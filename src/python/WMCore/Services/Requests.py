@@ -1,4 +1,5 @@
 #!/usr/bin/python
+#pylint: disable-msg=C0103,R0913,W0102
 """
 _Requests_
 
@@ -26,12 +27,18 @@ from WMCore.Algorithms import Permissions
 from WMCore.WMException import WMException
 from WMCore.Wrappers.JsonWrapper import JSONEncoder, JSONDecoder
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
+try:
+    from WMCore.Services.pycurl_manager import RequestHandler
+except ImportError:
+    pass
 from WMCore.Lexicon import sanitizeURL
 
 def check_server_url(srvurl):
+    """Check given url for correctness"""
     good_name = srvurl.startswith('http://') or srvurl.startswith('https://')
     if not good_name:
-        msg = "You must include http(s):// in your servers address, %s doesn't" % srvurl
+        msg  = "You must include"
+        msg += "http(s):// in your servers address, %s doesn't" % srvurl
         raise ValueError(msg)
 
 class Requests(dict):
@@ -39,11 +46,18 @@ class Requests(dict):
     Generic class for sending different types of HTTP Request to a given URL
     """
 
-    def __init__(self, url = 'http://localhost', dict={}):
+    def __init__(self, url = 'http://localhost', idict=None):
         """
         url should really be host - TODO fix that when have sufficient code
         coverage and change _getURLOpener if needed
         """
+        if  not idict:
+            idict = {}
+        dict.__init__(self, idict)
+        self.pycurl = idict.get('pycurl', None)
+        if self.pycurl:
+            self.reqmgr = RequestHandler()
+
         #set up defaults
         self.setdefault("accept_type", 'text/html')
         self.setdefault("content_type", 'application/x-www-form-urlencoded')
@@ -52,21 +66,23 @@ class Requests(dict):
         # check for basic auth early, as if found this changes the url
         urlComponent = sanitizeURL(url)
         if urlComponent['username'] is not None:
-            self.addBasicAuth(urlComponent['username'], urlComponent['password'])
+            self.addBasicAuth(\
+                urlComponent['username'], urlComponent['password'])
             url = urlComponent['url'] # remove user, password from url
 
         self.setdefault("host", url)
 
         # then update with the incoming dict
-        self.update(dict)
+        self.update(idict)
 
         self['endpoint_components'] = urlparse.urlparse(self['host'])
 
         # If cachepath = None disable caching
-        if 'cachepath' in dict and dict['cachepath'] is None:
+        if 'cachepath' in idict and idict['cachepath'] is None:
             self["req_cache_path"] = None
         else:
-            cache_dir = (self.cachePath(dict.get('cachepath'), dict.get('service_name')))
+            cache_dir = (self.cachePath(idict.get('cachepath'), \
+                        idict.get('service_name')))
             self["cachepath"] = cache_dir
             self["req_cache_path"] = os.path.join(cache_dir, '.cache')
         self.setdefault("timeout", 30)
@@ -112,6 +128,44 @@ class Requests(dict):
     def makeRequest(self, uri=None, data={}, verb='GET', incoming_headers={},
                      encoder=True, decoder=True, contentType=None):
         """
+        Wrapper around request helper functions.
+        """
+        if  self.pycurl:
+            result = self.makeRequest_pycurl(uri, data, verb, incoming_headers,
+                         encoder, decoder, contentType)
+        else:
+            result = self.makeRequest_httplib(uri, data, verb, incoming_headers,
+                         encoder, decoder, contentType)
+        return result
+
+    def makeRequest_pycurl(self, uri=None, params={}, verb='GET',
+            incoming_headers={}, encoder=True, decoder=True, contentType=None):
+        """
+        Make HTTP(s) request via pycurl library. Stay complaint with
+        makeRequest_httplib method.
+        """
+        ckey, cert = self.getKeyCert()
+        if  not contentType:
+            contentType = self['content_type']
+        headers = {"Content-type": contentType,
+               "User-agent": "WMCore.Services.Requests/v001",
+               "Accept": self['accept_type']}
+        for key in self.additionalHeaders.keys():
+            headers[key] = self.additionalHeaders[key]
+        #And now overwrite any headers that have been passed into the call:
+        headers.update(incoming_headers)
+        url = self['host'] + uri
+        if  verb == 'POST':
+            post = 1
+        else:
+            post = None
+        response, data = self.reqmgr.request(url, params, headers, \
+                    post=post, ckey=ckey, cert=cert, decode=decoder)
+        return data, response.status, response.reason, response.fromcache
+
+    def makeRequest_httplib(self, uri=None, data={}, verb='GET',
+            incoming_headers={}, encoder=True, decoder=True, contentType=None):
+        """
         Make a request to the remote database. for a give URI. The type of
         request will determine the action take by the server (be careful with
         DELETE!). Data should be a dictionary of {dataname: datavalue}.
@@ -126,15 +180,13 @@ class Requests(dict):
 
         """
         #TODO: User agent should be:
-        # $client/$client_version (CMS) $http_lib/$http_lib_version $os/$os_version ($arch)
-        if contentType:
-            headers = {"Content-type": contentType,
-                   "User-agent": "WMCore.Services.Requests/v001",
-                   "Accept": self['accept_type']}
-        else:
-            headers = {"Content-type": self['content_type'],
-                   "User-agent": "WMCore.Services.Requests/v001",
-                   "Accept": self['accept_type']}
+        # $client/$client_version (CMS)
+        # $http_lib/$http_lib_version $os/$os_version ($arch)
+        if  not contentType:
+            contentType = self['content_type']
+        headers = {"Content-type": contentType,
+               "User-agent": "WMCore.Services.Requests/v001",
+               "Accept": self['accept_type']}
         encoded_data = ''
 
         for key in self.additionalHeaders.keys():
@@ -152,7 +204,9 @@ class Requests(dict):
         #        "makeRequest input data must be a dict (key/value pairs)"
 
         # There must be a better way to do this...
-        def f(): pass
+        def f():
+            """Dummy function"""
+            pass
 
         if verb != 'GET' and data:
             if type(encoder) == type(self.get) or type(encoder) == type(f):
@@ -176,7 +230,8 @@ class Requests(dict):
         headers["Content-length"] = str(len(encoded_data))
 
         assert type(encoded_data) == type('string'), \
-                    "Data in makeRequest is %s and not encoded to a string" % type(encoded_data)
+            "Data in makeRequest is %s and not encoded to a string" \
+                % type(encoded_data)
 
         # httplib2 will allow sockets to close on remote end without retrying
         # try to send request - if this fails try again - should then succeed
@@ -200,7 +255,8 @@ class Requests(dict):
             except AttributeError:
                 # socket/httplib really screwed up - nuclear option
                 self['conn'].connections = {}
-                raise socket.error, 'Error contacting: %s' % self.getDomainName()
+                raise socket.error, 'Error contacting: %s' \
+                        % self.getDomainName()
         if response.status >= 400:
             e = HTTPException()
             setattr(e, 'req_data', encoded_data)
@@ -242,7 +298,8 @@ class Requests(dict):
         if self.getUserName() is None:
             cachepath = os.path.join(top, self['endpoint_components'].netloc)
         else:
-            cachepath = os.path.join(top, '%s-%s' % (self.getUserName(), self.getDomainName()))
+            cachepath = os.path.join(top, '%s-%s' \
+                % (self.getUserName(), self.getDomainName()))
 
         try:
             # only we should be able to write to this dir
@@ -274,10 +331,10 @@ class Requests(dict):
                 firstbit = os.environ[var]
                 break
         else:
-            dir = tempfile.mkdtemp(prefix='.wmcore_cache_')
+            idir = tempfile.mkdtemp(prefix='.wmcore_cache_')
             # object to store temporary directory - cleaned up on destruction
-            self['deleteCacheOnExit'] = TempDirectory(dir)
-            return dir
+            self['deleteCacheOnExit'] = TempDirectory(idir)
+            return idir
 
         return os.path.join(firstbit, lastbit)
 
@@ -294,12 +351,15 @@ class Requests(dict):
         method getting a secure (HTTPS) connection
         """
         key, cert = None, None
-        if self['endpoint_components'].scheme == 'https': # only add certs to https requests
-            # if we have a key/cert add to request, if not proceed as not all https connections require them
+        if self['endpoint_components'].scheme == 'https':
+            # only add certs to https requests
+            # if we have a key/cert add to request,
+            # if not proceed as not all https connections require them
             try:
                 key, cert = self.getKeyCert()
             except Exception, ex:
-                self['logger'].info('No certificate or key found, authentication may fail')
+                msg = 'No certificate or key found, authentication may fail'
+                self['logger'].info(msg)
                 self['logger'].debug(str(ex))
 
         try:
@@ -328,6 +388,8 @@ class Requests(dict):
        Get the user credentials if they exist, otherwise throw an exception.
        This code was modified from DBSAPI/dbsHttpService.py
         """
+        cert = None
+        key = None
         # Zeroth case is if the class has over ridden the key/cert and has it
         # stored in self
         if self.has_key('cert') and self.has_key('key' ) \
@@ -367,9 +429,10 @@ class Requests(dict):
                     key = cert
 
         #Set but not found
-        if not os.path.exists(cert) or not os.path.exists(key):
-            raise WMException('Request requires a host certificate and key',
-                              "WMCORE-11")
+        if  key and cert:
+            if not os.path.exists(cert) or not os.path.exists(key):
+                raise WMException('Request requires a host certificate and key',
+                                  "WMCORE-11")
 
         # All looks OK, still doesn't guarantee proxy's validity etc.
         return key, cert
@@ -378,8 +441,8 @@ class JSONRequests(Requests):
     """
     Example implementation of Requests that encodes data to/from JSON.
     """
-    def __init__(self, url = 'http://localhost:8080', dict={}):
-        Requests.__init__(self, url, dict)
+    def __init__(self, url = 'http://localhost:8080', idict={}):
+        Requests.__init__(self, url, idict)
         self['accept_type'] = "application/json"
         self['content_type'] = "application/json"
 
@@ -409,8 +472,8 @@ class JSONRequests(Requests):
 
 class TempDirectory():
     """Directory that cleans up after itself"""
-    def __init__(self, dir):
-        self.dir = dir
+    def __init__(self, idir):
+        self.dir = idir
 
     def __del__(self):
         shutil.rmtree(self.dir, ignore_errors = True)

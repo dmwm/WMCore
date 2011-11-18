@@ -94,6 +94,20 @@ class testRequestExceptions(unittest.TestCase):
             #print e
             self.assertEqual(e.status, 404)
 
+    def test404Error_with_pycurl(self):
+        endp = "http://cmsweb.cern.ch"
+        url = "/thispagedoesntexist/"
+        idict = dict(self.request_dict)
+        idict.update({'pycurl':1})
+        req = Requests.Requests(endp, idict)
+        for v in ['GET', 'POST']:
+            self.assertRaises(HTTPException, req.makeRequest, url, verb=v)
+        try:
+            req.makeRequest(url, verb='GET')
+        except HTTPException, e:
+            #print e
+            self.assertEqual(e.status, 404)
+
 # comment out so we don't ddos someone else's server
 #    def test408Error(self):
 #        endp = "http://bitworking.org/projects/httplib2/test"
@@ -139,6 +153,28 @@ class testRepeatCalls(RESTBaseUnitTest):
         if fail_count > 0:
             raise Exception('Test did not pass!')
 
+    def test10Calls_with_pycurl(self):
+        fail_count = 0
+        idict = {'req_cache_path': self.cache_path, 'pycurl':1}
+        req = Requests.Requests(self.urlbase, idict)
+
+        for i in range(0, 5):
+            time.sleep(i)
+            print 'test %s starting at %s' % (i, time.time())
+            try:
+                result = req.get('/', incoming_headers={'Cache-Control':'no-cache'}, decode=False)
+                self.assertEqual(False, result[3])
+                self.assertEqual(200, result[1])
+            except HTTPException, he:
+                print 'test %s raised a %s error' % (i, he.status)
+                fail_count += 1
+            except Exception, e:
+                print 'test %s raised an unexpected exception of type %s' % (i,type(e))
+                print e
+                fail_count += 1
+        if fail_count > 0:
+            raise Exception('Test did not pass!')
+
     def testRecoveryFromConnRefused(self):
         """Connections succeed after server down"""
         import socket
@@ -153,6 +189,22 @@ class testRepeatCalls(RESTBaseUnitTest):
         self.assertEqual(result[3], False)
         self.assertEqual(result[1], 200)
 
+    def testRecoveryFromConnRefused_with_pycurl(self):
+        """Connections succeed after server down"""
+        import socket
+        import pycurl
+        self.rt.stop()
+        idict = {'req_cache_path': self.cache_path, 'pycurl':1}
+        req = Requests.Requests(self.urlbase, idict)
+        headers = {'Cache-Control':'no-cache'}
+        self.assertRaises(pycurl.error, req.get, '/', incoming_headers=headers, decode=False)
+
+        # now restart server and hope we can connect
+        self.rt.start(blocking=False)
+        result = req.get('/', incoming_headers=headers, decode=False)
+        self.assertEqual(result[3], False)
+        self.assertEqual(result[1], 200)
+
 class testJSONRequests(unittest.TestCase):
     def setUp(self):
         self.testInit = TestInit(__file__)
@@ -163,7 +215,7 @@ class testJSONRequests(unittest.TestCase):
             os.environ['DATABASE'] = 'sqlite://'
         self.testInit.setDatabaseConnection()
         tmp = self.testInit.generateWorkDir()
-        self.request = Requests.JSONRequests(dict={'req_cache_path' : tmp})
+        self.request = Requests.JSONRequests(idict={'req_cache_path' : tmp})
 
     def roundTrip(self,data):
         encoded = self.request.encode(data)
@@ -260,6 +312,20 @@ class testJSONRequests(unittest.TestCase):
 
 class TestRequests(unittest.TestCase):
 
+    def testGetKeyCert(self):
+        """test existance of key/cert"""
+        proxy = os.environ.get('X509_USER_PROXY')
+        if not proxy:
+            raise nose.SkipTest('Only run if an X509 proxy is present')
+        os.environ.pop('X509_HOST_CERT', None)
+        os.environ.pop('X509_HOST_KEY', None)
+        os.environ.pop('X509_USER_CERT', None)
+        os.environ.pop('X509_USER_KEY', None)
+        req = Requests.Requests('https://cmsweb.cern.ch')
+        key, cert = req.getKeyCert()
+        self.assertNotEqual(None, key)
+        self.assertNotEqual(None, cert)
+
     def testSecureWithProxy(self):
         """https with proxy"""
         proxy = os.environ.get('X509_USER_PROXY')
@@ -275,11 +341,38 @@ class TestRequests(unittest.TestCase):
         self.assertNotEqual(out[0].find('passed basic validation'), -1)
         self.assertNotEqual(out[0].find('certificate is a proxy'), -1)
 
+    def testSecureWithProxy_with_pycurl(self):
+        """https with proxy with pycurl"""
+        proxy = os.environ.get('X509_USER_PROXY')
+        if not proxy:
+            raise nose.SkipTest('Only run if an X509 proxy is present')
+        os.environ.pop('X509_HOST_CERT', None)
+        os.environ.pop('X509_HOST_KEY', None)
+        os.environ.pop('X509_USER_CERT', None)
+        os.environ.pop('X509_USER_KEY', None)
+        req = Requests.Requests('https://cmsweb.cern.ch', {'pycurl':1})
+        out = req.makeRequest('/phedex/datasvc/json/prod/groups')
+        self.assertEqual(out[1], 200)
+        if  not isinstance(out[0], dict):
+            msg = 'wrong data type'
+            raise Exception(msg)
+        out = req.makeRequest('/auth/trouble', decoder=False)
+        self.assertEqual(out[1], 200)
+        self.assertNotEqual(out[0].find('passed basic validation'), -1)
+        self.assertNotEqual(out[0].find('certificate is a proxy'), -1)
 
     def testSecureNoAuth(self):
         """https with no client authentication"""
         req = Requests.Requests('https://cmsweb.cern.ch')
         out = req.makeRequest('')
+        self.assertEqual(out[1], 200)
+        # we should get an html page in response
+        self.assertNotEqual(out[0].find('html'), -1)
+
+    def testSecureNoAuth_with_pycurl(self):
+        """https with no client authentication"""
+        req = Requests.Requests('https://cmsweb.cern.ch', {'pycurl':1})
+        out = req.makeRequest('', decoder=False)
         self.assertEqual(out[1], 200)
         # we should get an html page in response
         self.assertNotEqual(out[0].find('html'), -1)
@@ -295,6 +388,20 @@ class TestRequests(unittest.TestCase):
         os.environ.pop('X509_USER_KEY', None)
         req = Requests.Requests('https://cmsweb.cern.ch:443')
         out = req.makeRequest('/auth/trouble')
+        self.assertEqual(out[1], 200)
+        self.assertNotEqual(out[0].find('passed basic validation'), -1)
+
+    def testSecureOddPort_with_pycurl(self):
+        """https with odd port"""
+        proxy = os.environ.get('X509_USER_PROXY')
+        if not proxy:
+            raise nose.SkipTest('Only run if an X509 proxy is present')
+        os.environ.pop('X509_HOST_CERT', None)
+        os.environ.pop('X509_HOST_KEY', None)
+        os.environ.pop('X509_USER_CERT', None)
+        os.environ.pop('X509_USER_KEY', None)
+        req = Requests.Requests('https://cmsweb.cern.ch:443', {'pycurl':1})
+        out = req.makeRequest('/auth/trouble', decoder=False)
         self.assertEqual(out[1], 200)
         self.assertNotEqual(out[0].find('passed basic validation'), -1)
 

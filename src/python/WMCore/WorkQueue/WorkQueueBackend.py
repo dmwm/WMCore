@@ -33,9 +33,9 @@ class WorkQueueBackend(object):
             self.parentCouchUrl = sanitizeURL(parentQueue)['url']
         else:
             self.parentCouchUrl = None
-        self.db = self.server.connectDatabase(db_name, create = False)
+        self.db = self.server.connectDatabase(db_name, create = False, size = 10000)
         self.hostWithAuth = db_url
-        self.inbox = self.server.connectDatabase(inbox_name, create = False)
+        self.inbox = self.server.connectDatabase(inbox_name, create = False, size = 10000)
         self.queueUrl = sanitizeURL(queueUrl or (db_url + '/' + db_name))['url']
 
     def forceQueueSync(self):
@@ -123,7 +123,7 @@ class WorkQueueBackend(object):
                 unit['WMBSUrl'] = parent['WMBSUrl']
 
             unit.save()
-        unit._couch.commit(timestamp = True, all_or_nothing = True)
+        unit._couch.commit(all_or_nothing = True)
         return
 
     def createWork(self, spec, **kwargs):

@@ -68,8 +68,8 @@ class CouchWorkQueueElement(WorkQueueElement):
         document = self._couch.document(self._document['_id'])
         self.update(document.pop('WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'))
         self._document['_rev'] = document.pop('_rev')
-        self._document['timestamp'] = document.pop('timestamp')
-        self._document['updatetime'] = document.pop('updatetime')
+        self._document['timestamp'] = document.pop('timestamp', None)
+        self._document['updatetime'] = document.pop('updatetime', None)
         return self
 
     def delete(self):
@@ -81,7 +81,9 @@ class CouchWorkQueueElement(WorkQueueElement):
     def populateDocument(self):
         """Certain attributed shouldn't be stored"""
         self._document.update(self.__to_json__(None))
-        self._document['updatetime'] = time.time()
+        now = time.time()
+        self._document['updatetime'] = now
+        self._document.setdefault('timestamp', now)
         if not self._document.get('_id') and self.id:
             self._document['_id'] = self.id
         attrs = ['WMSpec', 'Task']

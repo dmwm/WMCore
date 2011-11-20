@@ -612,7 +612,8 @@ class WorkQueue(WorkQueueBase):
             return
 
         self.backend.pullFromParent() # Check we are upto date with inbound changes
-        self.backend.fixConflicts() # before doing anything fix any conflicts
+        if self.params['LocalQueueFlag']:
+            self.backend.fixConflicts() # before doing anything fix any conflicts
 
         wf_to_cancel = [] # record what we did for task_activity
         finished_elements = []

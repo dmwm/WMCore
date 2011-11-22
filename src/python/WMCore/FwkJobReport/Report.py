@@ -13,6 +13,8 @@ import logging
 import sys
 import traceback
 import time
+import math
+import types
 
 from WMCore.Configuration import ConfigSection
 
@@ -197,6 +199,11 @@ class Report:
                 continue
 
             jsonPerformance[reportSection] = getattr(perfSection, reportSection).dictionary_()
+            for key in jsonPerformance[reportSection].keys():
+                val = jsonPerformance[reportSection][key]
+                if type(val) == types.FloatType:
+                    if math.isinf(val) or math.isnan(val):
+                        jsonPerformance[reportSection][key] = None
 
         return jsonPerformance
 

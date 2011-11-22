@@ -11,6 +11,8 @@ import xml.dom.minidom
 import time
 
 import WMCore.WMBase
+from WMCore.Database.CMSCouch import CouchServer
+from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
@@ -27,21 +29,26 @@ class ReportTest(unittest.TestCase):
 
         Figure out the location of the XML report produced by CMSSW.
         """
+        self.testInit = TestInitCouchApp(__file__)
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setupCouch("report_t/fwjrs", "FWJRDump")
+
         self.xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
                                     "WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
         self.badxmlPath = os.path.join(WMCore.WMBase.getTestBase(),
                                     "WMCore_t/FwkJobReport_t/CMSSWFailReport2.xml")
         return
 
-    # json/dejson
-    # persist/unpersist load/save
-    # add error
+    def tearDown(self):
+        """
+        _tearDown_
 
-    # retrieveStep
-    # getOutputModule
-    # getOutputFile
-    # getAllFilesFromStep
-    # getAllFiles
+        Cleanup the databases.
+        """
+        self.testInit.tearDownCouch()
+        self.testInit.clearDatabase()
+        return
 
     def verifyInputData(self, report):
         """
@@ -620,7 +627,29 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertTrue(myReport.taskSuccessful(ignoreString = 'cmsRun'))
         return
                          
+    def testMultiCoreReport(self):
+        """
+        _testMultiCoreReport_
 
+        Verify that multicore reports can be json encoded and uploaded to couch.
+        """
+        couchdb = CouchServer(os.environ["COUCHURL"])
+        fwjrdatabase = couchdb.connectDatabase("report_t/fwjrs")
+        
+        self.mcPath = os.path.join(WMCore.WMBase.getTestBase(),
+                                   "WMCore_t/FwkJobReport_t/MulticoreReport.pkl")        
+        myReport = Report()
+        myReport.unpersist(self.mcPath)
+
+        fwjrDocument = {"_id": "303-0",
+                        "jobid": 303,
+                        "retrycount": 0,
+                        "fwjr": myReport.__to_json__(None),
+                        "type": "fwjr"}
+
+        fwjrdatabase.queue(fwjrDocument, timestamp = True)
+        fwjrdatabase.commit()
+        return
  
     
 if __name__ == "__main__":

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#-*- coding: ISO-8859-1 -*-
 '''n
 Created on Aug 6, 2009
 
@@ -50,7 +52,7 @@ class testThunking(unittest.TestCase):
     def setUp(self):
         self.thunker = JSONThunker()
 
-    def roundTrip(self,data):
+    def roundTrip(self, data):
         encoded = self.thunker.thunk(data)
         decoded = self.thunker.unthunk(encoded)
         self.assertEqual( data, decoded )
@@ -147,7 +149,7 @@ class testRepeatCalls(RESTBaseUnitTest):
                 print 'test %s raised a %s error' % (i, he.status)
                 fail_count += 1
             except Exception, e:
-                print 'test %s raised an unexpected exception of type %s' % (i,type(e))
+                print 'test %s raised an unexpected exception of type %s' % (i, type(e))
                 print e
                 fail_count += 1
         if fail_count > 0:
@@ -169,7 +171,7 @@ class testRepeatCalls(RESTBaseUnitTest):
                 print 'test %s raised a %s error' % (i, he.status)
                 fail_count += 1
             except Exception, e:
-                print 'test %s raised an unexpected exception of type %s' % (i,type(e))
+                print 'test %s raised an unexpected exception of type %s' % (i, type(e))
                 print e
                 fail_count += 1
         if fail_count > 0:
@@ -217,7 +219,7 @@ class testJSONRequests(unittest.TestCase):
         tmp = self.testInit.generateWorkDir()
         self.request = Requests.JSONRequests(idict={'req_cache_path' : tmp})
 
-    def roundTrip(self,data):
+    def roundTrip(self, data):
         encoded = self.request.encode(data)
         #print encoded
         #print encoded.__class__.__name__
@@ -225,7 +227,7 @@ class testJSONRequests(unittest.TestCase):
         #print decoded.__class__.__name__
         self.assertEqual( data, decoded )
 
-    def roundTripLax(self,data):
+    def roundTripLax(self, data):
         encoded = self.request.encode(data)
         decoded = self.request.decode(encoded)
         datakeys = data.keys()
@@ -241,15 +243,15 @@ class testJSONRequests(unittest.TestCase):
 
     @runboth
     def testSet2(self):
-        self.roundTrip(set([1,2,3,4,Run(1)]))
+        self.roundTrip(set([1, 2, 3, 4, Run(1)]))
 
     @runboth
     def testSet3(self):
-        self.roundTrip(set(['a','b','c','d']))
+        self.roundTrip(set(['a', 'b', 'c', 'd']))
 
     @runboth
     def testSet4(self):
-        self.roundTrip(set([1,2,3,4,'a','b']))
+        self.roundTrip(set([1, 2, 3, 4, 'a', 'b']))
 
     @runboth
     def testRun1(self):
@@ -257,11 +259,11 @@ class testJSONRequests(unittest.TestCase):
 
     @runboth
     def testRun2(self):
-        self.roundTrip(Run(1,1))
+        self.roundTrip(Run(1, 1))
 
     @runboth
     def testRun3(self):
-        self.roundTrip(Run(1,2,3))
+        self.roundTrip(Run(1, 2, 3))
 
     @runboth
     def testMask1(self):

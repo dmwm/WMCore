@@ -124,7 +124,7 @@ class PromptSkimPoller(BaseWorkerThread):
         if self.workloads.has_key(blockInfo["RUN_ID"]):
             if self.workloads[blockInfo["RUN_ID"]].has_key(skimConfig.SkimName):
                 workload = self.workloads[blockInfo["RUN_ID"]][skimConfig.SkimName]
-                workload.setBlockWhitelist(skimConfig.SiteName)
+                workload.setBlockWhitelist(blockInfo["BLOCK_NAME"])
                 specPath = os.path.join(self.workloadCache, workloadName, "%s.pkl" % guid)
                 workload.setSpecUrl(specPath)
                 workload.save(specPath)  

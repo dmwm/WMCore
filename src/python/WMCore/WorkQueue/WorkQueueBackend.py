@@ -41,28 +41,30 @@ class WorkQueueBackend(object):
     def forceQueueSync(self):
         """Force a blocking replication
             - for use mainly in tests"""
-        self.pullFromParent()
-        self.sendToParent()
+        self.pullFromParent(continuous = False)
+        self.sendToParent(continuous = False)
 
-    def pullFromParent(self):
+    def pullFromParent(self, continuous = True):
         """Replicate from parent couch - blocking"""
         try:
             if self.parentCouchUrl and self.queueUrl:
                 self.server.replicate(source = self.parentCouchUrl,
                                       destination = "%s/%s" % (self.hostWithAuth, self.inbox.name),
                                       filter = 'WorkQueue/childQueueFilter',
-                                      query_params = {'queueUrl' : self.queueUrl})
+                                      query_params = {'queueUrl' : self.queueUrl},
+                                      continuous = continuous)
         except Exception, ex:
             self.logger.warning('Replication from %s failed: %s' % (self.parentCouchUrl, str(ex)))
 
-    def sendToParent(self):
+    def sendToParent(self, continuous = True):
         """Replicate to parent couch - blocking"""
         try:
             if self.parentCouchUrl and self.queueUrl:
                 self.server.replicate(source = "%s/%s" % (self.db['host'], self.inbox.name),
                                       destination = self.parentCouchUrlWithAuth,
                                       filter = 'WorkQueue/childQueueFilter',
-                                      query_params = {'queueUrl' : self.queueUrl})
+                                      query_params = {'queueUrl' : self.queueUrl},
+                                      continuous = continuous)
         except Exception, ex:
                 self.logger.warning('Replication to %s failed: %s' % (self.parentCouchUrl, str(ex)))
 

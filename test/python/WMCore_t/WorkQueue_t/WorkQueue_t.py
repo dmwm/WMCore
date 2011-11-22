@@ -63,8 +63,10 @@ def syncQueues(queue):
     """Sync parent & local queues and split work
         Workaround having to wait for couchdb replication and splitting polling
     """
+    queue.backend.forceQueueSync()
     work = queue.processInboundWork()
     queue.performQueueCleanupActions()
+    queue.backend.forceQueueSync()
     return work
 
 class WorkQueueTest(WorkQueueTestCase):
@@ -1032,6 +1034,7 @@ class WorkQueueTest(WorkQueueTestCase):
                          [{'testProcessing': False}, {'testProduction': False}])
         self.assertEqual(self.localQueue.getWMBSInjectionStatus(self.spec.name()),
                          False)
+        syncQueues(self.localQueue)
         self.localQueue.processInboundWork()
         self.localQueue.updateLocationInfo()
         self.localQueue.getWork({'T2_XX_SiteA' : 1000})
@@ -1042,6 +1045,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         #update parents status
         self.localQueue.performQueueCleanupActions()
+        self.localQueue.backend.sendToParent(continuous = False)
         self.assertEqual(self.localQueue.getWMBSInjectionStatus(),
                          [{'testProcessing': True}, {'testProduction': True}])
         self.assertEqual(self.localQueue.getWMBSInjectionStatus(self.spec.name()),
@@ -1060,10 +1064,11 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
         self.localQueue.backend.pullFromParent() # pull work into inbox (Negotiating state)
         self.localQueue.processInboundWork()
-        self.localQueue.backend.sendToParent()
+        syncQueues(self.localQueue)
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
         # should print message but not raise an error
         self.localQueue.performQueueCleanupActions(skipWMBS = True)
+        self.localQueue.backend.pullFromParent(continuous = False)
         self.assertEqual(self.localQueue.statusInbox()[1]['Status'], 'Negotiating')
         self.assertEqual(len(self.localQueue), 1)
 

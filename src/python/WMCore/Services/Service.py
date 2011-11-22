@@ -256,7 +256,7 @@ class Service(dict):
             #
             if force_refresh or not os.path.exists(cachefile):
                 msg = 'The cachefile %s does not exist and the service at %s'
-                msg = msg % (cachefile, url)
+                msg = msg % (cachefile, self["requests"]['host'] + url)
                 if hasattr(he, 'status') and hasattr(he, 'reason'):
                     msg += ' is unavailable - it returned %s because %s\n' % (he.status,
                                                                               he.reason)

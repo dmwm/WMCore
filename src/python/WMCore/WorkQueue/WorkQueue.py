@@ -394,42 +394,43 @@ class WorkQueue(WorkQueueBase):
                 args['RequestName'] = WorkflowName
             elements = self.backend.getElements(elementIDs = elementIDs, **args)
 
-        # only cancel in global if work has not been passed to a child queue
-        if not self.params['LocalQueueFlag']:
-            elements = [x for x in elements if not x['ChildQueueUrl']]
-
         requestNames = set([x['RequestName'] for x in elements])
-
         if not requestNames:
             return []
-
-        # if we can talk to wmbs kill the jobs
-        if self.params['PopulateFilesets']:
-            from WMCore.WorkQueue.WMBSHelper import killWorkflow
-
-            self.logger.debug("""Canceling work in wmbs, workflows: %s""" % (requestNames))
-            for workflow in requestNames:
-                try:
-                    myThread = threading.currentThread()
-                    myThread.dbi = self.conn.dbi
-                    myThread.logger = self.logger
-                    killWorkflow(workflow, self.params["JobDumpConfig"],
-                                 self.params["BossAirConfig"])
-                except RuntimeError:
-                    #TODO: Check this logic and improve if possible
-                    if SubscriptionId:
-                        self.logger.info("""Cancel update: Only some subscription's canceled.
-                                    This might be due to a child subscriptions: %s"""
-                                    % elementIDs)
-
-        # update parent elements to canceled
+        inbox_elements = []
         for wf in requestNames:
-            inbox_elements = self.backend.getInboxElements(WorkflowName = wf, returnIdOnly = True)
-            if not inbox_elements:
-                raise RuntimeError, "Cant find parent for %s" % wf
+            inbox_elements.extend(self.backend.getInboxElements(WorkflowName = wf, returnIdOnly = True))
+
+        # if local queue, kill jobs, update parent to Canceled and delete elements
+        if self.params['LocalQueueFlag']:
+            # if we can talk to wmbs kill the jobs
+            if self.params['PopulateFilesets']:
+                from WMCore.WorkQueue.WMBSHelper import killWorkflow
+
+                self.logger.debug("""Canceling work in wmbs, workflows: %s""" % (requestNames))
+                for workflow in requestNames:
+                    try:
+                        myThread = threading.currentThread()
+                        myThread.dbi = self.conn.dbi
+                        myThread.logger = self.logger
+                        killWorkflow(workflow, self.params["JobDumpConfig"],
+                                     self.params["BossAirConfig"])
+                    except RuntimeError:
+                        #TODO: Check this logic and improve if possible
+                        if SubscriptionId:
+                            self.logger.info("""Cancel update: Only some subscription's canceled.
+                                        This might be due to a child subscriptions: %s"""
+                                        % elementIDs)
             self.backend.updateInboxElements(*inbox_elements, Status = 'Canceled')
-        # delete elements - no longer need them
-        self.backend.deleteElements(*elements)
+            # delete elements - no longer need them
+            self.backend.deleteElements(*elements)
+
+        # if global queue, update non-acquired to Canceled, update parent to CancelRequested
+        else:
+            # only cancel in global if work has not been passed to a child queue
+            elements = [x for x in elements if not x['ChildQueueUrl']]
+            self.backend.updateElements(*[x.id for x in elements], Status = 'Canceled')
+            self.backend.updateInboxElements(*inbox_elements, Status = 'CancelRequested')
 
         return [x.id for x in elements]
 

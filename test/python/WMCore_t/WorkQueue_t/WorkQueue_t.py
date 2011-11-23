@@ -753,45 +753,45 @@ class WorkQueueTest(WorkQueueTestCase):
 
     def testCancelWorkGlobal(self):
         """Cancel work in global queue"""
-        # queue to global & pull to local
+        # queue to global & pull an element to local
         self.globalQueue.queueWork(self.processingSpec.specUrl())
-        self.globalQueue.updateLocationInfo()
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000}), 2)
-        syncQueues(self.localQueue)
-        work = self.localQueue.getWork({'T2_XX_SiteA' : 1000, 'T2_XX_SiteB' : 1000})
-        self.assertEqual(len(work), 2)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
         syncQueues(self.localQueue)
 
-        # cancel in global, and propagate down to local
-        #service = WorkQueueService({'endpoint': self.localQueue.backend.parentCouchUrl})
+        # cancel in global and propagate to local
         service = WorkQueueService(self.localQueue.backend.parentCouchUrlWithAuth)
         service.cancelWorkflow(self.processingSpec.name())
-        #self.globalQueue.cancelWork(WorkflowName = self.spec.name())
-        self.globalQueue.performQueueCleanupActions()
-        self.assertEqual(len(self.globalQueue.statusInbox(status='CancelRequested')), 1)
+        # marked for cancel
         self.assertEqual(len(self.globalQueue.status(status='CancelRequested')), 2)
+        self.assertEqual(len(self.globalQueue.statusInbox(status='Acquired')), 1)
+
+        # will cancel element left in global, one sent to local queue stays CancelRequested
+        self.globalQueue.performQueueCleanupActions()
+        self.assertEqual(len(self.globalQueue.status(status='CancelRequested')), 1)
+        self.assertEqual(len(self.globalQueue.status(status='Canceled')), 1)
+        self.assertEqual(len(self.globalQueue.statusInbox(status='CancelRequested')), 1)
+        # global parent stays CancelRequested till child queue cancels
+        self.globalQueue.performQueueCleanupActions()
+        self.assertEqual(len(self.globalQueue.status(status='CancelRequested')), 1)
+        self.assertEqual(len(self.globalQueue.status(status='Canceled')), 1)
+        self.assertEqual(len(self.globalQueue.statusInbox(status='CancelRequested')), 1)
+
+        # during sync local will delete elements and mark inbox as canceled
         syncQueues(self.localQueue)
-        self.assertEqual(len(self.localQueue.statusInbox(status='Canceled')), 2)
         self.assertEqual(len(self.localQueue.status()), 0)
-
-        # check cancel propagated back to global
-        syncQueues(self.localQueue)
+        self.assertEqual(len(self.localQueue.statusInbox(status='Canceled')), 1)
         self.assertEqual(len(self.globalQueue.status(status='Canceled')), 2)
+        self.assertEqual(len(self.globalQueue.statusInbox(status='CancelRequested')), 1)
         self.globalQueue.performQueueCleanupActions()
+        self.assertEqual(len(self.globalQueue.status()), 0)
+        self.assertEqual(len(self.globalQueue.statusInbox(status='Canceled')), 1)
         syncQueues(self.localQueue)
+        # local now empty
         self.assertEqual(len(self.localQueue.statusInbox()), 0)
-        self.assertEqual(len(self.globalQueue.statusInbox(status='Canceled')), 1)
-        self.assertEqual(len(self.globalQueue.status()), 0)
+        # clear global
         self.globalQueue.deleteWorkflows(self.processingSpec.name())
+        self.assertEqual(len(self.globalQueue.statusInbox()), 0)
 
-        # cancel work in global before it reaches a local queue
-        self.globalQueue.queueWork(self.spec.specUrl())
-        self.assertEqual(len(self.globalQueue.status(status='Available')), 1)
-        service.cancelWorkflow(self.spec.name())
-        self.globalQueue.performQueueCleanupActions()
-        self.assertEqual(len(self.globalQueue.status()), 0)
-        self.assertEqual(len(self.globalQueue.statusInbox(status='Canceled')), 1)
-        self.globalQueue.deleteWorkflows(self.spec.name())
 
     def testInvalidSpecs(self):
         """Complain on invalid WMSpecs"""

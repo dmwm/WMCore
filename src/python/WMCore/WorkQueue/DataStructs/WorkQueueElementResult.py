@@ -65,13 +65,19 @@ class WorkQueueElementResult(dict):
         """Return canceled items"""
         return [x for x in self['Elements'] if x.isCanceled()]
 
+    def cancelRequestedItems(self):
+        """Return CancelRequested Items"""
+        return [x for x in self['Elements'] if x.isCancelRequested()]
+
     def status(self):
         """Compute status of elements"""
         if not self['Elements']:
             return None
 
         if not self.inEndState():
-            if self.runningItems():
+            if self.cancelRequestedItems():
+                return 'CancelRequested'
+            elif self.runningItems():
                 return 'Running'
             elif self.acquiredItems() or self.availableItems():
                 # available in local queue is acquired to parent

@@ -107,7 +107,12 @@ def parseError(error):
     elif 'Failed to open command file' in error:
         errorCondition = True
         errorMsg = "CONDOR ERROR: jdl file not found by submitted jobs!\n"
-
+    elif 'It appears that the value of pthread_mutex_init' in error:
+        # glexec insists on spitting out to stderr
+        lines = error.split('\n')
+        if len(lines) == 2 and not lines[1]:
+            errorCondition = False
+            errorMsg = error
 
     return errorCondition, errorMsg
 
@@ -185,14 +190,16 @@ class CondorPlugin(BasePlugin):
         self.result   = multiprocessing.Queue()
         self.nProcess = getattr(self.config.BossAir, 'nCondorProcesses', 4)
 
-        # Set up my proxy stuff
+        # Set up my proxy and glexec stuff
         self.proxy      = None
         self.serverCert = getattr(config.BossAir, 'delegatedServerCert', None)
         self.serverKey  = getattr(config.BossAir, 'delegatedServerKey', None)
         self.myproxySrv = getattr(config.BossAir, 'myproxyServer', None)
         self.proxyDir   = getattr(config.BossAir, 'proxyDir', '/tmp/')
         self.serverHash = getattr(config.BossAir, 'delegatedServerHash', None)
-        
+        self.glexecPath = getattr(config.BossAir, 'glexecPath', None)
+        self.jdlProxyFile    = None # Proxy name to put in JDL (owned by submit user)
+        self.glexecProxyFile = None # Copy of same file owned by submit user
 
         if self.serverCert and self.serverKey and self.myproxySrv:
             self.proxy = self.setupMyProxy()
@@ -349,7 +356,13 @@ class CondorPlugin(BasePlugin):
 
                 # Now submit them
                 logging.info("About to submit %i jobs" %(len(jobsReady)))
-                command = "condor_submit %s" % jdlFile
+                if self.glexecPath:
+                    command = 'CS=`which condor_submit`; export GLEXEC_CLIENT_CERT=%s; ' % self.glexecProxyFile + \
+                              'export GLEXEC_SOURCE_PROXY=%s; export GLEXEC_TARGET_PROXY=%s; %s $CS %s' % \
+                              (self.glexecProxyFile, self.jdlProxyFile, self.glexecPath, jdlFile)
+                else:
+                    command = "condor_submit %s" % jdlFile
+
                 try:
                     self.input.put({'command': command, 'idList': idList})
                 except AssertionError, ex:
@@ -544,7 +557,7 @@ class CondorPlugin(BasePlugin):
                 # File error, do nothing
                 logging.error("Went to check on error report for job %i.  Found a directory instead.\n" % job['id'])
                 logging.error("Ignoring this, but this is very strange.\n")
-            
+
             # If we're still here, we must not have a real error report
             logOutput = 'Could not find jobReport\n'
             logPath = os.path.join(job['cache_dir'], 'condor.log')
@@ -655,7 +668,20 @@ class CondorPlugin(BasePlugin):
                 # Else, build the serverHash from the proxy sha1
                 filename = self.proxy.logonRenewMyProxy()
             logging.error("Proxy stored in %s" % filename)
-            jdl.append("x509userproxy = %s\n" % filename)
+            if self.glexecPath:
+                self.jdlProxyFile = '%s.user' % filename
+                self.glexecProxyFile = filename
+                command = 'export GLEXEC_CLIENT_CERT=%s; export GLEXEC_SOURCE_PROXY=%s; ' % \
+                          (self.glexecProxyFile, self.glexecProxyFile) + \
+                          'export GLEXEC_TARGET_PROXY=%s; %s /usr/bin/id' % \
+                          (self.jdlProxyFile, self.glexecPath)
+                proc = subprocess.Popen(command, stderr = subprocess.PIPE,
+                                        stdout = subprocess.PIPE, shell = True)
+                out, err = proc.communicate()
+                logging.error("Created new user proxy with glexec %s" % self.jdlProxyFile)
+            else:
+                self.jdlProxyFile = filename
+            jdl.append("x509userproxy = %s\n" % self.jdlProxyFile)
 
         return jdl
 

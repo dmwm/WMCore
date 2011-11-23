@@ -91,6 +91,9 @@ class Aggregator(object):
                 try:
                     #protect against weird cases like NaNs in the reports
                     value = float(getSectParam(perfRep, sect, param))
+                except AttributeError:
+                    #protect against missing parameters
+                    continue
                 except ValueError:
                     continue
                 self.values[key].append(value)

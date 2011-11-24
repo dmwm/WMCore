@@ -12,7 +12,7 @@ function(doc, site) {
 			return;
 		}
 		// check for at least one site with data in the whitelist
-		if (ele.SiteWhitelist.length && input_sites) {
+		if (ele.SiteWhitelist.length && input_sites.length) {
 			var inputs_in_whitelist = false;
 			for (var i = 0; i < ele.SiteWhitelist.length; i++) {
 				if (input_sites.indexOf(ele.SiteWhitelist[i]) !== -1) {
@@ -26,7 +26,7 @@ function(doc, site) {
 			}
 		}
 		// check for at least one site with data not in the blacklist
-		if (ele.SiteBlacklist.length && input_sites) {
+		if (ele.SiteBlacklist.length && input_sites.length) {
 			var inputs_in_blacklist = true
 			for (var i = 0; i < input_sites.length; i++) {
 				if (ele.SiteBlacklist.indexOf(input_sites[i]) === -1) {

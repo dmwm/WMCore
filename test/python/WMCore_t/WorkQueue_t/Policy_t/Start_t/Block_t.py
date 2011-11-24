@@ -35,6 +35,7 @@ class BlockTestCase(unittest.TestCase):
     def testTier1ReRecoWorkload(self):
         """Tier1 Re-reco workflow"""
         Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload.data.request.priority = 69
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
@@ -45,6 +46,7 @@ class BlockTestCase(unittest.TestCase):
             self.assertEqual(Globals.GlobalParams.numOfBlocksPerDataset(), len(units))
             blocks = [] # fill with blocks as we get work units for them
             for unit in units:
+                self.assertEqual(69, unit['Priority'])
                 self.assertEqual(1, unit['Jobs'])
                 self.assertEqual(Tier1ReRecoWorkload, unit['WMSpec'])
                 self.assertEqual(task, unit['Task'])

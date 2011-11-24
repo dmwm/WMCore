@@ -84,6 +84,9 @@ class StartPolicyInterface(PolicyInterface):
         args.setdefault('SiteWhitelist', self.initialTask.siteWhitelist())
         args.setdefault('SiteBlacklist', self.initialTask.siteBlacklist())
         args.setdefault('EndPolicy', self.wmspec.endPolicyParameters())
+        args.setdefault('Priority', self.wmspec.priority())
+        if not args['Priority']:
+            args['Priority'] = 0
         ele = WorkQueueElement(**args)
         if not ele['Jobs']:
             raise WorkQueueWMSpecError(self.wmspec, 'No work in element: "%s"' % ele)

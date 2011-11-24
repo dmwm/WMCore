@@ -77,7 +77,7 @@ def queueConfigFromConfigObject(config):
     if not hasattr(wqManager, 'namespace'):
         wqManager.namespace = 'WMComponent.WorkQueueManager.WorkQueueManager'
     if not hasattr(wqManager, 'logLevel'):
-        wqManager.logLevel = logging.INFO
+        wqManager.logLevel = 'INFO'
     if not hasattr(wqManager, 'pollInterval'):
         wqManager.pollInterval = 600
 
@@ -141,8 +141,9 @@ def queueConfigFromConfigObject(config):
         import threading
         myThread = threading.currentThread()
         if not hasattr(myThread, 'logger'):
+            loggingLevelName = getattr(wqManager, 'logLevel', 'INFO')
             logging.basicConfig(format='%(asctime)-15s %(levelname)-8s %(module)s: %(message)s',
-                                level = wqManager.logLevel)
+                                level = getattr(logging, loggingLevelName))
             myThread.logger = logging.getLogger('workqueue')
         qConfig['logger'] = myThread.logger
 

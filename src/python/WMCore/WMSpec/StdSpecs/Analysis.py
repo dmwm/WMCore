@@ -183,15 +183,29 @@ class AnalysisWorkloadFactory(StdBase):
     def validateSchema(self, schema):
         """
         _validateSchema_
-        
+
         Check for required fields, and some skim facts
         """
+        def _checkSiteList(list):
+            if self.has_key(list) and hasattr(self,'allCMSNames'):
+                for site in self[list]:
+                    if not site in self.allCMSNames: #self.allCMSNames needs to be initialized to allow sitelisk check
+                        raise RuntimeError("The site " + site + " provided in the " + list + " param has not been found. Check https://cmsweb.cern.ch/sitedb/json/index/SEtoCMSName?name= for a list of known sites")
+
         requiredFields = ["CMSSWVersion", "ScramArch",
                           "InputDataset", "Requestor",
-                          "RequestorDN"]
+                          "RequestorDN" , "RequestName"]
         self.requireValidateFields(fields = requiredFields, schema = schema,
                                    validate = False)
-        if schema.get("RequestName", None) != None and schema.get("RequestName").count(' ') > 0:
+
+        _checkSiteList("SiteWhitelist")
+        _checkSiteList("SiteBlacklist")
+
+        #Control if the request name contain spaces
+        if schema.get("RequestName").count(' ') > 0:
             msg = "RequestName cannot contain spaces"
             self.raiseValidationException(msg = msg)
+
+
+
         return

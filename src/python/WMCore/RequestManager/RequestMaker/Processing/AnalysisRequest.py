@@ -48,8 +48,18 @@ class AnalysisSchema(RequestSchema):
             ]
 
     def validate(self):
-        if self.get("RequestName", None) != None and self.get("RequestName").count(' ') > 0:
-            raise RuntimeError("RequestName cannot contain spaces")
+        def _checkSiteList(list):
+            if self.has_key(list) and hasattr(self,'allCMSNames'):
+                for site in self[list]:
+                    if not site in self.allCMSNames: #self.allCMSNames needs to be initialized to allow sitelisk check
+                        raise RuntimeError("The site " + site + " provided in the " + list + " param has not been found. Check https://cmsweb.cern.ch/sitedb/json/index/SEtoCMSName?name= for a list of known sites")
+
         RequestSchema.validate(self)
+
+        _checkSiteList("SiteWhitelist")
+        _checkSiteList("SiteBlacklist")
+
+        if self.get("RequestName").count(' ') > 0:
+            raise RuntimeError("RequestName cannot contain spaces")
 
 registerRequestType("Analysis", AnalysisRequest, AnalysisSchema)

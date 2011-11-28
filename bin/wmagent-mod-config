@@ -155,6 +155,10 @@ def modifyConfiguration(config, **args):
             config.AlertProcessor.critical.sinks.rest.uri = args["couch_url"] + "/" + "alertscollector"
         if hasattr(config.AlertProcessor.soft.sinks, "rest"):
             config.AlertProcessor.soft.sinks.rest.uri = args["couch_url"] + "/" + "alertscollector"
+        if hasattr(config.AlertProcessor.critical.sinks, "file"):
+            config.AlertProcessor.critical.sinks.file.outputfile = os.path.join(args['working_dir'], "AlertsFileSinkCritical.json")
+        if hasattr(config.AlertProcessor.soft.sinks, "file"):
+            config.AlertProcessor.soft.sinks.file.outputfile = os.path.join(args['working_dir'], "AlertsFileSinkSoft.json")            
     if  hasattr(config, "AlertGenerator"):
         if hasattr(config.AlertGenerator, "couchDbSizePoller"):
             config.AlertGenerator.couchDbSizePoller.couchURL = args["couch_url"]
@@ -164,7 +168,7 @@ def modifyConfiguration(config, **args):
             config.AlertGenerator.couchMemPoller.couchURL = args["couch_url"]
         if hasattr(config.AlertGenerator, "couchErrorsPoller"):
             config.AlertGenerator.couchErrorsPoller.couchURL = args["couch_url"]
-            
+                        
     # custom global workqueue
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'GlobalQueue':
         if args.get('workqueue_db_name'):

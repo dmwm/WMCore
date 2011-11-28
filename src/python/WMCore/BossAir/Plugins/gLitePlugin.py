@@ -1399,7 +1399,7 @@ class gLitePlugin(BasePlugin):
         Return the proxy path to be used and a boolean to indicates if the proxy is good or not
         """
         if self.singleproxy is not None:
-            timeleft = none
+            timeleft = None
             try:
                 proxy = Proxy(self.defaultDelegation)
                 timeleft = proxy.getTimeLeft( self.singleproxy )

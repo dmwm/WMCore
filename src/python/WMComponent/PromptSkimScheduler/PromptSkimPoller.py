@@ -137,9 +137,7 @@ class PromptSkimPoller(BaseWorkerThread):
         if skimConfig.TwoFileRead:
             includeParents = True
         else:
-            includeParents = True
-
-        blockLocation = blockInfo["STORAGE_NODE"].replace("_MSS", "")
+            includeParents = False
 
         wfParams = {"AcquisitionEra": runConfig.getAcquisitionEra(),
                     "Requestor": "CMSPromptSkimming",
@@ -196,6 +194,7 @@ class PromptSkimPoller(BaseWorkerThread):
                                                           "Exported", "Migrated")
 
         logging.info("pollForTransferedBlocks(): Found %s blocks." % len(skimmableBlocks))
+        logging.info("pollForTransferedBlocks(): %s" % skimmableBlocks)         
 
         for skimmableBlock in skimmableBlocks:
             logging.info("pollForTransferedBlocks(): Skimmable: %s" % skimmableBlock["BLOCK_ID"])

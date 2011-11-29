@@ -523,7 +523,7 @@ class JobCreatorPoller(BaseWorkerThread):
                                                conn = myThread.transaction.conn,
                                                transaction = True)
             jobNumber += splitParams.get('initial_lfn_counter', 0)
-            logging.debug("Have %i jobs for this workflow already" % (jobNumber))
+            logging.debug("Have %i jobs for workflow %s already in database." % (jobNumber, workflow.name))
 
             continueSubscription = True
             while continueSubscription:

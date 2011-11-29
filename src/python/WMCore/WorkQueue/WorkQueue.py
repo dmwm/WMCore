@@ -447,7 +447,7 @@ class WorkQueue(WorkQueueBase):
                 self.logger.info('Deleting request "%s" as it is %s' % (request.id, request['Status']))
                 self.backend.deleteElements(request)
             else:
-                self.logger.error('Not deleting "%s" as it is %s' % (request.id, request['Status']))
+                self.logger.debug('Not deleting "%s" as it is %s' % (request.id, request['Status']))
 
     def queueWork(self, wmspecUrl, request = None, team = None):
         """
@@ -727,17 +727,17 @@ class WorkQueue(WorkQueueBase):
                     # save inbound work to signal we have completed queueing
                     self.backend.updateInboxElements(inbound.id, Status = 'Acquired')
             except TERMINAL_EXCEPTIONS, ex:
-                self.logger.error('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))
+                self.logger.info('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))
                 self.backend.updateInboxElements(inbound.id, Status = 'Failed')
                 if throw:
                     raise
             except Exception, ex:
                 # if request has been failing for too long permanently fail it.
                 if (float(inbound.timestamp) + self.params['QueueRetryTime']) < time.time():
-                    self.logger.error('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))
+                    self.logger.info('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))
                     self.backend.updateInboxElements(inbound.id, Status = 'Failed')
                 else:
-                    self.logger.error('Exception splitting work for wmspec "%s": %s' % (inbound['RequestName'], str(ex)))
+                    self.logger.info('Exception splitting work for wmspec "%s": %s' % (inbound['RequestName'], str(ex)))
                 if throw:
                     raise
                 continue

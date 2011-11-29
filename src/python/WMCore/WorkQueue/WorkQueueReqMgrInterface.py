@@ -77,14 +77,14 @@ class WorkQueueReqMgrInterface():
                 units = queue.queueWork(workLoadUrl, request = reqName, team = team)
             except (WorkQueueWMSpecError, WorkQueueNoWorkError), ex:
                 # fatal error - report back to ReqMgr
-                self.logger.error('Permanent failure processing request "%s": %s' % (reqName, str(ex)))
-                self.logger.error("Marking request %s as failed in ReqMgr" % reqName)
+                self.logger.info('Permanent failure processing request "%s": %s' % (reqName, str(ex)))
+                self.logger.info("Marking request %s as failed in ReqMgr" % reqName)
                 self.reportRequestStatus(reqName, 'Failed', message = str(ex))
                 continue
             except Exception, ex:
                 msg = 'Error processing request "%s": will try again later.' \
                 '\nError: "%s"' % (reqName, str(ex))
-                self.logger.error(msg)
+                self.logger.info(msg)
                 #self.reportRequestStatus(reqName, 'failed', message = str(ex))
                 self.sendMessage(reqName, msg)
                 continue

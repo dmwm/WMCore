@@ -16,13 +16,8 @@ class New(NewUserMySQL):
 
 
     def execute(self, dn, hn = None, owner = None, group = None,
-                group_name = None, role_name = 'default',
+                group_name = '', role_name = '',
                 conn = None, transaction = False):
-
-        if role_name == None or role_name == '':
-            role_name = 'default'
-        if group_name == None or group_name == '':
-            group_name = 'default'
 
         binds = {"dn": dn, "hn": hn, "owner": owner, "grp": group,
                  "gr": group_name, "role": role_name}

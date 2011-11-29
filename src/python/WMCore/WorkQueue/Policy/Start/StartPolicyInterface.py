@@ -90,6 +90,9 @@ class StartPolicyInterface(PolicyInterface):
         ele = WorkQueueElement(**args)
         if not ele['Jobs']:
             raise WorkQueueWMSpecError(self.wmspec, 'No work in element: "%s"' % ele)
+        for data, sites in ele['Inputs'].items():
+            if not sites:
+                raise WorkQueueWMSpecError(self.wmspec, 'Input data has no locations "%s"' % data)
         self.workQueueElements.append(ele)
 
     def __call__(self, wmspec, task, data = None, mask = None, team = None):

@@ -33,27 +33,12 @@ class Dataset(StartPolicyInterface):
         if (self.data and self.data.keys() != [datasetPath]):
             raise RuntimeError, "Can't provide different data to split with"
 
-        
-        # apply input dataset restrictions
-        blockWhiteList = self.initialTask.inputBlockWhitelist()
-        blockBlackList = self.initialTask.inputBlockBlacklist()
-        runWhiteList = self.initialTask.inputRunWhitelist()
-        runBlackList = self.initialTask.inputRunBlacklist()
-        if blockWhiteList or blockBlackList or runWhiteList or runBlackList:
-            blocks = self.validBlocks(self.initialTask, self.dbs())
-            if not blocks:
-                return
+        blocks = self.validBlocks(self.initialTask, self.dbs())
+        if not blocks:
+            return
 
-            for block in blocks:
-                # even though getDBSSummaryInfo can use all the SliceType
-                # dbs call doesn't need to be made in NumOfFiles, and NumOfEvents
-                # type. so only for the performance reason lumi splitting was handled
-                # differently
-                if self.args['SliceType'] == self.lumiType and not block.get(self.lumiType):
-                    blockSummary = dbs.getDBSSummaryInfo(block = block['Name'])
-                    work += blockSummary[self.args['SliceType']]
-                else:
-                    work += block[self.args['SliceType']]
+        for block in blocks:
+            work += block[self.args['SliceType']]
 
         dataset = dbs.getDBSSummaryInfo(dataset = datasetPath)
 
@@ -90,7 +75,7 @@ class Dataset(StartPolicyInterface):
         datasetPath = task.getInputDatasetPath()
         Lexicon.dataset(datasetPath) # check dataset name
         validBlocks = []
-        locations = set()
+        locations = None
 
         blockWhiteList = task.inputBlockWhitelist()
         blockBlackList = task.inputBlockBlacklist()
@@ -130,8 +115,12 @@ class Dataset(StartPolicyInterface):
                 block['NumberOfEvents'] *= ratio_accepted
 
             validBlocks.append(block)
-            locations = locations.intersection(set(sitesFromStorageEelements([x['Name'] for x in block['StorageElementList']])))
+            if locations is None:
+                locations = set(sitesFromStorageEelements([x['Name'] for x in block['StorageElementList']]))
+            else:
+                locations = locations.intersection(set(sitesFromStorageEelements([x['Name'] for x in block['StorageElementList']])))
 
         # all needed blocks present at these sites
-        self.data[datasetPath] = list(locations)
+        if locations:
+            self.data[datasetPath] = list(locations)
         return validBlocks

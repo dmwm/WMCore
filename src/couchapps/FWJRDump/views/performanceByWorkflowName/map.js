@@ -10,6 +10,7 @@ function(doc) {
       var CPU = doc['fwjr']['steps'][stepName]['performance']['cpu'];
       var mem = doc['fwjr']['steps'][stepName]['performance']['memory'];
       var store = doc['fwjr']['steps'][stepName]['performance']['storage'];
+      var multi = doc['fwjr']['steps'][stepName]['performance']['multicore'];
       var perfInfo = Object();
 
       perfInfo['jobID'] = doc['jobid']
@@ -49,6 +50,18 @@ function(doc) {
 	  }
 	}
       }//END if loop over storage
+
+      //Do loop over multicore info
+      if (multi) {
+	for (var perfName in multi) {
+	  if (Number(multi[perfName]) != Number.NaN) {
+	    perfInfo[perfName] = multi[perfName]
+	  }
+	  else {
+	    perfInfo[perfName] = 0.0
+	  }
+	}
+      }//END loop over multi
       emit([specName], perfInfo);
     }
   }

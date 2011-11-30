@@ -517,7 +517,16 @@ class TaskArchiverPoller(BaseWorkerThread):
                             continue
                         if not key in output.keys():
                             output[key] = []
-                        output[key].append(float(row[key]))
+                        try:
+                            output[key].append(float(row[key]))
+                        except TypeError:
+                            # Why do we get None values here?
+                            # We may want to look into it
+                            logging.debug("Got a None performance value for key %s" % key)
+                            if row[key] == None:
+                                output[key].append(0.0)
+                            else:
+                                raise
                     try:
                         jobTime = row.get('stopTime', None) - row.get('startTime', None)
                         output['jobTime'].append(jobTime)

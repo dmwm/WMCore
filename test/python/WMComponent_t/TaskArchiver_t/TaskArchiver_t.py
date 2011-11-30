@@ -173,7 +173,7 @@ class TaskArchiverTest(unittest.TestCase):
 
     def createTestJobGroup(self, config, name = "TestWorkthrough",
                            specLocation = "spec.xml", error = False,
-                           task = "/TestWorkload/ReReco"):
+                           task = "/TestWorkload/ReReco", multicore = False):
         """
         Creates a group of several jobs
 
@@ -229,6 +229,10 @@ class TaskArchiverTest(unittest.TestCase):
         if error:
             path1 = os.path.join(WMCore.WMBase.getTestBase(),
                                  "WMComponent_t/JobAccountant_t/fwjrs", "badBackfillJobReport.pkl")
+            path2 = path1
+        elif multicore:
+            path1 = os.path.join(WMCore.WMBase.getTestBase(),
+                                 "WMCore_t/FwkJobReport_t/MulticoreReport.pkl")
             path2 = path1
         else:
             path1 = os.path.join(WMCore.WMBase.getTestBase(),
@@ -574,7 +578,7 @@ class TaskArchiverTest(unittest.TestCase):
         logging.info("TaskArchiver took %f seconds" % (stopTime - startTime))
         
                 
-    def testTaskArchiverPollerAlertsSending_notifyWorkQueue(self):
+    def atestTaskArchiverPollerAlertsSending_notifyWorkQueue(self):
         """
         Cause exception (alert-worthy situation) in
         the TaskArchiverPoller notifyWorkQueue method.
@@ -611,7 +615,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertEqual(alert["Source"], "TaskArchiverPoller")
         
     
-    def testTaskArchiverPollerAlertsSending_killSubscriptions(self):
+    def atestTaskArchiverPollerAlertsSending_killSubscriptions(self):
         """
         Cause exception (alert-worthy situation) in
         the TaskArchiverPoller killSubscriptions method.
@@ -643,6 +647,51 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertEqual(len(handler.queue), numAlerts)
         alert = handler.queue[0]
         self.assertEqual(alert["Source"], "TaskArchiverPoller")
+        return
+
+    def testE_multicore(self):
+        """
+        _multicore_
+
+        Create a workload summary based on the multicore job report
+        """
+
+        myThread = threading.currentThread()
+
+        config = self.getConfig()
+        workloadPath = os.path.join(self.testDir, 'specDir', 'spec.pkl')
+        workload     = self.createWorkload(workloadName = workloadPath)
+        testJobGroup = self.createTestJobGroup(config = config,
+                                               name = workload.name(),
+                                               specLocation = workloadPath,
+                                               error = False,
+                                               multicore = True)
+
+        cachePath = os.path.join(config.JobCreator.jobCacheDir,
+                                 "TestWorkload", "ReReco")
+        os.makedirs(cachePath)
+        self.assertTrue(os.path.exists(cachePath))
+
+        workflowName = "TestWorkload"
+        dbname       = config.TaskArchiver.workloadSummaryCouchDBName
+        couchdb      = CouchServer(config.JobStateMachine.couchurl)
+        workdatabase = couchdb.connectDatabase(dbname)
+        jobdb        = couchdb.connectDatabase("%s/jobs" % self.databaseName)
+        fwjrdb       = couchdb.connectDatabase("%s/fwjrs" % self.databaseName)
+
+        testTaskArchiver = TaskArchiverPoller(config = config)
+        testTaskArchiver.algorithm()
+
+        workloadSummary = workdatabase.document(id = "TestWorkload")
+
+        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['minMergeTime']['average'],
+                         5.7624950408900002)
+        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['numberOfMerges']['average'],
+                         3.0)
+        self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['averageProcessTime']['average'],
+                         29.369966666700002)
+        return
+        
                 
     
 

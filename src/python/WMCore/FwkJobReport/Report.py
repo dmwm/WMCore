@@ -193,7 +193,7 @@ class Report:
         Convert the performance section of the FWJR into JSON.
         """
         jsonPerformance = {}
-        for reportSection in ["storage", "memory", "cpu"]:
+        for reportSection in ["storage", "memory", "cpu", "multicore"]:
             jsonPerformance[reportSection] = {}
             if not hasattr(perfSection, reportSection):
                 continue

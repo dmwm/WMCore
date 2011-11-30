@@ -153,6 +153,9 @@ class StageOut(Executor):
                        and not getattr(file, 'merged', False):
                     # We need both of those to continue, and we don't
                     # direct-to-merge
+                    if getattr(self.step.output, 'doNotDirectMerge', False):
+                        # Then we've been told explicitly not to do direct-to-merge
+                        continue
                     if file.size > self.step.output.minMergeSize:
                         # Then this goes direct to merge
                         try:

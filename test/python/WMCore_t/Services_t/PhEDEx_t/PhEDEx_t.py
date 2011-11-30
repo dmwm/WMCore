@@ -73,6 +73,16 @@ class PhEDExTest(unittest.TestCase):
         self.assertTrue(requestIDs[0].has_key("id"),
                         "Error: Missing request ID")
         return
+    
+    @attr("integration")
+    def testBestNodeName(self):
+        """
+        _testBestNodeName_
+
+        Verify that the node name is Buffer first 
+        """
+        self.failUnless(self.phedexApi.getBestNodeName("cmssrm.fnal.gov") == "T1_US_FNAL_Buffer")
+        return
 
     @attr("integration")
     def testNodeMap(self):

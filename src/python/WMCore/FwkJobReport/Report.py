@@ -917,7 +917,7 @@ class Report:
         """
         stepReport = self.retrieveStep(step=step)
 
-        if not stepReport:
+        if not stepReport or not hasattr(stepReport.analysis, 'files'):
             return []
 
         analysisFiles = stepReport.analysis.files

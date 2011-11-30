@@ -31,6 +31,7 @@ from WMCore.WMBS.JobGroup   import JobGroup
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 
 class AccountantWorkerException(WMException):
     """
@@ -56,7 +57,7 @@ class AccountantWorker(WMConnectionBase):
         self.dbsDaoFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
                                         logger = myThread.logger,
                                         dbinterface = myThread.dbi)
-        
+
         self.getOutputMapAction      = self.daofactory(classname = "Jobs.GetOutputMap")
         self.bulkAddToFilesetAction  = self.daofactory(classname = "Fileset.BulkAddByLFN")
         self.bulkParentageAction     = self.daofactory(classname = "Files.AddBulkParentage")
@@ -81,7 +82,7 @@ class AccountantWorker(WMConnectionBase):
 
         self.dbsNewAlgoAction    = self.dbsDaoFactory(classname = "NewAlgo")
         self.dbsNewDatasetAction = self.dbsDaoFactory(classname = "NewDataset")
-        self.dbsAssocAction      = self.dbsDaoFactory(classname = "AlgoDatasetAssoc")      
+        self.dbsAssocAction      = self.dbsDaoFactory(classname = "AlgoDatasetAssoc")
         self.dbsExistsAction     = self.dbsDaoFactory(classname = "DBSBufferFiles.ExistsForAccountant")
         self.dbsLFNHeritage      = self.dbsDaoFactory(classname = "DBSBufferFiles.BulkHeritageParent")
 
@@ -104,6 +105,10 @@ class AccountantWorker(WMConnectionBase):
         self.datasetAlgoID     = collections.deque(maxlen = 1000)
         self.datasetAlgoPaths  = collections.deque(maxlen = 1000)
         self.dbsLocations      = collections.deque(maxlen = 1000)
+
+        self.phedex = PhEDEx()
+        self.locLists = self.phedex.getNodeMap()
+
 
         return
 
@@ -167,7 +172,7 @@ class AccountantWorker(WMConnectionBase):
     def didJobSucceed(self, jobReport):
         """
         _didJobSucceed_
-        
+
         Get the status of the jobReport.  This will loop through all the steps
         and make sure the status is 'Success'.  If a step does not return
         'Success', the job will fail.
@@ -183,7 +188,7 @@ class AccountantWorker(WMConnectionBase):
 
 
         return True
-   
+
     def __call__(self, parameters):
         """
         __call__
@@ -201,7 +206,7 @@ class AccountantWorker(WMConnectionBase):
             fwkJobReport = self.loadJobReport(job)
             fwkJobReport.setJobID(job['id'])
             jobSuccess = None
-            
+
             if not self.didJobSucceed(fwkJobReport):
                 logging.error("I have a bad jobReport for %i" %(job['id']))
                 self.handleFailed(jobID = job["id"],
@@ -219,7 +224,7 @@ class AccountantWorker(WMConnectionBase):
             else:
                 returnList.append({'id': job["id"], 'jobSuccess': jobSuccess})
             self.count += 1
-            
+
         self.beginTransaction()
 
         # Now things done at the end of the job
@@ -246,7 +251,7 @@ class AccountantWorker(WMConnectionBase):
                                           conn = self.getDBConn(),
                                           transaction = self.existingTransaction())
             self.stateChanger.propagate(self.listOfJobsToSave, "success", "complete")
-            
+
         # If we have failed jobs, fail them
         if len(self.listOfJobsToFail) > 0:
             outcomeBinds = [{'jobid': x['id'], 'outcome': x['outcome']} for x in self.listOfJobsToFail]
@@ -303,7 +308,7 @@ class AccountantWorker(WMConnectionBase):
                              appFam = jobReportFile["module_label"],
                              psetHash = "GIBBERISH",
                              configContent = jobReportFile.get('configURL'))
-        
+
         dbsFile.setDatasetPath("/%s/%s/%s" % (datasetInfo["primaryDataset"],
                                               datasetInfo["processedDataset"],
                                               datasetInfo["dataTier"]))
@@ -312,7 +317,7 @@ class AccountantWorker(WMConnectionBase):
         dbsFile.setAcquisitionEra(era = jobReportFile.get('acquisitionEra', None))
         dbsFile.setGlobalTag(globalTag = jobReportFile.get('globalTag', None))
         dbsFile.setCustodialSite(custodialSite = jobReportFile.get('custodialSite', None))
-        
+
         for run in jobReportFile["runs"]:
             newRun = Run(runNumber = run.run)
             newRun.extend(run.lumis)
@@ -326,7 +331,7 @@ class AccountantWorker(WMConnectionBase):
     def findDBSParents(self, lfn):
         """
         _findDBSParents_
-        
+
         Find the parent of the file in DBS
         This is meant to be called recursively
         """
@@ -364,7 +369,7 @@ class AccountantWorker(WMConnectionBase):
         """
         _addFileToWMBS_
 
-        Add a file that was produced in a job to WMBS.  
+        Add a file that was produced in a job to WMBS.
         """
         fwjrFile["first_event"] = jobMask["FirstEvent"]
         fwjrFile["last_event"]  = jobMask["LastEvent"]
@@ -378,11 +383,18 @@ class AccountantWorker(WMConnectionBase):
             fwjrFile["merged"] = True
 
         wmbsFile = self.createFileFromDataStructsFile(file = fwjrFile, jobID = jobID)
-        
+
         if fwjrFile["merged"]:
             self.addFileToDBS(fwjrFile)
 
         return wmbsFile
+
+
+    def _mapLocation(self, fwkJobReport):
+        for file in fwkJobReport.getAllFileRefs():
+            if file and hasattr(file, 'location'):
+                file.location = self.phedex.getBestNodeName(file.location, self.locLists)
+
 
     def handleSuccessful(self, jobID, fwkJobReport, fwkJobReportPath = None):
         """
@@ -424,11 +436,12 @@ class AccountantWorker(WMConnectionBase):
                 self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputFileset})
 
         # Only save once job is done, and we're sure we made it through okay
+        self._mapLocation(wmbsJob['fwjr'])
         self.listOfJobsToSave.append(wmbsJob)
         #wmbsJob.save()
 
         return
-        
+
     def handleFailed(self, jobID, fwkJobReport):
         """
         _handleFailed_
@@ -442,7 +455,7 @@ class AccountantWorker(WMConnectionBase):
         outputID = wmbsJob.loadOutputID()
         wmbsJob["outcome"] = "failure"
         #wmbsJob.save()
-        
+
         # We'll fake the rest of the state transitions here as the rest of the
         # WMAgent job submission framework is not yet complete.
         wmbsJob["fwjr"] = fwkJobReport
@@ -470,9 +483,9 @@ class AccountantWorker(WMConnectionBase):
             outputFilesets = self.outputFilesetsForJob(outputMap, merged, moduleLabel)
             for outputFileset in outputFilesets:
                 self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputFileset})
-            
+
         self.listOfJobsToFail.append(wmbsJob)
-        
+
         return
 
 
@@ -480,7 +493,7 @@ class AccountantWorker(WMConnectionBase):
                            errorDescription = 'Failure of unknown type'):
         """
         _createMissingFWJR_
-        
+
         Create a missing FWJR if the report can't be found by the code in the
         path location.
         """
@@ -542,11 +555,11 @@ class AccountantWorker(WMConnectionBase):
             lfn           = dbsFile['lfn']
             selfChecksums = dbsFile['checksums']
             jobLocation   = dbsFile.getLocations()[0]
-                        
+
             dbsFileTuples.append((lfn, dbsFile['size'],
                                   dbsFile['events'], assocID,
                                   dbsFile['status']))
-            
+
             dbsFileLoc.append({'lfn': lfn, 'sename' : jobLocation})
             if dbsFile['runs']:
                 runLumiBinds.append({'lfn': lfn, 'runs': dbsFile['runs']})
@@ -558,7 +571,7 @@ class AccountantWorker(WMConnectionBase):
                     dbsCksumBinds.append({'lfn': lfn, 'cksum' : selfChecksums[entry],
                                           'cktype' : entry})
 
-                    
+
 
         try:
 
@@ -567,19 +580,19 @@ class AccountantWorker(WMConnectionBase):
                                                conn = self.getDBConn(),
                                                transaction = self.existingTransaction())
                 self.dbsLocations.append(jobLocation)
-            
+
             self.dbsCreateFiles.execute(files = dbsFileTuples,
                                         conn = self.getDBConn(),
                                         transaction = self.existingTransaction())
-            
+
             self.dbsSetLocation.execute(binds = dbsFileLoc,
                                         conn = self.getDBConn(),
                                         transaction = self.existingTransaction())
-            
+
             self.dbsSetChecksum.execute(bulkList = dbsCksumBinds,
                                         conn = self.getDBConn(),
                                         transaction = self.existingTransaction())
-            
+
             if len(runLumiBinds) > 0:
                 self.dbsSetRunLumi.execute(file = runLumiBinds,
                                            conn = self.getDBConn(),
@@ -597,7 +610,7 @@ class AccountantWorker(WMConnectionBase):
             logging.debug("Checksum binds: %s\n" % dbsCksumBinds)
             logging.debug("RunLumi binds: %s\n" % runLumiBinds)
             raise AccountantWorkerException(msg)
-            
+
 
         # Now that we've created those files, clear the list
         self.dbsFilesToCreate = []
@@ -613,18 +626,18 @@ class AccountantWorker(WMConnectionBase):
         if len(self.wmbsFilesToBuild) == 0:
             # Nothing to do
             return
-        
+
         parentageBinds = []
         runLumiBinds   = []
         fileCksumBinds = []
         fileLocations  = []
         fileCreate     = []
-        
+
         for wmbsFile in self.wmbsFilesToBuild:
             lfn           = wmbsFile['lfn']
             if lfn == None:
                 continue
-            
+
             selfChecksums = wmbsFile['checksums']
             parentageBinds.append({'child': lfn, 'jobid': wmbsFile['jid']})
             if wmbsFile['runs']:
@@ -647,7 +660,7 @@ class AccountantWorker(WMConnectionBase):
                                wmbsFile["first_event"],
                                wmbsFile["last_event"],
                                wmbsFile['merged']])
-            
+
         if len(fileCreate) == 0:
             return
 
@@ -656,7 +669,7 @@ class AccountantWorker(WMConnectionBase):
             self.addFileAction.execute(files = fileCreate,
                                        conn = self.getDBConn(),
                                        transaction = self.existingTransaction())
-            
+
             self.setParentageByJob.execute(binds = parentageBinds,
                                            conn = self.getDBConn(),
                                            transaction = self.existingTransaction())
@@ -739,7 +752,7 @@ class AccountantWorker(WMConnectionBase):
         # Commit them to DBSBuffer
         logging.info("About to commit all DBSBuffer Heritage information")
         logging.info(len(bindList))
-        
+
         if len(bindList) > 0:
             try:
                 self.dbsLFNHeritage.execute(binds = bindList,

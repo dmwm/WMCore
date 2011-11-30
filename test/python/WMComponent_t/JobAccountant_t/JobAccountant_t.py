@@ -63,14 +63,14 @@ class JobAccountantTest(unittest.TestCase):
 
         locationAction = self.daofactory(classname = "Locations.New")
         locationAction.execute(siteName = "site1", seName = "cmssrm.fnal.gov")
-        locationAction.execute(siteName = "site2", seName = "srm.cern.ch")        
+        locationAction.execute(siteName = "site2", seName = "srm.cern.ch")
         locationAction.execute(siteName = "site3", seName = "srm-cms.cern.ch")
 
         self.stateChangeAction = self.daofactory(classname = "Jobs.ChangeState")
         self.setFWJRAction = self.daofactory(classname = "Jobs.SetFWJRPath")
         self.getJobTypeAction = self.daofactory(classname = "Jobs.GetType")
         self.getOutputMapAction = self.daofactory(classname = "Jobs.GetOutputMap")
-        
+
         self.dbsbufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                            logger = myThread.logger,
                                            dbinterface = myThread.dbi)
@@ -91,7 +91,7 @@ class JobAccountantTest(unittest.TestCase):
         Clear out the WMBS and DBSBuffer database schemas.
         """
         self.testInit.clearDatabase()
-        self.testInit.tearDownCouch()        
+        self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
         return
 
@@ -138,7 +138,7 @@ class JobAccountantTest(unittest.TestCase):
         testFileset.create()
         testFileset.addFile(inputFile)
         testFileset.commit()
-        
+
         self.testSubscription = Subscription(fileset = testFileset,
                                              workflow = testWorkflow,
                                              split_algo = "FileBased",
@@ -148,7 +148,7 @@ class JobAccountantTest(unittest.TestCase):
 
         testJobGroup = JobGroup(subscription = self.testSubscription)
         testJobGroup.create()
-        
+
         testJob = Job(name = jobName, files = [inputFile])
         testJob.create(group = testJobGroup)
         testJob["state"] = "complete"
@@ -215,7 +215,7 @@ class JobAccountantTest(unittest.TestCase):
         """
         self.setupDBForJobFailure(jobName = "T0Skim-Run2-Skim2-Jet-631",
                                   fwjrName = "EmptyJobReport.pkl")
-        
+
         config = self.createConfig()
         accountant = JobAccountantPoller(config)
         accountant.setup()
@@ -254,7 +254,7 @@ class JobAccountantTest(unittest.TestCase):
         """
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        
+
         self.recoOutputFileset = Fileset(name = "RECO")
         self.recoOutputFileset.create()
         self.alcaOutputFileset = Fileset(name = "ALCA")
@@ -280,7 +280,7 @@ class JobAccountantTest(unittest.TestCase):
         testFileset.create()
         testFileset.addFile(inputFile)
         testFileset.commit()
-        
+
         self.testSubscription = Subscription(fileset = testFileset,
                                              workflow = self.testWorkflow,
                                              split_algo = "EventBased",
@@ -290,7 +290,7 @@ class JobAccountantTest(unittest.TestCase):
 
         testJobGroup = JobGroup(subscription = self.testSubscription)
         testJobGroup.create()
-        
+
         self.testJobA = Job(name = "SplitJobA", files = [inputFile])
         self.testJobA.create(group = testJobGroup)
         self.testJobA["state"] = "complete"
@@ -298,7 +298,7 @@ class JobAccountantTest(unittest.TestCase):
         self.testJobA.save()
         self.stateChangeAction.execute(jobs = [self.testJobA],
                                        conn = myThread.transaction.conn,
-                                       transaction = True)                                       
+                                       transaction = True)
 
         self.testJobB = Job(name = "SplitJobB", files = [inputFile])
         self.testJobB.create(group = testJobGroup)
@@ -307,7 +307,7 @@ class JobAccountantTest(unittest.TestCase):
         self.testJobB.save()
         self.stateChangeAction.execute(jobs = [self.testJobB],
                                        conn = myThread.transaction.conn,
-                                       transaction = True)                                       
+                                       transaction = True)
 
         self.testJobC = Job(name = "SplitJobC", files = [inputFile])
         self.testJobC.create(group = testJobGroup)
@@ -327,11 +327,11 @@ class JobAccountantTest(unittest.TestCase):
         self.setFWJRAction.execute(jobID = self.testJobB["id"],
                                    fwjrPath = fwjrBasePath + "SplitSuccessB.pkl",
                                    conn = myThread.transaction.conn,
-                                   transaction = True)                                   
+                                   transaction = True)
         self.setFWJRAction.execute(jobID = self.testJobC["id"],
                                    fwjrPath = fwjrBasePath + "SplitSuccessC.pkl",
                                    conn = myThread.transaction.conn,
-                                   transaction = True)                                   
+                                   transaction = True)
         myThread.transaction.commit()
         return
 
@@ -393,7 +393,7 @@ class JobAccountantTest(unittest.TestCase):
                        "Error: Output file is missing checksums: %s" % ckType
                 assert outputFile["checksums"][ckType] == fwkJobReportFile["checksums"][ckType], \
                        "Error: Checksums don't match."
-                       
+
             assert len(fwkJobReportFile["checksums"].keys()) == \
                    len(outputFile["checksums"].keys()), \
                    "Error: Wrong number of checksums."
@@ -405,7 +405,7 @@ class JobAccountantTest(unittest.TestCase):
             else:
                 assert outputFile["merged"] == fwkJobReportFile["merged"], \
                        "Error: Output file merged output is wrong: %s, %s" % \
-                       (outputFile["merged"], fwkJobReportFile["merged"])            
+                       (outputFile["merged"], fwkJobReportFile["merged"])
 
             assert len(outputFile["locations"]) == 1, \
                    "Error: outputfile should have one location: %s" % outputFile["locations"]
@@ -434,7 +434,7 @@ class JobAccountantTest(unittest.TestCase):
 
                 if len(fwjrRuns[run.run]) == 0:
                         del fwjrRuns[run.run]
-                        
+
             assert len(fwjrRuns.keys()) == 0, \
                    "Error: Missing runs, lumis: %s" % fwjrRuns
 
@@ -462,7 +462,7 @@ class JobAccountantTest(unittest.TestCase):
             else:
                 assert testJob["mask"]["LastEvent"] == outputFile["last_event"], \
                        "Error: last event not set correctly: %s, %s" % \
-                       (testJob["mask"]["LastEvent"], outputFile["last_event"])                   
+                       (testJob["mask"]["LastEvent"], outputFile["last_event"])
 
         return
 
@@ -479,11 +479,11 @@ class JobAccountantTest(unittest.TestCase):
         job.  Each value would be a list of the parent LFNs.
         """
         myThread = threading.currentThread()
-        
+
         for fwkJobReportFile in fwkJobReportFiles:
             if fwkJobReportFile["merged"] != True and subType != "Merge":
                 continue
-            
+
             dbsFile = DBSBufferFile(lfn = fwkJobReportFile["lfn"])
 
             assert dbsFile.exists() != False, \
@@ -496,14 +496,14 @@ class JobAccountantTest(unittest.TestCase):
                    (dbsFile["events"], fwkJobReportFile["events"])
             assert dbsFile["size"] == fwkJobReportFile["size"], \
                    "Error: DBS file has wrong size: %s, %s" % \
-                   (dbsFile["size"], fwkJobReportFile["size"])            
+                   (dbsFile["size"], fwkJobReportFile["size"])
 
             for ckType in fwkJobReportFile["checksums"].keys():
                 assert ckType in dbsFile["checksums"].keys(), \
                        "Error: DBS file is missing checksums: %s" % ckType
                 assert dbsFile["checksums"][ckType] == fwkJobReportFile["checksums"][ckType], \
                        "Error: Checksums don't match."
-                       
+
             assert len(fwkJobReportFile["checksums"].keys()) == \
                    len(dbsFile["checksums"].keys()), \
                    "Error: Wrong number of checksums."
@@ -524,12 +524,12 @@ class JobAccountantTest(unittest.TestCase):
                 for lumi in run:
                     assert lumi in fwjrRuns[run.run], \
                            "Error: Extra lumi: %s" % lumi
-                    
+
                     fwjrRuns[run.run].remove(lumi)
 
                 if len(fwjrRuns[run.run]) == 0:
                         del fwjrRuns[run.run]
-                        
+
             assert len(fwjrRuns.keys()) == 0, \
                    "Error: Missing runs, lumis: %s" % fwjrRuns
 
@@ -538,7 +538,7 @@ class JobAccountantTest(unittest.TestCase):
             assert dbsFile["appName"] == datasetInfo["applicationName"], \
                    "Error: app name is wrong in DBS buffer."
             assert dbsFile["appVer"] == datasetInfo["applicationVersion"], \
-                   "Error: app ver is wrong in DBS buffer."            
+                   "Error: app ver is wrong in DBS buffer."
             assert dbsFile["appFam"] == fwkJobReportFile["module_label"], \
                    "Error: app fam is wrong in DBS buffer."
 
@@ -561,9 +561,9 @@ class JobAccountantTest(unittest.TestCase):
 
             assert len(parentFileLFNsCopy) == 0, \
                    "Error: missing parents %s." %parentFileLFNsCopy
-            
+
         return
-        
+
     def testSplitJobs(self):
         """
         _testSplitJobs_
@@ -604,7 +604,7 @@ class JobAccountantTest(unittest.TestCase):
                "Error: Wrong number of files in reco output fileset."
         assert len(self.alcaOutputFileset.getFiles(type = "list")) == 1, \
                "Error: Wrong number of files in alca output fileset."
-        
+
         assert len(self.testSubscription.filesOfStatus("Acquired")) == 1, \
                "Error: The input file should be acquired."
 
@@ -667,11 +667,11 @@ class JobAccountantTest(unittest.TestCase):
         self.recoOutputFileset = Fileset(name = "RECO")
         self.recoOutputFileset.create()
         self.mergedRecoOutputFileset = Fileset(name = "MergedRECO")
-        self.mergedRecoOutputFileset.create()        
+        self.mergedRecoOutputFileset.create()
         self.alcaOutputFileset = Fileset(name = "ALCA")
         self.alcaOutputFileset.create()
         self.mergedAlcaOutputFileset = Fileset(name = "MergedALCA")
-        self.mergedAlcaOutputFileset.create()        
+        self.mergedAlcaOutputFileset.create()
         self.cleanupFileset = Fileset(name = "Cleanup")
         self.cleanupFileset.create()
 
@@ -693,7 +693,7 @@ class JobAccountantTest(unittest.TestCase):
         self.testAlcaMergeWorkflow = Workflow(spec = "wf003.xml", owner = "Steve",
                                               name = "TestAlcaMergeWF", task = "None")
         self.testAlcaMergeWorkflow.create()
-        self.testAlcaMergeWorkflow.addOutput("Merged", self.mergedAlcaOutputFileset)        
+        self.testAlcaMergeWorkflow.addOutput("Merged", self.mergedAlcaOutputFileset)
 
         inputFile = File(lfn = "/path/to/some/lfn", size = 600000, events = 60000,
                          locations = "cmssrm.fnal.gov")
@@ -712,7 +712,7 @@ class JobAccountantTest(unittest.TestCase):
         pFile.setDatasetPath("/bogus/dataset/path")
         pFile.addRun(Run(1, *[45]))
         pFile.create()
-        
+
         self.testSubscription = Subscription(fileset = testFileset,
                                              workflow = self.testWorkflow,
                                              split_algo = "EventBased",
@@ -734,7 +734,7 @@ class JobAccountantTest(unittest.TestCase):
 
         testJobGroup = JobGroup(subscription = self.testSubscription)
         testJobGroup.create()
-        
+
         self.testJob = Job(name = "SplitJobA", files = [inputFile])
         self.testJob.create(group = testJobGroup)
         self.testJob["state"] = "complete"
@@ -784,7 +784,7 @@ class JobAccountantTest(unittest.TestCase):
         assert len(self.mergedRecoOutputFileset.getFiles(type = "list")) == 1, \
                "Error: Should be only one file in the merged reco fileset."
         assert len(self.mergedAlcaOutputFileset.getFiles(type = "list")) == 1, \
-               "Error: Should be only one file in the merged alca fileset."        
+               "Error: Should be only one file in the merged alca fileset."
 
         for fwjrFile in jobReport.getAllFilesFromStep("cmsRun1"):
             if fwjrFile["dataset"]["dataTier"] == "RECO":
@@ -810,11 +810,11 @@ class JobAccountantTest(unittest.TestCase):
         self.recoOutputFileset = Fileset(name = "RECO")
         self.recoOutputFileset.create()
         self.mergedRecoOutputFileset = Fileset(name = "MergedRECO")
-        self.mergedRecoOutputFileset.create()        
+        self.mergedRecoOutputFileset.create()
         self.aodOutputFileset = Fileset(name = "AOD")
         self.aodOutputFileset.create()
         self.mergedAodOutputFileset = Fileset(name = "MergedAOD")
-        self.mergedAodOutputFileset.create()        
+        self.mergedAodOutputFileset.create()
 
         self.testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
                                      name = "TestWF", task = "None")
@@ -844,7 +844,7 @@ class JobAccountantTest(unittest.TestCase):
         inputFileB.create()
         inputFileC = File(lfn = "/path/to/some/lfnC", size = 600000, events = 60000,
                          locations = "cmssrm.fnal.gov", merged = createDBSParents)
-        inputFileC.create()        
+        inputFileC.create()
 
         unmergedFileA = File(lfn = "/path/to/some/unmerged/lfnA", size = 600000, events = 60000,
                              locations = "cmssrm.fnal.gov", merged = False)
@@ -854,7 +854,7 @@ class JobAccountantTest(unittest.TestCase):
         unmergedFileB.create()
         unmergedFileC = File(lfn = "/path/to/some/unmerged/lfnC", size = 600000, events = 60000,
                              locations = "cmssrm.fnal.gov", merged = False)
-        unmergedFileC.create()        
+        unmergedFileC.create()
 
         inputFileA.addChild(unmergedFileA["lfn"])
         inputFileB.addChild(unmergedFileB["lfn"])
@@ -874,14 +874,14 @@ class JobAccountantTest(unittest.TestCase):
         testFileset.create()
         testFileset.addFile(inputFileA)
         testFileset.addFile(inputFileB)
-        testFileset.addFile(inputFileC)        
+        testFileset.addFile(inputFileC)
         testFileset.commit()
 
         self.aodOutputFileset.addFile(unmergedFileA)
         self.aodOutputFileset.addFile(unmergedFileB)
         self.aodOutputFileset.addFile(unmergedFileC)
         self.aodOutputFileset.commit()
-        
+
         self.testSubscription = Subscription(fileset = testFileset,
                                              workflow = self.testWorkflow,
                                              split_algo = "EventBased",
@@ -903,7 +903,7 @@ class JobAccountantTest(unittest.TestCase):
 
         testJobGroup = JobGroup(subscription = self.testMergeAodSubscription)
         testJobGroup.create()
-        
+
         self.testJob = Job(name = "MergeJob", files = [unmergedFileA,
                                                        unmergedFileB,
                                                        unmergedFileC])
@@ -921,7 +921,7 @@ class JobAccountantTest(unittest.TestCase):
             self.setFWJRAction.execute(jobID = self.testJob["id"],
                                        fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
                                                                "WMComponent_t/JobAccountant_t/fwjrs",
-                                                               "MergeSuccess.pkl"))            
+                                                               "MergeSuccess.pkl"))
         return
 
     def testMergeSuccess(self):
@@ -1013,7 +1013,7 @@ class JobAccountantTest(unittest.TestCase):
         assert fwjrFile["lfn"] in self.mergedAodOutputFileset.getFiles(type = "lfn"), \
                        "Error: file is missing from merged aod output fileset."
 
-        return    
+        return
 
     def testParentlessMergeSuccess(self):
         """
@@ -1058,12 +1058,12 @@ class JobAccountantTest(unittest.TestCase):
         assert fwjrFile["lfn"] in self.mergedAodOutputFileset.getFiles(type = "lfn"), \
                        "Error: file is missing from merged aod output fileset."
 
-        return    
+        return
 
     def testNoFileReport(self):
         """
         _testNoFileReport_
-        
+
         See that the Accountant does not crash if there are no files.
         """
         self.setupDBForMergeSuccess()
@@ -1116,7 +1116,7 @@ class JobAccountantTest(unittest.TestCase):
         testWorkflow.addOutput("write_A_RandomTriggers_RAW", ranFileset, ranFileset)
         testWorkflow.addOutput("write_A_Calibration_TestEnables_RAW", calFileset, calFileset)
         testWorkflow.addOutput("write_HLTDEBUG_Monitor_RAW", hltFileset, hltFileset)
-        
+
         self.testSubscription = Subscription(fileset = inputFileset,
                                              workflow = testWorkflow,
                                              split_algo = "FileBased",
@@ -1152,13 +1152,13 @@ class JobAccountantTest(unittest.TestCase):
             fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
                                     "WMComponent_t/JobAccountant_t/fwjrs",
                                     "LoadTest%02d.pkl" % i)
-            
+
             self.jobs.append((testJob["id"], fwjrPath))
             self.setFWJRAction.execute(jobID = testJob["id"], fwjrPath = fwjrPath)
 
         inputFileset.commit()
         return
-    
+
 #     @attr('performance')
 #     def testOneProcessLoadTest(self):
 #         """
@@ -1168,7 +1168,7 @@ class JobAccountantTest(unittest.TestCase):
 #         """
 #         print("  Filling DB...")
 #         self.setupDBForLoadTest()
-        
+
 #         config = self.createConfig()
 #         accountant = JobAccountantPoller(config)
 #         accountant.setup()
@@ -1208,7 +1208,7 @@ class JobAccountantTest(unittest.TestCase):
                                 "WMComponent_t/JobAccountant_t/fwjrs",
                                 "LoadTest07.pkl")
         self.setFWJRAction.execute(jobID = 10, fwjrPath = fwjrPath)
-        
+
         config = self.createConfig()
         accountant = JobAccountantPoller(config)
         accountant.setup()
@@ -1230,18 +1230,18 @@ class JobAccountantTest(unittest.TestCase):
     def setupDBFor4GMerge(self):
         """
         _setupDBFor4GMerge_
-        
+
         Setup for the MergeSuccess with added generations of parentage
         """
         self.recoOutputFileset = Fileset(name = "RECO")
         self.recoOutputFileset.create()
         self.mergedRecoOutputFileset = Fileset(name = "MergedRECO")
-        self.mergedRecoOutputFileset.create()        
+        self.mergedRecoOutputFileset.create()
         self.aodOutputFileset = Fileset(name = "AOD")
         self.aodOutputFileset.create()
         self.mergedAodOutputFileset = Fileset(name = "MergedAOD")
-        self.mergedAodOutputFileset.create()        
-        
+        self.mergedAodOutputFileset.create()
+
         self.testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
                                      name = "TestWF", task = "None")
         self.testWorkflow.create()
@@ -1249,27 +1249,27 @@ class JobAccountantTest(unittest.TestCase):
                                     self.mergedRecoOutputFileset)
         self.testWorkflow.addOutput("ALCARECOStreamCombined", self.aodOutputFileset,
                                     self.mergedAodOutputFileset)
-        
+
         self.testRecoMergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
                                               name = "TestRecoMergeWF", task = "None")
         self.testRecoMergeWorkflow.create()
         self.testRecoMergeWorkflow.addOutput("Merged", self.mergedRecoOutputFileset,
                                              self.mergedRecoOutputFileset)
-        
+
         self.testAodMergeWorkflow = Workflow(spec = "wf003.xml", owner = "Steve",
                                              name = "TestAodMergeWF", task = "None")
         self.testAodMergeWorkflow.create()
         self.testAodMergeWorkflow.addOutput("Merged", self.mergedAodOutputFileset,
                                             self.mergedAodOutputFileset)
-        
+
         masterFile1 = File(lfn = "/path/to/some/lfn1", size = 600000, events = 60000,
                            locations = "cmssrm.fnal.gov", merged = True)
-        
+
         masterFile1.create()
-        
+
         masterFile2 = File(lfn = "/path/to/some/lfn2", size = 600000, events = 60000,
                            locations = "cmssrm.fnal.gov", merged = False)
-        
+
         masterFile2.create()
         masterFile1.addChild(masterFile2['lfn'])
 
@@ -1281,7 +1281,7 @@ class JobAccountantTest(unittest.TestCase):
         inputFileB.create()
         inputFileC = File(lfn = "/path/to/some/lfnC", size = 600000, events = 60000,
                          locations = "cmssrm.fnal.gov", merged = False)
-        inputFileC.create()        
+        inputFileC.create()
 
         unmergedFileA = File(lfn = "/path/to/some/unmerged/lfnA", size = 600000, events = 60000,
                              locations = "cmssrm.fnal.gov", merged = False)
@@ -1318,14 +1318,14 @@ class JobAccountantTest(unittest.TestCase):
         testFileset.addFile(masterFile2)
         testFileset.addFile(inputFileA)
         testFileset.addFile(inputFileB)
-        testFileset.addFile(inputFileC)        
+        testFileset.addFile(inputFileC)
         testFileset.commit()
 
         self.aodOutputFileset.addFile(unmergedFileA)
         self.aodOutputFileset.addFile(unmergedFileB)
         self.aodOutputFileset.addFile(unmergedFileC)
         self.aodOutputFileset.commit()
-        
+
         self.testSubscription = Subscription(fileset = testFileset,
                                              workflow = self.testWorkflow,
                                              split_algo = "EventBased",
@@ -1347,7 +1347,7 @@ class JobAccountantTest(unittest.TestCase):
 
         testJobGroup = JobGroup(subscription = self.testMergeAodSubscription)
         testJobGroup.create()
-        
+
         self.testJob = Job(name = "MergeJob", files = [unmergedFileA,
                                                        unmergedFileB,
                                                        unmergedFileC])
@@ -1407,6 +1407,9 @@ class JobAccountantTest(unittest.TestCase):
         assert fwjrFile["lfn"] in self.mergedAodOutputFileset.getFiles(type = "lfn"), \
                        "Error: file is missing from merged aod output fileset."
 
+        fwjrCouchDoc = self.testInit.couch.couchServer.connectDatabase("jobaccountant_t/fwjrs").document('1-0')
+        assert 'T1_US_FNAL_Buffer' ==  fwjrCouchDoc['fwjr']['steps']['cmsRun1']['output']['Merged'][0]['location']
+
         return
 
     def setupDBForHeritageTest(self):
@@ -1435,7 +1438,7 @@ class JobAccountantTest(unittest.TestCase):
             outputFileset.create()
             testWorkflow.addOutput(outputModuleName, outputFileset,
                                    outputFileset)
-        
+
         self.testSubscription = Subscription(fileset = inputFileset,
                                              workflow = testWorkflow,
                                              split_algo = "FileBased",
@@ -1457,7 +1460,7 @@ class JobAccountantTest(unittest.TestCase):
                 newFile = File(lfn = "input%i" % inputFileCounter, size = 600000, events = 60000,
                                locations = "cmssrm.fnal.gov", merged = False)
                 newFile.create()
-                
+
                 for k in range(3):
                     lfn = makeUUID()
                     parentFile = File(lfn = lfn, size = 600000, events = 60000,
@@ -1480,7 +1483,7 @@ class JobAccountantTest(unittest.TestCase):
             fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
                                     "WMComponent_t/JobAccountant_t/fwjrs",
                                     "HeritageTest%02d.pkl" % i)
-            
+
             self.jobs.append((testJob["id"], fwjrPath))
             self.setFWJRAction.execute(jobID = testJob["id"], fwjrPath = fwjrPath)
 
@@ -1494,11 +1497,11 @@ class JobAccountantTest(unittest.TestCase):
 #         Run the big heritage test.
 #         """
 #         print "Starting Heritage Test"
-        
+
 #         print("  Filling DB...")
 
 #         self.setupDBForHeritageTest()
-        
+
 #         config = self.createConfig()
 #         accountant = JobAccountantPoller(config)
 #         accountant.setup()
@@ -1508,7 +1511,7 @@ class JobAccountantTest(unittest.TestCase):
 #         startTime = time.time()
 #         accountant.algorithm()
 #         #cProfile.runctx("accountant.algorithm()", globals(), locals(), filename = "testStats.stat")
-        
+
 #         endTime = time.time()
 #         print("  Time: %f" %(endTime - startTime))
 #         print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
@@ -1541,11 +1544,11 @@ class JobAccountantTest(unittest.TestCase):
         self.recoOutputFileset = Fileset(name = "RECO")
         self.recoOutputFileset.create()
         self.mergedRecoOutputFileset = Fileset(name = "MergedRECO")
-        self.mergedRecoOutputFileset.create()        
+        self.mergedRecoOutputFileset.create()
         self.alcaOutputFileset = Fileset(name = "ALCA")
         self.alcaOutputFileset.create()
         self.mergedAlcaOutputFileset = Fileset(name = "MergedALCA")
-        self.mergedAlcaOutputFileset.create()        
+        self.mergedAlcaOutputFileset.create()
 
         self.testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
                                      name = "TestWF", task = "None")
@@ -1584,7 +1587,7 @@ class JobAccountantTest(unittest.TestCase):
         pFile.setDatasetPath("/bogus/dataset/path")
         pFile.addRun(Run(1, *[45]))
         pFile.create()
-        
+
         self.testSubscription = Subscription(fileset = testFileset,
                                              workflow = self.testWorkflow,
                                              split_algo = "EventBased",
@@ -1606,7 +1609,7 @@ class JobAccountantTest(unittest.TestCase):
 
         testJobGroup = JobGroup(subscription = self.testSubscription)
         testJobGroup.create()
-        
+
         self.testJob = Job(name = "SplitJobA", files = [inputFile])
         self.testJob.create(group = testJobGroup)
         self.testJob["state"] = "complete"
@@ -1653,7 +1656,7 @@ class JobAccountantTest(unittest.TestCase):
         assert len(self.mergedRecoOutputFileset.getFiles(type = "list")) == 1, \
                "Error: Should be only one file in the merged reco fileset."
         assert len(self.mergedAlcaOutputFileset.getFiles(type = "list")) == 1, \
-               "Error: Should be only one file in the merged alca fileset."        
+               "Error: Should be only one file in the merged alca fileset."
 
         for fwjrFile in jobReport.getAllFilesFromStep("cmsRun1"):
             if fwjrFile["dataset"]["dataTier"] == "RECO":

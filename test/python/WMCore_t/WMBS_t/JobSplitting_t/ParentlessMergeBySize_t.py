@@ -713,6 +713,40 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
 
         return
 
+    def testDifferentSubscritionIDs(self):
+        """
+        _testDifferentSubscriptionIDs_
+
+        Make sure that the merge splitting still runs if the subscription ID
+        is not equal to the workflow ID.
+        """
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        dummyWorkflow = Workflow(name = "dummyWorkflow", spec = "bunk49",
+                                 owner = "Steve", task="Test2")
+        dummyWorkflow.create()
+        dummyFileset = Fileset(name = "dummyFileset")
+        dummyFileset.create()
+        dummySubscription1 = Subscription(fileset = dummyFileset,
+                                          workflow = dummyWorkflow,
+                                          split_algo = "ParentlessMergeBySize")
+        dummySubscription2 = Subscription(fileset = dummyFileset,
+                                          workflow = dummyWorkflow,
+                                          split_algo = "ParentlessMergeBySize")
+        dummySubscription1.create()
+        dummySubscription2.create()
+        myThread.transaction.commit()
+
+        self.stuffWMBS()
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.mergeSubscription)
+        result = jobFactory(min_merge_size = 4097, max_merge_size = 99999999,
+                            max_merge_events = 999999999, merge_across_runs = False)
+        self.assertEqual(len(result), 1)
+        jobGroup = result[0]
+        self.assertEqual(len(jobGroup.jobs), 2)
+        return
 
     
 if __name__ == '__main__':

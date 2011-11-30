@@ -41,8 +41,10 @@ class GetFilesForParentlessMerge(DBFormatter):
                  wmbs_file_location.location = wmbs_location.id
                INNER JOIN wmbs_fileset_files ON
                  wmbs_fileset_files.fileid = wmbs_sub_files_available.fileid
+               INNER JOIN wmbs_subscription ON
+                 wmbs_subscription.id = wmbs_sub_files_available.subscription
                INNER JOIN wmbs_workflow ON
-                 wmbs_workflow.id = wmbs_sub_files_available.subscription
+                 wmbs_workflow.id = wmbs_subscription.workflow
              WHERE wmbs_sub_files_available.subscription = :p_1
              GROUP BY wmbs_file_details.id, wmbs_file_details.events,
                       wmbs_file_details.filesize, wmbs_file_details.lfn,

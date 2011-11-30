@@ -1,3 +1,26 @@
+0.8.17 to 0.8.18:
+  - Store file locations in couch as the CMS site name instead of the SE 
+    name (2817).
+  - Fix the couch views to work with multicore performance information (2887).
+  - Fix the bad join in the DAO used by the ParentlessMergeBySize job splitting
+    algorithm (2916).
+  - Fix the Oracle Users.New DAO (2915).
+  - Reduce severity of workqueue error messages as requested by http group.
+  - WorkQueue to fail requests on inputs with no location (2891).
+  - Add workflow name to JobCreator debugging output (2902).
+  - Fix a typo in the gLite plugin (2903).
+  - Commit the version of the PromptSkimPoller we're using in production.
+  - Added a check for site black/white list parameters in AnalysisRequest (2605).
+  - Fix WorkQueueManager crash if logging level not specified (2885).
+  - Set workqueue priority from workflow spec.
+  - Improve cancelation in global workqueue.
+  - Switch users with glexec before condor_submit (2065).
+  - Handle attribute errors when merging multicore reports (2888).
+  - Correctly jsonize performance information (2886).
+  - Move back to continuous replication between workqueues.
+  - Set the block whitelist correctly for Prompt Skimming.
+  - Print full url when Service.getData() fails.
+
 0.7.13 to 0.7.14:
   - Fix problems with Dashboard reporting (2045).
   - Fix a problem with double removals in the run/lumi filtering codes (2004).

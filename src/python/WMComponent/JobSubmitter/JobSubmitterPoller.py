@@ -88,7 +88,8 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.locationDict   = {}
         self.cmsNames       = {}
         self.packageSize    = getattr(self.config.JobSubmitter, 'packageSize', 500)
-        self.collSize       = getattr(self.config.JobSubmitter, 'collectionSize', 10000)
+        self.collSize       = getattr(self.config.JobSubmitter, 'collectionSize',
+                                      self.packageSize * 1000)
 
         # initialize the alert framework (if available)
         self.initAlerts(compName = "JobSubmitter")
@@ -131,6 +132,40 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.getThresholds()
         return
 
+    def getPackageCollection(self, sandboxDir):
+        """
+        _getPackageCollection_
+        
+        Given a jobID figure out which packageCollection
+        it should belong in.
+        """
+
+        rawList     = os.listdir(sandboxDir)
+        collections = []
+        numberList  = []
+        for entry in rawList:
+            if 'PackageCollection' in entry:
+                collections.append(entry)
+
+        # If we have no collections, return 0 (PackageCollection_0)
+        if len(collections) < 1:
+            return 0
+
+        # Loop over the list of PackageCollections
+        for collection in collections:
+            collectionPath = os.path.join(sandboxDir, collection)
+            packageList    = os.listdir(collectionPath)
+            collectionNum  = int(collection.split('_')[1])
+            if len(packageList) < self.collSize:
+                return collectionNum
+            else:
+                numberList.append(collectionNum)
+
+        # If we got here, then all collections are full.  We'll need
+        # a new one.  Find the highest number, increment by one
+        numberList.sort()
+        return numberList[-1] + 1
+
     def addJobsToPackage(self, loadedJob):
         """
         _addJobsToPackage_
@@ -142,19 +177,24 @@ class JobSubmitterPoller(BaseWorkerThread):
         job packages have been written to disk.
         """
         if not self.jobsToPackage.has_key(loadedJob["workflow"]):
-            batchid = "%s-%s" % (loadedJob["id"], loadedJob["retry_count"])
+            # First, let's pull all the information from the loadedJob
+            batchid    = "%s-%s" % (loadedJob["id"], loadedJob["retry_count"])
+            sandboxDir = os.path.dirname(loadedJob["sandbox"])
+
+            # Second, assemble the jobPackage location
+            collectionIndex = self.getPackageCollection(sandboxDir)
+            collectionDir   = os.path.join(sandboxDir,
+                                           'PackageCollection_%i' % collectionIndex,
+                                           'batch_%s' % batchid)
+
+            # Now create the package object
             self.jobsToPackage[loadedJob["workflow"]] = {"batchid": batchid,
                                                          'id': loadedJob['id'],
-                                                         "package": JobPackage()}
+                                                         "package": JobPackage(directory = collectionDir)}
 
         jobPackage = self.jobsToPackage[loadedJob["workflow"]]["package"]
         jobPackage[loadedJob["id"]] = loadedJob.getDataStructsJob()
-
-        batchID = self.jobsToPackage[loadedJob["workflow"]]["batchid"]
-        sandboxDir = os.path.dirname(jobPackage[jobPackage.keys()[0]]["sandbox"])
-        batchDir = os.path.join(sandboxDir,
-                                "PackageCollection_%i" % (loadedJob['id']/self.collSize),
-                                "batch_%s" % batchID)
+        batchDir = jobPackage['directory']
 
         if len(jobPackage.keys()) == self.packageSize:
             if not os.path.exists(batchDir):
@@ -174,14 +214,10 @@ class JobSubmitterPoller(BaseWorkerThread):
         """
         workflowNames = self.jobsToPackage.keys()
         for workflowName in workflowNames:
-            batchID = self.jobsToPackage[workflowName]["batchid"]
-            id      = self.jobsToPackage[workflowName]["id"]
+            batchID    = self.jobsToPackage[workflowName]["batchid"]
+            id         = self.jobsToPackage[workflowName]["id"]
             jobPackage = self.jobsToPackage[workflowName]["package"]
-
-            sandboxDir = os.path.dirname(jobPackage[jobPackage.keys()[0]]["sandbox"])
-            batchDir = os.path.join(sandboxDir,
-                                    "PackageCollection_%i" % (id/self.collSize),
-                                    "batch_%s" % batchID)
+            batchDir   = jobPackage['directory']
 
             if not os.path.exists(batchDir):
                 os.makedirs(batchDir)

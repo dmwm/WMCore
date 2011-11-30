@@ -16,8 +16,17 @@ class JobPackage(WMObject, dict):
     """
     _JobPackage_
     """
-    def __init__(self):
+    def __init__(self, directory = None):
+        """
+        __init__
+
+        Allow you to set a directory where the
+        package will be stored.
+        This is then saved for use by the
+        JobSubmitter
+        """
         dict.__init__(self)
+        self.setdefault('directory', directory)
 
     def save(self, fileName):
         """

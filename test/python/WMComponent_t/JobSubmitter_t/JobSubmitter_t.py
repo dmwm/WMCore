@@ -1,8 +1,12 @@
 #!/bin/env python
 
+"""
+_JobSubmitter_t_
 
-
-
+JobSubmitter unittest
+Submit jobs to condor in various failure modes
+for the agent and see what they do
+"""
 
 import unittest
 import threading
@@ -152,9 +156,7 @@ class JobSubmitterTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
-        #self.tearDown()
-        #self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.MsgService', 'WMCore.ResourceControl', 'WMCore.BossAir', 'WMCore.Agent.Database'])
+        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"],
                                 useDefault = False)
         self.testInit.setupCouch("jobsubmitter_t/jobs", "JobDump")
@@ -454,9 +456,6 @@ class JobSubmitterTest(unittest.TestCase):
         Parse and test the JDL files
         See what condor says
         """
-
-        #return
-
         workloadName = "basicWorkload"
 
         myThread = threading.currentThread()
@@ -692,9 +691,6 @@ class JobSubmitterTest(unittest.TestCase):
         Test the whitelist/blacklist implementation
         Trust the jobCreator to get this in the job right
         """
-
-        #return
-
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
 
@@ -898,6 +894,9 @@ class JobSubmitterTest(unittest.TestCase):
         pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
         pipe.communicate()
 
+        del jobSubmitter
+        return
+
 
     @attr('integration')
     def testF_OverloadTest(self):
@@ -907,8 +906,6 @@ class JobSubmitterTest(unittest.TestCase):
         Test and see what happens if you put in more jobs
         Then the sites can handle
         """
-
-        return
 
         resourceControl = ResourceControl()
         for site in self.sites:
@@ -966,6 +963,8 @@ class JobSubmitterTest(unittest.TestCase):
         pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
         pipe.communicate()
 
+        del jobSubmitter
+
         return
 
 
@@ -977,11 +976,6 @@ class JobSubmitterTest(unittest.TestCase):
         Check to see you get proper indexes for the jobPackages
         if you have more jobs then you normally run at once.
         """
-
-
-        return
-
-
         workloadName = "basicWorkload"
 
         myThread = threading.currentThread()
@@ -989,7 +983,8 @@ class JobSubmitterTest(unittest.TestCase):
         workload = self.createTestWorkload()
 
         config   = self.getConfig()
-        config.JobSubmitter.jobsPerWorker = 1
+        config.JobSubmitter.jobsPerWorker  = 1
+        config.JobSubmitter.collectionSize = 1
 
         changeState = ChangeState(config)
 
@@ -1053,13 +1048,11 @@ class JobSubmitterTest(unittest.TestCase):
         # Now clean-up
         command = ['condor_rm', self.user]
         pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-        pipe.communicate()        
+        pipe.communicate()
 
-
-
-
+        del jobSubmitter
+        return
 
 
 if __name__ == "__main__":
-
     unittest.main() 

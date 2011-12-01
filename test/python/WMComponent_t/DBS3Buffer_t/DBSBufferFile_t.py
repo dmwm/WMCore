@@ -28,8 +28,7 @@ class DBSBufferFileTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
-        #self.testInit.clearDatabase(modules = ["WMComponent.DBSBuffer.Database"])
+        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
         self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer"],
                                 useDefault = False)
 

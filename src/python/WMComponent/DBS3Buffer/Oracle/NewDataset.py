@@ -8,9 +8,9 @@ Oracle implementation of DBS3Buffer.NewDataset
 
 
 
-from WMCore.Database.DBFormatter import DBFormatter
+from WMComponent.DBS3Buffer.MySQL.NewDataset import NewDataset as MySQLNewDataset
 
-class NewDataset(DBFormatter):
+class NewDataset(MySQLNewDataset):
 
     sql = """INSERT INTO dbsbuffer_dataset (path, processing_ver, acquisition_era, valid_status, global_tag, parent, custodial_site)
                SELECT :path, :processing_ver, :acquisition_era, :valid_status, :global_tag, :parent, :custodial_site FROM DUAL

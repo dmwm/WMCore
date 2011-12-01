@@ -326,10 +326,11 @@ class DBSBufferFile(WMBSBase, WMFile):
 
         existingTransaction = self.beginTransaction()
 
-        insertAction = self.daoFactory(classname = "DBSBufferFiles.AddLocation")
-        insertAction.execute(siteName = self["newlocations"],
-                             conn = self.getDBConn(),
-                             transaction = self.existingTransaction())
+        for location in self['newlocations']:
+            insertAction = self.daoFactory(classname = "DBSBufferFiles.AddLocation")
+            insertAction.execute(siteName = location,
+                                 conn = self.getDBConn(),
+                                 transaction = self.existingTransaction())
 
         binds = []
         for location in self["newlocations"]:

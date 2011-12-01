@@ -79,6 +79,7 @@ class AccountantWorker(WMConnectionBase):
         self.dbsInsertLocation = self.dbsDaoFactory(classname = "DBSBufferFiles.AddLocation")
         self.dbsSetChecksum    = self.dbsDaoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
         self.dbsSetRunLumi     = self.dbsDaoFactory(classname = "DBSBufferFiles.AddRunLumi")
+        self.insertWorkflow    = self.dbsDaoFactory(classname = "InsertWorkflow")
 
         self.dbsNewAlgoAction    = self.dbsDaoFactory(classname = "NewAlgo")
         self.dbsNewDatasetAction = self.dbsDaoFactory(classname = "NewDataset")
@@ -105,6 +106,8 @@ class AccountantWorker(WMConnectionBase):
         self.datasetAlgoID     = collections.deque(maxlen = 1000)
         self.datasetAlgoPaths  = collections.deque(maxlen = 1000)
         self.dbsLocations      = collections.deque(maxlen = 1000)
+        self.workflowIDs       = collections.deque(maxlen = 1000)
+        self.workflowPaths     = collections.deque(maxlen = 1000)
 
         self.phedex = PhEDEx()
         self.locLists = self.phedex.getNodeMap()
@@ -290,7 +293,7 @@ class AccountantWorker(WMConnectionBase):
 
         return outputFilesets
 
-    def addFileToDBS(self, jobReportFile):
+    def addFileToDBS(self, jobReportFile, task):
         """
         _addFileToDBS_
 
@@ -317,6 +320,7 @@ class AccountantWorker(WMConnectionBase):
         dbsFile.setAcquisitionEra(era = jobReportFile.get('acquisitionEra', None))
         dbsFile.setGlobalTag(globalTag = jobReportFile.get('globalTag', None))
         dbsFile.setCustodialSite(custodialSite = jobReportFile.get('custodialSite', None))
+        dbsFile['task'] = task
 
         for run in jobReportFile["runs"]:
             newRun = Run(runNumber = run.run)
@@ -365,7 +369,7 @@ class AccountantWorker(WMConnectionBase):
 
         return newParents
 
-    def addFileToWMBS(self, jobType, fwjrFile, jobMask, jobID = None):
+    def addFileToWMBS(self, jobType, fwjrFile, jobMask, task, jobID = None):
         """
         _addFileToWMBS_
 
@@ -385,7 +389,7 @@ class AccountantWorker(WMConnectionBase):
         wmbsFile = self.createFileFromDataStructsFile(file = fwjrFile, jobID = jobID)
 
         if fwjrFile["merged"]:
-            self.addFileToDBS(fwjrFile)
+            self.addFileToDBS(fwjrFile, task)
 
         return wmbsFile
 
@@ -423,7 +427,7 @@ class AccountantWorker(WMConnectionBase):
 
         for fwjrFile in fileList:
             wmbsFile = self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"],
-                                          jobID = jobID)
+                                          jobID = jobID, task = fwkJobReport.getTaskName())
             merged = fwjrFile['merged']
             moduleLabel = fwjrFile["module_label"]
 
@@ -472,7 +476,7 @@ class AccountantWorker(WMConnectionBase):
 
         for fwjrFile in fileList:
             wmbsFile = self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"],
-                                          jobID = jobID)
+                                          jobID = jobID, task = fwkJobReport.getTaskName())
             merged = fwjrFile['merged']
             moduleLabel = fwjrFile["module_label"]
 
@@ -525,8 +529,10 @@ class AccountantWorker(WMConnectionBase):
 
             assocID         = None
             datasetAlgoPath = '%s:%s:%s:%s:%s:%s:%s:%s' % (dbsFile['datasetPath'],
-                                                           dbsFile["appName"], dbsFile["appVer"],
-                                                           dbsFile["appFam"], dbsFile["psetHash"],
+                                                           dbsFile["appName"],
+                                                           dbsFile["appVer"],
+                                                           dbsFile["appFam"],
+                                                           dbsFile["psetHash"],
                                                            dbsFile['processingVer'],
                                                            dbsFile['acquisitionEra'],
                                                            dbsFile['globalTag'])
@@ -552,6 +558,24 @@ class AccountantWorker(WMConnectionBase):
                     logging.error(msg)
                     raise AccountantWorkerException(msg)
 
+            # Handle inserting the workflow using the taskPath and the requestName
+            taskPath   = str(dbsFile.get('task', None))
+            workflowID = None
+            if not '/' in taskPath:
+                logging.error("Could not find / character in taskPath")
+                logging.error("Could not find request Name!")
+                logging.error("Not doing workflow association!")
+            else:
+                requestName = taskPath.split('/')[1]
+                workflowPath = '%s:%s' % (requestName, taskPath)
+                if workflowPath in self.workflowPaths:
+                    for wf in self.workflowIDs:
+                        if wf['workflowPath'] == workflowPath:
+                            workflowID = wf['workflowID']
+                if not workflowID:
+                    # Then we have to insert the workflow by hand
+                    workflowID = self.insertWorkflow.execute(requestName = requestName,
+                                                             taskPath    = taskPath)
             lfn           = dbsFile['lfn']
             selfChecksums = dbsFile['checksums']
             jobLocation   = dbsFile.getLocations()[0]
@@ -582,6 +606,7 @@ class AccountantWorker(WMConnectionBase):
                 self.dbsLocations.append(jobLocation)
 
             self.dbsCreateFiles.execute(files = dbsFileTuples,
+                                        workflowID = workflowID,
                                         conn = self.getDBConn(),
                                         transaction = self.existingTransaction())
 

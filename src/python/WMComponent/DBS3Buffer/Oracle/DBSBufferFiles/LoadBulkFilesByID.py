@@ -10,7 +10,7 @@ Oracle implementation of DBSBufferFiles.GetByID
 
 import logging
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles import LoadBulkFilesByID as MySQLLoadBulkFilesByID
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles import LoadBulkFilesByID as MySQLLoadBulkFilesByID
 
 class LoadBulkFilesByID(MySQLLoadBulkFilesByID):
     """

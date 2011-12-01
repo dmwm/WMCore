@@ -63,6 +63,13 @@ class Create(DBCreator):
                            FOREIGN KEY (dataset_id) REFERENCES dbsbuffer_dataset(id)
                              ON DELETE CASCADE
                         ) ENGINE = InnoDB"""
+
+        self.create["03dbsbuffer_workflow"] = \
+          """CREATE TABLE dbsbuffer_workflow (
+               id           INTEGER PRIMARY KEY AUTO_INCREMENT,
+               name         VARCHAR(255),
+               task         VARCHAR(255),
+               UNIQUE(name, task)) ENGINE = InnoDB"""
         
         self.create["04dbsbuffer_file"] = \
           """CREATE TABLE dbsbuffer_file (
@@ -74,7 +81,10 @@ class Create(DBCreator):
              block_id     BIGINT UNSIGNED,
 	     status       varchar(20),
              in_phedex    INTEGER DEFAULT 0,
+             workflow     INTEGER,
              LastModificationDate  BIGINT,
+             FOREIGN KEY (workflow) references dbsbuffer_workflow(id)
+               ON DELETE CASCADE,
              UNIQUE(lfn)) ENGINE=InnoDB"""
         
         self.create["06dbsbuffer_file_parent"] = \
@@ -131,6 +141,8 @@ class Create(DBCreator):
                 ON DELETE CASCADE,
               FOREIGN KEY (fileid) REFERENCES dbsbuffer_file(id)
                 ON DELETE CASCADE) ENGINE=InnoDB"""
+
+        
 
 
         checksumTypes = ['cksum', 'adler32', 'md5']

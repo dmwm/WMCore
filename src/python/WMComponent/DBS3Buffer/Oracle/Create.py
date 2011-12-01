@@ -39,7 +39,8 @@ class Create(DBCreator):
                  valid_status      VARCHAR2(20),
                  global_tag        VARCHAR2(255),
                  parent            VARCHAR2(500),
-             subscribed int DEFAULT 0
+                 custodial_site    VARCHAR2(255),
+                 subscribed        INT DEFAULT 0
                )"""
         self.create["01dbsbuffer_dataset_seq"] = \
           """CREATE SEQUENCE dbsbuffer_dataset_seq
@@ -116,6 +117,7 @@ class Create(DBCreator):
                  status                VARCHAR2(20),
                  in_phedex             INTEGER DEFAULT 0,
                  block_id              NUMBER(11),
+                 workflow              INTEGER,
                  LastModificationDate  NUMBER(11)
                )%s""" % tablespaceTable
 
@@ -219,8 +221,20 @@ class Create(DBCreator):
           """CREATE TABLE dbsbuffer_file_checksums (
               fileid        INTEGER,
               typeid        INTEGER,
-              cksum         VARCHAR(100)
+              cksum         VARCHAR2(100)
               ) %s""" % tablespaceTable
+
+        self.create["13dbsbuffer_workflow"] = \
+          """CREATE TABLE dbsbuffer_workflow (
+               id           INTEGER,
+               name         VARCHAR2(255),
+               task         VARCHAR2(255)) %s """ % tablespaceTable
+
+        self.create["10dbsbuffer_workflow_seq"] = \
+          """CREATE SEQUENCE dbsbuffer_workflow_seq
+          start with 1
+          increment by 1
+          nomaxvalue"""
 
         self.indexes["02_uk_dbsbuffer_file_checksums"] = \
           """ALTER TABLE dbsbuffer_file_checksums ADD
@@ -319,7 +333,20 @@ class Create(DBCreator):
         self.constraints["02_fk_dbsbuffer_file_location"] = \
           """ALTER TABLE dbsbuffer_file_location ADD        
                (CONSTRAINT dbsbuffer_file_location_file FOREIGN KEY (filename) REFERENCES dbsbuffer_file(id)
-                 ON DELETE CASCADE)""" 
+                 ON DELETE CASCADE)"""
+
+        self.indexes["01_pk_dbsbuffer_workflow"] = \
+          """ALTER TABLE dbsbuffer_workflow ADD
+               (CONSTRAINT dbsbuffer_workflow_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
+
+        self.indexes["02_uq_dbsbuffer_workflow"] = \
+          """ALTER TABLE dbsbuffer_workflow ADD                                    
+               (CONSTRAINT dbsbuffer_workflow_uq UNIQUE (name, task) %s)""" % tablespaceIndex
+
+        #self.constraints["01_fk_dbsbuffer_file"] = \
+        #  """ALTER TABLE dbsbuffer_file ADD
+        #       (CONSTRAINT dbsbuffer_file  FOREIGN KEY (workflow)  REFERENCES dbsbuffer_workflow(id)
+        #         ON DELETE CASCADE)"""
 
         checksumTypes = ['cksum', 'adler32', 'md5']
         for i in checksumTypes:

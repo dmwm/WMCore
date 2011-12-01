@@ -132,7 +132,9 @@ class ReDigiWorkloadFactory(StdBase):
                                                    self.couchURL, self.couchDBName)
         outputMods = {}
         for outputModuleName in configOutput.keys():
-            outputModule = self.addOutputModule(stepOneTask, outputModuleName,
+            outputModule = self.addOutputModule(stepOneTask,
+                                                outputModuleName,
+                                                self.inputPrimaryDataset,
                                                 configOutput[outputModuleName]["dataTier"],
                                                 configOutput[outputModuleName]["filterName"],
                                                 stepName = "cmsRun3")
@@ -192,7 +194,9 @@ class ReDigiWorkloadFactory(StdBase):
                                                    self.couchURL, self.couchDBName)
         outputMods = {}
         for outputModuleName in configOutput.keys():
-            outputModule = self.addOutputModule(stepOneTask, outputModuleName,
+            outputModule = self.addOutputModule(stepOneTask,
+                                                outputModuleName,
+                                                self.inputPrimaryDataset,
                                                 configOutput[outputModuleName]["dataTier"],
                                                 configOutput[outputModuleName]["filterName"],
                                                 stepName = "cmsRun2")

@@ -52,6 +52,9 @@ class StdBase(object):
         self.owner_vorole = ''
         self.acquisitionEra = None
         self.scramArch = None
+        self.inputPrimaryDataset = None
+        self.inputProcessedDataset = None
+        self.inputDataTier = None
         self.processingVersion = None
         self.siteBlacklist = []
         self.siteWhitelist = []
@@ -255,14 +258,17 @@ class StdBase(object):
                                                    configDoc, couchURL, couchDBName)
         outputModules = {}
         for outputModuleName in configOutput.keys():
-            outputModule = self.addOutputModule(procTask, outputModuleName,
+            outputModule = self.addOutputModule(procTask,
+                                                outputModuleName,
+                                                self.inputPrimaryDataset,
                                                 configOutput[outputModuleName]["dataTier"],
                                                 configOutput[outputModuleName]["filterName"])
             outputModules[outputModuleName] = outputModule
 
         return outputModules
 
-    def addOutputModule(self, parentTask, outputModuleName, dataTier, filterName,
+    def addOutputModule(self, parentTask, outputModuleName,
+                        primaryDataset, dataTier, filterName,
                         stepName = "cmsRun1"):
         """
         _addOutputModule_
@@ -271,36 +277,36 @@ class StdBase(object):
         """
         if parentTask.name() == 'Analysis':
             # TODO in case of user data need to implement policy to define
-            #  1  processedDatasetName
-            #  2  primaryDatasetName
+            #  1  processedDataset
+            #  2  primaryDataset
             #  ( 3  dataTier should be always 'USER'.)
             #  4 then we'll know how to deal with Merge
             dataTier = 'USER'
 
         if filterName != None and filterName != "":
-            processedDatasetName = "%s-%s-%s" % (self.acquisitionEra, filterName,
-                                                    self.processingVersion)
+            processedDataset = "%s-%s-%s" % (self.acquisitionEra, filterName,
+                                             self.processingVersion)
             processingString = "%s-%s" % (filterName, self.processingVersion)
         else:
-            processedDatasetName = "%s-%s" % (self.acquisitionEra,
-                                                self.processingVersion)
+            processedDataset = "%s-%s" % (self.acquisitionEra,
+                                          self.processingVersion)
             processingString = "%s" % (self.processingVersion)
 
         if parentTask.name() == 'Analysis':
             if filterName:
-                unmergedLFN = "%s/%s/%s-%s/%s" % (self.unmergedLFNBase, self.inputPrimaryDataset,
-                                                  self.acquisitionEra, filterName, self.processingVersion)
+                unmergedLFN = "%s/%s/%s-%s/%s" % (self.unmergedLFNBase, primaryDataset,
+                                                  self.acquisitionEra, filterName,
+                                                  self.processingVersion)
             else:
-                unmergedLFN = "%s/%s/%s/%s" % (self.unmergedLFNBase, self.inputPrimaryDataset,
+                unmergedLFN = "%s/%s/%s/%s" % (self.unmergedLFNBase, primaryDataset,
                                                self.acquisitionEra, self.processingVersion)
             mergedLFN = None
             lfnBase(unmergedLFN)
         else:
             unmergedLFN = "%s/%s/%s/%s/%s" % (self.unmergedLFNBase, self.acquisitionEra,
-                                              self.inputPrimaryDataset, dataTier,
-                                              processingString)
+                                              primaryDataset, dataTier, processingString)
             mergedLFN = "%s/%s/%s/%s/%s" % (self.mergedLFNBase, self.acquisitionEra,
-                                            self.inputPrimaryDataset, dataTier,
+                                            primaryDataset, dataTier,
                                             processingString)
             lfnBase(unmergedLFN)
             lfnBase(mergedLFN)
@@ -308,14 +314,15 @@ class StdBase(object):
         cmsswStep = parentTask.getStep(stepName)
         cmsswStepHelper = cmsswStep.getTypeHelper()
         cmsswStepHelper.addOutputModule(outputModuleName,
-                                        primaryDataset = self.inputPrimaryDataset,
-                                        processedDataset = processedDatasetName,
+                                        primaryDataset = primaryDataset,
+                                        processedDataset = processedDataset,
                                         dataTier = dataTier,
                                         filterName = filterName,
                                         lfnBase = unmergedLFN,
                                         mergedLFNBase = mergedLFN)
 
-        return {"dataTier": dataTier, "processedDataset": processedDatasetName,
+        return {"dataTier": dataTier,
+                "processedDataset": processedDataset,
                 "filterName": filterName}
 
     def addLogCollectTask(self, parentTask, taskName = "LogCollect", filesPerJob = 500):

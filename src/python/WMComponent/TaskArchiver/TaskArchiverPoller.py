@@ -405,7 +405,14 @@ class TaskArchiverPoller(BaseWorkerThread):
                                                                "endkey": [jobid, {}]})['rows']
             job    = self.jobsdatabase.document(id = str(jobid))
             inputs = [x['lfn'] for x in job['inputfiles']]
-            runsA  = [x['runs'][0] for x in job['inputfiles']]
+            runsA  = []
+            for x in job['inputfiles']:
+                try:
+                    runsA.append(x['runs'][0])
+                except IndexError:
+                    # No runs in this input file
+                    # Ignore it
+                    pass
             maskA  = job['mask']
             
             # Have to transform this because JSON is too stupid to understand ints

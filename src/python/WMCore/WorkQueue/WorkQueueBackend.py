@@ -160,13 +160,23 @@ class WorkQueueBackend(object):
             elements = [CouchWorkQueueElement(db, i).load() for i in elementIDs]
         else:
             options = {'include_docs' : True, 'filter' : elementFilters, 'idOnly' : returnIdOnly}
-            if status:
-                key.append(status)
+            # filter on workflow or status if possible
+            filter = 'elementsByWorkflow'
             if WorkflowName:
-                # Stored in couch as RequestName
+                key.append(WorkflowName)
+            elif status:
+                filter = 'elementsByStatus'
+                key.append(status)
+            elif elementFilters.get('SubscriptionId'):
+                key.append(elementFilters['SubscriptionId'])
+                filter = 'elementsBySubscription'
+            # add given params to filters
+            if status:
+                options['filter']['Status'] = status
+            if WorkflowName:
                 options['filter']['RequestName'] = WorkflowName
 
-            view = db.loadList('WorkQueue', 'filter', 'elementsByStatus', options, key)
+            view = db.loadList('WorkQueue', 'filter', filter, options, key)
             view = json.loads(view)
             if returnIdOnly:
                 return view

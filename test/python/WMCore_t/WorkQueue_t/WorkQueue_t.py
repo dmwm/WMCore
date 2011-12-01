@@ -1069,7 +1069,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # should print message but not raise an error
         self.localQueue.performQueueCleanupActions(skipWMBS = True)
         self.localQueue.backend.pullFromParent(continuous = False)
-        self.assertEqual(self.localQueue.statusInbox()[1]['Status'], 'Negotiating')
+        self.assertEqual(len(self.localQueue.statusInbox(Status='Negotiating')), 1)
         self.assertEqual(len(self.localQueue), 1)
 
 

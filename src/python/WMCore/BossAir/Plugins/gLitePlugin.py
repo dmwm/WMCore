@@ -186,7 +186,7 @@ class gLitePlugin(BasePlugin):
                     setattr(self.config.Agent, 'serverDN', stdout)
                     logging.info('Retrieved agent DN %s ' % stdout)
                 else:
-                    logging.error('Failed to retrieve agent DN from %s due to "%s".' % (hostcertpath, stdout) )
+                    logging.error('Failed to retrieve agent DN from %s due to "%s".' % (hostcertpath, stdout + '\n' + stderr) )
             if getattr ( self.config.Agent, 'serverDN' , None ) is None:
                 msg = "Error: serverDN parameter required and not provided " + \
                       "in the configuration"

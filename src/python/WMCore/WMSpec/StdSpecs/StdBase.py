@@ -48,8 +48,8 @@ class StdBase(object):
         self.owner = None
         self.owner_dn = None
         self.group = None
-        self.owner_vogroup = ''
-        self.owner_vorole = ''
+        self.owner_vogroup = 'DEFAULT'
+        self.owner_vorole = 'DEFAULT'
         self.acquisitionEra = None
         self.scramArch = None
         self.inputPrimaryDataset = None
@@ -81,8 +81,10 @@ class StdBase(object):
         self.owner = arguments.get("Requestor", None)
         self.owner_dn = arguments.get("RequestorDN", None)
         self.group = arguments.get("Group", None)
-        self.owner_vogroup = arguments.get("VoGroup", '')
-        self.owner_vorole = arguments.get("VoRole", '')
+        if arguments.has_key('VoGroup'):
+            self.owner_vogroup = arguments['VoGroup']
+        if arguments.has_key('VoRole'):
+            self.owner_vorole = arguments['VoRole']
         self.acquisitionEra = arguments.get("AcquisitionEra", None)
         self.scramArch = arguments.get("ScramArch", None)
         self.processingVersion = arguments.get("ProcessingVersion", None)

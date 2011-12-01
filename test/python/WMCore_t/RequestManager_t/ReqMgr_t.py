@@ -223,6 +223,10 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.assertEqual(request['ReqMgrGroupBasePriority'], 7)
         self.assertEqual(request['RequestPriority'], 5+6+7)
 
+        # Check LFN Bases
+        self.assertEqual(request['UnmergedLFNBase'], '/store/unmerged')
+        self.assertEqual(request['MergedLFNBase'], '/store/data')
+
         # only certain transitions allowed
         #self.assertEqual(self.jsonSender.put('request/%s?status=running' % requestName)[1], 400)
         self.assertRaises(HTTPException, self.jsonSender.put,'request/%s?status=running' % requestName)
@@ -502,7 +506,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         """
         _TestWhitelistBlacklist_
 
-        Test whether or not we can assign the site/run blacklist/whitelist
+        Test whether or not we can assign the block/run blacklist/whitelist
         """
 
         userName     = 'Taizong'
@@ -525,12 +529,14 @@ class ReqMgrTest(RESTBaseUnitTest):
 
 
         workload = self.loadWorkload(requestName = requestName)
-        print workload.data
         self.assertEqual(workload.data.tasks.DataProcessing.input.dataset.runs.whitelist, schema['RunWhitelist'])
         self.assertEqual(workload.data.tasks.DataProcessing.input.dataset.runs.blacklist, schema['RunBlacklist'])
         self.assertEqual(workload.data.tasks.DataProcessing.input.dataset.blocks.whitelist, schema['BlockWhitelist'])
         self.assertEqual(workload.data.tasks.DataProcessing.input.dataset.blocks.blacklist, schema['BlockBlacklist'])
-        print workload.data
+
+        req = self.jsonSender.get('request/%s' % requestName)
+        self.assertTrue(req[0].has_key('Site Blacklist'))
+        self.assertTrue(req[0].has_key('Site Whitelist'))
 
         schema['BlockBlacklist'] = {'1': '/dataset/dataset/dataset#beta'}
 

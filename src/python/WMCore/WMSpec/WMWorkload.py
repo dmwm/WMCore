@@ -924,6 +924,24 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return outputDatasets
 
+    def getUnmergedLFNBase(self):
+        """
+        _getUnmergedLFNBase_
+
+        Get the unmerged LFN Base from properties
+        """
+
+        return getattr(self.data.properties, 'unmergedLFNBase', None)
+
+    def getMergedLFNBase(self):
+        """
+        _getMergedLFNBase_
+
+        Get the merged LFN Base from properties
+        """
+
+        return getattr(self.data.properties, 'mergedLFNBase', None)
+
     def getLFNBases(self):
         """
         _getLFNBases_
@@ -931,8 +949,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Retrieve the LFN bases.  They are returned as a tuple with the merged
         LFN base first, followed by the unmerged LFN base.
         """
-        return (self.data.properties.mergedLFNBase,
-                self.data.properties.unmergedLFNBase)
+        return self.getMergedLFNBase(), self.getUnmergedLFNBase()
 
     def setRetryPolicy(self):
         """

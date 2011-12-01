@@ -351,8 +351,10 @@ def requestDetails(requestName):
     # take the stuff from the DB preferentially
     schema.update(request)
     task = helper.getTopLevelTask()[0]
-    schema['Site Whitelist'] = task.siteWhitelist()
-    schema['Site Blacklist'] = task.siteBlacklist()
+    schema['Site Whitelist']  = task.siteWhitelist()
+    schema['Site Blacklist']  = task.siteBlacklist()
+    schema['MergedLFNBase']   = str(helper.getMergedLFNBase())
+    schema['UnmergedLFNBase'] = str(helper.getUnmergedLFNBase())
     return schema
 
 def serveFile(contentType, prefix, *args):

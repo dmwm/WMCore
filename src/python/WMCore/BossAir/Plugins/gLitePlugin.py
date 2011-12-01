@@ -285,7 +285,7 @@ class gLitePlugin(BasePlugin):
         return stateDict
 
 
-    def fakeReport(self, title, mesg, code, job):
+    def fakeReport(self, title, mesg, code, job, putReportInJob = False):
         """
         _fakeReport_
 
@@ -306,6 +306,8 @@ class gLitePlugin(BasePlugin):
             errorReport = Report()
             errorReport.addError(title, code, title, mesg)
             errorReport.save(filename = reportName)
+            if putReportInJob:
+                job['fwjr'] = errorReport
         return
 
 
@@ -436,7 +438,7 @@ class gLitePlugin(BasePlugin):
                         logging.error( msg )
                         failedJobs.extend( jobsReady )
                         for job in jobsReady:
-                            self.fakeReport("SubmissionFailure", msg, -1, job)
+                            self.fakeReport("SubmissionFailure", msg, -1, job, putReportInJob = True)
                         continue
 
                     ## getting the job destinations
@@ -536,26 +538,26 @@ class gLitePlugin(BasePlugin):
                     if jsout['result'] != 'success':
                         failedJobs.extend(jobsub)
                         for job in jobsub:
-                            self.fakeReport("SubmissionFailure", reporterror, -1, job)
+                            self.fakeReport("SubmissionFailure", reporterror, -1, job, putReportInJob = True)
                         continue
                 else:
                     failedJobs.extend(jobsub)
                     for job in jobsub:
-                        self.fakeReport("SubmissionFailure", reporterror, -1, job)
+                        self.fakeReport("SubmissionFailure", reporterror, -1, job, putReportInJob = True)
                     continue
                 if jsout.has_key('parent'):
                     parent = jsout['parent']
                 else:
                     failedJobs.extend(jobsub)
                     for job in jobsub:
-                        self.fakeReport("SubmissionFailure", reporterror, -1, job)
+                        self.fakeReport("SubmissionFailure", reporterror, -1, job, putReportInJob = True)
                     continue
                 if jsout.has_key('endpoint'):
                     endpoint = jsout['endpoint']
                 else:
                     failedJobs.extend(jobsub)
                     for job in jobsub:
-                        self.fakeReport("SubmissionFailure", reporterror, -1, job)
+                        self.fakeReport("SubmissionFailure", reporterror, -1, job, putReportInJob = True)
                     continue
                 if jsout.has_key('children'):
                     jobnames = jsout['children'].keys()
@@ -569,11 +571,11 @@ class gLitePlugin(BasePlugin):
                             successfulJobs.append(job)
                         else:
                             failedJobs.append(jj)
-                            self.fakeReport("SubmissionFailure", reporterror, -1, jj)
+                            self.fakeReport("SubmissionFailure", reporterror, -1, jj, putReportInJob = True)
                 else:
                     failedJobs.extend(jobsub)
                     for job in jobsub:
-                        self.fakeReport("SubmissionFailure", reporterror, -1, job)
+                        self.fakeReport("SubmissionFailure", reporterror, -1, job, putReportInJob = True)
                     continue
 
         logging.debug("Submission completed and processed at time %s " \
@@ -949,7 +951,7 @@ class gLitePlugin(BasePlugin):
                 logging.error( msg )
                 logging.error( msg )
                 failedJobs.append( jj )
-                self.fakeReport("PostMortemFailure", msg, -1, jj)
+                self.fakeReport("Abort", msg, -1, jj)
                 continue
 
             logInfoOutfile = '%s/loggingInfo.%i.log' % ( jj['cache_dir'], jj['retry_count'] )
@@ -987,7 +989,7 @@ class gLitePlugin(BasePlugin):
                 msg += '\tstderr: %s\n\tjson: %s' % (error, str(jsout.strip()))
                 logging.error( msg )
                 failedJobs.append(workqueued[workid])
-                self.fakeReport("PostMortemFailure", msg, -1, jj)
+                self.fakeReport("Abort", msg, -1, jj)
                 continue
             else:
                 logInfoOutfile = '%s/loggingInfo.%i.log' % ( jj['cache_dir'], jj['retry_count'] )
@@ -997,7 +999,7 @@ class gLitePlugin(BasePlugin):
                     #this should not happen, but, just in case...
                     msg = "Cannot find %s" % logInfoOutfile
                     logging.debug( msg )
-                self.fakeReport("PostMortemFailure", msg, -1, jj)
+                self.fakeReport("Abort", msg, -1, jj)
                 completedJobs.append(workqueued[workid])
 
         ## Shut down processes

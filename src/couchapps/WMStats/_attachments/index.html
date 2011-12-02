@@ -19,6 +19,7 @@
           <dd><p>Status of jobs for a user at sites over time.</p></dd>
         </dl>
       </p></dd>
+
       <dt><a href="_view/owner-work-time"><code>owner-work-time</code></a></dt>
       <dd><p>Returns the state document for each owner, workload and timestamp. Used to
 				calculate the status of a users jobs. View options:
@@ -30,6 +31,19 @@
           <dd><p>Time series of the status for a user/workflow.</p></dd>
         </dl>
       </p></dd>
+
+      <dt><a href="_view/owner-time"><code>owner-time</code></a></dt>
+      <dd><p>Returns a global state (across all workflows) for each owner over
+				time. Used to see global status of a users jobs across all workflows.
+				To make cumulative series/plots you need to sum in the client, since
+				once a workflow completes it stops being reported.
+				View options:
+        <dl>
+          <dt><code>?group=true&startkey=[$USER]&endkey=[$USER,{}]</code></dt>
+          <dd><p>Status of all jobs for all workflows by $USER.</p></dd>
+        </dl>
+      </p></dd>
+
       <dt><a href="_view/site-time-owner-work"><code>site-owner-work-time</code></a></dt>
       <dd><p>This view is designed to give site admins an idea about the jobs running
         at their site. It will return a time series by default, or a window with
@@ -44,6 +58,7 @@
           <dd><p>The number of jobs at a site broken down by owner and workflow.</p></dd>
         </dl>
       </p></dd>
+
       <dt><a href="_view/time-site-owner-work"><code>time-site-owner-work</code></a></dt>
       <dd><p>Returns the number of jobs per state, keyed by timestamp, site,
 				owner, and workload. View options:
@@ -54,6 +69,7 @@
           <dd><p>Number of jobs at a site by user</p></dd>
         </dl>
       </p></dd>
+
       <dt><a href="_view/timestamp-id"><code>timestamp-id</code></a></dt>
       <dd><p>This view is to be used to remove old/expired documents. View options:
         <dl>
@@ -61,8 +77,8 @@
           <dd><p>Turn off reduce to see the id's of documents to delete.</p></dd>
         </dl>
       </p></dd>
-    </dl>
 
-    <h2>Plots</h2>
+    </dl>
+		<div id="footer"><p><a href="plots.html">Plot</a></p></div>
   </body>
 </html>

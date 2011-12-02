@@ -83,7 +83,6 @@ var PlotView = Backbone.View.extend({
 		     *  This function puts deleted segments into the data array at the right
 		     *  place.
 		     */
-		    console.log([this.settings.name, this.deleted]);
 		    _.each(this.deleted, function(d) {
 		      data.splice(d, 0, 0);
 		    });
@@ -177,12 +176,34 @@ var PlotView = Backbone.View.extend({
 		}),
 		BarView: PlotView.extend(
 		{
+		  initialize: function(collection, settings) {
+		    PlotView.prototype.initialize.apply(this, [collection, settings]);
+
+  		  this.w = settings.w || 20;
+        this.h = settings.h || 80;
+        // TODO:
+        // Store the scale in the view object so that it can be set from user
+        // code. Issue is changing scale as data changes...
+        // this.xscale = settings.xscale || d3.scale.linear()
+        //          .domain([0, 1])
+        //          .range([0, this.w])
+        // this.yscale = settings.yscale || d3.scale.linear()
+        //          .domain([0, 100])
+        //          .rangeRound([0, this.h]);
+        this.scrolling = settings.scrolling || false;
+        // TODO:
+        // if (this.scrolling){
+        //   this.size = settings.size || 5;
+        // }
+
+      },
 		  plot: function(options) {
-		    var w = options.w || 20;
-		    var h = options.h || 80;
+		    // Copy these data to avoid closure issues below
+		    var w = this.w;
+		    var h = this.h;
 		    var data = this.collection.plotdata();
 
-		    var scale = d3.round(h / _.max(data, function(d) { return d.y; }).y);
+		    var scale = h / _.max(data, function(d) { return d.y; }).y;
 
 		    var yval = function(d) { return h - scale * d.y - .5; };
 
@@ -222,7 +243,7 @@ var PlotView = Backbone.View.extend({
 		        .attr("y1", 0)
 		        .attr("y2", h - .5)
 		        .attr("stroke", "#000");
-		    } else if (this.collection.scrolling) {
+		    } else if (this.scrolling) {
 		      var chart = this.div.selectAll("svg");
 		      var rect = chart.selectAll("rect")
 		      .data(data, function(d) { return d.x; });

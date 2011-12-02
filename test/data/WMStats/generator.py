@@ -34,6 +34,12 @@ def parse_opts():
                   default=5,
                   type="int",
                   help="The number of requests to simulate, default=5")
+  parser.add_option("-w", "--wait",
+                  dest="wait",
+                  default=0,
+                  type="int",
+                  help="Wait W seconds between iterations, default=0")
+
 
   return parser.parse_args()[0]
 
@@ -164,6 +170,7 @@ def main(options):
       print "%s requests remaining" % len(requests)
     # Commit at the end of each iteration, so the request list is stateful
     db.commit()
+    time.sleep(options.wait)
 
 
 if __name__ == "__main__":

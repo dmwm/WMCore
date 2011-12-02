@@ -103,7 +103,7 @@ class LogCollect(Executor):
                     msg = "Unable to StageIn %s" % file['LFN']
                     logging.error(msg)
                     # Don't do anything other then record it
-                    self.report.addSkippedFile(file['PFN'], file['LFN'])
+                    self.report.addSkippedFile(file.get('PFN', None), file['LFN'])
                 except Exception, ex:
                     raise
 

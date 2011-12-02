@@ -194,7 +194,7 @@ config.JobStatusLite.namespace = "WMComponent.JobStatusLite.JobStatusLite"
 config.JobStatusLite.componentDir  = config.General.workDir + "/JobStatusLite"
 config.JobStatusLite.logLevel = globalLogLevel
 config.JobStatusLite.pollInterval = 60
-config.JobStatusLite.stateTimeouts = {"Error": 1800}
+config.JobStatusLite.stateTimeouts = {"Error": 1800, "Running": 169200, "Pending": 360000}
 
 config.component_("ErrorHandler")
 config.ErrorHandler.namespace = "WMComponent.ErrorHandler.ErrorHandler"

@@ -2,7 +2,7 @@
 <head>
 	<meta http-equiv="Cache-Control" content="no-cache, max-age=0, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
-	<title>OpsClipboard - Campaigns List</title>
+	<title>OpsClipboard - Requests View By Campaign</title>
    	<script src="/_utils/script/json2.js"></script>
     <script src="/_utils/script/jquery.js?1.3.1"></script>
     <script src="/_utils/script/jquery.couch.js?0.9.0"></script>
@@ -10,11 +10,13 @@
     <script src="vendor/opsclipboard/utils.js"></script>
 </head>
 <body>
-	<h2>OpsClipboard - Campaigns List</h2>
-	<div id="campaigntableid"></div>
+	<h2>OpsClipboard - Requests View By Campaign</h2>
+	<div id="requestsviewbycampaigntableid"></div>
 </body>
 <script type="text/javascript">
 	campaign.setUp();
-	campaign.campaignList("campaigntableid");
+	campaign.setCampaign();
+	campaign.requestsViewByCampaign("requestsviewbycampaigntableid");
+	campaign.requestsViewByCampaignUpdate();
 </script>
 </html>

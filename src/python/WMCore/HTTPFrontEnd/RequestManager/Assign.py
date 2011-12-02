@@ -5,7 +5,7 @@ import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeSt
 import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
 import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
 from WMCore.HTTPFrontEnd.RequestManager.ReqMgrAuth import ReqMgrAuth
-import WMCore.RequestManager.Clipboard.Insert as Clipboard
+import WMCore.RequestManager.OpsClipboard.Inject as OpsClipboard
 import WMCore.Lexicon
 import logging
 import cherrypy
@@ -178,9 +178,9 @@ class Assign(WebAPI):
                     Utilities.changePriority(requestName, priority)
         participle=kwargs['action']+'ed'
         if self.hold and kwargs['action'] == 'Assign':
-            participle='put into hold state (see <a href="%s">clipboard</a>)' % self.clipboardUrl
+            participle='put into "ops-hold" state (see <a href="%s">OpsClipboard</a>)' % self.clipboardUrl
             requests = [GetRequest.getRequestByName(requestName) for requestName in requestNames]
-            Clipboard.inject(self.couchUrl, self.clipboardDB, *requests)
+            OpsClipboard.inject(self.couchUrl, self.clipboardDB, *requests)
             for request in requestNames:
                 ChangeState.changeRequestStatus(requestName, 'ops-hold')
         return self.templatepage("Acknowledge", participle=participle, requests=requestNames)

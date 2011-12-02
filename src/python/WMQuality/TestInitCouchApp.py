@@ -37,9 +37,11 @@ class CouchAppTestHarness:
         self.couchappConfig = Config()
 
 
-    def create(self):
+    def create(self, dropExistingDb=True):
         """create couch db instance"""
         if self.dbName in self.couchServer.listDatabases():
+            if not dropExistingDb:
+                return
             self.drop()
 
         self.couchServer.createDatabase(self.dbName)
@@ -61,10 +63,14 @@ class TestInitCouchApp(TestInit):
     TestInit with baked in Couch goodness
     """
     
-    def __init__(self, testClassName):
+    def __init__(self, testClassName, dropExistingDb=True):
         TestInit.__init__(self, testClassName)
         self.databases = []
         self.couch = None
+        # for experiments, after tests run, it's useful to have CouchDB
+        # populated with the testing data - having tearDownCouch commented
+        # out, this flag prevents from re-initializing the database
+        self.dropExistingDb = dropExistingDb
 
     def couchAppRoot(self):
         """Return path to couchapp dir"""
@@ -76,7 +82,7 @@ class TestInitCouchApp(TestInit):
             basePath = develPath
         return basePath
         
-    def setupCouch(self, dbName,  *couchapps):
+    def setupCouch(self, dbName, *couchapps):
         """
         _setupCouch_
         
@@ -85,7 +91,7 @@ class TestInitCouchApp(TestInit):
         """
         self.databases.append(dbName)
         self.couch = CouchAppTestHarness(dbName)
-        self.couch.create()
+        self.couch.create(dropExistingDb=self.dropExistingDb)
         self.couch.pushCouchapps(*[os.path.join(self.couchAppRoot(), couchapp) for couchapp in couchapps ])
 
 

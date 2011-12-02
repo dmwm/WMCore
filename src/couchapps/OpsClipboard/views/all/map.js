@@ -1,4 +1,6 @@
-function(doc){
-    // show all docs by state
-    emit(doc['state'], doc._id);
+// 'all' view
+// returns all requests docs by ordered state
+function(doc)
+{
+	emit(doc['state'], doc._id);
 }

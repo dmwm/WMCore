@@ -14,6 +14,7 @@ from WMCore.WMSpec.ConfigSectionTree import findTop
 from WMCore.WMSpec.Persistency import PersistencyHelper
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 from WMCore.Lexicon import lfnBase, sanitizeURL
+from WMCore.WMException import WMException
 
 parseTaskPath = lambda p: [ x for x in p.split('/') if x.strip() != '' ]
 
@@ -42,6 +43,14 @@ def getWorkloadFromTask(taskRef):
         raise RuntimeError, msg
 
     return WMWorkloadHelper(topNode)
+
+class WMWorkloadException(WMException):
+    """
+    _WMWorkloadException_
+
+    Exceptions raised by the Workload during filling
+    """
+    pass
 
 
 class WMWorkloadHelper(PersistencyHelper):
@@ -410,6 +419,64 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data.tasks.__delattr__(taskName)
         self.data.tasks.tasklist.remove(taskName)
         return
+
+    def setSiteWildcardsLists(self, siteWhitelist, siteBlacklist, wildcardDict):
+        """
+        _setSiteWildcardsLists_
+
+        Given a whitelist and a blacklist that contain wildcards, and a
+        list of wildcards, assign the whitelist and the blacklist so that
+        they have the proper sites and not the wildcard symbols.
+
+        Expects a wildcardDict containing all available wildcard symbols as keys
+        and the list of sites corresponding to those keys as values.
+
+        e.g.
+        {'T2*': ['T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT'],
+        'US*': ['T1_US_FNAL', 'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT'],
+        'T1*': ['T1_US_FNAL', 'T1_CH_CERN', 'T1_UK_RAL']}
+        """
+        newWhiteList = self.removeWildcardsFromList(siteList = siteWhitelist, wildcardDict = wildcardDict)
+        newBlackList = self.removeWildcardsFromList(siteList = siteBlacklist, wildcardDict = wildcardDict)
+
+        for site in newWhiteList:
+            if '*' in site:
+                msg = "Invalid wildcard site %s in site whitelist!" % site
+                #logging.error(msg)
+                raise WMWorkloadException(msg)
+        for site in newBlackList:
+            if '*' in site:
+                msg = "Invalid wildcard site %s in site blacklist!" % site
+                #logging.error(msg)
+                raise WMWorkloadException(msg)
+
+        self.setSiteWhitelist(siteWhitelist = newWhiteList)
+        self.setSiteBlacklist(siteBlacklist = newBlackList)
+
+        return
+
+    def removeWildcardsFromList(self, siteList, wildcardDict = {}):
+        """
+        _removeWildcardsFromList_
+
+        Given a list of sites, remove any of the wildcards
+        that are in site.wildcards and replace them with the
+        sites that you picked out of SiteDB.
+        """
+
+        deleteKeys = []
+        for s in siteList:
+            if s in wildcardDict.keys():
+                deleteKeys.append(s)
+
+        for s in deleteKeys:
+            keyList = wildcardDict[s]
+            for site in keyList:
+                if site not in siteList:
+                    siteList.append(site)
+            siteList.remove(s)
+
+        return siteList
 
     def setSiteWhitelist(self, siteWhitelist, initialTask = None):
         """

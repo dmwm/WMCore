@@ -67,10 +67,16 @@ class RequestManagerConfig(DefaultConfig):
         self._setReqMgrHost()
         self._setWorkloadCache()
         self._setupCouchUrl()
+        self._setupAssign()
 
     def setupCouchDatabase(self, dbName):
-        self.UnitTests.views.active.rest.configDBName = dbName
+        self.UnitTests.views.active.rest.configDBName   = dbName
         self.UnitTests.views.active.rest.workloadDBName = dbName
+        self.UnitTests.views.active.rest.clipboardDB    = dbName
+
+    def _setupAssign(self):
+        self.UnitTests.views.active.rest.hold    = False
+        self.UnitTests.views.active.rest.sitedb  = "https://cmsweb.cern.ch/sitedb/json/index/"
         
 class ReqMgrTest(RESTBaseUnitTest):
     """

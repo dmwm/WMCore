@@ -9,7 +9,7 @@ from WMCore.WebTools.Root import Root
 
 class RESTBaseUnitTest(unittest.TestCase):
     
-    def setUp(self):
+    def setUp(self, initRoot = True):
         # default set
         self.schemaModules = []
         self.initialize()
@@ -29,13 +29,16 @@ class RESTBaseUnitTest(unittest.TestCase):
             self.config.setDBUrl(myThread.dbFactory.dburl)
             
         logging.info("This is our config: %s" % self.config)
-        
-        self.rt = Root(self.config)
-        self.rt.start(blocking=False)
+
+        self.initRoot = initRoot
+        if initRoot:
+            self.rt = Root(self.config)
+            self.rt.start(blocking=False)
         return
         
     def tearDown(self):
-        self.rt.stop()
+        if self.initRoot:
+            self.rt.stop()
         if self.schemaModules:
             self.testInit.clearDatabase()
         self.config = None

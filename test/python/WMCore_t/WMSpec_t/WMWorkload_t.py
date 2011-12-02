@@ -8,7 +8,7 @@ Unittest for WMWorkload class
 import os
 import unittest
 
-from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
+from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper, WMWorkloadException
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 
 class WMWorkloadTest(unittest.TestCase):
@@ -1050,6 +1050,83 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor.maxVSize, 102)
         self.assertFalse(hasattr(testWorkload.data.tasks.ProcessingTask.tree.children.MergeTask, 'watchdog'))
         return
+
+    def test_parseSiteWildcards(self):
+        """
+        _parseSiteWildcards_
+
+        Parse the methods by which we add wildcards to the site
+        whitelist/blacklist
+        """
+
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        procTask = testWorkload.newTask("ProcessingTask")
+        procTask.setTaskType("Processing")
+
+        wildcardKeys = {'T1*': 'T1_*', 'T2*': 'T2_*',
+                        'T3*': 'T3_*', 'US*': '_US_'}
+        siteList = ['T1_US_FNAL', 'T1_CH_CERN', 'T1_UK_RAL',
+                    'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT']
+        wildcardSites = {'T2*': ['T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT'],
+                         'US*': ['T1_US_FNAL', 'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT'],
+                         'T1*': ['T1_US_FNAL', 'T1_CH_CERN', 'T1_UK_RAL']}
+
+        # Test full set
+        testWorkload.setSiteWildcardsLists(siteWhitelist = ['US*', 'T1*'],
+                                           siteBlacklist = [],
+                                           wildcardDict = wildcardSites)
+        self.assertEqual(testWorkload.data.tasks.ProcessingTask.constraints.sites.whitelist.sort(),
+                         siteList.sort())
+
+        # Test one subset
+        testWorkload.setSiteWildcardsLists(siteWhitelist = ['US*'],
+                                           siteBlacklist = [],
+                                           wildcardDict = wildcardSites)
+        self.assertEqual(testWorkload.data.tasks.ProcessingTask.constraints.sites.whitelist.sort(),
+                         ['T1_US_FNAL', 'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT'].sort())
+
+        # Test one subset plus one site
+        testWorkload.setSiteWildcardsLists(siteWhitelist = ['US*', 'T1_UK_RAL'],
+                                           siteBlacklist = [],
+                                           wildcardDict = wildcardSites)
+        self.assertEqual(testWorkload.data.tasks.ProcessingTask.constraints.sites.whitelist.sort(),
+                         ['T1_US_FNAL', 'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT', 'T1_UK_RAL'].sort())
+
+        # Repeat above with blacklist
+        # Test full set
+        testWorkload.setSiteWildcardsLists(siteBlacklist = ['US*', 'T1*'],
+                                           siteWhitelist = [],
+                                           wildcardDict = wildcardSites)
+        self.assertEqual(testWorkload.data.tasks.ProcessingTask.constraints.sites.blacklist.sort(),
+                         siteList.sort())
+
+        # Test one subset
+        testWorkload.setSiteWildcardsLists(siteBlacklist = ['US*'],
+                                           siteWhitelist = [],
+                                           wildcardDict = wildcardSites)
+        self.assertEqual(testWorkload.data.tasks.ProcessingTask.constraints.sites.blacklist.sort(),
+                         ['T1_US_FNAL', 'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT'].sort())
+
+        # Test one subset plus one site
+        testWorkload.setSiteWildcardsLists(siteBlacklist = ['US*', 'T1_UK_RAL'],
+                                           siteWhitelist = [],
+                                           wildcardDict = wildcardSites)
+        self.assertEqual(testWorkload.data.tasks.ProcessingTask.constraints.sites.blacklist.sort(),
+                         ['T1_US_FNAL', 'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT', 'T1_UK_RAL'].sort())
+
+
+        # Test an invalid
+        raises = False
+        try:
+            testWorkload.setSiteWildcardsLists(siteBlacklist = ['T3*'],
+                                               siteWhitelist = [],
+                                               wildcardDict = wildcardSites)
+        except WMWorkloadException, ex:
+            raises = True
+            self.assertTrue("Invalid wildcard site T3* in site blacklist!" in str(ex))
+            pass
+        self.assertTrue(raises)
+                         
 
 if __name__ == '__main__':
     unittest.main()

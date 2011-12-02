@@ -1,5 +1,18 @@
 #!/usr/bin/env python
-""" Main Module for browsing and modifying requests """
+"""
+Main Module for browsing and modifying requests
+as done by the dataOps operators to assign requests
+to processing sites.
+
+Handles site whitelist/blacklist info as well
+"""
+import types
+import copy
+import re
+import logging
+import cherrypy
+import threading
+
 import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement as ProdManagement
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
 import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
@@ -7,17 +20,17 @@ import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
 from WMCore.HTTPFrontEnd.RequestManager.ReqMgrAuth import ReqMgrAuth
 import WMCore.RequestManager.OpsClipboard.Inject as OpsClipboard
 import WMCore.Lexicon
-import logging
-import cherrypy
-import threading
-import types
 
-#from WMCore.WebTools.Page import TemplatedPage
 from WMCore.WebTools.WebAPI import WebAPI
 
 class Assign(WebAPI):
     """ Used by data ops to assign requests to processing sites"""
-    def __init__(self, config):
+    def __init__(self, config, noSiteDB = False):
+        """
+        _init_
+
+        Note, noSiteDB added for TESTING PURPOSED ONLY!
+        """
         WebAPI.__init__(self, config)
         ReqMgrAuth.assign_roles = config.security_roles
         # Take a guess
@@ -28,7 +41,10 @@ class Assign(WebAPI):
         self.clipboardUrl = "%s/%s/_design/OpsClipboard/index.html" % (cleanUrl, self.clipboardDB)
         self.hold = config.hold
         self.configDBName = config.configDBName
-        self.sites = Utilities.sites(config.sitedb)
+        if not noSiteDB:
+            self.sites = Utilities.sites(config.sitedb)
+        else:
+            self.sites = []
         self.allMergedLFNBases =  [
             "/store/backfill/1", "/store/backfill/2", 
             "/store/data",  "/store/mc"]
@@ -45,6 +61,12 @@ class Assign(WebAPI):
 
         self.yuiroot = config.yuiroot
         cherrypy.engine.subscribe('start_thread', self.initThread)
+
+        self.wildcardKeys = getattr(config, 'wildcardKeys', {'T1*': 'T1_*',
+                                                             'T2*': 'T2_*',
+                                                             'T3*': 'T3_*'})
+        self.wildcardSites = {}
+        self.addSiteWildcards()
 
     def initThread(self, thread_index):
         """ The ReqMgr expects the DBI to be contained in the Thread  """
@@ -185,14 +207,17 @@ class Assign(WebAPI):
                 ChangeState.changeRequestStatus(requestName, 'ops-hold')
         return self.templatepage("Acknowledge", participle=participle, requests=requestNames)
 
+
     def assignWorkload(self, requestName, kwargs):
         """ Make all the necessary changes in the Workload to reflect the new assignment """
         request = GetRequest.getRequestByName(requestName)
         helper = Utilities.loadWorkload(request)
         for field in ["AcquisitionEra", "ProcessingVersion"]:
             self.validate(kwargs[field], field)
-        helper.setSiteWhitelist(Utilities.parseSite(kwargs,"SiteWhitelist"))
-        helper.setSiteBlacklist(Utilities.parseSite(kwargs,"SiteBlacklist"))
+        # Set white list and black list
+        helper.setSiteWildcardsLists(siteWhitelist = whiteList, siteBlacklist = blackList,
+                                     wildcardDict = self.wildcardSites)
+        # Set ProcessingVersion and AcquisitionEra
         helper.setProcessingVersion(kwargs["ProcessingVersion"])
         helper.setAcquisitionEra(kwargs["AcquisitionEra"])
         #FIXME not validated
@@ -204,5 +229,33 @@ class Assign(WebAPI):
                                           int(kwargs["maxVSize"]))
         helper.setDashboardActivity(kwargs.get("dashboard", ""))
         Utilities.saveWorkload(helper, request['RequestWorkflow'])
- 
+
+    def addSiteWildcards(self):
+        """
+        _addSiteWildcards_
+
+        Add site wildcards to the self.sites list
+        These wildcards should allow you to whitelist/blacklist a
+        large number of sites at once.
+
+        Expects a dictionary for wildcardKeys where the key:values are
+        key = Label to be displayed as
+        value = Regular expression
+        """
+
+        for k in self.wildcardKeys.keys():
+            reValue = self.wildcardKeys.get(k)
+            found   = False
+            for s in self.sites:
+                if re.search(reValue, s):
+                    found = True
+                    if not k in self.wildcardSites.keys():
+                        self.wildcardSites[k] = []
+                    self.wildcardSites[k].append(s)
+            if found:
+                self.sites.append(k)
+
+        return
+
+                
          

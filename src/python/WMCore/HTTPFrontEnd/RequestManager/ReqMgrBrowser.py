@@ -86,16 +86,6 @@ class ReqMgrBrowser(WebAPI):
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
-    def index(self):
-        """ Main web page """
-        print cherrypy.request.user
-        requests = GetRequest.getRequests()
-        tableBody = self.drawRequests(requests)
-        return self.templatepage("ReqMgrBrowser", yuiroot=self.yuiroot, 
-                                 fields=self.fields, tableBody=tableBody)
-
-    @cherrypy.expose
-    @cherrypy.tools.secmodv2()
     def search(self, value, field):
         """ Search for a regular expression in a certain field of all requests """
         filteredRequests = []

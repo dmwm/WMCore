@@ -79,10 +79,7 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
         for outputModuleName in outputMods.keys():
             outputModuleInfo = outputMods[outputModuleName]
             mergeTask = self.addMergeTask(procTask, self.procJobSplitAlgo,
-                                          outputModuleName,
-                                          outputModuleInfo["dataTier"],
-                                          outputModuleInfo["filterName"],
-                                          outputModuleInfo["processedDataset"])
+                                          outputModuleName)
             procMergeTasks[outputModuleName] = mergeTask
 
         return workload

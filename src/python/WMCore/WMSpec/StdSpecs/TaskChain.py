@@ -271,10 +271,7 @@ class TaskChainWorkloadFactory(StdBase):
         for outputModuleName in outputMods.keys():
             outputModuleInfo = outputMods[outputModuleName]
             mergeTask = self.addMergeTask(task, taskConf['SplittingAlgorithm'],
-                                          outputModuleName,
-                                          outputModuleInfo["dataTier"],
-                                          outputModuleInfo["filterName"],
-                                          outputModuleInfo["processedDataset"])
+                                          outputModuleName)
             procMergeTasks[str(outputModuleName)] = mergeTask
         self.mergeMapping[task.name()] = procMergeTasks
         self.globalTag = globalGlobalTag
@@ -340,10 +337,7 @@ class TaskChainWorkloadFactory(StdBase):
         for outputModuleName in outputMods.keys():
             outputModuleInfo = outputMods[outputModuleName]
             mergeTask = self.addMergeTask(task, taskConf['SplittingAlgorithm'],
-                                          outputModuleName,
-                                          outputModuleInfo["dataTier"],
-                                          outputModuleInfo["filterName"],
-                                          outputModuleInfo["processedDataset"])
+                                          outputModuleName)
             procMergeTasks[str(outputModuleName)] = mergeTask
         self.mergeMapping[task.name()] = procMergeTasks
         self.globalTag = globalGlobalTag

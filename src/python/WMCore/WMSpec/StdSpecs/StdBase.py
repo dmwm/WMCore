@@ -323,7 +323,8 @@ class StdBase(object):
                                         lfnBase = unmergedLFN,
                                         mergedLFNBase = mergedLFN)
 
-        return {"dataTier": dataTier,
+        return {"primaryDataset": primaryDataset,
+                "dataTier": dataTier,
                 "processedDataset": processedDataset,
                 "filterName": filterName}
 
@@ -346,15 +347,14 @@ class StdBase(object):
         logCollectTask.setInputReference(parentTaskLogArch, outputModule = "logArchive")
         return logCollectTask
 
-    def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModule,
-                     dataTier, filterName, processedDatasetName,
+    def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModuleName,
                      parentStepName = "cmsRun1"):
         """
         _addMergeTask_
 
         Create a merge task for files produced by the parent task.
         """
-        mergeTask = parentTask.addTask("%sMerge%s" % (parentTask.name(), parentOutputModule))
+        mergeTask = parentTask.addTask("%sMerge%s" % (parentTask.name(), parentOutputModuleName))
         self.addDashboardMonitoring(mergeTask)
         mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
         mergeTaskCmssw.setStepType("CMSSW")
@@ -365,7 +365,7 @@ class StdBase(object):
         mergeTaskLogArch.setStepType("LogArchive")
 
         mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)
-        self.addLogCollectTask(mergeTask, taskName = "%s%sMergeLogCollect" % (parentTask.name(), parentOutputModule))
+        self.addLogCollectTask(mergeTask, taskName = "%s%sMergeLogCollect" % (parentTask.name(), parentOutputModuleName))
 
         mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
@@ -376,7 +376,14 @@ class StdBase(object):
         else:
             splitAlgo = "ParentlessMergeBySize"
 
-        if dataTier == "DQM":
+        parentTaskCmssw = parentTask.getStep(parentStepName)
+        parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
+
+        mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
+        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
+                                        scramArch = self.scramArch)
+
+        if getattr(parentOutputModule, "dataTier") == "DQM":
             # DQM wants everything to be a single file per run, so we'll merge
             # accordingly.  We'll set the max_wait_time to two weeks as files
             # tend to be garbage collected after that.
@@ -388,6 +395,7 @@ class StdBase(object):
                                             merge_across_runs = False,
                                             siteWhitelist = self.siteWhitelist,
                                             siteBlacklist = self.siteBlacklist)
+            mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge", dqm_format = True)            
         else:
             mergeTask.setSplittingAlgorithm(splitAlgo,
                                             max_merge_size = self.maxMergeSize,
@@ -396,32 +404,24 @@ class StdBase(object):
                                             max_wait_time = self.maxWaitTime,
                                             siteWhitelist = self.siteWhitelist,
                                             siteBlacklist = self.siteBlacklist)
-
-        mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
-        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
-                                        scramArch = self.scramArch)
-
-        if dataTier == "DQM":
-            mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge", dqm_format = True)
-        else:
-            mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge")
+            mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge")            
 
         mergeTaskCmsswHelper.setErrorDestinationStep(stepName = mergeTaskLogArch.name())
         mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
 
         mergedLFN = "%s/%s/%s/%s/%s" % (self.mergedLFNBase, self.acquisitionEra,
-                                        self.inputPrimaryDataset, dataTier,
+                                        getattr(parentOutputModule, "primaryDataset"),
+                                        getattr(parentOutputModule, "dataTier"),
                                         self.processingVersion)
         mergeTaskCmsswHelper.addOutputModule("Merged",
-                                             primaryDataset = self.inputPrimaryDataset,
-                                             processedDataset = processedDatasetName,
-                                             dataTier = dataTier,
-                                             filterName = filterName,
+                                             primaryDataset = getattr(parentOutputModule, "primaryDataset"),
+                                             processedDataset = getattr(parentOutputModule, "processedDataset"),
+                                             dataTier = getattr(parentOutputModule, "dataTier"),
+                                             filterName = getattr(parentOutputModule, "filterName"),
                                              lfnBase = mergedLFN)
 
-        parentTaskCmssw = parentTask.getStep(parentStepName)
-        mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModule)
-        self.addCleanupTask(parentTask, parentOutputModule)
+        mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
+        self.addCleanupTask(parentTask, parentOutputModuleName)
         return mergeTask
 
     def addCleanupTask(self, parentTask, parentOutputModuleName):

@@ -65,11 +65,7 @@ class ReDigiWorkloadFactory(StdBase):
         for outputModuleName in outputMods.keys():
             outputModuleInfo = outputMods[outputModuleName]
             mergeTask = self.addMergeTask(parentTask, self.procJobSplitAlgo,
-                                          outputModuleName,
-                                          outputModuleInfo["dataTier"],
-                                          outputModuleInfo["filterName"],
-                                          outputModuleInfo["processedDataset"],
-                                          parentStepName = parentStepName)
+                                          outputModuleName, parentStepName)
             mergeTasks[outputModuleName] = mergeTask
 
         return mergeTasks

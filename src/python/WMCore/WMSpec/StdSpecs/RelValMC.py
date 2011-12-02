@@ -73,10 +73,7 @@ class RelValMCWorkloadFactory(StdBase):
         for outputModuleName in genOutputMods.keys():
             outputModuleInfo = genOutputMods[outputModuleName]
             task = self.addMergeTask(genTask, self.genJobSplitAlgo,
-                                     outputModuleName,        
-                                     outputModuleInfo["dataTier"],
-                                     outputModuleInfo["filterName"],
-                                     outputModuleInfo["processedDataset"])
+                                     outputModuleName)
             if outputModuleName == self.genOutputModuleName:
                 genMergeTask = task
                 
@@ -96,10 +93,7 @@ class RelValMCWorkloadFactory(StdBase):
         for outputModuleName in stepOneOutputMods.keys():
             outputModuleInfo = stepOneOutputMods[outputModuleName]
             task = self.addMergeTask(stepOneTask, self.procJobSplitAlgo,
-                                     outputModuleName,
-                                     outputModuleInfo["dataTier"],
-                                     outputModuleInfo["filterName"],
-                                     outputModuleInfo["processedDataset"])                        
+                                     outputModuleName)
             if outputModuleName == self.stepOneOutputModuleName:
                 stepOneMergeTask = task
                 
@@ -118,10 +112,7 @@ class RelValMCWorkloadFactory(StdBase):
         for outputModuleName in stepTwoOutputMods.keys():
             outputModuleInfo = stepTwoOutputMods[outputModuleName]
             self.addMergeTask(stepTwoTask, self.procJobSplitAlgo,
-                              outputModuleName,
-                              outputModuleInfo["dataTier"],
-                              outputModuleInfo["filterName"],
-                              outputModuleInfo["processedDataset"])
+                              outputModuleName)
         return workload
         
     

@@ -15,7 +15,7 @@ class WorkQueueTestCase(unittest.TestCase):
 
     def setSchema(self):
         "this can be override if the schema setting is different"
-        self.schema = ["WMCore.WMBS","WMComponent.DBSBuffer.Database"]
+        self.schema = ["WMCore.WMBS","WMComponent.DBS3Buffer"]
         self.couchApps = ["WorkQueue"]
 
     def setUp(self):

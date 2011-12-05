@@ -63,7 +63,7 @@ class WMBSHelperTest(unittest.TestCase):
         self.testInit.setupCouch("config_test", "GroupUser", "ConfigCache")
         os.environ["COUCHDB"] = "wmbshelper_t"
         self.testInit.setSchema(customModules = ["WMCore.WMBS",
-                                                 "WMComponent.DBSBuffer.Database",
+                                                 "WMComponent.DBS3Buffer",
                                                  "WMCore.BossAir",
                                                  "WMCore.ResourceControl"],
                                 useDefault = False)

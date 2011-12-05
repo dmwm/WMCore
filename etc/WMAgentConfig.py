@@ -139,7 +139,7 @@ config.DBSInterface.globalDBSVersion = globalDBSVersion
 config.DBSInterface.DBSBlockMaxSize = dbsMaxBlockSize
 config.DBSInterface.DBSBlockMaxFiles = dbsMaxBlockFiles
 config.DBSInterface.DBSBlockMaxTime = dbsBlockTimeout
-config.DBSInterface.MaxFilesToCommit = 10
+config.DBSInterface.MaxFilesToCommit = 200
 config.DBSInterface.doGlobalMigration = False
 
 config.component_("PhEDExInjector")

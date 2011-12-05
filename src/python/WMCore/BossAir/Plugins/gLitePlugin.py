@@ -19,12 +19,14 @@ import types
 import stat
 from copy import deepcopy
 
+from WMCore.Wrappers import JsonWrapper as json
 from WMCore.Credential.Proxy           import Proxy, CredentialException
 from WMCore.FwkJobReport.Report        import Report
-from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from WMCore.DAOFactory                 import DAOFactory
-from WMCore.BossAir.LoggingInfoParser  import LoggingInfoParser
 import WMCore.WMInit
+
+from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
+from WMCore.BossAir.LoggingInfoParser  import LoggingInfoParser
 
 def processWorker(input, results):
     """
@@ -46,7 +48,6 @@ def processWorker(input, results):
     # Get this started
     t1 = None
     jsout = None
-    myJSONDecoder = BossAirJsonDecoder()
 
     while True:
         type = ''
@@ -77,13 +78,11 @@ def processWorker(input, results):
 
         try:
             ## TODO: make this dynamic with a dictionary
-            if type == 'submit':
-                jsout = myJSONDecoder.decodeSubmit( stdout )
+            if type in ['submit', 'kill', 'output']:
+                jsout = json.loads( stdout )
             elif type == 'status':
                 jsout = stdout
                 #myJSONDecoder.decodeStatus( stdout )
-            elif type == 'output':
-                jsout = stdout
             else:
                 jsout = stdout
         except ValueError, val:
@@ -521,16 +520,6 @@ class gLitePlugin(BasePlugin):
                 logging.error(error)
                 logging.error("Exit code %s" % str(exit) )
                 reporterror = 'Command stdout\n%s\nCommand stderr\n%s\nExit code %s' % (str(jsout), str(error), str(exit))
-            # {
-            #  result: success
-            #  parent: https://XYZ
-            #  endpoint: https://X
-            #  children: {
-            #             NodeName_1_0: https://ABC
-            #             NodeName_2_0: https://DEF
-            #             NodeName_3_0: https://GHI
-            #            }
-            # }
             if jsout is not None:
                 parent   = ''
                 endpoint = ''
@@ -560,6 +549,7 @@ class gLitePlugin(BasePlugin):
                         self.fakeReport("SubmissionFailure", reporterror, -1, job, putReportInJob = True)
                     continue
                 if jsout.has_key('children'):
+                    logging.info("WMS endpoint used: %s" % jsout["endpoint"])
                     jobnames = jsout['children'].keys()
                     for jj in jobsub:
                         jobnamejdl = 'Job_%i_%s' % (jj['id'], jj['retry_count'])
@@ -736,10 +726,10 @@ class gLitePlugin(BasePlugin):
                 for jj in jobs:
                     status = None
                     if jj['gridid'] in out.keys():
-                        logging.debug("Job scheduler id: %s " % (jj['gridid']))
                         jobStatus   = out[jj['gridid']]
                         status      = jobStatus['statusScheduler']
                         destination = jobStatus['destination']
+                        logging.debug("Job %s is %s @%s" % (jj['gridid'], status, destination))
 
                         if 'lbTimestamp' in jobStatus:
                             jj['status_time'] = jobStatus['lbTimestamp']
@@ -873,23 +863,9 @@ class gLitePlugin(BasePlugin):
                         break
                 continue
             else:
-                # parse JSON output, but is not a correct json format, so don't do it!
-                out = json
-
-                ### out example
-                # {
-                # result: success
-                # endpoint: https://wms202.cern.ch:7443/glite_wms_wmproxy_server
-                # jobid: https://wms202.cern.ch:9000/MwNUhRUsC2HaSfCFzxETVw {
-                # No output files to be retrieved for the job:
-                # https://wms202.cern.ch:9000/MwNUhRUsC2HaSfCFzxETVw
-                #
-                # }
-                #}
-
                 if jsout is not None:
                     jobid    = workqueued[workid]
-                    if jsout.find('success') != -1:
+                    if 'result' in jsout and jsout['result'] == 'success':
                         completedJobs.append(jobid)
                     else:
                         failedJobs.append(jobid)
@@ -1122,11 +1098,11 @@ class gLitePlugin(BasePlugin):
                         self.fakeReport("KillFailure", msg, -1, jj)
                         break
                 continue
-            elif jsout.find('success') != -1:
+            elif "result" in jsout and jsout["result"] == "success":
                 logging.debug('Success killing %s' % str(workqueued[workid]))
                 completedJobs.append(workqueued[workid])
             else:
-                logging.error('Error success != -1')
+                logging.error('Error killing job %s ' % str(workqueued[workid]))
                 failedJobs.append(workqueued[workid])
                 for jj in jobs:
                     if jj['jobid'] == workqueued[workid]:
@@ -1444,42 +1420,3 @@ class gLitePlugin(BasePlugin):
         if timeleft is not None and timeleft > 0:
             return (True, proxyPath)
         return (False, None)
-
-
-# manage json library using the appropriate WMCore wrapper
-from WMCore.Wrappers import JsonWrapper as json
-
-##########################################################################
-
-class BossAirJsonDecoder(json.JSONDecoder):
-    """
-    Override JSON decode
-    """
-
-    def __init__(self):
-
-        # call super
-        super(BossAirJsonDecoder, self).__init__()
-
-        # cache pattern to optimize reg-exp substitution
-        self.pattern1 = re.compile('([^ \t\n\r\f\v\{\}]+)\s')
-        self.pattern2 = re.compile(':"(["|\{])')
-        self.pattern3 = re.compile('"[\s]*"')
-
-    def decodeSubmit(self, jsonString):
-        """
-        specialized method to decode JSON output of glite-wms-job-submit
-        """
-
-        # pre-processing the string before decoding
-        toParse = jsonString.replace( '\n' , ' ' )
-        toParse = self.pattern1.sub(r'"\1"', toParse )
-        toParse = self.pattern2.sub(r'":\1', toParse )
-        toParse = self.pattern3.sub(r'","', toParse )
-
-        parsedJson = self.decode(toParse)
-
-        return parsedJson
-
-##########################################################################
-

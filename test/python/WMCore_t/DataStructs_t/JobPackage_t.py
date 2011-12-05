@@ -41,7 +41,8 @@ class JobPackageTest(unittest.TestCase):
             newJob["id"] = i
             package[i] = newJob
 
-        assert len(package.keys()) == 100, \
+        # There is an extra key for the directory the package is stored in.
+        assert len(package.keys()) == 101, \
                "Error: Wrong number of jobs in package."
                
         for i in range(100):
@@ -74,7 +75,8 @@ class JobPackageTest(unittest.TestCase):
         newPackage = JobPackage()
         newPackage.load(self.persistFile)
 
-        assert len(newPackage.keys()) == 100, \
+        # There is an extra key for the directory the package is stored in.
+        assert len(newPackage.keys()) == 101, \
                "Error: Wrong number of jobs in package."
 
         for i in range(100):
@@ -114,7 +116,8 @@ class JobPackageTest(unittest.TestCase):
         newPackage = JobPackage()
         newPackage.load(self.persistFile)
 
-        assert len(newPackage.keys()) == 100, \
+        # There is an extra key for the directory the package is stored in.
+        assert len(newPackage.keys()) == 101, \
                "Error: Wrong number of jobs in package."
 
         for i in range(100):

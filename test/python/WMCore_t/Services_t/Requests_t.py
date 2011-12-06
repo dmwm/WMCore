@@ -17,7 +17,7 @@ from WMCore.DataStructs.Run import Run
 from WMCore.DataStructs.Mask import Mask
 from WMCore.DataStructs.Job import Job
 from WMCore.Services.Requests import JSONRequests
-from WMCore.WMBS.Job import Job as WMBSJob
+from WMCore.DataStructs.Job import Job as DataStructsJob
 from WMQuality.TestInit import TestInit
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
@@ -211,11 +211,6 @@ class testJSONRequests(unittest.TestCase):
     def setUp(self):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        if not os.getenv('DATABASE', False):
-            # We don't care what the database is for these tests, so use an in
-            # memory sqlite one if none is configured.
-            os.environ['DATABASE'] = 'sqlite://'
-        self.testInit.setDatabaseConnection()
         tmp = self.testInit.generateWorkDir()
         self.request = Requests.JSONRequests(idict={'req_cache_path' : tmp})
 
@@ -295,14 +290,14 @@ class testJSONRequests(unittest.TestCase):
         mymask = Mask()
         mymask['FirstEvent'] = 9999
         mymask['LastEvent'] = 999
-        myjob = WMBSJob()
+        myjob = DataStructsJob()
         myjob["mask"] = mymask
         self.roundTripLax(myjob)
 
     @runboth
     def testMask6(self):
         mymask = Mask()
-        myjob = WMBSJob()
+        myjob = DataStructsJob()
         myjob["mask"] = mymask
         self.roundTripLax(myjob)
 

@@ -276,6 +276,9 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.jsonSender.put('campaign/%s/%s' % ('TestCampaign', requestName))
         requestsInCampaign = self.jsonSender.get('campaign/%s' % 'TestCampaign')[0]
         self.assertTrue(requestName in requestsInCampaign.keys())
+
+        req = self.jsonSender.get('request/%s' % requestName)[0]
+        self.assertEqual(req['Campaign'], 'TestCampaign')
         self.jsonSender.delete('request/%s' % requestName)
         return
 

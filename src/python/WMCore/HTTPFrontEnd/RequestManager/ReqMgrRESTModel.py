@@ -474,7 +474,12 @@ class ReqMgrRESTModel(RESTModel):
         if request:
             requestID = GetRequest.requestID(request)
             if requestID:
-                return Campaign.associateCampaign(campaign, requestID)
+                result = Campaign.associateCampaign(campaign, requestID)
+                Utilities.associateCampaign(campaign = campaign,
+                                            requestName = request,
+                                            couchURL = self.couchUrl,
+                                            couchDBName = self.workloadDBName)
+                return result
             else:
                 return False
         else:

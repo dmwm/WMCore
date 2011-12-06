@@ -355,6 +355,7 @@ def requestDetails(requestName):
     schema['Site Blacklist']  = task.siteBlacklist()
     schema['MergedLFNBase']   = str(helper.getMergedLFNBase())
     schema['UnmergedLFNBase'] = str(helper.getUnmergedLFNBase())
+    schema['Campaign']        = str(helper.getCampaign())
     return schema
 
 def serveFile(contentType, prefix, *args):
@@ -374,3 +375,17 @@ def getOutputForRequest(requestName):
     helper = loadWorkload(request)
     return helper.listOutputDatasets()
 
+def associateCampaign(campaign, requestName, couchURL, couchDBName):
+    """
+    _associateCampaign_
+
+    Associate a campaign and a request inside the workloadSpec
+    This is done by loading the workloadSpec from couch, modifying the
+    campaign, and saving it again.
+    """
+    WMCore.Lexicon.identifier(requestName)
+    request = GetRequest.getRequestDetails(requestName)
+    helper = loadWorkload(request)
+    helper.setCampaign(campaign = campaign)
+    helper.saveCouch(couchUrl = couchURL, couchDBName = couchDBName)
+    return   

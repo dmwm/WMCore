@@ -78,6 +78,8 @@ class RequestHandler(object):
             url = url + '?' + encoded_data
         if  post:
             curl.setopt(pycurl.POST, 1)
+            if params:
+                curl.setopt(pycurl.POSTFIELDS, params)
         curl.setopt(pycurl.URL, url)
         curl.setopt(pycurl.HTTPHEADER, \
                 ["%s: %s" % (k, v) for k, v in headers.items()])

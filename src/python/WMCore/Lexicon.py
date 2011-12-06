@@ -122,6 +122,16 @@ def primdataset(candidate):
         return candidate
     return check(r'^[a-zA-Z][a-zA-Z0-9\-_]*$', candidate)
 
+
+def hnName(candidate):
+    """
+    Use lfn parts definitions to validate a simple HN name
+    """
+
+    validName = '^%(hnName)s$' % lfnParts
+    return check(validName, candidate)
+
+
 def lfn(candidate):
     """
     Should be of the following form:

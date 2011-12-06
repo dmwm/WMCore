@@ -212,6 +212,17 @@ class LexiconTest(unittest.TestCase):
         for notok in ['agent86@control.fnal.gov:5984', 'http:/localhost:443', 'http://www.myspace.com']:
             self.assertRaises(AssertionError, couchurl, notok)
 
+    def testHNName(self):
+        """
+        _testHNName_
+
+        Test the HN name checker
+        """
+
+        hnName('ewv2')
+        hnName('m.cinquilli')
+        self.assertRaises(AssertionError, hnName, 'invalid-user')
+
     def testLFN(self):
         """
         _testLFN_

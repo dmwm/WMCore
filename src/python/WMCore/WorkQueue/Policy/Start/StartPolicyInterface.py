@@ -118,14 +118,16 @@ class StartPolicyInterface(PolicyInterface):
             # Hacky way of identifying non-existant data, DbsBadRequest chomped by DBSReader
             # DbsConnectionError: Database exception,Invalid parameters thrown by Summary api
             if 'DbsBadRequest' in str(ex) or 'Invalid parameters' in str(ex):
-                msg = """data: %s: %s.""" % (str(task.inputDataset().pythonise_()), str(ex))
+                data = task.data.input.pythonise_() if task.data.input else 'None'
+                msg = """data: %s: mask %s. %s""" % (str(data), str(mask), str(ex))
                 error = WorkQueueNoWorkError(self.wmspec, msg)
                 raise error
             raise # propagate other dbs errors
 
         # if we have no elements then there was no work in the spec, fail it
         if not self.workQueueElements:
-            msg = """data: %s, mask: %s.""" % (str(task.inputDataset().pythonise_()), str(mask))
+            data = task.data.input.pythonise_() if task.data.input else 'None'
+            msg = """data: %s, mask: %s.""" % (str(data), str(mask))
             error = WorkQueueNoWorkError(self.wmspec, msg)
             raise error
         return self.workQueueElements

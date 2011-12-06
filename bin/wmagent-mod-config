@@ -61,7 +61,7 @@ def modifyConfiguration(config, **args):
     
     """
     mapping = {
-        "mysql_socket" : [("CoreDatabase", "socket") ],
+        "coredb_url" : [("CoreDatabase","connectUrl") ],
         "mysql_url" : [("CoreDatabase","connectUrl") ],
         "couch_url" : [("JobStateMachine", "couchurl"), ("ACDC", "couchurl"), ("WorkQueueManager", "couchurl"),
                        
@@ -91,7 +91,11 @@ def modifyConfiguration(config, **args):
     
     # hostname locations
     config.Agent.hostName = localhost
-    
+
+    if hasattr(config,"CoreDatabase"):
+        if args.get('mysql_socket'):
+            config.CoreDatabase.socket = args['mysql_socket']
+
     if hasattr(config,"WorkloadSummary"):
         splited = args["workload_summary_url"].strip().rstrip('/').rsplit('/', 1)
         config.WorkloadSummary.couchurl = args["couch_url"]
@@ -202,7 +206,7 @@ def main(argv=None):
     inputFile = None
     outputFile = None
     parameters = {}
-    
+
     try:
         try:
             opts, args = getopt.getopt(argv[1:], "h", 
@@ -211,7 +215,7 @@ def main(argv=None):
              "workqueue_db_name=", "cs_hostname=", "cs_port=", "host_dn=", "couch_url=",  
              "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=", 
              "ufc_service_url=", "ufc_cachedir=", "client_mapping=", "wmbs_service_port=",
-             "workload_summary_url="])
+             "workload_summary_url=", "coredb_url="])
 
         except getopt.error, msg:
             raise Usage(msg)
@@ -224,9 +228,9 @@ def main(argv=None):
                 outputFile = value
             if option == "--input":
                 inputFile = value
-            if option in ('--mysql_socket', '--mysql_url', '--couch_url', '--working_dir',
-                          "--reqmgr_hostname", "--reqmgr_port", '--global_workqueue_url',
-                          '--workqueue_db_name',
+            if option in ('--mysql_socket', '--mysql_url', '--coredb_url', '--couch_url',
+                          '--working_dir', '--reqmgr_hostname', '--reqmgr_port',
+                          '--global_workqueue_url', '--workqueue_db_name',
                           '--cs_hostname', '--cs_port', '--host_dn', '--couch_url', 
                           '--sb_hostname', '--sb_port', '--sb_basepath', '--ufc_hostname',
                           '--ufc_port', '--ufc_service_url', '--ufc_cachedir',
@@ -239,7 +243,7 @@ def main(argv=None):
         print >> sys.stderr, sys.argv[0].split("/")[-1] + ": " + str(err.msg)
         print >> sys.stderr, "\t for help use --help"
         return 2
-        
+
     try:
         cfg = importConfigTemplate(inputFile)
     except Exception, ex:

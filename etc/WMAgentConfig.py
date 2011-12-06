@@ -20,6 +20,7 @@ wmbsServicePort = 9997
 # The work directory and database need to be separate from the ReqMgr
 # installation.
 workDirectory = "WMAGENT WORK DIR"
+databaseUrl = "oracle://DBUSER:DBPASSWORD@TNSNAME"
 databaseUrl = "mysql://DBUSER:DBSPASSWORD@localhost/WMAgentDB"
 databaseSocket = "/opt/MySQL-5.1/var/lib/mysql/mysql.sock"
 
@@ -102,8 +103,8 @@ config.BossAir.nCondorProcesses = 1
 config.BossAir.multicoreTaskTypes = ["MultiProcessing", "MultiProduction"]
 
 config.section_("CoreDatabase")
-config.CoreDatabase.socket = databaseSocket
 config.CoreDatabase.connectUrl = databaseUrl
+#config.CoreDatabase.socket = databaseSocket
 
 config.component_("DashboardReporter")
 config.DashboardReporter.namespace = "WMComponent.DashboardReporter.DashboardReporter"

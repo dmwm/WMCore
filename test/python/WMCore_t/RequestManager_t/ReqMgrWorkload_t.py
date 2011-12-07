@@ -568,6 +568,10 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                                         CMSSWVersion = CMSSWVersion,
                                         typename = "MonteCarlo")
 
+        # Set some versions
+        schema['ProcessingVersion'] = 'pv2012'
+        schema['AcquisitionEra']    = 'ae2012'
+
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
@@ -603,6 +607,8 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], CMSSWVersion)
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
+        self.assertEqual(request['ProcessingVersion'], schema['ProcessingVersion'])
+        self.assertEqual(request['AcquisitionEra'], schema['AcquisitionEra'])
 
         return
 

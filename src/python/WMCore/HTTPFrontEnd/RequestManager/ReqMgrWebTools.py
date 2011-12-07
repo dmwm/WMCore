@@ -356,6 +356,7 @@ def requestDetails(requestName):
     schema['MergedLFNBase']   = str(helper.getMergedLFNBase())
     schema['UnmergedLFNBase'] = str(helper.getUnmergedLFNBase())
     schema['Campaign']        = str(helper.getCampaign())
+    schema['AcquisitionEra']  = str(helper.getAcquisitionEra())
     return schema
 
 def serveFile(contentType, prefix, *args):

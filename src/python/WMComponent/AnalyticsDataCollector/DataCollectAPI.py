@@ -49,7 +49,7 @@ class LocalCouchDBData():
         options = {"group": True, "stale": "ok"}
         # site of data should be relatively small (~1M) for put in the memory 
         # If not, find a way to stream
-        results = self.couchDB.loadView("JobDump", "jobStatusByWork",
+        results = self.couchDB.loadView("JobDump", "jobStatusByWorkflowAndSite",
                                         options)
 
         # reformat the doc to upload to reqmon db
@@ -92,7 +92,7 @@ class WMAgentDBData():
                                      logger = logger, dbinterface = dbi)
         
         self.batchJobAction = bossAirDAOFactory(classname = "JobStatusByWorkflowAndSite")
-        self.jobSlotAction = bossAirDAOFactory(classname = "GetJobSlotsByCMSName")
+        self.jobSlotAction = bossAirDAOFactory(classname = "Locations.GetJobSlotsByCMSName")
         self.componentStatusAction = wmAgentDAOFactory(classname = "CheckComponentStatus")
 
     def getHeartBeatWarning(self, agentURL, acdcLink):

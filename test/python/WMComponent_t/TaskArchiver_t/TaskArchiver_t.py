@@ -65,7 +65,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
+        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMComponent.DBS3Buffer"],
                                 useDefault = False)
         self.databaseName = "taskarchiver_t_0"
         self.testInit.setupCouch("%s/workloadsummary" % self.databaseName, "WorkloadSummary")

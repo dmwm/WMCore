@@ -86,6 +86,10 @@ class AnalysisWorkloadFactory(StdBase):
         logCollectTask = self.addLogCollectTask(analysisTask)
         logCollectStep = logCollectTask.getStep('logCollect1')
 
+        stageOut = analysisTask.getStep('stageOut1')
+        stageOutHelper = stageOut.getTypeHelper()
+        stageOutHelper.setMinMergeSize(1, 1)
+
         if not self.saveLogs:
             logCollectStep.addOverride('dontStage', True)
         else:
@@ -169,6 +173,7 @@ class AnalysisWorkloadFactory(StdBase):
 
         self.asyncDest = arguments.get("asyncDest", "T1_US_FNAL_Buffer")
         self.publishName = arguments.get("PublishDataName", str(int(time.time())))
+        self.minMergeSize = 1 # arguments.get("MinMergeSize", 1)
         self.acquisitionEra = self.publishName
         self.owner_vogroup = arguments.get("VoGroup", '')
         self.owner_vorole = arguments.get("VoRole", '')

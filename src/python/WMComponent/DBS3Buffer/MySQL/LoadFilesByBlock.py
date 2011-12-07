@@ -14,7 +14,7 @@ from WMComponent.DBS3Buffer.MySQL.LoadDBSFilesByDAS import LoadDBSFilesByDAS as 
 
 class LoadFilesByBlock(MySQLLoadDBSFilesByDAS):
     fileInfoSQL = """SELECT files.id AS id, files.lfn AS lfn, files.filesize AS filesize,
-                    files.events AS events, 
+                    files.events AS events,
                     files.status AS status,
                     dbsbuffer_algo.app_name AS app_name, dbsbuffer_algo.app_ver AS app_ver,
                     dbsbuffer_algo.app_fam AS app_fam, dbsbuffer_algo.pset_hash AS pset_hash,
@@ -29,7 +29,7 @@ class LoadFilesByBlock(MySQLLoadDBSFilesByDAS):
                dbsbuffer_algo_dataset_assoc.algo_id = dbsbuffer_algo.id
              INNER JOIN dbsbuffer_dataset ON
                dbsbuffer_algo_dataset_assoc.dataset_id = dbsbuffer_dataset.id
-             WHERE files.block_id = (SELECT id FROM dbsbuffer_block WHERE name = :block)
+             WHERE files.block_id = (SELECT id FROM dbsbuffer_block WHERE blockname = :block)
              ORDER BY files.id"""
 
     def execute(self, blockname, conn = None, transaction = False):
@@ -39,7 +39,7 @@ class LoadFilesByBlock(MySQLLoadDBSFilesByDAS):
         It has no defenses against loading files with unloaded parents.
         It depends on nobody but LoadDBSFilesByDAS putting files into a block
         """
-        result   = self.dbi.processData(self.fileInfoSQL, {'block': blockname}, 
+        result   = self.dbi.processData(self.fileInfoSQL, {'block': blockname},
                                         conn = conn,
                                         transaction = transaction)
         fileInfo = self.formatFileInfo(result)
@@ -83,8 +83,8 @@ class LoadFilesByBlock(MySQLLoadDBSFilesByDAS):
                                         conn = conn,
                                         transaction = transaction)
         parInfo  = self.parentInfo(result)
-        fullResults = self.merge(fullResults, parInfo)        
-        
+        fullResults = self.merge(fullResults, parInfo)
+
 
 
         return fullResults

@@ -302,7 +302,7 @@ class StdBase(object):
             else:
                 unmergedLFN = "%s/%s/%s/%s" % (self.unmergedLFNBase, primaryDataset,
                                                self.acquisitionEra, self.processingVersion)
-            mergedLFN = None
+            mergedLFN = unmergedLFN
             lfnBase(unmergedLFN)
         else:
             unmergedLFN = "%s/%s/%s/%s/%s" % (self.unmergedLFNBase, self.acquisitionEra,
@@ -459,42 +459,42 @@ class StdBase(object):
     def validateSchema(self, schema):
         """
         _validateSchema_
-        
+
         Validate the schema prior to building the workload
         This function should be overridden by individual specs
-        
+
         If something breaks, raise a WMSpecFactoryException.  A message
         in that excpetion will be transferred to an HTTP Error later on.
         """
         return
-    
+
     def validateWorkload(self, workload):
         """
         _validateWorkload_
-        
+
         Just in case you have something that you want to validate
         after the workload gets created, this is where you should
         put it.
-        
+
         If something breaks, raise a WMSpecFactoryException.  A message
         in that excpetion will be transferred to an HTTP Error later on.
         """
         return
-    
+
     def factoryWorkloadConstruction(self, workloadName, arguments):
         """
         _factoryWorkloadConstruction_
-        
+
         Master build for ReqMgr - builds the entire workload
         and also performs the proper validation.
-        
+
         Named this way so that nobody else will try to use this name.
         """
-        
+
         self.validateSchema(schema = arguments)
         workload = self.__call__(workloadName = workloadName, arguments = arguments)
         self.validateWorkload(workload)
-        
+
         return workload
 
     def requireValidateFields(self, fields, schema, validate = False):
@@ -548,8 +548,8 @@ class StdBase(object):
             configCache.loadByID(configID = configID)
         except ConfigCacheException, ex:
             self.raiseValidationException(msg = "Failure to load ConfigCache while validating workload")
-            
+
         if getOutputModules:
             return configCache.getOutputModuleInfo()
-        
+
         return

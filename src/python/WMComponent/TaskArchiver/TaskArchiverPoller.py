@@ -25,11 +25,14 @@ histogramLimit: Limit in terms of number of standard deviations from the
 """
 __all__ = []
 
+import json
+import logging
 import math
 import os.path
+import pickle
 import shutil
+import tarfile
 import threading
-import logging
 import traceback
 import time
 
@@ -46,6 +49,7 @@ from WMCore.DataStructs.Run     import Run
 from WMCore.DataStructs.Mask    import Mask
 from WMCore.Algorithms          import MathAlgos
 from WMCore.Lexicon             import sanitizeURL
+from WMCore.WMSpec.WMWorkload   import WMWorkloadHelper
 
 from WMComponent.JobCreator.CreateWorkArea   import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
@@ -61,12 +65,31 @@ class TaskArchiverPollerException(WMException):
     As if you couldn't tell that already
     """
 
+
+
+class FileEncoder(json.JSONEncoder):
+    """
+    JSON encoder to transform sets to lists and handle any object with a __to_json__ method
+    """
+
+    def default(self, obj):
+        """
+        Redefine JSONEncoder default method
+        """
+        if hasattr(obj, '__to_json__'):
+            return obj.__to_json__()
+        elif isinstance(obj, set):
+            return list(obj)
+        return json.JSONEncoder.default(self, obj)
+
+
+
 class TaskArchiverPoller(BaseWorkerThread):
     """
     Polls for Ended jobs
 
     List of attributes
-    
+
     requireCouch:  raise an exception on couch failure instead of ignoring
     """
     def __init__(self, config):
@@ -82,7 +105,7 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         self.config      = config
         self.jobCacheDir = self.config.JobCreator.jobCacheDir
-        
+
         if getattr(self.config.TaskArchiver, "useWorkQueue", False) != False:
             # Get workqueue setup from config unless overridden
             if hasattr(self.config.TaskArchiver, 'WorkQueueParams'):
@@ -93,9 +116,10 @@ class TaskArchiverPoller(BaseWorkerThread):
         else:
             self.workQueue = None
 
-        self.timeout         = getattr(self.config.TaskArchiver, "timeOut", 0)
-        self.nOffenders      = getattr(self.config.TaskArchiver, 'nOffenders', 3)
-        self.deleteCouchData = getattr(self.config.TaskArchiver, 'deleteCouchData', True)
+        self.timeout           = getattr(self.config.TaskArchiver, "timeOut", 0)
+        self.nOffenders        = getattr(self.config.TaskArchiver, 'nOffenders', 3)
+        self.deleteCouchData   = getattr(self.config.TaskArchiver, 'deleteCouchData', True)
+        self.uploadPublishInfo = getattr(self.config.TaskArchiver, 'uploadPublishInfo', False)
 
         # Set up optional histograms
         self.histogramKeys  = getattr(self.config.TaskArchiver, "histogramKeys", [])
@@ -112,11 +136,11 @@ class TaskArchiverPoller(BaseWorkerThread):
             jobDBName        = self.config.JobStateMachine.couchDBName
             self.jobCouchdb  = CouchServer(jobDBurl)
             self.workCouchdb = CouchServer(workDBurl)
-            
+
             self.jobsdatabase = self.jobCouchdb.connectDatabase("%s/jobs" % jobDBName)
             self.fwjrdatabase = self.jobCouchdb.connectDatabase("%s/fwjrs" % jobDBName)
             self.workdatabase = self.workCouchdb.connectDatabase(workDBName)
-            
+
             logging.debug("Using url %s/%s for job" % (jobDBurl, jobDBName))
             logging.debug("Writing to  %s/%s for workloadSummary" % (sanitizeURL(workDBurl)['url'], workDBName))
             self.requireCouch = getattr(self.config.TaskArchiver, 'requireCouch', False)
@@ -128,11 +152,11 @@ class TaskArchiverPoller(BaseWorkerThread):
             self.fwjrdatabase = None
             if getattr(self.config.TaskArchiver, 'requireCouch', False):
                 raise TaskArchiverPollerException(msg)
-            
+
         # initialize the alert framework (if available)
         self.initAlerts(compName = "TaskArchiver")
         return
-    
+
 
     def terminate(self, params):
         """
@@ -145,7 +169,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         return
 
 
-    
+
 
     def algorithm(self, parameters = None):
         """
@@ -176,7 +200,7 @@ class TaskArchiverPoller(BaseWorkerThread):
     def archiveTasks(self):
         """
         _archiveTasks_
-        
+
         archiveTasks will handle the master task of looking for finished subscriptions,
         checking to see if they've finished, and then notifying the workQueue and
         finishing things up.
@@ -194,13 +218,13 @@ class TaskArchiverPoller(BaseWorkerThread):
             self.killSubscriptions(doneSubs)
         else:
             self.killSubscriptions(subList)
-            
+
         return
 
     def findFinishedSubscriptions(self):
         """
         _findFinishedSubscriptions_
-        
+
         Figures out which one of the subscriptions is actually finished.
         """
         subList = []
@@ -225,16 +249,16 @@ class TaskArchiverPoller(BaseWorkerThread):
     def notifyWorkQueue(self, subList):
         """
         _notifyWorkQueue_
-        
+
         Tells the workQueue component that a particular subscription,
         or set of subscriptions, is done.  Receives confirmation
         """
 
         if len(subList) < 1:
             return []
-        
+
         subIDs = []
-        
+
         for sub in subList:
             try:
                 self.workQueue.doneWork(SubscriptionId = sub['id'])
@@ -249,12 +273,12 @@ class TaskArchiverPoller(BaseWorkerThread):
                 self.sendAlert(1, msg = msg)
 
         return subIDs
-    
+
 
     def killSubscriptions(self, doneList):
         """
         _killSubscriptions_
-        
+
         Actually dump the subscriptions
         """
         for sub in doneList:
@@ -263,6 +287,8 @@ class TaskArchiverPoller(BaseWorkerThread):
                 sub.load()
                 sub['workflow'].load()
                 wf = sub['workflow']
+                if self.uploadPublishInfo:
+                    self.createAndUploadPublish(wf)
                 sub.deleteEverything()
                 workflow = sub['workflow']
 
@@ -270,10 +296,10 @@ class TaskArchiverPoller(BaseWorkerThread):
                     # Then there are other subscriptions attached
                     # to the workflow
                     continue
-                
+
                 # If we deleted the workflow, it's time to delete
                 # the work directories
-                    
+
                 # Now we have to delete the task area.
                 workDir, taskDir = getMasterName(startDir = self.jobCacheDir,
                                                  workflow = workflow)
@@ -307,11 +333,11 @@ class TaskArchiverPoller(BaseWorkerThread):
                     msg += str(ex)
                     msg += "There will be NO workflow summary for this task"
                     raise TaskArchiverPollerException(msg)
-                
+
                 # Then pull its info from couch and archive it
                 self.archiveCouchSummary(workflow = workflow, spec = spec)
                 self.deleteWorkflowFromCouch(workflowName = workflow.task.split('/')[1])
-                
+
                 # Now take care of the sandbox
                 sandbox  = getattr(wmTask.data.input, 'sandbox', None)
                 if sandbox:
@@ -383,8 +409,8 @@ class TaskArchiverPoller(BaseWorkerThread):
             # Keep going
             logging.error("ACDC info missing from config.  Skipping this step in the workflow summary.")
             logging.debug("Error: %s" % str(ex))
-    
-            
+
+
 
         # Attach output
         workflowData['output'] = {}
@@ -514,7 +540,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                 output = {'jobTime': []}
                 final[stepName] = {}
                 masterList = []
-                
+
                 # For each step put the data into a dictionary called output
                 # keyed by the name of the value
                 for row in taskList[taskName][stepName]:
@@ -586,10 +612,54 @@ class TaskArchiverPoller(BaseWorkerThread):
                                                                'log': x.get('logArchive', None),
                                                                'logCollect': x.get('logCollect', None)} for x in offenders]
 
-                        
+
             finalTask[taskName] = final
         return finalTask
 
+
+    def createAndUploadPublish(self, workflow):
+        """
+        Write out and upload to the UFC a JSON file
+        with all the info needed to publish this dataset later
+        """
+
+        workDir, taskDir = getMasterName(startDir=self.jobCacheDir, workflow=workflow)
+
+        # Skip tasks ending in LogCollect, they have nothing interesting.
+        taskNameParts = workflow.task.split('/')
+        if taskNameParts.pop() in ['LogCollect']:
+            logging.debug('Skipping LogCollect task')
+            return False
+        logging.info('Generating JSON for publication of %s of type %s' % (workflow.name, workflow.wfType))
+
+        myThread = threading.currentThread()
+
+        dbsDaoFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
+                                   logger = myThread.logger, dbinterface = myThread.dbi)
+        findFiles = dbsDaoFactory(classname = "LoadFilesByWorkflow")
+
+        # Fetch and filter the files to the ones we actually need
+        uploadDatasets = {}
+        uploadFiles = findFiles.execute(workflowName = workflow.name)
+        for file in uploadFiles:
+            datasetName = file['datasetPath']
+            if not uploadDatasets.has_key(datasetName):
+                uploadDatasets[datasetName] = []
+            uploadDatasets[datasetName].append(file)
+
+        if not uploadDatasets:
+            return False
+
+        # Write JSON file and then create tarball with it
+        jsonName = os.path.join(workDir, '%s_publish.json' % workflow.name)
+        tgzName  = os.path.join(workDir, '%s_publish.tgz'  % workflow.name)
+        with open(jsonName, 'w') as jsonFile:
+            json.dump(uploadDatasets, fp=jsonFile, cls=FileEncoder, indent=2)
+
+        # Only in 2.7 does tarfile become usable as context manager
+        tgzFile = tarfile.open(name=tgzName, mode='w:gz')
+        tgzFile.add(jsonName)
+        tgzFile.close()
 
 
     def deleteWorkflowFromCouch(self, workflowName):
@@ -618,12 +688,12 @@ class TaskArchiverPoller(BaseWorkerThread):
         jobs = self.fwjrdatabase.loadView("FWJRDump", "fwjrsByWorkflowName",
                                           options = {"startkey": [workflowName],
                                                      "endkey": [workflowName, {}]})['rows']
-        
+
         for j in jobs:
             id  = j['value']['id']
             rev = j['value']['rev']
             self.fwjrdatabase.delete_doc(id = id, rev = rev)
 
         return
-    
-    
+
+

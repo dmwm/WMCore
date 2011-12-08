@@ -7,6 +7,7 @@ __all__ = []
 
 import threading
 import logging
+import time
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import LocalCouchDBData, \
@@ -69,6 +70,7 @@ class AnalyticsPoller(BaseWorkerThread):
             tempCombinedData = combineAnalyticsData(jobInfoFromCouch, batchJobInfo)
             combinedRequests = combineAnalyticsData(tempCombinedData, localQInfo['status'])
             requestDocs = []
+            uploadTime = int(time.time())
             for request, status in combinedRequests.items():
                 doc = {}
                 doc.update(self.agentInfo)
@@ -78,8 +80,9 @@ class AnalyticsPoller(BaseWorkerThread):
                 tempData = convertToStatusSiteFormat(status)
                 doc['status'] = tempData['status']
                 doc['sites'] = tempData['sites']
-                
+                doc['timestamp'] = uploadTime
                 #TODO: need to handle the case localqueue is deleted before couch db
+                #This should be updated by reqmgr which will always have the record.
                 if request in localQInfo['input_dataset']:
                     doc['input_dataset'] = localQInfo['input_dataset'][request] 
                 requestDocs.append(doc)

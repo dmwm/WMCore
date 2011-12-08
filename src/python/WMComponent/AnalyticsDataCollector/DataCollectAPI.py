@@ -92,7 +92,7 @@ class WMAgentDBData():
                                      logger = logger, dbinterface = dbi)
         
         self.batchJobAction = bossAirDAOFactory(classname = "JobStatusByWorkflowAndSite")
-        self.jobSlotAction = bossAirDAOFactory(classname = "Locations.GetJobSlotsByCMSName")
+        self.jobSlotAction = wmbsDAOFactory(classname = "Locations.GetJobSlotsByCMSName")
         self.componentStatusAction = wmAgentDAOFactory(classname = "CheckComponentStatus")
 
     def getHeartBeatWarning(self, agentURL, acdcLink):

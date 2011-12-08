@@ -80,8 +80,8 @@ class AnalyticsPoller(BaseWorkerThread):
                 doc['sites'] = tempData['sites']
                 
                 #TODO: need to handle the case localqueue is deleted before couch db
-                # if localQInfo['input_dataset'].has_key(request)
-                doc['input_dataset'] = localQInfo['input_dataset'][request] 
+                if request in localQInfo['input_dataset']:
+                    doc['input_dataset'] = localQInfo['input_dataset'][request] 
                 requestDocs.append(doc)
             self.reqMonCouchDB.uploadData(requestDocs)
 

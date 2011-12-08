@@ -27,7 +27,6 @@ class LocalCouchDBData():
         # set the connection for local couchDB call
         self.couchURL = couchURL
         self.couchURLBase, self.dbName = splitCouchServiceURL(couchURL)
-        logging.info("connect couch %s:  %s" % (self.couchURLBase, self.dbName))
         self.couchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/jobs", False)
         
     def getJobSummaryByWorkflowAndSite(self):
@@ -42,8 +41,8 @@ class LocalCouchDBData():
             {"key":['request_name1", "success", "siteB"],"value":100}\
          ]}
          and convert to 
-         {'request_name1': {'queue_first'; { 'siteA': 100}}
-          'request_name1': {'queue_first'; { 'siteB': 100}}
+         {'request_name1': {'queue_first': { 'siteA': 100}}
+          'request_name1': {'queue_first': { 'siteB': 100}}
          }
         """
         options = {"group": True, "stale": "ok"}
@@ -55,9 +54,11 @@ class LocalCouchDBData():
         # reformat the doc to upload to reqmon db
         data = {}
         for x in results.get('rows', []):
-            data[x['key'][0]].setdefault(x['key'][1], {})
-            data[x['key'][0]][['key'][1]][x['key'][2]] = x['value']
-                                          
+            data.setdefault(x['key'][0], {})
+            data[x['key'][0]].setdefault(x['key'][1], {}) 
+            #data[x['key'][0]][x['key'][1]].setdefault(x['key'][2], {})
+            data[x['key'][0]][x['key'][1]][x['key'][2]] = x['value'] 
+        logging.info("Found %i requests" % len(data))
         return data
 
 @emulatorHook

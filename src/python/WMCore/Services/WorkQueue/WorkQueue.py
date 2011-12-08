@@ -80,7 +80,7 @@ class WorkQueue(object):
         """
         This getInject status and input dataset from workqueue
         """
-        results = self.db.loadView('WorkQueue', 'analyticData',
+        results = self.db.loadView('WorkQueue', 'analyticsData',
                                 {'reduce' : True, 'group' : True})
         statusByRequest = {}
         inputDataByRequest = {}

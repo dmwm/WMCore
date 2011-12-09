@@ -663,16 +663,12 @@ class gLitePlugin(BasePlugin):
 
             jobList = dnjobs.get(user, [])
             while len(jobList) > 0:
-                jobIds = []
-                ## TODO: try to avoid iterating over all the jobs
-                for jj in jobList:
-                    jobIds.append( jj['gridid'] )
-                formattedJobIds = ','.join(jobIds)
+                jobsReady = jobList[:self.trackmaxsize]
+                jobList   = jobList[self.trackmaxsize:]
+                formattedJobIds = ','.join([jj['gridid'] for jj in jobsReady])
                 ## TODO: understand how to solve the python 2.4
                 command = 'python2.4 %s --jobId=%s' % (cmdquerypath, \
                                                        formattedJobIds)
-                jobsReady = jobList[:self.trackmaxsize]
-                jobList   = jobList[self.trackmaxsize:]
                 logging.debug("Status check for %i jobs" %len(jobsReady))
                 workqueued[currentwork] = jobsReady
                 completecmd = 'source %s && export LD_LIBRARY_PATH=%s:$LD_LIBRARY_PATH && %s && %s' % (self.setupScript, self.manualenvprefix, exportproxy, command)

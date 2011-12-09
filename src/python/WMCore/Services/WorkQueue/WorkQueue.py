@@ -80,17 +80,14 @@ class WorkQueue(object):
         """
         This getInject status and input dataset from workqueue
         """
-        results = self.db.loadView('WorkQueue', 'analyticsData',
+        results = self.db.loadView('WorkQueue', 'jobInjectStatusByRequest',
                                 {'reduce' : True, 'group' : True})
         statusByRequest = {}
-        inputDataByRequest = {}
         for x in results.get('rows', []):
-            statusByRequest[x['key'][0]].setDefault(x['key'][2], 0)
-            statusByRequest[x['key'][0]][x['key'][2]] = x['value']
-            # assuming one input data per request
-            inputDataByRequest[x['key'][0]] =  x['key'][1]
+            statusByRequest.setdefault(x['key'][0], {}) 
+            statusByRequest[x['key'][0]][x['key'][1]] = x['value']
             
-        return {'status': statusByRequest, 'input_dataset': inputDataByRequest}
+        return statusByRequest
 
     def getSiteWhitelistByRequest(self):
         """

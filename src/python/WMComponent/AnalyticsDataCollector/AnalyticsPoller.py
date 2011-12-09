@@ -68,7 +68,7 @@ class AnalyticsPoller(BaseWorkerThread):
             
             # combine all the data from 3 sources
             tempCombinedData = combineAnalyticsData(jobInfoFromCouch, batchJobInfo)
-            combinedRequests = combineAnalyticsData(tempCombinedData, localQInfo['status'])
+            combinedRequests = combineAnalyticsData(tempCombinedData, localQInfo)
             requestDocs = []
             uploadTime = int(time.time())
             for request, status in combinedRequests.items():
@@ -81,11 +81,7 @@ class AnalyticsPoller(BaseWorkerThread):
                 doc['status'] = tempData['status']
                 doc['sites'] = tempData['sites']
                 doc['timestamp'] = uploadTime
-                #TODO: need to handle the case localqueue is deleted before couch db
-                #This should be updated by reqmgr which will always have the record.
-                if request in localQInfo['input_dataset']:
-                    doc['input_dataset'] = localQInfo['input_dataset'][request] 
-                requestDocs.append(doc)
+
             self.reqMonCouchDB.uploadData(requestDocs)
 
             #agent info (include job Slots for the sites)

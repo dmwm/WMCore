@@ -1,0 +1,2 @@
+WMCore release notes
+====================

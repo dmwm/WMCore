@@ -1,6 +1,7 @@
 from distutils.core import Command
 from distutils.command.build import build
 from distutils.command.install import install
+from distutils.spawn import spawn
 import os, sys, os.path, shutil
 from setup_dependencies import dependencies
 
@@ -178,8 +179,8 @@ def force_rebuild():
     This method forcibly removes the build area, so that all sub-system builds/installs start from
     a clean sheet.
     """
-    if os.path.exists('%s/build' % get_path_to_wmcore_root()):
-        shutil.rmtree('%s/build' % get_path_to_wmcore_root())
+    shutil.rmtree('%s/build' % get_path_to_wmcore_root(), True)
+    shutil.rmtree('%s/doc/build' % get_path_to_wmcore_root(), True)
 
 class BuildCommand(Command):
     """
@@ -208,6 +209,10 @@ class BuildCommand(Command):
         # Always do a rebuild
         force_rebuild()
 
+    def generate_docs (self):
+	os.environ["PYTHONPATH"] = "%s/build/lib:%s" % (get_path_to_wmcore_root(), os.environ["PYTHONPATH"])
+	spawn(['make', '-C', 'doc', 'html', 'PROJECT=%s' % self.system.lower()])
+
     def run (self):
         # Have to get the build command here and set force, as the build plugins only refer to the
         # build command, not what calls them. The following is taken from the Distribution class,
@@ -220,6 +225,7 @@ class BuildCommand(Command):
         cmd.force = self.force
         cmd.ensure_finalized()
         cmd.run()
+	self.generate_docs()
         self.distribution.have_run[command] = 1
 
 class InstallCommand(install):
@@ -248,6 +254,11 @@ class InstallCommand(install):
         # Set what actually gets installed
         self.distribution.packages, self.distribution.py_modules = things_to_build(self)
         self.distribution.data_files = list_static_files(dependencies[self.system])
+        docroot = "%s/doc/build/html" % get_path_to_wmcore_root()
+        for dirpath, dirs, files in os.walk(docroot):
+	    self.distribution.data_files.append(("doc%s" % dirpath[len(docroot):],
+	                                         ["%s/%s" % (dirpath, fname) for fname in files
+				                  if fname != '.buildinfo']))
         print_build_info(self)
         # Always do a rebuild
         force_rebuild()

@@ -211,8 +211,9 @@ class ChangeState(WMObject, WMConnectionBase):
 
             if job.get("fwjr", None):
                 # complete fwjr document
+                jobSummaryId = "%s-%s" % (job["name"], job["retry_count"])
                 job["fwjr"].setTaskName(job["task"])
-                fwjrDocument = {"_id": "%s-%s" % (job["id"], job["retry_count"]),
+                fwjrDocument = {"_id": jobSummaryId,
                                 "jobid": job["id"],
                                 "retrycount": job["retry_count"],
                                 "fwjr": job["fwjr"].__to_json__(None),
@@ -220,7 +221,7 @@ class ChangeState(WMObject, WMConnectionBase):
                 self.fwjrdatabase.queue(fwjrDocument, timestamp = True)
 
                 # building a summary of fwjr
-                logging.debug("Pushing job summary for job %s-%s" % (job["name"], job["retry_count"]) ) 
+                logging.debug("Pushing job summary for job %s" % jobSummaryId)
                 errmsgs = {}
                 inputs = []
                 for step in fwjrDocument["fwjr"]["steps"]:
@@ -232,7 +233,7 @@ class ChangeState(WMObject, WMConnectionBase):
                              'lfn': singlefile.get('lfn', None),
                              'location': singlefile.get('locations', None),
                              'checksums': singlefile.get('checksums', {})} for singlefile in job["fwjr"].getAllFiles() if singlefile ]
-                jobSummary = {"_id": "%s-%s" % (job["name"], job["retry_count"]),
+                jobSummary = {"_id": jobSummaryId,
                               "type": "jobsummary",
                               "retrycount": job["retry_count"],
                               "workflow": job["workflow"],

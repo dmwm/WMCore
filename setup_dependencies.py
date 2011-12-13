@@ -6,6 +6,7 @@ If a package ends with a + include all subpackages.
 """
 dependencies = {
                 'wmc-base':{
+			'bin': ['wmc-dist-patch', 'wmc-dist-unpatch'],
                         'packages' : ['WMCore.DataStructs'],
                         'modules': ['WMCore.WMFactory', 'WMCore.WMException', 'WMCore.Configuration',
                                     'WMCore.WMExceptions', 'WMCore.WMFactory', 'WMCore.Lexicon',

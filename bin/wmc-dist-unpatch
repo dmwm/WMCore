@@ -1,0 +1,8 @@
+#!/bin/sh
+# Script to unpatch the server area.  Simply clears out xbin/xlib/xpython
+# so the server will then pick up the files distributed with the RPM.
+
+R=${WMCORE_ROOT-$(dirname $(dirname $0))}
+[ X"$R" = X ] && { echo '$WMCORE_ROOT not set' 1>&2; exit 1; }
+[ -x $R/bin/wmc-dist-patch ] || { echo "$R does not appear to be the right place" 1>&2; exit 1; }
+exec rm -fr $R/x{lib,bin,python,data,doc}/{*,.??*}

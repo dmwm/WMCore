@@ -2,7 +2,8 @@ from distutils.core import Command
 from distutils.command.build import build
 from distutils.command.install import install
 from distutils.spawn import spawn
-import os, sys, os.path, shutil
+import re, os, sys, os.path, shutil
+from glob import glob
 from setup_dependencies import dependencies
 
 def get_path_to_wmcore_root():
@@ -25,6 +26,9 @@ def walk_dep_tree(system):
     packages = set()
     statics = set()
     modules = set()
+    bin = set()
+    if 'bin' in system.keys():
+        bin = set(system.get('bin', set()))
     if 'modules' in system.keys():
         modules = set(system.get('modules', set()))
     if 'packages' in system.keys():
@@ -34,10 +38,11 @@ def walk_dep_tree(system):
     if 'systems' in system.keys():
         for system in system['systems']:
             dependants = walk_dep_tree(dependencies[system])
+            bin = bin | dependants.get('bin', set())
             packages = packages | dependants.get('packages', set())
             statics = statics | dependants.get('statics', set())
             modules = modules | dependants.get('modules', set())
-    return {'packages': packages, 'statics': statics, 'modules': modules}
+    return {'bin': bin, 'packages': packages, 'statics': statics, 'modules': modules}
 
 def list_packages(package_dirs = [], recurse=True):
     """
@@ -80,7 +85,7 @@ def data_files_for(dir):
             if len(set(pathelements) & ignore_these) == 0:
                 rel_path = os.path.relpath(dirpath, get_path_to_wmcore_root())
                 localfiles = [os.path.join(rel_path, f) for f in filenames]
-                add_static((rel_path.replace('src/', ''), localfiles))
+                add_static((rel_path.replace('src/', 'data/'), localfiles))
             else:
                 print 'Ignoring %s' % dirpath
     else:
@@ -92,7 +97,7 @@ def data_files_for(dir):
                     continue
                 localfiles.append(filename)
         rel_path = os.path.relpath(dir, get_path_to_wmcore_root())
-        add_static((rel_path.replace('src/', ''), localfiles))
+        add_static((rel_path.replace('src/', 'data/'), localfiles))
 
     return files
 
@@ -104,7 +109,9 @@ def list_static_files(system = None):
     ignore_these = set(['CVS', '.svn', 'svn', '.git', 'DefaultConfig.py'])
     static_files = []
     if system:
-        for static_dir in walk_dep_tree(system)['statics']:
+        expanded = walk_dep_tree(system)
+        static_files.append(('bin', sum((glob("bin/%s" % x) for x in expanded['bin']), [])))
+        for static_dir in expanded['statics']:
             static_files.extend(data_files_for(static_dir))
     else:
         for language in ['couchapps+', 'css+', 'html+', 'javascript+', 'templates+']:
@@ -241,16 +248,22 @@ class InstallCommand(install):
 
     user_options = install.user_options
     user_options.append(('system=', 's', 'install the specified system'))
+    user_options.append(('patch', None, 'patch an existing installation (default: no patch)'))
 
     def initialize_options(self):
         # Call the base class
         install.initialize_options(self)
-        # and add our additionl option
+        # and add our additionl options
         self.system = None
+        self.patch = None
 
     def finalize_options(self):
         # Check that the sub-system is valid
         check_system(self)
+        # Check install destination looks valid if patching.
+        if self.patch and not os.path.isdir("%s/xbin" % self.prefix):
+            print "Patch destination %s does not look like a valid location." % self.prefix
+            sys.exit(1)
         # Set what actually gets installed
         self.distribution.packages, self.distribution.py_modules = things_to_build(self)
         self.distribution.data_files = list_static_files(dependencies[self.system])
@@ -259,14 +272,21 @@ class InstallCommand(install):
 	    self.distribution.data_files.append(("doc%s" % dirpath[len(docroot):],
 	                                         ["%s/%s" % (dirpath, fname) for fname in files
 				                  if fname != '.buildinfo']))
+        # Mangle data paths if patching.
+	if self.patch:
+          self.distribution.data_files = [('x' + dir, files) for dir, files in self.distribution.data_files]
+
         print_build_info(self)
-        # Always do a rebuild
-        force_rebuild()
 
         self.distribution.metadata.name = self.system
         assert self.distribution.get_name() == self.system
 
         install.finalize_options(self)
+
+	# Convert to patch install if so requested
+        if self.patch:
+            self.install_lib = re.sub(r'(.*)/lib/python(.*)', r'\1/xlib/python\2', self.install_lib)
+            self.install_scripts = re.sub(r'(.*)/bin$', r'\1/xbin', self.install_scripts)
 
     def run (self):
         # Have to override the distribution to build and install only what we specify.
@@ -275,7 +295,7 @@ class InstallCommand(install):
             cmd.distribution = self.distribution
             # We don't want data files mixed in with the python
             if cmd_name == 'install_data':
-                cmd.install_dir = os.path.join(self.prefix, 'lib')
+                cmd.install_dir = self.prefix
             else:
                 cmd.install_dir = self.install_lib
             cmd.ensure_finalized()

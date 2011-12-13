@@ -47,7 +47,7 @@ class TestChangeState(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setupCouch("changestate_t/jobs", "JobDump")
         self.testInit.setupCouch("changestate_t/fwjrs", "FWJRDump")
-        self.testInit.setupCouch("job_summary", "WMStat")
+        self.testInit.setupCouch("job_summary", "WMStats")
 
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
@@ -779,7 +779,7 @@ class TestChangeState(unittest.TestCase):
 
         fwjrDoc = {'state': None}
         for resultRow in allDocs["rows"]:
-            if resultRow["id"] != "_design/WMStat":
+            if resultRow["id"] != "_design/WMStats":
                 fwjrDoc = changeStateDB.document(resultRow["id"])
                 break
 

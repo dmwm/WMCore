@@ -204,7 +204,7 @@ class ChangeState(WMObject, WMConnectionBase):
             # doc is already in couch
             if updatesummary:
                 jobSummaryId = "%s-%s" % (job["name"], job["retry_count"])
-                updateUri = "/" + self.jsumdatabase.name + "/_design/WMStat/_update/jobSummaryState/" + jobSummaryId
+                updateUri = "/" + self.jsumdatabase.name + "/_design/WMStats/_update/jobSummaryState/" + jobSummaryId
                 updateUri += "?newstate=%s&timestamp=%s" % (newstate, timestamp)
                 self.jsumdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
                 logging.debug("Updated job summary status for job %s" % jobSummaryId)

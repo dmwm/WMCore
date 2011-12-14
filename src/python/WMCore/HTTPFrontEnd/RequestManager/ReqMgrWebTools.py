@@ -2,6 +2,7 @@
 import urllib
 import time
 import logging
+import re
 import WMCore.Wrappers.JsonWrapper as JsonWrapper
 import cherrypy
 from os import path
@@ -21,6 +22,34 @@ from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker, bu
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
 from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
+
+
+def addSiteWildcards(wildcardKeys, sites, wildcardSites):
+    """
+    _addSiteWildcards_
+
+    Add site wildcards to the self.sites list
+    These wildcards should allow you to whitelist/blacklist a
+    large number of sites at once.
+
+    Expects a dictionary for wildcardKeys where the key:values are
+    key = Label to be displayed as
+    value = Regular expression
+    """
+
+    for k in wildcardKeys.keys():
+        reValue = wildcardKeys.get(k)
+        found   = False
+        for s in sites:
+            if re.search(reValue, s):
+                found = True
+                if not k in wildcardSites.keys():
+                    wildcardSites[k] = []
+                wildcardSites[k].append(s)
+        if found:
+            sites.append(k)
+
+    return
 
 
 def parseRunList(l):

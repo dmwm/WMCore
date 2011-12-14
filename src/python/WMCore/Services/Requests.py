@@ -155,12 +155,8 @@ class Requests(dict):
         #And now overwrite any headers that have been passed into the call:
         headers.update(incoming_headers)
         url = self['host'] + uri
-        if  verb == 'POST':
-            post = 1
-        else:
-            post = None
         response, data = self.reqmgr.request(url, params, headers, \
-                    post=post, ckey=ckey, cert=cert, decode=decoder)
+                    verb=verb, ckey=ckey, cert=cert, decode=decoder)
         return data, response.status, response.reason, response.fromcache
 
     def makeRequest_httplib(self, uri=None, data={}, verb='GET',

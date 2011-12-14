@@ -7,6 +7,7 @@ __all__ = []
 
 import threading
 import logging
+import time
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import LocalCouchDBData, \
@@ -67,8 +68,9 @@ class AnalyticsPoller(BaseWorkerThread):
             
             # combine all the data from 3 sources
             tempCombinedData = combineAnalyticsData(jobInfoFromCouch, batchJobInfo)
-            combinedRequests = combineAnalyticsData(tempCombinedData, localQInfo['status'])
+            combinedRequests = combineAnalyticsData(tempCombinedData, localQInfo)
             requestDocs = []
+            uploadTime = int(time.time())
             for request, status in combinedRequests.items():
                 doc = {}
                 doc.update(self.agentInfo)
@@ -78,11 +80,8 @@ class AnalyticsPoller(BaseWorkerThread):
                 tempData = convertToStatusSiteFormat(status)
                 doc['status'] = tempData['status']
                 doc['sites'] = tempData['sites']
-                
-                #TODO: need to handle the case localqueue is deleted before couch db
-                # if localQInfo['input_dataset'].has_key(request)
-                doc['input_dataset'] = localQInfo['input_dataset'][request] 
-                requestDocs.append(doc)
+                doc['timestamp'] = uploadTime
+
             self.reqMonCouchDB.uploadData(requestDocs)
 
             #agent info (include job Slots for the sites)

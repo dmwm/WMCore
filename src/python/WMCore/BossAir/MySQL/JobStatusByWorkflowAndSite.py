@@ -28,7 +28,7 @@ class JobStatusByWorkflowAndSite(DBFormatter):
                INNER JOIN wmbs_jobgroup wjg ON wjg.id = wj.jobgroup
                INNER JOIN wmbs_subscription ws ON ws.id = wjg.subscription
                INNER JOIN wmbs_workflow wwf ON wwf.id = ws.workflow
-               LEFT OUTER JOIN wmbs_location wl ON wl.id = wj.location += data['num_jobs']
+               LEFT OUTER JOIN wmbs_location wl ON wl.id = wj.location
                WHERE rj.status = :complete
                GROUP BY wwf.name, plugin, st.name, wl.site_name
     """

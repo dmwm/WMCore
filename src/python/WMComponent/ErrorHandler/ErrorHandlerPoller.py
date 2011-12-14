@@ -114,7 +114,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         self.changeState.propagate(exhaustJobs, 'exhausted', \
                                    '%sfailed' %(jobType))
         self.changeState.propagate(cooloffJobs, '%scooloff' %(jobType), \
-                                   '%sfailed' %(jobType))
+                                   '%sfailed' %(jobType), updatesummary = True)
 
         # Remove all the files in the exhausted jobs.
         logging.debug("About to fail input files for exhausted jobs")

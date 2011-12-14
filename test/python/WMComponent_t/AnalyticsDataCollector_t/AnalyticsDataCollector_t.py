@@ -52,7 +52,7 @@ class AnalyticsDataCollector_t(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.reqmonDBName = "wmstat_t"
-        self.testInit.setupCouch(self.reqmonDBName, "WMStat")
+        self.testInit.setupCouch(self.reqmonDBName, "WMStats")
         self.testDir = self.testInit.generateWorkDir()
         EmulatorHelper.setEmulators(localCouch = True, reqMon = False, wmagentDB = True)
         return

@@ -215,6 +215,8 @@ class Assign(WebAPI):
         for field in ["AcquisitionEra", "ProcessingVersion"]:
             self.validate(kwargs[field], field)
         # Set white list and black list
+        whiteList = kwargs.get("SiteWhitelist", [])
+        blackList = kwargs.get("SiteBlacklist", [])
         helper.setSiteWildcardsLists(siteWhitelist = whiteList, siteBlacklist = blackList,
                                      wildcardDict = self.wildcardSites)
         # Set ProcessingVersion and AcquisitionEra

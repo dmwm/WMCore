@@ -640,6 +640,7 @@ class CondorPlugin(BasePlugin):
 
         jdl.append('+DESIRED_Archs = \"INTEL,X86_64\"\n')
         jdl.append("+WMAgent_AgentName = \"%s\"\n" %(self.agent))
+        jdl.append('+REQUIRES_LOCAL_DATA = True\n')
 
         # Check for multicore
         if jobList[0].get('taskType', None) in self.multiTasks:

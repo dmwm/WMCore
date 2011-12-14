@@ -245,7 +245,8 @@ class ReqMgrTest(RESTBaseUnitTest):
         workloadHelper = WMWorkloadHelper()
         workloadHelper.load(requestsAndSpecs[0][1]) 
         self.assertEqual(workloadHelper.getOwner()['Requestor'], "me")
-        self.assertTrue(self.jsonSender.get('assignment?request=%s'% requestName)[0] == ['White Sox'])
+        self.assertEqual(self.jsonSender.get('assignment?request=%s'% requestName)[0], ['White Sox'])
+        self.assertEqual(self.jsonSender.get('request/%s' % requestName)[0]['teams'], ['White Sox'])
 
         agentUrl = 'http://cmssrv96.fnal.gov/workqueue'
         self.jsonSender.put('workQueue/%s?url=%s'% (requestName, urllib.quote(agentUrl)) )

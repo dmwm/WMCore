@@ -252,7 +252,14 @@ class ReqMgrRESTModel(RESTModel):
         if requestName == None:
             return GetRequest.getRequests()
         else:
-            return Utilities.requestDetails(requestName)
+            result   = Utilities.requestDetails(requestName)
+            try:
+                teamNames       = GetRequest.getAssignmentsByName(requestName)
+                result['teams'] = teamNames
+            except:
+                # Ignore errors, then we just don't have a team name
+                pass
+            return result
 
     def getRequestNames(self):
         """ return all the request names in RequestManager as list """

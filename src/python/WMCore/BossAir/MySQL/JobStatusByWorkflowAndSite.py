@@ -59,7 +59,7 @@ class JobStatusByWorkflowAndSite(DBFormatter):
             if not commonStates.has_key(data['workflow']):
                 commonStates[data['workflow']] = {}
             
-            commonStates[data['workflow']].setdefault(state, 0)
+            commonStates[data['workflow']].setdefault(state, {})
             commonStates[data['workflow']][state].setdefault(data['site'], 0)
             commonStates[data['workflow']][state][data['site']] += data['num_jobs']
         return commonStates

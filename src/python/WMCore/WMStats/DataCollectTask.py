@@ -21,14 +21,15 @@ class DataCollectTask(SequentialTaskBase):
             
     
     def getData(self):
+        print "getting data ..." 
         self.data = self.getFunc()
-        print "getting data %s" % self.data
+        print "getting data %s" % len(self.data)
          
          
     def formatData(self):
         self.data = self.dataFormatFunc(self.data)
-        print "formmatting %s" % self.data
+        print "formmatting %s" % len(self.data)
     
     def putData(self):
         self.putFunc(self.data)
-        print "putting %s" % self.data
+        print "putting %s" % len(self.data)

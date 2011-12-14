@@ -48,7 +48,9 @@ import time
 def reqmgrDataFormat(data):
     docs = []
     uploadTime = int(time.time())
-    for item in data:
+    for itemThunked in data:
+        #print itemThunked
+        item =  itemThunked['WMCore.RequestManager.DataStructs.Request.Request']
         doc = {}
         doc['timestamp'] = uploadTime
         doc['type'] = 'reqmgr_request'
@@ -59,13 +61,14 @@ def reqmgrDataFormat(data):
         #doc['team'] = item['Team']
         # user is requestor : double check
         #doc['user'] = item['Requestor'] 
-        doc['campaign'] = item['Campaign']
+        # Not yet supported
+        #doc['campaign'] = item['Campaign']
+        #doc['request_date'] = item['RequestDate']
         doc['workflow'] = item['RequestName']
         doc['request_type'] = item['RequestType']
         doc['request_status'] = item['RequestStatus']
         doc['input_datasets'] = item['InputDatasets']
         doc['acquisition_era'] = item['AcquisitionEra']
-        doc['request_date'] = item['RequestDate']
         doc['priority'] = item['RequestPriority']
         docs.append(doc)
     return docs
@@ -96,6 +99,7 @@ if __name__ == '__main__':
     
     cherrypy.log.error_log.setLevel(logging.DEBUG)
     cherrypy.log.access_log.setLevel(logging.DEBUG)
+    cherrypy.config["server.socket_port"] = cfg.port
     #def sayHello(test):
     #    print "Hello"
     #PeriodicWorker(sayHello, 5)
@@ -106,10 +110,12 @@ if __name__ == '__main__':
     wmstatSvc = WMStatSevice(cfg.couchURL)
     
     reqmgrTask = DataCollectTask(reqmgrSvc.getRequest,  reqmgrDataFormat, wmstatSvc.uploadData)
-    wqTask = DataCollectTask(wqSvc.getTopLevelJobsByRequest, wqDataFormat, wmstatSvc.uploadData)
+    #reqmgrTask = DataCollectTask(reqmgrSvc.getRequestNames,  lambda x: x, wmstatSvc.uploadData)
     
-    reqmgrWorker = PeriodicWorker(reqmgrTask, 60)
-    wqWorker = PeriodicWorker(wqTask, 60)
+    #wqTask = DataCollectTask(wqSvc.getTopLevelJobsByRequest, wqDataFormat, wmstatSvc.uploadData)
+    
+    reqmgrWorker = PeriodicWorker(reqmgrTask, cfg.pollInterval)
+    #wqWorker = PeriodicWorker(wqTask, 200)
     
     cherrypy.quickstart()        
         

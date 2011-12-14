@@ -24,9 +24,11 @@ class RequestManager(Service):
             dict['endpoint'] = "%scmssrv49.fnal.gov:8585/reqMgr/" % \
                                 ((secure and "https://" or "http://"))
 
-        dict['accept_type'] = 'text/json'
         dict.setdefault('cacheduration', 0)
-
+        dict.setdefault("accept_type", "application/json")
+        dict.setdefault("content_type", "application/json")
+        self.encoder = JsonWrapper.dumps
+        self.decoder = JsonWrapper.loads
         Service.__init__(self, dict)
 
     def _getResult(self, callname, clearCache = True,
@@ -50,12 +52,8 @@ class RequestManager(Service):
         result = f.read()
         f.close()
 
-#        if self.responseType == "json":
-#            decoder = json.JSONDecoder()
-#            return decoder.decode(result)
-
         if result:
-            result = JsonWrapper.loads(result)
+            result = self.decoder(result)
         return result
 
     def getRequest(self, requestName = None):
@@ -65,8 +63,8 @@ class RequestManager(Service):
 
         """
         args = {}
-        args['requestName'] = requestName
-
+        if requestName:
+            args['requestName'] = requestName
         callname = 'request'
         return self._getResult(callname, args = args, verb = "GET")
 

@@ -16,7 +16,8 @@ class SequentialTaskBase(object):
                 #log the excpeiotn and break. 
                 #SequencialTasks are interconnected between functions  
                 logging.error(str(ex))
-                print (str(ex))
+                import traceback
+                print traceback.format_exc()
                 break
             
     def initialize(self):

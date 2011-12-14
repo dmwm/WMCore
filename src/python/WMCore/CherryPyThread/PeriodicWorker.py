@@ -20,6 +20,7 @@ class PeriodicWorker(Thread):
         Thread.__init__(self, name=name)
         cherrypy.engine.subscribe('start', self.start, priority = 100)
         cherrypy.engine.subscribe('stop', self.stop, priority = 100)
+
         # not sure this is salf or needed
         # in case the there are long lasting work 
         # it allows python process to exit.
@@ -37,6 +38,7 @@ class PeriodicWorker(Thread):
         return self.stopFlag
     
     def run(self):
+        print self.name + " running"
         while not self.stopFlag:
             self.wakeUp.acquire()
             self.taskFunc(self.isStopFlagOn)

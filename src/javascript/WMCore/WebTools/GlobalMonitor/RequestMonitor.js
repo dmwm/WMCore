@@ -60,7 +60,9 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
                  elCell.innerHTML = "<font color='red'> " + oRecord.getData("error") + "<font>";
                  return;
             };
-            if (oRecord.getData("status") == "completed") {
+            if (oRecord.getData("status") == "completed" ||
+                oRecord.getData("status") == "announced" ||
+                oRecord.getData("status") == "closed-out") {
                 var workloadSummaryUrl = WMCore.GlobalMonitor.Env['workload_summary_url'] +
                 "/_design/WorkloadSummary/_show/histogramByWorkflow/";
                 

@@ -120,6 +120,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.nOffenders        = getattr(self.config.TaskArchiver, 'nOffenders', 3)
         self.deleteCouchData   = getattr(self.config.TaskArchiver, 'deleteCouchData', True)
         self.uploadPublishInfo = getattr(self.config.TaskArchiver, 'uploadPublishInfo', False)
+        self.uploadPublishDir  = getattr(self.config.TaskArchiver, 'uploadPublishDir', None)
 
         # Set up optional histograms
         self.histogramKeys  = getattr(self.config.TaskArchiver, "histogramKeys", [])
@@ -440,7 +441,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                     # Ignore it
                     pass
             maskA  = job['mask']
-            
+
             # Have to transform this because JSON is too stupid to understand ints
             for key in maskA['runAndLumis'].keys():
                 maskA['runAndLumis'][int(key)] = maskA['runAndLumis'][key]
@@ -623,7 +624,10 @@ class TaskArchiverPoller(BaseWorkerThread):
         with all the info needed to publish this dataset later
         """
 
-        workDir, taskDir = getMasterName(startDir=self.jobCacheDir, workflow=workflow)
+        if self.uploadPublishDir:
+            workDir = self.uploadPublishDir
+        else:
+            workDir, taskDir = getMasterName(startDir=self.jobCacheDir, workflow=workflow)
 
         # Skip tasks ending in LogCollect, they have nothing interesting.
         taskNameParts = workflow.task.split('/')

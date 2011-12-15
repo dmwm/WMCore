@@ -193,7 +193,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         self.changeState.propagate(exhaustJobs, 'exhausted', \
                                    '%sfailed' %(jobType))
         self.changeState.propagate(cooloffJobs, '%scooloff' %(jobType), \
-                                   '%sfailed' %(jobType))
+                                   '%sfailed' %(jobtype), updatesummary = true)
         if len(passJobs) > 0:
             # Overwrite the transition states and move directly to created
             self.changeState.propagate(passJobs, 'created', 'new')

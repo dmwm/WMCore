@@ -58,7 +58,7 @@ class PhEDEx(Service):
 
         return result
 
-    def injectBlocks(self, node, xmlData, verbose = 0, strict = 1):
+    def injectBlocks(self, node, xmlData, strict = 1):
 
         """
         _injectBlocksToPhedex_
@@ -66,7 +66,6 @@ class PhEDEx(Service):
         xmlData = XMLDrop.makePhEDExDrop(dbsUrl, datasetPath, *blockNames)
 
         node: node name for injection
-        verbose: 1 for being verbose, 0 for not
         strict: throw an error if it can't insert the data exactly as
                 requested. Otherwise simply return the statistics. The
                 default is to be strict, 1, you can turn it off with 0.
@@ -77,7 +76,6 @@ class PhEDEx(Service):
 
         args['node'] = node
         args['data'] = xmlData
-        args['verbose'] = verbose
         args['strict'] = strict
 
         return self._getResult(callname, args = args, verb="POST")

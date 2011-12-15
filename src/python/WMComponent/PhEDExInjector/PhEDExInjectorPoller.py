@@ -149,7 +149,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 continue
 
             xmlData = self.createInjectionSpec(uninjectedFiles[siteName])
-            injectRes = self.phedex.injectBlocks(location, xmlData, 0, 0)
+            injectRes = self.phedex.injectBlocks(location, xmlData)
+            logging.info("Injection result: %s" % injectRes)
 
             if not injectRes.has_key("error"):
                 for datasetName in uninjectedFiles[siteName]:
@@ -206,7 +207,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 continue
 
             xmlData = self.createInjectionSpec(migratedBlocks[siteName])
-            injectRes = self.phedex.injectBlocks(location, xmlData, 0, 0)
+            injectRes = self.phedex.injectBlocks(location, xmlData)
+            logging.info("Block closing result: %s" % injectRes)
 
             if not injectRes.has_key("error"):
                 for datasetName in migratedBlocks[siteName]:

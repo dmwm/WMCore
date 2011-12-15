@@ -74,10 +74,11 @@ def submitWorker(input, results, timeout = None):
         try:
             stdout, stderr, returnCode = SubprocessAlgos.runCommand(cmd = command, shell = True, timeout = timeout)
             if returnCode == 0:
-                results.put({'stdout': stdout, 'stderr': stderr, 'idList': idList})
+                results.put({'stdout': stdout, 'stderr': stderr, 'idList': idList, 'exitCode': returnCode})
             else:
                 results.put({'stdout': stdout,
                              'stderr': 'Non-zero exit code: %s\n stderr: %s' % (returnCode, stderr),
+                             'exitCode': returnCode,
                              'idList': idList})
         except Exception, ex:
             msg =  "Critical error in subprocess while submitting to condor"
@@ -400,12 +401,13 @@ class CondorPlugin(BasePlugin):
                 queueError = True
                 continue
             
-            output = res['stdout']
-            error  = res['stderr']
-            idList = res['idList']
+            output   = res['stdout']
+            error    = res['stderr']
+            idList   = res['idList']
+            exitCode = res['exitCode']
 
-            if not error == '':
-                logging.error("Printing out command stderr")
+            if not exitCode == 0:
+                logging.error("Condor returned non-zero.  Printing out command stderr")
                 logging.error(error)
                 errorCheck, errorMsg = parseError(error = error)
             else:

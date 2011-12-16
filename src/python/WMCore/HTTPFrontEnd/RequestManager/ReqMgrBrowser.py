@@ -67,6 +67,7 @@ class ReqMgrBrowser(WebAPI):
         self.couchUrl = config.couchUrl
         self.configDBName = config.configDBName
         self.yuiroot = config.yuiroot
+        self.wmstatWriteURL = "%s/%s" % (self.couchUrl.rstrip('/'), config.wmstatDBName)
         cherrypy.engine.subscribe('start_thread', self.initThread)
 
     def initThread(self, thread_index):
@@ -304,7 +305,7 @@ class ReqMgrBrowser(WebAPI):
                     Utilities.changePriority(requestName, priority)
                     message += "Changed priority for %s to %s\n" % (requestName, priority)
                 if status != "":
-                    Utilities.changeStatus(requestName, status)
+                    Utilities.changeStatus(requestName, status, self.wmstatWriteURL)
                     message += "Changed status for %s to %s\n" % (requestName, status)
                     if status == "assigned":
                         # make a page to choose teams

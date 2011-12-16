@@ -31,6 +31,7 @@ databaseSocket = "/opt/MySQL-5.1/var/lib/mysql/mysql.sock"
 couchURL = "http://USERNAME:PASSWORD@COUCHSERVER:5984"
 workqueueDBName = 'workqueue'
 workqueueInboxDbName = 'workqueue_inbox'
+wmstatDBName = "wmstats"
 
 # Agent name and team name.
 agentName = "WMAgentCommissioning"
@@ -63,9 +64,11 @@ config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManag
 config.WorkQueueManager.componentDir = os.path.join(config.General.workDir, "WorkQueueManager")
 config.WorkQueueManager.couchurl = couchURL
 config.WorkQueueManager.dbname = workqueueDBName
+config.WorkQueueManager.wmstatDBName = wmstatDBName
 config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
 config.WorkQueueManager.level = "GlobalQueue"
 config.WorkQueueManager.pollInterval = 600
 config.WorkQueueManager.queueParams = {}
 config.WorkQueueManager.reqMgrConfig = {'teamName' : config.Agent.teamName,
-                                        'endpoint': "%s/reqMgr/" % reqMgrUrl}
+                                        'endpoint': "%s/reqMgr/" % reqMgrUrl,
+                                        'WMStatsCouchUrl': "%s/%s" % (config.WorkQueueManager.couchurl.rstrip(), config.WorkQueueManager.wmstatDBName)}

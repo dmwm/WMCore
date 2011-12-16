@@ -50,6 +50,7 @@ class ReqMgrRESTModel(RESTModel):
         self.couchUrl = config.couchUrl
         self.workloadDBName = config.workloadDBName
         self.configDBName = config.configDBName
+        self.wmstatWriteURL = "%s/%s" % (self.couchUrl.rstrip('/'), config.wmstatDBName)
         self.security_params = {'roles':config.security_roles}
 
         # Optional values for individual methods
@@ -384,7 +385,7 @@ class ReqMgrRESTModel(RESTModel):
 
     def putWorkQueue(self, request, url):
         """ Registers the request as "acquired" by the workqueue with the given URL """
-        Utilities.changeStatus(request, "acquired")
+        Utilities.changeStatus(request, "acquired", self.wmstatWriteURL)
         return ProdManagement.associateProdMgr(request, urllib.unquote(url))
 
     def validatePutWorkQueue(self, index):
@@ -405,7 +406,7 @@ class ReqMgrRESTModel(RESTModel):
             schema.setdefault('CouchURL', Utilities.removePasswordFromUrl(self.couchUrl))
             schema.setdefault('CouchDBName', self.configDBName)
             try:
-                request = Utilities.makeRequest(schema, self.couchUrl, self.workloadDBName)
+                request = Utilities.makeRequest(schema, self.couchUrl, self.workloadDBName, self.wmstatWriteURL)
             except cherrypy.HTTPError:
                 # Assume that this is a valid HTTPError
                 raise
@@ -419,7 +420,7 @@ class ReqMgrRESTModel(RESTModel):
             if status == 'assigned' and request['RequestStatus'] != 'ops-hold':
                 raise cherrypy.HTTPError(403, "Cannot change status without a team.  Please use PUT /reqmgr/rest/assignment/<team>/<requestName>")
             try:
-                Utilities.changeStatus(requestName, status)
+                Utilities.changeStatus(requestName, status, self.wmstatWriteURL)
             except RuntimeError, e:
                 # ignore some of these errors: https://svnweb.cern.ch/trac/CMSDMWM/ticket/2002
                 if status != 'announced' and status != 'closed-out':

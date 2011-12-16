@@ -329,6 +329,7 @@ if __name__ == "__main__":
 
     if hasattr(wmagentConfig, "reqmgr"):
         installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName, "ReqMgr")
+        installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.wmstatDBName, "WMStats")
         if options.cron:
             setupCronCompaction(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName)
 

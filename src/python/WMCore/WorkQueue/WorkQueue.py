@@ -37,7 +37,7 @@ from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper
 from WMCore.Database.CMSCouch import CouchNotFoundError
 
 from WMCore import Lexicon
-
+from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 #  //
 # // Convenience constructor functions
 #//
@@ -174,7 +174,10 @@ class WorkQueue(WorkQueueBase):
         if type(self.params['Teams']) in types.StringTypes:
             self.params['Teams'] = [x.strip() for x in \
                                     self.params['Teams'].split(',')]
-
+        
+        if not self.params.get('LocalQueueFlag') and not self.params.get('WMStatsCouchUrl'):
+            raise RuntimeError, 'WMStatsCouchUrl config value mandatory'
+        
         self.dataLocationMapper = WorkQueueDataLocationMapper(self.logger, self.backend,
                                                               phedex = self.phedexService,
                                                               sitedb = self.SiteDB,
@@ -678,7 +681,7 @@ class WorkQueue(WorkQueueBase):
         mask can be used to specify i.e. event range.
         """
         totalUnits = []
-
+        totalToplevelJobs = 0
         # split each top level task into constituent work elements
         # get the acdc server and db name
         for topLevelTask in wmspec.taskIterator():
@@ -701,9 +704,10 @@ class WorkQueue(WorkQueueBase):
                 if unit['Mask']:
                     msg += ' on events %d-%d' % (unit['Mask']['FirstEvent'], unit['Mask']['LastEvent'])
                 self.logger.info(msg)
+                totalToplevelJobs += unit['Jobs']
             totalUnits.extend(units)
 
-        return totalUnits
+        return totalUnits, totalToplevelJobs
 
     def processInboundWork(self, inbound_work = None, throw = False):
         """Retrieve work from inbox, split and store
@@ -722,10 +726,19 @@ class WorkQueue(WorkQueueBase):
                 if work:
                     self.logger.info('Request "%s" already split - Resuming' % inbound['RequestName'])
                 else:
-                    work = self._splitWork(inbound['WMSpec'], None, inbound['Inputs'], inbound['Mask'])
+                    work, totalJobs = self._splitWork(inbound['WMSpec'], None, inbound['Inputs'], inbound['Mask'])
                     self.backend.insertElements(work, parent = inbound) # if this fails, rerunning will pick up here
                     # save inbound work to signal we have completed queueing
+                    
+                    # add the total work on wmstat summary
                     self.backend.updateInboxElements(inbound.id, Status = 'Acquired')
+                    
+                    # what would you do if it fails (currently globalqueue and wmstats will be in the same couchserver)             
+                    if not self.params.get('LocalQueueFlag'):
+                        #only update for global queue
+                        wmstatSvc = WMStatsWriter(self.params.get('WMStatsCouchUrl'))
+                        wmstat.insertTotalJobs(inbound['WMSpec'].name(), totalJobs)
+                        
             except TERMINAL_EXCEPTIONS, ex:
                 self.logger.info('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))
                 self.backend.updateInboxElements(inbound.id, Status = 'Failed')

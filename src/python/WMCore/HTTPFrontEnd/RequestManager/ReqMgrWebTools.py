@@ -21,7 +21,7 @@ from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker, bu
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
 from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
-
+from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 
 def parseRunList(l):
     """ Changes a string into a list of integers """
@@ -145,7 +145,7 @@ def abortRequest(request):
     workqueue = WorkQueue.WorkQueue(url)
     workqueue.cancelWorkflow(request)
 
-def changeStatus(requestName, status):
+def changeStatus(requestName, status, wmstatUrl):
     """ Changes the status for this request """
     request = GetRequest.getRequestByName(requestName)
     oldStatus = request['RequestStatus']
@@ -156,12 +156,16 @@ def changeStatus(requestName, status):
     if not status in RequestStatus.NextStatus[oldStatus]:
         raise RuntimeError, "Cannot change status from %s to %s.  Allowed values are %s" % (
            oldStatus, status,  RequestStatus.NextStatus[oldStatus])
+
     ChangeState.changeRequestStatus(requestName, status)
 
     if status == 'aborted':
         # delete from the workqueue
         abortRequest(requestName)
-
+    
+    wmstatSvc = WMStatsWriter(wmstatUrl)
+    wmstatSvc.updateRequestStatus(requestName, status)
+    
 def prepareForTable(request):
     """ Add some fields to make it easier to display a request """
     if 'InputDataset' in request and request['InputDataset'] != '':
@@ -257,7 +261,7 @@ def validate(schema):
         if value and value != '':
             WMCore.Lexicon.cmsswversion(schema[field])
         
-def makeRequest(kwargs, couchUrl, couchDB):
+def makeRequest(kwargs, couchUrl, couchDB, wmstatUrl):
     logging.info(kwargs)
     """ Handles the submission of requests """
     # make sure no extra spaces snuck in
@@ -340,6 +344,8 @@ def makeRequest(kwargs, couchUrl, couchDB):
     workloadUrl = helper.saveCouch(couchUrl, couchDB, metadata=metadata)
     request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
     CheckIn.checkIn(request)
+    wmstatSvc = WMStatsWriter(wmstatUrl)
+    wmstatSvc.insertRequest(schema)
     return request
 
 def requestDetails(requestName):

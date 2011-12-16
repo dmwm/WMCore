@@ -14,6 +14,7 @@ environment in which the Runtime Script implementation needs to be called.
 
 import os
 import sys
+import traceback
 
 from WMCore.WMRuntime.ScriptFactory import getScript
 import WMCore.WMRuntime.Bootstrap as Bootstrap
@@ -99,6 +100,9 @@ if __name__ == '__main__':
         msg = "Error booting script invoker for step %s\n" % stepModule
         msg += "withe Script module: %s\n" % scriptModule
         msg += str(ex)
+        msg += "Details:\n"
+        for l in traceback.format_tb(sys.exc_info()[2]):
+            msg += l
         raise RuntimeError, msg
 
     try:
@@ -107,6 +111,9 @@ if __name__ == '__main__':
         msg = "Error invoking script for step %s\n" % stepModule
         msg += "withe Script module: %s\n" % scriptModule
         msg += str(ex)
+        msg += "Details:\n"
+        for l in traceback.format_tb(sys.exc_info()[2]):
+            msg += l
         raise RuntimeError, msg
 
     sys.exit(invoker.exit())

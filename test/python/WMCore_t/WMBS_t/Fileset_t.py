@@ -536,6 +536,7 @@ class FilesetTest(unittest.TestCase):
             files in their input fileset
           _ All of the jobs for feeder subscriptions have completed  
           - The fileset that feeds the subscription is closed
+          - The workflow for the subscription is fully injected.
         """
         testOutputFileset1 = Fileset(name = "TestOutputFileset1")
         testOutputFileset1.create()
@@ -627,6 +628,13 @@ class FilesetTest(unittest.TestCase):
         changeStateDAO.execute(jobs = [testJob])
         closableFilesets = closableFilesetDAO.execute()
 
+        assert len(closableFilesets) == 0, \
+               "Error: There should be no closable filesets."
+
+        injected = daoFactory(classname = "Workflow.MarkInjectedWorkflows")
+        injected.execute(names = ["wf001", "wf002", "wf003"], injected = True)
+
+        closableFilesets = closableFilesetDAO.execute()
         goldenFilesets = ["TestOutputFileset1", "TestOutputFileset2"]
 
         for closableFileset in closableFilesets:
@@ -729,6 +737,8 @@ class FilesetTest(unittest.TestCase):
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
                                 dbinterface = myThread.dbi)
+        injected = daoFactory(classname = "Workflow.MarkInjectedWorkflows")
+        injected.execute(names = ["wf001", "wf002"], injected = True)        
         closableFilesetDAO = daoFactory(classname = "Fileset.ListClosable")
         closableFilesets = closableFilesetDAO.execute()
 
@@ -840,6 +850,8 @@ class FilesetTest(unittest.TestCase):
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
                                 dbinterface = myThread.dbi)
+        injected = daoFactory(classname = "Workflow.MarkInjectedWorkflows")
+        injected.execute(names = ["wf001", "wf002"], injected = True)        
         closableFilesetDAO = daoFactory(classname = "Fileset.ListClosable")
         closableFilesets = closableFilesetDAO.execute()
 
@@ -915,6 +927,8 @@ class FilesetTest(unittest.TestCase):
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
                                 dbinterface = myThread.dbi)
+        injected = daoFactory(classname = "Workflow.MarkInjectedWorkflows")
+        injected.execute(names = ["wf001", "wf002", "wf003"], injected = True)        
         closableFilesetDAO = daoFactory(classname = "Fileset.ListClosable")
         closableFilesets = closableFilesetDAO.execute()
 
@@ -1005,7 +1019,8 @@ class FilesetTest(unittest.TestCase):
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
                                 dbinterface = myThread.dbi)
-
+        injected = daoFactory(classname = "Workflow.MarkInjectedWorkflows")
+        injected.execute(names = ["wf001"], injected = True)
         changeStateDAO = daoFactory(classname = "Jobs.ChangeState")
         changeStateDAO.execute(jobs = [testJobA])
 

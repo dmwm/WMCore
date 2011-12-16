@@ -48,7 +48,7 @@ class AnalyticsPoller(BaseWorkerThread):
         # set wmagent db data
         self.wmagentDB = WMAgentDBData(myThread.dbi, myThread.logger)
         # set the connection for local couchDB call
-        self.reqMonCouchDB = ReqMonDBData(self.config.AnalyticsDataCollector.reqMonURL)
+        self.reqMonCouchDB = ReqMonDBData(self.config.AnalyticsDataCollector.wmstatsURL)
 
     def algorithm(self, parameters):
         """

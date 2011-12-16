@@ -68,7 +68,6 @@ config.WorkQueueManager.wmstatDBName = wmstatDBName
 config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
 config.WorkQueueManager.level = "GlobalQueue"
 config.WorkQueueManager.pollInterval = 600
-config.WorkQueueManager.queueParams = {}
+config.WorkQueueManager.queueParams = {'WMStatsCouchUrl': "%s/%s" % (config.WorkQueueManager.couchurl.rstrip(), config.WorkQueueManager.wmstatDBName)}
 config.WorkQueueManager.reqMgrConfig = {'teamName' : config.Agent.teamName,
-                                        'endpoint': "%s/reqMgr/" % reqMgrUrl,
-                                        'WMStatsCouchUrl': "%s/%s" % (config.WorkQueueManager.couchurl.rstrip(), config.WorkQueueManager.wmstatDBName)}
+                                        'endpoint': "%s/reqMgr/" % reqMgrUrl}

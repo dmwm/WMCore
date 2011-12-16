@@ -67,7 +67,7 @@ def reqMgrConfig(
     config.reqmgr.couchUrl = couchurl
     config.reqmgr.configDBName = configCouchDB
     config.reqmgr.workloadDBName = workloadCouchDB
-    config.reqmgr.wmstatDBName = wmstatDBName
+    config.reqmgr.wmstatDBName = wmstatCouchDB
     config.reqmgr.security_roles = ['Admin', 'Developer', 'Data Manager', 'developer', 'admin', 'data-manager']
     config.reqmgr.yuiroot = yuiroot
     config.reqmgr.dbs3=dbs3

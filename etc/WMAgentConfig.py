@@ -465,3 +465,13 @@ config.AlertGenerator.couchErrorsPoller.pollInterval = 10 # [second]
 # be moved into respective configuration sections 
 # e.g. next item(s) will be from WorkQueueManager when a special necessary view is implemented
 config.DBSUpload.alertUploadQueueSize = 2000
+
+
+config.component_("AnalyticsDataCollector")
+config.AnalyticsDataCollector.namespace = "WMComponent.AnalyticsDataCollector.AnalyticsDataCollector"
+config.AnalyticsDataCollector.componentDir  = config.General.workDir + "/AnalyticsDataCollector"
+config.AnalyticsDataCollector.logLevel = globalLogLevel
+config.AnalyticsDataCollector.pollInterval = 600
+config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
+config.AnalyticsDataCollector.wmstatsURL = "CHANGE to correct one"

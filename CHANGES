@@ -1,3 +1,56 @@
+0.8.18 to 0.8.19:
+  - Improve logging for ScriptInvoke errors (3038).
+  - Only closeout and cleanup subscriptions/filesets that are 
+    fully injected (3039).
+  - Inject into PhEDEx in strict mode and log the result (3028).
+  - Don't fail if a task doesn't have an ACDC section (2980).
+  - Only raise CondorErrors on non-zero exit codes (2924).
+  - Add team names to the ReqMgr Request GET (3003).
+  - Make CouchConnectionError print its error when stringified (2971).
+  - Add unit tests for the topublish.json stuff (2982).
+  - Insert Analysis collection files as merged (2995).
+  - Show the summary link for completed, closedout and announced states (2992).
+  - Make the addSiteWildCards method public (2997).
+  - Re-add site white/black list definitions to ReqMgr.Assign (3000).
+  - Disable overflow for condor jobs (3018).
+  - Add DELETE and PUT verbs to pycurl_manager (2965).
+  - Add patch build option and build sphinx documentation for WMCore.
+  - Allow changing multicore splitting parameters (3016).
+  - Bug on tracking many jobs fixed here (2977).
+  - Make sure the AcquisitionEra and ProcessingVersion parameters are returned 
+    from the ReqMgr (2857).
+  - Initial support for producing the topublish.json file (2865).  Off by 
+    default.
+  - Add Oracle support for wmagent-mod-config.
+  - Save the campaign in the spec when it's updated (2938).
+  - Add hypernews name validation to the lexicon (2966).
+  - The Requests unit test shouldn't require a database (2976).
+  - pycurl_manager: POST parameters are ignored (2959).
+  - Correctly handle workqueue printout when input dataset is None.
+  - Initial support for Locale configs (1650).
+  - Increase the number of files added to DBS per API call to 200 from 10 (2964).
+  - Update the JobPackage unit test for account for the fix to the JobSubmitter
+    JobPackage directory problem.
+  - Handle talking to newer versions of the gLite WMS (1706).
+  - Modify the WorkQueue tests to install the DBS3Buffer schema as they're
+    already using the DAOs.
+  - Don't display the ReqMgrBrowser on the view page (2944).
+  - Support wild cards in the site white/black list (2607).
+  - Kill jobs that have been running more than 48 hours and add the sync back
+    in for the FNAL Lustre stageout.
+  - Retrieve dataset information from the parent output module (2948).
+  - Don't assume that we know what the PFN of a file is (2939).
+  - Cleanup handling of VoRole and VoGroup (2918).
+  - Handle files with no run when creating the workload summary (2945).
+  - Support outputs with different primary datasets (2947).
+  - Associate workflows with output data in DBSBuffer (2931).
+  - Speed up the getElements() call in WorkQueueBackend (2926).
+  - Include the merged/unmerged LFNs bases in the get request call in 
+    the ReqMgr (2862).
+  - Print stderr too when certs are not found (2932).
+  - Add a spec-based override to disable direct-to-merge (2927).
+  - Improve JobSubmitter handling of package directories (2919).
+
 0.8.17 to 0.8.18:
   - Store file locations in couch as the CMS site name instead of the SE 
     name (2817).

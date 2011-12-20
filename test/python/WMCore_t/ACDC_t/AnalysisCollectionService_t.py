@@ -45,6 +45,9 @@ class AnalysisCollectionService_t(unittest.TestCase):
 
         self.assertTrue(fl['_id'])
         self.assertEqual(len(fl['files']), 21)
+        for file in fl['files']:
+            self.assertTrue(fl['files'][file]['merged'])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -5,6 +5,8 @@ _Proxy_
 Wrap gLite proxy commands.
 """
 
+import contextlib
+import copy
 import os, subprocess
 import re
 from WMCore.Credential.Credential import Credential
@@ -72,6 +74,32 @@ class CredentialException(WMException):
     Credential exceptions should be defined in this class.
     """
     pass
+
+
+@contextlib.contextmanager
+def myProxyEnvironment(userDN, serverCert, serverKey, myproxySrv, proxyDir, logger):
+    """
+    Allows us to user a context manager within which a MyProxy delegated proxy
+    is set to X509_USER_PROXY and things are restored on exit
+    """
+
+    originalEnvironment = copy.deepcopy(os.environ)
+    try:
+        args = {}
+        args['server_cert'] = serverCert
+        args['server_key']  = serverKey
+        args['myProxySvr']  = myproxySrv
+        args['credServerPath'] = proxyDir
+        args['logger'] = logger
+        proxy = Proxy(args=args)
+
+        proxy.userDN = userDN
+        filename = proxy.logonRenewMyProxy()
+        os.environ['X509_USER_PROXY'] = filename
+        yield filename
+    finally:
+        os.environ = originalEnvironment
+
 
 class Proxy(Credential):
     """

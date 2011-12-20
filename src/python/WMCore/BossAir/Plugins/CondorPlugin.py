@@ -199,6 +199,8 @@ class CondorPlugin(BasePlugin):
         self.proxyDir   = getattr(config.BossAir, 'proxyDir', '/tmp/')
         self.serverHash = getattr(config.BossAir, 'delegatedServerHash', None)
         self.glexecPath = getattr(config.BossAir, 'glexecPath', None)
+        self.glexecWrapScript = getattr(config.BossAir, 'glexecWrapScript', None)
+        self.glexecUnwrapScript = getattr(config.BossAir, 'glexecUnwrapScript', None)
         self.jdlProxyFile    = None # Proxy name to put in JDL (owned by submit user)
         self.glexecProxyFile = None # Copy of same file owned by submit user
 
@@ -358,9 +360,17 @@ class CondorPlugin(BasePlugin):
                 # Now submit them
                 logging.info("About to submit %i jobs" %(len(jobsReady)))
                 if self.glexecPath:
-                    command = 'CS=`which condor_submit`; export GLEXEC_CLIENT_CERT=%s; ' % self.glexecProxyFile + \
-                              'export GLEXEC_SOURCE_PROXY=%s; export GLEXEC_TARGET_PROXY=%s; %s $CS %s' % \
-                              (self.glexecProxyFile, self.jdlProxyFile, self.glexecPath, jdlFile)
+                    command = 'CS=`which condor_submit`; '
+                    if self.glexecWrapScript:
+                        command += 'export GLEXEC_ENV=`%s 2>/dev/null`; ' % self.glexecWrapScript
+                    command += 'export GLEXEC_CLIENT_CERT=%s; ' % self.glexecProxyFile
+                    command += 'export GLEXEC_SOURCE_PROXY=%s; ' % self.glexecProxyFile
+                    command += 'export X509_USER_PROXY=%s; ' % self.glexecProxyFile
+                    command += 'export GLEXEC_TARGET_PROXY=%s; ' % self.jdlProxyFile
+                    if self.glexecUnwrapScript:
+                        command += '%s %s -- $CS %s' % (self.glexecPath, self.glexecUnwrapScript, jdlFile)
+                    else:
+                        command += '%s $CS %s' % (self.glexecPath, jdlFile)
                 else:
                     command = "condor_submit %s" % jdlFile
 
@@ -674,8 +684,8 @@ class CondorPlugin(BasePlugin):
             if self.glexecPath:
                 self.jdlProxyFile = '%s.user' % filename
                 self.glexecProxyFile = filename
-                command = 'export GLEXEC_CLIENT_CERT=%s; export GLEXEC_SOURCE_PROXY=%s; ' % \
-                          (self.glexecProxyFile, self.glexecProxyFile) + \
+                command = 'export GLEXEC_CLIENT_CERT=%s; export GLEXEC_SOURCE_PROXY=%s; export X509_USER_PROXY=%s; ' % \
+                          (self.glexecProxyFile, self.glexecProxyFile, self.glexecProxyFile) + \
                           'export GLEXEC_TARGET_PROXY=%s; %s /usr/bin/id' % \
                           (self.jdlProxyFile, self.glexecPath)
                 proc = subprocess.Popen(command, stderr = subprocess.PIPE,
@@ -737,7 +747,7 @@ class CondorPlugin(BasePlugin):
             else:
                 jdl.append('+DESIRED_Sites = \"%s\"\n' %(jobCE))
 
-            
+
 
             # Transfer the output files
             jdl.append("transfer_output_files = Report.%i.pkl\n" % (job["retry_count"]))

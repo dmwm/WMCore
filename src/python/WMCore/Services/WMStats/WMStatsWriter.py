@@ -18,8 +18,9 @@ def monitorDocFromRequestSchema(schema):
     doc['request_date'] = schema["RequestDate"]
     
     # additional field
-    doc['inputdataset'] = schema["InputDataset"]
-    doc['team'] = schema['team']
+    doc['inputdataset'] = schema.get("InputDataset", "")
+    # team name is not yet available need to be updated in assign status
+    #doc['team'] = schema['team']
     return doc
 
 class WMStatsWriter():
@@ -55,6 +56,10 @@ class WMStatsWriter():
         return self.couchDB.updateDocument(request, 'WMStats', 'requestStatus', 
                                          fields={'request_status': statusTime})
     
+    def updateTeam(self, request, team):
+        return self.couchDB.updateDocument(request, 'WMStats', 'team', 
+                                         fields={'teams': team})
+        
     def insertTotalJobs(self, request, totalJobs):
         return self.couchDB.updateDocument(request, 'WMStats', 'requestStatus', 
                                          fields={'total_jobs': totalJobs})

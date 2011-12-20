@@ -157,14 +157,11 @@ def changeStatus(requestName, status, wmstatUrl):
         raise RuntimeError, "Cannot change status from %s to %s.  Allowed values are %s" % (
            oldStatus, status,  RequestStatus.NextStatus[oldStatus])
 
-    ChangeState.changeRequestStatus(requestName, status)
+    ChangeState.changeRequestStatus(requestName, status, wmstatUrl = wmstatUrl)
 
     if status == 'aborted':
         # delete from the workqueue
         abortRequest(requestName)
-    
-    wmstatSvc = WMStatsWriter(wmstatUrl)
-    wmstatSvc.updateRequestStatus(requestName, status)
     
 def prepareForTable(request):
     """ Add some fields to make it easier to display a request """

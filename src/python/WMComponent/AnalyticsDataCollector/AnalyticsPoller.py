@@ -10,8 +10,9 @@ import logging
 import time
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
+from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import LocalCouchDBData, \
-     ReqMonDBData, WMAgentDBData, combineAnalyticsData, convertToStatusSiteFormat
+     WMAgentDBData, combineAnalyticsData, convertToStatusSiteFormat
 
 
 class AnalyticsPoller(BaseWorkerThread):
@@ -48,7 +49,7 @@ class AnalyticsPoller(BaseWorkerThread):
         # set wmagent db data
         self.wmagentDB = WMAgentDBData(myThread.dbi, myThread.logger)
         # set the connection for local couchDB call
-        self.reqMonCouchDB = ReqMonDBData(self.config.AnalyticsDataCollector.wmstatsURL)
+        self.wmstatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL )
 
     def algorithm(self, parameters):
         """
@@ -82,7 +83,7 @@ class AnalyticsPoller(BaseWorkerThread):
                 doc['sites'] = tempData['sites']
                 doc['timestamp'] = uploadTime
 
-            self.reqMonCouchDB.uploadData(requestDocs)
+            self.wmstatsCouchDB .uploadData(requestDocs)
 
             #agent info (include job Slots for the sites)
             #agentInfo = self.wmagentDB.getHeartBeatWarning(self.config.AnalyticsDataCollector.agentURL, 

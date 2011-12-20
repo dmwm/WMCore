@@ -196,8 +196,13 @@ def modifyConfiguration(config, **args):
         config.WMBSService.views.active.wmbs.couchConfig.couchURL = sanitizeURL(args["couch_url"])['url']
         config.WMBSService.views.active.wmagent.couchConfig.couchURL = sanitizeURL(args["couch_url"])['url']
     
+    # custom AnalyticsDataCollector 
+    if hasattr(config, "AnalyticsDataCollector"):
+        config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.couchDBName)
+        config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
+        config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+    
     return config
-
 
 def main(argv=None):
     if argv is None:

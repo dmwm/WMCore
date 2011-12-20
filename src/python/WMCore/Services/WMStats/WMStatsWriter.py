@@ -26,7 +26,7 @@ class WMStatsWriter():
 
     def __init__(self, couchURL, dbName = None):
         # set the connection for local couchDB call
-        if couchDB:
+        if dbName:
             self.couchURL = couchURL
             self.dbName = dbName
         else:

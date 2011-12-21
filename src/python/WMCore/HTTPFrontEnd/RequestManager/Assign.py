@@ -198,7 +198,7 @@ class Assign(WebAPI):
                         ChangeState.assignRequest(requestName, team, wmstatUrl = self.wmstatWriteURL)
                 priority = kwargs.get(requestName+':priority', '')
                 if priority != '':
-                    Utilities.changePriority(requestName, priority)
+                    Utilities.changePriority(requestName, priority, self.wmstatWriteURL)
         participle=kwargs['action']+'ed'
         if self.hold and kwargs['action'] == 'Assign':
             participle='put into "ops-hold" state (see <a href="%s">OpsClipboard</a>)' % self.clipboardUrl
@@ -216,6 +216,9 @@ class Assign(WebAPI):
         for field in ["AcquisitionEra", "ProcessingVersion"]:
             self.validate(kwargs[field], field)
         # Set white list and black list
+        # Set white list and black list
+        whiteList = kwargs.get("SiteWhitelist", [])
+        blackList = kwargs.get("SiteBlacklist", [])
         helper.setSiteWildcardsLists(siteWhitelist = whiteList, siteBlacklist = blackList,
                                      wildcardDict = self.wildcardSites)
         # Set ProcessingVersion and AcquisitionEra
@@ -229,7 +232,7 @@ class Assign(WebAPI):
         helper.setupPerformanceMonitoring(int(kwargs["maxRSS"]), 
                                           int(kwargs["maxVSize"]))
         helper.setDashboardActivity(kwargs.get("dashboard", ""))
-        Utilities.saveWorkload(helper, request['RequestWorkflow'])
+        Utilities.saveWorkload(helper, request['RequestWorkflow'], self.wmstatWriteURL)
 
     def addSiteWildcards(self):
         """

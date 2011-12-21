@@ -107,10 +107,13 @@ def loadWorkload(request):
         raise cherrypy.HTTPError(404, "Cannot find workload "+removePasswordFromUrl(url))
     return helper
  
-def saveWorkload(helper, workload):
+def saveWorkload(helper, workload, wmstatUrl = None):
     """ Saves the changes to this workload """
     if workload.startswith('http'):
         helper.saveCouchUrl(workload)
+        if wmstatUrl:
+            wmstatSvc = WMStatsWriter(wmstatUrl)
+            wmstatSvc.updateFromWMSpec(helper)
     else:
         helper.save(workload)
 
@@ -123,7 +126,7 @@ def removePasswordFromUrl(url):
         result = url[:slashslashat+2] + url[atat+1:]
     return result
 
-def changePriority(requestName, priority):
+def changePriority(requestName, priority, wmstatUrl = None):
     """ Changes the priority that's stored in the workload """
     # fill in all details
     request = GetRequest.getRequestByName(requestName)
@@ -131,9 +134,9 @@ def changePriority(requestName, priority):
     userPriority  = request.get('ReqMgrRequestorBasePriority', 0)
     ChangeState.changeRequestPriority(requestName, priority)
     helper = loadWorkload(request)
-    totalPriority = int(priority + userPriority + groupPriority)
+    totalPriority = int(priority) + int(userPriority) + int(groupPriority)
     helper.data.request.priority = totalPriority
-    saveWorkload(helper, request['RequestWorkflow'])
+    saveWorkload(helper, request['RequestWorkflow'], wmstatUrl)
 
 def abortRequest(request):
     """ Changes the state of the request to "aborted", and asks the work queue

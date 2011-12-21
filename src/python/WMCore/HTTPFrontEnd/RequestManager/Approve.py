@@ -44,7 +44,7 @@ class Approve(BulkOperations):
                 ChangeState.changeRequestStatus(requestName, 'assignment-approved', wmstatUrl = self.wmstatWriteURL)
             priority = kwargs.get(requestName+':priority', '')
             if priority != '':
-                Utilities.changePriority(requestName, priority)
+                Utilities.changePriority(requestName, priority, self.wmstatWriteURL)
         return self.templatepage("Acknowledge", participle=participle, 
                                  requests=requests)
 

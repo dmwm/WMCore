@@ -426,7 +426,7 @@ class ReqMgrRESTModel(RESTModel):
                 if status != 'announced' and status != 'closed-out':
                     raise cherrypy.HTTPError(403, "Failed to change status: %s" % str(e))
         if priority != None:
-            Utilities.changePriority(requestName, priority) 
+            Utilities.changePriority(requestName, priority, self.wmstatWriteURL) 
         return request
 
     def putAssignment(self, team, requestName):

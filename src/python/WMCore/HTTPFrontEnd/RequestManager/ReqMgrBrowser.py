@@ -302,7 +302,7 @@ class ReqMgrBrowser(WebAPI):
                 status = v
                 priority = kwargs[requestName+':priority']
                 if priority != '':
-                    Utilities.changePriority(requestName, priority)
+                    Utilities.changePriority(requestName, priority, self.wmstatWriteURL)
                     message += "Changed priority for %s to %s\n" % (requestName, priority)
                 if status != "":
                     Utilities.changeStatus(requestName, status, self.wmstatWriteURL)

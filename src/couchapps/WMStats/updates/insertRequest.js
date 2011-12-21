@@ -2,12 +2,12 @@ function (doc, req) {
     // create doc if it is not exist. 
     if (!doc) {
         // _id needs to be specified
-        if (!req.doc._id) {
-            return [null, "Error"]
+        doc = JSON.parse(req.query.doc);
+        if (!doc._id) {
+            return [null, "Error"];
         }
-        doc = req.doc
-        return [doc, 'OK']   
+        return [doc, 'OK'];   
     } else {
-        return [null, "EXIST"]
+        return [null, "EXIST"];
     } 
 } 

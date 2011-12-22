@@ -160,7 +160,7 @@ def changePriority(requestName, priority):
     userPriority  = request.get('ReqMgrRequestorBasePriority', 0)
     ChangeState.changeRequestPriority(requestName, priority)
     helper = loadWorkload(request)
-    totalPriority = int(priority + userPriority + groupPriority)
+    totalPriority = int(priority) + int(userPriority) + int(groupPriority)
     helper.data.request.priority = totalPriority
     saveWorkload(helper, request['RequestWorkflow'])
 

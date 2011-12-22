@@ -22,13 +22,18 @@ import shutil
 import stat
 import sys
 
+try:
+    import cStringIO as StringIO
+except:
+    import StringIO
+
 from WMCore.Algorithms import Permissions
 
 from WMCore.WMException import WMException
 from WMCore.Wrappers.JsonWrapper import JSONEncoder, JSONDecoder
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
 try:
-    from WMCore.Services.pycurl_manager import RequestHandler
+    from WMCore.Services.pycurl_manager import RequestHandler, ResponseHeader
 except ImportError:
     pass
 from WMCore.Lexicon import sanitizeURL
@@ -40,6 +45,36 @@ def check_server_url(srvurl):
         msg  = "You must include"
         msg += "http(s):// in your servers address, %s doesn't" % srvurl
         raise ValueError(msg)
+
+def uploadFile(fileName, url, fieldName = 'file1', params = []):
+    import pycurl
+    c = pycurl.Curl()
+    c.setopt(c.POST, 1)
+    c.setopt(c.URL, url)
+    fullParams = [(fieldName, (c.FORM_FILE, fileName))]
+    fullParams.extend(params)
+    c.setopt(c.HTTPPOST, fullParams)
+    c.setopt(c.HTTPHEADER, ['Content-Length: %d' % len(fileName)])
+    bbuf = StringIO.StringIO()
+    hbuf = StringIO.StringIO()
+    c.setopt(pycurl.WRITEFUNCTION, bbuf.write)
+    c.setopt(pycurl.HEADERFUNCTION, hbuf.write)
+    c.perform()
+    hres = hbuf.getvalue()
+    bres = bbuf.getvalue()
+    rh = ResponseHeader(hres)
+    c.close()
+    if  rh.status != 200:
+        exc = HTTPException()
+        setattr(exc, 'req_data', fullParams)
+        setattr(exc, 'url', url)
+        setattr(exc, 'result', bres)
+        setattr(exc, 'status', rh.status)
+        setattr(exc, 'reason', rh.reason)
+        setattr(exc, 'headers', rh.header)
+        raise exc
+
+    return bres
 
 class Requests(dict):
     """

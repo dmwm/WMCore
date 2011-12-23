@@ -27,6 +27,7 @@ from WMCore.WorkQueue.Policy.End import endPolicy
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
 from WMCore.WorkQueue.WorkQueueExceptions import TERMINAL_EXCEPTIONS
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueError
 from WMCore.WorkQueue.WorkQueueUtils import get_dbs
 
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
@@ -91,8 +92,17 @@ class WorkQueue(WorkQueueBase):
                                         self.params['ParentQueueCouchUrl'], self.params.get('QueueURL'),
                                         logger = self.logger)
         if self.params.get('ParentQueueCouchUrl'):
-            self.parent_queue = WorkQueueBackend(self.params['ParentQueueCouchUrl'].rsplit('/', 1)[0],
-                                                 self.params['ParentQueueCouchUrl'].rsplit('/', 1)[1])
+            try:
+                self.parent_queue = WorkQueueBackend(self.params['ParentQueueCouchUrl'].rsplit('/', 1)[0],
+                                                     self.params['ParentQueueCouchUrl'].rsplit('/', 1)[1])
+            except IndexError, ex:
+                # Probable cause: Someone didn't put the global WorkQueue name in
+                # the ParentCouchUrl
+                msg =  "Parsing failure for ParentQueueCouchUrl - probably missing dbname in input\n"
+                msg += "Exception: %s\n" % str(ex)
+                msg += str("ParentQueueCouchUrl: %s\n" % self.params['ParentQueueCouchUrl'])
+                self.logger.error(msg)
+                raise WorkQueueError(msg)
             self.params['ParentQueueCouchUrl'] = self.parent_queue.queueUrl
 
         self.params.setdefault("GlobalDBS",

@@ -26,7 +26,9 @@ class RequestManager(Service):
 
         dict.setdefault('cacheduration', 0)
         dict.setdefault("accept_type", "application/json")
-        dict.setdefault("content_type", "application/json")
+        # cherrypy converts request.body to params when content type is set
+        # application/x-www-form-urlencoded
+        dict.setdefault("content_type", 'application/x-www-form-urlencoded')
         self.encoder = JsonWrapper.dumps
         self.decoder = JsonWrapper.loads
         Service.__init__(self, dict)
@@ -115,7 +117,8 @@ class RequestManager(Service):
         args = {'requestName' : requestName}
         args.update(kargs)
 
-        return self._getResult(callname, args = args, verb = "POST")
+        return self._getResult(callname, args = args, verb = "POST",
+                               contentType = 'application/json')
 
     def reportRequestStatus(self, requestName, status):
         """Update reqMgr about request"""

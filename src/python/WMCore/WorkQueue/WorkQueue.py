@@ -737,7 +737,8 @@ class WorkQueue(WorkQueueBase):
                     if not self.params.get('LocalQueueFlag'):
                         #only update for global queue
                         wmstatSvc = WMStatsWriter(self.params.get('WMStatsCouchUrl'))
-                        wmstat.insertTotalJobs(inbound['WMSpec'].name(), totalJobs)
+                        #TODO need to handle error case?
+                        wmstatSvc.insertTotalJobs(inbound['WMSpec'].name(), totalJobs)
                         
             except TERMINAL_EXCEPTIONS, ex:
                 self.logger.info('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))

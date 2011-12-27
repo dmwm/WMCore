@@ -179,7 +179,8 @@ def modifyConfiguration(config, **args):
             config.WorkQueueManager.dbname = args['workqueue_db_name']
             config.WorkQueueManager.inboxDatabase = config.WorkQueueManager.dbname + '_inbox'
         config.WorkQueueManager.reqMgrConfig['endpoint'] = "http://%s:%s/reqmgr/reqMgr/" % (args["reqmgr_hostname"], args["reqmgr_port"])
-
+        config.WorkQueueManager.queueParams['WMStatsCouchUrl'] = "%s/%s" % (config.WorkQueueManager.couchurl.rstrip(), config.WorkQueueManager.wmstatDBName)
+        
     # Custom Local WorkQueue
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'LocalQueue':
         if args.get("global_workqueue_url", None):

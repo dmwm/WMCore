@@ -17,7 +17,7 @@ def monitorDocFromRequestSchema(schema):
     doc["priority"] = schema['RequestPriority']
     doc["group"] = schema['Group']
     doc["request_date"] = schema['RequestDate']
-    
+    doc["type"] = "reqmgr_request"
     # additional field
     doc["inputdataset"] = schema.get('InputDataset', "")
     # team name is not yet available need to be updated in assign status

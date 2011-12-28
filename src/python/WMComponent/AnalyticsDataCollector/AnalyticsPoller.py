@@ -75,7 +75,7 @@ class AnalyticsPoller(BaseWorkerThread):
             for request, status in combinedRequests.items():
                 doc = {}
                 doc.update(self.agentInfo)
-                doc['type'] = "request"
+                doc['type'] = "agent_request"
                 doc['workflow'] = request
                 # this will set doc['status'], and doc['sites']
                 tempData = convertToStatusSiteFormat(status)

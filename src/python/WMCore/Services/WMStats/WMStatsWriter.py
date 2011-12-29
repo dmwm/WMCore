@@ -1,4 +1,5 @@
 import time
+import logging
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.Wrappers.JsonWrapper import JSONEncoder
@@ -76,4 +77,20 @@ class WMStatsWriter():
         fields = {'priority': spec.priority(), 'site_white_list': spec.getTopLevelTask()[0].siteWhitelist()}
         return self.couchDB.updateDocument(spec.name(), 'WMStats', 'generalFields', 
                                          fields={'general_fields': JSONEncoder().encode(fields)})
+        
+    def deleteOldDocs(self, days):
+        """
+        delete the documents from wmstats db older than param 'days'
+        """
+        sec = days * 24 * 60 *60
+        threshold = int(time.time()) - sec
+        options = {"startkey": threshold, "descending": True, "stale": "ok"}
+        result = self.couchDB.loadView("WMStats", "time", options)
+        for row in result['rows']:
+            doc = {}
+            doc['_id'] = row['value']['id']
+            doc['_rev'] = row['value']['rev']
+            self.couchDB.queueDelete(doc)
+        return self.couchDB.commit()
+        
         

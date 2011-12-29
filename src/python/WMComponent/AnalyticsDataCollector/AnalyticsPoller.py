@@ -69,7 +69,9 @@ class AnalyticsPoller(BaseWorkerThread):
             
             # combine all the data from 3 sources
             tempCombinedData = combineAnalyticsData(jobInfoFromCouch, batchJobInfo)
+            logging.debug("temp combine data %s" % tempCombinedData)
             combinedRequests = combineAnalyticsData(tempCombinedData, localQInfo)
+            logging.debug("combined requests  %s" % combinedRequests)
             requestDocs = []
             uploadTime = int(time.time())
             for request, status in combinedRequests.items():
@@ -82,9 +84,10 @@ class AnalyticsPoller(BaseWorkerThread):
                 doc['status'] = tempData['status']
                 doc['sites'] = tempData['sites']
                 doc['timestamp'] = uploadTime
+                requestDocs.append(doc)
 
-            self.wmstatsCouchDB .uploadData(requestDocs)
-
+            self.wmstatsCouchDB.uploadData(requestDocs)
+            logging.info("Data upload success\n %s request" % len(requestDocs))
             #agent info (include job Slots for the sites)
             #agentInfo = self.wmagentDB.getHeartBeatWarning(self.config.AnalyticsDataCollector.agentURL, 
             #                                               self.getCouchACDCHtmlBase())
@@ -92,7 +95,7 @@ class AnalyticsPoller(BaseWorkerThread):
             #self.reqMonCouchDB.uploadData(agentInfo)
 
         except Exception, ex:
-            #add log
+            logging.error(str(ex))
             raise
 
     def getCouchACDCHtmlBase(self):

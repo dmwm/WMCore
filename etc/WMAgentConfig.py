@@ -475,3 +475,5 @@ config.AnalyticsDataCollector.pollInterval = 600
 config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl,  config.JobStateMachine.couchDBName)
 config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
 config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+config.AnalyticsDataCollector.DataKeepDays = 1
+config.AnalyticsDataCollector.cleanUpInterval = 60 * 60 * 24 # change to 1 day

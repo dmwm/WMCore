@@ -1,6 +1,6 @@
 
 function(doc) {
   if (doc.type == "agent_info") {
-    emit(doc.url, doc);   
+    emit(doc.agent_url, doc);   
   }
 }

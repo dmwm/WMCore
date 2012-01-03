@@ -17,7 +17,7 @@ import urllib
 import logging
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DAOFactory import DAOFactory
-from WMCore.Lexicon import splitCouchServiceURL
+from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 from WMComponent.AnalyticsDataCollector.DataCollectorEmulatorSwitch import emulatorHook
 
 @emulatorHook
@@ -62,24 +62,6 @@ class LocalCouchDBData():
         return data
 
 @emulatorHook
-class ReqMonDBData():
-
-    def __init__(self, couchURL):
-        # set the connection for local couchDB call
-        self.couchURL, self.dbName = splitCouchServiceURL(couchURL)
-        self.couchDB = CouchServer(self.couchURL).connectDatabase(self.dbName, False)
-
-    def uploadData(self, docs):
-        """
-        upload to given couchURL using cert and key authentication and authorization
-        """
-        # add delete docs as well for the compaction
-        # need to check whether delete and update is successful
-        for doc in docs:
-            self.couchDB.queue(doc)
-        return self.couchDB.commit(returndocs = True)
-
-@emulatorHook
 class WMAgentDBData():
 
     def __init__(self, dbi, logger):
@@ -96,13 +78,16 @@ class WMAgentDBData():
         self.jobSlotAction = wmbsDAOFactory(classname = "Locations.GetJobSlotsByCMSName")
         self.componentStatusAction = wmAgentDAOFactory(classname = "CheckComponentStatus")
 
-    def getHeartBeatWarning(self, agentURL, acdcLink):
+    def getHeartBeatWarning(self):
         
-        results = self.componentStatusAction.execute()
+        results = self.componentStatusAction.execute(detail = True)
         agentInfo = {}
-        agentInfo.update(results)
-        agentInfo['url'] = agentURL
-        agentInfo['acdc'] = acdcLink
+        agentInfo['down_components'] = []
+        if len(results) == 0:
+            agentInfo['status'] = 'ok'
+        else:
+            agentInfo['status'] = 'down'
+            agentInfo['down_components'] = results    
         return agentInfo
     
     def getBatchJobInfo(self):
@@ -111,6 +96,16 @@ class WMAgentDBData():
     def getJobSlotInfo(self):
         return self.jobSlotAction.execute()
 
+def getCouchACDCHtmlBase(acdcCouchURL):
+    """
+    TODO: currently it is hard code to the front page of ACDC
+    When there is more information is available, it can be added
+    through 
+    """
+    
+
+    return '%s/_design/ACDC/collections.html' % sanitizeURL(acdcCouchURL)['url']
+    
 def combineAnalyticsData(a, b, combineFunc = None):
     """
         combining 2 data which is the format of dict of dict of ...

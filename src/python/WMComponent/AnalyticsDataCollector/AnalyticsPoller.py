@@ -12,7 +12,7 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import LocalCouchDBData, \
-     WMAgentDBData, combineAnalyticsData, convertToStatusSiteFormat
+     WMAgentDBData, combineAnalyticsData, convertToStatusSiteFormat, getCouchACDCHtmlBase
 
 
 class AnalyticsPoller(BaseWorkerThread):
@@ -29,6 +29,7 @@ class AnalyticsPoller(BaseWorkerThread):
         self.agentInfo = {}
         self.agentInfo['team'] = config.Agent.teamName
         self.agentInfo['agent'] = config.Agent.agentName
+        self.agentInfo['agent_url'] = config.Agent.hostName
         # need to get campaign, user, owner info
         self.agentDocID = "agent+hostname"
 
@@ -89,20 +90,17 @@ class AnalyticsPoller(BaseWorkerThread):
             self.wmstatsCouchDB.uploadData(requestDocs)
             logging.info("Data upload success\n %s request" % len(requestDocs))
             #agent info (include job Slots for the sites)
-            #agentInfo = self.wmagentDB.getHeartBeatWarning(self.config.AnalyticsDataCollector.agentURL, 
-            #                                               self.getCouchACDCHtmlBase())
+            agentInfo = self.wmagentDB.getHeartBeatWarning()
+            agentInfo.update(self.agentInfo)
+            #TODO: sets the _id as agent url, need to be unique
+            agentInfo['_id'] = agentInfo["agent_url"]
+            acdcURL = '%s/%s' % (self.config.ACDC.couchurl, self.config.ACDC.database)
+            agentInfo['acdc'] = getCouchACDCHtmlBase(acdcURL)
             
-            #self.reqMonCouchDB.uploadData(agentInfo)
+            agentInfo['timestamp'] = uploadTime
+            agentInfo['type'] = "agent_info"
+            self.wmstatsCouchDB.updateAgentInfo(agentInfo)
 
         except Exception, ex:
             logging.error(str(ex))
             raise
-
-    def getCouchACDCHtmlBase(self):
-        """
-        TODO: currently it is hard code to the front page of ACDC
-        When there is more information is available, it can be added
-        through 
-        """
-
-        return '%s/_design/ACDC/collections.html' % (self.config.ReqMonReporter.acdcCouchURL)

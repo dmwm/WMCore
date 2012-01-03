@@ -77,6 +77,10 @@ class WMStatsWriter():
         fields = {'priority': spec.priority(), 'site_white_list': spec.getTopLevelTask()[0].siteWhitelist()}
         return self.couchDB.updateDocument(spec.name(), 'WMStats', 'generalFields', 
                                          fields={'general_fields': JSONEncoder().encode(fields)})
+    
+    def updateAgentInfo(self, agentInfo):
+        return self.couchDB.updateDocument(agentInfo['_id'], 'WMStats', 'agentInfo', 
+                                         fields={'agent_info': JSONEncoder().encode(agentInfo)})
         
     def deleteOldDocs(self, days):
         """

@@ -234,6 +234,9 @@ config.TaskArchiver.workloadSummaryCouchURL = workloadSummaryURL
 config.TaskArchiver.workloadSummaryCouchDBName = workloadSummaryDB
 config.TaskArchiver.histogramKeys = ["PeakValueRss", "PeakValueVsize", "TotalJobTime", "AvgEventTime"]
 config.TaskArchiver.requireCouch  = True
+config.TaskArchiver.uploadPublishInfo = False
+config.TaskArchiver.uploadPublishDir  = None
+config.TaskArchiver.userFileCacheURL = 'http://USERFILECACHEHOST:UFCPORT/userfilecache/'
 
 config.webapp_('WMBSService')
 config.WMBSService.default_expires = 0

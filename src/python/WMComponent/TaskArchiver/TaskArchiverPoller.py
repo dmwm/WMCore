@@ -37,6 +37,7 @@ import traceback
 import time
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from WMCore.Services.UserFileCache.UserFileCache import UserFileCache
 
 from WMCore.WMBS.Subscription   import Subscription
 from WMCore.WMBS.Fileset        import Fileset
@@ -121,6 +122,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.deleteCouchData   = getattr(self.config.TaskArchiver, 'deleteCouchData', True)
         self.uploadPublishInfo = getattr(self.config.TaskArchiver, 'uploadPublishInfo', False)
         self.uploadPublishDir  = getattr(self.config.TaskArchiver, 'uploadPublishDir', None)
+        self.userFileCacheURL  = getattr(self.config.TaskArchiver, 'userFileCacheURL', None)
 
         # Set up optional histograms
         self.histogramKeys  = getattr(self.config.TaskArchiver, "histogramKeys", [])
@@ -624,6 +626,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         with all the info needed to publish this dataset later
         """
 
+        ufc = UserFileCache({'endpoint': self.userFileCacheURL})
         if self.uploadPublishDir:
             workDir = self.uploadPublishDir
         else:
@@ -655,8 +658,9 @@ class TaskArchiverPoller(BaseWorkerThread):
             return False
 
         # Write JSON file and then create tarball with it
+        baseName = '%s_publish.tgz'  % workflow.name
         jsonName = os.path.join(workDir, '%s_publish.json' % workflow.name)
-        tgzName  = os.path.join(workDir, '%s_publish.tgz'  % workflow.name)
+        tgzName = os.path.join(workDir, baseName)
         with open(jsonName, 'w') as jsonFile:
             json.dump(uploadDatasets, fp=jsonFile, cls=FileEncoder, indent=2)
 
@@ -665,6 +669,11 @@ class TaskArchiverPoller(BaseWorkerThread):
         tgzFile.add(jsonName)
         tgzFile.close()
 
+        result = ufc.upload(fileName=tgzName, name=baseName, subDir='ewv')
+        logging.debug('Upload result %s' % result)
+        # If this doesn't work, exception will propogate up and block archiving the task
+        logging.info('Uploaded to URL %s with hashkey %s' % (result['url'], result['hashkey']))
+        return
 
     def deleteWorkflowFromCouch(self, workflowName):
         """

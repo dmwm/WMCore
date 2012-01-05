@@ -77,7 +77,7 @@ class TestInitCouchApp(TestInit):
         wmBase = self.init.getWMBASE()
         develPath = "%s/src/couchapps" % wmBase
         if not os.path.exists(develPath):
-            basePath = "%s/couchapps" % os.environ['WMCORE_ROOT']
+            basePath = "%s/data/couchapps" % os.environ['WMCORE_ROOT']
         else:
             basePath = develPath
         return basePath

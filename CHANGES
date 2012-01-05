@@ -1,3 +1,15 @@
+0.8.19 to 0.8.20:
+  - Fix for new WMCORE_ROOT/data/couchapps location (3061).
+  - Optionally upload the topublish.json file to the UFC (2866).
+  - WorkQueue Should Raise Proper Error if Missing DBName for Parent (2962).
+  - Add Service class for UFC upload (2953).
+  - Allow Scenario instead of ProcScenario in the DataProcessing workload (3048).
+  - Convert all priorities to integers before adding them to the ReqMgr (3050).
+  - Add a MyProxy context mananger (3026).
+  - More fixes to glexec with condor (3024).
+  - Add a view to the ReqMgr couch app for publication information (3022).
+  - Add a unit test to ACDC/AnalysisCollectionService_t.py (3020).
+
 0.8.18 to 0.8.19:
   - Improve logging for ScriptInvoke errors (3038).
   - Only closeout and cleanup subscriptions/filesets that are 

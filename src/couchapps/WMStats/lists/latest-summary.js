@@ -9,6 +9,11 @@ function(head, req) {
         }
         return true;
     }
+    function latestStatusFormat(data) {
+        //filter out the latest status
+        data.request_status = data.request_status[data.request_status.length-1];
+        return data
+    }
     // this function is used for elementsDetailByWorkflowAndStatus
     provides("json", function() {
         send("[");
@@ -19,7 +24,7 @@ function(head, req) {
         var requestor = req.query.requestor;
         if (row) {
             if (row.key[1] == 1) { 
-                send(toJSON(row.value)); commaFlag = true;
+                send(toJSON(latestStatusFormat(row.value))); commaFlag = true;
             } else {
                 latestRecord = row.value;
             };
@@ -30,7 +35,7 @@ function(head, req) {
                         latestRecord[col] = row.value[col];                        
                     }
                     if (commaFlag) {send(",");}
-                    send(toJSON(latestRecord));
+                    send(toJSON(latestStatusFormat(latestRecord)));
                     latestRecord = {};
                 } else {
                     latestRecord = row.value;

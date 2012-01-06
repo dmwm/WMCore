@@ -91,8 +91,8 @@ class RequestManagerTest(RESTBaseUnitTest):
         self.reqService.sendMessage(requestName,"error")
         self.reqService.putWorkQueue(requestName, "http://test_url")
         self.reqService.reportRequestProgress(requestName)
-        #self.reqService.reportRequestProgress(requestName, 
-        #                percent_complete = 100, percent_success = 90)
+        self.reqService.reportRequestProgress(requestName,
+                        percent_complete = 100, percent_success = 90)
         
         self.reqService.reportRequestStatus(requestName, "running")
         return

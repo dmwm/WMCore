@@ -24,7 +24,10 @@ class RequestManager(Service):
             dict['endpoint'] = "%scmssrv49.fnal.gov:8585/reqMgr/" % \
                                 ((secure and "https://" or "http://"))
 
-        dict['accept_type'] = 'text/json'
+        dict.setdefault("accept_type", "application/json")
+        # cherrypy converts request.body to params when content type is set
+        # application/x-www-form-urlencodeds
+        dict.setdefault("content_type", 'application/x-www-form-urlencoded')
         dict.setdefault('cacheduration', 0)
 
         Service.__init__(self, dict)
@@ -113,11 +116,12 @@ class RequestManager(Service):
 
     def reportRequestProgress(self, requestName, **kargs):
         """Update ReqMgr with request progress"""
-        callname = 'request'
-        args = {'requestName' : requestName}
+        callname = 'request/%s' % requestName
+        args = {}
         args.update(kargs)
 
-        return self._getResult(callname, args = args, verb = "POST")
+        return self._getResult(callname, args = args, verb = "POST",
+                               contentType = 'application/json')
 
     def reportRequestStatus(self, requestName, status):
         """Update reqMgr about request"""

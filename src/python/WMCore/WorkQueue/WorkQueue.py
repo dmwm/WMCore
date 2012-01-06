@@ -358,7 +358,7 @@ class WorkQueue(WorkQueueBase):
         self.logger.info("Adding WMBS subscription for %s" % match['RequestName'])
 
         mask = match['Mask']
-        wmbsHelper = WMBSHelper(wmspec, blockName, mask, self.params['CacheDir'])
+        wmbsHelper = WMBSHelper(wmspec, match['TaskName'], blockName, mask, self.params['CacheDir'])
 
         sub, match['NumOfFilesAdded'] = wmbsHelper.createSubscriptionAndAddFiles(block = dbsBlock)
         self.logger.info("Created top level subscription %s for %s with %s files" % (sub['id'],

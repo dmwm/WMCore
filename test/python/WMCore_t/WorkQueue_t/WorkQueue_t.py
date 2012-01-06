@@ -553,13 +553,30 @@ class WorkQueueTest(WorkQueueTestCase):
         # try to get work
         work = self.queue.getWork({'T2_XX_SiteA' : 0})
         self.assertEqual([], work)
-        work = self.queue.getWork({'T2_XX_SiteA' : total, 'T2_XX_SiteB' : total})
+        # check individual task whitelists obeyed when getting work
+        work = self.queue.getWork({'T2_XX_SiteA' : total})
+        self.assertEqual(len(work), 1)
+        work2 = self.queue.getWork({'T2_XX_SiteB' : total})
+        self.assertEqual(len(work2), 1)
+        work.extend(work2)
         self.assertEqual(len(work), 2)
         self.assertEqual(sum([x['Jobs'] for x in self.queue.status(status = 'Running')]),
                          total)
+        # check we have all tasks and no extra/missing ones
+        for task in spec.taskIterator():
+            # note: order of elements in work is undefined (both inserted simultaneously)
+            element = [x for x in work if x['Subscription']['workflow'].task == task.getPathName()]
+            if not element:
+                self.fail("Top level task %s not in wmbs" % task.getPathName())
+            element = element[0]
+
+            # check restrictions - only whitelist for now
+            whitelist = element['Subscription'].getWhiteBlackList()
+            whitelist = [x['site_name'] for x in whitelist if x['valid'] == 1]
+            self.assertEqual(sorted(task.siteWhitelist()), sorted(whitelist))
 
         #no more work available
-        self.assertEqual(0, len(self.queue.getWork({'T2_XX_SiteA' : total})))
+        self.assertEqual(0, len(self.queue.getWork({'T2_XX_SiteA' : total, 'T2_XX_SiteB' : total})))
         try:
             os.unlink(specfile)
         except OSError:

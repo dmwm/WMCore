@@ -513,7 +513,7 @@ class WMBSHelperTest(unittest.TestCase):
         
         topLevelTask = getFirstTask(wmspec)
          
-        wmbs = WMBSHelper(wmspec, block, mask, cachepath = self.workDir)
+        wmbs = WMBSHelper(wmspec, topLevelTask.name(), block, mask, cachepath = self.workDir)
         if block:
             if parentFlag:
                 block = self.dbs.getFileBlockWithParents(block)[block]
@@ -562,8 +562,10 @@ class WMBSHelperTest(unittest.TestCase):
                                    ceName = 'site2', plugin = "TestPlugin")        
 
         testWorkload = self.createTestWMSpec()
-        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock", cachepath = self.workDir)
-        testWMBSHelper.createSubscription()
+        testTopLevelTask = getFirstTask(testWorkload)
+        testWMBSHelper = WMBSHelper(testWorkload, testTopLevelTask.name(), "SomeBlock", cachepath = self.workDir)
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testTopLevelTask, testWMBSHelper.topLevelFileset)
 
         procWorkflow = Workflow(name = "TestWorkload",
                                 task = "/TestWorkload/ProcessingTask")
@@ -706,13 +708,19 @@ class WMBSHelperTest(unittest.TestCase):
                                    ceName = 'site2', plugin = "TestPlugin")        
 
         testWorkload = self.createTestWMSpec()
-        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock", cachepath = self.workDir)
-        testWMBSHelper.createSubscription()
+        testTopLevelTask = getFirstTask(testWorkload)
+        testWMBSHelper = WMBSHelper(testWorkload, testTopLevelTask.name(), "SomeBlock", cachepath = self.workDir)
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testTopLevelTask, testWMBSHelper.topLevelFileset)
 
         testWorkload.truncate("ResubmitTestWorkload", "/TestWorkload/ProcessingTask/MergeTask",
                               "someserver", "somedatabase")
-        testResubmitWMBSHelper = WMBSHelper(testWorkload, "SomeBlock2", cachepath = self.workDir)
-        testResubmitWMBSHelper.createSubscription()
+
+        # create  the subscription for multiple top task (MergeTask and CleanupTask for the same block)
+        for task in testWorkload.getTopLevelTask():
+            testResubmitWMBSHelper = WMBSHelper(testWorkload, task.name(), "SomeBlock2", cachepath = self.workDir)
+            testResubmitWMBSHelper.createTopLevelFileset()
+            testResubmitWMBSHelper.createSubscription(task, testResubmitWMBSHelper.topLevelFileset)
 
         mergeWorkflow = Workflow(name = "ResubmitTestWorkload",
                                  task = "/ResubmitTestWorkload/MergeTask")

@@ -151,7 +151,7 @@ class WMBSHelper(WMConnectionBase):
 
     Interface between the WorkQueue and WMBS.
     """
-    def __init__(self, wmSpec, blockName = None, mask = None, cachepath = '.'):
+    def __init__(self, wmSpec, taskName, blockName = None, mask = None, cachepath = '.'):
         """
         _init_
 
@@ -160,6 +160,7 @@ class WMBSHelper(WMConnectionBase):
         self.block = blockName
         self.mask = mask
         self.wmSpec = wmSpec
+        self.topLevelTask = wmSpec.getTask(taskName)
         self.cachepath = cachepath
         self.isDBS     = True
 
@@ -241,23 +242,13 @@ class WMBSHelper(WMConnectionBase):
 
         return outputFilesetName
 
-    def createSubscription(self, topLevelFilesetName = None, task = None,
-                           fileset = None):
+    def createSubscription(self, task, fileset):
         """
         _createSubscription_
 
         Create subscriptions in WMBS for all the tasks in the spec.  This
         includes filesets, workflows and the output map for each task.
         """
-        if task == None or fileset == None:
-            self.createTopLevelFileset(topLevelFilesetName)
-            sub = None
-            for topLevelTask in self.wmSpec.getTopLevelTask():
-                sub = self.createSubscription(topLevelFilesetName,
-                                              topLevelTask,
-                                              self.topLevelFileset)
-            return sub
-
         # create runtime sandbox for workflow
         self.createSandbox()
 
@@ -299,8 +290,8 @@ class WMBSHelper(WMConnectionBase):
                             mergedOutputFileset = Fileset(self.outputFilesetName(childTask, "Merged"))
                             mergedOutputFileset.create()
                             mergedOutputFileset.markOpen(True)
-                                                         
-                        self.createSubscription(topLevelFilesetName, childTask, outputFileset) 
+
+                        self.createSubscription(childTask, outputFileset)
 
                 if mergedOutputFileset == None:
                     workflow.addOutput(outputModuleName, outputFileset,
@@ -369,9 +360,10 @@ class WMBSHelper(WMConnectionBase):
 
         """
         self.beginTransaction()
-        
-        sub = self.createSubscription()
-        
+
+        self.createTopLevelFileset()
+        sub = self.createSubscription(self.topLevelTask, self.topLevelFileset)
+
         if block != None:
             logging.info('"%s" Injecting block %s (%d files) into wmbs' % (self.wmSpec.name(),
                                                                            self.block,
@@ -397,7 +389,7 @@ class WMBSHelper(WMConnectionBase):
         as well as run lumi update
         """
                 
-        if self.wmSpec.getTopLevelTask()[0].getInputACDC():
+        if self.topLevelTask.getInputACDC():
             self.isDBS = False
             for acdcFile in self.validFiles(block['Files']):
                 self._addACDCFileToWMBSFile(acdcFile)
@@ -632,8 +624,8 @@ class WMBSHelper(WMConnectionBase):
 
     def validFiles(self, files):
         """Apply run white/black list and return valid files"""
-        runWhiteList = self.wmSpec.getTopLevelTask()[0].inputRunWhitelist()
-        runBlackList = self.wmSpec.getTopLevelTask()[0].inputRunBlacklist()
+        runWhiteList = self.topLevelTask.inputRunWhitelist()
+        runBlackList = self.topLevelTask.inputRunBlacklist()
 
         results = []
         for f in files:

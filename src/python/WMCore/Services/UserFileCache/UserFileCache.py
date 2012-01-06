@@ -7,10 +7,11 @@ API for UserFileCache service
 
 import hashlib
 import json
+import logging
 import tarfile
 
 from WMCore.Services.Service import Service
-from WMCore.Services.Requests import uploadFile
+from WMCore.Services.Requests import uploadFile, downloadFile
 
 
 class UserFileCache(Service):
@@ -26,6 +27,21 @@ class UserFileCache(Service):
         if not dict.has_key('endpoint'):
             dict['endpoint'] = "http://cms-xen38.fnal.gov:7725/userfilecache/"
         Service.__init__(self, dict)
+
+    def download(self, hashkey=None, subDir=None, name=None, output=None):
+        """
+        Download file
+        """
+        # FIXME: option for temp file if output=None
+        if hashkey:
+            url = self['endpoint'] + 'download?hashkey=%s' % hashkey
+        else:
+            url = self['endpoint'] + 'download?subDir=%s;name=%s' % (subDir, name)
+
+        self['logger'].info('Fetching URL %s' % url)
+        fileName, header = downloadFile(output, url)
+        self['logger'].debug('Wrote %s' % fileName)
+        return fileName
 
     def upload(self, fileName, subDir=None, name=None):
         """

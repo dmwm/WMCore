@@ -47,6 +47,9 @@ def check_server_url(srvurl):
         raise ValueError(msg)
 
 def uploadFile(fileName, url, fieldName = 'file1', params = []):
+    """
+    Upload a file with curl streaming it directly from disk
+    """
     import pycurl
     c = pycurl.Curl()
     c.setopt(c.POST, 1)
@@ -75,6 +78,29 @@ def uploadFile(fileName, url, fieldName = 'file1', params = []):
         raise exc
 
     return bres
+
+def downloadFile(fileName, url):
+    """
+    Download a file with curl streaming it directly to disk
+    """
+    import pycurl
+    from WMCore.Services.pycurl_manager import ResponseHeader
+
+    hbuf = StringIO.StringIO()
+
+    with open(fileName, "wb") as fp:
+        curl = pycurl.Curl()
+        curl.setopt(pycurl.URL, url)
+        curl.setopt(pycurl.WRITEDATA, fp)
+        curl.setopt(pycurl.HEADERFUNCTION, hbuf.write)
+        curl.perform()
+        curl.close()
+
+        header = ResponseHeader(hbuf.getvalue())
+        if header.status < 200 or header.status >= 300:
+            raise RuntimeError('Reading %s failed with code %s' % (url, header.status))
+    return fileName, header
+
 
 class Requests(dict):
     """

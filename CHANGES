@@ -1,3 +1,9 @@
+0.8.20 to 0.8.21:
+  - Fix ReqMgr reportRequestProgress call (3052).
+  - WorkQueue fix to correctly handle multi top level task workflows (1582).
+  - Add http download to path functionality, used in UserFileCache (3047).
+  - Fix processed dataset name parsing in the lexicon (2987).
+
 0.8.19 to 0.8.20:
   - Fix for new WMCORE_ROOT/data/couchapps location (3061).
   - Optionally upload the topublish.json file to the UFC (2866).

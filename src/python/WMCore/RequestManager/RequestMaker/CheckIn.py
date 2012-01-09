@@ -43,7 +43,7 @@ def raiseCheckInError(request, ex, msg):
     raise RequestCheckInError( msg )
 
 
-def checkIn(request):
+def checkIn(request, wmstatSvc = None):
     """
     _CheckIn_
 
@@ -117,6 +117,8 @@ def checkIn(request):
     campaign = request.get("Campaign", "")
     if campaign != "" and campaign != None:
         Campaign.associateCampaign(campaign, reqId)
-
+    
+    if wmstatSvc != None:
+        wmstatSvc.insertRequest(request)
     return
 

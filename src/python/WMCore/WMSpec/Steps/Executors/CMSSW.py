@@ -98,6 +98,18 @@ class CMSSW(Executor):
         logging.info("Executing CMSSW step")
 
         #
+        # set any global environment variables
+        #
+        try:
+            os.environ['FRONTIER_ID'] = 'wmagent_%i_%s_%s_%s' % (self.job['id'], self.task.name(),
+                                                                 self.job['retry_count'],
+                                                                 cmsswVersion)
+        except Exception, ex:
+            logging.error('Have critical error in setting FRONTIER_ID: %s' % str(ex))
+            logging.error('Continuing, as this is not a critical function yet.')
+            pass
+
+        #
         # scram bootstrap
         #
         scram = Scram(

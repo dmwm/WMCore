@@ -669,7 +669,7 @@ class CondorPlugin(BasePlugin):
                 logging.error("Asked to build myProxy plugin, but no userDN available!")
                 logging.error("Checked job %i" % job0['id'])
                 return jdl
-            logging.error("Fetching proxy for %s" % userDN)
+            logging.info("Fetching proxy for %s" % userDN)
             # Build the proxy
             # First set the userDN of the Proxy object
             self.proxy.userDN = userDN
@@ -680,7 +680,7 @@ class CondorPlugin(BasePlugin):
             else:
                 # Else, build the serverHash from the proxy sha1
                 filename = self.proxy.logonRenewMyProxy()
-            logging.error("Proxy stored in %s" % filename)
+            logging.info("Proxy stored in %s" % filename)
             if self.glexecPath:
                 self.jdlProxyFile = '%s.user' % filename
                 self.glexecProxyFile = filename
@@ -691,7 +691,7 @@ class CondorPlugin(BasePlugin):
                 proc = subprocess.Popen(command, stderr = subprocess.PIPE,
                                         stdout = subprocess.PIPE, shell = True)
                 out, err = proc.communicate()
-                logging.error("Created new user proxy with glexec %s" % self.jdlProxyFile)
+                logging.info("Created new user proxy with glexec %s" % self.jdlProxyFile)
             else:
                 self.jdlProxyFile = filename
             jdl.append("x509userproxy = %s\n" % self.jdlProxyFile)

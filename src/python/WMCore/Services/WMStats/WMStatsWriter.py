@@ -78,6 +78,30 @@ class WMStatsWriter():
         return self.couchDB.updateDocument(spec.name(), 'WMStats', 'generalFields', 
                                          fields={'general_fields': JSONEncoder().encode(fields)})
     
+    def updateRequestsInfo(self, docs):
+        """
+        bulk update for request documents.
+        TODO: change to bulk update handler when it gets supported
+        """
+        # get the id of docs
+        keys = []
+        for doc in docs:
+            keys.append(doc['workflow'])
+        results = self.couchDB.allDocs(keys = keys)['rows']
+        
+        # update the _id field of docs  
+        i = 0;
+        for item in results:
+            if item.has_key("id"):
+                newDoc = {}
+                newDoc.update(docs[i])
+                newDoc['_id'] = item['id']
+                # remove original type 'agent_request' 
+                del newDoc['type']
+                self.couchDB.queue(newDoc)
+            i += 1
+        return self.couchDB.commit()
+    
     def updateAgentInfo(self, agentInfo):
         return self.couchDB.updateDocument(agentInfo['_id'], 'WMStats', 'agentInfo', 
                                          fields={'agent_info': JSONEncoder().encode(agentInfo)})

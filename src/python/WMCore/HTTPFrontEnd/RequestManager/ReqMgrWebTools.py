@@ -343,9 +343,8 @@ def makeRequest(kwargs, couchUrl, couchDB, wmstatUrl):
     del metadata['WorkloadSpec']
     workloadUrl = helper.saveCouch(couchUrl, couchDB, metadata=metadata)
     request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
-    CheckIn.checkIn(request)
     wmstatSvc = WMStatsWriter(wmstatUrl)
-    wmstatSvc.insertRequest(schema)
+    CheckIn.checkIn(request, wmstatSvc)
     return request
 
 def requestDetails(requestName):

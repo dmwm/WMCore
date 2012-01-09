@@ -12,6 +12,9 @@ import os.path
 import tarfile
 import pickle
 import shutil
+import sys
+import copy
+
 
 import WMCore_t.WMSpec_t.TestWorkloads as TestWorkloads
 import WMCore.WMRuntime.SandboxCreator as SandboxCreator
@@ -21,7 +24,6 @@ class SandboxCreator_t(unittest.TestCase):
     
     def testMakeSandbox(self):
         creator  = SandboxCreator.SandboxCreator()
-        creator.disableWMCorePackaging()
         workload = TestWorkloads.twoTaskTree()
         tempdir  = tempfile.mkdtemp()
         boxpath  = creator.makeSandbox(tempdir, workload)
@@ -47,6 +49,22 @@ class SandboxCreator_t(unittest.TestCase):
         self.fileExistsTest( extractDir + "/WMSandbox/SecondTask/cmsRun2/__init__.py")
         self.fileExistsTest( extractDir + "/WMSandbox/SecondTask/stageOut2/__init__.py")
         
+        # make sure the sandbox is there
+        self.fileExistsTest( extractDir + '/WMCore.zip')
+
+        # now test that zipimport works
+        # This gets replaced in setup/teardown
+        sys.path.insert(0, os.path.join(extractDir, 'WMCore.zip'))
+        os.system('ls -lah %s' % extractDir)
+        # Gotta remove this since python caches subpackage folders in package.__path__
+        del sys.modules['WMCore']
+        if 'WMCore.ZipImportTestModule' in sys.modules:
+            del sys.modules['WMCore.ZipImportTestModule']
+            
+        import WMCore.ZipImportTestModule
+        sys.modules = copy.copy(self.modulesBackup)
+        self.assertTrue( 'WMCore.zip' in WMCore.ZipImportTestModule.__file__ )
+        
         # make sure the pickled file is the same
         pickleHandle = open( extractDir + "/WMSandbox/WMWorkload.pkl")
         pickledWorkload = pickle.load( pickleHandle )
@@ -66,16 +84,19 @@ class SandboxCreator_t(unittest.TestCase):
         shutil.rmtree( extractDir )
         shutil.rmtree( tempdir )
 
-        
-        
-        
-    def testName(self):
-        pass
-    
     def fileExistsTest(self,file,msg = None):
         if (msg == None):
             msg = "Failed file existence test for (%s)" % file
         self.assertEquals(os.path.exists(file),True,msg)
+    
+    def setUp(self):
+        # need to take a slice to make a real copy
+        self.backupPath    = sys.path[:]
+        self.modulesBackup = copy.copy(sys.modules)
+    
+    def tearDown(self):
+        sys.path    = self.backupPath[:]
+        sys.modules = copy.copy(self.modulesBackup)
 
 
 if __name__ == "__main__":

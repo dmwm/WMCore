@@ -14,6 +14,7 @@ import WMCore.WMSpec.WMTask as WMTask
 import WMCore.WMSpec.WMStep as WMStep
 import urllib
 import urlparse
+import zipfile
 
 import WMCore
 import PSetTweaks
@@ -26,7 +27,7 @@ def tarballExclusion(path):
 
     Eliminates all unnecessary packages
     """
-    patternList = ['.svn', '.git', '.pyc']
+    patternList = ['.svn', '.git']
 
     for pattern in patternList:
         if re.search(pattern, path):
@@ -139,12 +140,38 @@ class SandboxCreator:
         archive = tarfile.open(None,'w:bz2', pythonHandle)
         archive.add("%s/%s/" % (buildItHere, workloadName), '/',
                     exclude = tarballExclusion)
+        
         if (self.packageWMCore):
-            # package up the WMCore distribution
-            # hopefully messing with this magic isn't a recipie for disaster
+            # package up the WMCore distribution in a zip file
+            # fixes #2943
             wmcorePath = WMCore.__path__[0]
-            #archive.add(wmcorePath, '/WMCore/', exclude = removePycFiles)
-            archive.add(wmcorePath, '/WMCore/', exclude = tarballExclusion)
+            
+            (zipHandle, zipPath)  = tempfile.mkstemp()
+            os.close(zipHandle)
+            zipFile               = zipfile.ZipFile( zipPath,
+                                                     mode = 'w',
+                                                     compression = zipfile.ZIP_DEFLATED )
+            
+            for ( root, dirnames, filenames ) in os.walk(wmcorePath):
+                for filename in filenames:
+                    if not tarballExclusion( filename ):
+                        zipFile.write( filename = os.path.join( root, filename ),
+                                       # the name in the archive is the path relative to WMCore/
+                                       arcname  = os.path.join( root, filename )[len(wmcorePath) - len('WMCore/') + 1:])
+            
+            # Add a dummy module for zipimport testing            
+            (handle, dummyModulePath) = tempfile.mkstemp()
+            os.write( handle, "#!/usr/bin/env python\n")
+            os.write( handle, "# This file should only appear in zipimports, used for testing\n")
+            os.close( handle )
+            zipFile.write( filename = dummyModulePath, arcname = 'WMCore/ZipImportTestModule.py')
+            
+            # Add the wmcore zipball to the sandbox
+            zipFile.close()            
+            archive.add(zipPath, '/WMCore.zip')
+            os.unlink( zipPath )
+            os.unlink( dummyModulePath )
+            
             psetTweaksPath = PSetTweaks.__path__[0]
             archive.add(psetTweaksPath, '/PSetTweaks',
                         exclude = tarballExclusion)

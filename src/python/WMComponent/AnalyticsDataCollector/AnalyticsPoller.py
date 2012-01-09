@@ -50,8 +50,9 @@ class AnalyticsPoller(BaseWorkerThread):
         # set wmagent db data
         self.wmagentDB = WMAgentDBData(myThread.dbi, myThread.logger)
         # set the connection for local couchDB call
-        self.wmstatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL )
-
+        self.localSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL )
+        self.centralWMStats = WMStatsWriter(self.config.AnalyticsDataCollector.centralMStatsURL )
+        
     def algorithm(self, parameters):
         """
         get information from wmbs, workqueue and local couch
@@ -87,8 +88,12 @@ class AnalyticsPoller(BaseWorkerThread):
                 doc['timestamp'] = uploadTime
                 requestDocs.append(doc)
 
-            self.wmstatsCouchDB.uploadData(requestDocs)
+            self.localSummaryCouchDB.uploadData(requestDocs)
             logging.info("Data upload success\n %s request" % len(requestDocs))
+            
+            # update directly to the central WMStats couchDB
+            self.centralWMStats.updateRequestsInfo(requestDocs)
+            
             #agent info (include job Slots for the sites)
             agentInfo = self.wmagentDB.getHeartBeatWarning()
             agentInfo.update(self.agentInfo)
@@ -99,7 +104,7 @@ class AnalyticsPoller(BaseWorkerThread):
             
             agentInfo['timestamp'] = uploadTime
             agentInfo['type'] = "agent_info"
-            self.wmstatsCouchDB.updateAgentInfo(agentInfo)
+            self.localSummaryCouchDB.updateAgentInfo(agentInfo)
 
         except Exception, ex:
             logging.error(str(ex))

@@ -24,6 +24,7 @@ from WMCore.DataStructs.Run import Run
 from WMCore.FwkJobReport.FileInfo import FileInfo
 from WMCore.WMException           import WMException
 
+
 class FwkJobReportException(WMException):
     """
     _FwkJobReportException_
@@ -1269,6 +1270,24 @@ class Report:
             self.addError(stepName, 60451, "NoAdler32Checksum", msg)
             self.setStepStatus(stepName = stepName, status = 60451)
 
+        return
+
+    def stripInputFiles(self):
+        """
+        _stripInputFiles_
+
+        If we need to compact the FWJR the easiest way is just to
+        trim the number of input files.  
+        """
+
+        for stepName in self.data.steps:
+            step = self.retrieveStep(stepName)
+            inputSources = step.input.listSections_()
+            for inputSource in inputSources:
+                source = getattr(step.input, inputSource)
+                for fileNum in range(source.files.fileCount):
+                    delattr(source.files, "file%d" % fileNum)
+                source.files.fileCount = 0
         return
 
 

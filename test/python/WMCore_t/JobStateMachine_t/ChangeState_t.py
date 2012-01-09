@@ -736,5 +736,83 @@ class TestChangeState(unittest.TestCase):
 
         return
 
+    def testFWJRInputFileTruncation(self):
+        """
+        _testFWJRInputFileTruncation_
+
+        Test and see whether the ChangeState code can
+        be used to automatically truncate the number of input files
+        in a FWJR
+
+        Code stolen from the serialization test
+        """
+
+        self.config.JobStateMachine.maxFWJRInputFiles = 0
+        change = ChangeState(self.config, "changestate_t")
+
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute("site1", seName = "somese.cern.ch")
+        
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task = "Test")
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+        testFile = File(lfn = "SomeLFNC", locations = set(["somese.cern.ch"]))
+        testFile.create()
+        testFileset.addFile(testFile)
+        testFileset.commit()
+        
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = testSubscription)
+        jobGroup = jobFactory(files_per_job = 1)[0]
+
+        self.assertEqual(len(jobGroup.jobs), 1,
+                         "Error: Splitting should have created one job.")
+
+        testJobA = jobGroup.jobs[0]
+        testJobA["user"] = "sfoulkes"
+        testJobA["group"] = "DMWM"
+        testJobA["taskType"] = "Processing"
+
+        change.propagate([testJobA], 'created', 'new')
+        myReport = Report()
+        reportPath = os.path.join(getTestBase(),
+                                  "WMCore_t/JobStateMachine_t/Report.pkl")
+        myReport.unpersist(reportPath)
+        testJobA["fwjr"] = myReport
+
+        change.propagate([testJobA], 'executing', 'created')
+
+        changeStateDB = self.couchServer.connectDatabase(dbname = "changestate_t/fwjrs")
+        allDocs = changeStateDB.document("_all_docs")
+
+        self.assertEqual(len(allDocs["rows"]), 2,
+                         "Error: Wrong number of documents")
+
+        result = changeStateDB.loadView("FWJRDump", "fwjrsByWorkflowName")
+        self.assertEqual(len(result["rows"]), 1,
+                         "Error: Wrong number of rows.")
+        for row in result["rows"]:
+            couchJobDoc = changeStateDB.document(row["value"]["id"])
+            self.assertEqual(couchJobDoc["_rev"], row["value"]["rev"],
+                             "Error: Rev is wrong.")
+
+        for resultRow in allDocs["rows"]:
+            if resultRow["id"] != "_design/FWJRDump":
+                fwjrDoc = changeStateDB.document(resultRow["id"])
+                break
+
+        self.assertEqual(fwjrDoc["fwjr"]["steps"]['cmsRun1']['input']['source'], [])
+
+
+        return
+    
 if __name__ == "__main__":
     unittest.main()

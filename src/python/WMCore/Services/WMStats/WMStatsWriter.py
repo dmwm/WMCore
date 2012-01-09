@@ -79,14 +79,28 @@ class WMStatsWriter():
                                          fields={'general_fields': JSONEncoder().encode(fields)})
     
     def updateRequestsInfo(self, docs):
-        # currently only update priority and siteWhitelist
-        # complex field needs to be JSON encoded 
-        # assuming all the toplevel tasks has the same site white lists
-        #priority is priority + user priority + group priority
-        fields = {'priority': spec.priority(), 'site_white_list': spec.getTopLevelTask()[0].siteWhitelist()}
-        return self.couchDB.updateDocument(spec.name(), 'WMStats', 'generalFields', 
-                                         fields={'general_fields': JSONEncoder().encode(fields)})
-    
+        """
+        bulk update for request documents.
+        TODO: change to bulk update handler when it gets supported
+        """
+        # get the id of docs
+        keys = []
+        for doc in docs:
+            keys.append(doc['workflow'])
+        results = self.couchDB.allDocs(keys = keys)['rows']
+        
+        # update the _id field of docs  
+        i = 0;
+        for item in results:
+            if item.has_key("id"):
+                newDoc = {}
+                newDoc.update(docs[i])
+                newDoc['_id'] = item['id']
+                # remove original type 'agent_request' 
+                del newDoc['type']
+                self.couchDB.queue(newDoc)
+            i += 1
+        return self.couchDB.commit()
     
     def updateAgentInfo(self, agentInfo):
         return self.couchDB.updateDocument(agentInfo['_id'], 'WMStats', 'agentInfo', 

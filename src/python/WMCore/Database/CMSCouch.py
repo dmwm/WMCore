@@ -437,11 +437,27 @@ class Database(CouchDBRequests):
 
         return retval
 
-    def allDocs(self):
+    def allDocs(self, options = {}, keys = []):
         """
         Return all the documents in the database
+        options is a dict type parameter which can be passed to _all_docs
+        id {'startkey': 'a', 'limit':2, 'include_docs': true}
+        keys is the list of key (ids) for doc to be returned
         """
-        return self.get('/%s/_all_docs' % self.name)
+        encodedOptions = {}
+        for k,v in options.iteritems():
+            encodedOptions[k] = self.encode(v)
+
+        if len(keys):
+            if (encodedOptions):
+                data = urllib.urlencode(encodedOptions)
+                return self.post('/%s/_all_docs?%s' % (self.name, data),
+                                 {'keys':keys})
+            else:
+                return self.post('/%s/_all_docs' % self.name,
+                                 {'keys':keys})
+        else:
+            return self.get('/%s/_all_docs' % self.name, encodedOptions)
 
     def info(self):
         """

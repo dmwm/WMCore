@@ -410,7 +410,7 @@ class CondorPlugin(BasePlugin):
                 logging.error(msg)
                 queueError = True
                 continue
-            
+
             output   = res['stdout']
             error    = res['stderr']
             idList   = res['idList']
@@ -638,7 +638,6 @@ class CondorPlugin(BasePlugin):
 
         jdl.append("universe = vanilla\n")
         jdl.append("requirements = %s\n" % self.reqStr)
-        #jdl.append("should_transfer_executable = TRUE\n")
 
         jdl.append("should_transfer_files = YES\n")
         jdl.append("when_to_transfer_output = ON_EXIT\n")
@@ -648,17 +647,10 @@ class CondorPlugin(BasePlugin):
         jdl.append("Output = condor.$(Cluster).$(Process).out\n")
         jdl.append("Error = condor.$(Cluster).$(Process).err\n")
         jdl.append("Log = condor.$(Cluster).$(Process).log\n")
-        # Things that are necessary for the glide-in
 
-        jdl.append('+DESIRED_Archs = \"INTEL,X86_64\"\n')
         jdl.append("+WMAgent_AgentName = \"%s\"\n" %(self.agent))
-        jdl.append('+REQUIRES_LOCAL_DATA = True\n')
 
-        # Check for multicore
-        if jobList[0].get('taskType', None) in self.multiTasks:
-            jdl.append('+DESIRES_HTPC = True\n')
-        else:
-            jdl.append('+DESIRES_HTPC = False\n')
+        jdl.extend(self.customizeCommon(jobList))
 
         if self.proxy:
             # Then we have to retrieve a proxy for this user
@@ -698,8 +690,22 @@ class CondorPlugin(BasePlugin):
 
         return jdl
 
+    def customizeCommon(self, jobList):
+        """
+        JDL additions just for this implementation. Over-ridden in sub-classes
+        These are the Glide-in specific bits
+        """
+        jdl = []
+        jdl.append('+DESIRED_Archs = \"INTEL,X86_64\"\n')
+        jdl.append('+REQUIRES_LOCAL_DATA = True\n')
 
+        # Check for multicore
+        if jobList and jobList[0].get('taskType', None) in self.multiTasks:
+            jdl.append('+DESIRES_HTPC = True\n')
+        else:
+            jdl.append('+DESIRES_HTPC = False\n')
 
+        return jdl
 
     def makeSubmit(self, jobList):
         """
@@ -731,23 +737,7 @@ class CondorPlugin(BasePlugin):
                         % (os.path.basename(job['sandbox']), job['id'])
             jdl.append(argString)
 
-            jobCE = job['location']
-            if not jobCE:
-                # Then we ended up with a site that doesn't exist?
-                logging.error("Job for non-existant site %s" \
-                              % (job['location']))
-                continue
-
-            if self.useGSite:
-                jdl.append('+GLIDEIN_CMSSite = \"%s\"\n' % (jobCE))
-            if self.submitWMSMode and len(job.get('possibleSites', [])) > 0:
-                strg = list(job.get('possibleSites')).__str__().lstrip('[').rstrip(']')
-                strg = filter(lambda c: c not in "\'", strg)
-                jdl.append('+DESIRED_Sites = \"%s\"\n' % strg)
-            else:
-                jdl.append('+DESIRED_Sites = \"%s\"\n' %(jobCE))
-
-
+            jdl.extend(self.customizePerJob(job))
 
             # Transfer the output files
             jdl.append("transfer_output_files = Report.%i.pkl\n" % (job["retry_count"]))
@@ -772,9 +762,29 @@ class CondorPlugin(BasePlugin):
 
         return jdl
 
+    def customizePerJob(self, job):
+        """
+        JDL additions just for this implementation. Over-ridden in sub-classes
+        These are the Glide-in specific bits
+        """
+        jdl = []
+        jobCE = job['location']
+        if not jobCE:
+            # Then we ended up with a site that doesn't exist?
+            logging.error("Job for non-existant site %s" \
+                            % (job['location']))
+            return jdl
 
+        if self.useGSite:
+            jdl.append('+GLIDEIN_CMSSite = \"%s\"\n' % (jobCE))
+        if self.submitWMSMode and len(job.get('possibleSites', [])) > 0:
+            strg = list(job.get('possibleSites')).__str__().lstrip('[').rstrip(']')
+            strg = filter(lambda c: c not in "\'", strg)
+            jdl.append('+DESIRED_Sites = \"%s\"\n' % strg)
+        else:
+            jdl.append('+DESIRED_Sites = \"%s\"\n' %(jobCE))
 
-
+        return jdl
 
     def getCEName(self, jobSite):
         """

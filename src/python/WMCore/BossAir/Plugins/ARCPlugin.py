@@ -269,7 +269,7 @@ class ARCPlugin(BasePlugin):
                 j['status_time'] = int(time.time())
                 changeList.append(j)
 
-            logging.debug("Job %s has status %s" % (j['gridid'], j['status'])
+            logging.debug("Job %s has status %s" % (j['gridid'], j['status']))
 
             if ARCPlugin.stateMap()[arcStat] not in ["Complete", "Error"]:
                 runningList.append(j)

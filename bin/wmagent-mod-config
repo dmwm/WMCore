@@ -202,7 +202,8 @@ def modifyConfiguration(config, **args):
         config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.couchDBName)
         config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
         config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
-    
+        config.AnalyticsDataCollector.centralWMStatsURL = args["wmstats_url"]
+
     return config
 
 def main(argv=None):
@@ -221,7 +222,7 @@ def main(argv=None):
              "workqueue_db_name=", "cs_hostname=", "cs_port=", "host_dn=", "couch_url=",  
              "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=", 
              "ufc_service_url=", "ufc_cachedir=", "client_mapping=", "wmbs_service_port=",
-             "workload_summary_url=", "coredb_url="])
+             "workload_summary_url=", "coredb_url=", "wmstats_url="])
 
         except getopt.error, msg:
             raise Usage(msg)
@@ -240,7 +241,8 @@ def main(argv=None):
                           '--cs_hostname', '--cs_port', '--host_dn', '--couch_url', 
                           '--sb_hostname', '--sb_port', '--sb_basepath', '--ufc_hostname',
                           '--ufc_port', '--ufc_service_url', '--ufc_cachedir',
-                          '--client_mapping', '--wmbs_service_port', '--workload_summary_url'):
+                          '--client_mapping', '--wmbs_service_port', '--workload_summary_url',
+                          '--wmstats_url'):
 
                 parameters[option[2:]] = value
     

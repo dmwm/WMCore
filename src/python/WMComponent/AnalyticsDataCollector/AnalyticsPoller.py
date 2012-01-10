@@ -27,7 +27,7 @@ class AnalyticsPoller(BaseWorkerThread):
         # set the workqueue service for REST call
         self.config = config
         self.agentInfo = {}
-        self.agentInfo['team'] = config.Agent.teamName
+        self.agentInfo['agent_team'] = config.Agent.teamName
         self.agentInfo['agent'] = config.Agent.agentName
         self.agentInfo['agent_url'] = config.Agent.hostName
         # need to get campaign, user, owner info
@@ -51,7 +51,7 @@ class AnalyticsPoller(BaseWorkerThread):
         self.wmagentDB = WMAgentDBData(myThread.dbi, myThread.logger)
         # set the connection for local couchDB call
         self.localSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL )
-        self.centralWMStats = WMStatsWriter(self.config.AnalyticsDataCollector.centralMStatsURL )
+        self.centralWMStats = WMStatsWriter(self.config.AnalyticsDataCollector.centralWMStatsURL )
         
     def algorithm(self, parameters):
         """
@@ -93,6 +93,7 @@ class AnalyticsPoller(BaseWorkerThread):
             
             # update directly to the central WMStats couchDB
             self.centralWMStats.updateRequestsInfo(requestDocs)
+            logging.info("Remote Data update success\n %s request" % len(requestDocs))
             
             #agent info (include job Slots for the sites)
             agentInfo = self.wmagentDB.getHeartBeatWarning()

@@ -21,6 +21,12 @@ def monitorDocFromRequestSchema(schema):
     doc["type"] = "reqmgr_request"
     # additional field
     doc["inputdataset"] = schema.get('InputDataset', "")
+    # additional field for Analysis work
+    doc["vo_group"] = schema.get('VoGroup', "")
+    doc["vo_role"] = schema.get('VoRole', "")
+    #TODO: not sure the information will be here (if not it is under WMSpec)
+    doc["user_dn"] = schema.get('UserDN', "")
+    
     # team name is not yet available need to be updated in assign status
     #doc['team'] = schema['team']
     return doc
@@ -83,24 +89,30 @@ class WMStatsWriter():
         bulk update for request documents.
         TODO: change to bulk update handler when it gets supported
         """
-        # get the id of docs
-        keys = []
         for doc in docs:
-            keys.append(doc['workflow'])
-        results = self.couchDB.allDocs(keys = keys)['rows']
-        
-        # update the _id field of docs  
-        i = 0;
-        for item in results:
-            if item.has_key("id"):
-                newDoc = {}
-                newDoc.update(docs[i])
-                newDoc['_id'] = item['id']
-                # remove original type 'agent_request' 
-                del newDoc['type']
-                self.couchDB.queue(newDoc)
-            i += 1
-        return self.couchDB.commit()
+            del doc['type']
+            self.couchDB.updateDocument(doc['workflow'], 'WMStats', 'generalFields', 
+                                         fields={'general_fields': JSONEncoder().encode(doc)})
+            
+        # get the id of docs
+#        keys = []
+#        for doc in docs:
+#            keys.append(doc['workflow'])
+#        results = self.couchDB.allDocs(keys = keys)['rows']
+#        print results
+#        # update the _id field of docs  
+#        i = 0;
+#        for item in results:
+#            if item.has_key("id"):
+#                newDoc = {}
+#                newDoc.update(docs[i])
+#                newDoc['_id'] = item['id']
+#                newDoc['_rev'] = item['value']['rev']
+#                # remove original type 'agent_request' 
+#                del newDoc['type']
+#                self.couchDB.queue(newDoc)
+#            i += 1
+#        return self.couchDB.commit()
     
     def updateAgentInfo(self, agentInfo):
         return self.couchDB.updateDocument(agentInfo['_id'], 'WMStats', 'agentInfo', 
@@ -110,10 +122,11 @@ class WMStatsWriter():
         """
         delete the documents from wmstats db older than param 'days'
         """
-        sec = days * 24 * 60 *60
+        sec = int(days * 24 * 60 *60)
         threshold = int(time.time()) - sec
-        options = {"startkey": threshold, "descending": True, "stale": "ok"}
+        options = {"startkey": threshold, "descending": True, "stale": "update_after"}
         result = self.couchDB.loadView("WMStats", "time", options)
+        print result
         for row in result['rows']:
             doc = {}
             doc['_id'] = row['value']['id']

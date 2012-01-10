@@ -1102,5 +1102,31 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertRaises(StandardError, self.queue.queueWork, self.processingSpec.specUrl())
         self.assertEqual(self.queue.statusInbox()[0]['Status'], 'Failed')
 
+
+    def testDrainSite(self):
+        """Allow sites to drain"""
+        self.globalQueue.queueWork(self.processingSpec.specUrl())
+        self.globalQueue.queueWork(self.spec.specUrl())
+        # acquire 1 element of a wf and then mark site as draining.
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
+        syncQueues(self.localQueue)
+        existing_wf = [x['RequestName'] for x in self.localQueue.statusInbox()]
+        self.assertEqual(1, len(existing_wf))
+        existing_wf = existing_wf[0]
+        rc = ResourceControl()
+        rc.drainSite('T2_XX_SiteA')
+        # pull more work, only elements from previously pulled wf should be acquired
+        self.localQueue.pullWork(resources = {'doesnt exist' : 0}, draining_resources={'T2_XX_SiteA' : 10})
+        syncQueues(self.localQueue)
+        [self.fail('Got new wf %s for draining site' % x['RequestName']) for x in self.localQueue.statusInbox() if x['RequestName'] != existing_wf]
+        # wmbs injection for draining sites continues to work
+        self.assertTrue(self.localQueue.getWork({'T2_XX_SiteA' : 10}))
+        # re-enable site and get remainder of work
+        rc.drainSite('T2_XX_SiteA', drain = False)
+        self.assertTrue(self.localQueue.pullWork({'T2_XX_SiteA' : 100}))
+        syncQueues(self.localQueue)
+        self.assertTrue(self.localQueue.getWork({'T2_XX_SiteA' : 100}))
+
+
 if __name__ == "__main__":
     unittest.main()

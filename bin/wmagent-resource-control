@@ -51,6 +51,10 @@ def createOptionParser():
                            help = "Specify the priority of the threshold at the site (higher is better)")
     myOptParser.add_option("--plugin", dest = "plugin",
                            help = "Specify submit plugin to use for specific site")
+    myOptParser.add_option("--drain", dest = "drain", action="store_true",
+                           help = "Drain the site.")
+    myOptParser.add_option("--enable", dest = "drain", action="store_false",
+                           help = "Stop draining the site.")
 
     return myOptParser
 
@@ -129,7 +133,9 @@ def printThresholds(resourceControl, desiredSiteName):
 
         siteSlots = siteThresholds[0]["total_slots"]
         siteJobs = siteThresholds[0]["total_running_jobs"]        
-        print "%s - %d running, %d slots total:" % (siteName, siteJobs, siteSlots)
+        drain = siteThresholds[0]["drain"]
+        drainMsg = ", Site is draining" if drain else ""
+        print "%s - %d running, %d slots total%s:" % (siteName, siteJobs, siteSlots, drainMsg)
 
         for task in siteThresholds:
             print "  %s - %d running, %d max, priority %s" % \
@@ -203,6 +209,16 @@ def updateThresholdInfo(resourceControl, siteName, taskType, maxSlots, priority 
                                     maxSlots = int(maxSlots), priority = priority)
     return
 
+def drainSite(site, drain)
+    """Drain or re-enable a site"""
+    if resourceControl.listSiteInfo(siteName) == None:
+        print "You must add the site to the database before you can drain it"
+        print ""
+        myOptParser.print_help()
+        sys.exit(1)
+
+        return resourceControl.drainSite(site, drain)
+
 myOptParser = createOptionParser()
 (options, args) = myOptParser.parse_args()
 connectToDB()
@@ -228,6 +244,9 @@ else:
         print "You must specify a site name."
         myOptParser.print_help()
         sys.exit(1)
+    elif options.drain is not None:
+        drainSite(options.siteName, options.drain)
+        sys.exit(0)
     elif options.taskType == None:
         updateSiteInfo(myResourceControl, options.siteName, options.jobSlots,
                        options.ceName, options.seName, options.plugin, options.cmsName)

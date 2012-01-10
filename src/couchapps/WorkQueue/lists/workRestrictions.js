@@ -29,6 +29,15 @@ function(head, req) {
             return;
         }
     }
+    var wfs = [];
+    if (req.query.wfs) {
+        try {
+            wfs = JSON.parse(req.query.wfs);
+        } catch (ex) {
+            send('"Error parsing wfs"');
+            return;
+        }
+    }
 
     send("[");
     // loop over elements, applying site restrictions
@@ -42,6 +51,11 @@ function(head, req) {
             // check work is for a team in the request
             if (teams.length && ele["TeamName"] && teams.indexOf(ele["TeamName"]) === -1) {
 		continue;
+            }
+
+            // skip if we only want work from certain wf's which don't include this one.
+            if (wfs.length && wfs.indexOf(ele["RequestName"]) == -1) {
+                break;
             }
 
             // skip if in blacklist

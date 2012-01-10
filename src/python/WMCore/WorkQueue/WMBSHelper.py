@@ -124,7 +124,7 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
         myThread.transaction.commit()
     return
 
-def freeSlots(multiplier = 1.0, minusRunning = False):
+def freeSlots(multiplier = 1.0, minusRunning = False, onlyDrain = False, skipDrain = True):
     """
     Get free resources from wmbs.
 
@@ -137,6 +137,10 @@ def freeSlots(multiplier = 1.0, minusRunning = False):
     for name, site in rc_sites.items():
         if not site.get('cms_name'):
             logging.warning("Not fetching work for %s, cms_name not defined" % name)
+            continue
+        if onlyDrain and not site.get('drain'):
+            continue
+        if skipDrain and site.get('drain'):
             continue
         slots = site['total_slots']
         if minusRunning:

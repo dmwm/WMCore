@@ -159,7 +159,7 @@ class WorkQueueBackend(object):
                 raise ValueError, "Can't specify extra filters (or return id's) when using element id's with getElements()"
             elements = [CouchWorkQueueElement(db, i).load() for i in elementIDs]
         else:
-            options = {'include_docs' : True, 'filter' : elementFilters, 'idOnly' : returnIdOnly}
+            options = {'include_docs' : True, 'filter' : elementFilters, 'idOnly' : returnIdOnly, 'reduce' : False}
             # filter on workflow or status if possible
             filter = 'elementsByWorkflow'
             if WorkflowName:
@@ -200,7 +200,7 @@ class WorkQueueBackend(object):
 
     def getElementsForWorkflow(self, workflow):
         """Get elements for a workflow"""
-        elements = self.db.loadView('WorkQueue', 'elementsByWorkflow', {'key' : workflow, 'include_docs' : True})
+        elements = self.db.loadView('WorkQueue', 'elementsByWorkflow', {'key' : workflow, 'include_docs' : True, 'reduce' : False})
         return [CouchWorkQueueElement.fromDocument(self.db,
                                                    x['doc'])
                 for x in elements.get('rows', [])]
@@ -268,13 +268,13 @@ class WorkQueueBackend(object):
         for wf in specs:
             try:
                 if not self.db.loadView('WorkQueue', 'elementsByWorkflow',
-                                        {'key' : wf, 'limit' : 0})['total_rows']:
+                                        {'key' : wf, 'limit' : 0, 'reduce' : False})['total_rows']:
                     self.db.delete_doc(wf)
             except CouchNotFoundError:
                 pass
 
 
-    def availableWork(self, conditions, teams = None):
+    def availableWork(self, conditions, teams = None, wfs = None):
         """Get work which is available to be run"""
         elements = []
         for site in conditions.keys():
@@ -289,6 +289,8 @@ class WorkQueueBackend(object):
         options['resources'] = conditions
         if teams:
             options['teams'] = teams
+        if wfs:
+            options['wfs'] = wfs
         result = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
         result = json.loads(result)
         for i in result:
@@ -345,6 +347,10 @@ class WorkQueueBackend(object):
             self.logger.error("CouchDB unavailable: %s" % str(ex))
             return False
         return True
+
+    def getWorkflows(self):
+        """Returns workflows known to workqueue"""
+        return [x['key'] for x in self.db.loadView('WorkQueue', 'elementsByWorkflow', {'group' : True})['rows']]
 
     def queueLength(self):
         """Return number of available elements"""

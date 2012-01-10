@@ -211,9 +211,31 @@ class LocationsTest(unittest.TestCase):
         self.assertEqual(result[0]['job_slots'], 10)
 
         return
-        
 
-        
-        
+    def testDrain(self):
+        """Drain sites"""
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        locationNew = daoFactory(classname = "Locations.New")
+        locationInfo = daoFactory(classname = "Locations.GetSiteInfo")
+        drainAction = daoFactory(classname = "Locations.SetDrain")
+
+        # add site but set to draining
+        locationNew.execute(siteName = "Satsuma", ceName = "Satsuma", seName = "Satsuma", jobSlots = 10)
+        drainAction.execute(siteName = "Satsuma")
+        result = locationInfo.execute(siteName = "Satsuma")
+        self.assertEqual(result[0]['site_name'], 'Satsuma')
+        self.assertEqual(result[0]['drain'], 1)
+
+        # re-enable site
+        drainAction.execute(siteName = "Satsuma", drain = False)
+        result = locationInfo.execute(siteName = "Satsuma")
+        self.assertEqual(result[0]['site_name'], 'Satsuma')
+        self.assertEqual(result[0]['drain'], 0)
+
+
+
+
 if __name__ == "__main__":
         unittest.main()

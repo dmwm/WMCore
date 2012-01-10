@@ -42,6 +42,13 @@ class ResourceControl(WMConnectionBase):
                              transaction = self.existingTransaction())
         return
 
+    def drainSite(self, siteName, drain = True):
+        """Set a state to draining / re-enable it"""
+        drainAction = self.wmbsDAOFactory(classname = "Locations.SetDrain")
+        drainAction.execute(siteName = siteName, drain = drain,
+                             conn = self.getDBConn(),
+                             transaction = self.existingTransaction())
+
     def listSiteInfo(self, siteName):
         """
         _listSiteInfo_

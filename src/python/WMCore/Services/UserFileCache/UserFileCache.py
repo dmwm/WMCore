@@ -54,12 +54,8 @@ class UserFileCache(Service):
             params.append(('name', name))
 
         resString = uploadFile(fileName=fileName, fieldName='userfile', url=uploadURL, params=params)
-        try:
-            result = json.loads(resString)
-        except ValueError:
-            result = json.loads(resString.replace("'", '"'))
-        return result
 
+        return json.loads(resString)
     def checksum(self, fileName):
         """
         Calculate the checksum of the file. We don't just hash the contents because

@@ -57,7 +57,7 @@ def uploadFile(fileName, url, fieldName = 'file1', params = []):
     fullParams = [(fieldName, (c.FORM_FILE, fileName))]
     fullParams.extend(params)
     c.setopt(c.HTTPPOST, fullParams)
-    c.setopt(c.HTTPHEADER, ['Content-Length: %d' % len(fileName)])
+    c.setopt(c.HTTPHEADER, ['Content-Length: %d' % len(fileName), "Accept: application/json"])
     bbuf = StringIO.StringIO()
     hbuf = StringIO.StringIO()
     c.setopt(pycurl.WRITEFUNCTION, bbuf.write)
@@ -67,8 +67,8 @@ def uploadFile(fileName, url, fieldName = 'file1', params = []):
     bres = bbuf.getvalue()
     rh = ResponseHeader(hres)
     c.close()
-    if  rh.status != 200:
-        exc = HTTPException()
+    if  rh.status < 200 or rh.status >= 300:
+        exc = HTTPException(bres)
         setattr(exc, 'req_data', fullParams)
         setattr(exc, 'url', url)
         setattr(exc, 'result', bres)

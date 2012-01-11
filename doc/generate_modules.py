@@ -31,12 +31,7 @@ import optparse
 
 
 # automodule options
-OPTIONS = ['members',
-           'undoc-members',
-           # 'inherited-members', # disabled because there's a bug in sphinx
-           'show-inheritance',
-          ]
-
+OPTIONS = ['members']
 INIT = '__init__.py'
 
 def makename(package, module):
@@ -77,41 +72,55 @@ def format_directive(module, package=None):
 
 def create_module_file(package, module, opts):
     """Build the text of the file and write the file."""
-    text = format_heading(1, '%s Module' % module)
-    text += format_heading(2, ':mod:`%s` Module' % module)
+    text = format_heading(1, ':mod:`%s` Module' % module)
     text += format_directive(module, package)
-    write_file(makename(package, module), text, opts)
+    filename = makename(package, module)
+    write_file(filename, text, opts)
+    return filename
+
+def create_submodule_file(master_package, subroot, package, py_file, opts):
+    is_package = py_file == INIT
+    py_file = os.path.splitext(py_file)[0]
+    py_path = makename(subroot, py_file)
+    if is_package:
+        text = format_heading(2, ':mod:`%s` Package' % package)
+        text += format_directive(is_package and subroot or py_path, master_package)
+        text += '\n'
+        return (text, '')
+    else:
+        return ('', create_module_file(subroot, py_file, opts))
 
 def create_package_file(root, master_package, subroot, py_files, opts, subs):
     """Build the text of the file and write the file."""
     package = os.path.split(root)[-1]
     text = format_heading(1, '%s Package' % package)
+    toc = ''
+
     # add each package's module
     for py_file in py_files:
         if shall_skip(os.path.join(root, py_file)):
             continue
-        is_package = py_file == INIT
-        py_file = os.path.splitext(py_file)[0]
-        py_path = makename(subroot, py_file)
-        if is_package:
-            heading = ':mod:`%s` Package' % package
-        else:
-            heading = ':mod:`%s` Module' % py_file
-        text += format_heading(2, heading)
-        text += format_directive(is_package and subroot or py_path, master_package)
-        text += '\n'
+        headpart, tocpart = create_submodule_file(master_package, subroot, package, py_file, opts)
+        if headpart:
+	    text += headpart
+        if tocpart:
+            if not toc:
+                toc = format_heading(2, ':mod:`%s` Modules' % package)
+                toc += '.. toctree::\n\n'
+            toc += '    %s\n' % tocpart
 
     # build a list of directories that are packages (they contain an INIT file)
     subs = [sub for sub in subs if os.path.isfile(os.path.join(root, sub, INIT))]
     # if there are some package directories, add a TOC for theses subpackages
     if subs:
-        text += format_heading(2, 'Subpackages')
-        text += '.. toctree::\n\n'
+        toc += '\n'
+        toc += format_heading(2, 'Subpackages')
+        toc += '.. toctree::\n\n'
         for sub in subs:
-            text += '    %s.%s\n' % (makename(master_package, subroot), sub)
-        text += '\n'
+            toc += '    %s.%s\n' % (makename(master_package, subroot), sub)
+        toc += '\n'
 
-    write_file(makename(master_package, subroot), text, opts)
+    write_file(makename(master_package, subroot), text + toc, opts)
 
 def create_modules_toc_file(master_package, modules, opts, name='modules'):
     """

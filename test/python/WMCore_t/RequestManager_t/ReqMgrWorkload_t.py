@@ -675,37 +675,6 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
 
         return
 
-    def testJ_Resubmission(self):
-        """
-        _Resubmission_
-
-        Test the basics of the resubmission validation
-        We can't run a full resubmission workload because
-        I'm not entirley sure how.
-        """
-
-        userName     = 'Taizong'
-        groupName    = 'Li'
-        teamName     = 'Tang'
-        CMSSWVersion = 'CMSSW_3_5_8'
-        schema       = self.setupSchema(userName = userName,
-                                        groupName = groupName,
-                                        teamName = teamName,
-                                        CMSSWVersion = CMSSWVersion,
-                                        typename = "Resubmission")
-
-        try:
-            raises = False
-            result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
-            raises = True
-            self.assertEqual(ex.status, 400)
-            self.assertTrue("Missing required field OriginalRequestName in workload validation" in ex.result)
-            pass
-        self.assertTrue(raises)
-        return
-
-        
 
 
 if __name__=='__main__':

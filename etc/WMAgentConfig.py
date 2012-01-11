@@ -412,25 +412,6 @@ config.AlertGenerator.componentsMemPoller.critical = 60 # [percent]
 config.AlertGenerator.componentsMemPoller.pollInterval = 10  # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
 config.AlertGenerator.componentsMemPoller.period = 30 # [second]
-# configuration for MySQL server CPU monitor: mysqlCPUPoller (percentage values)
-config.AlertGenerator.section_("mysqlCPUPoller")
-config.AlertGenerator.mysqlCPUPoller.soft = 40 # [percent]
-config.AlertGenerator.mysqlCPUPoller.critical = 60 # [percent]
-config.AlertGenerator.mysqlCPUPoller.pollInterval = 10 # [second]
-# period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.mysqlCPUPoller.period = 30 # [second]
-# configuration for MySQL memory monitor: mysqlMemPoller (percentage values)
-config.AlertGenerator.section_("mysqlMemPoller")
-config.AlertGenerator.mysqlMemPoller.soft = 40 # [percent]
-config.AlertGenerator.mysqlMemPoller.critical = 60 # [percent]
-config.AlertGenerator.mysqlMemPoller.pollInterval = 10 # [second]
-# period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.mysqlMemPoller.period = 30 # [second]
-# configuration for MySQL database size: mysqlDbSizePoller (gigabytes values)
-config.AlertGenerator.section_("mysqlDbSizePoller")
-config.AlertGenerator.mysqlDbSizePoller.soft = 1 # GB
-config.AlertGenerator.mysqlDbSizePoller.critical = 2 # GB
-config.AlertGenerator.mysqlDbSizePoller.pollInterval = 10 # [second]
 # configuration for CouchDB database size monitor: couchDbSizePoller (gigabytes values)
 config.AlertGenerator.section_("couchDbSizePoller")
 config.AlertGenerator.couchDbSizePoller.couchURL = couchURL

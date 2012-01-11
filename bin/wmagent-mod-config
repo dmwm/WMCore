@@ -92,9 +92,30 @@ def modifyConfiguration(config, **args):
     # hostname locations
     config.Agent.hostName = localhost
 
-    if hasattr(config,"CoreDatabase"):
-        if args.get('mysql_socket'):
+    # configure MySQL specific settings
+    if args.get('mysql_socket'):
+        if hasattr(config,"CoreDatabase"):
             config.CoreDatabase.socket = args['mysql_socket']
+        if hasattr(config,"AlertGenerator"):
+            # configuration for MySQL server CPU monitor: mysqlCPUPoller (percentage values)
+            config.AlertGenerator.section_("mysqlCPUPoller")
+            config.AlertGenerator.mysqlCPUPoller.soft = 40 # [percent]
+            config.AlertGenerator.mysqlCPUPoller.critical = 60 # [percent]
+            config.AlertGenerator.mysqlCPUPoller.pollInterval = 10 # [second]
+            # period during which measurements are collected before evaluating for possible alert triggering
+            config.AlertGenerator.mysqlCPUPoller.period = 30 # [second]
+            # configuration for MySQL memory monitor: mysqlMemPoller (percentage values)
+            config.AlertGenerator.section_("mysqlMemPoller")
+            config.AlertGenerator.mysqlMemPoller.soft = 40 # [percent]
+            config.AlertGenerator.mysqlMemPoller.critical = 60 # [percent]
+            config.AlertGenerator.mysqlMemPoller.pollInterval = 10 # [second]
+            # period during which measurements are collected before evaluating for possible alert triggering
+            config.AlertGenerator.mysqlMemPoller.period = 30 # [second]
+            # configuration for MySQL database size: mysqlDbSizePoller (gigabytes values)
+            config.AlertGenerator.section_("mysqlDbSizePoller")
+            config.AlertGenerator.mysqlDbSizePoller.soft = 1 # GB
+            config.AlertGenerator.mysqlDbSizePoller.critical = 2 # GB
+            config.AlertGenerator.mysqlDbSizePoller.pollInterval = 10 # [second]
 
     if hasattr(config,"WorkloadSummary"):
         splited = args["workload_summary_url"].strip().rstrip('/').rsplit('/', 1)

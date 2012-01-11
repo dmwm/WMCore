@@ -202,10 +202,12 @@ class BuildCommand(Command):
 
     user_options = build.user_options
     user_options.append(('system=', 's', 'build the specified system'))
+    user_options.append(('skip-docs', None, 'skip documentation'))
 
     def initialize_options(self):
         # and add our additional option
         self.system = None
+        self.skip_docs = False
 
     def finalize_options (self):
         # Check that the sub-system is valid
@@ -217,8 +219,9 @@ class BuildCommand(Command):
         force_rebuild()
 
     def generate_docs (self):
-	os.environ["PYTHONPATH"] = "%s/build/lib:%s" % (get_path_to_wmcore_root(), os.environ["PYTHONPATH"])
-	spawn(['make', '-C', 'doc', 'html', 'PROJECT=%s' % self.system.lower()])
+        if not self.skip_docs:
+	    os.environ["PYTHONPATH"] = "%s/build/lib:%s" % (get_path_to_wmcore_root(), os.environ["PYTHONPATH"])
+	    spawn(['make', '-C', 'doc', 'html', 'PROJECT=%s' % self.system.lower()])
 
     def run (self):
         # Have to get the build command here and set force, as the build plugins only refer to the
@@ -249,6 +252,7 @@ class InstallCommand(install):
     user_options = install.user_options
     user_options.append(('system=', 's', 'install the specified system'))
     user_options.append(('patch', None, 'patch an existing installation (default: no patch)'))
+    user_options.append(('skip-docs', None, 'skip documentation'))
 
     def initialize_options(self):
         # Call the base class
@@ -256,6 +260,7 @@ class InstallCommand(install):
         # and add our additionl options
         self.system = None
         self.patch = None
+        self.skip_docs = False
 
     def finalize_options(self):
         # Check that the sub-system is valid

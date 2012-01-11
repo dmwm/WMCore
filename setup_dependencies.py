@@ -5,6 +5,11 @@ A system can depend on packages or other systems.
 If a package ends with a + include all subpackages.
 """
 dependencies = {
+                'wmc-rest':{
+			'bin': ['wmc-dist-patch', 'wmc-dist-unpatch','wmc-httpd'],
+                        'packages' : ['WMCore.REST'],
+                        'modules': ['WMCore.Configuration'],
+			},
                 'wmc-base':{
 			'bin': ['wmc-dist-patch', 'wmc-dist-unpatch'],
                         'packages' : ['WMCore.DataStructs'],

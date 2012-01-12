@@ -487,6 +487,7 @@ class WorkQueue(WorkQueueBase):
         # Either pull the existing inbox element or create a new one.
         try:
             inbound = self.backend.getInboxElements(elementIDs = [wmspec.name()], loadSpec = True)
+            self.logger.info('Resume splitting of "%s"' % wmspec.name())
         except CouchNotFoundError:
             inbound = [self.backend.createWork(wmspec, Status = 'Negotiating',
                                               TeamName = team, WMBSUrl = self.params["WMBSUrl"])]

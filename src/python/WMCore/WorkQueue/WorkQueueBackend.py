@@ -124,7 +124,11 @@ class WorkQueueBackend(object):
                 unit['TeamName'] = parent['TeamName']
                 unit['WMBSUrl'] = parent['WMBSUrl']
 
+            if unit._couch.documentExists(unit.id):
+                self.logger.info('Element "%s" already exists, skip insertion.' % unit.id)
+                continue
             unit.save()
+
         unit._couch.commit(all_or_nothing = True)
         return
 

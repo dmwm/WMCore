@@ -267,7 +267,12 @@ class WMBSHelper(WMConnectionBase):
         subscription = Subscription(fileset = fileset, workflow = workflow,
                                     split_algo = task.jobSplittingAlgorithm(),
                                     type = task.getPrimarySubType())
-        subscription.create()
+        if subscription.exists():
+            subscription.load()
+            msg = "Subscription %s already exists for %s (you may ignore file insertion messages below, existing files wont be duplicated)"
+            self.logger.info(msg % (subscription['id'], task.getPathName()))
+        else:
+            subscription.create()
         for site in task.siteWhitelist():
             subscription.addWhiteBlackList([{"site_name": site, "valid": True}])
 

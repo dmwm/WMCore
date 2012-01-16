@@ -584,10 +584,36 @@ class ReqMgrTest(RESTBaseUnitTest):
             pass
         self.assertTrue(raises)
 
+        return
 
+    def testG_AddDuplicateUser(self):
+        """
+        _AddDuplicateUser_
+
+        Test and see if we get a sensible error when adding a duplicate user.
+        """
+
+        userName     = 'Taizong'
+        groupName    = 'Li'
+        teamName     = 'Tang'
+        CMSSWVersion = 'CMSSW_3_5_8'
+        schema       = self.setupSchema(userName = userName,
+                                        groupName = groupName,
+                                        teamName = teamName,
+                                        CMSSWVersion = CMSSWVersion)
+
+        raises = False
+        try:
+            self.jsonSender.put('group/%s/%s' % (groupName, userName))
+        except HTTPException, ex:
+            self.assertTrue("User/Group Already Linked in DB" in ex.result)
+            self.assertEqual(ex.status, 400)
+            raises = True
+        self.assertTrue(raises)
 
         return
         
+
 
 if __name__=='__main__':
     unittest.main()

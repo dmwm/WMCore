@@ -93,7 +93,7 @@ if [ X${TAG} == Xtrue ]; then
   echo "" >> $TMP
   cat CHANGES >> $TMP
   cp $TMP CHANGES
-  ${EDITOR} CHANGES
+  ${EDITOR:-vi} CHANGES
   if [ $? -ne 0 ]; then
       echo "User cancelled CHANGES update"
       exit 9

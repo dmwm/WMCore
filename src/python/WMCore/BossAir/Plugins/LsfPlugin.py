@@ -57,7 +57,7 @@ class LsfPlugin(BasePlugin):
 
         self.packageDir  = None
         self.unpacker    = os.path.join(getWMBASE(),
-                                        'src/python/WMCore/WMRuntime/Unpacker.py')
+                                        'WMCore/WMRuntime/Unpacker.py')
         self.agent       = config.Agent.agentName
         self.sandbox     = None
         self.scriptFile  = None

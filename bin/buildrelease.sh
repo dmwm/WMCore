@@ -82,7 +82,22 @@ if [ X${TAG} == Xtrue ]; then
   echo "Updating version string ..."
   perl -p -i -e "s{__version__ =.*}{__version__ = '$VERSION'}g" src/python/WMCore/__init__.py
 
-  #TODO: Update changes etc
+  echo "Generating CHANGES file"
+  LASTCOMMITLINE=$(git log -n1 --oneline -E --grep="^[0-9]+\.[0-9]+\.[0-9]+$")
+  LASTCOMMIT=$(echo ${LASTCOMMITLINE} | awk '{print $1}')
+  LASTVERSION=$(echo ${LASTCOMMITLINE} | awk '{print $2}')
+  TMP=$(mktemp -t ${LASTVERSION})
+  echo "${LASTVERSION} to ${VERSION}:" >> $TMP
+  git log --pretty=format:'  - %s' ${LASTCOMMIT}.. >> $TMP
+  echo "" >> $TMP
+  echo "" >> $TMP
+  cat CHANGES >> $TMP
+  cp $TMP CHANGES
+  ${EDITOR} CHANGES
+  if [ $? -ne 0 ]; then
+      echo "User cancelled CHANGES update"
+      exit 9
+  fi
 
   echo "committing local changes ..."
   git commit -a -s -m "$VERSION"

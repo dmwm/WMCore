@@ -1,3 +1,6 @@
+0.8.22 to 0.8.23:
+  - Fix template paths in default configs.  Fixes #3088.
+
 0.8.21 to 0.8.22:
   - Fix the patch to the Unpacker script in the LSF BossAir plugin.  Fixes #3102.
   - Default to vi for CHANGES editing if $EDITOR not specified

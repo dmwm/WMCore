@@ -60,7 +60,7 @@ class RequestHandler(object):
         if  not config:
             config = {}
         self.nosignal = config.get('nosignal', 1)
-        self.timeout = config.get('timeout', 300)
+        self.timeout = config.get('timeout', 30)
         self.connecttimeout = config.get('connecttimeout', 30)
         self.followlocation = config.get('followlocation', 1)
         self.maxredirs = config.get('maxredirs', 5)

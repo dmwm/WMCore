@@ -1,3 +1,30 @@
+0.8.21 to 0.8.22:
+  - Fix the patch to the Unpacker script in the LSF BossAir plugin.  Fixes #3102.
+  - Default to vi for CHANGES editing if $EDITOR not specified
+  - Generate CHANGES skeleton in buildrelease.sh
+  - Tidy up service call timeouts.
+  - Proxy http/https calls to UserFileCache on worker node
+  - Rewrote LoggingInfoParser. Fixes #2567
+  - Raise Proper Error if ReqMgr Replicates User/Group
+  - Add LoadFilesByWorkflow DBS3Buffer DAO
+  - mprove WorkQueue handling when queing request multiple  times
+  - Don't reset the subscription status when adding files to a fileset if the files are already associated with the fileset.  From #3080.
+  - Tighten CMSCouch.documentExists() check.  Fixes #3099.
+  - ReqMgr unit test improvements.  Fixes #2957.
+  - Make the AlertGenerator MySQL components optional.  Fixes #2983.
+  - Add DBSReader tests.
+  - Add site drain functionality to resource control.
+  - Remove the old submit.sh script.  Fixes #3077.
+  - Increase workqueue activity timeout to avoid false positive alerts
+  - Added "Accept: application/json" to the HTTP header. Fixes #3057
+  - Set the FRONTIER_ID env variable to improve frontier logging.  Fixes #3017.
+  - Use zipimport for packaging WMCore in sandboxes.
+  - Add a missing ')'.
+  - Refactor the Vanilla Condor BossAir plugin.  Fixes #2875.
+  - Trim input files for large FWJRs.  Fixes #3067.
+  - Fix the logging messages in the Proxy class to use the info level.  Fixes #3068.
+  - Add the options and keys parameters to the allDocs call.  Fixes #3069.
+
 0.8.20 to 0.8.21:
   - Fix ReqMgr reportRequestProgress call (3052).
   - WorkQueue fix to correctly handle multi top level task workflows (1582).

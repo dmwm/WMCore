@@ -269,7 +269,7 @@ wmbs.couchConfig.jobDumpDBName = jobDumpDBName
 
 wmagent = config.WMBSService.views.active.section_('wmagent')
 wmagent.object = 'WMCore.WebTools.RESTApi'
-wmagent.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools/')
+wmagent.templates = os.path.join(os.environ["WMCORE_ROOT"], 'data/templates/WMCore/WebTools/')
 wmagent.section_('model')
 wmagent.model.object = 'WMCore.HTTPFrontEnd.Agent.AgentRESTModel'
 wmagent.section_('formatter')
@@ -281,17 +281,17 @@ wmagent.couchConfig.jobDumpDBName = "wmagent_jobdump"
 
 wmagentmonitor = config.WMBSService.views.active.section_('wmagentmonitor')
 wmagentmonitor.object = 'WMCore.HTTPFrontEnd.Agent.AgentMonitorPage'
-wmagentmonitor.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools')
-wmagentmonitor.javascript = os.path.join(os.environ["WMCORE_ROOT"], 'javascript/')
-wmagentmonitor.css = os.path.join(os.environ["WMCORE_ROOT"], 'css/')
-wmagentmonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'html/')
+wmagentmonitor.templates = os.path.join(os.environ["WMCORE_ROOT"], 'data/templates/WMCore/WebTools')
+wmagentmonitor.javascript = os.path.join(os.environ["WMCORE_ROOT"], 'data/javascript/')
+wmagentmonitor.css = os.path.join(os.environ["WMCORE_ROOT"], 'data/css/')
+wmagentmonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'data/html/')
 
 wmbsmonitor = config.WMBSService.views.active.section_('wmbsmonitor')
 wmbsmonitor.object = 'WMCore.HTTPFrontEnd.WMBS.WMBSMonitorPage'
-wmbsmonitor.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools')
-wmbsmonitor.javascript = os.path.join(os.environ["WMCORE_ROOT"], 'javascript/')
-wmbsmonitor.css = os.path.join(os.environ["WMCORE_ROOT"], 'css/')
-wmbsmonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'html/')
+wmbsmonitor.templates = os.path.join(os.environ["WMCORE_ROOT"], 'data/templates/WMCore/WebTools')
+wmbsmonitor.javascript = os.path.join(os.environ["WMCORE_ROOT"], 'data/javascript/')
+wmbsmonitor.css = os.path.join(os.environ["WMCORE_ROOT"], 'data/css/')
+wmbsmonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'data/html/')
 
 
 

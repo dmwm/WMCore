@@ -24,8 +24,7 @@ def monitorDocFromRequestSchema(schema):
     # additional field for Analysis work
     doc["vo_group"] = schema.get('VoGroup', "")
     doc["vo_role"] = schema.get('VoRole', "")
-    #TODO: not sure the information will be here (if not it is under WMSpec)
-    doc["user_dn"] = schema.get('UserDN', "")
+    doc["user_dn"] = schema.get('RequestorDN', "")
     
     # team name is not yet available need to be updated in assign status
     #doc['team'] = schema['team']

@@ -209,7 +209,7 @@ def updateThresholdInfo(resourceControl, siteName, taskType, maxSlots, priority 
                                     maxSlots = int(maxSlots), priority = priority)
     return
 
-def drainSite(site, drain)
+def drainSite(site, drain):
     """Drain or re-enable a site"""
     if resourceControl.listSiteInfo(siteName) == None:
         print "You must add the site to the database before you can drain it"

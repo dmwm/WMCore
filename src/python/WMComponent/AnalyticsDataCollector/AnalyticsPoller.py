@@ -92,8 +92,8 @@ class AnalyticsPoller(BaseWorkerThread):
             logging.info("Data upload success\n %s request" % len(requestDocs))
             
             # update directly to the central WMStats couchDB
-            self.centralWMStats.updateRequestsInfo(requestDocs)
-            logging.info("Remote Data update success\n %s request" % len(requestDocs))
+            #self.centralWMStats.updateRequestsInfo(requestDocs)
+            #logging.info("Remote Data update success\n %s request" % len(requestDocs))
             
             #agent info (include job Slots for the sites)
             agentInfo = self.wmagentDB.getHeartBeatWarning()

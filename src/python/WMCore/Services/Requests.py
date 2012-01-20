@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #pylint: disable-msg=C0103,R0913,W0102
 """
 _Requests_
@@ -93,6 +93,7 @@ def downloadFile(fileName, url):
         curl.setopt(pycurl.URL, url)
         curl.setopt(pycurl.WRITEDATA, fp)
         curl.setopt(pycurl.HEADERFUNCTION, hbuf.write)
+        curl.setopt(pycurl.FOLLOWLOCATION, 1)
         curl.perform()
         curl.close()
 

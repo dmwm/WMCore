@@ -89,7 +89,7 @@ def createWorkArea(sandbox):
     # need to pull out the startup file from the zipball
     zfile = zipfile.ZipFile( os.path.join( jobDir, 'WMCore.zip' ), 'r' )
     startupScript = zfile.read( 'WMCore/WMRuntime/Startup.py' )
-    fd = os.open( os.path.join( jobDir, 'Startup.py'), "w" )
+    fd = os.open( os.path.join( jobDir, 'Startup.py'), os.O_CREAT | os.O_WRONLY )
     os.write(fd, startupScript)
     os.close(fd)
     

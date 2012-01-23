@@ -349,7 +349,7 @@ class DBSReader:
                  [], #tier_list
                  "", #analysisDataset
                  fileBlockName,
-                 details = None,
+                 details = "True",
                  retriveList = ['retrive_parent' ])
 
         except DbsException, ex:

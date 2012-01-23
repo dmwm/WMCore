@@ -25,6 +25,6 @@ function(doc) {
     var summary = {};
     summary[doc.request_status[doc.request_status.length - 1].status] = 1; 
     //summary['status'] = doc.status;
-    emit(doc.campaign, summary) ;
+    emit([doc.campaign, doc.teams[0], doc.request_type], summary) ;
   } 
 }

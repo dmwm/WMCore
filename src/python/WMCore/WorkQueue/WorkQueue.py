@@ -29,6 +29,7 @@ from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
 from WMCore.WorkQueue.WorkQueueExceptions import TERMINAL_EXCEPTIONS
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueError
 from WMCore.WorkQueue.WorkQueueUtils import get_dbs
+from WMCore.WorkQueue.WorkQueueUtils import cmsSiteNames
 
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
 from WMCore.ACDC.DataCollectionService import DataCollectionService
@@ -586,7 +587,7 @@ class WorkQueue(WorkQueueBase):
         if not resources:
             # find out available resources from wmbs
             from WMCore.WorkQueue.WMBSHelper import freeSlots
-            sites = freeSlots(self.params['QueueDepth'])
+            sites = freeSlots(self.params['QueueDepth'], knownCmsSites = cmsSiteNames())
             draining_sites = freeSlots(self.params['QueueDepth'], onlyDrain = True)
             # resources for new work are free wmbs resources minus what we already have queued
             _, resources = self.backend.availableWork(sites)

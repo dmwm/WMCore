@@ -1,0 +1,35 @@
+<html>
+  <head>
+    <title>WMStats</title>
+    <style type="text/css" title="currentStyle">
+            @import "css/demo_table.css";
+    </style>
+    <script src="lib/namespace.js" type='text/javascript'> </script>
+    <script src="lib/jquery.js" type='text/javascript'> </script>
+    <script src="lib/jquery.dataTables.js" type='text/javascript'> </script>
+    <script src="js/dataMap.js" type='text/javascript'> </script>
+    <script>
+    
+    
+    var createCampaignTable = function(selector, data) {
+        var baseCols = ["campaign", "team", "type"]
+        oTableConfig = WMStats.generateTableConfig(WMStats.convertToTableData(data, baseCols));
+        var oTable = $(selector).dataTable(oTableConfig);
+        return oTable;
+    }
+       
+    $(document).ready(function() {
+          
+        $('#campaignDiv').html( '<table cellpadding="0" cellspacing="0" border="0" class="display" id="campaignTable"></table>' );
+      
+        $.get('/wmstats/_design/WMStats/_view/campaign-status', 'reduce=true&group_level=1',
+              function(response) {
+                  createCampaignTable("#campaignTable", response);
+              },
+              'json')
+        
+     } );
+    </script>
+<body>
+    <div id="campaignDiv"></div>
+</body>

@@ -5,17 +5,12 @@
 
 var requestsView = 
 {
-	couchdb: null,
-    mainpage: null, 
-
+	mainUrl: null, // full URL to the couchapp
     
     setUp: function()
     {
 		utils.checkAndSetConsole();
-		var dbname = document.location.href.split('/')[3];
-        console.log("couchdb ref set: " + dbname);
-        this.couchdb = $.couch.db(dbname);
-        this.mainpage = this.couchdb.uri + "_design/OpsClipboard/index.html";
+		requestsView.mainUrl = utils.getMainUrl(document.location.href);		
     }, // setUp()
     
     
@@ -41,7 +36,7 @@ var requestsView =
         hRow.insertCell(2).innerHTML = "Request ID";
         document.getElementById(elemId).appendChild(table);
         
-        utils.addPageLink(requestsView.mainpage, "Main Page");
+        utils.addPageLink(requestsView.mainUrl + "index.html", "Main Page");
     }, // requestsView()
     
     
@@ -49,8 +44,8 @@ var requestsView =
     {
     	console.log("adding:" + state + "  " + lastUpdated + "  " + reqId + "  " + docId);
     	var updatedDateTime = new Date(parseInt(lastUpdated)).toLocaleString();
-        var clipLink = "<a href=\"" + requestsView.couchdb.uri ;
-        clipLink += "_design/OpsClipboard/_show/request/" + docId + "\">" + reqId + "</a>";
+        var clipLink = "<a href=\"" + requestsView.mainUrl;
+        clipLink += "_show/request/" + docId + "\">" + reqId + "</a>";
     	table = document.getElementById("requestsviewtable");
     	var row = table.insertRow(-1);
     	row.style.backgroundColor = rowColor;
@@ -59,27 +54,29 @@ var requestsView =
     	row.insertCell(2).innerHTML = clipLink; 
     }, // addTableRow()
     
+        
+    processData: function(data)
+    {
+		for (i in data.rows) 
+		{
+			var reqId = data.rows[i].key;
+            var docId = data.rows[i].value['doc_id'];
+            var state = data.rows[i].value['state'];
+            var updated = data.rows[i].value['updated'];
+            // alternate colours in table rows
+            var rowColor = i % 2 === 0 ? "#FAFAFA" : "#E3E3E3";  
+            requestsView.addTableRow(reqId, state, docId, updated, rowColor);
+        }    	
+    }, // processData()
+    
     
     // load view from couch and populate page
     requestsViewUpdate: function()
     {
-    	console.log("querying couchapp view 'request' ...");
-        this.couchdb.view("OpsClipboard/request",
-        {
-        	success: function(data)
-        	{
-        		for (i in data.rows) 
-        		{
-        			var reqId = data.rows[i].key[0];
-                    var docId = data.rows[i].value['doc_id'];
-                    var state = data.rows[i].value['state'];
-                    var updated = data.rows[i].value['updated'];
-                    // alternate colours in table rows
-                    var rowColor = i % 2 === 0 ? "#FAFAFA" : "#E3E3E3";  
-                    requestsView.addTableRow(reqId, state, docId, updated, rowColor);
-                  }
-              }
-        });
+        var url = requestsView.mainUrl + "_view/request";
+        var options = {"method": "GET", "reloadPage": false};
+        utils.makeHttpRequest(url, requestsView.processData, null, options);
     } // requestsViewUpdate()
+    
     
 } // requestsView

@@ -166,10 +166,7 @@ class OpsClipboardTest(unittest.TestCase):
         campView = self._getViewResults("campaign")
         self.assertEqual(len(campView), 7)
         for c in campView:
-            # TODO
-            # not clear why this view returns a list on the key position in the result            
-            self.assertEqual(len(c[u"key"]), 1) # only 1 item on the key position
-            self.failUnless(c[u"key"][0] in campaignIds)
+            self.failUnless(c[u"key"] in campaignIds)
             self.failUnless(c[u"value"][u"request_id"] in requestIds)
             # check that result ('value') dictionary has all these keys     
             map(self.failUnless, [c[u"value"].has_key(key) for key in ("doc_id", "state", "updated")])
@@ -249,10 +246,7 @@ class OpsClipboardTest(unittest.TestCase):
         requestView = self._getViewResults("request")
         self.assertEqual(len(requestView), 15)
         for reqView in requestView:
-            # TODO
-            # not clear why this view returns a list on the key position in the result
-            self.failUnless(len(reqView[u"key"]) == 1)
-            self.failUnless(reqView[u"key"][0] in requestIds)
+            self.failUnless(reqView[u"key"] in requestIds)
             self.failUnless(reqView[u"value"][u"state"] == u"NewlyHeld")
 
             

@@ -601,7 +601,10 @@ class Report:
         _setStep_
 
         """
-        self.data.steps.append(stepName)
+        if not stepName in self.data.steps:
+            self.data.steps.append(stepName)
+        else:
+            logging.info("Step %s is now being overridden by a new step report" % stepName)
         self.data.section_(stepName)
         setattr(self.data, stepName, stepSection)
         return

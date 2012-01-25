@@ -32,7 +32,7 @@ class ReportTest(unittest.TestCase):
         """
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
         self.testInit.setupCouch("report_t/fwjrs", "FWJRDump")
 
         self.xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
@@ -682,7 +682,30 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertEqual(info['Size'], 5933)
 
         return
- 
+
+    def testDuplicatStep(self):
+        """
+        _testDuplicateStep_
+
+        If the same step is added twice, it should act
+        as a replacement, and raise an appropriate message
+        """
+
+        baseReport = Report("cmsRun1")
+        baseReport.parse(self.xmlPath)
+
+        modReport = Report("cmsRun1")
+        modReport.parse(self.xmlPath)
+        setattr(modReport.data.cmsRun1, 'testVar', 'test01')
+
+        report = Report()
+        report.setStep(stepName = 'cmsRun1', stepSection = baseReport.retrieveStep('cmsRun1'))
+        report.setStep(stepName = 'cmsRun1', stepSection = modReport.retrieveStep('cmsRun1'))
+
+        self.assertEqual(report.listSteps(), ['cmsRun1'])
+        self.assertEqual(report.data.cmsRun1.testVar, 'test01')
+        
+        return
     
 if __name__ == "__main__":
     unittest.main()

@@ -285,19 +285,6 @@ class Report:
 
         return returnCode
 
-    def stepSuccessful(self, stepName):
-        """
-        _stepSuccessful_
-
-        Determine if the given step was successful.
-        """
-        reportStep = self.retrieveStep(stepName)
-
-        if int(getattr(reportStep, "status", 1)) == 0:
-            return True
-
-        return False
-
     def getStepExitCode(self, stepName):
         """
         _getStepExitCode_

@@ -95,7 +95,8 @@ dependencies = {
                 'crabserver':{
                         'packages': ['WMCore.WMSpec', 'WMCore.ACDC',
                                      'WMCore.Storage+', 'WMCore.HTTPFrontEnd.RequestManager+',
-                                     'WMCore.RequestManager+'],
+                                     'WMCore.RequestManager+', 'WMComponent.DBSUpload',
+                                     'WMCore.ProcessPool'],
                         'systems': ['wmc-web']
                         },
                 'wmclient':{

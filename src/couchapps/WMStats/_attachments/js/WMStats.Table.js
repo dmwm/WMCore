@@ -1,5 +1,6 @@
+WMStats.namespace("Table")
 
-WMStats.convertToTableData = function(data, baseColumns) {
+WMStats.Table.convertToColumnsAndRows = function(data, baseColumns) {
     /*
      * *
      *  convert couch db data to columns and rows.
@@ -44,16 +45,65 @@ WMStats.convertToTableData = function(data, baseColumns) {
     return {'columns': columns, 'rows': rows}
 }
 
-WMStats.generateTableConfig = function(tableData) {
+
+WMStats.Table.convertToRows = function(requestData, columnFilter) {
     /*
-     * jquery.dataTables column config
-     */
-    var tableConfig = {'bProcessing': true, 
-                       'aoColumns': [], 
-                       'aaData': tableData.rows}
-                       
-    for (var i in tableData.columns) {
-        tableConfig.aoColumns.push({'sTitle': tableData.columns[i]});
+     * *
+     *  combine couch db request data to columns and rows.
+     *  i.e. couchdb format is 
+     *  {"rows":[ {"key":["A", "B", "C"],"value":{"a":0,"b":0, ...}},
+     *            {"key":["D", "E", "F"],"value":{"a":1,"b":1, ...}},
+     *  baseColumns is the list of column names for key value above
+     *  baseColums = ["campaign", "team", "type"] then 
+     *  "A" is campaign name "B" is team name, "C" is test name 
+     *  
+     *  this will return
+     *  {'columns': ["campaign", "team", "type", "a", "b", ...],
+     *   'rows': [["A", "B", "C", 0, 0, ...],
+     *            ["D", "E", "F", 1, 1, ...],
+     *           ]
+     * */
+    var data = requestData.getDataByRequest();
+    var rows = [];
+    for (var workflow in data) {
+        rows.push(columnFilter(data[workflow]));       
     }
-    return tableConfig;        
+    return rows;
 }
+
+columnFilter = function(rowData) {
+    
+}
+
+WMStats.Table.create = function(selector, data, config) {
+    /*
+     * create the Table with given data on the specified selector 
+     * (selector is css/jquery selector)
+     */
+    
+    function generateConfig() {
+        /*
+         * jquery.dataTables config
+         * Reference: http://datatables.net/ref
+         * */
+        
+        // default table config
+        var tableConfig = {'bProcessing': true}; 
+      
+        if (config) {
+            tableConfig = config;
+        }
+        
+        tableConfig.aoColumns = [];                   
+        for (var i in tableData.columns) {
+            tableConfig.aoColumns.push({'sTitle': data.columns[i]});
+        }
+        tableConfig.aaData = data.rows;
+        return tableConfig; 
+    }
+    
+    var oTableConfig = generateTableConfig();
+    var oTable = $(selector).dataTable(oTableConfig);
+    return oTable;
+}
+    

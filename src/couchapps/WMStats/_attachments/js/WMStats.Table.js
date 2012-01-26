@@ -47,22 +47,18 @@ WMStats.Table.convertToColumnsAndRows = function(data, baseColumns) {
 
 
 WMStats.Table.convertToRows = function(requestData, columnFilter) {
-    /*
-     * *
-     *  combine couch db request data to columns and rows.
-     *  i.e. couchdb format is 
-     *  {"rows":[ {"key":["A", "B", "C"],"value":{"a":0,"b":0, ...}},
-     *            {"key":["D", "E", "F"],"value":{"a":1,"b":1, ...}},
-     *  baseColumns is the list of column names for key value above
-     *  baseColums = ["campaign", "team", "type"] then 
-     *  "A" is campaign name "B" is team name, "C" is test name 
-     *  
-     *  this will return
-     *  {'columns': ["campaign", "team", "type", "a", "b", ...],
-     *   'rows': [["A", "B", "C", 0, 0, ...],
-     *            ["D", "E", "F", 1, 1, ...],
-     *           ]
-     * */
+
+    if (!columnFilter) {
+        // default column filter
+        columnFilter = function(dataRow) {
+            var row = [];
+            for(var field in dataRow) {
+                row.push(dataRow[field]);
+            }
+            return row;
+        }
+    }
+    
     var data = requestData.getDataByRequest();
     var rows = [];
     for (var workflow in data) {

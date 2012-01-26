@@ -96,6 +96,12 @@ def myProxyEnvironment(userDN, serverCert, serverKey, myproxySrv, proxyDir, logg
         proxy.userDN = userDN
         filename = proxy.logonRenewMyProxy()
         os.environ['X509_USER_PROXY'] = filename
+
+        # host certs can be taken first, get rid of them
+        deleteKeys = ['X509_USER_CERT', 'X509_USER_KEY', 'X509_HOST_CERT', 'X509_HOST_KEY']
+        for key in deleteKeys:
+            if os.environ.has_key(key):
+                del os.environ[key]
         yield filename
     finally:
         os.environ = originalEnvironment

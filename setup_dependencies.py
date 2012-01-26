@@ -97,7 +97,14 @@ dependencies = {
                                      'WMCore.Storage+', 'WMCore.HTTPFrontEnd.RequestManager+',
                                      'WMCore.RequestManager+', 'WMComponent.DBSUpload',
                                      'WMCore.ProcessPool'],
-                        'systems': ['wmc-web']
+                        'systems': ['wmc-web'],
+                        },
+                'crabclient':{
+                        'packages': ['WMCore.Wrappers+', 'WMCore.Credential', 'PSetTweaks',
+                                     'WMCore.Services.UserFileCache'],
+                        'systems': ['wmc-base'],
+                        'modules': ['WMCore.FwkJobReport.FileInfo', 'WMCore.Services.Requests',
+                                    'WMCore.Services.Service', 'WMCore.Services.pycurl_manager'],
                         },
                 'wmclient':{
                         'systems': ['wmc-runtime', 'wmc-database']

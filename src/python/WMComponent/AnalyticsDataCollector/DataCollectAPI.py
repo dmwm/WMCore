@@ -155,11 +155,11 @@ def convertToStatusSiteFormat(requestData):
     convert data structure for couch db.
     "status": { "inWMBS": 100, "success": 1000, "inQueue": 100, "cooloff": 1000,
                 "submitted": {"retry": 200, "running": 200, "pending": 200, "first": 200"},
-                "failure": {"exception": 1000, "create": 1000, "submit": 1000,"cancel": 1000},
+                "failure": {"exception": 1000, "create": 1000, "submit": 1000},
                 "queued": {"retry": 1000, "first": 1000}},
    "sites": {
        "T1_test-site-1": {"submitted": {"retry": 200, "running": 200, "pending": 200, "first": 200"},
-                          "failure": {"exception": 100, "create": 10, "submit": 10,"cancel": 100},
+                          "failure": {"exception": 100, "create": 10, "submit": 10},
                           "cooloff": 100, ...}
        },
     """

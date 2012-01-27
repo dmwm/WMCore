@@ -39,7 +39,7 @@ function(doc) {
               };
               break;
           case 'killed':
-              status = 'failure_cancelled';
+              status = 'canceled';
               break;
           case 'cleanout':
               if (doc['states'][lastStateIndex].oldstate == 'success') {

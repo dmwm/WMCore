@@ -129,11 +129,12 @@ def generate_agent_requests(number=5, iterations=5):
     for cycle in xrange(iterations): 
         for i in xrange(number):
             doc = {"status": {"inWMBS": 12,
-                              "submitted": {"retry": 1, "running": 1, "pending": 1, "first": 1},
-                              "failure": {"exception": 1, "create": 1, "submit": 1, "cancel": 1},
-                              "queued": {"retry": 1, "first": 1},
-                              "running": {"retry": 1, "first": 1},
-                              "cooloff": 1
+                              "submitted": {"retry": 2, "running": 2, "pending": 2, "first": 2},
+                              "failure": {"exception": 2, "create": 2, "submit": 2},
+                              "queued": {"retry": 2, "first": 2},
+                              "canceled": 2,
+                              "cooloff": 2,
+                              "success": 2
                              },
                     
                 "workflow": "test_workflow_%s" % i,
@@ -141,10 +142,20 @@ def generate_agent_requests(number=5, iterations=5):
                 "sites": {"T1_DE_KIT": 
                              {
                               "submitted": {"retry": 1, "running": 1, "pending": 1, "first": 1},
-                              "failure": {"exception": 1, "create": 1, "submit": 1, "cancel": 1},
+                              "failure": {"exception": 1, "create": 1, "submit": 1},
                               "queued": {"retry": 1, "first": 1},
-                              "running": {"retry": 1, "first": 1},
-                              "cooloff": 1
+                              "canceled": 1,
+                              "cooloff": 1,
+                              "success": 1
+                             },
+                          "T1_US_FNAL": 
+                             {
+                              "submitted": {"retry": 1, "running": 1, "pending": 1, "first": 1},
+                              "failure": {"exception": 1, "create": 1, "submit": 1},
+                              "queued": {"retry": 1, "first": 1},
+                              "canceled": 1,
+                              "cooloff": 1,
+                              "success": 1
                              }
                           },
                 "agent": "WMAgentCommissioning",

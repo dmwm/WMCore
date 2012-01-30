@@ -11,6 +11,54 @@
     <script src="js/WMStats.Requests.js" type='text/javascript'> </script>
     <script>
     
+    $.jsonpost = function(url, data, func, dataType) {
+        $.ajax({"url": url,
+                "type": "POST",
+                "data": data,
+                "contentType": "application/json; charset=utf-8",
+                "dataType": dataType,
+                "success": func
+               })
+           }
+           
+      /*
+   statusObj structure
+  statusObj = {
+    "queued": {"first": 0, "retry": 0},
+    "submitted": {"first": 0, "retry": 0, "pending": 0, "running": 0},
+    "failure": {"create": 0, "submit": 0, "exception": 0},
+    "canceled": 0,
+    "success": 0,
+    "cooloff": 0
+    }
+  */
+
+    var requestTableConfig = {
+        "aoColumns": [
+            { "mDataProp": "workflow", "sTitle": "workflow"},
+            { "mDataProp": "requestor", "sTitle": "requestor"},
+            { "mDataProp": "request_type", "sTitle": "type"},
+            { "mDataProp": "inputdataset", "sTitle": "inputdataset"},
+            { "mDataProp": "site_white_list", "sTitle": "site white list"},
+            { "mDataProp": "status.inWMBS", "sTitle": "in wmbs", "sDefaultContent": 0},
+            { "mDataProp": "status.queued.first", "sTitle": "queued first", "sDefaultContent": 0 },
+            { "mDataProp": "status.queued.retry", "sTitle": "queued retry", "sDefaultContent": 0 },
+            { "mDataProp": "status.submitted.first", "sTitle": "submitted first", "sDefaultContent": 0 },
+            { "mDataProp": "status.submitted.retry", "sTitle": "submitted retry", "sDefaultContent": 0 },
+            { "mDataProp": "status.submitted.pending", "sTitle": "submitted pending", "sDefaultContent": 0 },
+            { "mDataProp": "status.submitted.running", "sTitle": "submitted running", "sDefaultContent": 0 },
+            { "mDataProp": "status.failure.create", "sTitle": "create fail", "sDefaultContent": 0 },
+            { "mDataProp": "status.failure.submit", "sTitle": "submit fail", "sDefaultContent": 0 },
+            { "mDataProp": "status.failure.exception", "sTitle": "exception fail", "sDefaultContent": 0 },
+            { "mDataProp": "status.canceled", "sTitle": "canceled", "sDefaultContent": 0 },
+            { "mDataProp": "status.success", "sTitle": "success", "sDefaultContent": 0 },
+            { "mDataProp": "status.cooloff", "sTitle": "cool off", "sDefaultContent": 0 },
+            
+            { "mDataProp": "total_jobs", "sTitle": "total estimate jobs", "sDefaultContent": 0 },
+            //TODO add more data
+        ]
+    }
+
     var keysFromIDs = function(data) {
         var keys = [];
         for (var i in data.rows){
@@ -21,13 +69,16 @@
                 
     var getRequestDetailsAndCreateTable = function (agentIDs, reqmgrData) {
         var options = {'keys': keysFromIDs(agentIDs), 'reduce': false, 'include_docs': true};
-        
-        $.post('/wmstats/_design/WMStats/_view/latest-request', options,
+        //TODO need to change to post call
+        $.get('/mock_wmstats/_design/WMStats/_view/latest-request', options,
               function(agentData) {
                   var requestCache = WMStats.Requests()
                   requestCache.updateBulkRequests(reqmgrData.rows)
                   requestCache.updateBulkRequests(agentData.rows)
-                  WMStats.Table.create("#requestTable", combinedData);
+                  
+                  requestTableConfig.aaData = requestCache.getList();
+                  return $("#requestTable").dataTable(requestTableConfig);
+                  //WMStats.Table.create("#requestTable", combinedData);
               },
               'json')
     }
@@ -37,9 +88,11 @@
          * get list of request ids first from the couchDB then get the details of the requests.
          * This is due to the reduce restiction on couchDB - can't be one http call. 
          */
-        var options = {'keys': keysFromIDs(response), 'reduce': true, 'group': true};
-                  
-        $.post('/wmstats/_design/WMStats/_view/latest-request', options,
+
+        var options = {"keys": keysFromIDs(reqmgrData), "reduce": true, 
+                       "group": true, "descending": true};
+        //TODO need to change to post call
+        $.get('/mock_wmstats/_design/WMStats/_view/latest-request', options,
               function(agentIDs) {
                   getRequestDetailsAndCreateTable(agentIDs, reqmgrData)
               },
@@ -50,7 +103,7 @@
           
         $('#requestDiv').html( '<table cellpadding="0" cellspacing="0" border="0" class="display" id="requestTable"></table>' );
       
-        $.get('/wmstats/_design/WMStats/_view/campaign-request', 'include_docs=true',
+        $.get('/mock_wmstats/_design/WMStats/_view/campaign-request', 'include_docs=true',
               function(reqmgrData) {
                   getLatestRequestIDsAndCreateTable(reqmgrData)
               },

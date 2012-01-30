@@ -1,5 +1,19 @@
 WMStats.namespace("Table")
 
+WMStats.Table.convertCampaignData = function(data, baseColumns) {
+    var rows =[]
+    for (var i in data) {
+        tableRow = data[i].value;
+        for (var j = 0; j < baseColumns.length; j ++) {
+            tableRow[baseColums[j]] = data[j].key;
+        }
+        rows.push(tableRow)
+    }
+    return rows
+}
+
+
+
 WMStats.Table.convertToColumnsAndRows = function(data, baseColumns) {
     /*
      * *
@@ -91,14 +105,14 @@ WMStats.Table.create = function(selector, data, config) {
         }
         
         tableConfig.aoColumns = [];                   
-        for (var i in tableData.columns) {
+        for (var i in data.columns) {
             tableConfig.aoColumns.push({'sTitle': data.columns[i]});
         }
         tableConfig.aaData = data.rows;
         return tableConfig; 
     }
     
-    var oTableConfig = generateTableConfig();
+    var oTableConfig = generateConfig();
     var oTable = $(selector).dataTable(oTableConfig);
     return oTable;
 }

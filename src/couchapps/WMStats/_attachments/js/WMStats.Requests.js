@@ -5,7 +5,7 @@ WMStats.Requests = function () {
     
     function updateRequest(doc) {
         //if !(doc.workflow) {throw};
-        var request = getRequest(doc.workflow);
+        var request = getRequestByName(doc.workflow);
         if (!request) {
             request = {}; 
             length++;
@@ -18,22 +18,32 @@ WMStats.Requests = function () {
     
     function updateBulkRequests(docList) {
         for (var row in docList) {
-            updateRequest(row.doc);
+            updateRequest(docList[row].doc);
         }
     };
     
     function getRequestByName(workflow) {
-        return _dataByWorkflow['workflow'];
+        return _dataByWorkflow[workflow];
     };
     
     function getDataByWorkflow() {
         return _dataByWorkflow;
     };
+    
+    function getList() {
+        //TODO need to cache
+        var list = [];
+        for (var item in _dataByWorkflow) {
+            list.push(_dataByWorkflow[item])
+        }
+        return list;
+    }
         
-    return {'getDataByRequest': getDataByRequest,
+    return {'getDataByWorkflow': getDataByWorkflow,
             'updateBulkRequests': updateBulkRequests,
             'updateRequest': updateRequest,
             'getRequestByName': getRequestByName,
+            'getList': getList,
             'length': length     
             }    
 }

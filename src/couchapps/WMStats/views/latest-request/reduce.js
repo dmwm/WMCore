@@ -1,3 +1,3 @@
 function(keys, values, rereduce) {
-    return values[0];
+    return values[values.length - 1];
 }

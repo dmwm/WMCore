@@ -1,4 +1,5 @@
 function(keys, values, rereduce) {
+  /*
   var summary = {
     "new": 0,
     "testing-approved": 0,
@@ -19,11 +20,18 @@ function(keys, values, rereduce) {
     "aborted": 0,
     "rejected": 0
     };
-    
+  */
+  function updateStatusSummary(summary, value){
+    for (var status in value) {
+      //setObjDefault(summary[status], 0)
+      if (summary[status] === undefined) {summary[status] = 0;}
+      summary[status] += value[status];
+    }  
+  }
+  
+  var summary = {}  
   for (var index in values) {
-    for (var status in values[index]) {
-      summary[status] += values[index][status];
-    }
+    updateStatusSummary(summary, values[index]);
   }
   return summary;
 }

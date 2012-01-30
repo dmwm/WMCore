@@ -1,7 +1,8 @@
 
 function(doc) {
-  if (doc.type == "reqmgr_request"){
-    var summary = {
+  /*  
+   * summary stucture will be following
+    summary = {
     "new": 0,
     "testing-approved": 0,
     "testing": 0,
@@ -21,10 +22,10 @@ function(doc) {
     "aborted": 0,
     "rejected": 0
     };
-
+   */
+  if (doc.type == "reqmgr_request"){
     var summary = {};
     summary[doc.request_status[doc.request_status.length - 1].status] = 1; 
-    //summary['status'] = doc.status;
     emit([doc.campaign, doc.teams[0], doc.request_type], summary) ;
   } 
 }

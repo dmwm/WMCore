@@ -433,7 +433,7 @@ def makeJobTweak(job):
     # We don't want to set skip events for MonteCarlo jobs which have
     # no input files.
     firstEvent = mask['FirstEvent']
-    if firstEvent != None and firstEvent > 0 and len(primaryFiles) > 0:
+    if firstEvent != None and firstEvent >= 0 and len(primaryFiles) > 0:
         result.addParameter("process.source.skipEvents", firstEvent)
 
     firstRun = mask['FirstRun']

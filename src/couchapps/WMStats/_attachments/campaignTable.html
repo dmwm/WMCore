@@ -3,14 +3,18 @@
     <title>WMStats</title>
     <style type="text/css" title="currentStyle">
             @import "css/demo_table.css";
+            @import "css/ColVis.css"
     </style>
     <script src="lib/namespace.js" type='text/javascript'> </script>
     <script src="lib/jquery.js" type='text/javascript'> </script>
     <script src="lib/jquery.dataTables.js" type='text/javascript'> </script>
+    <script src="lib/ColVis.js" type='text/javascript'> </script>
+    <script src="lib/jquery.dataTables.columnFilter.js" type='text/javascript'> </script>
     <script src="js/WMStats.Table.js" type='text/javascript'> </script>
+    <script src="js/WMStats.Globals.js" type='text/javascript'> </script>
+    
     <script>
-    
-    
+  
     var campaignTableConfig = {
         "aoColumns": [
             { "mDataProp": "campaign", "sTitle": "campaign"},
@@ -37,6 +41,13 @@
         ]
     }
     
+    var footer = "<tfoot><tr>";
+  
+    for (var obj in campaignTableConfig.aoColunms) {
+        footer += '<th>' + obj["mDataProp"] + "</th>"
+    }
+    footer += "</tfoot></tr>"
+    
     var convertCampaignData = function(data, baseColumns) {
         var rows =[]
         for (var i in data) {
@@ -54,14 +65,14 @@
         //This is base on the group_level ["campaign", "team", type]
         var baseCols = ["campaign"];
         campaignTableConfig.aaData = convertCampaignData(data, baseCols);
-        return $(selector).dataTable(campaignTableConfig);
+        return WMStats.Table(campaignTableConfig).create(selector)
     }
        
     $(document).ready(function() {
           
-        $('#campaignDiv').html( '<table cellpadding="0" cellspacing="0" border="0" class="display" id="campaignTable"></table>' );
-      
-        $.get('/wmstats/_design/WMStats/_view/campaign-status', 'reduce=true&group_level=1&descending=true',
+        $('#campaignDiv').html( '<table cellpadding="0" cellspacing="0" border="0" class="display" id="campaignTable">' + footer +'</table>' );
+        var url = WMStats.Globals.couchDBViewPath + 'campaign-status'
+        $.get(url, 'reduce=true&group_level=1&descending=true',
               function(campaignData) {
                   createCampaignTable("#campaignTable", campaignData.rows);
               },

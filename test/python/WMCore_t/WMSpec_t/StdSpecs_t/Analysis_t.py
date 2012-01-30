@@ -88,9 +88,9 @@ class AnalysisTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("marco.mascheroni@cern.ch", "DMWM")
 
-        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
-        testWMBSHelper.createSubscription()
-
+        testWMBSHelper = WMBSHelper(testWorkload, "Analysis", "SomeBlock")
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
         procWorkflow = Workflow(name = "TestWorkload",
                               task = "/TestWorkload/Analysis")
         procWorkflow.load()

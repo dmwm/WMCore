@@ -222,8 +222,9 @@ class MonteCarloTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
         
-        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
-        testWMBSHelper.createSubscription()
+        testWMBSHelper = WMBSHelper(testWorkload, "Production", "SomeBlock")
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
         
         self._commonMonteCarloTest()
 
@@ -248,8 +249,9 @@ class MonteCarloTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
         
-        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
-        testWMBSHelper.createSubscription()
+        testWMBSHelper = WMBSHelper(testWorkload, "Production", "SomeBlock")
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
         
         self._commonMonteCarloTest()
 

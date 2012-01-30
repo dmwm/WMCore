@@ -421,8 +421,9 @@ class RelValMCTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
         
-        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
-        testWMBSHelper.createSubscription()
+        testWMBSHelper = WMBSHelper(testWorkload, "Generation", "SomeBlock")
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
         
         # now run the tests on single workload instance installed into WMBS
         # each of the subtests is dealing with specific tasks
@@ -455,8 +456,9 @@ class RelValMCTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
         
-        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
-        testWMBSHelper.createSubscription()
+        testWMBSHelper = WMBSHelper(testWorkload, "Generation", "SomeBlock")
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
         
         # now run the tests on single workload instance installed into WMBS
         # each of the subtests is dealing with specific tasks

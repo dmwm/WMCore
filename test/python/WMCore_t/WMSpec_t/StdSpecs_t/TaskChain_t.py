@@ -272,8 +272,9 @@ class TaskChainTests(unittest.TestCase):
         self.workload.setOwnerDetails("evansde@fnal.gov", "DMWM")
 
 
-        testWMBSHelper = WMBSHelper(self.workload, "SomeBlock")
-        testWMBSHelper.createSubscription()
+        testWMBSHelper = WMBSHelper(self.workload, "GenSim", "SomeBlock")
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         firstTask = self.workload.getTaskByPath("/PullingTheChain/GenSim")
 
@@ -442,8 +443,9 @@ class TaskChainTests(unittest.TestCase):
         self.workload.setOwnerDetails("evansde@fnal.gov", "DMWM")
 
 
-        testWMBSHelper = WMBSHelper(self.workload, "SomeBlock")
-        testWMBSHelper.createSubscription()
+        testWMBSHelper = WMBSHelper(self.workload, "DigiHLT", "SomeBlock")
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
 
         self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT"), arguments['Task1'])
@@ -540,8 +542,9 @@ class TaskChainTests(unittest.TestCase):
         self.workload.setOwnerDetails("evansde@fnal.gov", "DMWM")
 
 
-        testWMBSHelper = WMBSHelper(self.workload, "SomeBlock")
-        testWMBSHelper.createSubscription()
+        testWMBSHelper = WMBSHelper(self.workload, "DigiHLT", "SomeBlock")
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
 
         self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT"), arguments['Task1'])
@@ -629,8 +632,9 @@ class TaskChainTests(unittest.TestCase):
         self.workload.setOwnerDetails("evansde@fnal.gov", "DMWM")
 
 
-        testWMBSHelper = WMBSHelper(self.workload, "SomeBlock")
-        testWMBSHelper.createSubscription()
+        testWMBSHelper = WMBSHelper(self.workload, "PromptReco", "SomeBlock")
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
         
         
 if __name__ == '__main__':

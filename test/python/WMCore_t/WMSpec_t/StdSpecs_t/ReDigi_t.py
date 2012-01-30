@@ -116,8 +116,9 @@ class ReDigiTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
 
-        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
-        testWMBSHelper.createSubscription()
+        testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock")
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         topLevelFileset = Fileset(name = "TestWorkload-StepOneProc-SomeBlock")
         topLevelFileset.loadData()
@@ -634,8 +635,9 @@ class ReDigiTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
         
-        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
-        testWMBSHelper.createSubscription()
+        testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock")
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         self.verifyDiscardRAW()
         return
@@ -661,8 +663,9 @@ class ReDigiTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
         
-        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
-        testWMBSHelper.createSubscription()
+        testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock")
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         self.verifyKeepAOD()
         return    
@@ -687,8 +690,9 @@ class ReDigiTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
         
-        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
-        testWMBSHelper.createSubscription()
+        testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock")
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         self.verifyDiscardRAW()
         return    
@@ -712,8 +716,9 @@ class ReDigiTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
         
-        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
-        testWMBSHelper.createSubscription()
+        testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock")
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         self.verifyKeepAOD()
         return    

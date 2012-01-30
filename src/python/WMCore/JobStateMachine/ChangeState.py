@@ -229,7 +229,7 @@ class ChangeState(WMObject, WMConnectionBase):
                         errmsgs[step] = [error for error in fwjrDocument["fwjr"]["steps"][step]["errors"]]
                     if "input" in fwjrDocument["fwjr"]["steps"][step] and "source" in fwjrDocument["fwjr"]["steps"][step]["input"]:
                         inputs.extend( [source["runs"] for source in fwjrDocument["fwjr"]['steps'][step]["input"]["source"] if "runs" in source] )
-                outputs = [ {'type': singlefile.get('module_lable', None),
+                outputs = [ {'type': singlefile.get('module_label', None),
                              'lfn': singlefile.get('lfn', None),
                              'location': singlefile.get('locations', None),
                              'checksums': singlefile.get('checksums', {})} for singlefile in job["fwjr"].getAllFiles() if singlefile ]

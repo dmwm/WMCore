@@ -1,3 +1,24 @@
+0.8.23 to 0.8.24:
+  - Fix WMSpec unit test breakage casued by an interface change in WMBSHelper.  Fixes #3158.
+  - Don't set FirstEvent for processing workflows, it's only useful in MC workflows. Fixes #3181.
+  - Always set the first event if it is specified in the mask.  Fixes #3139.
+  - Turn on random seeding for all jobs that don't specify reproducible seeding. Fixes #3164.
+  - Remove HOST variables from myProxyEnvironment.  Fixes #3160.
+  - adding crabclient system, fixes #2545
+  - patch-series-spiga/ Fixes #3079
+  - Avoid duplicate step names.  Fixes #3150.
+  - Fail a job if the FWJR path isn't a string.  Fixes #3087.
+  - Add a script to delete workflows from the couch database.  Fixes #2991.
+  - Remove duplicate stepSuccessful() methods from the report class.  Fixes #2840.
+  - Add a GetUnsubscribedFilesets DAO.  Fixes #2533.
+  - Hardcode the workload summary URL to point at the cmsweb couch as that is  where everything 
+    goes now.  Remove the option to changed this at deployment  time, it never worked correctly anyway.  Fixes #3144.
+  - Retrieve lumi information for child files when handling two-file-read workflows.  Fixes #3140.
+  - Make WorkQueue warn if it is given a site name not in sitedb
+  - Correctly specify the file mode when copying the Startup.py script.  Fixes #3138.
+  - Typo in wmagent-resource-control (Fixes #3137)
+  - Make pycurl follow redirects. Closes #3136.
+
 0.8.22 to 0.8.23:
   - Fix template paths in default configs.  Fixes #3088.
 

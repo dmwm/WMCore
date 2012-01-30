@@ -71,7 +71,7 @@ cd job
 export WMAGENTJOBDIR=$PWD
 export PYTHONPATH=$PYTHONPATH:$PWD/WMCore.zip:$PWD
 echo "WMAgent is now running the job..."
-python2.6 -m WMCore.WMRuntime.Startup
+python2.6 Startup.py
 jobrc=$?
 echo "WMAgent finished the job, is copying the pickled report"
 cp WMTaskSpace/Report*.pkl ../

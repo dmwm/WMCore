@@ -48,9 +48,6 @@ class ResubmitBlock(StartPolicyInterface):
         chunkSize = 200
         
         acdcInfo = task.getInputACDC()
-        if acdcInfo == None:
-            return []
-        
         acdc = DataCollectionService(acdcInfo["server"], acdcInfo["database"])
         if self.data:
             acdcBlockSplit = ACDCBlock.splitBlockName(self.data.keys()[0])

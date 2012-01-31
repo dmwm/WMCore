@@ -3,4 +3,4 @@
  */
 WMStats.namespace("Globals")
 WMStats.Globals.couchDBName = "wmstats"
-WMStats.Globals.couchDBViewPath = "/wmstats/_design/WMStats/_view/"
+WMStats.Globals.couchDBViewPath = "/mock_wmstats/_design/WMStats/_view/"

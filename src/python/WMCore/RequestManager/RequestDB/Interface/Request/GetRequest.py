@@ -75,7 +75,11 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
     request['percent_complete'], request['percent_success'] = percentages(updates)
     sqDeps = factory(classname = "Software.GetByAssoc")
     swVers = sqDeps.execute(requestId)
-    request['SoftwareVersions'] = swVers.values()
+    if swVers == {}:
+        request['SoftwareVersions'] = ['DEPRECATED']
+    else:
+        request['SoftwareVersions'] = swVers.values()
+    
     getDatasetsIn = factory(classname = "Datasets.GetInput")
     getDatasetsOut = factory(classname = "Datasets.GetOutput")
     datasetsIn = getDatasetsIn.execute(requestId)

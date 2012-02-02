@@ -17,16 +17,17 @@ class Delete(DBFormatter):
     Delete a software version from the DB
 
     """
-    def execute(self, softwareName, conn = None, trans = False):
+    sql = """DELETE FROM reqmgr_software WHERE software_name = :name
+                                           AND scram_arch = :arch
+    """
+    def execute(self, softwareName, scramArch = None, conn = None, trans = False):
         """
         _execute_
 
         Remove software name from database
 
         """
-        self.sql = "delete from reqmgr_software where "
-        self.sql += "software_name=:software_name"
-        binds = {"software_name": softwareName}
+        binds = {"name": softwareName, 'arch': scramArch}
         result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return

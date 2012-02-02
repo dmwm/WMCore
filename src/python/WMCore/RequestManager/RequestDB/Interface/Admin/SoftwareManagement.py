@@ -9,21 +9,48 @@ API for manipulating software information in the database
 import logging
 import WMCore.RequestManager.RequestDB.Connection as DBConnect
 
-
-
-def addSoftware(softwareName):
+def addSoftware(softwareName, scramArch = None):
     """
     _addSoftware_
-
+    
     Add a software version to the database
-
+    
     """
     factory = DBConnect.getConnection()
-    checkSw = factory(classname = "Software.ID")
-    checkResults = checkSw.execute(softwareName)
-    if checkResults == None or checkResults == []:
+    checkDict = listSoftware()
+    if checkDict.has_key(scramArch) and softwareName in checkDict[scramArch]:
+        return
+    else:
         addSw = factory(classname = "Software.New")
-        addSw.execute(softwareName)
+        addSw.execute(softwareNames = [softwareName], scramArch = scramArch)
+    return
+
+def updateSoftware(softwareNames, scramArch = None):
+    """
+    _updateSoftware_
+
+    Add a software version to the database if it does not already exist.
+    If a version exists that is not added, delete it.
+    """
+    versionsToAdd = []
+    versionsToDel = []
+    factory = DBConnect.getConnection()
+    currentVersions = listSoftware()
+
+    if not scramArch in currentVersions.keys():
+        # Then the whole architecture is new.  Add it.
+        versionsToAdd = softwareNames
+    else:
+        scramVersions = currentVersions[scramArch]
+        versionsToAdd = list(set(softwareNames) - set(scramVersions))
+        versionsToDel = list(set(scramVersions) - set(softwareNames))
+
+    if len(versionsToAdd) > 0:
+        addSw = factory(classname = "Software.New")
+        addSw.execute(softwareNames = versionsToAdd, scramArch = scramArch)
+    if len(versionsToDel) > 0:
+        for version in versionsToDel:
+            removeSoftware(softwareName = version, scramArch = scramArch)
     return
 
 def listSoftware():
@@ -37,7 +64,7 @@ def listSoftware():
     return listSw.execute()
 
 
-def removeSoftware(softwareName):
+def removeSoftware(softwareName, scramArch = None):
     """
     _removeSoftware_
 
@@ -46,6 +73,6 @@ def removeSoftware(softwareName):
     """
     factory = DBConnect.getConnection()
     removeSw = factory(classname = "Software.Delete")
-    removeSw.execute(softwareName)
+    removeSw.execute(softwareName, scramArch = scramArch)
     return
 

@@ -25,6 +25,7 @@ from httplib                  import HTTPException
 
 # RequestDB Interfaces
 from WMCore.RequestManager.RequestDB.Interface.Request import GetRequest
+from WMCore.RequestManager.RequestDB.Interface.Admin   import SoftwareManagement
 
 #decorator import for RESTServer setup
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
@@ -124,7 +125,8 @@ class ReqMgrTest(RESTBaseUnitTest):
 
     def setupSchema(self, groupName = 'PeopleLikeMe',
                     userName = 'me', teamName = 'White Sox',
-                    CMSSWVersion = 'CMSSW_3_5_8'):
+                    CMSSWVersion = 'CMSSW_3_5_8',
+                    scramArch = 'slc5_ia32_gcc434'):
         """
         _setupSchema_
 
@@ -136,7 +138,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.jsonSender.put('group/%s' % groupName)
         self.jsonSender.put('group/%s/%s' % (groupName, userName))
         self.jsonSender.put(urllib.quote('team/%s' % teamName))
-        self.jsonSender.put('version/%s' % CMSSWVersion)
+        self.jsonSender.put('version/%s/%s' % (CMSSWVersion, scramArch))
 
         schema = ReReco.getTestArguments()
         schema['RequestName'] = 'TestReReco'
@@ -612,7 +614,44 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.assertTrue(raises)
 
         return
+
+    def testH_RemoveSoftwareVersion(self):
+        """
+        _RemoveSoftwareVersion_
+
+        Remove the software version after submitting the request.  See what that does.
+        """
+        myThread = threading.currentThread()
         
+        userName     = 'Taizong'
+        groupName    = 'Li'
+        teamName     = 'Tang'
+        CMSSWVersion = 'CMSSW_3_5_8'
+        scramArch    = 'slc5_ia32_gcc434'
+        schema       = self.setupSchema(userName = userName,
+                                        groupName = groupName,
+                                        teamName = teamName,
+                                        CMSSWVersion = CMSSWVersion,
+                                        scramArch = scramArch)
+
+        result = self.jsonSender.put('request/testRequest', schema)
+        self.assertEqual(result[1], 200)
+        requestName = result[0]['RequestName']
+
+        req = self.jsonSender.get('request/%s' % requestName)[0]
+        self.assertEqual(req['SoftwareVersions'], [CMSSWVersion])
+
+        # Delete software versions and make sure they're gone from the DB
+        SoftwareManagement.removeSoftware(softwareName = CMSSWVersion,
+                                          scramArch = scramArch)
+        versions = myThread.dbi.processData("SELECT * FROM reqmgr_software")[0].fetchall()
+        self.assertEqual(versions, [])
+        assocs = myThread.dbi.processData("SELECT * FROM reqmgr_software_dependency")[0].fetchall()
+        self.assertEqual(assocs, [])
+        
+        req = self.jsonSender.get('request/%s' % requestName)[0]
+        self.assertEqual(req['SoftwareVersions'], [CMSSWVersion])
+        return
 
 
 if __name__=='__main__':

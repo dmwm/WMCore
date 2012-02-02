@@ -93,7 +93,8 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
     def setupSchema(self, groupName = 'PeopleLikeMe',
                     userName = 'me', teamName = 'White Sox',
                     CMSSWVersion = 'CMSSW_3_5_8',
-                    typename = 'ReReco', setupDB = True):
+                    typename = 'ReReco', setupDB = True,
+                    scramArch = 'slc5_ia32_gcc434'):
         """
         _setupSchema_
 
@@ -105,7 +106,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
             self.jsonSender.put('group/%s' % groupName)
             self.jsonSender.put('group/%s/%s' % (groupName, userName))
             self.jsonSender.put(urllib.quote('team/%s' % teamName))
-            self.jsonSender.put('version/%s' % CMSSWVersion)
+            self.jsonSender.put('version/%s/%s' % (CMSSWVersion, scramArch))
 
         schema = ReReco.getTestArguments()
         schema['RequestName'] = 'TestReReco'

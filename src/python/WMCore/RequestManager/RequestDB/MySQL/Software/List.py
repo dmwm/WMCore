@@ -25,9 +25,18 @@ class List(DBFormatter):
         Get mapping of software name to ids
 
         """
-        self.sql = "SELECT software_name, software_id FROM reqmgr_software"
+        self.sql = "SELECT software_name, software_id, scram_arch FROM reqmgr_software"
 
         result = self.dbi.processData(self.sql,
                                       conn = conn, transaction = trans)
 
-        return dict(result[0].fetchall())
+        formattedDict = self.formatDict(result)
+        formattedResult = {}
+        for entry in formattedDict:
+            scramArch = entry['scram_arch']
+            version = entry['software_name']
+            if not scramArch in formattedResult.keys():
+                formattedResult[scramArch] = []
+            formattedResult[scramArch].append(version)
+
+        return formattedResult

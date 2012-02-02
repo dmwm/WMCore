@@ -58,9 +58,12 @@ def checkIn(request):
     requestName = request['RequestName']
 
     # test if the software versions are registered first
-    versions = SoftwareManagement.listSoftware()
+    versions  = SoftwareManagement.listSoftware()
+    scramArch = request.get('ScramArch')
+    if not scramArch in versions.keys():
+        raise RequestCheckInError("Cannot find scramArch %s in ReqMgr" % scramArch)
     for version in request.get('SoftwareVersions', []):
-        if not version in versions:
+        if not version in versions[scramArch]:
             raise RequestCheckInError("Cannot find software version %s in ReqMgr" % version)
 
     try:

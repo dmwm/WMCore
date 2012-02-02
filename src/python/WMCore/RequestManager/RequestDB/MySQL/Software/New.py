@@ -18,16 +18,24 @@ class New(DBFormatter):
     Insert a new software version into the DB
 
     """
-    def execute(self, softwareName, conn = None, trans = False):
+    sql = """INSERT INTO reqmgr_software (software_name, scram_arch)
+               VALUES (:software_name, :scram_arch)
+    """
+    
+    def execute(self, softwareNames, scramArch = None, conn = None, trans = False):
         """
         _execute_
 
-        Add the named SW version to the DB
-
+        Adds scram_arch and software_name to DB
+        Expects a scram_arch and a list of associated software versions.
         """
-        self.sql = "INSERT INTO reqmgr_software (software_name) "
-        self.sql += "VALUES (:software_name)"
-        binds = {"software_name": softwareName}
+        if len(softwareNames) < 1:
+            return
+        
+        binds = []
+        for version in softwareNames:
+            binds.append({'scram_arch': scramArch,
+                          'software_name': version})
         result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return

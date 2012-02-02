@@ -6,16 +6,19 @@ import re
 import WMCore.Wrappers.JsonWrapper as JsonWrapper
 import cherrypy
 from os import path
+from xml.dom.minidom import parse as parseDOM
+from xml.parsers.expat import ExpatError
 from cherrypy import HTTPError
 from cherrypy.lib.static import serve_file
 import WMCore.Lexicon
 import cgi
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
-import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
-import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
-import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement as ProdManagement
-import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListRequests
+import WMCore.RequestManager.RequestDB.Settings.RequestStatus             as RequestStatus
+import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState      as ChangeState
+import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest       as GetRequest
+import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement     as ProdManagement
+import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests     as ListRequests
+import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
 import WMCore.Services.WorkQueue.WorkQueue as WorkQueue
 import WMCore.RequestManager.RequestMaker.CheckIn as CheckIn
 from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker, buildWorkloadForRequest
@@ -109,6 +112,56 @@ def parseSite(kw, name):
     if not isinstance(value, list):
         value = [value]
     return value
+
+def allScramArchsAndVersions():
+    """
+    _allScramArchs_
+
+    Downloads a list of all ScramArchs and Versions from the tag collector
+    """
+    result = {}
+    try:
+        f = urllib.urlopen("https://cmstags.cern.ch/tc/ReleasesXML/?anytype=1")
+        domDoc   = parseDOM(f)
+    except ExpatError, ex:
+        logging.error("Could not connect to tag collector!")
+        logging.error("Not changing anything!")
+        return {}
+    archDOMs = domDoc.firstChild.getElementsByTagName("architecture")
+    for archDOM in archDOMs:
+        arch = archDOM.attributes.item(0).value
+        releaseList = []
+        for node in archDOM.childNodes:
+            if not node.hasAttributes():
+                # Then it's an empty random node created by the XML
+                continue
+            for i in range(node.attributes.length):
+                attr = node.attributes.item(i)
+                if str(attr.name) == 'label':
+                    releaseList.append(str(attr.value))
+        result[str(arch)] = releaseList
+
+    return result
+
+def updateScramArchsAndCMSSWVersions():
+    """
+    _updateScramArchsAndCMSSWVersions_
+
+    Update both the scramArchs and their associated software versions to
+    the current tag collector standard.
+    """
+
+    allArchsAndVersions = allScramArchsAndVersions()
+    if allArchsAndVersions == {}:
+        # The tag collector is probably down
+        # NO valid CMSSW Versions is not a valid use case!
+        # Do nothing.
+        logging.error("Handed blank list of scramArchs/versions.  Ignoring for this cycle.")
+        return
+    for scramArch in allArchsAndVersions.keys():
+        SoftwareAdmin.updateSoftware(scramArch = scramArch,
+                                     softwareNames = allArchsAndVersions[scramArch])
+    return
 
 def allSoftwareVersions():
     """ Downloads a list of all software versions from the tag collector """
@@ -386,6 +439,8 @@ def requestDetails(requestName):
     schema['UnmergedLFNBase'] = str(helper.getUnmergedLFNBase())
     schema['Campaign']        = str(helper.getCampaign())
     schema['AcquisitionEra']  = str(helper.getAcquisitionEra())
+    if schema['SoftwareVersions'] == ['DEPRECATED']:
+        schema['SoftwareVersions'] = helper.getCMSSWVersions()
     return schema
 
 def serveFile(contentType, prefix, *args):

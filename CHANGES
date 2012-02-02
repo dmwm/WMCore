@@ -1,3 +1,17 @@
+0.8.25 to 0.8.26pre1:
+  - Update the ScramAch list.  Fixes #3167.
+  - Cleanup the MultiCore code.  Fixes #1804.
+  - Support subscribing blocks to their custodial site in PhEDEx.  Fixes #2524.
+  - Convert ProcessPool to use ZeroMQ.  Fixes #3085.
+  - Improve the layout of the JobArchiver directory.  Fixes #2920.
+  - Fix TaskChain spec creation problems in the ReqMgr.  Fixes #2346.
+  - Add a custodial site to the spec when it is created in the ReqMgr.  From #2553.
+  - Add ScramArch to ReqMgr database and cleanup the handling of the CMSSW version.  Fixes #2446.
+  - Don't die if we encounter errors uploading.  Fixes #2973.
+  - Continue uploading files if a data tier is missing from DBS.  Fixes #3193.
+  - DBS3 reader support.  Fixes #2737.
+  - Make scram runtime code more testable.  Fixes #3174.
+
 0.8.24 to 0.8.25:
   - Backout the changes to the WorkloadSummary configuration.
   - Fix setting the first event in MC jobs.  Fixes #3192.

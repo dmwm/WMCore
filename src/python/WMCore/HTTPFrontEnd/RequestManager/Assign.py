@@ -56,7 +56,8 @@ class Assign(WebAPI):
              "MonteCarlo" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
              "RelValMC" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
              "Resubmission" : ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data"],
-             "MonteCarloFromGEN" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"]}
+             "MonteCarloFromGEN" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
+             "TaskChain": ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data"]}
 
         self.yuiroot = config.yuiroot
         cherrypy.engine.subscribe('start_thread', self.initThread)

@@ -8,6 +8,7 @@ from WMCore.RequestManager.RequestMaker.Registry import  retrieveRequestMaker
 import WMCore.RequestManager.RequestMaker.Processing
 import WMCore.RequestManager.RequestMaker.Production
 import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
+from WMCore.Wrappers import JsonWrapper
 import cherrypy
 import time
 from WMCore.WebTools.WebAPI import WebAPI
@@ -92,8 +93,13 @@ class WebRequestSchema(WebAPI):
     def makeSchema(self, **schema):
         schema.setdefault('CouchURL', Utilities.removePasswordFromUrl(self.couchUrl))
         schema.setdefault('CouchDBName', self.configDBName)
+
+        decodedSchema = {}
+        for key in schema.keys():
+            decodedSchema[key] = JsonWrapper.loads(schema[key])
+
         try:
-            request = Utilities.makeRequest(schema, self.couchUrl, self.workloadDBName)
+            request = Utilities.makeRequest(decodedSchema, self.couchUrl, self.workloadDBName)
         except RuntimeError, e:
             raise cherrypy.HTTPError(400, "Error creating request: %s" % e)
         except KeyError, e:

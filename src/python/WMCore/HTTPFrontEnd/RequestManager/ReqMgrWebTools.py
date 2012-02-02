@@ -412,6 +412,8 @@ def makeRequest(kwargs, couchUrl, couchDB):
         raise HTTPError(400, "Error in Workload Validation: %s" % msg)
     helper = WMWorkloadHelper(request['WorkloadSpec'])
     helper.setCampaign(schema["Campaign"])
+    if "CustodialSite" in schema.keys():
+        helper.setCustodialSite(siteName = schema['CustodialSite'])
     if "RunWhitelist" in schema:
         helper.setRunWhitelist(schema["RunWhitelist"])
     # can't save Request object directly, because it makes it hard to retrieve the _rev
@@ -439,6 +441,7 @@ def requestDetails(requestName):
     schema['UnmergedLFNBase'] = str(helper.getUnmergedLFNBase())
     schema['Campaign']        = str(helper.getCampaign())
     schema['AcquisitionEra']  = str(helper.getAcquisitionEra())
+    schema['CustodialSite']   = str(helper.getCustodialSite())
     if schema['SoftwareVersions'] == ['DEPRECATED']:
         schema['SoftwareVersions'] = helper.getCMSSWVersions()
     return schema

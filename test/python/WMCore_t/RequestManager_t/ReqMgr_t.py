@@ -146,6 +146,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         schema['CmsPath'] = "/uscmst1/prod/sw/cms"
         schema['Requestor'] = '%s' % userName
         schema['Group'] = '%s' % groupName
+        schema['CustodialSite'] = 'US_T1_FNAL'
 
         return schema
 
@@ -234,6 +235,9 @@ class ReqMgrTest(RESTBaseUnitTest):
         # Check LFN Bases
         self.assertEqual(request['UnmergedLFNBase'], '/store/unmerged')
         self.assertEqual(request['MergedLFNBase'], '/store/data')
+
+        # Check random other
+        self.assertEqual(request['CustodialSite'], 'US_T1_FNAL')
 
         # only certain transitions allowed
         #self.assertEqual(self.jsonSender.put('request/%s?status=running' % requestName)[1], 400)

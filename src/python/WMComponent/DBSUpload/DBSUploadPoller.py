@@ -529,10 +529,14 @@ class DBSUploadPoller(BaseWorkerThread):
                     logging.debug("About to do post-upload DBS commit for DAS %i" % dasID)
                     myThread.transaction.commit()
 
+            # New plan: If we get an error in trying to commit a block to DBS
+            # then we just rollback the transaction and continue to the next
+            # block - ignoring the exception
             except WMException:
                 if getattr(myThread, 'transaction', None) != None: 
-                    myThread.transaction.rollback()
-                raise
+                    myThread.transaction.rollbackForError()
+                pass
+                #raise
             except Exception, ex:
                 msg =  'Error in committing files to DBS\n'
                 msg += str(ex)
@@ -540,8 +544,9 @@ class DBSUploadPoller(BaseWorkerThread):
                 logging.error(msg)
                 self.sendAlert(6, msg = msg)
                 if getattr(myThread, 'transaction', None) != None: 
-                    myThread.transaction.rollback()
-                raise DBSUploadPollerException(msg)
+                    myThread.transaction.rollbackForError()
+                pass
+                #raise DBSUploadPollerException(msg)
             
 
         return

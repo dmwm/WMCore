@@ -7,13 +7,14 @@ _ProcessPool_
 
 
 
-
+import zmq
 import subprocess
 import sys
 import logging
 import os
 import threading
 import traceback
+import cPickle
 
 from logging.handlers import RotatingFileHandler
 
@@ -25,74 +26,44 @@ from WMCore.Services.Requests import JSONRequests
 
 from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
 
-class WorkerProcess:
+from WMCore.WMException import WMException
+
+
+class ProcessPoolException(WMException):
     """
-    Class for holding the subproc objects
-    Makes it easier to do internal bookkeeping on
-    how much work has been generated.
+    _ProcessPoolException_
+
+    Raise some exceptions
     """
-    def __init__(self, subproc):
-        """
-        __init__
-        
-        This class just holds active ProcessPool subprocesses and does
-        its own bookkeeping.
-        """
-        self.subproc   = subproc
-        self.workCount = 0
+
+class ProcessPoolWorker:
+    """
+    _ProcessPoolWorker_
+
+    A basic worker object
+    """
+
+    def __init__(self, config):
+        self.config = config
 
         return
 
-    def enqueue(self, work, length = 1):
-        """
-        _enqueue_
-        
-        Handle writing to the stdin of the subproc
-        """
-        self.subproc.stdin.write("%s\n" % work)
-        self.subproc.stdin.flush()
-        self.workCount += length
-        return
 
-    def dequeue(self):
+    def __call__(self, input):
         """
-        _dequeue_
-        
-        Handle reading out of the subproc
-        """
-        if self.workCount == 0:
-            # Then we have no work to return
-            logging.error("Asked to return work for a thread that has no work assigned")
-            #raise
-            return
+        __call__
 
-        output = self.subproc.stdout.readline()
-        self.workCount -= 1
-
-        return output
-
-    def delete(self):
+        input should be a single piece of work - a single list, a single
+        dictionary, or a single variable of some sort
         """
-        _delete_
-        
-        Delete the worker thread
-        """
-        self.subproc.stdin.write("\n")
-        self.subproc.stdin.flush()
 
         return
-
-    def runningWork(self):
-        """
-        _runningWork_
-        
-        Accessor method for the workCount
-        """
-        return self.workCount
+    
 
 class ProcessPool:
     def __init__(self, slaveClassName, totalSlaves, componentDir,
-                 config, slaveInit = None, namespace = None):
+                 config, namespace = 'WMComponent', inPort = '5555',
+                 outPort = '5558'):
         """
         __init__
 
@@ -129,13 +100,51 @@ class ProcessPool:
         if majorVersion and minorVersion:
             self.versionString = "python%i.%i" % (majorVersion, minorVersion)
         else:
-            self.versionString = "python2.4"
+            self.versionString = "python2.6"
 
-        self.workers = []
-        self.nSlaves = totalSlaves
-        self.slaveInit = slaveInit
+        self.workers   = []
+        self.nSlaves   = totalSlaves
         self.namespace = namespace
+        self.inPort    = inPort
+        self.outPort   = outPort
 
+
+        # Pickle the config
+        self.configPath = os.path.join(componentDir, '%s_config.pkl' % slaveClassName)
+        if os.path.exists(self.configPath):
+            # Then we note it and overwrite it
+            msg =  "Something's in the way of the ProcessPool config: %s" % self.configPath
+            logging.error(msg)
+        f = open(self.configPath, 'w')
+        cPickle.dump(config, f)
+        f.close()
+
+        # Set up ZMQ
+        try:
+            context = zmq.Context()
+            self.sender = context.socket(zmq.PUSH)
+            self.sender.bind("tcp://*:%s" % inPort)
+            self.sink = context.socket(zmq.PULL)
+            self.sink.bind("tcp://*:%s" % outPort)
+        except zmq.ZMQError:
+            # Try this again in a moment to see
+            # if it's just being held by something pre-existing
+            import time
+            time.sleep(1)
+            logging.error("Blocked socket on startup: Attempting sleep to give it time to clear.")
+            try:
+                context = zmq.Context()
+                self.sender = context.socket(zmq.PUSH)
+                self.sender.bind("tcp://*:%s" % inPort)
+                self.sink = context.socket(zmq.PULL)
+                self.sink.bind("tcp://*:%s" % outPort)
+            except Exception, ex:
+                msg =  "Error attempting to open TCP sockets\n"
+                msg += str(ex)
+                logging.error(msg)
+                import traceback
+                print traceback.format_exc()
+                raise ProcessPoolException(msg)
 
         # Now actually create the slaves
         self.createSlaves()
@@ -156,37 +165,13 @@ class ProcessPool:
         totalSlaves    = self.nSlaves
         slaveClassName = self.slaveClassName
         config         = self.config
-        slaveInit      = self.slaveInit
         namespace      = self.namespace
+        inPort         = self.inPort
+        outPort        = self.outPort
         
-        slaveArgs = [self.versionString, __file__, self.slaveClassName]
-        if hasattr(config.CoreDatabase, "socket"):
-            socket = config.CoreDatabase.socket
-        else:
-            socket = None
+        slaveArgs = [self.versionString, __file__, self.slaveClassName, inPort,
+                     outPort, self.configPath, self.componentDir, self.namespace]
 
-        (connectDialect, junk) = config.CoreDatabase.connectUrl.split(":", 1)
-        if connectDialect.lower() == "mysql":
-            dialect = "MySQL"
-        elif connectDialect.lower() == "oracle":
-            dialect = "Oracle"
-        elif connectDialect.lower() == "sqlite":
-            dialect = "SQLite"
-
-        dbConfig = {"dialect": dialect,
-                    "connectUrl": config.CoreDatabase.connectUrl,
-                    "socket": socket,
-                    "componentDir": self.componentDir}
-        if namespace:
-            # Then add a namespace to the config
-            dbConfig['namespace'] = namespace
-        encodedDBConfig = self.jsonHandler.encode(dbConfig)
-
-        if slaveInit == None:
-            encodedSlaveInit = None
-        else:
-            encodedSlaveInit = self.jsonHandler.encode(slaveInit)
-        
         count = 0     
         while totalSlaves > 0:
             #For each worker you want create a slave process
@@ -194,20 +179,7 @@ class ProcessPool:
             #A process pool that loads the designated class
             slaveProcess = subprocess.Popen(slaveArgs, stdin = subprocess.PIPE,
                                             stdout = subprocess.PIPE)
-            slaveProcess.stdin.write("%s\n" % encodedDBConfig)
-
-            if encodedSlaveInit == None:
-                slaveProcess.stdin.write("\n")
-            else:
-                slaveProcess.stdin.write("%s\n" % encodedSlaveInit)
-                
-            slaveProcess.stdin.flush()
-            self.workers.append(WorkerProcess(subproc = slaveProcess))
-            workerName = self._subProcessName(self.slaveClassName, count)
-            
-            if getattr(self.config.Agent, "useHeartbeat", True):
-                self.heartbeatAPI.updateWorkerHeartbeat(workerName, 
-                                            pid = slaveProcess.pid)
+            self.workers.append(slaveProcess)
             totalSlaves -= 1
             count += 1
 
@@ -227,59 +199,83 @@ class ProcessPool:
         Kill all the workers processes by sending them an invalid JSON object.
         This will cause them to shut down.
         """
-        for worker in self.workers:
-            try:
-                worker.delete()
-            except Exception, ex:
-                pass
-
-        self.workers = []
-
+        self.close()
         return
 
-    def enqueue(self, work):
+    def close(self):
+        """
+        _close_
+
+        Close shuts down all the active systems by:
+
+        a) Sending STOP commands for all workers
+        b) Closing the pipes
+        c) Shutting down the workers themselves
+        """
+        for i in range(self.nSlaves):
+            try:
+                encodedWork = self.jsonHandler.encode('STOP')
+                self.sender.send(encodedWork)
+            except Exception, ex:
+                # Might be already failed.  Nothing you can
+                # really do about that.
+                logging.error("Failure killing running process: %s" % str(ex))
+                pass
+
+        try:
+            self.sender.close()
+        except:
+            # We can't really do anything if we fail
+            pass
+        try:
+            self.sink.close()
+        except:
+            # We can't do anything if we fail
+            pass
+
+        # Now close the workers by hand
+        for worker in self.workers:
+            try:
+                worker.join()
+            except Exception, ex:
+                try:
+                    worker.terminate()
+                except Exception, ex2:
+                    logging.error("Failure to join or terminate process")
+                    logging.error(str(ex))
+                    logging.error(str(ex2))
+                    continue
+        self.workers = []
+        return
+
+    def enqueue(self, work, list = False):
         """
         __enqeue__
 
         Assign work to the workers processes.  The work parameters must be a
         list where each item in the list can be serialized into JSON.
+
+        If list is True, the entire list is sent as one piece of work
         """
+        if len(self.workers) < 1:
+            # Someone's shut down the system
+            msg = "Attempting to send work after system failure and shutdown!\n"
+            logging.error(msg)
+            raise ProcessPoolException(msg)
 
-        workPerWorker = len(work) / len(self.workers)
-
-        if workPerWorker == 0:
-            workPerWorker = 1
-
-        workIndex = 0
-        while(len(work) > workIndex):
-            workForWorker = work[workIndex : workIndex + workPerWorker]
-            workIndex += workPerWorker
-            length = len(workForWorker)
-            
-
-            encodedWork = self.jsonHandler.encode(workForWorker)
-
-            worker = self.workers[self.enqueueIndex]
-            worker.enqueue(work = encodedWork, length = length)
-            
-            if getattr(self.config.Agent, "useHeartbeat", True):
-                self.heartbeatAPI.updateWorkerHeartbeat(
-                            self._subProcessName(self.slaveClassName, 
-                                                 self.enqueueIndex),
-                            state = "Running")
-            self.enqueueIndex = (self.enqueueIndex + 1) % len(self.workers)
-            self.runningWork += length
-
-        if len(work) > workIndex:
-            encodedWork = self.jsonHandler.encode(work[workIndex:])
-            length = len(work[workIndex:])
-
-            worker = self.workers[self.enqueueIndex]
-            self.enqueueIndex = (self.enqueueIndex + 1) % len(self.workers)
-            worker.enqueue(work = encodedWork, length = length)
-            self.runningWork += length
+        if not list:
+            for w in work:
+                encodedWork = self.jsonHandler.encode(w)
+                self.sender.send(encodedWork)
+                self.runningWork += 1
+        else:
+            encodedWork = self.jsonHandler.encode(work)
+            self.sender.send(encodedWork)
+            self.runningWork += 1
             
         return
+
+
 
     def dequeue(self, totalItems = 1):
         """
@@ -294,37 +290,27 @@ class ProcessPool:
             msg = "Asked to dequeue more work then is running!\n"
             msg += "Failing"
             logging.error(msg)
-            raise Exception(msg)
+            raise ProcessPoolException(msg)
 
         while totalItems > 0:
-            worker = self.workers[self.dequeueIndex]
-            
-            if not worker.runningWork() > 0:
-                # Then the worker we've picked has no running work
-                continue
-
             try:
-                output = worker.dequeue()
+                output = self.sink.recv()
+                decode = self.jsonHandler.decode(output)
+                if type(decode) == type({}) and decode.get('type', None) == 'ERROR':
+                    # Then we had some kind of error
+                    msg = decode.get('msg', 'Unknown Error in ProcessPool')
+                    logging.error("Received Error Message from ProcessPool Slave")
+                    logging.error(msg)
+                    self.close()
+                    raise ProcessPoolException(msg)
+                completedWork.append(decode)
                 self.runningWork -= 1
-                
-                if getattr(self.config.Agent, "useHeartbeat", True):
-                    self.heartbeatAPI.updateWorkerHeartbeat(
-                            self._subProcessName(self.slaveClassName, 
-                                                 self.dequeueIndex),
-                            state = "Done")
-
-                if output == None:
-                    logging.info("No output from worker node line in ProcessPool")
-                    continue
-
-
-                completedWork.append(self.jsonHandler.decode(output))
                 totalItems -= 1
-            except Exception, e:
-                logging.error("Exception while getting slave output: %s" % e)
+            except Exception, ex:
+                msg =  "Exception while getting slave outputin ProcessPool.\n"
+                msg += str(ex)
+                logging.error(msg)
                 break
-            finally:
-                self.dequeueIndex = (self.dequeueIndex + 1) % len(self.workers)
 
         return completedWork
 
@@ -336,7 +322,7 @@ class ProcessPool:
         Delete everything and restart all pools
         """
 
-        self.__del__()
+        self.close()
         self.createSlaves()
         return
         
@@ -369,18 +355,15 @@ def setupDB(config, wmInit):
 
     Create the database connections.
     """
-    if config.has_key("socket"):
-        socket = config["socket"]
-    else:
-        socket = None
-        
-    connectUrl = config["connectUrl"]
-    dialect = config["dialect"]
+    socket     = getattr(config.CoreDatabase, 'socket', None)
+    connectUrl = config.CoreDatabase.connectUrl
+    dialect    = config.CoreDatabase.dialect
         
     wmInit.setDatabaseConnection(dbConfig = connectUrl,
                                  dialect = dialect,
                                  socketLoc = socket)
     return
+
     
 if __name__ == "__main__":
     """
@@ -390,51 +373,68 @@ if __name__ == "__main__":
     on the command line.  The database connection parameters as well as the
     name of the directory that the log files will be stored in will be passed
     in through stdin as a JSON object.
+
+    Input variables:
+    className, input port, output port, path to pickled config, component dir, namespace
     """
     
+    # Get variables passed in
     slaveClassName = sys.argv[1]
+    inPort         = sys.argv[2]
+    outPort        = sys.argv[3]
+    configPath     = sys.argv[4]
+    componentDir   = sys.argv[5]
+    namespace      = sys.argv[6]
+    
+    # Set up logging
+    setupLogging(componentDir)
 
-    jsonHandler = JSONRequests()
+    # Build ZMQ link
+    context = zmq.Context()
+    receiver = context.socket(zmq.PULL)
+    receiver.connect("tcp://localhost:%s" % inPort)
 
-    encodedConfig = sys.stdin.readline()
-    config = jsonHandler.decode(encodedConfig)
+    sender = context.socket(zmq.PUSH)
+    sender.connect("tcp://localhost:%s" % outPort)
 
-    encodedSlaveInit = sys.stdin.readline()
-    if encodedSlaveInit != "\n":
-        unicodeSlaveInit = jsonHandler.decode(encodedSlaveInit)
-        slaveInit = {}
-        for key in unicodeSlaveInit.keys():
-            slaveInit[str(key)] = unicodeSlaveInit[key]
-    else:
-        slaveInit = None
+    # Build config
+    if not os.path.exists(configPath):
+        # We can do nothing - 
+        logging.error("Something in the way of the config path")
+        sys.exit(1)
 
+    f = open(configPath, 'r')
+    config = cPickle.load(f)
+    f.close()
+
+
+    # Setup DB
     wmInit = WMInit()
-    setupLogging(config["componentDir"])
     setupDB(config, wmInit)
 
-    namespace = config.get('namespace', 'WMComponent')
+    # Create JSON handler
+    jsonHandler = JSONRequests()
 
     wmFactory = WMFactory(name = "slaveFactory", namespace = namespace)
-    slaveClass = wmFactory.loadObject(classname = slaveClassName, args = slaveInit)
+    slaveClass = wmFactory.loadObject(classname = slaveClassName, args = config)
 
-    logging.error("Have slave class")
+    logging.info("Have slave class")
 
     while(True):
-        #Parameters for each job passed in from ProcessPool.enqueue()
-        #Decoded by WMCore.Services.Requests class JSONRequests
-        encodedInput = sys.stdin.readline()
-
+        encodedInput = receiver.recv()
+        
         try:
             input = jsonHandler.decode(encodedInput)
         except Exception, ex:
             logging.error("Error decoding: %s" % str(ex))
             break
 
-        #logging.info("Have parameters")
-        #logging.info(input)
+        if input == "STOP":
+            break
 
         try:
-            output = slaveClass(parameters = input)
+            logging.error(input)
+            output = slaveClass(input)
         except Exception, ex:
             crashMessage = "Slave process crashed with exception: " + str(ex)
             crashMessage += "\nStacktrace:\n"
@@ -444,18 +444,32 @@ if __name__ == "__main__":
                 crashMessage += stackFrame
                 
             logging.error(crashMessage)
-            sys.exit(1)
+            try:
+                output        = {'type': 'ERROR', 'msg': crashMessage}
+                encodedOutput = jsonHandler.encode(output)
+                sender.send(encodedOutput)
+                logging.error("Sent error message and now breaking")
+                break
+            except Exception, ex:
+                logging.error("Failed to send error message")
+                logging.error(str(ex))
+                del jsonHandler
+                sys.exit(1)
             
         if output != None:
             if type(output) == list:
                 for item in output:
                     encodedOutput = jsonHandler.encode(item)
-                    sys.stdout.write("%s\n" % encodedOutput)
-                    sys.stdout.flush()
+                    sender.send(encodedOutput)
             else:
                 encodedOutput = jsonHandler.encode(output)
-                sys.stdout.write("%s\n" % encodedOutput)
-                sys.stdout.flush()
+                sender.send(encodedOutput)
+
 
     logging.info("Process with PID %s finished" %(os.getpid()))
+    del jsonHandler
     sys.exit(0)
+
+
+
+

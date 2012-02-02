@@ -3,21 +3,14 @@ _ProcessPoolTestWorker_
 
 """
 
-class ProcessPoolTestWorker:
-    def __init__(self, **kwargs):
-        """
-        __init__
+from WMCore.ProcessPool.ProcessPool import ProcessPoolWorker
 
-        """
-        return
+class ProcessPoolTestWorker(ProcessPoolWorker):
 
-    def __call__(self, parameters):
+    def __call__(self, input):
         """
         __call__
 
         """
-        returnList = []
-        for parameter in parameters:
-            returnList.append(parameter)
 
-        return returnList
+        return input

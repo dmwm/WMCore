@@ -318,9 +318,10 @@ class SetupCMSSWPset(ScriptInterface):
             applyTweak(self.process, tweak, self.fixupDict)
             return
         else:
-            from IOMC.RandomEngine.RandomServiceHelper import RandomNumberServiceHelper
-            helper = RandomNumberServiceHelper(self.process.RandomNumberGeneratorService)
-            helper.populate()
+            if hasattr(self.process, "RandomNumberGeneratorService"):
+                from IOMC.RandomEngine.RandomServiceHelper import RandomNumberServiceHelper
+                helper = RandomNumberServiceHelper(self.process.RandomNumberGeneratorService)
+                helper.populate()
             return
     
     def handlePerformanceSettings(self):

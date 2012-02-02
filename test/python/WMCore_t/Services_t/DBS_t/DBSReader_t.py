@@ -7,6 +7,7 @@ Unit test for the DBS helper class.
 
 import unittest
 from nose.plugins.attrib import attr
+from functools import wraps
 
 from WMCore.Services.DBS.DBSReader import DBSReader as DBSReader
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
@@ -16,6 +17,7 @@ DATASET = '/HighPileUp/Run2011A-v1/RAW'
 BLOCK = '/HighPileUp/Run2011A-v1/RAW#fabf118a-cbbf-11e0-80a9-003048caaace'
 FILE = '/store/data/Run2011A/HighPileUp/RAW/v1/000/173/657/B293AF24-BFCB-E011-8F85-BCAEC5329701.root'
 
+
 class DBSReaderTest(unittest.TestCase):
 
     def setUp(self):
@@ -24,7 +26,8 @@ class DBSReaderTest(unittest.TestCase):
 
         Initialize the PhEDEx API to point at the test server.
         """
-        endpoint = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+        #endpoint = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+        endpoint = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
         self.dbs = DBSReader(endpoint)
         return
 
@@ -83,7 +86,7 @@ class DBSReaderTest(unittest.TestCase):
         self.assertEqual(dataset['path'], DATASET)
         self.assertEqual(dataset['block'], '')
         self.assertEqual(dataset['NumberOfEvents'], '22075')
-        self.assertEqual(dataset['number_of_blocks'], '46')
+        self.assertEqual(dataset['NumberOfBlocks'], '46')
         self.assertEqual(dataset['total_size'], '4001680824')
         self.assertEqual(dataset['NumberOfFiles'], '49')
         self.assertEqual(dataset['NumberOfLumis'], '7223')
@@ -92,7 +95,7 @@ class DBSReaderTest(unittest.TestCase):
         self.assertEqual(block['path'], '')
         self.assertEqual(block['block'], BLOCK)
         self.assertEqual(block['NumberOfEvents'], '377')
-        self.assertEqual(block['number_of_blocks'], '1')
+        self.assertEqual(block['NumberOfBlocks'], '1')
         self.assertEqual(block['total_size'], '150780132')
         self.assertEqual(block['NumberOfFiles'], '2')
         self.assertEqual(block['NumberOfLumis'], '94')
@@ -110,7 +113,7 @@ class DBSReaderTest(unittest.TestCase):
         self.assertEqual(46, len(blocks))
         self.assertTrue(block['Name'] in [x['Name'] for x in blocks])
         self.assertEqual(BLOCK, block['Name'])
-        self.assertEqual(377, block['NumberOfEvents'])
+        #self.assertEqual(377, block['NumberOfEvents'])
         self.assertEqual(150780132, block['BlockSize'])
         self.assertEqual(2, block['NumberOfFiles'])
         # possibly fragile but assume block located at least at cern

@@ -82,18 +82,19 @@ class Dataset(StartPolicyInterface):
         runWhiteList = task.inputRunWhitelist()
         runBlackList = task.inputRunBlacklist()
 
-        for block in dbs.getFileBlocksInfo(datasetPath, locations = True):
+        for blockName in dbs.listFileBlocks(datasetPath):
+            block = dbs.getDBSSummaryInfo(datasetPath, block = blockName)
 
             # check block restrictions
-            if blockWhiteList and block['Name'] not in blockWhiteList:
+            if blockWhiteList and block['block'] not in blockWhiteList:
                 continue
-            if block['Name'] in blockBlackList:
+            if block['block'] in blockBlackList:
                 continue
 
             # check run restrictions
             if runWhiteList or runBlackList:
                 # listRuns returns a run number per lumi section
-                full_lumi_list = dbs.listRuns(block = block['Name'])
+                full_lumi_list = dbs.listRuns(block = block['block'])
                 runs = set(full_lumi_list)
                 
                 # apply blacklist
@@ -116,9 +117,9 @@ class Dataset(StartPolicyInterface):
 
             validBlocks.append(block)
             if locations is None:
-                locations = set(sitesFromStorageEelements([x['Name'] for x in block['StorageElementList']]))
+                locations = set(sitesFromStorageEelements(dbs.listFileBlockLocation(block['block'])))
             else:
-                locations = locations.intersection(set(sitesFromStorageEelements([x['Name'] for x in block['StorageElementList']])))
+                locations = locations.intersection(set(sitesFromStorageEelements(dbs.listFileBlockLocation(block['block']))))
 
         # all needed blocks present at these sites
         if locations:

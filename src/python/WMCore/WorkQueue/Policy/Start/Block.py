@@ -32,10 +32,10 @@ class Block(StartPolicyInterface):
             #TODO this is slow process needs to change in DBS3
             if self.initialTask.parentProcessingFlag():
                 parentFlag = True
-                for dbsBlock in dbs.listBlockParents(block["Name"]):
+                for dbsBlock in dbs.listBlockParents(block["block"]):
                     parentList[dbsBlock["Name"]] = sitesFromStorageEelements(dbsBlock['StorageElementList'])
 
-            self.newQueueElement(Inputs = {block['Name'] : self.data.get(block['Name'], [])},
+            self.newQueueElement(Inputs = {block['block'] : self.data.get(block['block'], [])},
                                  ParentFlag = parentFlag,
                                  ParentData = parentList,
                                  Jobs = ceil(float(block[self.args['SliceType']]) /
@@ -70,29 +70,31 @@ class Block(StartPolicyInterface):
 
         for data in self.data:
             if data.find('#') > -1:
-                Lexicon.block(data) # check dataset name
+                Lexicon.block(data) # check block name
                 datasetPath = str(data.split('#')[0])
-                blocks.extend(dbs.getFileBlocksInfo(datasetPath, blockName = str(data), locations = True))
+                blocks.append(str(data))
             else:
                 Lexicon.dataset(data) # check dataset name
-                blocks.extend(dbs.getFileBlocksInfo(datasetPath, locations = True))
+                for block in dbs.listFileBlocks(data):
+                    blocks.append(str(block))
 
-        for block in blocks:
+        for blockName in blocks:
+            block = dbs.getDBSSummaryInfo(datasetPath, block = blockName)
             # blocks with 0 valid files should be ignored
             # - ideally they would be deleted but dbs can't delete blocks
             if not block['NumberOfFiles']:
                 continue
 
             # check block restrictions
-            if blockWhiteList and block['Name'] not in blockWhiteList:
+            if blockWhiteList and block['block'] not in blockWhiteList:
                 continue
-            if block['Name'] in blockBlackList:
+            if block['block'] in blockBlackList:
                 continue
 
             # check run restrictions
             if runWhiteList or runBlackList:
                 # listRuns returns a run number per lumi section
-                full_lumi_list = dbs.listRuns(block = block['Name'])
+                full_lumi_list = dbs.listRuns(block = block['block'])
                 runs = set(full_lumi_list)
 
                 # apply blacklist
@@ -114,13 +116,8 @@ class Block(StartPolicyInterface):
                 block['NumberOfFiles'] *= ratio_accepted
                 block['NumberOfEvents'] *= ratio_accepted
 
-            # get lumi info if needed and not already available
-            if self.args['SliceType'] == self.lumiType and not block.get(self.lumiType):
-                blockSummary = dbs.getDBSSummaryInfo(block = block["Name"])
-                block[self.lumiType] = blockSummary[self.lumiType]
-
             # save locations
-            self.data[block['Name']] = sitesFromStorageEelements([x['Name'] for x in block['StorageElementList']])
+            self.data[block['block']] = sitesFromStorageEelements(dbs.listFileBlockLocation(block['block']))
 
             validBlocks.append(block)
         return validBlocks

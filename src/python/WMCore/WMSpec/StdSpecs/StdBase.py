@@ -67,6 +67,8 @@ class StdBase(object):
         self.validStatus = None
         self.includeParents = False
         self.dbsUrl = None
+        self.multicore = False
+        self.multicoreNCores = 1
         return
 
     def __call__(self, workloadName, arguments):
@@ -103,6 +105,17 @@ class StdBase(object):
             self.includeParents = True
         else:
             self.includeParents = False
+
+        if arguments.has_key("Multicore"):
+            numCores = arguments.get("Multicore")
+            if numCores == None or numCores == "":
+                self.multicore = False
+            elif numCores == "auto":
+                self.multicore = True
+                self.multicoreNCores = "auto"
+            else:
+                self.multicore = True
+                self.multicoreNCores = numCores
 
         return
 
@@ -243,6 +256,11 @@ class StdBase(object):
 
         procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
         procTaskStageHelper = procTaskStageOut.getTypeHelper()
+
+        if self.multicore:
+            # if multicore, poke in the number of cores setting
+            procTaskCmsswHelper.setMulticoreCores(self.multicoreNCores)
+
         procTaskCmsswHelper.setUserSandbox(userSandbox)
         procTaskCmsswHelper.setUserFiles(userFiles)
         procTaskCmsswHelper.setGlobalTag(self.globalTag)

@@ -12,12 +12,17 @@ import subprocess
 import sys
 import select
 import logging
+import time
 
-from WMCore.FwkJobReport.Report import addAttributesToFile
+from WMCore.FwkJobReport.Report import addAttributesToFile, addFiles
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 from WMCore.WMRuntime.Tools.Scram import Scram
 from WMCore.WMSpec.WMStep import WMStepHelper
+
+from WMCore.FwkJobReport.MulticoreReader import readMultiJobReports 
+import WMCore.FwkJobReport.MulticoreUtils as ReportUtils
+
 
 def analysisFileLFN(fileName, lfnBase, job):
     """
@@ -63,6 +68,14 @@ class CMSSW(Executor):
         if hasattr(self.step, "pileup"):
             self.stepSpace.getFromSandbox("pileupconf.json")
 
+        # if step is multicore Enabled, add the multicore setup
+        # that generates the input file manifest and per process splitting
+        stepHelper = WMStepHelper(self.step)
+        typeHelper = stepHelper.getTypeHelper()
+        if typeHelper.multicoreEnabled():
+            self.step.runtime.scramPreScripts.append("SetupCMSSWMulticore")
+            
+        # add in ths scram env PSet manip script whatever happens
         self.step.runtime.scramPreScripts.append("SetupCMSSWPset")
         return None
 
@@ -76,6 +89,7 @@ class CMSSW(Executor):
         if (emulator != None):
             return emulator.emulate( self.step, self.job )
 
+        
 
         # write the wrapper script to a temporary location
         # I don't pass it directly through os.system because I don't
@@ -94,6 +108,21 @@ class CMSSW(Executor):
         userFiles      = ','.join(self.step.user.userFiles)
         logging.info('User files are %s' % userFiles)
         logging.info('User sandboxes are %s' % userTarball)
+
+
+
+        multicoreSettings = self.step.application.multicore
+        multicoreEnabled  = multicoreSettings.enabled 
+        if multicoreEnabled:
+            numberOfCores = multicoreSettings.numberOfCores
+            logging.info("***Multicore CMSSW Enabled***")
+            logging.info("Multicore configured for %s cores" % numberOfCores)
+            #create input file list used to generate manifest
+            filelist = open(multicoreSettings.inputfilelist,'w')
+            for inputFile in self.job['input_files']:
+                filelist.write("%s\n" % inputFile['lfn'])
+            filelist.close()
+
 
         logging.info("Executing CMSSW step")
 
@@ -258,6 +287,13 @@ class CMSSW(Executor):
             # Catch it if something goes wrong
             raise WMExecutionFailure(50115, "BadJobReportXML", str(ex))
 
+        
+        #
+        # If multicore is enabled, merged the output files and reports
+        #
+        if multicoreEnabled:
+            self.multicoreMerge(scram)
+
         stepHelper = WMStepHelper(self.step)
         typeHelper = stepHelper.getTypeHelper()
 
@@ -321,6 +357,98 @@ class CMSSW(Executor):
             return self.errorDestination
 
         return None
+        
+    def multicoreMerge(self, scramRef):
+        """
+        If this step is a multicore configured step, the output from the subprocesses needs to be merged
+        together and the job report updated.
+        
+        """
+        logging.info("***Multicore Post processing started***")
+        #  //
+        # // Now go through the reports and merge the outputs
+        #//
+        outputReports = readMultiJobReports( self.step.output.jobReport , self.stepName, self.step.builder.workingDir)
+        self.report = None
+        mergeBuckets = {}
+        inputFiles = {}
+        aggregator = ReportUtils.Aggregator()
+        #  //
+        # // loop over the sub reports and combine the inputs for recording and outputs for merges
+        #//
+        for o in outputReports:
+            # use one of the reports as the template for the master report
+            if self.report == None:
+                self.report = o
+            aggregator.add(o.report.performance)
+            # store list of all unique input files into the job, adding them together if they
+            # are fragments of the same file
+            for inp in o.getAllInputFiles():
+                lfn = inp['lfn']
+                if not inputFiles.has_key(lfn):
+                    inputFiles[lfn] = inp
+                else:
+                    addFiles(inputFiles[lfn], inp)
+            #  //
+            # // process the output modules from each subreport
+            #//
+            for f in o.getAllFiles():
+                lfn = f['outputModule']
+                if not mergeBuckets.has_key(lfn):
+                    mergeBuckets[lfn] = MergeBucket(f['lfn'], f['outputModule'], self.stepName, self.step.builder.workingDir)
+                mergeBuckets[lfn].append(f)
+
+        # clean up the master report from the template
+        reportData = getattr(self.report.data, self.stepName)
+        for src in reportData.input.listSections_():
+            delattr(reportData.input, src)
+        for omod in reportData.outputModules:
+            delattr(reportData.output, omod)
+            reportData.outputModules.remove(omod)
+
+        #  //
+        # // Add the reduced list of input files to the master report
+        #//
+        for f in inputFiles.values():
+            self.report.addInputFile(f['module_label'], **f)
+        
+        #  //
+        # // Now roll through the merges, run the merge and edit the master job report with the outcome
+        #//
+        mergesStart = time.time()
+        mergeTiming = []
+        for b in mergeBuckets.values():
+            # write the merge config file
+            thisMergeStarts = time.time()
+            b.writeConfig()
+            # run the merge as a scram enabled command
+            logging.info("    Invoking command: %s" % b.merge_command)
+            logfile = "%s.log" % b.merge_pset_file
+            retCode = scramRef(b.merge_command, False, logfile, self.step.builder.workingDir)
+            if retCode > 0:
+                msg = "Error running merge job:\n%s\n" % b.merge_command
+                msg += "Merge Config:\n%s\n" % b.mergeConfig()
+                msg += "%s\n " % retCode
+                msg += scram.diagnostic()
+                logging.critical(msg)
+                raise WMExecutionFailure(60666, "MulticoreMergeFailure", msg)
+            #  //
+            # // add report from merge to master
+            #//  ToDo: try/except here in case report is missing
+            b.editReport(self.report)
+            thisMergeTime = time.time() - thisMergeStarts
+            mergeTiming.append(thisMergeTime)
+        mergesComplete = time.time()
+        totalJobTime = mergesComplete - applicationStart
+        self.report.report.performance = aggregator.aggregate()
+        ReportUtils.updateMulticoreReport(self.report, len(mergeBuckets), mergesStart , mergesComplete,
+                                          totalJobTime , *mergeTiming)
+        
+        logging.info("***Multicore Post processing complete***")
+        return
+        
+        
+        
 
 configBlob = """#!/bin/bash
 

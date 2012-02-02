@@ -89,6 +89,26 @@ class CMSSWTemplateTest(unittest.TestCase):
                 )
         
         
+    def testMulticoreSettings(self):
+        """
+        test multicore related methods
+        """
+        workload = newWorkload("UnitTests")
+        task = workload.newTask("CMSSWTemplate")
+        stepHelper = step = task.makeStep("TemplateTest")
+        step = stepHelper.data
+        template = CMSSWTemplate()
+        template(step)
+        
+        helper = template.helper(step)
+
+        
+        self.assertEqual(helper.multicoreEnabled(), False)
+        helper.setMulticoreCores(8)
+        self.assertEqual(helper.numberOfCores(), 8)
+        self.assertEqual(helper.multicoreEnabled(), True)
+        
+        
     def testChainedProcessing(self):
         """
         

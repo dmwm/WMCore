@@ -245,6 +245,32 @@ class CMSSWStepHelper(CoreHelper):
             setattr(getattr(self.data.pileup, pileupType), "dataset", dataset)
         setattr(self.data, "dbsUrl", dbsUrl)
 
+    def setMulticoreCores(self, ncores):
+        """
+        _setMulticoreCores_
+
+        Preset the number of cores for CMSSW to run on, expect this to dribble away 
+        as batch systems get better at dynamic discovery etc, or be used as an override for 
+        testing
+        """
+        self.data.application.multicore.numberOfCores = ncores
+        self.data.application.multicore.enabled = True
+
+    def numberOfCores(self):
+        """
+        _numberOfCores_
+
+        Get number of cores
+        """
+        return self.data.application.multicore.numberOfCores
+
+    def multicoreEnabled(self):
+        """
+        _multicoreEnabled_
+        
+        True/False flag to determine wether multicore is enabled
+        """
+        return self.data.application.multicore.enabled 
 
 
 class CMSSW(Template):
@@ -305,7 +331,15 @@ class CMSSW(Template):
 
         step.section_("monitoring")
 
-
+        #
+        # support for multicore cmssw running mode
+        #
+        step.application.section_("multicore")
+        step.application.multicore.enabled =  False
+        step.application.multicore.numberOfCores = 1
+        step.application.multicore.inputfilelist = "input.filelist"
+        step.application.multicore.inputmanifest = "manifest.json"
+        step.application.multicore.edmFileUtil = "edmFileUtil --JSON -F input.filelist > manifest.json"
 
 
     def helper(self, step):

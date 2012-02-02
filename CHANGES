@@ -1,3 +1,9 @@
+0.8.24 to 0.8.25:
+  - Backout the changes to the WorkloadSummary configuration.
+  - Fix setting the first event in MC jobs.  Fixes #3192.
+  - Only configure the RandomNumberGeneratorService if it exists in the config.  Fixes #3190.
+  - patch-series-maxa/
+
 0.8.23 to 0.8.24:
   - Fix WMSpec unit test breakage casued by an interface change in WMBSHelper.  Fixes #3158.
   - Don't set FirstEvent for processing workflows, it's only useful in MC workflows. Fixes #3181.

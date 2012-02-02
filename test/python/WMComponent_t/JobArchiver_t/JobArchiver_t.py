@@ -254,10 +254,11 @@ class JobArchiverTest(unittest.TestCase):
         for job in testJobGroup.jobs:
             self.assertEqual(job["name"] in dirList, False)
 
-        logList = os.listdir(os.path.join(config.JobArchiver.componentDir, 'logDir', 'JobCluster_0'))
+        logPath = os.path.join(config.JobArchiver.componentDir, 'logDir', 'w', 'wf001', 'JobCluster_0')
+        logList = os.listdir(logPath)
         for job in testJobGroup.jobs:
             self.assertEqual('Job_%i.tar.bz2' %(job['id']) in logList, True, 'Could not find transferred tarball for job %i' %(job['id']))
-            pipe = Popen(['tar', '-jxvf', '%s/%s/%s/Job_%i.tar.bz2' %(config.JobArchiver.componentDir, 'logDir', 'JobCluster_0', job['id'])],
+            pipe = Popen(['tar', '-jxvf', os.path.join(logPath, 'Job_%i.tar.bz2' % (job['id']))],
                          stdout = PIPE, stderr = PIPE, shell = False)
             pipe.wait()
             #filename = '%s/%s/%s.out' %(cacheDir[1:], job['name'], job['name'])

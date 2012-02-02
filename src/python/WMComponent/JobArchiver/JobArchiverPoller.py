@@ -51,7 +51,7 @@ class JobArchiverPoller(BaseWorkerThread):
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
-        self.loadAction = self.daoFactory(classname = "Jobs.LoadFromID")
+        self.loadAction = self.daoFactory(classname = "Jobs.LoadFromIDWithWorkflow")
 
 
         # Variables
@@ -251,9 +251,14 @@ class JobArchiverPoller(BaseWorkerThread):
 
         # Now we need to set up a final destination
         try:
+            # Label all directories by workflow
+            # Workflow better have a first character
+            workflow       = job['workflow']
+            firstCharacter = workflow[0]
             jobFolder = 'JobCluster_%i' \
                         % (int(job['id']/self.numberOfJobsToCluster))
-            logDir = os.path.join(self.logDir, jobFolder)
+            logDir =  os.path.join(self.logDir, firstCharacter,
+                                   workflow, jobFolder)
             if not os.path.exists(logDir):
                 os.makedirs(logDir)
         except Exception, ex:

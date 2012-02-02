@@ -34,6 +34,9 @@ jobDumpDBName = "wmagent_jobdump"
 acdcDBName = "wmagent_acdc"
 workqueueDBName = 'workqueue'
 workqueueInboxDbName = 'workqueue_inbox'
+#example of workloadSummary url
+workloadSummaryDB = "workloadsummary"
+workloadSummaryURL = couchURL
 
 # Information for the workqueue, email of the administrator and the team names
 # for this agent.
@@ -90,8 +93,8 @@ config.ACDC.couchurl = couchURL
 config.ACDC.database = acdcDBName
 
 config.section_("WorkloadSummary")
-config.WorkloadSummary.couchurl = "https://cmsweb.cern.ch/couchdb"
-config.WorkloadSummary.database = "workloadsummary"
+config.WorkloadSummary.couchurl = couchURL
+config.WorkloadSummary.database = workloadSummaryDB
 
 config.section_("BossAir")
 config.BossAir.pluginDir = "WMCore.BossAir.Plugins"
@@ -227,8 +230,8 @@ config.TaskArchiver.logLevel = globalLogLevel
 config.TaskArchiver.pollInterval = 240
 config.TaskArchiver.timeOut      = workflowArchiveTimeout
 config.TaskArchiver.useWorkQueue = True
-config.TaskArchiver.workloadSummaryCouchURL = "https://cmsweb.cern.ch/couchdb"
-config.TaskArchiver.workloadSummaryCouchDBName = "workloadsummary"
+config.TaskArchiver.workloadSummaryCouchURL = workloadSummaryURL
+config.TaskArchiver.workloadSummaryCouchDBName = workloadSummaryDB
 config.TaskArchiver.histogramKeys = ["PeakValueRss", "PeakValueVsize", "TotalJobTime", "AvgEventTime"]
 config.TaskArchiver.requireCouch  = True
 config.TaskArchiver.uploadPublishInfo = False

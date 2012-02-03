@@ -72,7 +72,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.testInit.tearDownCouch()
         return
 
-    def createConfig(self):
+    def createConfig(self, bad = False):
         """
         _createConfig_
 
@@ -83,9 +83,18 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                                  'ThisIsAName': {'dataset': {'dataTier': 'RECO',
                                                              'filterName': 'Filter'}}}}
 
+        BadTweak  = {'process': {'outputModules_': ['ThisIsAName1', 'ThisIsAName2'],
+                                 'ThisIsAName1': {'dataset': {'dataTier': 'RECO',
+                                                             'filterName': 'Filter'}},
+                                 'ThisIsAName2': {'dataset': {'dataTier': 'RECO',
+                                                             'filterName': 'Filter'}}}}
+
         configCache = ConfigCache(os.environ["COUCHURL"], couchDBName = self.couchDBName)
         configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
-        configCache.setPSetTweaks(PSetTweak = PSetTweak)
+        if bad:
+            configCache.setPSetTweaks(PSetTweak = BadTweak)
+        else:
+            configCache.setPSetTweaks(PSetTweak = PSetTweak)
         configCache.save()
 
         return configCache.getCouchID()
@@ -192,6 +201,26 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
             self.assertTrue("No Scenario or Config in Processing Request!" in ex.result)
         self.assertTrue(raises)
 
+        
+        schema       = self.setupSchema(userName = userName,
+                                        groupName = groupName,
+                                        teamName = teamName,
+                                        CMSSWVersion = CMSSWVersion,
+                                        setupDB = False)
+
+        configID = self.createConfig(bad = True)
+        schema["ProcConfigCacheID"] = configID
+        schema["CouchDBName"] = self.couchDBName
+        schema["CouchURL"]    = os.environ.get("COUCHURL")
+
+        raises = False
+        try:
+            self.jsonSender.put('request/testRequest', schema)
+        except HTTPException, ex:
+            raises = True
+            self.assertEqual(ex.status, 400)
+            self.assertTrue("Error in Workload Validation: Duplicate dataTier/filterName combination" in ex.result)
+        self.assertTrue(raises)
 
         schema       = self.setupSchema(userName = userName,
                                         groupName = groupName,
@@ -201,9 +230,8 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         try:
             result = self.jsonSender.put('request/testRequest', schema)
         except Exception,ex:
-            print ex
-            print ex.result
             raise
+
         self.assertEqual(result[1], 200)
         requestName = result[0]['RequestName']
 

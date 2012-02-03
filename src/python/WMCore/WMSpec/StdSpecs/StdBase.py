@@ -567,7 +567,27 @@ class StdBase(object):
         except ConfigCacheException, ex:
             self.raiseValidationException(msg = "Failure to load ConfigCache while validating workload")
 
+        duplicateCheck = {}
+        outputModuleInfo = configCache.getOutputModuleInfo()
+        for outputModule in outputModuleInfo.values():
+            dataTier   = outputModule.get('dataTier', None)
+            filterName = outputModule.get('filterName', None)
+            if not dataTier:
+                self.raiseValidationException(msg = "No DataTier in output module.")
+            if not filterName:
+                self.raiseValidationException(msg = "No FilterName in output module.")
+
+            # Add dataTier to duplicate dictionary
+            if not dataTier in duplicateCheck.keys():
+                duplicateCheck[dataTier] = []
+            if filterName in duplicateCheck[dataTier]:
+                # Then we've seen this combination before
+                self.raiseValidationException(msg = "Duplicate dataTier/filterName combination.")
+            else:
+                duplicateCheck[dataTier].append(filterName)
+        print duplicateCheck
+
         if getOutputModules:
-            return configCache.getOutputModuleInfo()
+            return outputModuleInfo
 
         return

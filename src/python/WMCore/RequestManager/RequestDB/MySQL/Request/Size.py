@@ -18,7 +18,7 @@ class Size(DBFormatter):
 
     """
     def execute(self, requestId, eventSize, fileSize = None,
-                conn = None, trans = False):
+                sizeOfEvent = None, conn = None, trans = False):
         """
         _execute_
 
@@ -26,11 +26,14 @@ class Size(DBFormatter):
         """
 
 
-        self.sql = "UPDATE reqmgr_request SET request_size_events=:event_size"
+        self.sql = "UPDATE reqmgr_request SET request_num_events=:event_size"
         binds = {"event_size": int(eventSize), "request_id": requestId}
         if fileSize != None:
             self.sql += ",request_size_files=:file_size"
             binds["file_size"] = int(fileSize)
+        if sizeOfEvent != None:
+            self.sql += ",request_event_size = :size_of_event"
+            binds['size_of_event'] = int(sizeOfEvent)
         self.sql += " WHERE request_id=:request_id"
         result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)

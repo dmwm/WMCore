@@ -55,8 +55,9 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
     request["RequestPriority"] = reqData['request_priority']
     request["ReqMgrRequestBasePriority"] = reqData['request_priority']
     request["RequestWorkflow"] = reqData['workflow']
-    request["RequestSizeEvents"] = reqData['request_size_events']
+    request["RequestNumEvents"] = reqData['request_num_events']
     request["RequestSizeFiles"] = reqData['request_size_files']
+    request["RequestEventSize"] = reqData['request_event_size']
 
     request["Group"] = groupData['group_name']
     request["ReqMgrGroupID"] = groupData['group_id']

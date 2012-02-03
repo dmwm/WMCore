@@ -171,7 +171,7 @@ def associateSoftware(requestName, softwareName):
 
 
 
-def updateRequestSize(requestName, reqEventsSize, reqFilesSize = None):
+def updateRequestSize(requestName, reqEventsSize, reqFilesSize = None, reqSizeOfEvent = None):
     """
     _updateRequestSize_
 
@@ -191,7 +191,7 @@ def updateRequestSize(requestName, reqEventsSize, reqFilesSize = None):
 
 
     updateSize = factory(classname = "Request.Size")
-    updateSize.execute(reqId, reqEventsSize, reqFilesSize)
+    updateSize.execute(reqId, reqEventsSize, reqFilesSize, reqSizeOfEvent)
 
     return
 

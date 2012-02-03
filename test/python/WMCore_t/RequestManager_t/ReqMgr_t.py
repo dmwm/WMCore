@@ -199,6 +199,8 @@ class ReqMgrTest(RESTBaseUnitTest):
         Try a basic ReReco workflow
         """
         schema = self.setupSchema()
+        schema['RequestNumEvents'] = 100
+        schema['RequestEventSize'] = 101
         self.doRequest(schema)
         return
 
@@ -238,6 +240,11 @@ class ReqMgrTest(RESTBaseUnitTest):
 
         # Check random other
         self.assertEqual(request['CustodialSite'], 'US_T1_FNAL')
+
+        # Check Num events
+        self.assertEqual(request['RequestNumEvents'], 100)
+        self.assertEqual(request['RequestEventSize'], 101)
+        
 
         # only certain transitions allowed
         #self.assertEqual(self.jsonSender.put('request/%s?status=running' % requestName)[1], 400)

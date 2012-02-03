@@ -32,7 +32,7 @@ class RequestSchema(dict):
         self.setdefault("RequestType", None)
         self.setdefault("RequestName", None)
         self.setdefault("RequestPriority", 0)
-        self.setdefault("RequestSizeEvents", None)
+        self.setdefault("RequestNumEvents", None)
         self.setdefault("RequestSizeFiles", None)
         self.setdefault("AcquisitionEra", None)
         self.setdefault("Group", None)

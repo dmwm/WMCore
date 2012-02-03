@@ -460,7 +460,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                 "ConfigCacheID" : generatorDoc, 
                 "SplittingAlgorithm"  : "EventBased",
                 "SplittingArguments" : {"events_per_job" : 250},
-                "RequestSizeEvents" : 10000,
+                "RequestNumEvents" : 10000,
                 "Seeding" : "Automatic",
                 "PrimaryDataset" : "RelValTTBar",
             },
@@ -615,7 +615,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         schema["CouchDBName"] = self.couchDBName
         schema["CouchURL"]    = os.environ.get("COUCHURL")
         schema["PrimaryDataset"] = "ReallyFake"
-        schema["RequestSizeEvents"] = 100
+        schema["RequestNumEvents"] = 100
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
@@ -675,7 +675,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         schema["CouchDBName"]             = self.couchDBName
         schema["CouchURL"]                = os.environ.get("COUCHURL")
         schema["PrimaryDataset"]          = "ReallyFake"
-        schema["RequestSizeEvents"]       = 100
+        schema["RequestNumEvents"]        = 100
         schema["GenOutputModuleName"]     = "ThisIsAName"
         schema["StepOneOutputModuleName"] = "ThisIsAName"
 

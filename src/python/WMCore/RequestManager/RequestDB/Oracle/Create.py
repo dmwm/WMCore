@@ -274,8 +274,9 @@ class Create(DBCreator):
         requestor_group_id NUMBER(11) NOT NULL,
         workflow VARCHAR(255) NOT NULL,
 
-        request_size_events NUMBER(11) DEFAULT 0,
-        request_size_files NUMBER(11)  DEFAULT 0,
+        request_num_events NUMBER(11) DEFAULT 0,
+        request_size_files NUMBER(11) DEFAULT 0,
+        request_event_size NUMBER(11) DEFAULT 0,
 
         prep_id VARCHAR(255),
 

@@ -24,7 +24,7 @@ class Request(dict):
         self.setdefault("RequestStatus", None)
         self.setdefault("RequestPriority", None)
         self.setdefault("RequestWorkflow", None)
-        self.setdefault("RequestSizeEvents", None)
+        self.setdefault("RequestNumEvents", None)
         self.setdefault("RequestSizeFiles", None)
         self.setdefault("AcquisitionEra", None)
 

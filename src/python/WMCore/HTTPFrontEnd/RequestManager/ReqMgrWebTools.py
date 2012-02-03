@@ -316,7 +316,7 @@ def unidecode(data):
 def validate(schema):
     schema.validate()
     for field in ['RequestName', 'Requestor', 'RequestString',
-        'Campaign', 'Scenario', 'ProdConfigCacheID', 'inputMode',
+        'Campaign', 'Scenario', 'ProcConfigCacheID', 'inputMode',
         'CouchDBName', 'Group']:
         value = schema.get(field, '')
         if value and value != '':

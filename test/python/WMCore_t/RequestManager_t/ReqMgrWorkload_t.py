@@ -607,11 +607,11 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Missing required field ProdConfigCacheID in workload validation" in ex.result)
+            self.assertTrue("Missing required field ProcConfigCacheID in workload validation" in ex.result)
             pass
         self.assertTrue(raises)
 
-        schema["ProdConfigCacheID"] = "fakeID"
+        schema["ProcConfigCacheID"] = "fakeID"
         schema["CouchDBName"] = self.couchDBName
         schema["CouchURL"]    = os.environ.get("COUCHURL")
         schema["PrimaryDataset"] = "ReallyFake"
@@ -627,7 +627,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertTrue(raises)
 
         configID = self.createConfig()
-        schema["ProdConfigCacheID"] = configID
+        schema["ProcConfigCacheID"] = configID
         result = self.jsonSender.put('request/testRequest', schema)
         requestName = result[0]['RequestName']
         

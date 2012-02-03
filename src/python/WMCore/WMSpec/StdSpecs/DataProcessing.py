@@ -111,11 +111,8 @@ class DataProcessingWorkloadFactory(StdBase):
         self.couchURL = arguments["CouchURL"]
         self.couchDBName = arguments["CouchDBName"]        
 
-        # One of these parameters must be set.
-        if arguments.has_key("ProdConfigCacheID"):
-            self.procConfigCacheID = arguments["ProdConfigCacheID"]
-        else:
-            self.procConfigCacheID = arguments.get("ProcConfigCacheID", None)
+        # Get the ProcConfigCacheID
+        self.procConfigCacheID = arguments.get("ProcConfigCacheID", None)
 
         if arguments.has_key("Scenario"):
             self.procScenario = arguments.get("Scenario", None)

@@ -30,7 +30,7 @@ class ReproducibleSeedingTests(unittest.TestCase):
         self.testInit.tearDownCouch()
         
         
-    def testA(self):
+    def DISABLEDtestA(self):
         """instantiate"""
         
         document = Document()

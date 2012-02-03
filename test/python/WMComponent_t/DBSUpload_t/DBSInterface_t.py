@@ -138,7 +138,7 @@ class DBSInterfaceTest(unittest.TestCase):
         return algo, dataset
 
 
-    def testA_directReadWrite(self):
+    def DISABLEDtestA_directReadWrite(self):
         """
         Test whether you can read and write directly into DBS using DBSInterface
 

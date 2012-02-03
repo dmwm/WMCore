@@ -183,7 +183,7 @@ class JobAccountantTest(unittest.TestCase):
                          % len(self.testSubscription.filesOfStatus("Failed")))
         return
 
-    def testFailedJob(self):
+    def DISABLEDtestFailedJob(self):
         """
         _testFailedJob_
 
@@ -563,7 +563,7 @@ class JobAccountantTest(unittest.TestCase):
             
         return
         
-    def testSplitJobs(self):
+    def DISABLEDtestSplitJobs(self):
         """
         _testSplitJobs_
 
@@ -745,7 +745,7 @@ class JobAccountantTest(unittest.TestCase):
                                                 "MergedSkimSuccess.pkl"))
         return
 
-    def testMergedSkim(self):
+    def DISABLEDtestMergedSkim(self):
         """
         _testMergedSkim_
 
@@ -922,7 +922,7 @@ class JobAccountantTest(unittest.TestCase):
                                                                "MergeSuccess.pkl"))            
         return
 
-    def testMergeSuccess(self):
+    def DISABLEDtestMergeSuccess(self):
         """
         _testMergeSuccess_
 
@@ -967,7 +967,7 @@ class JobAccountantTest(unittest.TestCase):
 
         return
 
-    def testMergeSuccessNoLumi(self):
+    def DISABLEDtestMergeSuccessNoLumi(self):
         """
         _testMergeSuccessNoLumi_
 
@@ -1013,7 +1013,7 @@ class JobAccountantTest(unittest.TestCase):
 
         return    
 
-    def testParentlessMergeSuccess(self):
+    def DISABLEDtestParentlessMergeSuccess(self):
         """
         _testParentlessMergeSuccess_
 
@@ -1058,7 +1058,7 @@ class JobAccountantTest(unittest.TestCase):
 
         return    
 
-    def testNoFileReport(self):
+    def DISABLEDtestNoFileReport(self):
         """
         _testNoFileReport_
         
@@ -1360,7 +1360,7 @@ class JobAccountantTest(unittest.TestCase):
                                                 "MergeSuccess.pkl"))
         return
 
-    def test4GMerge(self):
+    def DISABLEDtest4GMerge(self):
         """
         _testMergeSuccess_
 
@@ -1617,7 +1617,7 @@ class JobAccountantTest(unittest.TestCase):
                                                 "MergedSkimSuccess.pkl"))
         return
 
-    def testMergedSkim(self):
+    def DISABLEDtestMergedSkim(self):
         """
         _testMergedSkim_
 

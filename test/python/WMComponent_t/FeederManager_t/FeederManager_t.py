@@ -62,7 +62,7 @@ class FeederManagerTest(unittest.TestCase):
             'src/python/WMComponent/FeederManager/DefaultConfig.py'))
 
 
-    def testA(self):
+    def DISABLEDtestA(self):
         """
         _testA_
 

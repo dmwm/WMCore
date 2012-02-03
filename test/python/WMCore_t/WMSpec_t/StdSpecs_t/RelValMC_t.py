@@ -402,7 +402,7 @@ class RelValMCTest(unittest.TestCase):
             self.assertEqual(logCollectSub["split_algo"], "EndOfRun", "Error: Wrong split algo.")
 
     
-    def testRelValMC(self):
+    def DISABLEDtestRelValMC(self):
         """
         Configure, instantiate, install into WMBS and check that the
         subscriptions in WMBS are setup correctly.
@@ -431,7 +431,7 @@ class RelValMCTest(unittest.TestCase):
         self._stepOneTaskTest()
         return
 
-    def testRelValMCWithPileup(self):
+    def DISABLEDtestRelValMCWithPileup(self):
         """
         Configure, instantiate, install into WMBS and check that the
         subscriptions in WMBS are setup correctly.

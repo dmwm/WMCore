@@ -216,7 +216,7 @@ class DashboardReporterTest(unittest.TestCase):
 
 
 
-    def testA_testSubmit(self):
+    def DISABLEDtestA_testSubmit(self):
         """
         _testSubmit_
 
@@ -250,7 +250,7 @@ class DashboardReporterTest(unittest.TestCase):
         return
     
 
-    def testDashboardReporterPollerAlertSending_algorithm(self):
+    def DISABLEDtestDashboardReporterPollerAlertSending_algorithm(self):
         """
         Cause exception (alert-worthy situation) in the algorithm()
         method.

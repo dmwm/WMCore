@@ -362,7 +362,7 @@ class TestChangeState(unittest.TestCase):
 
         return    
 
-    def testJobSerialization(self):
+    def DISABLEDtestJobSerialization(self):
         """
         _testJobSerialization_
 
@@ -433,7 +433,7 @@ class TestChangeState(unittest.TestCase):
 
         return
 
-    def testDuplicateJobReports(self):
+    def DISABLEDtestDuplicateJobReports(self):
         """
         _testDuplicateJobReports_
 
@@ -496,7 +496,7 @@ class TestChangeState(unittest.TestCase):
 
         return    
 
-    def testDashboardTransitions(self):
+    def DISABLEDtestDashboardTransitions(self):
     	"""
         _testDashboardTransitions_
 

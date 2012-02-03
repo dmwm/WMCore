@@ -21,7 +21,7 @@ class SiteLocalConfigTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def testFNALSiteLocalConfig(self):
+    def DISABLEDtestFNALSiteLocalConfig(self):
         """
         _testFNALSiteLocalConfig_
 
@@ -78,7 +78,7 @@ class SiteLocalConfigTest(unittest.TestCase):
                "Error: Fallback config is incorrect."
         return
 
-    def testVanderbiltSiteLocalConfig(self):
+    def DISABLEDtestVanderbiltSiteLocalConfig(self):
         """
         _testFNALSiteLocalConfig_
 
@@ -139,7 +139,7 @@ class SiteLocalConfigTest(unittest.TestCase):
         return
 
 
-    def testLoadingConfigFromOverridenEnvVarriable(self):
+    def DISABLEDtestLoadingConfigFromOverridenEnvVarriable(self):
         """
         test SiteLocalConfig module method loadSiteLocalConfig when loading
         site config from location defined by WMAGENT_SITE_CONFIG_OVERRIDE

@@ -2,82 +2,21 @@
   <head>
     <title>WMStats</title>
     <style type="text/css" title="currentStyle">
-            @import "css/demo_table.css";
-            @import "css/ColVis.css"
+        @import "css/demo_table.css";
+        @import "css/ColVis.css"
     </style>
     <script src="lib/namespace.js" type='text/javascript'> </script>
     <script src="lib/jquery.js" type='text/javascript'> </script>
     <script src="lib/jquery.dataTables.js" type='text/javascript'> </script>
     <script src="lib/ColVis.js" type='text/javascript'> </script>
     <script src="lib/jquery.dataTables.columnFilter.js" type='text/javascript'> </script>
+    
     <script src="js/WMStats.Table.js" type='text/javascript'> </script>
     <script src="js/WMStats.Globals.js" type='text/javascript'> </script>
-    
+    <script src="js/WMStats.CampaignView.js" type='text/javascript'> </script>
     <script>
-  
-    var campaignTableConfig = {
-        "aoColumns": [
-            { "mDataProp": "campaign", "sTitle": "campaign"},
-            //{ "sTitle": "team"},
-            //{ "sTitle": "type"},
-            { "mDataProp": "new", "sTitle": "new", "sDefaultContent": 0},
-            { "mDataProp": "testing-approved", "sTitle": "testing approved", "sDefaultContent": 0 },
-            { "mDataProp": "testing", "sTitle": "testing", "sDefaultContent": 0 },
-            { "mDataProp": "tested", "sTitle": "tested", "sDefaultContent": 0 },
-            { "mDataProp": "test-failed", "sTitle": "test failed", "sDefaultContent": 0 },
-            { "mDataProp": "assignment-approved", "sTitle": "assignment approved", "sDefaultContent": 0 },
-            { "mDataProp": "assigned", "sTitle": "assigned", "sDefaultContent": 0 },
-            { "mDataProp": "ops-hold", "sTitle": "ops hold", "sDefaultContent": 0 },
-            { "mDataProp": "negotiating", "sTitle": "negotiating", "sDefaultContent": 0 },
-            { "mDataProp": "acquired", "sTitle": "acquired", "sDefaultContent": 0 },
-            { "mDataProp": "running", "sTitle": "running", "sDefaultContent": 0 },
-            { "mDataProp": "failed", "sTitle": "failed", "sDefaultContent": 0 },
-            { "mDataProp": "epic-FAILED", "sTitle": "epic FAILED", "sDefaultContent": 0 },
-            { "mDataProp": "completed", "sTitle": "completed", "sDefaultContent": 0 },
-            { "mDataProp": "closed-out", "sTitle": "closed-out", "sDefaultContent": 0 },
-            { "mDataProp": "announced", "sTitle": "announced", "sDefaultContent": 0 },
-            { "mDataProp": "aborted", "sTitle": "aborted", "sDefaultContent": 0 },
-            { "mDataProp": "rejected", "sTitle": "rejected", "sDefaultContent": 0 }
-        ]
-    }
-    
-    var footer = "<tfoot><tr>";
-  
-    for (var obj in campaignTableConfig.aoColunms) {
-        footer += '<th>' + obj["mDataProp"] + "</th>"
-    }
-    footer += "</tfoot></tr>"
-    
-    var convertCampaignData = function(data, baseColumns) {
-        var rows =[]
-        for (var i in data) {
-            tableRow = data[i].value;
-            for (var j = 0; j < baseColumns.length; j ++) {
-                tableRow[baseColumns[j]] = data[i].key[j];
-            }
-            rows.push(tableRow)
-        }
-        return rows
-    }
-    
-    var createCampaignTable = function(selector, data) {
-        //TODO sync with group level
-        //This is base on the group_level ["campaign", "team", type]
-        var baseCols = ["campaign"];
-        campaignTableConfig.aaData = convertCampaignData(data, baseCols);
-        return WMStats.Table(campaignTableConfig).create(selector)
-    }
-       
     $(document).ready(function() {
-          
-        $('#campaignDiv').html( '<table cellpadding="0" cellspacing="0" border="0" class="display" id="campaignTable">' + footer +'</table>' );
-        var url = WMStats.Globals.couchDBViewPath + 'campaign-status'
-        $.get(url, 'reduce=true&group_level=1&descending=true',
-              function(campaignData) {
-                  createCampaignTable("#campaignTable", campaignData.rows);
-              },
-              'json')
-        
+        WMStats.CampaignView.createTable("#campaignDiv");
      } );
     </script>
 <body>

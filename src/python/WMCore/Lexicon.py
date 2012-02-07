@@ -102,7 +102,7 @@ def identifier(candidate):
 
 def dataset(candidate):
     """ A slash followed by an identifier,x3 """
-    return check(r'(/[a-zA-Z0-9\.\-_]{1,100}){3}$', candidate)
+    return check(r'(/[a-zA-Z0-9\.\-_]{1,700}){3}$', candidate)
 
 def procdataset(candidate):
     """

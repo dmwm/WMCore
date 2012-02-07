@@ -645,8 +645,16 @@ class WorkQueue(WorkQueueBase):
             try:
                 elements = self.status(RequestName = wf, syncWithWMBS = useWMBS)
                 parents = self.backend.getInboxElements(RequestName = wf)
-                if not parents:
-                    raise RuntimeError, "Parent elements not found for %s" % wf
+
+                # check for left overs from past work where cleanup needed
+                if elements and not parents:
+                    self.logger.info("Removing orphaned elements for %s" % wf)
+                    self.backend.deleteElements(*elements)
+                    continue
+                if not elements and not parents:
+                    self.logger.info("Removing orphaned workflow %s" % wf)
+                    self.backend.db.delete_doc(wf)
+                    continue
 
                 self.logger.debug("Queue status follows:")
                 results = endPolicy(elements, parents, self.params['EndPolicySettings'])

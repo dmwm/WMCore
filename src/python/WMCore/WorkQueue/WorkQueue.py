@@ -408,6 +408,7 @@ class WorkQueue(WorkQueueBase):
         requestNames = set([x['RequestName'] for x in elements])
         if not requestNames:
             return []
+        self.logger.info("""Canceling work for workflows: %s""" % (requestNames))
         inbox_elements = []
         for wf in requestNames:
             inbox_elements.extend(self.backend.getInboxElements(WorkflowName = wf, returnIdOnly = True))
@@ -417,8 +418,6 @@ class WorkQueue(WorkQueueBase):
             # if we can talk to wmbs kill the jobs
             if self.params['PopulateFilesets']:
                 from WMCore.WorkQueue.WMBSHelper import killWorkflow
-
-                self.logger.debug("""Canceling work in wmbs, workflows: %s""" % (requestNames))
                 for workflow in requestNames:
                     try:
                         myThread = threading.currentThread()
@@ -426,12 +425,8 @@ class WorkQueue(WorkQueueBase):
                         myThread.logger = self.logger
                         killWorkflow(workflow, self.params["JobDumpConfig"],
                                      self.params["BossAirConfig"])
-                    except RuntimeError:
-                        #TODO: Check this logic and improve if possible
-                        if SubscriptionId:
-                            self.logger.info("""Cancel update: Only some subscription's canceled.
-                                        This might be due to a child subscriptions: %s"""
-                                        % elementIDs)
+                    except Exception, ex:
+                        self.logger.error('Aborting %s wmbs subscription failed: %s' % (workflow, str(ex)))
             self.backend.updateInboxElements(*inbox_elements, Status = 'Canceled')
             # delete elements - no longer need them
             self.backend.deleteElements(*elements)
@@ -440,6 +435,8 @@ class WorkQueue(WorkQueueBase):
         else:
             # only cancel in global if work has not been passed to a child queue
             elements = [x for x in elements if not x['ChildQueueUrl']]
+            if elements:
+                self.logger.info("Canceling element(s) %s" % str([x.id for x in elements]))
             self.backend.updateElements(*[x.id for x in elements], Status = 'Canceled')
             self.backend.updateInboxElements(*inbox_elements, Status = 'CancelRequested')
 

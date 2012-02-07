@@ -674,9 +674,12 @@ class WorkQueue(WorkQueueBase):
                         self.backend.updateInboxElements(parent.id, **parent.statusMetrics())
 
                     if result.inEndState():
-                        self.logger.info("Request %s finished (%s)" % (result['RequestName'], parent.statusMetrics()))
-                        self.backend.deleteElements(*result['Elements'])
-                        finished_elements.extend(result['Elements'])
+                        if elements:
+                            self.logger.info("Request %s finished (%s)" % (result['RequestName'], parent.statusMetrics()))
+                            self.backend.deleteElements(*result['Elements'])
+                            finished_elements.extend(result['Elements'])
+                        else:
+                            self.logger.info('Waiting for parent queue to delete "%s"' % result['RequestName'])
                         continue
 
                     updated_elements = [x for x in result['Elements'] if x.modified]

@@ -29,11 +29,10 @@ from WMCore_t.RequestManager_t.ReqMgr_t import RequestManagerConfig, getRequestS
 
 
 
-class ReqMgrPriorityTest(RESTBaseUnitTest):
+class AssignTest(RESTBaseUnitTest):
     """
-    _ReqMgrPriorityTest_
+    _AssignTest_
 
-    Basic test for setting the priority in ReqMgr Services
     """
 
     def setUp(self):

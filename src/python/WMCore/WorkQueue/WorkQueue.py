@@ -409,15 +409,15 @@ class WorkQueue(WorkQueueBase):
         requestNames = set([x['RequestName'] for x in elements]) | set([wf for wf in [WorkflowName] if wf])
         if not requestNames:
             return []
-        self.logger.info("""Canceling work for workflow(s): %s""" % (requestNames))
         inbox_elements = []
         for wf in requestNames:
-            inbox_elements.extend(self.backend.getInboxElements(WorkflowName = wf, returnIdOnly = True))
+            inbox_elements.extend(self.backend.getInboxElements(WorkflowName = wf))
 
         # if local queue, kill jobs, update parent to Canceled and delete elements
         if self.params['LocalQueueFlag']:
             # if we can talk to wmbs kill the jobs
             if self.params['PopulateFilesets']:
+                self.logger.info("""Canceling work for workflow(s): %s""" % (requestNames))
                 from WMCore.WorkQueue.WMBSHelper import killWorkflow
                 for workflow in requestNames:
                     try:
@@ -428,18 +428,23 @@ class WorkQueue(WorkQueueBase):
                                      self.params["BossAirConfig"])
                     except Exception, ex:
                         self.logger.error('Aborting %s wmbs subscription failed: %s' % (workflow, str(ex)))
-            self.backend.updateInboxElements(*inbox_elements, Status = 'Canceled')
+            self.backend.updateInboxElements(*[x.id for x in inbox_elements if x['Status'] != 'Canceled'], Status = 'Canceled')
             # delete elements - no longer need them
             self.backend.deleteElements(*elements)
 
         # if global queue, update non-acquired to Canceled, update parent to CancelRequested
         else:
-            # only cancel in global if work has not been passed to a child queue
-            elements = [x for x in elements if not x['ChildQueueUrl']]
+            # Cancel in global if work has not been passed to a child queue
+            elements_to_cancel = [x for x in elements if not x['ChildQueueUrl'] and x['Status'] != 'Canceled']
+            # ensure all elements receive cancel request, covers case where initial cancel request missed some elements
+            # without this elements may avoid the cancel and not be cleared up till they finish
+            elements_not_requested = [x for x in elements if x['ChildQueueUrl'] and (x['Status'] != 'CancelRequested' or not x.inEndState())]
             if elements:
+                self.logger.info("""Canceling work for workflow(s): %s""" % (requestNames))
                 self.logger.info("Canceling element(s) %s" % str([x.id for x in elements]))
-            self.backend.updateElements(*[x.id for x in elements], Status = 'Canceled')
-            self.backend.updateInboxElements(*inbox_elements, Status = 'CancelRequested')
+            self.backend.updateElements(*[x.id for x in elements_to_cancel], Status = 'Canceled')
+            self.backend.updateElements(*[x.id for x in elements_not_requested], Status = 'CancelRequested')
+            self.backend.updateInboxElements(*[x.id for x in inbox_elements if x['Status'] != 'CancelRequested'], Status = 'CancelRequested')
 
         return [x.id for x in elements]
 

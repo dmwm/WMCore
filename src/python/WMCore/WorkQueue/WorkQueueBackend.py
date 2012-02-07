@@ -250,6 +250,8 @@ class WorkQueueBackend(object):
 
     def updateElements(self, *elementIds, **updatedParams):
         """Update given element's (identified by id) with new parameters"""
+        if not elementIds:
+            return
         uri = "/" + self.db.name + "/_design/WorkQueue/_update/in-place/"
         data = {"updates" : json.dumps(updatedParams)}
         for ele in elementIds:

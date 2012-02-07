@@ -115,7 +115,10 @@ class WorkQueueReqMgrInterface():
             ele = elements[ele][0] # 1 element tuple
             try:
                 request = self.reqMgr.getRequest(ele['RequestName'])
-                if not ele['Status'] == self._reqMgrStatus(request['RequestStatus']):
+                if request['RequestStatus'] in ('aborted', 'failed', 'completed', 'announced',
+                                                'epic-FAILED', 'closed-out', 'rejected') and ele.inEndState():
+                    self.logger.info("%s is %s in reqmgr, assume request is done. Will clean up." % (ele['RequestName'], request['RequestStatus']))
+                elif not ele['Status'] == self._reqMgrStatus(request['RequestStatus']):
                     self.reportElement(ele)
                 # check if we need to update progress, only update if we have progress
                 elif ele['PercentComplete'] > request['percent_complete'] + 1 or \
@@ -133,7 +136,9 @@ class WorkQueueReqMgrInterface():
         """Delete work from queue that is finished in ReqMgr"""
         finished = []
         for element in elements:
-            if self._reqMgrStatus(element['Status']) in ['failed', 'aborted', 'completed']:
+            if self._reqMgrStatus(element['Status']) in ('aborted', 'failed', 'completed', 'announced',
+                                                         'epic-FAILED', 'closed-out', 'rejected') \
+                                                         and element.inEndState():
                 finished.append(element['RequestName'])
         return queue.deleteWorkflows(*finished)
 

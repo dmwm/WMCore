@@ -15,6 +15,21 @@ from WMCore.Wrappers import JsonWrapper as json
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.Lexicon import sanitizeURL
 
+def formatReply(answer, *items):
+    """Take reply from couch bulk api and format labeling errors etc
+    """
+    result, errors = [], []
+    for ans in answer:
+        if 'error' in ans:
+            errors.append(ans)
+            continue
+        for item in items:
+            if item.id == ans['id']:
+                item.rev = ans['rev']
+                result.append(item)
+                break
+    return result, errors
+
 class WorkQueueBackend(object):
     """
     Represents persistent storage for WorkQueue
@@ -227,16 +242,10 @@ class WorkQueueBackend(object):
         for element in elements:
             element.save()
         answer = elements[0]._couch.commit()
-        for ans in answer:
-            if 'error' in ans:
-                msg = 'Couch error saving element: "%s", error "%s", reason "%s"'
-                self.logger.error(msg % (ans['id'], ans['error'], ans['reason']))
-                continue
-            for element in elements:
-                if element.id == ans['id']:
-                    element.rev = ans['rev']
-                    result.append(element)
-                    break
+        result, failures = formatReply(answer, *elements)
+        msg = 'Couch error saving element: "%s", error "%s", reason "%s"'
+        for failed in failures:
+            self.logger.error(msg % (failed['id'], failed['error'], failed['reason']))
         return result
 
     def updateElements(self, *elementIds, **updatedParams):
@@ -267,7 +276,13 @@ class WorkQueueBackend(object):
         for i in elements:
             i.delete()
             specs[i['RequestName']] = None
-        elements[0]._couch.commit()
+        answer = elements[0]._couch.commit()
+        result, failures = formatReply(answer, *elements)
+        msg = 'Couch error deleting element: "%s", error "%s", reason "%s"'
+        for failed in failures:
+            # only count delete as failed if document still exists
+            if elements[0]._couch.documentExists(failed['id']):
+                self.logger.error(msg % (failed['id'], failed['error'], failed['reason']))
         # delete specs if no longer used
         for wf in specs:
             try:

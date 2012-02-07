@@ -248,6 +248,8 @@ class WorkQueue(WorkQueueBase):
         for x in affected:
             x['Status'] = status
         elements = self.backend.saveElements(*affected)
+        if len(affected) != len(elements):
+            raise RuntimeError, "Some elements not updated, see log for details"
 
         return elements
 

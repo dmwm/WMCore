@@ -18,19 +18,30 @@ class WorkQueueElementResult(dict):
         self.setdefault('WMSpec', None)
         self.setdefault('Elements', [])
         self.setdefault('Status', self.status())
-        self.setdefault('EventsWritten',
-                        sum([x['EventsWritten'] for x in self['Elements']]))
-        self.setdefault('FilesProcessed',
-                        sum([x['FilesProcessed'] for x in self['Elements']]))
-        self.setdefault('PercentComplete',
-                        int(sum([x['PercentComplete'] for x in self['Elements']],
-                            0.0) / len(self['Elements'])))
-        self.setdefault('PercentSuccess',
-                        int(sum([x['PercentSuccess'] for x in self['Elements']],
-                            0.0) / len(self['Elements'])))
-        self.setdefault('RequestName', self['Elements'][0]['RequestName'])
-        self.setdefault('TeamName', self['Elements'][0]['TeamName'])
-        self.setdefault('ParentQueueId', self['Elements'][0]['ParentQueueId'])
+        if self['Elements']:
+            self.setdefault('EventsWritten',
+                            sum([x['EventsWritten'] for x in self['Elements']]))
+            self.setdefault('FilesProcessed',
+                            sum([x['FilesProcessed'] for x in self['Elements']]))
+            self.setdefault('PercentComplete',
+                            int(sum([x['PercentComplete'] for x in self['Elements']],
+                                0.0) / len(self['Elements'])))
+            self.setdefault('PercentSuccess',
+                            int(sum([x['PercentSuccess'] for x in self['Elements']],
+                                0.0) / len(self['Elements'])))
+            self.setdefault('RequestName', self['Elements'][0]['RequestName'])
+            self.setdefault('TeamName', self['Elements'][0]['TeamName'])
+            self.setdefault('ParentQueueId', self['Elements'][0]['ParentQueueId'])
+        elif self.get('ParentQueueElement'):
+            self.setdefault('EventsWritten', self['ParentQueueElement']['EventsWritten'])
+            self.setdefault('FilesProcessed', self['ParentQueueElement']['FilesProcessed'])
+            self.setdefault('PercentComplete', self['ParentQueueElement']['PercentComplete'])
+            self.setdefault('PercentSuccess', self['ParentQueueElement']['PercentSuccess'])
+            self.setdefault('RequestName', self['ParentQueueElement']['RequestName'])
+            self.setdefault('TeamName', self['ParentQueueElement']['TeamName'])
+            self.setdefault('ParentQueueId', self['ParentQueueElement'].id)
+        else:
+            raise RuntimeError, "Can create WQEResult: No elements or parent provided"
 
         # some cross checks
         for i in self['Elements']:
@@ -71,7 +82,9 @@ class WorkQueueElementResult(dict):
 
     def status(self):
         """Compute status of elements"""
-        if not self['Elements']:
+        if not self['Elements'] and self.get('ParentQueueElement'):
+            return self['ParentQueueElement']['Status']
+        elif not self['Elements']:
             return None
 
         if not self.inEndState():

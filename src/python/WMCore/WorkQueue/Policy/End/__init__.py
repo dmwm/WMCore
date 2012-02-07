@@ -16,9 +16,15 @@ def endPolicy(elements, parents = None, args = None):
     # load policy and apply
     if not args:
         args = {}
-    name = elements[0]['EndPolicy']['policyName']
+    if elements:
+        policy = elements[0]['EndPolicy']
+    elif parents:
+        policy = parents[0]['EndPolicy']
+    else:
+        raise RuntimeError, "Can't get policy, no elements or parents"
+    name = policy['policyName']
     args = args.get(name, {})
-    args.update(elements[0]['EndPolicy'])
+    args.update(policy)
     return endFac.loadObject(name,
                              args,
                              storeInCache = False)(elements, parents)

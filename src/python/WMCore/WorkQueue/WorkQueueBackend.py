@@ -352,9 +352,12 @@ class WorkQueueBackend(object):
             return False
         return True
 
-    def getWorkflows(self):
+    def getWorkflows(self, includeInbox = False):
         """Returns workflows known to workqueue"""
-        return [x['key'] for x in self.db.loadView('WorkQueue', 'elementsByWorkflow', {'group' : True})['rows']]
+        result = set([x['key'] for x in self.db.loadView('WorkQueue', 'elementsByWorkflow', {'group' : True})['rows']])
+        if includeInbox:
+            result = result | set([x['key'] for x in self.inbox.loadView('WorkQueue', 'elementsByWorkflow', {'group' : True})['rows']])
+        return list(result)
 
     def queueLength(self):
         """Return number of available elements"""

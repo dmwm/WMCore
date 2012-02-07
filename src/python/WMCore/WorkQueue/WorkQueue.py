@@ -641,8 +641,9 @@ class WorkQueue(WorkQueueBase):
         useWMBS = not skipWMBS and self.params['LocalQueueFlag']
         # Get queue elements grouped by their workflow with updated wmbs progress
         # Cancel if requested, update locally and remove obsolete elements
-        for wf, elements in self.status(dictKey = "RequestName", syncWithWMBS = useWMBS).items():
+        for wf in self.backend.getWorkflows(includeInbox = True):
             try:
+                elements = self.status(RequestName = wf, syncWithWMBS = useWMBS)
                 parents = self.backend.getInboxElements(RequestName = wf)
                 if not parents:
                     raise RuntimeError, "Parent elements not found for %s" % wf
@@ -658,6 +659,9 @@ class WorkQueue(WorkQueueBase):
                         if canceled: # global wont cancel if work in child queue
                             wf_to_cancel.append(wf)
                             break
+                    elif result['Status'] == 'Negotiating':
+                        self.logger.debug("Waiting for %s to finish splitting" % wf)
+                        continue
 
                     parent = result['ParentQueueElement']
                     if parent.modified:

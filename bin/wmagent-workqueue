@@ -40,6 +40,9 @@ def createOptionParser():
     myOptParser.add_option("--delete", dest = "deleteWork",
                            default = False, action = "store_true",
                            help = "Delete elements.")
+    myOptParser.add_option("--cancel", dest = "cancelWork",
+                           default = False, action = "store_true",
+                           help = "Cancel request")
     myOptParser.add_option("--process", dest = "process",
                            default = False, action = "store_true",
                            help = "Process inbound work.")
@@ -125,6 +128,8 @@ def main():
         reqConfig = getattr(cfgObject.WorkQueueManager, 'reqMgrConfig', {})
         reqMgrInt = WorkQueueReqMgrInterface(**reqConfig)
         reqMgrInt(workqueue)
+    elif options.cancelWork:
+        workqueue.cancelWork(WorkflowName = options.workflow)
 
 if __name__ == '__main__':
 	main()

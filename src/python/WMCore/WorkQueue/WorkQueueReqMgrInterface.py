@@ -27,7 +27,7 @@ class WorkQueueReqMgrInterface():
             self.logger.exception("Error caught during RequestManager pull")
         try:    # report back to ReqMgr
             uptodate_elements = self.report(queue)
-            msg += "Updated ReqMgr status for: %s" % ", ".join([x for x in uptodate_elements])
+            msg += "Updated ReqMgr status for: %s" % ", ".join([x['RequestName'] for x in uptodate_elements])
         except:
             self.logger.exception("Error caught during RequestManager update")
         else:
@@ -105,6 +105,7 @@ class WorkQueueReqMgrInterface():
     def report(self, queue):
         """Report queue status to ReqMgr."""
         new_state = {}
+        uptodate_elements = []
 
         elements = queue.statusInbox(dictKey = "RequestName")
         if not elements:
@@ -112,27 +113,26 @@ class WorkQueueReqMgrInterface():
 
         for ele in elements:
             ele = elements[ele][0] # 1 element tuple
-            # check if element has progressed since last report
-            if getattr(ele, 'updatetime', getattr(ele, 'timestamp', 0)) <= self.previous_state.get(ele['RequestName'], 0):
-                # no updates for this element
-                new_state[ele['RequestName']] = self.previous_state.get(ele['RequestName'], 0)
-                continue
-
             try:
-                self.reportElement(ele)
+                request = self.reqMgr.getRequest(ele['RequestName'])
+                if not ele['Status'] == self._reqMgrStatus(request['RequestStatus']):
+                    self.reportElement(ele)
+                # check if we need to update progress, only update if we have progress
+                elif ele['PercentComplete'] > request['percent_complete'] + 1 or \
+                     ele['PercentSuccess'] > request['percent_success'] + 1:
+                    self.reportProgress(ele['RequestName'], percent_complete = ele['PercentComplete'],
+                                                            percent_success = ele['PercentSuccess'])
+                uptodate_elements.append(ele)
             except Exception, ex:
-                msg = 'Error updating ReqMgr about request "%s": %s'
+                msg = 'Error talking to ReqMgr about request "%s": %s'
                 self.logger.error(msg % (ele['RequestName'], str(ex)))
-            else:
-                new_state[ele['RequestName']] = ele.updatetime
-        self.previous_state = new_state
-        return elements
+
+        return uptodate_elements
 
     def deleteFinishedWork(self, queue, elements):
         """Delete work from queue that is finished in ReqMgr"""
         finished = []
-        for request in elements:
-            element = elements[request][0] # 1 element tuple
+        for element in elements:
             if self._reqMgrStatus(element['Status']) in ['failed', 'aborted', 'completed']:
                 finished.append(element['RequestName'])
         return queue.deleteWorkflows(*finished)
@@ -181,7 +181,11 @@ class WorkQueueReqMgrInterface():
 
     def reportProgress(self, request, **args):
         """report progress for the request"""
-        return self.reqMgr.reportRequestProgress(request, **args)
+        try:
+            return self.reqMgr.reportRequestProgress(request, **args)
+        except Exception, ex:
+            # metrics are nice to have but not essential
+            self.logger.warning("Error updating reqmgr metrics for %s: %s" % (request, str(ex)))
 
     def reportElement(self, element):
         """Report element to ReqMgr"""

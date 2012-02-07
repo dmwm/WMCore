@@ -719,12 +719,12 @@ class WorkQueue(WorkQueueBase):
             # update policy parameter
             self.params['SplittingMapping'][policyName].update(args = spec.startPolicyParameters())
             policy = startPolicy(policyName, self.params['SplittingMapping'])
-            self.logger.info('Splitting %s with policy %s params = %s' % (spec.name(),
+            self.logger.info('Splitting %s with policy %s params = %s' % (topLevelTask.getPathName(),
                                                 policyName, self.params['SplittingMapping']))
             units = policy(spec, topLevelTask, data, mask)
             for unit in units:
-                msg = 'Queuing element for %s:%s with %d job(s) split with %s' % (spec.name(),
-                                                unit['TaskName'], unit['Jobs'], policyName)
+                msg = 'Queuing element %s for %s with %d job(s) split with %s' % (unit.id,
+                                                unit['Task'].getPathName(), unit['Jobs'], policyName)
                 if unit['Inputs']:
                     msg += ' on %s' % unit['Inputs'].keys()[0]
                 if unit['Mask']:

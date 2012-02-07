@@ -113,7 +113,11 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         if setupDB:
             self.jsonSender.put('user/%s?email=me@my.com' % userName)
             self.jsonSender.put('group/%s' % groupName)
-            self.jsonSender.put('group/%s/%s' % (groupName, userName))
+            try:
+                self.jsonSender.put('group/%s/%s' % (groupName, userName))
+            except:
+                # Done this already
+                pass
             self.jsonSender.put(urllib.quote('team/%s' % teamName))
             self.jsonSender.put('version/%s/%s' % (CMSSWVersion, scramArch))
 
@@ -702,6 +706,55 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['Requestor'], userName)
 
 
+        return
+
+    def testJ_Resubmission(self):
+        """
+        _Resubmission_
+
+        Test Resubmission Name
+        """
+
+        userName     = 'Taizong'
+        groupName    = 'Li'
+        teamName     = 'Tang'
+        CMSSWVersion = 'CMSSW_3_5_8'
+        schema       = self.setupSchema(userName = userName,
+                                        groupName = groupName,
+                                        teamName = teamName,
+                                        CMSSWVersion = CMSSWVersion,
+                                        typename = "DataProcessing")
+        schema['ProdScenario'] = 'pp'
+        result = self.jsonSender.put('request/testRequest', schema)
+        requestName = result[0]['RequestName']
+
+        schema       = self.setupSchema(userName = userName,
+                                        groupName = groupName,
+                                        teamName = teamName,
+                                        CMSSWVersion = CMSSWVersion,
+                                        typename = "Resubmission")
+        
+
+        try:
+            raises = False
+            result = self.jsonSender.put('request/testRequest', schema)
+        except HTTPException, ex:
+            raises = True
+            self.assertEqual(ex.status, 400)
+            self.assertTrue("Missing required field OriginalRequestName" in ex.result)
+            pass
+        self.assertTrue(raises)
+
+        schema["OriginalRequestName"] = requestName
+        schema["InitialTaskPath"]     = '/%s/DataProcessing' % requestName
+        schema["ACDCServer"]          = os.environ.get("COUCHURL")
+        schema["ACDCDatabase"]        = self.couchDBName
+
+        result = self.jsonSender.put('request/testRequest', schema)
+        resubmitName = result[0]['RequestName']
+        
+        result = self.jsonSender.get('request/%s' % resubmitName)
+        request = result[0]
         return
 
 

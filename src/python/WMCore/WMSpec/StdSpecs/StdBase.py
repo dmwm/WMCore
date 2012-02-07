@@ -585,7 +585,6 @@ class StdBase(object):
                 self.raiseValidationException(msg = "Duplicate dataTier/filterName combination.")
             else:
                 duplicateCheck[dataTier].append(filterName)
-        print duplicateCheck
 
         if getOutputModules:
             return outputModuleInfo

@@ -7,14 +7,27 @@ WMStats.RequestView = (function() {
     var _url = WMStats.Globals.couchDBViewPath + 'campaign-request';
     var _options = {'include_docs': true};
     var _tableID = "requestTable";
-    function _get(obj, val) {
-        if (obj) {
-            return obj;
+    
+   
+    
+        
+    function _getOrDefault(baseObj, objList, val) {
+        
+        if (baseObj[objList[0]]) { 
+            if (objList.length == 1) {
+                return baseObj[objList[0]];
+            } else {
+                return _getOrDefault(baseObj[objList[0]], objList.slice(1), val);
+            }
         } else {
             return val;
         } 
     }
     
+    function _get(baseObj, objStr, val) {
+        objList = objStr.split('.');
+        return _getOrDefault(baseObj, objList, val); 
+    }
     
     var tableConfig = {
         "aoColumns": [
@@ -25,54 +38,79 @@ WMStats.RequestView = (function() {
             { "mDataProp": "site_white_list", "sTitle": "site white list"},
             //{ "mDataProp": "status.inWMBS", "sTitle": "in wmbs", 
             //               "sDefaultContent": 0, "bVisible": false},
-            
+            /*
             { "mDataProp": "status.queued.first", "sTitle": "queued first", 
                            "sDefaultContent": 0 , "bVisible": false},
             { "mDataProp": "status.queued.retry", "sTitle": "queued retry", 
                            "sDefaultContent": 0, "bVisible": false },
-            { "sTitle": "queued", "sDefaultContent": 0, 
-                        "fnRender": function ( o, val ) {
-                                      return _get(o.aData.status.queued.first, 0) + 
-                                             _get(o.aData.status.queued.retry, 0);
-                                    }
+            */
+            { "sTitle": "queued", 
+              "fnRender": function ( o, val ) {
+                            return (_get(o.aData, "status.queued.first", 0) + 
+                                    _get(o.aData, "status.queued.retry", 0));
+                          }
             },
-                           
+            /*               
             { "mDataProp": "status.submitted.first", "sTitle": "submitted first", 
                            "sDefaultContent": 0, "bVisible": false },
             { "mDataProp": "status.submitted.retry", "sTitle": "submitted retry", 
                            "sDefaultContent": 0, "bVisible": false },
-            { "mDataProp": "status.submitted.pending", "sTitle": "pending", "sDefaultContent": 0 },
-            { "mDataProp": "status.submitted.running", "sTitle": "running", "sDefaultContent": 0 },
+            */
+            { "sTitle": "pending", 
+              "fnRender": function ( o, val ) {
+                            return _get(o.aData, "status.submitted.pending", 0);
+                          }
+            },
+            { "sTitle": "running", 
+              "fnRender": function ( o, val ) {
+                            return _get(o.aData, "status.submitted.running", 0);
+                          }
+            },
             
+            /*
             { "mDataProp": "status.failure.create", "sTitle": "create fail", 
                            "sDefaultContent": 0, "bVisible": false  },
             { "mDataProp": "status.failure.submit", "sTitle": "submit fail", 
                            "sDefaultContent": 0, "bVisible": false },
             { "mDataProp": "status.failure.exception", "sTitle": "exception fail", 
                            "sDefaultContent": 0, "bVisible": false },
-            { "sTitle": "failure", "sDefaultContent": 0, 
-                        "fnRender": function ( o, val ) {
-                                      return (_get(o.aData.status.failure.create, 0) + 
-                                              _get(o.aData.status.failure.submit, 0) + 
-                                              _get(o.aData.status.failure.exception, 0));
-                                    }
+            */
+            { "sTitle": "failure",
+              "fnRender": function ( o, val ) {
+                            return (_get(o.aData, "status.failure.create", 0) + 
+                                    _get(o.aData, "status.failure.submit", 0) + 
+                                    _get(o.aData, "status.failure.exception", 0));
+                          }
             },
             
-            { "mDataProp": "status.canceled", "sTitle": "canceled", "sDefaultContent": 0 },
-            { "mDataProp": "status.success", "sTitle": "success", "sDefaultContent": 0 },
-            { "mDataProp": "status.cooloff", "sTitle": "cool off", "sDefaultContent": 0 },
-            { "sTitle": "pre-cool offed", "sDefaultContent": 0, 
-                        "fnRender": function ( o, val ) {
-                                      return (_get(o.aData.status.submitted.retry, 0) + 
-                                              _get(o.aData.status.queued.retry, 0));
-                                    }
+            { "sTitle": "canceled", 
+              "fnRender": function ( o, val ) {
+                            return _get(o.aData, "status.canceled", 0);
+                          }},
+            { "sTitle": "success",
+              "fnRender": function ( o, val ) {
+                            return _get(o.aData, "status.success", 0);
+                          }},
+            { "sTitle": "cool off", 
+              "fnRender": function ( o, val ) {
+                            return _get(o.aData, "status.cooloff", 0);
+                          }
             },
+            { "sTitle": "pre-cooloff",
+              "fnRender": function ( o, val ) {
+                            return (_get(o.aData, "status.submitted.retry", 0) + 
+                                    _get(o.aData, "status.queued.retry", 0));
+                          }
+            },
+            /*
             { "mDataProp": "total_jobs", "sTitle": "total estimate jobs", 
                            "sDefaultContent": 0, "bVisible": false},
-            { "sTitle": "queue injection", "sDefaultContent": 0, 
-                        "fnRender": function ( o, val ) {
-                                        return _get(o.aData.status.inWMBS, 0) / _get(o.aData['total_jobs'], 1);
-                                    }}
+            */
+            { "sTitle": "queue injection",  
+              "fnRender": function ( o, val ) {
+                              return (_get(o.aData, "tatus.inWMBS",  0) / 
+                                      _get(o.aData, 'total_jobs', 1));
+                          }}
             //TODO add more data
         ]
     }

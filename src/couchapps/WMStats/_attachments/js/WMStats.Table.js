@@ -5,7 +5,6 @@ WMStats.Table = function(config) {
                           "sDom": 'C<"clear">lfrtip',
                           };
     
-    
     function _updateConfig(config) {
         for (var prop in config) {
             _tableConfig[prop] = config[prop];
@@ -13,7 +12,7 @@ WMStats.Table = function(config) {
         
     }
     
-    function _addFooter(selector) {
+    function _footer() {
         var footer = '<tfoot><tr>';
       
         for (var i in _tableConfig.aoColumns) {
@@ -22,12 +21,13 @@ WMStats.Table = function(config) {
             }
         }
         footer += '</tr></tfoot>';
-        $(selector).append(footer)
+        return footer;
     }
     
     function _create(selector) {
         oTable = $(selector).dataTable(_tableConfig)
-        _addFooter(selector);
+        // footer is needed to use columnFilter
+        oTable.append(_footer());
         return oTable.columnFilter();
     }
     

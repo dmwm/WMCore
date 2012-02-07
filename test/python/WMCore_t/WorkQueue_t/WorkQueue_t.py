@@ -763,7 +763,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.queue), 0)
         self.assertEqual(len(self.queue.status(status='Running')), elements)
         ids = [x.id for x in work]
-        canceled = self.queue.cancelWork(WorkflowName = ['testProduction'])
+        canceled = self.queue.cancelWork(WorkflowName = 'testProduction')
         self.assertEqual(canceled, ids)
         self.assertEqual(len(self.queue), 0)
 
@@ -807,6 +807,31 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue.statusInbox()), 0)
         # clear global
         self.globalQueue.deleteWorkflows(self.processingSpec.name())
+        self.assertEqual(len(self.globalQueue.statusInbox()), 0)
+
+
+        ### check cancel of work negotiating in agent works
+        self.globalQueue.queueWork(self.whitelistSpec.specUrl())
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteB' : 1}), 1)
+        self.localQueue.backend.forceQueueSync()
+        self.assertEqual(len(self.localQueue.statusInbox(status='Negotiating')), 1)
+
+        # now cancel
+        service.cancelWorkflow(self.whitelistSpec.name())
+        self.globalQueue.performQueueCleanupActions()
+        self.localQueue.backend.forceQueueSync() # pull in cancelation
+        self.assertEqual(len(self.globalQueue.status(status='Canceled')), 1)
+        self.assertEqual(len(self.localQueue.statusInbox(status='CancelRequested')), 1)
+        self.localQueue.performQueueCleanupActions(skipWMBS = True)
+        self.assertEqual(len(self.localQueue.statusInbox(status='Canceled')), 1)
+        syncQueues(self.localQueue)
+        self.globalQueue.performQueueCleanupActions()
+        syncQueues(self.localQueue)
+        self.assertEqual(len(self.localQueue.statusInbox(WorkflowName = self.whitelistSpec.name())), 0)
+        self.assertEqual(len(self.globalQueue.status(WorkflowName = self.whitelistSpec.name())), 0)
+        self.assertEqual(len(self.globalQueue.statusInbox(status='Canceled')), 1)
+        # clear global
+        self.globalQueue.deleteWorkflows(self.whitelistSpec.name())
         self.assertEqual(len(self.globalQueue.statusInbox()), 0)
 
 

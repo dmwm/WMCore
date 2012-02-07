@@ -405,10 +405,11 @@ class WorkQueue(WorkQueueBase):
                 args['RequestName'] = WorkflowName
             elements = self.backend.getElements(elementIDs = elementIDs, **args)
 
-        requestNames = set([x['RequestName'] for x in elements])
+        # take wf from args in case no elements exist for workflow (i.e. work was negotiating)
+        requestNames = set([x['RequestName'] for x in elements]) | set([wf for wf in [WorkflowName] if wf])
         if not requestNames:
             return []
-        self.logger.info("""Canceling work for workflows: %s""" % (requestNames))
+        self.logger.info("""Canceling work for workflow(s): %s""" % (requestNames))
         inbox_elements = []
         for wf in requestNames:
             inbox_elements.extend(self.backend.getInboxElements(WorkflowName = wf, returnIdOnly = True))
@@ -660,7 +661,7 @@ class WorkQueue(WorkQueueBase):
 
                     # check for cancellation requests (affects entire workflow)
                     if result['Status'] == 'CancelRequested':
-                        canceled = self.cancelWork(elements = elements)
+                        canceled = self.cancelWork(WorkflowName = wf)
                         if canceled: # global wont cancel if work in child queue
                             wf_to_cancel.append(wf)
                             break

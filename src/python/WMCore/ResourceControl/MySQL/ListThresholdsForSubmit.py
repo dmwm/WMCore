@@ -79,7 +79,10 @@ class ListThresholdsForSubmit(DBFormatter):
             threshold["se_name"]           = result["se_name"]
             threshold["priority"]          = result["priority"]
             threshold['cms_name']          = result["cms_name"]
-            threshold['drain']             = result["drain"]
+            if result['drain'] == 'T':
+                threshold['drain'] = True
+            else:
+                threshold['drain'] = False
 
             totalRunning[siteName] += result["task_running_jobs"]
             formattedResults[siteName].append(threshold)

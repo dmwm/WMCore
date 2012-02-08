@@ -11,7 +11,7 @@ from WMCore.ResourceControl.MySQL.ListThresholdsForCreate \
 class ListThresholdsForCreate(MySQLListThresholdsForCreate):
 
     assignedSQL = """SELECT wmbs_location.site_name, wmbs_location.job_slots, wmbs_location.cms_name,
-                            COUNT(wmbs_job.id) AS total FROM wmbs_job
+                            COUNT(wmbs_job.id) AS total, wmbs_location.drain FROM wmbs_job
                        INNER JOIN wmbs_job_state ON
                          wmbs_job.state = wmbs_job_state.id
                        INNER JOIN wmbs_location ON
@@ -21,4 +21,4 @@ class ListThresholdsForCreate(MySQLListThresholdsForCreate):
                            wmbs_job_state.name != 'exhausted' AND
                            wmbs_job_state.name != 'cleanout' AND
                            wmbs_job_state.name != 'killed'
-                     GROUP BY wmbs_location.site_name, wmbs_location.job_slots, wmbs_location.cms_name"""
+                     GROUP BY wmbs_location.site_name, wmbs_location.job_slots, wmbs_location.cms_name, wmbs_location.drain"""

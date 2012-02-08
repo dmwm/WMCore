@@ -64,9 +64,13 @@ class ListThresholdsForCreate(DBFormatter):
                 result["total"] = 0
                 
             if not results.has_key(result["site_name"]):
+                if result['drain'] == 'T':
+                    drainValue = True
+                else:
+                    drainValue = False
                 results[result["site_name"]] = {"total_slots": 0, "running_jobs": 0,
                                                 "cms_name": result["cms_name"],
-                                                "drain" : result["drain"]}
+                                                "drain" : drainValue}
 
             results[result["site_name"]]["running_jobs"] += result["total"]
             results[result["site_name"]]["total_slots"] = result["job_slots"]
@@ -75,10 +79,14 @@ class ListThresholdsForCreate(DBFormatter):
         jobBin = {}
         for result in unassignedResults:
             if not results.has_key(result["site_name"]):
+                if result['drain'] == 'T':
+                    drainValue = True
+                else:
+                    drainValue = False
                 results[result["site_name"]] = {"total_slots": result["job_slots"],
                                                 "running_jobs": 0,
                                                 "cms_name": result["cms_name"],
-                                                "drain" : result["drain"]}
+                                                "drain" : drainValue}
             if not jobBin.has_key(result["job"]):
                 jobBin[result["job"]] = []
 

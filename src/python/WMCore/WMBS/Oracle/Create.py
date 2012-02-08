@@ -154,7 +154,8 @@ class Create(CreateWMBSBase):
                se_name     VARCHAR(255),
                ce_name     VARCHAR(255),
                job_slots   INTEGER,
-               plugin      VARCHAR(255)
+               plugin      VARCHAR(255),
+               drain       VARCHAR(1)   DEFAULT 'F'
                ) %s""" % tablespaceTable
 
         self.indexes["01_pk_wmbs_location"] = \

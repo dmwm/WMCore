@@ -24,5 +24,11 @@ class GetSiteInfo(DBFormatter):
 
     def execute(self, siteName = None, conn = None, transaction = False):
 
-        results = self.dbi.processData(self.sql, {'site': siteName}, conn = conn, transaction = transaction)
-        return self.formatDict(results)
+        results   = self.dbi.processData(self.sql, {'site': siteName}, conn = conn, transaction = transaction)
+        formatted = self.formatDict(results)
+        for entry in formatted:
+            if entry['drain'] == 'T':
+                entry['drain'] = True
+            else:
+                entry['drain'] = False
+        return formatted

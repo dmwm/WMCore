@@ -1,4 +1,7 @@
-0.8.25 to 0.8.26pre2:
+0.8.26pre2 to 0.8.26pre3:
+  - Allow non-wmcore job splitters to run in the JobCreator.  Fixes #3217.
+
+0.8.26pre1 to 0.8.26pre2:
   - Change the default owner and group from an empty string to "unknown". Fixes #3203.
   - Fix the drain flag in Oracle.  Fixes #3203.
   - fix the ReqMgrPriority unit test.  Fixes #3123.

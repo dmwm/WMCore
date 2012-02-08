@@ -4,7 +4,7 @@ WMStats.CampaignView = (function() {
     
     var _data = null;
     var _containerDiv = null;
-    var _url = WMStats.Globals.couchDBViewPath + 'campaign-status';
+    var _viewName = 'campaign-status';
     var _options = {'reduce': true, 'group_level':1, 'descending':true};
     var _tableID = "campaignTable";
  
@@ -96,7 +96,7 @@ WMStats.CampaignView = (function() {
    function createTable(selector) {
         _containerDiv = selector;
         $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display" id="'+ _tableID + '"></table>' );
-        $.get(_url, _options, createCampaignTable, 'json')
+        WMStats.Couch.view(_viewName, _options, createCampaignTable)
     }
     
     return {'getData': getData, 'createTable': createTable};

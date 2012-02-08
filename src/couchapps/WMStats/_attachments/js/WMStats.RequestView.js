@@ -4,13 +4,10 @@ WMStats.RequestView = (function() {
     
     var _data = null;
     var _containerDiv = null;
-    var _url = WMStats.Globals.couchDBViewPath + 'campaign-request';
+    var _initialView = 'campaign-request';
     var _options = {'include_docs': true};
     var _tableID = "requestTable";
     
-   
-    
-        
     function _getOrDefault(baseObj, objList, val) {
         
         if (baseObj[objList[0]]) { 
@@ -108,7 +105,7 @@ WMStats.RequestView = (function() {
             */
             { "sTitle": "queue injection",  
               "fnRender": function ( o, val ) {
-                              return (_get(o.aData, "tatus.inWMBS",  0) / 
+                              return (_get(o.aData, "status.inWMBS",  0) / 
                                       _get(o.aData, 'total_jobs', 1));
                           }}
             //TODO add more data
@@ -122,17 +119,15 @@ WMStats.RequestView = (function() {
     var keysFromIDs = function(data) {
         var keys = [];
         for (var i in data.rows){
-            keys.push(data.rows[i].id);
+            keys.push(data.rows[i].value.id);
         }
-        //TODO not sure why JSON.stringify cause the problem
         return keys;      
     }   
                 
     var getRequestDetailsAndCreateTable = function (agentIDs, reqmgrData) {
         var options = {'keys': keysFromIDs(agentIDs), 'reduce': false, 'include_docs': true};
-        //TODO need to change to post call
-        var url = WMStats.Globals.couchDBViewPath + 'latest-request'
-        $.get(url, options,
+        
+        WMStats.Couch.allDocs(options,
               function(agentData) {
                   //combine reqmgrData(reqmgr_request) and agent_request(agentData) data 
                   var requestCache = WMStats.Requests()
@@ -146,8 +141,7 @@ WMStats.RequestView = (function() {
                   tableConfig.aaData = _data;
                   var selector = _containerDiv + " table#" + _tableID;
                   return WMStats.Table(tableConfig).create(selector)
-              },
-              'json')
+              })
     }
     
     var getLatestRequestIDsAndCreateTable = function (reqmgrData) {
@@ -158,23 +152,20 @@ WMStats.RequestView = (function() {
     
         var options = {"keys": keysFromIDs(reqmgrData), "reduce": true, 
                        "group": true, "descending": true};
-        //TODO need to change to post call
-        var url = WMStats.Globals.couchDBViewPath + 'latest-request';
-        $.get(url, options,
+        WMStats.Couch.view('latest-request', options,
               function(agentIDs) {
                   getRequestDetailsAndCreateTable(agentIDs, reqmgrData)
-              },
-              'json')
+              })
     }
     
     
-    function createTable(selector, url, options) {
-        if (!url) {url = _url;}
+    function createTable(selector, viewName, options) {
+        if (!viewName) {viewName = _initialView;}
         if (!options) {options = _options;}
         _containerDiv = selector;
         
         $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display" id="'+ _tableID + '"></table>' );
-        $.get(url, options, getLatestRequestIDsAndCreateTable, 'json')
+        WMStats.Couch.view(viewName, options, getLatestRequestIDsAndCreateTable)
     }
     
     return {'getData': getData, 'createTable': createTable};

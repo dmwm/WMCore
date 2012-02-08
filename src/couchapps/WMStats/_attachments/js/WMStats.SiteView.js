@@ -4,7 +4,7 @@ WMStats.SiteView = (function() {
     
     var _data = null;
     var _containerDiv = null;
-    var _url = WMStats.Globals.couchDBViewPath + 'latest-agent-time';
+    var _viewName = 'latest-agent-time';
     var _options = {"reduce": true, "group_level": 2, "descending": true};
     
     var tableConfig = {
@@ -60,7 +60,7 @@ WMStats.SiteView = (function() {
         for (var i in data.rows){
             keys.push([data.rows[i].value, data.rows[i].key[0], data.rows[i].key[1]]);
         }
-        return JSON.stringify(keys);      
+        return keys;      
     }   
             
 
@@ -72,9 +72,8 @@ WMStats.SiteView = (function() {
     
         var options = {"keys": constructSiteKey(siteKeys), "reduce": true, 
                        "group": true};
-        //TODO need to change to post call
-        var url = WMStats.Globals.couchDBViewPath + 'agent-site';
-        $.get(url, options,
+
+        WMStats.Couch.view('agent-site', options,
               function(siteData) {
                   return createSiteTable(_containerDiv + " table#siteTable", siteData.rows);
               },
@@ -84,7 +83,7 @@ WMStats.SiteView = (function() {
     function createTable(selector){
         _containerDiv = selector;
         $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display" id="siteTable"></table>' );
-        $.get(_url, _options, getLatestSiteKeyAndCreateTable, 'json')
+        WMStats.Couch.view(_viewName, _options, getLatestSiteKeyAndCreateTable)
     }
     
     return {'getData': getData, 'createTable': createTable};    

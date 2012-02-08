@@ -1,3 +1,29 @@
+0.8.25 to 0.8.26pre2:
+  - Change the default owner and group from an empty string to "unknown". Fixes #3203.
+  - Fix the drain flag in Oracle.  Fixes #3203.
+  - fix the ReqMgrPriority unit test.  Fixes #3123.
+  - Add server side caching to the Global Monitor.  Fixes #2955.
+  - Add link from workqueue main page to element details
+  - Increase the maximum size of a dataset.  Fixes #2571.
+  - ReqMgr unit test improvements.  Fixes #2810.
+  - Add a Resubmission StdSpec so that ACDC requests can be validated.  Fixes #3210.
+  - Make workqueue throw an error on couch save failure.
+  - Don't force state in reqmgr to completed if it is in a valid final state
+  - Fix bug where element status continually updated after cancel
+  - Don't repeat workqueue request finished message while waiting for parent queue
+  - Log workqueue id when queueing an element
+  - Add cancel option to wmagent-workqueue
+  - Fix wmagent-workqueue to create dbi if db in config file
+  - Fix bug in cancelation of negotiating workqueue elements
+  - Improve WorQueue cancelation logging
+  - Improve WorkQueue - Reqmgr interaction
+  - Remove obsolete WorkQueue elements that failed to be deleted earlier
+  - Log WorkQueue couchdb delete errors
+  - Fix bug in WorkQueue cancelation
+  - Rename the RequestSize fields in the MC schema to make things less confusing for requestors.  Fixes #2731.
+  - Replace ProdConfigCacheID with ProcConfigCacheID.  Fixes #3206.
+  - Verify configurations across multiple steps.  Fixes #2707.
+
 0.8.25 to 0.8.26pre1:
   - Update the ScramAch list.  Fixes #3167.
   - Cleanup the MultiCore code.  Fixes #1804.

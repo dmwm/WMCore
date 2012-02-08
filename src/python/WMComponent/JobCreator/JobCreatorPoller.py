@@ -335,7 +335,6 @@ class JobCreatorPoller(BaseWorkerThread):
                                      logger = logging,
                                      dbinterface = myThread.dbi)
 
-        self.splitterFactory  = SplitterFactory()
         self.setBulkCache     = self.daoFactory(classname = "Jobs.SetCache")
         self.countJobs        = self.daoFactory(classname = "Jobs.GetNumberOfJobsPerWorkflow")
         self.subscriptionList = self.daoFactory(classname = "Subscriptions.ListIncomplete")
@@ -503,13 +502,15 @@ class JobCreatorPoller(BaseWorkerThread):
 
             logging.debug("Going to call wmbsJobFactory for sub %i with limit %i" % (subscriptionID, self.limit))
 
-            # My hope is that the job factory is smart enough only to split un-split jobs
-            wmbsJobFactory = self.splitterFactory(package = "WMCore.WMBS",
-                                                  subscription = wmbsSubscription,
-                                                  generators=seederList,
-                                                  limit = self.limit)
             splitParams = retrieveJobSplitParams(wmWorkload, workflow.task)
             logging.debug("Split Params: %s" % splitParams)
+
+            # My hope is that the job factory is smart enough only to split un-split jobs
+            splitterFactory = SplitterFactory(splitParams.get('algo_package', "WMCore.JobSplitting"))
+            wmbsJobFactory = splitterFactory(package = "WMCore.WMBS",
+                                             subscription = wmbsSubscription,
+                                             generators=seederList,
+                                             limit = self.limit)
 
             # Turn on the jobFactory
             wmbsJobFactory.open()

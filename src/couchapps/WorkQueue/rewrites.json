@@ -63,5 +63,10 @@
   {
     "from": "js/*",
     "to": "js/*"
+  },
+
+  {
+    "from": "element/:id",
+    "to": "../../:id"
   }
 ]

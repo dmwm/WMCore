@@ -15,6 +15,11 @@ WQ.ElementInfoByWorkflow.elementTable = function(args) {
                                  "' target='_blank'>" + host + "</a>";
         };
 
+    var elementUrl = function(elCell, oRecord, oColumn, sData) {
+        elCell.innerHTML = "<a href='" + 'element/' + sData +
+        "' target='_blank'>" + sData + "</a>";
+    }
+
     var percentFormat = function(elCell, oRecord, oColumn, sData) {
             if (!sData) {
                 percent = 0;
@@ -59,7 +64,8 @@ WQ.ElementInfoByWorkflow.elementTable = function(args) {
     };
 
     var dataSchema = {
-        fields: [{key: "RequestName", label: "Request Name"},
+        fields: [{key: "Id", label: "Id", formatter : elementUrl},
+                 {key: "RequestName", label: "Request Name"},
                  {key: "TaskName", label: "Task Name"},
                  {key: "Inputs", formatter: inputFormatter},
                  {key: "Status"},

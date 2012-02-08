@@ -45,11 +45,11 @@ class StdBase(object):
         """
         self.workloadName = None
         self.priority = 0
-        self.owner = None
-        self.owner_dn = None
-        self.group = None
-        self.owner_vogroup = 'DEFAULT'
-        self.owner_vorole = 'DEFAULT'
+        self.owner = "unknown"
+        self.owner_dn = "unknown"
+        self.group = "unknown"
+        self.owner_vogroup = "DEFAULT"
+        self.owner_vorole = "DEFAULT"
         self.acquisitionEra = None
         self.scramArch = None
         self.inputPrimaryDataset = None
@@ -80,9 +80,9 @@ class StdBase(object):
         """
         self.workloadName = workloadName
         self.priority = arguments.get("Priority", 0)
-        self.owner = arguments.get("Requestor", None)
-        self.owner_dn = arguments.get("RequestorDN", None)
-        self.group = arguments.get("Group", None)
+        self.owner = arguments.get("Requestor", "unknown")
+        self.owner_dn = arguments.get("RequestorDN", "unknown")
+        self.group = arguments.get("Group", "unknown")
         if arguments.has_key('VoGroup'):
             self.owner_vogroup = arguments['VoGroup']
         if arguments.has_key('VoRole'):
@@ -184,8 +184,8 @@ class StdBase(object):
                             scenarioFunc = None, scenarioArgs = None, couchURL = None,
                             couchDBName = None, configDoc = None, splitAlgo = "LumiBased",
                             splitArgs = {'lumis_per_job': 8}, seeding = None, totalEvents = None,
-                            userDN = None, asyncDest = None, publishName =None, owner_vogroup = '',
-                            owner_vorole = '', stepType = "CMSSW",
+                            userDN = None, asyncDest = None, publishName =None, owner_vogroup = "DEFAULT",
+                            owner_vorole = "DEFAULT", stepType = "CMSSW",
                             userSandbox = None, userFiles = [], primarySubType = None):
 
         """

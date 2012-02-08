@@ -33,16 +33,19 @@ class Workflow(WMBSBase, WMWorkflow):
 
     workflow + fileset = subscription
     """
-    def __init__(self, spec = None, owner = None, dn = None, group = None,
-                 owner_vogroup = 'DEFAULT', owner_vorole = 'DEFAULT',
-                 name = None, task = None, wfType = None, id = -1):
+    def __init__(self, spec = None, owner = "unknown", dn = "unknown",
+                 group = "unknown", owner_vogroup = "DEFAULT",
+                 owner_vorole = "DEFAULT", name = None, task = None,
+                 wfType = None, id = -1):
         WMBSBase.__init__(self)
         WMWorkflow.__init__(self, spec = spec, owner = owner, dn = dn,
                             group = group, owner_vogroup = owner_vogroup,
                             owner_vorole = owner_vorole, name = name,
                             task = task, wfType = wfType)
 
-        if not self.dn: self.dn = owner
+        if self.dn == "unknown":
+            self.dn = owner
+            
         self.id = id
         return
 

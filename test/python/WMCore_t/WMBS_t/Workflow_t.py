@@ -385,7 +385,6 @@ class WorkflowTest(unittest.TestCase):
         self.assertNotEqual(listFromOwner2["owner"], listFromOwner3["owner"])
         return
 
-
     def testCountWorkflow(self):
         """
         _testCountWorkflow_

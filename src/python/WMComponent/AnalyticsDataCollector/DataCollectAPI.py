@@ -95,16 +95,6 @@ class WMAgentDBData():
 
     def getJobSlotInfo(self):
         return self.jobSlotAction.execute()
-
-def getCouchACDCHtmlBase(acdcCouchURL):
-    """
-    TODO: currently it is hard code to the front page of ACDC
-    When there is more information is available, it can be added
-    through 
-    """
-    
-
-    return '%s/_design/ACDC/collections.html' % sanitizeURL(acdcCouchURL)['url']
     
 def combineAnalyticsData(a, b, combineFunc = None):
     """
@@ -132,6 +122,33 @@ def combineAnalyticsData(a, b, combineFunc = None):
                 result[key] = combineAnalyticsData(value, result[key])
     return result 
 
+def convertToRequestCouchDoc(combinedRequests, agentInfo, uploadTime):
+    requestDocs = []
+    for request, status in combinedRequests.items():
+        doc = {}
+        doc.update(agentInfo)
+        doc['type'] = "agent_request"
+        doc['workflow'] = request
+        # this will set doc['status'], and doc['sites']
+        tempData = _convertToStatusSiteFormat(status)
+        doc['status'] = tempData['status']
+        doc['sites'] = tempData['sites']
+        doc['timestamp'] = uploadTime
+        requestDocs.append(doc)
+    return requestDocs
+
+def convertToAgentCouchDoc(agentInfo, acdcConfig, uploadTime):
+    
+    #sets the _id using agent url, need to be unique
+    aInfo = {}
+    aInfo.update(agentInfo)
+    aInfo['_id'] = agentInfo["agent_url"]
+    acdcURL = '%s/%s' % (acdcConfig.couchurl, acdcConfig.database)
+    aInfo['acdc'] = _getCouchACDCHtmlBase(acdcURL)
+    aInfo['timestamp'] = uploadTime
+    aInfo['type'] = "agent_info"
+    return aInfo
+           
 def _setMultiLevelStatus(statusData, status, value):
     """
     handle the sub status structure 
@@ -150,7 +167,7 @@ def _setMultiLevelStatus(statusData, status, value):
         statusData[statusStruct[0]][statusStruct[1]] += value
     return
 
-def convertToStatusSiteFormat(requestData):
+def _convertToStatusSiteFormat(requestData):
     """
     convert data structure for couch db.
     "status": { "inWMBS": 100, "success": 1000, "inQueue": 100, "cooloff": 1000,
@@ -177,3 +194,13 @@ def convertToStatusSiteFormat(requestData):
                     data['sites'].setdefault(site, {})
                     _setMultiLevelStatus(data['sites'][site], status, job)
     return data
+
+def _getCouchACDCHtmlBase(acdcCouchURL):
+    """
+    TODO: currently it is hard code to the front page of ACDC
+    When there is more information is available, it can be added
+    through 
+    """
+    
+
+    return '%s/_design/ACDC/collections.html' % sanitizeURL(acdcCouchURL)['url']

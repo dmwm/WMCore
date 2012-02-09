@@ -12,16 +12,17 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import LocalCouchDBData, \
-     WMAgentDBData, combineAnalyticsData, convertToStatusSiteFormat, getCouchACDCHtmlBase
-
+     WMAgentDBData, combineAnalyticsData, convertToRequestCouchDoc, \
+     convertToRequestCouchDoc
 
 class AnalyticsPoller(BaseWorkerThread):
     """
-    Cleans expired items, updates element status.
+    Gether the summary data for request (workflow) from local queue, 
+    local job couchdb, wmbs/boss air and populate summary db for monitoring 
     """
     def __init__(self, config):
         """
-        Initialize config
+        initialize properties specified from config
         """
         BaseWorkerThread.__init__(self)
         # set the workqueue service for REST call
@@ -35,8 +36,7 @@ class AnalyticsPoller(BaseWorkerThread):
 
     def setup(self, parameters):
         """
-        Called at startup - introduce random delay
-             to avoid workers all starting at once
+        set db connection(couchdb, wmbs) to prepare to gether information
         """
         
         #
@@ -59,54 +59,44 @@ class AnalyticsPoller(BaseWorkerThread):
         """
         try:
             #jobs per request info
+            logging.info("Getting Job Couch Data ...")
             jobInfoFromCouch = self.localCouchDB.getJobSummaryByWorkflowAndSite()
-            logging.debug("CouchData %s" % jobInfoFromCouch)
+            
+            logging.info("Getting Batch Job Data ...")
             batchJobInfo = self.wmagentDB.getBatchJobInfo()
-            logging.debug("BatchJobData %s" % batchJobInfo)
+            
             # get the data from local workqueue:
             # request name, input dataset, inWMBS, inQueue
+            logging.info("Getting Local Queue Data ...")
             localQInfo = self.localQueue.getAnalyticsData()
             
-            logging.debug("WorkQueueData %s" % localQInfo)
-            
             # combine all the data from 3 sources
+            logging.info("""Combining data from 
+                                   Job Couch(%s), 
+                                   Batch Job(%s), 
+                                   Local Queue(%s)  ...""" 
+                    % (len(jobInfoFromCouch), len(batchJobInfo), len(localQInfo)))
+            
             tempCombinedData = combineAnalyticsData(jobInfoFromCouch, batchJobInfo)
-            logging.debug("temp combine data %s" % tempCombinedData)
             combinedRequests = combineAnalyticsData(tempCombinedData, localQInfo)
-            logging.debug("combined requests  %s" % combinedRequests)
-            requestDocs = []
+            
+            #set the uploadTime - should be the same for all docs
             uploadTime = int(time.time())
-            for request, status in combinedRequests.items():
-                doc = {}
-                doc.update(self.agentInfo)
-                doc['type'] = "agent_request"
-                doc['workflow'] = request
-                # this will set doc['status'], and doc['sites']
-                tempData = convertToStatusSiteFormat(status)
-                doc['status'] = tempData['status']
-                doc['sites'] = tempData['sites']
-                doc['timestamp'] = uploadTime
-                requestDocs.append(doc)
-
+            logging.info("%s requests Data combined,\n uploading request data..." % len(combinedRequests))
+            requestDocs = convertToRequestCouchDoc(combinedRequests, 
+                                                   self.agentInfo, uploadTime)
+            
             self.localSummaryCouchDB.uploadData(requestDocs)
-            logging.info("Data upload success\n %s request" % len(requestDocs))
+            logging.info("Request data upload success\n %s request \n uploading agent data" % len(requestDocs))
             
-            # update directly to the central WMStats couchDB
-            #self.centralWMStats.updateRequestsInfo(requestDocs)
-            #logging.info("Remote Data update success\n %s request" % len(requestDocs))
-            
-            #agent info (include job Slots for the sites)
+            #TODO: agent info (need to include job Slots for the sites)
             agentInfo = self.wmagentDB.getHeartBeatWarning()
             agentInfo.update(self.agentInfo)
-            #TODO: sets the _id as agent url, need to be unique
-            agentInfo['_id'] = agentInfo["agent_url"]
-            acdcURL = '%s/%s' % (self.config.ACDC.couchurl, self.config.ACDC.database)
-            agentInfo['acdc'] = getCouchACDCHtmlBase(acdcURL)
             
-            agentInfo['timestamp'] = uploadTime
-            agentInfo['type'] = "agent_info"
-            self.localSummaryCouchDB.updateAgentInfo(agentInfo)
-
+            agentDocs = convertToAgentCouchDoc(agentInfo, self.config.ACDC, uploadTime)
+            self.localSummaryCouchDB.updateAgentInfo(agentDocs)
+            logging.info("Agent data upload success\n %s request" % len(agentDocs))
+        
         except Exception, ex:
             logging.error(str(ex))
             raise

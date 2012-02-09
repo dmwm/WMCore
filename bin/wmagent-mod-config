@@ -204,6 +204,13 @@ def modifyConfiguration(config, **args):
         config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
         config.AnalyticsDataCollector.centralWMStatsURL = args["wmstats_url"]
 
+    # custom CleanUpManager 
+    if hasattr(config, "CleanUpManager"):
+        config.CleanUpManager.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.couchDBName)
+        config.CleanUpManager.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
+        config.CleanUpManager.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+        config.CleanUpManager.centralWMStatsURL = args["wmstats_url"]
+        
     return config
 
 def main(argv=None):

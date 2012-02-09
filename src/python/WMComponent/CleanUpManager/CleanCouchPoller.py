@@ -11,9 +11,14 @@ import time
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 
-class CleanUpPoller(BaseWorkerThread):
+class CleanCouchPoller(BaseWorkerThread):
     """
-    Cleans expired items, updates element status.
+    Cleans up local couch db according the the given condition.
+    1. TODO: Cleans local couch db when request is completed and reported to cental db.
+       This will clean up local couchdb, local summary db, local queue
+       
+    2. Cleans old couchdoc which is created older than the time threshold
+    
     """
     def __init__(self, config):
         """
@@ -25,11 +30,10 @@ class CleanUpPoller(BaseWorkerThread):
         
     def setup(self, parameters):
         """
-        Called at startup - introduce random delay
-             to avoid workers all starting at once
+        Called at startup
         """
         # set the connection for local couchDB call
-        self.wmstatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL )
+        self.wmstatsCouchDB = WMStatsWriter(self.config.CleanUpManager.localWMStatsURL )
 
     def algorithm(self, parameters):
         """
@@ -37,7 +41,7 @@ class CleanUpPoller(BaseWorkerThread):
         """
         try:
             logging.info("Cleaning up the request docs")
-            numOfDoc = self.wmstatsCouchDB.deleteOldDocs(self.config.AnalyticsDataCollector.DataKeepDays)
+            numOfDoc = self.wmstatsCouchDB.deleteOldDocs(self.config.CleanUpManager.DataKeepDays)
             logging.info("%s docs deleted" % numOfDoc)
         except Exception, ex:
             logging.error(str(ex))

@@ -476,5 +476,14 @@ config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (config.JobStateMachine.
 config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
 config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 config.AnalyticsDataCollector.centralWMStatsURL = "Central WMStats URL"
-config.AnalyticsDataCollector.DataKeepDays = 1
-config.AnalyticsDataCollector.cleanUpInterval = 60 * 60 * 24 # change to 1 day
+
+config.component_("CleanUpManager")
+config.CleanUpManager.namespace = "WMComponent.CleanUpManager.CleanUpManager"
+config.CleanUpManager.componentDir  = config.General.workDir + "/CleanUpManager"
+config.CleanUpManager.logLevel = globalLogLevel
+config.CleanUpManager.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl,  config.JobStateMachine.couchDBName)
+config.CleanUpManager.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
+config.CleanUpManager.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+config.CleanUpManager.centralWMStatsURL = "Central WMStats URL"
+config.CleanUpManager.DataKeepDays = 1
+config.CleanUpManager.cleanCouchInterval = 60 * 60 * 24 # change to 1 day

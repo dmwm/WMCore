@@ -132,6 +132,10 @@ def allScramArchsAndVersions():
         arch = archDOM.attributes.item(0).value
         releaseList = []
         for node in archDOM.childNodes:
+            # Somehow we can get extraneous ('\n') text nodes in
+            # certain versions of Linux
+            if str(node.__class__) == "xml.dom.minidom.Text":
+                continue
             if not node.hasAttributes():
                 # Then it's an empty random node created by the XML
                 continue

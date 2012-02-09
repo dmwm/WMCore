@@ -1,3 +1,9 @@
+0.8.26pre3 to 0.8.26pre4:
+  - Fix ReqMgr handling of JSON encoded parameters.  Fixes #3225.
+  - Strip off extraneous newline characters from tag collector output.  Fixes #3221.
+  - Records LargestEventRss-h-PSS values from reports and remaps to PeakValuePss.  Exposes PeakValuePss in performance reports in the job dump couchapp.  Fixes #3002.
+  - Tighten WorkQueue replication filter
+
 0.8.26pre2 to 0.8.26pre3:
   - Allow non-wmcore job splitters to run in the JobCreator.  Fixes #3217.
 

@@ -65,7 +65,12 @@ class WebRequestSchema(WebAPI):
     @cherrypy.tools.secmodv2()
     def index(self):
         """ Main web page for creating requests """
-        self.versions = SoftwareAdmin.listSoftware().keys()
+        versionLists = SoftwareAdmin.listSoftware().values()
+        self.versions = []
+        for l in versionLists:
+            for v in l:
+                if not v in self.versions:
+                    self.versions.append(v)
         self.versions.sort()
         # see if this was configured with a hardcoded user.  If not, take from the request header 
         requestor = self.requestor
@@ -96,7 +101,13 @@ class WebRequestSchema(WebAPI):
 
         decodedSchema = {}
         for key in schema.keys():
-            decodedSchema[key] = JsonWrapper.loads(schema[key])
+            try:
+                decodedSchema[key] = JsonWrapper.loads(schema[key])
+            except:
+                # We don't know what kind of exception we'll get, so ignore them all
+                # If it does except, it probably wasn't in JSON to begin with.
+                # Anything else should be caught by the parsers and the validation
+                decodedSchema[key] = schema[key]
 
         try:
             request = Utilities.makeRequest(decodedSchema, self.couchUrl, self.workloadDBName)

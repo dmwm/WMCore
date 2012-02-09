@@ -21,8 +21,9 @@ getSectParam = lambda x, sect, param: getattr( getattr(x, sect), param)
 # Definition of what fields will be combined using what method of combination
 #
 AggrFunctions = {
-    "memory.PeakValueRss" : max ,
-    "memory.PeakValueVsize" : max ,
+    "memory.PeakValueRss" : sum ,
+    "memory.PeakValueVsize" : sum ,
+    "memory.PeakValuePss": sum,
     "storage.writeTotalMB" : sum,
     "storage.readPercentageOps": average,
     "storage.readAveragekB": average,

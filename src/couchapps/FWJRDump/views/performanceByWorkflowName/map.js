@@ -35,6 +35,9 @@ function(doc) {
       if (mem.PeakValueVsize) {
 	perfInfo['PeakValueVsize'] = mem['PeakValueVsize'];
       }
+      if (mem.PeakValuePss) {
+          perfInfo['PeakValuePss'] = mem['PeakValuePss'];
+      }
 
       //Do start/stop times
       perfInfo['startTime'] = doc['fwjr']['steps'][stepName]['start'];

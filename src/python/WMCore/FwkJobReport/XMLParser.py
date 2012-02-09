@@ -347,13 +347,17 @@ def perfMemHandler():
     Pack memory performance reports into the report
     """
     # Make a list of performance info we actually want
-    goodStatistics = ['PeakValueRss', 'PeakValueVsize']
+    goodStatistics = ['PeakValueRss', 'PeakValueVsize', 'LargestRssEvent-h-PSS']
 
     while True:
         report, node = (yield)
         for prop in node.children:
             if prop.attrs['Name'] in goodStatistics:
-                setattr(report, prop.attrs['Name'], prop.attrs['Value'])
+                if prop.attrs['Name'] == 'LargestRssEvent-h-PSS':
+                    # need to remove - chars from name as it buggers up downtstream code
+                    setattr(report, 'PeakValuePss', prop.attrs['Value'])
+                else:
+                    setattr(report, prop.attrs['Name'], prop.attrs['Value'])
 
 def checkRegEx(regexp, candidate):
         if re.compile(regexp).match(candidate) == None:

@@ -10,9 +10,10 @@ automatically requeued by LSF with a different job id
 
 import os
 import re
+import errno
 import time
+import datetime
 import socket
-import os.path
 import logging
 import subprocess
 
@@ -128,6 +129,13 @@ class LsfPlugin(BasePlugin):
                     handle.writelines(submitScript)
                     handle.close()
 
+                    # make reasonable job name
+                    jobName = "WMAgentJob"
+                    regExpParser = re.compile('.*/JobCreator/JobCache/([^/]+)/([^/]+)/.*')
+                    match = regExpParser.match(job['cache_dir'])
+                    if ( match != None ):
+                        jobName = "%s-%s-%s" % (match.group(1), match.group(2), job['id'])
+
                     # //
                     # // Submit LSF job
                     # //
@@ -138,12 +146,25 @@ class LsfPlugin(BasePlugin):
                         command += ' -R "%s"' % self.resourceReq
 
                     command += ' -g %s' % self.jobGroup
-                    command += ' -J %s' % "WMAgentJob"
+                    command += ' -J %s' % jobName
 
-                    if self.batchOutput == None:
+                    lsfLogDir = self.batchOutput
+                    if lsfLogDir != None:
+                        now = datetime.datetime.today()
+                        lsfLogDir += '/%s' % now.strftime("%Y%m%d%H")
+                        try:
+                            os.mkdir(lsfLogDir)
+                            logging.debug("Created directory %s" % lsfLogDir)
+                        except OSError, err:
+                            # suppress LSF log unless it's about an already exisiting directory
+                            if err.errno != errno.EEXIST or not os.path.isdir(lsfLogDir):
+                                logging.debug("Can't create directory %s, turning off LSF log" % lsfLogDir)
+                                lsfLogDir = None
+
+                    if lsfLogDir == None:
                         command += ' -oo /dev/null'
                     else:
-                        command += ' -oo %s' % self.batchOutput
+                        command += ' -oo %s' % lsfLogDir
 
                     command += ' < %s' % submitScriptFile
 
@@ -162,6 +183,7 @@ class LsfPlugin(BasePlugin):
                         if match != None:
                             job['gridid'] = match.group(1)
                             successfulJobs.append(job)
+                            logging.debug("LSF Job ID : %s" % job['gridid'] )
                             continue
 
                     lsfErrorReport = Report()

@@ -259,13 +259,6 @@ class ReDigiWorkloadFactory(StdBase):
 
         # Required parameters that must be specified by the Requestor.
         self.inputDataset = arguments["InputDataset"]
-        self.frameworkVersion = arguments["CMSSWVersion"]
-        self.globalTag = arguments["GlobalTag"]
-
-        # The CouchURL and name of the ConfigCache database must be passed in
-        # by the ReqMgr or whatever is creating this workflow.
-        self.couchURL = arguments["CouchURL"]
-        self.couchDBName = arguments["CouchDBName"]        
 
         # Pull down the configs and the names of the output modules so that
         # we can chain things together properly.

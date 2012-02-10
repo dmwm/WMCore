@@ -239,7 +239,7 @@ class WMBSHelper(WMConnectionBase):
 
         Generate an output fileset name for the given task and output module.
         """
-        if task.taskType() == "Merge":
+        if task.taskType().find("Merge") != -1:
             outputFilesetName = "%s/merged-%s" % (task.getPathName(),
                                                   outputModuleName)
         else:
@@ -297,7 +297,7 @@ class WMBSHelper(WMConnectionBase):
                 
                 for childTask in task.childTaskIterator():
                     if childTask.data.input.outputModule == outputModuleName:
-                        if childTask.taskType() == "Merge":
+                        if childTask.taskType().find("Merge") != -1:
                             mergedOutputFileset = Fileset(self.outputFilesetName(childTask, "Merged"))
                             mergedOutputFileset.create()
                             mergedOutputFileset.markOpen(True)

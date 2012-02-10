@@ -94,16 +94,8 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
 
         # Required parameters that must be specified by the Requestor.
         self.inputDataset = arguments["InputDataset"]
-        self.frameworkVersion = arguments["CMSSWVersion"]
-        self.globalTag = arguments["GlobalTag"]
-
-        # The CouchURL and name of the ConfigCache database must be passed in
-        # by the ReqMgr or whatever is creating this workflow.
-        self.couchURL = arguments["CouchURL"]
-        self.couchDBName = arguments["CouchDBName"]
 
         # Optional arguments that default to something reasonable.
-        self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
         self.blockBlacklist = arguments.get("BlockBlacklist", [])
         self.blockWhitelist = arguments.get("BlockWhitelist", [])
         self.runBlacklist = arguments.get("RunBlacklist", [])

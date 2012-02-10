@@ -51,9 +51,7 @@ class StdBase(object):
         self.owner_vogroup = "DEFAULT"
         self.owner_vorole = "DEFAULT"
         self.acquisitionEra = None
-        self.frameworkVersion = None
         self.scramArch = None
-        self.globalTag = None
         self.inputPrimaryDataset = None
         self.inputProcessedDataset = None
         self.inputDataTier = None
@@ -69,10 +67,6 @@ class StdBase(object):
         self.validStatus = None
         self.includeParents = False
         self.dbsUrl = None
-
-        self.couchURL = None
-        self.couchDBName = None
-        
         self.multicore = False
         self.multicoreNCores = 1
         return
@@ -94,8 +88,6 @@ class StdBase(object):
         if arguments.has_key('VoRole'):
             self.owner_vorole = arguments['VoRole']
         self.acquisitionEra = arguments.get("AcquisitionEra", None)
-        self.frameworkVersion = arguments.get("CMSSWVersion", None)
-        self.globalTag = arguments.get("GlobalTag", None)
         self.scramArch = arguments.get("ScramArch", None)
         self.processingVersion = arguments.get("ProcessingVersion", None)
         self.siteBlacklist = arguments.get("SiteBlacklist", [])
@@ -107,10 +99,7 @@ class StdBase(object):
         self.maxWaitTime = arguments.get("MaxWaitTime", 24 * 3600)
         self.maxMergeEvents = arguments.get("MaxMergeEvents", 100000)
         self.validStatus = arguments.get("ValidStatus", "PRODUCTION")
-
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
-        self.couchURL = arguments.get("CouchURL", None)
-        self.couchDBName = arguments.get("CouchDBName", None)
 
         if arguments.get("IncludeParents", False) == "True":
             self.includeParents = True
@@ -144,20 +133,11 @@ class StdBase(object):
             configCache = ConfigCache(couchURL, couchDBName)
             configCache.loadByID(configDoc)
             outputModules = configCache.getOutputModuleInfo()
-        elif scenarioName == "repack":
-            for primaryDataset in scenarioArgs.get("selectEvents", {}).keys():
-                if primaryDataset == "globalTag":
-                    continue
-                outputModuleName = "%soutput" % primaryDataset
-                outputModules[outputModuleName] = {"dataTier": "RAW",
-                                                   "filterName": None,
-                                                   "primaryDataset": primaryDataset}
         else:
             for dataTier in scenarioArgs.get("writeTiers",[]):
                 outputModuleName = "%soutput" % (dataTier)
                 outputModules[outputModuleName] = {"dataTier": dataTier,
-                                                   "filterName": None,
-                                                   "primary": self.inputPrimaryDataset}
+                                                   "filterName": None}
 
         return outputModules
 
@@ -242,6 +222,7 @@ class StdBase(object):
         procTask.applyTemplates()
         procTask.setTaskPriority(self.priority)
 
+
         procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
         procTask.setSiteWhitelist(self.siteWhitelist)
         procTask.setSiteBlacklist(self.siteBlacklist)
@@ -265,8 +246,10 @@ class StdBase(object):
                                          block_whitelist = self.blockWhitelist,
                                          run_blacklist = self.runBlacklist,
                                          run_whitelist = self.runWhitelist)
-            elif inputStep != None:
-                procTask.setInputReference(inputStep, outputModule = inputModule)                
+            elif inputStep == None:
+                procTask.setInputStep(inputStep)
+            else:
+                procTask.setInputReference(inputStep, outputModule = inputModule)
 
         if primarySubType:
             procTask.setPrimarySubType(subType = primarySubType)
@@ -295,18 +278,11 @@ class StdBase(object):
                                                    configDoc, couchURL, couchDBName)
         outputModules = {}
         for outputModuleName in configOutput.keys():
-            if configOutput[outputModuleName].has_key("primaryDataset"):
-                outputModule = self.addOutputModule(procTask,
-                                                    outputModuleName,
-                                                    configOutput[outputModuleName]["primaryDataset"],
-                                                    configOutput[outputModuleName]["dataTier"],
-                                                    configOutput[outputModuleName]["filterName"])
-            else:
-                outputModule = self.addOutputModule(procTask,
-                                                    outputModuleName,
-                                                    self.inputPrimaryDataset,
-                                                    configOutput[outputModuleName]["dataTier"],
-                                                    configOutput[outputModuleName]["filterName"])                
+            outputModule = self.addOutputModule(procTask,
+                                                outputModuleName,
+                                                self.inputPrimaryDataset,
+                                                configOutput[outputModuleName]["dataTier"],
+                                                configOutput[outputModuleName]["filterName"])
             outputModules[outputModuleName] = outputModule
 
         return outputModules
@@ -390,8 +366,7 @@ class StdBase(object):
         return logCollectTask
 
     def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModuleName,
-                     parentStepName = "cmsRun1", mergeSplitting = None,
-                     errorDataset = False, taskType = "Merge"):
+                     parentStepName = "cmsRun1"):
         """
         _addMergeTask_
 
@@ -410,13 +385,11 @@ class StdBase(object):
         mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)
         self.addLogCollectTask(mergeTask, taskName = "%s%sMergeLogCollect" % (parentTask.name(), parentOutputModuleName))
 
-        mergeTask.setTaskType(taskType)
+        mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
         mergeTask.setTaskPriority(self.priority + 5)
 
-        if mergeSplitting != None:
-            splitAlgo = mergeSplitting
-        elif parentTaskSplitting == "EventBased" and parentTask.taskType() != "Production":
+        if parentTaskSplitting == "EventBased" and parentTask.taskType() != "Production":
             splitAlgo = "WMBSMergeBySize"
         else:
             splitAlgo = "ParentlessMergeBySize"
@@ -458,20 +431,12 @@ class StdBase(object):
                                         getattr(parentOutputModule, "primaryDataset"),
                                         getattr(parentOutputModule, "dataTier"),
                                         self.processingVersion)
-
         mergeTaskCmsswHelper.addOutputModule("Merged",
-                                             primaryDataset = getattr(parentOutputModule, "primaryDataset"), 
+                                             primaryDataset = getattr(parentOutputModule, "primaryDataset"),
                                              processedDataset = getattr(parentOutputModule, "processedDataset"),
                                              dataTier = getattr(parentOutputModule, "dataTier"),
                                              filterName = getattr(parentOutputModule, "filterName"),
                                              lfnBase = mergedLFN)
-        if errorDataset:
-            mergeTaskCmsswHelper.addOutputModule("MergedError",
-                                                 primaryDataset = getattr(parentOutputModule, "primaryDataset") + "Error",
-                                                 processedDataset = getattr(parentOutputModule, "processedDataset"),
-                                                 dataTier = getattr(parentOutputModule, "dataTier"),
-                                                 filterName = getattr(parentOutputModule, "filterName"),
-                                                 lfnBase = mergedLFN)            
 
         mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
         self.addCleanupTask(parentTask, parentOutputModuleName)
@@ -543,6 +508,7 @@ class StdBase(object):
 
         Named this way so that nobody else will try to use this name.
         """
+
         self.validateSchema(schema = arguments)
         workload = self.__call__(workloadName = workloadName, arguments = arguments)
         self.validateWorkload(workload)

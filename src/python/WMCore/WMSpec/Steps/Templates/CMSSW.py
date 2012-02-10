@@ -117,14 +117,8 @@ class CMSSWStepHelper(CoreHelper):
         self.data.application.configuration.scenario = scenarioName
         self.data.application.configuration.function = functionName
         self.data.application.configuration.section_('arguments')
-        for k, v in args.items():
-            if type(v) == type({}):
-                self.data.application.configuration.arguments.section_(k)
-                ksection = getattr(self.data.application.configuration.arguments, k)
-                [ setattr(ksection, ksub, vsub) for ksub, vsub in v.items() ]
-            else:
-                setattr(self.data.application.configuration.arguments, k, v)
-                
+        [ setattr(self.data.application.configuration.arguments, k, v)
+          for k, v in args.items() ]
         return
 
 

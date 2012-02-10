@@ -96,6 +96,8 @@ class MonteCarloWorkloadFactory(StdBase):
 
         # Required parameters that must be specified by the Requestor.
         self.inputPrimaryDataset = arguments["PrimaryDataset"]
+        self.frameworkVersion    = arguments["CMSSWVersion"]
+        self.globalTag           = arguments["GlobalTag"]
         self.seeding             = arguments.get("Seeding", "AutomaticSeeding")
         self.prodConfigCacheID   = arguments["ProcConfigCacheID"]
 
@@ -107,6 +109,15 @@ class MonteCarloWorkloadFactory(StdBase):
 
         # pileup configuration for the first generation task
         self.pileupConfig = arguments.get("PileupConfig", None)
+
+        # The CouchURL and name of the ConfigCache database must be passed in
+        # by the ReqMgr or whatever is creating this workflow.
+        self.couchURL = arguments["CouchURL"]
+        self.couchDBName = arguments["CouchDBName"]        
+
+        # Optional arguments that default to something reasonable.
+        self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
+        self.emulation = arguments.get("Emulation", False)
 
         # These are mostly place holders because the job splitting algo and
         # parameters will be updated after the workflow has been created.

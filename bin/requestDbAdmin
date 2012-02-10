@@ -15,7 +15,8 @@ import WMCore.RequestManager.RequestDB.Interface.Admin.GroupManagement as GroupA
 import WMCore.RequestManager.RequestDB.Interface.Admin.RequestManagement as RequestAdmin
 import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
 import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement as ProdManagement
-from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import allSoftwareVersions
+from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import allSoftwareVersions, updateScramArchsAndCMSSWVersions
+
 from WMCore.WMInit import WMInit
 from WMCore.Configuration import loadConfigurationFile
 import logging
@@ -87,13 +88,7 @@ def doAdd():
         GroupAdmin.addUserToGroup(user, group) 
     if version != None:
         if version == "all":
-            for v in allSoftwareVersions():
-                # this can be used in concurrent cron jobs, so ignore integrity errors
-                # from the later ones
-                try:
-                    SoftwareAdmin.addSoftware(v)
-                except IntegrityError:
-                    pass
+            updateScramArchsAndCMSSWVersions()
         else:
             SoftwareAdmin.addSoftware(version)
     if team != None:

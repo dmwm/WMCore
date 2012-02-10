@@ -24,7 +24,7 @@ def couchAppRoot():
     wmBase = getWMBASE()
     develPath = "%s/src/couchapps" % wmBase
     if not os.path.exists(develPath):
-        basePath = "%s/couchapps" % os.environ['WMCORE_ROOT']
+        basePath = "%s/data/couchapps" % os.environ['WMCORE_ROOT']
     else:
         basePath = develPath
     return basePath
@@ -314,7 +314,7 @@ if __name__ == "__main__":
 
     if hasattr(wmagentConfig, "AsyncTransfer"):
         basePath = "%s/couchapp" % os.environ['ASYNC_ROOT']
-        baseWMCorePath = "%s/lib/couchapps" % os.environ['ASYNC_ROOT']
+        baseWMCorePath = "%s/data/couchapps" % os.environ['ASYNC_ROOT']
         # The format of wmagentConfig.CoreDatabase.connectUrl is http://$COUCH_USER:$COUCH_PASS@$COUCH_HOST_NAME:$COUCH_PORT/asynctransfer_agent
         agent_database = wmagentConfig.CoreDatabase.connectUrl.split('/')[len(wmagentConfig.CoreDatabase.connectUrl.split('/')) - 1 ]
         agent_instance = wmagentConfig.CoreDatabase.connectUrl.split(agent_database)[0]

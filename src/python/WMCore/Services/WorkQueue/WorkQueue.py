@@ -101,6 +101,6 @@ class WorkQueue(object):
 
     def cancelWorkflow(self, wf):
         """Cancel a workflow"""
-        data = self.db.loadView('WorkQueue', 'elementsByWorkflow', {'key' : wf})
+        data = self.db.loadView('WorkQueue', 'elementsByWorkflow', {'key' : wf, 'reduce' : False})
         elements = [x['id'] for x in data.get('rows', [])]
         return self.updateElements(*elements, Status = 'CancelRequested')

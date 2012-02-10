@@ -8,7 +8,6 @@ Handles site whitelist/blacklist info as well
 """
 import types
 import copy
-import re
 import logging
 import cherrypy
 import threading
@@ -58,7 +57,8 @@ class Assign(WebAPI):
              "MonteCarlo" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
              "RelValMC" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
              "Resubmission" : ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data"],
-             "MonteCarloFromGEN" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"]}
+             "MonteCarloFromGEN" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
+             "TaskChain": ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data"]}
 
         self.yuiroot = config.yuiroot
         cherrypy.engine.subscribe('start_thread', self.initThread)
@@ -67,7 +67,7 @@ class Assign(WebAPI):
                                                              'T2*': 'T2_*',
                                                              'T3*': 'T3_*'})
         self.wildcardSites = {}
-        self.addSiteWildcards()
+        Utilities.addSiteWildcards(self.wildcardKeys, self.sites, self.wildcardSites)
 
     def initThread(self, thread_index):
         """ The ReqMgr expects the DBI to be contained in the Thread  """
@@ -216,7 +216,6 @@ class Assign(WebAPI):
         for field in ["AcquisitionEra", "ProcessingVersion"]:
             self.validate(kwargs[field], field)
         # Set white list and black list
-        # Set white list and black list
         whiteList = kwargs.get("SiteWhitelist", [])
         blackList = kwargs.get("SiteBlacklist", [])
         helper.setSiteWildcardsLists(siteWhitelist = whiteList, siteBlacklist = blackList,
@@ -234,32 +233,3 @@ class Assign(WebAPI):
         helper.setDashboardActivity(kwargs.get("dashboard", ""))
         Utilities.saveWorkload(helper, request['RequestWorkflow'], self.wmstatWriteURL)
 
-    def addSiteWildcards(self):
-        """
-        _addSiteWildcards_
-
-        Add site wildcards to the self.sites list
-        These wildcards should allow you to whitelist/blacklist a
-        large number of sites at once.
-
-        Expects a dictionary for wildcardKeys where the key:values are
-        key = Label to be displayed as
-        value = Regular expression
-        """
-
-        for k in self.wildcardKeys.keys():
-            reValue = self.wildcardKeys.get(k)
-            found   = False
-            for s in self.sites:
-                if re.search(reValue, s):
-                    found = True
-                    if not k in self.wildcardSites.keys():
-                        self.wildcardSites[k] = []
-                    self.wildcardSites[k].append(s)
-            if found:
-                self.sites.append(k)
-
-        return
-
-                
-         

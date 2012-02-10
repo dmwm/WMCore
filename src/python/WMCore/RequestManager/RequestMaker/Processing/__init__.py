@@ -15,3 +15,4 @@ import StoreResultsRequest
 import AnalysisRequest
 import ResubmissionRequest
 import ReDigiRequest
+import TaskChainRequest

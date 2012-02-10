@@ -47,7 +47,20 @@ class RequestManager(dict):
             return [[specName, specUrl],]
         else:
             return []
-    
+
+    def getRequest(self, requestName):
+        """Get request info"""
+        if requestName not in self.names:
+            raise RuntimeError, "unknown request %s" % requestName
+
+        request = {'RequestName' : requestName,
+                   'RequestStatus' : self.status[requestName]}
+        if self.progress.has_key(requestName):
+            request.update(self.progress[requestName])
+        request.setdefault('percent_complete', 0)
+        request.setdefault('percent_success', 0)
+        return request
+
     def putWorkQueue(self, reqName, prodAgentUrl=None):
         self.status[reqName] = 'acquired'
 

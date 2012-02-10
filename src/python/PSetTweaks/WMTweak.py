@@ -422,6 +422,14 @@ def makeJobTweak(job):
     if len(primaryFiles) > 0:
         result.addParameter("process.source.fileNames", primaryFiles)
         result.addParameter("process.source.secondaryFileNames", secondaryFiles)    
+    else:
+        # We need to set the first event parameter for MC jobs but do not want
+        # to set it for regular processing job.  MC jobs don't have input files
+        # so we'll set it here.
+        baggage = job.getBaggage()        
+        if hasattr(baggage, "eventsPerJob"):
+            result.addParameter("process.source.firstEvent",
+                                (int(baggage.eventsPerJob) * (int(job["counter"]) - 1)) + 1)
 
     mask =  job['mask']
 
@@ -433,7 +441,7 @@ def makeJobTweak(job):
     # We don't want to set skip events for MonteCarlo jobs which have
     # no input files.
     firstEvent = mask['FirstEvent']
-    if firstEvent != None and firstEvent > 0 and len(primaryFiles) > 0:
+    if firstEvent != None and firstEvent >= 0 and len(primaryFiles) > 0:
         result.addParameter("process.source.skipEvents", firstEvent)
 
     firstRun = mask['FirstRun']
@@ -456,10 +464,6 @@ def makeJobTweak(job):
     # install any settings from the per job baggage
     baggage = job.getBaggage()
 
-    if hasattr(baggage, "eventsPerJob"):
-        result.addParameter("process.source.firstEvent",
-                            (int(baggage.eventsPerJob) * (int(job["counter"]) - 1)) + 1)
-        
     procSection = getattr(baggage, "process", None)
     if procSection == None:
         return result

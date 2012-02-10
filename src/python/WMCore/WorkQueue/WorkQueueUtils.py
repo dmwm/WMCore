@@ -54,6 +54,22 @@ def sitesFromStorageEelements(ses):
             result.add(site)
     return list(result)
 
+__cmsSiteNames = []
+def cmsSiteNames():
+    """Get all cms sites"""
+    global __cmsSiteNames
+    if __cmsSiteNames:
+        return __cmsSiteNames
+    global __sitedb
+    if not __sitedb:
+        from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
+        __sitedb = SiteDB()
+    try:
+        __cmsSiteNames = __sitedb.getAllCMSNames()
+    except:
+        pass
+    return __cmsSiteNames
+
 def queueFromConfig(config):
     """Create a queue from the config object"""
     config = queueConfigFromConfigObject(config)

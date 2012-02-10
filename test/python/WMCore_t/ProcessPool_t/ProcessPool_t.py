@@ -18,7 +18,7 @@ class ProcessPoolTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
         self.testInit.setSchema(customModules = ["WMCore.Agent.Database"],
                                 useDefault = False)
         return
@@ -36,7 +36,6 @@ class ProcessPoolTest(unittest.TestCase):
         _testProcessPool_
 
         """
-        raise nose.SkipTest
         config = self.testInit.getConfiguration()
         config.Agent.useHeartbeat = False
         self.testInit.generateWorkDir(config)
@@ -45,20 +44,15 @@ class ProcessPoolTest(unittest.TestCase):
                                   totalSlaves = 1,
                                   componentDir = config.General.workDir,
                                   config = config,
-                                  namespace = "WMCore_t",
-                                  slaveInit = {})
+                                  namespace = "WMCore_t")
                                  
         processPool.enqueue(["One", "Two", "Three"])
         result =  processPool.dequeue(3)
 
-        assert len(result) == 3, \
-               "Error: Expected three items back."
-        assert "One" in result, \
-               "Error: Missing data from dequeue()"
-        assert "Two" in result, \
-               "Error: Missing data from dequeue()"
-        assert "Three" in result, \
-               "Error: Missing data from dequeue()"        
+        self.assertEqual(len(result), 3, "Error: Expected three items back.")
+        self.assertTrue( "One" in result)
+        self.assertTrue( "Two" in result)
+        self.assertTrue( "Three" in result)
                
         return
 
@@ -67,7 +61,6 @@ class ProcessPoolTest(unittest.TestCase):
         _testProcessPoolStress_
 
         """
-        raise nose.SkipTest
         config = self.testInit.getConfiguration()
         config.Agent.useHeartbeat = False        
         self.testInit.generateWorkDir(config)
@@ -76,9 +69,10 @@ class ProcessPoolTest(unittest.TestCase):
                                   totalSlaves = 1,
                                   componentDir = config.General.workDir,
                                   namespace = "WMCore_t",
-                                  config = config,
-                                  slaveInit = {})
+                                  config = config)
 
+        result = None
+        input  = None
         for i in range(1000):
             input = []
             while i > 0:
@@ -88,8 +82,11 @@ class ProcessPoolTest(unittest.TestCase):
             processPool.enqueue(input)
             result =  processPool.dequeue(len(input))
         
-            assert len(result) == len(input), \
-                   "Error: Wrong number of results returned."
+            self.assertEqual(len(result), len(input),
+                             "Error: Wrong number of results returned.")
+
+        for k in result:
+            self.assertTrue(k in input)
 
         return
 
@@ -100,7 +97,7 @@ class ProcessPoolTest(unittest.TestCase):
 
         Run a test with multiple workers
         """
-        raise nose.SkipTest
+        #raise nose.SkipTest
         config = self.testInit.getConfiguration()
         config.Agent.useHeartbeat = False        
         self.testInit.generateWorkDir(config)
@@ -109,8 +106,7 @@ class ProcessPoolTest(unittest.TestCase):
                                   totalSlaves = 3,
                                   componentDir = config.General.workDir,
                                   namespace = "WMCore_t",
-                                  config = config,
-                                  slaveInit = {})
+                                  config = config)
 
         for i in range(100):
             input = []
@@ -121,8 +117,11 @@ class ProcessPoolTest(unittest.TestCase):
             processPool.enqueue(input)
             result =  processPool.dequeue(len(input))
         
-            assert len(result) == len(input), \
-                   "Error: Wrong number of results returned."
+            self.assertEqual(len(result), len(input),
+                             "Error: Wrong number of results returned.")
+
+
+
         
 
 if __name__ == "__main__":

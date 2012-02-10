@@ -42,7 +42,7 @@ Example initial generation task:
     "ConfigCacheID" : generatorDoc,                   Generator Config id
     "SplittingAlgorithm"  : "EventBased",             Splitting Algorithm
     "SplittingArguments" : {"events_per_job" : 250},  Size of jobs in terms of splitting algorithm
-    "RequestSizeEvents" : 10000,                      Total number of events to generate
+    "RequestNumEvents" : 10000,                      Total number of events to generate
     "Seeding" : "Automatic",                          Random seeding method
     "PrimaryDataset" : "RelValTTBar",                 Primary Dataset to be created
 },
@@ -133,8 +133,8 @@ def validateGenFirstTask(task):
     
     Validate first task contains all stuff required for generation
     """
-    if not task.has_key("RequestSizeEvents"):
-        msg = "RequestSizeEvents is required for first Generator task"
+    if not task.has_key("RequestNumEvents"):
+        msg = "RequestNumEvents is required for first Generator task"
         raise WMSpecFactoryException(msg)
 
     if not task.has_key("PrimaryDataset"):
@@ -264,7 +264,7 @@ class TaskChainWorkloadFactory(StdBase):
                                             couchURL = self.couchURL, couchDBName = self.couchDBName,
                                             configDoc = configCacheID, splitAlgo = splitAlgorithm,
                                             splitArgs = splitArguments, stepType = cmsswStepType, 
-                                            seeding = taskConf['Seeding'], totalEvents = taskConf['RequestSizeEvents']
+                                            seeding = taskConf['Seeding'], totalEvents = taskConf['RequestNumEvents']
                                             )
         self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
         procMergeTasks = {}

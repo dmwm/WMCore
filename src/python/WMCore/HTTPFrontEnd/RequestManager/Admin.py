@@ -165,7 +165,12 @@ class Admin(WebAPI):
     @cherrypy.tools.secmodv2()
     def versions(self):
         """ Lists all versions """
-        versions = SoftwareAdmin.listSoftware().keys()
+        archList = SoftwareAdmin.listSoftware()
+        versions = []
+        for versionList in archList.values():
+            for version in versionList:
+                if not version in versions:
+                    versions.append(version)
         versions.sort()
         for version in versions:
             WMCore.Lexicon.cmsswversion(version)
@@ -176,22 +181,13 @@ class Admin(WebAPI):
     def handleAddVersion(self, version):
         """ Registers a version """
         WMCore.Lexicon.cmsswversion(version)
-        SoftwareAdmin.addSoftware(version)
+        SoftwareAdmin.updateSoftware(version)
         return "Added version %s" % version
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2(role=security_roles)
     def handleAllVersions(self):
         """ Registers all versions in the TC """
-        currentVersions = SoftwareAdmin.listSoftware().keys()
-        allVersions = Utilities.allSoftwareVersions()
-        result = ""
-        for version in allVersions:
-            if not version in currentVersions:
-                WMCore.Lexicon.cmsswversion(version)
-                SoftwareAdmin.addSoftware(version)
-                result += "Added version %s<br/>" % version
-        if result == "":
-            result = "Version list is up to date"
-        return result
+        Utilities.updateScramArchsAndCMSSWVersions()
+        return "Updated versions to current standard"
 

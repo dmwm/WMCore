@@ -1126,6 +1126,27 @@ class WMWorkloadTest(unittest.TestCase):
             self.assertTrue("Invalid wildcard site T3* in site blacklist!" in str(ex))
             pass
         self.assertTrue(raises)
+        return
+
+    def test_getCMSSWVersion(self):
+        """
+        _getCMSSWVersion_
+
+        Test our ability to pull out the CMSSW Version from a workload
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        procTask = testWorkload.newTask("ProcessingTask")
+        procTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        procTask.setTaskType("Processing")
+        procTaskCmssw = procTask.makeStep("cmsRun1")
+        procTaskCmssw.setStepType("CMSSW")
+        procTask.applyTemplates()
+
+        testWorkload.setCMSSWParams(cmsswVersion = "CMSSW_1_1_1", globalTag =
+                                    "GLOBALTAG", scramArch = "SomeSCRAMArch")
+
+        self.assertEqual(testWorkload.getCMSSWVersions(), ["CMSSW_1_1_1"])
+        return
                          
 
 if __name__ == '__main__':

@@ -503,6 +503,22 @@ class ResourceControlTest(unittest.TestCase):
         
         return
 
+    def testDrain(self):
+        """Drain a site"""
+        myResourceControl = ResourceControl()
+        myResourceControl.insertSite("testSite1", 20, "testSE1", "testCE1")
+        myResourceControl.insertThreshold("testSite1", "Processing", 10, priority = 1)
+        myResourceControl.drainSite("testSite1")
+
+        result = myResourceControl.listThresholdsForCreate()
+        self.assertTrue(result['testSite1']['drain'])
+
+        # re-renable
+        myResourceControl.drainSite("testSite1", drain = False)
+        result = myResourceControl.listThresholdsForCreate()
+        self.assertFalse(result['testSite1']['drain'])
+
+
     def createConfig(self):
         """
         _createConfig_

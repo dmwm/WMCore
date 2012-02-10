@@ -3,7 +3,7 @@
 """
 Rest Model for Global Monitoring.
 """
-
+import re
 from WMCore.WebTools.RESTModel import RESTModel
 
 from WMCore.HTTPFrontEnd.GlobalMonitor.API.RequestMonitor \
@@ -12,6 +12,7 @@ from WMCore.HTTPFrontEnd.GlobalMonitor.API.AgentMonitor \
      import getAgentOverview
 from WMCore.HTTPFrontEnd.GlobalMonitor.API.SiteMonitor \
      import getSiteOverview
+from WMCore.HTTPFrontEnd.GlobalMonitor.DataCache import DataCache
 
 class GlobalMonitorRESTModel(RESTModel):
     """
@@ -31,15 +32,32 @@ class GlobalMonitorRESTModel(RESTModel):
                        args = ['detail'], secured=True)
         self._addMethod("GET", "sitemonitor", self.getSiteMonitor, secured=True)
         self._addMethod("GET", "env", self.getEnvValues, secured=True)
+        self._addMethod("GET", "requests", self.getRequests, args=['name'], secured=True) #expires=16000
+
+    def getRequests(self, name):
+        if DataCache.isRequestDataExpired():
+            DataCache.setRequestData(getRequestOverview(self.serviceURL, self.serviceLevel))
+        prog = re.compile(name, re.IGNORECASE)
+        filtered = []
+        for item in DataCache.getRequestData():
+            if prog.search(item['request_name']) != None:
+                filtered.append(item)
+        return filtered
 
     def getRequestMonitor(self):
-        return getRequestOverview(self.serviceURL, self.serviceLevel)
-
+        if DataCache.isRequestDataExpired():
+            DataCache.setRequestData(getRequestOverview(self.serviceURL, self.serviceLevel))
+        return DataCache.getRequestData()
+        
     def getAgentMonitor(self):
-        return getAgentOverview(self.serviceURL, self.serviceLevel)
-
+        if DataCache.isAgentDataExpired():
+            DataCache.setAgentData(getAgentOverview(self.serviceURL, self.serviceLevel))
+        return DataCache.getAgentData()
+    
     def getSiteMonitor(self):
-        return getSiteOverview(self.serviceURL, self.serviceLevel)
+        if DataCache.isSiteDataExpired():
+            DataCache.setSiteData(getSiteOverview(self.serviceURL, self.serviceLevel))
+        return DataCache.getSiteData()
     
     def getEnvValues(self):
         if self.config.serviceURL.lower() == 'local':

@@ -56,8 +56,10 @@ class EndPolicyInterfaceTestCase(unittest.TestCase):
         parent2 = WQE(Status = 'Negotiating')
         parent2.id = 2
         parents = [self.parent, parent2]
-        # throw error as can only compute status when all elements split
-        self.assertRaises(RuntimeError, self.policy(), [self.available], parents)
+        results = self.policy()([self.available], parents)
+        self.assertEqual(len(results), 2)
+        self.assertEqual(results[0]['Status'], 'Acquired')
+        self.assertEqual(results[1]['Status'], 'Negotiating')
 
 if __name__ == '__main__':
     unittest.main()

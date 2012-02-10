@@ -73,5 +73,25 @@ class WorkQueueBackendTest(unittest.TestCase):
                          ['backend_test_high', 'backend_test', 'backend_test_2', 'backend_test_low'])
 
 
+    def testDuplicateInsertion(self):
+        """Try to insert elements multiple times"""
+        element1 = CouchWorkQueueElement(self.couch_db,
+                                         elementParams = {'RequestName' : 'backend_test',
+                                                          'WMSpec' : self.processingSpec,
+                                                          'Status' : 'Available',
+                                                          'Jobs' : 10,
+                                                          'Inputs' : {self.processingSpec.listInputDatasets()[0] + '#1' : []}})
+        element2 = CouchWorkQueueElement(self.couch_db,
+                                         elementParams = {'RequestName' : 'backend_test',
+                                                          'WMSpec' : self.processingSpec,
+                                                          'Status' : 'Available',
+                                                          'Jobs' : 20,
+                                                          'Inputs' : {self.processingSpec.listInputDatasets()[0] + '#2' : []}})
+        self.backend.insertElements([element1, element2])
+        self.backend.insertElements([element1, element2])
+        # check no duplicates and no conflicts
+        self.assertEqual(len(self.backend.db.allDocs()['rows']), 4) # design doc + workflow + 2 elements
+        self.assertEqual(self.backend.db.loadView('WorkQueue', 'conflicts')['total_rows'], 0)
+
 if __name__ == '__main__':
     unittest.main()

@@ -24,6 +24,7 @@ from WMCore.DataStructs.Run import Run
 from WMCore.FwkJobReport.FileInfo import FileInfo
 from WMCore.WMException           import WMException
 
+
 class FwkJobReportException(WMException):
     """
     _FwkJobReportException_
@@ -291,19 +292,6 @@ class Report:
                 return errorCode
 
         return returnCode
-
-    def stepSuccessful(self, stepName):
-        """
-        _stepSuccessful_
-
-        Determine if the given step was successful.
-        """
-        reportStep = self.retrieveStep(stepName)
-
-        if int(getattr(reportStep, "status", 1)) == 0:
-            return True
-
-        return False
 
     def getStepExitCode(self, stepName):
         """
@@ -621,7 +609,10 @@ class Report:
         _setStep_
 
         """
-        self.data.steps.append(stepName)
+        if not stepName in self.data.steps:
+            self.data.steps.append(stepName)
+        else:
+            logging.info("Step %s is now being overridden by a new step report" % stepName)
         self.data.section_(stepName)
         setattr(self.data, stepName, stepSection)
         return
@@ -1277,6 +1268,24 @@ class Report:
             self.addError(stepName, 60451, "NoAdler32Checksum", msg)
             self.setStepStatus(stepName = stepName, status = 60451)
 
+        return
+
+    def stripInputFiles(self):
+        """
+        _stripInputFiles_
+
+        If we need to compact the FWJR the easiest way is just to
+        trim the number of input files.  
+        """
+
+        for stepName in self.data.steps:
+            step = self.retrieveStep(stepName)
+            inputSources = step.input.listSections_()
+            for inputSource in inputSources:
+                source = getattr(step.input, inputSource)
+                for fileNum in range(source.files.fileCount):
+                    delattr(source.files, "file%d" % fileNum)
+                source.files.fileCount = 0
         return
 
 

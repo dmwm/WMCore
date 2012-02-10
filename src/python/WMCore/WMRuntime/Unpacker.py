@@ -21,6 +21,7 @@ This will then do the following:
 import sys
 import os
 import tarfile
+import zipfile
 import getopt
 import shutil
 import traceback
@@ -77,19 +78,24 @@ def createWorkArea(sandbox):
     jobDir = "%s/job" % currentDir
     if not os.path.exists(jobDir):
         os.makedirs(jobDir)
+    if not os.path.exists(os.path.join( jobDir, 'StartupScript' ) ):
+        os.makedirs(os.path.join( jobDir, 'StartupScript' ) )
 
 
     tfile = tarfile.open(sandbox, "r")
     tfile.extractall(jobDir)
     tfile.close()
-
-    #os.chdir(jobDir)
-    #pipe = Popen(['tar', '-jxvf', '../%s' %(sandbox)], stdout = PIPE, stderr = PIPE, shell=False)
-    #pipe.communicate()
-    #os.chdir(currentDir)
-
-
-    print "export PYTHONPATH=$PYTHONPATH:%s" % jobDir
+    
+    # need to pull out the startup file from the zipball
+    zfile = zipfile.ZipFile( os.path.join( jobDir, 'WMCore.zip' ), 'r' )
+    startupScript = zfile.read( 'WMCore/WMRuntime/Startup.py' )
+    fd = os.open( os.path.join( jobDir, 'Startup.py'), os.O_CREAT | os.O_WRONLY )
+    os.write(fd, startupScript)
+    os.close(fd)
+    
+    zfile.close()
+    
+    print "export PYTHONPATH=$PYTHONPATH:%s/WMCore.zip:%s" % (jobDir, jobDir)
     return jobDir
 
 def installPackage(jobArea, jobPackage, jobIndex):

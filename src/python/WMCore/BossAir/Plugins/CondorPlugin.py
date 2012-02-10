@@ -74,10 +74,11 @@ def submitWorker(input, results, timeout = None):
         try:
             stdout, stderr, returnCode = SubprocessAlgos.runCommand(cmd = command, shell = True, timeout = timeout)
             if returnCode == 0:
-                results.put({'stdout': stdout, 'stderr': stderr, 'idList': idList})
+                results.put({'stdout': stdout, 'stderr': stderr, 'idList': idList, 'exitCode': returnCode})
             else:
                 results.put({'stdout': stdout,
                              'stderr': 'Non-zero exit code: %s\n stderr: %s' % (returnCode, stderr),
+                             'exitCode': returnCode,
                              'idList': idList})
         except Exception, ex:
             msg =  "Critical error in subprocess while submitting to condor"
@@ -198,6 +199,8 @@ class CondorPlugin(BasePlugin):
         self.proxyDir   = getattr(config.BossAir, 'proxyDir', '/tmp/')
         self.serverHash = getattr(config.BossAir, 'delegatedServerHash', None)
         self.glexecPath = getattr(config.BossAir, 'glexecPath', None)
+        self.glexecWrapScript = getattr(config.BossAir, 'glexecWrapScript', None)
+        self.glexecUnwrapScript = getattr(config.BossAir, 'glexecUnwrapScript', None)
         self.jdlProxyFile    = None # Proxy name to put in JDL (owned by submit user)
         self.glexecProxyFile = None # Copy of same file owned by submit user
 
@@ -357,9 +360,17 @@ class CondorPlugin(BasePlugin):
                 # Now submit them
                 logging.info("About to submit %i jobs" %(len(jobsReady)))
                 if self.glexecPath:
-                    command = 'CS=`which condor_submit`; export GLEXEC_CLIENT_CERT=%s; ' % self.glexecProxyFile + \
-                              'export GLEXEC_SOURCE_PROXY=%s; export GLEXEC_TARGET_PROXY=%s; %s $CS %s' % \
-                              (self.glexecProxyFile, self.jdlProxyFile, self.glexecPath, jdlFile)
+                    command = 'CS=`which condor_submit`; '
+                    if self.glexecWrapScript:
+                        command += 'export GLEXEC_ENV=`%s 2>/dev/null`; ' % self.glexecWrapScript
+                    command += 'export GLEXEC_CLIENT_CERT=%s; ' % self.glexecProxyFile
+                    command += 'export GLEXEC_SOURCE_PROXY=%s; ' % self.glexecProxyFile
+                    command += 'export X509_USER_PROXY=%s; ' % self.glexecProxyFile
+                    command += 'export GLEXEC_TARGET_PROXY=%s; ' % self.jdlProxyFile
+                    if self.glexecUnwrapScript:
+                        command += '%s %s -- $CS %s' % (self.glexecPath, self.glexecUnwrapScript, jdlFile)
+                    else:
+                        command += '%s $CS %s' % (self.glexecPath, jdlFile)
                 else:
                     command = "condor_submit %s" % jdlFile
 
@@ -399,13 +410,14 @@ class CondorPlugin(BasePlugin):
                 logging.error(msg)
                 queueError = True
                 continue
-            
-            output = res['stdout']
-            error  = res['stderr']
-            idList = res['idList']
 
-            if not error == '':
-                logging.error("Printing out command stderr")
+            output   = res['stdout']
+            error    = res['stderr']
+            idList   = res['idList']
+            exitCode = res['exitCode']
+
+            if not exitCode == 0:
+                logging.error("Condor returned non-zero.  Printing out command stderr")
                 logging.error(error)
                 errorCheck, errorMsg = parseError(error = error)
             else:
@@ -626,7 +638,6 @@ class CondorPlugin(BasePlugin):
 
         jdl.append("universe = vanilla\n")
         jdl.append("requirements = %s\n" % self.reqStr)
-        #jdl.append("should_transfer_executable = TRUE\n")
 
         jdl.append("should_transfer_files = YES\n")
         jdl.append("when_to_transfer_output = ON_EXIT\n")
@@ -636,16 +647,10 @@ class CondorPlugin(BasePlugin):
         jdl.append("Output = condor.$(Cluster).$(Process).out\n")
         jdl.append("Error = condor.$(Cluster).$(Process).err\n")
         jdl.append("Log = condor.$(Cluster).$(Process).log\n")
-        # Things that are necessary for the glide-in
 
-        jdl.append('+DESIRED_Archs = \"INTEL,X86_64\"\n')
         jdl.append("+WMAgent_AgentName = \"%s\"\n" %(self.agent))
 
-        # Check for multicore
-        if jobList[0].get('taskType', None) in self.multiTasks:
-            jdl.append('+DESIRES_HTPC = True\n')
-        else:
-            jdl.append('+DESIRES_HTPC = False\n')
+        jdl.extend(self.customizeCommon(jobList))
 
         if self.proxy:
             # Then we have to retrieve a proxy for this user
@@ -656,7 +661,7 @@ class CondorPlugin(BasePlugin):
                 logging.error("Asked to build myProxy plugin, but no userDN available!")
                 logging.error("Checked job %i" % job0['id'])
                 return jdl
-            logging.error("Fetching proxy for %s" % userDN)
+            logging.info("Fetching proxy for %s" % userDN)
             # Build the proxy
             # First set the userDN of the Proxy object
             self.proxy.userDN = userDN
@@ -667,26 +672,40 @@ class CondorPlugin(BasePlugin):
             else:
                 # Else, build the serverHash from the proxy sha1
                 filename = self.proxy.logonRenewMyProxy()
-            logging.error("Proxy stored in %s" % filename)
+            logging.info("Proxy stored in %s" % filename)
             if self.glexecPath:
                 self.jdlProxyFile = '%s.user' % filename
                 self.glexecProxyFile = filename
-                command = 'export GLEXEC_CLIENT_CERT=%s; export GLEXEC_SOURCE_PROXY=%s; ' % \
-                          (self.glexecProxyFile, self.glexecProxyFile) + \
+                command = 'export GLEXEC_CLIENT_CERT=%s; export GLEXEC_SOURCE_PROXY=%s; export X509_USER_PROXY=%s; ' % \
+                          (self.glexecProxyFile, self.glexecProxyFile, self.glexecProxyFile) + \
                           'export GLEXEC_TARGET_PROXY=%s; %s /usr/bin/id' % \
                           (self.jdlProxyFile, self.glexecPath)
                 proc = subprocess.Popen(command, stderr = subprocess.PIPE,
                                         stdout = subprocess.PIPE, shell = True)
                 out, err = proc.communicate()
-                logging.error("Created new user proxy with glexec %s" % self.jdlProxyFile)
+                logging.info("Created new user proxy with glexec %s" % self.jdlProxyFile)
             else:
                 self.jdlProxyFile = filename
             jdl.append("x509userproxy = %s\n" % self.jdlProxyFile)
 
         return jdl
 
+    def customizeCommon(self, jobList):
+        """
+        JDL additions just for this implementation. Over-ridden in sub-classes
+        These are the Glide-in specific bits
+        """
+        jdl = []
+        jdl.append('+DESIRED_Archs = \"INTEL,X86_64\"\n')
+        jdl.append('+REQUIRES_LOCAL_DATA = True\n')
 
+        # Check for multicore
+        if jobList and jobList[0].get('taskType', None) in self.multiTasks:
+            jdl.append('+DESIRES_HTPC = True\n')
+        else:
+            jdl.append('+DESIRES_HTPC = False\n')
 
+        return jdl
 
     def makeSubmit(self, jobList):
         """
@@ -718,23 +737,7 @@ class CondorPlugin(BasePlugin):
                         % (os.path.basename(job['sandbox']), job['id'])
             jdl.append(argString)
 
-            jobCE = job['location']
-            if not jobCE:
-                # Then we ended up with a site that doesn't exist?
-                logging.error("Job for non-existant site %s" \
-                              % (job['location']))
-                continue
-
-            if self.useGSite:
-                jdl.append('+GLIDEIN_CMSSite = \"%s\"\n' % (jobCE))
-            if self.submitWMSMode and len(job.get('possibleSites', [])) > 0:
-                strg = list(job.get('possibleSites')).__str__().lstrip('[').rstrip(']')
-                strg = filter(lambda c: c not in "\'", strg)
-                jdl.append('+DESIRED_Sites = \"%s\"\n' % strg)
-            else:
-                jdl.append('+DESIRED_Sites = \"%s\"\n' %(jobCE))
-
-            
+            jdl.extend(self.customizePerJob(job))
 
             # Transfer the output files
             jdl.append("transfer_output_files = Report.%i.pkl\n" % (job["retry_count"]))
@@ -759,9 +762,29 @@ class CondorPlugin(BasePlugin):
 
         return jdl
 
+    def customizePerJob(self, job):
+        """
+        JDL additions just for this implementation. Over-ridden in sub-classes
+        These are the Glide-in specific bits
+        """
+        jdl = []
+        jobCE = job['location']
+        if not jobCE:
+            # Then we ended up with a site that doesn't exist?
+            logging.error("Job for non-existant site %s" \
+                            % (job['location']))
+            return jdl
 
+        if self.useGSite:
+            jdl.append('+GLIDEIN_CMSSite = \"%s\"\n' % (jobCE))
+        if self.submitWMSMode and len(job.get('possibleSites', [])) > 0:
+            strg = list(job.get('possibleSites')).__str__().lstrip('[').rstrip(']')
+            strg = filter(lambda c: c not in "\'", strg)
+            jdl.append('+DESIRED_Sites = \"%s\"\n' % strg)
+        else:
+            jdl.append('+DESIRED_Sites = \"%s\"\n' %(jobCE))
 
-
+        return jdl
 
     def getCEName(self, jobSite):
         """

@@ -77,18 +77,44 @@ class LexiconTest(unittest.TestCase):
         # Check that valid procdataset work
         assert procdataset('CMSSW_4_4_0_pre7_g494p02-START44_V2_special_110808-v1'), 'valid procdataset not validated'
         assert procdataset('Summer11-PU_S4_START42_V11-v1'), 'valid procdataset not validated'
-        assert procdataset('CMSSW_3_0_0_pre3_IDEAL_30X_v1'), 'valid procdataset not validated'
+        assert procdataset('CMSSW_3_0_0_pre3_IDEAL_30X-v1'), 'valid procdataset not validated'
 
     def testBadProcataset(self):
         # Check that invalid Procataset raise an exception
         self.assertRaises(AssertionError, procdataset, 'Drop Table')
         self.assertRaises(AssertionError, procdataset, 'Alter Table')
+        self.assertRaises(AssertionError, procdataset, 'CMSSW_3_0_0_pre3_IDEAL_30X_v1')
 
     def testGoodPrimdataset(self):
         # Check that valid Primdataset work
         assert primdataset('qqH125-2tau'), 'valid primdataset not validated'
         assert primdataset('RelVal124QCD_pt120_170'), 'valid primdataset not validated'
         assert primdataset('RelVal160pre14SingleMuMinusPt10'), 'valid primdataset not validated'
+
+    def testProcVersion(self):
+        """
+        _testProcVersion_
+
+        Test whether we can correctly identify
+        a good processing version
+        """
+        self.assertRaises(AssertionError, procversion, 'version')
+        self.assertRaises(AssertionError, procversion, 'a280')
+        self.assertTrue(procversion('1'))
+        self.assertTrue(procversion('88'))
+        return
+
+    def testAcqName(self):
+        """
+        _testAcqName_
+
+        Test the acquisitionEra name verification
+        """
+        self.assertRaises(AssertionError, acqname, '*Nothing')
+        self.assertRaises(AssertionError, acqname, '1version')
+        self.assertTrue(acqname('a22'))
+        self.assertTrue(acqname('aForReals'))
+        return
 
     def testBadPrimdataset(self):
         # Check that invalid Primdataset raise an exception

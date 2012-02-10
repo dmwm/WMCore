@@ -45,11 +45,11 @@ class StdBase(object):
         """
         self.workloadName = None
         self.priority = 0
-        self.owner = None
-        self.owner_dn = None
-        self.group = None
-        self.owner_vogroup = 'DEFAULT'
-        self.owner_vorole = 'DEFAULT'
+        self.owner = "unknown"
+        self.owner_dn = "unknown"
+        self.group = "unknown"
+        self.owner_vogroup = "DEFAULT"
+        self.owner_vorole = "DEFAULT"
         self.acquisitionEra = None
         self.scramArch = None
         self.inputPrimaryDataset = None
@@ -67,6 +67,8 @@ class StdBase(object):
         self.validStatus = None
         self.includeParents = False
         self.dbsUrl = None
+        self.multicore = False
+        self.multicoreNCores = 1
         return
 
     def __call__(self, workloadName, arguments):
@@ -78,9 +80,9 @@ class StdBase(object):
         """
         self.workloadName = workloadName
         self.priority = arguments.get("Priority", 0)
-        self.owner = arguments.get("Requestor", None)
-        self.owner_dn = arguments.get("RequestorDN", None)
-        self.group = arguments.get("Group", None)
+        self.owner = arguments.get("Requestor", "unknown")
+        self.owner_dn = arguments.get("RequestorDN", "unknown")
+        self.group = arguments.get("Group", "unknown")
         if arguments.has_key('VoGroup'):
             self.owner_vogroup = arguments['VoGroup']
         if arguments.has_key('VoRole'):
@@ -103,6 +105,17 @@ class StdBase(object):
             self.includeParents = True
         else:
             self.includeParents = False
+
+        if arguments.has_key("Multicore"):
+            numCores = arguments.get("Multicore")
+            if numCores == None or numCores == "":
+                self.multicore = False
+            elif numCores == "auto":
+                self.multicore = True
+                self.multicoreNCores = "auto"
+            else:
+                self.multicore = True
+                self.multicoreNCores = numCores
 
         return
 
@@ -171,8 +184,8 @@ class StdBase(object):
                             scenarioFunc = None, scenarioArgs = None, couchURL = None,
                             couchDBName = None, configDoc = None, splitAlgo = "LumiBased",
                             splitArgs = {'lumis_per_job': 8}, seeding = None, totalEvents = None,
-                            userDN = None, asyncDest = None, publishName =None, owner_vogroup = '',
-                            owner_vorole = '', stepType = "CMSSW",
+                            userDN = None, asyncDest = None, publishName =None, owner_vogroup = "DEFAULT",
+                            owner_vorole = "DEFAULT", stepType = "CMSSW",
                             userSandbox = None, userFiles = [], primarySubType = None):
 
         """
@@ -243,6 +256,11 @@ class StdBase(object):
 
         procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
         procTaskStageHelper = procTaskStageOut.getTypeHelper()
+
+        if self.multicore:
+            # if multicore, poke in the number of cores setting
+            procTaskCmsswHelper.setMulticoreCores(self.multicoreNCores)
+
         procTaskCmsswHelper.setUserSandbox(userSandbox)
         procTaskCmsswHelper.setUserFiles(userFiles)
         procTaskCmsswHelper.setGlobalTag(self.globalTag)
@@ -549,7 +567,26 @@ class StdBase(object):
         except ConfigCacheException, ex:
             self.raiseValidationException(msg = "Failure to load ConfigCache while validating workload")
 
+        duplicateCheck = {}
+        outputModuleInfo = configCache.getOutputModuleInfo()
+        for outputModule in outputModuleInfo.values():
+            dataTier   = outputModule.get('dataTier', None)
+            filterName = outputModule.get('filterName', None)
+            if not dataTier:
+                self.raiseValidationException(msg = "No DataTier in output module.")
+            if not filterName:
+                self.raiseValidationException(msg = "No FilterName in output module.")
+
+            # Add dataTier to duplicate dictionary
+            if not dataTier in duplicateCheck.keys():
+                duplicateCheck[dataTier] = []
+            if filterName in duplicateCheck[dataTier]:
+                # Then we've seen this combination before
+                self.raiseValidationException(msg = "Duplicate dataTier/filterName combination.")
+            else:
+                duplicateCheck[dataTier].append(filterName)
+
         if getOutputModules:
-            return configCache.getOutputModuleInfo()
+            return outputModuleInfo
 
         return

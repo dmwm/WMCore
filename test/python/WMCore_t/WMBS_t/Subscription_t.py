@@ -1644,6 +1644,8 @@ class SubscriptionTest(unittest.TestCase):
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
                                 dbinterface = myThread.dbi)
+        injected = daoFactory(classname = "Workflow.MarkInjectedWorkflows")
+        injected.execute(names = ["wf001", "wf002", "wf003"], injected = True)        
         finishedDAO = daoFactory(classname = "Subscriptions.GetFinishedSubscriptions")
         finishedSubs = finishedDAO.execute()
 
@@ -1659,7 +1661,8 @@ class SubscriptionTest(unittest.TestCase):
         """
         _testFinishedSubscriptionsTimeout_
 
-        Verify that the finished subscriptions timeout works correctly.
+        Verify that the finished subscriptions timeout works correctly and that
+        it only returns subscriptions for workflows that are fully injected.
         """
         (testSubscription, testFileset, testWorkflow, 
          testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()        
@@ -1686,6 +1689,13 @@ class SubscriptionTest(unittest.TestCase):
                          "Error: There should be no finished subs.")
 
         time.sleep(10)
+
+        finishedSubs = finishedDAO.execute(timeOut = 0)
+        self.assertEqual(len(finishedSubs), 0,
+                         "Error: There should be no finished subs.")        
+
+        injected = self.daofactory(classname = "Workflow.MarkInjectedWorkflows")
+        injected.execute(names = ["wf001", "wfBOGUS"], injected = True)
 
         finishedSubs = finishedDAO.execute(timeOut = 0)
 

@@ -35,7 +35,8 @@ class ResponseHeader(object):
             row = row.replace('\n', '')
             if  not row:
                 continue
-            if  row.find('HTTP') != -1:
+            if  row.find('HTTP') != -1 and \
+                row.find('100') == -1: #HTTP/1.1 100 found: real header is later
                 res = row.replace('HTTP/1.1', '')
                 res = res.replace('HTTP/1.0', '')
                 res = res.strip()
@@ -59,13 +60,13 @@ class RequestHandler(object):
         if  not config:
             config = {}
         self.nosignal = config.get('nosignal', 1)
-        self.timeout = config.get('timeout', 300)
+        self.timeout = config.get('timeout', 30)
         self.connecttimeout = config.get('connecttimeout', 30)
         self.followlocation = config.get('followlocation', 1)
         self.maxredirs = config.get('maxredirs', 5)
 
     def set_opts(self, curl, url, params, headers,
-                 ckey=None, cert=None, verbose=None, post=None, doseq=True):
+                 ckey=None, cert=None, verbose=None, verb='GET', doseq=True):
         """Set options for given curl object"""
         curl.setopt(pycurl.NOSIGNAL, self.nosignal)
         curl.setopt(pycurl.TIMEOUT, self.timeout)
@@ -73,13 +74,22 @@ class RequestHandler(object):
         curl.setopt(pycurl.FOLLOWLOCATION, self.followlocation)
         curl.setopt(pycurl.MAXREDIRS, self.maxredirs)
 
-        encoded_data = urllib.urlencode(params, doseq=doseq)
-        if  not post:
+        if  verb == 'GET':
+            encoded_data = urllib.urlencode(params, doseq=doseq)
             url = url + '?' + encoded_data
-        if  post:
+        elif verb == 'POST':
             curl.setopt(pycurl.POST, 1)
             if params:
                 curl.setopt(pycurl.POSTFIELDS, params)
+        elif verb == 'DELETE':
+            curl.setopt(pycurl.CUSTOMREQUEST, 'DELETE')
+        elif verb == 'PUT':
+            curl.setopt(pycurl.CUSTOMREQUEST, 'PUT')
+            curl.setopt(pycurl.HTTPHEADER, 'Transfer-Encoding: chunked')
+            curl.setopt(pycurl.POSTFIELDS, params)
+        else:
+            raise Exception('Unsupported HTTP method "%s"' % verb)
+
         curl.setopt(pycurl.URL, url)
         curl.setopt(pycurl.HTTPHEADER, \
                 ["%s: %s" % (k, v) for k, v in headers.items()])
@@ -123,12 +133,12 @@ class RequestHandler(object):
         """
         return ResponseHeader(header)
 
-    def request(self, url, params, headers=None, post=None,
+    def request(self, url, params, headers=None, verb='GET',
                 verbose=0, ckey=None, cert=None, doseq=True, decode=False):
         """Fetch data for given set of parameters"""
         curl = pycurl.Curl()
         bbuf, hbuf = self.set_opts(curl, url, params, headers,
-                ckey, cert, verbose, post, doseq)
+                ckey, cert, verbose, verb, doseq)
         curl.perform()
         header = self.parse_header(hbuf.getvalue())
         if  header.status == 200:
@@ -149,17 +159,17 @@ class RequestHandler(object):
         hbuf.flush()
         return header, data
 
-    def getdata(self, url, params, headers=None, post=None,
+    def getdata(self, url, params, headers=None, verb='GET',
                 verbose=0, ckey=None, cert=None, doseq=True):
         """Fetch data for given set of parameters"""
-        _, data = self.request(url, params, headers, post,
+        _, data = self.request(url, params, headers, verb,
                     verbose, ckey, cert, doseq)
         return data
 
-    def getheader(self, url, params, headers=None, post=None,
+    def getheader(self, url, params, headers=None, verb='GET',
                 verbose=0, ckey=None, cert=None, doseq=True):
         """Fetch HTTP header"""
-        header, _ = self.request(url, params, headers, post,
+        header, _ = self.request(url, params, headers, verb,
                     verbose, ckey, cert, doseq)
         return header
 

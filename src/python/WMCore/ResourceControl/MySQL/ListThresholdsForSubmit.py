@@ -17,7 +17,8 @@ class ListThresholdsForSubmit(DBFormatter):
                     rc_threshold.max_slots,
                     wmbs_sub_types.name AS task_type,
                     job_count.total AS task_running_jobs,
-                    rc_threshold.priority
+                    rc_threshold.priority,
+                    wmbs_location.drain
                     FROM wmbs_location
                INNER JOIN rc_threshold ON
                  wmbs_location.id = rc_threshold.site_id
@@ -78,6 +79,10 @@ class ListThresholdsForSubmit(DBFormatter):
             threshold["se_name"]           = result["se_name"]
             threshold["priority"]          = result["priority"]
             threshold['cms_name']          = result["cms_name"]
+            if result['drain'] == 'T':
+                threshold['drain'] = True
+            else:
+                threshold['drain'] = False
 
             totalRunning[siteName] += result["task_running_jobs"]
             formattedResults[siteName].append(threshold)

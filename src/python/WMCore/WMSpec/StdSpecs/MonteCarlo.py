@@ -28,13 +28,13 @@ def getTestArguments():
     args["PrimaryDataset"] = "MonteCarloData"    
     args["ProcessingVersion"] = "v2scf"
     args["GlobalTag"] = None
-    args["RequestSizeEvents"] = 10
+    args["RequestNumEvents"] = 10
     
     args["CouchURL"] = os.environ.get("COUCHURL", None)
     args["CouchDBName"] = "scf_wmagent_configcache"
 
     args["CMSSWVersion"] = "CMSSW_3_8_1"
-    args["ProdConfigCacheID"] = "f90fc973b731a37c531f6e60e6c57955"
+    args["ProcConfigCacheID"] = "f90fc973b731a37c531f6e60e6c57955"
     args["TimePerEvent"] = 60
     args["FilterEfficiency"] = 1.0
     args["TotalTime"] = 9 * 3600
@@ -99,13 +99,13 @@ class MonteCarloWorkloadFactory(StdBase):
         self.frameworkVersion    = arguments["CMSSWVersion"]
         self.globalTag           = arguments["GlobalTag"]
         self.seeding             = arguments.get("Seeding", "AutomaticSeeding")
-        self.prodConfigCacheID   = arguments["ProdConfigCacheID"]
+        self.prodConfigCacheID   = arguments["ProcConfigCacheID"]
 
         # Splitting arguments
         timePerEvent     = int(arguments.get("TimePerEvent", 60))
         filterEfficiency = float(arguments.get("FilterEfficiency", 1.0))
         totalTime        = int(arguments.get("TotalTime", 9 * 3600))
-        self.totalEvents = int(int(arguments["RequestSizeEvents"]) / filterEfficiency)
+        self.totalEvents = int(int(arguments["RequestNumEvents"]) / filterEfficiency)
 
         # pileup configuration for the first generation task
         self.pileupConfig = arguments.get("PileupConfig", None)
@@ -135,13 +135,13 @@ class MonteCarloWorkloadFactory(StdBase):
         Check for required fields, and some skim facts
         """
         arguments = getTestArguments()
-        requiredFields = ["CMSSWVersion", "ProdConfigCacheID",
+        requiredFields = ["CMSSWVersion", "ProcConfigCacheID",
                           "PrimaryDataset", "CouchURL",
-                          "CouchDBName", "RequestSizeEvents",
+                          "CouchDBName", "RequestNumEvents",
                           "GlobalTag", "ScramArch"]
         self.requireValidateFields(fields = requiredFields, schema = schema,
                                    validate = False)
-        outMod = self.validateConfigCacheExists(configID = schema["ProdConfigCacheID"],
+        outMod = self.validateConfigCacheExists(configID = schema["ProcConfigCacheID"],
                                                 couchURL = schema["CouchURL"],
                                                 couchDBName = schema["CouchDBName"],
                                                 getOutputModules = True)

@@ -1,23 +1,17 @@
 // requestsbulkchange.js
 //
 // lists all requests and make possible to submit a state change
-// at multiple requests
-
+// at multiple requests at once
 
 
 var bulkChange = 
 {
-    couchdb : null,
-    mainpage: null,
-
+    mainUrl: null, // full URL to the couchapp
     
     setUp: function()
     {
 		utils.checkAndSetConsole();
-        var dbname = document.location.href.split('/')[3];
-        console.log("couchdb ref set: " + dbname)
-        this.couchdb = $.couch.db(dbname);
-        this.mainpage = this.couchdb.uri + "_design/OpsClipboard/index.html";
+		bulkChange.mainUrl = utils.getMainUrl(document.location.href);
     }, // setUp()
     
     
@@ -30,11 +24,11 @@ var bulkChange =
         for (r in rowsToSubmit)
         {
             var docId = rowsToSubmit[r].documentId;
-            var changeUpdate = bulkChange.couchdb.uri + "_design/OpsClipboard/_update/changestate/" + docId;
-            $.post(changeUpdate, {"newState" : rowsToSubmit[r].newState},
-            	   function(data){console.log(data);});            
+            var url = bulkChange.mainUrl + "_update/changestate/" + docId;
+            var data = {"newState": rowsToSubmit[r].newState};
+            var options = {"method": "POST", "reloadPage": true};
+        	utils.makeHttpRequest(url, null, data, options);
         }
-        window.location.reload();
     }, // submitBulkChange()
     
     
@@ -100,10 +94,10 @@ var bulkChange =
         var button = document.createElement("input");
         button.type = "button";
         button.value = "Submit Changes";
-        button.onclick = this.submitBulkChange;
+        button.onclick = bulkChange.submitBulkChange;
         document.getElementById(elemId).appendChild(button);
       
-        utils.addPageLink(bulkChange.mainpage, "Main Page");
+        utils.addPageLink(bulkChange.mainUrl + "index.html", "Main Page");
     }, // bulkChange()
     
     
@@ -135,26 +129,28 @@ var bulkChange =
     }, // addTableRow()
     
     
+    processData: function(data)
+    {
+		for (i in data.rows)
+		{
+			var reqId = data.rows[i].key;
+			var docId = data.rows[i].value['doc_id'];
+			var state = data.rows[i].value['state'];
+            // alternate colours in table rows
+            var rowColor = i % 2 === 0 ? "#FAFAFA" : "#E3E3E3";      						
+			bulkChange.addTableRow(reqId, docId, state, rowColor);
+		}
+    }, // processData()
+    
+    
     // load the couch view and populate the table.
     // each table row is tagged with the request id that can be used
     // to look up and modify the table when bulk changes are committed
     bulkChangeUpdate: function()
     {
-    	this.couchdb.view("OpsClipboard/request",
-    			{
-                	success : function(data)
-                	{
-    					for (i in data.rows)
-    					{
-    						var reqId = data.rows[i].key[0];
-    						var docId = data.rows[i].value['doc_id'];
-    						var state = data.rows[i].value['state'];
-    	                    // alternate colours in table rows
-    	                    var rowColor = i % 2 === 0 ? "#FAFAFA" : "#E3E3E3";      						
-    						bulkChange.addTableRow(reqId, docId, state, rowColor);
-    					}
-                	}
-    			});
+        var url = bulkChange.mainUrl + "_view/request";
+        var options = {"method": "GET", "reloadPage": false};
+        utils.makeHttpRequest(url, bulkChange.processData, null, options); 
     } // bulkChangeUpdate()
     
 } // bulkChange

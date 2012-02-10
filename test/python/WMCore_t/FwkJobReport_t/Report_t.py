@@ -11,6 +11,7 @@ import xml.dom.minidom
 import time
 
 import WMCore.WMBase
+import WMCore.Algorithms.BasicAlgos as BasicAlgos
 from WMCore.Database.CMSCouch import CouchServer
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
@@ -31,13 +32,14 @@ class ReportTest(unittest.TestCase):
         """
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
         self.testInit.setupCouch("report_t/fwjrs", "FWJRDump")
 
         self.xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
                                     "WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
         self.badxmlPath = os.path.join(WMCore.WMBase.getTestBase(),
                                     "WMCore_t/FwkJobReport_t/CMSSWFailReport2.xml")
+        self.testDir = self.testInit.generateWorkDir()
         return
 
     def tearDown(self):
@@ -48,6 +50,7 @@ class ReportTest(unittest.TestCase):
         """
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
+        self.testInit.delWorkDir()
         return
 
     def verifyInputData(self, report):
@@ -650,7 +653,59 @@ cms::Exception caught in EventProcessor and rethrown
         fwjrdatabase.queue(fwjrDocument, timestamp = True)
         fwjrdatabase.commit()
         return
- 
+
+    def testStripReport(self):
+        """
+        _testStripReport_
+
+        Test whether or not we can strip input file information
+        from a FWJR and create a smaller object.
+        """
+
+        myReport = Report("cmsRun1")
+        myReport.parse(self.xmlPath)
+
+        path1 = os.path.join(self.testDir, 'testReport1.pkl')
+        path2 = os.path.join(self.testDir, 'testReport2.pkl')
+
+        myReport.save(path1)
+        info = BasicAlgos.getFileInfo(filename = path1)
+        self.assertEqual(info['Size'], 6821)
+
+        inputFiles = myReport.getAllInputFiles()
+        self.assertEqual(len(inputFiles), 1)
+        myReport.stripInputFiles()
+        self.assertEqual(len(myReport.getAllInputFiles()), 0)
+
+        myReport.save(path2)
+        info = BasicAlgos.getFileInfo(filename = path2)
+        self.assertEqual(info['Size'], 5933)
+
+        return
+
+    def testDuplicatStep(self):
+        """
+        _testDuplicateStep_
+
+        If the same step is added twice, it should act
+        as a replacement, and raise an appropriate message
+        """
+
+        baseReport = Report("cmsRun1")
+        baseReport.parse(self.xmlPath)
+
+        modReport = Report("cmsRun1")
+        modReport.parse(self.xmlPath)
+        setattr(modReport.data.cmsRun1, 'testVar', 'test01')
+
+        report = Report()
+        report.setStep(stepName = 'cmsRun1', stepSection = baseReport.retrieveStep('cmsRun1'))
+        report.setStep(stepName = 'cmsRun1', stepSection = modReport.retrieveStep('cmsRun1'))
+
+        self.assertEqual(report.listSteps(), ['cmsRun1'])
+        self.assertEqual(report.data.cmsRun1.testVar, 'test01')
+        
+        return
     
 if __name__ == "__main__":
     unittest.main()

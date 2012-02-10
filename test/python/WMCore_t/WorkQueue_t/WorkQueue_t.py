@@ -553,13 +553,30 @@ class WorkQueueTest(WorkQueueTestCase):
         # try to get work
         work = self.queue.getWork({'T2_XX_SiteA' : 0})
         self.assertEqual([], work)
-        work = self.queue.getWork({'T2_XX_SiteA' : total, 'T2_XX_SiteB' : total})
+        # check individual task whitelists obeyed when getting work
+        work = self.queue.getWork({'T2_XX_SiteA' : total})
+        self.assertEqual(len(work), 1)
+        work2 = self.queue.getWork({'T2_XX_SiteB' : total})
+        self.assertEqual(len(work2), 1)
+        work.extend(work2)
         self.assertEqual(len(work), 2)
         self.assertEqual(sum([x['Jobs'] for x in self.queue.status(status = 'Running')]),
                          total)
+        # check we have all tasks and no extra/missing ones
+        for task in spec.taskIterator():
+            # note: order of elements in work is undefined (both inserted simultaneously)
+            element = [x for x in work if x['Subscription']['workflow'].task == task.getPathName()]
+            if not element:
+                self.fail("Top level task %s not in wmbs" % task.getPathName())
+            element = element[0]
+
+            # check restrictions - only whitelist for now
+            whitelist = element['Subscription'].getWhiteBlackList()
+            whitelist = [x['site_name'] for x in whitelist if x['valid'] == 1]
+            self.assertEqual(sorted(task.siteWhitelist()), sorted(whitelist))
 
         #no more work available
-        self.assertEqual(0, len(self.queue.getWork({'T2_XX_SiteA' : total})))
+        self.assertEqual(0, len(self.queue.getWork({'T2_XX_SiteA' : total, 'T2_XX_SiteB' : total})))
         try:
             os.unlink(specfile)
         except OSError:
@@ -746,7 +763,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.queue), 0)
         self.assertEqual(len(self.queue.status(status='Running')), elements)
         ids = [x.id for x in work]
-        canceled = self.queue.cancelWork(WorkflowName = ['testProduction'])
+        canceled = self.queue.cancelWork(WorkflowName = 'testProduction')
         self.assertEqual(canceled, ids)
         self.assertEqual(len(self.queue), 0)
 
@@ -790,6 +807,31 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue.statusInbox()), 0)
         # clear global
         self.globalQueue.deleteWorkflows(self.processingSpec.name())
+        self.assertEqual(len(self.globalQueue.statusInbox()), 0)
+
+
+        ### check cancel of work negotiating in agent works
+        self.globalQueue.queueWork(self.whitelistSpec.specUrl())
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteB' : 1}), 1)
+        self.localQueue.backend.forceQueueSync()
+        self.assertEqual(len(self.localQueue.statusInbox(status='Negotiating')), 1)
+
+        # now cancel
+        service.cancelWorkflow(self.whitelistSpec.name())
+        self.globalQueue.performQueueCleanupActions()
+        self.localQueue.backend.forceQueueSync() # pull in cancelation
+        self.assertEqual(len(self.globalQueue.status(status='Canceled')), 1)
+        self.assertEqual(len(self.localQueue.statusInbox(status='CancelRequested')), 1)
+        self.localQueue.performQueueCleanupActions(skipWMBS = True)
+        self.assertEqual(len(self.localQueue.statusInbox(status='Canceled')), 1)
+        syncQueues(self.localQueue)
+        self.globalQueue.performQueueCleanupActions()
+        syncQueues(self.localQueue)
+        self.assertEqual(len(self.localQueue.statusInbox(WorkflowName = self.whitelistSpec.name())), 0)
+        self.assertEqual(len(self.globalQueue.status(WorkflowName = self.whitelistSpec.name())), 0)
+        self.assertEqual(len(self.globalQueue.statusInbox(status='Canceled')), 1)
+        # clear global
+        self.globalQueue.deleteWorkflows(self.whitelistSpec.name())
         self.assertEqual(len(self.globalQueue.statusInbox()), 0)
 
 
@@ -1084,6 +1126,32 @@ class WorkQueueTest(WorkQueueTestCase):
         self.queue.params['QueueRetryTime'] = -100
         self.assertRaises(StandardError, self.queue.queueWork, self.processingSpec.specUrl())
         self.assertEqual(self.queue.statusInbox()[0]['Status'], 'Failed')
+
+
+    def testDrainSite(self):
+        """Allow sites to drain"""
+        self.globalQueue.queueWork(self.processingSpec.specUrl())
+        self.globalQueue.queueWork(self.spec.specUrl())
+        # acquire 1 element of a wf and then mark site as draining.
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
+        syncQueues(self.localQueue)
+        existing_wf = [x['RequestName'] for x in self.localQueue.statusInbox()]
+        self.assertEqual(1, len(existing_wf))
+        existing_wf = existing_wf[0]
+        rc = ResourceControl()
+        rc.drainSite('T2_XX_SiteA')
+        # pull more work, only elements from previously pulled wf should be acquired
+        self.localQueue.pullWork(resources = {'doesnt exist' : 0}, draining_resources={'T2_XX_SiteA' : 10})
+        syncQueues(self.localQueue)
+        [self.fail('Got new wf %s for draining site' % x['RequestName']) for x in self.localQueue.statusInbox() if x['RequestName'] != existing_wf]
+        # wmbs injection for draining sites continues to work
+        self.assertTrue(self.localQueue.getWork({'T2_XX_SiteA' : 10}))
+        # re-enable site and get remainder of work
+        rc.drainSite('T2_XX_SiteA', drain = False)
+        self.assertTrue(self.localQueue.pullWork({'T2_XX_SiteA' : 100}))
+        syncQueues(self.localQueue)
+        self.assertTrue(self.localQueue.getWork({'T2_XX_SiteA' : 100}))
+
 
 if __name__ == "__main__":
     unittest.main()

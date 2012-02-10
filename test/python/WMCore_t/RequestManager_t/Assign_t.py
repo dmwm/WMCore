@@ -21,6 +21,7 @@ from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMCore.WMSpec.StdSpecs.ReReco       import getTestArguments
 from WMCore.WMSpec.WMWorkload            import WMWorkloadHelper, WMWorkload
 
+import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
 import WMCore.WMSpec.StdSpecs.ReReco as ReReco
 from WMCore.WebTools.FrontEndAuth import FrontEndAuth, NullAuth
 
@@ -28,11 +29,10 @@ from WMCore_t.RequestManager_t.ReqMgr_t import RequestManagerConfig, getRequestS
 
 
 
-class ReqMgrPriorityTest(RESTBaseUnitTest):
+class AssignTest(RESTBaseUnitTest):
     """
-    _ReqMgrPriorityTest_
+    _AssignTest_
 
-    Basic test for setting the priority in ReqMgr Services
     """
 
     def setUp(self):
@@ -133,7 +133,8 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
         siteList = ['T1_US_FNAL', 'T1_CH_CERN', 'T1_UK_RAL', 'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT']
         self.assertEqual(assign.sites, [])
         assign.sites.extend(siteList)
-        assign.addSiteWildcards()
+
+        Utilities.addSiteWildcards(assign.wildcardKeys,assign.sites,assign.wildcardSites)
         for s in siteList:
             self.assertTrue(s in assign.sites)
         self.assertTrue('T1*' in assign.sites)

@@ -44,6 +44,8 @@ class ChangeState(WMObject, WMConnectionBase):
         self.setCouchDAO = self.daofactory("Jobs.SetCouchID")
         self.incrementRetryDAO = self.daofactory("Jobs.IncrementRetry")
         self.workflowTaskDAO = self.daofactory("Jobs.GetWorkflowTask")
+
+        self.maxUploadedInputFiles = getattr(self.config.JobStateMachine, 'maxFWJRInputFiles', 1000)
         return
 
     def propagate(self, jobs, newstate, oldstate, updatesummary = False):
@@ -210,8 +212,21 @@ class ChangeState(WMObject, WMConnectionBase):
                 logging.debug("Updated job summary status for job %s" % jobSummaryId)
 
             if job.get("fwjr", None):
+
+                # If there are too many input files, strip them out
+                # of the FWJR, as they should already
+                # be in the database
+                # This is not critical
+                try:
+                    if len(job['fwjr'].getAllInputFiles()) > self.maxUploadedInputFiles:
+                        job['fwjr'].stripInputFiles()
+                except:
+                    logging.error("Error while trying to strip input files from FWJR.  Ignoring.")
+                    pass
+
                 # complete fwjr document
                 jobSummaryId = "%s-%s" % (job["name"], job["retry_count"])
+
                 job["fwjr"].setTaskName(job["task"])
                 fwjrDocument = {"_id": jobSummaryId,
                                 "jobid": job["id"],

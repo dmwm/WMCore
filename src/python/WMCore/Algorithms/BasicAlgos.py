@@ -8,9 +8,9 @@ Python implementations of basic Linux functionality
 """
 
 import os
+import stat
+import time
 import hashlib
-
-
 
 
 def tail(filename, nLines = 20):
@@ -63,6 +63,21 @@ def getMD5(filename, size = 8192):
 
     f.close()
     return h.hexdigest()
-        
 
+
+def getFileInfo(filename):
+    """
+    _getFileInfo_
+
+    Return file info in a friendly format
+    """
+
+    filestats = os.stat(filename)
+
+    fileInfo = {'Name': filename,
+                'Size': filestats [stat.ST_SIZE],
+                'LastModification': time.strftime("%m/%d/%Y %I:%M:%S %p",time.localtime(filestats[stat.ST_MTIME])),
+                'LastAccess': time.strftime("%m/%d/%Y %I:%M:%S %p",time.localtime(filestats[stat.ST_ATIME]))}
+    return fileInfo
+    
 

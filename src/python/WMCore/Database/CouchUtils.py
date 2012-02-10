@@ -16,8 +16,7 @@ import WMCore.Database.CMSCouch as CMSCouch
 class CouchConnectionError(Exception):
     """docstring for CouchConnectionError"""
     def __init__(self, arg):
-        super(CouchConnectionError, self).__init__()
-        self.arg = arg
+        super(CouchConnectionError, self).__init__(arg)
         
 
 

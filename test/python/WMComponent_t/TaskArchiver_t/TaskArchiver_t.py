@@ -32,6 +32,7 @@ from WMCore.WMBS.Job          import Job
 from WMCore.DataStructs.Run   import Run
 from WMCore.Lexicon           import sanitizeURL
 
+from WMComponent.DBS3Buffer.DBSBufferFile        import DBSBufferFile
 from WMComponent.TaskArchiver.TaskArchiver       import TaskArchiver
 from WMComponent.TaskArchiver.TaskArchiverPoller import TaskArchiverPoller
 
@@ -48,7 +49,7 @@ from WMComponent_t.AlertGenerator_t.Pollers_t import utils
 
 class TaskArchiverTest(unittest.TestCase):
     """
-    TestCase for TestTaskArchiver module 
+    TestCase for TestTaskArchiver module
     """
 
     _setup_done = False
@@ -61,7 +62,7 @@ class TaskArchiverTest(unittest.TestCase):
         """
 
         myThread = threading.currentThread()
-        
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -71,7 +72,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.testInit.setupCouch("%s/workloadsummary" % self.databaseName, "WorkloadSummary")
         self.testInit.setupCouch("%s/jobs" % self.databaseName, "JobDump")
         self.testInit.setupCouch("%s/fwjrs" % self.databaseName, "FWJRDump")
-        
+
 
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
@@ -85,6 +86,10 @@ class TaskArchiverTest(unittest.TestCase):
         self.nJobs = 10
         self.campaignName = 'aCampaign'
         self.alertsReceiver = None
+
+        self.uploadPublishInfo = False
+        self.uploadPublishDir  = None
+
         return
 
     def tearDown(self):
@@ -98,7 +103,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.testInit.tearDownCouch()
         if self.alertsReceiver:
             self.alertsReceiver.shutdown()
-            self.alertsReceiver = None        
+            self.alertsReceiver = None
         return
 
     def getConfig(self):
@@ -132,6 +137,8 @@ class TaskArchiverTest(unittest.TestCase):
         config.TaskArchiver.workloadSummaryCouchDBName = "%s/workloadsummary" % self.databaseName
         config.TaskArchiver.workloadSummaryCouchURL    = config.JobStateMachine.couchurl
         config.TaskArchiver.requireCouch               = True
+        config.TaskArchiver.uploadPublishInfo = self.uploadPublishInfo
+        config.TaskArchiver.uploadPublishDir  = self.uploadPublishDir
 
         config.section_("ACDC")
         config.ACDC.couchurl                = config.JobStateMachine.couchurl
@@ -139,14 +146,14 @@ class TaskArchiverTest(unittest.TestCase):
 
         # Make the jobCacheDir
         os.mkdir(config.JobCreator.jobCacheDir)
-        
+
         # addition for Alerts messaging framework, work (alerts) and control
         # channel addresses to which the component will be sending alerts
         # these are destination addresses where AlertProcessor:Receiver listens
         config.section_("Alert")
         config.Alert.address = "tcp://127.0.0.1:5557"
         config.Alert.controlAddr = "tcp://127.0.0.1:5559"
-        
+
         return config
 
 
@@ -158,7 +165,7 @@ class TaskArchiverTest(unittest.TestCase):
         """
 
         workload = testWorkload("Tier1ReReco")
-        
+
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
@@ -168,8 +175,8 @@ class TaskArchiverTest(unittest.TestCase):
         workload.save(workloadName)
 
         return workload
-        
-        
+
+
 
     def createTestJobGroup(self, config, name = "TestWorkthrough",
                            specLocation = "spec.xml", error = False,
@@ -184,7 +191,7 @@ class TaskArchiverTest(unittest.TestCase):
         testWorkflow = Workflow(spec = specLocation, owner = "Simon",
                                 name = name, task = task)
         testWorkflow.create()
-        
+
         testWMBSFileset = Fileset(name = name)
         testWMBSFileset.create()
 
@@ -195,7 +202,7 @@ class TaskArchiverTest(unittest.TestCase):
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
         testFileB.addRun(Run(10, *[12312]))
         testFileB.setLocation('malpaquet')
-        
+
         testFileA.create()
         testFileB.create()
 
@@ -203,7 +210,7 @@ class TaskArchiverTest(unittest.TestCase):
         testWMBSFileset.addFile(testFileB)
         testWMBSFileset.commit()
         testWMBSFileset.markOpen(0)
-        
+
         testSubscription = Subscription(fileset = testWMBSFileset,
                                         workflow = testWorkflow)
         testSubscription.create()
@@ -219,7 +226,7 @@ class TaskArchiverTest(unittest.TestCase):
             testJob['retry_max'] = 10
             testJob['mask'].addRunAndLumis(run = 10, lumis = [12312, 12313])
             testJobGroup.add(testJob)
-        
+
         testJobGroup.commit()
 
         changer = ChangeState(config)
@@ -271,7 +278,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         jobList = []
 
-        
+
 
         for i in range(0, nSubs):
             # Make a bunch of subscriptions
@@ -279,15 +286,15 @@ class TaskArchiverTest(unittest.TestCase):
             testWorkflow = Workflow(spec = spec, owner = "Simon",
                                     name = localName, task="Test")
             testWorkflow.create()
-            
+
             testWMBSFileset = Fileset(name = localName)
-            testWMBSFileset.create()    
+            testWMBSFileset.create()
 
 
             testSubscription = Subscription(fileset = testWMBSFileset,
                                             workflow = testWorkflow)
             testSubscription.create()
-            
+
             testJobGroup = JobGroup(subscription = testSubscription)
             testJobGroup.create()
 
@@ -306,7 +313,7 @@ class TaskArchiverTest(unittest.TestCase):
                 testWMBSFileset.commit()
 
                 filesToComplete.append(testFileA)
-                
+
                 testJob = Job(name = '%s-%i' % (localName, j))
                 testJob.addFile(testFileA)
                 testJob['retry_count'] = 1
@@ -342,12 +349,12 @@ class TaskArchiverTest(unittest.TestCase):
 
 
         return jobList
-            
+
 
     def testA_BasicFunctionTest(self):
         """
         _BasicFunctionTest_
-        
+
         Tests the components, by seeing if they can process a simple set of closeouts
         """
 
@@ -390,8 +397,8 @@ class TaskArchiverTest(unittest.TestCase):
         jobs = jobdb.loadView("JobDump", "jobsByWorkflowName",
                               options = {"startkey": [workflowName],
                                          "endkey": [workflowName, {}]})['rows']
-        self.assertEqual(len(jobs), self.nJobs) 
-        
+        self.assertEqual(len(jobs), self.nJobs)
+
         from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
         create = CreateWMBSBase()
         tables = []
@@ -419,7 +426,7 @@ class TaskArchiverTest(unittest.TestCase):
         testWMBSFileset = Fileset(id = 1)
         self.assertEqual(testWMBSFileset.exists(), False)
 
-        
+
 
         workloadSummary = workdatabase.document(id = "TestWorkload")
         # Check ACDC
@@ -445,7 +452,7 @@ class TaskArchiverTest(unittest.TestCase):
                          [{'logCollect': None, 'log': None, 'value': '0.894052', 'jobID': 1},
                           {'logCollect': None, 'log': None, 'value': '0.894052', 'jobID': 2},
                           {'logCollect': None, 'log': None, 'value': '0.894052', 'jobID': 3}])
-        
+
         # LogCollect task is made out of identical FWJRs
         # assert that it is identical
         for x in workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['cmsRun1'].keys():
@@ -506,7 +513,7 @@ class TaskArchiverTest(unittest.TestCase):
     def atestC_Profile(self):
         """
         _Profile_
-        
+
         DON'T RUN THIS!
         """
 
@@ -525,7 +532,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         testTaskArchiver = TaskArchiverPoller(config = config)
 
-        
+
         cProfile.runctx("testTaskArchiver.algorithm()", globals(), locals(), filename = "testStats.stat")
 
         p = pstats.Stats('testStats.stat')
@@ -576,13 +583,13 @@ class TaskArchiverTest(unittest.TestCase):
 
 
         logging.info("TaskArchiver took %f seconds" % (stopTime - startTime))
-        
-                
+
+
     def atestTaskArchiverPollerAlertsSending_notifyWorkQueue(self):
         """
         Cause exception (alert-worthy situation) in
         the TaskArchiverPoller notifyWorkQueue method.
-        
+
         """
         return
         myThread = threading.currentThread()
@@ -592,7 +599,7 @@ class TaskArchiverTest(unittest.TestCase):
         # shall later be called directly from utils module
         handler, self.alertsReceiver = \
             utils.setUpReceiver(config.Alert.address, config.Alert.controlAddr)
-        
+
         # prepare input such input which will go until where it expectantly
         # fails and shall send an alert
         # this will currently fail in the TaskArchiverPoller killSubscriptions
@@ -606,21 +613,21 @@ class TaskArchiverTest(unittest.TestCase):
         while len(handler.queue) < len(subList):
             time.sleep(0.3)
             print "%s waiting for alert to arrive ..." % inspect.stack()[0][3]
-                
+
         self.alertsReceiver.shutdown()
         self.alertsReceiver = None
-        # now check if the alert was properly sent (expect this many failures)    
+        # now check if the alert was properly sent (expect this many failures)
         self.assertEqual(len(handler.queue), len(subList))
         alert = handler.queue[0]
         self.assertEqual(alert["Source"], "TaskArchiverPoller")
-        
-    
+
+
     def atestTaskArchiverPollerAlertsSending_killSubscriptions(self):
         """
         Cause exception (alert-worthy situation) in
         the TaskArchiverPoller killSubscriptions method.
         (only 1 situation out of two tested).
-        
+
         """
         return
         myThread = threading.currentThread()
@@ -639,8 +646,8 @@ class TaskArchiverTest(unittest.TestCase):
         # wait for the generated alert to arrive
         while len(handler.queue) < numAlerts:
             time.sleep(0.3)
-            print "%s waiting for alert to arrive ..." % inspect.stack()[0][3]        
-        
+            print "%s waiting for alert to arrive ..." % inspect.stack()[0][3]
+
         self.alertsReceiver.shutdown()
         self.alertsReceiver = None
         # now check if the alert was properly sent
@@ -691,9 +698,72 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['averageProcessTime']['average'],
                          29.369966666700002)
         return
-        
-                
-    
+
+
+    def testPublishJSONCreate(self):
+        """
+        Re-run testA_BasicFunctionTest with data in DBSBuffer
+        Make sure files are generated
+        """
+
+        # Set up uploading and write them elsewhere since the test deletes them.
+        self.uploadPublishInfo = True
+        self.uploadPublishDir  = self.testDir
+
+        # Insert some DBSFiles
+        testFileChildA = DBSBufferFile(lfn = "/this/is/a/child/lfnA", size = 1024, events = 20)
+        testFileChildA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                                    appFam = "RECO", psetHash = "GIBBERISH",
+                                    configContent = "MOREGIBBERISH")
+        testFileChildB = DBSBufferFile(lfn = "/this/is/a/child/lfnB", size = 1024, events = 20)
+        testFileChildB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                                    appFam = "RECO", psetHash = "GIBBERISH",
+                                    configContent = "MOREGIBBERISH")
+        testFileChildC = DBSBufferFile(lfn = "/this/is/a/child/lfnC", size = 1024, events = 20)
+        testFileChildC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                                    appFam = "RECO", psetHash = "GIBBERISH",
+                                    configContent = "MOREGIBBERISH")
+
+        testFileChildA.setDatasetPath("/Cosmics/USER-DATASET1-v1/USER")
+        testFileChildB.setDatasetPath("/Cosmics/USER-DATASET1-v1/USER")
+        testFileChildC.setDatasetPath("/Cosmics/USER-DATASET2-v1/USER")
+
+        testFileChildA.create()
+        testFileChildB.create()
+        testFileChildC.create()
+
+        testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10)
+        testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                              appFam = "RECO", psetHash = "GIBBERISH",
+                              configContent = "MOREGIBBERISH")
+        testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        testFile.create()
+
+        testFileChildA.addParents([testFile["lfn"]])
+        testFileChildB.addParents([testFile["lfn"]])
+        testFileChildC.addParents([testFile["lfn"]])
+
+        myThread = threading.currentThread()
+        self.dbsDaoFactory = DAOFactory(package="WMComponent.DBS3Buffer", logger=myThread.logger, dbinterface=myThread.dbi)
+        self.insertWorkflow = self.dbsDaoFactory(classname="InsertWorkflow")
+        workflowID = self.insertWorkflow.execute(requestName='TestWorkload', taskPath='TestWorkload/Analysis')
+        myThread.dbi.processData("update dbsbuffer_file set workflow=1 where id < 4")
+
+        # Run the test again
+        self.testA_BasicFunctionTest()
+
+        # Reset default values
+        self.uploadPublishInfo = False
+        self.uploadPublishDir  = None
+
+        # Make sure the files are there
+        self.assertTrue(os.path.exists( os.path.join(self.testDir, 'TestWorkload_publish.json')))
+        self.assertTrue(os.path.getsize(os.path.join(self.testDir, 'TestWorkload_publish.json')) > 100)
+        self.assertTrue(os.path.exists( os.path.join(self.testDir, 'TestWorkload_publish.tgz' )))
+
+        return
+
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,0 +1,100 @@
+#!/usr/bin/env python
+
+import os
+import sys
+from optparse import OptionParser
+from WMCore.Database.CMSCouch import CouchServer
+from WMCore.Configuration import loadConfigurationFile
+
+def getJobDumpCouchDB(couchDBUrl, jobDBName):
+    jobCouchdb  = CouchServer(couchDBUrl)
+            
+    jobsdatabase = jobCouchdb.connectDatabase("%s/jobs" % jobDBName)
+    fwjrdatabase = jobCouchdb.connectDatabase("%s/fwjrs" % jobDBName)
+    
+    return jobsdatabase, fwjrdatabase 
+
+def deleteWorkflowFromCouch(workflowName, jobsdatabase, fwjrdatabase):
+    """
+    _deleteWorkflowFromCouch_
+
+    If we are asked to delete the workflow from couch, delete it
+    to clear up some space.
+
+    Load the document IDs and revisions out of couch by workflowName,
+    then order a delete on them.
+    """
+
+    jobs = jobsdatabase.loadView("JobDump", "jobsByWorkflowName",
+                                 options = {"startkey": [workflowName],
+                                            "endkey": [workflowName, {}]})['rows']
+    for j in jobs:
+        id  = j['value']['id']
+        rev = j['value']['rev']
+        jobsdatabase.delete_doc(id = id, rev = rev)
+
+    fjobs = fwjrdatabase.loadView("FWJRDump", "fwjrsByWorkflowName",
+                                      options = {"startkey": [workflowName],
+                                                 "endkey": [workflowName, {}]})['rows']
+    
+    for j in fjobs:
+        id  = j['value']['id']
+        rev = j['value']['rev']
+        fwjrdatabase.delete_doc(id = id, rev = rev)
+
+    return len(jobs), len(fjobs)
+
+if __name__ == "__main__":
+
+    answer = raw_input("Warning: This is irreversible. Are you sure to delete workflows (yes, no)? ")
+    if not answer.lower() == "yes":
+        print "Canceled"
+        sys.exit(1)
+        
+    if not os.environ.has_key("WMAGENT_CONFIG"):
+        print "The WMAGENT_CONFIG environment variable needs to be set before this can run"
+        sys.exit(1)
+
+    wmagentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
+    
+    parser = OptionParser()
+    parser.set_usage("wmagent-delete-couchdb-worflow workflow1 workflow2 ...")
+    parser.add_option("-f", "--file", dest="filename",
+             help="get workflow list from file (separated white space)"
+             , metavar="FILE")
+    (options, args) = parser.parse_args()
+    if (not options.filename and not args) or (options.filename and args):
+        parser.error(" -h option for help")
+    if args:
+        workflowNames = args
+    else:
+        workflowNames = []
+        with open(options.filename) as f:
+            for line in f:
+                workflowNames.extend(line.split())
+    
+    if hasattr(wmagentConfig, "JobStateMachine") and hasattr(wmagentConfig.JobStateMachine, "couchDBName"):
+        couchDBUrl = wmagentConfig.JobStateMachine.couchurl
+        jobDBName = wmagentConfig.JobStateMachine.couchDBName
+    else:
+        print "JobStateMachine.couchurl is not specified"
+        sys.exit(1)
+
+    jobsdb, fwjrdb = getJobDumpCouchDB(couchDBUrl, jobDBName)
+    
+    deletedWorkflow = 0
+    for wf in workflowNames:
+        try:
+            jobs, fjobs = deleteWorkflowFromCouch(wf, jobsdb, fwjrdb)
+        except Exception, e:
+            print "Failed to delete: %s \n%s" % (wf, str(e))
+        else:
+            if jobs == 0 and fjobs == 0:
+                print "No workflow exist: %s" % wf
+            else:
+                if jobs == 0:
+                    print "No workflow exist in jobs db: %s" % wf
+                if fjobs == 0:
+                    print "No workflow exist in fwjrs db: %s" % wf
+                deletedWorkfow += 1
+    print "%s requested %s workflow deleted" % (len(workflowNames), deletedWorkflow)

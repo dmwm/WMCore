@@ -114,6 +114,7 @@ class CreateWMBSBase(DBCreator):
              ce_name     VARCHAR(255),
              job_slots   INTEGER,
              plugin      VARCHAR(255),
+             drain       VARCHAR(1)   DEFAULT 'F',
              UNIQUE(site_name))"""
 
         self.create["07wmbs_users"] = \

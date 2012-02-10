@@ -102,16 +102,28 @@ def identifier(candidate):
 
 def dataset(candidate):
     """ A slash followed by an identifier,x3 """
-    return check(r'(/[a-zA-Z0-9\.\-_]{1,100}){3}$', candidate)
+    return check(r'(/[a-zA-Z0-9\.\-_]{1,700}){3}$', candidate)
 
 def procdataset(candidate):
     """
     Check for processed dataset name.
     letters, numbers, dashes, underscores.
     """
-    if candidate =='' or not candidate :
+    if candidate == '' or not candidate:
         return candidate
-    return check(r'^[a-zA-Z][a-zA-Z0-9\-_]*$', candidate)
+    return check(r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+)?-v[0-9]*$', candidate)
+
+def procversion(candidate):
+     return check(r'^[0-9]*$', candidate)
+
+def acqname(candidate):
+    """
+    Check for acquisition name.
+    letters, numbers, underscores.
+    """
+    if candidate == '' or not candidate:
+        return candidate
+    return check(r'[a-zA-Z][a-zA-Z0-9_]*$', candidate)
 
 def primdataset(candidate):
     """

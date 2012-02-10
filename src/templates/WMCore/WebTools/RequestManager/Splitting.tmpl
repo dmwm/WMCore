@@ -187,7 +187,7 @@ function generateForm(taskName, splitAlgo, splitParams, taskType) {
   frmStr += '<input type="hidden" name="splittingTask" VALUE="' + taskName + '"></input>\n'; 
   frmStr += '<b>' + taskName + ':</b><b id="label' + taskName + '"></b><br>\n';
 
-  if (taskType == "Processing") {
+  if (taskType == "Processing" || taskType == "MultiProcessing") {
     frmStr += generateProcessing(splitAlgo, splitParams);
   } else if (taskType == "LogCollect" || taskType == "Cleanup") {
     frmStr += generateCleanupLogCollect(splitParams);
@@ -195,7 +195,7 @@ function generateForm(taskName, splitAlgo, splitParams, taskType) {
     frmStr += generateMerge(splitAlgo, splitParams);
   } else if (taskType == "Skim") {
     frmStr += generateSkim(splitAlgo, splitParams);
-  } else if (taskType == "Production") {
+  } else if (taskType == "Production" || taskType == "MultiProduction") {
     frmStr += generateProduction(splitAlgo, splitParams);
   }
 

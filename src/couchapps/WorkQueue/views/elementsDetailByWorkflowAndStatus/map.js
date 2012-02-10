@@ -1,7 +1,8 @@
 function(doc, site) {
     var ele = doc["WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement"];
     if (ele) {
-	    emit([ele.RequestName, ele.Status], {'RequestName':ele.RequestName,
+	    emit([ele.RequestName, ele.Status], {'Id' : doc['_id'],
+	                                         'RequestName':ele.RequestName,
 	                                         'Inputs': ele.Inputs,
 	                                         'Jobs': ele.Jobs,
 	                                         'SiteWhitelist': ele.SiteWhitelist,

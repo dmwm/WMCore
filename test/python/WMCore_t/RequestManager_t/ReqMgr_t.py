@@ -25,6 +25,7 @@ from httplib                  import HTTPException
 
 # RequestDB Interfaces
 from WMCore.RequestManager.RequestDB.Interface.Request import GetRequest
+from WMCore.RequestManager.RequestDB.Interface.Admin   import SoftwareManagement
 
 #decorator import for RESTServer setup
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
@@ -124,7 +125,8 @@ class ReqMgrTest(RESTBaseUnitTest):
 
     def setupSchema(self, groupName = 'PeopleLikeMe',
                     userName = 'me', teamName = 'White Sox',
-                    CMSSWVersion = 'CMSSW_3_5_8'):
+                    CMSSWVersion = 'CMSSW_3_5_8',
+                    scramArch = 'slc5_ia32_gcc434'):
         """
         _setupSchema_
 
@@ -136,7 +138,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.jsonSender.put('group/%s' % groupName)
         self.jsonSender.put('group/%s/%s' % (groupName, userName))
         self.jsonSender.put(urllib.quote('team/%s' % teamName))
-        self.jsonSender.put('version/%s' % CMSSWVersion)
+        self.jsonSender.put('version/%s/%s' % (CMSSWVersion, scramArch))
 
         schema = ReReco.getTestArguments()
         schema['RequestName'] = 'TestReReco'
@@ -144,6 +146,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         schema['CmsPath'] = "/uscmst1/prod/sw/cms"
         schema['Requestor'] = '%s' % userName
         schema['Group'] = '%s' % groupName
+        schema['CustodialSite'] = 'US_T1_FNAL'
 
         return schema
 
@@ -196,6 +199,8 @@ class ReqMgrTest(RESTBaseUnitTest):
         Try a basic ReReco workflow
         """
         schema = self.setupSchema()
+        schema['RequestNumEvents'] = 100
+        schema['RequestEventSize'] = 101
         self.doRequest(schema)
         return
 
@@ -233,6 +238,14 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.assertEqual(request['UnmergedLFNBase'], '/store/unmerged')
         self.assertEqual(request['MergedLFNBase'], '/store/data')
 
+        # Check random other
+        self.assertEqual(request['CustodialSite'], 'US_T1_FNAL')
+
+        # Check Num events
+        self.assertEqual(request['RequestNumEvents'], 100)
+        self.assertEqual(request['RequestEventSize'], 101)
+        
+
         # only certain transitions allowed
         #self.assertEqual(self.jsonSender.put('request/%s?status=running' % requestName)[1], 400)
         self.assertRaises(HTTPException, self.jsonSender.put,'request/%s?status=running' % requestName)
@@ -245,7 +258,8 @@ class ReqMgrTest(RESTBaseUnitTest):
         workloadHelper = WMWorkloadHelper()
         workloadHelper.load(requestsAndSpecs[0][1]) 
         self.assertEqual(workloadHelper.getOwner()['Requestor'], "me")
-        self.assertTrue(self.jsonSender.get('assignment?request=%s'% requestName)[0] == ['White Sox'])
+        self.assertEqual(self.jsonSender.get('assignment?request=%s'% requestName)[0], ['White Sox'])
+        self.assertEqual(self.jsonSender.get('request/%s' % requestName)[0]['teams'], ['White Sox'])
 
         agentUrl = 'http://cmssrv96.fnal.gov/workqueue'
         self.jsonSender.put('workQueue/%s?url=%s'% (requestName, urllib.quote(agentUrl)) )
@@ -583,10 +597,73 @@ class ReqMgrTest(RESTBaseUnitTest):
             pass
         self.assertTrue(raises)
 
+        return
 
+    def testG_AddDuplicateUser(self):
+        """
+        _AddDuplicateUser_
+
+        Test and see if we get a sensible error when adding a duplicate user.
+        """
+
+        userName     = 'Taizong'
+        groupName    = 'Li'
+        teamName     = 'Tang'
+        CMSSWVersion = 'CMSSW_3_5_8'
+        schema       = self.setupSchema(userName = userName,
+                                        groupName = groupName,
+                                        teamName = teamName,
+                                        CMSSWVersion = CMSSWVersion)
+
+        raises = False
+        try:
+            self.jsonSender.put('group/%s/%s' % (groupName, userName))
+        except HTTPException, ex:
+            self.assertTrue("User/Group Already Linked in DB" in ex.result)
+            self.assertEqual(ex.status, 400)
+            raises = True
+        self.assertTrue(raises)
 
         return
+
+    def testH_RemoveSoftwareVersion(self):
+        """
+        _RemoveSoftwareVersion_
+
+        Remove the software version after submitting the request.  See what that does.
+        """
+        myThread = threading.currentThread()
         
+        userName     = 'Taizong'
+        groupName    = 'Li'
+        teamName     = 'Tang'
+        CMSSWVersion = 'CMSSW_3_5_8'
+        scramArch    = 'slc5_ia32_gcc434'
+        schema       = self.setupSchema(userName = userName,
+                                        groupName = groupName,
+                                        teamName = teamName,
+                                        CMSSWVersion = CMSSWVersion,
+                                        scramArch = scramArch)
+
+        result = self.jsonSender.put('request/testRequest', schema)
+        self.assertEqual(result[1], 200)
+        requestName = result[0]['RequestName']
+
+        req = self.jsonSender.get('request/%s' % requestName)[0]
+        self.assertEqual(req['SoftwareVersions'], [CMSSWVersion])
+
+        # Delete software versions and make sure they're gone from the DB
+        SoftwareManagement.removeSoftware(softwareName = CMSSWVersion,
+                                          scramArch = scramArch)
+        versions = myThread.dbi.processData("SELECT * FROM reqmgr_software")[0].fetchall()
+        self.assertEqual(versions, [])
+        assocs = myThread.dbi.processData("SELECT * FROM reqmgr_software_dependency")[0].fetchall()
+        self.assertEqual(assocs, [])
+        
+        req = self.jsonSender.get('request/%s' % requestName)[0]
+        self.assertEqual(req['SoftwareVersions'], [CMSSWVersion])
+        return
+
 
 if __name__=='__main__':
     unittest.main()

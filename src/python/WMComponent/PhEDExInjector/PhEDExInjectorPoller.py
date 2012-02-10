@@ -7,6 +7,7 @@ Poll the DBSBuffer database and inject files as they are created.
 
 import threading
 import logging
+import traceback
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -14,6 +15,20 @@ from WMCore.Services.PhEDEx import XMLDrop
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 
 from WMCore.DAOFactory import DAOFactory
+
+from WMCore.WMException import WMException
+
+class PhEDExInjectorPassableError(WMException):
+    """
+    _PassableError_
+
+    Raised in cases where the error is sufficiently severe to terminate
+    the loop, but not severe enough to force us to crash the code.
+
+    Built to use with PhEDEx injection failures - if PhEDEx fails we should
+    terminate the loop, but continue to retry without terminating the entire
+    component.
+    """
 
 class PhEDExInjectorPoller(BaseWorkerThread):
     """
@@ -149,7 +164,17 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 continue
 
             xmlData = self.createInjectionSpec(uninjectedFiles[siteName])
-            injectRes = self.phedex.injectBlocks(location, xmlData, 0, 0)
+            try:
+                injectRes = self.phedex.injectBlocks(location, xmlData)
+            except Exception, ex:
+                # If we get an error here, assume that it's temporary (it usually is)
+                # log it, and ignore it in the algorithm() loop
+                msg =  "Encountered error while attempting to inject blocks to PhEDEx.\n"
+                msg += str(ex)
+                logging.error(msg)
+                logging.debug("Traceback: %s" % str(traceback.format_exc()))
+                raise PhEDExInjectorPassableError(msg)
+            logging.info("Injection result: %s" % injectRes)
 
             if not injectRes.has_key("error"):
                 for datasetName in uninjectedFiles[siteName]:
@@ -206,7 +231,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 continue
 
             xmlData = self.createInjectionSpec(migratedBlocks[siteName])
-            injectRes = self.phedex.injectBlocks(location, xmlData, 0, 0)
+            injectRes = self.phedex.injectBlocks(location, xmlData)
+            logging.info("Block closing result: %s" % injectRes)
 
             if not injectRes.has_key("error"):
                 for datasetName in migratedBlocks[siteName]:
@@ -237,9 +263,20 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         """
         myThread = threading.currentThread()
         myThread.transaction.begin()
-
-        self.injectFiles()
-        self.closeBlocks()
-
-        myThread.transaction.commit()
+        try:
+            self.injectFiles()
+            self.closeBlocks()
+            myThread.transaction.commit()
+        except PhEDExInjectorPassableError, ex:
+            logging.error("Encountered PassableError in PhEDExInjector")
+            logging.error("Rolling back current transaction and terminating current loop, but not killing component.")
+            if getattr(myThread, 'transaction', None):
+                myThread.transaction.rollbackForError()
+            pass
+        except Exception:
+            # Guess we should roll back if we actually have an exception
+            if getattr(myThread, 'transaction', None):
+                myThread.transaction.rollbackForError()
+            raise 
+                
         return

@@ -58,9 +58,12 @@ def checkIn(request, wmstatSvc = None):
     requestName = request['RequestName']
 
     # test if the software versions are registered first
-    versions = SoftwareManagement.listSoftware()
+    versions  = SoftwareManagement.listSoftware()
+    scramArch = request.get('ScramArch')
+    if not scramArch in versions.keys():
+        raise RequestCheckInError("Cannot find scramArch %s in ReqMgr" % scramArch)
     for version in request.get('SoftwareVersions', []):
-        if not version in versions:
+        if not version in versions[scramArch]:
             raise RequestCheckInError("Cannot find software version %s in ReqMgr" % version)
 
     try:
@@ -110,9 +113,10 @@ def checkIn(request, wmstatSvc = None):
     except Exception, ex:
         raiseCheckInError(request, ex, "Unable to associate software for this request")
 
-    if request["RequestSizeEvents"] != None:
-        MakeRequest.updateRequestSize(requestName, request["RequestSizeEvents"],
-                                      request.get("RequestSizeFiles", 0)
+    if request["RequestNumEvents"] != None:
+        MakeRequest.updateRequestSize(requestName, request["RequestNumEvents"],
+                                      request.get("RequestSizeFiles", 0),
+                                      request.get("RequestEventSize", 0)
                                       )
     campaign = request.get("Campaign", "")
     if campaign != "" and campaign != None:

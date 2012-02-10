@@ -13,6 +13,9 @@ from WMCore.Database.DBFormatter import DBFormatter
 class GetFinishedSubscriptions(DBFormatter):
     sql = """SELECT DISTINCT wmbs_sub.id FROM wmbs_subscription wmbs_sub
                INNER JOIN wmbs_fileset ON wmbs_fileset.id = wmbs_sub.fileset
+               INNER JOIN wmbs_workflow ON
+                 wmbs_sub.workflow = wmbs_workflow.id AND
+                 wmbs_workflow.injected = 1
                LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT fileid) AS total_files
                       FROM wmbs_sub_files_acquired GROUP BY subscription) sub_acquired ON
                       wmbs_sub.id = sub_acquired.subscription

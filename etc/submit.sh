@@ -69,9 +69,9 @@ python2.6 Unpacker.py --sandbox=$SANDBOX --package=JobPackage.pkl --index=$INDEX
 
 cd job
 export WMAGENTJOBDIR=$PWD
-export PYTHONPATH=$PYTHONPATH:$PWD
+export PYTHONPATH=$PYTHONPATH:$PWD/WMCore.zip:$PWD
 echo "WMAgent is now running the job..."
-python2.6 WMCore/WMRuntime/Startup.py
+python2.6 Startup.py
 jobrc=$?
 echo "WMAgent finished the job, is copying the pickled report"
 cp WMTaskSpace/Report*.pkl ../

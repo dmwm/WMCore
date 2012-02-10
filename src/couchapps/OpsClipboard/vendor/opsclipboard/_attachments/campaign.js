@@ -6,18 +6,13 @@
 
 var campaign =
 {
-    couchdb : null,
-    campaignToQuery : null,
-    mainpage : null,
+	mainUrl: null, // full URL to the couchapp
+	campaignToQuery: null, // communicate the name of the campaign to query
     
-
     setUp: function()
     { 			
 		utils.checkAndSetConsole();
-        var dbname = document.location.href.split('/')[3];
-        console.log("couchdb ref set: " + dbname);
-        this.couchdb = $.couch.db(dbname);
-        this.mainpage = this.couchdb.uri + "_design/OpsClipboard/index.html";
+		campaign.mainUrl = utils.getMainUrl(document.location.href);
     }, // setUp()
     
     
@@ -26,7 +21,7 @@ var campaign =
     {
         campaign.campaignToQuery = campaign.getQueryVariable("campaign");
         console.log("campaign is "+ campaign.campaignToQuery);
-    },
+    }, // setCampaign()
     
     
     // TODO
@@ -36,7 +31,7 @@ var campaign =
     { 
       var query = window.location.search.substring(1); 
       var vars = query.split("&"); 
-      for (var i=0;i<vars.length;i++)
+      for (var i=0; i<vars.length; i++)
       {
     	  var pair = vars[i].split("=");
     	  if (pair[0] == variable) 
@@ -82,7 +77,7 @@ var campaign =
         hRow.insertCell(2).innerHTML = "Request ID";
         document.getElementById(elemId).appendChild(table);
         
-        utils.addPageLink(campaign.mainpage, "Main Page");
+        utils.addPageLink(campaign.mainUrl + "index.html", "Main Page");
     }, // requestsViewByCampaign()
     
     
@@ -90,8 +85,8 @@ var campaign =
     {    	
     	console.log("adding:" + state + "  " + lastUpdated + "  " + reqId + "  " + docId);
     	var updatedDateTime = new Date(parseInt(lastUpdated)).toLocaleString();
-        var clipLink = "<a href=\"" + campaign.couchdb.uri ;
-        clipLink += "_design/OpsClipboard/_show/request/" + docId + "\">" + reqId + "</a>";
+        var clipLink = "<a href=\"" + campaign.mainUrl;
+        clipLink += "_show/request/" + docId + "\">" + reqId + "</a>";
     	table = document.getElementById("campaignviewtableid");
     	var row = table.insertRow(-1);
     	row.style.backgroundColor = rowColor;
@@ -99,8 +94,23 @@ var campaign =
     	row.insertCell(1).innerHTML = updatedDateTime; 
     	row.insertCell(2).innerHTML = clipLink; 
     }, // addTableRow()
-    	
+
     
+    processDataByCampaign: function(data)
+    {
+		for (i in data.rows) 
+		{
+			var reqId = data.rows[i].value['request_id'];
+            var docId = data.rows[i].value['doc_id'];
+            var state = data.rows[i].value['state'];
+            var updated = data.rows[i].value['updated'];
+            // alternate colours in table rows
+            var rowColor = i % 2 === 0 ? "#FAFAFA" : "#E3E3E3";  
+            campaign.addTableRow(reqId, state, docId, updated, rowColor);
+          }    	
+    }, // processDataByCampaign()
+    
+    	
     // load view from couch and populate page
     requestsViewByCampaignUpdate: function()
     {
@@ -108,56 +118,43 @@ var campaign =
     	{
             return;
         }
-    	console.log("querying couchapp view 'campaign' ...");
-        this.couchdb.view("OpsClipboard/campaign", 
-        {
-        	startkey: [campaign.campaignToQuery], endkey: [campaign.campaignToQuery],
-            success: function(data)
-            {
-        		for (i in data.rows) 
-        		{        			
-        			var reqId = data.rows[i].value['request_id'];
-                    var docId = data.rows[i].value['doc_id'];
-                    var state = data.rows[i].value['state'];
-                    var updated = data.rows[i].value['updated'];
-                    // alternate colours in table rows
-                    var rowColor = i % 2 === 0 ? "#FAFAFA" : "#E3E3E3";  
-                    campaign.addTableRow(reqId, state, docId, updated, rowColor);
-                }
-            }
-        });
+    	var url = campaign.mainUrl + "_view/campaign";
+    	var data = {"startkey": campaign.campaignToQuery,
+    			    "endkey": campaign.campaignToQuery};
+        var options = {"method": "GET", "reloadPage": false};
+        utils.makeHttpRequest(url, campaign.processDataByCampaign, data, options); 
     }, // requestsViewByCampaignUpdate()
-        
-
+            
+    
     // generate a list of known campaigns that provide a link into
     // the campaign view for that campaign
     campaignList: function(elemId)
     {
-    	console.log("campaignlist");
-    	var listPanel = document.getElementById(elemId).appendChild(document.createElement("div"));
-    	var listElem = listPanel.appendChild(document.createElement("ul"));
-        this.couchdb.view("OpsClipboard/campaign_ids", 
-        	{
-            	group: true,
-            	success: function(data)
-            	{
-            		// reduce - remove duplicates is applied
-            		console.log(data.rows);
-            		for (i in data.rows) 
-            		{
-            			var campName = data.rows[i]["key"];
-            			console.log(campName);
-                        var link = "<a href=\"" + campaign.couchdb.uri ;
-                        link += "_design/OpsClipboard/requestsviewbycampaign.html?campaign=" + campName;
-                        link += "\">" + campName + "</a>";
-                        var listItem = document.createElement("li");
-                        listItem.innerHTML = link;
-                        listElem.appendChild(listItem);
-                     }
-                }
-             });
+    	console.log("querying couchapp view 'campaign_ids' ...");
+    	var url = campaign.mainUrl + "_view/campaign_ids";
+    	var data = {"group": true};
+    	var options = {"method": "GET", "reloadPage": false};
+    	// due to variables sharing, it's not straightforward how to move
+    	// the callback into a separate function
+    	utils.makeHttpRequest(url, function(data) 
+    	{
+    		for (i in data.rows) 
+    		{
+    	    	var listPanel = document.getElementById(elemId).appendChild(document.createElement("div"));
+    	    	var listElem = listPanel.appendChild(document.createElement("ul"));
+    	    	// if "group" options is not passed, the structure of response will change
+    	    	var campName = data.rows[i]["key"];
+    			console.log(campName);
+                var link = "<a href=\"" + campaign.mainUrl;
+                link += "requestsviewbycampaign.html?campaign=" + campName;
+                link += "\">" + campName + "</a>";
+                var listItem = document.createElement("li");
+                listItem.innerHTML = link;
+                listElem.appendChild(listItem);			
+    	    }
+    	}, data, options);    	
 
-        utils.addPageLink(campaign.mainpage, "Main Page");
+    	utils.addPageLink(campaign.mainUrl + "index.html", "Main Page");
     } // campaignList()
     
 } // campaign()

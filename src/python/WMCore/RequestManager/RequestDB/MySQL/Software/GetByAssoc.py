@@ -26,7 +26,7 @@ class GetByAssoc(DBFormatter):
         """
         self.sql = """
         select reqmgr_software.software_id,reqmgr_software.software_name
-         from reqmgr_software JOIN reqmgr_software_dependency
+         from reqmgr_software LEFT OUTER JOIN reqmgr_software_dependency
      ON reqmgr_software.software_id = reqmgr_software_dependency.software_id
           where reqmgr_software_dependency.request_id = :request_id"""
         binds = {"request_id": requestId}

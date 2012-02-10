@@ -13,8 +13,8 @@ function(doc, req) {
 		// convert time stamp to Date object
 		var timestamp = new Date(task['timestamp'] * 1000);
 		task['timestamp'] = timestamp.toUTCString();
-		// mark if not run recently
-		if ((now - timestamp) < 3600000) {
+		// mark if not run recently (2 hours)
+		if ((now - timestamp) < 7200000) {
 			task['uptodate'] = true
 		}
 		data.tasks.push(doc.tasks[name]);

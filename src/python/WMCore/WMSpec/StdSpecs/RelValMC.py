@@ -21,7 +21,7 @@ def getTestArguments():
     args["PrimaryDataset"] = "MonteCarloData"
     args["ProcessingVersion"] = "v2scf"
     args["GlobalTag"] = None
-    args["RequestSizeEvents"] = 10
+    args["RequestNumEvents"] = 10
     args["CouchURL"] = os.environ.get("COUCHURL", None)
     args["CouchDBName"] = "scf_wmagent_configcache"
     args["CMSSWVersion"] = "CMSSW_3_8_1"
@@ -130,7 +130,7 @@ class RelValMCWorkloadFactory(StdBase):
         # Required parameters relevant to the MC generation.
         self.genConfigCacheID = arguments["GenConfigCacheID"]        
         self.inputPrimaryDataset = arguments["PrimaryDataset"]
-        self.totalEvents = arguments["RequestSizeEvents"]
+        self.totalEvents = arguments["RequestNumEvents"]
         self.seeding = arguments.get("Seeding", "AutomaticSeeding")
         self.pileupConfig = arguments.get("PileupConfig", None)
         
@@ -162,7 +162,7 @@ class RelValMCWorkloadFactory(StdBase):
         Check for required fields, and some skim facts
         """
         requiredFields = ["CMSSWVersion", "Requestor", "ScramArch",
-                          "PrimaryDataset", "GlobalTag", "RequestSizeEvents",
+                          "PrimaryDataset", "GlobalTag", "RequestNumEvents",
                           "GenConfigCacheID", "StepOneConfigCacheID", "StepTwoConfigCacheID",
                           "GenOutputModuleName", "StepOneOutputModuleName", "CouchURL", "CouchDBName"]
         self.requireValidateFields(fields = requiredFields, schema = schema,

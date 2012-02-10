@@ -103,7 +103,7 @@ class ReqMgrRESTModel(RESTModel):
                        secured=True, security_params=self.security_params,
                        validation = [self.isalnum])
         self._addMethod('PUT', 'version', self.putVersion,
-                       args = ['version'],
+                       args = ['version', 'scramArch'],
                        secured=True, security_params=self.security_params,
                        validation = [self.validateVersion])
         self._addMethod('PUT', 'team', self.putTeam,
@@ -149,7 +149,7 @@ class ReqMgrRESTModel(RESTModel):
                         secured=True, security_params=self.security_params,
                         validation = [self.isalnum])
         self._addMethod('DELETE', 'version', self.deleteVersion,
-                        args = ['version'],
+                        args = ['version', 'scramArch'],
                         secured=True, validation = [self.validateVersion])
         self._addMethod('DELETE', 'team', self.deleteTeam,
                         args = ['team'],
@@ -253,7 +253,14 @@ class ReqMgrRESTModel(RESTModel):
         if requestName == None:
             return GetRequest.getRequests()
         else:
-            return Utilities.requestDetails(requestName)
+            result   = Utilities.requestDetails(requestName)
+            try:
+                teamNames       = GetRequest.getAssignmentsByName(requestName)
+                result['teams'] = teamNames
+            except:
+                # Ignore errors, then we just don't have a team name
+                pass
+            return result
 
     def getRequestNames(self):
         """ return all the request names in RequestManager as list """
@@ -341,7 +348,13 @@ class ReqMgrRESTModel(RESTModel):
 
     def getVersion(self):
         """ Returns a list of all CMSSW versions registered with ReqMgr """
-        return SoftwareAdmin.listSoftware().keys()
+        archList = SoftwareAdmin.listSoftware()
+        result   = []
+        for arch in archList.keys():
+            for version in archList[arch]:
+                if not version in result:
+                    result.append(version)
+        return result
       
     def getTeam(self):
         """ Returns a list of all teams registered with ReqMgr """
@@ -455,9 +468,9 @@ class ReqMgrRESTModel(RESTModel):
             return "Group already exists"
         GroupManagement.addGroup(group)
 
-    def putVersion(self, version):
+    def putVersion(self, version, scramArch = None):
         """ Registers a new CMSSW version with ReqMgr """
-        return SoftwareAdmin.addSoftware(version)
+        return SoftwareAdmin.addSoftware(version, scramArch = scramArch)
 
     def putTeam(self, team):
         """ Registers a team with ReqMgr """
@@ -547,9 +560,9 @@ class ReqMgrRESTModel(RESTModel):
         else:
             return GroupManagement.removeUserFromGroup(user, group) 
 
-    def deleteVersion(self, version):
+    def deleteVersion(self, version, scramArch):
         """ Un-register this software version with ReqMgr """
-        SoftwareAdmin.removeSoftware(version)
+        SoftwareAdmin.removeSoftware(version, scramArch)
 
     def deleteTeam(self, team):
         """ Delete this team from ReqMgr """

@@ -124,7 +124,7 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
         myThread.transaction.commit()
     return
 
-def freeSlots(multiplier = 1.0, minusRunning = False):
+def freeSlots(multiplier = 1.0, minusRunning = False, onlyDrain = False, skipDrain = True, knownCmsSites = None):
     """
     Get free resources from wmbs.
 
@@ -137,6 +137,12 @@ def freeSlots(multiplier = 1.0, minusRunning = False):
     for name, site in rc_sites.items():
         if not site.get('cms_name'):
             logging.warning("Not fetching work for %s, cms_name not defined" % name)
+            continue
+        if knownCmsSites and site['cms_name'] not in knownCmsSites:
+            logging.warning("%s doesn't appear to be a known cms site, work may fail to be acquired for it" % site['cms_name'])
+        if onlyDrain and not site.get('drain'):
+            continue
+        if skipDrain and site.get('drain'):
             continue
         slots = site['total_slots']
         if minusRunning:
@@ -151,7 +157,7 @@ class WMBSHelper(WMConnectionBase):
 
     Interface between the WorkQueue and WMBS.
     """
-    def __init__(self, wmSpec, blockName = None, mask = None, cachepath = '.'):
+    def __init__(self, wmSpec, taskName, blockName = None, mask = None, cachepath = '.'):
         """
         _init_
 
@@ -160,6 +166,7 @@ class WMBSHelper(WMConnectionBase):
         self.block = blockName
         self.mask = mask
         self.wmSpec = wmSpec
+        self.topLevelTask = wmSpec.getTask(taskName)
         self.cachepath = cachepath
         self.isDBS     = True
 
@@ -241,23 +248,13 @@ class WMBSHelper(WMConnectionBase):
 
         return outputFilesetName
 
-    def createSubscription(self, topLevelFilesetName = None, task = None,
-                           fileset = None):
+    def createSubscription(self, task, fileset):
         """
         _createSubscription_
 
         Create subscriptions in WMBS for all the tasks in the spec.  This
         includes filesets, workflows and the output map for each task.
         """
-        if task == None or fileset == None:
-            self.createTopLevelFileset(topLevelFilesetName)
-            sub = None
-            for topLevelTask in self.wmSpec.getTopLevelTask():
-                sub = self.createSubscription(topLevelFilesetName,
-                                              topLevelTask,
-                                              self.topLevelFileset)
-            return sub
-
         # create runtime sandbox for workflow
         self.createSandbox()
 
@@ -272,7 +269,12 @@ class WMBSHelper(WMConnectionBase):
         subscription = Subscription(fileset = fileset, workflow = workflow,
                                     split_algo = task.jobSplittingAlgorithm(),
                                     type = task.getPrimarySubType())
-        subscription.create()
+        if subscription.exists():
+            subscription.load()
+            msg = "Subscription %s already exists for %s (you may ignore file insertion messages below, existing files wont be duplicated)"
+            self.logger.info(msg % (subscription['id'], task.getPathName()))
+        else:
+            subscription.create()
         for site in task.siteWhitelist():
             subscription.addWhiteBlackList([{"site_name": site, "valid": True}])
 
@@ -299,8 +301,8 @@ class WMBSHelper(WMConnectionBase):
                             mergedOutputFileset = Fileset(self.outputFilesetName(childTask, "Merged"))
                             mergedOutputFileset.create()
                             mergedOutputFileset.markOpen(True)
-                                                         
-                        self.createSubscription(topLevelFilesetName, childTask, outputFileset) 
+
+                        self.createSubscription(childTask, outputFileset)
 
                 if mergedOutputFileset == None:
                     workflow.addOutput(outputModuleName, outputFileset,
@@ -369,9 +371,10 @@ class WMBSHelper(WMConnectionBase):
 
         """
         self.beginTransaction()
-        
-        sub = self.createSubscription()
-        
+
+        self.createTopLevelFileset()
+        sub = self.createSubscription(self.topLevelTask, self.topLevelFileset)
+
         if block != None:
             logging.info('"%s" Injecting block %s (%d files) into wmbs' % (self.wmSpec.name(),
                                                                            self.block,
@@ -397,7 +400,7 @@ class WMBSHelper(WMConnectionBase):
         as well as run lumi update
         """
                 
-        if self.wmSpec.getTopLevelTask()[0].getInputACDC():
+        if self.topLevelTask.getInputACDC():
             self.isDBS = False
             for acdcFile in self.validFiles(block['Files']):
                 self._addACDCFileToWMBSFile(acdcFile)
@@ -632,8 +635,8 @@ class WMBSHelper(WMConnectionBase):
 
     def validFiles(self, files):
         """Apply run white/black list and return valid files"""
-        runWhiteList = self.wmSpec.getTopLevelTask()[0].inputRunWhitelist()
-        runBlackList = self.wmSpec.getTopLevelTask()[0].inputRunBlacklist()
+        runWhiteList = self.topLevelTask.inputRunWhitelist()
+        runBlackList = self.topLevelTask.inputRunBlacklist()
 
         results = []
         for f in files:

@@ -12,7 +12,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class ListThresholdsForCreate(DBFormatter):
     assignedSQL = """SELECT wmbs_location.site_name, wmbs_location.job_slots, wmbs_location.cms_name,
-                            COUNT(wmbs_job.id) AS total FROM wmbs_job
+                            COUNT(wmbs_job.id) AS total, wmbs_location.drain FROM wmbs_job
                        INNER JOIN wmbs_job_state ON
                          wmbs_job.state = wmbs_job_state.id
                        INNER JOIN wmbs_location ON
@@ -25,7 +25,7 @@ class ListThresholdsForCreate(DBFormatter):
                      GROUP BY wmbs_location.site_name, wmbs_location.job_slots"""
     
     unassignedSQL = """SELECT wmbs_location.site_name, wmbs_location.job_slots,
-                              wmbs_location.cms_name,
+                              wmbs_location.cms_name, wmbs_location.drain,
                               unassigned_jobs.job, unassigned_jobs.valid FROM wmbs_location
                          LEFT OUTER JOIN
                            (SELECT DISTINCT wmbs_job_assoc.job, wmbs_file_location.location,
@@ -64,8 +64,13 @@ class ListThresholdsForCreate(DBFormatter):
                 result["total"] = 0
                 
             if not results.has_key(result["site_name"]):
+                if result['drain'] == 'T':
+                    drainValue = True
+                else:
+                    drainValue = False
                 results[result["site_name"]] = {"total_slots": 0, "running_jobs": 0,
-                                                "cms_name": result["cms_name"]}
+                                                "cms_name": result["cms_name"],
+                                                "drain" : drainValue}
 
             results[result["site_name"]]["running_jobs"] += result["total"]
             results[result["site_name"]]["total_slots"] = result["job_slots"]
@@ -74,9 +79,14 @@ class ListThresholdsForCreate(DBFormatter):
         jobBin = {}
         for result in unassignedResults:
             if not results.has_key(result["site_name"]):
+                if result['drain'] == 'T':
+                    drainValue = True
+                else:
+                    drainValue = False
                 results[result["site_name"]] = {"total_slots": result["job_slots"],
                                                 "running_jobs": 0,
-                                                "cms_name": result["cms_name"]}
+                                                "cms_name": result["cms_name"],
+                                                "drain" : drainValue}
             if not jobBin.has_key(result["job"]):
                 jobBin[result["job"]] = []
 

@@ -1,3 +1,180 @@
+0.8.26pre3 to 0.8.26pre4:
+  - Fix ReqMgr handling of JSON encoded parameters.  Fixes #3225.
+  - Strip off extraneous newline characters from tag collector output.  Fixes #3221.
+  - Records LargestEventRss-h-PSS values from reports and remaps to PeakValuePss.  Exposes PeakValuePss in performance reports in the job dump couchapp.  Fixes #3002.
+  - Tighten WorkQueue replication filter
+
+0.8.26pre2 to 0.8.26pre3:
+  - Allow non-wmcore job splitters to run in the JobCreator.  Fixes #3217.
+
+0.8.26pre1 to 0.8.26pre2:
+  - Change the default owner and group from an empty string to "unknown". Fixes #3203.
+  - Fix the drain flag in Oracle.  Fixes #3203.
+  - fix the ReqMgrPriority unit test.  Fixes #3123.
+  - Add server side caching to the Global Monitor.  Fixes #2955.
+  - Add link from workqueue main page to element details
+  - Increase the maximum size of a dataset.  Fixes #2571.
+  - ReqMgr unit test improvements.  Fixes #2810.
+  - Add a Resubmission StdSpec so that ACDC requests can be validated.  Fixes #3210.
+  - Make workqueue throw an error on couch save failure.
+  - Don't force state in reqmgr to completed if it is in a valid final state
+  - Fix bug where element status continually updated after cancel
+  - Don't repeat workqueue request finished message while waiting for parent queue
+  - Log workqueue id when queueing an element
+  - Add cancel option to wmagent-workqueue
+  - Fix wmagent-workqueue to create dbi if db in config file
+  - Fix bug in cancelation of negotiating workqueue elements
+  - Improve WorQueue cancelation logging
+  - Improve WorkQueue - Reqmgr interaction
+  - Remove obsolete WorkQueue elements that failed to be deleted earlier
+  - Log WorkQueue couchdb delete errors
+  - Fix bug in WorkQueue cancelation
+  - Rename the RequestSize fields in the MC schema to make things less confusing for requestors.  Fixes #2731.
+  - Replace ProdConfigCacheID with ProcConfigCacheID.  Fixes #3206.
+  - Verify configurations across multiple steps.  Fixes #2707.
+
+0.8.25 to 0.8.26pre1:
+  - Update the ScramAch list.  Fixes #3167.
+  - Cleanup the MultiCore code.  Fixes #1804.
+  - Support subscribing blocks to their custodial site in PhEDEx.  Fixes #2524.
+  - Convert ProcessPool to use ZeroMQ.  Fixes #3085.
+  - Improve the layout of the JobArchiver directory.  Fixes #2920.
+  - Fix TaskChain spec creation problems in the ReqMgr.  Fixes #2346.
+  - Add a custodial site to the spec when it is created in the ReqMgr.  From #2553.
+  - Add ScramArch to ReqMgr database and cleanup the handling of the CMSSW version.  Fixes #2446.
+  - Don't die if we encounter errors uploading.  Fixes #2973.
+  - Continue uploading files if a data tier is missing from DBS.  Fixes #3193.
+  - DBS3 reader support.  Fixes #2737.
+  - Make scram runtime code more testable.  Fixes #3174.
+
+0.8.24 to 0.8.25:
+  - Backout the changes to the WorkloadSummary configuration.
+  - Fix setting the first event in MC jobs.  Fixes #3192.
+  - Only configure the RandomNumberGeneratorService if it exists in the config.  Fixes #3190.
+  - patch-series-maxa/
+
+0.8.23 to 0.8.24:
+  - Fix WMSpec unit test breakage casued by an interface change in WMBSHelper.  Fixes #3158.
+  - Don't set FirstEvent for processing workflows, it's only useful in MC workflows. Fixes #3181.
+  - Always set the first event if it is specified in the mask.  Fixes #3139.
+  - Turn on random seeding for all jobs that don't specify reproducible seeding. Fixes #3164.
+  - Remove HOST variables from myProxyEnvironment.  Fixes #3160.
+  - adding crabclient system, fixes #2545
+  - patch-series-spiga/ Fixes #3079
+  - Avoid duplicate step names.  Fixes #3150.
+  - Fail a job if the FWJR path isn't a string.  Fixes #3087.
+  - Add a script to delete workflows from the couch database.  Fixes #2991.
+  - Remove duplicate stepSuccessful() methods from the report class.  Fixes #2840.
+  - Add a GetUnsubscribedFilesets DAO.  Fixes #2533.
+  - Hardcode the workload summary URL to point at the cmsweb couch as that is  where everything 
+    goes now.  Remove the option to changed this at deployment  time, it never worked correctly anyway.  Fixes #3144.
+  - Retrieve lumi information for child files when handling two-file-read workflows.  Fixes #3140.
+  - Make WorkQueue warn if it is given a site name not in sitedb
+  - Correctly specify the file mode when copying the Startup.py script.  Fixes #3138.
+  - Typo in wmagent-resource-control (Fixes #3137)
+  - Make pycurl follow redirects. Closes #3136.
+
+0.8.22 to 0.8.23:
+  - Fix template paths in default configs.  Fixes #3088.
+
+0.8.21 to 0.8.22:
+  - Fix the patch to the Unpacker script in the LSF BossAir plugin.  Fixes #3102.
+  - Default to vi for CHANGES editing if $EDITOR not specified
+  - Generate CHANGES skeleton in buildrelease.sh
+  - Tidy up service call timeouts.
+  - Proxy http/https calls to UserFileCache on worker node
+  - Rewrote LoggingInfoParser. Fixes #2567
+  - Raise Proper Error if ReqMgr Replicates User/Group
+  - Add LoadFilesByWorkflow DBS3Buffer DAO
+  - mprove WorkQueue handling when queing request multiple  times
+  - Don't reset the subscription status when adding files to a fileset if the files are already associated with the fileset.  From #3080.
+  - Tighten CMSCouch.documentExists() check.  Fixes #3099.
+  - ReqMgr unit test improvements.  Fixes #2957.
+  - Make the AlertGenerator MySQL components optional.  Fixes #2983.
+  - Add DBSReader tests.
+  - Add site drain functionality to resource control.
+  - Remove the old submit.sh script.  Fixes #3077.
+  - Increase workqueue activity timeout to avoid false positive alerts
+  - Added "Accept: application/json" to the HTTP header. Fixes #3057
+  - Set the FRONTIER_ID env variable to improve frontier logging.  Fixes #3017.
+  - Use zipimport for packaging WMCore in sandboxes.
+  - Add a missing ')'.
+  - Refactor the Vanilla Condor BossAir plugin.  Fixes #2875.
+  - Trim input files for large FWJRs.  Fixes #3067.
+  - Fix the logging messages in the Proxy class to use the info level.  Fixes #3068.
+  - Add the options and keys parameters to the allDocs call.  Fixes #3069.
+
+0.8.20 to 0.8.21:
+  - Fix ReqMgr reportRequestProgress call (3052).
+  - WorkQueue fix to correctly handle multi top level task workflows (1582).
+  - Add http download to path functionality, used in UserFileCache (3047).
+  - Fix processed dataset name parsing in the lexicon (2987).
+
+0.8.19 to 0.8.20:
+  - Fix for new WMCORE_ROOT/data/couchapps location (3061).
+  - Optionally upload the topublish.json file to the UFC (2866).
+  - WorkQueue Should Raise Proper Error if Missing DBName for Parent (2962).
+  - Add Service class for UFC upload (2953).
+  - Allow Scenario instead of ProcScenario in the DataProcessing workload (3048).
+  - Convert all priorities to integers before adding them to the ReqMgr (3050).
+  - Add a MyProxy context mananger (3026).
+  - More fixes to glexec with condor (3024).
+  - Add a view to the ReqMgr couch app for publication information (3022).
+  - Add a unit test to ACDC/AnalysisCollectionService_t.py (3020).
+
+0.8.18 to 0.8.19:
+  - Improve logging for ScriptInvoke errors (3038).
+  - Only closeout and cleanup subscriptions/filesets that are 
+    fully injected (3039).
+  - Inject into PhEDEx in strict mode and log the result (3028).
+  - Don't fail if a task doesn't have an ACDC section (2980).
+  - Only raise CondorErrors on non-zero exit codes (2924).
+  - Add team names to the ReqMgr Request GET (3003).
+  - Make CouchConnectionError print its error when stringified (2971).
+  - Add unit tests for the topublish.json stuff (2982).
+  - Insert Analysis collection files as merged (2995).
+  - Show the summary link for completed, closedout and announced states (2992).
+  - Make the addSiteWildCards method public (2997).
+  - Re-add site white/black list definitions to ReqMgr.Assign (3000).
+  - Disable overflow for condor jobs (3018).
+  - Add DELETE and PUT verbs to pycurl_manager (2965).
+  - Add patch build option and build sphinx documentation for WMCore.
+  - Allow changing multicore splitting parameters (3016).
+  - Bug on tracking many jobs fixed here (2977).
+  - Make sure the AcquisitionEra and ProcessingVersion parameters are returned 
+    from the ReqMgr (2857).
+  - Initial support for producing the topublish.json file (2865).  Off by 
+    default.
+  - Add Oracle support for wmagent-mod-config.
+  - Save the campaign in the spec when it's updated (2938).
+  - Add hypernews name validation to the lexicon (2966).
+  - The Requests unit test shouldn't require a database (2976).
+  - pycurl_manager: POST parameters are ignored (2959).
+  - Correctly handle workqueue printout when input dataset is None.
+  - Initial support for Locale configs (1650).
+  - Increase the number of files added to DBS per API call to 200 from 10 (2964).
+  - Update the JobPackage unit test for account for the fix to the JobSubmitter
+    JobPackage directory problem.
+  - Handle talking to newer versions of the gLite WMS (1706).
+  - Modify the WorkQueue tests to install the DBS3Buffer schema as they're
+    already using the DAOs.
+  - Don't display the ReqMgrBrowser on the view page (2944).
+  - Support wild cards in the site white/black list (2607).
+  - Kill jobs that have been running more than 48 hours and add the sync back
+    in for the FNAL Lustre stageout.
+  - Retrieve dataset information from the parent output module (2948).
+  - Don't assume that we know what the PFN of a file is (2939).
+  - Cleanup handling of VoRole and VoGroup (2918).
+  - Handle files with no run when creating the workload summary (2945).
+  - Support outputs with different primary datasets (2947).
+  - Associate workflows with output data in DBSBuffer (2931).
+  - Speed up the getElements() call in WorkQueueBackend (2926).
+  - Include the merged/unmerged LFNs bases in the get request call in 
+    the ReqMgr (2862).
+  - Print stderr too when certs are not found (2932).
+  - Add a spec-based override to disable direct-to-merge (2927).
+  - Improve JobSubmitter handling of package directories (2919).
+
 0.8.17 to 0.8.18:
   - Store file locations in couch as the CMS site name instead of the SE 
     name (2817).

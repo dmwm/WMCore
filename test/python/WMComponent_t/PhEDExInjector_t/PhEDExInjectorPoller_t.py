@@ -15,7 +15,7 @@ import logging
 
 from WMComponent.PhEDExInjector.PhEDExInjectorPoller import PhEDExInjectorPoller
 from WMComponent.PhEDExInjector.PhEDExInjectorSubscriber import PhEDExInjectorSubscriber
-from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.UUID import makeUUID
@@ -60,6 +60,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         locationAction = daofactory(classname = "DBSBufferFiles.AddLocation")
         locationAction.execute(siteName = "srm-cms.cern.ch")
+        locationAction.execute(siteName = "se.fnal.gov")
 
         self.testFilesA = []
         self.testFilesB = []
@@ -77,7 +78,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
         
-    def stuffDatabase(self):
+    def stuffDatabase(self, custodialSite = "srm-cms.cern.ch"):
         """
         _stuffDatabase_
 
@@ -96,6 +97,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
         testFileA.setDatasetPath(self.testDatasetA)
+        testFileA.setCustodialSite(custodialSite = custodialSite)
         testFileA.addRun(Run(2, *[45]))
         testFileA.create()
 
@@ -106,6 +108,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
         testFileB.setDatasetPath(self.testDatasetA)
+        testFileB.setCustodialSite(custodialSite = custodialSite)
         testFileB.addRun(Run(2, *[45]))
         testFileB.create()
 
@@ -116,6 +119,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
         testFileC.setDatasetPath(self.testDatasetA)
+        testFileC.setCustodialSite(custodialSite = custodialSite)
         testFileC.addRun(Run(2, *[45]))
         testFileC.create()        
                                         
@@ -130,6 +134,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
         testFileD.setDatasetPath(self.testDatasetB)
+        testFileD.setCustodialSite(custodialSite = custodialSite)
         testFileD.addRun(Run(2, *[45]))
         testFileD.create()
 
@@ -140,6 +145,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
         testFileE.setDatasetPath(self.testDatasetB)
+        testFileE.setCustodialSite(custodialSite = custodialSite)
         testFileE.addRun(Run(2, *[45]))
         testFileE.create()        
 
@@ -229,6 +235,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         replica information for the uploaded blocks and verify that all files
         have been injected.  Also verify that files have been subscribed to MSS.
         """
+        return
         self.stuffDatabase()
 
         poller = PhEDExInjectorPoller(self.createConfig())
@@ -291,6 +298,51 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         self.assertEqual(datasetASub["subscription"][0]["node"], "T1_CH_CERN_MSS",
                          "Error: Node is wrong.")
         return
+
+
+    def test_CustodialSiteA(self):
+        """
+        _CustodialSiteA_
+
+        Check the custodialSite stuff by DAO, since I don't have a cert
+        First make sure we properly handle having no custodialSite
+        """
+
+        self.stuffDatabase(custodialSite = None)
+
+        poller = PhEDExInjectorPoller(self.createConfig())
+
+        myThread = threading.currentThread()
+        daofactory    = DAOFactory(package = "WMComponent.PhEDExInjector.Database",
+                                   logger = myThread.logger,
+                                   dbinterface = myThread.dbi)
+        getUninjected = daofactory(classname = "GetUninjectedFiles")
+
+        uninjectedFiles = getUninjected.execute()
+        self.assertEqual(uninjectedFiles.keys(), ['srm-cms.cern.ch'])
+
+        return
+
+    def test_CustodialSiteB(self):
+        """
+        _CustodialSiteB_
+
+        Test and make sure that we can handle a real custodial site
+        """
+
+        self.stuffDatabase(custodialSite = 'se.fnal.gov')
+
+        poller = PhEDExInjectorPoller(self.createConfig())
+
+        myThread        = threading.currentThread()
+        daofactory      = DAOFactory(package = "WMComponent.PhEDExInjector.Database",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
+        getUninjected   = daofactory(classname = "GetUninjectedFiles")
+        uninjectedFiles = getUninjected.execute()
+        self.assertEqual(uninjectedFiles.keys(), ['se.fnal.gov'])
+        return
+        
 
 if __name__ == '__main__':
     unittest.main()

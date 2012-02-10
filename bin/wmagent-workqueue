@@ -40,6 +40,9 @@ def createOptionParser():
     myOptParser.add_option("--delete", dest = "deleteWork",
                            default = False, action = "store_true",
                            help = "Delete elements.")
+    myOptParser.add_option("--cancel", dest = "cancelWork",
+                           default = False, action = "store_true",
+                           help = "Cancel request")
     myOptParser.add_option("--process", dest = "process",
                            default = False, action = "store_true",
                            help = "Process inbound work.")
@@ -71,6 +74,15 @@ def createOptionParser():
 
 def createWorkQueue(config):
     """Create a workqueue from wmagent config"""
+    # if config has a db sction instantiate a dbi
+    if hasattr(config, "CoreDatabase"):
+        from WMCore.WMInit import WMInit
+        wmInit = WMInit()
+        (dialect, junk) = config.CoreDatabase.connectUrl.split(":", 1)
+        socket = getattr(config.CoreDatabase, "socket", None)
+        wmInit.setDatabaseConnection(dbConfig = config.CoreDatabase.connectUrl,
+                                     dialect = dialect,
+                                     socketLoc = socket)
     return queueFromConfig(config)
 
 
@@ -116,6 +128,8 @@ def main():
         reqConfig = getattr(cfgObject.WorkQueueManager, 'reqMgrConfig', {})
         reqMgrInt = WorkQueueReqMgrInterface(**reqConfig)
         reqMgrInt(workqueue)
+    elif options.cancelWork:
+        workqueue.cancelWork(WorkflowName = options.workflow)
 
 if __name__ == '__main__':
 	main()

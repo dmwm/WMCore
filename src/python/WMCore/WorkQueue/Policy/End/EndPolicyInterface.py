@@ -23,11 +23,6 @@ class EndPolicyInterface(PolicyInterface):
             for element in elements:
                 if element['ParentQueueId'] == parent.id:
                     elements_for_parent.append(element)
-            if not elements_for_parent:
-                if parent['Status'] == 'Negotiating':
-                    raise RuntimeError, "Cant determine state yet, still splitting"
-                else:
-                    raise RuntimeError, "No elements for parent %s, unable to continue" % str(parent.id)
             result = WQEResult(ParentQueueId = parent.id,
                                ParentQueueElement = parent,
                                Elements = elements_for_parent)
@@ -38,8 +33,12 @@ class EndPolicyInterface(PolicyInterface):
 
     def applyPolicy(self):
         """Extend in sub classes for custom behaviour"""
+        forceStatus = None
         for result in self.results:
             result['ParentQueueElement'].updateWithResult(result)
             # check for a cancellation request
             if result['ParentQueueElement'].isCancelRequested():
-                result['Status'] = 'CancelRequested'
+                forceStatus = 'CancelRequested'
+        if forceStatus:
+            # cancel whole request
+            [x.__setitem__('Status', forceStatus) for x in self.results]

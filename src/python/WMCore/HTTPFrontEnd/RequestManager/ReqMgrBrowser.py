@@ -53,7 +53,7 @@ class ReqMgrBrowser(WebAPI):
                              'Requestor': '../admin/user', 
                              'RequestName': 'details'}
         self.detailsFields = ['RequestName', 'RequestType', 'Requestor', 'CMSSWVersion',
-            'ScramArch', 'GlobalTag', 'RequestSizeEvents',
+            'ScramArch', 'GlobalTag', 'RequestNumEvents',
             'InputDataset', 'PrimaryDataset', 'AcquisitionEra', 'ProcessingVersion', 
             'RunWhitelist', 'RunBlacklist', 'BlockWhitelist', 'BlockBlacklist', 
             'RequestWorkflow', 'Scenario', 'Campaign', 'PrimaryDataset',
@@ -258,8 +258,8 @@ class ReqMgrBrowser(WebAPI):
         """ Finds the biggest percentage among all the updates """
         maxPercent = 0
         for update in request["RequestUpdates"]:
-            if update.has_key("events_written") and request["RequestSizeEvents"] != 0:
-                percent = update["events_written"] / request["RequestSizeEvents"]
+            if update.has_key("events_written") and request["RequestNumEvents"] != 0:
+                percent = update["events_written"] / request["RequestNumEvents"]
                 if percent > maxPercent:
                     maxPercent = percent
             if update.has_key("files_written") and request["RequestSizeFiles"] != 0:
@@ -272,8 +272,8 @@ class ReqMgrBrowser(WebAPI):
         """ Finds the biggest percentage among all the updates """
         maxPercent = 0
         for update in request["RequestUpdates"]:
-            if update.has_key("events_merged") and request["RequestSizeEvents"] != 0:
-                percent = update["events_merged"] / request["RequestSizeEvents"]
+            if update.has_key("events_merged") and request["RequestNumEvents"] != 0:
+                percent = update["events_merged"] / request["RequestNumEvents"]
                 if percent > maxPercent:
                     maxPercent = percent
             if update.has_key("files_merged") and request["RequestSizeFiles"] != 0:

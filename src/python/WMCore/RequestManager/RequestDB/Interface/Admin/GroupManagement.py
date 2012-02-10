@@ -7,6 +7,8 @@ API for manipulating group information in the database
 """
 
 import logging
+import cherrypy
+from sqlalchemy.exc import IntegrityError as SQLAlchemyIntegrityError
 import WMCore.RequestManager.RequestDB.Connection as DBConnect
 
 
@@ -43,8 +45,13 @@ def addUserToGroup(userName, groupName):
         msg += "User: %s is not registered in Request Manager" % userName
         raise RuntimeError, msg
 
-    newAssoc = factory(classname = "Requestor.NewAssociation")
-    newAssoc.execute(userId, groupId)
+    try:
+        newAssoc = factory(classname = "Requestor.NewAssociation")
+        newAssoc.execute(userId, groupId)
+    except SQLAlchemyIntegrityError, ex:
+        if "Duplicate entry" in str(ex) or "unique constraint" in  str(ex):
+            raise cherrypy.HTTPError(400, "User/Group Already Linked in DB")
+        raise
     return
 
 def removeUserFromGroup(userName, groupName):

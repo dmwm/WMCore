@@ -72,7 +72,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.testInit.tearDownCouch()
         return
 
-    def createConfig(self):
+    def createConfig(self, bad = False):
         """
         _createConfig_
 
@@ -83,9 +83,18 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                                  'ThisIsAName': {'dataset': {'dataTier': 'RECO',
                                                              'filterName': 'Filter'}}}}
 
+        BadTweak  = {'process': {'outputModules_': ['ThisIsAName1', 'ThisIsAName2'],
+                                 'ThisIsAName1': {'dataset': {'dataTier': 'RECO',
+                                                             'filterName': 'Filter'}},
+                                 'ThisIsAName2': {'dataset': {'dataTier': 'RECO',
+                                                             'filterName': 'Filter'}}}}
+
         configCache = ConfigCache(os.environ["COUCHURL"], couchDBName = self.couchDBName)
         configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
-        configCache.setPSetTweaks(PSetTweak = PSetTweak)
+        if bad:
+            configCache.setPSetTweaks(PSetTweak = BadTweak)
+        else:
+            configCache.setPSetTweaks(PSetTweak = PSetTweak)
         configCache.save()
 
         return configCache.getCouchID()
@@ -93,7 +102,8 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
     def setupSchema(self, groupName = 'PeopleLikeMe',
                     userName = 'me', teamName = 'White Sox',
                     CMSSWVersion = 'CMSSW_3_5_8',
-                    typename = 'ReReco', setupDB = True):
+                    typename = 'ReReco', setupDB = True,
+                    scramArch = 'slc5_ia32_gcc434'):
         """
         _setupSchema_
 
@@ -103,9 +113,13 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         if setupDB:
             self.jsonSender.put('user/%s?email=me@my.com' % userName)
             self.jsonSender.put('group/%s' % groupName)
-            self.jsonSender.put('group/%s/%s' % (groupName, userName))
+            try:
+                self.jsonSender.put('group/%s/%s' % (groupName, userName))
+            except:
+                # Done this already
+                pass
             self.jsonSender.put(urllib.quote('team/%s' % teamName))
-            self.jsonSender.put('version/%s' % CMSSWVersion)
+            self.jsonSender.put('version/%s/%s' % (CMSSWVersion, scramArch))
 
         schema = ReReco.getTestArguments()
         schema['RequestName'] = 'TestReReco'
@@ -191,6 +205,26 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
             self.assertTrue("No Scenario or Config in Processing Request!" in ex.result)
         self.assertTrue(raises)
 
+        
+        schema       = self.setupSchema(userName = userName,
+                                        groupName = groupName,
+                                        teamName = teamName,
+                                        CMSSWVersion = CMSSWVersion,
+                                        setupDB = False)
+
+        configID = self.createConfig(bad = True)
+        schema["ProcConfigCacheID"] = configID
+        schema["CouchDBName"] = self.couchDBName
+        schema["CouchURL"]    = os.environ.get("COUCHURL")
+
+        raises = False
+        try:
+            self.jsonSender.put('request/testRequest', schema)
+        except HTTPException, ex:
+            raises = True
+            self.assertEqual(ex.status, 400)
+            self.assertTrue("Error in Workload Validation: Duplicate dataTier/filterName combination" in ex.result)
+        self.assertTrue(raises)
 
         schema       = self.setupSchema(userName = userName,
                                         groupName = groupName,
@@ -200,9 +234,8 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         try:
             result = self.jsonSender.put('request/testRequest', schema)
         except Exception,ex:
-            print ex
-            print ex.result
             raise
+
         self.assertEqual(result[1], 200)
         requestName = result[0]['RequestName']
 
@@ -431,7 +464,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                 "ConfigCacheID" : generatorDoc, 
                 "SplittingAlgorithm"  : "EventBased",
                 "SplittingArguments" : {"events_per_job" : 250},
-                "RequestSizeEvents" : 10000,
+                "RequestNumEvents" : 10000,
                 "Seeding" : "Automatic",
                 "PrimaryDataset" : "RelValTTBar",
             },
@@ -578,15 +611,15 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Missing required field ProdConfigCacheID in workload validation" in ex.result)
+            self.assertTrue("Missing required field ProcConfigCacheID in workload validation" in ex.result)
             pass
         self.assertTrue(raises)
 
-        schema["ProdConfigCacheID"] = "fakeID"
+        schema["ProcConfigCacheID"] = "fakeID"
         schema["CouchDBName"] = self.couchDBName
         schema["CouchURL"]    = os.environ.get("COUCHURL")
         schema["PrimaryDataset"] = "ReallyFake"
-        schema["RequestSizeEvents"] = 100
+        schema["RequestNumEvents"] = 100
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
@@ -598,7 +631,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertTrue(raises)
 
         configID = self.createConfig()
-        schema["ProdConfigCacheID"] = configID
+        schema["ProcConfigCacheID"] = configID
         result = self.jsonSender.put('request/testRequest', schema)
         requestName = result[0]['RequestName']
         
@@ -646,7 +679,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         schema["CouchDBName"]             = self.couchDBName
         schema["CouchURL"]                = os.environ.get("COUCHURL")
         schema["PrimaryDataset"]          = "ReallyFake"
-        schema["RequestSizeEvents"]       = 100
+        schema["RequestNumEvents"]        = 100
         schema["GenOutputModuleName"]     = "ThisIsAName"
         schema["StepOneOutputModuleName"] = "ThisIsAName"
 
@@ -679,9 +712,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         """
         _Resubmission_
 
-        Test the basics of the resubmission validation
-        We can't run a full resubmission workload because
-        I'm not entirley sure how.
+        Test Resubmission Name
         """
 
         userName     = 'Taizong'
@@ -692,7 +723,17 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                                         groupName = groupName,
                                         teamName = teamName,
                                         CMSSWVersion = CMSSWVersion,
+                                        typename = "DataProcessing")
+        schema['ProdScenario'] = 'pp'
+        result = self.jsonSender.put('request/testRequest', schema)
+        requestName = result[0]['RequestName']
+
+        schema       = self.setupSchema(userName = userName,
+                                        groupName = groupName,
+                                        teamName = teamName,
+                                        CMSSWVersion = CMSSWVersion,
                                         typename = "Resubmission")
+        
 
         try:
             raises = False
@@ -700,12 +741,22 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Missing required field OriginalRequestName in workload validation" in ex.result)
+            self.assertTrue("Missing required field OriginalRequestName" in ex.result)
             pass
         self.assertTrue(raises)
+
+        schema["OriginalRequestName"] = requestName
+        schema["InitialTaskPath"]     = '/%s/DataProcessing' % requestName
+        schema["ACDCServer"]          = os.environ.get("COUCHURL")
+        schema["ACDCDatabase"]        = self.couchDBName
+
+        result = self.jsonSender.put('request/testRequest', schema)
+        resubmitName = result[0]['RequestName']
+        
+        result = self.jsonSender.get('request/%s' % resubmitName)
+        request = result[0]
         return
 
-        
 
 
 if __name__=='__main__':

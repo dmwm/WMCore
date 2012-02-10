@@ -309,13 +309,6 @@ class SetupCMSSWPset(ScriptInterface):
         """
         baggage = self.job.getBaggage()
         seeding = getattr(baggage, "seeding", None)
-        if seeding == None:
-            return
-        if seeding == "AutomaticSeeding":
-            from IOMC.RandomEngine.RandomServiceHelper import RandomNumberServiceHelper
-            helper = RandomNumberServiceHelper(self.process.RandomNumberGeneratorService)
-            helper.populate()
-            return
         if seeding == "ReproducibleSeeding":
             randService = self.process.RandomNumberGeneratorService
             tweak = PSetTweak()
@@ -324,8 +317,12 @@ class SetupCMSSWPset(ScriptInterface):
                 tweak.addParameter(parameter, x.initialSeed)
             applyTweak(self.process, tweak, self.fixupDict)
             return
-        # still here means bad seeding algo name
-        raise RuntimeError, "Bad Seeding Algorithm: %s" % seeding
+        else:
+            if hasattr(self.process, "RandomNumberGeneratorService"):
+                from IOMC.RandomEngine.RandomServiceHelper import RandomNumberServiceHelper
+                helper = RandomNumberServiceHelper(self.process.RandomNumberGeneratorService)
+                helper.populate()
+            return
     
     def handlePerformanceSettings(self):
         """

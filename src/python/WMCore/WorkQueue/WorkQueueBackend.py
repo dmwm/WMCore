@@ -15,6 +15,21 @@ from WMCore.Wrappers import JsonWrapper as json
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.Lexicon import sanitizeURL
 
+def formatReply(answer, *items):
+    """Take reply from couch bulk api and format labeling errors etc
+    """
+    result, errors = [], []
+    for ans in answer:
+        if 'error' in ans:
+            errors.append(ans)
+            continue
+        for item in items:
+            if item.id == ans['id']:
+                item.rev = ans['rev']
+                result.append(item)
+                break
+    return result, errors
+
 class WorkQueueBackend(object):
     """
     Represents persistent storage for WorkQueue
@@ -50,8 +65,8 @@ class WorkQueueBackend(object):
             if self.parentCouchUrl and self.queueUrl:
                 self.server.replicate(source = self.parentCouchUrl,
                                       destination = "%s/%s" % (self.hostWithAuth, self.inbox.name),
-                                      filter = 'WorkQueue/childQueueFilter',
-                                      query_params = {'queueUrl' : self.queueUrl},
+                                      filter = 'WorkQueue/queueFilter',
+                                      query_params = {'childUrl' : self.queueUrl, 'parentUrl' : self.parentCouchUrl},
                                       continuous = continuous)
         except Exception, ex:
             self.logger.warning('Replication from %s failed: %s' % (self.parentCouchUrl, str(ex)))
@@ -62,8 +77,8 @@ class WorkQueueBackend(object):
             if self.parentCouchUrl and self.queueUrl:
                 self.server.replicate(source = "%s/%s" % (self.db['host'], self.inbox.name),
                                       destination = self.parentCouchUrlWithAuth,
-                                      filter = 'WorkQueue/childQueueFilter',
-                                      query_params = {'queueUrl' : self.queueUrl},
+                                      filter = 'WorkQueue/queueFilter',
+                                      query_params = {'childUrl' : self.queueUrl, 'parentUrl' : self.parentCouchUrl},
                                       continuous = continuous)
         except Exception, ex:
                 self.logger.warning('Replication to %s failed: %s' % (self.parentCouchUrl, str(ex)))
@@ -124,7 +139,11 @@ class WorkQueueBackend(object):
                 unit['TeamName'] = parent['TeamName']
                 unit['WMBSUrl'] = parent['WMBSUrl']
 
+            if unit._couch.documentExists(unit.id):
+                self.logger.info('Element "%s" already exists, skip insertion.' % unit.id)
+                continue
             unit.save()
+
         unit._couch.commit(all_or_nothing = True)
         return
 
@@ -159,7 +178,7 @@ class WorkQueueBackend(object):
                 raise ValueError, "Can't specify extra filters (or return id's) when using element id's with getElements()"
             elements = [CouchWorkQueueElement(db, i).load() for i in elementIDs]
         else:
-            options = {'include_docs' : True, 'filter' : elementFilters, 'idOnly' : returnIdOnly}
+            options = {'include_docs' : True, 'filter' : elementFilters, 'idOnly' : returnIdOnly, 'reduce' : False}
             # filter on workflow or status if possible
             filter = 'elementsByWorkflow'
             if WorkflowName:
@@ -200,7 +219,7 @@ class WorkQueueBackend(object):
 
     def getElementsForWorkflow(self, workflow):
         """Get elements for a workflow"""
-        elements = self.db.loadView('WorkQueue', 'elementsByWorkflow', {'key' : workflow, 'include_docs' : True})
+        elements = self.db.loadView('WorkQueue', 'elementsByWorkflow', {'key' : workflow, 'include_docs' : True, 'reduce' : False})
         return [CouchWorkQueueElement.fromDocument(self.db,
                                                    x['doc'])
                 for x in elements.get('rows', [])]
@@ -223,20 +242,16 @@ class WorkQueueBackend(object):
         for element in elements:
             element.save()
         answer = elements[0]._couch.commit()
-        for ans in answer:
-            if 'error' in ans:
-                msg = 'Couch error saving element: "%s", error "%s", reason "%s"'
-                self.logger.error(msg % (ans['id'], ans['error'], ans['reason']))
-                continue
-            for element in elements:
-                if element.id == ans['id']:
-                    element.rev = ans['rev']
-                    result.append(element)
-                    break
+        result, failures = formatReply(answer, *elements)
+        msg = 'Couch error saving element: "%s", error "%s", reason "%s"'
+        for failed in failures:
+            self.logger.error(msg % (failed['id'], failed['error'], failed['reason']))
         return result
 
     def updateElements(self, *elementIds, **updatedParams):
         """Update given element's (identified by id) with new parameters"""
+        if not elementIds:
+            return
         uri = "/" + self.db.name + "/_design/WorkQueue/_update/in-place/"
         data = {"updates" : json.dumps(updatedParams)}
         for ele in elementIds:
@@ -263,18 +278,24 @@ class WorkQueueBackend(object):
         for i in elements:
             i.delete()
             specs[i['RequestName']] = None
-        elements[0]._couch.commit()
+        answer = elements[0]._couch.commit()
+        result, failures = formatReply(answer, *elements)
+        msg = 'Couch error deleting element: "%s", error "%s", reason "%s"'
+        for failed in failures:
+            # only count delete as failed if document still exists
+            if elements[0]._couch.documentExists(failed['id']):
+                self.logger.error(msg % (failed['id'], failed['error'], failed['reason']))
         # delete specs if no longer used
         for wf in specs:
             try:
                 if not self.db.loadView('WorkQueue', 'elementsByWorkflow',
-                                        {'key' : wf, 'limit' : 0})['total_rows']:
+                                        {'key' : wf, 'limit' : 0, 'reduce' : False})['total_rows']:
                     self.db.delete_doc(wf)
             except CouchNotFoundError:
                 pass
 
 
-    def availableWork(self, conditions, teams = None):
+    def availableWork(self, conditions, teams = None, wfs = None):
         """Get work which is available to be run"""
         elements = []
         for site in conditions.keys():
@@ -289,6 +310,8 @@ class WorkQueueBackend(object):
         options['resources'] = conditions
         if teams:
             options['teams'] = teams
+        if wfs:
+            options['wfs'] = wfs
         result = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
         result = json.loads(result)
         for i in result:
@@ -345,6 +368,13 @@ class WorkQueueBackend(object):
             self.logger.error("CouchDB unavailable: %s" % str(ex))
             return False
         return True
+
+    def getWorkflows(self, includeInbox = False):
+        """Returns workflows known to workqueue"""
+        result = set([x['key'] for x in self.db.loadView('WorkQueue', 'elementsByWorkflow', {'group' : True})['rows']])
+        if includeInbox:
+            result = result | set([x['key'] for x in self.inbox.loadView('WorkQueue', 'elementsByWorkflow', {'group' : True})['rows']])
+        return list(result)
 
     def queueLength(self):
         """Return number of available elements"""

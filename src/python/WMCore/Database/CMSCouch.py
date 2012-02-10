@@ -295,11 +295,10 @@ class Database(CouchDBRequests):
         uri = "/%s/%s" % (self.name, urllib.quote_plus(id))
         if rev:
             uri += '?' + urllib.urlencode({'rev' : rev})
-        docExists = False
         try:
             self.makeRequest(uri, {}, 'HEAD')
             return True
-        except:
+        except CouchNotFoundError:
             return False
 
     def delete_doc(self, id, rev = None):

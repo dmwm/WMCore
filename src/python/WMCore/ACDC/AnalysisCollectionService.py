@@ -80,7 +80,7 @@ class AnalysisCollectionService(CouchService):
             if not blockName in blockLocations:
                 blockLocations[blockName] = dbsReader.listFileBlockLocation(blockName)
 
-            file = File(lfn=dbsResult["LogicalFileName"], size=dbsResult["FileSize"],
+            file = File(lfn=dbsResult["LogicalFileName"], size=dbsResult["FileSize"], merged=True,
                         events=dbsResult["NumberOfEvents"], locations=blockLocations[blockName])
             runs = {}
             for lumi in dbsResult["LumiList"]:

@@ -32,6 +32,34 @@ import os
 import os.path
 import sys
 import subprocess
+import logging
+
+
+def testWriter(func, *args):
+    """
+    _testWriter_
+    
+    If running Scram object in unittests, this mode will neuter the shell commands to make them
+    echo the commands written to the subprocess.
+    
+    """
+    def newWriter(*args):
+        newWriter.__name__ = func.__name__
+        newWriter.__doc__ = func.__doc__
+        newWriter.__dict__.update(func.__dict__)
+        subproc = args[0]
+        line = args[1]
+        escapedLine = "echo \"%s\"\n" % line
+        func(subproc, escapedLine)
+    return newWriter
+
+
+#  // 
+# // Interceptable function to push commands to the subshell, used to 
+#//  enable test mode. 
+procWriter = lambda s, l: s.stdin.write(l)
+    
+
 
 class Scram:
     """
@@ -45,16 +73,26 @@ class Scram:
     exception/error conditions
 
     """
+    
     def __init__(self, **options):
         self.command = options.get("command", "scramv1")
         self.initialise = options.get("initialise", None)
         self.version = options.get("version", None)
         self.directory = options.get("directory", os.getcwd())
         self.architecture = options.get("architecture", None)
-
+        self.test_mode = options.get("test", False)
+        
         # state checks
         self.projectArea = None
         self.runtimeEnv = {}
+
+        # handler to write to subprocesses
+        self.procWriter = procWriter
+        if self.test_mode:
+            # if in test mode, decorate the subprocess writer with the test harness
+            self.procWriter = testWriter(procWriter)
+            # dont actually try to call a non-existent scram binary in test mode
+            self.command = "/bin/echo"
 
         #buffers for debug/error reporting
         self.stdout = None
@@ -97,17 +135,24 @@ class Scram:
             stdin=subprocess.PIPE,
             )
 
-        # BADPYTHON
-        proc.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
-        proc.stdin.write(self.preCommand())
-        proc.stdin.write("%s project CMSSW %s\n" % (self.command, self.version))
-        proc.stdin.write("""if [ "$?" -ne "0" ]; then exit 3; fi\n""")
-        proc.stdin.write("exit 0")
+
+        # send commands to the subshell utilising the process writer method
+        self.procWriter(proc, "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
+        self.procWriter(proc, self.preCommand())
+        self.procWriter(proc, "%s project CMSSW %s\n" % (self.command, self.version))
+        self.procWriter(proc, """if [ "$?" -ne "0" ]; then exit 3; fi\n""")
+        self.procWriter(proc, "exit 0")
+
         self.projectArea = "%s/%s" % (self.directory, self.version)
         self.stdout, self.stderr =  proc.communicate()
         self.code = proc.returncode
         self.lastExecuted = "%s project CMSSW %s" % (
             self.command, self.version)
+        if self.test_mode:
+            # in test mode, the scram command would create the project area
+            # have to emulate this by hand here. 
+            if not os.path.exists(self.projectArea):
+                os.makedirs(self.projectArea)
         return proc.returncode
 
 
@@ -141,12 +186,13 @@ class Scram:
             self.stderr = ""
             return 1
 
-        # BADPYTHON
-        proc.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
-        proc.stdin.write(self.preCommand())
-        proc.stdin.write("%s ru -sh\n" % self.command)
-        proc.stdin.write("""if [ "$?" -ne "0" ]; then exit 4; fi\n""")
-        proc.stdin.write("eval `%s ru -sh`\n" % self.command)
+        # write via process writer method
+        self.procWriter(proc, "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
+        self.procWriter(proc, self.preCommand())
+        self.procWriter(proc, "%s ru -sh\n" % self.command)
+        self.procWriter(proc, """if [ "$?" -ne "0" ]; then exit 4; fi\n""")
+        self.procWriter(proc, "eval `%s ru -sh`\n" % self.command)
+
 
         self.stdout, self.stderr = proc.communicate()
         if proc.returncode == 0:
@@ -155,7 +201,11 @@ class Scram:
                     continue
                 l = l.replace("export ", "")
                 var, val = l.split("=", 1)
-                self.runtimeEnv[var] = val                    
+                self.runtimeEnv[var] = val  
+        if self.test_mode:
+            # ensure that runtime env isnt empty in test mode
+            # as that will cause an exception in __call__ 
+            self.runtimeEnv['TEST_MODE'] = 1                
         self.code = proc.returncode
         self.lastExecuted = "eval `%s ru -sh`" % self.command
         return proc.returncode
@@ -193,24 +243,24 @@ class Scram:
         # the variables being quoted which causes problems for search paths.
         # We'll setup the environment the hard way to avoid this.
         for varName in self.runtimeEnv:
-            proc.stdin.write('export %s=%s\n' % (varName, self.runtimeEnv[varName]))
+            self.procWriter(proc, 'export %s=%s\n' % (varName, self.runtimeEnv[varName]))
 
         if os.environ.get('VO_CMS_SW_DIR', None ) != None:
-            proc.stdin.write('export VO_CMS_SW_DIR=%s\n'%os.environ['VO_CMS_SW_DIR']) 
+            self.procWriter(proc, 'export VO_CMS_SW_DIR=%s\n'%os.environ['VO_CMS_SW_DIR']) 
         if os.environ.get('OSG_APP', None) != None:
-            proc.stdin.write('export VO_CMS_SW_DIR=%s/cmssoft/cms\n'%os.environ['OSG_APP'])
+            self.procWriter(proc, 'export VO_CMS_SW_DIR=%s/cmssoft/cms\n'%os.environ['OSG_APP'])
         if os.environ.get('CMS_PATH', None) != None:
-            proc.stdin.write('export CMS_PATH=%s\n'%os.environ['CMS_PATH'])
-        # BADPYTHON
+            self.procWriter(proc, 'export CMS_PATH=%s\n'%os.environ['CMS_PATH'])
+
         if hackLdLibPath:
-            proc.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
-        proc.stdin.write("%s\n" % self.preCommand())
+            self.procWriter(proc, "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
+        self.procWriter(proc, "%s\n" % self.preCommand())
         # scram fucks up the python environment from the parent shell
         if hackLdLibPath:
-            proc.stdin.write(
+            self.procWriter(proc,
                 "export PYTHONPATH==%s:$PYTHONPATH\n" % ":".join(sys.path)[1:])
-        proc.stdin.write("%s\n" % command)
-        proc.stdin.write("""if [ "$?" -ne "0" ]; then exit 5; fi\n""")
+        self.procWriter(proc, "%s\n" % command)
+        self.procWriter(proc,"""if [ "$?" -ne "0" ]; then exit 5; fi\n""")
         self.stdout, self.stderr = proc.communicate()
         self.code = proc.returncode
         self.lastExecuted = command
@@ -230,7 +280,7 @@ class Scram:
         """
 
         result = """
-        Scram Command Failure:
+        Scram Command Diagnostic:
         Command : %s
         Architecture: %s
         Executed: %s
@@ -244,3 +294,14 @@ class Scram:
             self.stdout,
             self.stderr)
         return result
+
+        
+
+
+
+    
+
+    
+    
+    
+    

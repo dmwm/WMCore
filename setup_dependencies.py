@@ -6,6 +6,7 @@ If a package ends with a + include all subpackages.
 """
 dependencies = {
                 'wmc-base':{
+			'bin': ['wmc-dist-patch', 'wmc-dist-unpatch'],
                         'packages' : ['WMCore.DataStructs'],
                         'modules': ['WMCore.WMFactory', 'WMCore.WMException', 'WMCore.Configuration',
                                     'WMCore.WMExceptions', 'WMCore.WMFactory', 'WMCore.Lexicon',
@@ -96,8 +97,16 @@ dependencies = {
                 'crabserver':{
                         'packages': ['WMCore.WMSpec', 'WMCore.ACDC',
                                      'WMCore.Storage+', 'WMCore.HTTPFrontEnd.RequestManager+',
-                                     'WMCore.RequestManager+'],
-                        'systems': ['wmc-web']
+                                     'WMCore.RequestManager+', 'WMComponent.DBSUpload',
+                                     'WMCore.ProcessPool'],
+                        'systems': ['wmc-web'],
+                        },
+                'crabclient':{
+                        'packages': ['WMCore.Wrappers+', 'WMCore.Credential', 'PSetTweaks',
+                                     'WMCore.Services.UserFileCache'],
+                        'systems': ['wmc-base'],
+                        'modules': ['WMCore.FwkJobReport.FileInfo', 'WMCore.Services.Requests',
+                                    'WMCore.Services.Service', 'WMCore.Services.pycurl_manager'],
                         },
                 'wmclient':{
                         'systems': ['wmc-runtime', 'wmc-database']

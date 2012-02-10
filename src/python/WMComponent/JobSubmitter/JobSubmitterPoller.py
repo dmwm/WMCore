@@ -87,6 +87,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.siteKeys       = {}
         self.locationDict   = {}
         self.cmsNames       = {}
+        self.drainSites     = []
         self.packageSize    = getattr(self.config.JobSubmitter, 'packageSize', 500)
         self.collSize       = getattr(self.config.JobSubmitter, 'collectionSize',
                                       self.packageSize * 1000)
@@ -313,6 +314,12 @@ class JobSubmitterPoller(BaseWorkerThread):
                     blackList.extend(self.cmsNames.get(cmsName, []))
                 possibleLocations = possibleLocations - set(blackList)
 
+            # try to remove draining sites if possible, this is needed to stop
+            # jobs that could run anywhere blocking draining sites
+            non_draining_sites = [x for x in possibleLocations if x not in self.drainSites]
+            if non_draining_sites: # if >1 viable non-draining site remove draining ones
+                possibleLocations = non_draining_sites
+
             if len(possibleLocations) == 0:
                 badJobs.append(newJob)
                 continue
@@ -387,11 +394,17 @@ class JobSubmitterPoller(BaseWorkerThread):
         """
         rcThresholds = self.resourceControl.listThresholdsForSubmit()
 
+        # Since we pull the drain information each time, there is
+        # no benefit really to storing the list of drained sites from
+        # one iteration to the next
+        self.drainSites = []
+
         for siteName in rcThresholds.keys():
             # Add threshold if we don't have it already
             for threshold in rcThresholds[siteName]:
                 seName  = threshold["se_name"]
                 cmsName = threshold["cms_name"]
+                drain   = threshold["drain"]
                 if not seName in self.siteKeys.keys():
                     self.siteKeys[seName] = []
                 if not siteName in self.siteKeys[seName]:
@@ -400,6 +413,9 @@ class JobSubmitterPoller(BaseWorkerThread):
                     self.cmsNames[cmsName] = []
                 if not siteName in self.cmsNames[cmsName]:
                     self.cmsNames[cmsName].append(siteName)
+                if drain and cmsName not in self.drainSites:
+                    logging.debug("Site %s is draining." % cmsName)
+                    self.drainSites.append(cmsName)
 
         return rcThresholds
 

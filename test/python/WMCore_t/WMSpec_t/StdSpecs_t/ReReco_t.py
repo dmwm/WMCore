@@ -93,8 +93,9 @@ class ReRecoTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DMWM")
         
-        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
-        testWMBSHelper.createSubscription()
+        testWMBSHelper = WMBSHelper(testWorkload, "DataProcessing", "SomeBlock")
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         skimWorkflow = Workflow(name = "TestWorkload",
                                 task = "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim")

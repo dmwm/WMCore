@@ -1133,6 +1133,26 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
+    def getCMSSWVersions(self):
+        """
+        _getCMSSWVersions_
+
+        Pull out any CMSSW Versions we might be looking for.
+        """
+        versions = []
+
+        for task in self.taskIterator():
+            for stepName in task.listAllStepNames():
+                
+                stepHelper = task.getStepHelper(stepName)
+                if stepHelper.stepType() != "CMSSW" and stepHelper.stepType() != "MulticoreCMSSW":
+                    continue
+                version = stepHelper.getCMSSWVersion()
+                if not version in versions:
+                    versions.append(version)
+        return versions
+        
+
     def generateWorkloadSummary(self):
         """
         _generateWorkloadSummary_

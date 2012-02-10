@@ -236,6 +236,9 @@ config.TaskArchiver.workloadSummaryCouchURL = workloadSummaryURL
 config.TaskArchiver.workloadSummaryCouchDBName = workloadSummaryDB
 config.TaskArchiver.histogramKeys = ["PeakValueRss", "PeakValueVsize", "TotalJobTime", "AvgEventTime"]
 config.TaskArchiver.requireCouch  = True
+config.TaskArchiver.uploadPublishInfo = False
+config.TaskArchiver.uploadPublishDir  = None
+config.TaskArchiver.userFileCacheURL = 'http://USERFILECACHEHOST:UFCPORT/userfilecache/'
 
 config.webapp_('WMBSService')
 config.WMBSService.default_expires = 0
@@ -268,7 +271,7 @@ wmbs.couchConfig.jobDumpDBName = jobDumpDBName
 
 wmagent = config.WMBSService.views.active.section_('wmagent')
 wmagent.object = 'WMCore.WebTools.RESTApi'
-wmagent.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools/')
+wmagent.templates = os.path.join(os.environ["WMCORE_ROOT"], 'data/templates/WMCore/WebTools/')
 wmagent.section_('model')
 wmagent.model.object = 'WMCore.HTTPFrontEnd.Agent.AgentRESTModel'
 wmagent.section_('formatter')
@@ -280,17 +283,17 @@ wmagent.couchConfig.jobDumpDBName = "wmagent_jobdump"
 
 wmagentmonitor = config.WMBSService.views.active.section_('wmagentmonitor')
 wmagentmonitor.object = 'WMCore.HTTPFrontEnd.Agent.AgentMonitorPage'
-wmagentmonitor.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools')
-wmagentmonitor.javascript = os.path.join(os.environ["WMCORE_ROOT"], 'javascript/')
-wmagentmonitor.css = os.path.join(os.environ["WMCORE_ROOT"], 'css/')
-wmagentmonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'html/')
+wmagentmonitor.templates = os.path.join(os.environ["WMCORE_ROOT"], 'data/templates/WMCore/WebTools')
+wmagentmonitor.javascript = os.path.join(os.environ["WMCORE_ROOT"], 'data/javascript/')
+wmagentmonitor.css = os.path.join(os.environ["WMCORE_ROOT"], 'data/css/')
+wmagentmonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'data/html/')
 
 wmbsmonitor = config.WMBSService.views.active.section_('wmbsmonitor')
 wmbsmonitor.object = 'WMCore.HTTPFrontEnd.WMBS.WMBSMonitorPage'
-wmbsmonitor.templates = os.path.join(os.environ["WMCORE_ROOT"], 'templates/WMCore/WebTools')
-wmbsmonitor.javascript = os.path.join(os.environ["WMCORE_ROOT"], 'javascript/')
-wmbsmonitor.css = os.path.join(os.environ["WMCORE_ROOT"], 'css/')
-wmbsmonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'html/')
+wmbsmonitor.templates = os.path.join(os.environ["WMCORE_ROOT"], 'data/templates/WMCore/WebTools')
+wmbsmonitor.javascript = os.path.join(os.environ["WMCORE_ROOT"], 'data/javascript/')
+wmbsmonitor.css = os.path.join(os.environ["WMCORE_ROOT"], 'data/css/')
+wmbsmonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'data/html/')
 
 
 
@@ -411,25 +414,6 @@ config.AlertGenerator.componentsMemPoller.critical = 60 # [percent]
 config.AlertGenerator.componentsMemPoller.pollInterval = 10  # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
 config.AlertGenerator.componentsMemPoller.period = 30 # [second]
-# configuration for MySQL server CPU monitor: mysqlCPUPoller (percentage values)
-config.AlertGenerator.section_("mysqlCPUPoller")
-config.AlertGenerator.mysqlCPUPoller.soft = 40 # [percent]
-config.AlertGenerator.mysqlCPUPoller.critical = 60 # [percent]
-config.AlertGenerator.mysqlCPUPoller.pollInterval = 10 # [second]
-# period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.mysqlCPUPoller.period = 30 # [second]
-# configuration for MySQL memory monitor: mysqlMemPoller (percentage values)
-config.AlertGenerator.section_("mysqlMemPoller")
-config.AlertGenerator.mysqlMemPoller.soft = 40 # [percent]
-config.AlertGenerator.mysqlMemPoller.critical = 60 # [percent]
-config.AlertGenerator.mysqlMemPoller.pollInterval = 10 # [second]
-# period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.mysqlMemPoller.period = 30 # [second]
-# configuration for MySQL database size: mysqlDbSizePoller (gigabytes values)
-config.AlertGenerator.section_("mysqlDbSizePoller")
-config.AlertGenerator.mysqlDbSizePoller.soft = 1 # GB
-config.AlertGenerator.mysqlDbSizePoller.critical = 2 # GB
-config.AlertGenerator.mysqlDbSizePoller.pollInterval = 10 # [second]
 # configuration for CouchDB database size monitor: couchDbSizePoller (gigabytes values)
 config.AlertGenerator.section_("couchDbSizePoller")
 config.AlertGenerator.couchDbSizePoller.couchURL = couchURL

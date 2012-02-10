@@ -2,19 +2,23 @@
 import urllib
 import time
 import logging
+import re
 import WMCore.Wrappers.JsonWrapper as JsonWrapper
 import cherrypy
 from os import path
+from xml.dom.minidom import parse as parseDOM
+from xml.parsers.expat import ExpatError
 from cherrypy import HTTPError
 from cherrypy.lib.static import serve_file
 import WMCore.Lexicon
 import cgi
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
-import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
-import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
-import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement as ProdManagement
-import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListRequests
+import WMCore.RequestManager.RequestDB.Settings.RequestStatus             as RequestStatus
+import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState      as ChangeState
+import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest       as GetRequest
+import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement     as ProdManagement
+import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests     as ListRequests
+import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
 import WMCore.Services.WorkQueue.WorkQueue as WorkQueue
 import WMCore.RequestManager.RequestMaker.CheckIn as CheckIn
 from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker, buildWorkloadForRequest
@@ -22,6 +26,34 @@ from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
 from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+
+def addSiteWildcards(wildcardKeys, sites, wildcardSites):
+    """
+    _addSiteWildcards_
+
+    Add site wildcards to the self.sites list
+    These wildcards should allow you to whitelist/blacklist a
+    large number of sites at once.
+
+    Expects a dictionary for wildcardKeys where the key:values are
+    key = Label to be displayed as
+    value = Regular expression
+    """
+
+    for k in wildcardKeys.keys():
+        reValue = wildcardKeys.get(k)
+        found   = False
+        for s in sites:
+            if re.search(reValue, s):
+                found = True
+                if not k in wildcardSites.keys():
+                    wildcardSites[k] = []
+                wildcardSites[k].append(s)
+        if found:
+            sites.append(k)
+
+    return
+
 
 def parseRunList(l):
     """ Changes a string into a list of integers """
@@ -80,6 +112,60 @@ def parseSite(kw, name):
     if not isinstance(value, list):
         value = [value]
     return value
+
+def allScramArchsAndVersions():
+    """
+    _allScramArchs_
+
+    Downloads a list of all ScramArchs and Versions from the tag collector
+    """
+    result = {}
+    try:
+        f = urllib.urlopen("https://cmstags.cern.ch/tc/ReleasesXML/?anytype=1")
+        domDoc   = parseDOM(f)
+    except ExpatError, ex:
+        logging.error("Could not connect to tag collector!")
+        logging.error("Not changing anything!")
+        return {}
+    archDOMs = domDoc.firstChild.getElementsByTagName("architecture")
+    for archDOM in archDOMs:
+        arch = archDOM.attributes.item(0).value
+        releaseList = []
+        for node in archDOM.childNodes:
+            # Somehow we can get extraneous ('\n') text nodes in
+            # certain versions of Linux
+            if str(node.__class__) == "xml.dom.minidom.Text":
+                continue
+            if not node.hasAttributes():
+                # Then it's an empty random node created by the XML
+                continue
+            for i in range(node.attributes.length):
+                attr = node.attributes.item(i)
+                if str(attr.name) == 'label':
+                    releaseList.append(str(attr.value))
+        result[str(arch)] = releaseList
+
+    return result
+
+def updateScramArchsAndCMSSWVersions():
+    """
+    _updateScramArchsAndCMSSWVersions_
+
+    Update both the scramArchs and their associated software versions to
+    the current tag collector standard.
+    """
+
+    allArchsAndVersions = allScramArchsAndVersions()
+    if allArchsAndVersions == {}:
+        # The tag collector is probably down
+        # NO valid CMSSW Versions is not a valid use case!
+        # Do nothing.
+        logging.error("Handed blank list of scramArchs/versions.  Ignoring for this cycle.")
+        return
+    for scramArch in allArchsAndVersions.keys():
+        SoftwareAdmin.updateSoftware(scramArch = scramArch,
+                                     softwareNames = allArchsAndVersions[scramArch])
+    return
 
 def allSoftwareVersions():
     """ Downloads a list of all software versions from the tag collector """
@@ -238,7 +324,7 @@ def unidecode(data):
 def validate(schema):
     schema.validate()
     for field in ['RequestName', 'Requestor', 'RequestString',
-        'Campaign', 'Scenario', 'ProdConfigCacheID', 'inputMode',
+        'Campaign', 'Scenario', 'ProcConfigCacheID', 'inputMode',
         'CouchDBName', 'Group']:
         value = schema.get(field, '')
         if value and value != '':
@@ -334,6 +420,8 @@ def makeRequest(kwargs, couchUrl, couchDB, wmstatUrl):
         raise HTTPError(400, "Error in Workload Validation: %s" % msg)
     helper = WMWorkloadHelper(request['WorkloadSpec'])
     helper.setCampaign(schema["Campaign"])
+    if "CustodialSite" in schema.keys():
+        helper.setCustodialSite(siteName = schema['CustodialSite'])
     if "RunWhitelist" in schema:
         helper.setRunWhitelist(schema["RunWhitelist"])
     # can't save Request object directly, because it makes it hard to retrieve the _rev
@@ -362,6 +450,9 @@ def requestDetails(requestName):
     schema['UnmergedLFNBase'] = str(helper.getUnmergedLFNBase())
     schema['Campaign']        = str(helper.getCampaign())
     schema['AcquisitionEra']  = str(helper.getAcquisitionEra())
+    schema['CustodialSite']   = str(helper.getCustodialSite())
+    if schema['SoftwareVersions'] == ['DEPRECATED']:
+        schema['SoftwareVersions'] = helper.getCMSSWVersions()
     return schema
 
 def serveFile(contentType, prefix, *args):

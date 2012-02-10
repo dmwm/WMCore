@@ -274,8 +274,9 @@ class Create(DBCreator):
         requestor_group_id NUMBER(11) NOT NULL,
         workflow VARCHAR(255) NOT NULL,
 
-        request_size_events NUMBER(11) DEFAULT 0,
-        request_size_files NUMBER(11)  DEFAULT 0,
+        request_num_events NUMBER(11) DEFAULT 0,
+        request_size_files NUMBER(11) DEFAULT 0,
+        request_event_size NUMBER(11) DEFAULT 0,
 
         prep_id VARCHAR(255),
 
@@ -407,8 +408,9 @@ class Create(DBCreator):
 
         software_id NUMBER(11) NOT NULL,
         software_name VARCHAR(255) NOT NULL,
+        scram_arch    VARCHAR(255),
 
-        UNIQUE(software_name),
+        UNIQUE(software_name, scram_arch),
         PRIMARY KEY(software_id)
         )
         """
@@ -435,7 +437,7 @@ class Create(DBCreator):
 
            UNIQUE(request_id, software_id),
            FOREIGN KEY(software_id) references
-                reqmgr_software(software_id),
+                reqmgr_software(software_id) ON DELETE CASCADE,
 
            FOREIGN KEY(request_id) references
                 reqmgr_request(request_id)

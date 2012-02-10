@@ -142,11 +142,11 @@ class AccountantWorker(WMConnectionBase):
         # The jobReportPath may be prefixed with "file://" which needs to be
         # removed so it doesn't confuse the FwkJobReport() parser.
         jobReportPath = parameters.get("fwjr_path", None)
-        jobReportPath = jobReportPath.replace("file://","")
         if not jobReportPath:
             logging.error("Bad FwkJobReport Path: %s" % jobReportPath)
             return self.createMissingFWKJR(parameters, 99999, "FWJR path is empty")
 
+        jobReportPath = jobReportPath.replace("file://","")
         if not os.path.exists(jobReportPath):
             logging.error("Bad FwkJobReport Path: %s" % jobReportPath)
             return self.createMissingFWKJR(parameters, 99999, 'Cannot find file in jobReport path: %s' % jobReportPath)

@@ -28,12 +28,12 @@ def reqMgrConfig(
     addMonitor = True):
 
     config = Configuration()
-    reqMgrHtml = os.path.join(installation, 'html/RequestManager')
-    reqMgrTemplates = os.path.join(installation, 'templates/WMCore/WebTools/RequestManager')
-    reqMgrJavascript = os.path.join(installation, 'javascript')
-    globalOverviewTemplates = os.path.join(installation, 'templates/WMCore/WebTools/GlobalMonitor')
+    reqMgrHtml = os.path.join(installation, 'data/html/RequestManager')
+    reqMgrTemplates = os.path.join(installation, 'data/templates/WMCore/WebTools/RequestManager')
+    reqMgrJavascript = os.path.join(installation, 'data/javascript')
+    globalOverviewTemplates = os.path.join(installation, 'data/templates/WMCore/WebTools/GlobalMonitor')
     globalOverviewJavascript = reqMgrJavascript
-    globalOverviewHtml = os.path.join(installation, 'html')
+    globalOverviewHtml = os.path.join(installation, 'data/html')
 
     if startup == "Root.py":
         config.component_("Webtools")
@@ -99,7 +99,7 @@ def reqMgrConfig(
     active.reqMgr.model.object = 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel'
     active.reqMgr.default_expires = 0 # no caching
     active.reqMgr.formatter.object = 'WMCore.WebTools.RESTFormatter'
-    active.reqMgr.templates = os.path.join(installation, 'templates/WMCore/WebTools')
+    active.reqMgr.templates = os.path.join(installation, 'data/templates/WMCore/WebTools')
     #deprecate the old interface
     active.section_('rest')
     active.rest.section_('model')
@@ -108,7 +108,7 @@ def reqMgrConfig(
     active.rest.model.object = 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel'
     active.rest.default_expires = 0 # no caching
     active.rest.formatter.object = 'WMCore.WebTools.RESTFormatter'
-    active.rest.templates = os.path.join(installation, 'templates/WMCore/WebTools')
+    active.rest.templates = os.path.join(installation, 'data/templates/WMCore/WebTools')
 
     active.section_('create')
     active.create.object = 'WMCore.HTTPFrontEnd.RequestManager.WebRequestSchema'
@@ -133,7 +133,7 @@ def reqMgrConfig(
         active.monitorSvc.model.object = 'WMCore.HTTPFrontEnd.GlobalMonitor.GlobalMonitorRESTModel'
         active.monitorSvc.default_expires = 0 # no caching
         active.monitorSvc.formatter.object = 'WMCore.WebTools.RESTFormatter'
-        active.monitorSvc.template = os.path.join(installation, 'templates/WMCore/WebTools')
+        active.monitorSvc.template = os.path.join(installation, 'data/templates/WMCore/WebTools')
     
     active.section_('yuiserver')
     active.yuiserver.object = 'WMCore.WebTools.YUIServer'

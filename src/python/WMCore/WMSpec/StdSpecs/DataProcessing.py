@@ -49,8 +49,6 @@ class DataProcessingWorkloadFactory(StdBase):
     """
     def __init__(self):
         StdBase.__init__(self)
-        self.multicore = False
-        self.multicoreNCores = 1
         return
 
     def buildWorkload(self):
@@ -75,7 +73,6 @@ class DataProcessingWorkloadFactory(StdBase):
         cmsswStepType = "CMSSW"
         taskType = "Processing"
         if self.multicore:
-            cmsswStepType = "MulticoreCMSSW"
             taskType = "MultiProcessing"
             
         outputMods = self.setupProcessingTask(procTask, taskType, self.inputDataset,
@@ -85,10 +82,7 @@ class DataProcessingWorkloadFactory(StdBase):
                                               configDoc = self.procConfigCacheID, splitAlgo = self.procJobSplitAlgo,
                                               splitArgs = self.procJobSplitArgs, stepType = cmsswStepType) 
         self.addLogCollectTask(procTask)
-        if self.multicore:
-            cmsswStep = procTask.getStep("cmsRun1")
-            multicoreHelper = cmsswStep.getTypeHelper()
-            multicoreHelper.setMulticoreCores(self.multicoreNCores)
+        
 
         procMergeTasks = {}
         for outputModuleName in outputMods.keys():
@@ -117,27 +111,13 @@ class DataProcessingWorkloadFactory(StdBase):
         self.couchURL = arguments["CouchURL"]
         self.couchDBName = arguments["CouchDBName"]        
 
-        # One of these parameters must be set.
-        if arguments.has_key("ProdConfigCacheID"):
-            self.procConfigCacheID = arguments["ProdConfigCacheID"]
-        else:
-            self.procConfigCacheID = arguments.get("ProcConfigCacheID", None)
+        # Get the ProcConfigCacheID
+        self.procConfigCacheID = arguments.get("ProcConfigCacheID", None)
 
         if arguments.has_key("Scenario"):
             self.procScenario = arguments.get("Scenario", None)
         else:
             self.procScenario = arguments.get("ProcScenario", None)
-
-        if arguments.has_key("Multicore"):
-            numCores = arguments.get("Multicore")
-            if numCores == None or numCores == "":
-                self.multicore = False
-            elif numCores == "auto":
-                self.multicore = True
-                self.multicoreNCores = "auto"
-            else:
-                self.multicore = True
-                self.multicoreNCores = numCores
 
         # Optional arguments that default to something reasonable.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")

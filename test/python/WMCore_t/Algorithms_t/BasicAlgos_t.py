@@ -6,15 +6,14 @@ Test class for Basic Algorithms
 """
 
 import os
+import os.path
 import hashlib
 import unittest
 import tempfile
 
 #from WMCore.Algorithms.BasicAlgos import *
 import WMCore.Algorithms.BasicAlgos as BasicAlgos
-
-
-
+from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 
 class testBasicAlgos(unittest.TestCase):
@@ -24,15 +23,14 @@ class testBasicAlgos(unittest.TestCase):
 
     """
 
-
-
     def setUp(self):
         """
         Do nothing
 
         """
-
-
+        self.testInit = TestInitCouchApp(__file__)
+        self.testDir = self.testInit.generateWorkDir()
+        
         return
 
 
@@ -40,9 +38,8 @@ class testBasicAlgos(unittest.TestCase):
         """
         Do nothing
         
-
         """
-
+        self.testInit.delWorkDir()
 
         return
 
@@ -86,7 +83,7 @@ class testBasicAlgos(unittest.TestCase):
         """
 
         silly = "This is a rather ridiculous string"
-        filename = '/tmp/md5test.test'
+        filename = os.path.join(self.testDir, 'md5test.test')
 
         f = open(filename, 'w')
         f.write(silly)
@@ -96,6 +93,24 @@ class testBasicAlgos(unittest.TestCase):
                          hashlib.md5(silly).hexdigest())
 
         os.remove(filename)
+        return
+
+    def test_fileInfo(self):
+        """
+        _fileInfo_
+
+        Test for basic file info
+        """
+        silly = "This is a rather ridiculous string"
+        filename = os.path.join(self.testDir, 'fileInfo.test')
+
+        f = open(filename, 'w')
+        f.write(silly)
+        f.close()
+        
+        info = BasicAlgos.getFileInfo(filename = filename)
+        self.assertEqual(info['Name'], filename)
+        self.assertEqual(info['Size'], 34)
         return
 
 

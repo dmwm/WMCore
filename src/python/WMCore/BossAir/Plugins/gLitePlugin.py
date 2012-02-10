@@ -13,11 +13,8 @@ import multiprocessing, Queue
 import socket
 import tempfile
 import os
-import re
 import time
 import types
-import stat
-from copy import deepcopy
 
 from WMCore.Wrappers import JsonWrapper as json
 from WMCore.Credential.Proxy           import Proxy, CredentialException
@@ -26,7 +23,7 @@ from WMCore.DAOFactory                 import DAOFactory
 import WMCore.WMInit
 
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
-from WMCore.BossAir.LoggingInfoParser  import LoggingInfoParser
+from WMCore.BossAir.Plugins.GLiteLIParser import LoggingInfoParser
 
 def processWorker(input, results):
     """
@@ -225,7 +222,7 @@ class gLitePlugin(BasePlugin):
         self.defaultjdl['service'] = getattr(self.config.BossAir, 'gliteWMS', None)
         self.basetimeout  = getattr(self.config.JobSubmitter, 'getTimeout', 300 )
         self.defaultjdl['myproxyhost'] = self.defaultDelegation['myProxySvr'] = getattr(self.config.BossAir, 'myproxyhost', self.defaultDelegation['myProxySvr'] )
-        self.loggInfoPars = LoggingInfoParser()
+
 
         self.wmsMode = getattr(self.config.BossAir, 'submitWMSMode', False)
 
@@ -253,6 +250,23 @@ class gLitePlugin(BasePlugin):
                 self.unpacker = os.path.join(wmcoreBasedir, 'src/python/WMCore/WMRuntime/Unpacker.py')
             else:
                 self.unpacker = os.path.join(wmcoreBasedir, 'WMCore/WMRuntime/Unpacker.py')
+
+        if getattr ( self.config.BossAir, 'loggingInfoDir', None) is not None:
+            if not os.path.exists(self.config.BossAir.loggingInfoDir):
+                logging.debug("loggingInfoDir not found: creating it...")
+                try:
+                    os.mkdir(self.config.BossAir.loggingInfoDir)
+                except Exception, ex:
+                    msg = "Error: problem when creating loggingInfoDir " + \
+                          "directory - '%s'" % str(ex)
+                    raise BossAirPluginException( msg )
+            elif not os.path.isdir(self.config.BossAir.loggingInfoDir):
+                msg = "Error: loggingInfoDir '%s' is not a directory" \
+                       % str(self.config.BossAir.loggingInfoDir)
+                raise BossAirPluginException( msg )
+        loggingInfoDir = getattr ( self.config.BossAir, 'loggingInfoDir', None)
+
+        self.loggInfoPars = LoggingInfoParser(loggingInfoDir)
 
         return
 
@@ -663,16 +677,12 @@ class gLitePlugin(BasePlugin):
 
             jobList = dnjobs.get(user, [])
             while len(jobList) > 0:
-                jobIds = []
-                ## TODO: try to avoid iterating over all the jobs
-                for jj in jobList:
-                    jobIds.append( jj['gridid'] )
-                formattedJobIds = ','.join(jobIds)
+                jobsReady = jobList[:self.trackmaxsize]
+                jobList   = jobList[self.trackmaxsize:]
+                formattedJobIds = ','.join([jj['gridid'] for jj in jobsReady])
                 ## TODO: understand how to solve the python 2.4
                 command = 'python2.4 %s --jobId=%s' % (cmdquerypath, \
                                                        formattedJobIds)
-                jobsReady = jobList[:self.trackmaxsize]
-                jobList   = jobList[self.trackmaxsize:]
                 logging.debug("Status check for %i jobs" %len(jobsReady))
                 workqueued[currentwork] = jobsReady
                 completecmd = 'source %s && export LD_LIBRARY_PATH=%s:$LD_LIBRARY_PATH && %s && %s' % (self.setupScript, self.manualenvprefix, exportproxy, command)
@@ -970,7 +980,7 @@ class gLitePlugin(BasePlugin):
             else:
                 logInfoOutfile = '%s/loggingInfo.%i.log' % ( jj['cache_dir'], jj['retry_count'] )
                 if os.path.isfile( logInfoOutfile ):
-                    msg = self.loggInfoPars.parseFile( logInfoOutfile )
+                    msg = self.loggInfoPars.parseFile( logInfoOutfile, jj['jobid'] )
                 else:
                     #this should not happen, but, just in case...
                     msg = "Cannot find %s" % logInfoOutfile

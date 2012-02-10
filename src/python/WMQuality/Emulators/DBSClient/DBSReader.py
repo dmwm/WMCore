@@ -53,6 +53,13 @@ class DBSReader:
                                                self.listFileBlockLocation(block['Name'])]
         return blocks
 
+    def listFileBlocks(self, dataset, onlyClosedBlocks = False,
+                       blockName = '*'):
+        """Get fake block names"""
+        return [x['Name'] for x in self.getFileBlocksInfo(dataset, onlyClosedBlocks = False,
+                                                          blockName = blockName,
+                                                          locations = False)]
+
     def listFileBlockLocation(self, block):
         """Fake locations"""
         return self.dataBlocks.getLocation(block)
@@ -134,6 +141,7 @@ class DBSReader:
             result['NumberOfLumis'] = len(getLumisectionsInBlock(block))
 
             result['path'] = dataset
+            result['block'] = block
 
         if dataset:
             if self.dataBlocks.getBlocks(dataset):

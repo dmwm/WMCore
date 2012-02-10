@@ -181,8 +181,9 @@ class Create(DBCreator):
         requestor_group_id INT(11) NOT NULL,
         workflow TEXT NOT NULL,
 
-        request_size_events INT(11) DEFAULT 0,
-        request_size_files INT(11)  DEFAULT 0,
+        request_num_events INT(11) DEFAULT 0,
+        request_size_files INT(11) DEFAULT 0,
+        request_event_size INT(11) DEFAULT 0,
 
         prep_id VARCHAR(255),
 
@@ -273,10 +274,11 @@ class Create(DBCreator):
         self.create['k_reqmgr_software'] = """
         CREATE TABLE reqmgr_software (
 
-        software_id INT(11) NOT NULL AUTO_INCREMENT,
+        software_id   INT(11)      NOT NULL AUTO_INCREMENT,
         software_name VARCHAR(255) NOT NULL,
+        scram_arch    VARCHAR(255),
 
-        UNIQUE(software_name),
+        UNIQUE(software_name, scram_arch),
         PRIMARY KEY(software_id)
         ) ENGINE=InnoDB
         """
@@ -291,7 +293,7 @@ class Create(DBCreator):
 
            UNIQUE(request_id, software_id),
            FOREIGN KEY(software_id) references
-                reqmgr_software(software_id),
+                reqmgr_software(software_id) ON DELETE CASCADE,
 
            FOREIGN KEY(request_id) references
                 reqmgr_request(request_id)

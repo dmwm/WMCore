@@ -6,17 +6,17 @@
 
 var requestsExpunge = 
 {
-    couchdb : null,
-    mainpage: null,
-    reqMgrUrl: "http://localhost:8687/reqmgr/reqMgr/",
+	mainUrl: null, // full URL to the couchapp
+	// ReqMgr REST API URL (rather than hard-code one)
+    reqMgrUrl: null,
     
     setUp: function()
     {
 		utils.checkAndSetConsole();
-        var dbname = document.location.href.split('/')[3];
-        console.log("couchdb ref set: " + dbname)
-        this.couchdb = $.couch.db(dbname);
-        this.mainpage = this.couchdb.uri + "_design/OpsClipboard/index.html";
+		requestsExpunge.mainUrl = utils.getMainUrl(document.location.href);
+		// document.location.origin is unfortunately undefined ... (that would have had everything)
+		requestsExpunge.reqMgrUrl = document.location.protocol + "//" + 
+		                            document.location.host + "/reqmgr/reqMgr/";
     }, // setUp()
     
     
@@ -40,54 +40,35 @@ var requestsExpunge =
             if (rowsToSubmit[r].state == "ReadyToReject")
             {
             	// TODO
-            	// not clear how to decide if 'aborted' or 'failed' (or some other) should be applied
-            	// listbox in the table?
+            	// not clear how to decide if 'aborted' or 'failed' (or some other) 
+            	// state should be set at ReqMgr ; listbox in the table?
             	state = 'failed';
             }
             var reqId = rowsToSubmit[r].requestId;
             var docRev = rowsToSubmit[r].documentRev;
             
             // make ReqMgr REST call - advance to the next state
-            var reqMgrUrl = requestsExpunge.reqMgrUrl + "request/" + reqId;
-            console.log("ReqMgr call: " + reqMgrUrl);
+            // how to make REST call from JavaScript:
+            // http://developer.yahoo.com/yui/connection/
+            // http://api.jquery.com/jQuery.ajax/ (similar to down for couchdb, but PUT method)
+            // getting "Unsupported verb: OPTIONS" - same origin policy violation ...
+            var url = requestsExpunge.reqMgrUrl + "request/" + reqId;
+            var data = {"status": state};
+            var options = {"method": "PUT", "reloadPage": false};                        
+            utils.makeHttpRequest(url, null, data, options);
             // TODO
-            // to double-check, seeing from Firefox: Unsupported verb: OPTIONS
-            $.ajax({url: reqMgrUrl,
-            	    type: "PUT",
-            	    data:  "status=" + state,
-                    success : function(resp) { console.log(resp); },
-                    error: function(resp) { console.log("Call to ReqMgr failed, reason: " + resp); }
-                   });
+            // maybe should query ReqMgr to check status change
+            // currently, this call on a request non-existent in ReqMgr throws
+            // 500 error at ReqMgr but here propagates request.status = 0
             
             // remove from OpsClipboard
             // need to put revision to avoid {"error":"conflict","reason":"Document update conflict."}
-            var couchUri = requestsExpunge.couchdb.uri + docId + "?rev=" + docRev;
-            console.log("removing doc from couch (uri): " + couchUri);            
-            $.ajax({url: couchUri,
-            	    type: "DELETE",
-            	    success : function(resp) { console.log(resp); }
-                   });
-            
-            // another solution experimented with - gives syntax error
-            //requestsExpunge.couchdb.openDoc(docId, 
-            //{
-            //	success: function(doc) 
-            //	{
-            //		requestsExpunge.couchdb.removeDoc(doc,
-            //		{
-            //			success: function()
-            //			{
-            //				console.log("deleted");
-            //           },
-            //            error: function()
-            //           {
-            //            	alert("Could not delete document(s) from CouchDB.");
-            //            }
-            //        })
-            //    }
-            //});            
+        	// URL to get after the couch database name to be able to modify the document
+            var url = requestsExpunge.mainUrl.split("_design")[0] + docId;
+            var data = {"rev": docRev};
+            var options = {"method": "DELETE", "reloadPage": true};
+            utils.makeHttpRequest(url, null, data, options);
         }
-        window.location.reload();
     }, // submitExpunge()
     
     
@@ -145,10 +126,10 @@ var requestsExpunge =
         var button = document.createElement("input");
         button.type = "button";
         button.value = "Expunge";
-        button.onclick = this.submitExpunge;
+        button.onclick = requestsExpunge.submitExpunge;
         document.getElementById(elemId).appendChild(button);
       
-        utils.addPageLink(requestsExpunge.mainpage, "Main Page");
+        utils.addPageLink(requestsExpunge.mainUrl + "index.html", "Main Page");
     }, // requestsExpunge()
     
         	                    
@@ -161,8 +142,8 @@ var requestsExpunge =
     	row.style.backgroundColor = rowColor;
     	row.insertCell(0).innerHTML = state;
     	row.insertCell(1).innerHTML = new Date(parseInt(lastUpdated)).toLocaleString();
-        var clipLink = "<a href=\"" + requestsExpunge.couchdb.uri ;
-        clipLink += "_design/OpsClipboard/_show/request/" + docId + "\">" + reqId + "</a>";
+        var clipLink = "<a href=\"" + requestsExpunge.mainUrl;
+        clipLink += "_show/request/" + docId + "\">" + reqId + "</a>";
         row.insertCell(2).innerHTML = clipLink;        
         var checkbox = document.createElement("input");
         checkbox.type = "checkbox";
@@ -174,26 +155,28 @@ var requestsExpunge =
     }, // addTableRow()
     
     
+    processData: function(data)
+    {
+		for (i in data.rows)
+		{
+			var state = data.rows[i].key;
+			var updated = data.rows[i].value['updated'];
+			var reqId = data.rows[i].value['request_id'];
+			var docId = data.rows[i].value['doc_id'];
+			var docRev = data.rows[i].value['rev'];
+            // alternate colours in table rows
+            var rowColor = i % 2 === 0 ? "#FAFAFA" : "#E3E3E3";    	                    
+            requestsExpunge.addTableRow(reqId, docId, docRev, state, updated, rowColor);
+		}
+    }, // processData()
+    
+
     // load the couch view and populate the table.
     requestsExpungeUpdate: function()
     {
-    	this.couchdb.view("OpsClipboard/expunge",
-    			{
-                	success : function(data)
-                	{
-    					for (i in data.rows)
-    					{
-    						var state = data.rows[i].key;
-    						var updated = data.rows[i].value['updated'];
-    						var reqId = data.rows[i].value['request_id'];
-    						var docId = data.rows[i].value['doc_id'];
-    						var docRev = data.rows[i].value['rev'];
-    	                    // alternate colours in table rows
-    	                    var rowColor = i % 2 === 0 ? "#FAFAFA" : "#E3E3E3";    	                    
-    	                    requestsExpunge.addTableRow(reqId, docId, docRev, state, updated, rowColor);
-    					}
-                	}
-    			});
+        var url = requestsExpunge.mainUrl + "_view/expunge";
+        var options = {"method": "GET", "reloadPage": false};
+        utils.makeHttpRequest(url, requestsExpunge.processData, null, options);
     } // requestsExpungeUpdate()
     
 } // requestsExpunge

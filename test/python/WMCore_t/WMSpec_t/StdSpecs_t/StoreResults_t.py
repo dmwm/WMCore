@@ -54,8 +54,9 @@ class StoreResultsTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("ewv@fnal.gov", "DMWM")
 
-        testWMBSHelper = WMBSHelper(testWorkload, "SomeBlock")
-        testWMBSHelper.createSubscription()
+        testWMBSHelper = WMBSHelper(testWorkload, "StoreResults", "SomeBlock")
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         testWorkflow = Workflow(name = "TestWorkload",
                                 task = "/TestWorkload/StoreResults")

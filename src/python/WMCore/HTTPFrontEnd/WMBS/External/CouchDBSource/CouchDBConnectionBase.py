@@ -28,11 +28,13 @@ class CouchDBConnectionBase(object):
 
         couchServer = CouchServer(dburl = self.couchURL)
         couchDB = couchServer.connectDatabase(dbname = self.jobDumpDB)
+        couchDB['timeout'] = 300 # set request timeout 5 min
         return couchDB
 
     def getCouchJobsDB(self):
         couchServer = CouchServer(dburl = self.couchURL)
         couchDB = couchServer.connectDatabase(dbname = self.jobDumpDB + "/jobs")
+        couchDB['timeout'] = 300 # set request timeout 5 min
         return couchDB
 
     def getCouchACDC(self):

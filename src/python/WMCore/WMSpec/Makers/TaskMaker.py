@@ -48,8 +48,8 @@ class TaskMaker:
         self.skipSubscription = False
         self.workflowDict = {}
         self.subDict      = {}
-        self.owner        = ''
-        self.owner_dn     = ''
+        self.owner        = "unknown"
+        self.owner_dn     = "unknown"
 
 
         myThread = threading.currentThread()

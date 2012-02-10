@@ -14,6 +14,7 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WorkQueue.WMBSHelper import freeSlots
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.Job import Job
+from WMCore.WorkQueue.WorkQueueUtils import cmsSiteNames
 
 class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
     """
@@ -56,7 +57,7 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         self.queue.logger.info("Getting work and feeding WMBS files")
 
         # need to make sure jobs are created
-        resources = freeSlots(minusRunning = True)
+        resources = freeSlots(minusRunning = True, knownCmsSites = cmsSiteNames())
 
         for site in resources:
             self.queue.logger.info("I need %d jobs on site %s" % (resources[site], site))

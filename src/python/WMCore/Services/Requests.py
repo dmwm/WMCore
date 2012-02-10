@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #pylint: disable-msg=C0103,R0913,W0102
 """
 _Requests_
@@ -22,13 +22,18 @@ import shutil
 import stat
 import sys
 
+try:
+    import cStringIO as StringIO
+except:
+    import StringIO
+
 from WMCore.Algorithms import Permissions
 
 from WMCore.WMException import WMException
 from WMCore.Wrappers.JsonWrapper import JSONEncoder, JSONDecoder
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
 try:
-    from WMCore.Services.pycurl_manager import RequestHandler
+    from WMCore.Services.pycurl_manager import RequestHandler, ResponseHeader
 except ImportError:
     pass
 from WMCore.Lexicon import sanitizeURL
@@ -40,6 +45,63 @@ def check_server_url(srvurl):
         msg  = "You must include"
         msg += "http(s):// in your servers address, %s doesn't" % srvurl
         raise ValueError(msg)
+
+def uploadFile(fileName, url, fieldName = 'file1', params = []):
+    """
+    Upload a file with curl streaming it directly from disk
+    """
+    import pycurl
+    c = pycurl.Curl()
+    c.setopt(c.POST, 1)
+    c.setopt(c.URL, url)
+    fullParams = [(fieldName, (c.FORM_FILE, fileName))]
+    fullParams.extend(params)
+    c.setopt(c.HTTPPOST, fullParams)
+    c.setopt(c.HTTPHEADER, ['Content-Length: %d' % len(fileName), "Accept: application/json"])
+    bbuf = StringIO.StringIO()
+    hbuf = StringIO.StringIO()
+    c.setopt(pycurl.WRITEFUNCTION, bbuf.write)
+    c.setopt(pycurl.HEADERFUNCTION, hbuf.write)
+    c.perform()
+    hres = hbuf.getvalue()
+    bres = bbuf.getvalue()
+    rh = ResponseHeader(hres)
+    c.close()
+    if  rh.status < 200 or rh.status >= 300:
+        exc = HTTPException(bres)
+        setattr(exc, 'req_data', fullParams)
+        setattr(exc, 'url', url)
+        setattr(exc, 'result', bres)
+        setattr(exc, 'status', rh.status)
+        setattr(exc, 'reason', rh.reason)
+        setattr(exc, 'headers', rh.header)
+        raise exc
+
+    return bres
+
+def downloadFile(fileName, url):
+    """
+    Download a file with curl streaming it directly to disk
+    """
+    import pycurl
+    from WMCore.Services.pycurl_manager import ResponseHeader
+
+    hbuf = StringIO.StringIO()
+
+    with open(fileName, "wb") as fp:
+        curl = pycurl.Curl()
+        curl.setopt(pycurl.URL, url)
+        curl.setopt(pycurl.WRITEDATA, fp)
+        curl.setopt(pycurl.HEADERFUNCTION, hbuf.write)
+        curl.setopt(pycurl.FOLLOWLOCATION, 1)
+        curl.perform()
+        curl.close()
+
+        header = ResponseHeader(hbuf.getvalue())
+        if header.status < 200 or header.status >= 300:
+            raise RuntimeError('Reading %s failed with code %s' % (url, header.status))
+    return fileName, header
+
 
 class Requests(dict):
     """
@@ -155,12 +217,8 @@ class Requests(dict):
         #And now overwrite any headers that have been passed into the call:
         headers.update(incoming_headers)
         url = self['host'] + uri
-        if  verb == 'POST':
-            post = 1
-        else:
-            post = None
         response, data = self.reqmgr.request(url, params, headers, \
-                    post=post, ckey=ckey, cert=cert, decode=decoder)
+                    verb=verb, ckey=ckey, cert=cert, decode=decoder)
         return data, response.status, response.reason, response.fromcache
 
     def makeRequest_httplib(self, uri=None, data={}, verb='GET',

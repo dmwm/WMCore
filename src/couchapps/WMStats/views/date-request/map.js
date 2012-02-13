@@ -1,6 +1,6 @@
 
 function(doc) {
   if (doc.type == "reqmgr_request"){
-    emit(doc.request_date, {"id": doc._id}) ;
+    emit([doc.request_date, doc.requestor], {"id": doc._id}) ;
   } 
 }

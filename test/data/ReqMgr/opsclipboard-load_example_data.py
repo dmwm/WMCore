@@ -75,7 +75,6 @@ class CouchAppTester(object):
         print "Request names: %s" % requestIds
         OpsClipboard.inject(self.couchUrl, self.dbName, *requests)
         print "OpsClipboard.inject() will inject only new request names ..."
-        self.queryAll()
         # in order to load a couchapp view - need to have couchapp name, e.g.:
         #results = self.couch.loadView("OpsClipboard", "all")
         #print results
@@ -121,10 +120,9 @@ def main():
     tester = CouchAppTester(opts.couchUrl, opts.database)
     if opts.couchapp:
         tester.couchapp(opts.couchapp)
-    elif opts.createRequests:
+    if opts.createRequests:
         tester.createRequests(int(opts.createRequests))
-    else:
-        tester.queryAll()
+    tester.queryAll()
         
     print "Finished."
 

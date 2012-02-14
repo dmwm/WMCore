@@ -6,14 +6,7 @@
 
 var bulkChange = 
 {
-    mainUrl: null, // full URL to the couchapp
-    
-    setUp: function()
-    {
-		utils.checkAndSetConsole();
-		bulkChange.mainUrl = utils.getMainUrl(document.location.href);
-    }, // setUp()
-    
+    mainUrl: null, // full URL to the couchapp, gets set up in the utils.setUp()
     
     // trawl the table contents, find all the checked entries and the new states
     // and fire off the changestate requests
@@ -69,9 +62,19 @@ var bulkChange =
     
     
     // build the bulk change table and submit button
-    bulkChange : function(elemId)
+    define : function(input)
     {
-        console.log("bulkChange");
+    	utils.setUp(bulkChange);
+    	// id of the div element into which this content will be defined
+    	var elemId = input.contentDivId;
+        console.log("bulkChange.define() - building the table");
+
+        // do page title
+        var pageTitle = document.createElement("div");
+        pageTitle.innerHTML = "Request Bulk State Change";
+        pageTitle.id = "pagetitle";
+        document.getElementById(elemId).appendChild(pageTitle);
+  
         var table = document.createElement("table");
         table.id = "bulkrequesttableid";
         // entire table style
@@ -96,9 +99,7 @@ var bulkChange =
         button.value = "Submit Changes";
         button.onclick = bulkChange.submitBulkChange;
         document.getElementById(elemId).appendChild(button);
-      
-        utils.addPageLink(bulkChange.mainUrl + "index.html", "Main Page");
-    }, // bulkChange()
+    }, // define()
     
     
     addTableRow: function(reqId, docId, state, rowColor)
@@ -146,11 +147,11 @@ var bulkChange =
     // load the couch view and populate the table.
     // each table row is tagged with the request id that can be used
     // to look up and modify the table when bulk changes are committed
-    bulkChangeUpdate: function()
+    update: function()
     {
         var url = bulkChange.mainUrl + "_view/request";
         var options = {"method": "GET", "reloadPage": false};
         utils.makeHttpRequest(url, bulkChange.processData, null, options); 
-    } // bulkChangeUpdate()
+    } // update()
     
 } // bulkChange

@@ -7,19 +7,21 @@ var requestsView =
 {
 	mainUrl: null, // full URL to the couchapp
     
-    setUp: function()
-    {
-		utils.checkAndSetConsole();
-		requestsView.mainUrl = utils.getMainUrl(document.location.href);		
-    }, // setUp()
-    
-    
     // main page building & display
     // build a table in the supplied HTML element
-    // elemId is parrent elementId
-    requestsView: function(elemId)
+    // elemId is parent elementId
+    define: function(input)
     {
-        console.log("requestsView - building the table");
+		utils.setUp(requestsView);
+		var elemId = input.contentDivId;
+        console.log("requestsView.define() - building the table");
+        
+        // do page title
+        var pageTitle = document.createElement("div");
+        pageTitle.innerHTML = "Requests View";
+        pageTitle.id = "pagetitle";
+        document.getElementById(elemId).appendChild(pageTitle);
+  
         // create campaign selection filter
         var tableCampaignSelect = document.createElement("table");
         var row = tableCampaignSelect.insertRow(-1);
@@ -31,7 +33,7 @@ var requestsView =
     	var option = document.createElement("option");
     	option.text = "<unselected>";
     	campaignSelect.add(option, null);
-    	campaignSelect.onchange = function() { requestsView.requestsViewTableUpdate(elemId); };
+    	campaignSelect.onchange = function() { requestsView.byCampaignSelectionUpdate(elemId); };
         row.insertCell(1).appendChild(campaignSelect);
         var row = tableCampaignSelect.insertRow(-1);
         document.getElementById(elemId).appendChild(tableCampaignSelect);
@@ -39,9 +41,7 @@ var requestsView =
 
         var table = requestsView.setUpRequestsTable();
         document.getElementById(elemId).appendChild(table);
-        
-        utils.addPageLink(requestsView.mainUrl + "index.html", "Main Page");
-    }, // requestsView()
+    }, // define()
     
     
     setUpRequestsTable: function()
@@ -70,7 +70,7 @@ var requestsView =
     	console.log("adding:" + state + "  " + lastUpdated + "  " + reqId + "  " + docId);
     	var updatedDateTime = new Date(parseInt(lastUpdated)).toLocaleString();
         var clipLink = "<a href=\"" + requestsView.mainUrl;
-        clipLink += "_show/request/" + docId + "\">" + reqId + "</a>";
+        clipLink += "index.html?object=requestShow&docId=" + docId + "\">" + reqId + "</a>";
     	table = document.getElementById("requestsviewtable");
     	var row = table.insertRow(-1);
     	row.style.backgroundColor = rowColor;
@@ -82,7 +82,16 @@ var requestsView =
         
     processRequestsData: function(data)
     {
-		for (i in data.rows) 
+    	// this function is called to process results from 'campaign' view
+    	// which returns a list of request sorted by the key which is campaign name
+    	// this orders the list according to request names 
+    	function sortFunc(a, b)
+    	{
+    		return a.value["request_id"] > b.value["request_id"];
+    	};
+    	data.rows.sort(sortFunc);	
+		
+    	for (i in data.rows) 
 		{
 			var reqId = data.rows[i].value['request_id'];
             var docId = data.rows[i].value['doc_id'];
@@ -117,19 +126,19 @@ var requestsView =
     // load view from couch and populate page
     // this function is called from the HTML page, fills in the content
     // of the campaign drop-down menu
-    requestsViewUpdate: function()
+    update: function()
     {
     	var url = requestsView.mainUrl + "_view/campaign";
         var options = {"method": "GET", "reloadPage": false};
         var campaignOptions = document.getElementById("campaignselectid").options;
         utils.makeHttpRequest(url, requestsView.processRequestsData, null, options);        
         requestsView.setCampaignSelect();
-    }, // requestsViewUpdate()
+    }, // update()
     
     
     // called on-change by campaign select drop-down menu
     // content of the drop-down menu is not modified here
-    requestsViewTableUpdate: function(elemId)
+    byCampaignSelectionUpdate: function(elemId)
     {
     	var url = requestsView.mainUrl + "_view/campaign";
         var options = {"method": "GET", "reloadPage": false};    	
@@ -146,14 +155,14 @@ var requestsView =
     	}
     	// remove current stuff from the table
     	// removing by row shall potentially work, but results are chaotic and disfunctional
-    	//	able.deleteRow(i);	
+    	// able.deleteRow(i);	
     	// replacing the whole element works ok
     	table = document.getElementById("requestsviewtable");
     	document.getElementById(elemId).removeChild(table);
     	var newTable = requestsView.setUpRequestsTable();
     	document.getElementById(elemId).appendChild(newTable);
         utils.makeHttpRequest(url, requestsView.processRequestsData, data, options);    	
-    } // requestsViewTableUpdate()
+    } // byCampaignSelectionUpdate()
     
     
 } // requestsView

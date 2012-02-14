@@ -9,7 +9,7 @@
 
 var requestShow = 
 {
-	mainUrl: null, // full URL to the couchapp
+	mainUrl: null, // full URL to the couchapp, gets set up in the utils.setUp()
 	documentId: null, // couch doc id
     // ids of HTML elements (key in this dictionary) and element titles for request
     // details section of the page
@@ -22,19 +22,20 @@ var requestShow =
     		                  "numDescCellId": "# Descriptions:"}, 
 
     		                  
-    setUp: function()
-    {
-        utils.checkAndSetConsole();
-        requestShow.mainUrl = utils.getMainUrl(document.location.href);
-    }, // setUp()
-    
-            
     // main function that draws the page elements and generates the forms
-    requestShow: function(docId, requestShowPanelDivId)
+    define: function(input)
     {
-    	console.log("requestShow");
-    	requestShow.documentId = docId;
-        
+        utils.setUp(requestShow);        
+    	// id of the div element into which this content will be defined
+    	var requestShowPanelDivId = input.contentDivId;
+    	requestShow.documentId = input.docId
+    	console.log("requestShow.define() - request details");
+    	
+        // do page title
+        var pageTitle = document.createElement("div");
+        pageTitle.id = "pagetitle";
+        document.getElementById(requestShowPanelDivId).appendChild(pageTitle);
+
         // left-hand side table with all request details, but descriptions (will be on the right)
         var detailsTable = document.createElement("table");
         detailsTable.style.backgroundColor = "#EBEBEB";
@@ -46,14 +47,14 @@ var requestShow =
         {
         	var row = detailsTable.insertRow(-1);
             row.insertCell(0).innerHTML = requestShow.reqDetailsTableElements[id];
-            row.cells[0].style.fontWeight = "bold";
+            row.cells[0].className = "requestdetailstitle";
             row.insertCell(1); // will later hold the value
             row.cells[1].id = id;        	
         }
         // add change state row (label, listbox, form ...)
         var row = detailsTable.insertRow(-1);
         row.insertCell(0).innerHTML = "Change State:";
-        row.cells[0].style.fontWeight = "bold";
+        row.cells[0].className = "requestdetailstitle";
         var stateMenu = document.createElement("select");
         stateMenu.id = "selectState";
         stateMenu.name = "selectState";
@@ -72,7 +73,7 @@ var requestShow =
         // right-hand side table with descriptions / notes                
         var descTable = document.createElement("table");
         descTable.style.backgroundColor = "#EBEBEB";
-        descTable.cellPadding = "3px";
+        descTable.cellPadding = "7px";
         // TODO
         // alignment doesn't seem to work on the right-hand side - starting from the top
         // likely incorrectly used ...
@@ -87,18 +88,19 @@ var requestShow =
         row.insertCell(0);
         var descLabel = document.createElement("div");
         descLabel.innerHTML = "Previous descriptions / notes:";
+        descLabel.className = "requestdetailstitle";
         row.cells[0].appendChild(descLabel);
         // text area for previous descriptions (those loaded from couch)
         var prevDescTextArea = document.createElement("textarea");
         prevDescTextArea.readOnly = true;
         prevDescTextArea.style.backgroundColor = "#FAFAFA";
         prevDescTextArea.id = "prevDescTextAreaId";
-        prevDescTextArea.style.width  = "500px";
+        prevDescTextArea.style.width  = "350px";
         prevDescTextArea.style.height = "200px";
         row.cells[0].appendChild(prevDescTextArea);
         // text area for new request descriptions / notes
         var newDescTextArea = document.createElement("textarea");
-        newDescTextArea.style.width  = "500px";
+        newDescTextArea.style.width  = "350px";
         newDescTextArea.style.height = "70px";
         newDescTextArea.value = "Add a note here..."
         newDescTextArea.id = "newDescriptionTextAreaId";
@@ -139,8 +141,6 @@ var requestShow =
                 
         document.getElementById(requestShowPanelDivId).appendChild(mainTable);
         
-        utils.addPageLink(requestShow.mainUrl + "index.html", "Main Page");
-        
         // TODO
         // perhaps the solution to align label and the listbox ...
         // display the current state in a labelled div
@@ -148,7 +148,7 @@ var requestShow =
         // stateLabel.for = "currState";
         // stateLabel.innerHTML = "<p>Current State:</p>";
         // var currentState = document.createElement("div")
-    }, // requestShow()
+    }, // define()
     
 
     // submit the change state form to the update handler when the
@@ -230,7 +230,9 @@ var requestShow =
     processData: function(couchDoc)
     {
 		console.log("updating page on couch doc id: " + requestShow.documentId);
-		var data = {};
+		var pageTitle = document.getElementById("pagetitle");
+		pageTitle.innerHTML = "Request \"" + couchDoc.request.request_id + "\"";
+		var data = {};		
 		// keys used here has to agree with reqDetailsTableElements
 		data["currDocIdCellId"] = requestShow.documentId;
 		data["currStateCellId"] = couchDoc.state;
@@ -248,12 +250,12 @@ var requestShow =
     // update function
     // retrieve the latest version of the doc from couch and populate
     // the displays and form fields 
-    requestShowUpdate: function()
+    update: function()
     {    	
     	// URL to get: main URL without _design/CouchAppName plus docId
         var url = requestShow.mainUrl.split("_design")[0] + requestShow.documentId;
         var options = {"method": "GET", "reloadPage": false};
         utils.makeHttpRequest(url, requestShow.processData, null, options);
-    }, // requestShowUpdate() 
+    }, // update() 
     
 } // requestShow

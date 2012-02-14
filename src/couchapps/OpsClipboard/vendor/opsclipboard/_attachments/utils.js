@@ -5,6 +5,13 @@
 
 var utils =
 {
+	setUp: function(module)
+	{
+		utils.checkAndSetConsole();
+		module.mainUrl = utils.getMainUrl(document.location.href);
+	}, // setUp()
+
+	
 	// console - Firefox Firebug plugin development debug tool
 	// if run without this plugin or on non-Firefox browser, it's
 	// necessary to set console variable so that the code still
@@ -23,12 +30,21 @@ var utils =
 
 
 	// add a main / index page link to the document body
-	addPageLink: function(link, linkTitle)
+	addPageLink: function(link, linkTitle, parentElem)
 	{
 		var backLink = document.createElement("div");
 		backLink.innerHTML = "<a href=\"" + link + "\">" + linkTitle + "</a>";
-		document.body.appendChild(document.createElement("br"));
-		document.body.appendChild(backLink);		
+		var divElem = document.createElement("div");
+		divElem.appendChild(document.createElement("br"));
+		divElem.appendChild(backLink);
+		if (parentElem === null)
+		{
+			document.body.appendChild(divElem);			
+		}
+		else
+		{
+			document.getElementById(parentElem).appendChild(divElem);
+		}				
 	}, // addMainPageLink()
 	
 	
@@ -140,6 +156,26 @@ var utils =
 		{
 			request.send(null);
 		}
-	} // makeHttpRequest()
+	}, // makeHttpRequest()
+    
+    
+    // this function parses ampersand-separated name-value argument pairs
+    getUrlArguments: function()
+    {
+		var args = {};
+		var query = location.search.substring(1); // without ?
+		var pairs = query.split("&");
+		for (var i=0; i<pairs.length; i++)
+		{
+			var pos = pairs[i].indexOf('=');
+			if (pos == -1) continue;
+			var name = pairs[i].substring(0, pos);
+			var value = pairs[i].substring(pos + 1);
+			value = decodeURIComponent(value);
+			args[name] = value;
+		}
+		return args;	
+    } // getUrlArguments()
+	
 	
 } // utils

@@ -6,20 +6,12 @@
 
 var requestsExpunge = 
 {
+	// gets set up in the utils.setUp()
 	mainUrl: null, // full URL to the couchapp
 	// ReqMgr REST API URL (rather than hard-code one)
     reqMgrUrl: null,
     
-    setUp: function()
-    {
-		utils.checkAndSetConsole();
-		requestsExpunge.mainUrl = utils.getMainUrl(document.location.href);
-		// document.location.origin is unfortunately undefined ... (that would have had everything)
-		requestsExpunge.reqMgrUrl = document.location.protocol + "//" + 
-		                            document.location.host + "/reqmgr/reqMgr/";
-    }, // setUp()
-    
-    
+
     // submit an expunge request: remove requests from OpsClipboard
     // and make REST call to ReqMgr to set appropriate state there:
     // 'assigned' for ReadyToRelease, 'failed/aborted' for ReadyToReject    
@@ -101,9 +93,22 @@ var requestsExpunge =
     
     
     // build the expunge table and submit button
-    requestsExpunge : function(elemId)
-    {
-        console.log("requestsExpunge");
+    define: function(input)
+    {    	
+    	utils.setUp(requestsExpunge);
+    	// id of the div element into which this content will be defined
+    	var elemId = input.contentDivId;
+		// document.location.origin is unfortunately undefined ... (that would have had everything)
+		requestsExpunge.reqMgrUrl = document.location.protocol + "//" + 
+		                            document.location.host + "/reqmgr/reqMgr/";
+        console.log("requestsExpunge.define() - building the table");
+        
+        // do page title
+        var pageTitle = document.createElement("div");
+        pageTitle.innerHTML = "Expunge Requests from OpsClipboard";
+        pageTitle.id = "pagetitle";
+        document.getElementById(elemId).appendChild(pageTitle);
+  
         var table = document.createElement("table");
         table.id = "requestsexpungetableid";
         // entire table style
@@ -128,9 +133,7 @@ var requestsExpunge =
         button.value = "Expunge";
         button.onclick = requestsExpunge.submitExpunge;
         document.getElementById(elemId).appendChild(button);
-      
-        utils.addPageLink(requestsExpunge.mainUrl + "index.html", "Main Page");
-    }, // requestsExpunge()
+    }, // define()
     
         	                    
     addTableRow: function(reqId, docId, docRev, state, lastUpdated, rowColor)
@@ -143,7 +146,7 @@ var requestsExpunge =
     	row.insertCell(0).innerHTML = state;
     	row.insertCell(1).innerHTML = new Date(parseInt(lastUpdated)).toLocaleString();
         var clipLink = "<a href=\"" + requestsExpunge.mainUrl;
-        clipLink += "_show/request/" + docId + "\">" + reqId + "</a>";
+        clipLink += "index.html?object=requestShow&docId=" + docId + "\">" + reqId + "</a>";
         row.insertCell(2).innerHTML = clipLink;        
         var checkbox = document.createElement("input");
         checkbox.type = "checkbox";
@@ -171,12 +174,12 @@ var requestsExpunge =
     }, // processData()
     
 
-    // load the couch view and populate the table.
-    requestsExpungeUpdate: function()
+    // load the couch view and populate the table
+    update: function()
     {
         var url = requestsExpunge.mainUrl + "_view/expunge";
         var options = {"method": "GET", "reloadPage": false};
         utils.makeHttpRequest(url, requestsExpunge.processData, null, options);
-    } // requestsExpungeUpdate()
+    } // update()
     
 } // requestsExpunge

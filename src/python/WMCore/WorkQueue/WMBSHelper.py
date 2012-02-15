@@ -258,11 +258,12 @@ class WMBSHelper(WMConnectionBase):
         # create runtime sandbox for workflow
         self.createSandbox()
 
+        #FIXME: Let workflow put in values if spec is missing them
         workflow = Workflow(spec = self.wmSpec.specUrl(), owner = self.wmSpec.getOwner()["name"],
-                            dn = self.wmSpec.getOwner().get("dn", None),
-                            group = self.wmSpec.getOwner().get("group", None),                            
-                            owner_vogroup = self.wmSpec.getOwner().get("vogroup", ''),
-                            owner_vorole = self.wmSpec.getOwner().get("vorole", ''),
+                            dn = self.wmSpec.getOwner().get("dn", "unknown"),
+                            group = self.wmSpec.getOwner().get("group", "unknown"),
+                            owner_vogroup = self.wmSpec.getOwner().get("vogroup", "DEFAULT"),
+                            owner_vorole = self.wmSpec.getOwner().get("vorole", "DEFAULT"),
                             name = self.wmSpec.name(), task = task.getPathName(),
                             wfType = self.wmSpec.getDashboardActivity())
         workflow.create()

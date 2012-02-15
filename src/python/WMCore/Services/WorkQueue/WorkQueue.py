@@ -78,6 +78,8 @@ class WorkQueue(object):
 
     def updateElements(self, *elementIds, **updatedParams):
         """Update given element's (identified by id) with new parameters"""
+        if not elementIds:
+            return
         import urllib
         uri = "/" + self.db.name + "/_design/WorkQueue/_update/in-place/"
         data = {"updates" : json.dumps(updatedParams)}
@@ -88,6 +90,9 @@ class WorkQueue(object):
 
     def cancelWorkflow(self, wf):
         """Cancel a workflow"""
-        data = self.db.loadView('WorkQueue', 'elementsByWorkflow', {'key' : wf, 'reduce' : False})
-        elements = [x['id'] for x in data.get('rows', [])]
+        nonCancelableElements = ['Done', 'Canceled', 'Failed']
+        data = self.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
+                                {'startkey' : [wf], 'endkey' : [wf, {}],
+                                 'reduce' : False})
+        elements = [x['id'] for x in data.get('rows', []) if x['key'][1] not in nonCancelableElements]
         return self.updateElements(*elements, Status = 'CancelRequested')

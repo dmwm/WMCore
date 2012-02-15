@@ -247,7 +247,8 @@ class ChangeState(WMObject, WMConnectionBase):
                 outputs = [ {'type': singlefile.get('module_label', None),
                              'lfn': singlefile.get('lfn', None),
                              'location': singlefile.get('locations', None),
-                             'checksums': singlefile.get('checksums', {})} for singlefile in job["fwjr"].getAllFiles() if singlefile ]
+                             'checksums': singlefile.get('checksums', {}),
+                             'size': singlefile.get('size', None) } for singlefile in job["fwjr"].getAllFiles() if singlefile ]
                 jobSummary = {"_id": jobSummaryId,
                               "type": "jobsummary",
                               "retrycount": job["retry_count"],

@@ -78,6 +78,7 @@ class TaskArchiverTest(unittest.TestCase):
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
         self.getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
+        self.inject  = self.daofactory(classname = "Workflow.MarkInjectedWorkflows")
 
         self.testDir = self.testInit.generateWorkDir()
         os.makedirs(os.path.join(self.testDir, 'specDir'))
@@ -191,6 +192,7 @@ class TaskArchiverTest(unittest.TestCase):
         testWorkflow = Workflow(spec = specLocation, owner = "Simon",
                                 name = name, task = task)
         testWorkflow.create()
+        self.inject.execute(names = [name], injected = True)
 
         testWMBSFileset = Fileset(name = name)
         testWMBSFileset.create()

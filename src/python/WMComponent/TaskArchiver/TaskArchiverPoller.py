@@ -445,9 +445,15 @@ class TaskArchiverPoller(BaseWorkerThread):
             maskA  = job['mask']
 
             # Have to transform this because JSON is too stupid to understand ints
-            for key in maskA['runAndLumis'].keys():
-                maskA['runAndLumis'][int(key)] = maskA['runAndLumis'][key]
-                del maskA['runAndLumis'][key]
+            # Also for some reason we're getting a strange problem where the mask
+            # isn't being loaded at all.  I'm not sure what to do there except drop it.
+            try:
+                for key in maskA['runAndLumis'].keys():
+                    maskA['runAndLumis'][int(key)] = maskA['runAndLumis'][key]
+                    del maskA['runAndLumis'][key]
+            except KeyError:
+                # We don't have a mask.  Not much we can do about this
+                maskA = Mask()
             mask   = Mask()
             mask.update(maskA)
             runs   = []

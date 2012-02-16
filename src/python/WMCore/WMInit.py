@@ -70,8 +70,7 @@ class WMInit:
     
     def getWMBASE(self):
         """ for those that don't want to use the static version"""
-        # I know that I am in src/python/WMCore/WMInit.py
-        return os.path.normpath( os.path.join(os.path.dirname(__file__), '..', '..','..' ) )
+        return getWMBASE()
 
     def setLogging(self,logFile = None, logName = None, logLevel = logging.INFO, logExists = True):
         """

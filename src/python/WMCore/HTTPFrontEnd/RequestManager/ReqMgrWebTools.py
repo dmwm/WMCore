@@ -65,6 +65,8 @@ def parseRunList(l):
         if toks == ['']:
             return []
         result = [int(tok) for tok in toks]
+    elif isinstance(l, int):
+        result = [l]
     else:
         raise cherrypy.HTTPError(400, "Bad Run list of type " + type(l).__name__)
 

@@ -1,3 +1,25 @@
+0.8.26pre4 to 0.8.26pre5:
+  - Avoid problems with jobs that do not have a mask in the TaskArchiver.  Fixes #3283.
+  - Don't swallow errors in the ReqMgr.  Fixes #3241.
+  - Accept single run lists in the ReqMgr.  Fixes #3239.
+  - Change how ReqMgr authenticates abort requests.  Fixes #2456.
+  - Fix Config.DataProcessing support.  Fixes #3251.
+  - Set the subDir correctly in the TaskArchiver.  Fixes #3238.
+  - Fix the DBSBuffer AddWorkflow DAO on Oracle.  Fixes #3255.
+  - Adds new regexp to parse rfio path.  Fixes #3223
+  - Turn off lazy download for multicore jobs.  Fixes #3165.
+  - Fix the BossAir NewJobs DAO on Oracle.  Fixes #3228.
+  - Make WMInit.getWMBASE() work with rpm installs.  Fixes #3230.
+  - ReqMgr OpsClipboard - forgotten file.  Fixes #3270.
+  - Only request cancel of non finished workqueue elements
+  - Adapt wmbsHelper to correct naming conventions when creating a workflow
+  - ReqMgr - OpsClipboard minor design and menu improvement.  Fixes #3242.
+  - Don't run ProcessPool tests on Jenkins.  Fixes #3233.
+  - A few fixes to the LSF BossAir plugin.  Fixes #3172.
+  - Modify StdBase so that it doesn't assume that all workflows have only run 
+    over a single primary dataset.  Modify the addMergeTask() method to support error 
+    datasets.  Minor cleanup in the other specs.  Fixes #1796.
+
 0.8.26pre3 to 0.8.26pre4:
   - Fix ReqMgr handling of JSON encoded parameters.  Fixes #3225.
   - Strip off extraneous newline characters from tag collector output.  Fixes #3221.

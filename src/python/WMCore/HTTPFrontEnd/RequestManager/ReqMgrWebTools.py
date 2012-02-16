@@ -462,7 +462,11 @@ def makeRequest(kwargs, couchUrl, couchDB):
     del metadata['WorkloadSpec']
     workloadUrl = helper.saveCouch(couchUrl, couchDB, metadata=metadata)
     request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
-    CheckIn.checkIn(request)
+    try:
+        CheckIn.checkIn(request)
+    except CheckIn.RequestCheckInError, ex:
+        msg = ex._message
+        raise HTTPError(400, "Error in Request check-in: %s" % msg)
     return request
 
 def requestDetails(requestName):

@@ -669,7 +669,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         tgzFile.add(jsonName)
         tgzFile.close()
 
-        result = ufc.upload(fileName=tgzName, name=baseName, subDir='ewv')
+        result = ufc.upload(fileName=tgzName, name=baseName, subDir=workflow.owner)
         logging.debug('Upload result %s' % result)
         # If this doesn't work, exception will propogate up and block archiving the task
         logging.info('Uploaded to URL %s with hashkey %s' % (result['url'], result['hashkey']))

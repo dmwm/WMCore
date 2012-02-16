@@ -116,9 +116,9 @@ def fixupFileNames(process):
     configure lazy download for the process.
     
     """
+    # Old style lazy download enable that is overridden by the sites local config.
     if not process.services.has_key("AdaptorConfig"):
         process.add_(cms.Service("AdaptorConfig"))
-
     process.services["AdaptorConfig"].cacheHint = cms.untracked.string("lazy-download")
     process.services["AdaptorConfig"].readHint = cms.untracked.string("auto-detect")
 
@@ -283,7 +283,31 @@ class SetupCMSSWPset(ScriptInterface):
                 outModRef.fileName = cms.untracked.string("")
             if not hasattr(outModRef, "logicalFileName"):
                 outModRef.logicalFileName = cms.untracked.string("")
+        return
+        
 
+    def fixupLazyDownload(self):
+        """
+         _fixupLazyDownload_
+         
+         Activate lazy download for all files (TBD if this is correct, but it is the current behanviour) 
+         but disable for multicore jobs because it is very inefficient.
+        """
+        
+        if not hasattr(self.process.source, "fileNames"):
+            # no source fileNames means no reading data => Irrelevant
+            return
+            
+        numberOfCores = 1
+        if hasattr(self.step.data.application, "multicore"):
+            numberOfCores = self.step.data.application.multicore.numberOfCores
+        if numberOfCores != 1:  # job is multicore
+            #override lazy download to be off despite what the site wants
+            self.process.add_(
+                cms.Service("SiteLocalConfigService", 
+                overrideSourceCacheHintDir = cms.untracked.string("application-only")
+                )
+            ) 
         return
 
 
@@ -515,10 +539,13 @@ class SetupCMSSWPset(ScriptInterface):
                 raise ex
 
         self.fixupProcess()
-
+        self.fixupLazyDownload()
+        
         psetTweak = getattr(self.step.data.application.command, "psetTweak", None)
         if psetTweak != None:
             self.applyPSetTweak(psetTweak, self.fixupDict)
+
+
 
         # Apply task level tweaks
         taskTweak = makeTaskTweak(self.step.data)

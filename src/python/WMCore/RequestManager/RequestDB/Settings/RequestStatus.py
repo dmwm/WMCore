@@ -29,14 +29,14 @@ StatusList = [
     ]
 
 NextStatus = {
- "new" : ["new", "testing-approved", "assignment-approved", "rejected", "failed"],
- "testing-approved" : ["testing-approved", "testing", "test-failed"],
- "testing" : ["testing", "tested", "test-failed"],
- "tested" : ["tested", "assignment-approved","failed", "rejected"],
- "test-failed" : ["test-failed", "testing-approved", "rejected"],
- "assignment-approved" : ["assignment-approved", "assigned", "rejected"],
+ "new" : ["new", "testing-approved", "assignment-approved", "rejected", "failed", "aborted"],
+ "testing-approved" : ["testing-approved", "testing", "test-failed", "aborted"],
+ "testing" : ["testing", "tested", "test-failed", "aborted"],
+ "tested" : ["tested", "assignment-approved","failed", "rejected", "aborted"],
+ "test-failed" : ["test-failed", "testing-approved", "rejected", "aborted"],
+ "assignment-approved" : ["assignment-approved", "assigned", "rejected", "aborted"],
  "assigned" : ["ops-hold", "assigned", "negotiating", "acquired", "aborted", "rejected", "failed"],
- "ops-hold" : ["assigned", "failed"],
+ "ops-hold" : ["assigned", "failed", "aborted"],
  "negotiating" : ["acquired", "assigned", "rejected", "aborted", "failed", "negotiating"],
  "acquired" : ["running", "failed", "completed", "acquired", "aborted"],
  "running" : ["running", "completed", "aborted", "failed", "epic-FAILED"], 

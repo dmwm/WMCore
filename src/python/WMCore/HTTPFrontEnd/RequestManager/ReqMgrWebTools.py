@@ -221,24 +221,46 @@ def changePriority(requestName, priority):
     helper.data.request.priority = totalPriority
     saveWorkload(helper, request['RequestWorkflow'])
 
-def abortRequest(request):
+def abortRequest(requestName):
     """ Changes the state of the request to "aborted", and asks the work queue
     to cancel its work """
-    response = ProdManagement.getProdMgr(request)
-    url = response[0]
-    if url == None or url == "":
-        raise cherrypy.HTTPError(400, "Cannot find URL for request " + request)
-    workqueue = WorkQueue.WorkQueue(url)
-    workqueue.cancelWorkflow(request)
+    response = ProdManagement.getProdMgr(requestName)
+    if response == [] or response[0] == None or response[0] == "":
+        raise cherrypy.HTTPError(400, "Cannot find URL for request " + requestName)
+    workqueue = WorkQueue.WorkQueue(response[0])
+    workqueue.cancelWorkflow(requestName)
+    return
+
+def insecure():
+    return "user" not in cherrypy.request.__dict__ or cherrypy.request.user['dn'] == 'None'
+
+def ownsRequest(request):
+    # let it slide if there's no authentication
+    if insecure():
+        return True
+    return cherrypy.request.user['login'] == request['Requestor']
+
+def security_roles():
+    return ['Developer', 'Admin',  'Data Manager', 'developer', 'admin', 'data-manager']
+
+def privileged():
+    """ whether this user has roles that overlap with security_roles """
+    # let it slide if there's no authentication
+    if insecure():
+        return True
+    #FIXME doesn't check role in this specific site
+    secure_roles = [role for role in cherrypy.request.user['roles'].keys() if role in security_roles()]
+    # and maybe we're running without securitya, in which case dn = 'None'
+    return secure_roles != []
 
 def changeStatus(requestName, status):
     """ Changes the status for this request """
     request = GetRequest.getRequestByName(requestName)
-    oldStatus = request['RequestStatus']
     if not status in RequestStatus.StatusList:
         raise RuntimeError, "Bad status code " + status
     if not request.has_key('RequestStatus'):
         raise RuntimeError, "Cannot find status for request " + requestName
+    oldStatus = request['RequestStatus']
     if not status in RequestStatus.NextStatus[oldStatus]:
         raise RuntimeError, "Cannot change status from %s to %s.  Allowed values are %s" % (
            oldStatus, status,  RequestStatus.NextStatus[oldStatus])
@@ -247,6 +269,17 @@ def changeStatus(requestName, status):
     if status == 'aborted':
         # delete from the workqueue
         abortRequest(requestName)
+        if not privileged() and not ownsRequest(request):
+            raise cherrypy.HTTPError(403, "You are not allowed to abort this request")
+        # delete from the workqueue if it's been assigned to one
+        if oldStatus in ["acquired", "running"]:
+            abortRequest(requestName)
+        elif not privileged():
+            raise cherrypy.HTTPError(403, "You are not allowed to change the state for this request")
+
+    #FIXME needs logic about who is allowed to do which transition
+    ChangeState.changeRequestStatus(requestName, status)
+    return
 
 def prepareForTable(request):
     """ Add some fields to make it easier to display a request """
@@ -454,10 +487,10 @@ def serveFile(contentType, prefix, *args):
     """Return a workflow from the cache"""
     name = path.normpath(path.join(prefix, *args))
     if path.commonprefix([name, prefix]) != prefix:
-        raise HTTPError(403)
+        raise cherrypy.HTTPError(403)
     if not path.exists(name):
-        raise HTTPError(404, "%s not found" % name)
-    return serve_file(name, content_type = contentType)
+        raise cherrypy.HTTPError(404, "%s not found" % name)
+    return cherrypy.lib.static.serve_file(name, content_type = contentType)
 
 def getOutputForRequest(requestName):
     """Return the datasets produced by this request."""

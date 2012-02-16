@@ -421,7 +421,8 @@ def makeJobTweak(job):
 
     if len(primaryFiles) > 0:
         result.addParameter("process.source.fileNames", primaryFiles)
-        result.addParameter("process.source.secondaryFileNames", secondaryFiles)    
+        if len(secondaryFiles) > 0:
+            result.addParameter("process.source.secondaryFileNames", secondaryFiles)    
     else:
         # We need to set the first event parameter for MC jobs but do not want
         # to set it for regular processing job.  MC jobs don't have input files

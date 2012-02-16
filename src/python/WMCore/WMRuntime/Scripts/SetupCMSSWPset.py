@@ -21,12 +21,6 @@ from WMCore.Wrappers.JsonWrapper import JSONDecoder
 
 import FWCore.ParameterSet.Config as cms
 
-applyPromptReco = lambda s, a: s.promptReco(**a)
-applyAlcaSkim = lambda s, a: s.alcaSkim(**a)
-applySkimming = lambda s, a: s.skimming(**a)
-applyDqmHarvesting = lambda s, a: s.dqmHarvesting(**a)
-
-
 
 def fixupGlobalTag(process):
     """
@@ -150,13 +144,6 @@ class SetupCMSSWPset(ScriptInterface):
     _SetupCMSSWPset_
 
     """
-    funcMap = {
-        "promptReco": applyPromptReco,
-        "alcaSkim": applyAlcaSkim,
-        "skimming": applySkimming,
-        "dqmHarvesting": applyDqmHarvesting
-        }
-
     fixupDict = {"process.GlobalTag.globaltag": fixupGlobalTag,
                  "process.source.fileNames": fixupFileNames,
                  "process.source.secondaryFileNames": fixupSecondaryFileNames,
@@ -188,9 +175,8 @@ class SetupCMSSWPset(ScriptInterface):
             try:
                 from Configuration.DataProcessing.GetScenario import getScenario
                 scenarioInst = getScenario(scenario)
-                applicationFunc = self.funcMap[funcName]
 
-                if type(funcArgs) == type({}):
+                if isinstance(funcArgs, dict):
                     # Our function arguments are already a dictionary, which
                     # means they're probably the result of some JSON decoding.
                     # We'll have to make sure they don't contain any unicode
@@ -214,13 +200,12 @@ class SetupCMSSWPset(ScriptInterface):
                             value = newValue
                         
                         strArgs[key] = value
-                        
-                    self.process = applicationFunc(scenarioInst,  strArgs)
+
+                    self.process = getattr(scenarioInst, funcName)(**strArgs)
                 else:
-                    # Our function arguments are most likely in the form of a
-                    # config section.
-                    self.process = applicationFunc(scenarioInst,
-                                                   funcArgs.dictionary_())
+                    # likely an instance of WMCore.Configuration.ConfigSection
+                    # cannot check because that class is not on the WN
+                    self.process = getattr(scenarioInst, funcName)(**(funcArgs.dictionary_()))
             except Exception, ex:
                 msg = "Failed to retrieve the Scenario named "
                 msg += str(scenario)
@@ -228,7 +213,7 @@ class SetupCMSSWPset(ScriptInterface):
                 msg += str(ex)
                 print msg
                 return None
-            
+
         return
 
 

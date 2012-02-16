@@ -20,7 +20,7 @@ class NewJobs(MySQLNewJobs):
                SELECT bl_runjob_SEQ.nextval, :jobid, :gridid, :bulkid,
                  (SELECT id FROM bl_status WHERE name = :status),
                  :retry_count,
-                 (SELECT id FROM wmbs_users WHERE cert_dn = :userdn),
+                 (SELECT id FROM wmbs_users WHERE cert_dn = :userdn AND group_name = :usergroup AND role_name = :userrole),
                  (SELECT id FROM wmbs_location WHERE site_name = :location)
                FROM dual
                WHERE NOT EXISTS (SELECT id FROM bl_runjob WHERE wmbs_id = :jobid

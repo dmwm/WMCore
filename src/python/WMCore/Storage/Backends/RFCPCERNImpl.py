@@ -69,6 +69,12 @@ class RFCPCERNImpl(StageOutImpl):
             if ( match != None ):
                 targetdir = os.path.dirname('/castor/' + match.group(1))
 
+        if targetdir == None:
+            regExpParser = re.compile('rfio:.*path=/+castorcms/(.*)\?.*')
+            match = regExpParser.match(targetPFN)
+            if ( match != None ):
+                targetdir = os.path.dirname(match.group(1))
+
         # raise exception if we have no rule that can parse the target dir
         if targetdir == None:
             raise StageOutError("Cannot parse directory out of targetPFN")

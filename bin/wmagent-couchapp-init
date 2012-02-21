@@ -330,5 +330,12 @@ if __name__ == "__main__":
         installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName, "ReqMgr")
         if options.cron:
             setupCronCompaction(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName)
+            
+    if hasattr(wmagentConfig, "AlertProcessor"):
+        # couchURL
+        uri = wmagentConfig.AlertProcessor.critical.sinks.rest.uri
+        dbName = uri.split('/')[-1]
+        installCouchApp(uri, dbName, "Alerts")
+                        
 
     sys.exit(0)

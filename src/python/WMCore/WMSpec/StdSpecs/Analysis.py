@@ -74,7 +74,7 @@ class AnalysisWorkloadFactory(StdBase):
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
                                               configDoc = self.analysisConfigCacheID, splitAlgo = self.analysisJobSplitAlgo,
                                               splitArgs = self.analysisJobSplitArgs, \
-                                              userDN = self.owner_dn, asyncDest = self.asyncDest, publishName = self.publishName,
+                                              userDN = self.owner_dn, asyncDest = self.asyncDest,
                                               owner_vogroup = self.owner_vogroup, owner_vorole = self.owner_vorole,
                                               userSandbox = self.userSandbox, userFiles = self.userFiles)
 
@@ -172,9 +172,8 @@ class AnalysisWorkloadFactory(StdBase):
             self.analysisJobSplitArgs  = arguments.get('JobSplitArgs', {})
 
         self.asyncDest = arguments.get("asyncDest", "T1_US_FNAL_Buffer")
-        self.publishName = arguments.get("PublishDataName", str(int(time.time())))
         self.minMergeSize = 1 # arguments.get("MinMergeSize", 1)
-        self.acquisitionEra = self.publishName
+        self.acquisitionEra = arguments.get("PublishDataName", str(int(time.time())))
         self.owner_vogroup = arguments.get("VoGroup", '')
         self.owner_vorole = arguments.get("VoRole", '')
         self.userSandbox = arguments.get("userSandbox", None)

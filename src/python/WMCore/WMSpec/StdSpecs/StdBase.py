@@ -184,7 +184,7 @@ class StdBase(object):
                             scenarioFunc = None, scenarioArgs = None, couchURL = None,
                             couchDBName = None, configDoc = None, splitAlgo = "LumiBased",
                             splitArgs = {'lumis_per_job': 8}, seeding = None, totalEvents = None,
-                            userDN = None, asyncDest = None, publishName =None, owner_vogroup = "DEFAULT",
+                            userDN = None, asyncDest = None, owner_vogroup = "DEFAULT",
                             owner_vorole = "DEFAULT", stepType = "CMSSW",
                             userSandbox = None, userFiles = [], primarySubType = None):
 
@@ -215,7 +215,6 @@ class StdBase(object):
         procTaskStageOut.setStepType("StageOut")
         procTaskStageOut.setUserDN(userDN)
         procTaskStageOut.setAsyncDest(asyncDest)
-        procTaskStageOut.setPublishName(publishName)
         procTaskStageOut.setUserRoleAndGroup(owner_vogroup, owner_vorole)
         procTaskLogArch = procTaskCmssw.addStep("logArch1")
         procTaskLogArch.setStepType("LogArchive")
@@ -413,7 +412,7 @@ class StdBase(object):
                                             merge_across_runs = False,
                                             siteWhitelist = self.siteWhitelist,
                                             siteBlacklist = self.siteBlacklist)
-            mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge", dqm_format = True)            
+            mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge", dqm_format = True)
         else:
             mergeTask.setSplittingAlgorithm(splitAlgo,
                                             max_merge_size = self.maxMergeSize,
@@ -422,7 +421,7 @@ class StdBase(object):
                                             max_wait_time = self.maxWaitTime,
                                             siteWhitelist = self.siteWhitelist,
                                             siteBlacklist = self.siteBlacklist)
-            mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge")            
+            mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge")
 
         mergeTaskCmsswHelper.setErrorDestinationStep(stepName = mergeTaskLogArch.name())
         mergeTaskCmsswHelper.setGlobalTag(self.globalTag)

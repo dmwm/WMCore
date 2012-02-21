@@ -109,15 +109,6 @@ class WMStepHelper(TreeHelper):
         self.data.owner_vogroup = owner_vogroup
         self.data.owner_vorole = owner_vorole
 
-    def setPublishName(self, publishName):
-        """
-        _setPublishName_
-
-        Set the publish data name for asynchronous stageout
-
-        """
-        self.data.publishName = publishName
-
     def getTypeHelper(self):
         """
         _getTypeHelper_

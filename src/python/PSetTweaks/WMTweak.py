@@ -426,11 +426,19 @@ def makeJobTweak(job):
     else:
         # We need to set the first event parameter for MC jobs but do not want
         # to set it for regular processing job.  MC jobs don't have input files
-        # so we'll set it here.
+        # so we'll set it here.  
         baggage = job.getBaggage()        
         if hasattr(baggage, "eventsPerJob"):
-            result.addParameter("process.source.firstEvent",
-                                (int(baggage.eventsPerJob) * (int(job["counter"]) - 1)) + 1)
+            # Limit the event number to a 32bit unsigned int.
+            counter = ((int(baggage.eventsPerJob) * (int(job["counter"]) - 1)) + 1) % (2**32 - 1)
+
+            # Catch cases where the counter will roll over during the job.
+            if (counter + int(baggage.eventsPerJob)) > (2**32 - 1):
+                counter = 0
+            elif counter < int(baggage.eventsPerJob):
+                counter = 0
+            
+            result.addParameter("process.source.firstEvent", counter)
 
     mask =  job['mask']
 

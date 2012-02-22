@@ -434,9 +434,9 @@ def makeJobTweak(job):
 
             # Catch cases where the counter will roll over during the job.
             if (counter + int(baggage.eventsPerJob)) > (2**32 - 1):
-                counter = 0
+                counter = 1
             elif counter < int(baggage.eventsPerJob):
-                counter = 0
+                counter = 1
             
             result.addParameter("process.source.firstEvent", counter)
 

@@ -22,6 +22,8 @@ class EmailSink(object):
         self.config = config
         server = getattr(self.config, "smtpServer", "localhost")
         self.smtp = smtplib.SMTP(server)
+        # produces a lot of debug output, uncomment in case of email delivery issues
+        # self.smtp.set_debuglevel(1)        
         login, passw = getattr(config, "smtpUser", None), getattr(config, "smtpPass", None)
         if login != None:
             self.smtp.login(login, passw)
@@ -40,7 +42,6 @@ class EmailSink(object):
             msg += "\n%s\n" % a.toMsg()
         self.smtp.sendmail(self.fromAddr, self.toAddr, msg)
         logging.debug("%s sent alerts." % self.__class__.__name__)
-
         
         
     def __del__(self):

@@ -334,16 +334,23 @@ config.AlertProcessor.soft.sinks.couch.url = couchURL
 # TODO
 # database name to be later moved up
 config.AlertProcessor.soft.sinks.couch.database = "alerts"
+# alerts delivery via email
 config.AlertProcessor.critical.sinks.section_("email")
-config.AlertProcessor.critical.sinks.email.fromAddr = "some@local.com"
-config.AlertProcessor.critical.sinks.email.toAddr = ["some1@local.com", "some2@local.com"]
-config.AlertProcessor.critical.sinks.email.smtpServer = "smtp.gov"
+# from must be a valid domain, at least when the destination address
+# was @cern.ch: it said email is queued but was never delivered,
+# may not always be the case though
+config.AlertProcessor.critical.sinks.email.fromAddr = "wmagent@%s" % serverHostName
+config.AlertProcessor.critical.sinks.email.toAddr = ["wmagentalerts@gmail.com"] # add more in the list
+config.AlertProcessor.critical.sinks.email.smtpServer = "cernmx.cern.ch"
 config.AlertProcessor.critical.sinks.email.smtpUser = None
 config.AlertProcessor.critical.sinks.email.smtpPass = None
 config.AlertProcessor.soft.sinks.section_("email")
-config.AlertProcessor.soft.sinks.email.fromAddr = "some@local.com"
-config.AlertProcessor.soft.sinks.email.toAddr = ["some1@local.com", "some2@local.com"]
-config.AlertProcessor.soft.sinks.email.smtpServer = "smtp.gov"
+# from must be a valid domain, at least when the destination address
+# was @cern.ch: it said email is queued but was never delivered,
+# may not always be the case though
+config.AlertProcessor.soft.sinks.email.fromAddr = "wmagent@%s" % serverHostName
+config.AlertProcessor.soft.sinks.email.toAddr = ["wmagentalerts@gmail.com"] # add more in the list
+config.AlertProcessor.soft.sinks.email.smtpServer = "cernmx.cern.ch"
 config.AlertProcessor.soft.sinks.email.smtpUser = None
 config.AlertProcessor.soft.sinks.email.smtpPass = None
 config.AlertProcessor.critical.sinks.section_("file")

@@ -423,8 +423,9 @@ class gLitePlugin(BasePlugin):
                 while len(jobList) > 0:
                     command = "glite-wms-job-submit --json "
                     if self.debugOutput:
-                        unused, uniquename = tempfile.mkstemp(suffix = '.log', prefix = 'glite.submit.%s.' % time.strftime("%Y%m%d%H%M%S", time.localtime()),
+                        fd, uniquename = tempfile.mkstemp(suffix = '.log', prefix = 'glite.submit.%s.' % time.strftime("%Y%m%d%H%M%S", time.localtime()),
                                                               dir = self.submitDir )
+                        os.close( fd )
                         command += '--logfile %s ' % os.path.join(self.submitDir, uniquename)
 
                     jobsReady = jobList[:self.collectionsize]

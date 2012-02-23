@@ -17,7 +17,7 @@ import time
 import types
 
 from WMCore.Wrappers import JsonWrapper as json
-from WMCore.Credential.Proxy           import Proxy, CredentialException
+from WMCore.Credential.Proxy           import Proxy
 from WMCore.FwkJobReport.Report        import Report
 from WMCore.DAOFactory                 import DAOFactory
 import WMCore.WMInit
@@ -162,13 +162,31 @@ class gLitePlugin(BasePlugin):
                                   'min_time_left' : 36000
                                  }
 
+        #if server_key/server_cert are not in defaultDelegation then $HOMW/.globus/host(key|cert).pem are taken
+        if hasattr(self.config.BossAir, 'delegatedServerKey'):
+            if os.path.isfile(self.config.BossAir.delegatedServerKey):
+                self.defaultDelegation['server_key'] = self.config.BossAir.delegatedServerKey
+            else:
+                logging.error("Cannot find the file in config.BossAir.delegatedServerKey parameter: " + config.BossAir.delegatedServerKey)
+
+        if hasattr(self.config.BossAir, 'delegatedServerCert'):
+            if os.path.isfile(self.config.BossAir.delegatedServerCert):
+                self.defaultDelegation['server_cert'] = self.config.BossAir.delegatedServerCert
+            else:
+                logging.error("Cannot find the file in config.BossAir.delegatedServerCert parameter: " + config.BossAir.delegatedServerCert)
+
         ## if we switch None to os.environ['X509_USER_PROXY'] this will be automatic
         self.singleproxy  = getattr(self.config.BossAir, 'manualProxyPath', None)
 
         if self.singleproxy is None:
             hostcertpath = None
-            if 'X509_HOST_CERT' in os.environ:
-                hostcertpath = os.environ['X509_HOST_CERT']
+            if hasattr(self.config.BossAir, 'delegatedServerCert'):
+                hostcertpath = self.config.BossAir.delegatedServerCert
+            elif 'X509_HOST_CERT' in os.environ:
+                if os.path.isfile(os.environ['X509_HOST_CERT']):
+                    hostcertpath = os.environ['X509_HOST_CERT']
+                else:
+                    logging.error('The X509_HOST_CERT environment variable points to a non-existant file: ' + os.environ['X509_HOST_CERT'])
             elif os.path.isfile(os.path.join(os.environ['HOME'], '.globus/hostcert.pem')):
                 hostcertpath = os.path.join(os.environ['HOME'], '.globus/hostcert.pem')
             elif os.path.isfile('/etc/grid-security/hostcert.pem'):
@@ -187,24 +205,24 @@ class gLitePlugin(BasePlugin):
                 msg = "Error: serverDN parameter required and not provided " + \
                       "in the configuration"
                 raise BossAirPluginException( msg )
-            if getattr ( self.config.BossAir, 'credentialDir', None) is None:
-                msg = "Error: credentialDir parameter required and " + \
+            if getattr ( self.config.BossAir, 'proxyDir', None) is None:
+                msg = "Error: proxyDir parameter required and " + \
                       "not provided in the configuration"
                 raise BossAirPluginException( msg )
             else:
-                if not os.path.exists(self.config.BossAir.credentialDir):
-                    logging.debug("credentialDir not found: creating it...")
+                if not os.path.exists(self.config.BossAir.proxyDir):
+                    logging.debug("proxyDir not found: creating it...")
                     try:
-                        os.mkdir(self.config.BossAir.credentialDir)
+                        os.mkdir(self.config.BossAir.proxyDir)
                     except Exception, ex:
-                        msg = "Error: problem when creating credentialDir " + \
+                        msg = "Error: problem when creating proxyDir " + \
                               "directory - '%s'" % str(ex)
                         raise BossAirPluginException( msg )
-                elif not os.path.isdir(self.config.BossAir.credentialDir):
-                    msg = "Error: credentialDir '%s' is not a directory" \
-                           % str(self.config.BossAir.credentialDir)
+                elif not os.path.isdir(self.config.BossAir.proxyDir):
+                    msg = "Error: proxyDir '%s' is not a directory" \
+                           % str(self.config.BossAir.proxyDir)
                     raise BossAirPluginException( msg )
-            self.defaultDelegation['credServerPath'] = self.config.BossAir.credentialDir
+            self.defaultDelegation['credServerPath'] = self.config.BossAir.proxyDir
             self.defaultDelegation['serverDN'] = self.config.Agent.serverDN
         else:
             logging.debug("Using manually provided proxy '%s' " % self.singleproxy)
@@ -1389,26 +1407,16 @@ class gLitePlugin(BasePlugin):
         """
         if self.singleproxy is not None:
             timeleft = None
-            try:
-                proxy = Proxy(self.defaultDelegation)
-                timeleft = proxy.getTimeLeft( self.singleproxy )
-            except CredentialException, ce:
-                logging.debug(ce)
-                msg = 'Problem getting proxy timeleft for user "%s" due to "%s".' % (user, ce._message)
-                return (False, '', msg)
+            proxy = Proxy(self.defaultDelegation)
+            timeleft = proxy.getTimeLeft( self.singleproxy )
             if timeleft is not None and timeleft > 60:
                 logging.info("Remaining timeleft for proxy %s is %s" % (self.singleproxy, str(timeleft)))
                 return (True, self.singleproxy, '')
             else:
                 return (False, self.singleproxy, '')
         else:
-            try:
-                valid, ownerproxy = self.getProxy(user.split(':')[0], user.split(':')[1], user.split(':')[2])
-                return (valid, ownerproxy, '')
-            except CredentialException, ce:
-                logging.debug(ce)
-                msg = 'Problem retrieving proxy for user "%s" due to "%s".' % (user, ce._message)
-                return (False, '', msg)
+            valid, ownerproxy = self.getProxy(user.split(':')[0], user.split(':')[1], user.split(':')[2])
+            return (valid, ownerproxy, '')
 
 
     def getProxy(self, userdn, group, role):

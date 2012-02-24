@@ -206,10 +206,11 @@ class Proxy(Credential):
             certFile = self.getProxyFilename()
 
         subjFromCertCmd = 'openssl x509 -in '+certFile+' -subject -noout'
-        subjectResult = execute_command(self.setUI() + subjFromCertCmd, self.logger, self.commandTimeout)
+        subjectResult, retcode = execute_command(self.setUI() + subjFromCertCmd, self.logger, self.commandTimeout)
 
-        if subjectResult:
-            subject = subjectResult[0].split('subject=')[1].strip()
+        subject = None
+        if retcode == 0:
+            subject = subjectResult.split('subject=')[1].strip()
 
         return subject
 
@@ -449,7 +450,12 @@ class Proxy(Credential):
 
         # get the credential name for this retriever
         if not credServerName:
-            credServerName = sha1(self.getSubjectFromCert( self.serverCert )).hexdigest()
+            subject = self.getSubjectFromCert( self.serverCert )
+            if subject:
+                credServerName = sha1(subject).hexdigest()
+            else:
+                self.logger.error("Unable to to get the subject from the cert for user %s" % (self.userDN))
+                return proxyFilename
 
         # compose the delegation or renewal commands
         # with the regeneration of Voms extensions

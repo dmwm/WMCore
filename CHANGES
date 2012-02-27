@@ -1,3 +1,13 @@
+0.8.26pre5 to 0.8.26pre6:
+  - Fix bug in workqueue for run whitelists after dbs3 changes
+  - Fixed a bug in proxy.py which happens with AFS timeouts. Fixes #3171
+  - Support configurable host certs and removed CredentialException. Fixes #3215,#3173
+  - Added os.close for correcting a file descriptor leak. Fixes #3072
+  - Event numbers should start at 1.  Fixes #3285.
+  - Reset the event counter if it goes over 32 bits.  Fixes #3285.
+  - Push out the alerts couch database.  Fixes #3292.
+  - Remove publishDataName from the Analysis spec.  Fixes #2726.
+
 0.8.26pre4 to 0.8.26pre5:
   - Avoid problems with jobs that do not have a mask in the TaskArchiver.  Fixes #3283.
   - Don't swallow errors in the ReqMgr.  Fixes #3241.

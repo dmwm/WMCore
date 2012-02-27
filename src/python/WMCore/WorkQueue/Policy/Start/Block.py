@@ -82,7 +82,7 @@ class Block(StartPolicyInterface):
             block = dbs.getDBSSummaryInfo(datasetPath, block = blockName)
             # blocks with 0 valid files should be ignored
             # - ideally they would be deleted but dbs can't delete blocks
-            if not block['NumberOfFiles']:
+            if not block['NumberOfFiles'] or block['NumberOfFiles'] == '0':
                 continue
 
             # check block restrictions
@@ -113,8 +113,8 @@ class Block(StartPolicyInterface):
                 accepted_lumis = [x for x in full_lumi_list if x in runs]
                 ratio_accepted = 1. * len(accepted_lumis) / len(full_lumi_list)
                 block[self.lumiType] = len(accepted_lumis)
-                block['NumberOfFiles'] *= ratio_accepted
-                block['NumberOfEvents'] *= ratio_accepted
+                block['NumberOfFiles'] = float(block['NumberOfFiles']) * ratio_accepted
+                block['NumberOfEvents'] = float(block['NumberOfEvents']) * ratio_accepted
 
             # save locations
             self.data[block['block']] = sitesFromStorageEelements(dbs.listFileBlockLocation(block['block']))

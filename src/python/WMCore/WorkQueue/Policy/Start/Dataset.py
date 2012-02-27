@@ -112,8 +112,8 @@ class Dataset(StartPolicyInterface):
                 accepted_lumis = [x for x in full_lumi_list if x in runs]
                 ratio_accepted = 1. * len(accepted_lumis) / len(full_lumi_list)
                 block[self.lumiType] = len(accepted_lumis)
-                block['NumberOfFiles'] *= ratio_accepted
-                block['NumberOfEvents'] *= ratio_accepted
+                block['NumberOfFiles'] = float(block['NumberOfFiles']) * ratio_accepted
+                block['NumberOfEvents'] = float(block['NumberOfEvents']) * ratio_accepted
 
             validBlocks.append(block)
             if locations is None:

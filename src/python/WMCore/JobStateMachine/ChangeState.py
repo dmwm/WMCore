@@ -205,7 +205,9 @@ class ChangeState(WMObject, WMConnectionBase):
             # updating the status of the summary doc only when it is explicitely requested
             # doc is already in couch
             if updatesummary:
-                jobSummaryId = "%s-%s" % (job["name"], job["retry_count"])
+                # TODO change this to remove retry-count
+                # jobSummaryId = "%s-%s" % (job["name"], job["retry_count"])
+                jobSummaryId = job["name"]
                 updateUri = "/" + self.jsumdatabase.name + "/_design/WMStats/_update/jobSummaryState/" + jobSummaryId
                 updateUri += "?newstate=%s&timestamp=%s" % (newstate, timestamp)
                 self.jsumdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
@@ -225,16 +227,18 @@ class ChangeState(WMObject, WMConnectionBase):
                     pass
 
                 # complete fwjr document
-                jobSummaryId = "%s-%s" % (job["name"], job["retry_count"])
+                # TODO change this to remove retry-count
+                #jobSummaryId = "%s-%s" % (job["name"], job["retry_count"])
 
                 job["fwjr"].setTaskName(job["task"])
-                fwjrDocument = {"_id": jobSummaryId,
+                fwjrDocument = {"_id": "%s-%s" % (job["name"], job["retry_count"]),
                                 "jobid": job["id"],
                                 "retrycount": job["retry_count"],
                                 "fwjr": job["fwjr"].__to_json__(None),
                                 "type": "fwjr"}
                 self.fwjrdatabase.queue(fwjrDocument, timestamp = True)
 
+                jobSummaryId = job["name"]
                 # building a summary of fwjr
                 logging.debug("Pushing job summary for job %s" % jobSummaryId)
                 errmsgs = {}
@@ -260,6 +264,8 @@ class ChangeState(WMObject, WMConnectionBase):
                               "errors": errmsgs,
                               "lumis": inputs,
                               "output": outputs }
+                if couchDocID is not None:
+                    jobSummary['_rev'] = self.jsumdatabase.document(id = jobSummaryId)['_rev']
                 self.jsumdatabase.queue(jobSummary, timestamp = True)
 
         if len(couchRecordsToUpdate) > 0:

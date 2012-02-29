@@ -189,10 +189,12 @@ def _convertToStatusSiteFormat(requestData):
             _setMultiLevelStatus(data['status'], status, siteJob)
         else:
             for site, job in siteJob.items():
-                _setMultiLevelStatus(data['status'], status, job)
+                _setMultiLevelStatus(data['status'], status, int(job))
                 if site != 'Agent':
+                    if site is None:
+                        site = 'unknown'
                     data['sites'].setdefault(site, {})
-                    _setMultiLevelStatus(data['sites'][site], status, job)
+                    _setMultiLevelStatus(data['sites'][site], status, int(job))
     return data
 
 def _getCouchACDCHtmlBase(acdcCouchURL):

@@ -8,5 +8,5 @@ function(doc) {
      	           failure_counter++;
                 }
         }
-        emit([doc.workflow, doc.task, failure_counter], 1);
+        emit([doc.workflow, failure_counter, doc.task], 1);
 }

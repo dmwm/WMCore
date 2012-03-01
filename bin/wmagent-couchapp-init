@@ -332,10 +332,10 @@ if __name__ == "__main__":
             setupCronCompaction(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName)
             
     if hasattr(wmagentConfig, "AlertProcessor"):
-        # couchURL
         uri = wmagentConfig.AlertProcessor.critical.sinks.rest.uri
         dbName = uri.split('/')[-1]
-        installCouchApp(uri, dbName, "Alerts")
+        dbAddr = "/".join(uri.split('/')[0:-1])
+        installCouchApp(dbAddr, dbName, "Alerts")
                         
 
     sys.exit(0)

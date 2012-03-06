@@ -60,7 +60,7 @@ class StatusPoller(BaseWorkerThread):
 
         Handle any exceptions with the actual code
         """
-
+        myThread = threading.currentThread()
         try:
             self.checkStatus()
         except WMException, ex:

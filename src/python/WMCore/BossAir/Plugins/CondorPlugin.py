@@ -598,7 +598,24 @@ class CondorPlugin(BasePlugin):
                 continue
             condorReport = Report()
             condorReport.addError("NoJobReport", 99303, "NoJobReport", logOutput)
-            condorReport.save(filename = reportName)
+            if os.path.isfile(reportName):
+                # Then we have a file already there.  It should be zero size due
+                # to the if statements above, but we should remove it.
+                if os.path.getsize(reportName) > 0:
+                    # This should never happen.  If it does, ignore it
+                    msg =  "Critical strange problem.  FWJR changed size while being processed."
+                    logging.error(msg)
+                else:
+                    try:
+                        os.remove(reportName)
+                        condorReport.save(filename = reportName)
+                    except Exception, ex:
+                        logging.error("Cannot remove and replace empty report %s" % reportName)
+                        logging.error("Report continuing without error!")
+            else:
+                condorReport.save(filename = reportName)
+
+            # Debug message to end loop
             logging.debug("No returning job report for job %i" % job['id'])
 
 

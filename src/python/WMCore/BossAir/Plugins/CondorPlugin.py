@@ -21,6 +21,7 @@ import WMCore.Algorithms.BasicAlgos as BasicAlgos
 
 from WMCore.Credential.Proxy           import Proxy
 from WMCore.DAOFactory                 import DAOFactory
+from WMCore.WMException                import WMException
 from WMCore.WMInit                     import getWMBASE
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from WMCore.FwkJobReport.Report        import Report
@@ -203,6 +204,13 @@ class CondorPlugin(BasePlugin):
         self.glexecUnwrapScript = getattr(config.BossAir, 'glexecUnwrapScript', None)
         self.jdlProxyFile    = None # Proxy name to put in JDL (owned by submit user)
         self.glexecProxyFile = None # Copy of same file owned by submit user
+
+        if self.glexecPath:
+            if not (self.myproxySrv and self.proxyDir):
+                raise WMException('glexec requires myproxyServer and proxyDir to be set.')
+        if self.myproxySrv:
+            if not (self.serverCert and self.serverKey):
+                raise WMException('MyProxy server requires serverCert and serverKey to be set.')
 
         if self.serverCert and self.serverKey and self.myproxySrv:
             self.proxy = self.setupMyProxy()

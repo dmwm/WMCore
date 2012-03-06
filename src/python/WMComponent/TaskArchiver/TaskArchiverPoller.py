@@ -374,7 +374,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         jobErrors  = []
         outputLFNs = []
 
-        workflowData = {}
+        workflowData = {'retryData': {}}
         workflowName     = workflow.task.split('/')[1]
 
         # Set campaign
@@ -388,6 +388,17 @@ class TaskArchiverPoller(BaseWorkerThread):
                                                               "endkey": [workflowName, taskName]})['rows']
             for entry in failedTmp:
                 failedJobs.append(entry['value'])
+
+        retryData = self.jobsdatabase.loadView("JobDump", "retriesByTask",
+                                               options = {'group_level': 3,
+                                                          'startkey': [workflowName],
+                                                          'endkey': [workflowName, {}]})['rows']
+        for row in retryData:
+            taskName = row['key'][2]
+            count    = str(row['key'][1])
+            if not taskName in workflowData['retryData'].keys():
+                workflowData['retryData'][taskName] = {}
+            workflowData['retryData'][taskName][count] = row['value']
 
         output = self.fwjrdatabase.loadView("FWJRDump", "outputByWorkflowName",
                                             options = {"group_level": 2,

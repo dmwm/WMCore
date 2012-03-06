@@ -455,6 +455,9 @@ class TaskArchiverTest(unittest.TestCase):
                           {'logCollect': None, 'log': None, 'value': '0.894052', 'jobID': 2},
                           {'logCollect': None, 'log': None, 'value': '0.894052', 'jobID': 3}])
 
+        # Check retryData
+        self.assertEqual(workloadSummary['retryData']['/TestWorkload/ReReco'], {'0': 10})
+
         # LogCollect task is made out of identical FWJRs
         # assert that it is identical
         for x in workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['cmsRun1'].keys():

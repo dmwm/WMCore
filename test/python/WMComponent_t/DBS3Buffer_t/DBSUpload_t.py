@@ -51,7 +51,7 @@ class DBSUploadTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
         self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer"],
                                 useDefault = False)
       
@@ -113,10 +113,11 @@ class DBSUploadTest(unittest.TestCase):
         config.DBSUpload.DBSBlockMaxFiles = 1
         config.DBSUpload.DBSBlockMaxTime  = 2
         config.DBSUpload.DBSBlockMaxSize  = 999999999999
-        config.DBSUpload.dbsUrl           = 'http://cms-xen40.fnal.gov/cms_dbs'
+        #config.DBSUpload.dbsUrl           = 'http://cms-xen40.fnal.gov/cms_dbs'
+        config.DBSUpload.dbsUrl           = 'https://localhost:1443/dbs/prod/global/DBSWriter'
         config.DBSUpload.namespace        = 'WMComponent.DBS3Buffer.DBSUpload'
         config.DBSUpload.componentDir     = os.path.join(os.getcwd(), 'Components')
-        config.DBSUpload.nProcesses       = 4
+        config.DBSUpload.nProcesses       = 1
         config.DBSUpload.dbsWaitTime      = 0.1
 
 
@@ -143,8 +144,8 @@ class DBSUploadTest(unittest.TestCase):
             for i in range(nLumis):
                 lumis.append((f * 1000000) + i)
             testFile.addRun(Run( 1, *lumis))
-            testFile.setAcquisitionEra("DBS3Test")
-            testFile.setProcessingVer("v0")
+            testFile.setAcquisitionEra(name.split('-')[0])
+            testFile.setProcessingVer("0")
             testFile.setGlobalTag("Weird")
             testFile.create()
             testFile.setLocation(site)
@@ -196,6 +197,8 @@ class DBSUploadTest(unittest.TestCase):
         name = "ThisIsATest_%s" % (makeUUID())
         tier = "RECO"
         nFiles = 12
+        name = name.replace('-', '_')
+        name = '%s-v0' % name
         files = self.getFiles(name = name, tier = tier, nFiles = nFiles)
         datasetPath = '/%s/%s/%s' % (name, name, tier)
         shortPath   = '/%s/%s' % (name, name)
@@ -211,7 +214,8 @@ class DBSUploadTest(unittest.TestCase):
 
         # Now look in DBS
         try:
-            result = dbsApi.listPrimaryDatasets(dataset = name)
+            print "Should have just tried with name %s" % name
+            result = dbsApi.listPrimaryDatasets(primary_ds_name = name)
             self.assertEqual(len(result), 1)
             self.assertEqual(result[0]['primary_ds_name'], name)
             result = dbsApi.listDatasets(dataset = datasetPath, detail = True,
@@ -265,6 +269,8 @@ class DBSUploadTest(unittest.TestCase):
         name = "ThisIsATest_%s" % (makeUUID())
         tier = "RECO"
         nFiles = 10
+        name = name.replace('-', '_')
+        name = '%s-v0' % name
         files = self.getFiles(name = name, tier = tier, nFiles = nFiles, nLumis = 3)
         datasetPath = '/%s/%s/%s' % (name, name, tier)
 

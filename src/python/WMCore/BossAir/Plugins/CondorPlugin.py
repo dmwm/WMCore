@@ -184,6 +184,8 @@ class CondorPlugin(BasePlugin):
         self.multiTasks    = getattr(config.BossAir, 'multicoreTaskTypes', [])
         self.useGSite      = getattr(config.BossAir, 'useGLIDEINSites', False)
         self.submitWMSMode = getattr(config.BossAir, 'submitWMSMode', False)
+        self.errorThreshold= getattr(config.BossAir, 'submitErrorThreshold', 10)
+        self.errorCount    = 0
 
 
         # Build ourselves a pool
@@ -302,7 +304,7 @@ class CondorPlugin(BasePlugin):
         # If we're here, then we have submitter components
         self.scriptFile = self.config.JobSubmitter.submitScript
         self.submitDir  = self.config.JobSubmitter.submitDir
-        timeout         = getattr(self.config.JobSubmitter, 'getTimeout', 300)
+        timeout         = getattr(self.config.JobSubmitter, 'getTimeout', 400)
 
         if len(self.pool) == 0:
             # Starting things up
@@ -428,10 +430,13 @@ class CondorPlugin(BasePlugin):
                 logging.error("Condor returned non-zero.  Printing out command stderr")
                 logging.error(error)
                 errorCheck, errorMsg = parseError(error = error)
+                logging.error("Processing failed jobs and proceeding to the next jobs.")
+                logging.error("Do not restart component.")
             else:
                 errorCheck = None
 
             if errorCheck:
+                self.errorCount += 1
                 condorErrorReport = Report()
                 condorErrorReport.addError("JobSubmit", 61202, "CondorError", errorMsg)
                 for jobID in idList:
@@ -441,11 +446,33 @@ class CondorPlugin(BasePlugin):
                             failedJobs.append(job)
                             break
             else:
+                if self.errorCount > 0:
+                    self.errorCount -= 1
                 for jobID in idList:
                     for job in jobs:
                         if job.get('id', None) == jobID:
                             successfulJobs.append(job)
                             break
+
+            # If we get a lot of errors in a row it's probably time to
+            # report this to the operators.
+            if self.errorCount > self.errorThreshold:
+                try:
+                    msg = "Exceeded errorThreshold while submitting to condor. Check condor status."
+                    logging.error(msg)
+                    logging.error("Reporting to Alert system and continuing to process jobs")
+                    from WMCore.Alerts import API as alertAPI
+                    preAlert, sender = alertAPI.setUpAlertsMessaging(self,
+                                                                     compName = "BossAirCondorPlugin")
+                    sendAlert = alertAPI.getSendAlert(sender = sender,
+                                                      preAlert = preAlert)
+                    sendAlert(6, msg = msg)
+                    sender.unregister()
+                    self.errorCount = 0
+                except:
+                    # There's nothing we can really do here
+                    pass
+                
 
         # Remove JDL files unless commanded otherwise
         if getattr(self.config.JobSubmitter, 'deleteJDLFiles', True):
@@ -461,6 +488,7 @@ class CondorPlugin(BasePlugin):
 
         # We must return a list of jobs successfully submitted,
         # and a list of jobs failed
+        logging.info("Done submitting jobs for this cycle in CondorPlugin")
         return successfulJobs, failedJobs
 
 

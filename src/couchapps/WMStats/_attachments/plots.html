@@ -1,0 +1,114 @@
+<html>
+  <head>
+    <title>WMStats</title>
+    <link rel="stylesheet" href="style.css" type="text/css" />
+    <script src="lib/jquery.js" type='text/javascript'> </script>
+    <script src="lib/underscore-min.js" type="text/javascript"> </script>
+    <script src="lib/backbone.js" type="text/javascript"> </script>
+    <script src="lib/d3.min.js" type="text/javascript"> </script>
+    <script src="lib/d3.layout.min.js" type="text/javascript"> </script>
+    <script src="lib/backbone-d3.js" type="text/javascript"> </script>
+    <script src="lib/jquery.couch.js" type="text/javascript"> </script>
+    <script src="lib/backbone.couch.js" type="text/javascript"> </script>
+  </head>
+  <body>
+    <div id="container">
+    <h1>WMStats</h1>
+    <h2>Plots</h2>
+    <script type="text/javascript">
+    $(function() {
+      Backbone.couch.databaseName = "wmagent-status";
+      Backbone.couch.ddocName  = "WMStats";
+      Backbone.couch.enableChangesFeed = true;
+
+      var JobStateForSite = Backbone.Model.extend({
+        initialize: function(data) {
+          this.set({
+            value: data.value
+          });
+        }
+      });
+
+			var SiteStatePie = Backbone.d3.PlotCollection.extend({
+        model : JobStateForSite,
+				url : "site-time-owner-work",
+				group:true,
+				group_level:2,
+				startkey:["T2_UK_SGrid_BristolXXX"],
+				endkey:["T2_UK_SGrid_Bristol"],
+				descending: true,
+				limit: 1,
+				plottype: "pie",
+				success: function( result ) {
+					var models = [];
+					_.each( result.rows, function( row ) {
+						for (s in row.value) {
+							models.push( {id: s, value: row.value[s]} );
+						}
+					});
+					if ( models.length == 0 ) { models = null }
+					return models;
+				}
+			});
+
+			var bristol = new SiteStatePie();
+			var siteplot = Backbone.d3.getView(bristol, {'div': '#plot1'});
+
+			var UserJob= Backbone.Model.extend({
+        initialize: function(point) {
+          this.set({
+            x: point.x,
+						y: point.y
+          });
+        }
+      });
+			var UserJobSeries = Backbone.d3.PlotCollection.extend({
+				model : UserJob,
+				url : "owner-work-time",
+				size : 24,
+				group : true,
+				stale: "ok", // should really use "update_after",
+				startkey : ["person-0"],
+				endkey : ["person-0",{}],
+				plotdata: function(){
+          var data = [];
+          this.forEach(function(datapoint) {
+              data.push({x:datapoint.get('x'), y:datapoint.get('y')});
+            }
+          )
+          // Needed for scolling plots - to do move to view
+					if (this.size > this.length) {
+          	return _.last(data, this.length);
+					} else {
+						return _.last(data, this.size);
+					}
+
+        },
+				success: function( result ) {
+					console.log('success');
+					var models = [];
+					_.each( result.rows, function( row ) {
+						models.push( {x: row.key[2], y: row.value.success} );
+					});
+					if ( models.length == 0 ) { models = null }
+					return models;
+				}
+			});
+
+			var personjobs = new UserJobSeries();
+ 			var userplot = Backbone.d3.getView(personjobs, {
+					'div': '#plot2',
+					'scrolling': true
+			});
+
+
+    });
+		</script>
+		<h3>Jobs at Bristol by state</h3>
+		<div id="plot1"></div>
+		<div id="plot2"></div>
+		<div id="plot3"></div>
+
+		<div id="footer"><p><a href="index.html">Index</a></p></div>
+  </body>
+</html>

@@ -1,0 +1,84 @@
+<html>
+  <head>
+    <title>WMStats</title>
+    <link rel="stylesheet" href="style.css" type="text/css" />
+  </head>
+  <body>
+    <div id="container">
+    <h1>WMStats</h1>
+    <h2>Views</h2>
+    <p>In general monitoring views should be accessed with either a
+      <code>?stale=ok</code> or <code>?stale=update_after</code> option, to
+      prevent their access impacting on the behaviour of the database server.</p>
+    <dl>
+      <dt><a href="_view/owner-time-site-work"><code>owner-time-site-work</code></a></dt>
+      <dd><p>Returns the state document for each owner, workload and timestamp. Used to
+				show the status of a users jobs over sites. View options:
+        <dl>
+          <dt><code>?group=true&startkey=[$USER]&endkey=[$USER,{}]</code></dt>
+          <dd><p>Status of jobs for a user at sites over time.</p></dd>
+        </dl>
+      </p></dd>
+
+      <dt><a href="_view/owner-work-time"><code>owner-work-time</code></a></dt>
+      <dd><p>Returns the state document for each owner, workload and timestamp. Used to
+				calculate the status of a users jobs. View options:
+        <dl>
+          <dt><code>?group=true&startkey=[$USER,$WF,{}]&endkey=[$USER,$WF]&descending=true&limit=1</code></dt>
+          <dd><p>Status of jobs for a user for a given workflow. The combination of limit and
+					descending to gets the most recent state.</p></dd>
+          <dt><code>?group=true&startkey=[$USER,$WF,{}]&endkey=[$USER,$WF]&descending=true</code></dt>
+          <dd><p>Time series of the status for a user/workflow.</p></dd>
+        </dl>
+      </p></dd>
+
+      <dt><a href="_view/owner-time"><code>owner-time</code></a></dt>
+      <dd><p>Returns a global state (across all workflows) for each owner over
+				time. Used to see global status of a users jobs across all workflows.
+				To make cumulative series/plots you need to sum in the client, since
+				once a workflow completes it stops being reported.
+				View options:
+        <dl>
+          <dt><code>?group=true&startkey=[$USER]&endkey=[$USER,{}]</code></dt>
+          <dd><p>Status of all jobs for all workflows by $USER.</p></dd>
+        </dl>
+      </p></dd>
+
+      <dt><a href="_view/site-time-owner-work"><code>site-owner-work-time</code></a></dt>
+      <dd><p>This view is designed to give site admins an idea about the jobs running
+        at their site. It will return a time series by default, or a window with
+        appropriate startkey/endkey values (e.g. [SITENAME, now], [SITENAME, now - 15mins]).</p>
+        <p>View options:
+        <dl>
+          <dt><code>?group=true&group_level=2&descending=true</code></dt>
+          <dd><p>The number of jobs in various states at a site.</p></dd>
+          <dt><code>?group=true&group_level=3&descending=true</code></dt>
+          <dd><p>The number of jobs at a site broken down by owner.</p></dd>
+          <dt><code>?group=true&group_level=4&descending=true</code></dt>
+          <dd><p>The number of jobs at a site broken down by owner and workflow.</p></dd>
+        </dl>
+      </p></dd>
+
+      <dt><a href="_view/time-site-owner-work"><code>time-site-owner-work</code></a></dt>
+      <dd><p>Returns the number of jobs per state, keyed by timestamp, site,
+				owner, and workload. View options:
+        <dl>
+          <dt><code>?group=true&group_level=2</code></dt>
+          <dd><p>Number of jobs at a site</p></dd>
+          <dt><code>?group=true&group_level=3</code></dt>
+          <dd><p>Number of jobs at a site by user</p></dd>
+        </dl>
+      </p></dd>
+
+      <dt><a href="_view/timestamp-id"><code>timestamp-id</code></a></dt>
+      <dd><p>This view is to be used to remove old/expired documents. View options:
+        <dl>
+          <dt><code>?reduce=false</code></dt>
+          <dd><p>Turn off reduce to see the id's of documents to delete.</p></dd>
+        </dl>
+      </p></dd>
+
+    </dl>
+		<div id="footer"><p><a href="plots.html">Plot</a></p></div>
+  </body>
+</html>

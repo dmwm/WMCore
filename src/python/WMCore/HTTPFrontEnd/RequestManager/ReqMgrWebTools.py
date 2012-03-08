@@ -25,7 +25,7 @@ from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker, bu
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
 from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
-
+from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 
 def addSiteWildcards(wildcardKeys, sites, wildcardSites):
     """
@@ -195,10 +195,13 @@ def loadWorkload(request):
         raise cherrypy.HTTPError(404, "Cannot find workload "+removePasswordFromUrl(url))
     return helper
  
-def saveWorkload(helper, workload):
+def saveWorkload(helper, workload, wmstatUrl = None):
     """ Saves the changes to this workload """
     if workload.startswith('http'):
         helper.saveCouchUrl(workload)
+        if wmstatUrl:
+            wmstatSvc = WMStatsWriter(wmstatUrl)
+            wmstatSvc.updateFromWMSpec(helper)
     else:
         helper.save(workload)
 
@@ -211,7 +214,7 @@ def removePasswordFromUrl(url):
         result = url[:slashslashat+2] + url[atat+1:]
     return result
 
-def changePriority(requestName, priority):
+def changePriority(requestName, priority, wmstatUrl = None):
     """ Changes the priority that's stored in the workload """
     # fill in all details
     request = GetRequest.getRequestByName(requestName)
@@ -221,7 +224,7 @@ def changePriority(requestName, priority):
     helper = loadWorkload(request)
     totalPriority = int(priority) + int(userPriority) + int(groupPriority)
     helper.data.request.priority = totalPriority
-    saveWorkload(helper, request['RequestWorkflow'])
+    saveWorkload(helper, request['RequestWorkflow'], wmstatUrl)
 
 def abortRequest(requestName):
     """ Changes the state of the request to "aborted", and asks the work queue
@@ -255,7 +258,7 @@ def privileged():
     # and maybe we're running without securitya, in which case dn = 'None'
     return secure_roles != []
 
-def changeStatus(requestName, status):
+def changeStatus(requestName, status, wmstatUrl):
     """ Changes the status for this request """
     request = GetRequest.getRequestByName(requestName)
     if not status in RequestStatus.StatusList:
@@ -266,7 +269,8 @@ def changeStatus(requestName, status):
     if not status in RequestStatus.NextStatus[oldStatus]:
         raise RuntimeError, "Cannot change status from %s to %s.  Allowed values are %s" % (
            oldStatus, status,  RequestStatus.NextStatus[oldStatus])
-    ChangeState.changeRequestStatus(requestName, status)
+
+    ChangeState.changeRequestStatus(requestName, status, wmstatUrl = wmstatUrl)
 
     if status == 'aborted':
         # delete from the workqueue
@@ -280,7 +284,7 @@ def changeStatus(requestName, status):
             raise cherrypy.HTTPError(403, "You are not allowed to change the state for this request")
 
     #FIXME needs logic about who is allowed to do which transition
-    ChangeState.changeRequestStatus(requestName, status)
+    ChangeState.changeRequestStatus(requestName, status, wmstatUrl = wmstatUrl)
     return
 
 def prepareForTable(request):
@@ -378,7 +382,7 @@ def validate(schema):
         if value and value != '':
             WMCore.Lexicon.cmsswversion(schema[field])
         
-def makeRequest(kwargs, couchUrl, couchDB):
+def makeRequest(kwargs, couchUrl, couchDB, wmstatUrl):
     logging.info(kwargs)
     """ Handles the submission of requests """
     # make sure no extra spaces snuck in
@@ -463,7 +467,8 @@ def makeRequest(kwargs, couchUrl, couchDB):
     workloadUrl = helper.saveCouch(couchUrl, couchDB, metadata=metadata)
     request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
     try:
-        CheckIn.checkIn(request)
+        wmstatSvc = WMStatsWriter(wmstatUrl)
+        CheckIn.checkIn(request, wmstatSvc)
     except CheckIn.RequestCheckInError, ex:
         msg = ex._message
         raise HTTPError(400, "Error in Request check-in: %s" % msg)

@@ -46,7 +46,8 @@ class TestChangeState(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setupCouch("changestate_t/jobs", "JobDump")
-        self.testInit.setupCouch("changestate_t/fwjrs", "FWJRDump")        
+        self.testInit.setupCouch("changestate_t/fwjrs", "FWJRDump")
+        self.testInit.setupCouch("job_summary", "WMStats")
 
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
@@ -60,6 +61,7 @@ class TestChangeState(unittest.TestCase):
         self.config = Configuration()
         self.config.component_("JobStateMachine")
         self.config.JobStateMachine.couchurl = os.getenv("COUCHURL")
+        self.config.JobStateMachine.jobSummaryDBName = "job_summary"
         return
 
     def tearDown(self):
@@ -752,7 +754,7 @@ class TestChangeState(unittest.TestCase):
 
         locationAction = self.daoFactory(classname = "Locations.New")
         locationAction.execute("site1", seName = "somese.cern.ch")
-        
+
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = "Test")
         testWorkflow.create()
@@ -763,7 +765,7 @@ class TestChangeState(unittest.TestCase):
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
-        
+
         testSubscription = Subscription(fileset = testFileset,
                                         workflow = testWorkflow)
         testSubscription.create()
@@ -786,6 +788,7 @@ class TestChangeState(unittest.TestCase):
         reportPath = os.path.join(getTestBase(),
                                   "WMCore_t/JobStateMachine_t/Report.pkl")
         myReport.unpersist(reportPath)
+
         testJobA["fwjr"] = myReport
 
         change.propagate([testJobA], 'executing', 'created')
@@ -811,8 +814,79 @@ class TestChangeState(unittest.TestCase):
 
         self.assertEqual(fwjrDoc["fwjr"]["steps"]['cmsRun1']['input']['source'], [])
 
-
         return
     
+
+    def testJobSummary(self):
+        """
+        _testJobSummary_
+
+        verify that job summary for jobs with fwjr are correctly created
+        and that status is updated when updatesummary flag is enabled
+        """
+        change = ChangeState(self.config, "changestate_t")
+
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute("site1", seName = "somese.cern.ch")
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task = "Test")
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+        testFile = File(lfn = "SomeLFNC", locations = set(["somese.cern.ch"]))
+        testFile.create()
+        testFileset.addFile(testFile)
+        testFileset.commit()
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = testSubscription)
+        jobGroup = jobFactory(files_per_job = 1)[0]
+
+        assert len(jobGroup.jobs) == 1, \
+               "Error: Splitting should have created one job."
+
+        testJobA = jobGroup.jobs[0]
+        testJobA["user"] = "cinquo"
+        testJobA["group"] = "DMWM"
+        testJobA["taskType"] = "Analysis"
+
+        change.propagate([testJobA], 'created', 'new')
+        myReport = Report()
+        reportPath = os.path.join(getTestBase(),
+                                  "WMCore_t/JobStateMachine_t/Report.pkl")
+        myReport.unpersist(reportPath)
+
+        change.propagate([testJobA], 'executing', 'created')
+        testJobA["fwjr"] = myReport
+        change.propagate([testJobA], 'jobfailed', 'executing')
+
+        changeStateDB = self.couchServer.connectDatabase(dbname = "job_summary")
+        allDocs = changeStateDB.document("_all_docs")
+
+        self.assertEqual(len(allDocs["rows"]), 2,
+                         "Error: Wrong number of documents")
+
+        fwjrDoc = {'state': None}
+        for resultRow in allDocs["rows"]:
+            if resultRow["id"] != "_design/WMStats":
+                fwjrDoc = changeStateDB.document(resultRow["id"])
+                break
+
+        self.assertEqual(fwjrDoc['state'], 'jobfailed',
+                         "Error: summary doesn't have the expected job state")
+
+        del testJobA["fwjr"]
+
+        change.propagate([testJobA], 'jobcooloff', 'jobfailed', updatesummary = True)
+        return
+
+
 if __name__ == "__main__":
     unittest.main()

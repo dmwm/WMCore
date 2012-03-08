@@ -28,6 +28,7 @@ class WebRequestSchema(WebAPI):
         self.componentDir = config.componentDir
         self.configDBName = config.configDBName
         self.workloadDBName = config.workloadDBName
+        self.wmstatWriteURL = "%s/%s" % (self.couchUrl.rstrip('/'), config.wmstatDBName)
         self.defaultSkimConfig = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"    
         self.yuiroot = config.yuiroot
         cherrypy.engine.subscribe('start_thread', self.initThread)
@@ -110,7 +111,7 @@ class WebRequestSchema(WebAPI):
                 decodedSchema[key] = schema[key]
 
         try:
-            request = Utilities.makeRequest(decodedSchema, self.couchUrl, self.workloadDBName)
+            request = Utilities.makeRequest(schema, self.couchUrl, self.workloadDBName, self.wmstatWriteURL)
         except RuntimeError, e:
             raise cherrypy.HTTPError(400, "Error creating request: %s" % e)
         except KeyError, e:

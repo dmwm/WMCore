@@ -5,7 +5,7 @@
 WMStats.namespace("Couch")
 
 WMStats.Couch = (function(){
-    var _dbName = "wmstats";
+    var _dbName = "mock_wmstats";
     var _Design = "WMStats";
     var _couchDB = $.couch.db(_dbName);
     

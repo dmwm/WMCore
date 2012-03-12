@@ -225,6 +225,77 @@ def generate_reqmgr_requests(number=5):
                 }
         docs.append(doc)
     return docs
+
+def generate_jobsummary(request, number=10):
+    """
+    jobSummary = {"_id": "jobid_1",  //jobid
+                  "type": "jobsummary", // setvalue
+                  "retrycount": job["retry_count"],
+                  "workflow": workflow1, //request name
+                  "task": job["task"],
+                  "state": success,
+                  "site": T1_US_FNAL,
+                  "exitcode": 123,
+                  "errors": errmsgs,
+                  "lumis": inputs,
+                  "output": outputs }
+
+    errmsgs = {}
+    inputs = []
+    for step in fwjrDocument["fwjr"]["steps"]:
+        if "errors" in fwjrDocument["fwjr"]["steps"][step]:
+            errmsgs[step] = [error for error in fwjrDocument["fwjr"]["steps"][step]["errors"]]
+        if "input" in fwjrDocument["fwjr"]["steps"][step] and "source" in fwjrDocument["fwjr"]["steps"][step]["input"]:
+            inputs.extend( [source["runs"] for source in fwjrDocument["fwjr"]['steps'][step]["input"]["source"] if "runs" in source] )
+    outputs = [ {'type': singlefile.get('module_label', None),
+                 'lfn': singlefile.get('lfn', None),
+                 'location': singlefile.get('locations', None),
+                 'checksums': singlefile.get('checksums', {}),
+                     'size': singlefile.get('size', None) } for singlefile in job["fwjr"].getAllFiles() if singlefile ]
+                     
+                     
+    job status 
+    ['new', 'created', 'executing', 'complete', 'createfailed', 'submitfailed', 
+     'jobfailed', 'createcooloff',  'submitcooloff', 'jobcooloff', 'success',
+     'exhausted', 'killed']
+    """
+    
+    #TODO: Make more realistic
+    docs = []
+    statusList = ['new', 'created', 'executing', 'complete', 'createfailed', 'submitfailed', 
+     'jobfailed', 'createcooloff',  'submitcooloff', 'jobcooloff', 'success',
+     'exhausted', 'killed']
+    
+    for i in xrange(number):
+        status = statusList[random.randint(0, len(statusList)-1)]
+        errmsgs = {}
+        if status.find("failed"):
+            exitCode = 666
+            errmsgs["step1"] = {}
+            errmsgs["step1"]["out"] = {}
+            errmsgs["step1"]["out"]["type"] = "test error"
+        else:
+            exitCode = 0
+
+        jobSummary = {"_id": "jobid_%s_%s" % (request, i),
+                  "type": "jobsummary", 
+                  "retrycount": random.randint(0,5),
+                  "workflow": request, 
+                  "task": "/%s/task_%s" % (request, i),
+                  "state": status,
+                  "site": "T1_US_FNAL",
+                  "exitcode": exitCode,
+                  "errors": errmsgs,
+                  "lumis": [],
+                  "output": [ {'type': "test-type",
+                               'lfn': "/somewhere/file.root",
+                               'location': 'T1',
+                               'checksums': 'abc123',
+                               'size': "1000" }  ]
+            }
+        docs.append(jobSummary)
+    return docs
+
         
 def generate_sites(request):
 
@@ -296,8 +367,12 @@ def main(options):
     if options.add_agent_data:
         for req in agent_requests:
             db.queue(req)
+            jobDocs = generate_jobsummary(req['workflow'])
+            for job in jobDocs:
+                db.queue(job)
         db.commit()
         print "Added %s agent requests" % len(agent_requests)
+        print "Added %s job Docs" % (len(agent_requests) * len(jobDocs))
   
 if __name__ == "__main__":
     main(parse_opts())

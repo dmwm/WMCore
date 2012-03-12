@@ -13,7 +13,7 @@ from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import LocalCouchDBData, \
      WMAgentDBData, combineAnalyticsData, convertToRequestCouchDoc, \
-     convertToRequestCouchDoc
+     convertToAgentCouchDoc
 
 class AnalyticsPoller(BaseWorkerThread):
     """
@@ -51,7 +51,6 @@ class AnalyticsPoller(BaseWorkerThread):
         self.wmagentDB = WMAgentDBData(myThread.dbi, myThread.logger)
         # set the connection for local couchDB call
         self.localSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL )
-        self.centralWMStats = WMStatsWriter(self.config.AnalyticsDataCollector.centralWMStatsURL )
         
     def algorithm(self, parameters):
         """

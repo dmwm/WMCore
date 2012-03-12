@@ -29,12 +29,23 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * DataTables features
  */
+th {
+    font-family: Verdana; 
+    font-size: 0.7em;
+}
+
+td {
+    font-family: Arial; 
+    font-size: 0.8em;
+}
 
 .dataTables_wrapper {
     position: relative;
     min-height: 302px;
     clear: both;
     _height: 302px;
+    font-family: Arial; 
+    font-size: 0.7em;
     zoom: 1; /* Feeling sorry for IE */
 }
 
@@ -63,6 +74,7 @@
     width: 50%;
     float: right;
     text-align: right;
+    font-size: 0.8em;
 }
 
 .dataTables_info {
@@ -262,6 +274,7 @@ tfoot input {
     margin: 0.5em 0;
     width: 100%;
     color: #444;
+    font-size: 0.5em;
 }
 
 tfoot input.search_init {

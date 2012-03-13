@@ -119,7 +119,7 @@ class StdBase(object):
 
         return
 
-    def determineOutputModules(self, scenarioName = None, scenarioArgs = None,
+    def determineOutputModules(self, scenarioFunc = None, scenarioArgs = None,
                                configDoc = None, couchURL = None,
                                couchDBName = None):
         """
@@ -134,10 +134,20 @@ class StdBase(object):
             configCache.loadByID(configDoc)
             outputModules = configCache.getOutputModuleInfo()
         else:
-            for dataTier in scenarioArgs.get("writeTiers",[]):
-                outputModuleName = "%soutput" % (dataTier)
-                outputModules[outputModuleName] = {"dataTier": dataTier,
-                                                   "filterName": None}
+            if scenarioFunc in [ "promptReco", "expressProcessing" ]:
+                for output in scenarioArgs.get('outputs',[]):
+                    dataTier = output['dataTier']
+                    moduleLabel = output['moduleLabel']
+                    filterName = output.get('filterName', None)
+                    outputModules[moduleLabel] = {'dataTier' : dataTier,
+                                                  'filterName' : filterName}
+            elif scenarioFunc == "alcaSkim":
+                for alcaSkim in scenarioArgs.get('skims',[]):
+                    dataTier = "ALCARECO"
+                    moduleLabel = "ALCARECOStream%s" % alcaSkim
+                    filterName = alcaSkim
+                    outputModules[moduleLabel] = {'dataTier' : dataTier,
+                                                  'filterName' : filterName}
 
         return outputModules
 
@@ -273,7 +283,7 @@ class StdBase(object):
             procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
                                                         **scenarioArgs)
 
-        configOutput = self.determineOutputModules(scenarioName, scenarioArgs,
+        configOutput = self.determineOutputModules(scenarioFunc, scenarioArgs,
                                                    configDoc, couchURL, couchDBName)
         outputModules = {}
         for outputModuleName in configOutput.keys():

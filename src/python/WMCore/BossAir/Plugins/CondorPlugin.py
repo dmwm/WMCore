@@ -86,7 +86,7 @@ def submitWorker(input, results, timeout = None):
             msg += str(ex)
             msg += str(traceback.format_exc())
             logging.error(msg)
-            results.put({'stdout': '', 'stderr': '999101\n %s' % msg, 'idList': idList})
+            results.put({'stdout': '', 'stderr': '999101\n %s' % msg, 'idList': idList, 'exitCode': 999101})
 
     return 0
 
@@ -421,10 +421,22 @@ class CondorPlugin(BasePlugin):
                 queueError = True
                 continue
 
-            output   = res['stdout']
-            error    = res['stderr']
-            idList   = res['idList']
-            exitCode = res['exitCode']
+            try:
+                output   = res['stdout']
+                error    = res['stderr']
+                idList   = res['idList']
+                exitCode = res['exitCode']
+            except KeyError, ex:
+                msg =  "Error in finding key from result pipe\n"
+                msg += "Something has gone crticially wrong in the worker\n"
+                try:
+                    msg += "Result: %s\n" % str(res)
+                except:
+                    pass
+                msg += str(ex)
+                logging.error(msg)
+                queueError = True
+                continue
 
             if not exitCode == 0:
                 logging.error("Condor returned non-zero.  Printing out command stderr")

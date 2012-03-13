@@ -453,6 +453,11 @@ def makeRequest(kwargs, couchUrl, couchDB):
     helper.setCampaign(schema["Campaign"])
     if "CustodialSite" in schema.keys():
         helper.setCustodialSite(siteName = schema['CustodialSite'])
+    elif len(schema.get("SiteWhitelist", [])) == 1:
+        # If there is only one site in the site whitelist we should
+        # set it as the custodial site.
+        # Oli says so.
+        helper.setCustodialSite(siteName = schema['SiteWhitelist'][0])
     if "RunWhitelist" in schema:
         helper.setRunWhitelist(schema["RunWhitelist"])
     # can't save Request object directly, because it makes it hard to retrieve the _rev

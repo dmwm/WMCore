@@ -287,8 +287,12 @@ class JobArchiverPoller(BaseWorkerThread):
             tarball = tarfile.open(name = os.path.join(logDir, tarName),
                                    mode = 'w:bz2')
             for fileName in cacheDirList:
-                tarball.add(name = os.path.join(cacheDir, fileName),
-                            arcname = 'Job_%i/%s' %(job['id'], fileName))
+                fullFile = os.path.join(cacheDir, fileName)
+                try:
+                    tarball.add(name = fullFile,
+                                arcname = 'Job_%i/%s' %(job['id'], fileName))
+                except IOError:
+                    logging.error('Cannot read %s, skipping' % fullFile)
             tarball.close()
         except Exception, ex:
             msg =  "Exception while opening and adding to a tarfile\n"
@@ -300,7 +304,7 @@ class JobArchiverPoller(BaseWorkerThread):
             raise JobArchiverPollerException(msg)
 
         try:
-            shutil.rmtree('%s' % (cacheDir))
+            shutil.rmtree('%s' % (cacheDir), ignore_errors=True)
         except Exception, ex:
             msg =  "Error while removing the old cache dir.\n"
             msg += "CacheDir: %s\n" % cacheDir

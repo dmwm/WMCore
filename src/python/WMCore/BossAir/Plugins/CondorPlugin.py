@@ -214,6 +214,18 @@ class CondorPlugin(BasePlugin):
             if not (self.serverCert and self.serverKey):
                 raise WMException('MyProxy server requires serverCert and serverKey to be set.')
 
+        # Make the directory for the proxies
+        if self.proxyDir and not os.path.exists(self.proxyDir):
+            logging.debug("proxyDir not found: creating it.")
+            try:
+                os.makedirs(self.proxyDir, 01777)
+            except Exception, ex:
+                msg = "Error: problem when creating proxyDir directory - '%s'" % str(ex)
+                raise BossAirPluginException(msg)
+        elif not os.path.isdir(self.proxyDir):
+            msg = "Error: proxyDir '%s' is not a directory" % self.proxyDir
+            raise BossAirPluginException(msg)
+
         if self.serverCert and self.serverKey and self.myproxySrv:
             self.proxy = self.setupMyProxy()
 

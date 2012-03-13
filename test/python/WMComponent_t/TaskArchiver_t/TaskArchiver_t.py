@@ -15,6 +15,8 @@ import time
 import shutil
 import inspect
 
+from nose.plugins.attrib import attr
+
 import WMCore.WMBase
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
@@ -140,6 +142,7 @@ class TaskArchiverTest(unittest.TestCase):
         config.TaskArchiver.requireCouch               = True
         config.TaskArchiver.uploadPublishInfo = self.uploadPublishInfo
         config.TaskArchiver.uploadPublishDir  = self.uploadPublishDir
+        config.TaskArchiver.userFileCacheURL = os.getenv('UFCURL', 'http://cms-xen38.fnal.gov:7725/userfilecache/')
 
         config.section_("ACDC")
         config.ACDC.couchurl                = config.JobStateMachine.couchurl
@@ -705,6 +708,8 @@ class TaskArchiverTest(unittest.TestCase):
         return
 
 
+    # Requires a running UserFileCache to succeed
+    @attr('integration')
     def testPublishJSONCreate(self):
         """
         Re-run testA_BasicFunctionTest with data in DBSBuffer

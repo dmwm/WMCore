@@ -572,17 +572,21 @@ class AccountantWorker(WMConnectionBase):
                     for wf in self.workflowIDs:
                         if wf['workflowPath'] == workflowPath:
                             workflowID = wf['workflowID']
+                            break
                 if not workflowID:
                     # Then we have to insert the workflow by hand
                     workflowID = self.insertWorkflow.execute(requestName = requestName,
                                                              taskPath    = taskPath)
+                    self.workflowPaths.append(workflowPath)
+                    self.workflowIDs.append({'workflowPath': workflowPath, 'workflowID': workflowID})
+                    
             lfn           = dbsFile['lfn']
             selfChecksums = dbsFile['checksums']
             jobLocation   = dbsFile.getLocations()[0]
 
             dbsFileTuples.append((lfn, dbsFile['size'],
                                   dbsFile['events'], assocID,
-                                  dbsFile['status']))
+                                  dbsFile['status'], workflowID))
 
             dbsFileLoc.append({'lfn': lfn, 'sename' : jobLocation})
             if dbsFile['runs']:
@@ -606,7 +610,6 @@ class AccountantWorker(WMConnectionBase):
                 self.dbsLocations.append(jobLocation)
 
             self.dbsCreateFiles.execute(files = dbsFileTuples,
-                                        workflowID = workflowID,
                                         conn = self.getDBConn(),
                                         transaction = self.existingTransaction())
 

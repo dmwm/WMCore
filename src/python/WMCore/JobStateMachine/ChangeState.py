@@ -277,25 +277,36 @@ class ChangeState(WMObject, WMConnectionBase):
                          "exitCode": 0}
             jobReport.update(viewResult["value"])
 
-            fwjrResults = self.fwjrdatabase.loadView("FWJRDump", "jobsToReport",
-                                                     options = {"startkey": [jobReport["id"], jobReport["retryCount"], 0],
-                                                                "endkey": [jobReport["id"], jobReport["retryCount"], {}]})
+            # Executing jobs don't require FWJR data, since they shouldn't
+            # have any yet
+            if jobReport.get('newState', None) == 'executing':
+                jobsToReport.append(jobReport)
+            # Jobs that have failed directly do so due to timeout.  Their FWJRs
+            # cannot be trusted in the first place
+            elif jobReport.get('newState', None) == 'jobfailed':
+                jobReport['exitCode'] = 99900
+                jobsToReport.append(jobReport)
+            else:
+                # Otherwise we actually have to load something out of the DB
+                fwjrResults = self.fwjrdatabase.loadView("FWJRDump", "jobsToReport",
+                                                         options = {"startkey": [jobReport["id"], jobReport["retryCount"], 0],
+                                                                    "endkey": [jobReport["id"], jobReport["retryCount"], {}]})
 
-            errorTime = None
-            exitCode = 0
-            for row in fwjrResults["rows"]:
-                jobReport["performance"][row["value"][0]] = row["value"][2]
+                errorTime = None
+                exitCode = 0
+                for row in fwjrResults["rows"]:
+                    jobReport["performance"][row["value"][0]] = row["value"][2]
+                    
+                    errors = row["value"][3]
+                    if len(errors) > 0:
+                        if errorTime == None or row["value"][1] < errorTime:
+                            erorrTime = row["value"][1]
+                            exitCode = errors[0]["exitCode"]
 
-                errors = row["value"][3]
-                if len(errors) > 0:
-                    if errorTime == None or row["value"][1] < errorTime:
-                        erorrTime = row["value"][1]
-                        exitCode = errors[0]["exitCode"]
-
-            jobReport["exitCode"] = exitCode
-            del jobReport["index"]
-            del jobReport["id"]
-            jobsToReport.append(jobReport)
+                jobReport["exitCode"] = exitCode
+                del jobReport["index"]
+                del jobReport["id"]
+                jobsToReport.append(jobReport)
 
             updateUri = updateBase + str(viewResult["value"]["id"])
             updateUri += "?index=%s" % (viewResult["value"]["index"])

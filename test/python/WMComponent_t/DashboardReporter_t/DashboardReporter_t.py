@@ -249,9 +249,33 @@ class DashboardReporterTest(unittest.TestCase):
         dashboardReporter.algorithm()
 
         return
+
+    def testB_CheckExecutingJobsAndProfile(self):
+        """
+        _CheckExecutingJobsAndProfile_
+        
+        Pull up some executing jobs and profile them.
+        """
+        return
+        jobGroup = self.createTestJobGroup()
+        config   = self.getConfig()
+
+        changer = ChangeState(config)
+        changer.propagate(jobGroup.jobs, "executing", "created")
+
+        dashboardReporter = DashboardReporterPoller(config = config)
+        import cProfile, pstats
+        cProfile.runctx("dashboardReporter.algorithm()", globals(), locals(), filename = "testStats.stat")
+
+        p = pstats.Stats('testStats.stat')
+        p.sort_stats('cumulative')
+        p.print_stats(.2)
+        #dashboardReporter.algorithm()
+
+        return
     
 
-    def testB_DashboardReporterPollerAlertSending_algorithm(self):
+    def testC_DashboardReporterPollerAlertSending_algorithm(self):
         """
         Cause exception (alert-worthy situation) in the algorithm()
         method.
@@ -282,7 +306,7 @@ class DashboardReporterTest(unittest.TestCase):
         alert = handler.queue[0]
         self.assertEqual(alert["Source"], dashboardReporter.__class__.__name__)
         self.assertEqual(alert["Component"], "DashboardReporter")
-
+        return
 
 
 if __name__ == '__main__':

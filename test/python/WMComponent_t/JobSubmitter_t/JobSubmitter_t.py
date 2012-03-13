@@ -516,6 +516,8 @@ class JobSubmitterTest(unittest.TestCase):
         self.checkJDL(config = config, cacheDir = cacheDir,
                       submitFile = submitFile, site = 'T2_US_UCSD')
 
+        
+
         #if os.path.exists('CacheDir'):
         #    shutil.rmtree('CacheDir')
         #shutil.copytree(self.testDir, 'CacheDir')
@@ -524,6 +526,17 @@ class JobSubmitterTest(unittest.TestCase):
         # Check to make sure we have running jobs
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, nJobs * nSubs)
+
+        # This should do nothing
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir,
+                                                                        'workloadTest',
+                                                                        workloadName),
+                                            site = 'se.T2_US_UCSD')
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+        jobSubmitter.algorithm()
 
         # Now clean-up
         command = ['condor_rm', self.user]

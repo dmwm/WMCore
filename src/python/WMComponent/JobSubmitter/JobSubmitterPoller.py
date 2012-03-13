@@ -79,9 +79,13 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.changeState = ChangeState(self.config)
         self.repollCount = getattr(self.config.JobSubmitter, 'repollCount', 10000)
 
+        # BossAir
+        self.bossAir = BossAirAPI(config = self.config)
+
         # Additions for caching-based JobSubmitter
         self.cachedJobIDs   = set()
         self.cachedJobs     = {}
+        self.jobDataCache   = {}
         self.jobsToPackage  = {}
         self.sandboxPackage = {}
         self.siteKeys       = {}
@@ -114,9 +118,6 @@ class JobSubmitterPoller(BaseWorkerThread):
                 pass
             raise JobSubmitterException(msg)
 
-
-        # BossAir
-        self.bossAir = BossAirAPI(config = self.config)
 
         # Now the DAOs
         self.listJobsAction = self.daoFactory(classname = "Jobs.ListForSubmitter")
@@ -327,11 +328,6 @@ class JobSubmitterPoller(BaseWorkerThread):
             batchDir = self.addJobsToPackage(loadedJob)
             self.cachedJobIDs.add(jobID)
 
-            if not self.cachedJobs.has_key(newJob["workflow"]):
-                self.cachedJobs[newJob["workflow"]] = {}
-
-            workflowCache = self.cachedJobs[newJob["workflow"]]
-
             for possibleLocation in possibleLocations:
                 if not self.cachedJobs.has_key(possibleLocation):
                     self.cachedJobs[possibleLocation] = {}
@@ -339,21 +335,29 @@ class JobSubmitterPoller(BaseWorkerThread):
                     self.cachedJobs[possibleLocation][newJob["type"]] = {}
 
                 locTypeCache = self.cachedJobs[possibleLocation][newJob["type"]]
-                if not locTypeCache.has_key(newJob["workflow"]):
-                    locTypeCache[newJob["workflow"]] = set()
+                workflowName = newJob['workflow']
+                if not locTypeCache.has_key(workflowName):
+                    locTypeCache[workflowName] = set()
+                if not self.jobDataCache.has_key(workflowName):
+                    self.jobDataCache[workflowName] = {}
 
-                locTypeCache[newJob["workflow"]].add((jobID,
-                                                      newJob["retry_count"],
-                                                      batchDir,
-                                                      loadedJob["sandbox"],
-                                                      loadedJob["cache_dir"],
-                                                      loadedJob.get("ownerDN", None),
-                                                      loadedJob.get("ownerGroup", ''),
-                                                      loadedJob.get("ownerRole", ''),
-                                                      loadedJob.get("priority", None),
-                                                      frozenset(possibleLocations),
-                                                      loadedJob.get("scramArch", None),
-                                                      loadedJob.get("swVersion", None)) )
+                locTypeCache[workflowName].add(jobID)
+
+            # Now that we're out of that loop, put the job data in the cache
+            jobInfo = (jobID,
+                       newJob["retry_count"],
+                       batchDir,
+                       loadedJob["sandbox"],
+                       loadedJob["cache_dir"],
+                       loadedJob.get("ownerDN", None),
+                       loadedJob.get("ownerGroup", ''),
+                       loadedJob.get("ownerRole", ''),
+                       loadedJob.get("priority", None),
+                       frozenset(possibleLocations),
+                       loadedJob.get("scramArch", None),
+                       loadedJob.get("swVersion", None))
+            
+            self.jobDataCache[workflowName][jobID] = jobInfo
 
         if len(badJobs) > 0:
             logging.error("The following jobs have no possible sites to run at: %s" % badJobs)
@@ -377,9 +381,14 @@ class JobSubmitterPoller(BaseWorkerThread):
         for siteName in self.cachedJobs.keys():
             for taskType in self.cachedJobs[siteName].keys():
                 for workflow in self.cachedJobs[siteName][taskType].keys():
-                    for cachedJob in list(self.cachedJobs[siteName][taskType][workflow]):
-                        if cachedJob[0] in jobIDsToPurge:
-                            self.cachedJobs[siteName][taskType][workflow].remove(cachedJob)
+                    for cachedJobID in list(self.cachedJobs[siteName][taskType][workflow]):
+                        if cachedJobID in jobIDsToPurge:
+                            self.cachedJobs[siteName][taskType][workflow].remove(cachedJobID)
+                            try:
+                                del self.jobDataCache[workflow][cachedJobID]
+                            except KeyError:
+                                # Already gone
+                                pass
 
         logging.info("Done pruning killed jobs, moving on to submit.")
         return
@@ -493,10 +502,16 @@ class JobSubmitterPoller(BaseWorkerThread):
                     workflows.sort()
 
                     for workflow in workflows:
+                        # Run a while loop until you get a job
                         while len(taskCache[workflow]) > 0:
-                            cachedJob = taskCache[workflow].pop()
+                            cachedJobID = taskCache[workflow].pop()
+                            try:
+                                cachedJob   = self.jobDataCache[workflow].get(cachedJobID, None)
+                                del self.jobDataCache[workflow][cachedJobID]
+                            except:
+                                pass
 
-                            if cachedJob not in jobsToPrune.get(workflow, set()):
+                            if cachedJobID not in jobsToPrune.get(workflow, set()):
                                 cachedJobWorkflow = workflow
                                 break
                             else:
@@ -505,6 +520,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                         # Remove the entry in the cache for the workflow if it is empty.
                         if len(self.cachedJobs[siteName][taskType][workflow]) == 0:
                             del self.cachedJobs[siteName][taskType][workflow]
+                        if self.jobDataCache.has_key(workflow) and len(self.jobDataCache[workflow].keys()) == 0:
+                            del self.jobDataCache[workflow]
 
                         if cachedJob:
                             # We found a job, bail out and handle it.
@@ -528,7 +545,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                     if not jobsToPrune.has_key(cachedJobWorkflow):
                         jobsToPrune[cachedJobWorkflow] = set()
 
-                    jobsToPrune[cachedJobWorkflow].add(cachedJob)
+                    jobsToPrune[cachedJobWorkflow].add(cachedJob[0])
 
                     # Sort jobs by jobPackage
                     package = cachedJob[2]

@@ -63,7 +63,7 @@ def submitWorker(input, results, timeout = None):
 
         if work == 'STOP':
             # Put the brakes on
-            logging.error("submitWorker multiprocess issued STOP command!")
+            logging.info("submitWorker multiprocess issued STOP command!")
             break
 
         command = work.get('command', None)
@@ -190,8 +190,8 @@ class CondorPlugin(BasePlugin):
 
         # Build ourselves a pool
         self.pool     = []
-        self.input    = multiprocessing.Queue()
-        self.result   = multiprocessing.Queue()
+        self.input    = None
+        self.result   = None
         self.nProcess = getattr(self.config.BossAir, 'nCondorProcesses', 4)
 
         # Set up my proxy and glexec stuff
@@ -266,8 +266,12 @@ class CondorPlugin(BasePlugin):
                 msg += str(ex)
                 logging.error(msg)
                 terminate = True
-        self.input.close()
-        self.result.close()
+        try:
+            self.input.close()
+            self.result.close()
+        except:
+            # There's really not much we can do about this
+            pass
         for proc in self.pool:
             if terminate:
                 try:
@@ -287,8 +291,10 @@ class CondorPlugin(BasePlugin):
                         logging.error(str(ex))
                         logging.error(str(ex2))
                         continue
-        # At the end, clean the pool
-        self.pool = []
+        # At the end, clean the pool and the queues
+        self.pool   = []
+        self.input  = None
+        self.result = None
         return
 
 
@@ -306,10 +312,20 @@ class CondorPlugin(BasePlugin):
         self.submitDir  = self.config.JobSubmitter.submitDir
         timeout         = getattr(self.config.JobSubmitter, 'getTimeout', 400)
 
+        successfulJobs = []
+        failedJobs     = []
+        jdlFiles       = []
+
+        if len(jobs) == 0:
+            # Then was have nothing to do
+            return successfulJobs, failedJobs
+
         if len(self.pool) == 0:
             # Starting things up
             # This is obviously a submit API
             logging.info("Starting up CondorPlugin worker pool")
+            self.input    = multiprocessing.Queue()
+            self.result   = multiprocessing.Queue()
             for x in range(self.nProcess):
                 p = multiprocessing.Process(target = submitWorker,
                                             args = (self.input, self.result, timeout))
@@ -318,16 +334,6 @@ class CondorPlugin(BasePlugin):
 
         if not os.path.exists(self.submitDir):
             os.makedirs(self.submitDir)
-
-
-        successfulJobs = []
-        failedJobs     = []
-        jdlFiles       = []
-
-        if len(jobs) == 0:
-            # Then we have nothing to do
-            return successfulJobs, failedJobs
-
 
 
         # Now assume that what we get is the following; a mostly
@@ -491,11 +497,13 @@ class CondorPlugin(BasePlugin):
             for f in jdlFiles:
                 os.remove(f)
 
-        # If the queue failed, clean the processes from the queue
-        # This prevents jobs from building up in memory anywhere
-        if queueError:
-            logging.error("Purging worker pool due to previous queueError")
-            self.close()
+        # When we're finished, clean up the queue workers in order
+        # to free up memory (in the midst of the process, the forked
+        # memory space shouldn't be touched, so it should still be
+        # shared, but after this point any action by the Submitter will
+        # result in memory duplication).
+        logging.info("Purging worker pool to clean up memory")
+        self.close()
 
 
         # We must return a list of jobs successfully submitted,

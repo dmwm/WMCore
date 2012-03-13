@@ -6,6 +6,8 @@ Template for a CMSSW Step
 
 """
 
+import pickle
+
 from WMCore.WMSpec.Steps.Template import Template
 from WMCore.WMSpec.Steps.Template import CoreHelper
 from WMCore.WMSpec.ConfigSectionTree import nodeName
@@ -116,9 +118,7 @@ class CMSSWStepHelper(CoreHelper):
         """
         self.data.application.configuration.scenario = scenarioName
         self.data.application.configuration.function = functionName
-        self.data.application.configuration.section_('arguments')
-        [ setattr(self.data.application.configuration.arguments, k, v)
-          for k, v in args.items() ]
+        self.data.application.configuration.arguments = pickle.dumps(args)
         return
 
 
@@ -165,8 +165,11 @@ class CMSSWStepHelper(CoreHelper):
 
         Set the global tag.
         """
-        self.data.application.configuration.section_('arguments')
-        self.data.application.configuration.arguments.globalTag = globalTag
+        args = {}
+        if hasattr(self.data.application.configuration, "arguments"):
+            args = pickle.loads(self.data.application.configuration.arguments)
+        args['globalTag'] = globalTag
+        self.data.application.configuration.arguments = pickle.dumps(args)
         return
 
     def getGlobalTag(self):
@@ -175,7 +178,7 @@ class CMSSWStepHelper(CoreHelper):
 
         Retrieve the global tag.
         """
-        return self.data.application.configuration.arguments.globalTag
+        return pickle.loads(self.data.application.configuration.arguments)['globalTag']
 
     def setUserSandbox(self, userSandbox):
         """

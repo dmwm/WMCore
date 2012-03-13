@@ -125,7 +125,7 @@ class JobSubmitterCachingTest(unittest.TestCase):
             newJobA["workflow"] = "wf001"
             newJobA["siteWhitelist"] = ["T1_US_FNAL"]
             newJobA["siteBlacklist"] = []
-            newJobA["sandbox"] = "somesandbox"
+            newJobA["sandbox"] = "%s/somesandbox" % self.testDir
             newJobA["owner"] = "Steve"
 
             jobCacheDir = os.path.join(self.testDir, "jobA-%s" % i)
@@ -144,7 +144,7 @@ class JobSubmitterCachingTest(unittest.TestCase):
             newJobB["workflow"] = "wf001"
             newJobB["siteWhitelist"] = ["T1_UK_RAL"]
             newJobB["siteBlacklist"] = []
-            newJobB["sandbox"] = "somesandbox"
+            newJobB["sandbox"] = "%s/somesandbox" % self.testDir
             newJobB["owner"] = "Steve"
 
             jobCacheDir = os.path.join(self.testDir, "jobB-%s" % i)

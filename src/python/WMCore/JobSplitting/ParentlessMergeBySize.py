@@ -145,7 +145,7 @@ class ParentlessMergeBySize(JobFactory):
         self.minMergeSize    = int(kwargs.get("min_merge_size", 1048576))
         self.maxMergeEvents  = int(kwargs.get("max_merge_events", 50000))
         self.mergeAcrossRuns = kwargs.get("merge_across_runs", True)
-        self.maxWaitTime     = kwargs.get("max_wait_time", 24 * 3600)
+        self.maxWaitTime     = kwargs.get("max_wait_time", 12 * 3600)
 
         self.subscription["fileset"].load()
 

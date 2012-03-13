@@ -350,7 +350,11 @@ class Harness:
         # Stop all worker threads
         logging.info(">>>Terminating worker threads")
         myThread = threading.currentThread()
-        myThread.workerThreadManager.terminateWorkers()
+        try:
+            myThread.workerThreadManager.terminateWorkers()
+        except:
+            # We may not have a thread manager
+            pass
 
         if(wait):
             logging.info(">>>Shut down of component "+\

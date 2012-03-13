@@ -10,6 +10,7 @@ from xml.dom.minidom import parse as parseDOM
 from xml.parsers.expat import ExpatError
 from cherrypy import HTTPError
 from cherrypy.lib.static import serve_file
+from httplib import HTTPException
 import WMCore.Lexicon
 import cgi
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper

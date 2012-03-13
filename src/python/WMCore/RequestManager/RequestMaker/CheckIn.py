@@ -64,7 +64,7 @@ def checkIn(request):
         raise RequestCheckInError("Cannot find scramArch %s in ReqMgr" % scramArch)
     for version in request.get('SoftwareVersions', []):
         if not version in versions[scramArch]:
-            raise RequestCheckInError("Cannot find software version %s in ReqMgr" % version)
+            raise RequestCheckInError("Cannot find software version %s in ReqMgr for scramArch %s" % (version, scramArch))
 
     try:
         reqId = MakeRequest.createRequest(

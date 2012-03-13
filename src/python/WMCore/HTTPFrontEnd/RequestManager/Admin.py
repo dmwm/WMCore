@@ -176,6 +176,17 @@ class Admin(WebAPI):
         return self.templatepage("Versions", versions=versions)
 
     @cherrypy.expose
+    @cherrypy.tools.secmodv2()
+    def scramArchs(self):
+        """
+        _scramArchs_
+
+        List all scramArchs in the DB
+        Prelim for putting this in the template pages
+        """
+        return SoftwareAdmin.listSoftware().keys()
+
+    @cherrypy.expose
     @cherrypy.tools.secmodv2(role=Utilities.security_roles())
     def handleAddVersion(self, version):
         """ Registers a version """

@@ -463,6 +463,10 @@ def makeRequest(kwargs, couchUrl, couchDB):
     # can't save Request object directly, because it makes it hard to retrieve the _rev
     metadata = {}
     metadata.update(request)
+    # Add the output datasets if necessary
+    for ds in helper.listOutputDatasets():
+        if not ds in request['OutputDatasets']:
+            request['OutputDatasets'].append(ds)
     # don't want to JSONify the whole workflow
     del metadata['WorkloadSpec']
     workloadUrl = helper.saveCouch(couchUrl, couchDB, metadata=metadata)

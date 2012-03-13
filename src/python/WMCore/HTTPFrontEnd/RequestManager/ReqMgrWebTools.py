@@ -246,11 +246,29 @@ def ownsRequest(request):
 def security_roles():
     return ['Developer', 'Admin',  'Data Manager', 'developer', 'admin', 'data-manager']
 
+def security_groups():
+    """
+    A list of groups which have security access
+    """
+    return ['ReqMgr', 'reqmgr']
+
 def privileged():
     """ whether this user has roles that overlap with security_roles """
     # let it slide if there's no authentication
     if insecure():
         return True
+
+    # Check and see if we have a valid group
+    groups = []
+    for role in cherrypy.request.user['roles'].values():
+        for group in role['group']:
+            # This should be a set
+            if group in security_groups():
+                groups.append(group)
+    if len(groups) < 1:
+        return False
+
+    
     #FIXME doesn't check role in this specific site
     secure_roles = [role for role in cherrypy.request.user['roles'].keys() if role in security_roles()]
     # and maybe we're running without securitya, in which case dn = 'None'

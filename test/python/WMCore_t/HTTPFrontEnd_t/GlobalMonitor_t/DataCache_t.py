@@ -22,7 +22,7 @@ class DataCacheTest(unittest.TestCase):
         self.assertEqual(self.dataCache.isSiteDataExpired(), False)
         self.assertEqual(self.dataCache.getSiteData(), siteData)
         
-        self.dataCache.setDuration(0)
+        self.dataCache.setDuration(-1)
         self.assertEqual(self.dataCache.isAgentDataExpired(), True)
         self.assertEqual(self.dataCache.isRequestDataExpired(), True)
         self.assertEqual(self.dataCache.isSiteDataExpired(), True)

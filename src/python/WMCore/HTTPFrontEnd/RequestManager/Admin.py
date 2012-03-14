@@ -66,7 +66,7 @@ class Admin(WebAPI):
             allGroups=allGroups, requests=requests, priority=priority)
 
     @cherrypy.expose
-    @cherrypy.tools.secmodv2(role=Utilities.security_roles())
+    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
     def handleUserPriority(self, user, userPriority):
         """ Handles setting user priority """
         self.validate(user)
@@ -83,7 +83,7 @@ class Admin(WebAPI):
         return self.templatepage("Group", group=groupName, users=users, priority=priority)
 
     @cherrypy.expose
-    @cherrypy.tools.secmodv2(role=Utilities.security_roles())
+    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
     def handleGroupPriority(self, group, groupPriority):
         """ Handles setting group priority """
         self.validate(group)
@@ -99,7 +99,7 @@ class Admin(WebAPI):
         return self.templatepage("Users", users=allUsers)
 
     @cherrypy.expose
-    @cherrypy.tools.secmodv2(role=Utilities.security_roles())
+    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
     def handleAddUser(self, user, email=None):
         """ Handles setting user priority """
         self.validate(user)
@@ -107,7 +107,7 @@ class Admin(WebAPI):
         return "Added user %s" % user
 
     @cherrypy.expose
-    @cherrypy.tools.secmodv2(role=Utilities.security_roles())
+    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
     def handleAddToGroup(self, user, group):
         """ Adds a user to the group """
         self.validate(user)
@@ -124,7 +124,7 @@ class Admin(WebAPI):
         return self.templatepage("Groups", groups=allGroups)
 
     @cherrypy.expose
-    @cherrypy.tools.secmodv2(role=Utilities.security_roles())
+    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
     def handleAddGroup(self, group):
         """ Handles adding a group """
         self.validate(group)
@@ -153,7 +153,7 @@ class Admin(WebAPI):
         return self.templatepage("Team", team=teamName, requests=assignments)
 
     @cherrypy.expose
-    @cherrypy.tools.secmodv2(role=Utilities.security_roles())
+    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
     def handleAddTeam(self, team):
         """ Handles a request to add a team """
         self.validate(team)
@@ -176,7 +176,18 @@ class Admin(WebAPI):
         return self.templatepage("Versions", versions=versions)
 
     @cherrypy.expose
-    @cherrypy.tools.secmodv2(role=Utilities.security_roles())
+    @cherrypy.tools.secmodv2()
+    def scramArchs(self):
+        """
+        _scramArchs_
+
+        List all scramArchs in the DB
+        Prelim for putting this in the template pages
+        """
+        return SoftwareAdmin.listSoftware().keys()
+
+    @cherrypy.expose
+    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
     def handleAddVersion(self, version):
         """ Registers a version """
         WMCore.Lexicon.cmsswversion(version)
@@ -184,7 +195,7 @@ class Admin(WebAPI):
         return "Added version %s" % version
 
     @cherrypy.expose
-    @cherrypy.tools.secmodv2(role=Utilities.security_roles())
+    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
     def handleAllVersions(self):
         """ Registers all versions in the TC """
         Utilities.updateScramArchsAndCMSSWVersions()

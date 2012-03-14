@@ -109,7 +109,7 @@ def uploadWorker(input, results, dbsUrl):
     """
 
     # Init DBS Stuff
-
+    logging.debug("Creating dbsAPI with address %s" % dbsUrl)
     dbsApi = DbsApi(url = dbsUrl)
 
 
@@ -133,7 +133,8 @@ def uploadWorker(input, results, dbsUrl):
 
         # Do stuff with DBS
         try:
-            dbsApi.insertBlockBluk(blockDump = block)
+            logging.debug("About to call insert block with block: %s" % block)
+            dbsApi.insertBulkBlock(blockDump = block)
             results.put({'name': name, 'success': True})        
         except Exception, ex:
             exString = str(ex)
@@ -147,6 +148,7 @@ def uploadWorker(input, results, dbsUrl):
                 msg =  "Error trying to process block %s through DBS.\n" % name
                 msg += exString
                 msg += str(traceback.format_exc())
+                logging.error(msg)
                 results.put({'name': name, 'success': False, 'error': msg})
 
     return

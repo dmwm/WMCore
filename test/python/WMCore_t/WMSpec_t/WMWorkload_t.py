@@ -107,6 +107,7 @@ class WMWorkloadTest(unittest.TestCase):
         workload.setOwnerDetails(name = "Lumumba", group = "Hoodoo")
         self.assertEqual(workload.data.owner.name, "Lumumba")
         self.assertEqual(workload.data.owner.group, "Hoodoo")
+        self.assertEqual(workload.data.owner.dn, 'DEFAULT')
 
         result = workload.getOwner()
 

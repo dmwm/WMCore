@@ -31,7 +31,7 @@ class XRDCPImpl(StageOutImpl):
         """
         return "%s" % pfn
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
         """
         _createStageOutCommand_
 

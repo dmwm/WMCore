@@ -83,6 +83,59 @@ class FileEncoder(json.JSONEncoder):
             return list(obj)
         return json.JSONEncoder.default(self, obj)
 
+def uploadPublishWorkflow(workflow, ufcEndpoint, workDir):
+    """
+    Write out and upload to the UFC a JSON file
+    with all the info needed to publish this dataset later
+    """
+
+    ufc = UserFileCache({'endpoint': ufcEndpoint})
+    
+    # Skip tasks ending in LogCollect, they have nothing interesting.
+    taskNameParts = workflow.task.split('/')
+    if taskNameParts.pop() in ['LogCollect']:
+        logging.info('Skipping LogCollect task')
+        return False
+    logging.info('Generating JSON for publication of %s of type %s' % (workflow.name, workflow.wfType))
+
+    myThread = threading.currentThread()
+
+    dbsDaoFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
+                                logger = myThread.logger, dbinterface = myThread.dbi)
+    findFiles = dbsDaoFactory(classname = "LoadFilesByWorkflow")
+
+    # Fetch and filter the files to the ones we actually need
+    uploadDatasets = {}
+    uploadFiles = findFiles.execute(workflowName = workflow.name)
+    for file in uploadFiles:
+        datasetName = file['datasetPath']
+        if not uploadDatasets.has_key(datasetName):
+            uploadDatasets[datasetName] = []
+        uploadDatasets[datasetName].append(file)
+
+    if not uploadDatasets:
+        logging.info('No datasets found to upload.')
+        return False
+
+    # Write JSON file and then create tarball with it
+    baseName = '%s_publish.tgz'  % workflow.name
+    jsonName = os.path.join(workDir, '%s_publish.json' % workflow.name)
+    tgzName = os.path.join(workDir, baseName)
+    with open(jsonName, 'w') as jsonFile:
+        json.dump(uploadDatasets, fp=jsonFile, cls=FileEncoder, indent=2)
+
+    # Only in 2.7 does tarfile become usable as context manager
+    tgzFile = tarfile.open(name=tgzName, mode='w:gz')
+    tgzFile.add(jsonName)
+    tgzFile.close()
+
+    result = ufc.upload(fileName=tgzName, name=baseName, subDir=workflow.owner)
+    logging.debug('Upload result %s' % result)
+    # If this doesn't work, exception will propogate up and block archiving the task
+    logging.info('Uploaded to URL %s with hashkey %s' % (result['url'], result['hashkey']))
+    return
+
+
 
 
 class TaskArchiverPoller(BaseWorkerThread):
@@ -374,7 +427,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         jobErrors  = []
         outputLFNs = []
 
-        workflowData = {}
+        workflowData = {'retryData': {}}
         workflowName     = workflow.task.split('/')[1]
 
         # Set campaign
@@ -388,6 +441,17 @@ class TaskArchiverPoller(BaseWorkerThread):
                                                               "endkey": [workflowName, taskName]})['rows']
             for entry in failedTmp:
                 failedJobs.append(entry['value'])
+
+        retryData = self.jobsdatabase.loadView("JobDump", "retriesByTask",
+                                               options = {'group_level': 3,
+                                                          'startkey': [workflowName],
+                                                          'endkey': [workflowName, {}]})['rows']
+        for row in retryData:
+            taskName = row['key'][2]
+            count    = str(row['key'][1])
+            if not taskName in workflowData['retryData'].keys():
+                workflowData['retryData'][taskName] = {}
+            workflowData['retryData'][taskName][count] = row['value']
 
         output = self.fwjrdatabase.loadView("FWJRDump", "outputByWorkflowName",
                                             options = {"group_level": 2,
@@ -628,58 +692,21 @@ class TaskArchiverPoller(BaseWorkerThread):
 
     def createAndUploadPublish(self, workflow):
         """
-        Write out and upload to the UFC a JSON file
-        with all the info needed to publish this dataset later
+        Upload to the UFC a JSON file with all the info needed to publish this dataset later
         """
 
-        ufc = UserFileCache({'endpoint': self.userFileCacheURL})
         if self.uploadPublishDir:
             workDir = self.uploadPublishDir
         else:
             workDir, taskDir = getMasterName(startDir=self.jobCacheDir, workflow=workflow)
 
-        # Skip tasks ending in LogCollect, they have nothing interesting.
-        taskNameParts = workflow.task.split('/')
-        if taskNameParts.pop() in ['LogCollect']:
-            logging.debug('Skipping LogCollect task')
+        try:
+            return uploadPublishWorkflow(workflow, ufcEndpoint=self.userFileCacheURL, workDir=workDir)
+        except Exception, ex:
+            logging.error('Upload failed for workflow, task: %s, %s' % (workflow, task))
+            logging.error(str(ex))
             return False
-        logging.info('Generating JSON for publication of %s of type %s' % (workflow.name, workflow.wfType))
-
-        myThread = threading.currentThread()
-
-        dbsDaoFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
-                                   logger = myThread.logger, dbinterface = myThread.dbi)
-        findFiles = dbsDaoFactory(classname = "LoadFilesByWorkflow")
-
-        # Fetch and filter the files to the ones we actually need
-        uploadDatasets = {}
-        uploadFiles = findFiles.execute(workflowName = workflow.name)
-        for file in uploadFiles:
-            datasetName = file['datasetPath']
-            if not uploadDatasets.has_key(datasetName):
-                uploadDatasets[datasetName] = []
-            uploadDatasets[datasetName].append(file)
-
-        if not uploadDatasets:
-            return False
-
-        # Write JSON file and then create tarball with it
-        baseName = '%s_publish.tgz'  % workflow.name
-        jsonName = os.path.join(workDir, '%s_publish.json' % workflow.name)
-        tgzName = os.path.join(workDir, baseName)
-        with open(jsonName, 'w') as jsonFile:
-            json.dump(uploadDatasets, fp=jsonFile, cls=FileEncoder, indent=2)
-
-        # Only in 2.7 does tarfile become usable as context manager
-        tgzFile = tarfile.open(name=tgzName, mode='w:gz')
-        tgzFile.add(jsonName)
-        tgzFile.close()
-
-        result = ufc.upload(fileName=tgzName, name=baseName, subDir=workflow.owner)
-        logging.debug('Upload result %s' % result)
-        # If this doesn't work, exception will propogate up and block archiving the task
-        logging.info('Uploaded to URL %s with hashkey %s' % (result['url'], result['hashkey']))
-        return
+    
 
     def deleteWorkflowFromCouch(self, workflowName):
         """

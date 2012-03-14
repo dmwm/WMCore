@@ -67,7 +67,7 @@ class CPImpl(StageOutImpl):
            print "=> dir already exists... do nothing."
 
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
         """
         _createStageOutCommand_
 

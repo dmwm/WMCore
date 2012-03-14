@@ -115,9 +115,11 @@ class WorkQueueReqMgrInterface():
             ele = elements[ele][0] # 1 element tuple
             try:
                 request = self.reqMgr.getRequest(ele['RequestName'])
-                if request['RequestStatus'] in ('aborted', 'failed', 'completed', 'announced',
-                                                'epic-FAILED', 'closed-out', 'rejected') and ele.inEndState():
-                    self.logger.info("%s is %s in reqmgr, assume request is done. Will clean up." % (ele['RequestName'], request['RequestStatus']))
+                if request['RequestStatus'] in ('failed', 'completed', 'announced',
+                                                'epic-FAILED', 'closed-out', 'rejected'):
+                    pass # assume workqueue status will catch up later
+                elif request['RequestStatus'] == 'aborted':
+                    queue.cancelWork(WorkflowName=request['RequestName'])
                 elif not ele['Status'] == self._reqMgrStatus(request['RequestStatus']):
                     self.reportElement(ele)
                 # check if we need to update progress, only update if we have progress

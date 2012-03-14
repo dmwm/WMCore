@@ -15,6 +15,7 @@ from WMCore.WebTools.WebAPI import WebAPI
 import WMCore.Database.CMSCouch
 import threading
 import os.path
+from WMCore.Database.CMSCouch import CouchUnauthorisedError
 
 
 class WebRequestSchema(WebAPI):
@@ -32,6 +33,7 @@ class WebRequestSchema(WebAPI):
         self.defaultSkimConfig = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"    
         self.yuiroot = config.yuiroot
         cherrypy.engine.subscribe('start_thread', self.initThread)
+        self.scramArchs = []
 
     def initThread(self, thread_index):
         """ The ReqMgr expects the DBI to be contained in the Thread  """
@@ -43,7 +45,11 @@ class WebRequestSchema(WebAPI):
     @cherrypy.expose
     def allDocs(self):
         server = WMCore.Database.CMSCouch.CouchServer(self.couchUrl)
-        database = server.connectDatabase(self.configDBName)
+        try:
+            database = server.connectDatabase(self.configDBName)
+        except CouchUnauthorisedError, ex:
+            # We can't talk to couch...it's not authorized
+            raise cherrypy.HTTPError(400, "Couch has raised an authorisation error on pulling allDocs!")
         docs = database.allDocs()
         result = []
         for row in docs["rows"]:
@@ -66,6 +72,9 @@ class WebRequestSchema(WebAPI):
     @cherrypy.tools.secmodv2()
     def index(self):
         """ Main web page for creating requests """
+        # Get the scram Architecture from the keys and the
+        # CMSSW versions from the values
+        self.scramArchs = SoftwareAdmin.listSoftware().keys()
         versionLists = SoftwareAdmin.listSoftware().values()
         self.versions = []
         for l in versionLists:
@@ -86,13 +95,14 @@ class WebRequestSchema(WebAPI):
             return "User " + requestor + " is not in any groups.  Contact a ReqMgr administrator."
         campaigns = Campaign.listCampaigns()
         return self.templatepage("WebRequestSchema", yuiroot=self.yuiroot,
-            requestor=requestor,
-            groups=groups, 
-            versions=self.versions, 
-            alldocs = Utilities.unidecode(self.allDocs()),
-            allcampaigns = campaigns,                     
-            defaultVersion=self.cmsswVersion,
-            defaultSkimConfig=self.defaultSkimConfig)
+                                 requestor=requestor,
+                                 groups=groups, 
+                                 versions=self.versions,
+                                 archs = self.scramArchs,
+                                 alldocs = Utilities.unidecode(self.allDocs()),
+                                 allcampaigns = campaigns,                     
+                                 defaultVersion=self.cmsswVersion,
+                                 defaultSkimConfig=self.defaultSkimConfig)
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2()

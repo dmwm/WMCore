@@ -96,14 +96,14 @@ class JobTrackerPoller(BaseWorkerThread):
         except WMException, ex:
             if getattr(myThread, 'transaction', None):
                 myThread.transaction.rollback()
-            self.sendAlert(6, str(ex))
+            self.sendAlert(6, msg = str(ex))
             raise
         except Exception, ex:
             msg =  "Unknown exception in JobTracker!\n"
             msg += str(ex)
             if getattr(myThread, 'transaction', None):
                 myThread.transaction.rollback()
-            self.sendAlert(6, msg)
+            self.sendAlert(6, msg = msg)
             logging.error(msg)
             raise JobTrackerException(msg)
 

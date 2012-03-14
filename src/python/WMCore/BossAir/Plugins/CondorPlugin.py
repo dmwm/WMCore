@@ -21,6 +21,7 @@ import WMCore.Algorithms.BasicAlgos as BasicAlgos
 
 from WMCore.Credential.Proxy           import Proxy
 from WMCore.DAOFactory                 import DAOFactory
+from WMCore.WMException                import WMException
 from WMCore.WMInit                     import getWMBASE
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from WMCore.FwkJobReport.Report        import Report
@@ -62,7 +63,7 @@ def submitWorker(input, results, timeout = None):
 
         if work == 'STOP':
             # Put the brakes on
-            logging.error("submitWorker multiprocess issued STOP command!")
+            logging.info("submitWorker multiprocess issued STOP command!")
             break
 
         command = work.get('command', None)
@@ -85,7 +86,7 @@ def submitWorker(input, results, timeout = None):
             msg += str(ex)
             msg += str(traceback.format_exc())
             logging.error(msg)
-            results.put({'stdout': '', 'stderr': '999101\n %s' % msg, 'idList': idList})
+            results.put({'stdout': '', 'stderr': '999101\n %s' % msg, 'idList': idList, 'exitCode': 999101})
 
     return 0
 
@@ -183,12 +184,14 @@ class CondorPlugin(BasePlugin):
         self.multiTasks    = getattr(config.BossAir, 'multicoreTaskTypes', [])
         self.useGSite      = getattr(config.BossAir, 'useGLIDEINSites', False)
         self.submitWMSMode = getattr(config.BossAir, 'submitWMSMode', False)
+        self.errorThreshold= getattr(config.BossAir, 'submitErrorThreshold', 10)
+        self.errorCount    = 0
 
 
         # Build ourselves a pool
         self.pool     = []
-        self.input    = multiprocessing.Queue()
-        self.result   = multiprocessing.Queue()
+        self.input    = None
+        self.result   = None
         self.nProcess = getattr(self.config.BossAir, 'nCondorProcesses', 4)
 
         # Set up my proxy and glexec stuff
@@ -203,6 +206,25 @@ class CondorPlugin(BasePlugin):
         self.glexecUnwrapScript = getattr(config.BossAir, 'glexecUnwrapScript', None)
         self.jdlProxyFile    = None # Proxy name to put in JDL (owned by submit user)
         self.glexecProxyFile = None # Copy of same file owned by submit user
+
+        if self.glexecPath:
+            if not (self.myproxySrv and self.proxyDir):
+                raise WMException('glexec requires myproxyServer and proxyDir to be set.')
+        if self.myproxySrv:
+            if not (self.serverCert and self.serverKey):
+                raise WMException('MyProxy server requires serverCert and serverKey to be set.')
+
+        # Make the directory for the proxies
+        if self.proxyDir and not os.path.exists(self.proxyDir):
+            logging.debug("proxyDir not found: creating it.")
+            try:
+                os.makedirs(self.proxyDir, 01777)
+            except Exception, ex:
+                msg = "Error: problem when creating proxyDir directory - '%s'" % str(ex)
+                raise BossAirPluginException(msg)
+        elif not os.path.isdir(self.proxyDir):
+            msg = "Error: proxyDir '%s' is not a directory" % self.proxyDir
+            raise BossAirPluginException(msg)
 
         if self.serverCert and self.serverKey and self.myproxySrv:
             self.proxy = self.setupMyProxy()
@@ -256,8 +278,12 @@ class CondorPlugin(BasePlugin):
                 msg += str(ex)
                 logging.error(msg)
                 terminate = True
-        self.input.close()
-        self.result.close()
+        try:
+            self.input.close()
+            self.result.close()
+        except:
+            # There's really not much we can do about this
+            pass
         for proc in self.pool:
             if terminate:
                 try:
@@ -277,8 +303,10 @@ class CondorPlugin(BasePlugin):
                         logging.error(str(ex))
                         logging.error(str(ex2))
                         continue
-        # At the end, clean the pool
-        self.pool = []
+        # At the end, clean the pool and the queues
+        self.pool   = []
+        self.input  = None
+        self.result = None
         return
 
 
@@ -294,12 +322,22 @@ class CondorPlugin(BasePlugin):
         # If we're here, then we have submitter components
         self.scriptFile = self.config.JobSubmitter.submitScript
         self.submitDir  = self.config.JobSubmitter.submitDir
-        timeout         = getattr(self.config.JobSubmitter, 'getTimeout', 300)
+        timeout         = getattr(self.config.JobSubmitter, 'getTimeout', 400)
+
+        successfulJobs = []
+        failedJobs     = []
+        jdlFiles       = []
+
+        if len(jobs) == 0:
+            # Then was have nothing to do
+            return successfulJobs, failedJobs
 
         if len(self.pool) == 0:
             # Starting things up
             # This is obviously a submit API
             logging.info("Starting up CondorPlugin worker pool")
+            self.input    = multiprocessing.Queue()
+            self.result   = multiprocessing.Queue()
             for x in range(self.nProcess):
                 p = multiprocessing.Process(target = submitWorker,
                                             args = (self.input, self.result, timeout))
@@ -308,16 +346,6 @@ class CondorPlugin(BasePlugin):
 
         if not os.path.exists(self.submitDir):
             os.makedirs(self.submitDir)
-
-
-        successfulJobs = []
-        failedJobs     = []
-        jdlFiles       = []
-
-        if len(jobs) == 0:
-            # Then we have nothing to do
-            return successfulJobs, failedJobs
-
 
 
         # Now assume that what we get is the following; a mostly
@@ -411,19 +439,34 @@ class CondorPlugin(BasePlugin):
                 queueError = True
                 continue
 
-            output   = res['stdout']
-            error    = res['stderr']
-            idList   = res['idList']
-            exitCode = res['exitCode']
+            try:
+                output   = res['stdout']
+                error    = res['stderr']
+                idList   = res['idList']
+                exitCode = res['exitCode']
+            except KeyError, ex:
+                msg =  "Error in finding key from result pipe\n"
+                msg += "Something has gone crticially wrong in the worker\n"
+                try:
+                    msg += "Result: %s\n" % str(res)
+                except:
+                    pass
+                msg += str(ex)
+                logging.error(msg)
+                queueError = True
+                continue
 
             if not exitCode == 0:
                 logging.error("Condor returned non-zero.  Printing out command stderr")
                 logging.error(error)
                 errorCheck, errorMsg = parseError(error = error)
+                logging.error("Processing failed jobs and proceeding to the next jobs.")
+                logging.error("Do not restart component.")
             else:
                 errorCheck = None
 
             if errorCheck:
+                self.errorCount += 1
                 condorErrorReport = Report()
                 condorErrorReport.addError("JobSubmit", 61202, "CondorError", errorMsg)
                 for jobID in idList:
@@ -433,26 +476,51 @@ class CondorPlugin(BasePlugin):
                             failedJobs.append(job)
                             break
             else:
+                if self.errorCount > 0:
+                    self.errorCount -= 1
                 for jobID in idList:
                     for job in jobs:
                         if job.get('id', None) == jobID:
                             successfulJobs.append(job)
                             break
 
+            # If we get a lot of errors in a row it's probably time to
+            # report this to the operators.
+            if self.errorCount > self.errorThreshold:
+                try:
+                    msg = "Exceeded errorThreshold while submitting to condor. Check condor status."
+                    logging.error(msg)
+                    logging.error("Reporting to Alert system and continuing to process jobs")
+                    from WMCore.Alerts import API as alertAPI
+                    preAlert, sender = alertAPI.setUpAlertsMessaging(self,
+                                                                     compName = "BossAirCondorPlugin")
+                    sendAlert = alertAPI.getSendAlert(sender = sender,
+                                                      preAlert = preAlert)
+                    sendAlert(6, msg = msg)
+                    sender.unregister()
+                    self.errorCount = 0
+                except:
+                    # There's nothing we can really do here
+                    pass
+                
+
         # Remove JDL files unless commanded otherwise
         if getattr(self.config.JobSubmitter, 'deleteJDLFiles', True):
             for f in jdlFiles:
                 os.remove(f)
 
-        # If the queue failed, clean the processes from the queue
-        # This prevents jobs from building up in memory anywhere
-        if queueError:
-            logging.error("Purging worker pool due to previous queueError")
-            self.close()
+        # When we're finished, clean up the queue workers in order
+        # to free up memory (in the midst of the process, the forked
+        # memory space shouldn't be touched, so it should still be
+        # shared, but after this point any action by the Submitter will
+        # result in memory duplication).
+        logging.info("Purging worker pool to clean up memory")
+        self.close()
 
 
         # We must return a list of jobs successfully submitted,
         # and a list of jobs failed
+        logging.info("Done submitting jobs for this cycle in CondorPlugin")
         return successfulJobs, failedJobs
 
 
@@ -590,7 +658,24 @@ class CondorPlugin(BasePlugin):
                 continue
             condorReport = Report()
             condorReport.addError("NoJobReport", 99303, "NoJobReport", logOutput)
-            condorReport.save(filename = reportName)
+            if os.path.isfile(reportName):
+                # Then we have a file already there.  It should be zero size due
+                # to the if statements above, but we should remove it.
+                if os.path.getsize(reportName) > 0:
+                    # This should never happen.  If it does, ignore it
+                    msg =  "Critical strange problem.  FWJR changed size while being processed."
+                    logging.error(msg)
+                else:
+                    try:
+                        os.remove(reportName)
+                        condorReport.save(filename = reportName)
+                    except Exception, ex:
+                        logging.error("Cannot remove and replace empty report %s" % reportName)
+                        logging.error("Report continuing without error!")
+            else:
+                condorReport.save(filename = reportName)
+
+            # Debug message to end loop
             logging.debug("No returning job report for job %i" % job['id'])
 
 

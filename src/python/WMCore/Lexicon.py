@@ -14,17 +14,18 @@ import urlparse
 from WMCore.WMException import WMException
 
 lfnParts = {
-    'era'       : '([a-zA-Z0-9\-_]+)',
-    'primDS'    : '([a-zA-Z0-9\-_]+)',
-    'tier'      : '([A-Z\-_]+)',
-    'version'   : '([a-zA-Z0-9\-_]+)',
-    'secondary' : '([a-zA-Z0-9\-_]+)',
-    'counter'   : '([0-9]+)',
-    'root'      : '([a-zA-Z0-9\-_]+).root',
-    'hnName'    : '([a-zA-Z0-9\.]+)',
-    'subdir'    : '([a-zA-Z0-9\-_]+)',
-    'file'      : '([a-zA-Z0-9\-\._]+)',
-    'workflow'  : '([a-zA-Z0-9\-_]+)',
+    'era'           : '([a-zA-Z0-9\-_]+)',
+    'primDS'        : '([a-zA-Z0-9\-_]+)',
+    'tier'          : '([A-Z\-_]+)',
+    'version'       : '([a-zA-Z0-9\-_]+)',
+    'secondary'     : '([a-zA-Z0-9\-_]+)',
+    'counter'       : '([0-9]+)',
+    'root'          : '([a-zA-Z0-9\-_]+).root',
+    'hnName'        : '([a-zA-Z0-9\.]+)',
+    'subdir'        : '([a-zA-Z0-9\-_]+)',
+    'file'          : '([a-zA-Z0-9\-\._]+)',
+    'workflow'      : '([a-zA-Z0-9\-_]+)',
+    'physics_group' : '([a-zA-Z\-_]+)',
 }
 
 def searchblock(candidate):
@@ -158,6 +159,7 @@ def lfn(candidate):
     regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)/([0-9]+)/([a-zA-Z0-9\-_]+).root'
     regexp3 = '/store/(temp/)*(user|group)/%(hnName)s/%(primDS)s/%(secondary)s/%(version)s/%(counter)s/%(root)s' % lfnParts
     tier0LFN = '/store/data/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s/%(root)s' % lfnParts
+    storeResultsLFN = '/store/results/%(physics_group)s/%(primDS)s/%(secondary)s/%(primDS)s/%(tier)s/%(secondary)s/%(counter)s/%(root)s' % lfnParts
 
     try:
         return check(regexp1, candidate)
@@ -172,7 +174,12 @@ def lfn(candidate):
     try:
         return check(regexp3, candidate)
     except AssertionError:
+        pass
+
+    try:
         return check(tier0LFN, candidate)
+    except AssertionError:
+        return check(storeResultsLFN, candidate)
 
 def lfnBase(candidate):
     """

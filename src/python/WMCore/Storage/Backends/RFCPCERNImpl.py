@@ -27,9 +27,6 @@ class RFCPCERNImpl(StageOutImpl):
         self.numRetries = 5
         self.retryPause = 300
 
-        # permissions for target directory
-        self.permissions = '775'
-
 
     def createSourceName(self, protocol, pfn):
         """
@@ -46,178 +43,241 @@ class RFCPCERNImpl(StageOutImpl):
         _createOutputDirectory_
 
         create dir with group permission
+
         """
+        # EOS stageout auto-creates directories
+        if self.isEOS(targetPFN):
+            return
 
-        # check how the targetPFN looks like and parse out the target dir
-        targetdir = None
+        targetDir = os.path.dirname(self.parseCastorPath(targetPFN))
 
-        if targetdir == None:
-            regExpParser = re.compile('/+castor/(.*)')
-            match = regExpParser.match(targetPFN)
-            if ( match != None ):
-                targetdir = os.path.dirname(targetPFN)
+        # targetDir does not exist => create it
+        if not self.checkDirExists(targetDir):
 
-        if targetdir == None:
-            regExpParser = re.compile('rfio:/+castor/(.*)')
-            match = regExpParser.match(targetPFN)
-            if ( match != None ):
-                targetdir = os.path.dirname('/castor/' + match.group(1))
+            # only use the fileclass code path if we run on t0export
+            serviceClass = os.environ.get('STAGE_SVCCLASS', None)
+            if serviceClass == 't0export':
 
-        if targetdir == None:
-            regExpParser = re.compile('rfio:.*path=/+castor/(.*)')
-            match = regExpParser.match(targetPFN)
-            if ( match != None ):
-                targetdir = os.path.dirname('/castor/' + match.group(1))
+                # determine file class from PFN
+                fileclass = None
 
-        if targetdir == None:
-            regExpParser = re.compile('rfio:.*path=/+castorcms/(.*)\?.*')
-            match = regExpParser.match(targetPFN)
-            if ( match != None ):
-                targetdir = os.path.dirname(match.group(1))
+                # check for correct naming convention in PFN
+                regExpParser = re.compile('/castor/cern.ch/cms/store/([^/]*data)/([^/]+)/([^/]+)/([^/]+)/')
+                match = regExpParser.match(targetDir)
+                if ( match != None ):
 
-        # raise exception if we have no rule that can parse the target dir
-        if targetdir == None:
-            raise StageOutError("Cannot parse directory out of targetPFN")
+                    # RAW data files use cms_raw, all others cms_production
+                    if match.group(4) == 'RAW':
+                        fileclass = 'cms_raw'
+                    else:
+                        fileclass = 'cms_production'
 
-        # remove multi-slashes from path
-        while ( targetdir.find('//') > -1 ):
-            targetdir = targetdir.replace('//','/')
+                    fileclassDir = '/castor/cern.ch/cms/store/%s/%s/%s/%s' % match.group(1,2,3,4)
 
-        #
-        # determine file class from LFN
-        #
-        fileclass = None
+                    # fileclassDir does not exist => create it
+                    if not self.checkDirExists(fileclassDir):
+                        self.createDir(fileclassDir)
+                        if ( fileclass != None ):
+                            self.setFileClass(fileclassDir,fileclass)
 
-        # temp or unmerged files use cms_no_tape
-        if ( fileclass == None ):
-            regExpParser = re.compile('.*/castor/cern.ch/cms/store/temp/')
-            if ( regExpParser.match(targetdir) != None ):
-                fileclass = 'cms_no_tape'
-        if ( fileclass == None ):
-            regExpParser = re.compile('.*/castor/cern.ch/cms/store/unmerged/')
-            if ( regExpParser.match(targetdir) != None ):
-                fileclass = 'cms_no_tape'
-
-        # RAW data files use cms_raw
-        if ( fileclass == None ):
-            regExpParser = re.compile('.*/castor/cern.ch/cms/store/data/[^/]+/[^/]+/RAW/')
-            if ( regExpParser.match(targetdir) != None ):
-                fileclass = 'cms_raw'
-
-        # otherwise we assume another type of production file
-        if ( fileclass == None ):
-            fileclass = 'cms_production'
-
-        print "Setting fileclass to : %s" % fileclass
-
-        # check if directory exists
-        rfstatCmd = "rfstat %s 2> /dev/null | grep Protection" % targetdir
-        print "Check dir existence : %s" % rfstatCmd
-        try:
-            rfstatExitCode, rfstatOutput = runCommandWithOutput(rfstatCmd)
-        except Exception, ex:
-            msg = "Error: Exception while invoking command:\n"
-            msg += "%s\n" % rfstatCmd
-            msg += "Exception: %s\n" % str(ex)
-            msg += "Fatal error, abort stageout..."
-            raise StageOutError(msg)
-
-        # does not exist => create it
-        if rfstatExitCode:
-            if ( fileclass != None ):
-                self.createDir(targetdir, '000')
-                self.setFileClass(targetdir,fileclass)
-                self.changeDirMode(targetdir, self.permissions)
-            else:
-                self.createDir(targetdir, self.permissions)
-        else:
-            # check if this is a directory
-            regExpParser = re.compile('Protection.*: d')
-            if ( regExpParser.match(rfstatOutput) == None):
-                raise StageOutError("Output path is not a directory !")
-            else:
-                # check if directory is writable
-                regExpParser = re.compile('Protection.*: d---------')
-                if ( regExpParser.match(rfstatOutput) != None and fileclass != None ):
-                    self.setFileClass(targetdir,fileclass)
-                    self.makeDirWritable(targetdir)
+            # now create targetDir
+            self.createDir(targetDir)
 
         return
 
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
         """
         _createStageOutCommand_
 
-        Build an rfcp command
+        Build the stageout command: rfcp for castor and xrdcp for eos
+
+        If adler32 checksum is provided, use it for the transfer
 
         """
-        result = "rfcp "
-        if options != None:
-            result += " %s " % options
-        result += " '%s' " % sourcePFN
-        result += " '%s' " % targetPFN
-        
+        isTargetEOS = self.isEOS(targetPFN)
+
+        result = ""
+
+        if isTargetEOS:
+
+            result += "source /afs/cern.ch/project/eos/installation/pro/etc/setup.sh\n"
+            result += "xrdcp -f -s "
+
+        else:
+
+            if checksums != None and checksums.has_key('adler32') and not self.stageIn:
+
+                targetFile = self.parseCastorPath(targetPFN)
+
+                result += "nstouch %s\n" % targetFile
+                result += "nssetchecksum -n adler32 -k %s %s\n" % (checksums['adler32'], targetFile)
+
+            result += "rfcp "
+            if options != None:
+                result += " %s " % options
+
+        result += " \"%s\" " % sourcePFN
+        result += " \"%s\" \n" % targetPFN
+
         if self.stageIn:
             remotePFN, localPFN = sourcePFN, targetPFN
         else:
             remotePFN, localPFN = targetPFN, sourcePFN
-        
-        result += "\nFILE_SIZE=`stat -c %s"
-        result += " %s `;\n" % localPFN
-        result += " echo \"Local File Size is: $FILE_SIZE\"; DEST_SIZE=`rfstat '%s' | grep Size | cut -f2 -d:` ; if [ $DEST_SIZE ] && [ $FILE_SIZE == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % remotePFN
+
+        result += "LOCAL_SIZE=`stat -c%%s \"%s\"`\n" % localPFN
+        result += "echo \"Local File Size is: $LOCAL_SIZE\"\n"
+
+        if isTargetEOS:
+
+            remotePFN = remotePFN.replace("root://eoscms//eos/cms/", "/eos/cms/", 1)
+
+            result += "REMOTE_FILEINFO=`eos fileinfo '%s' -m`\n" % remotePFN
+            result += "REMOTE_SIZE=`echo \"$REMOTE_FILEINFO\" | sed -r 's/.* size=([0-9]+) .*/\\1/'`\n"
+            result += "echo \"Remote File Size is: $REMOTE_SIZE\"\n"
+
+            if checksums != None and checksums.has_key('adler32') and not self.stageIn:
+
+                checksums['adler32'] = "%08x" % int(checksums['adler32'], 16)
+
+                result += "echo \"Local File Checksum is: %s\"\n" % checksums['adler32']
+                result += "REMOTE_XS=`echo \"$REMOTE_FILEINFO\" | sed -r 's/.* xstype=adler xs=([0-9a-fA-F]{8})[0]+ .*/\\1/'`\n"
+                result += "echo \"Remote File Checksum is: $REMOTE_XS\"\n"
+
+                result += "if [ $REMOTE_SIZE ] && [ $REMOTE_XS ] && [ $LOCAL_SIZE == $REMOTE_SIZE ] && [ '%s' == $REMOTE_XS ]; then exit 0; " % checksums['adler32']
+                result += "else echo \"Error: Size or Checksum Mismatch between local and SE\"; eos rm '%s'; exit 60311 ; fi" % remotePFN
+            else:
+                result += "if [ $REMOTE_SIZE ] && [ $LOCAL_SIZE == $REMOTE_SIZE ]; then exit 0; "
+                result += "else echo \"Error: Size Mismatch between local and SE\"; eos rm '%s'; exit 60311 ; fi" % remotePFN
+
+        else:
+
+            result += "REMOTE_SIZE=`rfstat '%s' | grep Size | cut -f2 -d: | tr -d ' '`\n" % remotePFN
+            result += "echo \"Remote File Size is: $REMOTE_SIZE\"\n"
+
+            result += "if [ $REMOTE_SIZE ] && [ $LOCAL_SIZE == $REMOTE_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi"
 
         return result
 
-    
+
     def removeFile(self, pfnToRemove):
         """
         _removeFile_
 
-        CleanUp pfn provided: specific for Castor-1
+        """
+        if self.isEOS(pfnToRemove):
+            command = "xrd eoscms rm %s" % pfnToRemove.replace("root://eoscms//eos/cms/", "/eos/cms/", 1)
+        else:
+            command = "stager_rm -M \"%s\" ; nsrm \"%s\"" % (pfnToRemove, pfnToRemove)
+
+        execute(command)
+        return
+
+
+    def checkDirExists(self, directory):
+        """
+        _checkDirExists_
+
+        Check if directory exists (will throw if it exists as a file)
+
+        Only used for castor and local file
 
         """
-        command = "stager_rm -M %s ; nsrm %s" % (pfnToRemove, pfnToRemove)
-        execute(command)
+        command = "rfstat %s 2> /dev/null | grep Protection" % directory
+        print "Check dir existence : %s" % command
+        try:
+            exitCode, output = runCommandWithOutput(command)
+        except Exception, ex:
+            msg = "Error: Exception while invoking command:\n"
+            msg += "%s\n" % command
+            msg += "Exception: %s\n" % str(ex)
+            msg += "Fatal error, abort stageout..."
+            raise StageOutError(msg)
+
+        if exitCode != 0:
+            return False
+        else:
+            regExpParser = re.compile('^Protection[ ]+: d')
+            if ( regExpParser.match(output) == None):
+                raise StageOutError("Output path is not a directory !")
+            else:
+                return True
 
 
-    def createDir(self, directory, mode):
+    def createDir(self, directory):
         """
         _createDir_
 
-        Creates directory with no permissions
+        Creates directory with correct permissions
+
+        Only used for castor and local files
 
         """
-        cmd = "nsmkdir -m %s -p %s" % (mode, directory)
-        execute(cmd)
+        command = "nsmkdir -p \"%s\"" % directory
 
+        execute(command)
         return
 
 
     def setFileClass(self, directory, fileclass):
         """
-        _createDir_
+        _setFileClass_
 
         Sets fileclass for specified directory
+
+        Only used for castor
 
         """
         cmd = "nschclass %s %s" % (fileclass, directory)
         execute(cmd)
-
         return
 
 
-    def changeDirMode(self, directory, mode):
+    def parseCastorPath(self, complexCastorPath):
         """
-        _createDir_
+        _parseCastorPath_
 
-        Sets mode for directory
+        Castor filenames can be full URLs
+        with control statements for the rfcp
+
+        Some other castor command line tools do
+        not understand that syntax, so we need
+        to retrieve the short version
+        
+        """
+        simpleCastorPath = None
+
+        if simpleCastorPath == None:
+            regExpParser = re.compile('/+castor/cern.ch/(.*)')
+            match = regExpParser.match(complexCastorPath)
+            if ( match != None ):
+                simpleCastorPath = '/castor/cern.ch/' + match.group(1)
+
+        if simpleCastorPath == None:
+            regExpParser = re.compile('rfio:.*/+castor/cern.ch/([^?]+).*')
+            match = regExpParser.match(complexCastorPath)
+            if ( match != None ):
+                simpleCastorPath = '/castor/cern.ch/' + match.group(1)
+
+        # if that does not work just use as-is
+        if simpleCastorPath == None:
+            simpleCastorPath = complexCastorPath
+
+        # remove multi-slashes from path
+        while ( simpleCastorPath.find('//') > -1 ):
+            simpleCastorPath = simpleCastorPath.replace('//','/')
+
+        return simpleCastorPath
+
+
+    def isEOS(self, pfn):
+        """
+        _isEOS_
+
+        Check if the PFN is for EOS
 
         """
-        cmd = "nschmod %s %s" % (mode, directory)
-        execute(cmd)
-
-        return
+        return pfn.startswith("root://eoscms//")
 
 
 registerStageOutImpl("rfcp-CERN", RFCPCERNImpl)

@@ -34,7 +34,7 @@ class Add(DBFormatter):
                               'events': f[2],
                               'dataset_algo': f[3],
                               'status' : f[4],
-                              'workflow': workflowID})
+                              'workflow': f[5]})
         return binds
     
     def execute(self, files = None, size = 0, events = 0, cksum = 0,

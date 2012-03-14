@@ -24,8 +24,8 @@ class WinImpl(StageOutImpl):
         return "WIN!!!"
 
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None):
-        print "WinImpl.createStageOutCommand(%s, %s, %s)" % (sourcePFN, targetPFN, options)
+    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
+        print "WinImpl.createStageOutCommand(%s, %s, %s, %s)" % (sourcePFN, targetPFN, options, checksums)
         return "WIN!!!"
 
 
@@ -51,8 +51,8 @@ class FailImpl(StageOutImpl):
         return "FAIL!!!"
 
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None):
-        print "FailImpl.createStageOutCommand(%s, %s, %s)" % (sourcePFN, targetPFN, options)
+    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
+        print "FailImpl.createStageOutCommand(%s, %s, %s, %s)" % (sourcePFN, targetPFN, options, checksums)
         return "FAIL!!!"
 
 
@@ -95,7 +95,7 @@ class LocalCopyImpl(StageOutImpl):
         return pfn
 
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
         command = "cp %s %s" %(sourcePFN, sourcePFN+'2')
         return command
 

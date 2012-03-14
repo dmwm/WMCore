@@ -62,7 +62,7 @@ class VandyImpl(StageOutImpl):
         self.executeCommand(command)
 
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
         
         """
         _createStageOutCommand_

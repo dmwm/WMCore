@@ -361,18 +361,34 @@ class TaskChainWorkloadFactory(StdBase):
             self.raiseValidationException(msg = msg)
 
         for i in range(1, numTasks+1):
-            if not schema.has_key("Task%s" % i):
+            taskName = "Task%s" % i
+            if not schema.has_key(taskName):
                 msg = "No Task%s entry present in request" % i
                 self.raiseValidationException(msg = msg)
 
+            task = schema[taskName]
+            # We can't handle non-dictionary tasks
+            if type(task) != dict:
+                    msg =  "Non-dictionary input for task in TaskChain.\n"
+                    msg += "Could be an indicator of JSON error.\n"
+                    self.raiseValidationException(msg = msg)
+
             if i == 1:
-                if schema['Task1'].has_key('InputDataset'):
-                    validateProcFirstTask(schema['Task1'])
+                if task.has_key('InputDataset'):
+                    validateProcFirstTask(task)
                 else:
-                    validateGenFirstTask(schema['Task1'])
-                validateSubTask(schema['Task1'], firstTask = True)
+                    validateGenFirstTask(task)
+                validateSubTask(task, firstTask = True)
             else:
-                validateSubTask(schema['Task%s' % i])
+                validateSubTask(task)
+
+            # Validate the existence of the configCache
+            if task.has_key("ConfigCacheID"):
+                outMod = self.validateConfigCacheExists(configID = task['ConfigCacheID'],
+                                                        couchURL = schema["CouchURL"],
+                                                        couchDBName = schema["CouchDBName"],
+                                                        getOutputModules = True)
+        return
 
 
 def taskChainWorkload(workloadName, arguments):

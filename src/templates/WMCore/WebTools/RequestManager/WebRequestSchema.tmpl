@@ -60,9 +60,12 @@ Software Release:
   #end for
 </select>
 <select name="ScramArch">
-   <option selected>slc5_ia32_gcc434</option>
-   <option>slc5_amd64_gcc434</option>
-   <option>slc5_amd64_gcc461</option>
+  #for $arch in $archs
+    #if $arch == $defaultArch
+      <option selected>$arch</option>
+    #else
+      <option>$arch</option>
+    #end if
 </select><br/>
 #end def 
 

@@ -8,6 +8,7 @@ from ConfigParser import ConfigParser, NoOptionError
 import os, sys, os.path
 import unittest
 import time
+import pickle
 
 # pylint and coverage aren't standard, but aren't strictly necessary
 # you should get them though
@@ -129,7 +130,14 @@ if can_nose:
                           "Only runs tests below a certain path (i.e. test/python searches the whole test tree"),
                          ('quickTestMode=',
                           None,
-                          "Fails on the first error, doesn't compute coverage")]
+                          "Fails on the first error, doesn't compute coverage"),
+                         ('testTotalSlices=',
+                          None,
+                          "Number of ways to split up the test suite"),
+                         ('testCurrentSlice=',
+                          None,
+                          "Which slice to run (zero-based index)")
+                         ]
 
         def initialize_options(self):
             self.reallyDeleteMyDatabaseAfterEveryTest = False
@@ -137,10 +145,39 @@ if can_nose:
             self.workerNodeTestsOnly = False
             self.testCertainPath = False
             self.quickTestMode = False
+            self.testTotalSlices = 1
+            self.testCurrentSlice = 0
             pass
 
         def finalize_options(self):
             pass
+
+        def callNose( self, args ):
+            # run once to get splits
+            collectOnlyArgs = args[:]
+            collectOnlyArgs.extend([ '-q', '--collect-only', '--with-id' ])
+            retval = nose.run(argv=collectOnlyArgs, addplugins=[DetailedOutputter()])           
+            if not retval:
+                print "Failed to collect TestCase IDs"
+                return retval
+
+            idhandle = open( ".noseids", "r" )
+            testIds = pickle.load(idhandle)['ids']
+            idhandle.close()
+
+            totalCases = len(testIds)
+            myIds      = []
+            for id in sorted( testIds.keys() ):
+                if ( id % int(self.testTotalSlices) ) == int(self.testCurrentSlice):
+                    myIds.append( str(id) )
+
+            print "Out of %s cases, we will run %s" % (totalCases, len(myIds))
+            if not myIds:
+                return True
+            
+            args.extend(['-v', '--with-id'])
+            args.extend(myIds)
+            return nose.run( argv=args )
 
         def run(self):
             testPath = 'test/python'
@@ -163,13 +200,13 @@ if can_nose:
                 WMQuality.TestInit.deleteDatabaseAfterEveryTest( "I'm Serious" )
                 time.sleep(4)
             if self.workerNodeTestsOnly:
-                args = [__file__,'--with-xunit', '-v',testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a','workerNodeTest']
+                args = [__file__,'--with-xunit', testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a','workerNodeTest']
                 args.extend( quickTestArg )
-                retval =  nose.run(argv=args, addplugins=[DetailedOutputter()])
+                retval = self.callNose(args)
             elif not self.buildBotMode:
-                args = [__file__,'--with-xunit', '-v',testPath, '-m', '(_t.py$)|(_t$)|(^test)', '-a', '!workerNodeTest']
+                args = [__file__,'--with-xunit', testPath, '-m', '(_t.py$)|(_t$)|(^test)', '-a', '!workerNodeTest']
                 args.extend( quickTestArg )
-                retval =  nose.run(argv=args)
+                retval = self.callNose(args)
             else:
                 print "### We are in buildbot mode ###"
                 srcRoot = os.path.join(os.path.normpath(os.path.dirname(__file__)), 'src', 'python')
@@ -180,16 +217,14 @@ if can_nose:
                 moduleList = ",".join(modulesToCover)
                 sys.stdout.flush()
                 if not quickTestArg:
-                    retval =  nose.run(argv=[__file__,'--with-xunit', '-v',testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a',
+                    retval = self.callNose([__file__,'--with-xunit', testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a',
                                              '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
                                              '--with-coverage','--cover-html','--cover-html-dir=coverageHtml','--cover-erase',
-                                             '--cover-package=' + moduleList, '--cover-inclusive'],
-                                        addplugins=[DetailedOutputter()])
+                                             '--cover-package=' + moduleList, '--cover-inclusive'])
                 else:
-                    retval =  nose.run(argv=[__file__,'--with-xunit', '-v',testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a',
+                    retval = self.callNose([__file__,'--with-xunit', testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a',
                          '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
-                         '--stop'],
-                    addplugins=[DetailedOutputter()]) 
+                         '--stop'])
 
             if retval:
                 sys.exit( 0 )

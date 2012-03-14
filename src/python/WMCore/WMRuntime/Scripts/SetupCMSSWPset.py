@@ -9,6 +9,7 @@ import os
 import types
 import socket
 import traceback
+import pickle
 
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
 from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog 
@@ -26,14 +27,29 @@ def fixupGlobalTag(process):
     """
     _fixupGlobalTag_
 
-    Make sure that the process has a GlobalTag PSet and a globaltag string.
-    
+    Make sure that the process has a GlobalTag.globaltag string.
+
+    Requires that the configuration already has a properly configured GlobalTag object.
+
     """
-    if not hasattr(process, "GlobalTag"):
-        process.GlobalTag = cms.PSet(globalTag = cms.string(""))
     if not hasattr(process.GlobalTag, "globaltag"):
         process.GlobalTag.globaltag = cms.string("")
-        
+
+
+def fixupGlobalTagTransaction(process):
+    """
+    _fixupGlobalTagTransaction_
+
+    Make sure that the process has a GlobalTag.DBParameters.transactionId string.
+
+    Requires that the configuration already has a properly configured GlobalTag object
+
+    (used to customize conditions access for Tier0 express processing)
+
+    """
+    if not hasattr(process.GlobalTag.DBParameters, "transactionId"):
+        process.GlobalTag.DBParameters.transactionId = cms.untracked.string("")
+
 
 def fixupFirstRun(process):
     """
@@ -145,6 +161,7 @@ class SetupCMSSWPset(ScriptInterface):
 
     """
     fixupDict = {"process.GlobalTag.globaltag": fixupGlobalTag,
+                 "process.GlobalTag.DBParameters.transactionId": fixupGlobalTagTransaction,
                  "process.source.fileNames": fixupFileNames,
                  "process.source.secondaryFileNames": fixupSecondaryFileNames,
                  "process.maxEvents.input": fixupMaxEvents,
@@ -175,37 +192,7 @@ class SetupCMSSWPset(ScriptInterface):
             try:
                 from Configuration.DataProcessing.GetScenario import getScenario
                 scenarioInst = getScenario(scenario)
-
-                if isinstance(funcArgs, dict):
-                    # Our function arguments are already a dictionary, which
-                    # means they're probably the result of some JSON decoding.
-                    # We'll have to make sure they don't contain any unicode
-                    # strings.
-                    strArgs = {}
-                    for key in funcArgs.keys():
-                        value = funcArgs[key]
-                        
-                        if type(key) in types.StringTypes:
-                            key = str(key)
-                        if type(value) in types.StringTypes:
-                            value = str(value)
-                        elif type(value) == type([]):
-                            newValue = []
-                            for item in value:
-                                if type(item) in types.StringTypes:
-                                    newValue.append(str(item))
-                                else:
-                                    newValue.append(item)
-
-                            value = newValue
-                        
-                        strArgs[key] = value
-
-                    self.process = getattr(scenarioInst, funcName)(**strArgs)
-                else:
-                    # likely an instance of WMCore.Configuration.ConfigSection
-                    # cannot check because that class is not on the WN
-                    self.process = getattr(scenarioInst, funcName)(**(funcArgs.dictionary_()))
+                self.process = getattr(scenarioInst, funcName)(**funcArgs)
             except Exception, ex:
                 msg = "Failed to retrieve the Scenario named "
                 msg += str(scenario)
@@ -508,7 +495,7 @@ class SetupCMSSWPset(ScriptInterface):
         scenario = getattr(self.step.data.application.configuration, "scenario", None)
         if scenario != None and scenario != "":
             funcName = getattr(self.step.data.application.configuration, "function", None)
-            funcArgs = getattr(self.step.data.application.configuration, "arguments", None)
+            funcArgs = pickle.loads(getattr(self.step.data.application.configuration, "arguments", None))
             try:
                 self.createProcess(scenario, funcName, funcArgs)
             except Exception, ex:
@@ -535,7 +522,7 @@ class SetupCMSSWPset(ScriptInterface):
         # Apply task level tweaks
         taskTweak = makeTaskTweak(self.step.data)
         applyTweak(self.process, taskTweak, self.fixupDict)
-        
+
         # Check if chained processing is enabled
         # If not - apply the per job tweaks
         # If so - create an override TFC (like done in PA) and then modify thePSet accordingly

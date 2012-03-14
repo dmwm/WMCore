@@ -205,7 +205,7 @@ class DBSBlock:
         self.data['processing_era']['processing_version'] = era
         return
 
-    def setAcquisitionEra(self, era):
+    def setAcquisitionEra(self, era, date = 123456789):
         """
         _setAcquisitionEra_
 
@@ -213,6 +213,7 @@ class DBSBlock:
         """
 
         self.data['acquisition_era']['acquisition_era_name'] = era
+        self.data['acquisition_era']['start_date']           = date
         return
 
     def setPhysicsGroup(self, group):
@@ -270,7 +271,6 @@ class DBSBlock:
         self.data['dataset']['data_tier_name']      = tier
         self.data['dataset']['dataset_access_type'] = datasetType
         self.data['dataset']['dataset']             = datasetName
-        self.data['dataset']['is_dataset_valid']    = valid
 
         return
 

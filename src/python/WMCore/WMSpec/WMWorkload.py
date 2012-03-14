@@ -146,7 +146,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return self.data.owner.dictionary_()
 
-    def setOwner(self, name, ownerProperties = {}):
+    def setOwner(self, name, ownerProperties = {'dn': 'DEFAULT'}):
         """
         _setOwner_
         sets the owner of wmspec.
@@ -163,7 +163,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def setOwnerDetails(self, name, group, ownerProperties = {}):
+    def setOwnerDetails(self, name, group, ownerProperties = {'dn': 'DEFAULT'}):
         """
         _setOwnerDetails_
 

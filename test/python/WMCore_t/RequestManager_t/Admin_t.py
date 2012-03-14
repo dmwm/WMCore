@@ -5,7 +5,7 @@ Admin_t
 
 Test for code in the RequestDB/Admin section
 """
-
+import os
 import unittest
 
 from WMCore.Services.Requests            import JSONRequests
@@ -14,6 +14,7 @@ from WMCore_t.RequestManager_t.ReqMgr_t  import RequestManagerConfig, getRequest
 
 from WMCore.RequestManager.RequestDB.Interface.Admin import SoftwareManagement
 from WMCore.HTTPFrontEnd.RequestManager              import ReqMgrWebTools
+
 
 class AdminTest(RESTBaseUnitTest):
     """
@@ -80,7 +81,16 @@ class AdminTest(RESTBaseUnitTest):
             SoftwareManagement.updateSoftware(softwareNames = [], scramArch = scramArch)
         self.assertEqual(SoftwareManagement.listSoftware(), {})
 
+        from WMCore.HTTPFrontEnd.RequestManager import Admin
+        self.config.section_('database')
+        setattr(self.config.database, 'connectUrl', os.environ['DATABASE'])
+        setattr(self.config.database, 'dialect', os.environ['DIALECT'])
+        self.config.section_('templates')
+        self.config.section_('html')
+        admin = Admin.Admin(self.config)
 
+        ReqMgrWebTools.updateScramArchsAndCMSSWVersions()
+        self.assertTrue('slc5_amd64_gcc434' in admin.scramArchs())
         return
 
 if __name__=='__main__':

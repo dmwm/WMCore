@@ -78,7 +78,7 @@ class LCGImpl(StageOutImpl):
             return StageOutImpl.createRemoveFileCommand(self, pfn)
 
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
         """
         _createStageOutCommand_
 

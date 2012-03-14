@@ -10,6 +10,7 @@ from xml.dom.minidom import parse as parseDOM
 from xml.parsers.expat import ExpatError
 from cherrypy import HTTPError
 from cherrypy.lib.static import serve_file
+from httplib import HTTPException
 import WMCore.Lexicon
 import cgi
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
@@ -248,11 +249,29 @@ def ownsRequest(request):
 def security_roles():
     return ['Developer', 'Admin',  'Data Manager', 'developer', 'admin', 'data-manager']
 
+def security_groups():
+    """
+    A list of groups which have security access
+    """
+    return ['ReqMgr', 'reqmgr']
+
 def privileged():
     """ whether this user has roles that overlap with security_roles """
     # let it slide if there's no authentication
     if insecure():
         return True
+
+    # Check and see if we have a valid group
+    groups = []
+    for role in cherrypy.request.user['roles'].values():
+        for group in role['group']:
+            # This should be a set
+            if group in security_groups():
+                groups.append(group)
+    if len(groups) < 1:
+        return False
+
+    
     #FIXME doesn't check role in this specific site
     secure_roles = [role for role in cherrypy.request.user['roles'].keys() if role in security_roles()]
     # and maybe we're running without securitya, in which case dn = 'None'
@@ -457,11 +476,20 @@ def makeRequest(kwargs, couchUrl, couchDB, wmstatUrl):
     helper.setCampaign(schema["Campaign"])
     if "CustodialSite" in schema.keys():
         helper.setCustodialSite(siteName = schema['CustodialSite'])
+    elif len(schema.get("SiteWhitelist", [])) == 1:
+        # If there is only one site in the site whitelist we should
+        # set it as the custodial site.
+        # Oli says so.
+        helper.setCustodialSite(siteName = schema['SiteWhitelist'][0])
     if "RunWhitelist" in schema:
         helper.setRunWhitelist(schema["RunWhitelist"])
     # can't save Request object directly, because it makes it hard to retrieve the _rev
     metadata = {}
     metadata.update(request)
+    # Add the output datasets if necessary
+    for ds in helper.listOutputDatasets():
+        if not ds in request['OutputDatasets']:
+            request['OutputDatasets'].append(ds)
     # don't want to JSONify the whole workflow
     del metadata['WorkloadSpec']
     workloadUrl = helper.saveCouch(couchUrl, couchDB, metadata=metadata)

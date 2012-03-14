@@ -66,8 +66,12 @@ class RequestHandler(object):
         self.maxredirs = config.get('maxredirs', 5)
 
     def set_opts(self, curl, url, params, headers,
-                 ckey=None, cert=None, verbose=None, verb='GET', doseq=True):
-        """Set options for given curl object"""
+                 ckey=None, cert=None, capath=None, verbose=None, verb='GET', doseq=True):
+        """Set options for given curl object
+           param needs to be a dictionary in case of GET, while PUT and POST
+           assume it is a string already encoded/quoted with urllib.encode and
+           urllib.quote.
+        """
         curl.setopt(pycurl.NOSIGNAL, self.nosignal)
         curl.setopt(pycurl.TIMEOUT, self.timeout)
         curl.setopt(pycurl.CONNECTTIMEOUT, self.connecttimeout)
@@ -85,7 +89,7 @@ class RequestHandler(object):
             curl.setopt(pycurl.CUSTOMREQUEST, 'DELETE')
         elif verb == 'PUT':
             curl.setopt(pycurl.CUSTOMREQUEST, 'PUT')
-            curl.setopt(pycurl.HTTPHEADER, 'Transfer-Encoding: chunked')
+            curl.setopt(pycurl.HTTPHEADER, ['Transfer-Encoding: chunked'])
             curl.setopt(pycurl.POSTFIELDS, params)
         else:
             raise Exception('Unsupported HTTP method "%s"' % verb)
@@ -97,7 +101,11 @@ class RequestHandler(object):
         hbuf = StringIO.StringIO()
         curl.setopt(pycurl.WRITEFUNCTION, bbuf.write)
         curl.setopt(pycurl.HEADERFUNCTION, hbuf.write)
-        curl.setopt(pycurl.SSL_VERIFYPEER, False)
+        if  capath:
+            curl.setopt(pycurl.CAPATH, capath)
+            curl.setopt(pycurl.SSL_VERIFYPEER, True)
+        else:
+            curl.setopt(pycurl.SSL_VERIFYPEER, False)
         if  ckey:
             curl.setopt(pycurl.SSLKEY, ckey)
         if  cert:
@@ -134,11 +142,11 @@ class RequestHandler(object):
         return ResponseHeader(header)
 
     def request(self, url, params, headers=None, verb='GET',
-                verbose=0, ckey=None, cert=None, doseq=True, decode=False):
+                verbose=0, ckey=None, cert=None, capath=None, doseq=True, decode=False):
         """Fetch data for given set of parameters"""
         curl = pycurl.Curl()
         bbuf, hbuf = self.set_opts(curl, url, params, headers,
-                ckey, cert, verbose, verb, doseq)
+                ckey, cert, capath, verbose, verb, doseq)
         curl.perform()
         header = self.parse_header(hbuf.getvalue())
         if  header.status == 200:

@@ -320,22 +320,24 @@ if __name__ == "__main__":
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "AsyncTransfer", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "monitor", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_statinstance, wmagentConfig.AsyncTransfer.statitics_database, "stat", basePath)
+        installCouchApp(wmagentConfig.AsyncTransfer.couch_user_monitoring_instance, wmagentConfig.AsyncTransfer.user_monitoring_db, "UserMonitoring", basePath)
         installCouchApp(agent_instance, agent_database, "Agent", baseWMCorePath)
         if options.cron:
             setupCronCompaction(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database)
             setupCronCompaction(wmagentConfig.AsyncTransfer.couch_statinstance, wmagentConfig.AsyncTransfer.statitics_database)
+            setupCronCompaction(wmagentConfig.AsyncTransfer.couch_user_monitoring_instance, wmagentConfig.AsyncTransfer.user_monitoring_db)
             setupCronCompaction(agent_instance, agent_database)
 
     if hasattr(wmagentConfig, "reqmgr"):
         installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName, "ReqMgr")
         if options.cron:
             setupCronCompaction(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName)
-            
+
     if hasattr(wmagentConfig, "AlertProcessor"):
         uri = wmagentConfig.AlertProcessor.critical.sinks.rest.uri
         dbName = uri.split('/')[-1]
         dbAddr = "/".join(uri.split('/')[0:-1])
         installCouchApp(dbAddr, dbName, "Alerts")
-                        
+
 
     sys.exit(0)

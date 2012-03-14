@@ -111,17 +111,21 @@ dependencies = {
                 'wmclient':{
                         'systems': ['wmc-runtime', 'wmc-database']
                         },
+                #'reqmon':{
+                #        'packages': ['WMCore.HTTPFrontEnd',
+                #                     'WMCore.HTTPFrontEnd.GlobalMonitor+',
+                #                     'WMCore.Services',
+                #                     'WMCore.Services.RequestManager+',
+                #                     'WMCore.Services.WorkQueue+',
+                #                     'WMCore.Services.WMBS+',
+                #                     'WMCore.Services.WMAgent+'],
+                #       'modules': ['WMCore.Database.CMSCouch'],
+                #       'systems':['wmc-web'],
+                #        'statics': ['src/html/GlobalMonitor',
+                #                    'src/javascript/WMCore/WebTools/GlobalMonitor+']
+                #        },
+                
                 'reqmon':{
-                        'packages': ['WMCore.HTTPFrontEnd',
-                                     'WMCore.HTTPFrontEnd.GlobalMonitor+',
-                                     'WMCore.Services',
-                                     'WMCore.Services.RequestManager+',
-                                     'WMCore.Services.WorkQueue+',
-                                     'WMCore.Services.WMBS+',
-                                     'WMCore.Services.WMAgent+'],
-                        'modules': ['WMCore.Database.CMSCouch'],
-                        'systems':['wmc-web'],
-                        'statics': ['src/html/GlobalMonitor',
-                                    'src/javascript/WMCore/WebTools/GlobalMonitor+']
+                        'statics': ['src/couchapps/WMStats+'],
                         },
                }

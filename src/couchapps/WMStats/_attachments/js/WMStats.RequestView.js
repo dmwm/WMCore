@@ -4,7 +4,7 @@ WMStats.RequestView = (function() {
     
     var _data = null;
     var _containerDiv = null;
-    var _initialView = 'campaign-request';
+    var _initialView = 'requestByCampaignAndDate';
     var _options = {'include_docs': true};
     var _tableID = "requestTable";
     
@@ -33,26 +33,12 @@ WMStats.RequestView = (function() {
             { "mDataProp": "request_type", "sTitle": "type"},
             { "mDataProp": "inputdataset", "sTitle": "inputdataset"},
             { "mDataProp": "site_white_list", "sTitle": "site white list"},
-            //{ "mDataProp": "status.inWMBS", "sTitle": "in wmbs", 
-            //               "sDefaultContent": 0, "bVisible": false},
-            /*
-            { "mDataProp": "status.queued.first", "sTitle": "queued first", 
-                           "sDefaultContent": 0 , "bVisible": false},
-            { "mDataProp": "status.queued.retry", "sTitle": "queued retry", 
-                           "sDefaultContent": 0, "bVisible": false },
-            */
             { "sTitle": "queued", 
               "fnRender": function ( o, val ) {
                             return (_get(o.aData, "status.queued.first", 0) + 
                                     _get(o.aData, "status.queued.retry", 0));
                           }
             },
-            /*               
-            { "mDataProp": "status.submitted.first", "sTitle": "submitted first", 
-                           "sDefaultContent": 0, "bVisible": false },
-            { "mDataProp": "status.submitted.retry", "sTitle": "submitted retry", 
-                           "sDefaultContent": 0, "bVisible": false },
-            */
             { "sTitle": "pending", 
               "fnRender": function ( o, val ) {
                             return _get(o.aData, "status.submitted.pending", 0);
@@ -63,15 +49,6 @@ WMStats.RequestView = (function() {
                             return _get(o.aData, "status.submitted.running", 0);
                           }
             },
-            
-            /*
-            { "mDataProp": "status.failure.create", "sTitle": "create fail", 
-                           "sDefaultContent": 0, "bVisible": false  },
-            { "mDataProp": "status.failure.submit", "sTitle": "submit fail", 
-                           "sDefaultContent": 0, "bVisible": false },
-            { "mDataProp": "status.failure.exception", "sTitle": "exception fail", 
-                           "sDefaultContent": 0, "bVisible": false },
-            */
             { "sTitle": "failure",
               "fnRender": function ( o, val ) {
                             return (_get(o.aData, "status.failure.create", 0) + 
@@ -99,16 +76,12 @@ WMStats.RequestView = (function() {
                                     _get(o.aData, "status.queued.retry", 0));
                           }
             },
-            /*
-            { "mDataProp": "total_jobs", "sTitle": "total estimate jobs", 
-                           "sDefaultContent": 0, "bVisible": false},
-            */
             { "sTitle": "queue injection",  
               "fnRender": function ( o, val ) {
                               return (_get(o.aData, "status.inWMBS",  0) / 
                                       _get(o.aData, 'total_jobs', 1));
                           }}
-            //TODO add more data
+            //TODO add more data (consult dataops)
         ]
     }
 
@@ -125,11 +98,13 @@ WMStats.RequestView = (function() {
     }   
                 
     var getRequestDetailsAndCreateTable = function (agentIDs, reqmgrData) {
-        var options = {'keys': keysFromIDs(agentIDs), 'reduce': false, 'include_docs': true};
+        var options = {'keys': keysFromIDs(agentIDs), 'reduce': false, 
+                       'include_docs': true};
         
         WMStats.Couch.allDocs(options,
               function(agentData) {
-                  //combine reqmgrData(reqmgr_request) and agent_request(agentData) data 
+                  // combine reqmgrData(reqmgr_request) and 
+                  // agent_request(agentData) data 
                   var requestCache = WMStats.Requests()
                   requestCache.updateBulkRequests(reqmgrData.rows)
                   requestCache.updateBulkRequests(agentData.rows)
@@ -146,13 +121,13 @@ WMStats.RequestView = (function() {
     
     var getLatestRequestIDsAndCreateTable = function (reqmgrData) {
         /*
-         * get list of request ids first from the couchDB then get the details of the requests.
-         * This is due to the reduce restiction on couchDB - can't be one http call. 
+         * get list of request ids first from the couchDB then 
+         * get the details of the requests.
          */
     
         var options = {"keys": keysFromIDs(reqmgrData), "reduce": true, 
                        "group": true, "descending": true};
-        WMStats.Couch.view('latest-request', options,
+        WMStats.Couch.view('latestRequest', options,
               function(agentIDs) {
                   getRequestDetailsAndCreateTable(agentIDs, reqmgrData)
               })

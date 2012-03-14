@@ -2,8 +2,8 @@ WMStats.namespace("Table")
 
 WMStats.Table = function(config) {
     var _tableConfig = {"bProcessing": true,
-                          "sDom": 'C<"clear">lfrtip',
-                          };
+                        "sDom": 'C<"clear">lfrtip',
+                       };
     
     function _updateConfig(config) {
         for (var prop in config) {
@@ -12,6 +12,7 @@ WMStats.Table = function(config) {
         
     }
     
+    /* footer is needed to use columnFilter */ 
     function _footer() {
         var footer = '<tfoot><tr>';
       
@@ -26,7 +27,6 @@ WMStats.Table = function(config) {
     
     function _create(selector) {
         oTable = $(selector).dataTable(_tableConfig)
-        // footer is needed to use columnFilter
         oTable.append(_footer());
         return oTable.columnFilter();
     }

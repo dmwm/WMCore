@@ -4,27 +4,39 @@ WMStats.SiteView = (function() {
     
     var _data = null;
     var _containerDiv = null;
-    var _viewName = 'latest-agent-time';
+    var _viewName = 'latestAgentSite';
     var _options = {"reduce": true, "group_level": 2, "descending": true};
     
     var tableConfig = {
         "aoColumns": [
             { "mDataProp": "agent_url", "sTitle": "agent"},
             { "mDataProp": "site", "sTitle": "site"},
-            { "mDataProp": "queued.first", "sTitle": "queued first", "sDefaultContent": 0 },
-            { "mDataProp": "queued.retry", "sTitle": "queued retry", "sDefaultContent": 0 },
-            { "mDataProp": "submitted.first", "sTitle": "submitted first", "sDefaultContent": 0 },
-            { "mDataProp": "submitted.retry", "sTitle": "submitted retry", "sDefaultContent": 0 },
-            { "mDataProp": "submitted.pending", "sTitle": "submitted pending", "sDefaultContent": 0 },
-            { "mDataProp": "submitted.running", "sTitle": "submitted running", "sDefaultContent": 0 },
-            { "mDataProp": "failure.create", "sTitle": "create fail", "sDefaultContent": 0 },
-            { "mDataProp": "failure.submit", "sTitle": "submit fail", "sDefaultContent": 0 },
-            { "mDataProp": "failure.exception", "sTitle": "exception fail", "sDefaultContent": 0 },
-            { "mDataProp": "canceled", "sTitle": "canceled", "sDefaultContent": 0 },
-            { "mDataProp": "success", "sTitle": "success", "sDefaultContent": 0 },
-            { "mDataProp": "cooloff", "sTitle": "cool off", "sDefaultContent": 0 },
+            { "mDataProp": "queued.first", "sTitle": "queued first", 
+                           "sDefaultContent": 0 },
+            { "mDataProp": "queued.retry", "sTitle": "queued retry", 
+                           "sDefaultContent": 0 },
+            { "mDataProp": "submitted.first", "sTitle": "submitted first", 
+                           "sDefaultContent": 0 },
+            { "mDataProp": "submitted.retry", "sTitle": "submitted retry", 
+                           "sDefaultContent": 0 },
+            { "mDataProp": "submitted.pending", "sTitle": "submitted pending", 
+                           "sDefaultContent": 0 },
+            { "mDataProp": "submitted.running", "sTitle": "submitted running", 
+                           "sDefaultContent": 0 },
+            { "mDataProp": "failure.create", "sTitle": "create fail", 
+                           "sDefaultContent": 0 },
+            { "mDataProp": "failure.submit", "sTitle": "submit fail", 
+                           "sDefaultContent": 0 },
+            { "mDataProp": "failure.exception", "sTitle": "exception fail", 
+                           "sDefaultContent": 0 },
+            { "mDataProp": "canceled", "sTitle": "canceled", 
+                           "sDefaultContent": 0 },
+            { "mDataProp": "success", "sTitle": "success", 
+                           "sDefaultContent": 0 },
+            { "mDataProp": "cooloff", "sTitle": "cool off", 
+                           "sDefaultContent": 0 },
             { "mDataProp": "timestamp", "sTitle": "updated"}
-            //TODO add more data
+            //TODO add more data (consult dataops)
         ]
     }
     
@@ -58,7 +70,8 @@ WMStats.SiteView = (function() {
          */
         var keys = [];
         for (var i in data.rows){
-            keys.push([data.rows[i].value, data.rows[i].key[0], data.rows[i].key[1]]);
+            keys.push([data.rows[i].value, data.rows[i].key[0], 
+                       data.rows[i].key[1]]);
         }
         return keys;      
     }   
@@ -66,16 +79,17 @@ WMStats.SiteView = (function() {
 
     var getLatestSiteKeyAndCreateTable = function (siteKeys) {
         /*
-         * get list of request ids first from the couchDB then get the details of the requests.
-         * This is due to the reduce restiction on couchDB - can't be one http call. 
+         * get list of request ids first from the couchDB then 
+         * get the details of the requests.
          */
     
         var options = {"keys": constructSiteKey(siteKeys), "reduce": true, 
                        "group": true};
 
-        WMStats.Couch.view('agent-site', options,
+        WMStats.Couch.view('timeWithAgentSite', options,
               function(siteData) {
-                  return createSiteTable(_containerDiv + " table#siteTable", siteData.rows);
+                  return createSiteTable(_containerDiv + " table#siteTable", 
+                                         siteData.rows);
               },
               'json')
     };

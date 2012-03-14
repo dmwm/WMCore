@@ -1,10 +1,14 @@
 WMStats.namespace("Requests");
 WMStats.Requests = function () {
+    /*
+     * Data structure for holding the request
+     */
+    // request data by workflow name
     var _dataByWorkflow = {};
+    // number of requests in the data
     var length = 0;
     
     function updateRequest(doc) {
-        //if !(doc.workflow) {throw};
         var request = getRequestByName(doc.workflow);
         if (!request) {
             request = {}; 
@@ -31,7 +35,6 @@ WMStats.Requests = function () {
     };
     
     function getList() {
-        //TODO need to cache
         var list = [];
         for (var item in _dataByWorkflow) {
             list.push(_dataByWorkflow[item])

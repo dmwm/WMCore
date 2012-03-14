@@ -1,9 +1,12 @@
 WMStats.namespace("JobSummaryView")
 
 WMStats.JobSummaryView = (function() {
-    
-    var _data = null;
+    /*
+     * Create JobSummary view
+     */
+    //div container for job summary
     var _containerDiv = null;
+    // default couch view name for job summary
     var _viewName = 'jobsByStatusWorkflow';
     
     function _formatHtml(jobSummary) {

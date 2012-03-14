@@ -5,13 +5,15 @@
 WMStats.namespace("Couch")
 
 WMStats.Couch = (function(){
-    var _dbName = "mock_wmstats";
+    // couchdb name for central summary db
+    var _dbName = "wmstats";
+    // couchapp name
     var _Design = "WMStats";
     var _couchDB = $.couch.db(_dbName);
     
     function _combineOption(options, callback) {
         //combine options and callbacks for jquery.couch.js
-        //TODO need to extend not just for success.
+        //TODO need to extend not just for success. (i.e failed case)
         var options = options || {};
         options.success = callback;
         return options

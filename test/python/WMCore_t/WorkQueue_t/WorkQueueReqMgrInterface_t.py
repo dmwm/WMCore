@@ -208,5 +208,21 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         reqMgrInt(globalQ)
         self.assertEqual(len(globalQ), 0)
 
+    def testCancelPickedUp(self):
+        """WorkQueue cancels if canceled in ReqMgr"""
+        globalQ = self.setupGlobalWorkqueue()
+        reqMgr = fakeReqMgr()
+        reqMgrInt = WorkQueueReqMgrInterface()
+        reqMgrInt.reqMgr = reqMgr
+        reqMgrInt(globalQ)
+        # abort in reqmgr
+        reqMgr.status[reqMgr.names[0]] = 'aborted'
+        # workqueue will detect abort and cancel workflow
+        reqMgrInt(globalQ)
+        self.assertEqual(globalQ.status(WorkflowName=reqMgr.names[0])[0]['Status'], 'Canceled')
+        # check stays canceled
+        reqMgrInt(globalQ)
+        self.assertEqual(globalQ.status(WorkflowName=reqMgr.names[0])[0]['Status'], 'Canceled')
+
 if __name__ == '__main__':
     unittest.main()

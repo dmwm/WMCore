@@ -46,22 +46,35 @@ def check_server_url(srvurl):
         msg += "http(s):// in your servers address, %s doesn't" % srvurl
         raise ValueError(msg)
 
-def uploadFile(fileName, url, fieldName = 'file1', params = []):
+def uploadFile(fileName, url, fieldName = 'file1', params = [], verb = 'POST', ckey = None, cert = None, capath = None):
     """
     Upload a file with curl streaming it directly from disk
     """
     import pycurl
     c = pycurl.Curl()
-    c.setopt(c.POST, 1)
+    if verb == 'POST':
+        c.setopt(c.POST, 1)
+    elif verb == 'PUT':
+        c.setopt(pycurl.CUSTOMREQUEST, 'PUT')
+    else:
+        raise HTTPException("Verb %s not sopported for upload." % verb)
     c.setopt(c.URL, url)
     fullParams = [(fieldName, (c.FORM_FILE, fileName))]
     fullParams.extend(params)
     c.setopt(c.HTTPPOST, fullParams)
-    c.setopt(c.HTTPHEADER, ['Content-Length: %d' % len(fileName), "Accept: application/json"])
     bbuf = StringIO.StringIO()
     hbuf = StringIO.StringIO()
     c.setopt(pycurl.WRITEFUNCTION, bbuf.write)
     c.setopt(pycurl.HEADERFUNCTION, hbuf.write)
+    if  capath:
+        c.setopt(pycurl.CAPATH, capath)
+        c.setopt(pycurl.SSL_VERIFYPEER, True)
+    else:
+        c.setopt(pycurl.SSL_VERIFYPEER, False)
+    if  ckey:
+        c.setopt(pycurl.SSLKEY, ckey)
+    if  cert:
+        c.setopt(pycurl.SSLCERT, cert)
     c.perform()
     hres = hbuf.getvalue()
     bres = bbuf.getvalue()

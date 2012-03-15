@@ -276,5 +276,20 @@ class BlockTestCase(unittest.TestCase):
             self.assertEqual(len(units),
                              len(dbs[inputDataset.dbsurl].getFileBlocksInfo(dataset)))
 
+    def testIgnore0SizeBlocks(self):
+        """Ignore blocks with 0 files"""
+        Globals.GlobalParams.setNumOfFilesPerBlock(0)
+
+        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload.setRunWhitelist([2, 3])
+        inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
+        dataset = "/%s/%s/%s" % (inputDataset.primary,
+                                     inputDataset.processed,
+                                     inputDataset.tier)
+        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+        for task in Tier1ReRecoWorkload.taskIterator():
+            self.assertRaises(WorkQueueNoWorkError, Block(**self.splitArgs), Tier1ReRecoWorkload, task)
+
+
 if __name__ == '__main__':
     unittest.main()

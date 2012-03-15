@@ -38,7 +38,7 @@ class Dataset(StartPolicyInterface):
             return
 
         for block in blocks:
-            work += block[self.args['SliceType']]
+            work += float(block[self.args['SliceType']])
 
         dataset = dbs.getDBSSummaryInfo(dataset = datasetPath)
 

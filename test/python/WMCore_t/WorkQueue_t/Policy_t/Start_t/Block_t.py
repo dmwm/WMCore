@@ -186,7 +186,7 @@ class BlockTestCase(unittest.TestCase):
             self.assertEqual(2, len(units))
             blocks = [] # fill with blocks as we get work units for them
             for unit in units:
-                self.assertEqual(2, unit['Jobs'])
+                self.assertEqual(4, unit['Jobs'])
 
     def testRunWhitelist(self):
         """ReReco lumi split with Run whitelist"""

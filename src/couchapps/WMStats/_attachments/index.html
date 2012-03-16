@@ -24,11 +24,13 @@
     <script src="js/WMStats.RequestView.js" type='text/javascript'> </script>
     <script src="js/WMStats.SiteView.js" type='text/javascript'> </script>
     <script src="js/WMStats.JobSummaryView.js" type='text/javascript'> </script>
+    <script src="js/WMStats.AgentView.js" type='text/javascript'> </script>
     <script src="js/WMStats.EventHandler.js" type='text/javascript'> </script>
     <script>
     function drawMonitor() {
         WMStats.CampaignView.createTable("#campaignDiv");
         WMStats.SiteView.createTable("#siteDiv");
+        WMStats.AgentView.createTable("#agentDiv");
     }
     $(document).ready(function() {
         myLayout = $('body').layout();
@@ -52,11 +54,10 @@
                 <div id="requestDiv"></div>
             </div>
             <div id="tab-site">
-                Site
                 <div id="siteDiv"></div>
             </div>
             <div id="tab-agent">
-                Under construction
+                <div id="agentDiv"></div>
             </div>
         </div>   
     </div>

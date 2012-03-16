@@ -26,11 +26,15 @@
     <script src="js/WMStats.JobSummaryView.js" type='text/javascript'> </script>
     <script src="js/WMStats.EventHandler.js" type='text/javascript'> </script>
     <script>
+    function drawMonitor() {
+        WMStats.CampaignView.createTable("#campaignDiv");
+        WMStats.SiteView.createTable("#siteDiv");
+    }
     $(document).ready(function() {
         myLayout = $('body').layout();
         $( "#tabs" ).tabs();
-        WMStats.CampaignView.createTable("#campaignDiv");
-        WMStats.SiteView.createTable("#siteDiv");
+        drawMonitor()
+        setInterval(drawMonitor, 600000)
      } );
     </script>
 <body>

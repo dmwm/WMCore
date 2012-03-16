@@ -50,8 +50,10 @@ class AnalyticsPoller(BaseWorkerThread):
         # set wmagent db data
         self.wmagentDB = WMAgentDBData(myThread.dbi, myThread.logger)
         # set the connection for local couchDB call
-        self.localSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL )
-        
+        self.localSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL)
+        self.centralSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.centralWMStatsURL)
+        logging.info("Setting the replication to central monitor ...")
+        self.centralSummaryCouchDB.replicate(self.config.AnalyticsDataCollector.localWMStatsURL)
     def algorithm(self, parameters):
         """
         get information from wmbs, workqueue and local couch

@@ -1,7 +1,7 @@
 import time
 import logging
 from WMCore.Database.CMSCouch import CouchServer
-from WMCore.Lexicon import splitCouchServiceURL
+from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 from WMCore.Wrappers.JsonWrapper import JSONEncoder
 
 def monitorDocFromRequestSchema(schema):
@@ -41,7 +41,8 @@ class WMStatsWriter():
             self.dbName = dbName
         else:
             self.couchURL, self.dbName = splitCouchServiceURL(couchURL)
-        self.couchDB = CouchServer(self.couchURL).connectDatabase(self.dbName, False)
+        self.couchServer = CouchServer(self.couchURL)
+        self.couchDB = self.couchServer.connectDatabase(self.dbName, False)
 
     def uploadData(self, docs):
         """
@@ -58,14 +59,15 @@ class WMStatsWriter():
     def insertRequest(self, schema):
         doc = monitorDocFromRequestSchema(schema)
         result = self.couchDB.updateDocument(doc['_id'], 'WMStats', 
-                                    'insertRequest', fields={'doc': JSONEncoder().encode(doc)})
+                                    'insertRequest',
+                                    fields={'doc': JSONEncoder().encode(doc)})
         self.updateRequestStatus(doc['_id'], "new")
         return result
     
     def updateRequestStatus(self, request, status):
         statusTime = {'status': status, 'update_time': int(time.time())}
         return self.couchDB.updateDocument(request, 'WMStats', 'requestStatus', 
-                                         fields={'request_status': JSONEncoder().encode(statusTime)})
+                    fields={'request_status': JSONEncoder().encode(statusTime)})
     
     def updateTeam(self, request, team):
         return self.couchDB.updateDocument(request, 'WMStats', 'team', 
@@ -80,9 +82,11 @@ class WMStatsWriter():
         # complex field needs to be JSON encoded 
         # assuming all the toplevel tasks has the same site white lists
         #priority is priority + user priority + group priority
-        fields = {'priority': spec.priority(), 'site_white_list': spec.getTopLevelTask()[0].siteWhitelist()}
-        return self.couchDB.updateDocument(spec.name(), 'WMStats', 'generalFields', 
-                                         fields={'general_fields': JSONEncoder().encode(fields)})
+        fields = {'priority': spec.priority(), 
+                  'site_white_list': spec.getTopLevelTask()[0].siteWhitelist()}
+        return self.couchDB.updateDocument(spec.name(), 'WMStats', 
+                    'generalFields', 
+                    fields={'general_fields': JSONEncoder().encode(fields)})
     
     def updateRequestsInfo(self, docs):
         """
@@ -91,32 +95,15 @@ class WMStatsWriter():
         """
         for doc in docs:
             del doc['type']
-            self.couchDB.updateDocument(doc['workflow'], 'WMStats', 'generalFields', 
-                                         fields={'general_fields': JSONEncoder().encode(doc)})
+            self.couchDB.updateDocument(doc['workflow'], 'WMStats', 
+                        'generalFields', 
+                        fields={'general_fields': JSONEncoder().encode(doc)})
             
-        # get the id of docs
-#        keys = []
-#        for doc in docs:
-#            keys.append(doc['workflow'])
-#        results = self.couchDB.allDocs(keys = keys)['rows']
-#        print results
-#        # update the _id field of docs  
-#        i = 0;
-#        for item in results:
-#            if item.has_key("id"):
-#                newDoc = {}
-#                newDoc.update(docs[i])
-#                newDoc['_id'] = item['id']
-#                newDoc['_rev'] = item['value']['rev']
-#                # remove original type 'agent_request' 
-#                del newDoc['type']
-#                self.couchDB.queue(newDoc)
-#            i += 1
-#        return self.couchDB.commit()
     
     def updateAgentInfo(self, agentInfo):
-        return self.couchDB.updateDocument(agentInfo['_id'], 'WMStats', 'agentInfo', 
-                                         fields={'agent_info': JSONEncoder().encode(agentInfo)})
+        return self.couchDB.updateDocument(agentInfo['_id'], 'WMStats', 
+                        'agentInfo', 
+                        fields={'agent_info': JSONEncoder().encode(agentInfo)})
         
     def deleteOldDocs(self, days):
         """
@@ -124,7 +111,8 @@ class WMStatsWriter():
         """
         sec = int(days * 24 * 60 *60)
         threshold = int(time.time()) - sec
-        options = {"startkey": threshold, "descending": True, "stale": "update_after"}
+        options = {"startkey": threshold, "descending": True, 
+                   "stale": "update_after"}
         result = self.couchDB.loadView("WMStats", "time", options)
         print result
         for row in result['rows']:
@@ -134,4 +122,6 @@ class WMStatsWriter():
             self.couchDB.queueDelete(doc)
         return self.couchDB.commit()
         
-        
+    def replicate(self, source):
+        self.couchServer.replicate(sanitizeURL(source)['url'], self.dbName, 
+                                   continuous = True)

@@ -41,7 +41,7 @@ class DatasetTestCase(unittest.TestCase):
             units = Dataset(**self.splitArgs)(Tier1ReRecoWorkload, task)
             self.assertEqual(1, len(units))
             for unit in units:
-                self.assertEqual(2, unit['Jobs'])
+                self.assertEqual(4, unit['Jobs'])
                 self.assertEqual(Tier1ReRecoWorkload, unit['WMSpec'])
                 self.assertEqual(task, unit['Task'])
                 self.assertEqual(unit['Inputs'].keys(), [dataset])
@@ -62,7 +62,7 @@ class DatasetTestCase(unittest.TestCase):
             units = Dataset(**self.splitArgs)(MultiTaskProcessingWorkload, task)
             self.assertEqual(1, len(units))
             for unit in units:
-                self.assertEqual(2, unit['Jobs'])
+                self.assertEqual(4, unit['Jobs'])
                 self.assertEqual(MultiTaskProcessingWorkload, unit['WMSpec'])
                 self.assertEqual(task, unit['Task'])
                 self.assertEqual(unit['Inputs'].keys(), [datasets[count]])
@@ -87,7 +87,7 @@ class DatasetTestCase(unittest.TestCase):
         task = getFirstTask(blacklistBlockWorkload)
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
-        self.assertEqual(units[0]['Jobs'], 1.0)
+        self.assertEqual(units[0]['Jobs'], 2.0)
 
         # Block Whitelist
         rerecoArgs2['BlockWhitelist'] = [dataset + '#1']
@@ -97,7 +97,7 @@ class DatasetTestCase(unittest.TestCase):
         task = getFirstTask(blacklistBlockWorkload)
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
-        self.assertEqual(units[0]['Jobs'], 1.0)
+        self.assertEqual(units[0]['Jobs'], 2.0)
 
         # Block Mixed Whitelist
         rerecoArgs2['BlockWhitelist'] = [dataset + '#2']
@@ -107,7 +107,7 @@ class DatasetTestCase(unittest.TestCase):
         task = getFirstTask(blacklistBlockWorkload)
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
-        self.assertEqual(units[0]['Jobs'], 1.0)
+        self.assertEqual(units[0]['Jobs'], 2.0)
 
         # Run Whitelist
         rerecoArgs3 = {'RunWhitelist' : [1]}
@@ -128,7 +128,7 @@ class DatasetTestCase(unittest.TestCase):
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset])
-        self.assertEqual(units[0]['Jobs'], 2.0)
+        self.assertEqual(units[0]['Jobs'], 3.0)
 
         # Run Blacklist
         rerecoArgs3 = {'RunBlacklist' : [2]}
@@ -139,7 +139,7 @@ class DatasetTestCase(unittest.TestCase):
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset])
-        self.assertEqual(units[0]['Jobs'], 1.0)
+        self.assertEqual(units[0]['Jobs'], 2.0)
 
         # Run Mixed Whitelist
         rerecoArgs3 = {'RunBlacklist' : [1], 'RunWhitelist' : [2]}
@@ -150,7 +150,7 @@ class DatasetTestCase(unittest.TestCase):
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset])
-        self.assertEqual(units[0]['Jobs'], 1.0)
+        self.assertEqual(units[0]['Jobs'], 2.0)
 
 
     def testDataDirectiveFromQueue(self):
@@ -180,7 +180,7 @@ class DatasetTestCase(unittest.TestCase):
             units = Dataset(**splitArgs)(Tier1ReRecoWorkload, task)
             self.assertEqual(1, len(units))
             for unit in units:
-                self.assertEqual(2, unit['Jobs'])
+                self.assertEqual(4, unit['Jobs'])
 
     def testRunWhitelist(self):
         """ReReco lumi split with Run whitelist"""
@@ -252,7 +252,7 @@ class DatasetTestCase(unittest.TestCase):
             units = Dataset(**self.splitArgs)(parentProcSpec, task)
             self.assertEqual(1, len(units))
             for unit in units:
-                self.assertEqual(2, unit['Jobs'])
+                self.assertEqual(4, unit['Jobs'])
                 self.assertEqual(parentProcSpec, unit['WMSpec'])
                 self.assertEqual(task, unit['Task'])
                 self.assertEqual(unit['Inputs'].keys(), [dataset])

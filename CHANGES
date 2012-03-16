@@ -1,3 +1,19 @@
+0.8.28 to 0.8.29:
+  - Fix ListThresholdsForCreate to reduce memory. Fixes #3395.
+  - Fix problems in WebRequestSchema. Fixes #3387
+  - Fix transaction code for dbsbuffer insertion
+
+0.8.27 to 0.8.28:
+  - Add workqueue test on empty block.
+  - Match emulator behaviour to DBS for getDBSSummaryInfo api
+  - Fix workqueue dbsbuffer insertion
+  - Modified the upload method by adding auth parameters, and modified parameter names. Fixes #3345
+  - Only log cancelations the first time
+  - If aborted in reqmgr workqueue should cancel workflow
+  - Don't complain if reqmgr status ahead of workqueue
+  - patch-riahi-wmcore/
+  - Added capath parameter and fixed a bug while setting the header of the request. Fixes #3367 #3346
+
 0.8.26pre6 to 0.8.27:
   - Initial revision of the Tier1 PromptReco spec.  Fixes #3384.
   - Recover from errors in the harness.  Fixes #3373.

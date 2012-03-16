@@ -26,6 +26,14 @@ class UserFileCache(Service):
             dict = {}
         if not dict.has_key('endpoint'):
             dict['endpoint'] = "http://cms-xen38.fnal.gov:7725/userfilecache/"
+        if not dict.has_key('proxyfilename'):
+            dict['proxyfilename'] = None
+        if not dict.has_key('capath'):
+            dict['capath'] = None
+        #TODO: Temporary flag used to indicate that the UserFileCache is talking with the new REST
+        #Remove when the branch 3.0.x of the CRABClient is deprecated
+        if not dict.has_key('newrest'):
+            dict['newrest'] = False
         Service.__init__(self, dict)
 
     def download(self, hashkey=None, subDir=None, name=None, output=None):
@@ -47,13 +55,19 @@ class UserFileCache(Service):
         """
         Upload the file
         """
-        uploadURL = self['endpoint'] + '/userfilecache/upload/'
-        params = [('checksum', self.checksum(fileName))]
+        #TODO: the following three lines will not be needed anymore if we only support the new REST
+        endpointSuffix = '/userfilecache/upload/' if not self['newrest'] else ''
+        cksumParam = 'checksum' if not self['newrest'] else 'hashkey'
+        fieldName = 'userfile' if not self['newrest'] else 'inputfile'
+
+        uploadURL = self['endpoint'] + endpointSuffix
+        params = [(cksumParam, self.checksum(fileName))]
         if subDir or name:
             params.append(('subDir', subDir))
             params.append(('name', name))
 
-        resString = uploadFile(fileName=fileName, fieldName='userfile', url=uploadURL, params=params)
+        resString = uploadFile(fileName=fileName, fieldName=fieldName, url=uploadURL, params=params, \
+                                                 verb='PUT', ckey=self['proxyfilename'], cert=self['proxyfilename'], capath=self['capath'] )
 
         return json.loads(resString)
     def checksum(self, fileName):

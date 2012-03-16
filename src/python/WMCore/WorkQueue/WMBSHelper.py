@@ -195,6 +195,7 @@ class WMBSHelper(WMConnectionBase):
         self.dbsSetLocation    = self.dbsDaoFactory(classname = "DBSBufferFiles.SetLocationByLFN")
         self.dbsInsertLocation = self.dbsDaoFactory(classname = "DBSBufferFiles.AddLocation")
         self.dbsSetChecksum    = self.dbsDaoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
+        self.dbsInsertWorkflow = self.dbsDaoFactory(classname = "InsertWorkflow")
 
 
         # Added for file creation bookkeeping
@@ -448,7 +449,9 @@ class WMBSHelper(WMConnectionBase):
         if self.insertedBogusDataset  == -1:
             self.insertedBogusDataset = self.dbsFilesToCreate[0].insertDatasetAlgo()
 
-
+        # add workflow
+        workflow_id = self.dbsInsertWorkflow.execute(self.wmSpec.name(), self.topLevelTask.getPathName(),
+                                                     conn = self.getDBConn(), transaction = self.existingTransaction())
 
         for dbsFile in self.dbsFilesToCreate:
             # Append a tuple in the format specified by DBSBufferFiles.Add
@@ -459,7 +462,7 @@ class WMBSHelper(WMConnectionBase):
 
             newTuple = (lfn, dbsFile['size'],
                         dbsFile['events'], self.insertedBogusDataset,
-                        dbsFile['status'])
+                        dbsFile['status'], workflow_id)
 
             if not newTuple in dbsFileTuples:
                 dbsFileTuples.append(newTuple)

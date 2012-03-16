@@ -39,6 +39,9 @@ try:
 except:
     pass
 
+# dummy xunit test result for when we try to look at a non-existent path
+notFoundXML = '<?xml version="1.0" encoding="UTF-8"?><testsuite name="nosetests" tests="1" errors="0" failures="0" skip="0"><testcase classname="pathNotFound" name="pathNotFound" time="0" /></testsuite>'
+
 def generate_filelist(basepath=None, recurse=True, ignore=False):
     """
     Recursively get a list of files to test/lint
@@ -154,9 +157,14 @@ if can_nose:
 
         def callNose( self, args ):
             # run once to get splits
+            if os.path.exists('.noseids'):
+                # needed to update the noseid file
+                os.unlink('.noseids')
+
             collectOnlyArgs = args[:]
             collectOnlyArgs.extend([ '-q', '--collect-only', '--with-id' ])
-            retval = nose.run(argv=collectOnlyArgs, addplugins=[DetailedOutputter()])           
+            retval = nose.run( argv=collectOnlyArgs, 
+                               addplugins=[DetailedOutputter()])           
             if not retval:
                 print "Failed to collect TestCase IDs"
                 return retval
@@ -177,16 +185,22 @@ if can_nose:
             
             args.extend(['-v', '--with-id'])
             args.extend(myIds)
-            return nose.run( argv=args )
+            return nose.run( argv=args,
+                             addplugins=[DetailedOutputter()] )
 
         def run(self):
             testPath = 'test/python'
             if self.testCertainPath:
                 print "Using the tests below: %s" % self.testCertainPath
+                if not os.path.exists( self.testCertainPath ):
+                    print "  --testing path doesn't exist, passing tests"
+                    handle=open('nosetests.xml', 'w')
+                    handle.write( notFoundXML )
+                    handle.close()
+                    sys.exit(0)
                 testPath = self.testCertainPath
             else:
-				print "Nose is scanning all tests"
-                
+                print "Nose is scanning all tests"
             if self.quickTestMode:
                 quickTestArg = ['--stop']
             else:

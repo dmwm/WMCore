@@ -1,3 +1,8 @@
+0.8.28 to 0.8.29:
+  - Fix ListThresholdsForCreate to reduce memory. Fixes #3395.
+  - Fix problems in WebRequestSchema. Fixes #3387
+  - Fix transaction code for dbsbuffer insertion
+
 0.8.27 to 0.8.28:
   - Add workqueue test on empty block.
   - Match emulator behaviour to DBS for getDBSSummaryInfo api

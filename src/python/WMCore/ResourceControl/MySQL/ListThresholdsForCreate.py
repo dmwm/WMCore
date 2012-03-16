@@ -26,10 +26,10 @@ class ListThresholdsForCreate(DBFormatter):
     
     unassignedSQL = """SELECT wmbs_location.site_name, wmbs_location.job_slots,
                               wmbs_location.cms_name, wmbs_location.drain,
-                              unassigned_jobs.job, unassigned_jobs.valid FROM wmbs_location
+                              COUNT(unassigned_jobs.job) AS job_count FROM wmbs_location
                          LEFT OUTER JOIN
-                           (SELECT DISTINCT wmbs_job_assoc.job, wmbs_file_location.location,
-                                            wmbs_subscription_validation.valid FROM wmbs_job_assoc
+                           (SELECT DISTINCT wmbs_job_assoc.job, wmbs_file_location.location
+                              FROM wmbs_job_assoc
                               INNER JOIN wmbs_file_location ON
                                 wmbs_job_assoc.fileid = wmbs_file_location.fileid
                               INNER JOIN wmbs_job ON
@@ -38,15 +38,19 @@ class ListThresholdsForCreate(DBFormatter):
                                 wmbs_job.state = wmbs_job_state.id
                               INNER JOIN wmbs_jobgroup ON
                                 wmbs_job.jobgroup = wmbs_jobgroup.id
-                              LEFT OUTER JOIN wmbs_subscription_validation ON
-                                wmbs_jobgroup.subscription = wmbs_subscription_validation.subscription_id AND
-                                wmbs_subscription_validation.location_id = wmbs_file_location.location
+                              LEFT OUTER JOIN wmbs_subscription_validation wsv
+                                ON wsv.location_id = wmbs_file_location.location
+                                AND wsv.subscription_id = wmbs_jobgroup.subscription
                             WHERE wmbs_job.location IS NULL AND
                                   wmbs_job_state.name != 'killed' AND
                                   wmbs_job_state.name != 'cleanout' AND
-                                  (wmbs_subscription_validation.valid = 1 OR
-                                   wmbs_subscription_validation.valid IS NULL)) unassigned_jobs ON
-                            wmbs_location.id = unassigned_jobs.location"""
+                                  (wsv.valid = 1 OR
+                                   (wsv.valid IS NULL AND NOT EXISTS
+                                    (SELECT wsv2.valid FROM wmbs_subscription_validation wsv2
+                                     WHERE wsv2.subscription_id = wmbs_jobgroup.subscription
+                                     AND wsv2.valid = 1)))) unassigned_jobs ON
+                            wmbs_location.id = unassigned_jobs.location
+                            GROUP BY wmbs_location.site_name"""
     
     def format(self, assignedResults, unassignedResults):
         """
@@ -75,40 +79,20 @@ class ListThresholdsForCreate(DBFormatter):
             results[result["site_name"]]["running_jobs"] += result["total"]
             results[result["site_name"]]["total_slots"] = result["job_slots"]
 
-        # Bin jobs
-        jobBin = {}
+        # Sum up all the jobs currently unassigned
         for result in unassignedResults:
-            if not results.has_key(result["site_name"]):
+            siteName = result['site_name']
+            if not results.has_key(siteName):
                 if result['drain'] == 'T':
                     drainValue = True
                 else:
                     drainValue = False
-                results[result["site_name"]] = {"total_slots": result["job_slots"],
-                                                "running_jobs": 0,
-                                                "cms_name": result["cms_name"],
-                                                "drain" : drainValue}
-            if not jobBin.has_key(result["job"]):
-                jobBin[result["job"]] = []
+                results[siteName] = {"total_slots": result["job_slots"],
+                                     "running_jobs": 0,
+                                     "cms_name": result["cms_name"],
+                                     "drain" : drainValue}
+            results[siteName]['running_jobs'] += result['job_count']
 
-            jobBin[result["job"]].append(result)
-
-        for jobID in jobBin.keys():
-            foundWhitelist = False
-            for site in jobBin[jobID]:
-                if site["valid"] == 1:
-                    foundWhitelist = True
-                    break
-
-            if foundWhitelist:
-                for site in copy.copy(jobBin[jobID]):
-                    if site["valid"] != 1:
-                        jobBin[jobID].remove(site)
-
-        for jobID in jobBin.keys():
-            for site in jobBin[jobID]:
-                if site["job"] != None:
-                    results[site["site_name"]]["running_jobs"] += 1
-                    
         return results
     
     def formatTable(self, formattedResults):

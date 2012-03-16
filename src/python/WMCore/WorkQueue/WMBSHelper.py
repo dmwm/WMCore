@@ -450,7 +450,8 @@ class WMBSHelper(WMConnectionBase):
             self.insertedBogusDataset = self.dbsFilesToCreate[0].insertDatasetAlgo()
 
         # add workflow
-        workflow_id = self.dbsInsertWorkflow.execute(self.wmSpec.name(), self.topLevelTask.getPathName())
+        workflow_id = self.dbsInsertWorkflow.execute(self.wmSpec.name(), self.topLevelTask.getPathName(),
+                                                     conn = self.getDBConn(), transaction = self.existingTransaction())
 
         for dbsFile in self.dbsFilesToCreate:
             # Append a tuple in the format specified by DBSBufferFiles.Add

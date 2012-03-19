@@ -239,6 +239,8 @@ config.TaskArchiver.requireCouch  = True
 config.TaskArchiver.uploadPublishInfo = False
 config.TaskArchiver.uploadPublishDir  = None
 config.TaskArchiver.userFileCacheURL = 'http://USERFILECACHEHOST:UFCPORT/userfilecache/'
+# set to False couch data will be deleted from CleanUpManager
+config.TaskArchiver.deleteCouchData = False
 
 config.webapp_('WMBSService')
 config.WMBSService.default_expires = 0

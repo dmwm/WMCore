@@ -12,9 +12,9 @@ WMStats.JobSummaryView = (function() {
     function _formatHtml(jobSummary) {
         var htmlstr = "";
         htmlstr += jobSummary.workflow + ":\n"
-        htmlstr += "<ol>"
         for (var index in jobSummary.status) {
-            htmlstr += "<li><ul>";
+            htmlstr += "<div class='box' id='jobsummay-" + index + "'>"
+            htmlstr += "<ul>";
             htmlstr += "<li> status: " + jobSummary.status[index].status + "</li>";
             htmlstr += "<li> site: " + jobSummary.status[index].site + "</li>";
             htmlstr += "<li> exitCode: " + jobSummary.status[index].exitCode + "</li>";
@@ -24,10 +24,9 @@ WMStats.JobSummaryView = (function() {
             } 
             htmlstr += "</li>";
             htmlstr += "<li> num of jobs: " + jobSummary.status[index].count + "</li>";
-            htmlstr += "</ul></li>";
+            htmlstr += "</ul>";
+            htmlstr += "</div>"
         }
-        htmlstr += "</ol>"
-        
         return htmlstr;
     }
                 

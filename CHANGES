@@ -1,3 +1,6 @@
+0.8.29 to 0.8.30:
+  - Make WorkQueue call the right couchdb view
+
 0.8.28 to 0.8.29:
   - Fix ListThresholdsForCreate to reduce memory. Fixes #3395.
   - Fix problems in WebRequestSchema. Fixes #3387

@@ -172,6 +172,8 @@ class WorkQueueBackend(object):
         key = []
         if not db:
             db = self.db
+        if elementFilters.get('RequestName') and not WorkflowName:
+            WorkflowName = elementFilters.pop('RequestName')
 
         if elementIDs:
             if elementFilters or status or returnIdOnly:

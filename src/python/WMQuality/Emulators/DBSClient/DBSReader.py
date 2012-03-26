@@ -134,26 +134,26 @@ class DBSReader:
 
         result = {}
         if block:
-            result['NumberOfEvents'] = sum([x['NumberOfEvents']
-                                for x in self.dataBlocks.getFiles(block)])
-            result['NumberOfFiles'] = len(self.dataBlocks.getFiles(block))
+            result['NumberOfEvents'] = str(sum([x['NumberOfEvents']
+                                for x in self.dataBlocks.getFiles(block)]))
+            result['NumberOfFiles'] = str(len(self.dataBlocks.getFiles(block)))
 
-            result['NumberOfLumis'] = len(getLumisectionsInBlock(block))
+            result['NumberOfLumis'] = str(len(getLumisectionsInBlock(block)))
 
             result['path'] = dataset
             result['block'] = block
 
         if dataset:
             if self.dataBlocks.getBlocks(dataset):
-                result['NumberOfEvents'] = sum([x['NumberOfEvents']
-                                    for x in self.dataBlocks.getBlocks(dataset)])
-                result['NumberOfFiles'] = sum([x['NumberOfFiles']
-                                    for x in self.dataBlocks.getBlocks(dataset)])
+                result['NumberOfEvents'] = str(sum([x['NumberOfEvents']
+                                    for x in self.dataBlocks.getBlocks(dataset)]))
+                result['NumberOfFiles'] = str(sum([x['NumberOfFiles']
+                                    for x in self.dataBlocks.getBlocks(dataset)]))
                 lumis = set()
                 for b in self.dataBlocks.getBlocks(dataset):
                     lumis = lumis.union(getLumisectionsInBlock(b['Name']))
 
-                result['NumberOfLumis'] = len(lumis)
+                result['NumberOfLumis'] = str(len(lumis))
                 result['path'] = dataset
 
         # Weird error handling follows, this is what dbs does

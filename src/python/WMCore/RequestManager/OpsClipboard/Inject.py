@@ -63,8 +63,7 @@ def _makeClipboardDoc(req):
     
     """
     req['request_id'] = req[u'RequestName']
-    # need to check what the CampaignName will actually be.
-    req['campaign_id'] = req.get(u'CampaignName', None)
+    req['campaign_id'] = req.get(u'Campaign', None)
     data = {
         "request": req,
         # this is internal, in-OpsClipboard request state
@@ -91,9 +90,11 @@ def inject(clipboardUrl, clipboardDb, *requests):
     couch = Database(clipboardDb, clipboardUrl)
     knownDocs = couch.loadView("OpsClipboard", "request_ids")
     knownReqs = [ x[u'key'] for x in knownDocs['rows']]
+    print "There already are %s requests in OpsClipboard." % len(knownReqs)
     for req in requests:
         if req[u'RequestName'] in knownReqs:
             continue
         doc = _makeClipboardDoc(req)
+        print "Injecting request into OpsClipboard: '%s'" % doc["request"][u"RequestName"]
         couch.queue(doc)
     couch.commit()

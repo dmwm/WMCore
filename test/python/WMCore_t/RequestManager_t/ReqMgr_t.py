@@ -76,7 +76,7 @@ class RequestManagerConfig(DefaultConfig):
         self.UnitTests.views.active.rest.clipboardDB    = dbName
 
     def _setupAssign(self):
-        self.UnitTests.views.active.rest.hold    = False
+        self.UnitTests.views.active.rest.opshold    = False
         self.UnitTests.views.active.rest.sitedb  = "https://cmsweb.cern.ch/sitedb/json/index/"
         
 class ReqMgrTest(RESTBaseUnitTest):

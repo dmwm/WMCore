@@ -249,6 +249,7 @@ class ReqMgrRESTModel(RESTModel):
     def getRequest(self, requestName=None):
         """ If a request name is specified, return the details of the request. 
         Otherwise, return an overview of all requests """
+        print "Query request: '%s'" % requestName
         if requestName == None:
             return GetRequest.getRequests()
         else:

@@ -22,9 +22,13 @@ http://localhost:8687/reqmgr/reqMgr/    [local instance]
 https://maxadmwm.cern.ch/reqmgr/reqMgr/ [VM devel instance]
 https://localhost:2000/reqmgr/reqMgr/   [ssh tunnel to VM devel instance]  
 
+zmaxa is CMS username as mapped by SiteDB from grid certificate.
+https://cmsweb.cern.ch/sitedb/prod/people/zmaxa
+see also: https://cmsweb.cern.ch/reqmgr/admin/users/
+
 """
 
-TEAM_NAME = "White Sox"
+TEAM_NAME = "dmwm"
 
 import urllib
 import sys
@@ -85,14 +89,15 @@ class ReqMgrTester(object):
         schema['RequestName'] = 'TestReReco'
         schema['RequestType'] = 'ReReco'
         schema['CmsPath'] = "/uscmst1/prod/sw/cms"
-        schema['Requestor'] = '%s' % "testinguser"
-        schema['Group'] = '%s' % "PeopleLikeMe"
+        schema['Requestor'] = '%s' % "zmaxa"
+        schema['Group'] = '%s' % "DATAOPS"
         schema['BlockWhitelist'] = ['/dataset/dataset/dataset#alpha']
         schema['BlockBlacklist'] = ['/dataset/dataset/dataset#beta']
         schema['Campaign'] = 'MyTestCampaign'        
         for i in range(numRequests):
             urlQuery = "request/testRequest"
-            logging.info("Query: '%s':" % urlQuery)
+            print "Query: '%s':" % urlQuery
+            print "Schema (request): '%s'" % schema
             r = self.restSender.put(urlQuery, schema)
             # print "request creating response: ", r
             print "created: ", r[0]["RequestName"]  
@@ -161,6 +166,7 @@ class ReqMgrTester(object):
                          "request/%s?status=%s" % (reqName, "assignment-approved"),
                          # create an assignment now
                          # need quote because of space in the team name
+                         # (previous name - White Sox)
                          urllib.quote("assignment/%s/%s" % (TEAM_NAME, reqName)),
                          "request/%s?status=%s" % (reqName, "ops-hold")]                 
         for query in statesQueries:
@@ -187,9 +193,9 @@ class ReqMgrTester(object):
                 print "exception"
                 print str(ex) 
             print "response:", r
-        queries = ["user/testinguser?email=testinguser@my.com",
-                   "group/PeopleLikeMe",
-                   "group/PeopleLikeMe/testinguser",
+        queries = ["user/zmaxa?email=testinguser@my.com",
+                   "group/DATAOPS",
+                   "group/DATAOPS/zmaxa",
                    urllib.quote("team/" + TEAM_NAME),
                    "version/%s" % "CMSSW_3_5_8"]
         for q in queries:

@@ -59,8 +59,7 @@ def globalQueue(logger = None, dbi = None, **kwargs):
 def localQueue(logger = None, dbi = None, **kwargs):
     """Convenience method to create a WorkQueue suitable for use locally
     """
-    defaults = {'TrackLocationOrSubscription' : 'location',
-                'ParentQueueCouchUrl' : 'http://localhost:5984/workqueue_t_global'}
+    defaults = {'TrackLocationOrSubscription' : 'location'}
     defaults.update(kwargs)
     return WorkQueue(logger, dbi, **defaults)
 

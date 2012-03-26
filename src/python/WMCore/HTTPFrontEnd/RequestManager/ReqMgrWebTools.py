@@ -22,7 +22,7 @@ import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests     as Lis
 import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
 import WMCore.Services.WorkQueue.WorkQueue as WorkQueue
 import WMCore.RequestManager.RequestMaker.CheckIn as CheckIn
-from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker, buildWorkloadForRequest
+from WMCore.RequestManager.RequestMaker.Registry import buildWorkloadForRequest
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
 from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
@@ -404,8 +404,6 @@ def makeRequest(kwargs, couchUrl, couchDB):
     for k, v in kwargs.iteritems():
         if isinstance(v, str):
             kwargs[k] = v.strip()
-    #maker = retrieveRequestMaker(kwargs["RequestType"])
-    #schema = maker.newSchema()
     # Create a new schema
     schema = RequestSchema()
     schema.update(kwargs)

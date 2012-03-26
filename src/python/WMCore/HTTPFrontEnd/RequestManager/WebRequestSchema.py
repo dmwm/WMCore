@@ -25,6 +25,7 @@ class WebRequestSchema(WebAPI):
         self.templatedir = config.templates
         self.requestor = config.requestor
         self.cmsswVersion = config.cmsswDefaultVersion
+        self.defaultArch  = getattr(config, 'defaultScramArch', "slc5_amd64_gcc434")
         self.couchUrl = config.couchUrl
         self.componentDir = config.componentDir
         self.configDBName = config.configDBName
@@ -101,6 +102,7 @@ class WebRequestSchema(WebAPI):
                                  alldocs = Utilities.unidecode(self.allDocs()),
                                  allcampaigns = campaigns,                     
                                  defaultVersion=self.cmsswVersion,
+                                 defaultArch = self.defaultArch,
                                  defaultSkimConfig=self.defaultSkimConfig)
 
     @cherrypy.expose

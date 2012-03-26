@@ -10,7 +10,7 @@ import logging
 import traceback
 
 from WMCore.Database.CMSCouch import CouchServer
-from WMCore.Database.CMSCouch import CouchConflictError
+from WMCore.Database.CMSCouch import CouchConflictError, CouchNotFoundError
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.JobStateMachine.Transitions import Transitions
 from WMCore.Services.UUID import makeUUID
@@ -205,8 +205,6 @@ class ChangeState(WMObject, WMConnectionBase):
             # updating the status of the summary doc only when it is explicitely requested
             # doc is already in couch
             if updatesummary:
-                # TODO change this to remove retry-count
-                # jobSummaryId = "%s-%s" % (job["name"], job["retry_count"])
                 jobSummaryId = job["name"]
                 updateUri = "/" + self.jsumdatabase.name + "/_design/WMStats/_update/jobSummaryState/" + jobSummaryId
                 updateUri += "?newstate=%s&timestamp=%s" % (newstate, timestamp)
@@ -227,9 +225,6 @@ class ChangeState(WMObject, WMConnectionBase):
                     pass
 
                 # complete fwjr document
-                # TODO change this to remove retry-count
-                #jobSummaryId = "%s-%s" % (job["name"], job["retry_count"])
-
                 job["fwjr"].setTaskName(job["task"])
                 fwjrDocument = {"_id": "%s-%s" % (job["name"], job["retry_count"]),
                                 "jobid": job["id"],
@@ -265,7 +260,10 @@ class ChangeState(WMObject, WMConnectionBase):
                               "lumis": inputs,
                               "output": outputs }
                 if couchDocID is not None:
-                    jobSummary['_rev'] = self.jsumdatabase.document(id = jobSummaryId)['_rev']
+                   try:
+                        jobSummary['_rev'] = self.jsumdatabase.document(id = jobSummaryId)['_rev']
+                   except CouchNotFoundError:
+                        pass
                 self.jsumdatabase.queue(jobSummary, timestamp = True)
 
         if len(couchRecordsToUpdate) > 0:

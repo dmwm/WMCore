@@ -1,3 +1,15 @@
+0.8.30 to 0.8.31:
+  - Add a paused state for the T0.  Fixes #3114.
+  - Raise validation errors if skim configs are invalid.  Fixes #3429.
+  - Mark sure files returned by condor are readable by the agent.
+  - Increment the retry count if a job fails while being created.  Fixes #3389.
+  - Add a unit test for the Tier1PromptReco workflow.  Fixes #3386.
+  - Remove call to obsolete retrieveRequestMaker function.  Fixes #3426.
+  - Allow empty or NULL filternames in the ReqMgr output module validation.  Fixes #3427.
+
+0.8.29 to 0.8.30:
+  - Make WorkQueue call the right couchdb view
+
 0.8.28 to 0.8.29:
   - Fix ListThresholdsForCreate to reduce memory. Fixes #3395.
   - Fix problems in WebRequestSchema. Fixes #3387

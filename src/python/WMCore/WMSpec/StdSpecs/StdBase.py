@@ -583,8 +583,6 @@ class StdBase(object):
             filterName = outputModule.get('filterName', None)
             if not dataTier:
                 self.raiseValidationException(msg = "No DataTier in output module.")
-            if not filterName:
-                self.raiseValidationException(msg = "No FilterName in output module.")
 
             # Add dataTier to duplicate dictionary
             if not dataTier in duplicateCheck.keys():

@@ -231,12 +231,17 @@ class RetryManagerPoller(BaseWorkerThread):
         logging.info("Found %s jobs in createcooloff" % len(jobs))
         self.processRetries(jobs, 'create')
 
-         # Discover the jobs that are in submit cooloff
+        # Discover the jobs that are in submit cooloff
         jobs = self.getJobs.execute(state = 'submitcooloff')
         logging.info("Found %s jobs in submitcooloff" % len(jobs))
         self.processRetries(jobs, 'submit')
 
-	# Discover the jobs that are in run cooloff
+	    # Discover the jobs that are in run cooloff
         jobs = self.getJobs.execute(state = 'jobcooloff')
         logging.info("Found %s jobs in jobcooloff" % len(jobs))
         self.processRetries(jobs, 'job')
+
+        # Discover the jobs that are in paused, logging only purpose:
+        jobs = self.getJobs.execute(state = 'jobpaused')
+        logging.info("Found %s jobs in jobpaused" % len(jobs))
+

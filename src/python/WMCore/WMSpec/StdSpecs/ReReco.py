@@ -75,9 +75,13 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
         
         for skimConfig in self.skimConfigs:
             if not procMergeTasks.has_key(skimConfig["SkimInput"]):
+                # This is an extremely rare case - we have to wait until the entire system is built to get to this point
+                # But if we do get here we need to raise a Validation exception, which is normally only raised in the validate
+                # steps.  This is a once in a lifetime thing - don't go raising validationExceptions in the rest of the code.
                 error = "Processing config does not have the following output module: %s.  " % skimConfig["SkimInput"]
                 error += "Please change your skim input to be one of the following: %s" % procMergeTasks.keys()
-                raise Exception, error
+                self.raiseValidationException(msg = error)
+
         
             mergeTask = procMergeTasks[skimConfig["SkimInput"]]
             skimTask = mergeTask.addTask(skimConfig["SkimName"])

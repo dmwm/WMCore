@@ -284,7 +284,7 @@ class ChangeState(WMObject, WMConnectionBase):
 
         Update the job state in the database.
         """
-        if oldstate == "submitcooloff" or oldstate == "jobcooloff":
+        if oldstate == "submitcooloff" or oldstate == "jobcooloff" or oldstate == "createcooloff" :
             self.incrementRetryDAO.execute(jobs,
                                            conn = self.getDBConn(),
                                            transaction = self.existingTransaction())

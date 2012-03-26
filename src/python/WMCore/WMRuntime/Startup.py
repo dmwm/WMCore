@@ -31,6 +31,8 @@ if __name__ == '__main__':
     task.completeTask(jobLocation = os.getcwd(),
                       logLocation = logLocation)
     print "Startup.py : shutting down monitor"
+    os.fchmod(1, 0664)
+    os.fchmod(2, 0664)
     if monitor.isAlive():
         monitor.shutdown()
 

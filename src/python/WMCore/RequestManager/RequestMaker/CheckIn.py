@@ -43,7 +43,7 @@ def raiseCheckInError(request, ex, msg):
     raise RequestCheckInError( msg )
 
 
-def checkIn(request):
+def checkIn(request, requestType = 'None'):
     """
     _CheckIn_
 
@@ -60,11 +60,15 @@ def checkIn(request):
     # test if the software versions are registered first
     versions  = SoftwareManagement.listSoftware()
     scramArch = request.get('ScramArch')
-    if not scramArch in versions.keys():
-        raise RequestCheckInError("Cannot find scramArch %s in ReqMgr" % scramArch)
-    for version in request.get('SoftwareVersions', []):
-        if not version in versions[scramArch]:
-            raise RequestCheckInError("Cannot find software version %s in ReqMgr for scramArch %s" % (version, scramArch))
+    if requestType.lower() in ['resubmission']:
+        # Do nothing, as we have no valid software version yet
+        pass
+    else:
+        if not scramArch in versions.keys() and checkSoftware:
+            raise RequestCheckInError("Cannot find scramArch %s in ReqMgr" % scramArch)
+        for version in request.get('SoftwareVersions', []):
+            if not version in versions[scramArch]:
+                raise RequestCheckInError("Cannot find software version %s in ReqMgr for scramArch %s" % (version, scramArch))
 
     try:
         reqId = MakeRequest.createRequest(

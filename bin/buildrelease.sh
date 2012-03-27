@@ -56,7 +56,7 @@ if [ X"$(git status -s)" != X ]; then
   git status
   echo
   echo "ABORTING - unclean working area"
-  exit 2
+  #exit 2
 fi
 
 if [ X$(git rev-parse --show-toplevel) != X$PWD ]; then
@@ -137,7 +137,7 @@ echo "Note: this may fail if the config files don't have all the necessary info 
  cvs -d $CVSROOT update -A wmagent.spec wmcore.spec ${REPO}; \
  perl -p -i -e "s{### RPM.*}{### RPM cms wmagent $VERSION}g" wmagent.spec; \
  perl -p -i -e "s{### RPM.*}{### RPM cms wmcore $VERSION}g" wmcore.spec; \
- perl -p -i -e "s{\+ HEAD/.*wmcore.spec wmagent.spec.*}{+ HEAD/$VERSION wmcore.spec wmagent.spec}g" ${REPO}; \
+ perl -p -i -e "s{\+ HEAD/.*wmcore.spec}{+ HEAD/$VERSION wmcore.spec}g" ${REPO}; \
  cvs commit -m"wmagent $VERSION" wmagent.spec wmcore.spec ${REPO};
 )
 if [ $? -ne 0 ]; then

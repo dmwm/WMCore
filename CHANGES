@@ -1,3 +1,6 @@
+0.8.32 to 0.8.33:
+  - Fix ReqMgr assign page display.
+
 0.8.31 to 0.8.32:
   - DBS3 support fixups.  Fixes #3446.
   - Update the default CMSSW version in ReqMgr.  Fixes #3446.

@@ -309,7 +309,7 @@ def prepareForTable(request):
     elif 'InputDatasets' in request and len(request['InputDatasets']) != 0:
         request['Input'] = str(request['InputDatasets']).strip("[]'")
     else:
-        request['Input'] = "Total Events: %s" % request['RequestSizeEvents']
+        request['Input'] = "Total Events: %s" % request.get('RequestEventSize', 0)
     if len(request.get('SoftwareVersions', [])) > 0:
         # only show one version
         request['SoftwareVersions'] = request['SoftwareVersions'][0]

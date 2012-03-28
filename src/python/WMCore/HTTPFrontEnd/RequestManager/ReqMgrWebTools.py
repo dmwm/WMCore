@@ -418,7 +418,7 @@ def makeRequest(kwargs, couchUrl, couchDB):
     else:
         schema['RequestName'] = "%s_%s_%s" % (schema['Requestor'], currentTime, secondFraction)
     schema["Campaign"] = kwargs.get("Campaign", "")
-    if 'Scenario' in kwargs and 'ProdConfigCacheID' in kwargs:
+    if 'Scenario' in kwargs and 'ProcConfigCacheID' in kwargs:
         # Use input mode to delete the unused one
         inputMode = kwargs['inputMode']
         inputValues = {'scenario':'Scenario',

@@ -567,6 +567,10 @@ class StdBase(object):
 
         If we have a configCache, we should probably try and load it.
         """
+
+        if configID == '' or configID == ' ':
+            self.raiseValidationException(msg = "ConfigCacheID is invalid and cannot be loaded")
+
         from WMCore.Cache.WMConfigCache import ConfigCache
         configCache = ConfigCache(dbURL = couchURL,
                                   couchDBName = couchDBName,
@@ -577,7 +581,12 @@ class StdBase(object):
             self.raiseValidationException(msg = "Failure to load ConfigCache while validating workload")
 
         duplicateCheck = {}
-        outputModuleInfo = configCache.getOutputModuleInfo()
+        try:
+            outputModuleInfo = configCache.getOutputModuleInfo()
+        except Exception, ex:
+            # Something's gone wrong with trying to open the configCache
+            msg = "Error in getting output modules from ConfigCache during workload validation.  Check ConfigCache formatting!"
+            self.raiseValidationException(msg = msg)
         for outputModule in outputModuleInfo.values():
             dataTier   = outputModule.get('dataTier', None)
             filterName = outputModule.get('filterName', None)

@@ -226,7 +226,7 @@ class ChangeState(WMObject, WMConnectionBase):
 
                 # complete fwjr document
                 job["fwjr"].setTaskName(job["task"])
-                fwjrDocument = {"_id": "%s-%s" % (job["name"], job["retry_count"]),
+                fwjrDocument = {"_id": "%s-%s" % (job["id"], job["retry_count"]),
                                 "jobid": job["id"],
                                 "retrycount": job["retry_count"],
                                 "fwjr": job["fwjr"].__to_json__(None),

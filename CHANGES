@@ -1,3 +1,6 @@
+0.8.34 to 0.8.35:
+  - Fix MC Submission Page for ReqMgr, Fixes #3467.
+
 0.8.33 to 0.8.34:
   - Revert "Allow passing complex data structures to Config.DP.  Fixes #3370."
   - Update wmaget-dev spec when building a release

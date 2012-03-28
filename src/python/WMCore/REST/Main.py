@@ -95,7 +95,8 @@ class Logger(LogManager):
          'h': remote.name or remote.ip,
          'r': request.request_line,
          's': response.status.split(" ", 1)[0],
-         'i': request.rfile.rfile.bytes_read or "-",
+         'i': (getattr(request.rfile, 'rfile', None)
+               and request.rfile.rfile.bytes_read) or "-",
          'b': nout or "-",
          'T': delta_time,
          'AS': inheaders.get("CMS-Auth-Status", "-"),

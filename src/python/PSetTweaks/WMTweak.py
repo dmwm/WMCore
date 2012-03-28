@@ -9,7 +9,6 @@ process/config but does not depend on any CMSSW libraries. It needs to stay like
 
 """
 import logging
-import pickle
 
 from PSetTweaks.PSetTweak import PSetTweak
 from PSetTweaks.PSetTweak import parameterIterator, psetIterator
@@ -299,7 +298,7 @@ def applyTweak(process, tweak, fixup = None):
     for param, value in tweak:
         if fixup and fixup.has_key(param):
             fixup[param](process)
-
+             
         setParameter(process, param, value)
 
 
@@ -370,11 +369,10 @@ def makeTaskTweak(stepSection):
     if hasattr(stepSection, "application"):
         if hasattr(stepSection.application, "configuration"):
             if hasattr(stepSection.application.configuration, "arguments"):
-                args = pickle.loads(stepSection.application.configuration.arguments)
-                if args.has_key('globalTag'):
-                    result.addParameter("process.GlobalTag.globaltag", args['globalTag'])
-                if args.has_key('globalTagTransaction'):
-                    result.addParameter("process.GlobalTag.DBParameters.transactionId", args['globalTagTransaction'])
+                globalTag = getattr(stepSection.application.configuration.arguments,
+                                    "globalTag", None)
+                if globalTag != None:
+                    result.addParameter("process.GlobalTag.globaltag", globalTag)
 
     return result
 

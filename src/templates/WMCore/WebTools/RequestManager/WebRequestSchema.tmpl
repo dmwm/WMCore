@@ -186,11 +186,11 @@ Include Parents: <select name="IncludeParents"><option>True</option><option sele
         <div id="mc">
             $headerBlock
             $softwareBlock
-# of Events: <input type="text" name="RequestSizeEvents" size=10 value=1000 />
+# of Events: <input type="text" name="RequestNumEvents" size=10 value=1000 />
 Time per event: <input type="text" name="TimePerEvent" size=10 value=60 />
 Filter efficiency: <input type="text" name="FilterEfficiency" size=10 value=1.0 />
 Total job time: <input type="text" name="TotalTime", value=32400 />
-            $configBlock("inputMode", "Scenario", "ProdConfigCacheID", "MC")
+            $configBlock("inputMode", "Scenario", "ProcConfigCacheID", "MC")
 Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
 Data Pileup: <input type="text" name="DataPileup" size=80 /><br/>
 MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
@@ -201,7 +201,7 @@ MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
             $softwareBlock
             $campaignBlock
 Global Tag: <input type="text" name="GlobalTag" size=20 value=""/> &nbsp &nbsp
-# of Events: <input type="text" name="RequestSizeEvents" size=10 value=1000 /><br/>
+# of Events: <input type="text" name="RequestNumEvents" size=10 value=1000 /><br/>
 Generation ConfigCache ID <input type="text" name="GenConfigCacheID" size=80 /><br/>
 Generation Output Module Name: <input type="text" name="GenOutputModuleName" size=40 /><br/>
 Step One ConfigCache ID <input type="text" name="StepOneConfigCacheID" size=80 /><br/>

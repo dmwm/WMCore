@@ -25,7 +25,7 @@ add them, and then add the files.  This is why everything is
 so convoluted.
 """
 
-
+import time
 import threading
 import logging
 import Queue
@@ -138,17 +138,19 @@ def uploadWorker(input, results, dbsUrl):
             results.put({'name': name, 'success': True})        
         except Exception, ex:
             exString = str(ex)
-            if exString.find('Duplicate entry') > 0:
+            if 'Duplicate entry' in exString:
                 # Then this is probably a duplicate
                 # Ignore this for now
                 logging.error("Had duplicate entry for block %s\n" % name)
                 logging.error("Ignoring for now.\n")
+                logging.error("Exception: %s\n" % exString)
+                logging.error("Traceback: %s\n" % str(traceback.format_exc()))
                 results.put({'name': name, 'success': True})
             else:
                 msg =  "Error trying to process block %s through DBS.\n" % name
                 msg += exString
-                msg += str(traceback.format_exc())
                 logging.error(msg)
+                logging.error(str(traceback.format_exc()))
                 results.put({'name': name, 'success': False, 'error': msg})
 
     return
@@ -192,23 +194,20 @@ class DBSUploadPoller(BaseWorkerThread):
         self.dbsUtil = DBSBufferUtil()
 
 
-        self.pool = []
-        self.input  = multiprocessing.Queue()
-        self.result = multiprocessing.Queue()
+        self.pool   = []
+        self.input  = None
+        self.result = None
         self.nProc  = getattr(self.config.DBSUpload, 'nProcesses', 4)
-        self.wait   = getattr(self.config.DBSUpload, 'dbsWaitTime', 0.1)
+        self.wait   = getattr(self.config.DBSUpload, 'dbsWaitTime', 1)
+        self.nTries = getattr(self.config.DBSUpload, 'dbsNTries', 300)
         self.physicsGroup = getattr(self.config.DBSUpload, 'physicsGroup', 'DBS3Test')
+        self.blockCount   = 0
 
         # List of blocks currently in processing
         self.queuedBlocks = []
 
-        # Starting up the pool:
-        for x in range(self.nProc):
-            p = multiprocessing.Process(target = uploadWorker,
-                                        args = (self.input, self.result, self.dbsUrl))
-            p.start()
-            self.pool.append(p)
-
+        # Set up the pool of worker processes
+        self.setupPool()
 
         # Setting up any cache objects
         self.blockCache = {}
@@ -219,6 +218,28 @@ class DBSUploadPoller(BaseWorkerThread):
         self.produceCopy = getattr(self.config.DBSUpload, 'copyBlock', False)
         self.copyPath    = getattr(self.config.DBSUpload, 'copyBlockPath',
                                    '/data/mnorman/block.json')
+
+        return
+
+    def setupPool(self):
+        """
+        _setupPool_
+
+        Set up the processing pool for work
+        """
+        if len(self.pool) > 0:
+            # Then something already exists.  Continue
+            return
+
+        self.input  = multiprocessing.Queue()
+        self.result = multiprocessing.Queue()
+
+        # Starting up the pool:
+        for x in range(self.nProc):
+            p = multiprocessing.Process(target = uploadWorker,
+                                        args = (self.input, self.result, self.dbsUrl))
+            p.start()
+            self.pool.append(p)
 
         return
 
@@ -252,13 +273,20 @@ class DBSUploadPoller(BaseWorkerThread):
                 msg += str(ex)
                 logging.debug(msg)
                 terminate = True
-        self.input.close()
-        self.result.close()
+        try:
+            self.input.close()
+            self.result.close()
+        except:
+            # What are you going to do?
+            pass
         for proc in self.pool:
             if terminate:
                 proc.terminate()
             else:
                 proc.join()
+        self.pool   = []
+        self.input  = None
+        self.result = None
         return
 
 
@@ -347,6 +375,8 @@ class DBSUploadPoller(BaseWorkerThread):
                 logging.error(msg)
                 logging.debug("Blocks being loaded: %s\n" % blockname)
                 raise DBSUploadException(msg)
+
+            # Add the loaded files to the block
             for file in files:
                 block.addFile(file)
 
@@ -567,6 +597,7 @@ class DBSUploadPoller(BaseWorkerThread):
         2) Upload them to DBS
         """
 
+        
         myThread = threading.currentThread()
 
         # We want to run this over all pending blocks
@@ -575,6 +606,7 @@ class DBSUploadPoller(BaseWorkerThread):
         updateBlocks      = []
         for block in self.blockCache.values():
             if block.getName() in self.queuedBlocks:
+                logging.error("Skipping queuedBlock %s" % block.getName())
                 continue
             if block.status == 'Pending':
                 blocks.append(block)
@@ -594,6 +626,9 @@ class DBSUploadPoller(BaseWorkerThread):
             # Nothing to do
             return
 
+        # Build the pool if it was closed
+        if len(self.pool) == 0:
+            self.setupPool()
 
         # First handle new and updated blocks
         try:
@@ -617,7 +652,6 @@ class DBSUploadPoller(BaseWorkerThread):
         for block in blockForDBSBuffer:
             self.blockCache.get(block.getName()).inBuff = True
 
-
         # Now put in the files that we just added.
         try:
             myThread.transaction.begin()
@@ -639,10 +673,23 @@ class DBSUploadPoller(BaseWorkerThread):
         # Now that things are in DBSBuffer, we can put them in DBS
 
         for block in blocks:
+            if len(block.files) < 1:
+                # What are we doing?
+                logging.debug("Skipping empty block")
+                continue
+            if not block.hasDataset():
+                # Then we have to fix the dataset
+                dbsFile = block.files[0]
+                block.setDataset(datasetName  = dbsFile['datasetPath'],
+                                 primaryType  = dbsFile.get('primaryType', 'DATA'),
+                                 datasetType  = dbsFile.get('datasetType', 'PRODUCTION'),
+                                 physicsGroup = dbsFile.get('physicsGroup', None))
             logging.debug("Found block %s in blocks" % block.getName())
             block.setPhysicsGroup(group = self.physicsGroup)
             encodedBlock = block.data
+            logging.info("About to insert block %s" % block.getName())
             self.input.put({'name': block.getName(), 'block': encodedBlock})
+            self.blockCount += 1
             if self.produceCopy:
                 import json
                 f = open(self.copyPath, 'w')
@@ -671,15 +718,25 @@ class DBSUploadPoller(BaseWorkerThread):
         myThread = threading.currentThread()
         
         blocksToClose = []
-        while True:
+        emptyCount    = 0
+        while self.blockCount > 0:
+            if emptyCount > self.nTries:
+                # Then we've been waiting for a long time.
+                # Raise an error
+                msg = "Exceeded max number of waits while waiting for DBS to finish"
+                raise DBSUploadException(msg)
             try:
                 # Get stuff out of the queue with a ridiculously
                 # short wait time
                 blockresult = self.result.get(timeout = self.wait)
                 blocksToClose.append(blockresult)
+                self.blockCount -= 1
+                logging.debug("Got a block to close")
             except Queue.Empty:
                 # This means the queue has no current results
-                break
+                time.sleep(1)
+                emptyCount += 1
+                continue
 
         loadedBlocks = []
         for result in blocksToClose:
@@ -718,6 +775,10 @@ class DBSUploadPoller(BaseWorkerThread):
             das      = block.das
             self.dasCache[das][location].remove(name)
             del self.blockCache[name]
+
+        # Clean up the pool so we don't have stuff waiting around
+        if len(self.pool) > 0:
+            self.close()
 
 
         # And we're done

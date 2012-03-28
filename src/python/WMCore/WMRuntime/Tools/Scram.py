@@ -81,7 +81,8 @@ class Scram:
         self.directory = options.get("directory", os.getcwd())
         self.architecture = options.get("architecture", None)
         self.test_mode = options.get("test", False)
-        
+        self.envCmd = options.get("envCmd", None)
+
         # state checks
         self.projectArea = None
         self.runtimeEnv = {}
@@ -127,7 +128,6 @@ class Scram:
         Sets the projectArea attribute checked by runtime and call
 
         """
-
         proc = subprocess.Popen(
             ["/bin/bash"], shell=True, cwd=self.directory,
             stdout=subprocess.PIPE,
@@ -211,7 +211,8 @@ class Scram:
         return proc.returncode
 
 
-    def __call__(self, command, hackLdLibPath = True, logName = "scramOutput.log", runtimeDir = None):
+    def __call__(self, command, hackLdLibPath = True,
+                 logName = "scramOutput.log", runtimeDir = None):
         """
         _operator(command)_
 
@@ -233,7 +234,7 @@ class Scram:
             f.write('-------------------------------------------\n')
             f.close()
         logFile = open(logName, 'a')
-        proc = subprocess.Popen(["/bin/bash"], shell=True, cwd=executeIn,
+        proc = subprocess.Popen(["env - /bin/bash"], shell=True, cwd=executeIn,
                                 stdout=logFile,
                                 stderr=logFile,
                                 stdin=subprocess.PIPE,
@@ -255,10 +256,15 @@ class Scram:
         if hackLdLibPath:
             self.procWriter(proc, "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
         self.procWriter(proc, "%s\n" % self.preCommand())
+            
         # scram fucks up the python environment from the parent shell
         if hackLdLibPath:
             self.procWriter(proc,
                 "export PYTHONPATH==%s:$PYTHONPATH\n" % ":".join(sys.path)[1:])
+
+        if self.envCmd != None:
+            self.procWriter(proc, "%s\n" % self.envCmd)
+
         self.procWriter(proc, "%s\n" % command)
         self.procWriter(proc,"""if [ "$?" -ne "0" ]; then exit 5; fi\n""")
         self.stdout, self.stderr = proc.communicate()

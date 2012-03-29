@@ -245,7 +245,8 @@ class ChangeState(WMObject, WMConnectionBase):
                         inputs.extend( [source["runs"] for source in fwjrDocument["fwjr"]['steps'][step]["input"]["source"] if "runs" in source] )
                 outputs = [ {'type': singlefile.get('module_label', None),
                              'lfn': singlefile.get('lfn', None),
-                             'location': singlefile.get('locations', None),
+                             'location': list(singlefile.get('locations', set([]))) if len(singlefile.get('locations', set([]))) > 1
+                                                                                    else singlefile['locations'].pop(),
                              'checksums': singlefile.get('checksums', {}),
                              'size': singlefile.get('size', None) } for singlefile in job["fwjr"].getAllFiles() if singlefile ]
                 jobSummary = {"_id": jobSummaryId,
@@ -260,10 +261,10 @@ class ChangeState(WMObject, WMConnectionBase):
                               "lumis": inputs,
                               "output": outputs }
                 if couchDocID is not None:
-                   try:
-                        jobSummary['_rev'] = self.jsumdatabase.document(id = jobSummaryId)['_rev']
-                   except CouchNotFoundError:
-                        pass
+                    try:
+                        jobSummary['_rev'] = self.jsumdatabase.document(id = jobSummaryId)['_rev']
+                    except CouchNotFoundError:
+                        pass
                 self.jsumdatabase.queue(jobSummary, timestamp = True)
 
         if len(couchRecordsToUpdate) > 0:

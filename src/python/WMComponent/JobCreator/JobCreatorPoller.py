@@ -494,11 +494,23 @@ class JobCreatorPoller(BaseWorkerThread):
 
             # Set task object
             wmTask = wmWorkload.getTaskByPath(workflow.task)
-            if hasattr(wmTask.data, 'generators'):
-                manager    = GeneratorManager(wmTask)
-                seederList = manager.getGeneratorList()
-            else:
-                seederList = []
+
+            # Get generators
+            # If you fail to load the generators, pass on the job
+            try:
+                if hasattr(wmTask.data, 'generators'):
+                    manager    = GeneratorManager(wmTask)
+                    seederList = manager.getGeneratorList()
+                else:
+                    seederList = []
+            except Exception, ex:
+                msg =  "Had failure loading generators for subscription %i\n" % (subscriptionID)
+                msg += "Exception: %s\n" % str(ex)
+                msg += "Passing over this error.  It will reoccur next interation!\n"
+                msg += "Please check or remove this subscription!\n"
+                logging.error(msg)
+                self.sendAlert(6, msg = msg)
+                continue
 
             logging.debug("Going to call wmbsJobFactory for sub %i with limit %i" % (subscriptionID, self.limit))
 

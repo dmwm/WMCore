@@ -375,7 +375,7 @@ class StdBase(object):
         return logCollectTask
 
     def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModuleName,
-                     parentStepName = "cmsRun1"):
+                     parentStepName = "cmsRun1", doLogCollect = True):
         """
         _addMergeTask_
 
@@ -392,7 +392,8 @@ class StdBase(object):
         mergeTaskLogArch.setStepType("LogArchive")
 
         mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)
-        self.addLogCollectTask(mergeTask, taskName = "%s%sMergeLogCollect" % (parentTask.name(), parentOutputModuleName))
+        if doLogCollect:
+            self.addLogCollectTask(mergeTask, taskName = "%s%sMergeLogCollect" % (parentTask.name(), parentOutputModuleName))
 
         mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
@@ -440,6 +441,7 @@ class StdBase(object):
                                         getattr(parentOutputModule, "primaryDataset"),
                                         getattr(parentOutputModule, "dataTier"),
                                         self.processingVersion)
+
         mergeTaskCmsswHelper.addOutputModule("Merged",
                                              primaryDataset = getattr(parentOutputModule, "primaryDataset"),
                                              processedDataset = getattr(parentOutputModule, "processedDataset"),

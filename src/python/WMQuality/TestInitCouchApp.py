@@ -72,15 +72,17 @@ class TestInitCouchApp(TestInit):
         # out, this flag prevents from re-initializing the database
         self.dropExistingDb = dropExistingDb
 
-    def couchAppRoot(self):
-        """Return path to couchapp dir"""
+    def couchAppRoot(self, couchapp):
+        """Return parent path containing couchapp"""
         wmBase = self.init.getWMBASE()
-        develPath = "%s/src/couchapps" % wmBase
-        if not os.path.exists(develPath):
-            basePath = "%s/data/couchapps" % os.environ['WMCORE_ROOT']
-        else:
-            basePath = develPath
-        return basePath
+        develPath = os.path.join(wmBase, "src", "couchapps")
+        if os.path.exists(os.path.join(develPath, couchapp)):
+            return develPath
+        elif os.path.exists(os.path.join(wmBase, 'xdata', 'couchapps', couchapp)):
+            return os.path.join(wmBase, 'xdata', 'couchapps')
+        elif os.path.exists(os.path.join(wmBase, 'data', 'couchapps', couchapp)):
+            return os.path.join(wmBase, 'data', 'couchapps')
+        raise OSError, 'Cannot find couchapp: %s' % couchapp
         
     def setupCouch(self, dbName, *couchapps):
         """
@@ -92,7 +94,7 @@ class TestInitCouchApp(TestInit):
         self.databases.append(dbName)
         self.couch = CouchAppTestHarness(dbName)
         self.couch.create(dropExistingDb=self.dropExistingDb)
-        self.couch.pushCouchapps(*[os.path.join(self.couchAppRoot(), couchapp) for couchapp in couchapps ])
+        self.couch.pushCouchapps(*[os.path.join(self.couchAppRoot(couchapp), couchapp) for couchapp in couchapps ])
 
 
     couchUrl = property(lambda x: x.couch.couchUrl)

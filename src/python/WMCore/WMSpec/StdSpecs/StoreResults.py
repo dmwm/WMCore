@@ -161,7 +161,7 @@ class StoreResultsWorkloadFactory(StdBase):
         arguments = getTestArguments()
         requiredFields = ['InputDatasets', 'CMSSWVersion',
                           'ScramArch', 'Group', 'DbsUrl', 'ProcessingVersion',
-                          'AcquisitionEra']
+                          'AcquisitionEra', 'GlobalTag', 'CmsPath']
         self.requireValidateFields(fields = requiredFields, schema = schema,
                                    validate = False)
         return

@@ -161,6 +161,18 @@ class scaleTestFiller:
             testFile.setLocation(site)
             files.append(testFile)
 
+        testFileChild = DBSBufferFile(lfn = '/data/store/random/random/RANDOM/test/0/%s-%s-child.root' %(name, site), size = 1024,
+                                 events = 10, checksums = {'cksum': 1})
+        testFileChild.setAlgorithm(appName = name, appVer = "CMSSW_3_1_1",
+                              appFam = "RECO", psetHash = "GIBBERISH",
+                              configContent = "MOREGIBBERISH")
+        testFileChild.setDatasetPath("/%s/%s_2/RECO" %(name, name))
+        testFileChild.addRun(Run( 1, *[45]))
+        testFileChild.create()
+        testFileChild.setLocation(site)
+
+        testFileChild.addParents([x['lfn'] for x in files])
+
         return files
 
 

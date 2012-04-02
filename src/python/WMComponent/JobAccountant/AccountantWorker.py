@@ -376,12 +376,9 @@ class AccountantWorker(WMConnectionBase):
         Add a file that was produced in a job to WMBS.
         """
         fwjrFile["first_event"] = jobMask["FirstEvent"]
-        fwjrFile["last_event"]  = jobMask["LastEvent"]
 
         if fwjrFile["first_event"] == None:
             fwjrFile["first_event"] = 0
-        if fwjrFile["last_event"] == None:
-            fwjrFile["last_event"] = fwjrFile["events"]
 
         if jobType == "Merge" and fwjrFile["module_label"] != "logArchive":
             fwjrFile["merged"] = True
@@ -686,7 +683,6 @@ class AccountantWorker(WMConnectionBase):
                                wmbsFile['events'],
                                None,
                                wmbsFile["first_event"],
-                               wmbsFile["last_event"],
                                wmbsFile['merged']])
 
         if len(fileCreate) == 0:

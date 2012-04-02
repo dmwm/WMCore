@@ -329,17 +329,24 @@ class gLitePlugin(BasePlugin):
             logging.debug("cache_dir: %s\n" % job['cache_dir'])
             return
         reportName = os.path.join(job['cache_dir'], 'Report.%i.pkl' % job['retry_count'])
-        if os.path.exists(reportName) and os.path.getsize(reportName) > 0:
-            logging.debug("Not writing report due to pre-existing report for job %i.\n" % job['id'])
-            logging.debug("ReportPath: %s\n" % reportName)
-            return
-        else:
-            errorReport = Report()
-            errorReport.addError(title, code, title, mesg)
-            errorReport.save(filename = reportName)
-            if putReportInJob:
-                job['fwjr'] = errorReport
-        return
+        if os.path.exists(reportName):
+            if os.path.getsize(reportName) > 0:
+                logging.debug("Not writing report due to pre-existing report for job %i.\n" % job['id'])
+                logging.debug("ReportPath: %s\n" % reportName)
+                return
+            else:
+                try:
+                    os.remove(reportName)
+                except Exception, ex:
+                    logging.error("Cannot remove and replace empty report %s" % reportName)
+                    logging.error("Report continuing without error!")
+                    return
+        logging.debug("Writing fake report with '%s' title" % str(title))
+        errorReport = Report()
+        errorReport.addError(title, code, title, mesg)
+        errorReport.save(filename = reportName)
+        if putReportInJob: 
+            job['fwjr'] = errorReport 
 
 
     def close(self, input, result):

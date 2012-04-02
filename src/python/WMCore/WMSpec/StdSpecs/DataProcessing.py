@@ -77,7 +77,11 @@ class DataProcessingWorkloadFactory(StdBase):
             
         outputMods = self.setupProcessingTask(procTask, taskType, self.inputDataset,
                                               scenarioName = self.procScenario, scenarioFunc = "promptReco",
-                                              scenarioArgs = {"globalTag": self.globalTag, "writeTiers": ["RECO", "ALCARECO"]}, 
+                                              scenarioArgs = { 'globalTag' : self.globalTag,
+                                                               'outputs' : [ { 'dataTier' : "RECO",
+                                                                               'moduleLabel' : "RECOoutput" },
+                                                                             { 'dataTier' : "ALCARECO",
+                                                                               'moduleLabel' : "ALCARECOoutput" } ] },
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
                                               configDoc = self.procConfigCacheID, splitAlgo = self.procJobSplitAlgo,
                                               splitArgs = self.procJobSplitArgs, stepType = cmsswStepType) 

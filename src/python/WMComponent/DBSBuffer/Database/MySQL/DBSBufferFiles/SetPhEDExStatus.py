@@ -14,6 +14,9 @@ class SetPhEDExStatus(DBFormatter):
         if type(lfns) != list:
             lfns = [lfns]
 
+        if len(lfns) < 1:
+            return
+
         bindVars = []
         for lfn in lfns:
             bindVars.append({"lfn": lfn, "status": status})

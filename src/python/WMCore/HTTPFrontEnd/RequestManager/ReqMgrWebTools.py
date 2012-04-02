@@ -229,7 +229,9 @@ def abortRequest(requestName):
     to cancel its work """
     response = ProdManagement.getProdMgr(requestName)
     if response == [] or response[0] == None or response[0] == "":
-        raise cherrypy.HTTPError(400, "Cannot find URL for request " + requestName)
+        msg =  "Cannot find ProdMgr for request %s\n " % requestName
+        msg += "Request may not be known to WorkQueue.  If aborted immediately after assignment, ignore this."
+        raise cherrypy.HTTPError(400, msg)
     workqueue = WorkQueue.WorkQueue(response[0])
     workqueue.cancelWorkflow(requestName)
     return
@@ -289,14 +291,15 @@ def changeStatus(requestName, status):
 
     if status == 'aborted':
         # delete from the workqueue
-        abortRequest(requestName)
         if not privileged() and not ownsRequest(request):
             raise cherrypy.HTTPError(403, "You are not allowed to abort this request")
+        elif not privileged():
+            raise cherrypy.HTTPError(403, "You are not allowed to change the state for this request")
         # delete from the workqueue if it's been assigned to one
         if oldStatus in ["acquired", "running"]:
             abortRequest(requestName)
-        elif not privileged():
-            raise cherrypy.HTTPError(403, "You are not allowed to change the state for this request")
+        else:
+            raise cherrypy.HTTPError(400, "You cannot abort a request in state %s" % oldStatus)
 
     #FIXME needs logic about who is allowed to do which transition
     ChangeState.changeRequestStatus(requestName, status)

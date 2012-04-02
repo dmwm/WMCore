@@ -35,4 +35,19 @@ WMStats.EventHandler = function($) {
         var requestName = $(nTds[0]).text();
         WMStats.JobSummaryView.createSummaryView("#jobDiv", requestName) 
     } );
+    
+    // job summary event handler
+    // when jobsummary is clicked create job detail view
+    $('#jobDiv:nth-child(1n)').live('click', function (event) {
+        var summary =  $(event.currentTarget).data('summary');
+        if (summary) {
+            WMStats.JobDetailView.createDetailView("#jobDetailDiv", summary);
+        }
+    } );
+    
+    
+    $('div.caption img').live('click', function(event){
+        $(this).parent('div.caption').siblings('div.body').toggle('nomal');
+     });
+
 }(jQuery)

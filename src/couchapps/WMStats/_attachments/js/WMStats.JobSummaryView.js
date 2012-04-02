@@ -10,10 +10,11 @@ WMStats.JobSummaryView = (function() {
     var _viewName = 'jobsByStatusWorkflow';
     
     function _formatHtml(jobSummary) {
+        $(_containerDiv).empty();
         var htmlstr = "";
         htmlstr += jobSummary.workflow + ":\n"
         for (var index in jobSummary.status) {
-            htmlstr += "<div class='box' id='jobsummay-" + index + "'>"
+            htmlstr += "<div class='box' id='jobsummary-" + index + "'>"
             htmlstr += "<ul>";
             htmlstr += "<li> status: " + jobSummary.status[index].status + "</li>";
             htmlstr += "<li> site: " + jobSummary.status[index].site + "</li>";
@@ -25,7 +26,11 @@ WMStats.JobSummaryView = (function() {
             htmlstr += "</li>";
             htmlstr += "<li> num of jobs: " + jobSummary.status[index].count + "</li>";
             htmlstr += "</ul>";
-            htmlstr += "</div>"
+            htmlstr += "</div>";
+            
+            var summaryData = jobSummary.status[index];
+            summaryData.workflow = jobSummary.workflow
+            $(_containerDiv).append(htmlstr).data('summary', summaryData)
         }
         return htmlstr;
     }
@@ -46,7 +51,8 @@ WMStats.JobSummaryView = (function() {
             jobSummary.status.push(statusSummary)
                      
         }
-        $(_containerDiv).html(_formatHtml(jobSummary));
+        _formatHtml(jobSummary);
+        //$(_containerDiv).html(_formatHtml(jobSummary));
         
     }
     

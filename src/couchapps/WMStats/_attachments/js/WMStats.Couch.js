@@ -18,6 +18,7 @@ WMStats.Couch = (function(){
         options.success = callback;
         return options
     }
+    
     function view(name, options, callback){
         return _couchDB.view(_Design +"/" + name, 
                              _combineOption(options, callback));

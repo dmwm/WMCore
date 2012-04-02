@@ -10,3 +10,41 @@ tr.yellow {
 tr.green {
     background-color: green;
 }
+
+div.module {
+  width: 85%;
+  border: 2px #5f5f5f solid;
+  background-color: white;
+}
+
+div.module div.caption {
+  background: black url('module.caption.backg.png');
+  border: 1px solid black;
+  padding: 0 8px;
+  height: 24px;
+  color: white;
+  font-weight: bold;
+}
+
+div.module.rolledup div.caption {
+  background: black url('module.caption.backg.rolledup.png');
+}
+
+div.module div.caption span {
+  float: left;
+}
+
+div.module div.caption img {
+  float: right;
+  cursor: pointer;
+}
+
+div.module div.caption span,div.module div.caption img {
+  margin-top: 4px;
+}
+
+div.module div.body {
+  padding: 8px;
+  background-color: white;
+  border-width: 0;
+}

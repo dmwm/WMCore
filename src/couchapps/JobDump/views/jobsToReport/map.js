@@ -13,11 +13,8 @@ function(doc) {
 
     if (transition.reported) {
       continue;
-    } else if ((transition['oldstate'] == 'executing' &&
-                transition['newstate'] == 'jobfailed') ||
-               (transition['oldstate'] == 'complete') ||
-               (transition['oldstate'] == 'created' &&
-                transition['newstate'] == 'executing')) {
+    } else if ((transition['oldstate'] == 'complete') &&
+	       (transition['newstate'] == 'success')) {
       emit(doc['jobid'], {'index': transitionIndex,
                           'id': doc['jobid'],
                           'name': doc['name'],

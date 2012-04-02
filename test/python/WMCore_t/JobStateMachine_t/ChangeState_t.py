@@ -562,27 +562,13 @@ class TestChangeState(unittest.TestCase):
         testJobB["user"] = "sfoulkes"
         testJobB["group"] = "DMWM"
 
+        # We con't catch executing jobs anymore
         change.propagate([testJobA, testJobB], "new", "none")
         change.propagate([testJobA, testJobB], "created", "new")
         change.propagate([testJobA], "executing", "created")
         change.propagate([testJobB], "submitfailed", "created")
         change.propagate([testJobB], "submitcooloff", "submitfailed")
 
-        transitions = change.listTransitionsForDashboard()
-
-        self.assertEqual(len(transitions), 1,
-                         "Error: Wrong number of transitions: %s" % transitions)
-        self.assertEqual(transitions[0]["name"], testJobA["name"],
-                         "Error: Wrong job name.")
-        self.assertEqual(transitions[0]["retryCount"], 0,
-                         "Error: Wrong retry count.")
-        self.assertEqual(transitions[0]["newState"], "executing",
-                         "Error: Wrong new state.")
-        self.assertEqual(transitions[0]["oldState"], "created",
-                         "Error: Wrong old state.")
-        self.assertEqual(transitions[0]["requestName"], "wf001",
-                         "Error: Wrong request name.")
-        
         transitions = change.listTransitionsForDashboard()
 
         self.assertEqual(len(transitions), 0,
@@ -603,15 +589,7 @@ class TestChangeState(unittest.TestCase):
                             "Error: Timestamp is wrong.")
             del transition["timestamp"]
 
-        goldenTransitions = [{"name": testJobA["name"], "retryCount": 0, "newState": "jobfailed",
-                              "oldState": "complete", "requestName": "wf001", "user": "sfoulkes",
-                              "group": "DMWM", "jobType": "Processing", "taskType": "ReDigi",
-                              "performance": {}, "exitCode": 0},
-                             {"name": testJobB["name"], "retryCount": 1, "newState": "executing",
-                              "oldState": "created", "requestName": "wf001", "user": "sfoulkes",
-                              "group": "DMWM", "jobType": "Processing", "taskType": "ReDigi",
-                              "performance": {}, "exitCode": 0},
-                             {"name": testJobB["name"], "retryCount": 1, "newState": "success",
+        goldenTransitions = [{"name": testJobB["name"], "retryCount": 1, "newState": "success",
                               "oldState": "complete", "requestName": "wf001", "user": "sfoulkes",
                               "group": "DMWM", "jobType": "Processing", "taskType": "ReDigi",
                               "performance": {}, "exitCode": 0}]

@@ -1,3 +1,21 @@
+0.8.34 to 0.8.35:
+  - Fix MC Submission Page for ReqMgr, Fixes #3467.
+
+0.8.33 to 0.8.34:
+  - Revert "Allow passing complex data structures to Config.DP.  Fixes #3370."
+  - Update wmaget-dev spec when building a release
+
+0.8.32 to 0.8.33:
+  - Fix ReqMgr assign page display.
+
+0.8.31 to 0.8.32:
+  - DBS3 support fixups.  Fixes #3446.
+  - Update the default CMSSW version in ReqMgr.  Fixes #3446.
+  - Don't check SW version in ACDC requests.  Fixes #3445.
+  - Commit a couple PromptSkimming fixes we have been using in production.  From #3443.
+  - Remove localQueue default global queue url of localhost
+  - ReqMgr doesn't inject requests into OpsClipboard
+
 0.8.30 to 0.8.31:
   - Add a paused state for the T0.  Fixes #3114.
   - Raise validation errors if skim configs are invalid.  Fixes #3429.

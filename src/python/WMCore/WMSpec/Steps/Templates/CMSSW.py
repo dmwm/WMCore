@@ -118,7 +118,16 @@ class CMSSWStepHelper(CoreHelper):
         """
         self.data.application.configuration.scenario = scenarioName
         self.data.application.configuration.function = functionName
-        self.data.application.configuration.arguments = pickle.dumps(args)
+        # assume if this crashes we are dealing with complex data
+        # which is only supported in new agents that only look
+        # at pickledarguments anyways
+        try:
+            self.data.application.configuration.section_('arguments') 
+            [ setattr(self.data.application.configuration.arguments, k, v) 
+              for k, v in args.items() ]
+        except Exception:
+            pass
+        self.data.application.configuration.pickledarguments = pickle.dumps(args)
         return
 
 
@@ -165,11 +174,15 @@ class CMSSWStepHelper(CoreHelper):
 
         Set the global tag.
         """
+        self.data.application.configuration.section_('arguments') 
+        self.data.application.configuration.arguments.globalTag = globalTag 
+
         args = {}
-        if hasattr(self.data.application.configuration, "arguments"):
-            args = pickle.loads(self.data.application.configuration.arguments)
+        if hasattr(self.data.application.configuration, "pickledarguments"):
+            args = pickle.loads(self.data.application.configuration.pickledarguments)
         args['globalTag'] = globalTag
-        self.data.application.configuration.arguments = pickle.dumps(args)
+        self.data.application.configuration.pickledarguments = pickle.dumps(args)
+
         return
 
     def getGlobalTag(self):
@@ -178,7 +191,11 @@ class CMSSWStepHelper(CoreHelper):
 
         Retrieve the global tag.
         """
-        return pickle.loads(self.data.application.configuration.arguments)['globalTag']
+        if hasattr(self.data.application.configuration, "arguments"):
+            if hassattr(self.data.application.configuration.arguments, "globalTag"):
+                return self.data.application.configuration.arguments.globalTag
+
+        return pickle.loads(self.data.application.configuration.pickledarguments)['globalTag']
 
     def setUserSandbox(self, userSandbox):
         """

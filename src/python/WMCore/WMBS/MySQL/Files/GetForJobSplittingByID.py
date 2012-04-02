@@ -10,7 +10,7 @@ from WMCore.Database.DBFormatter     import DBFormatter
 from WMCore.WMBS.MySQL.Files.GetByID import GetByID 
 
 class GetForJobSplittingByID(GetByID):
-    sql = """SELECT id, lfn, filesize, events, first_event, last_event, merged, MIN(run) AS minrun
+    sql = """SELECT id, lfn, filesize, events, first_event, merged, MIN(run) AS minrun
              FROM wmbs_file_details wfd
              LEFT OUTER JOIN wmbs_file_runlumi_map wfr ON wfr.fileid = wfd.id
              WHERE id = :fileid"""
@@ -32,7 +32,6 @@ class GetForJobSplittingByID(GetByID):
             tmpDict["lfn"]         = entry["lfn"]
             tmpDict["events"]      = int(entry["events"])
             tmpDict["first_event"] = int(entry["first_event"])
-            tmpDict["last_event"]  = int(entry["last_event"])
             tmpDict['minrun']      = entry.get('minrun', None)
             if "size" in entry.keys():
                 tmpDict["size"]    = int(entry["size"])

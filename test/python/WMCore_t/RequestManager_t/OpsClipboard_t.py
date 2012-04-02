@@ -84,7 +84,7 @@ def getTestRequests(numRequests):
         requestIds.append(requestId)        
         campaignId = campaignIds[0] if c % 2 == 0 else campaignIds[1]
         c += 1 
-        requests.append({u"RequestName": requestId, u"CampaignName" : campaignId})
+        requests.append({u"RequestName": requestId, u"Campaign" : campaignId})
     return requests, campaignIds, requestIds 
     
 
@@ -128,13 +128,13 @@ class OpsClipboardTest(unittest.TestCase):
         return requests, campaignIds, requestIds
     
     
-    def _getViewResults(self, viewName):
+    def _getViewResults(self, viewName, options = {}):
         """
         Query CouchDB viewName, return rows.
         
         """
         try:
-            result = self.couch.loadView("OpsClipboard", viewName)
+            result = self.couch.loadView("OpsClipboard", viewName, options)
         except Exception as ex:
             msg = "Error loading OpsClipboard view: '%s', reason:%s\n" % (viewName, ex)
             self.fail(msg)
@@ -179,9 +179,9 @@ class OpsClipboardTest(unittest.TestCase):
         
         """
         _, campaignIds, _ = self._inject(8) # creates x docs/requests
-        campList = self._getViewResults("campaign_ids")
-        result = campList[0][u"value"]
-        self.assertEqual(result, campaignIds)
+        campList = self._getViewResults("campaign_ids", options = {"group": True})
+        expected = [campList[0]["key"], campList[1]["key"]] 
+        self.assertEqual(expected, campaignIds)
         
         
     def testD_view_reject_update_changestate(self):

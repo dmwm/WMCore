@@ -42,8 +42,8 @@ Example initial generation task:
     "ConfigCacheID" : generatorDoc,                   Generator Config id
     "SplittingAlgorithm"  : "EventBased",             Splitting Algorithm
     "SplittingArguments" : {"events_per_job" : 250},  Size of jobs in terms of splitting algorithm
-    "RequestNumEvents" : 10000,                      Total number of events to generate
-    "Seeding" : "Automatic",                          Random seeding method
+    "RequestNumEvents" : 10000,                       Total number of events to generate
+    "Seeding" : "AutomaticSeeding",                   Random seeding method
     "PrimaryDataset" : "RelValTTBar",                 Primary Dataset to be created
 },
 

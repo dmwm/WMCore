@@ -313,7 +313,7 @@ def prepareForTable(request):
     elif 'InputDatasets' in request and len(request['InputDatasets']) != 0:
         request['Input'] = str(request['InputDatasets']).strip("[]'")
     else:
-        request['Input'] = "Total Events: %s" % request['RequestSizeEvents']
+        request['Input'] = "Total Events: %s" % request.get('RequestEventSize', 0)
     if len(request.get('SoftwareVersions', [])) > 0:
         # only show one version
         request['SoftwareVersions'] = request['SoftwareVersions'][0]
@@ -422,7 +422,7 @@ def makeRequest(kwargs, couchUrl, couchDB, wmstatUrl):
     else:
         schema['RequestName'] = "%s_%s_%s" % (schema['Requestor'], currentTime, secondFraction)
     schema["Campaign"] = kwargs.get("Campaign", "")
-    if 'Scenario' in kwargs and 'ProdConfigCacheID' in kwargs:
+    if 'Scenario' in kwargs and 'ProcConfigCacheID' in kwargs:
         # Use input mode to delete the unused one
         inputMode = kwargs['inputMode']
         inputValues = {'scenario':'Scenario',
@@ -494,7 +494,7 @@ def makeRequest(kwargs, couchUrl, couchDB, wmstatUrl):
     request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
     try:
         wmstatSvc = WMStatsWriter(wmstatUrl)
-        CheckIn.checkIn(request, wmstatSvc)
+        CheckIn.checkIn(request, requestType = kwargs['RequestType'], wmstatSvc)
     except CheckIn.RequestCheckInError, ex:
         msg = ex._message
         raise HTTPError(400, "Error in Request check-in: %s" % msg)

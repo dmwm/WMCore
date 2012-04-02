@@ -104,7 +104,7 @@ def buildWorkloadForRequest(typename, schema):
     request.update(schema)
     loadRequestSchema(workload = workload, requestSchema = schema)
     request['WorkloadSpec'] = workload.data
-    request['SoftwareVersions'].append(schema.get('CMSSWVersion', "CMSSW_3_9_7"))
+    request['SoftwareVersions'].append(schema.get('CMSSWVersion', "CMSSW_5_0_0"))
     return request
 
 

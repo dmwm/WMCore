@@ -272,7 +272,7 @@ class FileTest(unittest.TestCase):
         LFN of a file.
         """
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        checksums = {'cksum': 101}, first_event = 2, last_event = 3, merged = True)
+                        checksums = {'cksum': 101}, first_event = 2, merged = True)
         testFileA.create()
                                                         
         testFileB = File(lfn = testFileA["lfn"])
@@ -296,8 +296,6 @@ class FileTest(unittest.TestCase):
                "ERROR: File cksum is not a string type."
         assert type(testFileB["first_event"]) == int, \
                "ERROR: File first_event is not an integer type."
-        assert type(testFileB["last_event"]) == int, \
-               "ERROR: File last_event is not an integer type."
         
         assert type(testFileC["id"]) == int, \
                "ERROR: File id is not an integer type."
@@ -309,8 +307,6 @@ class FileTest(unittest.TestCase):
                "ERROR: File cksum is not an string type."
         assert type(testFileC["first_event"]) == int, \
                "ERROR: File first_event is not an integer type."
-        assert type(testFileC["last_event"]) == int, \
-               "ERROR: File last_event is not an integer type."
 
         self.assertEqual(testFileC['checksums'], {'cksum': '101'})
 

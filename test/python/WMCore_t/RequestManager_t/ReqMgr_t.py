@@ -76,7 +76,7 @@ class RequestManagerConfig(DefaultConfig):
         self.UnitTests.views.active.rest.clipboardDB    = dbName
 
     def _setupAssign(self):
-        self.UnitTests.views.active.rest.hold    = False
+        self.UnitTests.views.active.rest.opshold    = False
         self.UnitTests.views.active.rest.sitedb  = "https://cmsweb.cern.ch/sitedb/json/index/"
         
 class ReqMgrTest(RESTBaseUnitTest):
@@ -172,9 +172,9 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.assertTrue( 'PeopleLikeMe' in self.jsonSender.get('group')[0])
 
         self.jsonSender.put('group/PeopleLikeMe/me')
-        users = json.loads(self.jsonSender.get('group/PeopleLikeMe')[0])['users']
+        users = self.jsonSender.get('group/PeopleLikeMe')[0]['users']
         self.assertTrue('me' in users)
-        groups = json.loads(self.jsonSender.get('user/me')[0])['groups']
+        groups = self.jsonSender.get('user/me')[0]['groups']
         self.assertTrue('PeopleLikeMe' in groups)
         groups2 = self.jsonSender.get('group?user=me')[0]
         self.assertTrue('PeopleLikeMe' in groups2)
@@ -217,11 +217,9 @@ class ReqMgrTest(RESTBaseUnitTest):
         requestName = result[0]['RequestName']
 
         self.assertEqual(self.jsonSender.get('request/%s' % requestName)[0]['RequestName'], requestName)
-        self.assertTrue(requestName in self.jsonSender.get('user/me')[0])
 
         self.jsonSender.put('request/%s?status=assignment-approved' % requestName)
-        meJSON = self.jsonSender.get('user/me')[0]
-        me = json.loads(meJSON)
+        me = self.jsonSender.get('user/me')[0]
         self.assertTrue(requestName in me['requests'])
         self.assertEqual(self.jsonSender.put('request/%s?priority=5' % requestName)[1], 200)
         self.assertEqual(self.jsonSender.post('user/me?priority=6')[1], 200)

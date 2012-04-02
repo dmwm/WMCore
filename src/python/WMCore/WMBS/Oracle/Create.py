@@ -69,8 +69,7 @@ class Create(CreateWMBSBase):
                lfn         VARCHAR(500) NOT NULL,
                filesize    INTEGER,
                events      INTEGER,
-               first_event INTEGER,
-               last_event  INTEGER,
+               first_event INTEGER      DEFAULT 0,
                merged      CHAR(1) CHECK (merged IN ('0', '1' )) NOT NULL
                ) %s""" % tablespaceTable
 
@@ -219,7 +218,7 @@ class Create(CreateWMBSBase):
                task  VARCHAR(500) NOT NULL,
                type  VARCHAR(255),
                owner INTEGER      NOT NULL,
-               injected CHAR(1)   DEFAULT '0'
+               injected INTEGER   DEFAULT 0
                ) %s""" % tablespaceTable
 
         self.indexes["01_pk_wmbs_workflow"] = \

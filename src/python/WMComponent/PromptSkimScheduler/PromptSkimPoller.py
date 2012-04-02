@@ -32,7 +32,7 @@ class PromptSkimPoller(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         self.config = config
         return
-    
+
     def setup(self, parameters = None):
         """
         _setup_
@@ -69,6 +69,7 @@ class PromptSkimPoller(BaseWorkerThread):
         self.connectT0AST()
 
         self.workQueue = WorkQueue(CouchUrl = self.config.JobStateMachine.couchurl,
+                                   DbName = self.config.PromptSkimScheduler.localWQDB,
                                    CacheDir = os.path.join(self.config.General.workDir, "WorkQueueCacheDir"))
         return
 
@@ -108,7 +109,7 @@ class PromptSkimPoller(BaseWorkerThread):
                                                            "RunConfig")
 
         return self.runConfigCache.getRunConfig(runNumber)
-    
+
     def createWorkloadsForBlock(self, acquisitionEra, skimConfig, blockInfo):
         """
         _createWorkloadsForBlock_
@@ -127,8 +128,8 @@ class PromptSkimPoller(BaseWorkerThread):
                 workload.setBlockWhitelist(blockInfo["BLOCK_NAME"])
                 specPath = os.path.join(self.workloadCache, workloadName, "%s.pkl" % guid)
                 workload.setSpecUrl(specPath)
-                workload.save(specPath)  
-                self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)                
+                workload.save(specPath)
+                self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)
                 return
 
         runConfig = self.getRunConfig(blockInfo["RUN_ID"])
@@ -168,8 +169,8 @@ class PromptSkimPoller(BaseWorkerThread):
 
         if not os.path.exists(os.path.join(self.workloadCache, workloadName)):
             os.makedirs(os.path.join(self.workloadCache, workloadName))
-            
-        specPath = os.path.join(self.workloadCache, workloadName, "%s.pkl" % guid)        
+
+        specPath = os.path.join(self.workloadCache, workloadName, "%s.pkl" % guid)
         workload.setSpecUrl(specPath)
         workload.save(specPath)
 
@@ -189,17 +190,17 @@ class PromptSkimPoller(BaseWorkerThread):
         injected into the Tier1 WMBS.
         """
         logging.info("pollForTransferedBlocks(): Running...")
-        
+
         skimmableBlocks = ListBlock.listBlockInfoByStatus(self.t0astDBConn,
                                                           "Exported", "Migrated")
 
         logging.info("pollForTransferedBlocks(): Found %s blocks." % len(skimmableBlocks))
-        logging.info("pollForTransferedBlocks(): %s" % skimmableBlocks)         
+        logging.info("pollForTransferedBlocks(): %s" % skimmableBlocks)
 
         for skimmableBlock in skimmableBlocks:
             logging.info("pollForTransferedBlocks(): Skimmable: %s" % skimmableBlock["BLOCK_ID"])
             runConfig = self.getRunConfig(int(skimmableBlock["RUN_ID"]))
-            
+
             skims = runConfig.getSkimConfiguration(skimmableBlock["PRIMARY_ID"],
                                                    skimmableBlock["TIER_ID"])
 

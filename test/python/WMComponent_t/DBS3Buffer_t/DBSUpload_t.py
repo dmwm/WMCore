@@ -113,8 +113,8 @@ class DBSUploadTest(unittest.TestCase):
         config.DBSUpload.DBSBlockMaxFiles = 1
         config.DBSUpload.DBSBlockMaxTime  = 2
         config.DBSUpload.DBSBlockMaxSize  = 999999999999
-        #config.DBSUpload.dbsUrl           = 'http://cms-xen40.fnal.gov/cms_dbs'
-        config.DBSUpload.dbsUrl           = 'https://localhost:1443/dbs/prod/global/DBSWriter'
+        config.DBSUpload.dbsUrl           = 'http://cms-xen40.fnal.gov:8787/dbs/prod/global/DBSWriter'
+        #config.DBSUpload.dbsUrl           = 'https://localhost:1443/dbs/prod/global/DBSWriter'
         config.DBSUpload.namespace        = 'WMComponent.DBS3Buffer.DBSUpload'
         config.DBSUpload.componentDir     = os.path.join(os.getcwd(), 'Components')
         config.DBSUpload.nProcesses       = 1
@@ -210,7 +210,7 @@ class DBSUploadTest(unittest.TestCase):
             dbsUploader.close()
             raise
 
-        time.sleep(3)
+        time.sleep(5)
 
         # Now look in DBS
         try:
@@ -219,11 +219,11 @@ class DBSUploadTest(unittest.TestCase):
             self.assertEqual(len(result), 1)
             self.assertEqual(result[0]['primary_ds_name'], name)
             result = dbsApi.listDatasets(dataset = datasetPath, detail = True,
-                                         dataset_access_type = 'PROCESSING')
+                                         dataset_access_type = 'PRODUCTION')
             self.assertEqual(len(result), 1)
             self.assertEqual(result[0]['data_tier_name'], u'RECO')
-            self.assertEqual(result[0]['processing_version'], u'V0')
-            self.assertEqual(result[0]['acquisition_era_name'], u"DBS3TEST")
+            self.assertEqual(result[0]['processing_version'], 0)
+            self.assertEqual(result[0]['acquisition_era_name'], name.split('-')[0])
             result = dbsApi.listFiles(dataset=datasetPath)
             self.assertEqual(len(result), 11)
         except:
@@ -261,7 +261,7 @@ class DBSUploadTest(unittest.TestCase):
 
     @attr('integration')
     def testB_DONOTUSE(self):
-
+        return
         config = self.getConfig()
         config.DBSUpload.DBSBlockMaxFiles = 1
         config.DBSUpload.copyBlock = True

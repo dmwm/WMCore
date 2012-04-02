@@ -31,7 +31,7 @@ class EventBased(JobFactory):
             fileList = locationDict[location]
         
             for f in fileList:
-                currentEvent = 0
+                currentEvent = f['first_event']
                 eventsInFile = f['events']
 
                 if getParents: 

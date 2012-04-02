@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 """
 _WMTweak_
@@ -369,8 +368,8 @@ def makeTaskTweak(stepSection):
     # GlobalTag
     if hasattr(stepSection, "application"):
         if hasattr(stepSection.application, "configuration"):
-            if hasattr(stepSection.application.configuration, "arguments"):
-                args = pickle.loads(stepSection.application.configuration.arguments)
+            if hasattr(stepSection.application.configuration, "pickledarguments"):
+                args = pickle.loads(stepSection.application.configuration.pickledarguments)
                 if args.has_key('globalTag'):
                     result.addParameter("process.GlobalTag.globaltag", args['globalTag'])
                 if args.has_key('globalTagTransaction'):

@@ -250,6 +250,7 @@ class ReqMgrRESTModel(RESTModel):
     def getRequest(self, requestName=None):
         """ If a request name is specified, return the details of the request. 
         Otherwise, return an overview of all requests """
+        print "Query request: '%s'" % requestName
         if requestName == None:
             return GetRequest.getRequests()
         else:
@@ -323,7 +324,7 @@ class ReqMgrRESTModel(RESTModel):
             result['requests'] = UserRequests.listRequests(userName).keys()
             result['priority'] = UserManagement.getPriority(userName)
             result.update(Registration.userInfo(userName))
-            return json.dumps(result)
+            return result
         elif group != None:
             GroupInfo.usersInGroup(group)    
         else:
@@ -340,7 +341,7 @@ class ReqMgrRESTModel(RESTModel):
                 result['priority'] = GroupManagement.getPriority(group)
             except IndexError:
                 raise cherrypy.HTTPError(404, "Cannot find group/group priority")
-            return json.dumps(result)
+            return result
         elif user != None:   
             return GroupInfo.groupsForUser(user).keys()
         else:

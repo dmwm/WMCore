@@ -85,8 +85,10 @@ def reqMgrConfig(
     active.section_('assign')
     active.assign.object = 'WMCore.HTTPFrontEnd.RequestManager.Assign'
     active.assign.sitedb = sitedb
-    active.assign.hold = False
-    active.assign.clipboardDB = 'opsclipboard'
+    # this value controls whether an assigned request will be put into
+    # ops-hold state and injected into OpsClipboard
+    active.assign.opshold = True
+    active.assign.clipboardDB = 'ops_clipboard'
     active.section_('closeout')
     active.closeout.object = 'WMCore.HTTPFrontEnd.RequestManager.CloseOut'
     active.section_('announce')
@@ -113,7 +115,7 @@ def reqMgrConfig(
     active.section_('create')
     active.create.object = 'WMCore.HTTPFrontEnd.RequestManager.WebRequestSchema'
     active.create.requestor = user
-    active.create.cmsswDefaultVersion = 'CMSSW_3_5_8'
+    active.create.cmsswDefaultVersion = 'CMSSW_5_0_0'
 
     if addMonitor:
         active.section_('GlobalMonitor')

@@ -70,11 +70,11 @@ class CouchDBRequests(JSONRequests):
     CouchDB has two non-standard HTTP calls, implement them here for
     completeness, and talks to the CouchDB port
     """
-    def __init__(self, url = 'http://localhost:5984'):
+    def __init__(self, url = 'http://localhost:5984', usePYCurl = False, ckey = None, cert = None, capath = None):
         """
         Initialise requests
         """
-        JSONRequests.__init__(self, url, {"cachepath" : None})
+        JSONRequests.__init__(self, url, {"cachepath" : None, "pycurl" : usePYCurl, "key" : ckey, "cert" : cert, "capath" : capath})
         self.accept_type = "application/json"
 
     def move(self, uri=None, data=None):
@@ -754,12 +754,12 @@ class CouchServer(CouchDBRequests):
     More info http://wiki.apache.org/couchdb/HTTP_database_API
     """
 
-    def __init__(self, dburl='http://localhost:5984'):
+    def __init__(self, dburl='http://localhost:5984', usePYCurl = False, ckey = None, cert = None, capath = None):
         """
         Set up a connection to the CouchDB server
         """
         check_server_url(dburl)
-        CouchDBRequests.__init__(self, dburl)
+        CouchDBRequests.__init__(self, dburl, usePYCurl=usePYCurl, ckey=ckey, cert=cert, capath=capath)
         self.url = dburl
 
     def listDatabases(self):

@@ -139,7 +139,7 @@ echo "Note: this may fail if the config files don't have all the necessary info 
  perl -p -i -e "s{### RPM.*}{### RPM cms wmagent-dev $VERSION}g" wmagent-dev.spec; \
  perl -p -i -e "s{### RPM.*}{### RPM cms wmcore $VERSION}g" wmcore.spec; \
  perl -p -i -e "s{\+ HEAD/.*wmcore.spec}{+ HEAD/$VERSION wmcore.spec}g" ${REPO}; \
- cvs commit -m"wmagent $VERSION" wmagent.spec wmcore.spec ${REPO};
+ cvs commit -m"wmagent $VERSION" wmagent.spec wmagent-dev.spec wmcore.spec ${REPO};
 )
 if [ $? -ne 0 ]; then
   echo "RPM Request failed - please request manually"

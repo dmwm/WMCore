@@ -19,15 +19,17 @@ from WMCore.Database.CMSCouch import CouchServer
 from WMCore.WMBase import getWMBASE
 
 
-def couchAppRoot():
-    """Return path to couchapp dir"""
+def couchAppRoot(couchapp):
+    """Return parent path containing couchapp"""
     wmBase = getWMBASE()
-    develPath = "%s/src/couchapps" % wmBase
-    if not os.path.exists(develPath):
-        basePath = "%s/data/couchapps" % os.environ['WMCORE_ROOT']
-    else:
-        basePath = develPath
-    return basePath
+    develPath = os.path.join(wmBase, "src", "couchapps")
+    if os.path.exists(os.path.join(develPath, couchapp)):
+        return develPath
+    elif os.path.exists(os.path.join(wmBase, 'xdata', 'couchapps', couchapp)):
+        return os.path.join(wmBase, 'xdata', 'couchapps')
+    elif os.path.exists(os.path.join(wmBase, 'data', 'couchapps', couchapp)):
+        return os.path.join(wmBase, 'data', 'couchapps')
+    raise OSError, 'Cannot find couchapp: %s' % couchapp
 
 def installCouchApp(couchUrl, couchDBName, couchAppName, basePath = None):
     """
@@ -37,7 +39,7 @@ def installCouchApp(couchUrl, couchDBName, couchAppName, basePath = None):
     the database already exists it will be deleted.
     """
     if not basePath:
-        basePath = couchAppRoot()
+        basePath = couchAppRoot(couchAppName)
     print "Installing %s into %s" % (couchAppName, urllib.unquote_plus(couchDBName))
 
     couchServer = CouchServer(couchUrl)
@@ -52,7 +54,7 @@ def installWorkQueueCouchApp(couchUrl, couchDBName):
     yui = os.environ.get('YUI_ROOT', '')
     if not yui or not os.path.exists(yui):
         raise RuntimeError, "Can't locate YUI, set YUI_ROOT env variable"
-    basePath = couchAppRoot()
+    basePath = couchAppRoot('WorkQueue')
     # make a temporary directory to create the couchapp structure
     tempDir = os.path.join(tempfile.mkdtemp(), 'WorkQueue')
     try:

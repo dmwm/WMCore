@@ -95,7 +95,7 @@ class DBSBlock:
         
         
         if dbsFile['id'] in [x['id'] for x in self.files]:
-            msg =  "Duplicate file inserted into DBSBlock: %i     Flag: %i\n" % (dbsFile['id'], flag)
+            msg =  "Duplicate file inserted into DBSBlock: %i\n" % (dbsFile['id'])
             msg += "Ignoring this file for now!\n"
             logging.error(msg)
             logging.debug("Block length: %i" % len(self.files))

@@ -23,7 +23,7 @@ WMStats.JobDetailView = (function() {
             htmlstr += "<li> retry count: " + jobDoc.retrycount + "</li>";
             htmlstr += "<li> lumis: " 
             for (var i in jobDoc.lumis) {
-                htmlstr += jobSummary.lumis[i] + " "
+                htmlstr += jobDoc.lumis[i] + " "
             } 
             htmlstr += "</li>";
             /*

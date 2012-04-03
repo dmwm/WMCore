@@ -25,10 +25,14 @@ WMStats.Table = function(config) {
         return footer;
     }
     
-    function _create(selector) {
-        oTable = $(selector).dataTable(_tableConfig)
-        oTable.append(_footer());
-        return oTable.columnFilter();
+    function _create(selector, filterConfig) {
+        var oTable = $(selector).dataTable(_tableConfig)
+        if (filterConfig) {
+            oTable.append(_footer());
+            return oTable.columnFilter(filterConfig);
+        } else {
+            return oTable
+        }
     }
     
     if (config) {_updateConfig(config)}

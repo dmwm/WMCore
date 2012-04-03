@@ -86,7 +86,27 @@ WMStats.RequestView = (function() {
             //TODO add more data (consult dataops)
         ]
     }
-
+    
+        // filter config
+    var filterConfig = {
+        "aoColumns": [
+            {type: "text", bRegex: true, bSmart: true},               
+            {type: "text", bRegex: true, bSmart: true},
+            {type: "text", bRegex: true, bSmart: true},
+            {type: "text", bRegex: true, bSmart: true},
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+        ]
+    }
+    
     function getData() {
         return _data;
     }
@@ -117,7 +137,7 @@ WMStats.RequestView = (function() {
                   //create table
                   tableConfig.aaData = _data;
                   var selector = _containerDiv + " table#" + _tableID;
-                  return WMStats.Table(tableConfig).create(selector)
+                  return WMStats.Table(tableConfig).create(selector, filterConfig)
               })
     }
     

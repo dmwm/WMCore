@@ -9,6 +9,23 @@ WMStats.JobSummaryView = (function() {
     // default couch view name for job summary
     var _viewName = 'jobsByStatusWorkflow';
     
+    var _tableID = "jobSummaryTable";
+    
+    var _data;
+    
+     // jquery datatable config
+    var tableConfig = {
+        "aoColumns": [
+            { "mDataProp": "status", "sTitle": "status"},               
+            { "mDataProp": "site", "sTitle": "site"},
+            { "mDataProp": "count", "sTitle": "jobs"},
+            { "mDataProp": "exitCode", "sTitle": "exit code"},
+            { "mDataProp": "errorMsg", "sTitle": "error mesage", 
+                           "sDefaultContent": ""}
+         ]
+            
+    }
+    
     function _formatHtml(jobSummary) {
         $(_containerDiv).empty();
         var htmlstr = "";
@@ -35,13 +52,12 @@ WMStats.JobSummaryView = (function() {
         return htmlstr;
     }
                 
-    function _formatJobSummary(data) {
+    function _setSummaryData(data) {
         var htmlstr = "";
         var jobSummary = {};
+        jobSummary.status = [];
         for (var i in data.rows){
             jobSummary.workflow = data.rows[i].key[0];
-            jobSummary.status = [];
-            
             var statusSummary = {};
             statusSummary.status = data.rows[i].key[1];
             statusSummary.exitCode = data.rows[i].key[2];
@@ -51,16 +67,26 @@ WMStats.JobSummaryView = (function() {
             jobSummary.status.push(statusSummary)
                      
         }
-        _formatHtml(jobSummary);
+        _data = jobSummary;
         //$(_containerDiv).html(_formatHtml(jobSummary));
         
     }
+    
+    function createJobSummaryTable(data) {
+        _setSummaryData(data);
+        tableConfig.aaData = _data.status;
+        var selector =  _containerDiv + " table#" + _tableID;
+        $(selector).data('workflow', _data.workflow)
+        return WMStats.Table(tableConfig).create(selector)
+    }
+    
     
     function createSummaryView(selector, workflow) {
         _containerDiv = selector;
         options = {'reduce': true, 'group_level': 5, 'startkey':[workflow], 
                    'endkey':[workflow, {}]};
-        WMStats.Couch.view(_viewName, options, _formatJobSummary)
+        $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display" id="'+ _tableID + '"></table>') 
+        WMStats.Couch.view(_viewName, options, createJobSummaryTable)
     }
     
     return {'createSummaryView': createSummaryView};

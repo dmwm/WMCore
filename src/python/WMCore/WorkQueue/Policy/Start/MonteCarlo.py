@@ -30,7 +30,7 @@ class MonteCarlo(StartPolicyInterface):
                              LastRun = 1,
                              LastEvent = self.initialTask.totalEvents())
         mask = Mask(**self.mask)
-        stepSize = self.args['SliceSize'] * self.args['MaxJobsPerElement']
+        stepSize = int(self.args['SliceSize']) * int(self.args['MaxJobsPerElement'])
         total = mask['LastEvent']
         assert(total > mask['FirstEvent'])
         while mask['FirstEvent'] < total:

@@ -42,7 +42,7 @@ WMStats.CampaignView = (function() {
             { "sTitle": "failed", "sDefaultContent": 0, 
               "fnRender": function ( o, val ) {
                               return (_get(o.aData['failed'], 0) + 
-                                     _get(o.aData['epic-Failed'], 0));
+                                     _get(o.aData['epic-FAILED'], 0));
                           },
             },
             { "mDataProp": "completed", "sTitle": "completed", 

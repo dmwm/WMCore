@@ -31,8 +31,10 @@ WMStats.RequestView = (function() {
             { "mDataProp": "workflow", "sTitle": "workflow"},
             { "mDataProp": "requestor", "sTitle": "requestor"},
             { "mDataProp": "request_type", "sTitle": "type"},
-            { "mDataProp": "inputdataset", "sTitle": "inputdataset"},
-            { "mDataProp": "site_white_list", "sTitle": "site white list"},
+            { "mDataProp": "inputdataset", "sTitle": "inputdataset",
+                           "sDefaultContent": ""},
+            { "mDataProp": "site_white_list", "sTitle": "site white list",
+                           "sDefaultContent": ""},
             { "sTitle": "queued", 
               "fnRender": function ( o, val ) {
                             return (_get(o.aData, "status.queued.first", 0) + 

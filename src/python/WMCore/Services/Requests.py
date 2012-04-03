@@ -517,7 +517,7 @@ class Requests(dict):
         is capath == None then the server identity is not verified. To enable this check
         you need to set either the X509_CERT_DIR variable or the cacert key of the request.
         """
-        cacerty = None
+        cacert = None
         if self.has_key('cacert'):
             cacert = self['cacert']
         elif os.environ.has_key("X509_CERT_DIR"):

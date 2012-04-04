@@ -243,12 +243,20 @@ class ChangeState(WMObject, WMConnectionBase):
                         errmsgs[step] = [error for error in fwjrDocument["fwjr"]["steps"][step]["errors"]]
                     if "input" in fwjrDocument["fwjr"]["steps"][step] and "source" in fwjrDocument["fwjr"]["steps"][step]["input"]:
                         inputs.extend( [source["runs"] for source in fwjrDocument["fwjr"]['steps'][step]["input"]["source"] if "runs" in source] )
-                outputs = [ {'type': singlefile.get('module_label', None),
-                             'lfn': singlefile.get('lfn', None),
-                             'location': list(singlefile.get('locations', set([]))) if len(singlefile.get('locations', set([]))) > 1
+                
+                outputs = []
+                outputDataset = None
+                for singlefile in job["fwjr"].getAllFiles():
+                    if singlefile:
+                        outputs.append({'type': singlefile.get('module_label', None),
+                                        'lfn': singlefile.get('lfn', None),
+                                        'location': list(singlefile.get('locations', set([]))) if len(singlefile.get('locations', set([]))) > 1
                                                                                     else singlefile['locations'].pop(),
-                             'checksums': singlefile.get('checksums', {}),
-                             'size': singlefile.get('size', None) } for singlefile in job["fwjr"].getAllFiles() if singlefile ]
+                                        'checksums': singlefile.get('checksums', {}),
+                                        'size': singlefile.get('size', None) })
+                        #it should have one output dataset for all the files
+                        outputDataset = singlefile.get('dataset', None)
+                
                 jobSummary = {"_id": jobSummaryId,
                               "type": "jobsummary",
                               "retrycount": job["retry_count"],
@@ -259,6 +267,7 @@ class ChangeState(WMObject, WMConnectionBase):
                               "exitcode": job["fwjr"].getExitCode(),
                               "errors": errmsgs,
                               "lumis": inputs,
+                              "outputdataset": outputDataset,
                               "output": outputs }
                 if couchDocID is not None:
                     try:

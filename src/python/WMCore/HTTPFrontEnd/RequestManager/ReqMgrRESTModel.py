@@ -289,10 +289,22 @@ class ReqMgrRESTModel(RESTModel):
         """Return the datasets produced by the most recently submitted request with this prep ID"""
         requestIDs = GetRequest.getRequestByPrepID(prepID)
         # most recent will have the largest ID
-        requestID = max(requestIDs)
-        request = GetRequest.getRequest(requestID)
-        helper = Utilities.loadWorkload(request)
-        return helper.listOutputDatasets()
+        requestIDs.sort()
+        requestIDs.reverse()
+
+        request = None
+        # Go through each request in order from largest to smallest
+        # looking for the first non-failed/non-canceled request
+        for requestID in requestIDs:
+            request = GetRequest.getRequest(requestID)
+            if request.get("RequestStatus", 'aborted').lower() not in ['aborted', 'failed']:
+                break
+
+        if request != None:
+            helper = Utilities.loadWorkload(request)
+            return helper.listOutputDatasets()
+        else:
+            return []
  
     def getAssignment(self, teamName=None, request=None):
         """ If a team name is passed in, get all assignments for that team.

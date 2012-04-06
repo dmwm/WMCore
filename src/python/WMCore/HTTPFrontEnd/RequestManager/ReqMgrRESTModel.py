@@ -169,6 +169,9 @@ class ReqMgrRESTModel(RESTModel):
         self._addMethod('GET', 'mostRecentOutputDatasetsByPrepID', self.getMostRecentOutputForPrepID,
                        args = ['prepID'], secured=True, 
                        validation=[self.isalnum], expires = 0)
+        self._addMethod('GET', 'configIDs', self.getConfigIDs, 
+                        args = ['prim', 'proc', 'tier'],
+                        secured=True, validation=[self.isalnum], expires = 0)
 
         cherrypy.engine.subscribe('start_thread', self.initThread)
     
@@ -570,4 +573,21 @@ class ReqMgrRESTModel(RESTModel):
 
     def deleteCampaign(self, campaign):
         return Campaign.deleteCampaign(campaign)
+
+    def getConfigIDs(self, prim, proc, tier):
+        """
+        _getConfigIDs_
+
+        Get the ConfigIDs for the specified request
+        """
+        result = {}
+        dataset = self.getDataset(prim, proc, tier)
+        requests = GetRequest.getRequestsByCriteria("Datasets.GetRequestByInput", dataset)
+        for request in requests:
+            requestName = request["RequestName"]
+            helper = Utilities.loadWorkload(request)
+            result[requestName] = helper.listAllCMSSWConfigCacheIDs()
+
+        return result
+
 

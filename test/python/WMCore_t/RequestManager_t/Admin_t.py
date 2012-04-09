@@ -82,9 +82,7 @@ class AdminTest(RESTBaseUnitTest):
         self.assertEqual(SoftwareManagement.listSoftware(), {})
 
         from WMCore.HTTPFrontEnd.RequestManager import Admin
-        self.config.section_('database')
-        setattr(self.config.database, 'connectUrl', os.environ['DATABASE'])
-        setattr(self.config.database, 'dialect', os.environ['DIALECT'])
+        setattr(self.config, 'database', self.testInit.coreConfig.CoreDatabase)
         self.config.section_('templates')
         self.config.section_('html')
         admin = Admin.Admin(self.config)

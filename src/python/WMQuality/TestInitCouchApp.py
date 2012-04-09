@@ -74,16 +74,16 @@ class TestInitCouchApp(TestInit):
 
     def couchAppRoot(self, couchapp):
         """Return parent path containing couchapp"""
-        wmBase = self.init.getWMBASE()
-        develPath = os.path.join(wmBase, "src", "couchapps")
+        wmcoreroot = os.path.normpath(os.path.join(self.init.getWMBASE(), '..', '..', '..'))
+        develPath = os.path.join(self.init.getWMBASE(), "src", "couchapps")
         if os.path.exists(os.path.join(develPath, couchapp)):
             return develPath
-        elif os.path.exists(os.path.join(wmBase, 'xdata', 'couchapps', couchapp)):
-            return os.path.join(wmBase, 'xdata', 'couchapps')
-        elif os.path.exists(os.path.join(wmBase, 'data', 'couchapps', couchapp)):
-            return os.path.join(wmBase, 'data', 'couchapps')
+        elif os.path.exists(os.path.join(wmcoreroot, 'xdata', 'couchapps', couchapp)):
+            return os.path.join(wmcoreroot, 'xdata', 'couchapps')
+        elif os.path.exists(os.path.join(wmcoreroot, 'data', 'couchapps', couchapp)):
+            return os.path.join(wmcoreroot, 'data', 'couchapps')
         raise OSError, 'Cannot find couchapp: %s' % couchapp
-        
+
     def setupCouch(self, dbName, *couchapps):
         """
         _setupCouch_

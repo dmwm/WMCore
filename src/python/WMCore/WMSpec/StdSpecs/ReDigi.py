@@ -124,6 +124,16 @@ class ReDigiWorkloadFactory(StdBase):
         stepThreeCmsswHelper.setConfigCache(self.couchURL, self.stepThreeConfigCacheID,
                                           self.couchDBName)
 
+        configOutput = self.determineOutputModules(None, None, self.stepTwoConfigCacheID,
+                                                   self.couchURL, self.couchDBName)
+        for outputModuleName in configOutput.keys():
+            outputModule = self.addOutputModule(stepOneTask,
+                                                outputModuleName,
+                                                self.inputPrimaryDataset,
+                                                configOutput[outputModuleName]["dataTier"],
+                                                configOutput[outputModuleName]["filterName"],
+                                                stepName = "cmsRun2")
+
         configOutput = self.determineOutputModules(None, None, self.stepThreeConfigCacheID,
                                                    self.couchURL, self.couchDBName)
         outputMods = {}

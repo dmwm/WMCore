@@ -192,7 +192,7 @@ class CMSSWStepHelper(CoreHelper):
         Retrieve the global tag.
         """
         if hasattr(self.data.application.configuration, "arguments"):
-            if hassattr(self.data.application.configuration.arguments, "globalTag"):
+            if hasattr(self.data.application.configuration.arguments, "globalTag"):
                 return self.data.application.configuration.arguments.globalTag
 
         return pickle.loads(self.data.application.configuration.pickledarguments)['globalTag']

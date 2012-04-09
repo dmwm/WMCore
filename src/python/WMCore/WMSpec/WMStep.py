@@ -225,6 +225,14 @@ class WMStepHelper(TreeHelper):
         """
         return getattr(self.data.output.analysisFiles, name, None)
 
+    def getConfigCacheID(self):
+        """
+        _getConfigCacheID_
+
+        If we have a configCacheID return it, otherwise return None
+        """
+        return getattr(self.data.application.configuration, 'retrieveConfigUrl', None)
+
 
 
 class WMStep(ConfigSectionTree):

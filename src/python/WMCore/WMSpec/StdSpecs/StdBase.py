@@ -293,10 +293,11 @@ class StdBase(object):
             procTaskCmsswHelper.setConfigCache(couchURL, configDoc, couchDBName)
         else:
             # delete dataset information from scenarioArgs
-            if scenarioArgs.has_key('outputs'):
+            if 'outputs' in scenarioArgs:
                 for output in scenarioArgs['outputs']:
-                    del output['primaryDataset']
-            if scenarioArgs.has_key('primaryDataset'):
+                    if 'primaryDataset' in output:
+                        del output['primaryDataset']
+            if 'primaryDataset' in scenarioArgs:
                 del scenarioArgs['primaryDataset']
 
             procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,

@@ -18,10 +18,11 @@ from nose.plugins.attrib import attr
 import WMCore.RequestManager.RequestMaker.Processing.ReRecoRequest as ReRecoRequest
 import WMCore.WMSpec.StdSpecs.ReReco                               as ReReco
 
-from WMCore.Services.Requests import JSONRequests
-from WMCore.Wrappers          import JsonWrapper as json
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-from httplib                  import HTTPException
+from WMCore.Services.Requests   import JSONRequests
+from WMCore.Wrappers            import JsonWrapper as json
+from WMCore.WMSpec.WMWorkload   import WMWorkloadHelper
+from httplib                    import HTTPException
+from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 
 # RequestDB Interfaces
 from WMCore.RequestManager.RequestDB.Interface.Request import GetRequest
@@ -108,7 +109,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.config.setFormatter('WMCore.WebTools.RESTFormatter')
         self.config.setupRequestConfig()
         self.config.setupCouchDatabase(dbName = self.couchDBName)
-        self.config.setPort(8888)
+        self.config.setPort(12888)
         self.schemaModules = ["WMCore.RequestManager.RequestDB"]
         return
 
@@ -149,6 +150,33 @@ class ReqMgrTest(RESTBaseUnitTest):
         schema['CustodialSite'] = 'US_T1_FNAL'
 
         return schema
+
+    def createConfig(self, bad = False):
+        """
+        _createConfig_
+
+        Create a config of some sort that we can load out of ConfigCache
+        """
+        
+        PSetTweak = {'process': {'outputModules_': ['ThisIsAName'],
+                                 'ThisIsAName': {'dataset': {'dataTier': 'RECO',
+                                                             'filterName': 'Filter'}}}}
+
+        BadTweak  = {'process': {'outputModules_': ['ThisIsAName1', 'ThisIsAName2'],
+                                 'ThisIsAName1': {'dataset': {'dataTier': 'RECO',
+                                                             'filterName': 'Filter'}},
+                                 'ThisIsAName2': {'dataset': {'dataTier': 'RECO',
+                                                             'filterName': 'Filter'}}}}
+
+        configCache = ConfigCache(os.environ["COUCHURL"], couchDBName = self.couchDBName)
+        configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
+        if bad:
+            configCache.setPSetTweaks(PSetTweak = BadTweak)
+        else:
+            configCache.setPSetTweaks(PSetTweak = PSetTweak)
+        configCache.save()
+
+        return configCache.getCouchID()
 
     @attr("integration")
     def testA_testBasicSetUp(self):
@@ -661,6 +689,44 @@ class ReqMgrTest(RESTBaseUnitTest):
         req = self.jsonSender.get('request/%s' % requestName)[0]
         self.assertEqual(req['SoftwareVersions'], [CMSSWVersion])
         return
+
+    def testI_CheckConfigIDs(self):
+        """
+        _CheckConfigIDs_
+
+        Check to see if we can pull out the ConfigIDs by request
+        """
+        
+        userName     = 'Taizong'
+        groupName    = 'Li'
+        teamName     = 'Tang'
+        CMSSWVersion = 'CMSSW_3_5_8'
+        schema       = self.setupSchema(userName = userName,
+                                        groupName = groupName,
+                                        teamName = teamName,
+                                        CMSSWVersion = CMSSWVersion)
+
+        # Set some versions
+        schema['ProcessingVersion'] = 'pv2012'
+        schema['AcquisitionEra']    = 'ae2012'
+        schema["PrimaryDataset"]    = "ReallyFake"
+        schema["RequestNumEvents"]  = 100
+
+        configID = self.createConfig()
+        schema["CouchDBName"] = self.couchDBName
+        schema["CouchURL"]    = os.environ.get("COUCHURL")
+        schema["ProcConfigCacheID"] = configID
+        schema["InputDatasets"]     = ['/MinimumBias/Run2010B-RelValRawSkim-v1/RAW']
+
+
+        result = self.jsonSender.put('request/testRequest', schema)
+        self.assertEqual(result[1], 200)
+        requestName = result[0]['RequestName']
+
+        result = self.jsonSender.get('configIDs?prim=MinimumBias&proc=Commissioning10-v4&tier=RAW')[0]
+        self.assertTrue(requestName in result.keys())
+        self.assertTrue(configID in result[requestName][0])
+        return        
 
 
 if __name__=='__main__':

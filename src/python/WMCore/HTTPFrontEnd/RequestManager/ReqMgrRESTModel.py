@@ -170,6 +170,9 @@ class ReqMgrRESTModel(RESTModel):
         self._addMethod('GET', 'mostRecentOutputDatasetsByPrepID', self.getMostRecentOutputForPrepID,
                        args = ['prepID'], secured=True, 
                        validation=[self.isalnum], expires = 0)
+        self._addMethod('GET', 'configIDs', self.getConfigIDs, 
+                        args = ['prim', 'proc', 'tier'],
+                        secured=True, validation=[self.isalnum], expires = 0)
 
         cherrypy.engine.subscribe('start_thread', self.initThread)
     
@@ -287,10 +290,22 @@ class ReqMgrRESTModel(RESTModel):
         """Return the datasets produced by the most recently submitted request with this prep ID"""
         requestIDs = GetRequest.getRequestByPrepID(prepID)
         # most recent will have the largest ID
-        requestID = max(requestIDs)
-        request = GetRequest.getRequest(requestID)
-        helper = Utilities.loadWorkload(request)
-        return helper.listOutputDatasets()
+        requestIDs.sort()
+        requestIDs.reverse()
+
+        request = None
+        # Go through each request in order from largest to smallest
+        # looking for the first non-failed/non-canceled request
+        for requestID in requestIDs:
+            request = GetRequest.getRequest(requestID)
+            if request.get("RequestStatus", 'aborted').lower() not in ['aborted', 'failed']:
+                break
+
+        if request != None:
+            helper = Utilities.loadWorkload(request)
+            return helper.listOutputDatasets()
+        else:
+            return []
  
     def getAssignment(self, teamName=None, request=None):
         """ If a team name is passed in, get all assignments for that team.
@@ -571,4 +586,21 @@ class ReqMgrRESTModel(RESTModel):
 
     def deleteCampaign(self, campaign):
         return Campaign.deleteCampaign(campaign)
+
+    def getConfigIDs(self, prim, proc, tier):
+        """
+        _getConfigIDs_
+
+        Get the ConfigIDs for the specified request
+        """
+        result = {}
+        dataset = self.getDataset(prim, proc, tier)
+        requests = GetRequest.getRequestsByCriteria("Datasets.GetRequestByInput", dataset)
+        for request in requests:
+            requestName = request["RequestName"]
+            helper = Utilities.loadWorkload(request)
+            result[requestName] = helper.listAllCMSSWConfigCacheIDs()
+
+        return result
+
 

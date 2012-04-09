@@ -276,7 +276,13 @@ class LexiconTest(unittest.TestCase):
         lfn(lfnA)
         lfnA = '/store/data/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
         lfn(lfnA)
-        lfnA = '/store/data/Run2010A/Cosmics/RECO/v4/000/143/316/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
+        lfnA = '/store/data/Run2010A/Cosmics/RECO/v4/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
+        lfn(lfnA)
+        lfnA = '/store/t0temp/data/Run2010A/Cosmics/RECO/v4/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
+        lfn(lfnA)
+        lfnA = '/store/backfill/1/data/Run2010A/Cosmics/RECO/v4/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
+        lfn(lfnA)
+        lfnA = '/store/backfill/1/t0temp/data/Run2010A/Cosmics/RECO/v4/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
         lfn(lfnA)
         lfnA = '/store/results/qcd/QCD_Pt80/StoreResults-Summer09-MC_31X_V3_7TeV-Jet30U-JetAODSkim-0a98be42532eba1f0545cc9b086ec3c3/QCD_Pt80/USER/StoreResults-Summer09-MC_31X_V3_7TeV-Jet30U-JetAODSkim-0a98be42532eba1f0545cc9b086ec3c3/0000/C44630AC-C0C7-DE11-AD4E-0019B9CAC0F8.root'
         lfn(lfnA)

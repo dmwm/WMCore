@@ -92,9 +92,6 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         fixedPSet = pickle.load(fixedPSetHandle)
         fixedPSetHandle.close()
 
-        self.assertEqual(fixedPSet.GlobalTag.globaltag.value, "SomeGlobalTag",
-                         "Error: Wrong global tag.")
-
         self.assertEqual(len(fixedPSet.source.fileNames.value), 2,
                          "Error: Wrong number of files.")
         self.assertEqual(len(fixedPSet.source.secondaryFileNames.value), 2,

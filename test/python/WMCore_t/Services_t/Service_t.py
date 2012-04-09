@@ -198,6 +198,7 @@ class ServiceTest(unittest.TestCase):
         service.getData('%s/socketresettest' % self.testDir, '/cgi-bin/cmssw.cgi')
         assert deftimeout == socket.getdefaulttimeout()
 
+    @attr("integration")
     def testStaleCache(self):
 
         dict = {'logger': self.logger,
@@ -292,7 +293,8 @@ class ServiceTest(unittest.TestCase):
         self.assertRaises(IncompleteRead, myService.getData, 'foo', '')
         cherrypy.engine.exit()
         cherrypy.engine.stop()
-
+        
+    @attr("integration")
     def testSlowResponse(self):
         """
         _SlowResponse_
@@ -329,7 +331,7 @@ class ServiceTest(unittest.TestCase):
         myService['requests'] = CrappyRequest('http://bad.com', {})
         self.assertRaises(BadStatusLine, myService.getData, 'foo', '')
 
-
+    @attr("integration")
     def testZ_InterruptedConnection(self):
         """
         _InterruptedConnection_

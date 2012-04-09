@@ -1,29 +1,27 @@
 #!/usr/bin/env python
 """
-_RFCP2Impl_
+_RFCP1Impl_
 
-Implementation of StageOutImpl interface for RFIO in Castor-2
+Implementation of StageOutImpl interface for RFIO in Castor-1
 
 """
-import os 
+import os
+import logging 
+from subprocess import Popen, PIPE
 
-from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.Execute import runCommandWithOutput as runCommand
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
 from WMCore.Storage.Execute import runCommand
-import logging
-from subprocess import Popen, PIPE
 
 
-class RFCP2Impl(StageOutImplV2):
+class RFCP1Impl(StageOutImplV2):
     """
-    _RFCP2Impl_
+    _RFCP1Impl_
 
     Implement interface for rfcp command
     
     """
-
 
     def createOutputDirectory(self, targetPFN):
         """
@@ -44,7 +42,7 @@ class RFCP2Impl(StageOutImplV2):
             self.runCommandWarnOnNonZero(['rfmkdir', '-m', '775', '-p',targetdir])
 
 
-    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol  ):
+    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum  ):
         """
             performs a transfer. stageOut tells you which way to go. returns the new pfn or
             raises on failure. StageOutError (and inherited exceptions) are for expected errors
@@ -104,5 +102,6 @@ class RFCP2Impl(StageOutImplV2):
 
         runCommand(["stageclr", "-M", pfn])
         runCommand(["nsrm", pfn])
+
 
 

@@ -1,6 +1,7 @@
 import os
 import unittest
 import time
+
 from WMCore.Configuration import ConfigSection
 from WMCore.Alerts.Alert import Alert
 from WMCore.Alerts.ZMQ.Sinks.FileSink import FileSink

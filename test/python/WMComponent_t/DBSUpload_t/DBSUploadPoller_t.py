@@ -18,6 +18,8 @@ import unittest
 import cProfile, pstats
 import nose
 
+from nose.plugins.attrib import attr
+
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 
 from WMComponent.DBSUpload.DBSUpload       import DBSUpload
@@ -28,14 +30,13 @@ from WMCore.WMFactory       import WMFactory
 from WMCore.DAOFactory      import DAOFactory
 from WMCore.Services.UUID   import makeUUID
 from WMCore.DataStructs.Run import Run
+from DBSAPI.dbsApi          import DbsApi
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Cache.WMConfigCache import ConfigCache
 from WMCore.Agent.HeartbeatAPI  import HeartbeatAPI
 
 from WMComponent.DBSUpload.DBSInterface import *
-
-from DBSAPI.dbsApi import DbsApi
 
 class DBSUploadTest(unittest.TestCase):
     """
@@ -208,7 +209,7 @@ class DBSUploadTest(unittest.TestCase):
         return files
 
 
-
+    @attr('integration')
     def testA_basicUploadTest(self):
         """
         _basicUploadTest_
@@ -339,10 +340,7 @@ class DBSUploadTest(unittest.TestCase):
         return
 
 
-
-
-
-
+    @attr('integration')
     def testB_AlgoMigration(self):
         """
         _AlgoMigration_
@@ -433,7 +431,7 @@ class DBSUploadTest(unittest.TestCase):
         return
 
 
-
+    @attr('integration')
     def testC_FailTest(self):
         """
         _FailTest_
@@ -542,7 +540,7 @@ class DBSUploadTest(unittest.TestCase):
 
 
 
-
+    @attr('integration')
     def testD_Profile(self):
         """
         _Profile_
@@ -568,7 +566,7 @@ class DBSUploadTest(unittest.TestCase):
 
         return
 
-
+    @attr('integration')
     def testE_NoMigration(self):
         """
         _NoMigration_
@@ -615,7 +613,7 @@ class DBSUploadTest(unittest.TestCase):
 
         return
     
-    
+    @attr('integration')
     def testF_DBSUploadQueueSizeCheckForAlerts(self):
         """
         Test will not trigger a real alert being sent unless doing some

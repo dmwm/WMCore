@@ -34,7 +34,7 @@ class Workflow(WMBSBase, WMWorkflow):
     workflow + fileset = subscription
     """
     def __init__(self, spec = None, owner = None, dn = None, group = None,
-                 owner_vogroup = '', owner_vorole = '',
+                 owner_vogroup = 'DEFAULT', owner_vorole = 'DEFAULT',
                  name = None, task = None, wfType = None, id = -1):
         WMBSBase.__init__(self)
         WMWorkflow.__init__(self, spec = spec, owner = owner, dn = dn,
@@ -55,6 +55,8 @@ class Workflow(WMBSBase, WMWorkflow):
         """
         action = self.daofactory(classname = "Workflow.Exists")
         result = action.execute(spec = self.spec, owner = self.dn,
+                                group_name = self.vogroup,
+                                role_name = self.vorole,
                                 name = self.name, task = self.task,
                                 conn = self.getDBConn(),
                                 transaction = self.existingTransaction())
@@ -160,11 +162,9 @@ class Workflow(WMBSBase, WMWorkflow):
         self.id = result["id"]
         self.spec = result["spec"]
         self.name = result["name"]
-
         self.owner = result["owner"]
         self.dn = result["dn"]
         self.group = result["grp"]
-
         self.task = result["task"]
         self.wfType = result["type"]
 
@@ -236,15 +236,3 @@ class Workflow(WMBSBase, WMWorkflow):
 
         return result
 
-    def __str__(self):
-        """
-        __str__
-
-        Print out some useful info just because
-        this does not inherit from dict.
-        """
-
-        d = {'id': self.id, 'spec': self.spec, 'name': self.name,
-             'owner': self.owner, 'task': self.task}
-
-        return str(d)

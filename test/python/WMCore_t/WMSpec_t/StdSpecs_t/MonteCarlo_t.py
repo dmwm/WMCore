@@ -189,7 +189,7 @@ class MonteCarloTest(unittest.TestCase):
 
         self.assertEqual(logCollectSub["type"], "LogCollect",
                          "Error: Wrong subscription type.")
-        self.assertEqual(logCollectSub["split_algo"], "EndOfRun",
+        self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
                          "Error: Wrong split algo.")
 
         for outputName in ["OutputA", "OutputB"]:
@@ -203,7 +203,7 @@ class MonteCarloTest(unittest.TestCase):
             
             self.assertEqual(logCollectSub["type"], "LogCollect",
                              "Error: Wrong subscription type.")
-            self.assertEqual(logCollectSub["split_algo"], "EndOfRun",
+            self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
                              "Error: Wrong split algo.")
         
 

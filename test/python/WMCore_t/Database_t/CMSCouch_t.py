@@ -134,7 +134,7 @@ class CMSCouchTest(unittest.TestCase):
         info = db.info()
         assert info['db_name'] == db_name
 
-        db = Database(db_name)
+        db = Database(db_name, url = os.environ["COUCHURL"])
         info = db.info()
         assert info['db_name'] == db_name
 

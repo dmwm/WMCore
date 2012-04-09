@@ -23,6 +23,8 @@ function(doc) {
                  '_id': doc['fwjr']['steps'][step]["output"][module][file]["lfn"],
                  'checksums': doc['fwjr']['steps'][step]["output"][module][file]['checksums'],
                  'size': doc['fwjr']['steps'][step]["output"][module][file]['size'],
+                 'group' : doc['fwjr']['steps'][step]["output"][module][file]['user_vogroup'],
+                 'role': doc['fwjr']['steps'][step]["output"][module][file]['user_vorole'],
                  'source' : doc['fwjr']['steps'][step]["output"][module][file]["location"],
                  'destination': doc['fwjr']['steps'][step]["output"][module][file]['async_dest']}
           );

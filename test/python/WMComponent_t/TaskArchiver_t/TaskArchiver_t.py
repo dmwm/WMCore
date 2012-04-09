@@ -13,8 +13,9 @@ import threading
 import unittest
 import time
 import shutil
+import inspect
 
-import WMCore.WMInit
+import WMCore.WMBase
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 #from WMQuality.TestInit   import TestInit
@@ -62,12 +63,12 @@ class TaskArchiverTest(unittest.TestCase):
         myThread = threading.currentThread()
         
         self.testInit = TestInit(__file__)
-        self.testInit.setLogging()
+        self.testInit.setLogging(logLevel = logging.DEBUG)
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.databaseName = "taskarchiver_t_0"
-        self.testInit.setupCouch(self.databaseName, "WorkloadSummary")
+        self.testInit.setupCouch("%s/workloadsummary" % self.databaseName, "WorkloadSummary")
         self.testInit.setupCouch("%s/jobs" % self.databaseName, "JobDump")
         self.testInit.setupCouch("%s/fwjrs" % self.databaseName, "FWJRDump")
         
@@ -128,7 +129,7 @@ class TaskArchiverTest(unittest.TestCase):
         config.TaskArchiver.histogramKeys   = ['AvgEventTime', 'writeTotalMB']
         config.TaskArchiver.histogramBins   = 5
         config.TaskArchiver.histogramLimit  = 5
-        config.TaskArchiver.summaryDBName   = self.databaseName
+        config.TaskArchiver.workloadSummaryCouchDBName = "%s/workloadsummary" % self.databaseName
 
         config.section_("ACDC")
         config.ACDC.couchurl                = config.JobStateMachine.couchurl
@@ -224,15 +225,15 @@ class TaskArchiverTest(unittest.TestCase):
         report1 = Report()
         report2 = Report()
         if error:
-            path1 = os.path.join(WMCore.WMInit.getWMBASE(),
-                                 "test/python/WMComponent_t/JobAccountant_t/fwjrs", "badBackfillJobReport.pkl")
+            path1 = os.path.join(WMCore.WMBase.getTestBase(),
+                                 "WMComponent_t/JobAccountant_t/fwjrs", "badBackfillJobReport.pkl")
             path2 = path1
         else:
-            path1 = os.path.join(WMCore.WMInit.getWMBASE(),
-                                 'test/python/WMComponent_t/TaskArchiver_t/fwjrs',
+            path1 = os.path.join(WMCore.WMBase.getTestBase(),
+                                 'WMComponent_t/TaskArchiver_t/fwjrs',
                                  'mergeReport1.pkl')
-            path2 = os.path.join(WMCore.WMInit.getWMBASE(),
-                                 'test/python/WMComponent_t/TaskArchiver_t/fwjrs',
+            path2 = os.path.join(WMCore.WMBase.getTestBase(),
+                                 'WMComponent_t/TaskArchiver_t/fwjrs',
                                  'mergeReport2.pkl')
         report1.load(filename = path1)
         report2.load(filename = path2)
@@ -394,7 +395,7 @@ class TaskArchiverTest(unittest.TestCase):
         testWMBSFileset = Fileset(id = 1)
         self.assertEqual(testWMBSFileset.exists(), False)
 
-        dbname       = getattr(config.JobStateMachine, "couchDBName")
+        dbname       = config.TaskArchiver.workloadSummaryCouchDBName
         couchdb      = CouchServer(config.JobStateMachine.couchurl)
         workdatabase = couchdb.connectDatabase(dbname)
 
@@ -545,7 +546,7 @@ class TaskArchiverTest(unittest.TestCase):
         logging.info("TaskArchiver took %f seconds" % (stopTime - startTime))
         
                 
-    def atestTaskArchiverPollerAlertsSending_notifyWorkQueue(self):
+    def testTaskArchiverPollerAlertsSending_notifyWorkQueue(self):
         """
         Cause exception (alert-worthy situation) in
         the TaskArchiverPoller notifyWorkQueue method.
@@ -568,6 +569,11 @@ class TaskArchiverTest(unittest.TestCase):
         print "failures 'AttributeError: 'dict' object has no attribute 'load' expected ..."
         subList = [{'id': 1}, {'id': 2}, {'id': 3}]
         testTaskArchiver.notifyWorkQueue(subList)
+        # wait for the generated alert to arrive
+        while len(handler.queue) < len(subList):
+            time.sleep(0.3)
+            print "%s waiting for alert to arrive ..." % inspect.stack()[0][3]
+                
         self.alertsReceiver.shutdown()
         self.alertsReceiver = None
         # now check if the alert was properly sent (expect this many failures)    
@@ -576,7 +582,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertEqual(alert["Source"], "TaskArchiverPoller")
         
     
-    def atestTaskArchiverPollerAlertsSending_killSubscriptions(self):
+    def testTaskArchiverPollerAlertsSending_killSubscriptions(self):
         """
         Cause exception (alert-worthy situation) in
         the TaskArchiverPoller killSubscriptions method.
@@ -596,6 +602,10 @@ class TaskArchiverTest(unittest.TestCase):
         doneList = [{'id': x} for x in range(numAlerts)]
         # final re-raise is currently commented, so don't expect Exception here
         testTaskArchiver.killSubscriptions(doneList)
+        # wait for the generated alert to arrive
+        while len(handler.queue) < numAlerts:
+            time.sleep(0.3)
+            print "%s waiting for alert to arrive ..." % inspect.stack()[0][3]        
         
         self.alertsReceiver.shutdown()
         self.alertsReceiver = None

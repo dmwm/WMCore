@@ -216,7 +216,7 @@ class JobTrackerTest(unittest.TestCase):
         config.JobSubmitter.submitDir     = os.path.join(self.testDir, 'submit')
         config.JobSubmitter.submitNode    = os.getenv("HOSTNAME", 'badtest.fnal.gov')
         #config.JobSubmitter.submitScript  = os.path.join(os.getcwd(), 'submit.sh')
-        config.JobSubmitter.submitScript  = os.path.join(WMCore.WMInit.getWMBASE(),
+        config.JobSubmitter.submitScript  = os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                                          'test/python/WMComponent_t/JobSubmitter_t',
                                                          'submit.sh')
         config.JobSubmitter.componentDir  = os.path.join(os.getcwd(), 'Components')

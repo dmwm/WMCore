@@ -16,6 +16,14 @@ import WMCore.RequestManager.RequestDB.Interface.Request.Campaign as Campaign
 import WMCore.RequestManager.RequestDB.Interface.Admin.RequestManagement as RequestAdmin
 import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareManagement
 
+from WMCore.WMException         import WMException
+
+
+class RequestCheckInError(WMException):
+    """
+    Reporting errors when a problem with check-in operations occurs
+    """
+
 
 def raiseCheckInError(request, ex, msg):
     requestName = request['RequestName']
@@ -29,10 +37,10 @@ def raiseCheckInError(request, ex, msg):
        # make absolutely sure you're deleting the right one
        oldReqId = request['RequestID']
        if oldReqId != reqId:
-           raise RuntimeError, "Bad state deleting request %s/%s.  Please contact a ReqMgr administrator" % (oldReqId/ reqId)
+           raise RequestCheckInError("Bad state deleting request %s/%s.  Please contact a ReqMgr administrator" % (oldReqId/ reqId))
        else:
            RequestAdmin.deleteRequest(reqId)
-    raise RuntimeError, msg
+    raise RequestCheckInError( msg )
 
 
 def checkIn(request):
@@ -53,7 +61,7 @@ def checkIn(request):
     versions = SoftwareManagement.listSoftware()
     for version in request.get('SoftwareVersions', []):
         if not version in versions:
-            raise RuntimeError, "Cannot find software version %s in ReqMgr" % version
+            raise RequestCheckInError("Cannot find software version %s in ReqMgr" % version)
 
     try:
         reqId = MakeRequest.createRequest(
@@ -67,7 +75,7 @@ def checkIn(request):
     except Exception, ex:
         msg = "Error creating new request:\n"
         msg += str(ex)
-        raise RuntimeError, msg
+        raise RequestCheckInError( msg )
     #FIXME LAST_INSERT_ID doesn't work on oracle
     reqId = GetRequest.requestID(requestName)
     request['RequestID'] = reqId

@@ -1296,6 +1296,101 @@ class FilesetTest(unittest.TestCase):
 
         return
 
+    def testAddToWMBSInBulk(self):
+        """
+        testAddToWMBSInBulk
+
+        test create and add files to fileset in one go
+        """
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))
+        testFileA.addRun(Run( 1, *[45]))
+
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))
+        testFileB.addRun(Run( 1, *[45]))
+
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))
+        testFileC.addRun(Run( 1, *[45]))
+
+        testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
+                         events = 20, checksums = {'cksum': 3},
+                         locations = set(["goodse.cern.ch"]))
+        testFileD.addRun(Run( 1, *[45]))
+
+
+        testWorkflowA = Workflow(spec = "spec1.xml", owner = "Hassen",
+                                 name = "wf001", task = "sometask")
+        testWorkflowA.create()
+        testWorkflowB = Workflow(spec = "spec2.xml", owner = "Hassen",
+                                 name = "wf002", task = "sometask")
+        testWorkflowB.create()
+
+        testFilesetA = Fileset(name = "TestFilesetA")
+        testFilesetA.create()
+        testFilesetB = Fileset(name = "TestFilesetB")
+        testFilesetB.create()
+
+        testSubscriptionA = Subscription(fileset = testFilesetA,
+                                         workflow = testWorkflowA)
+        testSubscriptionA.create()
+        testSubscriptionB = Subscription(fileset = testFilesetB,
+                                         workflow = testWorkflowB)
+        testSubscriptionB.create()
+
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+
+        testFilesetA.addFilesToWMBSInBulk([testFileA, testFileB, testFileC],
+                                          testWorkflowA.name)
+        testFilesetB.addFilesToWMBSInBulk([testFileB, testFileC, testFileD],
+                                          testWorkflowB.name)
+
+        testFilesetA.loadData()
+        testFilesetB.loadData()
+
+        goldenFiles = [testFileA, testFileB, testFileC]
+        for filesetFile in testFilesetA.files:
+            assert filesetFile in goldenFiles, \
+                   "ERROR: Unknown file in fileset"
+            goldenFiles.remove(filesetFile)
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Fileset is missing files"
+
+        goldenFiles = [testFileA, testFileB, testFileC]
+        for filesetFile in testSubscriptionA.filesOfStatus("Available"):
+            assert filesetFile["lfn"] in goldenFiles, \
+                   "ERROR: Unknown file in fileset"
+            goldenFiles.remove(filesetFile["lfn"])
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Fileset is missing files"
+
+        goldenFiles = [testFileB, testFileC, testFileD]
+        for filesetFile in testFilesetB.files:
+            assert filesetFile in goldenFiles, \
+                   "ERROR: Unknown file in fileset"
+            goldenFiles.remove(filesetFile)
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Fileset is missing files"
+
+        goldenFiles = [testFileB, testFileC, testFileD]
+        for filesetFile in testSubscriptionB.filesOfStatus("Available"):
+            assert filesetFile["lfn"] in goldenFiles, \
+                   "ERROR: Unknown file in fileset"
+            goldenFiles.remove(filesetFile["lfn"])
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Fileset is missing files"
+
+        return
+
     def testSetLastUpdate(self):
         """
         _testSetLastUpdate_

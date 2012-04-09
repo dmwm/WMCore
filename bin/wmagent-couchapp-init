@@ -299,7 +299,7 @@ if __name__ == "__main__":
 
     if hasattr(wmagentConfig, "ACDC"):
         installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "ACDC")
-        installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")    
+        installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")
 
     if hasattr(wmagentConfig, "WorkQueueManager"):
         installWorkQueueCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname)
@@ -307,5 +307,17 @@ if __name__ == "__main__":
         if options.cron:
             setupCronCompaction(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname)
             setupCronCompaction(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.inboxDatabase)
+
+    if hasattr(wmagentConfig, "WorkloadSummary"):
+        installCouchApp(wmagentConfig.WorkloadSummary.couchurl, wmagentConfig.WorkloadSummary.database, "WorkloadSummary")
+
+    if hasattr(wmagentConfig, "AsyncTransfer"):
+        basePath = "%s/couchapp" % os.environ['ASYNC_ROOT']
+        installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "AsyncTransfer", basePath)
+        installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "monitor", basePath)
+        installCouchApp(wmagentConfig.AsyncTransfer.couch_statinstance, wmagentConfig.AsyncTransfer.statitics_database, "stat", basePath)
+        if options.cron:
+            setupCronCompaction(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database)
+            setupCronCompaction(wmagentConfig.AsyncTransfer.couch_statinstance, wmagentConfig.AsyncTransfer.statitics_database)
 
     sys.exit(0)

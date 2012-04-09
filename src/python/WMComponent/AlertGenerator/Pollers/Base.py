@@ -6,13 +6,14 @@ within the Alert messaging framework.
 
 import time
 import logging
+import threading
 
 import psutil
 
 from WMCore.Alerts import API as alertAPI
 from WMCore.Alerts.Alert import Alert
 from WMCore.Alerts.ZMQ.Sender import Sender
- 
+
 
 
 class ProcessDetail(object):
@@ -60,19 +61,17 @@ class Measurements(list):
 
 
 
-class BasePoller(object):
+class BasePoller(threading.Thread):
     """
-    Base class for various pollers. Class provides esp. entry point
-    poll() method from which poller's life starts in a background process
-    and Sender instance.
-    
-    Methods of this class as well as of the inherited ones run in different
-    process contexts. The attributes are not shared and if accessed from both
-    contexts, the initial values are taken (as set up in the initial process)
-    and then modified in the later (polling) process context.
+    Base class for various pollers running as Thread.
+    Each poller creates own Sender instance.
+    Starting from Thread entry point method run(), methods run
+    in different thread contexts. The only shared variable shall
+    be _stopFlag.
     
     """
     def __init__(self, config, generator):
+        threading.Thread.__init__(self)
         # it's particular Poller config only
         self.config = config
         # reference to AlertGenerator instance
@@ -92,41 +91,68 @@ class BasePoller(object):
                          Workload = "n/a",
                          Component = self.generator.__class__.__name__,
                          Source = "<to_overwrite>")
-        self.preAlert = alertAPI.getPredefinedAlert(**dictAlert) 
-                               
+        self.preAlert = alertAPI.getPredefinedAlert(**dictAlert)
+        # flag controlling run of the Thread
+        self._stopFlag = False
+        # thread own sleep time
+        self._threadSleepTime = 0.5 # seconds
+        
 
-    def poll(self):
+    def run(self):
         """
         This method is called from the AlertGenerator component instance and is
-        entry point for different process. Sender instance needs to be created
-        here. Each poller instance has its own sender instance.
+        entry point for a thread. 
         
         """
+        # when running with multiprocessing, this was necessary, stick to it
+        # with threading as well - may create some thread-safety issues in ZMQ ...
         self.sender = Sender(self.generator.config.Alert.address,
                              self.__class__.__name__,
                              self.generator.config.Alert.controlAddr)
         self.sender.register()
-        while True:
-            # it would feel that check() takes long time but there is
-            # specified a delay in case of psutil percentage calls
-            self.check()
-            time.sleep(self.config.pollInterval)
-        
-    
-    def shutdown(self):
+        counter = self.config.pollInterval
+        # want to periodically check whether the thread should finish,
+        # would be impossible to terminate a sleeping thread
+        while not self._stopFlag:
+            if counter == self.config.pollInterval:
+                # it would feel that check() takes long time but there is
+                # specified a delay in case of psutil percentage calls                
+                self.check()
+                counter -= self._threadSleepTime
+                if counter <= 0:
+                    counter = self.config.pollInterval
+            if self._stopFlag:
+                break
+            time.sleep(self._threadSleepTime)
+                    
+            
+    def terminate(self):
         """
-        This method is called from main AlertGenerator process to unregister
-        senders with receiver. Has to create a new sender instance and 
-        unregister the name. self.sender instance created in poll() is not
-        visible to this process.
+        Methods added when Pollers were reimplemented to run as
+        multi-threaded rather than multiprocessing.
+        This would be a slightly blocking call - wait for the thread to finish.
         
         """
+        self._stopFlag = True
+        self.join(self._threadSleepTime + 0.1)
+        if self.is_alive():
+            logging.error("Thread %s refuses to finish, continuing." % self.__class__.__name__)
+        else:
+            logging.debug("Thread %s finished." % self.__class__.__name__)
+            
+        # deregister with the receiver
+        # (was true for multiprocessing implemention:
+        # has to create a new sender instance and unregister the name. 
+        # self.sender instance was created in different thread in run())
         sender = Sender(self.generator.config.Alert.address,
                         self.__class__.__name__,
                         self.generator.config.Alert.controlAddr)
         sender.unregister()
+        # if messages weren't consumed, this should get rid of them
+        del sender
+        del self.sender
         
-        
+         
         
 class PeriodPoller(BasePoller):
     """
@@ -176,15 +202,9 @@ class PeriodPoller(BasePoller):
                     details["threshold"] = "%s%%" % threshold
                     a["Details"] = details                    
                     a["Level"] = level
-                    # #2238 AlertGenerator test can take 1 hour+ (and fail)
-                    # logging from different process context (multiprocessing.Process)
-                    # causes issues, own new logging.getLogger not helpful
-                    #logging.debug(a)
+                    logging.debug(a)
                     self.sender(a)
                     break # send only one alert, critical threshold tested first
         if avgPerc != None:
             m = ("%s: measurements result: %s%%" % (self.__class__.__name__, avgPerc))
-            # #2238 AlertGenerator test can take 1 hour+ (and fail)
-            # logging from different process context (multiprocessing.Process)
-            # causes issues, own new logging.getLogger not helpful
-            #logging.debug(m)
+            logging.debug(m)

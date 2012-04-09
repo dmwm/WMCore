@@ -95,10 +95,22 @@ def createAlgoFromInfo(info):
 
     configString = info.get('PSetContent')
     if configString:
-        split = configString.split(';;')
-        cacheURL = split[0]
-        cacheDB  = split[1]
-        configID = split[2]
+        try:
+            split = configString.split(';;')
+            cacheURL = split[0]
+            cacheDB  = split[1]
+            configID = split[2]
+        except IndexError:
+            msg =  "configCache not properly formatted\n"
+            msg += "configString\n: %s" % configString
+            msg += "Not attempting to put configCache content in DBS for this algo"
+            msg += "AlgoInfo: %s" % algo
+            logging.error(msg)
+            return algo
+        if cacheURL == "None" or cacheDB == "None" or configID == "None":
+            # No Config for this DB
+            logging.debug("No configCache for this algo")
+            return algo
         try:
             configCache = ConfigCache(cacheURL, cacheDB)
             configCache.loadByID(configID)
@@ -111,8 +123,6 @@ def createAlgoFromInfo(info):
             logging.error(msg)
             logging.debug("URL: %s,  DB: %s,  ID: %s" % (cacheURL, cacheDB, configID))
             
-        
-
     return algo
 
 def sortByDAS(incoming):

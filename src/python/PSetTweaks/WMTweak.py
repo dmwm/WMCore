@@ -402,7 +402,7 @@ def makeJobTweak(job):
                 # one.
                 logging.debug("MCFakeFile initiated without job FirstLumi - using counter.")
                 result.addParameter("process.source.firstLuminosityBlock",
-                                    int(job["counter"]) + 1)
+                                    int(job["counter"]))
 
             # Assign the run
             if getattr(job['mask'], 'FirstRun', None) != None:
@@ -439,9 +439,6 @@ def makeJobTweak(job):
     firstRun = mask['FirstRun']
     if firstRun != None:
         result.addParameter("process.source.firstRun", firstRun)
-    #lastRun = mask['LastRun']
-    #if lastRun != None:
-    #    result.addParameter("process.source.lastRun", lastRun)
 
     runs = mask.getRunAndLumis()
     lumisToProcess = []
@@ -458,6 +455,11 @@ def makeJobTweak(job):
                         
     # install any settings from the per job baggage
     baggage = job.getBaggage()
+
+    if hasattr(baggage, "eventsPerJob"):
+        result.addParameter("process.source.firstEvent",
+                            (int(baggage.eventsPerJob) * (int(job["counter"]) - 1)) + 1)
+        
     procSection = getattr(baggage, "process", None)
     if procSection == None:
         return result

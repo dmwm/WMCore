@@ -52,7 +52,7 @@ class WMBSMergeBySize(unittest.TestCase):
         self.testInit.clearDatabase()
         return
 
-    def stuffWMBS(self):
+    def stuffWMBS(self, injected = True):
         """
         _stuffWMBS_
 
@@ -80,6 +80,8 @@ class WMBSMergeBySize(unittest.TestCase):
         mergeWorkflow = Workflow(name = "mergeWorkflow", spec = "bunk2",
                                  owner = "Steve", task="Test")
         mergeWorkflow.create()
+        markWorkflow = self.daoFactory(classname = "Workflow.MarkInjectedWorkflows")
+        markWorkflow.execute(names = [mergeWorkflow.name], injected = injected)
         
         self.mergeSubscription = Subscription(fileset = self.mergeFileset,
                                               workflow = mergeWorkflow,
@@ -1103,6 +1105,28 @@ class WMBSMergeBySize(unittest.TestCase):
         for failedFile in failedFiles:
             assert failedFile["file"] in goldenIDs, \
                    "Error: Extra failed file."
+
+        return
+
+
+    def testForcedMerge(self):
+        """
+        _testForcedMerge_
+
+        Repeat testMinMergeSize1a, but with non-injected files to assert that
+        this causes no jobgroups to be created.
+        """
+        self.stuffWMBS(injected = False)
+        self.mergeFileset.markOpen(False)
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.mergeSubscription)
+
+        result = jobFactory(min_merge_size = 20000, max_merge_size = 200000,
+                            max_merge_events = 20000)
+
+        self.assertEqual(len(result), 0)
 
         return
     

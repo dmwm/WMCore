@@ -1,6 +1,7 @@
 import os
 import time
 import unittest
+import inspect
 
 from WMCore.Configuration import ConfigSection
 from WMCore.Configuration import Configuration
@@ -127,15 +128,16 @@ class ForwardSinkTest(unittest.TestCase):
         worker(self.address1, self.controlAddr1, 10)
         # wait until receiver1 shuts
         while receiver1.isReady():
-            time.sleep(0.1)
-        print "Receiver1 shut."
+            time.sleep(0.4)
+            print "%s waiting for Receiver1 to shut ..." % inspect.stack()[0][3]
+        
         # shut down receiver2 - need to sendShutdown() to it
         s = Sender(self.address2, "some_id", self.controlAddr2)
         s.sendShutdown()
         # wait until receiver2 shuts
         while receiver2.isReady():
-            time.sleep(0.1)
-        print "Receiver2 shut."
+            time.sleep(0.4)
+            print "%s waiting for Receiver2 to shut ..." % inspect.stack()[0][3]
 
         # check the result in the files
         # the bufferSize for soft-level Alerts was set to 0 so all

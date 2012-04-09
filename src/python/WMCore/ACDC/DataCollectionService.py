@@ -1,4 +1,4 @@
-343#!/usr/bin/env python
+#!/usr/bin/env python
 # encoding: utf-8
 """
 DataCollectionInterface.py
@@ -31,19 +31,19 @@ class DataCollectionService(CouchService):
         CouchService.__init__(self, url = url,
                               database = database,
                               **opts)
-        
-            
+
+
     @CouchUtils.connectToCouch
     def getDataCollection(self, collName, user = "cmsdataops",
                           group = "cmsdataops"):
         """
         _getDataCollection_
-        
+
         Get a data collection by name
         """
         coll = CouchCollection(name = collName, database = self.database,
                                url = self.url)
-        
+
         coll.owner = self.newOwner(group, user)
         coll.populate()
         return coll
@@ -52,7 +52,7 @@ class DataCollectionService(CouchService):
     def failedJobs(self, failedJobs):
         """
         _failedJobs_
-        
+
         Given a list of failed jobs, sort them into Filesets and record them
 
         NOTE: jobs must have a non-standard task, workflow, owner and group
@@ -120,7 +120,7 @@ class DataCollectionService(CouchService):
             numFilesInBlock += 1
             numLumisInBlock += row["value"]["lumis"]
             numEventsInBlock += row["value"]["events"]
-            
+
         if numFilesInBlock > 0:
             chunks.append({"offset": totalFiles, "files": numFilesInBlock,
                            "events": numEventsInBlock, "lumis": numLumisInBlock,
@@ -156,11 +156,11 @@ class DataCollectionService(CouchService):
             numFilesInBlock += 1
             numLumisInBlock += row["value"]["lumis"]
             numEventsInBlock += row["value"]["events"]
-            
+
         return {"offset": totalFiles, "files": numFilesInBlock,
                 "events": numEventsInBlock, "lumis": numLumisInBlock,
                 "locations": currentLocation}
-    
+
     @CouchUtils.connectToCouch
     def getChunkFiles(self, collectionName, filesetName, chunkOffset, chunkSize = 100,
                       user = "cmsdataops", group = "cmsdataops"):
@@ -171,9 +171,9 @@ class DataCollectionService(CouchService):
         """
         chunkFiles = []
         result = self.couchdb.loadView("ACDC", "owner_coll_fileset_files",
-                                       {"startkey": [group, user, 
+                                       {"startkey": [group, user,
                                                      collectionName, filesetName],
-                                        "endkey": [group, user, 
+                                        "endkey": [group, user,
                                                    collectionName, filesetName, {}],
                                         "limit": chunkSize,
                                         "skip": chunkOffset,
@@ -188,7 +188,7 @@ class DataCollectionService(CouchService):
                 newRun = Run(run["run_number"])
                 newRun.extend(run["lumis"])
                 newFile.addRun(newRun)
-                
+
             chunkFiles.append(newFile)
 
         return chunkFiles
@@ -245,5 +245,5 @@ class DataCollectionService(CouchService):
 
             currentSet.append(lastLumi)
             whiteList[str(run)].append(currentSet)
-            
+
         return whiteList

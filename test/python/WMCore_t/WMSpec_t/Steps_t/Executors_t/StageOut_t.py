@@ -212,7 +212,8 @@ class otherStageOutTest(unittest.TestCase):
         myThread = threading.currentThread()
         if hasattr(myThread, "factory"):
             myThread.factory = {}
-     
+
+    @attr('integration')
     def testCPBackendStageOutAgainstReportNew(self):
         myReport = Report('cmsRun1')
         myReport.unpersist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
@@ -226,7 +227,8 @@ class otherStageOutTest(unittest.TestCase):
         executor.execute( )
         self.assertTrue( os.path.exists( os.path.join( self.testDir, 'hosts' )))
         self.assertTrue( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
-    
+
+    @attr('integration')
     def testCPBackendStageOutAgainstReportFailedStepNew(self):
         myReport = Report('cmsRun1')
         myReport.unpersist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
@@ -240,7 +242,9 @@ class otherStageOutTest(unittest.TestCase):
         executor.execute( )
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'hosts' )))
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
+        return
         
+    @attr('integration')
     def testCPBackendStageOutAgainstReportOld(self):
         
         myReport = Report('cmsRun1')
@@ -254,7 +258,9 @@ class otherStageOutTest(unittest.TestCase):
         executor.execute( )
         self.assertTrue( os.path.exists( os.path.join( self.testDir, 'hosts' )))
         self.assertTrue( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
-#    
+        return
+
+    @attr('integration') 
     def testCPBackendStageOutAgainstReportFailedStepOld(self):
         myReport = Report('cmsRun1')
         myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
@@ -268,6 +274,7 @@ class otherStageOutTest(unittest.TestCase):
         executor.execute( )
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'hosts' )))
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
+        return
     
     @attr('workerNodeTest')
     def testOnWorkerNodes(self):

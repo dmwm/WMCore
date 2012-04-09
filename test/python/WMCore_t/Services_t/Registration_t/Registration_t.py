@@ -11,7 +11,7 @@ import os
 import tempfile
 
 from WMCore.Services.Registration.Registration import Registration
-from WMCore.Services.Requests import BasicAuthJSONRequests
+from WMCore.Services.Requests import JSONRequests as BasicAuthJSONRequests
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 class RegistrationTest(unittest.TestCase):

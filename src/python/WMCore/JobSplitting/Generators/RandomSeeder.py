@@ -7,9 +7,9 @@ Simple Random seed generator
 """
 import random
 
-from WMCore.WMSpec.Seeders.SeederInterface import SeederInterface
+from WMCore.JobSplitting.Generators.GeneratorInterface import GeneratorInterface
 
-class RandomSeeder(SeederInterface):
+class RandomSeeder(GeneratorInterface):
     """
     Seeder that generates a set of random numbers for a job
     and inserts them into the job baggage
@@ -18,11 +18,7 @@ class RandomSeeder(SeederInterface):
     def __init__(self, **options):
         self.options  = options
         self._inst    = random.SystemRandom()
-        self._MAXINT  = 900000000
-        #Allow the user to set the integer range
-        if 'MAXINT' in options.keys():
-            self._MAXINT = int(options['MAXINT'])
-            del self.options['MAXINT']
+        self._MAXINT  = options.get('MAXINT', 900000000)
 
     def __call__(self, wmbsJob):
         baggage = wmbsJob.getBaggage()

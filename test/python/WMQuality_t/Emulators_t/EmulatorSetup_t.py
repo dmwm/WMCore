@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import unittest
-from WMQuality.Emulators.EmulatorSetup import EmulatorHelper
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON

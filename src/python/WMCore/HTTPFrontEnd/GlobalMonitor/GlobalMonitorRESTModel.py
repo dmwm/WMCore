@@ -26,11 +26,11 @@ class GlobalMonitorRESTModel(RESTModel):
         self.serviceLevel = self.config.serviceLevel
         self.workloadSummaryCouchURL = self.config.workloadSummaryCouchURL
 
-        self._addMethod("GET", "requestmonitor", self.getRequestMonitor) #expires=16000
+        self._addMethod("GET", "requestmonitor", self.getRequestMonitor, secured=True) #expires=16000
         self._addMethod("GET", "agentmonitor", self.getAgentMonitor,
-                       args = ['detail'])
-        self._addMethod("GET", "sitemonitor", self.getSiteMonitor)
-        self._addMethod("GET", "env", self.getEnvValues)
+                       args = ['detail'], secured=True)
+        self._addMethod("GET", "sitemonitor", self.getSiteMonitor, secured=True)
+        self._addMethod("GET", "env", self.getEnvValues, secured=True)
 
     def getRequestMonitor(self):
         return getRequestOverview(self.serviceURL, self.serviceLevel)

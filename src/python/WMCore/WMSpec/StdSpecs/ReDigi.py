@@ -221,7 +221,7 @@ class ReDigiWorkloadFactory(StdBase):
          self.inputDataTier) = self.inputDataset[1:].split("/")
         
         workload = self.createWorkload()
-        workload.setDashboardActivity("reprocessing")
+        workload.setDashboardActivity("redigi")
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
         stepOneTask = workload.newTask("StepOneProc")
 

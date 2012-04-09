@@ -4,9 +4,9 @@ _RunAndLumiSeeder_
 
 
 """
-from WMCore.WMSpec.Seeders.SeederInterface import SeederInterface
+from WMCore.JobSplitting.Generators.GeneratorInterface import GeneratorInterface
 
-class RunAndLumiSeeder(SeederInterface):
+class RunAndLumiSeeder(GeneratorInterface):
 
     def __init__(self, **options):
         self.initialRun    = int(options.get("initial_run",   1))

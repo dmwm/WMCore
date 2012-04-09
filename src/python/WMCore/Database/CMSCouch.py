@@ -678,7 +678,6 @@ class RotatingDatabase(Database):
             db_state = self.seed_db.document(db['id'])
             self.seed_db.queueDelete(db_state)
         self.seed_db.commit()
-        self.seed_db.compact()
 
     def _find_dbs_in_state(self, state, options = {}):
         # TODO: couchapp this, how to make sure that the app is deployed?

@@ -31,7 +31,7 @@ class WorkflowTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         return
-                       
+
     def tearDown(self):
         """
         _tearDown_
@@ -130,7 +130,7 @@ class WorkflowTest(unittest.TestCase):
 
         self.assertTrue(testWorkflow.exists() > 0,
                         "ERROR: Workflow does not exist transaction was rolled back")
-        
+
         return
 
     def testLoad(self):
@@ -157,7 +157,7 @@ class WorkflowTest(unittest.TestCase):
                         (testWorkflowA.wfType == testWorkflowB.wfType) and
                         (testWorkflowA.owner == testWorkflowB.owner),
                         "ERROR: Workflow.LoadFromName Failed")
-        
+
         testWorkflowC = Workflow(id = testWorkflowA.id)
         testWorkflowC.load()
 
@@ -165,10 +165,10 @@ class WorkflowTest(unittest.TestCase):
                         (testWorkflowA.name == testWorkflowC.name) and
                         (testWorkflowA.spec == testWorkflowC.spec) and
                         (testWorkflowA.task == testWorkflowC.task) and
-                        (testWorkflowA.wfType == testWorkflowC.wfType) and                        
+                        (testWorkflowA.wfType == testWorkflowC.wfType) and
                         (testWorkflowA.owner == testWorkflowC.owner),
                         "ERROR: Workflow.LoadFromID Failed")
-        
+
         testWorkflowD = Workflow(spec = "spec.xml", owner = "Simon", task='Test')
         testWorkflowD.load()
 
@@ -176,8 +176,75 @@ class WorkflowTest(unittest.TestCase):
                         (testWorkflowA.name == testWorkflowD.name) and
                         (testWorkflowA.spec == testWorkflowD.spec) and
                         (testWorkflowA.task == testWorkflowD.task) and
-                        (testWorkflowA.wfType == testWorkflowD.wfType) and                        
+                        (testWorkflowA.wfType == testWorkflowD.wfType) and
                         (testWorkflowA.owner == testWorkflowD.owner),
+                        "ERROR: Workflow.LoadFromSpecOwner Failed")
+
+        testWorkflowA.delete()
+        return
+
+    def testCreateLoadWithUserAtt(self):
+        """
+        _testLoad_
+
+        Create a workflow and then try to load it from the database using the
+        following load methods:
+          Workflow.LoadFromName
+          Workflow.LoadFromID
+          Workflow.LoadFromSpecOwner
+        Test if the Workflow is created correctly.
+        """
+        testWorkflowA = Workflow(spec = "spec.xml", owner = "Simon",
+                                 owner_vogroup = 'integration', owner_vorole = 'priority',
+                                 name = "wf001", task='Test', wfType="ReReco")
+        testWorkflowA.create()
+
+        testWorkflowB = Workflow(name = "wf001", task='Test')
+        testWorkflowB.load()
+
+        self.assertTrue((testWorkflowA.id == testWorkflowB.id) and
+                        (testWorkflowA.name == testWorkflowB.name) and
+                        (testWorkflowA.spec == testWorkflowB.spec) and
+                        (testWorkflowA.task == testWorkflowB.task) and
+                        (testWorkflowA.wfType == testWorkflowB.wfType) and
+                        (testWorkflowA.owner == testWorkflowB.owner),
+                        "ERROR: Workflow.LoadFromName Failed")
+
+        testWorkflowC = Workflow(id = testWorkflowA.id)
+        testWorkflowC.load()
+
+        self.assertTrue((testWorkflowA.id == testWorkflowC.id) and
+                        (testWorkflowA.name == testWorkflowC.name) and
+                        (testWorkflowA.spec == testWorkflowC.spec) and
+                        (testWorkflowA.task == testWorkflowC.task) and
+                        (testWorkflowA.wfType == testWorkflowC.wfType) and
+                        (testWorkflowA.owner == testWorkflowC.owner),
+                        "ERROR: Workflow.LoadFromID Failed")
+
+        testWorkflowD = Workflow(spec = "spec.xml", owner = "Simon", task='Test')
+        testWorkflowD.load()
+
+        self.assertTrue((testWorkflowA.id == testWorkflowD.id) and
+                        (testWorkflowA.name == testWorkflowD.name) and
+                        (testWorkflowA.spec == testWorkflowD.spec) and
+                        (testWorkflowA.task == testWorkflowD.task) and
+                        (testWorkflowA.wfType == testWorkflowD.wfType) and
+                        (testWorkflowA.owner == testWorkflowD.owner),
+                        "ERROR: Workflow.LoadFromSpecOwner Failed")
+
+        testWorkflowE = Workflow(spec = "spec_1.xml", owner = "Simon",
+                                 owner_vogroup = 't1access', owner_vorole = 't1access',
+                                 name = "wf002", task='Test_1', wfType="ReReco")
+        testWorkflowE.create()
+
+        self.assertTrue((testWorkflowE.id != testWorkflowA.id) and
+                        (testWorkflowE.name != testWorkflowA.name) and
+                        (testWorkflowE.spec != testWorkflowA.spec) and
+                        (testWorkflowE.vogroup != testWorkflowA.vogroup) and
+                        (testWorkflowE.vorole != testWorkflowA.vorole) and
+                        (testWorkflowE.task != testWorkflowA.task) and
+                        (testWorkflowE.wfType == testWorkflowA.wfType) and
+                        (testWorkflowE.owner == testWorkflowA.owner),
                         "ERROR: Workflow.LoadFromSpecOwner Failed")
 
         testWorkflowA.delete()
@@ -202,7 +269,7 @@ class WorkflowTest(unittest.TestCase):
         testMergedFilesetA.create()
         testMergedFilesetB.create()
         testMergedFilesetC.create()
-        
+
         testWorkflowA = Workflow(spec = "spec.xml", owner = "Simon",
                                  name = "wf001", task='Test')
         testWorkflowA.create()
@@ -266,7 +333,7 @@ class WorkflowTest(unittest.TestCase):
 
         listFromTask = loadFromTaskDAO.execute(task = testWorkflow1.task)
 
-        self.assertEqual(len(listFromTask), 1, 
+        self.assertEqual(len(listFromTask), 1,
                           "ERROR: listFromTask should be 1.")
         self.assertEqual(listFromTask[0]["task"], "sometask",
                          "ERROR: task should be sometask.")
@@ -301,7 +368,7 @@ class WorkflowTest(unittest.TestCase):
                                                   dn   = testWorkflow2.owner,
                                                   spec = testWorkflow2.spec )
 
-        testWorkflow3 = Workflow(spec = "spec3.xml", owner = "Ciccio", 
+        testWorkflow3 = Workflow(spec = "spec3.xml", owner = "Ciccio",
                                  name = "wf003", task = "MultiUser-support")
         testWorkflow3.create()
 
@@ -325,7 +392,7 @@ class WorkflowTest(unittest.TestCase):
 
         """
         spec  = "spec.py"
-        owner = "moron"        
+        owner = "moron"
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
                                 dbinterface = myThread.dbi)
@@ -362,7 +429,7 @@ class WorkflowTest(unittest.TestCase):
 
         workflows = []
         for i in range(0, 10):
-            testWorkflow = Workflow(spec = spec, owner = owner,
+            testWorkflow = Workflow(spec = "sp00%i" % i, owner = owner,
                                     name = "wf00%i" % i, task = "task%i" % i)
             testWorkflow.create()
             workflows.append(testWorkflow)
@@ -381,13 +448,13 @@ class WorkflowTest(unittest.TestCase):
         names = ['wf002', 'wf004', 'wf006', 'wf008']
         markAction.execute(names = names, injected = True)
 
-        
+
         result = getAction.execute(injected = True)
         self.assertEqual(result, names)
         result = getAction.execute(injected = False)
         self.assertEqual(len(result), 6)
         return
-        
+
 
 
 if __name__ == "__main__":

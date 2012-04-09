@@ -13,6 +13,7 @@ from optparse import OptionParser
 from WMCore.WMInit import connectToDB
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 
 def createOptionParser():
     """
@@ -25,6 +26,13 @@ def createOptionParser():
     myOptParser.add_option("-p", "--thresholds", dest = "printThresholds",
                            default = False, action = "store_true",
                            help = "Print out all known thresholds and site information.")
+    myOptParser.add_option("--add-T1s", dest = "addT1s", default = False, action = "store_true",
+                           help = "Add all of the CMS T1 sites to resource control.")
+    myOptParser.add_option("--add-T2s", dest = "addT2s", default = False, action = "store_true",
+                           help = "Add all of the CMS T2 sites to resource control.")
+    myOptParser.add_option("--add-all-sites", dest = "addAllSites", default = False,
+                           action = "store_true",
+                           help = "Add all of the CMS sites to resource control.")
     myOptParser.add_option("--site-name", dest = "siteName",
                            help = "Specify the unique name of the location")
     myOptParser.add_option("--site-slots", dest = "jobSlots",
@@ -45,6 +53,59 @@ def createOptionParser():
                            help = "Specify submit plugin to use for specific site")
 
     return myOptParser
+
+def getCMSSiteInfo(pattern):
+    """
+    _getCMSSiteInfo_
+
+    Query SiteDB for the site and SE names matching the pattern.  Return a
+    dictionary keyed by site name.
+    """
+    nameSEMapping = {}
+    print "Querying SiteDB for site information..."
+    
+    siteDB = SiteDBJSON()
+    for seName in siteDB.cmsNametoList(pattern, "SE", "result.json"):
+        cmsName = siteDB.seToCMSName(seName)
+        nameSEMapping[cmsName] = seName
+
+    return nameSEMapping
+
+def addSites(resourceControl, allSites, ceName, plugin, jobSlots):
+    """
+    _addSites_
+
+    Add the given sites to resource control and add tasks as well.
+    """
+    if options.jobSlots == None:
+        jobSlots = 10
+    else:
+        jobSlots = options.jobSlots
+
+    for siteName in allSites.keys():
+        if ceName == None:
+            updateSiteInfo(resourceControl, siteName, jobSlots,
+                           siteName, allSites[siteName], plugin, siteName)
+        else:
+            updateSiteInfo(resourceControl, siteName, jobSlots,
+                           ceName, allSites[siteName], plugin, siteName)
+
+        updateThresholdInfo(resourceControl, siteName, "Merge", jobSlots,
+                            priority = 5)
+        updateThresholdInfo(resourceControl, siteName, "Cleanup", jobSlots,
+                            priority = 5)
+        updateThresholdInfo(resourceControl, siteName, "LogCollect", jobSlots,
+                            priority = 3)
+        updateThresholdInfo(resourceControl, siteName, "Skim", jobSlots,
+                            priority = 2)
+        updateThresholdInfo(resourceControl, siteName, "Production", jobSlots,
+                            priority = 1)        
+        updateThresholdInfo(resourceControl, siteName, "Processing", jobSlots,
+                            priority = 1)
+        updateThresholdInfo(resourceControl, siteName, "Analysis", jobSlots,
+                            priority = 1)
+
+    return
 
 def printThresholds(resourceControl, desiredSiteName):
     """
@@ -91,9 +152,9 @@ def updateSiteInfo(resourceControl, siteName, jobSlots = None,
     information about sites in the database if it already exists.
     """
     if resourceControl.listSiteInfo(siteName) == None:
-        if jobSlots == None or ceName == None or seName == None:
-            print "You must specify the number of job slots, the SE name and"
-            print "the CE name when adding a site."
+        if jobSlots == None or ceName == None or seName == None or plugin == None:
+            print "You must specify the number of job slots, the SE name, "
+            print "the CE name and a plugin when adding a site."
             print ""
             myOptParser.print_help()
             sys.exit(1)
@@ -151,11 +212,23 @@ if options.printThresholds:
     printThresholds(myResourceControl, options.siteName)
     sys.exit(0)
 else:
-    if options.siteName == None:
+    if options.addT1s == True:
+        t1Sites = getCMSSiteInfo("T1*")
+        addSites(myResourceControl, t1Sites, options.ceName, options.plugin,
+                 options.jobSlots)
+    elif options.addT2s == True:
+        t2Sites = getCMSSiteInfo("T2*")
+        addSites(myResourceControl, t2Sites, options.ceName, options.plugin,
+                 options.jobSlots)
+    elif options.addAllSites == True:
+        allSites = getCMSSiteInfo("*")
+        addSites(myResourceControl, allSites, options.ceName, options.plugin,
+                 options.jobSlots)
+    elif options.siteName == None:
         print "You must specify a site name."
         myOptParser.print_help()
         sys.exit(1)
-    if options.taskType == None:
+    elif options.taskType == None:
         updateSiteInfo(myResourceControl, options.siteName, options.jobSlots,
                        options.ceName, options.seName, options.plugin, options.cmsName)
         sys.exit(0)

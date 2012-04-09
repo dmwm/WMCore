@@ -50,6 +50,7 @@ class Create(CreateWMBSBase):
         self.create = {}
         self.constraints = {}
         self.indexes = {}
+        self.inserts = {}
 
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (

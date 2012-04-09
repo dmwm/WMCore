@@ -16,6 +16,7 @@ from collections import defaultdict
 from WMCore.WMRuntime.SandboxCreator import SandboxCreator
 
 from WMCore.WMBS.File import File
+from WMCore.DataStructs.File import File as DatastructFile
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
@@ -270,7 +271,7 @@ class WMBSHelper(WMConnectionBase):
         workflow.create()
         subscription = Subscription(fileset = fileset, workflow = workflow,
                                     split_algo = task.jobSplittingAlgorithm(),
-                                    type = task.taskType())
+                                    type = task.getPrimarySubType())
         subscription.create()
         for site in task.siteWhitelist():
             subscription.addWhiteBlackList([{"site_name": site, "valid": True}])
@@ -352,7 +353,9 @@ class WMBSHelper(WMConnectionBase):
 
         self.wmbsFilesToCreate.append(wmbsFile)
 
-        totalFiles = self._addFilesToWMBSInBulk()
+        totalFiles = self.topLevelFileset.addFilesToWMBSInBulk(self.wmbsFilesToCreate,
+                                                               self.wmSpec.name(),
+                                                               isDBS = self.isDBS)
 
         self.topLevelFileset.markOpen(False)
         return totalFiles
@@ -405,7 +408,9 @@ class WMBSHelper(WMConnectionBase):
 
 
         # Add files to WMBS
-        totalFiles = self._addFilesToWMBSInBulk()
+        totalFiles = self.topLevelFileset.addFilesToWMBSInBulk(self.wmbsFilesToCreate,
+                                                               self.wmSpec.name(),
+                                                               isDBS = self.isDBS)
         # Add files to DBSBuffer
         self._createFilesInDBSBuffer()
 
@@ -413,109 +418,7 @@ class WMBSHelper(WMConnectionBase):
         return totalFiles
 
 
-    def _addFilesToWMBSInBulk(self):
-        """
-        _addFilesToWMBSInBulk
 
-        Do a bulk addition of files into WMBS
-        """
-
-        if len(self.wmbsFilesToCreate) == 0:
-            # Nothing to do
-            return 0
-
-
-        parentageBinds = []
-        runLumiBinds   = []
-        fileCksumBinds = []
-        fileLocations  = []
-        fileCreate     = []
-        fileLFNs       = []
-        lfnsToCreate   = []
-        lfnList        = []
-
-        
-        for wmbsFile in self.wmbsFilesToCreate:
-            lfn           = wmbsFile['lfn']
-            lfnList.append(lfn)
-
-            if wmbsFile['inFileset']:
-                if not lfn in fileLFNs:
-                    fileLFNs.append(lfn)
-            for parent in wmbsFile['parents']:
-                parentageBinds.append({'child': lfn, 'parent': parent["lfn"]})
-            
-            selfChecksums = wmbsFile['checksums']
-            if len(wmbsFile['runs']) > 0:
-                runLumiBinds.append({'lfn': lfn, 'runs': wmbsFile['runs']})
-
-            if len(wmbsFile['newlocations']) < 1:
-                # Then we're in trouble
-                msg = "File created in WMBS without locations!\n"
-                msg += "File lfn: %s\n" % (lfn)
-                logging.error(msg)
-                raise WorkQueueWMBSException(msg)
-
-            for loc in wmbsFile['newlocations']:
-                fileLocations.append({'lfn': lfn, 'location': loc})
-
-            if wmbsFile.exists():
-                continue
-
-            if lfn in lfnsToCreate:
-                continue
-            lfnsToCreate.append(lfn)
-
-            
-
-            if selfChecksums:
-                # If we have checksums we have to create a bind
-                # For each different checksum
-                for entry in selfChecksums.keys():
-                    fileCksumBinds.append({'lfn': lfn, 'cksum' : selfChecksums[entry],
-                                           'cktype' : entry})
-
-            fileCreate.append([lfn,
-                               wmbsFile['size'],
-                               wmbsFile['events'],
-                               None,
-                               wmbsFile["first_event"],
-                               wmbsFile["last_event"],
-                               wmbsFile['merged']])
-
-        if len(fileCreate) > 0:
-            self.addFileAction.execute(files = fileCreate,
-                                       conn = self.getDBConn(),
-                                       transaction = self.existingTransaction())
-            self.setFileAddChecksum.execute(bulkList = fileCksumBinds,
-                                            conn = self.getDBConn(),
-                                            transaction = self.existingTransaction())
-            
-        if len(fileLocations) > 0:
-            self.setFileLocation.execute(lfns = lfnList, locations = fileLocations,
-                                         isDBS = self.isDBS, conn = self.getDBConn(),
-                                         transaction = self.existingTransaction())
-        if len(runLumiBinds) > 0:
-            self.setFileRunLumi.execute(file = runLumiBinds,
-                                        conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
-            
-
-        if len(fileLFNs) > 0:
-            logging.debug("About to add %i files to fileset %i" % (len(fileLFNs),
-                                                                   self.topLevelFileset.id))
-            self.addToFileset.execute(file = fileLFNs,
-                                      fileset = self.topLevelFileset.id,
-                                      workflow = self.wmSpec.name(),
-                                      conn = self.getDBConn(),
-                                      transaction = self.existingTransaction())
-
-        if len(parentageBinds) > 0:
-            self.setParentage.execute(binds = parentageBinds,
-                                      conn = self.getDBConn(),
-                                      transaction = self.existingTransaction())
-
-        return len(fileCreate)
 
 
     def _createFilesInDBSBuffer(self):
@@ -688,14 +591,19 @@ class WMBSHelper(WMConnectionBase):
         """
         """
         wmbsParents = []
+        for parent in acdcFile["parents"]:
+            parent = self._addACDCFileToWMBSFile(DatastructFile(lfn = parent,
+                                                                locations = acdcFile["locations"]),
+                                                 inFileset = False)
+            wmbsParents.append(parent)
+
         #pass empty check sum since it won't be updated to dbs anyway
         checksums = {}
         wmbsFile = File(lfn = str(acdcFile["lfn"]),
                         size = acdcFile["size"],
                         events = acdcFile["events"],
                         checksums = checksums,
-                        #TODO: need to get list of parent lfn
-                        parents = acdcFile["parents"],
+                        parents = wmbsParents,
                         locations = acdcFile["locations"],
                         merged = acdcFile.get('merged', True))
 
@@ -708,7 +616,7 @@ class WMBSHelper(WMConnectionBase):
         self._addToDBSBuffer(dbsFile, checksums, acdcFile["locations"])
             
         logging.info("WMBS File: %s\n on Location: %s" 
-                     % (wmbsFile['lfn'], wmbsFile['locations']))
+                     % (wmbsFile['lfn'], wmbsFile['newlocations']))
 
         if inFileset:
             wmbsFile['inFileset'] = True

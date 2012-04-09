@@ -4,6 +4,9 @@ import unittest
 import logging
 import shutil
 import types
+import inspect
+
+import psutil
 
 from WMQuality.TestInit import TestInit
 from WMCore.Configuration import Configuration
@@ -168,12 +171,10 @@ class AlertGeneratorTest(unittest.TestCase):
         self.generator = None
         
         self.config = getConfig(self.testDir)
-         
         self.config.section_("CoreDatabase")
         self.config.CoreDatabase.socket = os.environ.get("DBSOCK")
         self.config.CoreDatabase.connectUrl = os.environ.get("DATABASE")
-        
-        self.testProcesses = []
+
         self.testComponentDaemonXml = "/tmp/TestComponent/Daemon.xml" 
                 
 
@@ -181,7 +182,6 @@ class AlertGeneratorTest(unittest.TestCase):
         self.testInit.clearDatabase()       
         self.testInit.delWorkDir()
         self.generator = None
-        utils.terminateProcesses(self.testProcesses)
         # if the directory and file "/tmp/TestComponent/Daemon.xml" after
         # ComponentsPoller test exist, then delete it
         d = os.path.dirname(self.testComponentDaemonXml)
@@ -200,19 +200,18 @@ class AlertGeneratorTest(unittest.TestCase):
         except Exception, ex:
             print ex
             self.fail(str(ex))
-        print "AlertGenerator and its sub-components should be running now ..."
+        logging.debug("AlertGenerator and its sub-components should be running now ...")
         
         
     def _stopComponent(self):
-        print "Going to stop the AlertGenerator ..."
+        logging.debug("Going to stop the AlertGenerator ...")
         # stop via component method
         try:
             self.generator.stopProcessor()
         except Exception, ex:
-            print ex
+            logging.error(ex)
             self.fail(str(ex))
-            
-        print "AlertGenerator should be stopped now."
+        logging.debug("AlertGenerator should be stopped now.")
         
 
     def testAlertProcessorBasic(self):
@@ -221,13 +220,21 @@ class AlertGeneratorTest(unittest.TestCase):
         Should start and stop all configured pollers.
         
         """
+        # the generator will run full-fledged pollers that may get triggered
+        # to send some alerts. need to consume such in order to avoid clashes
+        # further tests
+        handler, receiver = utils.setUpReceiver(self.config.Alert.address,
+                                                self.config.Alert.controlAddr)
         self._startComponent()
         # test that all poller processes are running
-        for poller, proc in zip(self.generator._pollers, self.generator._procs):
-            self.assertTrue(proc.is_alive())
-            #print "poller '%s' running: %s" % (poller.__class__.__name__, proc.is_alive())
+        for poller in self.generator._pollers:
+            self.assertTrue(poller.is_alive())
+        # just give the pollers some time to run
         time.sleep(5)
         self._stopComponent()
+        receiver.shutdown()
+        print "%s alerts captured by the way (test %s)." % (len(handler.queue),
+                                                            inspect.stack()[0][3])
         
 
     def testAllFinalClassPollerImplementations(self):
@@ -248,18 +255,15 @@ class AlertGeneratorTest(unittest.TestCase):
         
         # need to create some temp directory, real process and it's
         # Daemon.xml so that is looks like agents component process 
-        # and check back the information
-        p = utils.getProcess()
-        self.testProcesses.append(p)
-        while not p.is_alive():
-            time.sleep(0.2)                
+        # and check back the information, give its own PID
+        pid = os.getpid()
         config.component_("TestComponent")
         d = os.path.dirname(self.testComponentDaemonXml)
         config.TestComponent.componentDir = d
         if not os.path.exists(d):
             os.mkdir(d)
         f = open(self.testComponentDaemonXml, 'w')
-        f.write(utils.daemonXmlContent % dict(PID_TO_PUT = p.pid))
+        f.write(utils.daemonXmlContent % dict(PID_TO_PUT = pid))
         f.close()
         
         generator = utils.AlertGeneratorMock(config)
@@ -284,10 +288,10 @@ class AlertGeneratorTest(unittest.TestCase):
         shutil.rmtree(d)
             
         # don't do shutdown() on poller - will take a while and it's not
-        # necessary anyway - BasePoller.poll() which does register is not
-        # called here (shutdown does only unregister)    
+        # necessary anyway - BasePoller.start() which does register is not
+        # called here so the threads are not running in fact    
 
-        
+
 
 if __name__ == "__main__":
     unittest.main()                

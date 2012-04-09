@@ -53,14 +53,38 @@ class FeederManagerTest(unittest.TestCase):
 
     def getConfig(self):
         """
-        _getConfig_
+        _createConfig_
 
-        Get defaults FeederManager parameters
+        Create a config for the JobAccountant.  This config needs to include
+        information for connecting to the database as the component will create
+        it's own database connections.  These parameters are still pulled from
+        the environment.
         """
-        return self.testInit.getConfiguration(
-                    os.path.join(WMCore.WMInit.getWMBASE(), \
-            'src/python/WMComponent/FeederManager/DefaultConfig.py'))
+        #return self.testInit.getConfiguration(
+        #            os.path.join(WMCore.WMInit.getWMTESTBASE(), \
+        #    'src/python/WMComponent/FeederManager/DefaultConfig.py'))
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
 
+        config.section_("JobStateMachine")
+        config.JobStateMachine.couchurl = os.getenv("COUCHURL")
+        config.JobStateMachine.couchDBName = "jobaccountant_t"
+
+		config.component_("FeederManager")
+		config.FeederManager.logLevel = "INFO"
+		config.FeederManager.componentName = "FeederManager"
+		config.FeederManager.componentDir = \
+	    os.path.join(os.getenv("TESTDIR"), "FeederManager")
+		config.FeederManager.addDatasetWatchHandler = \
+	    'WMComponent.FeederManager.Handler.DefaultAddDatasetWatch'
+
+		# The maximum number of threads to process each message type
+		config.FeederManager.maxThreads = 10
+
+		# The poll interval at which to look for new fileset/feeder association
+		config.FeederManager.pollInterval = 60
+
+        return config
 
     def testA(self):
         """

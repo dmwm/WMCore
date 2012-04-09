@@ -1,18 +1,7 @@
-#!/usr/bin/env python
-# encoding: utf-8
-
-"""
-Created by Dave Evans on 2011-03-15.
-Copyright (c) 2011 Fermilab. All rights reserved.
-
-"""
-
-
 import os
 import time
 import unittest
-
-from multiprocessing import Process, Queue
+import inspect
 
 from WMCore.Alerts.Alert import Alert
 from WMCore.Configuration import Configuration
@@ -23,18 +12,6 @@ from WMCore.Alerts.ZMQ.Sinks.FileSink import FileSink
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 
-
-def simpleWorker(addr, ctrl):
-    """
-    Sender that pauses and sends a shutdown message.
-    
-    """
-    s = Sender(addr, "Processor_t", ctrl)
-    s.register()
-    s.unregister()
-    s.sendShutdown()
- 
- 
     
 def worker(addr, ctrl, nAlerts, workerId = "Processor_t"):
     """
@@ -91,7 +68,7 @@ class ProcessorTest(unittest.TestCase):
         
 
     def testProcessorBasic(self):
-        print str(self.config.AlertProcessor)
+        str(self.config.AlertProcessor)
         p = Processor(self.config.AlertProcessor)
 
 
@@ -102,14 +79,18 @@ class ProcessorTest(unittest.TestCase):
         """
         processor = Processor(self.config.AlertProcessor)
         rec = Receiver(self.addr, processor, self.ctrl)
-        rec.startReceiver()
-        # since the above is non-blocking, could send the messages from here
-        # directly, yet running via Process doesn't harm
-        sender = Process(target = simpleWorker, args = (self.addr, self.ctrl))
-        sender.start()
-        # wait until the Receiver is shut by simpleWorker
+        rec.startReceiver() # non-blocking call
+        
+        # now sender tests control messages (register, unregister, shutdown)
+        s = Sender(self.addr, "Processor_t", self.ctrl)
+        s.register()
+        s.unregister()
+        s.sendShutdown()
+  
+        # wait until the Receiver is shut by sending the above control messages
         while rec.isReady():
-            time.sleep(0.1)
+            time.sleep(0.3)
+            print "%s waiting for Receiver to shut ..." % inspect.stack()[0][3]
         
             
     def testProcessorWithReceiverAndFileSink(self):
@@ -131,7 +112,8 @@ class ProcessorTest(unittest.TestCase):
         
         # wait until the Receiver is shut by worker
         while rec.isReady():
-            time.sleep(0.1)
+            time.sleep(0.3)
+            print "%s waiting for Receiver to shut ..." % inspect.stack()[0][3]
             
         # now check the FileSink output files for content:
         # the soft Alerts has threshold level set to 0 so Alerts
@@ -177,7 +159,8 @@ class ProcessorTest(unittest.TestCase):
         
         # wait until the Receiver is shut by worker
         while rec.isReady():
-            time.sleep(0.1)
+            time.sleep(0.3)
+            print "%s waiting for Receiver to shut ..." % inspect.stack()[0][3]
             
             
 if __name__ == "__main__":

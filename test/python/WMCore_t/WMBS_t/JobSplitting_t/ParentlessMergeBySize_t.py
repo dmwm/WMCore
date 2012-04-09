@@ -75,6 +75,8 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         mergeWorkflow = Workflow(name = "mergeWorkflow", spec = "bunk2",
                                  owner = "Steve", task="Test")
         mergeWorkflow.create()
+        markWorkflow = self.daoFactory(classname = "Workflow.MarkInjectedWorkflows")
+        markWorkflow.execute(names = [mergeWorkflow.name], injected = True)
         
         self.mergeSubscription = Subscription(fileset = self.mergeFileset,
                                               workflow = mergeWorkflow,
@@ -710,6 +712,8 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         self.assertEqual(len(job.getFiles()), 11)
 
         return
+
+
     
 if __name__ == '__main__':
     unittest.main()

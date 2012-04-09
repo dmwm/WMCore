@@ -24,7 +24,7 @@ from WMCore_t.BossAir_t.BossAir_t import BossAirTest, getNArcJobs, getCondorRunn
 class ARCTest(BossAirTest):
 
 
-        @attr('integration')
+    @attr('integration')
     def testH_ARCTest(self):
         """
         _ARCTest_

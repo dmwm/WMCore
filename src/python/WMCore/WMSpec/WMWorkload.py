@@ -13,7 +13,7 @@ from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop
 from WMCore.WMSpec.Persistency import PersistencyHelper
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
-from WMCore.Lexicon import lfnBase
+from WMCore.Lexicon import lfnBase, sanitizeURL
 
 parseTaskPath = lambda p: [ x for x in p.split('/') if x.strip() != '' ]
 
@@ -54,7 +54,7 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data = wmWorkload
 
     def setSpecUrl(self, url):
-        self.data.persistency.specUrl = url
+        self.data.persistency.specUrl = sanitizeURL(url)["url"]
 
     def specUrl(self):
         """

@@ -115,18 +115,26 @@ class Assign(WebAPI):
             # make sure there's a workload attached
             try:
                 helper = Utilities.loadWorkload(request)
-            except:
+            except Exception, ex:
+                logging.error("Assign error: %s " % str(ex))
                 badRequestNames.append(request["RequestName"])
             else:
                 # get defaults from the first good one
                 if not goodRequests:
-                    if helper.getAcquisitionEra() != None:
-                        acqEra = helper.getAcquisitionEra()
-                    if helper.getProcessingVersion() != None:
-                        procVer = helper.getProcessingVersion()
-                    (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
-                    dashboardActivity = helper.getDashboardActivity()
-                goodRequests.append(request)
+                    # forget it if it fails.
+                    try:
+                        if helper.getAcquisitionEra() != None:
+                            acqEra = helper.getAcquisitionEra()
+                        if helper.getProcessingVersion() != None:
+                            procVer = helper.getProcessingVersion()
+                        (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
+                        dashboardActivity = helper.getDashboardActivity()
+                        goodRequests.append(request)
+                    except Exception, ex:
+                        logging.error("Assign error: %s " % str(ex))
+                        badRequests.append(request["RequestName"])
+                else:
+                    goodRequests.append(request)
         return self.templatepage("Assign", all=all, requests=goodRequests, teams=teams,
                                  assignments=[], sites=self.sites,
                                  mergedLFNBases=self.allMergedLFNBases,

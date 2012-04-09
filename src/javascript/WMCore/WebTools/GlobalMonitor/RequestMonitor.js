@@ -46,6 +46,14 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
                  elCell.innerHTML = "<font color='red'> " + oRecord.getData("error") + "<font>";
                  return;
             };
+            if (oRecord.getData("status") == "completed") {
+                var workloadSummaryUrl = WMCore.GlobalMonitor.Env['workload_summary_url'] +
+                "/_design/WorkloadSummary/_show/histogramByWorkflow/";
+                
+                elCell.innerHTML = "<a id='couchDB' href='" + workloadSummaryUrl +
+                           oRecord.getData("request_name") + "' target='_blank' title='" +
+                           workloadSummaryUrl + "'> summary </a>";
+            }
 
             if (!sData) {
                 if (oRecord.getData("couch_error")) {
@@ -54,16 +62,7 @@ WMCore.GlobalMonitor.RequestMonitor.overviewTable = function(divID, filterDiv,
                     elCell.innerHTML = "No Jobs";
                 }
             } else {
-                var workloadSummaryUrl = WMCore.GlobalMonitor.Env['workload_summary_url'] +
-                                         "/_design/WorkloadSummary/_show/histogramByWorkflow/";
-                if (oRecord.getData("status") == "complete") {
-                    elCell.innerHTML = "<a id='couchDB' href='" + workloadSummaryUrl 
-                                         + oRecord.getData("request_name") 
-                                         + "' target='_blank' title='" + workloadSummaryUrl 
-                                         + "'> summary </a>";
-                }else {
-                    elCell.innerHTML = "<a id='couchDB' href='" + sData + "' target='_blank' title='" + sData + "'> summary </a>";
-                }
+                elCell.innerHTML = "<a id='couchDB' href='" + sData + "' target='_blank' title='" + sData + "'> summary </a>";
                 new YAHOO.widget.Tooltip("couchDB", { context:"couchDB" });
             };
         };

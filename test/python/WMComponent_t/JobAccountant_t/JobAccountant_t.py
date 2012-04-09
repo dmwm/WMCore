@@ -14,7 +14,7 @@ import copy
 import random
 import tempfile
 
-import WMCore.WMInit
+import WMCore.WMBase
 from WMCore.FwkJobReport.Report import Report
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
@@ -154,8 +154,10 @@ class JobAccountantTest(unittest.TestCase):
         testJob["state"] = "complete"
         self.stateChangeAction.execute(jobs = [testJob])
 
-        fwjrPath = os.path.join(WMCore.WMInit.getWMBASE(),
-                                "test/python/WMComponent_t/JobAccountant_t/fwjrs", fwjrName)
+        #fwjrPath = os.path.join(WMCore.WMInit.getWMTESTBASE(),
+        #                        "test/python/WMComponent_t/JobAccountant_t/fwjrs", fwjrName)
+        fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
+                                "WMComponent_t/JobAccountant_t/fwjrs", fwjrName)
         self.setFWJRAction.execute(jobID = testJob["id"], fwjrPath = fwjrPath)
         return
 
@@ -318,7 +320,12 @@ class JobAccountantTest(unittest.TestCase):
                                        conn = myThread.transaction.conn,
                                        transaction = True)
 
-        fwjrBasePath = WMCore.WMInit.getWMBASE() + "/test/python/WMComponent_t/JobAccountant_t/fwjrs/"
+<<<<<<< HEAD
+        fwjrBasePath = WMCore.WMInit.getWMTESTBASE() + "/test/python/WMComponent_t/JobAccountant_t/fwjrs/"
+=======
+        fwjrBasePath = os.path.join(WMCore.WMBase.getTestBase(),
+                                    "/WMComponent_t/JobAccountant_t/fwjrs/")
+>>>>>>> remotes/dmwm/master
         self.setFWJRAction.execute(jobID = self.testJobA["id"],
                                    fwjrPath = fwjrBasePath + "SplitSuccessA.pkl",
                                    conn = myThread.transaction.conn,
@@ -578,7 +585,12 @@ class JobAccountantTest(unittest.TestCase):
         accountant.setup()
         accountant.algorithm()
 
-        fwjrBasePath = WMCore.WMInit.getWMBASE() + "/test/python/WMComponent_t/JobAccountant_t/fwjrs/"
+<<<<<<< HEAD
+        fwjrBasePath = WMCore.WMInit.getWMTESTBASE() + "/test/python/WMComponent_t/JobAccountant_t/fwjrs/"
+=======
+        fwjrBasePath = os.path.join(WMCore.WMBase.getTestBase(),
+                                    "WMComponent_t/JobAccountant_t/fwjrs/")
+>>>>>>> remotes/dmwm/master
         jobReport = Report()
         jobReport.unpersist(fwjrBasePath + "SplitSuccessA.pkl")
         self.verifyFileMetaData(self.testJobA["id"], jobReport.getAllFilesFromStep("cmsRun1"), site = "srm-cms.cern.ch")
@@ -740,8 +752,13 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.testJob])
 
         self.setFWJRAction.execute(self.testJob["id"],
-                                   os.path.join(WMCore.WMInit.getWMBASE(),
+<<<<<<< HEAD
+                                   os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+=======
+                                   os.path.join(WMCore.WMBase.getTestBase(),
+                                                "WMComponent_t/JobAccountant_t/fwjrs",
+>>>>>>> remotes/dmwm/master
                                                 "MergedSkimSuccess.pkl"))
         return
 
@@ -760,8 +777,13 @@ class JobAccountantTest(unittest.TestCase):
         accountant.algorithm()
 
         jobReport = Report()
-        jobReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+<<<<<<< HEAD
+        jobReport.unpersist(os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+=======
+        jobReport.unpersist(os.path.join(WMCore.WMBase.getTestBase(),
+                                         "WMComponent_t/JobAccountant_t/fwjrs",
+>>>>>>> remotes/dmwm/master
                                          "MergedSkimSuccess.pkl"))
         self.verifyFileMetaData(self.testJob["id"], jobReport.getAllFilesFromStep("cmsRun1"), site = "srm-cms.cern.ch")
         self.verifyJobSuccess(self.testJob["id"])
@@ -912,13 +934,23 @@ class JobAccountantTest(unittest.TestCase):
 
         if noLumi:
             self.setFWJRAction.execute(jobID = self.testJob["id"],
-                                       fwjrPath = os.path.join(WMCore.WMInit.getWMBASE(),
+<<<<<<< HEAD
+                                       fwjrPath = os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                                                "test/python/WMComponent_t/JobAccountant_t/fwjrs",
                                                                "MergeSuccessNoLumi.pkl"))
         else:
             self.setFWJRAction.execute(jobID = self.testJob["id"],
-                                       fwjrPath = os.path.join(WMCore.WMInit.getWMBASE(),
+                                       fwjrPath = os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                                                "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+=======
+                                       fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
+                                                               "WMComponent_t/JobAccountant_t/fwjrs",
+                                                               "MergeSuccessNoLumi.pkl"))
+        else:
+            self.setFWJRAction.execute(jobID = self.testJob["id"],
+                                       fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
+                                                               "WMComponent_t/JobAccountant_t/fwjrs",
+>>>>>>> remotes/dmwm/master
                                                                "MergeSuccess.pkl"))            
         return
 
@@ -936,8 +968,13 @@ class JobAccountantTest(unittest.TestCase):
         accountant.algorithm()
 
         jobReport = Report()
-        jobReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+<<<<<<< HEAD
+        jobReport.unpersist(os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+=======
+        jobReport.unpersist(os.path.join(WMCore.WMBase.getTestBase(),
+                                         "WMComponent_t/JobAccountant_t/fwjrs",
+>>>>>>> remotes/dmwm/master
                                          "MergeSuccess.pkl"))
         self.verifyFileMetaData(self.testJob["id"], jobReport.getAllFilesFromStep("cmsRun1"))
         self.verifyJobSuccess(self.testJob["id"])
@@ -982,8 +1019,13 @@ class JobAccountantTest(unittest.TestCase):
         accountant.algorithm()
 
         jobReport = Report()
-        jobReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+<<<<<<< HEAD
+        jobReport.unpersist(os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+=======
+        jobReport.unpersist(os.path.join(WMCore.WMBase.getTestBase(),
+                                         "WMComponent_t/JobAccountant_t/fwjrs",
+>>>>>>> remotes/dmwm/master
                                          "MergeSuccessNoLumi.pkl"))
         self.verifyFileMetaData(self.testJob["id"], jobReport.getAllFilesFromStep("cmsRun1"))
         self.verifyJobSuccess(self.testJob["id"])
@@ -1028,8 +1070,13 @@ class JobAccountantTest(unittest.TestCase):
         accountant.algorithm()
 
         jobReport = Report()
-        jobReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+<<<<<<< HEAD
+        jobReport.unpersist(os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+=======
+        jobReport.unpersist(os.path.join(WMCore.WMBase.getTestBase(),
+                                         "WMComponent_t/JobAccountant_t/fwjrs",
+>>>>>>> remotes/dmwm/master
                                          "MergeSuccess.pkl"))
         self.verifyFileMetaData(self.testJob["id"], jobReport.getAllFilesFromStep("cmsRun1"))
         self.verifyJobSuccess(self.testJob["id"])
@@ -1072,8 +1119,13 @@ class JobAccountantTest(unittest.TestCase):
         accountant.algorithm()
 
         jobReport = Report()
-        jobReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+<<<<<<< HEAD
+        jobReport.unpersist(os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+=======
+        jobReport.unpersist(os.path.join(WMCore.WMBase.getTestBase(),
+                                         "WMComponent_t/JobAccountant_t/fwjrs",
+>>>>>>> remotes/dmwm/master
                                          "MergeSuccessNoFiles.pkl"))
         self.verifyJobSuccess(self.testJob["id"])
         return
@@ -1147,8 +1199,13 @@ class JobAccountantTest(unittest.TestCase):
             testJob.addFile(newFile)
             testJob.associateFiles()
 
-            fwjrPath = os.path.join(WMCore.WMInit.getWMBASE(),
+<<<<<<< HEAD
+            fwjrPath = os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                     "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+=======
+            fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
+                                    "WMComponent_t/JobAccountant_t/fwjrs",
+>>>>>>> remotes/dmwm/master
                                     "LoadTest%02d.pkl" % i)
             
             self.jobs.append((testJob["id"], fwjrPath))
@@ -1202,8 +1259,13 @@ class JobAccountantTest(unittest.TestCase):
 
         # We just need to make two jobs process the same report so that we get a
         # duplicate LFN error.
-        fwjrPath = os.path.join(WMCore.WMInit.getWMBASE(),
+<<<<<<< HEAD
+        fwjrPath = os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                 "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+=======
+        fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
+                                "WMComponent_t/JobAccountant_t/fwjrs",
+>>>>>>> remotes/dmwm/master
                                 "LoadTest07.pkl")
         self.setFWJRAction.execute(jobID = 10, fwjrPath = fwjrPath)
         
@@ -1355,8 +1417,13 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.testJob])
 
         self.setFWJRAction.execute(jobID = self.testJob["id"],
-                                   fwjrPath = os.path.join(WMCore.WMInit.getWMBASE(),
+<<<<<<< HEAD
+                                   fwjrPath = os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+=======
+                                   fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
+                                                "WMComponent_t/JobAccountant_t/fwjrs",
+>>>>>>> remotes/dmwm/master
                                                 "MergeSuccess.pkl"))
         return
 
@@ -1376,8 +1443,13 @@ class JobAccountantTest(unittest.TestCase):
         myThread = threading.currentThread()
 
         jobReport = Report()
-        jobReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+<<<<<<< HEAD
+        jobReport.unpersist(os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+=======
+        jobReport.unpersist(os.path.join(WMCore.WMBase.getTestBase(),
+                                         "WMComponent_t/JobAccountant_t/fwjrs",
+>>>>>>> remotes/dmwm/master
                                          "MergeSuccess.pkl"))
         self.verifyFileMetaData(self.testJob["id"], jobReport.getAllFilesFromStep("cmsRun1"))
         self.verifyJobSuccess(self.testJob["id"])
@@ -1475,8 +1547,13 @@ class JobAccountantTest(unittest.TestCase):
                 testJob.addFile(newFile)
 
             testJob.associateFiles()
-            fwjrPath = os.path.join(WMCore.WMInit.getWMBASE(),
+<<<<<<< HEAD
+            fwjrPath = os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                     "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+=======
+            fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
+                                    "WMComponent_t/JobAccountant_t/fwjrs",
+>>>>>>> remotes/dmwm/master
                                     "HeritageTest%02d.pkl" % i)
             
             self.jobs.append((testJob["id"], fwjrPath))
@@ -1612,8 +1689,13 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.testJob])
 
         self.setFWJRAction.execute(self.testJob["id"],
-                                   os.path.join(WMCore.WMInit.getWMBASE(),
+<<<<<<< HEAD
+                                   os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+=======
+                                   os.path.join(WMCore.WMBase.getTestBase(),
+                                                "WMComponent_t/JobAccountant_t/fwjrs",
+>>>>>>> remotes/dmwm/master
                                                 "MergedSkimSuccess.pkl"))
         return
 
@@ -1632,8 +1714,13 @@ class JobAccountantTest(unittest.TestCase):
         accountant.algorithm()
 
         jobReport = Report()
-        jobReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+<<<<<<< HEAD
+        jobReport.unpersist(os.path.join(WMCore.WMInit.getWMTESTBASE(),
                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+=======
+        jobReport.unpersist(os.path.join(WMCore.WMBase.getTestBase(),
+                                         "WMComponent_t/JobAccountant_t/fwjrs",
+>>>>>>> remotes/dmwm/master
                                          "MergedSkimSuccess.pkl"))
         self.verifyFileMetaData(self.testJob["id"], jobReport.getAllFilesFromStep("cmsRun1"), site = "srm-cms.cern.ch")
         self.verifyJobSuccess(self.testJob["id"])

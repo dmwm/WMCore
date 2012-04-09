@@ -133,7 +133,7 @@ class AnalysisTest(unittest.TestCase):
         logCollectSub.loadData()
         self.assertEqual(logCollectSub["type"], "LogCollect",
                          "Error: Wrong subscription type.")
-        self.assertEqual(logCollectSub["split_algo"], "FixedDelay",
+        self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
                          "Error: Wrong split algo.")
 
 

@@ -136,11 +136,9 @@ class ErrorHandlerTest(unittest.TestCase):
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
 
-        workload.save(workloadName)
-
-        
-
         return workload
+
+    
 
     def createTestJobGroup(self, nJobs = 10, retry_count = 1, workloadPath = 'test'):
         """

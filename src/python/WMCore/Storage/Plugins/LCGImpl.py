@@ -33,7 +33,7 @@ class LCGImpl(StageOutImplV2):
         """
         localFileName = fromPfn
         fromPfn = self.prependFileProtocol(fromPfn)    
-        transferCommand = "lcg-cp -b -D srmv2 --vo cms -t 2400 --verbose %s %s %s " %\
+        transferCommand = "lcg-cp -b -D srmv2 --vo cms --srm-timeout 2400 --sendreceive-timeout 2400 --connect-timeout 300 --verbose %s %s %s " %\
                             ( options, fromPfn, toPfn )
         
         logging.info("Staging out with lcg-cp")

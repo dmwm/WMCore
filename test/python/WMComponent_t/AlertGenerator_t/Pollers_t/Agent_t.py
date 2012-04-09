@@ -11,7 +11,8 @@ import logging
 import time
 import random
 import shutil
-import multiprocessing
+import datetime
+import inspect
 
 import psutil
 
@@ -41,14 +42,12 @@ class AgentTest(unittest.TestCase):
         self.config = getConfig(self.testDir)
         # mock generator instance to communicate some configuration values
         self.generator = utils.AlertGeneratorMock(self.config)        
-        self.testProcesses = []
         self.testComponentDaemonXml = "/tmp/TestComponent/Daemon.xml" 
         
         
     def tearDown(self):       
         self.testInit.delWorkDir()
         self.generator = None
-        utils.terminateProcesses(self.testProcesses)
         
         # if the directory and file "/tmp/TestComponent/Daemon.xml" after
         # ComponentsPoller test exist, then delete it
@@ -80,17 +79,14 @@ class AgentTest(unittest.TestCase):
         # need to create some temp directory, real process and it's
         # Daemon.xml so that is looks like agents component process 
         # and check back the information
-        p = utils.getProcess()
-        self.testProcesses.append(p)
-        while not p.is_alive():
-            time.sleep(0.2)                
+        pid = os.getpid()
         config.component_("TestComponent")
         d = os.path.dirname(self.testComponentDaemonXml)
         config.TestComponent.componentDir = d
         if not os.path.exists(d):
             os.mkdir(d)
         f = open(self.testComponentDaemonXml, 'w')
-        f.write(utils.daemonXmlContent % dict(PID_TO_PUT = p.pid))
+        f.write(utils.daemonXmlContent % dict(PID_TO_PUT = pid))
         f.close()
                 
         generator = utils.AlertGeneratorMock(config)
@@ -101,7 +97,7 @@ class AgentTest(unittest.TestCase):
         # should have been ignored
         self.assertEqual(len(poller._components), 1)
         pd = poller._components[0]
-        self.assertEqual(pd.pid, p.pid)
+        self.assertEqual(pd.pid, pid)
         self.assertEqual(pd.name, "TestComponent")
         self.assertEqual(len(pd.children), 0)
         self.assertEqual(len(poller._compMeasurements), 1)
@@ -114,12 +110,17 @@ class AgentTest(unittest.TestCase):
 
     def _doComponentsPoller(self, thresholdToTest, level, config,
                             pollerClass, expected = 0):
+        """
+        Components pollers have array of Measurements and ProcessDetails
+        which make it more difficult to factory with test methods from the
+        utils module.
+        
+        """
         handler, receiver = utils.setUpReceiver(self.generator.config.Alert.address,
                                                 self.generator.config.Alert.controlAddr)
         
-        procWorker = multiprocessing.Process(target = utils.worker, args = ())
-        procWorker.start()
-        self.testProcesses.append(procWorker)
+        # need some real process to pike, give itself
+        pid = os.getpid()
         
         numMeasurements = config.period / config.pollInterval
         poller = pollerClass(config, self.generator)
@@ -128,28 +129,33 @@ class AgentTest(unittest.TestCase):
         poller.sample = lambda proc_: random.randint(thresholdToTest, thresholdToTest + 10)
         
         # have sample process to run upon but sample date will be fooled by random
-        pd = ProcessDetail(procWorker.pid, "TestProcess")
+        pd = ProcessDetail(pid, "TestProcess")
         mes = Measurements(numMeasurements)
         poller._components.append(pd)
         poller._compMeasurements.append(mes)
-        
-        proc = multiprocessing.Process(target = poller.poll, args = ())
-        proc.start()
-        self.assertTrue(proc.is_alive())
+        poller.start()
+        self.assertTrue(poller.is_alive())
 
         if expected != 0:
+            # watch so that the test can't take for ever, fail in 2mins
+            timeLimitExceeded = False
+            startTime = datetime.datetime.now()
+            limitTime = 2 * 60 # seconds
             while len(handler.queue) == 0:
                 time.sleep(config.pollInterval / 5)
+                if (datetime.datetime.now() - startTime).seconds > limitTime:
+                    timeLimitExceeded = True
+                    break                
         else:
             time.sleep(config.period * 2)
             
-        procWorker.terminate()        
-        proc.terminate()
-        poller.shutdown()
+        poller.terminate()
         receiver.shutdown()
-        self.assertFalse(proc.is_alive())
+        self.assertFalse(poller.is_alive())
         
         if expected != 0:
+            if timeLimitExceeded:
+                self.fail("No alert received in %s seconds." % limitTime)            
             # there should be just one alert received, poller should have the
             # change to send a second
             self.assertEqual(len(handler.queue), expected)
@@ -283,17 +289,15 @@ class AgentTest(unittest.TestCase):
         # there is in fact input argument in this case which needs be ignored
         poller.sample = lambda proc_: random.randint(thresholdToTest - 10, thresholdToTest)
         
-        proc = multiprocessing.Process(target = poller.poll, args = ())
-        proc.start()
-        self.assertTrue(proc.is_alive())
+        poller.start()
+        self.assertTrue(poller.is_alive())
 
         # no alert shall arrive
         time.sleep(5 * self.config.AlertGenerator.componentsCPUPoller.period)
         
-        proc.terminate()
-        poller.shutdown()
+        poller.terminate()
         receiver.shutdown()
-        self.assertFalse(proc.is_alive())
+        self.assertFalse(poller.is_alive())
         
 
         

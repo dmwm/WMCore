@@ -35,6 +35,7 @@ WMStats.RequestView = (function() {
                            "sDefaultContent": ""},
             { "mDataProp": "site_white_list", "sTitle": "site white list",
                            "sDefaultContent": ""},
+            { "mDataProp": "priority", "sTitle": "priority"},
             { "sTitle": "queued", 
               "fnRender": function ( o, val ) {
                             return (_get(o.aData, "status.queued.first", 0) + 
@@ -82,28 +83,18 @@ WMStats.RequestView = (function() {
               "fnRender": function ( o, val ) {
                               return (_get(o.aData, "status.inWMBS",  0) / 
                                       _get(o.aData, 'total_jobs', 1));
-                          }}
+                          }},
+            
             //TODO add more data (consult dataops)
         ]
     }
     
-        // filter config
     var filterConfig = {
         "aoColumns": [
             {type: "text", bRegex: true, bSmart: true},               
             {type: "text", bRegex: true, bSmart: true},
             {type: "text", bRegex: true, bSmart: true},
-            {type: "text", bRegex: true, bSmart: true},
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
+            {type: "text", bRegex: true, bSmart: true}
         ]
     }
     

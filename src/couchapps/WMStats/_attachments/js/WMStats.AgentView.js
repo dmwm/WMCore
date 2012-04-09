@@ -22,8 +22,7 @@ WMStats.AgentView = (function() {
             { "mDataProp": "status", "sTitle": "status"},
             { "mDataProp": "agent_team", "sTitle": "teams"},
             { "mDataProp": "down_components", "sTitle": "components down", 
-              "sDefaultContent": ""
-            }
+              "sDefaultContent": ""}
         ]
     }
     
@@ -35,7 +34,7 @@ WMStats.AgentView = (function() {
     function setAgentData(data) {
         var rows =[]
         for (var i in data) {
-            tableRow = data[i].value;
+            var tableRow = data[i].value;
             rows.push(tableRow)
         }
         _data = rows;

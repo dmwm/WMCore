@@ -67,7 +67,7 @@ WMStats.CampaignView = (function() {
         var baseColumns = ["campaign"];
         var rows =[]
         for (var i in data) {
-            tableRow = data[i].value;
+            var tableRow = data[i].value;
             for (var j = 0; j < baseColumns.length; j ++) {
                 tableRow[baseColumns[j]] = data[i].key[j];
             }

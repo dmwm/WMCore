@@ -15,6 +15,8 @@ from WMCore.Lexicon import lfnBase, identifier
 from WMCore.WMException import WMException
 from WMCore.Database.CMSCouch import CouchNotFoundError
 
+analysisTaskTypes = ['Analysis', 'PrivateMC']
+
 class WMSpecFactoryException(WMException):
     """
     _WMSpecFactoryException_
@@ -244,7 +246,7 @@ class StdBase(object):
         procTask.setSplittingAlgorithm(splitAlgo, **newSplitArgs)
         procTask.setTaskType(taskType)
 
-        if taskType == "Production" and totalEvents != None:
+        if taskType in ["Production", 'PrivateMC'] and totalEvents != None:
             procTask.addGenerator(seeding)
             procTask.addProduction(totalevents = totalEvents)
         else:
@@ -313,7 +315,7 @@ class StdBase(object):
 
         Add an output module to the given processing task.
         """
-        if parentTask.name() == 'Analysis':
+        if parentTask.name() in analysisTaskTypes:
             # TODO in case of user data need to implement policy to define
             #  1  processedDataset
             #  2  primaryDataset
@@ -330,7 +332,7 @@ class StdBase(object):
                                           self.processingVersion)
             processingString = "%s" % (self.processingVersion)
 
-        if parentTask.name() == 'Analysis':
+        if parentTask.name() in analysisTaskTypes:
             if filterName:
                 unmergedLFN = "%s/%s/%s-%s/%s" % (self.unmergedLFNBase, primaryDataset,
                                                   self.acquisitionEra, filterName,

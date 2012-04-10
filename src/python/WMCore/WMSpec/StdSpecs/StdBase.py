@@ -199,7 +199,8 @@ class StdBase(object):
                             splitArgs = {'lumis_per_job': 8}, seeding = None, totalEvents = None,
                             userDN = None, asyncDest = None, owner_vogroup = "DEFAULT",
                             owner_vorole = "DEFAULT", stepType = "CMSSW",
-                            userSandbox = None, userFiles = [], primarySubType = None):
+                            userSandbox = None, userFiles = [], primarySubType = None,
+                            forceMerged = False, forceUnmerged = False):
 
         """
         _setupProcessingTask_
@@ -288,7 +289,8 @@ class StdBase(object):
                                                 configOutput[outputModuleName].get('primaryDataset',
                                                                                    self.inputPrimaryDataset),
                                                 configOutput[outputModuleName]['dataTier'],
-                                                configOutput[outputModuleName].get('filterName', None))
+                                                configOutput[outputModuleName].get('filterName', None),
+                                                forceMerged = forceMerged, forceUnmerged = forceUnmerged)
             outputModules[outputModuleName] = outputModule
 
         if configDoc != None and configDoc != "":
@@ -309,7 +311,8 @@ class StdBase(object):
 
     def addOutputModule(self, parentTask, outputModuleName,
                         primaryDataset, dataTier, filterName,
-                        stepName = "cmsRun1"):
+                        stepName = "cmsRun1", forceMerged = False,
+                        forceUnmerged = False):
         """
         _addOutputModule_
 
@@ -350,6 +353,11 @@ class StdBase(object):
                                             processingString)
             lfnBase(unmergedLFN)
             lfnBase(mergedLFN)
+
+        if forceMerged:
+            unmergedLFN = mergedLFN
+        elif forceUnmerged:
+            mergedLFN = unmergedLFN
 
         cmsswStep = parentTask.getStep(stepName)
         cmsswStepHelper = cmsswStep.getTypeHelper()

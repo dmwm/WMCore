@@ -296,7 +296,9 @@ class ReqMgrRESTModel(RESTModel):
         # looking for the first non-failed/non-canceled request
         for requestID in requestIDs:
             request = GetRequest.getRequest(requestID)
-            if request.get("RequestStatus", 'aborted').lower() not in ['aborted', 'failed']:
+            rejectList = ['aborted', 'failed', 'rejected', 'epic-failed']
+            requestStatus = request.get("RequestStatus", 'aborted').lower()
+            if requestStatus not in rejectList:
                 break
 
         if request != None:

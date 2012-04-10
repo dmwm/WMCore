@@ -141,6 +141,7 @@ class DashboardInfo(dict):
         self.publisher    = None
         self.destinations = {}
         self.server       = None
+        self.agentName    = getattr(self.workload.data, 'WMAgentName', 'WMAgentPrimary')
 
         dict.__init__(self)
 

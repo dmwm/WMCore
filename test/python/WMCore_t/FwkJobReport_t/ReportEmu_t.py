@@ -133,23 +133,23 @@ class ReportEmuTest(unittest.TestCase):
         assert len(goldenRuns) == 0, \
                "Error: Run information wrong on input file."
 
-        recoOutputFiles = report.getFilesFromOutputModule("cmsRun1", "outputRECORECO")
-        alcaOutputFiles = report.getFilesFromOutputModule("cmsRun1", "outputALCARECOALCARECO")
+        recoOutputFiles = report.getFilesFromOutputModule("cmsRun1", "RECOoutput")
+        alcaOutputFiles = report.getFilesFromOutputModule("cmsRun1", "ALCARECOoutput")
 
         assert len(recoOutputFiles) == 1, \
                "Error: There should only be one RECO output file."
         assert len(alcaOutputFiles) == 1, \
                "Error: There should only be one ALCA output file."
 
-        assert recoOutputFiles[0]["module_label"] == "outputRECORECO", \
+        assert recoOutputFiles[0]["module_label"] == "RECOoutput", \
                "Error: RECO file has wrong output module."
-        assert alcaOutputFiles[0]["module_label"] == "outputALCARECOALCARECO", \
+        assert alcaOutputFiles[0]["module_label"] == "ALCARECOoutput", \
                "Error: ALCA file has wrong output module."
         
         self.verifyOutputMetaData(recoOutputFiles[0], processingJob)
         self.verifyOutputMetaData(alcaOutputFiles[0], processingJob)
 
-        dataTierMap = {"outputRECORECO": "RECO", "outputALCARECOALCARECO": "ALCARECO"}
+        dataTierMap = {"RECOoutput": "RECO", "ALCARECOoutput": "ALCARECO"}
         for outputFile in [recoOutputFiles[0], alcaOutputFiles[0]]:
             assert outputFile["dataset"]["applicationName"] == "cmsRun", \
                    "Error: Application name is incorrect."

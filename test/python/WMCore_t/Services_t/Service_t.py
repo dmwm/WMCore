@@ -275,6 +275,20 @@ class ServiceTest(unittest.TestCase):
                          '%s is not unique' % thishash2)
             hashes[thishash], hashes[thishash2] = None, None
 
+    def testNoCache(self):
+        """Cache disabled"""
+        dict = {'logger': self.logger,
+                'endpoint':'http://cmssw.cvs.cern.ch',
+                'cachepath' : None,
+                }
+        service = Service(dict)
+
+        self.assertEqual( service['cachepath'] ,  dict['cachepath'] )
+        self.assertEqual( service['requests']['cachepath'] ,  dict['cachepath'] )
+        self.assertEqual( service['requests']['req_cache_path'] ,  dict['cachepath'] )
+
+        out = service.refreshCache('shouldntbeused', '/').read()
+        self.assertTrue('html' in out)
 
     @attr("integration")
     def testTruncatedResponse(self):

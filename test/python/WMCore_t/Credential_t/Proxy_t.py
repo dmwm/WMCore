@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 """
 _Proxy_t_
-
+Test the basic Proxy operations.
+You need to source your UI before running these tests.
+Your proxy is initialized in testAAACreateProxy method and it is used by the remaining tests.
 """
 
 import unittest
@@ -14,8 +16,14 @@ import tempfile
 import subprocess
 
 from nose.plugins.attrib import attr
-
 from WMCore.Credential.Proxy import Proxy
+
+# You may have to set these environment variables to run in a local environment
+
+uiPath = os.environ.get('GLITE_UI', '/afs/cern.ch/cms/LCG/LCG-2/UI/cms_ui_env.sh')
+group = os.environ.get('PROXY_GROUP', '')
+role = os.environ.get('PROXY_ROLE', 'NULL')
+myProxySvr = os.environ.get('MYPROXY_SERVER', 'myproxy.cern.ch')
 
 class ProxyTest(unittest.TestCase):
 
@@ -33,16 +41,11 @@ class ProxyTest(unittest.TestCase):
 
         self.logger = logging.getLogger(logger_name)
         self.dict = {'logger': self.logger,
-                'server_key' : '/home/crab/.globus/hostkey.pem', 'server_cert' : '/home/crab/.globus/hostcert.pem',
-                'vo': 'cms', 'group': 'integration', 'role': 'NULL', 'myProxySvr': 'myproxy.cern.ch',
-                'proxyValidity' : '192:00', 'min_time_left' : 36000, 'uisource' : '/afs/cern.ch/cms/LCG/LCG-2/UI/cms_ui_env.sh'}
-                #, 'serverDN' : '/C=IT/O=INFN/OU=Host/L=Perugia/CN=crab.pg.infn.it'}
+                     'vo': 'cms', 'group': group, 'role': role, 'myProxySvr': myProxySvr,
+                     'proxyValidity' : '192:00', 'min_time_left' : 36000, 'uisource' : uiPath}
 
         self.proxyPath = None
         self.proxy = Proxy( self.dict )
-        self.serverKey = self.dict['server_key']
-        self.serverDN = None
-        if self.dict.has_key('serverDN'): self.serverDN = self.dict['serverDN']
 
     def tearDown(self):
         """
@@ -50,7 +53,6 @@ class ProxyTest(unittest.TestCase):
 
         Tear down the proxy.
         """
-        self.proxy.destroy()
         return
 
     def getUserIdentity(self):
@@ -82,73 +84,54 @@ class ProxyTest(unittest.TestCase):
         return stdout[0:-1]
 
     @attr("integration")
-    def testDestroyBeforeCreation(self ):
+    def testAAACreateProxy( self ):
         """
+        Test if create method creates correctly the proxy.
+        This is sort of bad form to require that this test run first, but the alternative is
+        entering a password for every single invocation
         """
-        if not os.path.exists( self.serverKey ):
-
-            self.proxy.destroy( )
-            self.proxyPath = self.proxy.getProxyFilename()
-            assert not os.path.exists(self.proxyPath)
-
-    @attr("integration")
-    def testCreateProxy( self ):
-        """
-        """
-        if not os.path.exists( self.serverKey ):
-            self.proxy.create()
-            time.sleep( 5 )
-            proxyPath = self.proxy.getProxyFilename()
-            assert os.path.exists(proxyPath)
+        self.proxy.create()
+        time.sleep( 5 )
+        proxyPath = self.proxy.getProxyFilename()
+        self.assertTrue(os.path.exists(proxyPath))
 
     @attr("integration")
     def testCheckProxyTimeLeft( self ):
         """
+        Test if getTimeLeft method returns correctly the proxy time left.
         """
-        if not os.path.exists( self.serverKey ):
-
-           self.proxy.create()
-           timeLeft = self.proxy.getTimeLeft()
-           print timeLeft
-           assert ( int(timeLeft) / 3600 ) == 192
+        timeLeft = self.proxy.getTimeLeft()
+        self.assertEqual(int(timeLeft) / 3600, 191)
 
     @attr("integration")
     def testRenewProxy( self ):
         """
+        Test if the renew method renews correctly the user proxy.
         """
-        if not os.path.exists( self.serverKey ):
-
-           time.sleep( 70 )
-
-           self.proxy.renew()
-           time.sleep( 10 )
-           timeLeft = self.proxy.getTimeLeft()
-
-           assert ( int(timeLeft) / 3600 ) == 191
+        time.sleep( 70 )
+        self.proxy.renew()
+        time.sleep( 10 )
+        timeLeft = self.proxy.getTimeLeft()
+        self.assertEqual(int(timeLeft) / 3600, 191)
 
     @attr("integration")
     def testDestroyProxy(self ):
         """
+        Test the proxy destroy method.
         """
-        if not os.path.exists( self.serverKey ):
-
-           self.proxy.destroy( )
-           self.proxyPath = self.proxy.getProxyFilename()
-           assert not os.path.exists(self.proxyPath)
+        self.proxy.destroy( )
+        self.proxyPath = self.proxy.getProxyFilename()
+        self.assertFalse(os.path.exists(self.proxyPath))
+        # Create the proxy after the destroy
+        self.proxy.create()
 
     @attr("integration")
     def testGetSubject(self):
         """
         _testGetSubject_
-
         Verify that the getSubject() method works correctly.
         """
-        if os.path.exists(self.serverKey):
-            return
-
-        self.testCreateProxy()
         subject = self.proxy.getSubject( )
-
         self.assertEqual(subject, self.getUserIdentity(),
                          "Error: Wrong subject.")
         return
@@ -157,212 +140,97 @@ class ProxyTest(unittest.TestCase):
     def testGetUserName( self ):
         """
         _testGetUserName_
-
         Verify that the getUserName() method correctly determines the user's
         name.
         """
-        if os.path.exists( self.serverKey ):
-            return
-
-        self.testCreateProxy()
         user = self.proxy.getUserName( )
         identity = self.getUserIdentity().split("/")[ len(self.getUserIdentity().split("/")) - 1 ][3:]
-
         self.assertEqual(user, identity,
                          "Error: User name is wrong: |%s|\n|%s|" % (user, identity))
         return
 
     @attr("integration")
-    def checkAttribute( self ):
+    def testCheckAttribute( self ):
         """
+        Test if the checkAttribute  method checks correctly the attributes validity.
         """
-        if not os.path.exists( self.serverKey ):
-
-           valid = self.proxy.checkAttribute( )
-           assert valid == True
+        valid = self.proxy.checkAttribute( )
+        self.assertTrue(valid)
 
     @attr("integration")
     def testCheckTimeLeft( self ):
         """
+        Test if the check method checks correctly the proxy validity.
         """
-        if not os.path.exists( self.serverKey ):
-
-           valid = self.proxy.check( self.proxyPath )
-           assert valid == True
-
-    @attr("integration")
-    def testDelegateMyProxy( self ):
-        """
-        """
-        if not os.path.exists( self.serverKey ):
-
-           self.proxy.create()
-           self.proxy.delegate( credential = self.proxyPath )
-           valid = self.proxy.checkMyProxy( )
-           assert valid == True
-
-    @attr("integration")
-    def testDelegateServerAndMyProxy( self ):
-        """
-        """
-        if not os.path.exists( self.serverKey ):
-
-           self.proxy.create()
-           self.proxy.delegate( credential = self.proxyPath, serverRenewer = True )
-           valid = self.proxy.checkMyProxy( checkRenewer = True )
-           assert valid == True
-
-    @attr("integration")
-    def testCheckMyProxy( self ):
-        """
-        """
-        if not os.path.exists( self.serverKey ) and self.serverDN:
-
-           self.proxy.create()
-           self.proxy.delegate( )
-           valid = self.proxy.checkMyProxy( )
-           assert valid == True
-
-    @attr("integration")
-    def testCheckMyProxyServer( self ):
-        """
-        """
-        if not os.path.exists( self.serverKey ) and self.serverDN:
-
-           self.proxy.create()
-           self.proxy.delegate( serverRenewer = True )
-           valid = self.proxy.checkMyProxy( checkRenewer = True )
-           assert valid == True
-
-    @attr("integration")
-    def testLogonRenewMyProxy( self ):
-        """
-       """
-        if os.path.exists( self.serverKey ):
-
-           proxyFile = self.proxy.logonRenewMyProxy( )
-           assert os.path.exists( proxyFile )
-
-    @attr("integration")
-    def testRenewMyProxy( self ):
-        """
-        """
-        if not os.path.exists( self.serverKey ):
-
-           self.proxy.create()
-           time.sleep( 70 )
-           self.proxy.renewMyProxy( proxy = self.proxyPath )
-           time.sleep( 5 )
-           timeLeft = self.proxy.getMyProxyTimeLeft( proxy = self.proxyPath )
-
-           assert ( int(timeLeft) / 3600 ) == 167
-
-    @attr("integration")
-    def testRenewMyProxyForServer( self ):
-        """
-        """
-        if not os.path.exists( self.serverKey ) and self.serverDN:
-
-            self.proxy.create()
-            time.sleep( 70 )
-            self.proxy.renewMyProxy( proxy = self.proxyPath, serverRenewer = True )
-            time.sleep( 5 )
-            timeLeft = self.proxy.getMyProxyTimeLeft( proxy = self.proxyPath, serverRenewer = True )
-            assert ( int(timeLeft) / 3600 ) == 167
-
-    @attr("integration")
-    def testRenewMyProxyByServer( self ):
-        """
-        """
-        if os.path.exists( self.serverKey ):
-
-           proxyPath = self.proxy.getProxyFilename( serverRenewer = True )
-           self.proxy.logonRenewMyProxy( proxyPath )
-           timeLeft = self.proxy.getTimeLeft( proxyPath )
-           assert ( int(timeLeft) / 3600 ) > 120
+        valid = self.proxy.check( self.proxyPath )
+        self.assertTrue(valid)
 
     @attr("integration")
     def testVomsRenewal( self ):
         """
+        Test if vomsExtensionRenewal method renews correctly the voms-proxy.
         """
-        if not os.path.exists( self.serverKey ):
-
-           self.proxy.create()
-           proxyPath = self.proxy.getProxyFilename( )
-
-           time.sleep( 70 )
-
-           attribute = self.proxy.prepareAttForVomsRenewal( self.proxy.getAttributeFromProxy( proxyPath ) )
-           self.proxy.vomsExtensionRenewal( proxyPath, attribute )
-           vomsTimeLeft = self.proxy.getVomsLife( proxyPath )
-           assert ( int(vomsTimeLeft) / 3600 ) == 191
-
+        proxyPath = self.proxy.getProxyFilename( )
+        time.sleep( 70 )
+        attribute = self.proxy.prepareAttForVomsRenewal( self.proxy.getAttributeFromProxy( proxyPath ) )
+        self.proxy.vomsExtensionRenewal( proxyPath, attribute )
+        vomsTimeLeft = self.proxy.getVomsLife( proxyPath )
+        self.assertEqual(int(vomsTimeLeft) / 3600, 191)
 
     @attr("integration")
     def testElevateAttribute( self ):
         """
+        Test if the vomsExtensionRenewal method elevate last attributes given.
         """
-        if not os.path.exists( self.serverKey ):
-
-           self.proxy.create()
-           proxyPath = self.proxy.getProxyFilename( )
-
-           # getProxyDetails allows to buid the proxy attribute from the parameters given 
-           attribute = self.proxy.prepareAttForVomsRenewal( '/cms/Role=NULL/Capability=NULL' )
-
-           self.proxy.vomsExtensionRenewal( proxyPath, attribute )
-
-           assert self.proxy.getAttributeFromProxy( proxyPath ) == '/cms/Role=NULL/Capability=NULL'
+        proxyPath = self.proxy.getProxyFilename( )
+        attribute = self.proxy.prepareAttForVomsRenewal( '/cms/Role=NULL/Capability=NULL' )
+        self.proxy.vomsExtensionRenewal( proxyPath, attribute )
+        self.assertEqual(self.proxy.getAttributeFromProxy(proxyPath), '/cms/Role=NULL/Capability=NULL')
+        # Restore the original configuration of the proxy
+        self.proxy.create()
 
     @attr("integration")
     def testUserGroupInProxy( self ):
         """
+        Test if getUserAttributes method returns correctly the user group.
         """
-        if not os.path.exists( self.serverKey ):
-
-           self.proxy.create()
-           assert self.proxy.group == self.getUserAttributes().split('\n')[0].split('/')[2]
+        self.assertTrue(self.proxy.group, 'No group set. Testing incomplete.')
+        self.assertEqual(self.proxy.group, self.getUserAttributes().split('\n')[0].split('/')[2])
 
     @attr("integration")
     def testUserRoleInProxy( self ):
         """
+        Test if getUserAttributes method returns correctly the user role.
         """
-        if not os.path.exists( self.serverKey ):
-
-           self.proxy.create()
-           assert self.proxy.role == self.getUserAttributes().split('\n')[0].split('/')[3].split('=')[1]
+        self.assertEqual(self.proxy.role, self.getUserAttributes().split('\n')[0].split('/')[3].split('=')[1])
 
     @attr("integration")
     def testGetAttributes( self ):
         """
+        Test getAttributeFromProxy method.
         """
-        if not os.path.exists( self.serverKey ):
+        self.assertTrue(self.proxy.group, 'No group set. Testing incomplete.')
+        if not self.dict['role']:
+            role = 'NULL'
+        else:
+            role = self.dict['role']
+        proxyPath = self.proxy.getProxyFilename( )
+        self.assertEqual(self.proxy.getAttributeFromProxy(proxyPath).split('/')[2], self.dict['group'])
+        self.assertEqual(self.proxy.getAttributeFromProxy(proxyPath).split('/')[3].split('=')[1], role)
 
-           if not self.dict['role']:
-               role = 'NULL'            
-           self.proxy.create()
-           assert self.proxy.getAttributeFromProxy().split('/')[2] == self.dict['group']
-           assert self.proxy.getAttributeFromProxy().split('/')[3].split('=')[1] == role
-            
     @attr("integration")
-    def testGetAttributes( self ):
+    def testGetUserGroupAndRole( self ):
         """
+        Test GetUserGroupAndRoleFromProxy method.
         """
-        if not os.path.exists( self.serverKey ):
-
-           if not self.dict['role']:
-               role = 'NULL'
-           self.proxy.create()
-           proxyPath = self.proxy.getProxyFilename( )
-           if self.dict['group'] and self.dict['role']: 
-               assert self.proxy.getUserGroupAndRoleFromProxy( proxyPath )[0] == self.dict['group']
-               assert self.proxy.getUserGroupAndRoleFromProxy( proxyPath )[1] == self.dict['role']
-
-
-#    def testDestroyMyProxy( self ):
-#        """
-#        """
-#         return
+        if not self.dict['role']:
+            role = 'NULL'
+        else:
+            role = self.dict['role']
+        proxyPath = self.proxy.getProxyFilename( )
+        if self.dict['group'] and self.dict['role']:
+            self.assertEqual(self.proxy.getUserGroupAndRoleFromProxy(proxyPath)[0], self.dict['group'])
+            self.assertEqual(self.proxy.getUserGroupAndRoleFromProxy(proxyPath)[1], role)
 
 if __name__ == '__main__':
     unittest.main()

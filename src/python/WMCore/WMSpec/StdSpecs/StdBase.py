@@ -15,6 +15,8 @@ from WMCore.Lexicon import lfnBase, identifier
 from WMCore.WMException import WMException
 from WMCore.Database.CMSCouch import CouchNotFoundError
 
+analysisTaskTypes = ['Analysis', 'PrivateMC']
+
 class WMSpecFactoryException(WMException):
     """
     _WMSpecFactoryException_
@@ -197,7 +199,8 @@ class StdBase(object):
                             splitArgs = {'lumis_per_job': 8}, seeding = None, totalEvents = None,
                             userDN = None, asyncDest = None, owner_vogroup = "DEFAULT",
                             owner_vorole = "DEFAULT", stepType = "CMSSW",
-                            userSandbox = None, userFiles = [], primarySubType = None):
+                            userSandbox = None, userFiles = [], primarySubType = None,
+                            forceMerged = False, forceUnmerged = False):
 
         """
         _setupProcessingTask_
@@ -244,7 +247,7 @@ class StdBase(object):
         procTask.setSplittingAlgorithm(splitAlgo, **newSplitArgs)
         procTask.setTaskType(taskType)
 
-        if taskType == "Production" and totalEvents != None:
+        if taskType in ["Production", 'PrivateMC'] and totalEvents != None:
             procTask.addGenerator(seeding)
             procTask.addProduction(totalevents = totalEvents)
         else:
@@ -286,7 +289,8 @@ class StdBase(object):
                                                 configOutput[outputModuleName].get('primaryDataset',
                                                                                    self.inputPrimaryDataset),
                                                 configOutput[outputModuleName]['dataTier'],
-                                                configOutput[outputModuleName].get('filterName', None))
+                                                configOutput[outputModuleName].get('filterName', None),
+                                                forceMerged = forceMerged, forceUnmerged = forceUnmerged)
             outputModules[outputModuleName] = outputModule
 
         if configDoc != None and configDoc != "":
@@ -307,13 +311,14 @@ class StdBase(object):
 
     def addOutputModule(self, parentTask, outputModuleName,
                         primaryDataset, dataTier, filterName,
-                        stepName = "cmsRun1"):
+                        stepName = "cmsRun1", forceMerged = False,
+                        forceUnmerged = False):
         """
         _addOutputModule_
 
         Add an output module to the given processing task.
         """
-        if parentTask.name() == 'Analysis':
+        if parentTask.name() in analysisTaskTypes:
             # TODO in case of user data need to implement policy to define
             #  1  processedDataset
             #  2  primaryDataset
@@ -330,7 +335,7 @@ class StdBase(object):
                                           self.processingVersion)
             processingString = "%s" % (self.processingVersion)
 
-        if parentTask.name() == 'Analysis':
+        if parentTask.name() in analysisTaskTypes:
             if filterName:
                 unmergedLFN = "%s/%s/%s-%s/%s" % (self.unmergedLFNBase, primaryDataset,
                                                   self.acquisitionEra, filterName,
@@ -348,6 +353,11 @@ class StdBase(object):
                                             processingString)
             lfnBase(unmergedLFN)
             lfnBase(mergedLFN)
+
+        if forceMerged:
+            unmergedLFN = mergedLFN
+        elif forceUnmerged:
+            mergedLFN = unmergedLFN
 
         cmsswStep = parentTask.getStep(stepName)
         cmsswStepHelper = cmsswStep.getTypeHelper()

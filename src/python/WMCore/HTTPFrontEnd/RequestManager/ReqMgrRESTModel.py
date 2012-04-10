@@ -253,7 +253,6 @@ class ReqMgrRESTModel(RESTModel):
     def getRequest(self, requestName=None):
         """ If a request name is specified, return the details of the request. 
         Otherwise, return an overview of all requests """
-        print "Query request: '%s'" % requestName
         if requestName == None:
             return GetRequest.getRequests()
         else:
@@ -298,7 +297,9 @@ class ReqMgrRESTModel(RESTModel):
         # looking for the first non-failed/non-canceled request
         for requestID in requestIDs:
             request = GetRequest.getRequest(requestID)
-            if request.get("RequestStatus", 'aborted').lower() not in ['aborted', 'failed']:
+            rejectList = ['aborted', 'failed', 'rejected', 'epic-failed']
+            requestStatus = request.get("RequestStatus", 'aborted').lower()
+            if requestStatus not in rejectList:
                 break
 
         if request != None:

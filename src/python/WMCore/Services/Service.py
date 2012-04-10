@@ -50,6 +50,28 @@ result          |  cached  |  cached  |  cached  | not cached |
 
 
 
+def isfile(obj):
+    # Any better way of identifying if an object is a file?
+    return hasattr(obj, 'flush')
+
+def cache_expired(cache, delta = 0):
+    """Is the cache expired? At delta hours (default 0) in the future.
+    """
+    # cache can either be a file name or an already opened file object
+    if isfile(cache):
+        # currently file object only used for StringIO object when not caching to disk
+        return True # could check size here, just assume we need a refresh
+    else:
+        if not os.path.exists(cache):
+            return True
+
+        delta = datetime.timedelta(hours = delta)
+        t = datetime.datetime.now() - delta
+        # cache file mtime has been set to cache expiry time
+        if (os.path.getmtime(cache) < time.mktime(t.timetuple())):
+            return True
+
+    return False
 
 
 import datetime
@@ -57,6 +79,11 @@ import os
 import time
 import types
 import logging
+try:
+    from cStringIO import cStringIO as StringIO
+except ImportError:
+    from StringIO import StringIO
+
 
 from httplib import InvalidURL, HTTPException
 from httplib2 import HttpLib2Error
@@ -123,10 +150,14 @@ class Service(dict):
         self['cachepath'] = self["requests"]["cachepath"]
 
         if 'logger' not in self:
+            if self['cachepath']:
+                logfile = os.path.join(self['cachepath'], '%s.log' % self.__class__.__name__.lower())
+            else:
+                logfile = None
             logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
-                    filename = os.path.join(self['cachepath'], '%s.log' % self.__class__.__name__.lower()),
+                    filename = logfile,
                     filemode='w')
             self['logger'] = logging.getLogger(self.__class__.__name__)
             self['requests']['logger'] = self['logger']
@@ -150,6 +181,9 @@ class Service(dict):
         """
         Calculate the cache filename for a given query.
         """
+        # if not caching to disk return StringIO object
+        if not self['cachepath'] or not cachefile:
+            return StringIO()
 
         hash = 0
         if inputdata:
@@ -165,17 +199,18 @@ class Service(dict):
         """
         See if the cache has expired. If it has make a new request to the
         service for the input data. Return the cachefile as an open file object.
+        If cachefile is None returns StringIO.
         """
         verb = self._verbCheck(verb)
 
         t = datetime.datetime.now() - datetime.timedelta(hours = self['cacheduration'])
         cachefile = self.cacheFileName(cachefile, verb, inputdata)
 
-        if not os.path.exists(cachefile) or os.path.getmtime(cachefile) < time.mktime(t.timetuple()):
-            self['logger'].debug("%s expired, refreshing cache" % cachefile)
+        if cache_expired(cachefile):
             self.getData(cachefile, url, inputdata, {}, encoder, decoder, verb, contentType)
 
-        if openfile:
+        # cachefile may be filename or file object
+        if openfile and not isfile(cachefile):
             return open(cachefile, 'r')
         else:
             return cachefile
@@ -185,6 +220,7 @@ class Service(dict):
         """
         Make a new request to the service for the input data, regardless of the
         cache state. Return the cachefile as an open file object.
+        If cachefile is None returns StringIO.
         """
         verb = self._verbCheck(verb)
 
@@ -193,7 +229,7 @@ class Service(dict):
         self['logger'].debug("Forcing cache refresh of %s" % cachefile)
         self.getData(cachefile, url, inputdata, {'cache-control':'no-cache'},
                      encoder, decoder, verb, contentType, force_refresh = True)
-        if openfile:
+        if openfile and not isfile(cachefile):
             return open(cachefile, 'r')
         else:
             return cachefile
@@ -202,12 +238,16 @@ class Service(dict):
         """
         Delete the cache file and the httplib2 cache.
         """
+        if not self['cachepath'] or not cachefile:
+            # nothing to clear
+            return
 
         verb = self._verbCheck(verb)
         os.system("/bin/rm -f %s/*" % self['requests']['req_cache_path'])
         cachefile = self.cacheFileName(cachefile, verb, inputdata)
         try:
-            os.remove(cachefile)
+            if not isfile(cachefile):
+                os.remove(cachefile)
         except OSError: # File doesn't exist
             return
 
@@ -218,10 +258,10 @@ class Service(dict):
         Takes the already generated *full* path to cachefile and the url of the
         resource. Don't need to call self.cacheFileName(cachefile, verb, inputdata)
         here.
+
+        If cachefile is StringIO append to that
         """
         verb = self._verbCheck(verb)
-
-        # Nested form for version < 2.5
 
         try:
             # Get the data
@@ -239,13 +279,17 @@ class Service(dict):
             if from_cache:
                 # If it's coming from the cache we don't need to write it to the
                 # second cache, or do we?
-                self['logger'].debug('Data is from the httplib2 cache')
+                self['logger'].debug('Data is from the cache')
             else:
                 # Don't need to prepend the cachepath, the methods calling
                 # getData have done that for us
-                f = open(cachefile, 'w')
-                f.write(str(data))
-                f.close()
+                if isfile(cachefile):
+                    cachefile.write(str(data))
+                    cachefile.seek (0, 0) # return to beginning of file
+                else:
+                    f = open(cachefile, 'w')
+                    f.write(str(data))
+                    f.close()
 
 
         except (IOError, HttpLib2Error, HTTPException), he:
@@ -254,7 +298,7 @@ class Service(dict):
             # from *Ops that it is very clear that data is is being returned
             # from a cachefile, and that cachefiles can be good/stale/dead.
             #
-            if force_refresh or not os.path.exists(cachefile):
+            if force_refresh or isfile(cachefile) or not os.path.exists(cachefile):
                 msg = 'The cachefile %s does not exist and the service at %s'
                 msg = msg % (cachefile, self["requests"]['host'] + url)
                 if hasattr(he, 'status') and hasattr(he, 'reason'):
@@ -265,24 +309,18 @@ class Service(dict):
                 self['logger'].warning(msg)
                 raise he
             else:
-                cache_age = os.path.getmtime(cachefile)
-                delta = datetime.timedelta(hours = self.get('maxcachereuse', 24))
-                t = datetime.datetime.now() - delta
-                cache_dead = cache_age < time.mktime(t.timetuple())
+                cache_dead = cache_expired(cachefile, delta =  self.get('maxcachereuse', 24))
                 if self.get('usestalecache', False) and not cache_dead:
                     # If usestalecache is set the previous version of the cache
                     # file should be returned, with a suitable message in the
                     # log, but no exception raised
-                    self['logger'].warning('Returning stale cache data')
+                    self['logger'].warning('Returning stale cache data from %s' % cachefile)
                     if hasattr(he, 'status') and hasattr(he, 'reason'):
                         self['logger'].info('%s returned %s because %s' % (he.url,
                                                                            he.status,
                                                                            he.reason))
                     else:
-                        self['logger'].info('raised a %s when accessed' % he.__repr__())
-                    self['logger'].info('cache file (%s) was created on %s' % (
-                                                                        cachefile,
-                                                                        cache_age))
+                        self['logger'].info('%s raised a %s when accessed' % (url, he.__repr__()))
                 else:
                     if cache_dead:
                         msg = 'The cachefile %s is dead (%s hours older than cache '

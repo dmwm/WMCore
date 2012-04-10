@@ -68,12 +68,12 @@ class scaleTestFiller:
 
         # Generate somewhere between one and a thousand files
         name = "ThisIsATest_%s" % (makeUUID())
-        nFiles = random.randint(10, 5000)
+        nFiles = random.randint(10, 2000)
         name = name.replace('-', '_')
         name = '%s-v0' % name
         files = self.getFiles(name = name, nFiles = nFiles)
 
-        print "Inserting %i files for dataset %s" % (nFiles, name)
+        print "Inserting %i files for dataset %s" % (nFiles * 2, name)
 
         try:
             self.dbsUploader.algorithm()
@@ -161,17 +161,21 @@ class scaleTestFiller:
             testFile.setLocation(site)
             files.append(testFile)
 
-        testFileChild = DBSBufferFile(lfn = '/data/store/random/random/RANDOM/test/0/%s-%s-child.root' %(name, site), size = 1024,
-                                 events = 10, checksums = {'cksum': 1})
-        testFileChild.setAlgorithm(appName = name, appVer = "CMSSW_3_1_1",
-                              appFam = "RECO", psetHash = "GIBBERISH",
-                              configContent = "MOREGIBBERISH")
-        testFileChild.setDatasetPath("/%s/%s_2/RECO" %(name, name))
-        testFileChild.addRun(Run( 1, *[45]))
-        testFileChild.create()
-        testFileChild.setLocation(site)
+        count = 0
+        for f in files:
+            count += 1
+            testFileChild = DBSBufferFile(lfn = '/data/store/random/random/RANDOM/test/0/%s-%s-%i-child.root' %(name, site, count), size = 1024,
+                                          events = 10, checksums = {'cksum': 1})
+            testFileChild.setAlgorithm(appName = name, appVer = "CMSSW_3_1_1",
+                                       appFam = "RECO", psetHash = "GIBBERISH",
+                                       configContent = "MOREGIBBERISH")
+            testFileChild.setDatasetPath("/%s/%s_2/RECO" %(name, name))
+            testFileChild.addRun(Run( 1, *[45]))
+            testFileChild.create()
+            testFileChild.setLocation(site)
 
-        testFileChild.addParents([x['lfn'] for x in files])
+            testFileChild.addParents([f['lfn']])
+            
 
         return files
 

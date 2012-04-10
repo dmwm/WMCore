@@ -497,7 +497,7 @@ def makeRequest(kwargs, couchUrl, couchDB, wmstatUrl):
     request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
     try:
         wmstatSvc = WMStatsWriter(wmstatUrl)
-        CheckIn.checkIn(request, requestType = kwargs['RequestType'], wmstatSvc)
+        CheckIn.checkIn(request, kwargs['RequestType'], wmstatSvc)
     except CheckIn.RequestCheckInError, ex:
         msg = ex._message
         raise HTTPError(400, "Error in Request check-in: %s" % msg)

@@ -21,9 +21,12 @@ WMStats.JobDetailView = (function() {
             htmlstr += "<li> site: " + jobDoc.site + "</li>";
             htmlstr += "<li> exit code: " + jobDoc.exitcode + "</li>";
             htmlstr += "<li> retry count: " + jobDoc.retrycount + "</li>";
-            htmlstr += "<li> lumis: " 
+            htmlstr += "<li> lumis:" 
             for (var i in jobDoc.lumis) {
-                htmlstr += jobDoc.lumis[i] + " "
+                for (var j in jobDoc.lumis[i]) {
+                    htmlstr += jobDoc.lumis[i][j] + " "
+                }
+                htmlstr +=  "\n "
             } 
             htmlstr += "</li>";
             /*
@@ -35,10 +38,16 @@ WMStats.JobDetailView = (function() {
             */
             htmlstr += "<li> output: " 
             for (var i in jobDoc.output) {
-                htmlstr += jobDoc.output[i].lfn;
                 htmlstr += "<ul>";
-                htmlstr += "<li> location: " + jobDoc.output[i].location + "</li>";
-                htmlstr += "<li> checksums: " + jobDoc.output[i].checksums + "</li>";
+                htmlstr += "<li> lfn:" + jobDoc.output[i].lfn +"</li>";
+                
+                htmlstr += "<li> location: ";
+                for (var j in jobDoc.output[i].location) {
+                    htmlstr += jobDoc.output[i].location[j] + " ";
+                }
+                htmlstr += "</li>";
+                htmlstr += "<li> checksums: adler32: " + jobDoc.output[i].checksums.adler32 + 
+                            " cksum: " + jobDoc.output[i].checksums.cksum + "</li>";
                 htmlstr += "<li> type: " + jobDoc.output[i].type + "</li>";
                 htmlstr += "<li> size: " + jobDoc.output[i].size + "</li>";
                 htmlstr += "</ul>";

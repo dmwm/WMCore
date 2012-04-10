@@ -1,3 +1,74 @@
+0.8.35 to 0.8.36:
+  - Add support for force merging and force unmerging in StdBase.  Fixes #3564.
+  - Add support for PromptReconstruction at the Tier1s with the PromptSkimming system.  Fixes #3413.
+  - Remove old Workload Summary code.  Fixes #3337.
+  - Remove SQLite support.  Fixes #3393.
+  - Missed the unit test for the PrivateMC request type.  Fixes #3480.
+  - When determing which datasets a request produced ignore requests with the following status:   'aborted', 'failed', 'rejected', 'epic-failed'
+  - Remove the REST unit tests.  Fixes #3534.
+  - Make the DBSReader unit test fail gracefully if no X509 cert is set.  Fixes #3517.
+  - Add a PrivateMC request type.  Fixes #3480.
+  - Fix error message in the TaskArchiver.  Fixes #3510.
+  - Allow the Service Cache to be disabled.  Fixes #3512.
+  - Use NumEvents instead of SizeEvents on the ReqMgr assignment page.  Fixes #3513.
+  - Add my child files to the DBS3 scale test.  Fixes #3511.
+  - Missed the change from ProdConfigCacheID to ProcConfigCacheID.  Fixes #3530.
+  - Uses POST with the old REST interface. Fixes #3514
+  - Fixes and cleanups in the BossAir MockPlugin unit test.  Fixes #3523.
+  - Fix the ReportEmu unit test.  Fixes #3524.
+  - Fix the FWJR/ReportIntegration unit test.  Fixes #3525.
+  - Fix the database connection code in the ReqMgr/Admit_t unit test.  Fixes #3526.
+  - Mark several of the Services_t tests as integration as they are not reliable.  Fixes #3527.
+  - Fix the CMSSW executor unit test.  Fixes #3531.
+  - Fix the WebTools_t/REST_Format unit tests.  Fixes #3532.
+  - Fix the WebTools_t/REST_Exceptions_t unit test.  Fixes #3533.
+  - Fix the Lexicon unit test.  Fixes #3537.
+  - Cleanup the proxy unit tests.  Fixes #3031.
+  - Remove runtime global tag testing as changes have made this difficult to test.  Fixes #3529.
+  - Add AgentName to dashboard information.  Fixes #3508.
+  - Remove a print statement from the ReqMgr.  Fixes #3544.
+  - Fix the of the agent processes.  Fixes #3542.
+  - Fix the TaskChain unit test.  Fixes #3521.
+  - Don't delete keys that don't exist in StdBase.  Fixes #3518.
+  - Add output module information to all steps.  Fixes #3557.
+  - Fix issues deploying couchapps.  Fixes #3507.
+  - Ignore canceled and rejected requests when trying to determine that datasets created for a given PrepID.  Fixes #3551.
+  - Fix issues with the RunWhiteList and TaskChain requests.  Fixes #3504.
+  - Add a method to the ReqMgr to map datasets to the configs that produced them.  Fixes #3451.
+  - Cast workqueue mc policy SliceSize to int
+  - Typo in Request certificate dir lookup
+  - Add DBS3 URLs to the request creation page.  Fixes #3502.
+  - Improve error messages when aborting work in the ReqMgr.  Fixes #3500.
+  - Improve error handling in PhEDExInjector.  Fixes #3498.
+  - Support a couple variations of the T0 LFN in the lexicon.  Fixes #3418.
+  - Make is possible to use pycurl with couch.  Fixes #3353.
+  - Improve handling of empty FWJR in BossAir gLite plugin.
+  - Remove last_event from wmbs_file.  Fixes #3392.
+  - Fixes for Config.DP workflow output handling.  Fixes #3421.
+  - Add global tag to the alca skim step in the Tier1PromptReco spec.  Fixes #3495.
+  - Move the majority of dashboard reporting to the WN.  Fixes #3471.
+  - Fix the Config.DP arguments are writeTiers is no longer supported.  Fixes #3493.
+  - Make the global tag runtime fixup more tolerant of configs that don't have global tags.  Fixes #3439.
+  - Allow complex data strcutures to be passed to Config.DataProcessing.  Fixes #3370.
+  - DBS3 upload fixups.  Fixes #3492.
+  - Initial version of a script to inject a Tier1PromptReco workflow directly into WMBS.  Fixes #3412.
+  - Remove retry_max from the WMBS schema as it's not used.  Fixes #3431.
+  - Initial version of a script to aid in DBS3 scale testing.  Fixes #3442.
+  - Fix the PromptSkimPoller so that it looks at the correct WorkQueue database.  Fixes #3462.
+  - Initial version of a command line utility to handle paused jobs.  Fixes #3454.
+  - Fix the creation of StoreResults requests in the ReqMgr.  Fixes #3469.
+  - Make log collect tasks optional for merge tasks.  Fixes #3468.
+  - Add an Oracle version of the CheckInjectedWorkflow DAO.  Fixes #3419.
+  - Look for couch apps in xdata as well as data.  Fixes #3494.
+  - Have git ignore patch files.
+  - Resolve issues with invalid JSON being produced by certain REST methods.  Fixes #3450.
+  - Fix the parentless merge by size data discovery query.
+  - Ignore bogus datasets when subscribing data.  Fixes #3477.
+  - Dont kill JobSplitter when generators inaccessible
+  - Fix documentation for TaskChain Seeding param.
+  - Remove lingering continuous replication in workqueue tests
+  - Fix bug that stopped update of wmagent-dev spec.
+
 0.8.34 to 0.8.35:
   - Fix MC Submission Page for ReqMgr, Fixes #3467.
 

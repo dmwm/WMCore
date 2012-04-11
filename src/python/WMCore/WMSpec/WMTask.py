@@ -961,6 +961,21 @@ class WMTaskHelper(TreeHelper):
         return getattr(self.data.parameters, 'primarySubType',
                        self.taskType())
 
+    def getConfigCacheIDs(self):
+        """
+        _getConfigCacheIDs_
+
+        Search constituent steps for ConfigCacheID
+        """
+
+        IDs = []
+        for stepName in self.listAllStepNames():
+            stepHelper = self.getStepHelper(stepName)
+            ID = stepHelper.getConfigCacheID()
+            if ID:
+                IDs.append(ID)
+        return IDs
+
     
 class WMTask(ConfigSectionTree):
     """

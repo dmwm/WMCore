@@ -42,8 +42,8 @@ Example initial generation task:
     "ConfigCacheID" : generatorDoc,                   Generator Config id
     "SplittingAlgorithm"  : "EventBased",             Splitting Algorithm
     "SplittingArguments" : {"events_per_job" : 250},  Size of jobs in terms of splitting algorithm
-    "RequestNumEvents" : 10000,                      Total number of events to generate
-    "Seeding" : "Automatic",                          Random seeding method
+    "RequestNumEvents" : 10000,                       Total number of events to generate
+    "Seeding" : "AutomaticSeeding",                   Random seeding method
     "PrimaryDataset" : "RelValTTBar",                 Primary Dataset to be created
 },
 
@@ -182,10 +182,6 @@ class TaskChainWorkloadFactory(StdBase):
         self.globalTag = arguments.get("GlobalTag", None)
         # Optional arguments that default to something reasonable.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
-        self.blockBlacklist = arguments.get("BlockBlacklist", [])
-        self.blockWhitelist = arguments.get("BlockWhitelist", [])
-        self.runBlacklist = arguments.get("RunBlacklist", [])
-        self.runWhitelist = arguments.get("RunWhitelist", [])
         self.emulation = arguments.get("Emulation", False)
 
         
@@ -198,6 +194,13 @@ class TaskChainWorkloadFactory(StdBase):
                 
             taskConf = getTaskN(arguments, i)
             parent = parentTaskName(taskConf)
+
+            # Set task-specific global parameters
+            self.blockBlacklist = taskConf.get("BlockBlacklist", [])
+            self.blockWhitelist = taskConf.get("BlockWhitelist", [])
+            self.runBlacklist   = taskConf.get("RunBlacklist", [])
+            self.runWhitelist   = taskConf.get("RunWhitelist", [])
+
             
             task = self.makeTask(taskConf, self.taskMapping.get(parent, None) )
             if i == 1:

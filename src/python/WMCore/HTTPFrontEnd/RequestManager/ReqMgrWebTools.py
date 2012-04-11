@@ -22,7 +22,7 @@ import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests     as Lis
 import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
 import WMCore.Services.WorkQueue.WorkQueue as WorkQueue
 import WMCore.RequestManager.RequestMaker.CheckIn as CheckIn
-from WMCore.RequestManager.RequestMaker.Registry import retrieveRequestMaker, buildWorkloadForRequest
+from WMCore.RequestManager.RequestMaker.Registry import buildWorkloadForRequest
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
 from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
@@ -229,7 +229,9 @@ def abortRequest(requestName):
     to cancel its work """
     response = ProdManagement.getProdMgr(requestName)
     if response == [] or response[0] == None or response[0] == "":
-        raise cherrypy.HTTPError(400, "Cannot find URL for request " + requestName)
+        msg =  "Cannot find ProdMgr for request %s\n " % requestName
+        msg += "Request may not be known to WorkQueue.  If aborted immediately after assignment, ignore this."
+        raise cherrypy.HTTPError(400, msg)
     workqueue = WorkQueue.WorkQueue(response[0])
     workqueue.cancelWorkflow(requestName)
     return
@@ -289,14 +291,15 @@ def changeStatus(requestName, status):
 
     if status == 'aborted':
         # delete from the workqueue
-        abortRequest(requestName)
         if not privileged() and not ownsRequest(request):
             raise cherrypy.HTTPError(403, "You are not allowed to abort this request")
+        elif not privileged():
+            raise cherrypy.HTTPError(403, "You are not allowed to change the state for this request")
         # delete from the workqueue if it's been assigned to one
         if oldStatus in ["acquired", "running"]:
             abortRequest(requestName)
-        elif not privileged():
-            raise cherrypy.HTTPError(403, "You are not allowed to change the state for this request")
+        else:
+            raise cherrypy.HTTPError(400, "You cannot abort a request in state %s" % oldStatus)
 
     #FIXME needs logic about who is allowed to do which transition
     ChangeState.changeRequestStatus(requestName, status)
@@ -309,7 +312,7 @@ def prepareForTable(request):
     elif 'InputDatasets' in request and len(request['InputDatasets']) != 0:
         request['Input'] = str(request['InputDatasets']).strip("[]'")
     else:
-        request['Input'] = "Total Events: %s" % request['RequestSizeEvents']
+        request['Input'] = "Total Events: %s" % request.get('RequestNumEvents', 0)
     if len(request.get('SoftwareVersions', [])) > 0:
         # only show one version
         request['SoftwareVersions'] = request['SoftwareVersions'][0]
@@ -404,8 +407,6 @@ def makeRequest(kwargs, couchUrl, couchDB):
     for k, v in kwargs.iteritems():
         if isinstance(v, str):
             kwargs[k] = v.strip()
-    #maker = retrieveRequestMaker(kwargs["RequestType"])
-    #schema = maker.newSchema()
     # Create a new schema
     schema = RequestSchema()
     schema.update(kwargs)
@@ -420,7 +421,7 @@ def makeRequest(kwargs, couchUrl, couchDB):
     else:
         schema['RequestName'] = "%s_%s_%s" % (schema['Requestor'], currentTime, secondFraction)
     schema["Campaign"] = kwargs.get("Campaign", "")
-    if 'Scenario' in kwargs and 'ProdConfigCacheID' in kwargs:
+    if 'Scenario' in kwargs and 'ProcConfigCacheID' in kwargs:
         # Use input mode to delete the unused one
         inputMode = kwargs['inputMode']
         inputValues = {'scenario':'Scenario',
@@ -491,7 +492,7 @@ def makeRequest(kwargs, couchUrl, couchDB):
     workloadUrl = helper.saveCouch(couchUrl, couchDB, metadata=metadata)
     request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
     try:
-        CheckIn.checkIn(request)
+        CheckIn.checkIn(request, requestType = kwargs['RequestType'])
     except CheckIn.RequestCheckInError, ex:
         msg = ex._message
         raise HTTPError(400, "Error in Request check-in: %s" % msg)

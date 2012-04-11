@@ -163,6 +163,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 self.sendAlert(7, msg = msg)
                 continue
 
+            myThread.transaction.begin()
             xmlData = self.createInjectionSpec(uninjectedFiles[siteName])
             try:
                 injectRes = self.phedex.injectBlocks(location, xmlData)
@@ -187,11 +188,11 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 logging.error(msg)
                 self.sendAlert(6, msg = msg)
 
-        if len(injectedFiles) > 0:
-            logging.debug("Injecting files: %s" % injectedFiles)
             self.setStatus.execute(injectedFiles, 1, 
                                    conn = myThread.transaction.conn,
                                    transaction = myThread.transaction)
+            injectedFiles = []
+            myThread.transaction.commit()
 
         return
 
@@ -204,7 +205,6 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         myThread = threading.currentThread()
         migratedBlocks = self.getMigrated.execute()
 
-        closedBlocks = []
         for siteName in migratedBlocks.keys():
             # SE names can be stored in DBSBuffer as that is what is returned in
             # the framework job report.  We'll try to map the SE name to a
@@ -230,28 +230,49 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 self.sendAlert(6, msg = msg)
                 continue
 
-            xmlData = self.createInjectionSpec(migratedBlocks[siteName])
-            injectRes = self.phedex.injectBlocks(location, xmlData)
-            logging.info("Block closing result: %s" % injectRes)
+            myThread.transaction.begin()
+            try:
+                xmlData = self.createInjectionSpec(migratedBlocks[siteName])
+                injectRes = self.phedex.injectBlocks(location, xmlData)
+                logging.info("Block closing result: %s" % injectRes)
+            except HTTPException, ex:
+                # If we get an HTTPException of certain types, raise it as an error
+                if ex.status == 400:
+                    msg =  "Received 400 HTTP Error From PhEDEx: %s" % str(ex.result)
+                    logging.error(msg)
+                    self.sendAlert(6, msg = msg)
+                    logging.debug("Blocks: %s" % migratedBlocks[siteName])
+                    logging.debug("XMLData: %s" % xmlData)
+                    raise
+                else:
+                    msg =  "Encountered error while attempting to close blocks in PhEDEx.\n"
+                    msg += str(ex)
+                    logging.error(msg)
+                    logging.debug("Traceback: %s" % str(traceback.format_exc()))
+                    raise PhEDExInjectorPassableError(msg)
+            except Exception, ex:
+                # If we get an error here, assume that it's temporary (it usually is)
+                # log it, and ignore it in the algorithm() loop
+                msg =  "Encountered error while attempting to close blocks in PhEDEx.\n"
+                msg += str(ex)
+                logging.error(msg)
+                logging.debug("Traceback: %s" % str(traceback.format_exc()))
+                raise PhEDExInjectorPassableError(msg)                
 
             if not injectRes.has_key("error"):
                 for datasetName in migratedBlocks[siteName]:
                     for blockName in migratedBlocks[siteName][datasetName]:
-                        closedBlocks.append(blockName)
+                        logging.debug("Closing block %s" % blockName)
+                        self.setBlockStatus.execute(blockName, locations = None,
+                                                    open_status = "Closed", 
+                                                    conn = myThread.transaction.conn,
+                                                    transaction = myThread.transaction)
             else:
                 msg = ("Error injecting data %s: %s" %
                        (migratedBlocks[siteName], injectRes["error"]))
                 logging.error(msg)
                 self.sendAlert(6, msg = msg)
-
-        for closedBlock in closedBlocks:
-            logging.debug("Closing block %s" % closedBlock)
-            self.setBlockStatus.execute(closedBlock, locations = None,
-                                        open_status = "Closed", 
-                                        conn = myThread.transaction.conn,
-                                        transaction = myThread.transaction)
-
-
+            myThread.transaction.commit()            
         return
 
     def algorithm(self, parameters):
@@ -262,11 +283,9 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         PhEDEx.
         """
         myThread = threading.currentThread()
-        myThread.transaction.begin()
         try:
             self.injectFiles()
             self.closeBlocks()
-            myThread.transaction.commit()
         except PhEDExInjectorPassableError, ex:
             logging.error("Encountered PassableError in PhEDExInjector")
             logging.error("Rolling back current transaction and terminating current loop, but not killing component.")

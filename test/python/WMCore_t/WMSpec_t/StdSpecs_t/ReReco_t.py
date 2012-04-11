@@ -48,6 +48,26 @@ class ReRecoTest(unittest.TestCase):
         self.testInit.clearDatabase()
         return
 
+    def injectReRecoConfig(self):
+        """
+        _injectReRecoConfig_
+
+        Inject a ReReco config document that we can use to set the outputModules
+        """
+
+        newConfig = Document()
+        newConfig["info"] = None
+        newConfig["config"] = None
+        newConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
+        newConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
+        newConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
+        newConfig["pset_tweak_details"] ={"process": {"outputModules_": ['RECOoutput'],
+                                                      "RECOoutput": {'dataset': {'filterName': 'RECOoutputFilter',
+                                                                                 'dataTier': 'RECO'}}}}
+        result = self.configDatabase.commitOne(newConfig)
+        return result[0]["id"]
+
+
     def injectSkimConfig(self):
         """
         _injectSkimConfig_
@@ -78,7 +98,9 @@ class ReRecoTest(unittest.TestCase):
         skims tacked on.  We'll only test the skims here.
         """
         skimConfig = self.injectSkimConfig()
+        recoConfig = self.injectReRecoConfig()
         dataProcArguments = getTestArguments()
+        dataProcArguments['ProcConfigCacheID'] = recoConfig
         dataProcArguments["SkimConfigs"] = [{"SkimName": "SomeSkim",
                                              "SkimInput": "RECOoutput",
                                              "SkimSplitAlgo": "FileBased",

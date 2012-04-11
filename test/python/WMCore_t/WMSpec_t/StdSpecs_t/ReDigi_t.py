@@ -662,7 +662,15 @@ class ReDigiTest(unittest.TestCase):
         testWorkload = reDigiWorkload("TestWorkload", defaultArguments)
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
-        
+
+        self.assertTrue(len(testWorkload.getTopLevelTask()) == 1,
+                        "Error: Wrong number of top level tasks.")
+        topLevelTask = testWorkload.getTopLevelTask()[0]
+        topLevelStep = topLevelTask.steps()
+        cmsRun2Step = topLevelStep.getStep("cmsRun2").getTypeHelper()
+        self.assertTrue(len(cmsRun2Step.listOutputModules()) == 2,
+                        "Error: Wrong number of output modules in cmsRun2.")
+
         testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock")
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)

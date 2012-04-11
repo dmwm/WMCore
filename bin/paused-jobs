@@ -1,0 +1,101 @@
+#!/usr/bin/env python
+import threading
+import re
+import getopt
+import sys
+import os
+
+from WMCore.JobStateMachine.ChangeState import ChangeState
+from WMCore.Configuration     import loadConfigurationFile
+from WMCore.WMInit            import connectToDB
+from WMCore.WMBS.Job          import Job
+from WMCore.DAOFactory        import DAOFactory
+
+
+class pausedTool:
+
+    def __init__(self):
+        # Connecting to DB
+        myThread = threading.currentThread() 
+        connectToDB()
+        self.dbi = myThread.dbi 
+
+        # Creating DAO stuff for job discovery 
+        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = myThread.logger,
+                                     dbinterface = self.dbi)
+        self.getJobs     = self.daoFactory(classname = "Jobs.GetAllJobs")
+        self.getTask = self.daoFactory(classname = "Jobs.GetTask")       
+        # Instantiating a changer so we can change jobState
+        Config = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
+        self.changer = ChangeState(Config)
+
+
+    def getOptions(self):
+
+        opts, args = getopt.getopt(sys.argv[1:], 'frw:n:', ['fail', 'resume', 'workflow=', 'nJobs='])
+
+        for o, a in opts:
+            if o in ('-f', '--fail'):
+                action="fail"
+            elif o in ('-r', '--resume'):
+                action="resume"
+            elif o in ('-w', '--workflow'):
+                workflow=a
+            elif o in ('-n', '--njobs'):
+                self.nJobs=a
+
+        if not 'workflow' in locals() or not 'action' in locals():
+            sys.exit('Please give me at least a workflow and a task')
+
+        self.workflow=workflow
+        self.action=action
+
+    def getPaused(self):
+        pausedJobs = self.getJobs.execute(state = 'jobpaused' )
+        jobs = self.getTask.execute(pausedJobs)
+        return jobs
+
+    def filterJobs(self, jobs): 
+
+        matchedJobs = []
+        WMBSJobs = []    
+        workflow = self.workflow
+
+        for jobID in jobs:
+            requestName = jobs[jobID].split("/")[1]
+            if ( re.match( '.*'+workflow+'.*' ,jobs[jobID])):
+                matchedJobs.append(jobID)
+
+        # Now that we know what we want, we instantiate the jobs
+        for jobID in matchedJobs:
+            job = Job(id = jobID)
+            job.load()
+            WMBSJobs.append(job)
+
+        return WMBSJobs
+
+    def resumeJobs(self, jobs):
+        for job in jobs:
+            self.changer.propagate(job, 'created', 'jobpaused')
+            print ('Resuming job '+job['id'])
+
+    def failJobs(self, jobs):
+        for job in jobs:
+            self.changer.propagate(job, 'killed', 'jobpaused')
+            print ('Failing job '+job['id'])
+
+    def main(self):
+
+        self.getOptions()
+        allJobs = self.getPaused()
+        jobs = self.filterJobs(allJobs)
+        if self.action == "resume":
+            self.resumeJobs(jobs)
+        elif self.action == "fail":
+            self.failJobs(jobs)
+        
+
+tool = pausedTool()
+tool.main()
+

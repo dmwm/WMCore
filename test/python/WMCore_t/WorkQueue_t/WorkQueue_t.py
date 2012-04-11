@@ -286,8 +286,10 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(numUnit, len(self.globalQueue))
 
         # pull work to localQueue2 - check local doesn't get any
-        self.assertEqual(numUnit, self.localQueue2.pullWork({'T2_XX_SiteA' : total}))
-        self.assertEqual(0, self.localQueue.pullWork({'T2_XX_SiteA' : total}))
+        self.assertEqual(numUnit, self.localQueue2.pullWork({'T2_XX_SiteA' : total},
+                                                            continuousReplication = False))
+        self.assertEqual(0, self.localQueue.pullWork({'T2_XX_SiteA' : total},
+                                                     continuousReplication = False))
         syncQueues(self.localQueue)
         syncQueues(self.localQueue2)
         self.assertEqual(numUnit, len(self.localQueue2.status(status = 'Available')))
@@ -437,7 +439,8 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(2, len(self.globalQueue))
 
         # check work isn't passed down to site without subscription
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteC' : 1000}), 0)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteC' : 1000},
+                                                  continuousReplication = False), 0)
 
         # put at correct site
         self.globalQueue.updateLocationInfo()
@@ -448,7 +451,8 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(2, len(self.globalQueue))
 
         # pull work down to the lowest queue
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000}), 2)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000},
+                                                  continuousReplication = False), 2)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue), 2)
         # parent state should be negotiating till we verify we have it
@@ -484,7 +488,8 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # pull to local queue
         self.globalQueue.updateLocationInfo()
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000}), 2)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000},
+                                                  continuousReplication = False), 2)
         syncQueues(self.localQueue) # Tell parent local has acquired
         self.assertEqual(len(self.globalQueue.status('Acquired')), 2)
         self.assertEqual(len(self.localQueue.status('Available')), 2)
@@ -595,10 +600,12 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # Can't get work for wrong team
         self.localQueue.params['Teams'] = ['other']
-        self.assertEqual(self.localQueue.pullWork(slots), 0)
+        self.assertEqual(self.localQueue.pullWork(slots,
+                                                  continuousReplication = False), 0)
         # and with correct team name
         self.localQueue.params['Teams'] = ['The A-Team']
-        self.assertEqual(self.localQueue.pullWork(slots), 1)
+        self.assertEqual(self.localQueue.pullWork(slots,
+                                                  continuousReplication = False), 1)
         syncQueues(self.localQueue)
         # when work leaves the queue in the agent it doesn't care about teams
         self.localQueue.params['Teams'] = ['other']
@@ -614,7 +621,8 @@ class WorkQueueTest(WorkQueueTestCase):
         self.globalQueue.updateLocationInfo()
 
         self.localQueue.params['Teams'] = ['The B-Team', 'The C-Team']
-        self.assertEqual(self.localQueue.pullWork(slots), 3)
+        self.assertEqual(self.localQueue.pullWork(slots,
+                                                  continuousReplication = False), 3)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.getWork(slots)), 3)
 
@@ -642,7 +650,8 @@ class WorkQueueTest(WorkQueueTestCase):
         # pull to local
         # location info should already be added
         #self.globalQueue.updateLocationInfo()
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000}),
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000},
+                                                  continuousReplication = False),
                          totalBlocks)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.status(status = 'Available')),
@@ -681,7 +690,8 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # pull to local
         self.globalQueue.updateLocationInfo()
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000}),
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000},
+                                                  continuousReplication = False),
                          totalSpec)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.status(status = 'Available')),
@@ -709,7 +719,8 @@ class WorkQueueTest(WorkQueueTestCase):
         totalBlocks = 2
         self.globalQueue.queueWork(self.processingSpec.specUrl())
         self.globalQueue.updateLocationInfo()
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000}),
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000},
+                                                  continuousReplication = False),
                          totalBlocks)
         syncQueues(self.localQueue)
         work = self.localQueue.getWork({'T2_XX_SiteA' : 1000, 'T2_XX_SiteB' : 1000})
@@ -729,7 +740,8 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(work_at_local), 0)
 
         # now 2nd queue calls and acquires work
-        self.assertEqual(self.localQueue2.pullWork({'T2_XX_SiteA' : 1000}),
+        self.assertEqual(self.localQueue2.pullWork({'T2_XX_SiteA' : 1000},
+                                                   continuousReplication = False),
                          totalBlocks)
         syncQueues(self.localQueue2)
 
@@ -772,7 +784,8 @@ class WorkQueueTest(WorkQueueTestCase):
         """Cancel work in global queue"""
         # queue to global & pull an element to local
         self.globalQueue.queueWork(self.processingSpec.specUrl())
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1},
+                                                  continuousReplication = False), 1)
         syncQueues(self.localQueue)
 
         # cancel in global and propagate to local
@@ -812,7 +825,8 @@ class WorkQueueTest(WorkQueueTestCase):
 
         ### check cancel of work negotiating in agent works
         self.globalQueue.queueWork(self.whitelistSpec.specUrl())
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteB' : 1}), 1)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteB' : 1},
+                                                  continuousReplication = False), 1)
         self.localQueue.backend.forceQueueSync()
         self.assertEqual(len(self.localQueue.statusInbox(status='Negotiating')), 1)
 
@@ -923,7 +937,8 @@ class WorkQueueTest(WorkQueueTestCase):
     def testConflicts(self):
         """Resolve conflicts between global & local queue"""
         self.globalQueue.queueWork(self.spec.specUrl())
-        self.localQueue.pullWork({'T2_XX_SiteA' : 10000})
+        self.localQueue.pullWork({'T2_XX_SiteA' : 10000},
+                                 continuousReplication = False)
         self.localQueue.getWork({'T2_XX_SiteA' : 10000})
         syncQueues(self.localQueue)
         global_ids = [x.id for x in self.globalQueue.status()]
@@ -942,7 +957,8 @@ class WorkQueueTest(WorkQueueTestCase):
     def testDeleteWork(self):
         """Delete finished work"""
         self.globalQueue.queueWork(self.spec.specUrl())
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 10000}), 1)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 10000},
+                                                  continuousReplication = False), 1)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA' : 10000})), 1)
         syncQueues(self.localQueue)
@@ -975,7 +991,8 @@ class WorkQueueTest(WorkQueueTestCase):
         spec.save(spec.specUrl())
         self.localQueue.params['Teams'] = ['cmsdataops']
         self.globalQueue.queueWork(spec.specUrl(), "Resubmit_TestWorkload", team = "cmsdataops")
-        self.localQueue.pullWork({"T1_US_FNAL": 100})
+        self.localQueue.pullWork({"T1_US_FNAL": 100},
+                                 continuousReplication = False)
         syncQueues(self.localQueue)
         self.localQueue.getWork({"T1_US_FNAL": 100})
 
@@ -990,7 +1007,8 @@ class WorkQueueTest(WorkQueueTestCase):
         spec.save(spec.specUrl())
         self.localQueue.params['Teams'] = ['cmsdataops']
         self.globalQueue.queueWork(spec.specUrl(), "Resubmit_TestWorkload", team = "cmsdataops")
-        self.localQueue.pullWork({"T1_US_FNAL": 100})
+        self.localQueue.pullWork({"T1_US_FNAL": 100},
+                                 continuousReplication = False)
         syncQueues(self.localQueue)
         self.localQueue.getWork({"T1_US_FNAL": 100})
 
@@ -998,16 +1016,19 @@ class WorkQueueTest(WorkQueueTestCase):
         """Pull work only if all previous work processed in child"""
         self.globalQueue.queueWork(self.processingSpec.specUrl())
         self.assertEqual(2, len(self.globalQueue))
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1},
+                                                  continuousReplication = False), 1)
         # further pull will fail till we replicate to child
         # hopefully couch replication wont happen till we manually sync
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 0)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1},
+                                                  continuousReplication = False), 0)
         self.assertEqual(1, len(self.globalQueue))
         self.assertEqual(0, len(self.localQueue))
         syncQueues(self.localQueue)
         self.assertEqual(1, len(self.localQueue))
         # pull works again
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1},
+                                                  continuousReplication = False), 1)
         
     def testSitesFromResourceControl(self):
         """Test sites from resource control"""
@@ -1015,7 +1036,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # In reality site list will come from resource control so test
         # that here (just a simple check that we can get sites from rc)
         self.globalQueue.queueWork(self.spec.specUrl())
-        self.assertEqual(self.localQueue.pullWork(), 1)
+        self.assertEqual(self.localQueue.pullWork(continuousReplication = False), 1)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.status()), 1)
 
@@ -1058,7 +1079,8 @@ class WorkQueueTest(WorkQueueTestCase):
         self.localQueue.params['DrainMode'] = True
         self.globalQueue.queueWork(self.spec.specUrl())
         self.assertEqual(1, len(self.globalQueue))
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000, 'T2_XX_SiteB' : 1000}), 0)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000, 'T2_XX_SiteB' : 1000},
+                                                  continuousReplication = False), 0)
 
     def testWMBSInjectionStatus(self):
 
@@ -1070,7 +1092,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(self.globalQueue.getWMBSInjectionStatus(self.spec.name()),
                          False)
 
-        self.assertEqual(self.localQueue.pullWork(),3)
+        self.assertEqual(self.localQueue.pullWork(continuousReplication = False),3)
         # test local queue status with parents (globalQueue is not synced yet
         self.assertEqual(self.localQueue.getWMBSInjectionStatus(),
                          [{'testProcessing': False}, {'testProduction': False}])
@@ -1103,11 +1125,13 @@ class WorkQueueTest(WorkQueueTestCase):
         """Test end policy processing of request before splitting"""
         work = self.globalQueue.queueWork(self.processingSpec.specUrl())
         self.assertEqual(work, 2)
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1},
+                                                  continuousReplication = False), 1)
         self.localQueue.backend.pullFromParent() # pull work into inbox (Negotiating state)
         self.localQueue.processInboundWork()
         syncQueues(self.localQueue)
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1},
+                                                  continuousReplication = False), 1)
         # should print message but not raise an error
         self.localQueue.performQueueCleanupActions(skipWMBS = True)
         self.localQueue.backend.pullFromParent(continuous = False)
@@ -1133,7 +1157,8 @@ class WorkQueueTest(WorkQueueTestCase):
         self.globalQueue.queueWork(self.processingSpec.specUrl())
         self.globalQueue.queueWork(self.spec.specUrl())
         # acquire 1 element of a wf and then mark site as draining.
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1},
+                                                  continuousReplication = False), 1)
         syncQueues(self.localQueue)
         existing_wf = [x['RequestName'] for x in self.localQueue.statusInbox()]
         self.assertEqual(1, len(existing_wf))
@@ -1141,14 +1166,16 @@ class WorkQueueTest(WorkQueueTestCase):
         rc = ResourceControl()
         rc.drainSite('T2_XX_SiteA')
         # pull more work, only elements from previously pulled wf should be acquired
-        self.localQueue.pullWork(resources = {'doesnt exist' : 0}, draining_resources={'T2_XX_SiteA' : 10})
+        self.localQueue.pullWork(resources = {'doesnt exist' : 0}, draining_resources={'T2_XX_SiteA' : 10},
+                                 continuousReplication = False)
         syncQueues(self.localQueue)
         [self.fail('Got new wf %s for draining site' % x['RequestName']) for x in self.localQueue.statusInbox() if x['RequestName'] != existing_wf]
         # wmbs injection for draining sites continues to work
         self.assertTrue(self.localQueue.getWork({'T2_XX_SiteA' : 10}))
         # re-enable site and get remainder of work
         rc.drainSite('T2_XX_SiteA', drain = False)
-        self.assertTrue(self.localQueue.pullWork({'T2_XX_SiteA' : 100}))
+        self.assertTrue(self.localQueue.pullWork({'T2_XX_SiteA' : 100},
+                                                 continuousReplication = False))
         syncQueues(self.localQueue)
         self.assertTrue(self.localQueue.getWork({'T2_XX_SiteA' : 100}))
 

@@ -59,8 +59,7 @@ def globalQueue(logger = None, dbi = None, **kwargs):
 def localQueue(logger = None, dbi = None, **kwargs):
     """Convenience method to create a WorkQueue suitable for use locally
     """
-    defaults = {'TrackLocationOrSubscription' : 'location',
-                'ParentQueueCouchUrl' : 'http://localhost:5984/workqueue_t_global'}
+    defaults = {'TrackLocationOrSubscription' : 'location'}
     defaults.update(kwargs)
     return WorkQueue(logger, dbi, **defaults)
 
@@ -569,7 +568,7 @@ class WorkQueue(WorkQueueBase):
         self.backend.recordTaskActivity('location_refresh')
         return result
 
-    def pullWork(self, resources = None, draining_resources = None):
+    def pullWork(self, resources = None, draining_resources = None, continuousReplication = True):
         """
         Pull work from another WorkQueue to be processed
 
@@ -625,7 +624,7 @@ class WorkQueue(WorkQueueBase):
         work = self._assignToChildQueue(self.params['QueueURL'], *work)
 
         # do this whether we have work or not - other events i.e. cancel may have happened
-        self.backend.pullFromParent()
+        self.backend.pullFromParent(continuous = continuousReplication)
         return len(work)
 
     def performQueueCleanupActions(self, skipWMBS = False):

@@ -703,7 +703,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         try:
             return uploadPublishWorkflow(workflow, ufcEndpoint=self.userFileCacheURL, workDir=workDir)
         except Exception, ex:
-            logging.error('Upload failed for workflow, task: %s, %s' % (workflow, task))
+            logging.error('Upload failed for workflow: %s' % (workflow))
             logging.error(str(ex))
             return False
     

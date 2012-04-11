@@ -66,6 +66,7 @@ Software Release:
     #else
       <option>$arch</option>
     #end if
+  #end for
 </select><br/>
 #end def 
 
@@ -112,6 +113,9 @@ DBS: <!--input type="text" name="dbs" value="http://cmsdbsprod.cern.ch/cms_dbs_p
 		<option>http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet</option>
                 <option>http://cmsdbsprod.cern.ch/cms_dbs_ph_analysis_01/servlet/DBSServlet</option>
                 <option>http://cmsdbsprod.cern.ch/cms_dbs_ph_analysis_02/servlet/DBSServlet</option>
+		<option>https://cmsweb-dev.cern.ch/dbs/prod/global/DBSWriter</option>
+		<option>https://dbs3-dev01.cern.ch/dbs/prod/global/DBSWriter</option>
+		<option>http://cms-xen40.fnal.gov:8787/dbs/prod/global/DBSWriter</option>
 </select><br>
 #end def
 
@@ -185,11 +189,11 @@ Include Parents: <select name="IncludeParents"><option>True</option><option sele
         <div id="mc">
             $headerBlock
             $softwareBlock
-# of Events: <input type="text" name="RequestSizeEvents" size=10 value=1000 />
+# of Events: <input type="text" name="RequestNumEvents" size=10 value=1000 />
 Time per event: <input type="text" name="TimePerEvent" size=10 value=60 />
 Filter efficiency: <input type="text" name="FilterEfficiency" size=10 value=1.0 />
 Total job time: <input type="text" name="TotalTime", value=32400 />
-            $configBlock("inputMode", "Scenario", "ProdConfigCacheID", "MC")
+            $configBlock("inputMode", "Scenario", "ProcConfigCacheID", "MC")
 Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
 Data Pileup: <input type="text" name="DataPileup" size=80 /><br/>
 MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
@@ -200,7 +204,7 @@ MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
             $softwareBlock
             $campaignBlock
 Global Tag: <input type="text" name="GlobalTag" size=20 value=""/> &nbsp &nbsp
-# of Events: <input type="text" name="RequestSizeEvents" size=10 value=1000 /><br/>
+# of Events: <input type="text" name="RequestNumEvents" size=10 value=1000 /><br/>
 Generation ConfigCache ID <input type="text" name="GenConfigCacheID" size=80 /><br/>
 Generation Output Module Name: <input type="text" name="GenOutputModuleName" size=40 /><br/>
 Step One ConfigCache ID <input type="text" name="StepOneConfigCacheID" size=80 /><br/>
@@ -213,6 +217,10 @@ MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
         </div>
         <div id="storeResults">
             $headerBlock
+Acquisition Era: <input type="text" name="AcquisitionEra" size=50/><br/>
+Processing Version: <input type="text" name="ProcessingVersion" size=50/><br/>
+Global Tag: <input type="text" name="GlobalTag" size=20/></br>
+CMS Path: <input type="text" name="CmsPath" size=50/><br/>
             $softwareBlock
             $campaignBlock
             $ioBlock

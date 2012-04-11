@@ -10,6 +10,7 @@ import sys
 import tempfile
 import urllib
 import shutil
+import logging
 
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessingWorkloadFactory
 from WMCore.WMRuntime.Tools.Scram import Scram
@@ -65,6 +66,7 @@ class PromptSkimWorkloadFactory(DataProcessingWorkloadFactory):
         _injectIntoConfigCache_
 
         """
+        logging.error("Injecting to config cache.\n");
         configTempDir = tempfile.mkdtemp()
         configPath = os.path.join(configTempDir, "cmsswConfig.py")
         configString = urllib.urlopen(configUrl).read(-1)
@@ -73,12 +75,14 @@ class PromptSkimWorkloadFactory(DataProcessingWorkloadFactory):
         configFile.close()
 
         scramTempDir = tempfile.mkdtemp()
+        wmcoreBase = getWMBASE()
+        envPath = os.path.normpath(os.path.join(getWMBASE(), "../../../../../../../../apps/wmagent/etc/profile.d/init.sh"))
         scram = Scram(version = frameworkVersion, architecture = scramArch,
-                      directory = scramTempDir, initialise = initCommand)
+                      directory = scramTempDir, initialise = initCommand,
+                      envCmd = "source %s" % envPath)
         scram.project()
         scram.runtime()
 
-        wmcoreBase = getWMBASE()
         scram("python2.6 %s/../../../bin/inject-to-config-cache %s %s PromptSkimmer cmsdataops %s %s None" % (wmcoreBase,
                                                                                                      couchUrl,
                                                                                                      couchDBName,
@@ -99,11 +103,25 @@ class PromptSkimWorkloadFactory(DataProcessingWorkloadFactory):
                                    arguments["InitCommand"], arguments["SkimConfig"], workloadName,
                                    arguments["CouchURL"], arguments["CouchDBName"])
 
-        configCache = ConfigCache(arguments["CouchURL"], arguments["CouchDBName"])
-        arguments["ProcConfigCacheID"] = configCache.getIDFromLabel(workloadName)
+        try:
+            configCache = ConfigCache(arguments["CouchURL"], arguments["CouchDBName"])
+            arguments["ProcConfigCacheID"] = configCache.getIDFromLabel(workloadName)
+        except Exception, ex:
+            logging.error("There was an exception loading the config out of the")
+            logging.error("ConfigCache.  Check the scramOutput.log file in the")
+            logging.error("PromptSkimScheduler directory to find out what went")
+            logging.error("wrong.")
+            raise
         
         workload = DataProcessingWorkloadFactory.__call__(self, workloadName, arguments)
-        workload.setSiteWhitelist(arguments["CustodialSite"])
+
+        # We need to strip off "MSS" as that causes all sorts of problems.
+        if arguments["CustodialSite"].find("MSS") != -1:
+            site = arguments["CustodialSite"][:-4]
+        else:
+            site = arguments["CustodialSite"]
+            
+        workload.setSiteWhitelist(site)
         workload.setBlockWhitelist(arguments["BlockName"])
         return workload
 

@@ -91,11 +91,17 @@ class DBSBlock:
         
         Add a DBSBufferFile object to our block
         """
+
+        
         
         if dbsFile['id'] in [x['id'] for x in self.files]:
-            msg =  "Duplicate file inserted into DBSBlock: %i\n" % dbsFile['id']
+            msg =  "Duplicate file inserted into DBSBlock: %i\n" % (dbsFile['id'])
             msg += "Ignoring this file for now!\n"
             logging.error(msg)
+            logging.debug("Block length: %i" % len(self.files))
+            l = [x['id'] for x in self.files]
+            l.sort()
+            logging.debug("First file: %s    Last file: %s" % (l[0], l[-1]))
             return
         
         self.files.append(dbsFile)
@@ -145,13 +151,6 @@ class DBSBlock:
         fileAlgo['lfn'] = dbsFile['lfn']
         self.data['file_conf_list'].append(fileAlgo)
 
-
-        # Now take care of the dataset
-        self.setDataset(datasetName  = dbsFile['datasetPath'],
-                        primaryType  = dbsFile.get('primaryType', 'DATA'),
-                        datasetType  = dbsFile.get('datasetType', 'PROCESSING'),
-                        physicsGroup = dbsFile.get('physicsGroup', None))
-
         if dbsFile.get('acquisition_era', False):
             self.setAcquisitionEra(dbsFile['acquisition_era'])
         elif dbsFile.get('acquisitionEra', False):
@@ -160,6 +159,12 @@ class DBSBlock:
             self.setProcessingVer(dbsFile['processingVer'])
         elif dbsFile.get('processing_ver', False):
             self.setProcessingVer(dbsFile['processing_ver'])
+
+        # Take care of the dataset
+        self.setDataset(datasetName  = dbsFile['datasetPath'],
+                        primaryType  = dbsFile.get('primaryType', 'DATA'),
+                        datasetType  = dbsFile.get('datasetType', 'PRODUCTION'),
+                        physicsGroup = dbsFile.get('physicsGroup', None))
        
         return
 
@@ -226,6 +231,16 @@ class DBSBlock:
         self.data['dataset']['physics_group_name'] = group
         return
 
+    def hasDataset(self):
+        """
+        _hasDataset_
+
+        Check and see if the dataset has been properly set
+        """
+
+        return self.data['dataset'].get('dataset', False)
+        
+
 
     def setDataset(self, datasetName, primaryType,
                    datasetType, physicsGroup = None, overwrite = False, valid = 1):
@@ -236,7 +251,7 @@ class DBSBlock:
         the primary, processed and tier info
         """
 
-        if self.data['dataset'].get('dataset', False) and not overwrite:
+        if self.hasDataset() and not overwrite:
             # Do nothing, we already have a dataset
             return
 
@@ -245,7 +260,7 @@ class DBSBlock:
             logging.error(msg)
             raise DBSBlockException(msg)
 
-        if not datasetType in ['PROCESSING', 'PRODUCTION']:
+        if not datasetType in ['VALID', 'PRODUCTION', 'INVALID', 'DEPRECATED', 'DELETED']:
             msg = "Invalid processedDatasetType %s\n" % datasetType
             logging.error(msg)
             raise DBSBlockException(msg)

@@ -186,7 +186,7 @@ class BlockTestCase(unittest.TestCase):
             self.assertEqual(2, len(units))
             blocks = [] # fill with blocks as we get work units for them
             for unit in units:
-                self.assertEqual(2, unit['Jobs'])
+                self.assertEqual(4, unit['Jobs'])
 
     def testRunWhitelist(self):
         """ReReco lumi split with Run whitelist"""
@@ -275,6 +275,21 @@ class BlockTestCase(unittest.TestCase):
                 self.assertEqual(1, len(unit['ParentData']))
             self.assertEqual(len(units),
                              len(dbs[inputDataset.dbsurl].getFileBlocksInfo(dataset)))
+
+    def testIgnore0SizeBlocks(self):
+        """Ignore blocks with 0 files"""
+        Globals.GlobalParams.setNumOfFilesPerBlock(0)
+
+        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload.setRunWhitelist([2, 3])
+        inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
+        dataset = "/%s/%s/%s" % (inputDataset.primary,
+                                     inputDataset.processed,
+                                     inputDataset.tier)
+        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+        for task in Tier1ReRecoWorkload.taskIterator():
+            self.assertRaises(WorkQueueNoWorkError, Block(**self.splitArgs), Tier1ReRecoWorkload, task)
+
 
 if __name__ == '__main__':
     unittest.main()

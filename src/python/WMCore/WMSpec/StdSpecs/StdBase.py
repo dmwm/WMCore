@@ -15,6 +15,8 @@ from WMCore.Lexicon import lfnBase, identifier
 from WMCore.WMException import WMException
 from WMCore.Database.CMSCouch import CouchNotFoundError
 
+analysisTaskTypes = ['Analysis', 'PrivateMC']
+
 class WMSpecFactoryException(WMException):
     """
     _WMSpecFactoryException_
@@ -135,19 +137,20 @@ class StdBase(object):
             outputModules = configCache.getOutputModuleInfo()
         else:
             if scenarioFunc in [ "promptReco", "expressProcessing" ]:
-                for output in scenarioArgs.get('outputs',[]):
-                    dataTier = output['dataTier']
+                for output in scenarioArgs.get('outputs', []):
                     moduleLabel = output['moduleLabel']
-                    filterName = output.get('filterName', None)
-                    outputModules[moduleLabel] = {'dataTier' : dataTier,
-                                                  'filterName' : filterName}
+                    outputModules[moduleLabel] = { 'dataTier' : output['dataTier'] }
+                    if output.has_key('primaryDataset'):
+                        outputModules[moduleLabel]['primaryDataset'] = output['primaryDataset']
+                    if output.has_key('filterName'):
+                        outputModules[moduleLabel]['filterName'] = output['filterName']
             elif scenarioFunc == "alcaSkim":
                 for alcaSkim in scenarioArgs.get('skims',[]):
-                    dataTier = "ALCARECO"
                     moduleLabel = "ALCARECOStream%s" % alcaSkim
-                    filterName = alcaSkim
-                    outputModules[moduleLabel] = {'dataTier' : dataTier,
-                                                  'filterName' : filterName}
+                    outputModules[moduleLabel] = { 'dataTier' : "ALCARECO",
+                                                   'primaryDataset' : scenarioArgs.get('primaryDataset'),
+                                                   'filterName' : alcaSkim }
+                    
 
         return outputModules
 
@@ -196,7 +199,8 @@ class StdBase(object):
                             splitArgs = {'lumis_per_job': 8}, seeding = None, totalEvents = None,
                             userDN = None, asyncDest = None, owner_vogroup = "DEFAULT",
                             owner_vorole = "DEFAULT", stepType = "CMSSW",
-                            userSandbox = None, userFiles = [], primarySubType = None):
+                            userSandbox = None, userFiles = [], primarySubType = None,
+                            forceMerged = False, forceUnmerged = False):
 
         """
         _setupProcessingTask_
@@ -243,7 +247,7 @@ class StdBase(object):
         procTask.setSplittingAlgorithm(splitAlgo, **newSplitArgs)
         procTask.setTaskType(taskType)
 
-        if taskType == "Production" and totalEvents != None:
+        if taskType in ["Production", 'PrivateMC'] and totalEvents != None:
             procTask.addGenerator(seeding)
             procTask.addProduction(totalevents = totalEvents)
         else:
@@ -255,9 +259,7 @@ class StdBase(object):
                                          block_whitelist = self.blockWhitelist,
                                          run_blacklist = self.runBlacklist,
                                          run_whitelist = self.runWhitelist)
-            elif inputStep == None:
-                procTask.setInputStep(inputStep)
-            else:
+            elif inputStep != None and inputModule != None:
                 procTask.setInputReference(inputStep, outputModule = inputModule)
 
         if primarySubType:
@@ -277,11 +279,6 @@ class StdBase(object):
         procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
         procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                        scramArch = self.scramArch)
-        if configDoc != None and configDoc != "":
-            procTaskCmsswHelper.setConfigCache(couchURL, configDoc, couchDBName)
-        else:
-            procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
-                                                        **scenarioArgs)
 
         configOutput = self.determineOutputModules(scenarioFunc, scenarioArgs,
                                                    configDoc, couchURL, couchDBName)
@@ -289,22 +286,39 @@ class StdBase(object):
         for outputModuleName in configOutput.keys():
             outputModule = self.addOutputModule(procTask,
                                                 outputModuleName,
-                                                self.inputPrimaryDataset,
-                                                configOutput[outputModuleName]["dataTier"],
-                                                configOutput[outputModuleName]["filterName"])
+                                                configOutput[outputModuleName].get('primaryDataset',
+                                                                                   self.inputPrimaryDataset),
+                                                configOutput[outputModuleName]['dataTier'],
+                                                configOutput[outputModuleName].get('filterName', None),
+                                                forceMerged = forceMerged, forceUnmerged = forceUnmerged)
             outputModules[outputModuleName] = outputModule
+
+        if configDoc != None and configDoc != "":
+            procTaskCmsswHelper.setConfigCache(couchURL, configDoc, couchDBName)
+        else:
+            # delete dataset information from scenarioArgs
+            if 'outputs' in scenarioArgs:
+                for output in scenarioArgs['outputs']:
+                    if 'primaryDataset' in output:
+                        del output['primaryDataset']
+            if 'primaryDataset' in scenarioArgs:
+                del scenarioArgs['primaryDataset']
+
+            procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
+                                                        **scenarioArgs)
 
         return outputModules
 
     def addOutputModule(self, parentTask, outputModuleName,
                         primaryDataset, dataTier, filterName,
-                        stepName = "cmsRun1"):
+                        stepName = "cmsRun1", forceMerged = False,
+                        forceUnmerged = False):
         """
         _addOutputModule_
 
         Add an output module to the given processing task.
         """
-        if parentTask.name() == 'Analysis':
+        if parentTask.name() in analysisTaskTypes:
             # TODO in case of user data need to implement policy to define
             #  1  processedDataset
             #  2  primaryDataset
@@ -321,7 +335,7 @@ class StdBase(object):
                                           self.processingVersion)
             processingString = "%s" % (self.processingVersion)
 
-        if parentTask.name() == 'Analysis':
+        if parentTask.name() in analysisTaskTypes:
             if filterName:
                 unmergedLFN = "%s/%s/%s-%s/%s" % (self.unmergedLFNBase, primaryDataset,
                                                   self.acquisitionEra, filterName,
@@ -339,6 +353,11 @@ class StdBase(object):
                                             processingString)
             lfnBase(unmergedLFN)
             lfnBase(mergedLFN)
+
+        if forceMerged:
+            unmergedLFN = mergedLFN
+        elif forceUnmerged:
+            mergedLFN = unmergedLFN
 
         cmsswStep = parentTask.getStep(stepName)
         cmsswStepHelper = cmsswStep.getTypeHelper()
@@ -375,7 +394,7 @@ class StdBase(object):
         return logCollectTask
 
     def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModuleName,
-                     parentStepName = "cmsRun1"):
+                     parentStepName = "cmsRun1", doLogCollect = True):
         """
         _addMergeTask_
 
@@ -392,7 +411,8 @@ class StdBase(object):
         mergeTaskLogArch.setStepType("LogArchive")
 
         mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)
-        self.addLogCollectTask(mergeTask, taskName = "%s%sMergeLogCollect" % (parentTask.name(), parentOutputModuleName))
+        if doLogCollect:
+            self.addLogCollectTask(mergeTask, taskName = "%s%sMergeLogCollect" % (parentTask.name(), parentOutputModuleName))
 
         mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
@@ -440,6 +460,7 @@ class StdBase(object):
                                         getattr(parentOutputModule, "primaryDataset"),
                                         getattr(parentOutputModule, "dataTier"),
                                         self.processingVersion)
+
         mergeTaskCmsswHelper.addOutputModule("Merged",
                                              primaryDataset = getattr(parentOutputModule, "primaryDataset"),
                                              processedDataset = getattr(parentOutputModule, "processedDataset"),
@@ -567,6 +588,10 @@ class StdBase(object):
 
         If we have a configCache, we should probably try and load it.
         """
+
+        if configID == '' or configID == ' ':
+            self.raiseValidationException(msg = "ConfigCacheID is invalid and cannot be loaded")
+
         from WMCore.Cache.WMConfigCache import ConfigCache
         configCache = ConfigCache(dbURL = couchURL,
                                   couchDBName = couchDBName,
@@ -577,14 +602,17 @@ class StdBase(object):
             self.raiseValidationException(msg = "Failure to load ConfigCache while validating workload")
 
         duplicateCheck = {}
-        outputModuleInfo = configCache.getOutputModuleInfo()
+        try:
+            outputModuleInfo = configCache.getOutputModuleInfo()
+        except Exception, ex:
+            # Something's gone wrong with trying to open the configCache
+            msg = "Error in getting output modules from ConfigCache during workload validation.  Check ConfigCache formatting!"
+            self.raiseValidationException(msg = msg)
         for outputModule in outputModuleInfo.values():
             dataTier   = outputModule.get('dataTier', None)
             filterName = outputModule.get('filterName', None)
             if not dataTier:
                 self.raiseValidationException(msg = "No DataTier in output module.")
-            if not filterName:
-                self.raiseValidationException(msg = "No FilterName in output module.")
 
             # Add dataTier to duplicate dictionary
             if not dataTier in duplicateCheck.keys():

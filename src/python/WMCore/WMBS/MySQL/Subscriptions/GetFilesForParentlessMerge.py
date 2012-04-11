@@ -20,6 +20,7 @@ class GetFilesForParentlessMerge(DBFormatter):
       Lumi sections in file (file_lumi)
       Location
     """
+
     sql = """SELECT wmbs_file_details.id AS file_id,
                     wmbs_file_details.events AS file_events,
                     wmbs_file_details.filesize AS file_size,
@@ -39,16 +40,23 @@ class GetFilesForParentlessMerge(DBFormatter):
                  wmbs_file_details.id = wmbs_file_location.fileid
                INNER JOIN wmbs_location ON
                  wmbs_file_location.location = wmbs_location.id
-               INNER JOIN wmbs_fileset_files ON
-                 wmbs_fileset_files.fileid = wmbs_sub_files_available.fileid
                INNER JOIN wmbs_subscription ON
                  wmbs_subscription.id = wmbs_sub_files_available.subscription
+               INNER JOIN wmbs_fileset_files ON
+                 wmbs_fileset_files.fileset = wmbs_subscription.fileset AND
+                 wmbs_fileset_files.fileid = wmbs_sub_files_available.fileid
                INNER JOIN wmbs_workflow ON
                  wmbs_workflow.id = wmbs_subscription.workflow
              WHERE wmbs_sub_files_available.subscription = :p_1
-             GROUP BY wmbs_file_details.id, wmbs_file_details.events,
-                      wmbs_file_details.filesize, wmbs_file_details.lfn,
-                      wmbs_file_details.first_event, wmbs_location.se_name"""
+             GROUP BY wmbs_file_details.id,
+                      wmbs_file_details.events,
+                      wmbs_file_details.filesize,
+                      wmbs_file_details.lfn,
+                      wmbs_file_details.first_event,
+                      wmbs_location.se_name,
+                      wmbs_fileset_files.insert_time,
+                      wmbs_workflow.injected
+             """
 
     def execute(self, subscription = None, conn = None, transaction = False):
         results = self.dbi.processData(self.sql, {"p_1": subscription}, conn = conn,

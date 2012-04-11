@@ -19,7 +19,8 @@ class GetUnsubscribedDatasets(DBFormatter):
                  dbsbuffer_file_location.location = dbsbuffer_location.id
              WHERE dbsbuffer_dataset.subscribed = 0 AND
                    dbsbuffer_file.status = 'GLOBAL' AND
-                   dbsbuffer_file.in_phedex = 1"""
+                   dbsbuffer_file.in_phedex = 1 AND
+                   dbsbuffer_dataset.path != 'bogus'"""
 
     def execute(self, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, conn = conn,

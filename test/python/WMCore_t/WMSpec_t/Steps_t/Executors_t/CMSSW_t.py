@@ -92,7 +92,7 @@ class CMSSW_t(unittest.TestCase):
         #executor.execute()
         executor.post()
         self.assertEqual(executor.report.data.ExecutorTest.status, 1)
-        self.assertEqual(executor.report.data.ExecutorTest.analysis.fileCount, 0)
+        self.assertEqual(executor.report.data.ExecutorTest.analysis.files.fileCount, 0)
         return
 
     def testB_Execute(self):

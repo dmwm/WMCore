@@ -233,8 +233,11 @@ var requestShow =
 		var pageTitle = document.getElementById("pagetitle");
 		pageTitle.innerHTML = "Request \"" + couchDoc.request.request_id + "\"";
 		var data = {};		
-		// keys used here has to agree with reqDetailsTableElements
-		data["currDocIdCellId"] = requestShow.documentId;
+		// keys used here has to agree with reqDetailsTableElements	
+		var url = requestShow.mainUrl.split("_design")[0] + requestShow.documentId;
+		// provide link into couchdb along with the docId
+		var couchLink = "<a href=" + url + " target=_blank>" + requestShow.documentId + "</a>"; 
+		data["currDocIdCellId"] = couchLink;
 		data["currStateCellId"] = couchDoc.state;
 		data["createdCellId"] = new Date(parseInt(couchDoc.created)).toLocaleString(); 
 		data["lastUpdatedCellId"] = new Date(parseInt(couchDoc.timestamp)).toLocaleString(); 	

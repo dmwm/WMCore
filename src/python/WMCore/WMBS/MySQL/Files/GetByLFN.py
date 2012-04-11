@@ -4,7 +4,7 @@ MySQL implementation of File.GetByLFN
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetByLFN(DBFormatter):
-    sql = """SELECT id, lfn, filesize, events, first_event, last_event, merged
+    sql = """SELECT id, lfn, filesize, events, first_event, merged
              FROM wmbs_file_details WHERE lfn = :lfn"""
 
     def formatDict(self, result):
@@ -22,8 +22,6 @@ class GetByLFN(DBFormatter):
             formattedResult["events"] = int(formattedResult["events"])
         if formattedResult["first_event"] != None:
             formattedResult["first_event"] = int(formattedResult["first_event"])
-        if formattedResult["last_event"] != None:
-            formattedResult["last_event"] = int(formattedResult["last_event"])
 
         if "size" in formattedResult.keys():
             formattedResult["size"] = formattedResult["size"]

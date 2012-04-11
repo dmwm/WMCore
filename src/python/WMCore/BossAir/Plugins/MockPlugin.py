@@ -12,7 +12,7 @@ from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from datetime import datetime
 from datetime import timedelta
 from random import randint
-import multiprocessing , Queue
+import multiprocessing
 
 
 def processWorker(myinput, tmp):
@@ -31,28 +31,28 @@ def processWorker(myinput, tmp):
 
             taskName = targetDir.split('/')[5]
             if jj['cache_dir'].count("Analysis/LogCollect") > 0:
-               if lcreport is not None: 
+                if lcreport is not None: 
                     lcreport.task = "/" + taskName + "/Analysis/LogCollect"
                     f = open(outfile, 'w')
                     logging.debug('Process worker is dumping the LogCollect report to ' + f.name)
                     pickle.dump(lcreport, f)
                     continue
-               else:
+                else:
                     msg = "Parameter lcFakeReport is mandatory if you are using logCollect jobs"
-                    raise BossAirPluginException()
+                    raise BossAirPluginException(msg)
 
             #ensure each lfn of each output file in the job is unique by adding the jobid
             jobid = str(jj['id'])
 
-            if getattr(report.cmsRun1.output, 'output', None) is not None:
+            if hasattr(report, 'cmsRun1') and hasattr(report.cmsRun1.output, 'output'):
                 tmpname = report.cmsRun1.output.output.files.file0.lfn.split('.root')[0]
                 tmpname = tmpname + jobid
                 report.cmsRun1.output.output.files.file0.lfn = tmpname + '.root'
 
-            if getattr(report.logArch1, 'output', None) is not None:
-                 tmpname = report.logArch1.output.logArchive.files.file0.lfn.split('.tar.gz')[0]
-                 tmpname = tmpname + jobid
-                 report.logArch1.output.logArchive.files.file0.lfn = tmpname + '.root'
+            if hasattr(report, 'logAtch1') and hasattr(report.logArch1, 'output'):
+                tmpname = report.logArch1.output.logArchive.files.file0.lfn.split('.tar.gz')[0]
+                tmpname = tmpname + jobid
+                report.logArch1.output.logArchive.files.file0.lfn = tmpname + '.root'
 
             #get target diretory and set task name
             report.task = "/" + taskName + "/Analysis"
@@ -146,7 +146,7 @@ class MockPlugin(BasePlugin):
 
 
 
-    def track(self, jobs, info = None):
+    def track(self, jobs, info = None, currentTime = None):
         """
         Label the jobs as done
 
@@ -173,7 +173,7 @@ class MockPlugin(BasePlugin):
 
         for jj in jobs:
             if not self.jobsScheduledEnd.has_key(jj['id']):
-                self._scheduleJob(jj)
+                self._scheduleJob(jj, currentTime)
             oldState = jj['status']
             jobEnded = datetime.now() > self.jobsScheduledEnd[jj['id']]
             if jobEnded:
@@ -202,11 +202,15 @@ class MockPlugin(BasePlugin):
 
         return
 
-    def _scheduleJob(self, job):
+    def _scheduleJob(self, job, currentTime = None):
         """
         Schedule the endtime of the job
         """
-        nowt = datetime.now()
+        if currentTime:
+            # someone told us when to start
+            nowt = currentTime
+        else:
+            nowt = datetime.now()
         #Compute some random (between 0 and 20% of the total running time)
         randlen = randint(0, self.jobRunTime*20/100)
         totlen = randlen + self.jobRunTime

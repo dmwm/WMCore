@@ -141,6 +141,7 @@ class DashboardInfo(dict):
         self.publisher    = None
         self.destinations = {}
         self.server       = None
+        self.agentName    = getattr(self.workload.data, 'WMAgentName', 'WMAgentPrimary')
 
         dict.__init__(self)
 
@@ -180,6 +181,34 @@ class DashboardInfo(dict):
         Fill with basic information upon job start
         """
 
+        package = {}
+        package['MessageType']    = 'TaskMeta'
+        package['MessageTS']      = time.time()
+        package['taskId']         = self.taskName
+        package['jobId']          = 'taskMeta'
+        package['JSTool']         = 'WMAgent'
+        package['JSToolVersion']  = '0.X'
+        package['CMSUser']        = self.get('User')
+        package['Workflow']       = self.job.get('requestName', self.workload.name())
+        package['AgentName']      = self.agentName
+
+        self.publish(data = package)
+
+        package = {}
+        package['jobId']           = self.jobName
+        package['taskId']          = self.taskName
+        package['GridJobID']       = 'NotAvailable'
+        package['retryCount']      = self.job['retry_count']
+        package['MessageTS']       = time.time()
+        package['MessageType']     = 'JobMeta'
+        package['JobType']         = self.job.get('jobType', None)
+        package['TaskType']        = self.job.get('taskType', None)
+        package['StatusValue']     = 'submitted'
+        package['scheduler']       = 'BossAir'
+        package['StatusEnterTime'] = time.time()
+
+        self.publish(data = package)
+
         data = {}
         data['MessageType']     = 'jobRuntime'
         data['MessageTS']       = time.time()
@@ -211,6 +240,21 @@ class DashboardInfo(dict):
         data['jobId']           = self.jobName
         data['JobExitCode']     = self.jobSuccess
         self.publish(data = data)
+
+        package = {}
+        statusValue = 0
+        if self.jobSuccess != 0:
+            statusValue = 1
+        package['jobId']           = self.jobName
+        package['taskId']          = self.taskName
+        package['GridJobID']       = self.job['name']
+        package['retryCount']      = self.job['retry_count']
+        package['MessageTS']       = time.time()
+        package['MessageType']     = 'JobStatus'
+        package['StatusValue']     = statusValue
+        package['StatusEnterTime'] = time.time()
+        package['JobExitCode']     = self.jobSuccess
+        self.publish(data = package)
         
         return data
     

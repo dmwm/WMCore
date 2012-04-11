@@ -90,7 +90,7 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
                                                                 'outputs' : recoOutputs },
                                                splitAlgo = self.procJobSplitAlgo,
                                                splitArgs = self.procJobSplitArgs,
-                                               stepType = cmsswStepType) 
+                                               stepType = cmsswStepType)
         self.addLogCollectTask(recoTask)
 
         for recoOutLabel, recoOutInfo in recoOutMods.items():
@@ -105,10 +105,11 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
                                                        inputModule = recoOutLabel,
                                                        scenarioName = self.procScenario,
                                                        scenarioFunc = "alcaSkim",
-                                                       scenarioArgs = { 'skims' : self.alcaSkims },
+                                                       scenarioArgs = { 'globalTag' : self.globalTag,
+                                                                        'skims' : self.alcaSkims },
                                                        splitAlgo = self.procJobSplitAlgo,
                                                        splitArgs = self.procJobSplitArgs,
-                                                       stepType = cmsswStepType) 
+                                                       stepType = cmsswStepType)
                 for alcaOutLabel, alcaOutInfo in alcaOutMods.items():
                     self.addMergeTask(alcaTask,
                                       self.procJobSplitAlgo,

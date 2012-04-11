@@ -261,7 +261,6 @@ class File(WMBSBase, WMFile):
         addAction.execute(files = self["lfn"], size = self["size"],
                           events = self["events"],
                           first_event = self["first_event"],
-                          last_event = self["last_event"],
                           merged = self["merged"],
                           conn = self.getDBConn(),
                           transaction = self.existingTransaction())
@@ -588,7 +587,6 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS = True,
                            wmbsFile['events'],
                            None,
                            wmbsFile["first_event"],
-                           wmbsFile["last_event"],
                            wmbsFile['merged']])
 
     if len(fileCreate) > 0:

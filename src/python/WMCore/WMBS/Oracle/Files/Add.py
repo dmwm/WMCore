@@ -11,6 +11,6 @@ class Add(AddFileMySQL):
     increments
     """
     sql = """INSERT INTO wmbs_file_details (id, lfn, filesize, events, 
-                                            first_event, last_event, merged) 
+                                            first_event, merged) 
              VALUES (wmbs_file_details_SEQ.nextval, :lfn, :filesize, :events,
-                     :first_event, :last_event, :merged)"""
+                     :first_event, :merged)"""

@@ -32,8 +32,9 @@ def fixupGlobalTag(process):
     Requires that the configuration already has a properly configured GlobalTag object.
 
     """
-    if not hasattr(process.GlobalTag, "globaltag"):
-        process.GlobalTag.globaltag = cms.string("")
+    if hasattr(process, "GlobalTag"):
+        if not hasattr(process.GlobalTag, "globaltag"):
+            process.GlobalTag.globaltag = cms.string("")
 
 
 def fixupGlobalTagTransaction(process):
@@ -47,8 +48,9 @@ def fixupGlobalTagTransaction(process):
     (used to customize conditions access for Tier0 express processing)
 
     """
-    if not hasattr(process.GlobalTag.DBParameters, "transactionId"):
-        process.GlobalTag.DBParameters.transactionId = cms.untracked.string("")
+    if hasattr(process, "GlobalTag"):
+        if not hasattr(process.GlobalTag.DBParameters, "transactionId"):
+            process.GlobalTag.DBParameters.transactionId = cms.untracked.string("")
 
 
 def fixupFirstRun(process):
@@ -495,7 +497,7 @@ class SetupCMSSWPset(ScriptInterface):
         scenario = getattr(self.step.data.application.configuration, "scenario", None)
         if scenario != None and scenario != "":
             funcName = getattr(self.step.data.application.configuration, "function", None)
-            funcArgs = pickle.loads(getattr(self.step.data.application.configuration, "arguments", None))
+            funcArgs = pickle.loads(getattr(self.step.data.application.configuration, "pickledarguments", None))
             try:
                 self.createProcess(scenario, funcName, funcArgs)
             except Exception, ex:

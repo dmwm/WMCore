@@ -59,6 +59,7 @@ class UserFileCache(Service):
         endpointSuffix = '/userfilecache/upload/' if not self['newrest'] else ''
         cksumParam = 'checksum' if not self['newrest'] else 'hashkey'
         fieldName = 'userfile' if not self['newrest'] else 'inputfile'
+        verb = 'POST' if not self['newrest'] else 'PUT'
 
         uploadURL = self['endpoint'] + endpointSuffix
         params = [(cksumParam, self.checksum(fileName))]
@@ -67,7 +68,7 @@ class UserFileCache(Service):
             params.append(('name', name))
 
         resString = uploadFile(fileName=fileName, fieldName=fieldName, url=uploadURL, params=params, \
-                                                 verb='PUT', ckey=self['proxyfilename'], cert=self['proxyfilename'], capath=self['capath'] )
+                                                 verb=verb, ckey=self['proxyfilename'], cert=self['proxyfilename'], capath=self['capath'] )
 
         return json.loads(resString)
     def checksum(self, fileName):

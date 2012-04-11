@@ -712,7 +712,8 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         """
         _Resubmission_
 
-        Test Resubmission Name
+        Test Resubmission
+        Use an utterly bogus CMSSWVersion since it shouldn't check that anyway
         """
 
         userName     = 'Taizong'
@@ -731,7 +732,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         schema       = self.setupSchema(userName = userName,
                                         groupName = groupName,
                                         teamName = teamName,
-                                        CMSSWVersion = CMSSWVersion,
+                                        CMSSWVersion = 'CMSSW_1_0_0',
                                         typename = "Resubmission")
         
 
@@ -750,11 +751,12 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         schema["ACDCServer"]          = os.environ.get("COUCHURL")
         schema["ACDCDatabase"]        = self.couchDBName
 
+        # Here we just make sure that real result goes through
         result = self.jsonSender.put('request/testRequest', schema)
         resubmitName = result[0]['RequestName']
-        
         result = self.jsonSender.get('request/%s' % resubmitName)
         request = result[0]
+        
         return
 
 

@@ -25,6 +25,7 @@ from T0.GenericTier0.Tier0DB import Tier0DB
 from T0.RunConfigCache.Cache import Cache
 
 from WMCore.WMSpec.StdSpecs.PromptSkim import PromptSkimWorkloadFactory
+from WMCore.WMSpec.StdSpecs.Tier1PromptReco import Tier1PromptRecoWorkloadFactory
 from WMCore.WorkQueue.WorkQueue import WorkQueue
 
 class PromptSkimPoller(BaseWorkerThread):
@@ -32,7 +33,7 @@ class PromptSkimPoller(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         self.config = config
         return
-    
+
     def setup(self, parameters = None):
         """
         _setup_
@@ -43,7 +44,9 @@ class PromptSkimPoller(BaseWorkerThread):
 
         # Workload related parameters
         self.promptSkimFactory = PromptSkimWorkloadFactory()
-        self.workloads = {}
+        self.tier1PromptRecoFactory = Tier1PromptRecoWorkfloadFactory()
+        self.promptSkimWorkloads = {}
+        self.promptRecoWorkloads = {}
         self.workloadCache = self.config.PromptSkimScheduler.workloadCache
 
         if not os.path.exists(self.workloadCache):
@@ -69,6 +72,7 @@ class PromptSkimPoller(BaseWorkerThread):
         self.connectT0AST()
 
         self.workQueue = WorkQueue(CouchUrl = self.config.JobStateMachine.couchurl,
+                                   DbName = self.config.PromptSkimScheduler.localWQDB,
                                    CacheDir = os.path.join(self.config.General.workDir, "WorkQueueCacheDir"))
         return
 
@@ -90,9 +94,9 @@ class PromptSkimPoller(BaseWorkerThread):
         """
         _algorithm_
 
-        Poll for transfered blocks and complete runs.
+        Poll for transferred blocks and complete runs.
         """
-        self.pollForTransferedBlocks()
+        self.pollForTransferredBlocks()
         return
 
     def getRunConfig(self, runNumber):
@@ -108,10 +112,80 @@ class PromptSkimPoller(BaseWorkerThread):
                                                            "RunConfig")
 
         return self.runConfigCache.getRunConfig(runNumber)
-    
-    def createWorkloadsForBlock(self, acquisitionEra, skimConfig, blockInfo):
+    def createTier1PromptRecoWorkloadsForBlock(self, acquisitionEra, recoConfig, blockInfo):
         """
-        _createWorkloadsForBlock_
+        _createTier1PromptRecoWorkloadsForBlock_
+
+        Check to see if we have already created promptreco workloads for the
+        run/dataset that the block belongs to. If no workload exists create one
+        and install it into WMBS.
+        """
+        (datasetPath, guid) = blockInfo["BLOCK_NAME"].split("#", 1)
+        (primary, processed, tier) = datasetPath[1:].split("/", 3)
+        workloadName = "Run%s-%s-%s-%s" % (blockInfo["RUN_ID"], primary, processed, "Tier1PromptReco")
+
+        if self.promptRecoWorkloads.has_key(blockInfo["RUN_ID"]):
+            workload = self.promptRecoWorkloads[blockInfo["RUN_ID"]]
+            workload.setBlockWhitelist(blockInfo["BLOCK_NAME"])
+            specPath = os.path.join(self.workloadCache, workloadName, "%s.pkl" % guid)
+            workload.setSpecUrl(specPath)
+            workload.save(specPath)
+            self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)
+            return
+
+        writeTiers = []
+        if recoConfig.DoReco:
+            if recoConfig.WriteRECO:
+                writeTiers.append("RECO")
+            if recoConfig.WriteDQM:
+                writeTiers.append("DQM")
+            if recoConfig.WriteAOD:
+                writeTiers.append("AOD")
+
+        if len(recoConfig.AlcaProducers) >  0:
+            writeTiers.append("ALCARECO")
+        alcaProducers = alcaConfig.AlcaProducers
+
+        wfParams = {"AcquisitionEra": acquisitionEra,
+                    "Requestor": "CMSPromptSkimming",
+                    "InputDataset": datasetPath,
+                    "CMSSWVersion": recoConfig.CMSSWVersion,
+                    "ScramArch": self.scramArch,
+                    "ProcessingVersion": recoConfig.ProcessingVersion,
+                    "GlobalTag": recoConfig.GlobalTag,
+                    "UnmergedLFNBase": "/store/unmerged",
+                    "MergedLFNBase": "/store/data",
+                    "MinMergeSize": self.minMergeSize,
+                    "MaxMergeSize": self.maxMergeSize,
+                    "MaxMergeEvents": self.maxMergeEvents,
+                    "WriteTiers": writeTiers,
+                    "AlcaSkims": alcaProducers,
+                    "StdJobSplitAlgo": "EventBased",
+                    "StdJobSplitArgs": {"events_per_job": 720},
+                    "ValidStatus": "VALID"}
+                    }
+
+
+        workload = self.tier1PromptRecoFactory(workloadName, wfParams)
+        workload.setOwner("CMSDataOps")
+        workload.setBlockWhitelist(blockInfo["BLOCK_NAME"])
+
+        if not os.path.exists(os.path.join(self.workloadCache, workloadName)):
+            os.makedirs(os.path.join(self.workloadCache, workloadName))
+
+        specPath = os.path.join(self.workloadCache, workloadName, "%s.pkl" % guid)
+        workload.setSpecUrl(specPath)
+        workload.save(specPath)
+
+        self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)
+
+        self.promptRecoWorkloads[blockInfo["RUN_ID"]] = workload
+        return
+
+
+    def createPromptSkimWorkloadsForBlock(self, acquisitionEra, skimConfig, blockInfo):
+        """
+        _createPromptSkimWorkloadsForBlock_
 
         Check to see if we're already created skimming workloads for the
         run/dataset that the block belongs to.  If no workload exists create one
@@ -121,14 +195,14 @@ class PromptSkimPoller(BaseWorkerThread):
         (primary, processed, tier) = datasetPath[1:].split("/", 3)
         workloadName = "Run%s-%s-%s-%s" % (blockInfo["RUN_ID"], primary, processed, skimConfig.SkimName)
 
-        if self.workloads.has_key(blockInfo["RUN_ID"]):
-            if self.workloads[blockInfo["RUN_ID"]].has_key(skimConfig.SkimName):
-                workload = self.workloads[blockInfo["RUN_ID"]][skimConfig.SkimName]
+        if self.promptSkimWorkloads.has_key(blockInfo["RUN_ID"]):
+            if self.promptSkimWorkloads[blockInfo["RUN_ID"]].has_key(skimConfig.SkimName):
+                workload = self.promptSkimWorkloads[blockInfo["RUN_ID"]][skimConfig.SkimName]
                 workload.setBlockWhitelist(blockInfo["BLOCK_NAME"])
                 specPath = os.path.join(self.workloadCache, workloadName, "%s.pkl" % guid)
                 workload.setSpecUrl(specPath)
-                workload.save(specPath)  
-                self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)                
+                workload.save(specPath)
+                self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)
                 return
 
         runConfig = self.getRunConfig(blockInfo["RUN_ID"])
@@ -139,7 +213,7 @@ class PromptSkimPoller(BaseWorkerThread):
         else:
             includeParents = False
 
-        wfParams = {"AcquisitionEra": runConfig.getAcquisitionEra(),
+        wfParams = {"AcquisitionEra": acquisitionEra,
                     "Requestor": "CMSPromptSkimming",
                     "CustodialSite": skimConfig.SiteName,
                     "BlockName": blockInfo["BLOCK_NAME"],
@@ -168,75 +242,96 @@ class PromptSkimPoller(BaseWorkerThread):
 
         if not os.path.exists(os.path.join(self.workloadCache, workloadName)):
             os.makedirs(os.path.join(self.workloadCache, workloadName))
-            
-        specPath = os.path.join(self.workloadCache, workloadName, "%s.pkl" % guid)        
+
+        specPath = os.path.join(self.workloadCache, workloadName, "%s.pkl" % guid)
         workload.setSpecUrl(specPath)
         workload.save(specPath)
 
         self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)
 
-        if not self.workloads.has_key(blockInfo["RUN_ID"]):
-            self.workloads[blockInfo["RUN_ID"]] = {}
-        self.workloads[blockInfo["RUN_ID"]][skimConfig.SkimName] = workload
+        if not self.promptSkimWorkloads.has_key(blockInfo["RUN_ID"]):
+            self.promptSkimWorkloads[blockInfo["RUN_ID"]] = {}
+        self.promptSkimWorkloads[blockInfo["RUN_ID"]][skimConfig.SkimName] = workload
         return
 
-    def pollForTransferedBlocks(self):
+    def pollForTransferredBlocks(self):
         """
-        _pollForTransferedBlocks_
+        _pollForTransferredBlocks_
 
         Poll T0AST for any blocks that have been migrated to DBS and generate
-        skims for them.  Mark the blocks as "Skimmed" once any skims have been
+        skims for them.  Mark the blocks as "Skimmed" once any skims or promtprecos have been
         injected into the Tier1 WMBS.
         """
-        logging.info("pollForTransferedBlocks(): Running...")
-        
-        skimmableBlocks = ListBlock.listBlockInfoByStatus(self.t0astDBConn,
+        logging.info("pollForTransferredBlocks(): Running...")
+
+        candidateBlocks = ListBlock.listBlockInfoByStatus(self.t0astDBConn,
                                                           "Exported", "Migrated")
 
-        logging.info("pollForTransferedBlocks(): Found %s blocks." % len(skimmableBlocks))
-        logging.info("pollForTransferedBlocks(): %s" % skimmableBlocks)         
+        logging.info("pollForTransferredBlocks(): Found %s blocks." % len(candidateBlocks))
+        logging.info("pollForTransferredBlocks(): %s" % candidateBlocks)
 
-        for skimmableBlock in skimmableBlocks:
-            logging.info("pollForTransferedBlocks(): Skimmable: %s" % skimmableBlock["BLOCK_ID"])
-            runConfig = self.getRunConfig(int(skimmableBlock["RUN_ID"]))
-            
-            skims = runConfig.getSkimConfiguration(skimmableBlock["PRIMARY_ID"],
-                                                   skimmableBlock["TIER_ID"])
+        for candidateBlock in candidateBlocks:
+            logging.info("pollForTransferredBlocks(): Candidate: %s" % candidateBlock["BLOCK_ID"])
+            runConfig = self.getRunConfig(int(candidateBlock["RUN_ID"]))
 
-            if skims == None:
+            skims = runConfig.getSkimConfiguration(candidateBlock["PRIMARY_ID"],
+                                                   candidateBlock["TIER_ID"])
+            tier1RecoConfig = runConfig.getTier1PromptRecoConfiguration(candidateBlock["PRIMARY_ID"])
+            dataTier = candidateBlock["BLOCK_NAME"].split("#", 1)[0][1:].split("/", 3)[2]
+
+            if skims == None and tier1RecoConfig == None:
                 InsertBlock.updateBlockStatusByID(self.t0astDBConn,
-                                                  skimmableBlock, "Skimmed")
+                                                  candidateBlock, "Skimmed")
                 self.t0astDBConn.commit()
-                logging.info("No skims for block %s" % skimmableBlock["BLOCK_ID"])
-                continue
+                logging.info("No skims or promptRecos for block %s" % candidateBlock["BLOCK_ID"])
 
-            insertParents = False
-            for skimConfig in skims:
-                if skimConfig.TwoFileRead:
-                    insertParents = True
-                    break
+            elif skims != None:
+                insertParents = False
+                for skimConfig in skims:
+                    if skimConfig.TwoFileRead:
+                        insertParents = True
+                        break
 
-            if insertParents:
-                if not ListBlock.isParentBlockExported(self.t0astDBConn, skimmableBlock["BLOCK_ID"]):
-                    logging.info("Block %s has unexported parents." % skimmableBlock["BLOCK_ID"])
-                    continue
+                if insertParents:
+                    if not ListBlock.isParentBlockExported(self.t0astDBConn, candidateBlock["BLOCK_ID"]):
+                        logging.info("Block %s has unexported parents." % candidateBlock["BLOCK_ID"])
+                        continue
 
-            myThread = threading.currentThread()
-            myThread.transaction.begin()
+                myThread = threading.currentThread()
+                myThread.transaction.begin()
 
-            for skimConfig in skims:
+                for skimConfig in skims:
+                    try:
+                        self.createPromptSkimWorkloadsForBlock(runConfig.getAcquisitionEra(),
+                                                    skimConfig, candidateBlock)
+                    except Exception, ex:
+                        logging.info("Error making workflows: %s" % str(ex))
+                        logging.info("Traceback: %s" % traceback.format_exc())
+                        self.t0astDBConn.rollback()
+                        myThread.transaction.rollback()
+                        break
+                else:
+                    InsertBlock.updateBlockStatusByID(self.t0astDBConn, candidateBlock,
+                                                    "Skimmed")
+                    self.t0astDBConn.commit()
+                    myThread.transaction.commit()
+
+            elif tier1RecoConfig != None:
+                myThread = threading.currentThread()
+                myThread.transaction.begin()
+
                 try:
-                    self.createWorkloadsForBlock(runConfig.getAcquisitionEra(),
-                                                 skimConfig, skimmableBlock)
+                    self.createTier1PromptRecoWorkloadsForBlock(runConfig.getAcquisitionEra(),
+                                                tier1RecoConfig, candidateBlock)
                 except Exception, ex:
-                    logging.info("Error making workflows: %s" % str(ex))
-                    logging.info("Traceback: %s" % traceback.format_exc())
-                    self.t0astDBConn.rollback()
-                    myThread.transaction.rollback()
-                    break
-            else:
-                InsertBlock.updateBlockStatusByID(self.t0astDBConn, skimmableBlock,
-                                                  "Skimmed")
+                        logging.error("Error making workflows: %s" % str(ex))
+                        logging.error("Traceback: %s" % traceback.format_exc())
+                        self.t0astDBConn.rollback()
+                        myThread.transaction.rollback()
+                        continue
+
+                InsertBlock.updateBlockStatusByID(self.t0astDBConn, candidateBlock,
+                                                "Skimmed")
                 self.t0astDBConn.commit()
                 myThread.transaction.commit()
 

@@ -1196,6 +1196,18 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
+
+    def listAllCMSSWConfigCacheIDs(self):
+        """
+        _listAllCMSSWConfigCacheIDs_
+
+        Go through each task and check to see if we have a configCacheID
+        """
+        result = []
+        for t in self.taskIterator():
+            result.extend(t.getConfigCacheIDs())
+        return result
+
         
 
         

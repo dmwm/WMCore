@@ -46,12 +46,12 @@ class ConfigCache(WMObject):
     The class that handles the upload and download of configCache
     artifacts from Couch
     """
-    def __init__(self, dbURL, couchDBName = None, id = None, rev = None):
+    def __init__(self, dbURL, couchDBName = None, id = None, rev = None, usePYCurl = False, ckey = None, cert = None, capath = None):
         self.dbname = couchDBName
         self.dburl  = dbURL
 
         try:
-            self.couchdb = CouchServer(self.dburl)
+            self.couchdb = CouchServer(self.dburl, usePYCurl=usePYCurl, ckey=ckey, cert=cert, capath=capath)
             if self.dbname not in self.couchdb.listDatabases():
                 self.createDatabase()
 
@@ -61,7 +61,7 @@ class ConfigCache(WMObject):
             msg += str(traceback.format_exc())
             logging.error(msg)
             raise ConfigCacheException(message = msg)
-            
+
         # UserGroup variables
         self.group = None
         self.owner = None
@@ -100,7 +100,7 @@ class ConfigCache(WMObject):
         self.group.connect()
         self.owner = makeUser(groupname, username,
                               couchUrl = self.dburl,
-                              couchDatabase = self.dbname)        
+                              couchDatabase = self.dbname)
         return
 
     def createUserGroup(self, groupname, username):
@@ -128,15 +128,15 @@ class ConfigCache(WMObject):
     def setLabel(self, label):
         """
         _setLabel_
-        
+
         Util to add a descriptive label to the configuration doc
         """
         self.document['description']['config_label'] = label
-        
+
     def setDescription(self, desc):
         """
         _setDescription_
-        
+
         Util to add a verbose description string to a configuration doc
         """
         self.document['description']['config_desc'] = desc
@@ -179,8 +179,8 @@ class ConfigCache(WMObject):
         for attachName in self.attachments:
             self.saveAttachment(name = attachName,
                                 attachment = self.attachments[attachName])
-            
-        
+
+
         return
 
 
@@ -281,7 +281,7 @@ class ConfigCache(WMObject):
     def saveConfigToDisk(self, targetFile):
         """
         _saveConfigToDisk_
-        
+
         Make sure we can save our config file to disk
         """
         config = self.getConfig()
@@ -314,11 +314,11 @@ class ConfigCache(WMObject):
             self.loadByView(view = 'config_by_md5hash', value = self.document['md5_hash'])
         # TODO: Add more views as they become available.
 
-            
+
         #elif not self.owner == None:
             # Then we have an owner
             #self.loadByView(view = 'config_by_owner', value = self.owner['name'])
-       
+
 
 
 
@@ -326,14 +326,14 @@ class ConfigCache(WMObject):
     def unwrapView(self, view):
         """
         _unwrapView_
-        
+
         Move view information into the main document
         """
 
         self.document["_id"]  = view['rows'][0].get('id')
         self.document["_rev"] = view['rows'][0].get('value').get('_rev')
 
-        
+
 
 
     def setPSetTweaks(self, PSetTweak):
@@ -414,7 +414,7 @@ class ConfigCache(WMObject):
     def getCouchID(self):
         """
         _getCouchID_
-        
+
         Return the document's couchID
         """
 

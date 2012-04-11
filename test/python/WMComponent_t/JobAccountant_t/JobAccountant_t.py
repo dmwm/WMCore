@@ -455,15 +455,6 @@ class JobAccountantTest(unittest.TestCase):
                        "Error: last event not set correctly: %s, %s" % \
                        (testJob["mask"]["FirstEvent"], outputFile["first_event"])
 
-            if testJob["mask"]["LastEvent"] == None:
-                assert outputFile["last_event"] == int(fwkJobReportFile["events"]), \
-                       "Error: last event not set correctly: %s, %s" % \
-                       (fwkJobReportFile["TotalEvents"], outputFile["last_event"])
-            else:
-                assert testJob["mask"]["LastEvent"] == outputFile["last_event"], \
-                       "Error: last event not set correctly: %s, %s" % \
-                       (testJob["mask"]["LastEvent"], outputFile["last_event"])
-
         return
 
     def verifyDBSBufferContents(self, subType, parentFileLFNs, fwkJobReportFiles):

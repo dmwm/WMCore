@@ -141,7 +141,7 @@ class RESTTest(RESTBaseUnitTest):
         self.assertRaises(urllib2.HTTPError, urllib2.urlopen, url)
         # urllib2,urlopen raise the error but not urllib.urlopen
         url = self.urlbase + 'list1?int=a'
-        expected_data = {"exception": 400, "type": "HTTPError", "message": "Invalid input"}
+        expected_data = {"exception": 400, "type": "HTTPError", "message": "Invalid input: Arguments added where none allowed"}
         urllib_data = urllib.urlopen(url)
         if self.do_production:
             #production mode returns 403 error

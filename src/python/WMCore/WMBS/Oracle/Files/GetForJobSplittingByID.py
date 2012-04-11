@@ -13,8 +13,8 @@ class GetForJobSplittingByID(MySQLGetByID):
 
     """
 
-    sql = """SELECT id, lfn, filesize, events, first_event, last_event, merged, MIN(run) AS minrun
+    sql = """SELECT id, lfn, filesize, events, first_event, merged, MIN(run) AS minrun
              FROM wmbs_file_details wfd
              LEFT OUTER JOIN wmbs_file_runlumi_map wfr ON wfr.fileid = wfd.id
-             WHERE id = :fileid GROUP BY wfd.id, wfd.lfn, wfd.filesize, wfd.events, wfd.first_event, wfd.last_event,
+             WHERE id = :fileid GROUP BY wfd.id, wfd.lfn, wfd.filesize, wfd.events, wfd.first_event,
              wfd.merged"""

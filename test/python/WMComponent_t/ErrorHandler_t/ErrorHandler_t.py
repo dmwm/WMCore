@@ -172,12 +172,12 @@ class ErrorHandlerTest(unittest.TestCase):
         testFile0.setLocation('malpaquet')
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
-                         first_event = 88, last_event = 99)
+                         first_event = 88)
         testFileA.addRun(Run(10, *[12312, 12313]))
         testFileA.setLocation('malpaquet')
 
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
-                         first_event = 88, last_event = 99)
+                         first_event = 88)
         testFileB.addRun(Run(10, *[12314, 12315, 12316]))
         testFileB.setLocation('malpaquet')
 
@@ -278,7 +278,6 @@ class ErrorHandlerTest(unittest.TestCase):
                                 "Unknown lumi %s" % f['runs'][0]['lumis'])
                 self.assertTrue(f['merged'], 1)
                 self.assertTrue(f['first_event'], 88)
-                self.assertTrue(f['last_event'], 99)
             self.assertEqual(counter, 20)
         return
 

@@ -2,6 +2,7 @@ import unittest
 from WMCore.BossAir.Plugins.MockPlugin import MockPlugin
 from WMCore.BossAir.Plugins.BasePlugin import BossAirPluginException
 from WMCore.Configuration import Configuration
+from WMQuality.TestInit import TestInit
 from datetime import datetime
 from datetime import timedelta
 import os
@@ -21,52 +22,48 @@ jobList = [{'status': 'Done', 'bulkid': None, 'cms_site_name': None, 'cache_dir'
 
 
 class MockPluginTest(unittest.TestCase):
+    def setUp(self):
+        self.testinit = TestInit(__file__)
+        self.workdir = self.testinit.generateWorkDir()
+        jobList[0]['cache_dir'] = self.workdir
+    
+    def tearDown(self):
+        self.testinit.delWorkDir()
+        
     def testInit(self):
         wrongconfig = Configuration()
         wrongconfig.section_('BossAir')
-        try:
-            mp = MockPlugin(wrongconfig)
-        except BossAirPluginException:
-            #The config does not contain MockPlugin section
-            pass
-        else:
-            fail('Expected exception')
-
+        self.assertRaises( BossAirPluginException, MockPlugin, wrongconfig )
 
         wrongconfig.BossAir.section_('MockPlugin')
-        try:
-            mp = MockPlugin(wrongconfig)
-        except BossAirPluginException:
-            #The config does not contain fakeReport parameter
-            pass
-        else:
-            fail('Expected exception')
+        self.assertRaises( BossAirPluginException, MockPlugin, wrongconfig )
+        #The config does not contain fakeReport parameter
+        self.assertRaises( BossAirPluginException, MockPlugin, wrongconfig )
 
-
+        #The fakeReport does not exist
         wrongconfig.BossAir.MockPlugin.fakeReport = 'asdf'
-        try:
-            mp = MockPlugin(wrongconfig)
-        except BossAirPluginException:
-            #The fakeReport does not exist
-            pass
-        else:
-            fail('Expected exception')
-
-        mp = MockPlugin(config)
-
+        self.assertRaises( BossAirPluginException, MockPlugin, wrongconfig )
 
     def testTrack(self):
         mp = MockPlugin(config)
 
         #Check that the job has been scheduled
         self.assertEquals({}, mp.jobsScheduledEnd)
+        
+        # Don't be racy
+        currentTime = datetime.now()
         #id is the only required parameter in the job dictionary
-        res = mp.track( jobList )
+        res = mp.track( jobList, currentTime )
         self.assertTrue( mp.jobsScheduledEnd.has_key(1L) )
         #check scheduled end (N.B. this includes 20% of random time)
         scheduledEnd = mp.jobsScheduledEnd[1L]
-        self.assertTrue( (scheduledEnd - datetime.now()) > timedelta(minutes = TEST_JOB_LEN) )
-        self.assertTrue( (scheduledEnd - datetime.now()) < timedelta(minutes = TEST_JOB_LEN*120/100) )
+        timeTillJob = scheduledEnd - currentTime
+        self.assertTrue( timeTillJob >= timedelta(minutes = TEST_JOB_LEN - 1), \
+                         "Time till Job %s !>= Delta %s" % (timeTillJob, \
+                         timedelta(minutes = TEST_JOB_LEN - 1)))
+        self.assertTrue( timeTillJob <= timedelta(minutes = TEST_JOB_LEN*120/100 + 1), \
+                         "Time till Job %s !<= Delta %s" % (timeTillJob, \
+                         timedelta(minutes = TEST_JOB_LEN * 120/100 + 1)) )
         #the job is running
         self.assertEquals( 'Running', res[0][0]['status'])
         self.assertEquals( 'Running', res[1][0]['status'])
@@ -78,8 +75,11 @@ class MockPluginTest(unittest.TestCase):
         self.assertEquals( [], res[0])
         self.assertEquals( 'Done', res[1][0]['status'])
         self.assertEquals( 'Done', res[2][0]['status'])
+        
+        del mp
 
 
 
 if __name__ == '__main__':
     unittest.main()
+   

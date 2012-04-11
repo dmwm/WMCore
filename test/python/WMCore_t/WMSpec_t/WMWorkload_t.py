@@ -1148,6 +1148,50 @@ class WMWorkloadTest(unittest.TestCase):
 
         self.assertEqual(testWorkload.getCMSSWVersions(), ["CMSSW_1_1_1"])
         return
+
+    def test_getConfigCacheIDs(self):
+        """
+        _getConfigCacheIDs_
+
+        See if we can pull out the configCacheIDs
+        """
+
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        procTask = testWorkload.newTask("ProcessingTask")
+        procTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        procTask.setTaskType("Processing")
+        procTaskCmssw = procTask.makeStep("cmsRun1")
+        procTaskCmssw.setStepType("CMSSW")
+        procTask.applyTemplates()
+
+        procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
+        procTaskCmsswHelper.setConfigCache(url = "SomeURL",
+                                           document = "DocIDThatIsReallyLong",
+                                           dbName = "SomeDBName")
+
+        procTask = testWorkload.newTask("ProcessingTask2")
+        procTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        procTask.setTaskType("Processing")
+        procTaskCmssw = procTask.makeStep("cmsRun2")
+        procTaskCmssw.setStepType("CMSSW")
+        procTask.applyTemplates()
+
+        procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
+        procTaskCmsswHelper.setConfigCache(url = "SomeURL",
+                                           document = "DocIDThatIsReallyLong2",
+                                           dbName = "SomeDBName")
+
+        procTask = testWorkload.newTask("ProcessingTask3")
+        procTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        procTask.setTaskType("Processing")
+        procTaskCmssw = procTask.makeStep("cmsRun2")
+        procTaskCmssw.setStepType("CMSSW")
+        procTask.applyTemplates()
+
+        self.assertEqual(testWorkload.listAllCMSSWConfigCacheIDs(),
+                         ['SomeURL/SomeDBName/DocIDThatIsReallyLong/configFile',
+                          'SomeURL/SomeDBName/DocIDThatIsReallyLong2/configFile'])
+        return
                          
 
 if __name__ == '__main__':

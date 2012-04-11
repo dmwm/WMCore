@@ -72,7 +72,7 @@ class RESTFormatTest(RESTBaseUnitTest):
                          output={'code':200, 'data':'{"a": "a%", "b": "b"}'})
 
         url = self.urlbase + 'list?input_int=a&input_str=a'
-        expected_data = '''{"exception": 400, "message": "Invalid input", "type": "HTTPError"}'''
+        expected_data = '''{"exception": 400, "message": "Invalid input: Input data failed validation.", "type": "HTTPError"}'''
         methodTest('GET', url, accept=return_type,
                          output={'code':400, 'data':expected_data})
 
@@ -82,7 +82,7 @@ class RESTFormatTest(RESTBaseUnitTest):
         """
         return_type = 'application/json'
         url = self.urlbase + 'list1?int=a'
-        expected_data = """{"exception": 400, "message": "Invalid input", "type": "HTTPError"}"""
+        expected_data = """{"exception": 400, "message": "Invalid input: Arguments added where none allowed", "type": "HTTPError"}"""
         methodTest('GET', url, accept=return_type, output={'code':400, 'data':expected_data})
 
 

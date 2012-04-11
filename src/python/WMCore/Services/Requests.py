@@ -220,6 +220,7 @@ class Requests(dict):
         makeRequest_httplib method.
         """
         ckey, cert = self.getKeyCert()
+        capath = self.getCAPath()
         if  not contentType:
             contentType = self['content_type']
         headers = {"Content-type": contentType,
@@ -231,7 +232,7 @@ class Requests(dict):
         headers.update(incoming_headers)
         url = self['host'] + uri
         response, data = self.reqmgr.request(url, params, headers, \
-                    verb=verb, ckey=ckey, cert=cert, decode=decoder)
+                    verb=verb, ckey=ckey, cert=cert, capath=capath, decode=decoder)
         return data, response.status, response.reason, response.fromcache
 
     def makeRequest_httplib(self, uri=None, data={}, verb='GET',
@@ -507,6 +508,21 @@ class Requests(dict):
 
         # All looks OK, still doesn't guarantee proxy's validity etc.
         return key, cert
+
+    def getCAPath(self):
+        """
+        _getCAPath_
+
+        Return the path of the CA certificates. The check is loose in the pycurl_manager:
+        is capath == None then the server identity is not verified. To enable this check
+        you need to set either the X509_CERT_DIR variable or the cacert key of the request.
+        """
+        cacert = None
+        if self.has_key('cacert'):
+            cacert = self['cacert']
+        elif os.environ.has_key("X509_CERT_DIR"):
+            cacert = os.environ["X509_CERT_DIR"]
+        return cacert
 
 class JSONRequests(Requests):
     """

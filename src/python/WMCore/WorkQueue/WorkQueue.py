@@ -118,6 +118,7 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('LocalQueueFlag', True)
         self.params.setdefault('QueueRetryTime', 3600)
         self.params.setdefault('stuckElementAlertTime', 86400)
+        self.params.setdefault('reqmgrCompleteGraceTime', 604800)
 
         self.params.setdefault('JobDumpConfig', None)
         self.params.setdefault('BossAirConfig', None)

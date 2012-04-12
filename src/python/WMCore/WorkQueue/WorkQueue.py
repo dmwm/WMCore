@@ -645,7 +645,7 @@ class WorkQueue(WorkQueueBase):
         useWMBS = not skipWMBS and self.params['LocalQueueFlag']
         # Get queue elements grouped by their workflow with updated wmbs progress
         # Cancel if requested, update locally and remove obsolete elements
-        for wf in self.backend.getWorkflows(includeInbox = True):
+        for wf in self.backend.getWorkflows(includeInbox = True, includeSpecs = True):
             try:
                 elements = self.status(RequestName = wf, syncWithWMBS = useWMBS)
                 parents = self.backend.getInboxElements(RequestName = wf)
@@ -657,7 +657,10 @@ class WorkQueue(WorkQueueBase):
                     continue
                 if not elements and not parents:
                     self.logger.info("Removing orphaned workflow %s" % wf)
-                    self.backend.db.delete_doc(wf)
+                    try:
+                        self.backend.db.delete_doc(wf)
+                    except CouchNotFoundError:
+                        pass
                     continue
 
                 self.logger.debug("Queue status follows:")

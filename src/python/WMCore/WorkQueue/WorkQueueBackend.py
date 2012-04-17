@@ -291,7 +291,7 @@ class WorkQueueBackend(object):
         for wf in specs:
             try:
                 if not self.db.loadView('WorkQueue', 'elementsByWorkflow',
-                                        {'key' : wf, 'limit' : 0, 'reduce' : False})['total_rows']:
+                                        {'key' : wf, 'limit' : 1, 'reduce' : False})['rows']:
                     self.db.delete_doc(wf)
             except CouchNotFoundError:
                 pass
@@ -371,11 +371,13 @@ class WorkQueueBackend(object):
             return False
         return True
 
-    def getWorkflows(self, includeInbox = False):
+    def getWorkflows(self, includeInbox = False, includeSpecs = False):
         """Returns workflows known to workqueue"""
         result = set([x['key'] for x in self.db.loadView('WorkQueue', 'elementsByWorkflow', {'group' : True})['rows']])
         if includeInbox:
             result = result | set([x['key'] for x in self.inbox.loadView('WorkQueue', 'elementsByWorkflow', {'group' : True})['rows']])
+        if includeSpecs:
+            result = result | set([x['key'] for x in self.db.loadView('WorkQueue', 'specsByWorkflow')['rows']])
         return list(result)
 
     def queueLength(self):

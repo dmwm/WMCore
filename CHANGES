@@ -1,3 +1,12 @@
+0.8.36 to 0.8.37:
+  - Improved support for the paused status.  Fixes #3597.
+  - Improvements to error handling and logging in the BossAir LSF plugin.  Fixes #3187 and #3587.
+  - Changes to StdBase and the runtime code to support repacking.  Fixes #3577.
+  - If work cancel isn't progressing (agent dead?) move to canceled
+  - Remove requests from WorkQueue if they are done for a long time in reqmgr
+  - Fix bug that stopped dangling specs being deleted from WorkQueue
+  - Account for all sites per CMSName before determining if it is ignorable in WMBSHelper
+
 0.8.35 to 0.8.36:
   - Add support for force merging and force unmerging in StdBase.  Fixes #3564.
   - Add support for PromptReconstruction at the Tier1s with the PromptSkimming system.  Fixes #3413.

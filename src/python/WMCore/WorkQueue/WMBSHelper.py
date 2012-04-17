@@ -147,8 +147,14 @@ def freeSlots(multiplier = 1.0, minusRunning = False, onlyDrain = False, skipDra
         slots = site['total_slots']
         if minusRunning:
             slots -= site['running_jobs']
-        if slots > 0:
-            sites[site['cms_name']] += (slots * multiplier)
+        sites[site['cms_name']] += (slots * multiplier)
+
+    # At the end delete entries < 1
+    # This allows us to combine multiple sites under the same CMS_Name
+    # Without going nuts
+    for site in sites.keys():
+        if sites[site] < 1:
+            del sites[site]
     return dict(sites)
 
 class WMBSHelper(WMConnectionBase):

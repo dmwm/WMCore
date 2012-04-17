@@ -136,7 +136,7 @@ class StdBase(object):
             configCache.loadByID(configDoc)
             outputModules = configCache.getOutputModuleInfo()
         else:
-            if scenarioFunc in [ "promptReco", "expressProcessing" ]:
+            if scenarioFunc in [ "promptReco", "expressProcessing", "repack" ]:
                 for output in scenarioArgs.get('outputs', []):
                     moduleLabel = output['moduleLabel']
                     outputModules[moduleLabel] = { 'dataTier' : output['dataTier'] }

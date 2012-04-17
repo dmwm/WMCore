@@ -190,6 +190,14 @@ class SetupCMSSWPset(ScriptInterface):
                 msg = "Failed to create a merge process."
                 print msg
                 return None
+        elif funcName == "repack":
+            try:
+                from Configuration.DataProcessing.Repack import repackProcess
+                self.process = repackProcess(**funcArgs)
+            except Exception, ex:
+                msg = "Failed to create a repack process."
+                print msg
+                return None
         else:
             try:
                 from Configuration.DataProcessing.GetScenario import getScenario
@@ -244,7 +252,7 @@ class SetupCMSSWPset(ScriptInterface):
         if hasattr(self.process, "outputModules"):
             outputModuleNames = self.process.outputModules.keys()
         else:
-            outputModuleNames = self.process.outputModules_()            
+            outputModuleNames = self.process.outputModules_()
         for outMod in outputModuleNames:
             outModRef = getattr(self.process, outMod)
             if not hasattr(outModRef, "dataset"):

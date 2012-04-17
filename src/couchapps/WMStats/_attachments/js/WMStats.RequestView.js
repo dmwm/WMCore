@@ -29,6 +29,9 @@ WMStats.RequestView = (function() {
     var tableConfig = {
         "aoColumns": [
             { "mDataProp": "workflow", "sTitle": "workflow"},
+            { "mDataProp": function (source, type, val) { 
+                              return source.request_status[source.request_status.length -1].status
+                           }, "sTitle": "status"},
             { "mDataProp": "requestor", "sTitle": "requestor"},
             { "mDataProp": "request_type", "sTitle": "type"},
             { "mDataProp": "inputdataset", "sTitle": "inputdataset",
@@ -92,6 +95,7 @@ WMStats.RequestView = (function() {
     var filterConfig = {
         "aoColumns": [
             {type: "text", bRegex: true, bSmart: true},               
+            {type: "text", bRegex: true, bSmart: true},
             {type: "text", bRegex: true, bSmart: true},
             {type: "text", bRegex: true, bSmart: true},
             {type: "text", bRegex: true, bSmart: true}

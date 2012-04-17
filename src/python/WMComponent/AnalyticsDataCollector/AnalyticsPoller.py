@@ -11,6 +11,7 @@ import time
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import LocalCouchDBData, \
      WMAgentDBData, combineAnalyticsData, convertToRequestCouchDoc, \
      convertToAgentCouchDoc
@@ -51,9 +52,10 @@ class AnalyticsPoller(BaseWorkerThread):
         self.wmagentDB = WMAgentDBData(myThread.dbi, myThread.logger)
         # set the connection for local couchDB call
         self.localSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL)
-        self.centralSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.centralWMStatsURL)
+        self.localSummaryReader = WMStatsReader(self.config.AnalyticsDataCollector.localWMStatsURL)
         logging.info("Setting the replication to central monitor ...")
-        self.centralSummaryCouchDB.replicate(self.config.AnalyticsDataCollector.localWMStatsURL)
+        self.localSummaryReader.replicate(self.config.AnalyticsDataCollector.centralWMStatsURL)
+        
     def algorithm(self, parameters):
         """
         get information from wmbs, workqueue and local couch

@@ -121,7 +121,3 @@ class WMStatsWriter():
             doc['_rev'] = row['value']['rev']
             self.couchDB.queueDelete(doc)
         return self.couchDB.commit()
-        
-    def replicate(self, source):
-        self.couchServer.replicate(sanitizeURL(source)['url'], self.dbName, 
-                                   continuous = True)

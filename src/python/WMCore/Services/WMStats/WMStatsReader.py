@@ -14,6 +14,7 @@ class WMStatsReader():
             self.dbName = dbName
         else:
             self.couchURL, self.dbName = splitCouchServiceURL(couchURL)
+        self.couchServer = CouchServer(self.couchURL)
         self.couchDB = CouchServer(self.couchURL).connectDatabase(self.dbName, False)
 
     def workflowsByStatus(self, statusList):
@@ -24,3 +25,7 @@ class WMStatsReader():
         for item in result["rows"]:
             workflowList.append(item["id"])
         return workflowList
+    
+    def replicate(self, target):
+        self.couchServer.replicate(self.dbName, target, 
+                                   continuous = True)

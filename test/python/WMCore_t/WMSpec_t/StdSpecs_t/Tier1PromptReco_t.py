@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
-_T1PromptReco_t_
+_Tier1PromptReco_t_
 
-Unit tests for the new T1 PromptReconstruction workflow.
+Unit tests for the new Tier1 PromptReconstruction workflow.
 """
 
 import unittest
@@ -16,20 +16,26 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WMSpec.StdSpecs.Tier1PromptReco import getTestArguments, tier1promptrecoWorkload
 
-from WMQuality.TestInit import TestInit
+from WMCore.Configuration import ConfigSection
 
-class DataProcessingTest(unittest.TestCase):
+from WMQuality.TestInitCouchApp import TestInitCouchApp
+from WMCore.Database.CMSCouch import CouchServer
+
+class Tier1PromptRecoTest(unittest.TestCase):
     def setUp(self):
         """
         _setUp_
 
-        Initialize the database.
+        Initialize the database and couch.
         """
-        self.testInit = TestInit(__file__)
+        self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
+        self.testInit.setupCouch("tier1promptreco_t", "ConfigCache")
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
+        couchServer = CouchServer(os.environ["COUCHURL"])
+        self.configDatabase = couchServer.connectDatabase("tier1promptreco_t")
         return
 
     def tearDown(self):
@@ -38,28 +44,33 @@ class DataProcessingTest(unittest.TestCase):
 
         Clear out the database.
         """
+        self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         return
 
-    def testT1PromptReco(self):
+    def setupPromptSkimConfigObject(self):
+        """
+        _setupPromptSkimConfigObject_
+        Creates a custom config object for testing
+        of the skim functionality
+        """
+        self.promptSkim = ConfigSection(name="Tier1Skim")
+        self.promptSkim.SkimName = "TestSkim1"
+        self.promptSkim.DataTier = "RECO"
+        self.promptSkim.TwoFileRead = False
+        self.promptSkim.ProcessingVersion = "PromptSkim-v1"
+        self.promptSkim.ConfigURL = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"
+
+    def testTier1PromptReco(self):
         """
         _testT1PromptReco_
 
         Create a T1 Prompt Reconstruction workflow and verify it installs into WMBS
         correctly.
         """
-
-        alcaProducers = ['TkAlCosmics0T','MuAlGlobalCosmics','HcalCalHOCosmics','DtCalibCosmics']
-        dataTiers = ['AOD', 'RECO', 'ALCARECO']
-
+        self.setupPromptSkimConfigObject()
         testArguments = getTestArguments()
-        testArguments['CMSSWVersion'] = 'CMSSW 5_2_0'
-        testArguments['ProcessingVersion'] = 't1PromptReco-v1'
-        testArguments['ProcScenario'] = 'cosmics'
-        testArguments['GlobalTag'] = 'GR_P_V28::All'
-        testArguments['InputDataset'] = '/Cosmics/Commissioning12-v1/RAW'
-        testArguments['WriteTiers'] = dataTiers
-        testArguments['AlcaSkims'] = alcaProducers
+        testArguments["PromptSkims"] = [self.promptSkim]
 
 
         testWorkload = tier1promptrecoWorkload("TestWorkload", testArguments)
@@ -73,10 +84,10 @@ class DataProcessingTest(unittest.TestCase):
         recoWorkflow = Workflow(name = "TestWorkload",
                                 task = "/TestWorkload/Reco")
         recoWorkflow.load()
-        self.assertEqual(len(recoWorkflow.outputMap.keys()), len(dataTiers) + 1,
+        self.assertEqual(len(recoWorkflow.outputMap.keys()), len(testArguments["WriteTiers"]) + 1,
                          "Error: Wrong number of WF outputs in the Reco WF.")
 
-        goldenOutputMods = ["write_RECO", "write_ALCARECO", "write_AOD"]
+        goldenOutputMods = ["write_RECO", "write_ALCARECO", "write_AOD", "write_DQM"]
         for goldenOutputMod in goldenOutputMods:
             mergedOutput = recoWorkflow.outputMap[goldenOutputMod][0]["merged_output_fileset"]
             unmergedOutput = recoWorkflow.outputMap[goldenOutputMod][0]["output_fileset"]
@@ -102,11 +113,11 @@ class DataProcessingTest(unittest.TestCase):
         alcaSkimWorkflow = Workflow(name = "TestWorkload",
                                     task = "/TestWorkload/Reco/AlcaSkim")
         alcaSkimWorkflow.load()
-        self.assertEqual(len(alcaSkimWorkflow.outputMap.keys()), len(alcaProducers) + 1,
+        self.assertEqual(len(alcaSkimWorkflow.outputMap.keys()), len(testArguments["AlcaSkims"]) + 1,
                         "Error: Wrong number of WF outputs in the AlcaSkim WF.")
 
         goldenOutputMods = []
-        for alcaProd in alcaProducers:
+        for alcaProd in testArguments["AlcaSkims"]:
             goldenOutputMods.append("ALCARECOStream%s" % alcaProd)
 
         for goldenOutputMod in goldenOutputMods:
@@ -116,6 +127,8 @@ class DataProcessingTest(unittest.TestCase):
             unmergedOutput.loadData()
             self.assertEqual(mergedOutput.name, "/TestWorkload/Reco/AlcaSkim/AlcaSkimMerge%s/merged-Merged" % goldenOutputMod,
                              "Error: Merged output fileset is wrong: %s" % mergedOutput.name)
+            self.assertEqual(unmergedOutput.name, "/TestWorkload/Reco/AlcaSkim/unmerged-%s" % goldenOutputMod,
+                              "Error: Unmerged output fileset is wrong: %s" % unmergedOutput.name)
 
         logArchOutput = alcaSkimWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
         unmergedLogArchOutput = alcaSkimWorkflow.outputMap["logArchive"][0]["output_fileset"]
@@ -127,7 +140,37 @@ class DataProcessingTest(unittest.TestCase):
         self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/Reco/AlcaSkim/unmerged-logArchive",
                          "Error: LogArchive output fileset is wrong.")
 
-        goldenOutputMods = ["write_RECO", "write_AOD"]
+        promptSkimWorkflow = Workflow(name="TestWorkload",
+                                      task="/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1")
+        promptSkimWorkflow.load()
+
+        self.assertEqual(len(promptSkimWorkflow.outputMap.keys()), 6,
+                         "Error: Wrong number of WF outputs.")
+
+        goldenOutputMods = ["fakeSkimOut1", "fakeSkimOut2", "fakeSkimOut3",
+                            "fakeSkimOut4", "fakeSkimOut5"]
+        for goldenOutputMod in goldenOutputMods:
+            mergedOutput = promptSkimWorkflow.outputMap[goldenOutputMod][0]["merged_output_fileset"]
+            unmergedOutput = promptSkimWorkflow.outputMap[goldenOutputMod][0]["output_fileset"]
+            mergedOutput.loadData()
+            unmergedOutput.loadData()
+
+            self.assertEqual(mergedOutput.name, "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1Merge%s/merged-Merged" % goldenOutputMod,
+                             "Error: Merged output fileset is wrong: %s" % mergedOutput.name)
+            self.assertEqual(unmergedOutput.name, "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/unmerged-%s" % goldenOutputMod,
+                             "Error: Unmerged output fileset is wrong: %s" % unmergedOutput.name)
+
+        logArchOutput = promptSkimWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
+        unmergedLogArchOutput = promptSkimWorkflow.outputMap["logArchive"][0]["output_fileset"]
+        logArchOutput.loadData()
+        unmergedLogArchOutput.loadData()
+
+        self.assertEqual(logArchOutput.name, "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/unmerged-logArchive",
+                         "Error: LogArchive output fileset is wrong.")
+        self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/unmerged-logArchive",
+                         "Error: LogArchive output fileset is wrong.")
+
+        goldenOutputMods = ["write_RECO", "write_AOD", "write_DQM"]
         for goldenOutputMod in goldenOutputMods:
             mergeWorkflow = Workflow(name = "TestWorkload",
                                      task = "/TestWorkload/Reco/RecoMerge%s" % goldenOutputMod)
@@ -158,7 +201,7 @@ class DataProcessingTest(unittest.TestCase):
                              "Error: LogArchive output fileset is wrong.")
 
         goldenOutputMods = []
-        for alcaProd in alcaProducers:
+        for alcaProd in testArguments["AlcaSkims"]:
             goldenOutputMods.append("ALCARECOStream%s" % alcaProd)
 
         for goldenOutputMod in goldenOutputMods:
@@ -190,6 +233,36 @@ class DataProcessingTest(unittest.TestCase):
             self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/Reco/AlcaSkim/AlcaSkimMerge%s/merged-logArchive" % goldenOutputMod,
                              "Error: LogArchive output fileset is wrong.")
 
+        goldenOutputMods = ["fakeSkimOut1", "fakeSkimOut2", "fakeSkimOut3",
+                            "fakeSkimOut4", "fakeSkimOut5"]
+        for goldenOutputMod in goldenOutputMods:
+            mergeWorkflow = Workflow(name = "TestWorkload",
+                                     task = "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1Merge%s" % goldenOutputMod)
+            mergeWorkflow.load()
+
+            self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
+                             "Error: Wrong number of WF outputs %d." % len(mergeWorkflow.outputMap.keys()))
+
+            mergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["merged_output_fileset"]
+            unmergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["output_fileset"]
+
+            mergedMergeOutput.loadData()
+            unmergedMergeOutput.loadData()
+
+            self.assertEqual(mergedMergeOutput.name, "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1Merge%s/merged-Merged" % goldenOutputMod,
+                             "Error: Merged output fileset is wrong.")
+            self.assertEqual(unmergedMergeOutput.name, "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1Merge%s/merged-Merged" % goldenOutputMod,
+                             "Error: Unmerged output fileset is wrong.")
+
+            logArchOutput = mergeWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
+            unmergedLogArchOutput = mergeWorkflow.outputMap["logArchive"][0]["output_fileset"]
+            logArchOutput.loadData()
+            unmergedLogArchOutput.loadData()
+
+            self.assertEqual(logArchOutput.name, "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1Merge%s/merged-logArchive" % goldenOutputMod,
+                             "Error: LogArchive output fileset is wrong: %s" % logArchOutput.name)
+            self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1Merge%s/merged-logArchive" % goldenOutputMod,
+                             "Error: LogArchive output fileset is wrong.")
 
         topLevelFileset = Fileset(name = "TestWorkload-Reco-SomeBlock")
         topLevelFileset.loadData()
@@ -199,8 +272,8 @@ class DataProcessingTest(unittest.TestCase):
 
         self.assertEqual(recoSubscription["type"], "Processing",
                          "Error: Wrong subscription type.")
-        self.assertEqual(recoSubscription["split_algo"], "FileBased",
-                         "Error: Wrong split algo.")
+        self.assertEqual(recoSubscription["split_algo"], "EventBased",
+                         "Error: Wrong split algorithm. %s" % recoSubscription["split_algo"])
 
         alcaRecoFileset = Fileset(name = "/TestWorkload/Reco/unmerged-write_ALCARECO")
         alcaRecoFileset.loadData()
@@ -208,13 +281,23 @@ class DataProcessingTest(unittest.TestCase):
         alcaSkimSubscription = Subscription(fileset = alcaRecoFileset, workflow = alcaSkimWorkflow)
         alcaSkimSubscription.loadData()
 
-        self.assertEqual(recoSubscription["type"], "Processing",
+        self.assertEqual(alcaSkimSubscription["type"], "Processing",
                          "Error: Wrong subscription type.")
-        self.assertEqual(recoSubscription["split_algo"], "FileBased",
-                         "Error: Wrong split algo.")
+        self.assertEqual(alcaSkimSubscription["split_algo"], "EventBased",
+                         "Error: Wrong split algorithm. %s" % alcaSkimSubscription["split_algo"])
 
+        mergedRecoFileset = Fileset(name = "/TestWorkload/Reco/RecoMergewrite_RECO/merged-Merged")
+        mergedRecoFileset.loadData()
 
-        unmergedOutputs = ["write_RECO", "write_AOD"]
+        promptSkimSubscription = Subscription(fileset = mergedRecoFileset, workflow = promptSkimWorkflow)
+        promptSkimSubscription.loadData()
+
+        self.assertEqual(promptSkimSubscription["type"], "Skim",
+                         "Error: Wrong subscription type.")
+        self.assertEqual(promptSkimSubscription["split_algo"], "FileBased",
+                         "Error: Wrong split algorithm. %s" % promptSkimSubscription["split_algo"])
+
+        unmergedOutputs = ["write_RECO", "write_AOD", "write_DQM"]
         for unmergedOutput in unmergedOutputs:
             unmergedDataTier = Fileset(name = "/TestWorkload/Reco/unmerged-%s" % unmergedOutput)
             unmergedDataTier.loadData()
@@ -226,10 +309,10 @@ class DataProcessingTest(unittest.TestCase):
 
             self.assertEqual(mergeSubscription["type"], "Merge",
                              "Error: Wrong subscription type.")
-            self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
-                             "Error: Wrong split algorithm.")
+            self.assertEqual(mergeSubscription["split_algo"], "WMBSMergeBySize",
+                             "Error: Wrong split algorithm. %s" % mergeSubscription["split_algo"])
         unmergedOutputs = []
-        for alcaProd in alcaProducers:
+        for alcaProd in testArguments["AlcaSkims"]:
             unmergedOutputs.append("ALCARECOStream%s" % alcaProd)
         for unmergedOutput in unmergedOutputs:
             unmergedAlcaSkim = Fileset(name = "/TestWorkload/Reco/AlcaSkim/unmerged-%s" % unmergedOutput)
@@ -242,10 +325,26 @@ class DataProcessingTest(unittest.TestCase):
 
             self.assertEqual(mergeSubscription["type"], "Merge",
                              "Error: Wrong subscription type.")
-            self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
-                             "Error: Wrong split algorithm.")
+            self.assertEqual(mergeSubscription["split_algo"], "WMBSMergeBySize",
+                             "Error: Wrong split algorithm. %s" % mergeSubscription["split_algo"])
 
-        goldenOutputMods = ["write_RECO", "write_AOD"]
+        unmergedOutputs = ["fakeSkimOut1", "fakeSkimOut2", "fakeSkimOut3",
+                           "fakeSkimOut4", "fakeSkimOut5"]
+        for unmergedOutput in unmergedOutputs:
+            unmergedPromptSkim = Fileset(name = "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/unmerged-%s" % unmergedOutput)
+            unmergedPromptSkim.loadData()
+            promptSkimMergeWorkflow = Workflow(name = "TestWorkload",
+                                               task = "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1Merge%s" % unmergedOutput)
+            promptSkimMergeWorkflow.load()
+            mergeSubscription = Subscription(fileset = unmergedPromptSkim, workflow = promptSkimMergeWorkflow)
+            mergeSubscription.loadData()
+
+            self.assertEqual(mergeSubscription["type"], "Merge",
+                             "Error: Wrong subscription type.")
+            self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
+                             "Error: Wrong split algorithm. %s" % mergeSubscription["split_algo"])
+
+        goldenOutputMods = ["write_RECO", "write_AOD", "write_DQM"]
         for goldenOutputMod in goldenOutputMods:
             unmergedFileset = Fileset(name = "/TestWorkload/Reco/unmerged-%s" % goldenOutputMod)
             unmergedFileset.loadData()
@@ -261,7 +360,7 @@ class DataProcessingTest(unittest.TestCase):
                              "Error: Wrong subscription type.")
 
         goldenOutputMods = []
-        for alcaProd in alcaProducers:
+        for alcaProd in testArguments["AlcaSkims"]:
             goldenOutputMods.append("ALCARECOStream%s" % alcaProd)
         for goldenOutputMod in goldenOutputMods:
             unmergedFileset = Fileset(name = "/TestWorkload/Reco/AlcaSkim/unmerged-%s" % goldenOutputMod)
@@ -277,6 +376,22 @@ class DataProcessingTest(unittest.TestCase):
             self.assertEqual(cleanupSubscription["split_algo"], "SiblingProcessingBased",
                              "Error: Wrong subscription type.")
 
+        goldenOutputMods = ["fakeSkimOut1", "fakeSkimOut2", "fakeSkimOut3",
+                           "fakeSkimOut4", "fakeSkimOut5"]
+        for goldenOutputMod in goldenOutputMods:
+            unmergedFileset = Fileset(name = "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/unmerged-%s" % unmergedOutput)
+            unmergedFileset.loadData()
+            cleanupWorkflow = Workflow(name = "TestWorkload",
+                                               task = "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1CleanupUnmerged%s" % unmergedOutput)
+            cleanupWorkflow.load()
+            cleanupSubscription = Subscription(fileset = unmergedFileset, workflow = cleanupWorkflow)
+            cleanupSubscription.loadData()
+
+            self.assertEqual(cleanupSubscription["type"], "Cleanup",
+                             "Error: Wrong subscription type.")
+            self.assertEqual(cleanupSubscription["split_algo"], "SiblingProcessingBased",
+                             "Error: Wrong split algorithm. %s" % cleanupSubscription["split_algo"])
+
         recoLogCollect = Fileset(name = "/TestWorkload/Reco/unmerged-logArchive")
         recoLogCollect.loadData()
         recoLogCollectWorkflow = Workflow(name = "TestWorkload",
@@ -288,9 +403,35 @@ class DataProcessingTest(unittest.TestCase):
         self.assertEqual(logCollectSub["type"], "LogCollect",
                          "Error: Wrong subscription type.")
         self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
-                         "Error: Wrong split algo.")
+                         "Error: Wrong split algorithm.")
 
-        goldenOutputMods = ["write_RECO", "write_AOD"]
+        alcaSkimLogCollect = Fileset(name = "/TestWorkload/Reco/AlcaSkim/unmerged-logArchive")
+        alcaSkimLogCollect.loadData()
+        alcaSkimLogCollectWorkflow = Workflow(name = "TestWorkload",
+                                                task = "/TestWorkload/Reco/AlcaSkim/AlcaSkimLogCollect")
+        alcaSkimLogCollectWorkflow.load()
+        logCollectSub = Subscription(fileset = alcaSkimLogCollect, workflow = alcaSkimLogCollectWorkflow)
+        logCollectSub.loadData()
+
+        self.assertEqual(logCollectSub["type"], "LogCollect",
+                         "Error: Wrong subscription type.")
+        self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
+                         "Error: Wrong split algorithm.")
+
+        promptSkimLogCollect = Fileset(name = "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/unmerged-logArchive")
+        promptSkimLogCollect.loadData()
+        promptSkimLogCollectWorkflow = Workflow(name = "TestWorkload",
+                                                task = "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1LogCollect")
+        promptSkimLogCollectWorkflow.load()
+        logCollectSub = Subscription(fileset = promptSkimLogCollect, workflow = promptSkimLogCollectWorkflow)
+        logCollectSub.loadData()
+
+        self.assertEqual(logCollectSub["type"], "LogCollect",
+                         "Error: Wrong subscription type.")
+        self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
+                         "Error: Wrong split algorithm.")
+
+        goldenOutputMods = ["write_RECO", "write_AOD", "write_DQM"]
         for goldenOutputMod in goldenOutputMods:
             recoMergeLogCollect = Fileset(name = "/TestWorkload/Reco/RecoMerge%s/merged-logArchive" % goldenOutputMod)
             recoMergeLogCollect.loadData()
@@ -303,10 +444,10 @@ class DataProcessingTest(unittest.TestCase):
             self.assertEqual(logCollectSub["type"], "LogCollect",
                          "Error: Wrong subscription type.")
             self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
-                         "Error: Wrong split algo.")
+                         "Error: Wrong split algorithm.")
 
         goldenOutputMods = []
-        for alcaProd in alcaProducers:
+        for alcaProd in testArguments["AlcaSkims"]:
             goldenOutputMods.append("ALCARECOStream%s" % alcaProd)
         for goldenOutputMod in goldenOutputMods:
             alcaSkimLogCollect = Fileset(name = "/TestWorkload/Reco/AlcaSkim/AlcaSkimMerge%s/merged-logArchive" % goldenOutputMod)
@@ -320,7 +461,23 @@ class DataProcessingTest(unittest.TestCase):
             self.assertEqual(logCollectSub["type"], "LogCollect",
                          "Error: Wrong subscription type.")
             self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
-                         "Error: Wrong split algo.")
+                         "Error: Wrong split algorithm.")
+
+        goldenOutputMods = ["fakeSkimOut1", "fakeSkimOut2", "fakeSkimOut3",
+                           "fakeSkimOut4", "fakeSkimOut5"]
+        for goldenOutputMod in goldenOutputMods:
+            promptSkimMergeLogCollect = Fileset(name = "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1Merge%s/merged-logArchive" % goldenOutputMod)
+            promptSkimMergeLogCollect.loadData()
+            promptSkimMergeLogCollectWorkflow = Workflow(name = "TestWorkload",
+                                                    task = "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1Merge%s/TestSkim1%sMergeLogCollect" % (goldenOutputMod, goldenOutputMod))
+            promptSkimMergeLogCollectWorkflow.load()
+            logCollectSubscription = Subscription(fileset = promptSkimMergeLogCollect, workflow = promptSkimMergeLogCollectWorkflow)
+            logCollectSubscription.loadData()
+
+            self.assertEqual(logCollectSub["type"], "LogCollect",
+                             "Error: Wrong subscription type.")
+            self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
+                             "Error: Wrong split algorithm.")
 
         return
 

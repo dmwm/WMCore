@@ -25,7 +25,14 @@ function(doc) {
    */
   if (doc.type == "reqmgr_request"){
     var summary = {};
-    summary[doc.request_status[doc.request_status.length - 1].status] = 1; 
-    emit([doc.campaign, doc.teams[0], doc.request_type], summary) ;
+    summary[doc.request_status[doc.request_status.length - 1].status] = 1;
+    //not sure why there will be multiple teams in the request.
+    // currently support only one team
+    if (doc.teams) {
+        team = doc.teams[0];
+    } else {
+        team = "";
+    }
+    emit([doc.campaign, team, doc.request_type], summary) ;
   } 
 }

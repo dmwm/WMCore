@@ -463,6 +463,10 @@ def makeRequest(kwargs, couchUrl, couchDB):
         if blocklist in kwargs:
             schema[blocklist] = parseBlockList(kwargs[blocklist])
     validate(schema)
+
+    # Get the DN
+    schema['RequestorDN'] = cherrypy.request.user.get('dn', 'unknown')
+    
     try:
         request = buildWorkloadForRequest(typename = kwargs["RequestType"],
                                           schema = schema)

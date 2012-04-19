@@ -176,14 +176,17 @@ class WorkQueueReqMgrInterface():
         """Change state in RequestManager
            Optionally, take a message to append to the request
         """
-        if self._reqMgrStatus(status): # only send known states
-            self.reqMgr.reportRequestStatus(request, self._reqMgrStatus(status))
         if message:
             self.sendMessage(request, str(message))
+        if self._reqMgrStatus(status): # only send known states
+            self.reqMgr.reportRequestStatus(request, self._reqMgrStatus(status))
 
     def sendMessage(self, request, message):
         """Attach a message to the request"""
-        return self.reqMgr.sendMessage(request, message)
+        try:
+            self.reqMgr.sendMessage(request, message)
+        except Exception, ex:
+            self.logger.error('Error sending message to reqmgr: %s' % str(ex))
 
     def markAcquired(self, request, url = None):
         """Mark request acquired"""

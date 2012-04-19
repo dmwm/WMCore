@@ -6,17 +6,25 @@ Standard Tier1PromptReco workflow.
 """
 
 import os
+import tempfile
+import urllib
+import shutil
+import logging
+
 import WMCore.Lexicon
 
-from WMCore.WMSpec.StdSpecs.StdBase import StdBase	
+from WMCore.WMSpec.StdSpecs.StdBase import StdBase
+from WMCore.WMRuntime.Tools.Scram import Scram
+from WMCore.WMInit import getWMBASE
+from WMCore.Cache.WMConfigCache import ConfigCache
 
 def getTestArguments():
     """
     _getTestArguments_
 
     This should be where the default REQUIRED arguments go
-    This serves as documentation for what is currently required 
-    by the standard ReReco workload in importable format.
+    This serves as documentation for what is currently required
+    by the standard Tier1PromptReco workload in importable format.
 
     NOTE: These are test values.  If used in real workflows they
     will cause everything to crash/die/break, and we will be forced
@@ -25,20 +33,61 @@ def getTestArguments():
     arguments = {
         "AcquisitionEra": "WMAgentCommissioning12",
         "Requestor": "Dirk.Hufnagel@cern.ch",
-
-        "ScramArch": "slc5_amd64_gcc462",
-
+        "ScramArch" : "slc5_amd64_gcc462",
+        "ProcessingVersion" : "v1",
+        "GlobalTag" : "GR_P_V29::All",
+        "CMSSWVersion" : "CMSSW_5_2_1",
         # these must be overridden
-        "CMSSWVersion" : None,
-        "ProcessingVersion" : None,
-        "ProcScenario" : None,
-        "GlobalTag" : None,
-        "InputDataset" : None,
-        "WriteTiers" : None,
-        "AlcaSkims" : None,
+        "ProcScenario" : "cosmics",
+        "InputDataset" : "/Cosmics/Commissioning12-v1/RAW",
+        "WriteTiers" : ["AOD", "RECO", "DQM", "ALCARECO"],
+        "AlcaSkims" : ["TkAlCosmics0T","MuAlGlobalCosmics","HcalCalHOCosmics"],
+        "CouchURL": os.environ["COUCHURL"],
+        "CouchDBName": "tier1promptreco_t",
+        "InitCommand": os.environ.get("INIT_COMMAND", None),
+        #PromptSkims should be a list of ConfigSection objects with the
+        #following attributes
+        #DataTier: "RECO"
+        #SkimName: "CosmicsSkim1"
+        #TwoFileRead: True
+        #ConfigURL: http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/Skimming/test/tier1/skim_Cosmics.py?revision=1.2&pathrev=SkimsFor426
+        #ProcessingVersion: PromptSkim-v1
+        "PromptSkims": [],
         }
 
     return arguments
+
+def injectIntoConfigCache(frameworkVersion, scramArch, initCommand,
+                          configUrl, configLabel, couchUrl, couchDBName):
+    """
+    _injectIntoConfigCache_
+    """
+    logging.info("Injecting to config cache.\n")
+    configTempDir = tempfile.mkdtemp()
+    configPath = os.path.join(configTempDir, "cmsswConfig.py")
+    configString = urllib.urlopen(configUrl).read(-1)
+    configFile = open(configPath, "w")
+    configFile.write(configString)
+    configFile.close()
+
+    scramTempDir = tempfile.mkdtemp()
+    wmcoreBase = getWMBASE()
+    envPath = os.path.normpath(os.path.join(wmcoreBase, "../../../../../../../../apps/wmagent/etc/profile.d/init.sh"))
+    scram = Scram(version = frameworkVersion, architecture = scramArch,
+                  directory = scramTempDir, initialise = initCommand,
+                  envCmd = "source %s" % envPath)
+    scram.project()
+    scram.runtime()
+
+    scram("python2.6 %s/../../../bin/inject-to-config-cache %s %s PromptSkimmer cmsdataops %s %s None" % (wmcoreBase,
+                                                                                                 couchUrl,
+                                                                                                 couchDBName,
+                                                                                                 configPath,
+                                                                                                 configLabel))
+
+    shutil.rmtree(configTempDir)
+    shutil.rmtree(scramTempDir)
+    return
 
 class Tier1PromptRecoWorkloadFactory(StdBase):
     """
@@ -67,7 +116,8 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
 
         workload = self.createWorkload()
         workload.setDashboardActivity("tier0")
-        workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
+        workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo,
+                                         self.procJobSplitArgs)
 
         cmsswStepType = "CMSSW"
         taskType = "Processing"
@@ -92,12 +142,14 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
                                                splitArgs = self.procJobSplitArgs,
                                                stepType = cmsswStepType)
         self.addLogCollectTask(recoTask)
-
+        recoMergeTasks = {}
         for recoOutLabel, recoOutInfo in recoOutMods.items():
             if recoOutInfo['dataTier'] != "ALCARECO":
-                self.addMergeTask(recoTask,
-                                  self.procJobSplitAlgo,
-                                  recoOutLabel)
+                mergeTask = self.addMergeTask(recoTask,
+                                    self.procJobSplitAlgo,
+                                    recoOutLabel)
+                recoMergeTasks[recoOutInfo['dataTier']] = mergeTask
+
             else:
                 alcaTask = recoTask.addTask("AlcaSkim")
                 alcaOutMods = self.setupProcessingTask(alcaTask, taskType,
@@ -106,14 +158,59 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
                                                        scenarioName = self.procScenario,
                                                        scenarioFunc = "alcaSkim",
                                                        scenarioArgs = { 'globalTag' : self.globalTag,
-                                                                        'skims' : self.alcaSkims },
+                                                                        'skims' : self.alcaSkims,
+                                                                        'primaryDataset' : self.inputPrimaryDataset },
                                                        splitAlgo = self.procJobSplitAlgo,
                                                        splitArgs = self.procJobSplitArgs,
                                                        stepType = cmsswStepType)
+                self.addLogCollectTask(alcaTask,
+                                       taskName = "AlcaSkimLogCollect")
                 for alcaOutLabel, alcaOutInfo in alcaOutMods.items():
-                    self.addMergeTask(alcaTask,
-                                      self.procJobSplitAlgo,
+                    self.addMergeTask(alcaTask, self.procJobSplitAlgo,
                                       alcaOutLabel)
+
+        for promptSkim in self.promptSkims:
+            if not promptSkim.DataTier in recoMergeTasks:
+                error = 'PromptReco output does not have the following output data tier: %s.' % promptSkim.DataTier
+                error += 'Please change the skim input to be one of the following: %s' % recoMergeTasks.keys()
+                error += 'That should be in the relevant skimConfig in T0AST'
+                logging.error(error)
+                raise Exception
+
+            mergeTask = recoMergeTasks[promptSkim.DataTier]
+            skimTask = mergeTask.addTask(promptSkim.SkimName)
+            parentCmsswStep = mergeTask.getStep('cmsRun1')
+
+            #Does this work?
+            self.processingVersion = promptSkim.ProcessingVersion
+
+            if promptSkim.TwoFileRead:
+                self.skimJobSplitArgs['include_parents'] = True
+            else:
+                self.skimJobSplitArgs['include_parents'] = False
+
+            injectIntoConfigCache(self.frameworkVersion, self.scramArch,
+                                       self.initCommand, promptSkim.ConfigURL, self.workloadName,
+                                       self.couchURL, self.couchDBName)
+            try:
+                configCache = ConfigCache(self.couchURL, self.couchDBName)
+                procConfigCacheID = configCache.getIDFromLabel(self.workloadName)
+            except Exception:
+                logging.error("There was an exception loading the config out of the")
+                logging.error("ConfigCache.  Check the scramOutput.log file in the")
+                logging.error("PromptSkimScheduler directory to find out what went")
+                logging.error("wrong.")
+                raise
+
+            outputMods = self.setupProcessingTask(skimTask, "Skim", inputStep = parentCmsswStep, inputModule = "Merged",
+                                                  couchURL = self.couchURL, couchDBName = self.couchDBName,
+                                                  configDoc = procConfigCacheID, splitAlgo = self.skimJobSplitAlgo,
+                                                  splitArgs = self.skimJobSplitArgs)
+            self.addLogCollectTask(skimTask, taskName = "%sLogCollect" % promptSkim.SkimName)
+
+            for outputModuleName in outputMods.keys():
+                self.addMergeTask(skimTask, self.skimJobSplitAlgo,
+                                  outputModuleName)
 
         return workload
 
@@ -131,7 +228,12 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
         self.procScenario = arguments['ProcScenario']
         self.writeTiers = arguments['WriteTiers']
         self.alcaSkims = arguments['AlcaSkims']
-	self.inputDataset = arguments['InputDataset']
+        self.inputDataset = arguments['InputDataset']
+        self.promptSkims = arguments['PromptSkims']
+        self.couchURL = arguments['CouchURL']
+        self.couchDBName = arguments['CouchDBName']
+        self.initCommand = arguments['InitCommand']
+
 
         if arguments.has_key('Multicore'):
             numCores = arguments.get('Multicore')
@@ -154,15 +256,20 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
 
         # These are mostly place holders because the job splitting algo and
         # parameters will be updated after the workflow has been created.
-        self.procJobSplitAlgo  = arguments.get("StdJobSplitAlgo", "FileBased")
-        self.procJobSplitArgs  = arguments.get("StdJobSplitArgs", {})
+        self.procJobSplitAlgo = arguments.get("StdJobSplitAlgo", "EventBased")
+        self.procJobSplitArgs = arguments.get("StdJobSplitArgs",
+                                              {"events_per_job": 500})
+        self.skimJobSplitAlgo = arguments.get("SkimJobSplitAlgo", "FileBased")
+        self.skimJobSplitArgs = arguments.get("SkimJobSplitArgs",
+                                              {"files_per_job": 1,
+                                               "include_parents": True})
 
         return self.buildWorkload()
 
     def validateSchema(self, schema):
         """
         _validateSchema_
-        
+
         Check for required fields, and some skim facts
         """
         requiredFields = ["ScramArch", "CMSSWVersion", "ProcessingVersion",

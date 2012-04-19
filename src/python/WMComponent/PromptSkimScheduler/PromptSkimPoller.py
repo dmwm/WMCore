@@ -44,7 +44,7 @@ class PromptSkimPoller(BaseWorkerThread):
 
         # Workload related parameters
         self.promptSkimFactory = PromptSkimWorkloadFactory()
-        self.tier1PromptRecoFactory = Tier1PromptRecoWorkfloadFactory()
+        self.tier1PromptRecoFactory = Tier1PromptRecoWorkloadFactory()
         self.promptSkimWorkloads = {}
         self.promptRecoWorkloads = {}
         self.workloadCache = self.config.PromptSkimScheduler.workloadCache
@@ -112,7 +112,7 @@ class PromptSkimPoller(BaseWorkerThread):
                                                            "RunConfig")
 
         return self.runConfigCache.getRunConfig(runNumber)
-    def createTier1PromptRecoWorkloadsForBlock(self, acquisitionEra, recoConfig, blockInfo):
+    def createTier1PromptRecoWorkloadsForBlock(self, acquisitionEra, processingScenario, recoConfig, blockInfo):
         """
         _createTier1PromptRecoWorkloadsForBlock_
 
@@ -125,13 +125,14 @@ class PromptSkimPoller(BaseWorkerThread):
         workloadName = "Run%s-%s-%s-%s" % (blockInfo["RUN_ID"], primary, processed, "Tier1PromptReco")
 
         if self.promptRecoWorkloads.has_key(blockInfo["RUN_ID"]):
-            workload = self.promptRecoWorkloads[blockInfo["RUN_ID"]]
-            workload.setBlockWhitelist(blockInfo["BLOCK_NAME"])
-            specPath = os.path.join(self.workloadCache, workloadName, "%s.pkl" % guid)
-            workload.setSpecUrl(specPath)
-            workload.save(specPath)
-            self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)
-            return
+            if self.promptRecoWorkloads[blockInfo["RUN_ID"]].has_key(primary):
+                workload = self.promptRecoWorkloads[blockInfo["RUN_ID"]][primary]
+                workload.setBlockWhitelist(blockInfo["BLOCK_NAME"])
+                specPath = os.path.join(self.workloadCache, workloadName, "%s.pkl" % guid)
+                workload.setSpecUrl(specPath)
+                workload.save(specPath)
+                self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)
+                return
 
         writeTiers = []
         if recoConfig.DoReco:
@@ -142,16 +143,20 @@ class PromptSkimPoller(BaseWorkerThread):
             if recoConfig.WriteAOD:
                 writeTiers.append("AOD")
 
-        if len(recoConfig.AlcaProducers) >  0:
+        if len(recoConfig.AlcaProducers) > 0:
             writeTiers.append("ALCARECO")
-        alcaProducers = alcaConfig.AlcaProducers
+        alcaProducers = recoConfig.AlcaProducers
 
         wfParams = {"AcquisitionEra": acquisitionEra,
                     "Requestor": "CMSPromptSkimming",
                     "InputDataset": datasetPath,
                     "CMSSWVersion": recoConfig.CMSSWVersion,
                     "ScramArch": self.scramArch,
+                    "InitCommand": self.initCommand,
+                    "CouchURL": self.config.JobStateMachine.couchurl,
+                    "CouchDBName": self.config.JobStateMachine.configCacheDBName,
                     "ProcessingVersion": recoConfig.ProcessingVersion,
+                    "ProcScenario": processingScenario,
                     "GlobalTag": recoConfig.GlobalTag,
                     "UnmergedLFNBase": "/store/unmerged",
                     "MergedLFNBase": "/store/data",
@@ -160,15 +165,23 @@ class PromptSkimPoller(BaseWorkerThread):
                     "MaxMergeEvents": self.maxMergeEvents,
                     "WriteTiers": writeTiers,
                     "AlcaSkims": alcaProducers,
+                    "PromptSkims":  recoConfig.PromptSkims,
                     "StdJobSplitAlgo": "EventBased",
-                    "StdJobSplitArgs": {"events_per_job": 720},
+                    "StdJobSplitArgs": {"events_per_job": recoConfig.EventSplit},
+                    "SkimJobSplitAlgo": "FileBased",
+                    "SkimJobSplitArgs": {"files_per_job": 1,
+                                         "include_parents": True},
                     "ValidStatus": "VALID"}
-                    }
-
 
         workload = self.tier1PromptRecoFactory(workloadName, wfParams)
         workload.setOwner("CMSDataOps")
         workload.setBlockWhitelist(blockInfo["BLOCK_NAME"])
+
+        if recoConfig.CustodialNode.find("MSS") != -1:
+            site = recoConfig.CustodialNode[:-4]
+        else:
+            site = recoConfig.CustodialNode
+        workload.setSiteWhitelist(site)
 
         if not os.path.exists(os.path.join(self.workloadCache, workloadName)):
             os.makedirs(os.path.join(self.workloadCache, workloadName))
@@ -179,7 +192,9 @@ class PromptSkimPoller(BaseWorkerThread):
 
         self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)
 
-        self.promptRecoWorkloads[blockInfo["RUN_ID"]] = workload
+        if not self.promptRecoWorkloads.has_key(blockInfo["RUN_ID"]):
+            self.promptRecoWorkloads[blockInfo["RUN_ID"]] = {}
+        self.promptRecoWorkloads[blockInfo["RUN_ID"]][primary] = workload
         return
 
 
@@ -205,9 +220,6 @@ class PromptSkimPoller(BaseWorkerThread):
                 self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)
                 return
 
-        runConfig = self.getRunConfig(blockInfo["RUN_ID"])
-        configFile = runConfig.retrieveConfigFromURL(skimConfig.ConfigURL)
-
         if skimConfig.TwoFileRead:
             includeParents = True
         else:
@@ -226,7 +238,7 @@ class PromptSkimPoller(BaseWorkerThread):
                     "ProcessingVersion": skimConfig.ProcessingVersion,
                     "GlobalTag": skimConfig.GlobalTag,
                     "CmsPath": self.cmsPath,
-                    "SkimConfig": configFile,
+                    "SkimConfig": skimConfig.ConfigURL,
                     "UnmergedLFNBase": "/store/unmerged",
                     "MergedLFNBase": "/store/data",
                     "MinMergeSize": self.minMergeSize,
@@ -277,7 +289,6 @@ class PromptSkimPoller(BaseWorkerThread):
             skims = runConfig.getSkimConfiguration(candidateBlock["PRIMARY_ID"],
                                                    candidateBlock["TIER_ID"])
             tier1RecoConfig = runConfig.getTier1PromptRecoConfiguration(candidateBlock["PRIMARY_ID"])
-            dataTier = candidateBlock["BLOCK_NAME"].split("#", 1)[0][1:].split("/", 3)[2]
 
             if skims == None and tier1RecoConfig == None:
                 InsertBlock.updateBlockStatusByID(self.t0astDBConn,
@@ -321,14 +332,14 @@ class PromptSkimPoller(BaseWorkerThread):
                 myThread.transaction.begin()
 
                 try:
-                    self.createTier1PromptRecoWorkloadsForBlock(runConfig.getAcquisitionEra(),
+                    self.createTier1PromptRecoWorkloadsForBlock(runConfig.getAcquisitionEra(), runConfig.getScenario(candidateBlock["PRIMARY_ID"]),
                                                 tier1RecoConfig, candidateBlock)
                 except Exception, ex:
-                        logging.error("Error making workflows: %s" % str(ex))
-                        logging.error("Traceback: %s" % traceback.format_exc())
-                        self.t0astDBConn.rollback()
-                        myThread.transaction.rollback()
-                        continue
+                    logging.error("Error making workflows: %s" % str(ex))
+                    logging.error("Traceback: %s" % traceback.format_exc())
+                    self.t0astDBConn.rollback()
+                    myThread.transaction.rollback()
+                    continue
 
                 InsertBlock.updateBlockStatusByID(self.t0astDBConn, candidateBlock,
                                                 "Skimmed")

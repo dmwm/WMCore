@@ -223,7 +223,7 @@ class ReqMgrRESTModel(RESTModel):
         
         index = self.intpriority(index = index)
         value = index['priority']
-        if math.fabs(value) > self.reqPriorityMax:
+        if math.fabs(value) > self.reqPriorityMax and not Utilities.privileged():
             msg = "Invalid requestPriority!  Request priority must have abs() less then %i!" % self.reqPriorityMax
             raise cherrypy.HTTPError(400, msg)
             

@@ -21,6 +21,8 @@ from WMCore.Configuration import ConfigSection
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer
 
+from nose.plugins.attrib import attr
+
 class Tier1PromptRecoTest(unittest.TestCase):
     def setUp(self):
         """
@@ -61,6 +63,7 @@ class Tier1PromptRecoTest(unittest.TestCase):
         self.promptSkim.ProcessingVersion = "PromptSkim-v1"
         self.promptSkim.ConfigURL = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"
 
+    @attr("integration")
     def testTier1PromptReco(self):
         """
         _testT1PromptReco_

@@ -26,12 +26,35 @@ WMStats.RequestView = (function() {
         return _getOrDefault(baseObj, objList, val); 
     }
     
+    function formatReqDetailUrl(request) {
+        return '<a href="' + WMStats.Couch.REQ_DETAIL_URL_PREFIX  + request + '" target="_blank">' + request + '</a>';
+    }
+    
+    function formatWorkloadSummarylUrl(request, status) {
+        if (status == "completed" || status == "announced" || status == "closed-out") {
+            return '<a href="' + WMStats.Couch.WORKLOAD_SUMMARY_URL_PREFIX  + request + '" target="_blank">' + status + '</a>';
+        } else {
+            return status;
+        }
+    }
+    
     var tableConfig = {
         "aoColumns": [
-            { "mDataProp": "workflow", "sTitle": "workflow"},
+            { "mDataProp": "workflow", "sTitle": "workflow",
+              "fnRender": function ( o, val ) {
+                            return formatReqDetailUrl(o.aData.workflow);
+                      },
+              "bUseRendered": false
+            },
             { "mDataProp": function (source, type, val) { 
                               return source.request_status[source.request_status.length -1].status
-                           }, "sTitle": "status"},
+                           }, "sTitle": "status",
+              "fnRender": function ( o, val ) {
+                            return formatWorkloadSummarylUrl(o.aData.workflow, 
+                                o.aData.request_status[o.aData.request_status.length -1].status);
+                          },
+              "bUseRendered": false
+            },
             { "mDataProp": "requestor", "sTitle": "requestor"},
             { "mDataProp": "request_type", "sTitle": "type"},
             { "mDataProp": "inputdataset", "sTitle": "inputdataset",

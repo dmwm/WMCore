@@ -9,6 +9,10 @@ WMStats.Couch = (function(){
     var _dbName = "wmstats";
     // couchapp name
     var _Design = "WMStats";
+    var _reqDetailPrefix = "/reqmgr/view/details/";
+    // this will depends on the variation of deployment
+    var _workloadSummaryPrefix = "/couchdb/workloadsummary/_design/WorkloadSummary/_show/histogramByWorkflow/";
+    
     var _couchDB = $.couch.db(_dbName);
     
     function _combineOption(options, callback) {
@@ -33,5 +37,7 @@ WMStats.Couch = (function(){
         return _couchDB.allDocs(_combineOption(options, callback));
     }
     
-    return {'view': view, "allDocs": allDocs};
+    return {'view': view, "allDocs": allDocs, 
+            "REQ_DETAIL_URL_PREFIX": _reqDetailPrefix,
+            "WORKLOAD_SUMMARY_URL_PREFIX": _workloadSummaryPrefix};
 })()

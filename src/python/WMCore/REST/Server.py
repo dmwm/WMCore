@@ -91,6 +91,19 @@ class RESTFrontPage:
 
      The name of the front page file.
 
+  .. attribute:: _substitutions
+
+     Extra (name, value) substitutions for `_frontpage`. When serving
+     the front-page via `_serve()`, each ``@name@`` is replaced by its
+     corresponding `value`.
+
+  .. attribute:: _embeddings
+
+     Extra (name, value) file replacements for `_frontpage`. Similar to
+     `_substitutions` but each value is a list of file names, and the
+     replacement value is the concatenation of all the contents of all
+     the files, with leading and trailing white space removed.
+
   .. attribute:: _preamble
 
      The ``rest/preamble.js`` computed as described above.
@@ -101,6 +114,7 @@ class RESTFrontPage:
   """
 
   def __init__(self, app, config, mount, frontpage, roots,
+               substitutions = None, embeddings = None,
                instances = None, preamble = None, debug_mode = None):
     """.. rubric:: Constructor
 
@@ -117,6 +131,8 @@ class RESTFrontPage:
                              path to start looking up files, and "``rx``" for
                              the regular expression to define valid file names.
                              **All the root paths must end in a trailing slash.**
+    :arg dict substitutions: Extra (name, value) substitutions for `frontpage`.
+    :arg dict embeddings:    Extra (name, value) file replacements for `frontpage`.
     :arg callable instances: Callable which returns database instances, often
                              ``lambda: return self._app.views["data"]._db``
     :arg str preamble:       Optional string for additional content for the
@@ -139,6 +155,8 @@ class RESTFrontPage:
     self._mount = mount
     self._frontpage = frontpage
     self._static = roots
+    self._substitutions = substitutions
+    self._embeddings = embeddings
     if debug_mode is None:
       debug_mode = not frontpage.endswith("-min.html")
 
@@ -174,7 +192,9 @@ class RESTFrontPage:
     CherryPy gzip tool to handle compression-related headers appropriately.
 
     In general files are passed through unmodified. The only exception is
-    that HTML files will have @MOUNT@ string replaced with the mount point.
+    that HTML files will have @MOUNT@ string replaced with the mount point,
+    the @NAME@ substitutions from the constructor are replaced by value,
+    and @NAME@ embeddings are replaced by file contents.
 
     :arg list(str) items: One or more file names to serve.
     :returns: File contents combined as a single string."""
@@ -240,6 +260,23 @@ class RESTFrontPage:
         elif ctype != ctypemap[suffix]:
           ctype = "text/plain"
         if suffix == "html":
+          for var, value in self._substitutions.iteritems():
+            data = data.replace("@" + var + "@", value)
+          for var, files in self._embeddings.iteritems():
+            value = ""
+            for fpath in files:
+              if not os.access(fpath, os.R_OK):
+                cherrypy.log("ERROR: embedded '%s' file '%s' does not exist"
+                             % (var, fpath))
+                raise HTTPError(404, "No such file")
+              try:
+                mtime = max(mtime, os.stat(fpath).st_mtime)
+                value += file(fpath).read().strip()
+              except:
+                cherrypy.log("ERROR: embedded '%s' file '%s' failed to"
+                             " retrieve file" % (var, fpath))
+                raise HTTPError(404, "No such file")
+            data = data.replace("@" + var + "@", value)
           data = data.replace("@MOUNT@", self._mount)
         if result:
           result += "\n"

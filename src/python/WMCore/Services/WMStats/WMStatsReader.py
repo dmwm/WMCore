@@ -20,7 +20,7 @@ class WMStatsReader():
     def workflowsByStatus(self, statusList):
         keys = statusList
         options = {"stale": "update_after"}
-        result = self.couchDB.loadView("WMStats", "time", options, keys)
+        result = self.couchDB.loadView("WMStats", "requestByStatus", options, keys)
         workflowList = []
         for item in result["rows"]:
             workflowList.append(item["id"])

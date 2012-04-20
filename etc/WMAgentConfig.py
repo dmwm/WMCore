@@ -478,5 +478,5 @@ config.CleanUpManager.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl
 config.CleanUpManager.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
 config.CleanUpManager.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 config.CleanUpManager.centralWMStatsURL = "Central WMStats URL"
-config.CleanUpManager.DataKeepDays = 1
-config.CleanUpManager.cleanCouchInterval = 60 * 60 * 24 # change to 1 day
+config.CleanUpManager.DataKeepDays = 1 # delete after a day maybe change to a week
+config.CleanUpManager.cleanCouchInterval = 60 * 20 # 20 min

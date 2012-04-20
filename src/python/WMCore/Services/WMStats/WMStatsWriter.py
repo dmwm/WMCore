@@ -114,14 +114,27 @@ class WMStatsWriter():
         options = {"startkey": threshold, "descending": True, 
                    "stale": "update_after"}
         result = self.couchDB.loadView("WMStats", "time", options)
-        print result
+
         for row in result['rows']:
             doc = {}
             doc['_id'] = row['value']['id']
             doc['_rev'] = row['value']['rev']
             self.couchDB.queueDelete(doc)
-        return self.couchDB.commit()
-
+        committed = self.couchDB.commit()
+        
+        if committed:
+            errorReport = {}
+            deleted = 0
+            for data in committed:
+                if data.has_key('error'):
+                    errorReport.setdefault(data['error'], 0)
+                    errorReport[data['error']] += 1
+                else:
+                    deleted += 1
+            return {'delete': deleted, 'error': errorReport}
+        else:
+            return "nothing"
+                    
     def replicate(self, target):
         self.couchServer.replicate(self.dbName, target, continuous = True,
                                    filter = 'WMStats/repfilter', useReplicator = True)

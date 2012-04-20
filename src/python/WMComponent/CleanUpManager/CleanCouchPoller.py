@@ -51,21 +51,31 @@ class CleanCouchPoller(BaseWorkerThread):
         """
         try:
             logging.info("Cleaning up the old request docs")
-            numOfDoc = self.wmstatsCouchDB.deleteOldDocs(self.config.CleanUpManager.DataKeepDays)
-            logging.info("%s docs deleted" % numOfDoc)
-            logging.info("Deleting the complete request docs")
+            report = self.wmstatsCouchDB.deleteOldDocs(self.config.CleanUpManager.DataKeepDays)
+            logging.info("%s docs deleted" % report)
+            logging.info("getting complete and announced requests")
             
             #TODO: define what is deletable status. Also add the code to delet summary document, 
             # request summary and job summary
             deletableWorkflows = self.centralCouchDBReader.workflowsByStatus(["completed", "announced"])
+            
+            logging.info("Ready to delete %s" % deletableWorkflows)     
             for workflowName in deletableWorkflows:
-                self.deleteWorkflowFromJobCouch(workflowName)
-                self.centralCouchDBWriter.updateRequestStatus(workflowName, "deleted")            
+                logging.info("Deleting %s from JobCouch" % workflowName)
+                
+                report = self.deleteWorkflowFromJobCouch(workflowName, "JobDump")
+                logging.info("%s docs deleted from JobDump" % report)
+                report = self.deleteWorkflowFromJobCouch(workflowName, "FWJRDump")
+                logging.info("%s docs deleted from FWJRDump" % report)
+                
+                self.centralCouchDBWriter.updateRequestStatus(workflowName, "deleted")
+                logging.info("status updated to deleted %s" % workflowName)
+                
         except Exception, ex:
             logging.error(str(ex))
             raise
 
-    def deleteWorkflowFromJobCouch(self, workflowName):
+    def deleteWorkflowFromJobCouch(self, workflowName, db):
         """
         _deleteWorkflowFromCouch_
 
@@ -75,22 +85,32 @@ class CleanCouchPoller(BaseWorkerThread):
         Load the document IDs and revisions out of couch by workflowName,
         then order a delete on them.
         """
-       
-        jobs = self.jobsdatabase.loadView("JobDump", "jobsByWorkflowName",
-                                          options = {"startkey": [workflowName],
-                                                     "endkey": [workflowName, {}]})['rows']
+        if (db == "JobDump"):
+            couchDB = self.jobsdatabase
+            view = "jobsByWorkflowName"
+        elif (db == "FWJRDump"):
+            couchDB = self.fwjrdatabase
+            view = "fwjrsByWorkflowName"
+        
+        options = {"startkey": [workflowName], "endkey": [workflowName, {}]}
+        jobs = couchDB.loadView(db, view, options = options)['rows']
         for j in jobs:
-            id  = j['value']['id']
-            rev = j['value']['rev']
-            self.jobsdatabase.delete_doc(id = id, rev = rev)
-
-        jobs = self.fwjrdatabase.loadView("FWJRDump", "fwjrsByWorkflowName",
-                                          options = {"startkey": [workflowName],
-                                                     "endkey": [workflowName, {}]})['rows']
-
-        for j in jobs:
-            id  = j['value']['id']
-            rev = j['value']['rev']
-            self.fwjrdatabase.delete_doc(id = id, rev = rev)
-
-        return
+            doc = {}
+            doc["_id"]  = j['value']['id']
+            doc["_rev"] = j['value']['rev']
+            couchDB.queueDelete(doc)
+        committed = couchDB.commit()
+        
+        if committed:
+            #create the error report
+            errorReport = {}
+            deleted = 0
+            for data in committed:
+                if data.has_key('error'):
+                    errorReport.setdefault(data['error'], 0)
+                    errorReport[data['error']] += 1
+                else:
+                    deleted += 1
+            return {'delete': deleted, 'error': errorReport}
+        else:
+            return "nothing"

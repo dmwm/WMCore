@@ -31,7 +31,8 @@ WMStats.RequestView = (function() {
     }
     
     function formatWorkloadSummarylUrl(request, status) {
-        if (status == "completed" || status == "announced" || status == "closed-out") {
+        if (status == "completed" || status == "announced" ||
+            status == "closed-out" || status == "deleted") {
             return '<a href="' + WMStats.Couch.WORKLOAD_SUMMARY_URL_PREFIX  + request + '" target="_blank">' + status + '</a>';
         } else {
             return status;

@@ -131,10 +131,10 @@ class LsfPlugin(BasePlugin):
 
                     # make reasonable job name
                     jobName = "WMAgentJob"
-                    regExpParser = re.compile('.*/JobCreator/JobCache/([^/]+)/([^/]+)/.*')
+                    regExpParser = re.compile('.*/JobCreator/JobCache/([^/]+)/[^/]+/.*')
                     match = regExpParser.match(job['cache_dir'])
                     if ( match != None ):
-                        jobName = "%s-%s-%s" % (match.group(1), match.group(2), job['id'])
+                        jobName = "%s-%s" % (match.group(1), job['id'])
 
                     # //
                     # // Submit LSF job
@@ -158,13 +158,13 @@ class LsfPlugin(BasePlugin):
                         except OSError, err:
                             # suppress LSF log unless it's about an already exisiting directory
                             if err.errno != errno.EEXIST or not os.path.isdir(lsfLogDir):
-                                logging.debug("Can't create directory %s, turning off LSF log" % lsfLogDir)
+                                logging.error("Can't create directory %s, turning off LSF log" % lsfLogDir)
                                 lsfLogDir = None
 
                     if lsfLogDir == None:
                         command += ' -oo /dev/null'
                     else:
-                        command += ' -oo %s' % lsfLogDir
+                        command += ' -oo %s/%s.%%J.out' % (lsfLogDir, jobName)
 
                     command += ' < %s' % submitScriptFile
 
@@ -173,7 +173,8 @@ class LsfPlugin(BasePlugin):
                     p = subprocess.Popen(command, shell = True,
                                          stdout = subprocess.PIPE,
                                          stderr = subprocess.STDOUT)
-                    stdout = p.communicate()[0]
+                    
+                    stdout = p.communicate()[0] 
                     returncode = p.returncode
 
                     if returncode == 0:
@@ -183,8 +184,11 @@ class LsfPlugin(BasePlugin):
                         if match != None:
                             job['gridid'] = match.group(1)
                             successfulJobs.append(job)
-                            logging.debug("LSF Job ID : %s" % job['gridid'] )
+                            logging.info("LSF Job ID : %s" % job['gridid'] )
                             continue
+                        else:
+                            logging.error("bsub didn't return a valid Job ID. Job is not submitted")
+                            logging.error(stdout)    
 
                     lsfErrorReport = Report()
                     lsfErrorReport.addError("JobSubmit", 61202, "LsfError", stdout)
@@ -304,13 +308,6 @@ class LsfPlugin(BasePlugin):
         script.append("bash %s %s %s\n" % (os.path.basename(self.scriptFile),
                                            os.path.basename(job['sandbox']),
                                            job['id']))
-
-         #script.append("Going to sleep...\n")
-         #script.append("sleep 3600\n")
-
-##         stageHost = os.getenv("STAGE_HOST")
-##         if stageHost:
-##             script.append("export STAGE_HOST=%s\n" % stageHost)
 
         script.append("rfcp Report.%i.pkl %s:%s/\n" % (job["retry_count"], hostname, job['cache_dir']))
 

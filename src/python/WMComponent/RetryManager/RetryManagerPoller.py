@@ -245,3 +245,10 @@ class RetryManagerPoller(BaseWorkerThread):
         jobs = self.getJobs.execute(state = 'jobpaused')
         logging.info("Found %s jobs in jobpaused" % len(jobs))
 
+        jobs = self.getJobs.execute(state = 'createpaused')
+        logging.info("Found %s jobs in createpaused" % len(jobs))
+
+        jobs = self.getJobs.execute(state = 'submitpaused')
+        logging.info("Found %s jobs in submitpaused" % len(jobs))        
+
+

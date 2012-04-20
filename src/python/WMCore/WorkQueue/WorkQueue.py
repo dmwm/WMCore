@@ -118,6 +118,8 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('LocalQueueFlag', True)
         self.params.setdefault('QueueRetryTime', 3600)
         self.params.setdefault('stuckElementAlertTime', 86400)
+        self.params.setdefault('reqmgrCompleteGraceTime', 604800)
+        self.params.setdefault('cancelGraceTime', 604800)
 
         self.params.setdefault('JobDumpConfig', None)
         self.params.setdefault('BossAirConfig', None)
@@ -446,6 +448,12 @@ class WorkQueue(WorkQueueBase):
             self.backend.updateElements(*[x.id for x in elements_to_cancel], Status = 'Canceled')
             self.backend.updateElements(*[x.id for x in elements_not_requested], Status = 'CancelRequested')
             self.backend.updateInboxElements(*[x.id for x in inbox_elements if x['Status'] != 'CancelRequested' and not x.inEndState()], Status = 'CancelRequested')
+            # if we haven't had any updates for a while assume agent is dead and move to canceled
+            if self.params.get('cancelGraceTime', -1) > 0:
+                last_update = max([float(x.updatetime) for x in elements])
+                if (time.time() - last_update) > self.params['cancelGraceTime']:
+                    self.logger.info("%s cancelation has stalled, mark as finished" % elements[0]['RequestName'])
+                    self.backend.updateElements(*[x.id for x in elements if not x.inEndState()], Status = 'Canceled')
 
         return [x.id for x in elements]
 
@@ -645,7 +653,7 @@ class WorkQueue(WorkQueueBase):
         useWMBS = not skipWMBS and self.params['LocalQueueFlag']
         # Get queue elements grouped by their workflow with updated wmbs progress
         # Cancel if requested, update locally and remove obsolete elements
-        for wf in self.backend.getWorkflows(includeInbox = True):
+        for wf in self.backend.getWorkflows(includeInbox = True, includeSpecs = True):
             try:
                 elements = self.status(RequestName = wf, syncWithWMBS = useWMBS)
                 parents = self.backend.getInboxElements(RequestName = wf)
@@ -657,7 +665,10 @@ class WorkQueue(WorkQueueBase):
                     continue
                 if not elements and not parents:
                     self.logger.info("Removing orphaned workflow %s" % wf)
-                    self.backend.db.delete_doc(wf)
+                    try:
+                        self.backend.db.delete_doc(wf)
+                    except CouchNotFoundError:
+                        pass
                     continue
 
                 self.logger.debug("Queue status follows:")

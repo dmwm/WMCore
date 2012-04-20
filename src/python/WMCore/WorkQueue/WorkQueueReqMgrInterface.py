@@ -6,6 +6,7 @@ from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
 from WMCore import Lexicon
 import os
+import time
 
 class WorkQueueReqMgrInterface():
     """Helper class for ReqMgr interaction"""
@@ -106,6 +107,7 @@ class WorkQueueReqMgrInterface():
         """Report queue status to ReqMgr."""
         new_state = {}
         uptodate_elements = []
+        now = time.time()
 
         elements = queue.statusInbox(dictKey = "RequestName")
         if not elements:
@@ -117,7 +119,22 @@ class WorkQueueReqMgrInterface():
                 request = self.reqMgr.getRequest(ele['RequestName'])
                 if request['RequestStatus'] in ('failed', 'completed', 'announced',
                                                 'epic-FAILED', 'closed-out', 'rejected'):
-                    pass # assume workqueue status will catch up later
+                    # requests can be done in reqmgr but running in workqueue
+                    # if request has been closed but agent cleanup actions
+                    # haven't been run (or agent has been retired)
+                    # Prune out obviously too old ones to avoid build up
+                    if queue.params.get('reqmgrCompleteGraceTime', -1) > 0:
+                        if (now - float(ele.updatetime)) > queue.params['reqmgrCompleteGraceTime']:
+                            # have to check all elements are at least running and are old enough
+                            request_elements = queue.statusInbox(WorkflowName = request['RequestName'])
+                            if not any([x for x in request_elements if x['Status'] != 'Running' and not x.inEndState()]):
+                                last_update = max([float(x.updatetime) for x in request_elements])
+                                if (now - last_update) > queue.params['reqmgrCompleteGraceTime']:
+                                    self.logger.info("Finishing request %s as it is done in reqmgr" % request['RequestName'])
+                                    queue.doneWork(WorkflowName=request['RequestName'])
+                                    continue
+                    else:
+                        pass # assume workqueue status will catch up later
                 elif request['RequestStatus'] == 'aborted':
                     queue.cancelWork(WorkflowName=request['RequestName'])
                 elif not ele['Status'] == self._reqMgrStatus(request['RequestStatus']):
@@ -159,14 +176,17 @@ class WorkQueueReqMgrInterface():
         """Change state in RequestManager
            Optionally, take a message to append to the request
         """
-        if self._reqMgrStatus(status): # only send known states
-            self.reqMgr.reportRequestStatus(request, self._reqMgrStatus(status))
         if message:
             self.sendMessage(request, str(message))
+        if self._reqMgrStatus(status): # only send known states
+            self.reqMgr.reportRequestStatus(request, self._reqMgrStatus(status))
 
     def sendMessage(self, request, message):
         """Attach a message to the request"""
-        return self.reqMgr.sendMessage(request, message)
+        try:
+            self.reqMgr.sendMessage(request, message)
+        except Exception, ex:
+            self.logger.error('Error sending message to reqmgr: %s' % str(ex))
 
     def markAcquired(self, request, url = None):
         """Mark request acquired"""

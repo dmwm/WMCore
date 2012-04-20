@@ -147,8 +147,14 @@ def freeSlots(multiplier = 1.0, minusRunning = False, onlyDrain = False, skipDra
         slots = site['total_slots']
         if minusRunning:
             slots -= site['running_jobs']
-        if slots > 0:
-            sites[site['cms_name']] += (slots * multiplier)
+        sites[site['cms_name']] += (slots * multiplier)
+
+    # At the end delete entries < 1
+    # This allows us to combine multiple sites under the same CMS_Name
+    # Without going nuts
+    for site in sites.keys():
+        if sites[site] < 1:
+            del sites[site]
     return dict(sites)
 
 class WMBSHelper(WMConnectionBase):
@@ -172,7 +178,9 @@ class WMBSHelper(WMConnectionBase):
 
         self.topLevelFileset = None
         self.topLevelSubscription = None
-        
+
+        self.mergeOutputMapping = {}
+
         # Initiate the pieces you need to run your own DAOs
         WMConnectionBase.__init__(self, "WMCore.WMBS")
         myThread = threading.currentThread()
@@ -304,6 +312,10 @@ class WMBSHelper(WMConnectionBase):
                             mergedOutputFileset.create()
                             mergedOutputFileset.markOpen(True)
 
+                            primaryDataset = getattr(getattr(outputModule, outputModuleName), "primaryDataset", None)
+                            if primaryDataset != None:
+                                self.mergeOutputMapping[mergedOutputFileset.id] = primaryDataset
+
                         self.createSubscription(childTask, outputFileset)
 
                 if mergedOutputFileset == None:
@@ -422,8 +434,15 @@ class WMBSHelper(WMConnectionBase):
         self.topLevelFileset.markOpen(False)
         return totalFiles
 
+    def getMergeOutputMapping(self):
+        """
+        _getMergeOutputMapping_
 
-
+        retrieves the relationship between primary
+        dataset and merge output fileset ids for
+        all merge tasks created
+        """
+        return self.mergeOutputMapping
 
 
     def _createFilesInDBSBuffer(self):

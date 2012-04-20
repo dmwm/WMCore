@@ -155,8 +155,8 @@ class RESTFrontPage:
     self._mount = mount
     self._frontpage = frontpage
     self._static = roots
-    self._substitutions = substitutions
-    self._embeddings = embeddings
+    self._substitutions = substitutions or {}
+    self._embeddings = embeddings or {}
     if debug_mode is None:
       debug_mode = not frontpage.endswith("-min.html")
 

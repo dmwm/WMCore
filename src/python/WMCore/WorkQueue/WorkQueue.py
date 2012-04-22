@@ -449,7 +449,7 @@ class WorkQueue(WorkQueueBase):
             self.backend.updateElements(*[x.id for x in elements_not_requested], Status = 'CancelRequested')
             self.backend.updateInboxElements(*[x.id for x in inbox_elements if x['Status'] != 'CancelRequested' and not x.inEndState()], Status = 'CancelRequested')
             # if we haven't had any updates for a while assume agent is dead and move to canceled
-            if self.params.get('cancelGraceTime', -1) > 0:
+            if self.params.get('cancelGraceTime', -1) > 0 and elements:
                 last_update = max([float(x.updatetime) for x in elements])
                 if (time.time() - last_update) > self.params['cancelGraceTime']:
                     self.logger.info("%s cancelation has stalled, mark as finished" % elements[0]['RequestName'])

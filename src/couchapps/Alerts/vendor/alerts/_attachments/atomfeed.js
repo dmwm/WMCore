@@ -1,56 +1,42 @@
-function(head, req)
+// atomfeed.js
+//
+// creates an Atom feed list of alerts
+
+
+var atomFeed = 
 {
-	var designDoc = this;
-	// var Mustache = require("vendor/couchapp/lib/mustache");
-	// var List = require("vendor/couchapp/lib/list");
+	mainUrl: null, // full URL to the couchapp
+	
+	// define and update API is required by index.html caller's implementation
+	// does not make sense for this use case, code here will be used/called
+	// differently ...
+	
+	define: function(input)
+	{
+	}, // define()
+	
+	
+	update: function()
+	{
+		console.log("worked");
+		
+	} // update()
+	
+	
+	/*
+	 * Taken from previous implementation.
+	 * Stored for reference, not used for the moment.
+	 * Not sure how to best and cleanly import and initialize
+	 * everything that atom.js needs ... 
+	 * 
+	 * 
 	var path = require("vendor/couchapp/lib/path").init(req);
 	var Atom = require("vendor/couchapp/lib/atom");
 
 	// to limit number of alerts per page: limit:10
 	var indexPath = path.list('index','index',{descending:true});
 	var feedPath = path.list('index','index',{descending:true, format:"atom"});
-  
-  	// HTML
-	// The provides function serves the format the client requests.
-  	// The first matching format is sent, so reordering functions changes 
-  	// thier priority. In this case HTML is the preferred format, so it comes first.
-	provides("html", function() 
-	{	
-		start({"headers": {"Content-Type": "text/html"}});
-		
-		send("<html><head><title>" + designDoc.couchapp.visualisationTitle + "</title>\n");
-		send("<link rel=\"stylesheet\" href=" + path.asset() + "/style/main.css\" type=\"text/css\">\n");
-		send("</head><body>\n");
-		send("<br><br><center>\n");
-		send("<h1><a href=" + indexPath + ">" + designDoc.couchapp.appName + "</a></h1>\n");
-		send("<div id=\"feeds\"><a href=" + feedPath + " target=\"_blank\">");
-		send("<img src=\"" + path.asset() + "/img/feed-icon.png\" alt=\"atom feed\"/>");
-		send("</a>\n</div>\n");
-		send("</center>\n");
-		send("<table border=0 align=center cellspacing=20>\n");
-		send("<tr><th>Timestamp</th><th>Component</th><th>Source</th><th>details</th>\n");
-		send("</tr>\n");
-		while (row = getRow()) 
-		{
-			// row.key = alert.Timestamp
-			// multiplied by 1000 so that the argument is in milliseconds, not seconds
-			send("<tr><td>" + new Date(row.key * 1000) + "</td>\n");
-			send("<td>" + row.value.Component + "</td>\n");
-			send("<td>" + row.value.Source + "</td>\n");
-			send("<td><a href=" +
-			     path.absolute(path.show("alert", row.id, {format: "html"})) +
-			     " target=\"_blank\">html</a>&nbsp;|&nbsp;<a href=" +
-			     path.absolute(path.show("alert", row.id)) +
-			     " target=\"_blank\">text</a>\n");
-			send("</td></tr>\n");
-		}
-		send("</table\n");
-		send("</body></html>");
-	}); // provides("html", function()
-	
-	
-	
-	
+
 	// Atom feed
 	// if the client requests an atom feed and not html, 
   	// we run this function to generate the feed.
@@ -110,6 +96,7 @@ function(head, req)
       	// close the loop after all rows are rendered
       	return "\n</feed>\n"; // why not send like above? - with send the closing tag doens't appear
     	    	  		
-  	}); // provides("atom", function()
-	
-}; // top level function
+  	}); // provides("atom", function()	
+	*/
+		
+} // atomFeed

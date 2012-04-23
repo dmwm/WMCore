@@ -15,7 +15,7 @@ rather than using only CMSCouch class directly.
 
 import logging
 
-from WMCore.Database.CMSCouch import Database, CouchServer
+from WMCore.Database.CMSCouch import Document, Database, CouchServer
 
 
 
@@ -57,9 +57,9 @@ class RESTSink(object):
         Send a list of alerts to a REST server.
         
         """
-        for alert in alerts:
-            self._database.queue(alert)
-            
+        for a in alerts:
+            doc = Document(None, a)
+            self._database.queue(doc)
         # two options here: either to call commit on the couch myself
         # or leave the alerts buffered in the Database queue which means
         # the .commit() would be called automatically if size is exceeded

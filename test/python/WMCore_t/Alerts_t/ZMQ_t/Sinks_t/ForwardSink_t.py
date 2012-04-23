@@ -21,7 +21,7 @@ def worker(addr, ctrl, nAlerts, workerId = "ForwardSinkTestSource"):
     Send a few alerts.
      
     """
-    s = Sender(addr, workerId, ctrl)
+    s = Sender(addr, ctrl, workerId)
     s.register()
     d = dict(very = "interesting")
     [s(Alert(Type = "Alert", Level = i, Details = d)) for i in range(0, nAlerts)]
@@ -130,7 +130,7 @@ class ForwardSinkTest(unittest.TestCase):
             print "%s waiting for Receiver1 to shut ..." % inspect.stack()[0][3]
         
         # shut down receiver2 - need to sendShutdown() to it
-        s = Sender(self.address2, "some_id", self.controlAddr2)
+        s = Sender(self.address2, self.controlAddr2, "some_id")
         s.sendShutdown()
         # wait until receiver2 shuts
         while receiver2.isReady():
@@ -141,16 +141,14 @@ class ForwardSinkTest(unittest.TestCase):
         # the bufferSize for soft-level Alerts was set to 0 so all
         # Alerts should be present also in the soft-level type file
         # initial 10 Alerts (Level 0 .. 9) gets distributed though a cascade
-        # of two Receivers, Level 0 gets lots (interested only in higher than 0),
-        # so Receiver1 forwards through its ForwardSink 1 .. 9 Alerts as soft and
-        # 6 .. 9 level Alerts through 'critical'. Receiver2 receives these two
-        # bunches and stores 1 .. 9 + 6 .. 9 into soft file and 6 ..9 +
-        # 6 .. 9 into 'critical' file ; order is not guaranteed
+        # of two Receivers. soft alerts with level 0 .. 4 are considered
+        # so Receiver1 forwards through its ForwardSink 0 .. 4 Alerts as soft and
+        # 5 .. 9 level Alerts through 'critical'. order is not guaranteed
         # critical Alerts
         fileConfig = ConfigSection("file")
         fileConfig.outputfile = self.outputfileCritical
         sink = FileSink(fileConfig)
-        expectedLevels = 2 * range(6, 10) # 6 .. 9, 6 .. 9
+        expectedLevels = range(5, 10) # that is 5 .. 9
         loadAlerts = sink.load()
         self.assertEqual(len(loadAlerts), len(expectedLevels))
         d = dict(very = "interesting")        
@@ -161,7 +159,7 @@ class ForwardSinkTest(unittest.TestCase):
         fileConfig = ConfigSection("file")
         fileConfig.outputfile = self.outputfileSoft
         sink = FileSink(fileConfig)
-        expectedLevels = range(1, 10) + range(6, 10)  # 1 .. 9, 6 .. 9
+        expectedLevels = range(0, 5) # that is 0 .. 4
         loadAlerts = sink.load()
         self.assertEqual(len(loadAlerts), len(expectedLevels))
         for a in loadAlerts:

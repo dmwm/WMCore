@@ -51,10 +51,10 @@ class CouchTest(unittest.TestCase):
         # test failing during set up
         poller = CouchDbSizePoller(config.AlertGenerator.couchDbSizePoller, self.generator)
         poller._query = "nonsense query"
-        poller._dbDirectory = poller._getDbDir()
+        # this will fail on the above query
+        self.assertRaises(Exception, poller._getDbDir)
         poller.check()
-        self.assertEquals(poller._dbDirectory, None)        
-
+                
         
     def testAlertGeneratorCouchDbSizePollerSoftThreshold(self):
         self.config.AlertGenerator.couchDbSizePoller.couchURL = os.getenv("COUCHURL", None)
@@ -121,14 +121,10 @@ class CouchTest(unittest.TestCase):
         # assuming CouchDb server is running, check that 1 sensible measurement value was collected
         self.assertEqual(len(poller._measurements), 1)
         self.assertTrue(isinstance(poller._measurements[0], types.FloatType))
-        
         # test handling of a non-existing process
         CouchPoller._getProcessPID = lambda inst: 1212121212
-        poller = CouchPoller(self.config.AlertGenerator.bogusCouchPoller, self.generator)
-        # polling should not even happen so don't have to define sample function
-        poller.check()
-        self.assertEqual(poller._measurements, None)
-        self.assertEqual(poller._dbProcessDetail, None)
+        self.assertRaises(Exception, CouchPoller,
+                          self.config.AlertGenerator.bogusCouchPoller, self.generator)
         
         
     def testAlertGeneratorCouchCPUPollerSoftThreshold(self):

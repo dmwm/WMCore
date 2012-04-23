@@ -9,7 +9,6 @@ import logging
 import types
 import time
 
-from WMCore.Alerts.ZMQ.Sender import Sender
 from WMCore.Database.CMSCouch import CouchServer
 from WMComponent.AlertGenerator.Pollers.Base import PeriodPoller
 from WMComponent.AlertGenerator.Pollers.Base import Measurements
@@ -20,11 +19,6 @@ from WMComponent.AlertGenerator.Pollers.System import DirectorySizePoller
 from WMComponent.AlertGenerator.Pollers.System import ProcessCPUPoller
 from WMComponent.AlertGenerator.Pollers.System import ProcessMemoryPoller
 
-
-# TODO
-# sending initialisation alerts shall be factored out above, likely into
-# BaseSender - with proper comment - such Sender is made and used from the
-# initialisation process unlike the other Sender from polling process
 
 
 class CouchPoller(PeriodPoller):
@@ -64,7 +58,7 @@ class CouchPoller(PeriodPoller):
         try:
             couchURL = getattr(self.config, "couchURL", None)
             if not couchURL:
-                raise Exception("Configuration value 'couchURL' missing, can't connect to Couch.")
+                raise Exception("Configuration value 'couchURL' missing, can't connect to CouchDB.")
             couch = CouchServer(couchURL)
             r = couch.makeRequest("/_config")
             logFile = r["log"]["file"]
@@ -92,23 +86,8 @@ class CouchPoller(PeriodPoller):
         create ProcessDetail and Measurements instances.
         
         """ 
-        try:
-            pid = self._getProcessPID()
-            self._dbProcessDetail = ProcessDetail(pid, "CouchDB")
-        except Exception, ex:
-            msg = ("%s: polling not possible, reason: %s" % (self.__class__.__name__, ex))
-            logging.error(msg)
-            # send one-off set up alert, instantiate ad-hoc alert Sender
-            sender = Sender(self.generator.config.Alert.address,
-                             self.__class__.__name__,
-                             self.generator.config.Alert.controlAddr)
-            a = Alert(**self.preAlert)
-            a["Source"] = self.__class__.__name__
-            a["Timestamp"] = time.time()
-            a["Details"] = dict(msg = msg)                    
-            a["Level"] = 10
-            sender(a)
-            return
+        pid = self._getProcessPID()
+        self._dbProcessDetail = ProcessDetail(pid, "CouchDB")
         numOfMeasurements = round(self.config.period / self.config.pollInterval, 0)
         self._measurements = Measurements(numOfMeasurements)
                 
@@ -138,29 +117,18 @@ class CouchDbSizePoller(DirectorySizePoller):
         
     def _getDbDir(self):
         """
-        Connect to CouchDb instance and query its database directory name.
+        Connect to CouchDB instance and query its database directory name.
         
         """
+        couchURL = getattr(self.config, "couchURL", None)
         try:
-            couchURL = getattr(self.config, "couchURL", None)
             couch = CouchServer(couchURL)
             r = couch.makeRequest(self._query)
             dataDir = r["couchdb"]["database_dir"]
         except Exception, ex:
-            msg = ("%s: could not find out database directory, reason: %s" %
-                   (self.__class__.__name__, ex))
-            logging.error(msg)            
-            # send one-off set up alert, instantiate ad-hoc alert Sender
-            sender = Sender(self.generator.config.Alert.address,
-                             self.__class__.__name__,
-                             self.generator.config.Alert.controlAddr)
-            a = Alert(**self.preAlert)
-            a["Source"] = self.__class__.__name__
-            a["Timestamp"] = time.time()
-            a["Details"] = dict(msg = msg)                    
-            a["Level"] = 10
-            sender(a)
-            dataDir = None
+            msg = ("%s: could not find out database directory, reason: %s " 
+                   "couchURL: '%s'" % (self.__class__.__name__, ex, couchURL))
+            raise Exception(msg)
         return dataDir
         
     
@@ -217,7 +185,6 @@ class CouchErrorsPoller(BasePoller):
         
         """
         BasePoller.__init__(self, config, generator)        
-        self._myName = self.__class__.__name__
         self.couch = None
         self._query = "/_stats" # couch query to retrieve statistics
         self._setUp()
@@ -232,13 +199,14 @@ class CouchErrorsPoller(BasePoller):
         try:
             couchURL = getattr(self.config, "couchURL", None)
             if not couchURL:
-                raise Exception("Configuration value 'couchURL' missing, can't connect to Couch.")            
+                raise Exception("Configuration value 'couchURL' missing, can't connect to CouchDB.")            
             self.couch = CouchServer(couchURL)
             # retrieves result which is not used during this set up
             r = self.couch.makeRequest(self._query)
         except Exception, ex:
-            logging.error("%s: could not connect to CouchDB, reason: %s" %
-                          (self._myName, ex))
+            msg = ("%s: could not connect to CouchDB, reason: %s" %
+                   (self.__class__.__name__, ex))
+            raise Exception(msg)
         # observables shall be list-like integers
         if not isinstance(self.config.observables, (types.ListType, types.TupleType)):
             self.config.observables = tuple([self.config.observables])
@@ -279,13 +247,13 @@ class CouchErrorsPoller(BasePoller):
                                        occurrences = occurrences, 
                                        threshold = threshold)
                         a = Alert(**self.preAlert)
-                        a["Source"] = self._myName
+                        a["Source"] = self.__class__.__name__
                         a["Timestamp"] = time.time()
                         a["Details"] = details
                         a["Level"] = level
-                        # #2238 AlertGenerator test can take 1 hour+ (and fail)
-                        logging.debug(a)
+                        logging.debug("Sending an alert (%s): %s" % (self.__class__.__name__, a))
                         self.sender(a)
                         break # send only one alert, critical threshold tested first
-            m = "%s: checked code:%s current occurrences:%s" % (self._myName, code, occurrences)
+            m = ("%s: checked code:%s current occurrences:%s" %
+                 (self.__class__.__name__, code, occurrences))
             logging.debug(m)

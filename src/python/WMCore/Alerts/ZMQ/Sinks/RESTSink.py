@@ -31,6 +31,7 @@ class RESTSink(object):
         #         in case of CouchDB, the resource name is the database name
         #         http://servername:port/databaseName
         self.config = config
+        logging.info("Instantiating ...")
         
         # the class currently relies only on 1 REST server possibility - the
         # CouchDB server. as explained above, .database will be replaced by
@@ -45,11 +46,13 @@ class RESTSink(object):
         #     general REST server
         server = CouchServer(url)
         databases = server.listDatabases()
+        # there needs to be this database created upfront and also
+        # couchapp associated with it installed, if it's there, fail
         if dbName not in databases:
-            raise Exception("%s: REST URI: %s, %s does not exist." %
-                            (self.__class__.__name__, self.config.uri, dbName))
+            raise Exception("REST URI: %s (DB name: %s) does not exist." %
+                            (self.config.uri, dbName))
         self._database = Database(dbName, url)
-        logging.debug("%s initialized." % self.__class__.__name__)
+        logging.info("Initialized.")
                 
         
     def send(self, alerts):
@@ -65,6 +68,5 @@ class RESTSink(object):
         # the .commit() would be called automatically if size is exceeded
         # 1st option:
         retVal = self._database.commit()
-        m = "%s stored alerts, retVals: %s" % (self.__class__.__name__, retVal)
-        logging.debug(m)
+        logging.debug("Stored %s alerts to REST resource, retVals: %s" % (len(alerts), retVal))
         return retVal

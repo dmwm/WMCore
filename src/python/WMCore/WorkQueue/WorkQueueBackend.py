@@ -154,6 +154,7 @@ class WorkQueueBackend(object):
         """
         kwargs.update({'WMSpec' : spec,
                        'RequestName' : spec.name(),
+                       'EndPolicy' : spec.endPolicyParameters()
                       })
         unit = CouchWorkQueueElement(self.inbox, elementParams = kwargs)
         unit.id = spec.name()

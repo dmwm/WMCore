@@ -9,7 +9,7 @@ import unittest
 import os
 
 from WMCore.BossAir.Plugins.GLiteLIParser import LoggingInfoParser
-
+from WMCore.WMBase import getTestBase
 
 class LoggingInfoParserTest(unittest.TestCase):
     def testParseFile(self):
@@ -29,10 +29,11 @@ class LoggingInfoParserTest(unittest.TestCase):
         lip = LoggingInfoParser()
         i = 0
         for exp in expected:
-            fileName = os.path.join(os.path.dirname(__file__), "../../../data/loggingInfo/loggingInfo.%s.log" % i)
+            fileName = os.path.join(getTestBase(), "WMCore_t/BossAir_t/loggingInfo/loggingInfo.%s.log" % i)
             i += 1
             res = lip.parseFile(fileName)
             self.assertEqual(res, exp)
 
 if __name__ == '__main__':
     unittest.main()
+

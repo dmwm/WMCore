@@ -1,3 +1,17 @@
+0.8.37 to 0.8.38:
+  - Add endpolicy info to workqueue inbox element
+  - Only abort cancel request if agent hasn't deleted elements
+  - reverting bogus hunk. fixes #3621
+  - Fix typo on workqueue view jobInjectionStatus.
+  - Fix bug that stopped messages being posted to a failed request
+  - Fix a GLiteLIParser regex. Fixes #3562
+  - fix Tier1PromptReco_t.py test. fixes #3594
+  - Pull the requestor DN from the cherrpy headers.  Fixes #3618.
+  - PromptSkimming fixups.  Fixes #3569.
+  - Add support for running PromptSkims and files reconstructed at the T1.  Fixes #3594.
+  - Allow ReqMgr admins to setup priorities.  Fixes #3611.
+  - Make it possible to retrieve a mapping of dataset to fileset id from the WMBSHelper class.  Fixes #3607.
+
 0.8.36 to 0.8.37:
   - Improved support for the paused status.  Fixes #3597.
   - Improvements to error handling and logging in the BossAir LSF plugin.  Fixes #3187 and #3587.

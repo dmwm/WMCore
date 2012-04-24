@@ -8,7 +8,7 @@ body
 
 td, th 
 {	
-	font-family: Verdana, Arial, Helvetica, sans-serif;	
+	font-family: Verdana, Arial, Helvetica, sans-serif;
 }
 
 
@@ -52,8 +52,11 @@ tr.odd
 {
 	text-align: center;
 	font-size: 90%;
-	margin: 2px;	
+	margin: 2px;
+    border-spacing: 0;
+	padding: 5px;
 }
+
 
 a, a:visited
 {

@@ -25,8 +25,7 @@ var alertsView =
         // create by HostName selection filter
         var input = {"title": "Filter by HostName",
         		     "selectorId": "hostnameselectid",
-        		     "handler": alertsView.bySelectionUpdate,
-        		     "mainElemId": mainElemId};        		  
+        		     "handler": alertsView.bySelectionUpdate};        		  
         var table = alertsView.setUpSelectionFilter(input);
         document.getElementById(mainElemId).appendChild(table);
         
@@ -35,8 +34,7 @@ var alertsView =
         // create by Source selection filter
         var input = {"title": "Filter by Source",
 		   		     "selectorId": "sourceselectid",
-		   		     "handler": alertsView.bySelectionUpdate,
-		   		     "mainElemId": mainElemId};        	
+		   		     "handler": alertsView.bySelectionUpdate};        	
         var table = alertsView.setUpSelectionFilter(input);
         document.getElementById(mainElemId).appendChild(table);
        
@@ -69,7 +67,7 @@ var alertsView =
     	var option = document.createElement("option");
     	option.text = "unspecified";
     	selector.add(option, null);
-    	selector.onchange = function() { input["handler"](input["mainElemId"]); };
+    	selector.onchange = function() { input["handler"](); };
         row.insertCell(1).appendChild(selector);
         return table;
     }, // setUpHostNameSelectionTable()
@@ -79,8 +77,7 @@ var alertsView =
     {
 	    var table = document.createElement("table");
 	    table.id = "alertsviewtable";
-	    table.rules = "cols"; // doesn't work when applied in style
-	    table.cellPadding = "8px"; // doesn't work when applied in style
+	    table.cellPadding = "5px"; // doesn't work when applied in style
 	    var header = table.createTHead();
 	    // 0 - Timestamp, 1 - HostName, 2 - AgentName, 3 - Component, 4 - Source 
 	    var hRow = header.insertRow(0);
@@ -89,7 +86,7 @@ var alertsView =
 	    hRow.insertCell(1).innerHTML = "Host Name";
 	    hRow.insertCell(2).innerHTML = "Agent Name";
 	    hRow.insertCell(3).innerHTML = "Component";
-	    hRow.insertCell(4).innerHTML = "Source";	    
+	    hRow.insertCell(4).innerHTML = "Source";
 	    return table;
     }, // setUpAlertsTable()
     
@@ -101,7 +98,7 @@ var alertsView =
      * seleciton by both HostName and Source together corresponds to byhostnamebysource view
      * content of the drop-down menus is not modified here
      */
-    bySelectionUpdate: function(mainElemId)
+    bySelectionUpdate: function()
     {
     	function getData(selectorId)
     	{
@@ -147,12 +144,13 @@ var alertsView =
 
     	// remove current stuff from the table
     	// removing by row shall potentially work, but results are chaotic and disfunctional
-    	// able.deleteRow(i);	
+    	// table.deleteRow(i);	
     	// replacing the whole element works ok
-    	table = document.getElementById("alertsviewtable");
-    	document.getElementById(mainElemId).removeChild(table);
+    	var alertsDiv = document.getElementById("alertscontent");
+    	var table = document.getElementById("alertsviewtable");
+    	alertsDiv.removeChild(table);
     	var newTable = alertsView.setUpAlertsTable();
-    	document.getElementById(mainElemId).appendChild(newTable);
+    	alertsDiv.appendChild(newTable);
         utils.makeHttpRequest(url, alertsView.processAlertsData, data, options);    	    	
     }, // bySelectionUpdate()
         

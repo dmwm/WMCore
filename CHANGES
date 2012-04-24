@@ -1,5 +1,7 @@
+0.8.38 to 0.8.38a:
+  - DOM fix for Alert Visualization. Fixes #3634
+
 0.8.38 to 0.8.38:
-  - DOM fix for alertvisualization fixes #3634
   - Include the job name in the JobSubmitter job cache.  Fixes #3630.
   - Fix problems with the Agent harness with respect to logging levels.  Review all logging messages the alerts framework produces.  Fixes #3297.
   - Escape the period in the tarball exclusion list for making sandboxes.  Fixes #3625.

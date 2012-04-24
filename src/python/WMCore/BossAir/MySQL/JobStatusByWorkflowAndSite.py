@@ -30,7 +30,7 @@ class JobStatusByWorkflowAndSite(DBFormatter):
                INNER JOIN wmbs_workflow wwf ON wwf.id = ws.workflow
                LEFT OUTER JOIN wmbs_location wl ON wl.id = wj.location
                WHERE rj.status = :complete
-               GROUP BY wwf.name, plugin, st.name, wl.site_name
+               GROUP BY wwf.name, plugin, st.name, wl.cms_name, wu.cert_dn
     """
     #TODO this needs to move to BasePlugin replacing the global state: check with Matt
     MONITOR_STATE_MAP = {'Pending': 'submitted_pending', 

@@ -52,7 +52,8 @@ WMStats.CampaignView = (function() {
             { "mDataProp": "announced", "sTitle": "announced",
                            "sDefaultContent": 0},
             { "mDataProp": "aborted", "sTitle": "aborted", "sDefaultContent": 0},
-            { "mDataProp": "rejected", "sTitle": "rejected", "sDefaultContent": 0}
+            { "mDataProp": "rejected", "sTitle": "rejected", "sDefaultContent": 0},
+            { "mDataProp": "deleted", "sTitle": "deleted", "sDefaultContent": 0}
         ]
     }
     

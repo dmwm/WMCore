@@ -57,7 +57,7 @@ class CleanCouchPoller(BaseWorkerThread):
             
             #TODO: define what is deletable status. Also add the code to delet summary document, 
             # request summary and job summary
-            deletableWorkflows = self.centralCouchDBReader.workflowsByStatus(["completed", "announced"])
+            deletableWorkflows = self.centralCouchDBReader.workflowsByStatus(["announced"])
             
             logging.info("Ready to delete %s" % deletableWorkflows)     
             for workflowName in deletableWorkflows:

@@ -62,24 +62,28 @@ WMStats.RequestView = (function() {
                            "sDefaultContent": ""},
             { "mDataProp": "site_white_list", "sTitle": "site white list",
                            "sDefaultContent": ""},
-            { "mDataProp": "priority", "sTitle": "priority"},
-            { "sTitle": "queued", 
+            { "mDataProp": "priority", "sTitle": "priority", "sDefaultContent": 0},
+            { "sDefaultContent": 0,
+              "sTitle": "queued", 
               "fnRender": function ( o, val ) {
                             return (_get(o.aData, "status.queued.first", 0) + 
                                     _get(o.aData, "status.queued.retry", 0));
                           }
             },
-            { "sTitle": "pending", 
+            { "sDefaultContent": 0,
+              "sTitle": "pending", 
               "fnRender": function ( o, val ) {
                             return _get(o.aData, "status.submitted.pending", 0);
                           }
             },
-            { "sTitle": "running", 
+            { "sDefaultContent": 0,
+              "sTitle": "running", 
               "fnRender": function ( o, val ) {
                             return _get(o.aData, "status.submitted.running", 0);
                           }
             },
-            { "sTitle": "failure",
+            { "sDefaultContent": 0,
+              "sTitle": "failure",
               "fnRender": function ( o, val ) {
                             return (_get(o.aData, "status.failure.create", 0) + 
                                     _get(o.aData, "status.failure.submit", 0) + 
@@ -87,30 +91,36 @@ WMStats.RequestView = (function() {
                           }
             },
             
-            { "sTitle": "canceled", 
+            { "sDefaultContent": 0,
+              "sTitle": "canceled", 
               "fnRender": function ( o, val ) {
                             return _get(o.aData, "status.canceled", 0);
                           }},
-            { "sTitle": "success",
+            { "sDefaultContent": 0,
+              "sTitle": "success",
               "fnRender": function ( o, val ) {
                             return _get(o.aData, "status.success", 0);
                           }},
-            { "sTitle": "cool off", 
+            { "sDefaultContent": 0,
+              "sTitle": "cool off", 
               "fnRender": function ( o, val ) {
                             return _get(o.aData, "status.cooloff", 0);
                           }
             },
-            { "sTitle": "pre-cooloff",
+            { "sDefaultContent": 0,
+              "sTitle": "pre-cooloff",
               "fnRender": function ( o, val ) {
                             return (_get(o.aData, "status.submitted.retry", 0) + 
                                     _get(o.aData, "status.queued.retry", 0));
                           }
             },
-            { "sTitle": "queue injection",  
+            { "sDefaultContent": 0,
+              "sTitle": "queue injection",  
               "fnRender": function ( o, val ) {
                               return (_get(o.aData, "status.inWMBS",  0) / 
                                       _get(o.aData, 'total_jobs', 1));
-                          }},
+                        }
+            }
             
             //TODO add more data (consult dataops)
         ]

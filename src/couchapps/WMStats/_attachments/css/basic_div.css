@@ -13,7 +13,7 @@ div.module {
 }
 
 div.module div.caption {
-  background: black url('module.caption.backg.png');
+  background: black url('../images/module.caption.backg.png');
   border: 1px solid black;
   padding: 0 8px;
   height: 24px;
@@ -22,7 +22,7 @@ div.module div.caption {
 }
 
 div.module.rolledup div.caption {
-  background: black url('module.caption.backg.rolledup.png');
+  background: black url('../images/module.caption.backg.rolledup.png');
 }
 
 div.module div.caption span {

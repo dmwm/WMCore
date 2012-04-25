@@ -27,6 +27,9 @@ WMStats.Table = function(config) {
     
     function _create(selector, filterConfig) {
         var oTable = $(selector).dataTable(_tableConfig)
+        if ( oTable.length > 0 ) {
+                oTable.fnAdjustColumnSizing();
+        }
         if (filterConfig) {
             oTable.append(_footer());
             return oTable.columnFilter(filterConfig);

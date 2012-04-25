@@ -61,7 +61,16 @@ WMStats.RequestView = (function() {
             { "mDataProp": "inputdataset", "sTitle": "inputdataset",
                            "sDefaultContent": ""},
             { "mDataProp": "site_white_list", "sTitle": "site white list",
-                           "sDefaultContent": ""},
+                           "sDefaultContent": "",
+              "fnRender": function ( o, val ) {
+                            if (o.aData.site_white_list.length > 1) {
+                                return "mulitple sites";
+                            } else {
+                                return o.aData.site_white_list[0];
+                            }
+                          },
+              "bUseRendered": false,
+            },
             { "mDataProp": "priority", "sTitle": "priority", "sDefaultContent": 0},
             { "sDefaultContent": 0,
               "sTitle": "queued", 
@@ -129,6 +138,7 @@ WMStats.RequestView = (function() {
     var filterConfig = {
         "aoColumns": [
             {type: "text", bRegex: true, bSmart: true},               
+            {type: "text", bRegex: true, bSmart: true},
             {type: "text", bRegex: true, bSmart: true},
             {type: "text", bRegex: true, bSmart: true},
             {type: "text", bRegex: true, bSmart: true},

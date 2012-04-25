@@ -41,6 +41,7 @@ def getTestArguments():
         
         "CouchURL": os.environ.get("COUCHURL", None),
         "CouchDBName": "wmagent_configcachescf",
+        "PileupConfig": {"cosmics": "/some/cosmics/dataset"},
         }
 
     return arguments
@@ -241,8 +242,6 @@ class ReDigiWorkloadFactory(StdBase):
                                               splitAlgo = self.procJobSplitAlgo,
                                               splitArgs = self.procJobSplitArgs, stepType = "CMSSW")
         self.addLogCollectTask(stepOneTask)
-        if self.pileupConfig:
-            self.setupPileup(stepOneTask, self.pileupConfig)
 
         if (self.keepStepOneOutput == True or self.keepStepOneOutput == "True") \
                and (self.keepStepTwoOutput == True or self.keepStepTwoOutput == "True"):
@@ -256,6 +255,9 @@ class ReDigiWorkloadFactory(StdBase):
         else:
             # Steps one and two are dependent, step three is chained.
             pass
+
+        if self.pileupConfig:
+            self.setupPileup(stepOneTask, self.pileupConfig)
 
         return workload
 

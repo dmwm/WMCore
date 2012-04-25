@@ -54,7 +54,7 @@ class SenderTest(unittest.TestCase):
         self.receiver.startReceiver() # non blocking call
         
         # instantiate sender and send ...
-        s = Sender(self.addr, "Sender_t", self.control)
+        s = Sender(self.addr, self.control, "Sender_t")
         # nothing is registered up to now with the Receiver
         self.assertEqual(len(self.receiver._receiver._registSenders), 0)
         s.register()
@@ -84,14 +84,14 @@ class SenderTest(unittest.TestCase):
         and test that the Sender is not blocking due to undelivered
         messages since no Receiver is available.
         This test shall wait (between iterations) only delay specified
-        in the Sender (was hanging indefinitely due to -1 default value).
+        in the Sender.
         
         """
         iterations = 2
         nAlerts = 3
         for i in range(iterations):
             # instantiate sender and send ...
-            s = Sender(self.addr, "Sender_t", self.control)
+            s = Sender(self.addr, self.control, "Sender_t")
             s.register()
             # send some alerts        
             for i in range(0, nAlerts):

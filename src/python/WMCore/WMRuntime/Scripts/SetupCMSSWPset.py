@@ -436,6 +436,8 @@ class SetupCMSSWPset(ScriptInterface):
                 # there should be either "input" or "secsource" attributes
                 # and both "MixingModule", "DataMixingModule" can have both
                 inputTypeAttrib = getattr(m, "input", None) or getattr(m, "secsource", None)
+                if not inputTypeAttrib:
+                    continue
                 inputTypeAttrib.fileNames = cms.untracked.vstring()
                 if pileupType == requestedPileupType:
                     # not all blocks may be stored on the local SE, loop over

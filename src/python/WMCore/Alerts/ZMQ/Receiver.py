@@ -59,17 +59,28 @@ class ReceiverLogic(object):
         control - control channel
         handler - instance of the alert Processor
         
-        """        
-        context = zmq.Context()
-        # receiver pulls in alerts to pass to a handler
-        self._workChannel = context.socket(zmq.PULL)
-        logging.debug("Receiver - going to bind (target): %s" % target)
-        self._workChannel.bind(target)
-        # control messages
-        self._contChannel = context.socket(zmq.SUB)
-        logging.debug("Receiver - going to bind (control): %s" % control)
-        self._contChannel.bind(control)
-        self._contChannel.setsockopt(zmq.SUBSCRIBE, "")
+        """
+        logging.info("Instantiating %s ..." % self.__class__.__name__)
+        try:
+            context = zmq.Context()
+            # receiver pulls in alerts to pass to a handler
+            self._workChannel = context.socket(zmq.PULL)
+            logging.info("Receiver - going to bind (alerts target): %s" % target)
+            self._workChannel.bind(target)
+        except Exception, ex:
+            logging.error("Failed to bind (alerts target) %s, reason: %s" % (target, ex))
+            raise
+
+        try:
+            # control messages
+            self._contChannel = context.socket(zmq.SUB)
+            logging.info("Receiver - going to bind (alerts control): %s" % control)
+            self._contChannel.bind(control)
+            self._contChannel.setsockopt(zmq.SUBSCRIBE, "")
+        except Exception, ex:
+            logging.error("Failed to bind (control target) %s, reason: %s" % (control, ex))
+            raise
+        
         # address of the control channel
         self._controlAddr = control
         # handler to be called when alert data is passed in (callable)
@@ -82,6 +93,7 @@ class ReceiverLogic(object):
         self._doShutdown = False
         # flag to check when instantiating Receiver to check readiness
         self._isReady = False
+        logging.info("Initialized %s." % self.__class__.__name__)
         
         
     def _processControlData(self, data):
@@ -92,6 +104,7 @@ class ReceiverLogic(object):
         """
         # direct shutdown command, shutdown the receiver -> terminate start()
         if data.has_key(ShutdownMsg.key):
+            logging.warn("Received Shutdown message, setting flag ...")
             self._doShutdown = True
         # new sender registers itself
         if data.has_key(RegisterMsg.key):
@@ -134,9 +147,10 @@ class ReceiverLogic(object):
         poller.register(self._contChannel, zmq.POLLIN)
         poller.register(self._workChannel, zmq.POLLIN)
         self._isReady = True
-        logging.info("Receiver ready to accept messages ...")
+        logging.info("Ready to accept messages (%s) ..." % self.__class__.__name__) 
         # loop and accept messages from both channels, acting accordingly
         while True:
+            logging.debug("Waiting for messages ...")
             timeout = None
             if self._doShutdown:
                 timeout = self.TIMEOUT_AFTER_SHUTDOWN * 1000 # takes milliseconds
@@ -148,6 +162,7 @@ class ReceiverLogic(object):
             if socks.get(self._workChannel) == zmq.POLLIN:
                 # alert data (JSON) are sent to the handler
                 alert = self._workChannel.recv_json()
+                logging.debug("Received Alert, processing ...")
                 self._workMsgHandler(alert)
             # check the control channel
             if socks.get(self._contChannel) == zmq.POLLIN:
@@ -169,6 +184,7 @@ class ReceiverLogic(object):
         terminate the process.
         
         """
+        logging.info("Shutting down %s ..." % self.__class__.__name__)
         # send itself Shutdown message to shutdown
         context = zmq.Context()
         # set up control channel
@@ -177,12 +193,14 @@ class ReceiverLogic(object):
         contChann.send_json(ShutdownMsg())
         # wait until the Receiver background process shuts
         count = 0
+        logging.info("Waiting for %s to finish ..." % self.__class__.__name__)
         while self._isReady:
             time.sleep(0.1)
             count += 1
             if count > self.TIMEOUT_THREAD_FINISH * 10: # iterating by 10ths of a second
                 logging.warn("Receiver background process seems not shut yet, continue anyway ...")
-                break  
+                break
+        logging.info("Shutdown finished %s." % self.__class__.__name__)
                 
         
 
@@ -191,9 +209,11 @@ class ThreadReceiver(Thread):
     Wrapper thread for running Receiver instance.
     
     """
-    def __init__(self, target, handler, control = "tcp://127.0.0.1:5559"):
+    def __init__(self, target, handler, control = None):
+        logging.info("Instantiating %s..." % self.__class__.__name__)
         Thread.__init__(self)
         self._receiver = ReceiverLogic(target, handler, control)
+        logging.info("Initialized %s." % self.__class__.__name__)
         
     
     def run(self):
@@ -202,6 +222,7 @@ class ThreadReceiver(Thread):
         conditions are set.
         
         """
+        logging.info("Started %s." % self.__class__.__name__)
         self._receiver.start()
         
         
@@ -210,10 +231,12 @@ class ThreadReceiver(Thread):
         Can't use start() method name (Thread class inheritance).
         
         """
-        self.start()        
+        logging.info("Starting %s ..." % self.__class__.__name__)
+        self.start()
         # wait until Receiver instance is fully started and ready
         while not self._receiver.isReady():
-            logging.debug("ReceiverThread waiting for Receiver to start up ...")
+            logging.debug("Waiting for %s to start up ..." %
+                          self.__class__.__name__)
             time.sleep(0.1)
 
 
@@ -226,4 +249,4 @@ class ThreadReceiver(Thread):
         
         
         
-Receiver = ThreadReceiver        
+Receiver = ThreadReceiver

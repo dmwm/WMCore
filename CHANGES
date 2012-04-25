@@ -1,3 +1,25 @@
+0.8.38a to 0.8.41:
+  - Fix several problems found during TaskChain commissioning (#3598):   
+     o Make dependent tasks run over the output of the merge task instead     
+       of the processing task.   
+     o Include TaskChain task parameters in the schema section of the workload   
+     o Don't add more events to a job than there are in the input file.
+  - For chained workflows with pileup, configure each chained step to use the pileup 
+    dataset.  Don't fail if there isn't a pileup section in the config.  Fixes #3628.
+  - fixing retrymanager unittests. Fixes #3613
+  - Have the WorkQueue guard against negative slice sizes.
+
+0.8.38 to 0.8.38a:
+  - DOM fix for Alert Visualization. Fixes #3634
+
+0.8.38 to 0.8.38:
+  - Include the job name in the JobSubmitter job cache.  Fixes #3630.
+  - Fix problems with the Agent harness with respect to logging levels.  Review all logging messages the alerts framework produces.  Fixes #3297.
+  - Escape the period in the tarball exclusion list for making sandboxes.  Fixes #3625.
+  - Fix reading in the pause count in the Paused RetryManager algo.  Fixes #3613.
+  - Reimplementation of the Alerts couchapp.  Fixes #1639.
+  - Added missing loggingInfo test file, using getTestBase to locate the data directory.
+
 0.8.37 to 0.8.38:
   - Add endpolicy info to workqueue inbox element
   - Only abort cancel request if agent hasn't deleted elements

@@ -176,6 +176,7 @@ class BlockTestCase(unittest.TestCase):
         splitArgs = dict(SliceType = 'NumberOfLumis', SliceSize = 1)
 
         Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload.setStartPolicy('Block', **splitArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
@@ -197,6 +198,7 @@ class BlockTestCase(unittest.TestCase):
         splitArgs = dict(SliceType = 'NumberOfLumis', SliceSize = 1)
 
         Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload.setStartPolicy('Block', **splitArgs)
         Tier1ReRecoWorkload.setRunWhitelist([2, 3])
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,

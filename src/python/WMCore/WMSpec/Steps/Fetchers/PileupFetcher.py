@@ -88,10 +88,9 @@ class PileupFetcher(FetcherInterface):
         # this should have been set in CMSSWStepHelper along with
         # the pileup configuration
         args["url"] = helper.data.dbsUrl
-        args["version"] = "DBS_2_0_9"
-        args["mode"] = "GET"
-        from DBSAPI.dbsApi import DbsApi        
-        dbsApi = DbsApi(args)
+        
+        from WMCore.Services.DBS.DBSReader import DBSReader
+        dbsApi = DBSReader(args).dbs
 
         configDict = self._queryDbsAndGetPileupConfig(helper, dbsApi)
         

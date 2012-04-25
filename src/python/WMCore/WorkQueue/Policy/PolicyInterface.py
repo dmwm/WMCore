@@ -3,6 +3,8 @@
 WorkQueue PolicyInterface
 
 """
+from copy import deepcopy
+
 __all__ = []
 
 
@@ -10,4 +12,4 @@ __all__ = []
 class PolicyInterface:
     """Interface for policies"""
     def __init__(self, **args):
-        self.args = args
+        self.args = deepcopy(args)

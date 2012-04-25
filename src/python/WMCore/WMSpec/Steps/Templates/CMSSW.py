@@ -255,7 +255,7 @@ class CMSSWStepHelper(CoreHelper):
         (user input) and here is available as a dict.
 
         """
-        # so, e.g. this "cosmics": {"/some/cosmics/dataset", "minbias": "/some/minbias/dataset"}
+        # so, e.g. this {"cosmics": "/some/cosmics/dataset", "minbias": "/some/minbias/dataset"}
         # would translate into
         # self.data.pileup.comics.dataset = "/some/cosmics/dataset"
         # self.data.pileup.minbias.dataset = "/some/minbias/dataset"

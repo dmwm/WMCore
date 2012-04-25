@@ -527,6 +527,10 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
 
+        workload = self.loadWorkload(requestName)
+        self.assertEqual(workload.data.request.schema.Task1.SplittingArguments,
+                         {'events_per_job': 250})
+
         return
 
 

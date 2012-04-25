@@ -71,7 +71,25 @@ def installWorkQueueCouchApp(couchUrl, couchDBName):
         installCouchApp(couchUrl, couchDBName, "WorkQueue", basePath = os.path.dirname(tempDir))
     finally:
         shutil.rmtree(tempDir, ignore_errors = True)
-
+        
+def createSymLinkWMStatsExternal():
+    """WMStats has to install jquery libraries to couchapp - handle this here"""
+    jquery = os.environ.get('JQUERY_ROOT', '')
+    jquery_ui = os.environ.get('JQUERY_UI_ROOT', '')
+    jquery_datatables = os.environ.get('JQUERY_DATATABLES_ROOT', '')
+    if not (jquery or jquery_ui or jquery_datatables):
+        raise RuntimeError, "Can't locate jquery jquery-ui jquery-datatables lib"
+    basePath = couchAppRoot('WMStats')
+    # make a temporary directory to create the couchapp structure
+    externalDir = os.path.join(basePath, 'WMStats', '_attachments', 'lib')
+    
+    for file in os.listdir(jquery):
+        os.symlink(os.path.join(jquery, file), os.path.join(externalDir, file))
+    for file in os.listdir(jquery_ui):
+        os.symlink(os.path.join(jquery_ui, file), os.path.join(externalDir, file))
+    for file in os.listdir(jquery_datatables):
+        os.symlink(os.path.join(jquery_datatables, file), os.path.join(externalDir, file))
+    
 def setupCron(couchUrl, couchDBName):
     """
     _setupCron_
@@ -333,6 +351,7 @@ if __name__ == "__main__":
 
     if hasattr(wmagentConfig, "reqmgr"):
         installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName, "ReqMgr")
+        createSymLinkWMStatsExternal()
         installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.wmstatDBName, "WMStats")
         if options.cron:
             setupCronCompaction(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName)

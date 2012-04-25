@@ -54,7 +54,7 @@ class PileupFetcher(FetcherInterface):
                 # iterate over and query each block to get list of files
                 for dbsBlockName in blockNames:
                     blockDict[dbsBlockName] = {"FileList": dbsReader.lfnsInBlock(dbsBlockName), 
-                                               "StorageElementNames": listFileBlockLocation(dbsBlockName)}
+                                               "StorageElementNames": dbsReader.listFileBlockLocation(dbsBlockName)}
             resultDict[pileupType] = blockDict
         return resultDict
     

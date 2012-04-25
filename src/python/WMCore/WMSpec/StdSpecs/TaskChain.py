@@ -157,6 +157,7 @@ def validateProcFirstTask(task):
 getTaskN = lambda args, tasknum: args.get("Task%s" % tasknum, None)
 isGenerator = lambda args: not args["Task1"].has_key("InputDataset")
 parentTaskName = lambda args: args.get("InputTask", None)
+parentTaskModule = lambda args: args.get("InputFromOutputModule", None)
 
 class TaskChainWorkloadFactory(StdBase):
     def __init__(self):
@@ -201,8 +202,11 @@ class TaskChainWorkloadFactory(StdBase):
             self.runBlacklist   = taskConf.get("RunBlacklist", [])
             self.runWhitelist   = taskConf.get("RunWhitelist", [])
 
-            
-            task = self.makeTask(taskConf, self.taskMapping.get(parent, None) )
+            parentTask = None
+            if self.mergeMapping.has_key(parent):
+                parentTask = self.mergeMapping[parent][parentTaskModule(taskConf)]
+                
+            task = self.makeTask(taskConf, parentTask)
             if i == 1:
                 #  //
                 # // First task will either be generator or processing
@@ -311,10 +315,10 @@ class TaskChainWorkloadFactory(StdBase):
             #  ToDo: if None, need to throw here
             inputTaskRef = self.taskMapping[inputTask]
             # ToDo: key check in self.taskMapping for inputTask & throw if missing
-            inpMod = taskConf['InputFromOutputModule']
-            mergeTaskForMod = self.mergeMapping[inputTask][inpMod]
+            mergeTaskForMod = self.mergeMapping[inputTask][taskConf['InputFromOutputModule']]
             inpStep = mergeTaskForMod.getStep("cmsRun1")
-            
+            inpMod = "Merged"            
+
         scenario = None
         scenarioFunc = None
         scenarioArgs = {}

@@ -355,7 +355,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                        loadedJob.get("priority", None),
                        frozenset(possibleLocations),
                        loadedJob.get("scramArch", None),
-                       loadedJob.get("swVersion", None))
+                       loadedJob.get("swVersion", None),
+                       loadedJob["name"])
             
             self.jobDataCache[workflowName][jobID] = jobInfo
 
@@ -568,7 +569,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'taskType': taskType,
                                'possibleSites': cachedJob[9],
                                'scramArch': cachedJob[10],
-                               'swVersion': cachedJob[11]}
+                               'swVersion': cachedJob[11],
+                               'name': cachedJob[12]}
 
                     # Add to jobsToSubmit
                     jobsToSubmit[package].append(jobDict)

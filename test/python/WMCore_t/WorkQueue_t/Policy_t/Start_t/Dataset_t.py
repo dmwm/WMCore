@@ -32,6 +32,7 @@ class DatasetTestCase(unittest.TestCase):
     def testTier1ReRecoWorkload(self):
         """Tier1 Re-reco workflow"""
         Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload.setStartPolicy('Dataset', **self.splitArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
@@ -73,6 +74,7 @@ class DatasetTestCase(unittest.TestCase):
     def testWhiteBlackLists(self):
         """Block/Run White/Black lists"""
         Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload.setStartPolicy('Dataset', **self.splitArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
@@ -84,6 +86,7 @@ class DatasetTestCase(unittest.TestCase):
         rerecoArgs2.update(rerecoArgs)
         blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
                                                      rerecoArgs2)
+        blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
@@ -94,6 +97,7 @@ class DatasetTestCase(unittest.TestCase):
         rerecoArgs2['BlockBlacklist'] = []
         blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
                                                      rerecoArgs2)
+        blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
@@ -104,6 +108,7 @@ class DatasetTestCase(unittest.TestCase):
         rerecoArgs2['BlockBlacklist'] = [dataset + '#1']
         blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
                                                      rerecoArgs2)
+        blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
@@ -114,6 +119,7 @@ class DatasetTestCase(unittest.TestCase):
         rerecoArgs3.update(rerecoArgs)
         blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
                                                      rerecoArgs3)
+        blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
@@ -124,6 +130,7 @@ class DatasetTestCase(unittest.TestCase):
         rerecoArgs3.update(rerecoArgs)
         blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
                                                      rerecoArgs3)
+        blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
@@ -135,6 +142,7 @@ class DatasetTestCase(unittest.TestCase):
         rerecoArgs3.update(rerecoArgs)
         blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
                                                     rerecoArgs3)
+        blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
@@ -146,6 +154,7 @@ class DatasetTestCase(unittest.TestCase):
         rerecoArgs3.update(rerecoArgs)
         blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
                                                      rerecoArgs3)
+        blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
@@ -171,6 +180,7 @@ class DatasetTestCase(unittest.TestCase):
         splitArgs = dict(SliceType = 'NumberOfLumis', SliceSize = 2)
 
         Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload.setStartPolicy('Dataset', **splitArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
@@ -189,9 +199,9 @@ class DatasetTestCase(unittest.TestCase):
         # a large number of lumis to ensure we get multiple runs
         Globals.GlobalParams.setNumOfLumisPerBlock(10)
         splitArgs = dict(SliceType = 'NumberOfLumis', SliceSize = 1)
-
         Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs)
         Tier1ReRecoWorkload.setRunWhitelist([2, 3])
+        Tier1ReRecoWorkload.setStartPolicy('Dataset', **splitArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
@@ -242,7 +252,7 @@ class DatasetTestCase(unittest.TestCase):
         with the parent flag and dataset.
         """
         parentProcSpec = rerecoWorkload('testParentProcessing', parentProcArgs)
-
+        parentProcSpec.setStartPolicy('Dataset', **self.splitArgs)
         inputDataset = getFirstTask(parentProcSpec).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,

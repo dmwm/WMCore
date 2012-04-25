@@ -120,7 +120,16 @@ def loadRequestSchema(workload, requestSchema):
         try:
             setattr(schema, key, value)
         except Exception, ex:
-            pass
+            # Attach TaskChain tasks
+            if type(value) == dict and requestSchema['RequestType'] == 'TaskChain' and 'Task' in key:
+                newSec = schema.section_(key)
+                for k, v in requestSchema[key].iteritems():
+                    try:
+                        setattr(newSec, k, v)
+                    except Exception, ex:
+                        pass
+            else:
+                pass
     schema.timeStamp = int(time.time())
     schema = workload.data.request.schema
     

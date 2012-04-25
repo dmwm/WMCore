@@ -739,8 +739,6 @@ class WorkQueue(WorkQueueBase):
             if not policyName:
                 raise RuntimeError("WMSpec doesn't define policyName, current value: '%s'" % policyName)
 
-            # update policy parameter
-            self.params['SplittingMapping'][policyName].update(args = spec.startPolicyParameters())
             policy = startPolicy(policyName, self.params['SplittingMapping'])
             self.logger.info('Splitting %s with policy %s params = %s' % (topLevelTask.getPathName(),
                                                 policyName, self.params['SplittingMapping']))

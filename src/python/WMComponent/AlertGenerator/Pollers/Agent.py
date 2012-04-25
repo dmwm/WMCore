@@ -63,7 +63,7 @@ class ComponentsPoller(PeriodPoller):
             compConfig = getattr(self.agentCompleteConfig, comp)
             daemonXml = os.path.join(compConfig.componentDir, "Daemon.xml")
             if not os.path.exists(daemonXml):
-                logging.error("%s: can't read file '%s' of component '%s', ignored." %
+                logging.warn("%s: can't read file '%s' of component '%s', ignored." %
                               (self.__class__.__name__, daemonXml, comp))
                 continue
             tree = et.parse(daemonXml)

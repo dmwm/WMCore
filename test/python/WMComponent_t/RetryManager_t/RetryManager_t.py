@@ -163,7 +163,7 @@ class RetryManagerTest(unittest.TestCase):
         config = self.getConfig()
         config.RetryManager.pluginName   = 'PauseAlgo'
         config.RetryManager.coolOffTime  = {'create': 20, 'submit': 20, 'job': 20}
-        config.RetryManager.PauseCount  =   2
+        config.RetryManager.pauseCount  =   2
         changer = ChangeState(config)
         changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
         changer.propagate(testJobGroup.jobs, 'createcooloff', 'createfailed')
@@ -241,7 +241,7 @@ class RetryManagerTest(unittest.TestCase):
         config = self.getConfig()
         config.RetryManager.pluginName   = 'PauseAlgo'
         config.RetryManager.coolOffTime  = {'create': 20, 'submit': 20, 'job': 20}
-        config.RetryManager.PauseCount  =   2
+        config.RetryManager.pauseCount  =   2
         changer = ChangeState(config)
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'submitfailed', 'created')
@@ -685,7 +685,7 @@ class RetryManagerTest(unittest.TestCase):
         config = self.getConfig()
         config.RetryManager.pluginName   = 'PauseAlgo'
         config.RetryManager.coolOffTime  = {'create': 20, 'submit': 20, 'job': 20}
-        config.RetryManager.PauseCount  =   2
+        config.RetryManager.pauseCount  =   2
         changer = ChangeState(config)
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'executing', 'created')

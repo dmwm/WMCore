@@ -36,12 +36,10 @@ class ProcessCPUPoller(object):
             pollProcess = lambda proc: proc.get_cpu_percent(PeriodPoller.PSUTIL_INTERVAL)
             v = sum([pollProcess(p) for p in processDetail.allProcs])
             return v
-        except psutil.error.AccessDenied, ex:
-            logging.error("Can't get CPU usage of %s, reason: %s" %
-                          (processDetail.getDetails(), ex))
-            return float(-1)
-        except psutil.error.NoSuchProcess, ex:
-            return float(-1)
+        except (psutil.error.AccessDenied, psutil.error.NoSuchProcess) as ex:
+            m = ("Can't get CPU usage of %s, reason: %s" %
+                 (processDetail.getDetails(), ex))
+            raise Exception(m)
 
     
 
@@ -66,12 +64,10 @@ class ProcessMemoryPoller(object):
             pollProcess = lambda proc: proc.get_memory_percent()
             v = sum([pollProcess(p) for p in processDetail.allProcs])
             return v
-        except psutil.error.AccessDenied, ex:
-            logging.error("Can't get memory usage of %s, reason: %s" %
-                          (processDetail.getDetails(), ex))
-            return float(-1)
-        except psutil.error.NoSuchProcess, ex:
-            return float(-1)
+        except (psutil.error.AccessDenied, psutil.error.NoSuchProcess) as ex:
+            m = ("Can't get memory usage of %s, reason: %s" %
+                 (processDetail.getDetails(), ex))
+            raise Exception(m)
                 
         
 
@@ -206,7 +202,7 @@ class DiskSpacePoller(BasePoller):
                         a["Timestamp"] = time.time()
                         a["Details"] = details
                         a["Level"] = level
-                        logging.debug(a)
+                        logging.debug("Sending an alert (%s): %s" % (self.__class__.__name__, a))
                         self.sender(a)
                         break # send only one alert, critical threshold tested first
                 percs.append(percStr)
@@ -298,10 +294,9 @@ class DirectorySizePoller(BasePoller):
                 a["Source"] = self._myName
                 a["Timestamp"] = time.time()
                 a["Details"] = details
-                a["Level"] = level
-                logging.debug(a)
+                a["Level"] = level                
+                logging.debug("Sending an alert (%s): %s" % (self.__class__.__name__, a))
                 self.sender(a)
-                break # send only one alert, critical threshold tested first
-                
+                break # send only one alert, critical threshold tested first 
         m = "%s: measurements results: %s" % (self._myName, usageStr)
         logging.debug(m)

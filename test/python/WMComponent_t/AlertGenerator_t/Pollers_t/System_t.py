@@ -54,7 +54,6 @@ class SystemTest(unittest.TestCase):
         poller = ProcessCPUPoller()
         v = poller.sample(pd)
         self.assertTrue(isinstance(v, types.FloatType))
-        # psutil.error.AccessDenied will result into -1 returned
         
             
     def testProcessMemoryPollerBasic(self):
@@ -64,7 +63,7 @@ class SystemTest(unittest.TestCase):
         poller = ProcessMemoryPoller()
         v = poller.sample(pd)
         self.assertTrue(isinstance(v, types.FloatType))
-        # psutil.error.AccessDenied will result into -1 returned
+
 
     def _doPeriodPoller(self, thresholdToTest, level, config,
                         pollerClass, expected = 0):
@@ -143,11 +142,9 @@ class SystemTest(unittest.TestCase):
         pd = self._getKilledProcessDetail()        
         poller = ProcessCPUPoller()
         self.assertFalse(pd.proc.is_running())
-        v = poller.sample(pd)
-        self.assertTrue(isinstance(v, types.FloatType))
-        # above situation shall result into handled psutil.error.NoSuchProcess
-        self.assertEquals(v, -1)
-
+        # sample() shall result into handled psutil.error.NoSuchProcess
+        self.assertRaises(Exception, poller.sample, pd)
+        
 
     def testProcessMemoryPollerNoSuchProcess(self):
         """
@@ -158,10 +155,8 @@ class SystemTest(unittest.TestCase):
         pd = self._getKilledProcessDetail()        
         poller = ProcessMemoryPoller()
         self.assertFalse(pd.proc.is_running())
-        v = poller.sample(pd)
-        self.assertTrue(isinstance(v, types.FloatType))
-        # above situation shall result into handled psutil.error.NoSuchProcess
-        self.assertEquals(v, -1)
+        # sample() shall result into handled psutil.error.NoSuchProcess
+        self.assertRaises(Exception, poller.sample, pd)
                 
     
     def testMemoryPollerBasic(self):

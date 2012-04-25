@@ -15,6 +15,7 @@ from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
 from WMCore.WorkQueue.WorkQueueExceptions import *
 from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 from WMQuality.Emulators.DataBlockGenerator import Globals
+import math
 
 mcArgs = getMCArgs()
 
@@ -35,24 +36,28 @@ class MonteCarloTestCase(unittest.TestCase):
         for task in BasicProductionWorkload.taskIterator():
             units = MonteCarlo(**splitArgs)(BasicProductionWorkload, task)
 
-            self.assertEqual(int(totalevents / (splitArgs['SliceSize'] * splitArgs['MaxJobsPerElement'])),
+            SliceSize = BasicProductionWorkload.startPolicyParameters()['SliceSize']
+            self.assertEqual(math.ceil(float(totalevents) / (SliceSize * splitArgs['MaxJobsPerElement'])),
                              len(units))
             first_event = 1
             first_lumi = 1
             first_run = 1
             for unit in units:
-                self.assertEqual(int(splitArgs['MaxJobsPerElement']), unit['Jobs'])
+                self.assertTrue(unit['Jobs'] <= splitArgs['MaxJobsPerElement'])
                 self.assertEqual(unit['WMSpec'], BasicProductionWorkload)
                 self.assertEqual(unit['Task'], task)
                 self.assertEqual(unit['Mask']['FirstEvent'], first_event)
                 self.assertEqual(unit['Mask']['FirstLumi'], first_lumi)
-                last_event = first_event + (self.splitArgs['SliceSize'] * unit['Jobs']) - 1
+                last_event = first_event + (SliceSize * unit['Jobs']) - 1
+                if last_event > totalevents:
+                    # this should be the last unit of work
+                    last_event = totalevents
                 self.assertEqual(unit['Mask']['LastEvent'], last_event)
                 self.assertEqual(unit['Mask']['LastLumi'], first_lumi + unit['Jobs'] - 1)
                 self.assertEqual(unit['Mask']['FirstRun'], first_run)
                 first_event = last_event + 1
                 first_lumi += unit['Jobs'] # one lumi per job
-            self.assertEqual(last_event, totalevents)
+            self.assertEqual(unit['Mask']['LastEvent'], totalevents)
 
 
     def testMultiMergeProductionWorkload(self):
@@ -91,6 +96,13 @@ class MonteCarloTestCase(unittest.TestCase):
         getFirstTask(mcspec).addProduction(totalevents = 0)
         for task in mcspec.taskIterator():
             self.assertRaises(WorkQueueNoWorkError, MonteCarlo(), mcspec, task)
+
+        # -ve split size
+        mcspec2 = monteCarloWorkload('testProdInvalid', mcArgs)
+        mcspec2.data.policies.start.SliceSize = -100
+        for task in mcspec2.taskIterator():
+            self.assertRaises(WorkQueueWMSpecError, MonteCarlo(), mcspec2, task)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -494,14 +494,17 @@ class StdBase(object):
 
     def setupPileup(self, task, pileupConfig):
         """
-        Support for pileup input for MonteCarlo and RelValMC workloads
+        _setupPileup_
 
+        Setup pileup for every CMSSW step in the task.
         """
-        # task is instance of WMTaskHelper (WMTask module)
-        # retrieve task helper (cmssw step helper), top step name is cmsRun1
-        stepName = task.getTopStepName()
-        stepHelper = task.getStepHelper(stepName)
-        stepHelper.setupPileup(pileupConfig, self.dbsUrl)
+        for stepName in task.listAllStepNames():
+            step = task.getStep(stepName)
+            if step.stepType != "CMSSW":
+                continue
+            helper = task.getStepHelper(stepName)
+            stepHelper.setupPileup(pileupConfig, self.dbsUrl)        
+
         return
 
     def validateSchema(self, schema):

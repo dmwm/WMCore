@@ -8,7 +8,8 @@ MySQL implementation of Jobs.GetWorkflowTask
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetWorkflowTask(DBFormatter):
-    sql = """SELECT wmbs_workflow.name, wmbs_workflow.task, wmbs_job.id FROM wmbs_workflow
+    sql = """SELECT wmbs_workflow.name, wmbs_workflow.task, wmbs_job.id,
+             wmbs_workflow.type FROM wmbs_workflow
                INNER JOIN wmbs_subscription ON
                  wmbs_workflow.id = wmbs_subscription.workflow
                INNER JOIN wmbs_jobgroup ON

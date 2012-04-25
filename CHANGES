@@ -1,3 +1,9 @@
+0.8.38 to 0.8.39:
+  - Fix several problems found during TaskChain commissioning:   - Make dependent tasks run over the output of the merge task instead     of the processing task.   - Include TaskChain task parameters in the schema section of the workload   - Don't add more events to a job than there are in the input file.
+  - For chained workflows with pileup, configure each chained step to use the pileup dataset.  Don't fail if there isn't a pileup section in the config.  Fixes #3628.
+  - fixing retrymanager unittests. Fixes #3613
+  - 0.8.38a
+
 0.8.38 to 0.8.38a:
   - DOM fix for Alert Visualization. Fixes #3634
 

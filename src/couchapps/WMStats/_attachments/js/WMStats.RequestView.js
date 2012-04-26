@@ -111,13 +111,13 @@ WMStats.RequestView = (function() {
                             return _get(o.aData, "status.success", 0);
                           }},
             { "sDefaultContent": 0,
-              "sTitle": "cool off", 
+              "sTitle": "cooloff", 
               "fnRender": function ( o, val ) {
                             return _get(o.aData, "status.cooloff", 0);
                           }
             },
             { "sDefaultContent": 0,
-              "sTitle": "pre-cooloff",
+              "sTitle": "prev cooloff",
               "fnRender": function ( o, val ) {
                             return (_get(o.aData, "status.submitted.retry", 0) + 
                                     _get(o.aData, "status.queued.retry", 0));
@@ -127,7 +127,7 @@ WMStats.RequestView = (function() {
               "sTitle": "queue injection",  
               "fnRender": function ( o, val ) {
                               return (_get(o.aData, "status.inWMBS",  0) / 
-                                      _get(o.aData, 'total_jobs', 1));
+                                      _get(o.aData, 'total_jobs', 1) * 100 + '%');
                         }
             }
             

@@ -1,3 +1,15 @@
+0.8.41 to 0.8.42:
+  - Add global tag validation to the lexicon.  Fixes #3648.
+  - Load infomration necessary for dashboard reporting in the data discovery dao when killing jobs.  Fixes #3644.
+  - Remove unnecessary try/except statements from unit tests.  Fixes #3571.
+  - Restore default scenario handling to StdBase.  Fixes #3593.
+  - Remove tests for deprecated code.  Fixes #3595.
+  - Fix missing imports in WMBS_t.  Fixes #3535.
+  - Add job name and location to the BossAir LoadComplete DAO.  Fixes #3632.
+  - Allow the Jobs.GetType DAO to process a list of IDs.  Fixes #3640.
+  - Make the order that tests are run in stable.  Fixes #3641.
+  - Add the workflow type to the GetWorkflowTask DAO.  Fixes #3643.
+
 0.8.38a to 0.8.41:
   - Fix several problems found during TaskChain commissioning (#3598):   
      o Make dependent tasks run over the output of the merge task instead     

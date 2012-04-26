@@ -101,6 +101,10 @@ def identifier(candidate):
     """ letters, numbers, whitespace, periods, dashes, underscores """
     return check(r'[a-zA-Z0-9\s\.\-_]{1,100}$', candidate)
 
+def globalTag(candidate):
+    """ Identifier plus colons """
+    return check(r'[a-zA-Z0-9\s\.\-_:]{1,100}$', candidate)
+
 def dataset(candidate):
     """ A slash followed by an identifier,x3 """
     return check(r'(/[a-zA-Z0-9\.\-_]{1,700}){3}$', candidate)

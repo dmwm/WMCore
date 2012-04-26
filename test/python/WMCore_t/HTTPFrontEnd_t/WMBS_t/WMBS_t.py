@@ -15,7 +15,6 @@ from WMCore.DataStructs.Run import Run
 from WMCore.WMBS.Job      import Job
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMCore.JobStateMachine import DefaultConfig
 
 from WMCore.Services.Requests import Requests, JSONRequests
 import urllib
@@ -41,7 +40,7 @@ class WMBSServiceTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)
+                                useDefault = False )
 
         myThread = threading.currentThread()
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
@@ -126,7 +125,7 @@ class WMBSServiceTest(unittest.TestCase):
         #        testFileB, testFileC)
         
         return (testSubscription, testFileA, testFileB, testFileC)
-        
+
     def createTestJob(self, testSubscription, jobName, *testFiles):
         """
         _createTestJob_

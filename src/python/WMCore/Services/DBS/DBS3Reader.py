@@ -17,7 +17,7 @@ from DBSAPI.dbsApiException import *
 from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx
 from WMCore.Services.EmulatorSwitch import emulatorHook
 
-def remapDBS3Keys(data, stringify = False, **others):
+def remapDBS3Keys(data, stringify = True, **others):
     """Fields have been renamed between DBS2 and 3, take fields from DBS3
     and map to DBS2 values
     """
@@ -28,7 +28,7 @@ def remapDBS3Keys(data, stringify = False, **others):
                    'file_count' : 'NumberOfFiles', 'open_for_writing' : 'OpenForWriting',
                    'logical_file_name' : 'LogicalFileName'}
     mapping.update(others)
-    format = lambda x: str(x) if stringify else x
+    format = lambda x: str(x) if stringify and type(x) == unicode else x
     for name, newname in mapping.iteritems():
         if data.has_key(name):
             data[newname] = format(data[name])
@@ -365,18 +365,19 @@ class DBS3Reader:
                 msg += "DBSReader.listFileLumis(%s)\n" % fileBlockName
                 msg += "%s\n" % formatEx(ex)
                 raise DBSReaderError(msg)
+            
+            lumiDict = {}    
             for lumis in lumiLists:
-                lumiDict = {}
-                lumiDict.setdefault(lumis['logical_file_name'], {})
-                lumiDict[lumis['logical_file_name']]["RunNumber"] = lumis['run_num']
-                lumiDict[lumis['logical_file_name']].setdefault('LumiSectionNumber', [])
-                lumiDict[lumis['logical_file_name']]['LumiSectionNumber'].append(lumis['lumi_section_num'])
+                lumiDict.setdefault(lumis['logical_file_name'], [])
+                item = {}
+                item["RunNumber"] = lumis['run_num']
+                item['LumiSectionNumber'] = lumis['lumi_section_num']
+                lumiDict[lumis['logical_file_name']].append(item)
                 
         result = []
         for file in files:
             if lumis:
                 file["LumiList"] = lumiDict[file['logical_file_name']]
-            remapDBS3Keys(file)
             result.append(remapDBS3Keys(file))
         return result
 

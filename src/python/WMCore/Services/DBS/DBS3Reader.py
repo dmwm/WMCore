@@ -23,7 +23,8 @@ def remapDBS3Keys(data, stringify = False, **others):
     """
     mapping = {'num_file' : 'NumberOfFiles', 'num_event' : 'NumberOfEvents',
                    'num_block' : 'NumberOfBlocks', 'num_lumi' : 'NumberOfLumis',
-                   'file_size' : 'total_size', 'block_size' : 'BlockSize',
+                   'event_count' : 'NumberOfEvents', 'run_num' : 'RunNumber',
+                   'file_size' : 'FileSize', 'block_size' : 'BlockSize',
                    'file_count' : 'NumberOfFiles', 'open_for_writing' : 'OpenForWriting',
                    'logical_file_name' : 'LogicalFileName'}
     mapping.update(others)
@@ -333,12 +334,16 @@ class DBS3Reader:
         return True
 
 
-    def listFilesInBlock(self, fileBlockName):
+    def listFilesInBlock(self, fileBlockName, lumis = True):
         """
         _listFilesInBlock_
 
         Get a list of files in the named fileblock
-
+        TODO: lumis can be false when lumi splitting is not required
+        However WMBSHelper expect file['LumiList'] to get the run number
+        so for now it will be always true. 
+        We need to clean code up when dbs2 is completely deprecated.
+        calling lumis for run number is expensive.
         """
         if not self.blockExists(fileBlockName):
             msg = "DBSReader.listFilesInBlock(%s): No matching data"
@@ -351,8 +356,29 @@ class DBS3Reader:
             msg += "DBSReader.listFilesInBlock(%s)\n" % fileBlockName
             msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
-
-        return [remapDBS3Keys(x) for x in files]
+        
+        if lumis:
+            try:
+                lumiLists = self.dbs.listFileLumis(block_name = fileBlockName)
+            except DbsException, ex:
+                msg = "Error in "
+                msg += "DBSReader.listFileLumis(%s)\n" % fileBlockName
+                msg += "%s\n" % formatEx(ex)
+                raise DBSReaderError(msg)
+            for lumis in lumiLists:
+                lumiDict = {}
+                lumiDict.setdefault(lumis['logical_file_name'], {})
+                lumiDict[lumis['logical_file_name']]["RunNumber"] = lumis['run_num']
+                lumiDict[lumis['logical_file_name']].setdefault('LumiSectionNumber', [])
+                lumiDict[lumis['logical_file_name']]['LumiSectionNumber'].append(lumis['lumi_section_num'])
+                
+        result = []
+        for file in files:
+            if lumis:
+                file["LumiList"] = lumiDict[file['logical_file_name']]
+            remapDBS3Keys(file)
+            result.append(remapDBS3Keys(file))
+        return result
 
     def listFilesInBlockWithParents(self, fileBlockName):
         """

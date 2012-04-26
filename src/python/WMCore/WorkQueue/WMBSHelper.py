@@ -566,7 +566,7 @@ class WMBSHelper(WMConnectionBase):
            where child and parent files are in the same location  
         """
         wmbsParents = []
-        
+        dbsFile.setdefault("ParentList", [])
         for parent in dbsFile["ParentList"]:
             wmbsParents.append(self._addDBSFileToWMBSFile(parent, 
                                             storageElements, inFileset = False))

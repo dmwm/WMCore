@@ -27,13 +27,13 @@ WMStats.RequestView = (function() {
     }
     
     function formatReqDetailUrl(request) {
-        return '<a href="' + WMStats.Couch.REQ_DETAIL_URL_PREFIX  + request + '" target="_blank">' + request + '</a>';
+        return '<a href="' + WMStats.Couch.REQ_DETAIL_URL_PREFIX  + encodeURIComponent(request) + '" target="_blank">' + request + '</a>';
     }
     
     function formatWorkloadSummarylUrl(request, status) {
         if (status == "completed" || status == "announced" ||
             status == "closed-out" || status == "deleted") {
-            return '<a href="' + WMStats.Couch.WORKLOAD_SUMMARY_URL_PREFIX  + request + '" target="_blank">' + status + '</a>';
+            return '<a href="' + WMStats.Couch.WORKLOAD_SUMMARY_URL_PREFIX  + encodeURIComponent(request) + '" target="_blank">' + status + '</a>';
         } else {
             return status;
         }

@@ -150,6 +150,11 @@ class StdBase(object):
                     outputModules[moduleLabel] = { 'dataTier' : "ALCARECO",
                                                    'primaryDataset' : scenarioArgs.get('primaryDataset'),
                                                    'filterName' : alcaSkim }
+            else:
+                for dataTier in scenarioArgs.get("writeTiers",[]): 
+                    outputModuleName = "%soutput" % (dataTier) 
+                    outputModules[outputModuleName] = {"dataTier": dataTier, 
+                                                       "filterName": None} 
                     
 
         return outputModules

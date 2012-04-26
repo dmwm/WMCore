@@ -61,18 +61,9 @@ class TaskChainRequestTest(unittest.TestCase):
         }
          
         
-        try:
-            schema = TaskChainSchema()
-            schema.update(request)
-        except Exception, ex:
-            msg = "Error instantiating TaskChainSchema: %s" % str(ex)
-            self.fail(msg)
-        try:
-            schema.validate()
-        except Exception, ex:
-            msg = "Error testing TaskChainSchema Validation: %s" % str(ex)
-            self.fail(msg)
-
+        schema = TaskChainSchema()
+        schema.update(request)
+        schema.validate()
 
     def testB(self):
         """test with processing TaskChain"""
@@ -118,16 +109,9 @@ class TaskChainRequestTest(unittest.TestCase):
         }
 
 
-        try:
-            schema = TaskChainSchema()
-            schema.update(request)
-        except Exception, ex:
-            msg = "Error instantiating TaskChainSchema: %s" % str(ex)
-            self.fail(msg)
-        try:
-            schema.validate()
-        except Exception, ex:
-            msg = "Error testing TaskChainSchema Validation: %s" % str(ex)
-            self.fail(msg)
+        schema = TaskChainSchema()
+        schema.update(request)
+        schema.validate()
+
 if __name__ == '__main__':
     unittest.main()

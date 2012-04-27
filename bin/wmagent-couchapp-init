@@ -74,21 +74,26 @@ def installWorkQueueCouchApp(couchUrl, couchDBName):
         
 def createSymLinkWMStatsExternal():
     """WMStats has to install jquery libraries to couchapp - handle this here"""
-    jquery = os.environ.get('JQUERY_ROOT', '')
-    jquery_ui = os.environ.get('JQUERY_UI_ROOT', '')
-    jquery_datatables = os.environ.get('JQUERY_DATATABLES_ROOT', '')
+    
+    def createSymLink(source):
+        for file in os.listdir(source):
+            dest = os.path.join(externalDir, file)
+            if not os.path.exists(dest):
+                os.symlink(os.path.join(source, file), dest)
+                
+    jquery = os.path.join(os.environ.get('JQUERY_ROOT', ''), 'data', 'jquery')
+    jquery_ui = os.path.join(os.environ.get('JQUERY_UI_ROOT', ''), 'data', 'jquery-ui')
+    jquery_datatables = os.path.join(os.environ.get('JQUERY_DATATABLES_ROOT', ''), 'data', 'jquery-dataTables')
     if not (jquery or jquery_ui or jquery_datatables):
         raise RuntimeError, "Can't locate jquery jquery-ui jquery-datatables lib"
     basePath = couchAppRoot('WMStats')
     # make a temporary directory to create the couchapp structure
     externalDir = os.path.join(basePath, 'WMStats', '_attachments', 'lib')
     
-    for file in os.listdir(jquery):
-        os.symlink(os.path.join(jquery, file), os.path.join(externalDir, file))
-    for file in os.listdir(jquery_ui):
-        os.symlink(os.path.join(jquery_ui, file), os.path.join(externalDir, file))
-    for file in os.listdir(jquery_datatables):
-        os.symlink(os.path.join(jquery_datatables, file), os.path.join(externalDir, file))
+    createSymLink(jquery)
+    createSymLink(jquery_ui)
+    createSymLink(jquery_datatables)
+    
     
 def setupCron(couchUrl, couchDBName):
     """

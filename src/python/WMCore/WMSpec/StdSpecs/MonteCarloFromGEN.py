@@ -134,6 +134,11 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
                                                 couchURL = schema["CouchURL"],
                                                 couchDBName = schema["CouchDBName"],
                                                 getOutputModules = True)
+
+        if schema.get("StdJobSplitAlgo", "LumiBased") == "LumiBased":
+            if not schema.get("StdJobSplitArgs", {"lumis_per_job": 1}).get("lumis_per_job", 0) > 0:
+                self.raiseValidationException(msg = "Invalid number of lumis_per_job for MCFromGEN")
+                
         return
 
 

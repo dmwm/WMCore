@@ -1,11 +1,5 @@
 #!/usr/bin/env python
-
-
 # This is the interface to the Dashboard that the monitor will use
-
-
-
-
 
 import threading
 import os
@@ -20,54 +14,6 @@ from WMCore.WMSpec.WMWorkload import getWorkloadFromTask
 from WMCore.WMRuntime.Tools.Plugins.ApMonLite.ApMonDestMgr import ApMonDestMgr
 
 from WMCore.Services.Dashboard.DashboardAPI import apmonSend, apmonFree
-
-
-def generateDashboardID(job, workload, task):
-    """
-    _generateDashboardID_
-
-    Generate a global job ID for the dashboard
-
-    """
-
-    jobName = job['name'].replace("_", "-")
-    agentName = getattr(workload.data, 'WMAgentName', 'WMAgentPrimary')
-    
-    #jobName = "ProdAgent_%s_%s" %(
-    #    agentName, jobId )
-
-    workflowId = task.getPathName().replace('/', '-')
-    workflowId = workflowId.replace("_", "-")
-    taskName = "ProdAgent_%s_%s" % ( workflowId,
-                                     agentName)
-    subCount = job.get('retry_count', 0)
-    jobIdent = "WMAgent_%i_%i_%s" % (job['id'], subCount, jobName)
-    
-    return taskName, jobIdent
-
-
-
-def getGridJobID(default = 'None'):
-    """
-    _getGridJobID_
-
-    Get the grid job ID from local os
-    """
-
-    GridJobIDPriority = ['EDG_WL_JOBID', 'GLITE_WMS_JOBID',
-                         'CONDOR_JOBID', 'GLOBUS_GRAM_JOB_CONTACT',
-                         'ARCSUBMITTER_JOBID']
-
-    gridJobID = None
-    for envVar in GridJobIDPriority:
-        gridJobID = os.environ.get(envVar, None)
-        if gridJobID != None:
-            break
-
-    if not gridJobID:
-        gridJobID = default
-
-    return gridJobID
 
 
 def getSyncCE(default = socket.gethostname()):
@@ -94,7 +40,7 @@ def getSyncCE(default = socket.gethostname()):
         return result
 
     # Stu says LCG may have the globus gram contact
-    
+
     #if os.environ.has_key('EDG_WL_JOBID'):
     #    #  //
     #    # // LCG, Sync CE from edg command
@@ -124,7 +70,7 @@ def getSyncCE(default = socket.gethostname()):
 class DashboardInfo(dict):
     """
     An object to let you assemble the information needed for a Dashboard Report
-    
+
     """
 
 
@@ -141,7 +87,8 @@ class DashboardInfo(dict):
         self.publisher    = None
         self.destinations = {}
         self.server       = None
-        self.agentName    = getattr(self.workload.data, 'WMAgentName', 'WMAgentPrimary')
+        self.agentName    = getattr(self.workload.data, 'WMAgentName',
+                                    'WMAgentPrimary')
 
         dict.__init__(self)
 
@@ -167,8 +114,14 @@ class DashboardInfo(dict):
         self.taskName = 'wmagent_%s' % self.workload.name()
         self.jobName  = '%s_%i' % (job['name'], job['retry_count'])
         self.jobSuccess = 0
-        
+        self.jobStarted = False
+        self.failedStep = None
+        self.tsFormat = '%Y-%m-%d %H:%M:%S'
+        self.lastStep = None
 
+        #Need to consider all possible steps
+        self.WrapperWCTime = 0
+        self.WrapperCPUTime = 0
 
 
         return
@@ -178,49 +131,21 @@ class DashboardInfo(dict):
         """
         _jobStart_
 
-        Fill with basic information upon job start
+        Fill with basic information upon job start, we shouldn't send anything
+        until the first step starts.
         """
 
-        package = {}
-        package['MessageType']    = 'TaskMeta'
-        package['MessageTS']      = time.time()
-        package['taskId']         = self.taskName
-        package['jobId']          = 'taskMeta'
-        package['JSTool']         = 'WMAgent'
-        package['JSToolVersion']  = '0.X'
-        package['CMSUser']        = self.get('User')
-        package['Workflow']       = self.job.get('requestName', self.workload.name())
-        package['AgentName']      = self.agentName
-
-        self.publish(data = package)
-
-        package = {}
-        package['jobId']           = self.jobName
-        package['taskId']          = self.taskName
-        package['GridJobID']       = 'NotAvailable'
-        package['retryCount']      = self.job['retry_count']
-        package['MessageTS']       = time.time()
-        package['MessageType']     = 'JobMeta'
-        package['JobType']         = self.job.get('jobType', None)
-        package['TaskType']        = self.job.get('taskType', None)
-        package['StatusValue']     = 'submitted'
-        package['scheduler']       = 'BossAir'
-        package['StatusEnterTime'] = time.time()
-
-        self.publish(data = package)
-
+        #Announce that the job is running'
         data = {}
-        data['MessageType']     = 'jobRuntime'
-        data['MessageTS']       = time.time()
-        data['taskId']          = self.taskName
-        data['jobId']           = self.jobName
-        data['SyncCE']          = getSyncCE()
-        data['GridFlavour']     = "NotAvailable"
-        data['WNHostName']      = socket.gethostname()
-        data['StatusValue']     = 'Running'
-        data['StatusEnterTime'] = time.time()
+        data['MessageType']       = 'JobStatus'
+        data['MessageTS']         = time.strftime(self.tsFormat, time.gmtime())
+        data['taskId']            = self.taskName
+        data['jobId']             = self.jobName
+        data['StatusValue']       = 'running'
+        data['StatusEnterTime']   = time.strftime(self.tsFormat, time.gmtime())
+        data['StatusValueReason'] = 'Job started execution in the WN'
+        data['StatusDestination'] = getSyncCE()
 
-        
         self.publish(data = data)
 
         return
@@ -234,48 +159,58 @@ class DashboardInfo(dict):
         """
 
         data = {}
-        data['MessageType']     = 'jobRuntime'
-        data['MessageTS']       = time.time()
-        data['taskId']          = self.taskName
-        data['jobId']           = self.jobName
-        data['JobExitCode']     = self.jobSuccess
+        data['MessageType']    = 'jobRuntime-jobEnd'
+        data['MessageTS']      = time.strftime(self.tsFormat, time.gmtime())
+        data['taskId']         = self.taskName
+        data['jobId']          = self.jobName
+        data['ExeEnd']         = self.lastStep
+        data['WrapperCPUTime'] = self.WrapperCPUTime
+        data['WrapperWCTime']  = self.WrapperWCTime
+        data['JobExitCode']    = self.jobSuccess
+        if self.failedStep:
+            data['JobExitReason'] = 'Step %s failed in the WN' % self.failedStep
+        else:
+            data['JobExitReason'] = 'Job completed execution in the WN'
+
         self.publish(data = data)
 
-        package = {}
-        statusValue = 0
-        if self.jobSuccess != 0:
-            statusValue = 1
-        package['jobId']           = self.jobName
-        package['taskId']          = self.taskName
-        package['GridJobID']       = self.job['name']
-        package['retryCount']      = self.job['retry_count']
-        package['MessageTS']       = time.time()
-        package['MessageType']     = 'JobStatus'
-        package['StatusValue']     = statusValue
-        package['StatusEnterTime'] = time.time()
-        package['JobExitCode']     = self.jobSuccess
-        self.publish(data = package)
-        
         return data
-    
+
 
     def stepStart(self, step):
         """
         _stepStart_
 
-        Fill with the step-based information
+        Fill with the step-based information. If it is the first step, report
+        that the job started its execution.
         """
 
-        helper = WMStepHelper(step)
 
+        helper = WMStepHelper(step)
+        if self.jobStarted:
+            #It's the first step so let's send the exe that started and where
+            #That's what they request
+            data = {}
+            data['MessageType']       = 'jobRuntime-jobStart'
+            data['MessageTS']         = time.strftime(self.tsFormat,
+                                                      time.timegm())
+            data['taskId']            = self.taskName
+            data['jobId']             = self.jobName
+            data['ExeStart']          = helper.name()
+            data['SyncCE']            = getSyncCE()
+            data['WNHostName']        = socket.gethostname()
+
+            self.publish(data = data)
+            self.jobStarted = True
+
+        #Now let's send the step information
         data = {}
-        data['MessageType']   = 'jobRuntime'
-        data['MessageTS']     = time.time()
-        data['taskId']        = self.taskName
-        data['jobId']         = self.jobName
-        data['retryCount']    = self.job['retry_count']
-        data['ExeStart']      = helper.name()
-        
+        data['MessageType'] = 'jobRuntime-stepStart'
+        data['MessageTS']   = time.strftime(self.tsFormat, time.timegm())
+        data['taskId']      = self.taskName
+        data['jobId']       = self.jobName
+        data['ExeStart']    = helper.name()
+
         self.publish(data = data)
 
         return data
@@ -292,19 +227,38 @@ class DashboardInfo(dict):
         stepSuccess = stepReport.getStepExitCode(stepName = helper.name())
         if self.jobSuccess == 0:
             self.jobSuccess = int(stepSuccess)
+            self.failedStep = helper.name()
 
 
         data = {}
-        data['MessageType']              = 'jobRuntime'
-        data['MessageTS']                = time.time()
+        data['MessageType']              = 'jobRuntime-stepEnd'
+        data['MessageTS']                = time.strftime(self.tsFormat,
+                                                         time.timegm())
         data['taskId']                   = self.taskName
         data['jobId']                    = self.jobName
-        data['retryCount']               = self.job['retry_count']
         data['ExeEnd']                   = helper.name()
-        data['ExeExitCode']              = stepReport.getStepExitCode(stepName = helper.name())
+        data['ExeExitCode']              = stepReport.getStepExitCode(
+                                                       stepName = helper.name())
         if helper.name() == 'StageOut':
-            data['StageOutExitStatus']       = stepReport.stepSuccessful(stepName = helper.name())
-        
+            data['StageOutExitStatus']   = int(stepReport.stepSuccessful(
+                                                      stepName = helper.name()))
+
+        times = stepReport.getTimes(stepName = helper.name())
+
+        data['ExeWCTime'] = times['stopTime'] - times['startTime']
+
+
+        step = stepReport.retrieveStep(step = helper.name())
+
+        if hasattr(step, 'performance'):
+            if hasattr(step.performance, 'cpu'):
+                data['ExeCPUTime'] = getattr(step.performance.cpu,
+                                             'TotalJobCPU', 0)
+                self.WrapperCPUTime += data['ExeCPUTime']
+
+        self.WrapperWCTime += data['ExeWCTime']
+        self.lastStep = helper.name()
+
         self.publish(data = data)
 
         return data
@@ -313,9 +267,21 @@ class DashboardInfo(dict):
     def jobKilled(self):
         """
         _jobKilled_
-        
-        What if the job is killed?
+
+        If the job is killed let's inform its ungraceful end
         """
+
+        data = {}
+        data['MessageType']    = 'jobRuntime-jobEnd'
+        data['MessageTS']      = time.strftime(self.tsFormat, time.gmtime())
+        data['taskId']         = self.taskName
+        data['jobId']          = self.jobName
+        data['ExeEnd']         = self.lastStep
+        data['WrapperCPUTime'] = self.WrapperCPUTime
+        data['WrapperWCTime']  = self.WrapperWCTime
+        data['JobExitReason']  = 'Job was killed in the WN'
+
+        self.publish(data = data)
 
         return
 
@@ -329,14 +295,14 @@ class DashboardInfo(dict):
         helper = WMStepHelper(step)
 
         data = {}
-        data['MessageType']   = 'jobRuntime'
-        data['MessageTS']     = time.time()
+        data['MessageType']   = 'jobRuntime-stepKilled'
+        data['MessageTS']     = time.strftime(self.tsFormat, time.gmtime())
         data['taskId']        = self.taskName
         data['jobId']         = self.jobName
-        data['retryCount']    = self.job['retry_count']
         data['ExeEnd']        = helper.name()
-        
-        
+
+        self.lastStep = helper.name()
+
         self.publish(data = data)
 
 
@@ -346,11 +312,10 @@ class DashboardInfo(dict):
     def periodicUpdate(self):
         """
         _periodicUpdate_
-        
+
         One day this will do something useful.
         But not yet
         """
-
 
         return
 
@@ -381,11 +346,6 @@ class DashboardInfo(dict):
         redunancy is the amount to times to publish this information
 
         """
-        #if self.publisher == None:
-        #    self._InitPublisher()
-      
-        
-        #self.publisher.connect()
         toPublish = {}
         if data:
             toPublish = data
@@ -395,17 +355,12 @@ class DashboardInfo(dict):
             if value == None:
                 del toPublish[key]
 
-                
+
         logging.debug("About to send UDP package to dashboard: %s" % toPublish)
         logging.debug("Using address %s" % self.server)
         apmonSend(taskid = self.taskName, jobid = self.jobName, params = toPublish,
                   logr = logging, apmonServer = self.server)
         apmonFree()
-        
-        #for i in range(1, redundancy+1):
-        #    self.publisher.send(**toPublish)
-        #    
-        #self.publisher.disconnect()
         return
 
 
@@ -417,7 +372,7 @@ class DashboardInfo(dict):
         _InitPublisher_
 
         *private*
-        
+
         Initialise the ApMonDestMgr instance, verifying that the task and
         job attributes are set
 
@@ -438,4 +393,4 @@ class DashboardInfo(dict):
 
 
 
-    
+

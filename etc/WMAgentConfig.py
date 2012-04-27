@@ -106,12 +106,9 @@ config.section_("CoreDatabase")
 config.CoreDatabase.connectUrl = databaseUrl
 #config.CoreDatabase.socket = databaseSocket
 
-config.component_("DashboardReporter")
-config.DashboardReporter.namespace = "WMComponent.DashboardReporter.DashboardReporter"
-config.DashboardReporter.componentDir = config.General.workDir + "/DashboardReporter"
+config.section_("DashboardReporter")
 config.DashboardReporter.dashboardHost = "cms-wmagent-job.cern.ch"
 config.DashboardReporter.dashboardPort = 8884
-config.DashboardReporter.pollInterval = 60
 
 config.component_('WorkQueueManager')
 config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"

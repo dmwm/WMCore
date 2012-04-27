@@ -53,6 +53,8 @@ def getTestArguments():
         #ConfigURL: http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/Skimming/test/tier1/skim_Cosmics.py?revision=1.2&pathrev=SkimsFor426
         #ProcessingVersion: PromptSkim-v1
         "PromptSkims": [],
+        "DashboardHost": "127.0.0.1",
+        "DashboardPort": 8884,
         }
 
     return arguments
@@ -116,6 +118,7 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
 
         workload = self.createWorkload()
         workload.setDashboardActivity("tier0")
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo,
                                          self.procJobSplitArgs)
 

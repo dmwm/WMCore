@@ -31,6 +31,8 @@ def getTestArguments():
     args["StepTwoConfigCacheID"] = "nonsense_id_step_two"
     args["GenDataOutputModuleName"] = "GenSimOutput"
     args["StepOneOutputModuleName"] = "GenSimRawOutput"
+    args['DashboardHost'] = "127.0.0.1"
+    args['DashboardPort'] = 8884
     return args
 
 class RelValMCWorkloadFactory(StdBase):
@@ -52,6 +54,7 @@ class RelValMCWorkloadFactory(StdBase):
         """
         workload = self.createWorkload()
         workload.setDashboardActivity("relval")
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
         workload.setWorkQueueSplitPolicy("MonteCarlo", self.genJobSplitAlgo,
                                          self.genJobSplitArgs)
         

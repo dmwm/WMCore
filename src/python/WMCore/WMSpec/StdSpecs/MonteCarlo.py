@@ -38,6 +38,8 @@ def getTestArguments():
     args["TimePerEvent"] = 60
     args["FilterEfficiency"] = 1.0
     args["TotalTime"] = 9 * 3600
+    args['DashboardHost'] = "127.0.0.1"
+    args['DashboardPort'] = 8884
     return args
 
 
@@ -63,6 +65,7 @@ class MonteCarloWorkloadFactory(StdBase):
         """
         workload = self.createWorkload()
         workload.setDashboardActivity("production")
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
         workload.setWorkQueueSplitPolicy("MonteCarlo", self.prodJobSplitAlgo, self.prodJobSplitArgs)
         workload.setEndPolicy("SingleShot")
         prodTask = workload.newTask("Production")

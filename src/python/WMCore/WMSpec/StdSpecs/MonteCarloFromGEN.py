@@ -35,6 +35,8 @@ def getTestArguments():
         "CouchDBName": "scf_wmagent_configcache",
         
         "ProcConfigCacheID": "03da10e20c7b98c79f9d6a5c8900f83b",
+        "DashboardHost" : "127.0.0.1",
+        "DashboardPort" : 8884,
         }
 
     return arguments
@@ -65,6 +67,7 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
 
         workload = self.createWorkload()
         workload.setDashboardActivity("lheproduction")
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
         procTask = workload.newTask("MonteCarloFromGEN")
 

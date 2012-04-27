@@ -213,7 +213,7 @@ class StdBase(object):
         if hasattr(self, 'inputDataset'):
             dataset = self.inputDataset
         workflow['datasetFull'] = dataset
-        workflow['CMSUser'] = 'cmsdataops'
+        workflow['user'] = 'cmsdataops'
 
         #These two make are not reported for now
         workflow['GridName'] = 'NotAvailable'

@@ -79,12 +79,12 @@ class XMLFormat(RESTFormat):
   application name and the ``cherrypy.request.rest_generate_data`` is
   ``result``.
 
-  Iterables are output as ``<array><i>ITEM</i><i>ITEM</i></array>``.
-  Dictionaries are output as ``<dict><KEY>VALUE</KEY></dict>``. `None`
-  is output as empty contents, and hence there is no way to distinguish
-  `None` and an empty string from each other. Scalar types are output
-  as rendered by `str()`, but obviously XML encoding unsafe characters.
-  This class does not support formatting arbitrary types.
+  Iterables are output as ``<array><i>ITEM</i><i>ITEM</i></array>``,
+  dictionaries as ``<dict><key>KEY</key><value>VALUE</value></dict>``.
+  `None` is output as empty contents, and hence there is no way to
+  distinguish `None` and an empty string from each other. Scalar types
+  are output as rendered by `str()`, but obviously XML encoding unsafe
+  characters. This class does not support formatting arbitrary types.
 
   The formatter does not insert any spaces into the output. Although the
   output is generated as a preamble, stream of objects, and trailer just
@@ -111,8 +111,9 @@ class XMLFormat(RESTFormat):
     elif isinstance(obj, dict):
       result = "<dict>"
       for k, v in obj.iteritems():
-        assert re.match(r"^[-A-Za-z0-9_]+$", k)
-        result += "<%s>%s</%s>" % (k, XMLFormat.format_obj(v), k)
+        result += "<key>%s</key><value>%s</value>" % \
+          (xml.sax.saxutils.escape(k).encode("utf-8"),
+           XMLFormat.format_obj(v))
       result += "</dict>"
     elif is_iterable(obj):
       result = "<array>"

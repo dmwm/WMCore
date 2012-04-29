@@ -78,7 +78,7 @@ def authz_match(role=[], group=[], site=[], verbose=False):
     return
 
   # Otherwise determine set intersection of requirements.
-  for r, authz in user['roles'].iteritems():
+  for r, authz in ((user and user['roles']) or {}).iteritems():
     if (not role) or (r in role):
       if not (group or site):
         if verbose:

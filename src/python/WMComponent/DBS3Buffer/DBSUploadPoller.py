@@ -568,16 +568,17 @@ class DBSUploadPoller(BaseWorkerThread):
         pre-existant block. 
         """
 
-        for block in dasBlocks:
+        for blockName in dasBlocks:
+            block = self.blockCache.get(blockName)
             if not self.isBlockOpen(newFile = newFile, block = block):
                 # Then the block can't fit the file
                 # Close the block
                 block.status = 'Pending'
-                self.blockCache[block.getName()] = block
-                dasBlocks.remove(block.getName())
+                self.blockCache[blockName] = block
+                dasBlocks.remove(blockName)
             else:
                 # Load it out of the cache
-                currentBlock = self.blockCache.get(block.getName())
+                currentBlock = blockName
                 return currentBlock
         # If there are no open blocks
         # Or we run out of blocks

@@ -37,6 +37,8 @@ def getTestArguments():
         "ProcScenario": "cosmics",
         #"ProcConfigCacheID": "03da10e20c7b98c79f9d6a5c8900f83b",
         "Multicore" : None,
+        "DashboardHost" : "127.0.0.1",
+        "DashboardPort" : 8884,
         }
 
     return arguments
@@ -67,6 +69,7 @@ class DataProcessingWorkloadFactory(StdBase):
 
         workload = self.createWorkload()
         workload.setDashboardActivity("reprocessing")
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
         procTask = workload.newTask("DataProcessing")
 

@@ -224,6 +224,7 @@ class TaskChainWorkloadFactory(StdBase):
                     self.workload.setWorkQueueSplitPolicy("Block", taskConf['SplittingAlgorithm'],
                                                      taskConf['SplittingArguments'])
                     self.setupTask(task, taskConf)
+                self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
             else:
                 #  //
                 # // all subsequent tasks have to be processing tasks

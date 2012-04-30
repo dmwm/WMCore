@@ -43,9 +43,12 @@ def getTestArguments():
         "ScramArch": "slc5_amd64_gcc434",
         "ProcessingVersion": "v3",
         "GlobalTag": "GR10_P_V12::All",
-        
+
         "CouchURL": os.environ.get("COUCHURL", None),
         "CouchDBName": "scf_wmagent_configcache",
+
+        "DashboardHost": "127.0.0.1",
+        "DashboardPort": 8884,
         }
 
     return arguments

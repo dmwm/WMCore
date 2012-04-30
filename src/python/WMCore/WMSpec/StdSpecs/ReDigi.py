@@ -42,6 +42,9 @@ def getTestArguments():
         "CouchURL": os.environ.get("COUCHURL", None),
         "CouchDBName": "wmagent_configcachescf",
         "PileupConfig": {"cosmics": "/some/cosmics/dataset"},
+
+        "DashboardHost": "127.0.0.1",
+        "DashboardPort": 8884,
         }
 
     return arguments
@@ -233,6 +236,7 @@ class ReDigiWorkloadFactory(StdBase):
         
         workload = self.createWorkload()
         workload.setDashboardActivity("redigi")
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
         stepOneTask = workload.newTask("StepOneProc")
 

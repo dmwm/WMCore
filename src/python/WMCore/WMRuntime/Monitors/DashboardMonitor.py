@@ -6,9 +6,6 @@ _TestMonitor_
 This is the test class for monitors
 """
 
-
-
-
 import threading
 import time
 import logging
@@ -86,14 +83,6 @@ def searchForEvent(file):
             return (None, None)
 
     return (None, None)
-
-
-
-
-
-
-
-
 
 class DashboardMonitor(WMRuntimeMonitor):
     """

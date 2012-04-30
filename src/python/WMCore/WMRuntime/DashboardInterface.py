@@ -8,13 +8,9 @@ import logging
 import socket
 
 from WMCore.WMSpec.WMStep     import WMStepHelper
-
 from WMCore.WMSpec.WMWorkload import getWorkloadFromTask
-
 from WMCore.WMRuntime.Tools.Plugins.ApMonLite.ApMonDestMgr import ApMonDestMgr
-
 from WMCore.Services.Dashboard.DashboardAPI import apmonSend, apmonFree
-
 
 def getSyncCE(default = socket.gethostname()):
     """
@@ -64,15 +60,11 @@ def getSyncCE(default = socket.gethostname()):
 
     return result
 
-
-
-
-class DashboardInfo(dict):
+class DashboardInfo():
     """
     An object to let you assemble the information needed for a Dashboard Report
 
     """
-
 
     def __init__(self, task, job):
         """
@@ -80,52 +72,32 @@ class DashboardInfo(dict):
 
         """
 
-
+        #Basic task/job objects
         self.task         = task
         self.workload     = getWorkloadFromTask(task)
         self.job          = job
+
+        #Dashboard server interface info
         self.publisher    = None
         self.destinations = {}
         self.server       = None
-        self.agentName    = getattr(self.workload.data, 'WMAgentName',
-                                    'WMAgentPrimary')
 
-        dict.__init__(self)
-
-
-        self.setdefault("Application", None)
-        self.setdefault("ApplicationVersion", None)
-        self.setdefault("GridJobID", None)
-        self.setdefault("LocalBatchID", None)
-        self.setdefault("GridUser", None)
-        self.setdefault("User" , self.workload.getOwner().get('name', 'WMAgent'))
-        self.setdefault("JSTool","WMAgent")
-        self.setdefault("NbEvPerRun", 0)
-        self.setdefault("NodeName", None)
-        self.setdefault("Scheduler", None)
-        self.setdefault("TaskType", self.task.taskType())
-        self.setdefault("NSteps", 0)
-        self.setdefault("VO", "CMS")
-        self.setdefault("TargetCE", None)
-        self.setdefault("RBname", None)
-        self.setdefault("JSToolUI" , None) # Can't set here, see bug #64232
-
-
+        #Job ids
         self.taskName = 'wmagent_%s' % self.workload.name()
         self.jobName  = '%s_%i' % (job['name'], job['retry_count'])
-        self.jobSuccess = 0
-        self.jobStarted = False
-        self.failedStep = None
-        self.tsFormat = '%Y-%m-%d %H:%M:%S'
-        self.lastStep = None
 
-        #Need to consider all possible steps
-        self.WrapperWCTime = 0
+        #Job ending report stuff
+        self.jobSuccess     = 0
+        self.jobStarted     = False
+        self.failedStep     = None
+        self.lastStep       = None
+        self.WrapperWCTime  = 0
         self.WrapperCPUTime = 0
 
+        #Utility
+        self.tsFormat = '%Y-%m-%d %H:%M:%S'
 
         return
-
 
     def jobStart(self):
         """
@@ -135,7 +107,7 @@ class DashboardInfo(dict):
         until the first step starts.
         """
 
-        #Announce that the job is running'
+        #Announce that the job is running
         data = {}
         data['MessageType']       = 'JobStatus'
         data['MessageTS']         = time.strftime(self.tsFormat, time.gmtime())
@@ -148,8 +120,7 @@ class DashboardInfo(dict):
 
         self.publish(data = data)
 
-        return
-
+        return data
 
     def jobEnd(self):
         """
@@ -176,7 +147,6 @@ class DashboardInfo(dict):
 
         return data
 
-
     def stepStart(self, step):
         """
         _stepStart_
@@ -185,15 +155,15 @@ class DashboardInfo(dict):
         that the job started its execution.
         """
 
-
         helper = WMStepHelper(step)
-        if self.jobStarted:
+        data = None
+        if not self.jobStarted:
             #It's the first step so let's send the exe that started and where
             #That's what they request
             data = {}
             data['MessageType']       = 'jobRuntime-jobStart'
             data['MessageTS']         = time.strftime(self.tsFormat,
-                                                      time.timegm())
+                                                      time.gmtime())
             data['taskId']            = self.taskName
             data['jobId']             = self.jobName
             data['ExeStart']          = helper.name()
@@ -204,17 +174,20 @@ class DashboardInfo(dict):
             self.jobStarted = True
 
         #Now let's send the step information
+        tmp = {'jobStart': data}
+        
         data = {}
         data['MessageType'] = 'jobRuntime-stepStart'
-        data['MessageTS']   = time.strftime(self.tsFormat, time.timegm())
+        data['MessageTS']   = time.strftime(self.tsFormat, time.gmtime())
         data['taskId']      = self.taskName
         data['jobId']       = self.jobName
         data['ExeStart']    = helper.name()
 
         self.publish(data = data)
-
+        
+        data.update(tmp)
+        
         return data
-
 
     def stepEnd(self, step, stepReport):
         """
@@ -229,11 +202,10 @@ class DashboardInfo(dict):
             self.jobSuccess = int(stepSuccess)
             self.failedStep = helper.name()
 
-
         data = {}
         data['MessageType']              = 'jobRuntime-stepEnd'
         data['MessageTS']                = time.strftime(self.tsFormat,
-                                                         time.timegm())
+                                                         time.gmtime())
         data['taskId']                   = self.taskName
         data['jobId']                    = self.jobName
         data['ExeEnd']                   = helper.name()
@@ -244,9 +216,7 @@ class DashboardInfo(dict):
                                                       stepName = helper.name()))
 
         times = stepReport.getTimes(stepName = helper.name())
-
         data['ExeWCTime'] = times['stopTime'] - times['startTime']
-
 
         step = stepReport.retrieveStep(step = helper.name())
 
@@ -263,7 +233,6 @@ class DashboardInfo(dict):
 
         return data
 
-
     def jobKilled(self):
         """
         _jobKilled_
@@ -279,11 +248,12 @@ class DashboardInfo(dict):
         data['ExeEnd']         = self.lastStep
         data['WrapperCPUTime'] = self.WrapperCPUTime
         data['WrapperWCTime']  = self.WrapperWCTime
+        data['JobExitCode']    = 9999
         data['JobExitReason']  = 'Job was killed in the WN'
 
         self.publish(data = data)
 
-        return
+        return data
 
     def stepKilled(self, step):
         """
@@ -305,9 +275,7 @@ class DashboardInfo(dict):
 
         self.publish(data = data)
 
-
-        return
-
+        return data
 
     def periodicUpdate(self):
         """
@@ -318,7 +286,6 @@ class DashboardInfo(dict):
         """
 
         return
-
 
     def addDestination(self, host, port):
         """
@@ -333,9 +300,7 @@ class DashboardInfo(dict):
         self.publisher.newDestination(host, port)
         self.server = ['%s:%s' % (host, port)]
 
-
-
-    def publish(self, redundancy = 1, data = None):
+    def publish(self, data, redundancy = 1):
         """
         _publish_
 
@@ -346,26 +311,13 @@ class DashboardInfo(dict):
         redunancy is the amount to times to publish this information
 
         """
-        toPublish = {}
-        if data:
-            toPublish = data
-        else:
-            toPublish.update(self)
-        for key, value in toPublish.items():
-            if value == None:
-                del toPublish[key]
 
-
-        logging.debug("About to send UDP package to dashboard: %s" % toPublish)
+        logging.debug("About to send UDP package to dashboard: %s" % data)
         logging.debug("Using address %s" % self.server)
-        apmonSend(taskid = self.taskName, jobid = self.jobName, params = toPublish,
+        apmonSend(taskid = self.taskName, jobid = self.jobName, params = data,
                   logr = logging, apmonServer = self.server)
         apmonFree()
         return
-
-
-
-
 
     def _InitPublisher(self):
         """
@@ -385,12 +337,6 @@ class DashboardInfo(dict):
             msg = "Error: You must set the job id before adding \n"
             msg += "destinations or publishing data"
             raise RuntimeError, msg
-        self.publisher = ApMonDestMgr(clusterName = self.taskName, nodeName = self.jobName)
+        self.publisher = ApMonDestMgr(clusterName = self.taskName,
+                                      nodeName = self.jobName)
         return
-
-
-
-
-
-
-

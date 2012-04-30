@@ -1,3 +1,13 @@
+0.8.42 to 0.8.43:
+  - Pull the site name from the site-local-config and report that as the CE.  Fixes #2774.
+  - More improvements to WN dashboard reporting.  Fixes #3656.
+  - Correct a typo from the dashboard cleanup in StdBase.  Fixes #3667.
+  - Remove the DashboardReporter component.  Better integrate dashboard reporting with the WMAgent JobStateMachine.  Fixes #3629.
+  - Cleanup runtime dashboard reporting.  Fixes #3656.
+  - Fix problems with ALCARECO handling in the Tier1PromptReco spec.  Clean up it's unit test.  Fixes #3620.
+  - Require positive parameters for the MC requests.  Fixes #3647.
+  - Fix problems with MultiCore jobs.
+
 0.8.41 to 0.8.42:
   - Add global tag validation to the lexicon.  Fixes #3648.
   - Load infomration necessary for dashboard reporting in the data discovery dao when killing jobs.  Fixes #3644.

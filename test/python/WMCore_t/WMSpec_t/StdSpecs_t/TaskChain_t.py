@@ -213,6 +213,8 @@ class TaskChainTests(unittest.TestCase):
             "CouchURL": self.testInit.couchUrl,
             "CouchDBName": self.testInit.couchDbName,
             "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],
+            "DashboardHost": "127.0.0.1",
+            "DashboardPort": 8884,
             "TaskChain" : 5,
             "Task1" :{
                 "TaskName" : "GenSim",
@@ -396,6 +398,8 @@ class TaskChainTests(unittest.TestCase):
             "CouchURL": self.testInit.couchUrl,
             "CouchDBName": self.testInit.couchDbName,
             "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],
+            "DashboardHost": "127.0.0.1",
+            "DashboardPort": 8884,
             "TaskChain" : 4,
             "Task1" :{
                 "TaskName" : "DigiHLT",
@@ -495,6 +499,8 @@ class TaskChainTests(unittest.TestCase):
             "CouchURL": self.testInit.couchUrl,
             "CouchDBName": self.testInit.couchDbName,
             "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],
+            "DashboardHost": "127.0.0.1",
+            "DashboardPort": 8884,
             "TaskChain" : 4,
             "Task1" :{
                 "TaskName" : "DigiHLT",
@@ -600,6 +606,8 @@ class TaskChainTests(unittest.TestCase):
             "CouchDBName": self.testInit.couchDbName,
             "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],
             "RunWhitelist" : [171050],
+            "DashboardHost": "127.0.0.1",
+            "DashboardPort": 8884,
             "TaskChain" : 3,
             "Task1" :{
                 "TaskName" : "PromptReco",

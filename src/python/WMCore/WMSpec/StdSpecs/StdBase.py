@@ -14,6 +14,8 @@ from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 from WMCore.Lexicon import lfnBase, identifier
 from WMCore.WMException import WMException
 from WMCore.Database.CMSCouch import CouchNotFoundError
+from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
+from WMCore.Configuration import ConfigSection
 
 analysisTaskTypes = ['Analysis', 'PrivateMC']
 
@@ -71,6 +73,8 @@ class StdBase(object):
         self.dbsUrl = None
         self.multicore = False
         self.multicoreNCores = 1
+        self.dashboardHost = None
+        self.dashboardPort = 0
         return
 
     def __call__(self, workloadName, arguments):
@@ -102,6 +106,8 @@ class StdBase(object):
         self.maxMergeEvents = arguments.get("MaxMergeEvents", 100000)
         self.validStatus = arguments.get("ValidStatus", "PRODUCTION")
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
+        self.dashboardHost = arguments.get("DashboardHost", "cms-wmagent-job.cern.ch")
+        self.dashboardPort = arguments.get("DashboardPort", 8884)
 
         if arguments.get("IncludeParents", False) == "True":
             self.includeParents = True
@@ -173,12 +179,48 @@ class StdBase(object):
         monitoring.section_("DashboardMonitor")
         monitoring.DashboardMonitor.softTimeOut = 300000
         monitoring.DashboardMonitor.hardTimeOut = 600000
-        monitoring.DashboardMonitor.destinationHost = "cms-wmagent-job.cern.ch"
-        monitoring.DashboardMonitor.destinationPort = 8884
+        monitoring.DashboardMonitor.destinationHost = self.dashboardHost
+        monitoring.DashboardMonitor.destinationPort = self.dashboardPort
         monitoring.section_("PerformanceMonitor")
         monitoring.PerformanceMonitor.maxRSS = 4 * gb
         monitoring.PerformanceMonitor.maxVSize = 4 * gb
         return task
+
+
+    def reportWorkflowToDashboard(self, dashboardActivity):
+        """
+        _reportWorkflowToDashboard_
+        Gathers workflow information from the arguments and reports it to the
+        dashboard
+        """
+        #Create a fake config
+        conf = ConfigSection()
+        conf.section_('DashboardReporter')
+        conf.DashboardReporter.dashboardHost = self.dashboardHost
+        conf.DashboardReporter.dashboardPort = self.dashboardPort
+
+        #Create the reporter
+        reporter = DashboardReporter(conf)
+
+        #Assemble the info
+        workflow = {}
+        workflow['name'] = self.workloadName
+        workflow['application'] = self.frameworkVersion
+        workflow['scheduler'] = 'BossAir'
+        workflow['TaskType'] = dashboardActivity
+        #Let's try to build information about the inputDataset
+        dataset = 'DoesNotApply'
+        if hasattr(self, 'inputDataset'):
+            dataset = self.inputDataset
+        workflow['datasetFull'] = dataset
+        workflow['user'] = 'cmsdataops'
+
+        #These two make are not reported for now
+        workflow['GridName'] = 'NotAvailable'
+        workflow['nevtJob'] = 'NotAvailable'
+
+        #Send the workflow info
+        reporter.addTask(workflow)
 
     def createWorkload(self):
         """

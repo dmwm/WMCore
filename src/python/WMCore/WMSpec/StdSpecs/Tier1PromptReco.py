@@ -53,6 +53,8 @@ def getTestArguments():
         #ConfigURL: http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/Skimming/test/tier1/skim_Cosmics.py?revision=1.2&pathrev=SkimsFor426
         #ProcessingVersion: PromptSkim-v1
         "PromptSkims": [],
+        "DashboardHost": "127.0.0.1",
+        "DashboardPort": 8884,
         }
 
     return arguments
@@ -116,6 +118,7 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
 
         workload = self.createWorkload()
         workload.setDashboardActivity("tier0")
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo,
                                          self.procJobSplitArgs)
 
@@ -140,7 +143,8 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
                                                                 'outputs' : recoOutputs },
                                                splitAlgo = self.procJobSplitAlgo,
                                                splitArgs = self.procJobSplitArgs,
-                                               stepType = cmsswStepType)
+                                               stepType = cmsswStepType,
+                                               forceUnmerged = True)
         self.addLogCollectTask(recoTask)
         recoMergeTasks = {}
         for recoOutLabel, recoOutInfo in recoOutMods.items():
@@ -160,11 +164,14 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
                                                        scenarioArgs = { 'globalTag' : self.globalTag,
                                                                         'skims' : self.alcaSkims,
                                                                         'primaryDataset' : self.inputPrimaryDataset },
-                                                       splitAlgo = self.procJobSplitAlgo,
-                                                       splitArgs = self.procJobSplitArgs,
+                                                       splitAlgo = "WMBSMergeBySize",
+                                                       splitArgs = {"max_merge_size": self.maxMergeSize,
+                                                                    "min_merge_size": self.minMergeSize,
+                                                                    "max_merge_events": self.maxMergeEvents},
                                                        stepType = cmsswStepType)
                 self.addLogCollectTask(alcaTask,
                                        taskName = "AlcaSkimLogCollect")
+                self.addCleanupTask(recoTask, recoOutLabel)
                 for alcaOutLabel, alcaOutInfo in alcaOutMods.items():
                     self.addMergeTask(alcaTask, self.procJobSplitAlgo,
                                       alcaOutLabel)

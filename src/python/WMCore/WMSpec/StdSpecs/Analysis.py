@@ -23,6 +23,8 @@ def getCommonTestArgs():
     args["ScramArch"] =  "slc5_ia32_gcc434"
     args['CMSSWVersion'] = "CMSSW_4_2_0"
     args["ProcessingVersion"] = "v2"
+    args['DashboardHost'] = "127.0.0.1"
+    args['DashboardPort'] = 8884
     return args
 
 def getTestArguments():
@@ -70,6 +72,7 @@ class AnalysisWorkloadFactory(StdBase):
         """
         self.workload = self.createWorkload()
         self.workload.setDashboardActivity("analysis")
+        self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
 
         lfnBase = '/store/temp/user/%s' % self.userName
         self.unmergedLFNBase = lfnBase

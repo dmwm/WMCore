@@ -22,9 +22,11 @@ from WMCore.DataStructs.Run  import Run
 from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, getTestArguments
 from WMCore.FwkJobReport.Report     import Report
 
-
 from WMCore.WMRuntime.DashboardInterface import DashboardInfo
 from WMCore.WMRuntime.Bootstrap          import setupMonitoring
+
+from WMCore.WMBase import getTestBase
+
 
 class DashboardInterfaceTest(unittest.TestCase):
     """
@@ -113,8 +115,9 @@ class DashboardInterfaceTest(unittest.TestCase):
         Make some sort of environment in which to run tests
         """
 
-        os.environ['GLOBUS_GRAM_JOB_CONTACT'] = "https://%s:test" %(name)
-
+        os.environ['WMAGENT_SITE_CONFIG_OVERRIDE'] = os.path.join(getTestBase(),
+                                            "WMCore_t/Storage_t",
+                                            "T1_US_FNAL_SiteLocalConfig.xml")
         return
 
     def testASuccessfulJobMonitoring(self):
@@ -142,7 +145,7 @@ class DashboardInterfaceTest(unittest.TestCase):
         data = dbInfo.jobStart()
         self.assertEqual(data['MessageType'], 'JobStatus')
         self.assertEqual(data['StatusValue'], 'running')
-        self.assertEqual(data['StatusDestination'], name)
+        self.assertEqual(data['StatusDestination'], "T1_US_FNAL")
         self.assertEqual(data['taskId'], 'wmagent_Tier1ReReco')
 
         # Do the first step
@@ -212,7 +215,7 @@ class DashboardInterfaceTest(unittest.TestCase):
         data = dbInfo.jobStart()
         self.assertEqual(data['MessageType'], 'JobStatus')
         self.assertEqual(data['StatusValue'], 'running')
-        self.assertEqual(data['StatusDestination'], name)
+        self.assertEqual(data['StatusDestination'], "T1_US_FNAL")
         self.assertEqual(data['taskId'], 'wmagent_Tier1ReReco')
 
         # Do the first step
@@ -267,7 +270,7 @@ class DashboardInterfaceTest(unittest.TestCase):
         data = dbInfo.jobStart()
         self.assertEqual(data['MessageType'], 'JobStatus')
         self.assertEqual(data['StatusValue'], 'running')
-        self.assertEqual(data['StatusDestination'], name)
+        self.assertEqual(data['StatusDestination'], "T1_US_FNAL")
         self.assertEqual(data['taskId'], 'wmagent_Tier1ReReco')
 
         # Do the first step

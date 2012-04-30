@@ -11,15 +11,26 @@ from WMCore.WMSpec.WMStep     import WMStepHelper
 from WMCore.WMSpec.WMWorkload import getWorkloadFromTask
 from WMCore.WMRuntime.Tools.Plugins.ApMonLite.ApMonDestMgr import ApMonDestMgr
 from WMCore.Services.Dashboard.DashboardAPI import apmonSend, apmonFree
+from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig, SiteConfigError
 
 def getSyncCE(default = socket.gethostname()):
     """
     _getSyncCE_
 
-    Extract the SyncCE from GLOBUS_GRAM_JOB_CONTACT if available for OSG,
-    otherwise broker info for LCG
+    Tries to get the site name from the localSite config, if it doesn't find it
+    or it finds an empty string then we check the environment
+    variables. Worst case scenario we give the Worker node.
 
     """
+
+    try:
+        siteConfig = loadSiteLocalConfig()
+        result = siteConfig.siteName
+        if result:
+            return result
+    except SiteConfigError:
+        logging.error("Couldn't find the site config, looking for the CE elsewhere")
+
     result = socket.gethostname()
 
     if os.environ.has_key('GLOBUS_GRAM_JOB_CONTACT'):
@@ -34,23 +45,6 @@ def getSyncCE(default = socket.gethostname()):
         except:
             pass
         return result
-
-    # Stu says LCG may have the globus gram contact
-
-    #if os.environ.has_key('EDG_WL_JOBID'):
-    #    #  //
-    #    # // LCG, Sync CE from edg command
-    #    #//
-    #    command = "glite-brokerinfo getCE"
-    #    pop = popen2.Popen3(command)
-    #    pop.wait()
-    #    exitCode = pop.poll()
-    #    if exitCode:
-    #        return result
-    #
-    #    content = pop.fromchild.read()
-    #    result = content.strip()
-    #    return result
 
     if os.environ.has_key('NORDUGRID_CE'):
         #  //

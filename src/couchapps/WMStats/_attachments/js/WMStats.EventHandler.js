@@ -46,7 +46,8 @@ WMStats.EventHandler = function($) {
         var summary = {};
         summary.workflow = $('#jobSummaryTable').data("workflow");
         summary.status = $(nTds[0]).text();
-        summary.exitCode = Number($(nTds[3]).text());
+        summary.site = $(nTds[1]).text();
+        summary.exitCode = Number($(nTds[2]).text());
         WMStats.JobDetailView.createDetailView("#jobDetailDiv", summary);
     }
     
@@ -70,12 +71,12 @@ WMStats.EventHandler = function($) {
     tableRowClick('#requestTable tbody tr',  poplurateJobTable);
     tableRowClick('#jobSummaryTable tbody tr',  poplurateJobDetail);
     
-    /*
-    $("div.body").live("ajaxSend", function(){
+    
+    $('div').ajaxSend(function(){
+            alert("test");
             $(this).show();
         }).live("ajaxComplete", function(){
             $(this).hide();
     });
-    */
 
 }(jQuery)

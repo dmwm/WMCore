@@ -16,10 +16,10 @@ WMStats.JobSummaryView = (function() {
      // jquery datatable config
     var tableConfig = {
         "aoColumns": [
-            { "mDataProp": "status", "sTitle": "status"},               
+            { "mDataProp": "status", "sTitle": "status"},
             { "mDataProp": "site", "sTitle": "site"},
-            { "mDataProp": "count", "sTitle": "jobs"},
             { "mDataProp": "exitCode", "sTitle": "exit code"},
+            { "mDataProp": "count", "sTitle": "jobs"},
             { "mDataProp": "errorMsg", "sTitle": "error mesage", 
                            "sDefaultContent": ""}
          ]
@@ -61,8 +61,8 @@ WMStats.JobSummaryView = (function() {
             var statusSummary = {};
             statusSummary.status = data.rows[i].key[1];
             statusSummary.exitCode = data.rows[i].key[2];
-            statusSummary.errorMsg = data.rows[i].key[3];
-            statusSummary.site = data.rows[i].key[4];
+            statusSummary.site = data.rows[i].key[3];
+            statusSummary.errorMsg = data.rows[i].key[4];
             statusSummary.count = data.rows[i].value;
             jobSummary.status.push(statusSummary)
                      

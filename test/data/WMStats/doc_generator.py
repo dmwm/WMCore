@@ -1,44 +1,11 @@
-from CMSCouch import CouchServer
+import time
+import random
 
-NUM_OF_REQUEST = 20
-ITERATIONS =100
+NUM_OF_REQUEST = 30
+ITERATIONS =50 # number of jobs updated
 NUM_OF_JOBS_PER_REQUEST = 10
-
-def splitCouchServiceURL(serviceURL):
-    """
-    split service URL to couchURL and couchdb name
-    serviceURL should be couchURL/dbname format.
-    """
-
-    splitedURL = serviceURL.rstrip('/').rsplit('/', 1)
-    return splitedURL[0], splitedURL[1]
-
-
-def parse_opts():
-    parser = OptionParser()
-    parser.add_option("-d", "--dburl",
-                    dest="dburl",
-                    help="CouchDB URL which data will be populated")
-    parser.add_option("-c", "--cert",
-                    default=None,
-                    dest="cert",
-                    help="certificate file")
-    parser.add_option("-k", "--key",
-                    default=None,
-                    dest="key",
-                    help="key file")
-    parser.add_option("-i", "--iterations",
-                    dest="iterations",
-                    default=ITERATIONS,
-                    type="int",
-                    help="The number of iterations to make, default=%s" % ITERATIONS)
-    parser.add_option("-r", "--requests",
-                    dest="requests",
-                    default=NUM_OF_REQUEST,
-                    type="int",
-                    help="The number of requests to simulate, default=%s" % NUM_OF_REQUEST)
-    
-    return parser.parse_args()[0]
+#To use curl to insert doc
+#curl -d @sample_docs.json -X POST -H "Content-Type:application/json" $DB_URL/_bulk_docs 
 
 def generate_reqmgr_requests(number=NUM_OF_REQUEST):
     """ 
@@ -99,7 +66,6 @@ def generate_reqmgr_requests(number=NUM_OF_REQUEST):
                 }
         docs.append(doc)
     return docs
-
 
 def generate_agent_requests(number=NUM_OF_REQUEST, iterations=ITERATIONS):
     """ 
@@ -241,26 +207,36 @@ def generate_jobsummary(request, number=NUM_OF_JOBS_PER_REQUEST):
         docs.append(jobSummary)
     return docs
 
-def main(options):
-    url, dbName = splitCouchServiceURL(options.dburl)
-    db = CouchServer(url, cert=cert, ckey=key).connectDatabase(dbName)
+if __name__ == "__main__":
+    from optparse import OptionParser
+    import json
+    def parse_opts():
+        parser = OptionParser()
+        parser.add_option("-i", "--iterations",
+                        dest="iterations",
+                        default=ITERATIONS,
+                        type="int",
+                        help="The number of iterations to make, default=%s" % ITERATIONS)
+        parser.add_option("-r", "--requests",
+                        dest="requests",
+                        default=NUM_OF_REQUEST,
+                        type="int",
+                        help="The number of requests to simulate, default=%s" % NUM_OF_REQUEST)
+    
+        return parser.parse_args()[0]
+    
+    options = parse_opts()
     reqmgr_requests = generate_reqmgr_requests(options.requests)
     agent_requests = generate_agent_requests(options.requests, options.iterations)
     
-    for req in reqmgr_requests:
-        db.queue(req)
-    db.commit()
-    print "Added %s reqmgr requests" % len(reqmgr_requests)
-    
-    
+    docList = []
+    docList.extend(reqmgr_requests)
+    docList.extend(agent_requests)
     for req in agent_requests:
-        db.queue(req)
-        jobDocs = generate_jobsummary(req['workflow'])
-        for job in jobDocs:
-            db.queue(job)
-    db.commit()
-    print "Added %s agent requests" % len(agent_requests)
-    print "Added %s job Docs" % (len(agent_requests) * len(jobDocs))
-  
-if __name__ == "__main__":
-    main(parse_opts())
+        docList.extend(generate_jobsummary(req['workflow']))
+    docs = {"docs": docList};
+    
+    json.dump(docs, open("sample_docs.json", "w+"))
+    
+    
+    

@@ -11,7 +11,7 @@ WMStats.AlertView = (function() {
     var tableConfig = {
         "aoColumns": [
             { "mDataProp": "workflow", "sTitle": "request"},
-            { "mDataProp": "count", "sTitle": "jobs"}
+            { "mDataProp": "count", "sTitle": "cooloff jobs"}
         ]
     }
     

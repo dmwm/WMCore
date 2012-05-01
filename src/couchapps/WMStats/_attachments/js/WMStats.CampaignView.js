@@ -88,7 +88,7 @@ WMStats.CampaignView = (function() {
    function createTable(selector) {
         _containerDiv = selector;
         $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display" id="'+ _tableID + '"></table>' );
-        WMStats.Couch.view(_viewName, _options, createCampaignTable)
+        WMStats.Couch.view(_viewName, _options, createCampaignTable, WMStats.Globals.AJAX_LOADING_STATUS)
     }
     
     return {'getData': getData, 'createTable': createTable};

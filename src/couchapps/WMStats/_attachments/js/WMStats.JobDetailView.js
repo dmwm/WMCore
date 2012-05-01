@@ -63,7 +63,7 @@ WMStats.JobDetailView = (function() {
         var htmlstr = "";
         var jobDetails = [];
         for (var i in data.rows){
-            jobDetails.push(data.rows[i].doc);                    
+            jobDetails.push(data.rows[i].doc);
         }
         $(_containerDiv).html(_formatHtml(jobDetails));
     }
@@ -71,8 +71,8 @@ WMStats.JobDetailView = (function() {
     function createDetailView(selector, summary) {
         _containerDiv = selector;
         options= {'include_docs': true, 'reduce': false, 
-                  'startkey': [summary.workflow, summary.status, summary.exitCode],
-                  'endkey': [summary.workflow, summary.status, summary.exitCode, {}],
+                  'startkey': [summary.workflow, summary.status, summary.exitCode, summary.site],
+                  'endkey': [summary.workflow, summary.status, summary.exitCode, summary.site, {}],
                   'limit': 3};
                   
         WMStats.Couch.view(_viewName, options, _formatJobDetails);

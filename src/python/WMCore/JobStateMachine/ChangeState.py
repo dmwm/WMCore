@@ -279,10 +279,6 @@ class ChangeState(WMObject, WMConnectionBase):
 
         self.jobsdatabase.commit()
         self.fwjrdatabase.commit()
-<<<<<<< HEAD
-        self.jsumdatabase.commit()
-=======
->>>>>>> svnmaster
         return
 
     def persist(self, jobs, newstate, oldstate):

@@ -9,7 +9,11 @@ WMStats.SiteView = (function() {
     
     var tableConfig = {
         "aoColumns": [
-            { "mDataProp": "agent_url", "sTitle": "agent"},
+            { "mDataProp": "agent_url", "sTitle": "agent",
+            "fnRender": function ( o, val ) {
+                            return decodeURIComponent(o.aData.agent_url);
+                      }
+            },
             { "mDataProp": "site", "sTitle": "site"},
             { "mDataProp": "queued.first", "sTitle": "queued first", 
                            "sDefaultContent": 0 },

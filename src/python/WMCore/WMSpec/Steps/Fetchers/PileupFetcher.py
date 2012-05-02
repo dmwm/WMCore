@@ -71,7 +71,7 @@ class PileupFetcher(FetcherInterface):
         url = helper.data.dbsUrl
         
         from WMCore.Services.DBS.DBSReader import DBSReader
-        dbsReader = DBSReader(args)
+        dbsReader = DBSReader(url)
 
         configDict = self._queryDbsAndGetPileupConfig(helper, dbsReader)
         

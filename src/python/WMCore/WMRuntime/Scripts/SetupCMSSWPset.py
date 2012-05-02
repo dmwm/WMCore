@@ -185,7 +185,7 @@ class SetupCMSSWPset(ScriptInterface):
         if funcName == "merge":
             try:
                 from Configuration.DataProcessing.Merge import mergeProcess
-                self.process = mergeProcess([])
+                self.process = mergeProcess(**funcArgs)
             except Exception, ex:
                 msg = "Failed to create a merge process."
                 print msg

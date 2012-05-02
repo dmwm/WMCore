@@ -142,7 +142,7 @@ class StdBase(object):
             configCache.loadByID(configDoc)
             outputModules = configCache.getOutputModuleInfo()
         else:
-            if scenarioFunc in [ "promptReco", "expressProcessing", "repack" ]:
+            if 'outputs' in scenarioArgs and scenarioFunc in [ "promptReco", "expressProcessing", "repack" ]:
                 for output in scenarioArgs.get('outputs', []):
                     moduleLabel = output['moduleLabel']
                     outputModules[moduleLabel] = { 'dataTier' : output['dataTier'] }
@@ -150,18 +150,18 @@ class StdBase(object):
                         outputModules[moduleLabel]['primaryDataset'] = output['primaryDataset']
                     if output.has_key('filterName'):
                         outputModules[moduleLabel]['filterName'] = output['filterName']
+
+            elif 'writeTiers' in scenarioArgs and scenarioFunc == "promptReco":
+                for dataTier in scenarioArgs.get('writeTiers'):
+                    moduleLabel = "%soutput" % dataTier
+                    outputModules[moduleLabel] = { 'dataTier' : dataTier }
+
             elif scenarioFunc == "alcaSkim":
                 for alcaSkim in scenarioArgs.get('skims',[]):
                     moduleLabel = "ALCARECOStream%s" % alcaSkim
                     outputModules[moduleLabel] = { 'dataTier' : "ALCARECO",
                                                    'primaryDataset' : scenarioArgs.get('primaryDataset'),
                                                    'filterName' : alcaSkim }
-            else:
-                for dataTier in scenarioArgs.get("writeTiers",[]): 
-                    outputModuleName = "%soutput" % (dataTier) 
-                    outputModules[outputModuleName] = {"dataTier": dataTier, 
-                                                       "filterName": None} 
-                    
 
         return outputModules
 
@@ -477,7 +477,7 @@ class StdBase(object):
         mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                         scramArch = self.scramArch)
 
-        if getattr(parentOutputModule, "dataTier") == "DQM":
+        if getattr(parentOutputModule, "dataTier") in ["DQM", "DQMROOT"]:
             # DQM wants everything to be a single file per run, so we'll merge
             # accordingly.  We'll set the max_wait_time to two weeks as files
             # tend to be garbage collected after that.
@@ -489,7 +489,6 @@ class StdBase(object):
                                             merge_across_runs = False,
                                             siteWhitelist = self.siteWhitelist,
                                             siteBlacklist = self.siteBlacklist)
-            mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge", dqm_format = True)
         else:
             mergeTask.setSplittingAlgorithm(splitAlgo,
                                             max_merge_size = self.maxMergeSize,
@@ -498,7 +497,11 @@ class StdBase(object):
                                             max_wait_time = self.maxWaitTime,
                                             siteWhitelist = self.siteWhitelist,
                                             siteBlacklist = self.siteBlacklist)
-            mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge")
+
+        if getattr(parentOutputModule, "dataTier") == "DQMROOT":
+            mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge", newDQMIO = True)
+        else:
+            mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge")
 
         mergeTaskCmsswHelper.setErrorDestinationStep(stepName = mergeTaskLogArch.name())
         mergeTaskCmsswHelper.setGlobalTag(self.globalTag)

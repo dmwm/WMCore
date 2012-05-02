@@ -18,7 +18,11 @@ WMStats.AgentView = (function() {
     // jquery datatable config
     var tableConfig = {
         "aoColumns": [
-            { "mDataProp": "agent_url", "sTitle": "agent url"},               
+            { "mDataProp": "agent_url", "sTitle": "agent url",
+              "fnRender": function ( o, val ) {
+                            return decodeURIComponent(o.aData.agent_url);
+                      }
+            },               
             { "mDataProp": "status", "sTitle": "status"},
             { "mDataProp": "agent_team", "sTitle": "teams"},
             { "mDataProp": "down_components", "sTitle": "components down", 

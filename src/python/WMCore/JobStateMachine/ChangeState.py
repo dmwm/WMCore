@@ -261,7 +261,8 @@ class ChangeState(WMObject, WMConnectionBase):
         #Unpause script comes with the standard information of a WMBSJob
         #For those last 3 cases we need to fill the gaps
         if newstate == 'created':
-            self.completeCreatedJobsInformation(jobs)
+            incrementRetry = True if 'cooloff' in oldstate else False
+            self.completeCreatedJobsInformation(jobs, incrementRetry)
             self.dashboardReporter.handleCreated(jobs)
         #If the new state is executing that was done only by the JobSubmitter,
         #it sends jobs with select information, nevertheless is enough
@@ -327,7 +328,7 @@ class ChangeState(WMObject, WMConnectionBase):
                 jobs[idx]["workflow"] = jobTask["name"]
                 jobs[idx]["taskType"] = jobTask["type"]
 
-    def completeCreatedJobsInformation(self, jobs):
+    def completeCreatedJobsInformation(self, jobs, incrementRetry = False):
         jobIDsToCheck = []
         jobMap = {}
         for idx, job in enumerate(jobs):
@@ -336,10 +337,17 @@ class ChangeState(WMObject, WMConnectionBase):
             if "jobType" not in job:
                 jobIDsToCheck.append(job["id"])
                 jobMap[job["id"]] = idx
+            #It there's no jobID in the mask then it's not loaded
+            if "jobID" not in job["mask"]:
+                job["mask"].load(jobID = job["id"])
             #If the mask is event based, then we have info to report
             if job["mask"]["LastEvent"] != None and \
                job["mask"]["FirstEvent"] != None and job["mask"]['inclusivemask']:
-                job["nEventsToProc"] = job["mask"]["LastEvent"] - job["mask"]["FirstEvent"]
+                job["nEventsToProc"] = int(job["mask"]["LastEvent"] - 
+                                            job["mask"]["FirstEvent"])
+            #Increment retry when commanded
+            if incrementRetry:
+                job["retry_count"] += 1
 
         #Let's continue with the jobTypes, get all the types at once and add them
         #to the jobs

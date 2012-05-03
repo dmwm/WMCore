@@ -116,7 +116,7 @@ def procdataset(candidate):
     """
     if candidate == '' or not candidate:
         return candidate
-    return check(r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+)?-v[0-9]*$', candidate)
+    return check(r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+){0,2}-v[0-9]*$', candidate)
 
 def procversion(candidate):
      return check(r'^[0-9]*$', candidate)

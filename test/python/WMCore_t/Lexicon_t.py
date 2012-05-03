@@ -78,6 +78,7 @@ class LexiconTest(unittest.TestCase):
         assert procdataset('CMSSW_4_4_0_pre7_g494p02-START44_V2_special_110808-v1'), 'valid procdataset not validated'
         assert procdataset('Summer11-PU_S4_START42_V11-v1'), 'valid procdataset not validated'
         assert procdataset('CMSSW_3_0_0_pre3_IDEAL_30X-v1'), 'valid procdataset not validated'
+        assert procdataset('CMSSW_3_0_0_pre3_IDEAL_30X-my_filter-my_string-v1'), 'valid procdataset not validated'
 
     def testBadProcataset(self):
         # Check that invalid Procataset raise an exception

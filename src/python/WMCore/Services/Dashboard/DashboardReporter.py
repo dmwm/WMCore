@@ -81,7 +81,7 @@ class DashboardReporter(WMObject):
             package['scheduler']        = 'BossAir'
             package['TaskType']         = job['taskType']
             package['JobType']          = job['jobType']
-            package['NEventsToProcess'] = job.get('nEvntsToProc',
+            package['NEventsToProcess'] = job.get('nEventsToProc',
                                                     'NotAvailable')
 
             logging.info("Sending: %s" % str(package))
@@ -170,15 +170,22 @@ class DashboardReporter(WMObject):
         performanceSteps = job['fwjr'].listSteps()
         for stepName in performanceSteps:
             step = job['fwjr'].retrieveStep(stepName)
-            if not getattr(step, 'performance', False):
+            if not hasattr(step, 'performance'):
                 continue
             performance = step.performance
-            if not getattr(performance, 'memory', False):
+            toReport = 3
+            if not hasattr(performance, 'memory'):
                 performance.section_('memory')
-            if not getattr(performance, 'storage', False):
+                toReport -= 1
+            if not hasattr(performance, 'storage'):
                 performance.section_('storage')
-            if not getattr(performance, 'cpu', False):
+                toReport -= 1
+            if not hasattr(performance, 'cpu'):
                 performance.section_('cpu')
+                toReport -= 1
+            #There's nothing to report, get out
+            if not toReport:
+                continue
             package = {}
             package['jobId']                  = '%s_%i' % (job['name'],
                                                 job['retry_count'])

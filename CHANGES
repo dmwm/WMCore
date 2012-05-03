@@ -1,3 +1,8 @@
+0.8.43 to 0.8.44:
+  - Dashboard fixes.  Fixes #3674.
+  - Support merging the new DQM format.  Fixes #3671.
+  - Support a four part processed dataset name in lexicon.  From #3653.
+
 0.8.42 to 0.8.43:
   - Pull the site name from the site-local-config and report that as the CE.  Fixes #2774.
   - More improvements to WN dashboard reporting.  Fixes #3656.

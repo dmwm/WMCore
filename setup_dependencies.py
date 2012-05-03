@@ -47,6 +47,7 @@ dependencies = {
                                      'WMCore.Services.WorkQueue',
                                      'WMCore.Services.WMBS',
                                      'WMCore.Services.WMAgent',
+                                     'WMCore.Services.Dashboard',
                                      'WMCore.Services.WMStats'],
                         'systems':['wmc-web', 'wmc-runtime'],
                         'statics': ['src/templates/WMCore/WebTools/RequestManager',

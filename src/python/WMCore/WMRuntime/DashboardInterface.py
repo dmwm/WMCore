@@ -194,6 +194,7 @@ class DashboardInfo():
         stepSuccess = stepReport.getStepExitCode(stepName = helper.name())
         if self.jobSuccess == 0:
             self.jobSuccess = int(stepSuccess)
+        if int(stepSuccess) != 0:
             self.failedStep = helper.name()
 
         data = {}
@@ -218,7 +219,7 @@ class DashboardInfo():
             if hasattr(step.performance, 'cpu'):
                 data['ExeCPUTime'] = getattr(step.performance.cpu,
                                              'TotalJobCPU', 0)
-                self.WrapperCPUTime += data['ExeCPUTime']
+                self.WrapperCPUTime += float(data['ExeCPUTime'])
 
         self.WrapperWCTime += data['ExeWCTime']
         self.lastStep = helper.name()
@@ -306,8 +307,8 @@ class DashboardInfo():
 
         """
 
-        logging.debug("About to send UDP package to dashboard: %s" % data)
-        logging.debug("Using address %s" % self.server)
+        logging.info("About to send UDP package to dashboard: %s" % data)
+        logging.info("Using address %s" % self.server)
         apmonSend(taskid = self.taskName, jobid = self.jobName, params = data,
                   logr = logging, apmonServer = self.server)
         apmonFree()

@@ -30,6 +30,9 @@
     <script src="js/WMStats.AlertView.js" type='text/javascript'> </script>
     <script src="js/WMStats.EventHandler.js" type='text/javascript'> </script>
     <script>
+    //get info for which db it is talking to
+    WMStats.Globals.setCouchDB();
+    
     function drawMonitor() {
         WMStats.CampaignView.createTable("#campaignDiv");
         WMStats.SiteView.createTable("#siteDiv");

@@ -193,34 +193,39 @@ class StdBase(object):
         Gathers workflow information from the arguments and reports it to the
         dashboard
         """
+        try:
         #Create a fake config
-        conf = ConfigSection()
-        conf.section_('DashboardReporter')
-        conf.DashboardReporter.dashboardHost = self.dashboardHost
-        conf.DashboardReporter.dashboardPort = self.dashboardPort
+            conf = ConfigSection()
+            conf.section_('DashboardReporter')
+            conf.DashboardReporter.dashboardHost = self.dashboardHost
+            conf.DashboardReporter.dashboardPort = self.dashboardPort
 
-        #Create the reporter
-        reporter = DashboardReporter(conf)
+            #Create the reporter
+            reporter = DashboardReporter(conf)
 
-        #Assemble the info
-        workflow = {}
-        workflow['name'] = self.workloadName
-        workflow['application'] = self.frameworkVersion
-        workflow['scheduler'] = 'BossAir'
-        workflow['TaskType'] = dashboardActivity
-        #Let's try to build information about the inputDataset
-        dataset = 'DoesNotApply'
-        if hasattr(self, 'inputDataset'):
-            dataset = self.inputDataset
-        workflow['datasetFull'] = dataset
-        workflow['user'] = 'cmsdataops'
+            #Assemble the info
+            workflow = {}
+            workflow['name'] = self.workloadName
+            workflow['application'] = self.frameworkVersion
+            workflow['scheduler'] = 'BossAir'
+            workflow['TaskType'] = dashboardActivity
+            #Let's try to build information about the inputDataset
+            dataset = 'DoesNotApply'
+            if hasattr(self, 'inputDataset'):
+                dataset = self.inputDataset
+            workflow['datasetFull'] = dataset
+            workflow['user'] = 'cmsdataops'
 
-        #These two make are not reported for now
-        workflow['GridName'] = 'NotAvailable'
-        workflow['nevtJob'] = 'NotAvailable'
+            #These two make are not reported for now
+            workflow['GridName'] = 'NotAvailable'
+            workflow['nevtJob'] = 'NotAvailable'
 
-        #Send the workflow info
-        reporter.addTask(workflow)
+            #Send the workflow info
+            reporter.addTask(workflow)
+        except:
+            #This is not critical, if it fails just leave it be
+            logging.error("There was an error with dashboard reporting")
+
 
     def createWorkload(self):
         """
@@ -553,7 +558,7 @@ class StdBase(object):
             if step.stepType != "CMSSW":
                 continue
             helper = task.getStepHelper(stepName)
-            stepHelper.setupPileup(pileupConfig, self.dbsUrl)        
+            stepHelper.setupPileup(pileupConfig, self.dbsUrl)
 
         return
 

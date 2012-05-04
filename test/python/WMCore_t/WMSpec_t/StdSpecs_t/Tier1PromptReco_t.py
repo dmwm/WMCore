@@ -361,6 +361,7 @@ class Tier1PromptRecoTest(unittest.TestCase):
         self.setupPromptSkimConfigObject()
         testArguments = getTestArguments()
         testArguments["PromptSkims"] = [self.promptSkim]
+        testArguments["CouchURL"] = os.environ["COUCHURL"]
 
 
         testWorkload = tier1promptrecoWorkload("TestWorkload", testArguments)

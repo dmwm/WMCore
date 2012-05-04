@@ -42,7 +42,7 @@ def getTestArguments():
         "InputDataset" : "/Cosmics/Commissioning12-v1/RAW",
         "WriteTiers" : ["AOD", "RECO", "DQM", "ALCARECO"],
         "AlcaSkims" : ["TkAlCosmics0T","MuAlGlobalCosmics","HcalCalHOCosmics"],
-        "CouchURL": os.environ["COUCHURL"],
+        "CouchURL": None,
         "CouchDBName": "tier1promptreco_t",
         "InitCommand": os.environ.get("INIT_COMMAND", None),
         #PromptSkims should be a list of ConfigSection objects with the

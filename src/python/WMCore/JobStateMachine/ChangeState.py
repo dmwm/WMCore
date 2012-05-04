@@ -339,7 +339,9 @@ class ChangeState(WMObject, WMConnectionBase):
                 jobMap[job["id"]] = idx
             #It there's no jobID in the mask then it's not loaded
             if "jobID" not in job["mask"]:
-                job["mask"].load(jobID = job["id"])
+                #Make sure the daofactory was not stripped
+                if getattr(job["mask"], "daofactory", None):
+                    job["mask"].load(jobID = job["id"])
             #If the mask is event based, then we have info to report
             if job["mask"]["LastEvent"] != None and \
                job["mask"]["FirstEvent"] != None and job["mask"]['inclusivemask']:

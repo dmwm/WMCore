@@ -59,7 +59,8 @@ class CreateWMBSBase(DBCreator):
                                "16wmbs_job_assoc",
                                "17wmbs_job_mask",
                                "18wmbs_checksum_type",
-                               "19wmbs_file_checksums"]
+                               "19wmbs_file_checksums",
+                               "20wmbs_location_senames",]
 
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
@@ -109,7 +110,6 @@ class CreateWMBSBase(DBCreator):
              id          INTEGER      PRIMARY KEY AUTO_INCREMENT,
              site_name   VARCHAR(255) NOT NULL,
              cms_name    VARCHAR(255),
-             se_name     VARCHAR(255),
              ce_name     VARCHAR(255),
              job_slots   INTEGER,
              plugin      VARCHAR(255),
@@ -315,6 +315,14 @@ class CreateWMBSBase(DBCreator):
                 ON DELETE CASCADE,
               FOREIGN KEY (fileid) REFERENCES wmbs_file_details(id)
                 ON DELETE CASCADE)"""
+
+        self.create["20wmbs_location_senames"] = \
+          """CREATE TABLE wmbs_location_senames (
+               location   INTEGER,
+               se_name    VARCHAR(255),
+               UNIQUE(location, se_name),
+               FOREIGN KEY (location) REFERENCES wmbs_location(id)
+                 ON DELETE CASCADE)"""
 
 
         self.constraints["01_idx_wmbs_fileset_files"] = \

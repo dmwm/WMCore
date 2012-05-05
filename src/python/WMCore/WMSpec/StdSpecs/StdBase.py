@@ -59,7 +59,8 @@ class StdBase(object):
         self.inputPrimaryDataset = None
         self.inputProcessedDataset = None
         self.inputDataTier = None
-        self.processingVersion = None
+        self.processingVersion = 0
+        self.processingString  = None
         self.siteBlacklist = []
         self.siteWhitelist = []
         self.unmergedLFNBase = None
@@ -95,7 +96,8 @@ class StdBase(object):
             self.owner_vorole = arguments['VoRole']
         self.acquisitionEra = arguments.get("AcquisitionEra", None)
         self.scramArch = arguments.get("ScramArch", None)
-        self.processingVersion = arguments.get("ProcessingVersion", None)
+        self.processingVersion = int(arguments.get("ProcessingVersion", 0))
+        self.processingString = arguments.get("ProcessingString", None)
         self.siteBlacklist = arguments.get("SiteBlacklist", [])
         self.siteWhitelist = arguments.get("SiteWhitelist", [])
         self.unmergedLFNBase = arguments.get("UnmergedLFNBase", "/store/unmerged")
@@ -369,40 +371,59 @@ class StdBase(object):
         _addOutputModule_
 
         Add an output module to the given processing task.
+
         """
-        if parentTask.name() in analysisTaskTypes:
-            # TODO in case of user data need to implement policy to define
-            #  1  processedDataset
-            #  2  primaryDataset
-            #  ( 3  dataTier should be always 'USER'.)
-            #  4 then we'll know how to deal with Merge
-            dataTier = 'USER'
+        haveFilterName = (filterName != None and filterName != "")
+        haveProcString = (self.processingString != None and self.processingString != "")
 
-        if filterName != None and filterName != "":
-            processedDataset = "%s-%s-%s" % (self.acquisitionEra, filterName,
-                                             self.processingVersion)
-            processingString = "%s-%s" % (filterName, self.processingVersion)
+        processedDataset = "%s-" % self.acquisitionEra
+        if haveFilterName:
+            processedDataset += "%s-" % filterName
+        if haveProcString:
+            processedDataset += "%s-" % self.processingString
+        processedDataset += "v%i" % self.processingVersion
+
+        if haveProcString:
+            processingLFN = "%s-v%i" % (self.processingString, self.processingVersion)
         else:
-            processedDataset = "%s-%s" % (self.acquisitionEra,
-                                          self.processingVersion)
-            processingString = "%s" % (self.processingVersion)
+            processingLFN = "v%i" % self.processingVersion
+
 
         if parentTask.name() in analysisTaskTypes:
-            if filterName:
-                unmergedLFN = "%s/%s/%s-%s/%s" % (self.unmergedLFNBase, primaryDataset,
-                                                  self.acquisitionEra, filterName,
-                                                  self.processingVersion)
+
+            # dataTier for user data is always USER
+            dataTier = "USER"
+
+            # output for user data is always unmerged
+            forceUnmerged = True
+
+            unmergedLFN = "%s/%s" % (self.unmergedLFNBase, primaryDataset)
+
+            if haveFilterName:
+                unmergedLFN += "/%s-%s" % (self.acquisitionEra, filterName)
             else:
-                unmergedLFN = "%s/%s/%s/%s" % (self.unmergedLFNBase, primaryDataset,
-                                               self.acquisitionEra, self.processingVersion)
-            mergedLFN = unmergedLFN
+                unmergedLFN += "/%s" % self.acquisitionEra
+
+            unmergedLFN += "/%s" % processingLFN
+
             lfnBase(unmergedLFN)
+
         else:
-            unmergedLFN = "%s/%s/%s/%s/%s" % (self.unmergedLFNBase, self.acquisitionEra,
-                                              primaryDataset, dataTier, processingString)
-            mergedLFN = "%s/%s/%s/%s/%s" % (self.mergedLFNBase, self.acquisitionEra,
-                                            primaryDataset, dataTier,
-                                            processingString)
+
+            unmergedLFN = "%s/%s/%s/%s" % (self.unmergedLFNBase,
+                                           self.acquisitionEra,
+                                           primaryDataset, dataTier)
+            mergedLFN = "%s/%s/%s/%s" % (self.mergedLFNBase,
+                                         self.acquisitionEra,
+                                         primaryDataset, dataTier)
+
+            if haveFilterName:
+                unmergedLFN += "/%s-%s" % (filterName, processingLFN)
+                mergedLFN += "/%s-%s" % (filterName, processingLFN)
+            else:
+                unmergedLFN += "/%s" % processingLFN
+                mergedLFN += "/%s" % processingLFN
+
             lfnBase(unmergedLFN)
             lfnBase(mergedLFN)
 
@@ -478,14 +499,20 @@ class StdBase(object):
         parentTaskCmssw = parentTask.getStep(parentStepName)
         parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
 
+        mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
+
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
         mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                         scramArch = self.scramArch)
 
+        mergeTaskCmsswHelper.setErrorDestinationStep(stepName = mergeTaskLogArch.name())
+        mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
+
         if getattr(parentOutputModule, "dataTier") in ["DQM", "DQMROOT"]:
             # DQM wants everything to be a single file per run, so we'll merge
             # accordingly.  We'll set the max_wait_time to two weeks as files
-            # tend to be garbage collected after that.
+            # tend to be garbage collected after that. Also effectively disable
+            # size thresholds for DQM merges (they do not apply).
             mergeTask.setSplittingAlgorithm(splitAlgo,
                                             max_merge_size = 21000000000,
                                             min_merge_size = 20000000000,
@@ -508,22 +535,14 @@ class StdBase(object):
         else:
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge")
 
-        mergeTaskCmsswHelper.setErrorDestinationStep(stepName = mergeTaskLogArch.name())
-        mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
 
-        mergedLFN = "%s/%s/%s/%s/%s" % (self.mergedLFNBase, self.acquisitionEra,
-                                        getattr(parentOutputModule, "primaryDataset"),
-                                        getattr(parentOutputModule, "dataTier"),
-                                        self.processingVersion)
 
-        mergeTaskCmsswHelper.addOutputModule("Merged",
-                                             primaryDataset = getattr(parentOutputModule, "primaryDataset"),
-                                             processedDataset = getattr(parentOutputModule, "processedDataset"),
-                                             dataTier = getattr(parentOutputModule, "dataTier"),
-                                             filterName = getattr(parentOutputModule, "filterName"),
-                                             lfnBase = mergedLFN)
+        self.addOutputModule(mergeTask, "Merged",
+                             primaryDataset = getattr(parentOutputModule, "primaryDataset"),
+                             dataTier = getattr(parentOutputModule, "dataTier"),
+                             filterName = getattr(parentOutputModule, "filterName"),
+                             forceMerged = True)
 
-        mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
         self.addCleanupTask(parentTask, parentOutputModuleName)
         return mergeTask
 
@@ -596,12 +615,30 @@ class StdBase(object):
 
         Named this way so that nobody else will try to use this name.
         """
-
+        self.masterValidation(schema = arguments)
         self.validateSchema(schema = arguments)
         workload = self.__call__(workloadName = workloadName, arguments = arguments)
         self.validateWorkload(workload)
 
         return workload
+
+    def masterValidation(self, schema):
+        """
+        _masterValidation_
+
+        This is validation for global inputs that have to be implemented for
+        multiple types of workflows in the exact same way.
+
+        Usually used for type-checking, etc.
+        """
+
+        try:
+            processingVersion = int(schema.get("ProcessingVersion", 0))
+        except ValueError:
+            try:
+                processingVersion = int(float(schema.get("ProcessingVersion", 0)))
+            except ValueError:
+                self.raiseValidationException(msg = "Non-integer castable ProcessingVersion found")
 
     def requireValidateFields(self, fields, schema, validate = False):
         """

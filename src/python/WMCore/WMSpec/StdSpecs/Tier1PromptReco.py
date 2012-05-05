@@ -34,7 +34,7 @@ def getTestArguments():
         "AcquisitionEra": "WMAgentCommissioning12",
         "Requestor": "Dirk.Hufnagel@cern.ch",
         "ScramArch" : "slc5_amd64_gcc462",
-        "ProcessingVersion" : "v1",
+        "ProcessingVersion" : "1",
         "GlobalTag" : "GR_P_V29::All",
         "CMSSWVersion" : "CMSSW_5_2_1",
         # these must be overridden

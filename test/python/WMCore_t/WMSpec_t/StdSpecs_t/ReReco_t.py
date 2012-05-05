@@ -100,6 +100,7 @@ class ReRecoTest(unittest.TestCase):
         skimConfig = self.injectSkimConfig()
         recoConfig = self.injectReRecoConfig()
         dataProcArguments = getTestArguments()
+        dataProcArguments['ProcessingString']  = 'ProcString'
         dataProcArguments['ProcConfigCacheID'] = recoConfig
         dataProcArguments["SkimConfigs"] = [{"SkimName": "SomeSkim",
                                              "SkimInput": "RECOoutput",
@@ -114,6 +115,11 @@ class ReRecoTest(unittest.TestCase):
         testWorkload = rerecoWorkload("TestWorkload", dataProcArguments)
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DMWM")
+
+        self.assertEqual(testWorkload.data.tasks.DataProcessing.tree.children.DataProcessingMergeRECOoutput.\
+                         tree.children.SomeSkim.tree.children.SomeSkimMergeSkimB.steps.cmsRun1.output.modules.\
+                         Merged.mergedLFNBase,
+                         '/store/data/WMAgentCommissioning10/MinimumBias/USER/SkimBFilter-ProcString-v2')
         
         testWMBSHelper = WMBSHelper(testWorkload, "DataProcessing", "SomeBlock")
         testWMBSHelper.createTopLevelFileset()

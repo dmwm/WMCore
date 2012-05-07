@@ -72,7 +72,6 @@ class ChangeState(WMObject, WMConnectionBase):
         self.check(newstate, oldstate)
 
         # 2. Load workflow/task information into the jobs
-
         self.loadExtraJobInformation(jobs)
 
         # 3. Document the state transition in couch

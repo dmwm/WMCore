@@ -42,7 +42,9 @@ def getTestArguments():
         "DoStageOut": True,
         "DoDqmUpload": True,
         "DqmBaseLFN": '/store/temp/WMAgent/dqm',
-        "RefHistogram": '/store/unmerged/dqm/wmagent/CMSSW_3_8_1/RelValMinBias/GEN-SIM-RECO/MC_38Y_V8-v1/0000/DQM_V0001_R000000001__RelValMinBias__CMSSW_3_8_1-MC_38Y_V8-v1__GEN-SIM-RECO.root'
+        "RefHistogram": '/store/unmerged/dqm/wmagent/CMSSW_3_8_1/RelValMinBias/GEN-SIM-RECO/MC_38Y_V8-v1/0000/DQM_V0001_R000000001__RelValMinBias__CMSSW_3_8_1-MC_38Y_V8-v1__GEN-SIM-RECO.root',
+        "DashboardHost": "127.0.0.1",
+        "DashboardPort": 8884
         }
 
     return arguments
@@ -266,6 +268,9 @@ class HarvestingWorkloadFactory(StdBase):
 
 
         self.addLogCollectTask(harvTask)
+
+        workload.setDashboardActivity("Harvesting")
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
 
         return workload
 

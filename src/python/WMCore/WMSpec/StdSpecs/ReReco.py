@@ -37,6 +37,8 @@ def getTestArguments():
         "CouchDBName": "scf_wmagent_configcache",
         
         "ProcScenario": "cosmics",
+        "DashboardHost": "127.0.0.1",
+        "DashboardPort": 8884,
         #"ProcConfigCacheID": "03da10e20c7b98c79f9d6a5c8900f83b",
 
         #"SkimConfigs": [{"SkimName": "Prescaler", "SkimInput": "output",

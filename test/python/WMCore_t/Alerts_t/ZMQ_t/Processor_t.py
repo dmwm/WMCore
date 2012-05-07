@@ -18,7 +18,7 @@ def worker(addr, ctrl, nAlerts, workerId = "Processor_t"):
     Send a few alerts.
      
     """
-    s = Sender(addr, workerId, ctrl)
+    s = Sender(addr, ctrl, workerId)
     s.register()
     for i in range(0, nAlerts):
         a = Alert(Type = "Alert", Level = i)
@@ -52,7 +52,7 @@ class ProcessorTest(unittest.TestCase):
         self.config.AlertProcessor.section_("soft")
         
         self.config.AlertProcessor.critical.level = 5
-        self.config.AlertProcessor.soft.level = 0
+        self.config.AlertProcessor.soft.level = 1
         self.config.AlertProcessor.soft.bufferSize = 3
         
         self.config.AlertProcessor.critical.section_("sinks")
@@ -82,7 +82,7 @@ class ProcessorTest(unittest.TestCase):
         rec.startReceiver() # non-blocking call
         
         # now sender tests control messages (register, unregister, shutdown)
-        s = Sender(self.addr, "Processor_t", self.ctrl)
+        s = Sender(self.addr, self.ctrl, "Processor_t")
         s.register()
         s.unregister()
         s.sendShutdown()
@@ -125,12 +125,14 @@ class ProcessorTest(unittest.TestCase):
         softList = softSink.load()
         criticalList = criticalSink.load()
         # check soft level alerts
-        self.assertEqual(len(softList), 9) # levels 1 .. 9 went in
-        for a, level in zip(softList, range(1, 9)):
+        # levels 1 .. 4 went in (level 0 is, according to the config not considered)
+        self.assertEqual(len(softList), 3) 
+        for a, level in zip(softList, range(1, 4)):
             self.assertEqual(a["Level"], level)
         # check 'critical' levels
-        self.assertEqual(len(criticalList), 4) # only levels 6 .. 9 went in
-        for a, level in zip(criticalList, range(6, 9)):
+        # only levels 5 .. 9 went in
+        self.assertEqual(len(criticalList), 5)
+        for a, level in zip(criticalList, range(5, 10)):
             self.assertEqual(a["Level"], level)
             
             

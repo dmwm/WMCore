@@ -527,6 +527,10 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
 
+        workload = self.loadWorkload(requestName)
+        self.assertEqual(workload.data.request.schema.Task1.SplittingArguments,
+                         {'events_per_job': 250})
+
         return
 
 
@@ -632,6 +636,19 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
 
         configID = self.createConfig()
         schema["ProcConfigCacheID"] = configID
+        schema["FilterEfficiency"] = -0.5
+
+        try:
+            raises = False
+            result = self.jsonSender.put('request/testRequest', schema)
+        except HTTPException, ex:
+            raises = True
+            self.assertEqual(ex.status, 400)
+            self.assertTrue("Negative filter efficiency for MC workflow" in ex.result)
+            pass
+        self.assertTrue(raises)
+
+        schema["FilterEfficiency"] = 1.0
         result = self.jsonSender.put('request/testRequest', schema)
         requestName = result[0]['RequestName']
         

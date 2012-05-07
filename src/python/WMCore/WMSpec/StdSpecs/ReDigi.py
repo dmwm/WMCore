@@ -28,7 +28,7 @@ def getTestArguments():
         "InputDataset": "/MinimumBias/Commissioning10-v4/RAW",
         "CMSSWVersion": "CMSSW_3_9_7",
         "ScramArch": "slc5_ia32_gcc434",
-        "ProcessingVersion": "v2scf",
+        "ProcessingVersion": 2,
         "GlobalTag": "GR10_P_v4::All",
 
         "StepOneOutputModuleName": "RAWDEBUGoutput",
@@ -41,6 +41,10 @@ def getTestArguments():
         
         "CouchURL": os.environ.get("COUCHURL", None),
         "CouchDBName": "wmagent_configcachescf",
+        "PileupConfig": {"cosmics": "/some/cosmics/dataset"},
+
+        "DashboardHost": "127.0.0.1",
+        "DashboardPort": 8884,
         }
 
     return arguments
@@ -232,6 +236,7 @@ class ReDigiWorkloadFactory(StdBase):
         
         workload = self.createWorkload()
         workload.setDashboardActivity("redigi")
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
         stepOneTask = workload.newTask("StepOneProc")
 
@@ -241,8 +246,6 @@ class ReDigiWorkloadFactory(StdBase):
                                               splitAlgo = self.procJobSplitAlgo,
                                               splitArgs = self.procJobSplitArgs, stepType = "CMSSW")
         self.addLogCollectTask(stepOneTask)
-        if self.pileupConfig:
-            self.setupPileup(stepOneTask, self.pileupConfig)
 
         if (self.keepStepOneOutput == True or self.keepStepOneOutput == "True") \
                and (self.keepStepTwoOutput == True or self.keepStepTwoOutput == "True"):
@@ -256,6 +259,9 @@ class ReDigiWorkloadFactory(StdBase):
         else:
             # Steps one and two are dependent, step three is chained.
             pass
+
+        if self.pileupConfig:
+            self.setupPileup(stepOneTask, self.pileupConfig)
 
         return workload
 

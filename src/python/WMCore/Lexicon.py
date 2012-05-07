@@ -101,6 +101,10 @@ def identifier(candidate):
     """ letters, numbers, whitespace, periods, dashes, underscores """
     return check(r'[a-zA-Z0-9\s\.\-_]{1,100}$', candidate)
 
+def globalTag(candidate):
+    """ Identifier plus colons """
+    return check(r'[a-zA-Z0-9\s\.\-_:]{1,100}$', candidate)
+
 def dataset(candidate):
     """ A slash followed by an identifier,x3 """
     return check(r'(/[a-zA-Z0-9\.\-_]{1,700}){3}$', candidate)
@@ -112,7 +116,7 @@ def procdataset(candidate):
     """
     if candidate == '' or not candidate:
         return candidate
-    return check(r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+)?-v[0-9]*$', candidate)
+    return check(r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+){0,2}-v[0-9]*$', candidate)
 
 def procversion(candidate):
      return check(r'^[0-9]*$', candidate)

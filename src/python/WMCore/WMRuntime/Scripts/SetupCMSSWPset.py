@@ -185,7 +185,7 @@ class SetupCMSSWPset(ScriptInterface):
         if funcName == "merge":
             try:
                 from Configuration.DataProcessing.Merge import mergeProcess
-                self.process = mergeProcess([])
+                self.process = mergeProcess(**funcArgs)
             except Exception, ex:
                 msg = "Failed to create a merge process."
                 print msg
@@ -436,6 +436,8 @@ class SetupCMSSWPset(ScriptInterface):
                 # there should be either "input" or "secsource" attributes
                 # and both "MixingModule", "DataMixingModule" can have both
                 inputTypeAttrib = getattr(m, "input", None) or getattr(m, "secsource", None)
+                if not inputTypeAttrib:
+                    continue
                 inputTypeAttrib.fileNames = cms.untracked.vstring()
                 if pileupType == requestedPileupType:
                     # not all blocks may be stored on the local SE, loop over

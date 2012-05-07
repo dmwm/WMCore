@@ -39,7 +39,9 @@ class EmailSinkTest(unittest.TestCase):
         
     def testEmailSinkBasic(self):
         # pre-generate the entire email message
-        msg = EmailSink.EMAIL_HEADER % (self.config.fromAddr, ", ".join(self.config.toAddr))
+        subj = "Alert from %s" % None # this is default Alert value for HostName
+        msg = EmailSink.EMAIL_HEADER % (self.config.fromAddr, subj,
+                                        ", ".join(self.config.toAddr))
         alerts = []
         for i in range(10):
             a = Alert(Source=__file__, Level = i, Timestamp = time.time(), Type = "Test")

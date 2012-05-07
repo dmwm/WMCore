@@ -24,7 +24,7 @@ class PauseAlgo(RetryAlgoBase):
         """
         #This should come from configuration, pause_count
 
-        pauseCount = self.config.RetryManager.PauseCount
+        pauseCount = self.config.RetryManager.pauseCount
 
         pauseMap = {
             'createcooloff' :    'createpaused',

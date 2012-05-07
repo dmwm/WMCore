@@ -181,8 +181,8 @@ class EventBasedTest(unittest.TestCase):
             assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                    "ERROR: Job contains unknown files."
         
-            assert job["mask"].getMaxEvents() == 99, \
-                   "ERROR: Job's max events is incorrect."
+            self.assertTrue(job["mask"].getMaxEvents() == 99 or job['mask'].getMaxEvents() == 1, 
+                            "ERROR: Job's max events is incorrect.")
         
             assert job["mask"]["FirstEvent"] in [0, 99], \
                    "ERROR: Job's first event is incorrect."

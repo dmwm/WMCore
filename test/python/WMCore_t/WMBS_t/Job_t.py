@@ -62,7 +62,7 @@ class JobTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
         
-    def createTestJob(self):
+    def createTestJob(self, subscriptionType = "Merge"):
         """
         _createTestJob_
 
@@ -78,7 +78,7 @@ class JobTest(unittest.TestCase):
         
         testSubscription = Subscription(fileset = testWMBSFileset,
                                         workflow = testWorkflow,
-                                        type = "Merge")
+                                        type = subscriptionType)
         testSubscription.create()
 
         testJobGroup = JobGroup(subscription = testSubscription)
@@ -900,7 +900,8 @@ class JobTest(unittest.TestCase):
         _testJobTypeDAO_
 
         Verify that the Jobs.GetType DAO returns the correct job type.  The
-        job type is retrieved from the subscription type.
+        job type is retrieved from the subscription type. When only a single
+        job is passed.
         """
         testJob = self.createTestJob()
 
@@ -910,7 +911,48 @@ class JobTest(unittest.TestCase):
         assert jobType == "Merge", \
                "Error: GetJobType DAO returned the wrong job type."
 
-        return        
+        return
+
+    def testJobTypeDAOBulk(self):
+        """
+        _testJobTypeDAOBulk_
+
+        Verify that the Jobs.GetType DAO returns the correct job type.  The
+        job type is retrieved from the subscription type. When a list of jobs
+        ids is passed.
+        """
+        testJobA = self.createTestJob(subscriptionType = "Merge")
+        testJobB = self.createTestJob(subscriptionType = "Processing")
+        testJobC = self.createTestJob(subscriptionType = "Analysis")
+        testJobD = self.createTestJob(subscriptionType = "Merge")
+        testJobE = self.createTestJob(subscriptionType = "Skim")
+
+        jobIds = []
+        jobIds.append(testJobA["id"])
+        jobIds.append(testJobB["id"])
+        jobIds.append(testJobC["id"])
+        jobIds.append(testJobD["id"])
+        jobIds.append(testJobE["id"])
+
+        jobTypeAction = self.daoFactory(classname = "Jobs.GetType")
+        jobTypes = jobTypeAction.execute(jobID = jobIds)
+
+        entryMap = {}
+        for entry in jobTypes:
+            entryMap[entry["id"]] = entry["type"]
+
+        assert entryMap[testJobA["id"]] == "Merge", \
+               "Error: GetJobType DAO returned the wrong job type."
+        assert entryMap[testJobB["id"]] == "Processing", \
+               "Error: GetJobType DAO returned the wrong job type."
+        assert entryMap[testJobC["id"]] == "Analysis", \
+               "Error: GetJobType DAO returned the wrong job type."
+        assert entryMap[testJobD["id"]] == "Merge", \
+               "Error: GetJobType DAO returned the wrong job type."
+        assert entryMap[testJobE["id"]] == "Skim", \
+               "Error: GetJobType DAO returned the wrong job type."
+
+        return
 
     def testGetOutputMapDAO(self):
         """

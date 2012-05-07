@@ -88,8 +88,8 @@ class BaseTest(unittest.TestCase):
 
     def testSenderReceiverBasic(self):
         sender = Sender(self.config.Alert.address,
-                        self.__class__.__name__,
-                        self.config.Alert.controlAddr)
+                        self.config.Alert.controlAddr,
+                        self.__class__.__name__)
         handler, receiver = utils.setUpReceiver(self.config.Alert.address,
                                                 self.config.Alert.controlAddr)
         a = Alert(Component = inspect.stack()[0][3])
@@ -132,7 +132,7 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(len(mes), 0)
         self.assertEqual(mes._numOfMeasurements, numMes)
         
-
+        
     def testBasePollerBasic(self):
         config = getConfig("/tmp")
         # create some non-sence config section. just need a bunch of values defined        
@@ -154,6 +154,26 @@ class BaseTest(unittest.TestCase):
             time.sleep(0.2)
             print "%s waiting for test poller to terminate" % inspect.stack()[0][3]
             
+            
+    def testBasePollerHandleFailedPolling(self):
+        config = getConfig("/tmp")
+        # create some non-sence config section. just need a bunch of values defined        
+        config.AlertGenerator.section_("bogusPoller")
+        config.AlertGenerator.bogusPoller.soft = 5 # [percent]
+        config.AlertGenerator.bogusPoller.critical = 50 # [percent] 
+        config.AlertGenerator.bogusPoller.pollInterval = 2  # [second]
+        config.AlertGenerator.bogusPoller.period = 10
+        
+        generator = utils.AlertGeneratorMock(config)
+        poller = BasePoller(config.AlertGenerator.bogusPoller, generator)
+        ex = Exception("test exception")
+        class Sender(object):
+            def __call__(self, alert):
+                self.alert = alert
+        poller.sender = Sender()
+        poller._handleFailedPolling(ex)
+        self.assertEqual(poller.sender.alert["Source"], "BasePoller")
+                    
         
     def testPeriodPollerOnRealProcess(self):
         config = getConfig("/tmp")

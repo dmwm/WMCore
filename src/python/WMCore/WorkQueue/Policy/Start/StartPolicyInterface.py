@@ -66,6 +66,11 @@ class StartPolicyInterface(PolicyInterface):
                 error = WorkQueueWMSpecError(self.wmspec, "Site blacklist validation error: %s" % str(ex))
                 raise error
 
+        # splitter settings
+        if self.args.get('SliceSize', 1) <= 0:
+            error = WorkQueueWMSpecError(self.wmspec, 'Zero or negative SliceSize parameter')
+            raise error
+
         # check input dataset is valid
         try:
             if self.initialTask.getInputDatasetPath():
@@ -97,7 +102,8 @@ class StartPolicyInterface(PolicyInterface):
 
     def __call__(self, wmspec, task, data = None, mask = None, team = None):
         self.wmspec = wmspec
-        self.splitParams = self.wmspec.data.policies.start
+        # bring in spec specific settings
+        self.args.update(self.wmspec.startPolicyParameters())
         self.initialTask = task
         if data:
             self.data = data

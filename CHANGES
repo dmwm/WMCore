@@ -1,3 +1,74 @@
+0.8.44 to 0.8.45:
+  - Initial PromptReco spec.  Fixes #3684.
+  - Fixup LFN conventions.  Fixes #3653.
+  - Support sites with more than one SE.  Fixes #3318.
+  - Remove the CouchURL from the default Tier1PromptReco test arguments.  Fixes #3678.
+  - Fix the JobSubmitter unit test.  Fixes #3679.
+  - Fix problems with new dashboard reporting code and ReqMgr.  Fixes #3629.
+
+0.8.43 to 0.8.44:
+  - Dashboard fixes.  Fixes #3674.
+  - Support merging the new DQM format.  Fixes #3671.
+  - Support a four part processed dataset name in lexicon.  From #3653.
+
+0.8.42 to 0.8.43:
+  - Pull the site name from the site-local-config and report that as the CE.  Fixes #2774.
+  - More improvements to WN dashboard reporting.  Fixes #3656.
+  - Correct a typo from the dashboard cleanup in StdBase.  Fixes #3667.
+  - Remove the DashboardReporter component.  Better integrate dashboard reporting with the WMAgent JobStateMachine.  Fixes #3629.
+  - Cleanup runtime dashboard reporting.  Fixes #3656.
+  - Fix problems with ALCARECO handling in the Tier1PromptReco spec.  Clean up it's unit test.  Fixes #3620.
+  - Require positive parameters for the MC requests.  Fixes #3647.
+  - Fix problems with MultiCore jobs.
+
+0.8.41 to 0.8.42:
+  - Add global tag validation to the lexicon.  Fixes #3648.
+  - Load infomration necessary for dashboard reporting in the data discovery dao when killing jobs.  Fixes #3644.
+  - Remove unnecessary try/except statements from unit tests.  Fixes #3571.
+  - Restore default scenario handling to StdBase.  Fixes #3593.
+  - Remove tests for deprecated code.  Fixes #3595.
+  - Fix missing imports in WMBS_t.  Fixes #3535.
+  - Add job name and location to the BossAir LoadComplete DAO.  Fixes #3632.
+  - Allow the Jobs.GetType DAO to process a list of IDs.  Fixes #3640.
+  - Make the order that tests are run in stable.  Fixes #3641.
+  - Add the workflow type to the GetWorkflowTask DAO.  Fixes #3643.
+
+0.8.38a to 0.8.41:
+  - Fix several problems found during TaskChain commissioning (#3598):   
+     o Make dependent tasks run over the output of the merge task instead     
+       of the processing task.   
+     o Include TaskChain task parameters in the schema section of the workload   
+     o Don't add more events to a job than there are in the input file.
+  - For chained workflows with pileup, configure each chained step to use the pileup 
+    dataset.  Don't fail if there isn't a pileup section in the config.  Fixes #3628.
+  - fixing retrymanager unittests. Fixes #3613
+  - Have the WorkQueue guard against negative slice sizes.
+
+0.8.38 to 0.8.38a:
+  - DOM fix for Alert Visualization. Fixes #3634
+
+0.8.38 to 0.8.38:
+  - Include the job name in the JobSubmitter job cache.  Fixes #3630.
+  - Fix problems with the Agent harness with respect to logging levels.  Review all logging messages the alerts framework produces.  Fixes #3297.
+  - Escape the period in the tarball exclusion list for making sandboxes.  Fixes #3625.
+  - Fix reading in the pause count in the Paused RetryManager algo.  Fixes #3613.
+  - Reimplementation of the Alerts couchapp.  Fixes #1639.
+  - Added missing loggingInfo test file, using getTestBase to locate the data directory.
+
+0.8.37 to 0.8.38:
+  - Add endpolicy info to workqueue inbox element
+  - Only abort cancel request if agent hasn't deleted elements
+  - reverting bogus hunk. fixes #3621
+  - Fix typo on workqueue view jobInjectionStatus.
+  - Fix bug that stopped messages being posted to a failed request
+  - Fix a GLiteLIParser regex. Fixes #3562
+  - fix Tier1PromptReco_t.py test. fixes #3594
+  - Pull the requestor DN from the cherrpy headers.  Fixes #3618.
+  - PromptSkimming fixups.  Fixes #3569.
+  - Add support for running PromptSkims and files reconstructed at the T1.  Fixes #3594.
+  - Allow ReqMgr admins to setup priorities.  Fixes #3611.
+  - Make it possible to retrieve a mapping of dataset to fileset id from the WMBSHelper class.  Fixes #3607.
+
 0.8.36 to 0.8.37:
   - Improved support for the paused status.  Fixes #3597.
   - Improvements to error handling and logging in the BossAir LSF plugin.  Fixes #3187 and #3587.

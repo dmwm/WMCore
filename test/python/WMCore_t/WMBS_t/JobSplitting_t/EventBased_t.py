@@ -213,7 +213,8 @@ class EventBasedTest(unittest.TestCase):
         for job in jobGroups[0].jobs:
             self.assertEqual(job.getFiles(type = "lfn"), ["/some/file/name"])
         
-            self.assertEqual(job["mask"].getMaxEvents(), 99)
+            self.assertTrue(job["mask"].getMaxEvents() == 99 or \
+                            job["mask"].getMaxEvents() == 1)
         
             assert job["mask"]["FirstEvent"] in [0, 99], \
                    "ERROR: Job's first event is incorrect."

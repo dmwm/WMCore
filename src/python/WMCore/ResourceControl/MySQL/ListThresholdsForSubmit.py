@@ -11,7 +11,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class ListThresholdsForSubmit(DBFormatter):
     sql = """SELECT wmbs_location.site_name AS site_name,
-                    wmbs_location.se_name AS se_name,
+                    wls.se_name AS se_name,
                     wmbs_location.job_slots,
                     wmbs_location.cms_name AS cms_name,
                     rc_threshold.max_slots,
@@ -24,6 +24,8 @@ class ListThresholdsForSubmit(DBFormatter):
                  wmbs_location.id = rc_threshold.site_id
                INNER JOIN wmbs_sub_types ON
                  rc_threshold.sub_type_id = wmbs_sub_types.id
+               INNER JOIN wmbs_location_senames wls
+                 ON wls.location = wmbs_location.id
                LEFT OUTER JOIN
                  (SELECT wmbs_job.location AS location, wmbs_subscription.subtype AS subtype,
                          COUNT(wmbs_job.id) AS total FROM wmbs_job

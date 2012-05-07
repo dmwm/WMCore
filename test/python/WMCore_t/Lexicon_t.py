@@ -78,6 +78,7 @@ class LexiconTest(unittest.TestCase):
         assert procdataset('CMSSW_4_4_0_pre7_g494p02-START44_V2_special_110808-v1'), 'valid procdataset not validated'
         assert procdataset('Summer11-PU_S4_START42_V11-v1'), 'valid procdataset not validated'
         assert procdataset('CMSSW_3_0_0_pre3_IDEAL_30X-v1'), 'valid procdataset not validated'
+        assert procdataset('CMSSW_3_0_0_pre3_IDEAL_30X-my_filter-my_string-v1'), 'valid procdataset not validated'
 
     def testBadProcataset(self):
         # Check that invalid Procataset raise an exception
@@ -255,7 +256,6 @@ class LexiconTest(unittest.TestCase):
 
         Test the LFN checker in several modes, including user LFNs
         """
-
         lfnA = '/store/temp/user/ewv/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
         lfn(lfnA)
         lfnA = '/store/temp/user/cinquilli.nocern/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
@@ -605,6 +605,21 @@ class LexiconTest(unittest.TestCase):
         urlSplit = splitCouchServiceURL("https://cmsweb-dev.cern.ch/couchdb/workqueue")
         self.assertEqual("https://cmsweb-dev.cern.ch/couchdb", urlSplit[0])
         self.assertEqual("workqueue", urlSplit[1])
+
+        return
+
+    def testGlobalTag(self):
+        """
+        Test and check with some global tags.
+
+        """
+
+        gTag = 'START_V2::ALL'
+        globalTag(gTag)
+        gTag = 'START_V2;;ALL'
+        self.assertRaises(AssertionError, globalTag, gTag)
+        
+        return
 
 if __name__ == "__main__":
     unittest.main()

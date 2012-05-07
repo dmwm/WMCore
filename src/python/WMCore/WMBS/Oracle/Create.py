@@ -150,7 +150,6 @@ class Create(CreateWMBSBase):
                id          INTEGER      NOT NULL,
                site_name   VARCHAR(255) NOT NULL,
                cms_name    VARCHAR(255),
-               se_name     VARCHAR(255),
                ce_name     VARCHAR(255),
                job_slots   INTEGER,
                plugin      VARCHAR(255),
@@ -618,6 +617,21 @@ class Create(CreateWMBSBase):
 
         self.constraints["01_idx_wmbs_file_checksums"] = \
           """CREATE INDEX idx_wmbs_file_checksums_file ON wmbs_file_checksums(fileid) %s""" % tablespaceIndex
+
+        self.create["20wmbs_location_senames"] = \
+          """CREATE TABLE wmbs_location_senames (
+               location      INTEGER,
+               se_name       VARCHAR(255)
+               ) %s""" % tablespaceTable
+
+        self.constraints["01_uq_wmbs_location_senames"] = \
+          """ALTER TABLE wmbs_location_senames ADD
+               (CONSTRAINT wmbs_location_senames_uq UNIQUE (location, se_name) %s)""" % tablespaceIndex
+
+        self.constraints["02_fk_wmbs_location_senames"] = \
+          """ALTER TABLE wmbs_location_senames ADD
+               (CONSTRAINT wmbs_location_se_fk FOREIGN KEY (location)
+                 REFERENCES wmbs_location(id) ON DELETE CASCADE)"""
 
         for jobState in Transitions().states():
             jobStateQuery = """INSERT INTO wmbs_job_state(id, name) VALUES

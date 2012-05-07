@@ -76,6 +76,7 @@ class StdBase(object):
         self.multicoreNCores = 1
         self.dashboardHost = None
         self.dashboardPort = 0
+        self.overrideCatalog = None
         return
 
     def __call__(self, workloadName, arguments):
@@ -110,6 +111,7 @@ class StdBase(object):
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
         self.dashboardHost = arguments.get("DashboardHost", "cms-wmagent-job.cern.ch")
         self.dashboardPort = arguments.get("DashboardPort", 8884)
+        self.overrideCatalog = arguments.get("OverrideCatalog", None)
 
         if arguments.get("IncludeParents", False) == "True":
             self.includeParents = True
@@ -329,6 +331,7 @@ class StdBase(object):
         procTaskCmsswHelper.setUserSandbox(userSandbox)
         procTaskCmsswHelper.setUserFiles(userFiles)
         procTaskCmsswHelper.setGlobalTag(self.globalTag)
+        procTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
         procTaskCmsswHelper.setErrorDestinationStep(stepName = procTaskLogArch.name())
         procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
         procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
@@ -507,6 +510,7 @@ class StdBase(object):
 
         mergeTaskCmsswHelper.setErrorDestinationStep(stepName = mergeTaskLogArch.name())
         mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
+        mergeTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
 
         if getattr(parentOutputModule, "dataTier") in ["DQM", "DQMROOT"]:
             # DQM wants everything to be a single file per run, so we'll merge

@@ -183,7 +183,7 @@ class AnalysisWorkloadFactory(StdBase):
         self.globalTag = arguments.get("GlobalTag", None)
 
         self.inputDataset = arguments.get('InputDataset', None)
-        self.processingVersion = arguments.get('ProcessingVersion', '1')
+        self.processingVersion = arguments.get('ProcessingVersion', 1)
         self.origRequest = arguments.get('OriginalRequestName', '')
 
         # Sites

@@ -23,7 +23,7 @@ The main request parameters required are:
     "Requestor": "sfoulkes@fnal.gov",                 Person responsible
     "CMSSWVersion": "CMSSW_3_5_8",                    CMSSW Version (used for all tasks in chain)
     "ScramArch": "slc5_ia32_gcc434",                  Scram Arch (used for all tasks in chain)
-    "ProcessingVersion": "v1",                        Processing Version (used for all tasks in chain)
+    "ProcessingVersion": "1",                        Processing Version (used for all tasks in chain)
     "GlobalTag": "GR10_P_v4::All",                    Global Tag (used for all tasks)
     "CouchURL": "http://couchserver.cern.ch",         URL of CouchDB containing Config Cache
     "CouchDBName": "config_cache",                    Name of Couch Database containing config cache 

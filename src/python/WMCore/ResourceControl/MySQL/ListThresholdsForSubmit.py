@@ -63,7 +63,7 @@ class ListThresholdsForSubmit(DBFormatter):
             for thresh in formattedResults[siteName]:
                 if thresh['task_type'] == taskType:
                     # Then we have a problem
-                    logging.error("Skipping duplicate threshold type %s for site %s" % (taskType, siteName))
+                    logging.debug("Skipping duplicate threshold type %s for site %s" % (taskType, siteName))
                     logging.debug("Current site info: %s" % formattedResults[siteName])
                     logging.debug("Current processing result: %s" % result)
                     skipThreshold = True

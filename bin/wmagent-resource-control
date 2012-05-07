@@ -71,7 +71,10 @@ def getCMSSiteInfo(pattern):
     siteDB = SiteDBJSON()
     for seName in siteDB.cmsNametoList(pattern, "SE", "result.json"):
         cmsName = siteDB.seToCMSName(seName)
-        nameSEMapping[cmsName] = seName
+        if nameSEMapping.has_key(cmsName):
+            nameSEMapping[cmsName].append(seName)
+        else:
+            nameSEMapping[cmsName] = [seName]
 
     return nameSEMapping
 
@@ -166,9 +169,15 @@ def updateSiteInfo(resourceControl, siteName, jobSlots = None,
             sys.exit(1)
 
         print "Adding %s to the resource control db..." % siteName
-        resourceControl.insertSite(siteName = siteName, jobSlots = int(jobSlots),
-                                   seName = seName, ceName = ceName,
-                                   plugin = plugin, cmsName = cmsName)
+        if type(seName) == type([]):
+            for singleSEName in seName:
+                resourceControl.insertSite(siteName = siteName, jobSlots = int(jobSlots),
+                                           seName = singleSEName, ceName = ceName,
+                                           plugin = plugin, cmsName = cmsName)
+        else:
+            resourceControl.insertSite(siteName = siteName, jobSlots = int(jobSlots),
+                                       seName = seName, ceName = ceName,
+                                       plugin = plugin, cmsName = cmsName)            
         return
 
     if jobSlots != None:

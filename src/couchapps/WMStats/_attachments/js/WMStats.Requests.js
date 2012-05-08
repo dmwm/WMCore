@@ -7,7 +7,26 @@ WMStats.Requests = function () {
     var _dataByWorkflow = {};
     // number of requests in the data
     var length = 0;
-    var statusOrder = {}
+    var statusOrder = {
+        "new": 1,
+        "testing-approved": 2,
+        "testing": 3,
+        "tested": 4,
+        "test-failed": 5,
+        "assignment-approved": 6,
+        "assigned": 7,
+        "ops-hold": 8,
+        "negotiating": 9,
+        "acquired": 10,
+        "running": 11,
+        "failed": 12,
+        "epic-FAILED": 13,
+        "completed": 14,
+        "closed-out": 15,
+        "announced": 16,
+        "aborted": 17,
+        "rejected": 18
+    }
     
     function updateRequest(doc) {
         var request = getRequestByName(doc.workflow);

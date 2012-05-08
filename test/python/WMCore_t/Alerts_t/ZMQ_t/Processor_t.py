@@ -66,6 +66,10 @@ class ProcessorTest(unittest.TestCase):
         if hasattr(self, "testInit"):
             self.testInit.tearDownCouch()
         
+        if hasattr(self, "rec"):
+            while self.rec.isReady():
+                time.sleep(0.3)
+                print "%s waiting for Receiver to shut ..." % inspect.stack()[0][3]
 
     def testProcessorBasic(self):
         str(self.config.AlertProcessor)
@@ -78,8 +82,8 @@ class ProcessorTest(unittest.TestCase):
         
         """
         processor = Processor(self.config.AlertProcessor)
-        rec = Receiver(self.addr, processor, self.ctrl)
-        rec.startReceiver() # non-blocking call
+        self.rec = Receiver(self.addr, processor, self.ctrl)
+        self.rec.startReceiver() # non-blocking call
         
         # now sender tests control messages (register, unregister, shutdown)
         s = Sender(self.addr, self.ctrl, "Processor_t")
@@ -87,10 +91,6 @@ class ProcessorTest(unittest.TestCase):
         s.unregister()
         s.sendShutdown()
   
-        # wait until the Receiver is shut by sending the above control messages
-        while rec.isReady():
-            time.sleep(0.3)
-            print "%s waiting for Receiver to shut ..." % inspect.stack()[0][3]
         
             
     def testProcessorWithReceiverAndFileSink(self):
@@ -103,17 +103,12 @@ class ProcessorTest(unittest.TestCase):
         config.soft.sinks.file.outputfile = self.softOutputFile
         
         processor = Processor(config)
-        rec = Receiver(self.addr, processor, self.ctrl)
-        rec.startReceiver() # non blocking call
+        self.rec = Receiver(self.addr, processor, self.ctrl)
+        self.rec.startReceiver() # non blocking call
         
         # run worker(), this time directly without Process as above,
         # worker will send 10 Alerts to Receiver
         worker(self.addr, self.ctrl, 10)
-        
-        # wait until the Receiver is shut by worker
-        while rec.isReady():
-            time.sleep(0.3)
-            print "%s waiting for Receiver to shut ..." % inspect.stack()[0][3]
             
         # now check the FileSink output files for content:
         # the soft Alerts has threshold level set to 0 so Alerts
@@ -152,17 +147,12 @@ class ProcessorTest(unittest.TestCase):
         # just send the Alert into couch
 
         processor = Processor(config)
-        rec = Receiver(self.addr, processor, self.ctrl)
-        rec.startReceiver() # non blocking call
+        self.rec = Receiver(self.addr, processor, self.ctrl)
+        self.rec.startReceiver() # non blocking call
         
         # run worker(), this time directly without Process as above,
         # worker will send 10 Alerts to Receiver
         worker(self.addr, self.ctrl, 10)
-        
-        # wait until the Receiver is shut by worker
-        while rec.isReady():
-            time.sleep(0.3)
-            print "%s waiting for Receiver to shut ..." % inspect.stack()[0][3]
             
             
 if __name__ == "__main__":

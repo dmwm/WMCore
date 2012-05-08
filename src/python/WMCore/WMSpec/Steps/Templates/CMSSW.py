@@ -265,6 +265,18 @@ class CMSSWStepHelper(CoreHelper):
             setattr(getattr(self.data.pileup, pileupType), "dataset", dataset)
         setattr(self.data, "dbsUrl", dbsUrl)
 
+    def setOverrideCatalog(self, overrideCatalog):
+        """
+        _setOverrideCatalog_
+
+        set the override catalog
+
+        needed at least at CERN to use production castor pools
+
+        """
+        if overrideCatalog != None:
+            self.data.application.overrideCatalog = overrideCatalog
+
     def setMulticoreCores(self, ncores):
         """
         _setMulticoreCores_

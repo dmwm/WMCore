@@ -57,12 +57,20 @@ class ResourceControl(WMConnectionBase):
         given site.
         """
         listAction = self.wmbsDAOFactory(classname = "Locations.GetSiteInfo")
-        result = listAction.execute(siteName = siteName,
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
-        if len(result) == 0:
+        results = listAction.execute(siteName = siteName,
+                                     conn = self.getDBConn(),
+                                     transaction = self.existingTransaction())
+        if len(results) == 0:
             return None
-        return result[0]
+
+        # We get a row back for every single SE.  Return a single dict with a
+        # list in the SE field.
+        seNames = []
+        for result in results:
+            seNames.append(result["se_name"])
+
+        results[0]["se_name"] = seNames
+        return results[0]
 
     def insertThreshold(self, siteName, taskType, maxSlots, priority = None):
         """

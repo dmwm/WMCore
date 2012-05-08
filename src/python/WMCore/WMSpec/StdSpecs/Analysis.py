@@ -22,7 +22,7 @@ def getCommonTestArgs():
     args["CouchDBName"] = "test_wmagent_configcache"
     args["ScramArch"] =  "slc5_ia32_gcc434"
     args['CMSSWVersion'] = "CMSSW_4_2_0"
-    args["ProcessingVersion"] = "v2"
+    args["ProcessingVersion"] = 2
     args['DashboardHost'] = "127.0.0.1"
     args['DashboardPort'] = 8884
     return args
@@ -183,7 +183,7 @@ class AnalysisWorkloadFactory(StdBase):
         self.globalTag = arguments.get("GlobalTag", None)
 
         self.inputDataset = arguments.get('InputDataset', None)
-        self.processingVersion = arguments.get('ProcessingVersion', 'v1')
+        self.processingVersion = arguments.get('ProcessingVersion', 1)
         self.origRequest = arguments.get('OriginalRequestName', '')
 
         # Sites

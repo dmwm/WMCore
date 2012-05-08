@@ -1,4 +1,10 @@
 function (doc, req) {
+  if (!doc) {
+    doc = {};
+    doc._id = req.id;
+    doc.states = {}
+  };
+ 
   var newTransition = {'oldstate': req.query['oldstate'],
                        'newstate': req.query['newstate'],
                        'location': req.query['location'],

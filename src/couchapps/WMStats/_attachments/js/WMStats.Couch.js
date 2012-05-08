@@ -5,13 +5,11 @@
 WMStats.namespace("Couch")
 
 WMStats.Couch = (function(){
-    // couchdb name for central summary db
-    var _dbName = "wmstats";
     // couchapp name
-    var _Design = "WMStats";
-    
-    var _couchDB = $.couch.db(_dbName);
-    
+    var _Design = WMStats.Globals.COUCHAPP_DESIGN;
+    var _couchDB = $.couch.db(WMStats.Globals.COUCHDB_NAME);
+    var _config;
+
     function _combineOption(options, callback, ajaxOptions) {
         //combine options and callbacks for jquery.couch.js
         // ajaxOptions are object which contains jquery ajax options
@@ -26,7 +24,26 @@ WMStats.Couch = (function(){
         }
         return options
     }
-    
+
+    function loadConfig(func) {
+        function callback(data) {
+            //fist set the global config value
+            var config;
+            if (!data.rows && (data.rows.length != 1)) {
+                //use default config
+                config = null;
+            } else {
+                config = data.rows[0].doc;
+            }
+            WMStats.Globals.CONFIG = config;
+            // then call the function
+            func();
+        }
+        _couchDB.view(_Design +"/config", 
+                      _combineOption({"include_docs": true}, callback))
+        
+    }
+
     function view(name, options, callback, ajaxOptions){
         //make all the view stale options update_after
         var options = options || {};
@@ -40,6 +57,6 @@ WMStats.Couch = (function(){
     function allDocs(options, callback, ajaxOptions){
         return _couchDB.allDocs(_combineOption(options, callback, ajaxOptions));
     }
-    
-    return {'view': view, "allDocs": allDocs};
+
+    return {'loadConfig': loadConfig, 'view': view, "allDocs": allDocs};
 })()

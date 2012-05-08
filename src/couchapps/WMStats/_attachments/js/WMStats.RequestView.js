@@ -1,5 +1,7 @@
-WMStats.namespace("RequestView")
-
+WMStats.namespace("RequestView");
+WMStats.RequestView.Variants = function() {
+    
+}
 WMStats.RequestView = (function() {
     
     var _data = null;
@@ -185,7 +187,6 @@ WMStats.RequestView = (function() {
          * get list of request ids first from the couchDB then 
          * get the details of the requests.
          */
-    
         var options = {"keys": keysFromIDs(reqmgrData), "reduce": true, 
                        "group": true, "descending": true};
         WMStats.Couch.view('latestRequest', options,

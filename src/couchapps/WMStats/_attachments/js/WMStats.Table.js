@@ -3,6 +3,7 @@ WMStats.namespace("Table")
 WMStats.Table = function(config) {
     var _tableConfig = {"bProcessing": true,
                         "sDom": 'C<"clear">lfrtip',
+                        "aaSorting": []
                        };
     
     function _updateConfig(config) {

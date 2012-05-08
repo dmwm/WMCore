@@ -30,7 +30,7 @@ class LoadBlocksByDAS(DBFormatter):
             final['Name']          = tmp['blockname']
             final['CreationDate']  = tmp['create_time']
             final['NumberOfFiles'] = tmp['nfiles']
-            final['BlockSize']     = tmp['blocksize']
+            final['BlockSize']     = float(tmp['blocksize'])
             final['location']      = tmp['location']
             final['newFiles']      = []
             final['insertedFiles'] = []

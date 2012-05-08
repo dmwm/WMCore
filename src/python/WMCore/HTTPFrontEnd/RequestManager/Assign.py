@@ -40,6 +40,7 @@ class Assign(WebAPI):
         self.clipboardUrl = "%s/%s/_design/OpsClipboard/index.html" % (cleanUrl, self.clipboardDB)
         self.opshold = config.opshold
         self.configDBName = config.configDBName
+        self.wmstatWriteURL = "%s/%s" % (self.couchUrl.rstrip('/'), config.wmstatDBName)
         if not noSiteDB:
             self.sites = Utilities.sites(config.sitedb)
         else:
@@ -186,7 +187,7 @@ class Assign(WebAPI):
         
         for requestName in requestNames:
             if kwargs['action'] == 'Reject':
-                ChangeState.changeRequestStatus(requestName, 'rejected') 
+                ChangeState.changeRequestStatus(requestName, 'rejected', wmstatUrl = self.wmstatWriteURL) 
             else:
                 assignments = GetRequest.getAssignmentsByName(requestName)
                 if teams == [] and assignments == []:
@@ -194,10 +195,10 @@ class Assign(WebAPI):
                 self.assignWorkload(requestName, kwargs)
                 for team in teams:
                     if not team in assignments:
-                        ChangeState.assignRequest(requestName, team)
+                        ChangeState.assignRequest(requestName, team, wmstatUrl = self.wmstatWriteURL)
                 priority = kwargs.get(requestName+':priority', '')
                 if priority != '':
-                    Utilities.changePriority(requestName, priority)
+                    Utilities.changePriority(requestName, priority, self.wmstatWriteURL)
         participle=kwargs['action']+'ed'
         if self.opshold and kwargs['action'] == 'Assign':
             participle='put into "ops-hold" state (see <a href="%s">OpsClipboard</a>)' % self.clipboardUrl
@@ -208,8 +209,9 @@ class Assign(WebAPI):
             #requests = [GetRequest.getRequestByName(requestName) for requestName in requestNames]
             requests = [Utilities.requestDetails(requestName) for requestName in requestNames]
             OpsClipboard.inject(self.couchUrl, self.clipboardDB, *requests)
-            for requestName in requestNames:
-                ChangeState.changeRequestStatus(requestName, 'ops-hold')
+            for request in requestNames:
+                ChangeState.changeRequestStatus(requestName, 'ops-hold', wmstatUrl = self.wmstatWriteURL)
+
         return self.templatepage("Acknowledge", participle=participle, requests=requestNames)
 
 
@@ -235,5 +237,5 @@ class Assign(WebAPI):
         helper.setupPerformanceMonitoring(int(kwargs["maxRSS"]), 
                                           int(kwargs["maxVSize"]))
         helper.setDashboardActivity(kwargs.get("dashboard", ""))
-        Utilities.saveWorkload(helper, request['RequestWorkflow'])
+        Utilities.saveWorkload(helper, request['RequestWorkflow'], self.wmstatWriteURL)
 

@@ -26,15 +26,13 @@ class LoadBlocks(DBFormatter):
         blockList = []
         for tmp in tmpList:
             final = {}
-            final['Name']          = tmp['blockname']
-            final['CreationDate']  = tmp['create_time']
-            final['NumberOfFiles'] = tmp['nfiles']
-            final['BlockSize']     = tmp['blocksize']
-            final['location']      = tmp['location']
-            final['DatasetAlgo']   = tmp['das']
-            final['newFiles']      = []
-            final['insertedFiles'] = []
-            final['open']          = 1
+            final['block_name']       = tmp['blockname']
+            final['creation_date']    = tmp['create_time']
+            final['file_count']       = tmp['nfiles']
+            final['block_size']       = tmp['blocksize']
+            final['origin_site_name'] = tmp['location']
+            final['DatasetAlgo']      = tmp['das']
+            final['open_for_writing'] = 1
             blockList.append(final)
 
         return blockList

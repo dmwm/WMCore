@@ -1,0 +1,99 @@
+<html>
+  <head>
+    <title>WMStats</title>
+    <style type="text/css" title="currentStyle">
+        @import "css/basic_table.css";
+        @import "css/basic_div.css";
+        @import "css/ColVis.css";
+        @import "css/layout-default-latest.css";
+        @import "css/jquery-ui-1.8.18.custom.css";
+    </style>
+    </style>
+    <script src="lib/namespace.js" type='text/javascript'> </script>
+    <script src="lib/jquery-1.7.2.min.js" type='text/javascript'> </script>
+    <script src="lib/jquery.couch.js" type='text/javascript'> </script>
+    <script src="lib/jquery.dataTables.min.js" type='text/javascript'> </script>
+    <script src="lib/ColVis.min.js" type='text/javascript'> </script>
+    <script src="lib/jquery.dataTables.columnFilter.js" type='text/javascript'> </script>
+    <script src="lib/jquery-ui.min.js"></script>
+    <!-- <script src="lib/jquery.layout-1.2.0.js" type='text/javascript'> </script> -->
+    <script src="js/WMStats.Globals.js" type='text/javascript'> </script>
+    <script src="js/WMStats.Table.js" type='text/javascript'> </script>
+    <script src="js/WMStats.Couch.js" type='text/javascript'> </script>
+    <script src="js/WMStats.CampaignView.js" type='text/javascript'> </script>
+    <script src="js/WMStats.Requests.js" type='text/javascript'> </script>
+    <script src="js/WMStats.RequestView.js" type='text/javascript'> </script>
+    <script src="js/WMStats.SiteView.js" type='text/javascript'> </script>
+    <script src="js/WMStats.JobSummaryView.js" type='text/javascript'> </script>
+    <script src="js/WMStats.JobDetailView.js" type='text/javascript'> </script>
+    <script src="js/WMStats.AgentView.js" type='text/javascript'> </script>
+    <script src="js/WMStats.AlertView.js" type='text/javascript'> </script>
+    <script src="js/WMStats.EventHandler.js" type='text/javascript'> </script>
+    <script>
+    function drawMonitor() {
+        WMStats.CampaignView.createTable("#campaignDiv");
+        WMStats.SiteView.createTable("#siteDiv");
+        WMStats.AgentView.createTable("#agentDiv");
+        WMStats.AlertView.createTable("#alertDiv");
+    }
+    $(document).ready(function() {
+        //myLayout = $('body').layout();
+        $("#tabs").tabs();
+        drawMonitor()
+        //position the job block against request block
+        $('#request-block').position({my:'left top', at:'left bottom', 
+                                  of:'#overview-block', offset:'0 20'})
+        $('#job-block').position({my:'left top', at:'left bottom', 
+                                  of:'#request-block', offset:'0 20'})
+        // refresh table every 10 min                          
+        setInterval(drawMonitor, 600000)
+     } );
+    </script>
+<body>
+    <div class="middle">
+        <div id="tabs">
+            <ul>
+                <li><a href="#tab-camaign">Request view</a></li>
+                <li><a href="#tab-site">Site view</a></li>
+                <li><a href="#tab-agent">Agent view</a></li>
+                <li><a href="#tab-alert">Alert view</a></li>
+            </ul>
+            <div class="module" id="tab-camaign">
+                <div class="view" id="overview-block">
+                    <div class="caption">
+                        <span>Campaign View</span>
+                        <img src="images/rollup.gif" alt="rollup" title="rolls up this module"/>
+                    </div>
+                    <div class="body" id="campaignDiv"></div>
+                </div>
+                <div class="view" id="request-block">
+                    <div class="caption">
+                        <span>Requests View</span>
+                        <img src="images/rollup.gif" alt="rollup" title="rolls up this module"/>
+                    </div>
+                    <div class="body" id="requestDiv"></div>
+                </div>
+                <div class="view" id="job-block">
+                    <div class="caption">
+                        <span>Job View</span>
+                        <img src="images/rollup.gif" alt="rollup" title="rolls up this module"/>
+                    </div>
+                    <div class="body" id="jobDiv"></div>
+                    <div class="body" id="jobDetailDiv"></div>
+                </div>
+            </div>
+            <div id="tab-site">
+                <div id="siteDiv"></div>
+            </div>
+            <div id="tab-agent">
+                <div id="agentDiv"></div>
+            </div>
+            <div id="tab-alert">
+                <div id="alertDiv"></div>
+            </div>
+        </div>
+    </div>
+    <div id="loading_page">
+        Loading ...
+    </div>
+    </body>

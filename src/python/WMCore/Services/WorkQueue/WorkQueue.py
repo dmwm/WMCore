@@ -67,6 +67,19 @@ class WorkQueue(object):
         return [{'request_name' : x['key'][0], x['key'][1]: x['value']}
                 for x in data.get('rows', [])]
 
+    def getAnalyticsData(self):
+        """
+        This getInject status and input dataset from workqueue
+        """
+        results = self.db.loadView('WorkQueue', 'jobInjectStatusByRequest',
+                                {'reduce' : True, 'group' : True})
+        statusByRequest = {}
+        for x in results.get('rows', []):
+            statusByRequest.setdefault(x['key'][0], {}) 
+            statusByRequest[x['key'][0]][x['key'][1]] = x['value']
+            
+        return statusByRequest
+
     def getSiteWhitelistByRequest(self):
         """
         This service only provided by global queue

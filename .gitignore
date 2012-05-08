@@ -1,4 +1,5 @@
 *.pyc
+.*
 WMCORE_JENKINS_REPLACEMENT_SOURCE.tar.gz
 .noseids
 *.patch

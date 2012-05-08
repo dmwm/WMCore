@@ -7,6 +7,7 @@ WMStats.Requests = function () {
     var _dataByWorkflow = {};
     // number of requests in the data
     var length = 0;
+    var statusOrder = {}
     
     function updateRequest(doc) {
         var request = getRequestByName(doc.workflow);
@@ -39,14 +40,23 @@ WMStats.Requests = function () {
         for (var item in _dataByWorkflow) {
             list.push(_dataByWorkflow[item])
         }
-        return list;
+        return list.sort(requestDateSort);
     }
-        
+    
+    function requestDateSort(a, b) {
+        for (var i in a.request_date) { 
+            if (b.request_date[i] != a.request_date[i]) {
+                return (Number(b.request_date[i]) - Number(a.request_date[i]));
+            }
+        }
+        return 0;
+    }
+    
     return {'getDataByWorkflow': getDataByWorkflow,
             'updateBulkRequests': updateBulkRequests,
             'updateRequest': updateRequest,
             'getRequestByName': getRequestByName,
             'getList': getList,
-            'length': length     
-            }    
+            'length': length
+            }
 }

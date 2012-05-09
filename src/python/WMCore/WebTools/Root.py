@@ -12,6 +12,7 @@ dynamically and can be turned on/off via configuration file.
 # CherryPy
 import cherrypy
 from cherrypy._cplogging import LogManager
+
 # configuration and arguments
 #FIXME
 from WMCore.Agent.Daemon.Create import createDaemon
@@ -211,7 +212,6 @@ class Root(Harness):
         cherrypy.config["server.thread_pool"] = configDict.get("thread_pool", 10)
         cherrypy.config["server.socket_port"] = configDict.get("port", default_port)
         cherrypy.config["server.socket_host"] = configDict.get("host", "0.0.0.0")
-
         #A little hacky way to pass the expire second to config
         self.appconfig.default_expires = cherrypy.config["tools.expires.secs"]
 
@@ -364,6 +364,7 @@ class Root(Harness):
         self._configureCherryPy()
         self._loadPages()
         self._makeIndex()
+        cherrypy.server.httpserver = None
         cherrypy.engine.start()
         if blocking:
             cherrypy.engine.block()
@@ -375,7 +376,6 @@ class Root(Harness):
         Called by the WMAgent harness code.  This will never return.
         """
         self.start()
-        return
 
     def stop(self):
         """
@@ -383,6 +383,12 @@ class Root(Harness):
         """
         cherrypy.engine.stop()
         cherrypy.engine.exit()
+        
+        # Ensure the next server that's started gets fresh objects
+        for name, server in getattr(cherrypy, 'servers', {}).items():
+            server.unsubscribe()
+            del cherrypy.servers[name]
+        
 
 if __name__ == "__main__":
     parser = OptionParser()

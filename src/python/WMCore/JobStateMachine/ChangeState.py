@@ -278,6 +278,7 @@ class ChangeState(WMObject, WMConnectionBase):
 
         self.jobsdatabase.commit()
         self.fwjrdatabase.commit()
+        self.jsumdatabase.commit()
         return
 
     def persist(self, jobs, newstate, oldstate):

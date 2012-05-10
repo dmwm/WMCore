@@ -34,7 +34,7 @@ class EmulatorSetupTest(unittest.TestCase):
         self.assertEqual(PhEDEx().wrapped.__module__, 
                          'WMCore.Services.PhEDEx.PhEDEx')
         self.assertEqual(DBSReader(self.globalDBS).wrapped.__module__,
-                         'WMCore.Services.DBS.DBSReader')
+                         'WMCore.Services.DBS.DBS2Reader')
         self.assertEqual(SiteDBJSON().wrapped.__module__,
                          'WMCore.Services.SiteDB.SiteDB')
         self.assertEqual(RequestManager().wrapped.__module__,

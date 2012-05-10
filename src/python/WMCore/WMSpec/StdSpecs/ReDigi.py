@@ -28,7 +28,7 @@ def getTestArguments():
         "InputDataset": "/MinimumBias/Commissioning10-v4/RAW",
         "CMSSWVersion": "CMSSW_3_9_7",
         "ScramArch": "slc5_ia32_gcc434",
-        "ProcessingVersion": "v2scf",
+        "ProcessingVersion": 2,
         "GlobalTag": "GR10_P_v4::All",
 
         "StepOneOutputModuleName": "RAWDEBUGoutput",

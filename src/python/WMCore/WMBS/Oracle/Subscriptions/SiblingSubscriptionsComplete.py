@@ -10,7 +10,7 @@ from WMCore.WMBS.MySQL.Subscriptions.SiblingSubscriptionsComplete import \
 
 class SiblingSubscriptionsComplete(SiblingCompleteMySQL):
     sql = """SELECT wmbs_file_details.id, wmbs_file_details.events,
-                    wmbs_file_details.lfn, wmbs_location.se_name
+                    wmbs_file_details.lfn, wmbs_location_senames.se_name
                     FROM wmbs_sub_files_available
                INNER JOIN wmbs_file_details ON
                  wmbs_sub_files_available.fileid = wmbs_file_details.id
@@ -26,6 +26,8 @@ class SiblingSubscriptionsComplete(SiblingCompleteMySQL):
                  wmbs_file_details.id = wmbs_file_location.fileid
                INNER JOIN wmbs_location ON
                  wmbs_file_location.location = wmbs_location.id
+               INNER JOIN wmbs_location_senames ON
+                 wmbs_location_senames.location = wmbs_location.id
              WHERE complete_files.complete_files =
                (SELECT COUNT(*) FROM wmbs_subscription
                 WHERE wmbs_subscription.id != :subscription AND

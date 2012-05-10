@@ -41,7 +41,7 @@ def getTestArguments():
         "InitCommand": ". /uscmst1/prod/sw/cms/setup/shrc prod",
 
         "ScramArch": "slc5_amd64_gcc434",
-        "ProcessingVersion": "v3",
+        "ProcessingVersion": 3,
         "GlobalTag": "GR10_P_V12::All",
 
         "CouchURL": os.environ.get("COUCHURL", None),

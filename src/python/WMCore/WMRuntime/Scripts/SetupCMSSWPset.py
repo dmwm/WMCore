@@ -137,7 +137,6 @@ def fixupFileNames(process):
     if not hasattr(process.source, "fileNames"):
         process.source.fileNames = cms.untracked.vstring()
 
-
 def fixupSecondaryFileNames(process):
     """
     _fixupSecondaryFileNames_

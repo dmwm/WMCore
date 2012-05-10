@@ -1,3 +1,11 @@
+0.8.44 to 0.8.45:
+  - Initial PromptReco spec.  Fixes #3684.
+  - Fixup LFN conventions.  Fixes #3653.
+  - Support sites with more than one SE.  Fixes #3318.
+  - Remove the CouchURL from the default Tier1PromptReco test arguments.  Fixes #3678.
+  - Fix the JobSubmitter unit test.  Fixes #3679.
+  - Fix problems with new dashboard reporting code and ReqMgr.  Fixes #3629.
+
 0.8.43 to 0.8.44:
   - Dashboard fixes.  Fixes #3674.
   - Support merging the new DQM format.  Fixes #3671.

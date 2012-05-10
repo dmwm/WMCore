@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-_Tier1PromptReco_t_
+_PromptReco_t_
 
 Unit tests for the new Tier1 PromptReconstruction workflow.
 """
@@ -14,7 +14,7 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
-from WMCore.WMSpec.StdSpecs.Tier1PromptReco import getTestArguments, tier1promptrecoWorkload
+from WMCore.WMSpec.StdSpecs.PromptReco import getTestArguments, promptrecoWorkload
 
 from WMCore.Configuration import ConfigSection
 
@@ -23,7 +23,7 @@ from WMCore.Database.CMSCouch import CouchServer
 
 from nose.plugins.attrib import attr
 
-class Tier1PromptRecoTest(unittest.TestCase):
+class PromptRecoTest(unittest.TestCase):
     def setUp(self):
         """
         _setUp_
@@ -33,11 +33,11 @@ class Tier1PromptRecoTest(unittest.TestCase):
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setupCouch("tier1promptreco_t", "ConfigCache")
+        self.testInit.setupCouch("promptreco_t", "ConfigCache")
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         couchServer = CouchServer(os.environ["COUCHURL"])
-        self.configDatabase = couchServer.connectDatabase("tier1promptreco_t")
+        self.configDatabase = couchServer.connectDatabase("promptreco_t")
         return
 
     def tearDown(self):
@@ -63,7 +63,7 @@ class Tier1PromptRecoTest(unittest.TestCase):
         self.promptSkim.ProcessingVersion = "PromptSkim-v1"
         self.promptSkim.ConfigURL = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"
 
-    def testTier1PromptReco(self):
+    def testPromptReco(self):
         """
         _testT1PromptReco_
 
@@ -72,7 +72,7 @@ class Tier1PromptRecoTest(unittest.TestCase):
         """
         testArguments = getTestArguments()
 
-        testWorkload = tier1promptrecoWorkload("TestWorkload", testArguments)
+        testWorkload = promptrecoWorkload("TestWorkload", testArguments)
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("dballest@fnal.gov", "T0")
 
@@ -351,7 +351,7 @@ class Tier1PromptRecoTest(unittest.TestCase):
         return
 
     @attr("integration")
-    def testTier1PromptRecoWithSkims(self):
+    def testPromptRecoWithSkims(self):
         """
         _testT1PromptRecoWithSkim_
 
@@ -361,10 +361,9 @@ class Tier1PromptRecoTest(unittest.TestCase):
         self.setupPromptSkimConfigObject()
         testArguments = getTestArguments()
         testArguments["PromptSkims"] = [self.promptSkim]
-        testArguments["CouchURL"] = os.environ["COUCHURL"]
 
 
-        testWorkload = tier1promptrecoWorkload("TestWorkload", testArguments)
+        testWorkload = promptrecoWorkload("TestWorkload", testArguments)
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("dballest@fnal.gov", "T0")
 

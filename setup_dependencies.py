@@ -49,6 +49,7 @@ dependencies = {
                                      'WMCore.Services.WMAgent',
                                      'WMCore.Services.Dashboard',
                                      'WMCore.Services.WMStats'],
+
                         'systems':['wmc-web', 'wmc-runtime'],
                         'statics': ['src/templates/WMCore/WebTools/RequestManager',
                                     'src/html/GlobalMonitor',

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
-_Tier1PromptReco_
+_PromptReco_
 
-Standard Tier1PromptReco workflow.
+Standard PromptReco workflow.
 """
 
 import os
@@ -24,27 +24,31 @@ def getTestArguments():
 
     This should be where the default REQUIRED arguments go
     This serves as documentation for what is currently required
-    by the standard Tier1PromptReco workload in importable format.
+    by the standard PromptReco workload in importable format.
 
     NOTE: These are test values.  If used in real workflows they
     will cause everything to crash/die/break, and we will be forced
     to hunt you down and kill you.
     """
     arguments = {
-        "AcquisitionEra": "WMAgentCommissioning12",
         "Requestor": "Dirk.Hufnagel@cern.ch",
+
         "ScramArch" : "slc5_amd64_gcc462",
-        "ProcessingVersion" : "1",
-        "GlobalTag" : "GR_P_V29::All",
-        "CMSSWVersion" : "CMSSW_5_2_1",
+
         # these must be overridden
+        "AcquisitionEra": "WMAgentCommissioning12",
+        "CMSSWVersion" : "CMSSW_5_2_1",
+
+        "ProcessingVersion" : 1,
         "ProcScenario" : "cosmics",
-        "InputDataset" : "/Cosmics/Commissioning12-v1/RAW",
-        "WriteTiers" : ["AOD", "RECO", "DQM", "ALCARECO"],
+        "GlobalTag" : "GR_P_V29::All",
+
+        "InputDataset" : "/Cosmics/Run2012A-v1/RAW",
+        "WriteTiers" : ["RECO", "AOD", "DQM", "ALCARECO"],
         "AlcaSkims" : ["TkAlCosmics0T","MuAlGlobalCosmics","HcalCalHOCosmics"],
-        "CouchURL": None,
-        "CouchDBName": "tier1promptreco_t",
+
         "InitCommand": os.environ.get("INIT_COMMAND", None),
+
         #PromptSkims should be a list of ConfigSection objects with the
         #following attributes
         #DataTier: "RECO"
@@ -53,6 +57,10 @@ def getTestArguments():
         #ConfigURL: http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/Skimming/test/tier1/skim_Cosmics.py?revision=1.2&pathrev=SkimsFor426
         #ProcessingVersion: PromptSkim-v1
         "PromptSkims": [],
+
+        "CouchURL": None,
+        "CouchDBName": None,
+
         "DashboardHost": "127.0.0.1",
         "DashboardPort": 8884,
         }
@@ -91,11 +99,11 @@ def injectIntoConfigCache(frameworkVersion, scramArch, initCommand,
     shutil.rmtree(scramTempDir)
     return
 
-class Tier1PromptRecoWorkloadFactory(StdBase):
+class PromptRecoWorkloadFactory(StdBase):
     """
-    _Tier1PromptRecoWorkloadFactory_
+    _PromptRecoWorkloadFactory_
 
-    Stamp out Tier1PromptReco workflows.
+    Stamp out PromptReco workflows.
     """
     def __init__(self):
         StdBase.__init__(self)
@@ -131,7 +139,6 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
         for dataTier in self.writeTiers:
             recoOutputs.append( { 'dataTier' : dataTier,
                                   'eventContent' : dataTier,
-                                  'filterName' : "Tier1PromptReco",
                                   'moduleLabel' : "write_%s" % dataTier } )
 
         recoTask = workload.newTask("Reco")
@@ -293,12 +300,12 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
         return
 
 
-def tier1promptrecoWorkload(workloadName, arguments):
+def promptrecoWorkload(workloadName, arguments):
     """
-    _tier1promptrecoWorkload_
+    _promptrecoWorkload_
 
-    Instantiate the Tier1PromptRecoWorkflowFactory and have it generate
+    Instantiate the PromptRecoWorkflowFactory and have it generate
     a workload for the given parameters.
     """
-    myTier1PromptRecoFactory = Tier1PromptRecoWorkloadFactory()
-    return myTier1PromptRecoFactory(workloadName, arguments)
+    myPromptRecoFactory = PromptRecoWorkloadFactory()
+    return myPromptRecoFactory(workloadName, arguments)

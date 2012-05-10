@@ -19,7 +19,7 @@ def getTestArguments():
     args["Requestor"] = "sfoulkes@fnal.gov"
     args["ScramArch"] =  "slc5_ia32_gcc434"
     args["PrimaryDataset"] = "MonteCarloData"
-    args["ProcessingVersion"] = "v2scf"
+    args["ProcessingVersion"] = 2
     args["GlobalTag"] = None
     args["RequestNumEvents"] = 10
     args["CouchURL"] = os.environ.get("COUCHURL", None)

@@ -96,8 +96,7 @@ class TestChangeState(unittest.TestCase):
     	"""
         _testRecordInCouch_
         
-        Verify that jobs, state transitions and fwjrs are recorded into seperate
-        couch documents correctly.
+        Verify that jobs, state transitions and fwjrs are recorded correctly.
     	"""
         change = ChangeState(self.config, "changestate_t")
 
@@ -228,6 +227,52 @@ class TestChangeState(unittest.TestCase):
             self.assertEqual(couchJobDoc["_rev"], row["value"]["rev"],
                              "Error: Rev is wrong.")
             
+        return
+
+    def testUpdateFailedDoc(self):
+        """
+        _testUpdateFailedDoc_
+
+        Verify that the update function will work correctly and not throw a 500
+        error if the doc didn't make it into the database for some reason.
+        """
+        change = ChangeState(self.config, "changestate_t")
+
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute("site1", seName = "somese.cern.ch")
+        
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task = "Test")
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow,
+                                        split_algo = "FileBased")
+        testSubscription.create()
+        
+        testFileA = File(lfn = "SomeLFNA", events = 1024, size = 2048,
+                         locations = set(["somese.cern.ch"]))
+        testFileA.create()
+        testFileset.addFile(testFileA)
+        testFileset.commit()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = testSubscription)
+        jobGroup = jobFactory(files_per_job = 1)[0]
+
+        testJobA = jobGroup.jobs[0]
+        testJobA["user"] = "sfoulkes"
+        testJobA["group"] = "DMWM"
+        testJobA["taskType"] = "Merge"
+        testJobA["couch_record"] = str(testJobA["id"])
+        
+        change.propagate([testJobA], "new", "none")
+        testJobADoc = change.jobsdatabase.document(testJobA["couch_record"])        
+
+        self.assertTrue(testJobADoc.has_key("states"))
+        self.assertTrue(testJobADoc["states"].has_key("1"))
         return
 
     def testPersist(self):

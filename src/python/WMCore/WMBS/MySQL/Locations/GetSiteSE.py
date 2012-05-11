@@ -20,7 +20,7 @@ class GetSiteSE(DBFormatter):
     """
     
     sql = """SELECT wls.se_name FROM wmbs_location_senames wls
-             INNER JOIN wmbs_location ON wls.location = wmbs_location.se
+             INNER JOIN wmbs_location ON wls.location = wmbs_location.id
              WHERE wmbs_location.ce_name = :site"""
 
 

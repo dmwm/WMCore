@@ -53,6 +53,7 @@ class ReceiverLogic(object):
     # control message
     TIMEOUT_THREAD_FINISH = 3  # [s]
     
+
     def __init__(self, target, handler, control):
         """
         target - host:port of the work channel (where the actual alerts are sent)
@@ -60,27 +61,9 @@ class ReceiverLogic(object):
         handler - instance of the alert Processor
         
         """
-        logging.info("Instantiating %s ..." % self.__class__.__name__)
-        try:
-            context = zmq.Context()
-            # receiver pulls in alerts to pass to a handler
-            self._workChannel = context.socket(zmq.PULL)
-            logging.info("Receiver - going to bind (alerts target): %s" % target)
-            self._workChannel.bind(target)
-        except Exception, ex:
-            logging.error("Failed to bind (alerts target) %s, reason: %s" % (target, ex))
-            raise
-
-        try:
-            # control messages
-            self._contChannel = context.socket(zmq.SUB)
-            logging.info("Receiver - going to bind (alerts control): %s" % control)
-            self._contChannel.bind(control)
-            self._contChannel.setsockopt(zmq.SUBSCRIBE, "")
-        except Exception, ex:
-            logging.error("Failed to bind (control target) %s, reason: %s" % (control, ex))
-            raise
-        
+        logging.info("Instantiating %s ..." % self.__class__.__name__)        
+        # address of the alerts channel
+        self._alertsAddr = target
         # address of the control channel
         self._controlAddr = control
         # handler to be called when alert data is passed in (callable)
@@ -94,7 +77,7 @@ class ReceiverLogic(object):
         # flag to check when instantiating Receiver to check readiness
         self._isReady = False
         logging.info("Initialized %s." % self.__class__.__name__)
-        
+
         
     def _processControlData(self, data):
         """
@@ -128,7 +111,35 @@ class ReceiverLogic(object):
             if self.closeWhenEmpty:
                 if len(self._registSenders.keys()) == 0:
                     self._doShutdown = True
+                    
+                    
+    def _setUpChannels(self):
+        """
+        Instantiates sockets for message communication (channels).
+        Called from the thread context.
+        
+        """         
+        # moreover, consider setting setsockopt on sockets (channels)
+        try:
+            context = zmq.Context()
+            # receiver pulls in alerts to pass to a handler
+            self._workChannel = context.socket(zmq.PULL)
+            logging.info("Receiver - going to bind (alerts target): %s" % self._alertsAddr)
+            self._workChannel.bind(self._alertsAddr)
+        except Exception, ex:
+            logging.error("Failed to bind (alerts target) %s, reason: %s" % (self._alertsAddr, ex))
+            raise
 
+        try:
+            # control messages
+            self._contChannel = context.socket(zmq.SUB)
+            logging.info("Receiver - going to bind (alerts control): %s" % self._controlAddr)
+            self._contChannel.bind(self._controlAddr)
+            self._contChannel.setsockopt(zmq.SUBSCRIBE, "")
+        except Exception, ex:
+            logging.error("Failed to bind (control target) %s, reason: %s" % (self._controlAddr, ex))
+            raise
+                    
             
     def start(self):
         """
@@ -143,6 +154,7 @@ class ReceiverLogic(object):
         messages.
         
         """
+        self._setUpChannels()
         poller = zmq.Poller()
         poller.register(self._contChannel, zmq.POLLIN)
         poller.register(self._workChannel, zmq.POLLIN)
@@ -156,6 +168,7 @@ class ReceiverLogic(object):
                 timeout = self.TIMEOUT_AFTER_SHUTDOWN * 1000 # takes milliseconds
             socks = dict(poller.poll(timeout = timeout))
             if not socks:
+                logging.info("Nothing received in %s [ms], finishing loop." % timeout)
                 # nothing was received within the timeout
                 break
             # check receiver - work channel
@@ -169,6 +182,11 @@ class ReceiverLogic(object):
                 controlData = self._contChannel.recv_json()
                 self._processControlData(controlData)
         self._isReady = False
+        logging.info("Closing ZQM sockets ...")
+        poller.unregister(self._contChannel)
+        poller.unregister(self._workChannel)        
+        self._workChannel.close()
+        self._contChannel.close()
         logging.info("Receiver background loop finished. Some Alerts of "
                      "'soft' level/threshold may be unflushed at the Processor and will now be lost.")
         
@@ -191,6 +209,7 @@ class ReceiverLogic(object):
         contChann = context.socket(zmq.PUB)
         contChann.connect(self._controlAddr)        
         contChann.send_json(ShutdownMsg())
+        contChann.close()
         # wait until the Receiver background process shuts
         count = 0
         logging.info("Waiting for %s to finish ..." % self.__class__.__name__)
@@ -200,8 +219,8 @@ class ReceiverLogic(object):
             if count > self.TIMEOUT_THREAD_FINISH * 10: # iterating by 10ths of a second
                 logging.warn("Receiver background process seems not shut yet, continue anyway ...")
                 break
-        logging.info("Shutdown finished %s." % self.__class__.__name__)
-                
+        logging.info("Shutdown %s finished." % self.__class__.__name__)
+        
         
 
 class ThreadReceiver(Thread):

@@ -1,3 +1,19 @@
+0.8.45 to 0.8.46:
+  - Alert system unit test fixes.  Fixes #3701.
+  - Fix problems with the GetSiteSE DAO.  Fixes #3318.
+  - Use a view that actually exists to trigger view rebuilding.
+  - Fix the Emulator unit test.  Fixes #3716.
+  - Added key and certificate to Un packUserTarball. Fixes #3479
+  - Fix cherrpy port/address handling.  Fixes #3709.
+  - Update the test harness so that testers have more control over what is run.  Fixes #3699.
+  - Fix another DAO that broke due to the multi-se changes.  Fixes #3700.
+  - Fix unit test breakage.  Fixes #3696.
+  - Allow overriding the TFC from the spec.  Fixes #3311.
+  - Resolve some problems automatically configuring resource control with sites that have more than one SE.
+  - Fix the Oracle SiblingSubscriptionsComplete DAO that was broken by the multi-SE patch.  Fixes #3318.
+  - Fix the GetSiteSE DAO.  Fixes #3687.
+  - Update the couch app stateTransition update function to work correctly if the document doesn't exist.
+
 0.8.44 to 0.8.45:
   - Initial PromptReco spec.  Fixes #3684.
   - Fixup LFN conventions.  Fixes #3653.

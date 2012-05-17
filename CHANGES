@@ -1,3 +1,9 @@
+0.8.46 to 0.8.47:
+  - Update Lexicon to handle old tier0 LFNs.  Fixes #3752.
+  - Test alerts in the JobTracker unit test.  Fixes #3326.
+  - Add cron entries to build alert views.  Fixes #3736.
+  - Add support for security parameters using instances.  Fixes #3751.
+
 0.8.45 to 0.8.46:
   - Alert system unit test fixes.  Fixes #3701.
   - Fix problems with the GetSiteSE DAO.  Fixes #3318.

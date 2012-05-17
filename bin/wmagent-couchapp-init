@@ -86,7 +86,7 @@ def setupCron(couchUrl, couchDBName):
     fwjrDumpName = urllib.quote_plus("%s/fwjrs" % couchDBName).replace("%", "\\%")
     jobDumpName = urllib.quote_plus("%s/jobs" % couchDBName).replace("%", "\\%")
 
-    indexJobsUrl = "'%s/%s/_design/JobDump/_view/jobsToReport?limit=1'" % (couchUrl, jobDumpName)
+    indexJobsUrl = "'%s/%s/_design/JobDump/_view/statusByWorkflowName?limit=1'" % (couchUrl, jobDumpName)
     indexFwjrUrl = "'%s/%s/_design/FWJRDump/_view/outputByJobID?limit=1'" % (couchUrl, fwjrDumpName)
     indexCmd = "echo %s | sed -e 's|\\\\||g' | xargs curl -s -m 1 > /dev/null"
 

@@ -390,6 +390,11 @@ class Root(Harness):
             del cherrypy.servers[name]
         
 
+        # Ensure the next server that's started gets fresh objects
+        for name, server in getattr(cherrypy, 'servers', {}).items():
+            server.unsubscribe()
+            del cherrypy.servers[name]
+
 if __name__ == "__main__":
     parser = OptionParser()
     parser.add_option("-i", "--ini", dest="inifile", default=False,

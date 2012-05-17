@@ -286,7 +286,11 @@ class Root(Harness):
                 view_config.section_('database')
                 view_config.database = db_cfg.section_(instance)
 
-
+            if hasattr(view, 'security') and hasattr(view.security, 'instances'):
+                security_cfg = view.security.section_('instances')
+                view_config.section_('security')
+                view_config.security = security_cfg.section_(instance)
+                
         if view_config.dictionary_().has_key('database'):
             if not type(view_config.database) == str:
                 if len(view_config.database.listSections_()) == 0:

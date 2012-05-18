@@ -10,6 +10,7 @@ import unittest
 import time
 import pickle
 import threading
+import hashlib
 
 # pylint and coverage aren't standard, but aren't strictly necessary
 # you should get them though
@@ -200,17 +201,26 @@ if can_nose:
             idhandle.close()
 
             print "path lists is %s" % pathList
-
+            # divide it up
             totalCases = len(testIds)
             myIds      = []
-            for id in sorted( testIds.keys() ):
-                if int(id) >= int(self.testMinimumIndex) and int(id) <= int(self.testMaximumIndex):                  
-                    if ( id % int(self.testTotalSlices) ) == int(self.testCurrentSlice):
+            for id in testIds.keys():
+                if int(id) >= int(self.testMinimumIndex) and int(id) <= int(self.testMaximumIndex):
+                    # generate a stable ID for sorting
+                    if len(testIds[id]) == 3:
+                        testName = testIds[id][1] + testIds[id][2]
+                        testHash = hashlib.md5( testName ).hexdigest()
+                        hashSnip = testHash[:7]
+                        hashInt  = int( hashSnip, 16 )
+                    else:
+                        hashInt = id
+
+                    if ( hashInt % int(self.testTotalSlices) ) == int(self.testCurrentSlice):
                         for path in pathList:
                             if path in testIds[id][0]:
                                 myIds.append( str(id) )
                                 break
-
+            myIds = sorted( myIds )
             print "Out of %s cases, we will run %s" % (totalCases, len(myIds))
             if not myIds:
                 return True

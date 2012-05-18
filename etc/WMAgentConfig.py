@@ -292,13 +292,13 @@ wmbsmonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'data/html/')
 
 
 
-# Alerts framework configuration
+# Alert framework configuration
 
 # common 'Alert' section (Alert "senders" use these values to determine destination)
 config.section_("Alert")
 # destination for the alert messages
 config.Alert.address = "tcp://127.0.0.1:6557"
-# control channel (internal alerts system commands)
+# control channel (internal alert system commands)
 config.Alert.controlAddr = "tcp://127.0.0.1:6559"
 
 # AlertProcessor component

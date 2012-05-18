@@ -174,7 +174,7 @@ def modifyConfiguration(config, **args):
             config.AlertProcessor.critical.sinks.couch.url = args["couch_url"]
         if hasattr(config.AlertProcessor.soft.sinks, "couch"):
             config.AlertProcessor.soft.sinks.couch.url = args["couch_url"]
-        # the AlertsCollector database has be created beforehand (and couchapp pushed), this
+        # the AlertCollector database has be created beforehand (and couchapp pushed), this
         # location will change in the future , as described on the ticket 1640
         if hasattr(config.AlertProcessor.critical.sinks, "rest"):
             config.AlertProcessor.critical.sinks.rest.uri = args["couch_url"] + "/" + "alertscollector"

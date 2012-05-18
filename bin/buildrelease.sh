@@ -12,7 +12,7 @@ TAG=true
 BUILD=true
 REPO=comp.releases
 VERSION=
-CVSROOT="cmscvs.cern.ch:/cvs_server/repositories/CMSSW"
+CVSROOT="cmscvs.cern.ch:/local/reps/CMSSW"
 # use a tag so we only checkout a limited set,
 # doesn't need to be recent as we do an update on the changed files to remove sticky tag
 EXAMPLE_CMSDIST_TAG="builder_2011-08-02_16-19-02_wmagent"

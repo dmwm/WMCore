@@ -72,6 +72,18 @@ def installWorkQueueCouchApp(couchUrl, couchDBName):
     finally:
         shutil.rmtree(tempDir, ignore_errors = True)
 
+
+def createCronEntires(crontabLines):
+    tempDir = tempfile.mkdtemp()
+    os.system("crontab -l > %s/crontab" % tempDir)
+    cronTab = open("%s/crontab" % tempDir, "a")
+    [cronTab.write(line) for line in crontabLines]
+    cronTab.close()
+    os.system("crontab %s/crontab" % tempDir)
+    os.remove("%s/crontab" % tempDir)
+    os.rmdir(tempDir)
+        
+
 def setupCron(couchUrl, couchDBName):
     """
     _setupCron_
@@ -94,20 +106,30 @@ def setupCron(couchUrl, couchDBName):
     compactDBUrl = "'%s/%s/_compact'" % (couchUrl, jobDumpName)
     compactCmd = "echo %s | sed -e 's|\\\\||g' | xargs curl -s -H 'Content-Type: application/json' -X POST > /dev/null"
 
-    tempDir = tempfile.mkdtemp()
-    os.system("crontab -l > %s/crontab" % tempDir)
-    cronTab = open("%s/crontab" % tempDir, "a")
-    cronTab.write("* * * * * %s\n" % (indexCmd % indexJobsUrl))
-    cronTab.write("* * * * * %s\n" % (indexCmd % indexFwjrUrl))
-    cronTab.write("0 0 * * * %s\n" % (compactCmd % compactViewUrl))
-    cronTab.write("0 0 * * * %s\n" % (compactCmd % compactDBUrl))
-    cronTab.close()
+    crontabLines = []
+    crontabLines.append("* * * * * %s\n" % (indexCmd % indexJobsUrl))
+    crontabLines.append("* * * * * %s\n" % (indexCmd % indexFwjrUrl))
+    crontabLines.append("0 0 * * * %s\n" % (compactCmd % compactViewUrl))
+    crontabLines.append("0 0 * * * %s\n" % (compactCmd % compactDBUrl))
+    createCronEntires(crontabLines)
+        
 
-    os.system("crontab %s/crontab" % tempDir)
-    os.remove("%s/crontab" % tempDir)
-    os.rmdir(tempDir)
-    return
-
+def setupCronForAlerts(couchUrl, couchDBName, couchAppName):
+    """
+    Like above, set up periodic CouchDB views queries for the alertcollector DB.
+    Shall need no % character hacking as the above.
+    
+    """
+    print "Setting up cron jobs for '%s'" % couchDBName
+    views = ("all", "byhostname", "byhostnamebysource", "bysource", "hostnames", "sources")
+    # couchUrl, couchDBName, couchAppName, viewName
+    urlBase = "%s/%s/_design/%s/_view/%s?limit=1"
+    urls = [urlBase % (couchUrl, couchDBName, couchAppName, viewName) for viewName in views]
+    commands = ["curl -s '%s' > /dev/null" % url for url in urls]
+    crontabLines = ["* * * * * %s\n" % command for command in commands]
+    createCronEntires(crontabLines)
+    
+    
 def setupCronCompaction(couchUrl, couchDbName):
     """Add a simple couch compaction"""
     compactUrl = "%s/%s/_compact" % (couchUrl, couchDbName)
@@ -335,11 +357,14 @@ if __name__ == "__main__":
         if options.cron:
             setupCronCompaction(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName)
 
+    # this will be removed once AlertCollector is moved behind cmsweb
     if hasattr(wmagentConfig, "AlertProcessor"):
         uri = wmagentConfig.AlertProcessor.critical.sinks.rest.uri
         dbName = uri.split('/')[-1]
         dbAddr = "/".join(uri.split('/')[0:-1])
         installCouchApp(dbAddr, dbName, "Alerts")
+        if options.cron:
+            setupCronForAlerts(dbAddr, dbName, "Alerts")
 
 
     sys.exit(0)

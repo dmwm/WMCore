@@ -578,9 +578,9 @@ class StdBase(object):
         """
         for stepName in task.listAllStepNames():
             step = task.getStep(stepName)
-            if step.stepType != "CMSSW":
+            if step.stepType() != "CMSSW":
                 continue
-            helper = task.getStepHelper(stepName)
+            stepHelper = task.getStepHelper(stepName)
             stepHelper.setupPileup(pileupConfig, self.dbsUrl)
 
         return

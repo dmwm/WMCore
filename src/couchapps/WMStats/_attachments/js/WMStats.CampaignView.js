@@ -60,8 +60,7 @@ WMStats.CampaignView = (function() {
     function getData() {
         return _data;
     }
-    
-    
+
     function setCampaignData(data) {
         //TODO sync with group level
         //This is base on the group_level ["campaign", "team", type]
@@ -81,13 +80,13 @@ WMStats.CampaignView = (function() {
     function createCampaignTable(data) {
         setCampaignData(data.rows);
         tableConfig.aaData = _data;
-        var selector =  _containerDiv + " table#" + _tableID;
+        var selector =  _containerDiv + " table";
         return WMStats.Table(tableConfig).create(selector)
     }
     
    function createTable(selector) {
         _containerDiv = selector;
-        $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display" id="'+ _tableID + '"></table>' );
+        $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display"></table>' );
         WMStats.Couch.view(_viewName, _options, createCampaignTable, WMStats.Globals.AJAX_LOADING_STATUS)
     }
     

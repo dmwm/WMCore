@@ -1,3 +1,7 @@
+#templates {
+  display: none;
+}
+
 tr.yellow {
     background-color: yellow;
 }

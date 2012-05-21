@@ -75,8 +75,8 @@ WMStats.JobSummaryView = (function() {
     function createJobSummaryTable(data) {
         _setSummaryData(data);
         tableConfig.aaData = _data.status;
-        var selector =  _containerDiv + " table#" + _tableID;
-        $(selector).data('workflow', _data.workflow)
+        var selector =  _containerDiv + " table";
+        $(_containerDiv).data('workflow', _data.workflow)
         return WMStats.Table(tableConfig).create(selector)
     }
     
@@ -85,7 +85,7 @@ WMStats.JobSummaryView = (function() {
         _containerDiv = selector;
         options = {'reduce': true, 'group_level': 5, 'startkey':[workflow], 
                    'endkey':[workflow, {}]};
-        $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display" id="'+ _tableID + '"></table>') 
+        $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display"></table>') 
         WMStats.Couch.view(_viewName, options, createJobSummaryTable)
     }
     

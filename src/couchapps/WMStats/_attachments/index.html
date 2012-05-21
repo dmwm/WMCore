@@ -22,7 +22,9 @@
     <script src="js/WMStats.Table.js" type='text/javascript'> </script>
     <script src="js/WMStats.Couch.js" type='text/javascript'> </script>
     
+    <script src="js/WMStats.Overview.js" type='text/javascript'> </script>
     <script src="js/WMStats.CampaignView.js" type='text/javascript'> </script>
+    <script src="js/T0/WMStats.T0.RunView.js" type='text/javascript'> </script>
 
     <script src="js/WMStats.Requests.js" type='text/javascript'> </script>
     <script src="js/WMStats.RequestTable.js" type='text/javascript'> </script>
@@ -42,7 +44,8 @@
     }
     
     function drawMonitor() {
-        WMStats.CampaignView.createTable("#tab-overview > div[name='overview'] > div.body");
+        // select initial summary view by global value (tier0, tier1, analysis)
+        WMStats.Overview.createTable("#tab-overview > div[name='overview'] > div.body");
         WMStats.SiteView.createTable("#tab-site > div[name='overview'] > div.body");
         WMStats.AlertView.createTable("#tab-alert > div[name='requestSummary'] > div.body");
         WMStats.AgentView.createTable("#agentDiv");

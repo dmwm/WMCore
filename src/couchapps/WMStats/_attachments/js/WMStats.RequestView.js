@@ -3,8 +3,6 @@ WMStats.namespace("RequestView");
 WMStats.RequestView = (function() {
     
     var _data = null;
-    var _tableID = "requestTable";
-    
     function getData() {
         return _data;
     }

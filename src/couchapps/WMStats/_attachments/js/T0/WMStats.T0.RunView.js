@@ -1,6 +1,6 @@
-WMStats.namespace("CampaignView")
+WMStats.namespace("T0.RunView")
 
-WMStats.CampaignView = (function() {
+WMStats.T0.RunView = (function() {
     /*
      * create campaign table view.
      */
@@ -9,10 +9,10 @@ WMStats.CampaignView = (function() {
     // div id for the view
     var _containerDiv = null;
     // default couchdb view name to get the campaign dat
-    var _viewName = 'campaignStatus';
+    var _viewName = 'runStatus';
     // default option
     var _options = {'reduce': true, 'group_level':1, 'descending':true};
- 
+
     function _get(obj, val) {
         if (obj) {
             return obj;

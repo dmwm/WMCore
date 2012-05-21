@@ -8,7 +8,7 @@ WMStats.namespace("Globals")
 WMStats.Globals = function(){
     // get the couchdb name from the path
     var _couchDBName = "";
-    var _dbVariants = {'wmstats': 'tier1', 'tier0stats': 'tier0', 'analysis_wmstats': 'analysis' }
+    var _dbVariants = {'wmstats': 'tier1', 'tier0_wmstats': 'tier0', 'analysis_wmstats': 'analysis' }
     var pathList = window.location.pathname.split('/_design/WMStats');
     var tempList = pathList[0].split('/');
     if (pathList.length > 1) {

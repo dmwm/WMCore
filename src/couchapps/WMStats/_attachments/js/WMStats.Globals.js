@@ -25,6 +25,9 @@ WMStats.Globals = function(){
         COUCHDB_NAME: _couchDBName,
         VARIANT: _dbVariants[_couchDBName],
         COUCHAPP_DESIGN: "WMStats",
-        CONFIG: null //this will be set when WMStats.Couch.loadConfig is called. just place holder or have default config
+        CONFIG: null, //this will be set when WMStats.Couch.loadConfig is called. just place holder or have default config
+        loadScript: function (url, success) {
+                        $.ajax({async: false, url: url, dataType: 'script', success: success})
+                    }
     }
 }()

@@ -1,14 +1,14 @@
-WMStats.namespace("Overview")
+WMStats.namespace("Overview");
 
-WMStats.Overview = function() {
-    function createTable(selector){
-        if (WMStats.Globals.VARIANT == "tier1") {
-            WMStats.CampaignView.createTable(selector);
-        } else if (WMStats.Globals.VARIANT == "tier0") {
-            WMStats.T0.RunView.createTable(selector);
-        } else if (WMStats.Globals.VARIANT == "analysis") {
-            WMStats.Analysis.RunView.createTable(selector);
-        } 
-    }
-    return {createTable: createTable}
-}()
+ (function($){
+    if (WMStats.Globals.VARIANT == "tier1") {
+        WMStats.Globals.loadScript("js/WMStats.CampaignView.js", 
+                            function() {WMStats.Overview = WMStats.CampaignView;})
+    } else if (WMStats.Globals.VARIANT == "tier0") {
+        WMStats.Globals.loadScript("js/T0/WMStats.T0.RunView.js", 
+                            function() {WMStats.Overview =  WMStats.T0.RunView;})
+    } else if (WMStats.Globals.VARIANT == "analysis") {
+        WMStats.Globals.loadScript("js/WMStats.CampaignView.js", 
+                            function() {WMStats.Overview =  WMStats.CampaignView;})
+    } 
+})(jQuery);

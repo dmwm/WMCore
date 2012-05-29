@@ -28,9 +28,12 @@ class MonteCarlo(StartPolicyInterface):
         """Apply policy to spec"""
         # if not specified take standard defaults
         if not self.mask:
-            self.mask = Mask(FirstRun = 1, FirstLumi = 1, FirstEvent = 1,
+            self.mask = Mask(FirstRun = 1,
+                             FirstLumi = self.initialTask.getFirstLumi(),
+                             FirstEvent = self.initialTask.getFirstEvent(),
                              LastRun = 1,
-                             LastEvent = self.initialTask.totalEvents())
+                             LastEvent = self.initialTask.getFirstEvent() +
+                                             self.initialTask.totalEvents() - 1)
         if not self.args['SubSliceType']:
             self.args['SubSliceType'] = 'NumberOfEventsPerLumi'
             self.args['SubSliceSize'] = self.args['SliceSize']

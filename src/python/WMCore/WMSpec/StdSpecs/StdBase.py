@@ -77,6 +77,8 @@ class StdBase(object):
         self.dashboardHost = None
         self.dashboardPort = 0
         self.overrideCatalog = None
+        self.firstLumi = None
+        self.firstEvent = None
         return
 
     def __call__(self, workloadName, arguments):
@@ -308,6 +310,8 @@ class StdBase(object):
         if taskType in ["Production", 'PrivateMC'] and totalEvents != None:
             procTask.addGenerator(seeding)
             procTask.addProduction(totalevents = totalEvents)
+            procTask.setFirstEventAndLumi(firstEvent = self.firstEvent,
+                                          firstLumi = self.firstLumi)
         else:
             if inputDataset != None:
                 (primary, processed, tier) = self.inputDataset[1:].split("/")

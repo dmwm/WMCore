@@ -608,6 +608,8 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         # Set some versions
         schema['ProcessingVersion'] = 'pv2012'
         schema['AcquisitionEra']    = 'ae2012'
+        schema['FirstEvent'] = 1
+        schema['FirstLumi'] = 1
 
         try:
             raises = False
@@ -796,6 +798,8 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         # Set some versions
         schema['ProcessingVersion'] = '2012'
         schema['AcquisitionEra']    = 'ae2012'
+        schema['FirstEvent'] = 1
+        schema['FirstLumi'] = 1
 
         try:
             raises = False

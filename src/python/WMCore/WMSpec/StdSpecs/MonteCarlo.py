@@ -33,6 +33,9 @@ def getTestArguments():
     args["CouchURL"] = os.environ.get("COUCHURL", None)
     args["CouchDBName"] = "scf_wmagent_configcache"
 
+    args["FirstLumi"] = 1
+    args["FirstEvent"] = 1
+
     args["CMSSWVersion"] = "CMSSW_3_8_1"
     args["ProcConfigCacheID"] = "f90fc973b731a37c531f6e60e6c57955"
     args["TimePerEvent"] = 60
@@ -110,6 +113,8 @@ class MonteCarloWorkloadFactory(StdBase):
         filterEfficiency = float(arguments.get("FilterEfficiency", 1.0))
         totalTime        = int(arguments.get("TotalTime", 9 * 3600))
         self.totalEvents = int(int(arguments["RequestNumEvents"]) / filterEfficiency)
+        self.firstEvent  = int(arguments["FirstEvent"])
+        self.firstLumi   = int(arguments["FirstLumi"])
 
         # pileup configuration for the first generation task
         self.pileupConfig = arguments.get("PileupConfig", None)
@@ -147,7 +152,8 @@ class MonteCarloWorkloadFactory(StdBase):
         requiredFields = ["CMSSWVersion", "ProcConfigCacheID",
                           "PrimaryDataset", "CouchURL",
                           "CouchDBName", "RequestNumEvents",
-                          "GlobalTag", "ScramArch"]
+                          "GlobalTag", "ScramArch",
+                          "FirstEvent", "FirstLumi"]
         self.requireValidateFields(fields = requiredFields, schema = schema,
                                    validate = False)
         outMod = self.validateConfigCacheExists(configID = schema["ProcConfigCacheID"],

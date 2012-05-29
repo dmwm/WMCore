@@ -61,7 +61,7 @@ class MonteCarloTestCase(unittest.TestCase):
 
     def testLHEProductionWorkload(self):
         """
-        _LHEProductionWorkload_
+        _testLHEProductionWorkload_
 
         Make sure that splitting by event plus events in per lumi works
 
@@ -164,11 +164,66 @@ class MonteCarloTestCase(unittest.TestCase):
             self.assertEqual(unit3['Mask']['LastEvent'],
                              4*(2**30), 'First unit has a wrong last event')
 
+    def testShiftedStartSplitting(self):
+        """
+        _testShiftedStartSplitting_
+
+        Make sure that splitting by event plus events in per lumi works
+        when the first event and lumi is not 1
+
+        """
+        totalevents = 542674
+        splitArgs = dict(SliceType = 'NumEvents', SliceSize = 47, MaxJobsPerElement = 5,
+                         SubSliceType = 'NumEventsPerLumi', SubSliceSize = 13)
+
+        LHEProductionWorkload = monteCarloWorkload('MonteCarloWorkload', mcArgs)
+        LHEProductionWorkload.setJobSplittingParameters(
+            getFirstTask(LHEProductionWorkload).getPathName(),
+            'EventBased',
+            {'events_per_job': splitArgs['SliceSize'],
+             'events_per_lumi': splitArgs['SubSliceSize']})
+        getFirstTask(LHEProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
+        getFirstTask(LHEProductionWorkload).addProduction(totalevents = totalevents)
+        getFirstTask(LHEProductionWorkload).setFirstEventAndLumi(50,100)
+        getFirstTask(LHEProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
+        for task in LHEProductionWorkload.taskIterator():
+            units = MonteCarlo(**splitArgs)(LHEProductionWorkload, task)
+
+            SliceSize = LHEProductionWorkload.startPolicyParameters()['SliceSize']
+            self.assertEqual(math.ceil(float(totalevents) / (SliceSize * splitArgs['MaxJobsPerElement'])),
+                             len(units))
+            first_event = 50
+            first_lumi = 100
+            first_run = 1
+            lumis_per_job = int(math.ceil(float(SliceSize) /
+                                splitArgs['SubSliceSize']))
+            for unit in units:
+                self.assertTrue(unit['Jobs'] <= splitArgs['MaxJobsPerElement'])
+                self.assertEqual(unit['WMSpec'], LHEProductionWorkload)
+                self.assertEqual(unit['Task'], task)
+                self.assertEqual(unit['Mask']['FirstEvent'], first_event)
+                self.assertEqual(unit['Mask']['FirstLumi'], first_lumi)
+                last_event = first_event + (SliceSize * unit['Jobs']) - 1
+                last_lumi = first_lumi + (lumis_per_job * unit['Jobs']) - 1
+                if last_event > totalevents:
+                    # this should be the last unit of work
+                    last_event = totalevents + 50 - 1
+                    last_lumi = first_lumi
+                    last_lumi += math.ceil(((last_event - first_event + 1) %
+                                SliceSize) / splitArgs['SubSliceSize'])
+                    last_lumi += (lumis_per_job * (unit['Jobs'] - 1)) - 1
+                self.assertEqual(unit['Mask']['LastEvent'], last_event)
+                self.assertEqual(unit['Mask']['LastLumi'], last_lumi)
+                self.assertEqual(unit['Mask']['FirstRun'], first_run)
+                first_event = last_event + 1
+                first_lumi  = last_lumi + 1
+            self.assertEqual(unit['Mask']['LastEvent'], totalevents + 50 - 1)
 
 
     def testMultiMergeProductionWorkload(self):
         """Multi merge production workload"""
         getFirstTask(MultiMergeProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
+        getFirstTask(MultiMergeProductionWorkload).setFirstEventAndLumi(1,1)
         for task in MultiMergeProductionWorkload.taskIterator():
             units = MonteCarlo(**self.splitArgs)(MultiMergeProductionWorkload, task)
 
@@ -186,6 +241,7 @@ class MonteCarloTestCase(unittest.TestCase):
         getFirstTask(MultiTaskProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         for task in MultiTaskProductionWorkload.taskIterator():
             count += 1
+            task.setFirstEventAndLumi(1,1)
             units = MonteCarlo(**self.splitArgs)(MultiTaskProductionWorkload, task)
 
             self.assertEqual(10 * count, len(units))

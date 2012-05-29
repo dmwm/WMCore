@@ -603,7 +603,12 @@ class CondorPlugin(BasePlugin):
                 if statName != job['status']:
                     # Then the status has changed
                     job['status']      = statName
-                    job['status_time'] = jobAd.get('stateTime', 0)
+                    if job['status'] == 'Running':
+                        job['status_time'] = jobAd.get('runningTime', 0)
+                    elif job['status'] == 'Idle':
+                        job['status_time'] = jobAd.get('submitTime', 0)
+                    else:
+                        job['status_time'] = jobAd.get('stateTime', 0)
                     changeList.append(job)
 
 
@@ -911,6 +916,8 @@ class CondorPlugin(BasePlugin):
                    '-constraint', 'WMAgent_AgentName == \"%s\"' % (self.agent),
                    '-format', '(JobStatus:\%s)  ', 'JobStatus',
                    '-format', '(stateTime:\%s)  ', 'EnteredCurrentStatus',
+                   '-format', '(runningTime:\%s)  ', 'JobStartDate',
+                   '-format', '(submitTime:\%s)  ', 'QDate',
                    '-format', '(WMAgentID:\%d):::',  'WMAgent_JobID']
 
         pipe = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = False)

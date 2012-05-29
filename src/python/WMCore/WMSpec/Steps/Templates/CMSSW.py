@@ -248,6 +248,14 @@ class CMSSWStepHelper(CoreHelper):
         self.data.output.keep = keepOutput
         return
 
+    def getPileup(self):
+        """
+        _getPileup_
+
+        Retrieve the pileup config from this step.
+        """
+        return getattr(self.data, "pileup", None)
+
     def setupPileup(self, pileupConfig, dbsUrl):
         """
         include pileup input configuration into this step configuration.

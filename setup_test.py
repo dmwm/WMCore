@@ -9,6 +9,7 @@ import os, sys, os.path
 import unittest
 import time
 import pickle
+import threading
 
 # pylint and coverage aren't standard, but aren't strictly necessary
 # you should get them though
@@ -85,6 +86,20 @@ if can_nose:
                         continue
                     result.append( prefix + "."+ subdir[:-3])
         return result
+
+    def trapExit( code ):
+        """
+        Cherrypy likes to call os._exit() which causes the interpreter to 
+        bomb without a chance of catching it. This sucks. This function
+        will replace os._exit() and throw an exception instead
+        """
+        if hasattr( threading.local(), "isMain" ) and threading.local().isMain:
+            # only trap the main thread
+            print "*******EXIT WAS TRAPPED**********"
+            raise RuntimeError, "os._exit() was called, we trapped it for testing"
+        else:
+            # subthreads can behave the same
+            os.DMWM_REAL_EXIT( code )
 
     class DetailedOutputter(Plugin):
         name = "detailed"
@@ -205,6 +220,12 @@ if can_nose:
             return nose.run( argv=args )
 
         def run(self):
+
+            # trap os._exit
+            os.DMWM_REAL_EXIT = os._exit
+            os._exit = trapExit
+            threading.local().isMain = True
+
             testPath = 'test/python'
             if self.testCertainPath:
                 print "Using the tests below: %s" % self.testCertainPath

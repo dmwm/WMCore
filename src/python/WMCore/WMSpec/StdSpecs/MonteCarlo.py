@@ -74,7 +74,8 @@ class MonteCarloWorkloadFactory(StdBase):
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
                                               configDoc = self.prodConfigCacheID, splitAlgo = self.prodJobSplitAlgo,
                                               splitArgs = self.prodJobSplitArgs,
-                                              seeding = self.seeding, totalEvents = self.totalEvents) 
+                                              seeding = self.seeding, totalEvents = self.totalEvents,
+                                              eventsPerLumi = self.eventsPerLumi)
         self.addLogCollectTask(prodTask)
         
         # pile up support
@@ -112,6 +113,11 @@ class MonteCarloWorkloadFactory(StdBase):
 
         # pileup configuration for the first generation task
         self.pileupConfig = arguments.get("PileupConfig", None)
+
+        #Events per lumi configuration (Allow others to inherit)
+        self.eventsPerLumi = arguments.get("EventsPerLumi", None)
+        if self.eventsPerLumi != None:
+            self.eventsPerLumi = int(self.eventsPerLumi)
 
         # The CouchURL and name of the ConfigCache database must be passed in
         # by the ReqMgr or whatever is creating this workflow.

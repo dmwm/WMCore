@@ -253,7 +253,8 @@ class StdBase(object):
                             inputModule = None, scenarioName = None,
                             scenarioFunc = None, scenarioArgs = None, couchURL = None,
                             couchDBName = None, configDoc = None, splitAlgo = "LumiBased",
-                            splitArgs = {'lumis_per_job': 8}, seeding = None, totalEvents = None,
+                            splitArgs = {'lumis_per_job': 8}, seeding = None,
+                            totalEvents = None, eventsPerLumi = None,
                             userDN = None, asyncDest = None, owner_vogroup = "DEFAULT",
                             owner_vorole = "DEFAULT", stepType = "CMSSW",
                             userSandbox = None, userFiles = [], primarySubType = None,
@@ -337,6 +338,7 @@ class StdBase(object):
         procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
         procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                        scramArch = self.scramArch)
+        procTaskCmsswHelper.setEventsPerLumi(eventsPerLumi)
 
         configOutput = self.determineOutputModules(scenarioFunc, scenarioArgs,
                                                    configDoc, couchURL, couchDBName)

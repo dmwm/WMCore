@@ -173,6 +173,7 @@ Emulator:
         <li><a href="#Resubmission"><em>Resubmission</em></a></li>
         <li><a href="#ReDigi"><em>ReDigi</em></a></li>
         <li><a href="#MonteCarloFromGEN"><em>MonteCarlo FromGEN</em></a></li>
+        <li><a href="#lhe"><em>LHE Step0</em></a></li>
     </ul>
     <div class="yui-content">
         <div id="rereco">
@@ -274,6 +275,21 @@ Global Tag: <input type="text" name="GlobalTag" size=20 value=""/><br/>
             $ioBlock
             $runBlockBlock
             $trailerBlock("MonteCarloFromGEN")
+        </div>
+        <div id="lhe">
+            $headerBlock
+            $softwareBlock
+# of Events: <input type="text" name="RequestNumEvents" size=10 value=1000 />
+Time per event: <input type="text" name="TimePerEvent" size=10 value=60 />
+Filter efficiency: <input type="text" name="FilterEfficiency" size=10 value=1.0 />
+Total job time: <input type="text" name="TotalTime", value=32400 />
+# of Events per luminosity block: <input type="text" name="EventsPerLumi" size=10 value=100 /><br/>
+ConfigCache ID: <input type="text" name="ProcConfigCacheID" size=80 /><br/>
+Global Tag: <input type="text" name="GlobalTag" size=20 value=""/><br/>
+Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
+Data Pileup: <input type="text" name="DataPileup" size=80 /><br/>
+MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
+            $trailerBlock("LHEStepZero")
         </div>
 </div>
 <script type="text/javascript">

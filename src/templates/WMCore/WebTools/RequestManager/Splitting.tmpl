@@ -176,6 +176,9 @@ function generateProduction(splitAlgo, splitParams) {
   var procStr = '<input type="hidden" name="splittingAlgo" value="EventBased"></input>\n';
   procStr += "<table>"
   procStr += generateInputRow("Events per job:", "events_per_job", splitParams);
+  if "events_per_lumi" in splitParams {
+    procStr += generateInputRow("Events per lumi:", "events_per_lumi", splitParams);
+  }
   procStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
   procStr += "</table>\n";
   return procStr;

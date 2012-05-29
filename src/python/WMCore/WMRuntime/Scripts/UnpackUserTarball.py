@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 import urllib
+from urllib import URLopener
 import urlparse
 
 
@@ -36,6 +37,30 @@ def setHttpProxy(url):
     os.environ['http_proxy'] = proxy
     return proxy
 
+def getRetriever(scheme):
+    """
+    Get the right retriever function depending on the scheme.
+    If scheme is 'http' return urllib.urlretrieve, else if the scheme is https create a URLOpener
+    with certificates taken from the X509_USER_PROXY variable. If certificates are not available return
+    urllib.urlretrieve as for the http case.
+    """
+    if os.environ.has_key('X509_USER_PROXY') and os.path.isfile(os.environ['X509_USER_PROXY']):
+        certfile = os.environ['X509_USER_PROXY']
+    else:
+        if scheme == 'https':
+            print "User proxy not found. Trying to retrieve the file without using certificates"
+        certfile = None
+
+    if scheme == 'http' or not certfile:
+        retriever = urllib.urlretrieve
+    else:
+        print "Using %s as X509 certificate" % certfile
+        op = URLopener(None, key_file=certfile, cert_file=certfile)
+        op.addheader( 'Accept', 'application/octet-stream' )
+        retriever = op.retrieve
+
+    return retriever
+
 def UnpackUserTarball():
     tarballs = []
     userFiles = []
@@ -53,18 +78,19 @@ def UnpackUserTarball():
         # Is it a URL or a file that exists in the jobDir?
 
         if splitResult[0] in ['http','https'] and splitResult[1]:
+            retriever = getRetriever( splitResult[0] )
             with tempfile.NamedTemporaryFile() as tempFile:
                 if setHttpProxy(tarball):
                     try:
                         print 'Fetching URL tarball %s through proxy server' % tarball
-                        fileName, headers = urllib.urlretrieve(tarball, tempFile.name)
-                    except RuntimeError:
+                        fileName, headers = retriever(tarball, tempFile.name)
+                    except (RuntimeError, IOError):
                         del os.environ['http_proxy']
                         print 'Fetching URL tarball %s after proxy server failure' % tarball
-                        fileName, headers = urllib.urlretrieve(tarball, tempFile.name)
+                        fileName, headers = retriever(tarball, tempFile.name)
                 else:
                     print 'Fetching URL tarball %s without proxy server' % tarball
-                    fileName, headers = urllib.urlretrieve(tarball, tempFile.name)
+                    fileName, headers = retriever(tarball, tempFile.name)
 
                 try:
                     subprocess.check_call(['tar', 'xzf', fileName])

@@ -36,6 +36,7 @@ class Sender(object):
         self._contChannel = self._context.socket(zmq.PUB)
         self._contChannel.setsockopt(zmq.LINGER, self.LINGER_DELAY)
         self._contChannel.connect(controller)
+        # socket closure will be done on garbage collection of Sender instance
         
         
     def __call__(self, alert):

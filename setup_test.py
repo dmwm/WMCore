@@ -28,7 +28,7 @@ try:
     can_coverage = True
 except:
     pass
-
+can_coverage = False
 try:
     import nose
     from nose.plugins import Plugin, PluginTester
@@ -139,7 +139,13 @@ if can_nose:
                           "Which slice to run (zero-based index)"),
                          ('testingRoot=',
                          None,
-                         "Primarily used by buildbot. Gives the path to the root of the test tree (i.e. the directory with WMCore_t)")
+                         "Primarily used by buildbot. Gives the path to the root of the test tree (i.e. the directory with WMCore_t)"),
+                        ('testMinimumIndex=',
+                         None,
+                         "The minimum ID to be executed (advanced use)"),
+                        ('testMaximumIndex=',
+                         None,
+                         "The maximum ID to be executed (advanced use)")
                          ]
 
         def initialize_options(self):
@@ -151,6 +157,8 @@ if can_nose:
             self.testingRoot = "test/python"
             self.testTotalSlices = 1
             self.testCurrentSlice = 0
+            self.testMinimumIndex = 0
+            self.testMaximumIndex = 9999999
             pass
 
         def finalize_options(self):
@@ -181,11 +189,12 @@ if can_nose:
             totalCases = len(testIds)
             myIds      = []
             for id in sorted( testIds.keys() ):
-                if ( id % int(self.testTotalSlices) ) == int(self.testCurrentSlice):
-                    for path in pathList:
-                        if path in testIds[id][0]:
-                            myIds.append( str(id) )
-                            break
+                if int(id) >= int(self.testMinimumIndex) and int(id) <= int(self.testMaximumIndex):                  
+                    if ( id % int(self.testTotalSlices) ) == int(self.testCurrentSlice):
+                        for path in pathList:
+                            if path in testIds[id][0]:
+                                myIds.append( str(id) )
+                                break
 
             print "Out of %s cases, we will run %s" % (totalCases, len(myIds))
             if not myIds:
@@ -236,12 +245,13 @@ if can_nose:
                     retval = self.callNose([__file__,'--with-xunit', '-m', '(_t.py$)|(_t$)|(^test)','-a',
                                              '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
                                              '--with-coverage','--cover-html','--cover-html-dir=coverageHtml','--cover-erase',
-                                             '--cover-package=' + moduleList, '--cover-inclusive',self.testingRoot],
+                                             '--cover-package=' + moduleList, '--cover-inclusive',
+                                             self.testingRoot],
                                              paths = testPath)
                 else:
                     retval = self.callNose([__file__,'--with-xunit', '-m', '(_t.py$)|(_t$)|(^test)','-a',
                          '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
-                         '--stop', self.testnigRoot],
+                         '--stop', self.testingRoot],
                          paths = testPath)
 
             if retval:

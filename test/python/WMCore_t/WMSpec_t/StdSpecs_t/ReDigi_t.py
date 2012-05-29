@@ -634,6 +634,17 @@ class ReDigiTest(unittest.TestCase):
         testWorkload = reDigiWorkload("TestWorkload", defaultArguments)
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
+
+        # Verify that pileup is configured for both of the cmsRun steps in the
+        # top level task.
+        topLevelTask = testWorkload.getTopLevelTask()[0]
+        cmsRun1Helper = topLevelTask.getStepHelper("cmsRun1")
+        cmsRun2Helper = topLevelTask.getStepHelper("cmsRun2")
+        cmsRun1PileupConfig = cmsRun1Helper.getPileup()
+        cmsRun2PileupConfig = cmsRun2Helper.getPileup()
+
+        self.assertTrue(cmsRun1PileupConfig.mc.dataset, "/some/cosmics/dataset")
+        self.assertTrue(cmsRun2PileupConfig.mc.dataset, "/some/cosmics/dataset")
         
         testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock")
         testWMBSHelper.createTopLevelFileset()

@@ -1186,13 +1186,10 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         _setupPerformanceMonitoring_
         
-        Attempt to automatically setup the performance monitoring
-        You should not use this and I make no guarantees for whether
-        it still works.
+        Setups performance monitors for all tasks in the workflow
         """
         for task in self.getAllTasks():
-            if task.taskType() in ['Production', 'Processing']:
-                task.setPerformanceMonitor(maxRSS = maxRSS, maxVSize = maxVSize)
+            task.setPerformanceMonitor(maxRSS = maxRSS, maxVSize = maxVSize)
 
         return
 

@@ -835,8 +835,11 @@ class WMTaskHelper(TreeHelper):
         Set the timeout for the task.
         """
         monitoring = self.data.section_("watchdog")
-        monitoring.monitors = ["DashboardMonitor"]
-        monitoring.section_("DashboardMonitor")
+        if not hasattr(self.data.watchdog, "monitors"):
+            monitoring.monitors = []
+        if not "DashboardMonitor" in monitoring.monitors:
+            monitoring.monitors.append("DashboardMonitor")
+            monitoring.section_("DashboardMonitor")
         monitoring.DashboardMonitor.softTimeOut = taskTimeOut
         monitoring.DashboardMonitor.hardTimeOut = taskTimeOut + 600
         return
@@ -900,8 +903,7 @@ class WMTaskHelper(TreeHelper):
         """
         _setPerformanceMonitor_
 
-        Set the setup for a non-standard optional plugin that
-        you may or may not use because Oli wants something.
+        Set/Update the performance monitor options for the task
         """
         monitoring = self.data.section_("watchdog")
         if not hasattr(self.data.watchdog, 'monitors'):

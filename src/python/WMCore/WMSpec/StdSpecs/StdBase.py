@@ -175,7 +175,8 @@ class StdBase(object):
 
         Add dashboard monitoring for the given task.
         """
-        gb = 1024.0 * 1024.0 * 1024.0
+        #A gigabyte defined as 1024^3 (assuming RSS and VSize is in KiByte)
+        gb = 1024.0 * 1024.0
 
         monitoring = task.data.section_("watchdog")
         monitoring.interval = 600

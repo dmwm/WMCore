@@ -16,6 +16,7 @@ import threading
 import traceback
 import subprocess
 import multiprocessing
+import glob
 
 import WMCore.Algorithms.BasicAlgos as BasicAlgos
 
@@ -640,11 +641,18 @@ class CondorPlugin(BasePlugin):
 
             # If we're still here, we must not have a real error report
             logOutput = 'Could not find jobReport\n'
-            logPath = os.path.join(job['cache_dir'], 'condor.log')
-            if os.path.isfile(logPath):
+            #But we don't know exactly the condor id, so it will append
+            #the last lines of the latest condor log in cache_dir
+            genLogPath = os.path.join(job['cache_dir'], 'condor.*.*.log')
+            logPaths = glob.glob(genLogPath)
+            errLog = None
+            if len(logPaths):
+                errLog = max(logPaths, key = lambda path :
+                                                    os.stat(path).st_mtime)
+            if errLog != None and os.path.isfile(errLog):
                 logTail = BasicAlgos.tail(errLog, 50)
                 logOutput += 'Adding end of condor.log to error message:\n'
-                logOutput += logTail
+                logOutput += '\n'.join(logTail)
             if not os.path.isdir(job['cache_dir']):
                 msg =  "Serious Error in Completing condor job with id %s!\n" % job.get('id', 'unknown')
                 msg += "Could not find jobCache directory - directory deleted under job: %s\n" % job['cache_dir']

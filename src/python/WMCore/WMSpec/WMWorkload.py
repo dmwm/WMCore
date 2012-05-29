@@ -819,17 +819,30 @@ class WMWorkloadHelper(PersistencyHelper):
         policyName should be either 'DatasetBlock', 'Dataset', 'MonteCarlo' 'Block'
         different policy could be added in the workqueue plug in.
         """
-        SplitAlgoToStartPolicy = {"FileBased": "NumberOfFiles",
-                                  "EventBased": "NumberOfEvents",
-                                  "LumiBased": "NumberOfLumis" }
+        SplitAlgoToStartPolicy = {"FileBased": ["NumberOfFiles"],
+                                  "EventBased": ["NumberOfEvents",
+                                                 "NumberOfEventsPerLumi"],
+                                  "LumiBased": ["NumberOfLumis"]}
         SplitAlgoToArgMap = {"NumberOfFiles": "files_per_job",
                              "NumberOfEvents": "events_per_job",
-                             "NumberOfLumis": "lumis_per_job"}
+                             "NumberOfLumis": "lumis_per_job",
+                             "NumberOfEventsPerLumi": "events_per_lumi"}
+        startPolicyArgs = {}
 
-        sliceType = SplitAlgoToStartPolicy.get(splitAlgo, "NumberOfFiles")
+        sliceTypes = SplitAlgoToStartPolicy.get(splitAlgo, ["NumberOfFiles"])
+        sliceType = sliceTypes[0]
         sliceSize = splitArgs.get(SplitAlgoToArgMap[sliceType], 1)
+        startPolicyArgs["SliceType"] = sliceType
+        startPolicyArgs["SliceSize"] = sliceSize
 
-        self.setStartPolicy(policyName, SliceType = sliceType, SliceSize = sliceSize)
+        if len(sliceTypes) > 1:
+            subSliceType = sliceTypes[1]
+            subSliceSize = splitArgs.get(SplitAlgoToArgMap[subSliceType],
+                                         sliceSize)
+            startPolicyArgs["SubSliceType"] = subSliceType
+            startPolicyArgs["SubSliceSize"] = subSliceSize
+
+        self.setStartPolicy(policyName, **startPolicyArgs)
         self.setEndPolicy("SingleShot")
         return
 
@@ -880,6 +893,10 @@ class WMWorkloadHelper(PersistencyHelper):
                     stepHelper.setMinMergeSize(minMergeSize, maxMergeEvents)
                 else:
                     stepHelper.disableStraightToMerge()
+            if taskHelper.isTopOfTree() and stepHelper.stepType() == "CMSSW" \
+                and taskHelper.taskType() == "Production":
+                stepHelper.setEventsPerLumi(splitArgs.get("events_per_lumi",
+                                                          None))
         return
 
     def setTaskTimeOut(self, taskPath, taskTimeOut):

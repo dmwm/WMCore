@@ -29,20 +29,27 @@ class LocalCouchDBData():
         self.couchURLBase, self.dbName = splitCouchServiceURL(couchURL)
         self.couchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/jobs", False)
         
-    def getJobSummaryByWorkflowAndSite(self):
+    def getJobSummaryByWorkflowAndSite(self, taskFlag=False):
         """
         gets the job status information by workflow
     
         example
         {"rows":[
-            {"key":['request_name1", "queued_first", "siteA"],"value":100},
-            {"key":['request_name1", "queued_first", "siteB"],"value":100},
-            {"key":['request_name1", "running", "siteA"],"value":100},
-            {"key":['request_name1", "success", "siteB"],"value":100}\
+            {"key":['request_name1", 'task_name1', "queued_first", "siteA"],"value":100},
+            {"key":['request_name1", 'task_name1', "queued_first", "siteB"],"value":100},
+            {"key":['request_name1", 'task_name2', "running", "siteA"],"value":100},
+            {"key":['request_name1", 'task_name2', "success", "siteB"],"value":100}\
          ]}
          and convert to 
          {'request_name1': {'queue_first': { 'siteA': 100}}
           'request_name1': {'queue_first': { 'siteB': 100}}
+         }
+         if taskflag is set,
+         convert to
+         {'request_name1': {'task_name1 : {'queue_first': { 'siteA': 100}}}
+          'request_name1': {'task_name1 : {'queue_first': { 'siteB': 100}}},
+          'request_name1': {'task_name2 : {'running': { 'siteA': 100}}}
+          'request_name1': {'task_name2 : {'success': { 'siteB': 100}}},
          }
         """
         options = {"group": True, "stale": "ok"}
@@ -53,11 +60,18 @@ class LocalCouchDBData():
 
         # reformat the doc to upload to reqmon db
         data = {}
-        for x in results.get('rows', []):
-            data.setdefault(x['key'][0], {})
-            data[x['key'][0]].setdefault(x['key'][1], {}) 
-            #data[x['key'][0]][x['key'][1]].setdefault(x['key'][2], {})
-            data[x['key'][0]][x['key'][1]][x['key'][2]] = x['value'] 
+        if taskFlag:
+            for x in results.get('rows', []):
+                data.setdefault(x['key'][0], {})
+                data[x['key'][0]].setdefault(x['key'][1], {}) 
+                data[x['key'][0]][x['key'][1]].setdefault(x['key'][2], {})
+                data[x['key'][0]][x['key'][1]][x['key'][2]][x['key'][3]] = x['value'] 
+        else:
+            for x in results.get('rows', []):
+                data.setdefault(x['key'][0], {})
+                data[x['key'][0]].setdefault(x['key'][2], {}) 
+                #data[x['key'][0]][x['key'][1]].setdefault(x['key'][2], {})
+                data[x['key'][0]][x['key'][2]][x['key'][3]] = x['value'] 
         logging.info("Found %i requests" % len(data))
         return data
 

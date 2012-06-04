@@ -519,7 +519,10 @@ class SetupCMSSWPset(ScriptInterface):
         scenario = getattr(self.step.data.application.configuration, "scenario", None)
         if scenario != None and scenario != "":
             funcName = getattr(self.step.data.application.configuration, "function", None)
-            funcArgs = pickle.loads(getattr(self.step.data.application.configuration, "pickledarguments", None))
+            if getattr(self.step.data.application.configuration, "pickledarguments", None) != None:
+                funcArgs = pickle.loads(getattr(self.step.data.application.configuration, "pickledarguments", None))
+            else:
+                funcArgs = {}
             try:
                 self.createProcess(scenario, funcName, funcArgs)
             except Exception, ex:

@@ -18,6 +18,8 @@ from WMCore.DAOFactory        import DAOFactory
 from WMCore.WMFactory         import WMFactory
 from WMCore.WMException       import WMException
 
+from WMCore.FwkJobReport.Report      import Report
+
 from WMCore.JobStateMachine.ChangeState import ChangeState
 
 from WMCore.BossAir.BossAirAPI          import BossAirAPI
@@ -177,8 +179,11 @@ class JobTrackerPoller(BaseWorkerThread):
             jrPath = os.path.join(job.getCache(),
                                   'Report.%i.pkl' % (job['retry_count']))
             jrBinds.append({'jobid': job['id'], 'fwjrpath': jrPath})
-            #job.setFWJRPath(os.path.join(job.getCache(),
-            #                             'Report.%i.pkl' % (job['retry_count'])))
+            #Make sure the job object goes packed with fwjr_path so it
+            #can be persisted in couch
+            fwjr = Report()
+            fwjr.load(jrPath)
+            job["fwjr"] = fwjr
 
         
         # Set all paths at once

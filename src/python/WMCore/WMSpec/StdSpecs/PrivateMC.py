@@ -31,6 +31,9 @@ def getTestArguments():
     args["RequestNumEvents"] = 10
     args["ProcConfigCacheID"] = "f90fc973b731a37c531f6e60e6c57955"
 
+    args["FirstEvent"] = 1
+    args["FirstLumi"] = 1
+
     return args
 
 
@@ -84,6 +87,8 @@ class PrivateMCWorkloadFactory(AnalysisWorkloadFactory):
         # Monte Carlo arguments
         self.inputPrimaryDataset = arguments["PrimaryDataset"]
         self.seeding = arguments.get("Seeding", "AutomaticSeeding")
+        self.firstEvent = arguments.get("FirstEvent", 1)
+        self.firstLumi = arguments.get("FirstLumi", 1)
 
         # Pileup configuration for the first generation task
         self.pileupConfig = arguments.get("PileupConfig", None)

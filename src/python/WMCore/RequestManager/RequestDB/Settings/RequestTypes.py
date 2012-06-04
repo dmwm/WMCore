@@ -22,4 +22,5 @@ TypesList = [
     "MonteCarloFromGEN",
     "TaskChain",
     "PrivateMC",
+    "LHEStepZero",
     ]

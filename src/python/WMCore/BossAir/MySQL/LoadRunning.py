@@ -22,7 +22,7 @@ class LoadRunning(DBFormatter):
                wj.cache_dir AS cache_dir
              FROM bl_runjob rj 
              INNER JOIN bl_status st ON rj.sched_status = st.id
-             INNER JOIN wmbs_users wu ON wu.id = rj.user_id
+             LEFT OUTER JOIN wmbs_users wu ON wu.id = rj.user_id
              INNER JOIN wmbs_job wj ON wj.id = rj.wmbs_id
              WHERE rj.status = 1
              """

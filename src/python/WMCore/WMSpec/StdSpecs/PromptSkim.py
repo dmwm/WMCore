@@ -34,15 +34,15 @@ def getTestArguments():
         "AcquisitionEra": "WMAgentCommissioning10",
         "Requestor": "sfoulkes@fnal.gov",
         "InputDataset": "/MinimumBias/Commissioning10-v4/RAW",
-        "CMSSWVersion": "CMSSW_3_9_5",
+        "CMSSWVersion": "CMSSW_5_2_5_patch1",
 
-        "SkimConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/HeavyIonsAnalysis/Configuration/test/centralSkimsHI_SKIM.py?revision=1.7",
+        "SkimConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/Skimming/test/tier1/skim_MET.py?revision=1.4",
         "BlockName": ["SomeBlock"],
-        "CustodialSite": ["SomeSite"],
+        "CustodialSite": "SomeSite",
         "InitCommand": ". /uscmst1/prod/sw/cms/setup/shrc prod",
 
-        "ScramArch": "slc5_amd64_gcc434",
-        "ProcessingVersion": 3,
+        "ScramArch": "slc5_amd64_gcc462",
+        "ProcessingVersion": "PromptSkim-v1",
         "GlobalTag": "GR10_P_V12::All",
 
         "CouchURL": os.environ.get("COUCHURL", None),
@@ -132,6 +132,12 @@ class PromptSkimWorkloadFactory(DataProcessingWorkloadFactory):
             logging.error("PromptSkimScheduler directory to find out what went")
             logging.error("wrong.")
             raise
+
+        compoundProcVer = r"((?P<ProcString>[a-zA-Z0-9_]+)-)?v(?P<ProcVer>[0-9]+)"
+        match = re.match(compoundProcVer, arguments["ProcessingVersion"])
+
+        arguments["ProcessingString"] = match.group("ProcString")
+        arguments["ProcessingVersion"] = match.group("ProcVer")
         
         workload = DataProcessingWorkloadFactory.__call__(self, workloadName, arguments)
 

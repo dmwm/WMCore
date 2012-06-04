@@ -9,6 +9,8 @@ import os, sys, os.path
 import unittest
 import time
 import pickle
+import threading
+import hashlib
 
 # pylint and coverage aren't standard, but aren't strictly necessary
 # you should get them though
@@ -85,6 +87,20 @@ if can_nose:
                         continue
                     result.append( prefix + "."+ subdir[:-3])
         return result
+
+    def trapExit( code ):
+        """
+        Cherrypy likes to call os._exit() which causes the interpreter to 
+        bomb without a chance of catching it. This sucks. This function
+        will replace os._exit() and throw an exception instead
+        """
+        if hasattr( threading.local(), "isMain" ) and threading.local().isMain:
+            # only trap the main thread
+            print "*******EXIT WAS TRAPPED**********"
+            raise RuntimeError, "os._exit() was called, we trapped it for testing"
+        else:
+            # subthreads can behave the same
+            os.DMWM_REAL_EXIT( code )
 
     class DetailedOutputter(Plugin):
         name = "detailed"
@@ -185,17 +201,26 @@ if can_nose:
             idhandle.close()
 
             print "path lists is %s" % pathList
-
+            # divide it up
             totalCases = len(testIds)
             myIds      = []
-            for id in sorted( testIds.keys() ):
-                if int(id) >= int(self.testMinimumIndex) and int(id) <= int(self.testMaximumIndex):                  
-                    if ( id % int(self.testTotalSlices) ) == int(self.testCurrentSlice):
+            for id in testIds.keys():
+                if int(id) >= int(self.testMinimumIndex) and int(id) <= int(self.testMaximumIndex):
+                    # generate a stable ID for sorting
+                    if len(testIds[id]) == 3:
+                        testName = testIds[id][1] + testIds[id][2]
+                        testHash = hashlib.md5( testName ).hexdigest()
+                        hashSnip = testHash[:7]
+                        hashInt  = int( hashSnip, 16 )
+                    else:
+                        hashInt = id
+
+                    if ( hashInt % int(self.testTotalSlices) ) == int(self.testCurrentSlice):
                         for path in pathList:
                             if path in testIds[id][0]:
                                 myIds.append( str(id) )
                                 break
-
+            myIds = sorted( myIds )
             print "Out of %s cases, we will run %s" % (totalCases, len(myIds))
             if not myIds:
                 return True
@@ -205,6 +230,12 @@ if can_nose:
             return nose.run( argv=args )
 
         def run(self):
+
+            # trap os._exit
+            os.DMWM_REAL_EXIT = os._exit
+            os._exit = trapExit
+            threading.local().isMain = True
+
             testPath = 'test/python'
             if self.testCertainPath:
                 print "Using the tests below: %s" % self.testCertainPath

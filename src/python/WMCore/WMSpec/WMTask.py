@@ -360,6 +360,41 @@ class WMTaskHelper(TreeHelper):
         """
         return self.data.input
 
+    def setFirstEventAndLumi(self, firstEvent, firstLumi):
+        """
+        _setFirstEventAndLumi_
+
+        Set an arbitrary first event and first lumi
+        Only used by production workflows
+        """
+
+        if not hasattr(self.data, "production"):
+            self.data._section("production")
+        setattr(self.data.production, "firstEvent", firstEvent)
+        setattr(self.data.production, "firstLumi", firstLumi)
+
+    def getFirstEvent(self):
+        """
+        _getFirstEvent_
+
+        Get first event to produce for the task
+        """
+        if hasattr(self.data, "production"):
+            if hasattr(self.data.production, "firstLumi"):
+                return self.data.production.firstEvent
+        return None
+
+    def getFirstLumi(self):
+        """
+        _getFirstLumi_
+
+        Get first lumi to produce for the task
+        """
+        if hasattr(self.data, "production"):
+            if hasattr(self.data.production, "firstLumi"):
+                return self.data.production.firstLumi
+        return None
+
     def setSplittingParameters(self, **params):
         """
         _setSplittingParameters_
@@ -369,7 +404,7 @@ class WMTaskHelper(TreeHelper):
         [setattr(self.data.input.splitting, key, val)
          for key, val in params.items() ]
         return
-          
+
     def setSplittingAlgorithm(self, algoName, **params):
         """
         _setSplittingAlgorithm_
@@ -663,7 +698,8 @@ class WMTaskHelper(TreeHelper):
         - totalevents - total events in dataset
         
         """
-        self.data.section_("production")
+        if not hasattr(self.data, "production"):
+            self.data.section_("production")
         
         for opt, arg in options.items():
             if opt == 'totalevents':
@@ -835,8 +871,11 @@ class WMTaskHelper(TreeHelper):
         Set the timeout for the task.
         """
         monitoring = self.data.section_("watchdog")
-        monitoring.monitors = ["DashboardMonitor"]
-        monitoring.section_("DashboardMonitor")
+        if not hasattr(self.data.watchdog, "monitors"):
+            monitoring.monitors = []
+        if not "DashboardMonitor" in monitoring.monitors:
+            monitoring.monitors.append("DashboardMonitor")
+            monitoring.section_("DashboardMonitor")
         monitoring.DashboardMonitor.softTimeOut = taskTimeOut
         monitoring.DashboardMonitor.hardTimeOut = taskTimeOut + 600
         return
@@ -900,8 +939,7 @@ class WMTaskHelper(TreeHelper):
         """
         _setPerformanceMonitor_
 
-        Set the setup for a non-standard optional plugin that
-        you may or may not use because Oli wants something.
+        Set/Update the performance monitor options for the task
         """
         monitoring = self.data.section_("watchdog")
         if not hasattr(self.data.watchdog, 'monitors'):

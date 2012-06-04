@@ -46,75 +46,6 @@ def check_server_url(srvurl):
         msg += "http(s):// in your servers address, %s doesn't" % srvurl
         raise ValueError(msg)
 
-def uploadFile(fileName, url, fieldName = 'file1', params = [], verb = 'POST', ckey = None, cert = None, capath = None):
-    """
-    Upload a file with curl streaming it directly from disk
-    """
-    import pycurl
-    c = pycurl.Curl()
-    if verb == 'POST':
-        c.setopt(c.POST, 1)
-    elif verb == 'PUT':
-        c.setopt(pycurl.CUSTOMREQUEST, 'PUT')
-    else:
-        raise HTTPException("Verb %s not sopported for upload." % verb)
-    c.setopt(c.URL, url)
-    fullParams = [(fieldName, (c.FORM_FILE, fileName))]
-    fullParams.extend(params)
-    c.setopt(c.HTTPPOST, fullParams)
-    bbuf = StringIO.StringIO()
-    hbuf = StringIO.StringIO()
-    c.setopt(pycurl.WRITEFUNCTION, bbuf.write)
-    c.setopt(pycurl.HEADERFUNCTION, hbuf.write)
-    if  capath:
-        c.setopt(pycurl.CAPATH, capath)
-        c.setopt(pycurl.SSL_VERIFYPEER, True)
-    else:
-        c.setopt(pycurl.SSL_VERIFYPEER, False)
-    if  ckey:
-        c.setopt(pycurl.SSLKEY, ckey)
-    if  cert:
-        c.setopt(pycurl.SSLCERT, cert)
-    c.perform()
-    hres = hbuf.getvalue()
-    bres = bbuf.getvalue()
-    rh = ResponseHeader(hres)
-    c.close()
-    if  rh.status < 200 or rh.status >= 300:
-        exc = HTTPException(bres)
-        setattr(exc, 'req_data', fullParams)
-        setattr(exc, 'url', url)
-        setattr(exc, 'result', bres)
-        setattr(exc, 'status', rh.status)
-        setattr(exc, 'reason', rh.reason)
-        setattr(exc, 'headers', rh.header)
-        raise exc
-
-    return bres
-
-def downloadFile(fileName, url):
-    """
-    Download a file with curl streaming it directly to disk
-    """
-    import pycurl
-    from WMCore.Services.pycurl_manager import ResponseHeader
-
-    hbuf = StringIO.StringIO()
-
-    with open(fileName, "wb") as fp:
-        curl = pycurl.Curl()
-        curl.setopt(pycurl.URL, url)
-        curl.setopt(pycurl.WRITEDATA, fp)
-        curl.setopt(pycurl.HEADERFUNCTION, hbuf.write)
-        curl.setopt(pycurl.FOLLOWLOCATION, 1)
-        curl.perform()
-        curl.close()
-
-        header = ResponseHeader(hbuf.getvalue())
-        if header.status < 200 or header.status >= 300:
-            raise RuntimeError('Reading %s failed with code %s' % (url, header.status))
-    return fileName, header
-
 
 class Requests(dict):
     """
@@ -130,6 +61,7 @@ class Requests(dict):
             idict = {}
         dict.__init__(self, idict)
         self.pycurl = idict.get('pycurl', None)
+        self.capath = idict.get('capath', None)
         if self.pycurl:
             self.reqmgr = RequestHandler()
 
@@ -518,11 +450,96 @@ class Requests(dict):
         you need to set either the X509_CERT_DIR variable or the cacert key of the request.
         """
         cacert = None
-        if self.has_key('cacert'):
-            cacert = self['cacert']
+        if self.has_key('capath'):
+            cacert = self['capath']
         elif os.environ.has_key("X509_CERT_DIR"):
             cacert = os.environ["X509_CERT_DIR"]
         return cacert
+
+    def uploadFile(self, fileName, url, fieldName = 'file1', params = [], verb = 'POST'):
+        """
+        Upload a file with curl streaming it directly from disk
+        """
+        ckey, cert = self.getKeyCert()
+        capath = self.getCAPath()
+        import pycurl
+        c = pycurl.Curl()
+        if verb == 'POST':
+            c.setopt(c.POST, 1)
+        elif verb == 'PUT':
+            c.setopt(pycurl.CUSTOMREQUEST, 'PUT')
+        else:
+            raise HTTPException("Verb %s not sopported for upload." % verb)
+        print url
+        c.setopt(c.URL, url)
+        fullParams = [(fieldName, (c.FORM_FILE, fileName))]
+        fullParams.extend(params)
+        c.setopt(c.HTTPPOST, fullParams)
+        bbuf = StringIO.StringIO()
+        hbuf = StringIO.StringIO()
+        c.setopt(pycurl.WRITEFUNCTION, bbuf.write)
+        c.setopt(pycurl.HEADERFUNCTION, hbuf.write)
+        if  capath:
+            c.setopt(pycurl.CAPATH, capath)
+            c.setopt(pycurl.SSL_VERIFYPEER, True)
+        else:
+            c.setopt(pycurl.SSL_VERIFYPEER, False)
+        if  ckey:
+            c.setopt(pycurl.SSLKEY, ckey)
+        if  cert:
+            c.setopt(pycurl.SSLCERT, cert)
+        c.perform()
+        hres = hbuf.getvalue()
+        bres = bbuf.getvalue()
+        rh = ResponseHeader(hres)
+        c.close()
+        if  rh.status < 200 or rh.status >= 300:
+            exc = HTTPException(bres)
+            setattr(exc, 'req_data', fullParams)
+            setattr(exc, 'url', url)
+            setattr(exc, 'result', bres)
+            setattr(exc, 'status', rh.status)
+            setattr(exc, 'reason', rh.reason)
+            setattr(exc, 'headers', rh.header)
+            raise exc
+
+        return bres
+
+    def downloadFile(self, fileName, url):
+        """
+        Download a file with curl streaming it directly to disk
+        """
+        ckey, cert = self.getKeyCert()
+        capath = self.getCAPath()
+        import pycurl
+        from WMCore.Services.pycurl_manager import ResponseHeader
+
+        hbuf = StringIO.StringIO()
+
+        with open(fileName, "wb") as fp:
+            curl = pycurl.Curl()
+            curl.setopt(pycurl.URL, url)
+            curl.setopt(pycurl.WRITEDATA, fp)
+            curl.setopt(pycurl.HEADERFUNCTION, hbuf.write)
+            if  capath:
+                curl.setopt(pycurl.CAPATH, capath)
+                curl.setopt(pycurl.SSL_VERIFYPEER, True)
+            else:
+                curl.setopt(pycurl.SSL_VERIFYPEER, False)
+            if  ckey:
+                curl.setopt(pycurl.SSLKEY, ckey)
+            if  cert:
+                curl.setopt(pycurl.SSLCERT, cert)
+            curl.setopt(pycurl.FOLLOWLOCATION, 1)
+            curl.perform()
+            curl.close()
+
+            header = ResponseHeader(hbuf.getvalue())
+            if header.status < 200 or header.status >= 300:
+                raise RuntimeError('Reading %s failed with code %s' % (url, header.status))
+        return fileName, header
+
+
 
 class JSONRequests(Requests):
     """

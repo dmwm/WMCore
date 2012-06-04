@@ -708,6 +708,7 @@ class BossAirAPI(WMConnectionBase):
 
         # If there is a killMsg, pass it on to the accountant via a FWJR
         # NOTE: If a job brings back a FWJR before it gets killed, that FWJR is preserved.
+        # And updated with the killing message
         if killMsg:
             for job in jobs:
                 if job.get('cache_dir', None) == None or job.get('retry_count', None) == None:
@@ -720,15 +721,14 @@ class BossAirAPI(WMConnectionBase):
                     continue
                 reportName = os.path.join(job['cache_dir'],
                                               'Report.%i.pkl' % job['retry_count'])
+                condorErrorReport = Report()
                 if os.path.exists(reportName) and os.path.getsize(reportName) > 0:
-                    # Then there's already a report there.  Ignore this.
-                    logging.debug("Not writing report due to pre-existing report for job %i.\n" % job['id'])
-                    logging.debug("ReportPath: %s\n" % reportName)
-                    continue
-                else:
-                    condorErrorReport = Report()
-                    condorErrorReport.addError("JobKilled", 61302, "JobKilled", killMsg)
-                    condorErrorReport.save(filename = reportName)
+                    # Then there's already a report there.  Add messages
+                    condorErrorReport.load(reportName)
+                #Build a better job message
+                reportedMsg = killMsg + '\n Job last known status was: %s' % job.get('globalState', 'Unknown')
+                condorErrorReport.addError("JobKilled", 61302, "JobKilled", reportedMsg)
+                condorErrorReport.save(filename = reportName)
 
         return
 

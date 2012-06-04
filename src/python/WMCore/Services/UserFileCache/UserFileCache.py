@@ -11,7 +11,6 @@ import logging
 import tarfile
 
 from WMCore.Services.Service import Service
-from WMCore.Services.Requests import uploadFile, downloadFile
 
 
 class UserFileCache(Service):
@@ -20,57 +19,44 @@ class UserFileCache(Service):
     """
     # Should be filled out with other methods: download, exists
 
-    def __init__(self, dict=None):
-
-        if not dict:
-            dict = {}
-        if not dict.has_key('endpoint'):
-            dict['endpoint'] = "http://cms-xen38.fnal.gov:7725/userfilecache/"
-        if not dict.has_key('proxyfilename'):
-            dict['proxyfilename'] = None
-        if not dict.has_key('capath'):
-            dict['capath'] = None
-        #TODO: Temporary flag used to indicate that the UserFileCache is talking with the new REST
-        #Remove when the branch 3.0.x of the CRABClient is deprecated
-        if not dict.has_key('newrest'):
-            dict['newrest'] = False
+    def __init__(self, dict={}):
+        dict['endpoint'] =  dict.get('endpoint', 'https://cmsweb.cern.ch/crabcache/')
         Service.__init__(self, dict)
 
-    def download(self, hashkey=None, subDir=None, name=None, output=None):
+        if dict.has_key('proxyfilename'):
+            #in case there is some code I have not updated in ticket #3780. Should not be required... but...
+            self['logger'].warning('The UserFileCache proxyfilename parameter has been replace with the more' +
+                                   ' general (ckey/cert) pair.')
+
+    def download(self, hashkey=None, name=None, output=None):
         """
-        Download file
+        Download file. If hashkey is provided use it. Otherwise use filename. At least one
+        of them should be provided.
         """
         # FIXME: option for temp file if output=None
         if hashkey:
-            url = self['endpoint'] + 'download?hashkey=%s' % hashkey
+            url = self['endpoint'] + 'file?hashkey=%s' % hashkey
         else:
-            url = self['endpoint'] + 'download?subDir=%s;name=%s' % (subDir, name)
+            url = self['endpoint'] + 'file?inputfilename=%s' % name
 
         self['logger'].info('Fetching URL %s' % url)
-        fileName, header = downloadFile(output, url)
+        fileName, header = self['requests'].downloadFile(output, str(url)) #unicode broke pycurl.setopt
         self['logger'].debug('Wrote %s' % fileName)
         return fileName
 
-    def upload(self, fileName, subDir=None, name=None):
+    def upload(self, fileName, name=None):
         """
         Upload the file
         """
-        #TODO: the following three lines will not be needed anymore if we only support the new REST
-        endpointSuffix = '/userfilecache/upload/' if not self['newrest'] else ''
-        cksumParam = 'checksum' if not self['newrest'] else 'hashkey'
-        fieldName = 'userfile' if not self['newrest'] else 'inputfile'
-        verb = 'POST' if not self['newrest'] else 'PUT'
+        params = [('hashkey', self.checksum(fileName))]
+        if name:
+            params.append(('inputfilename', name))
 
-        uploadURL = self['endpoint'] + endpointSuffix
-        params = [(cksumParam, self.checksum(fileName))]
-        if subDir or name:
-            params.append(('subDir', subDir))
-            params.append(('name', name))
-
-        resString = uploadFile(fileName=fileName, fieldName=fieldName, url=uploadURL, params=params, \
-                                                 verb=verb, ckey=self['proxyfilename'], cert=self['proxyfilename'], capath=self['capath'] )
+        resString = self["requests"].uploadFile(fileName=fileName, fieldName='inputfile', url=self['endpoint'] + 'file', \
+                                                params=params, verb='PUT')
 
         return json.loads(resString)
+
     def checksum(self, fileName):
         """
         Calculate the checksum of the file. We don't just hash the contents because

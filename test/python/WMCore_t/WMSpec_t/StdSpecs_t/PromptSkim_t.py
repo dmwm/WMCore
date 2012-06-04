@@ -10,6 +10,7 @@ import os
 
 from WMCore.WMSpec.StdSpecs.PromptSkim import promptSkimWorkload
 from WMCore.WMSpec.StdSpecs.PromptSkim import getTestArguments
+from WMCore.WMSpec.StdSpecs.PromptSkim import fixCVSUrl
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
@@ -44,6 +45,21 @@ class PromptSkimTest(unittest.TestCase):
         self.testInit.clearDatabase()
         return
 
+    def testFixCVSUrl(self):
+        notCVSUrl = 'http://cmsprod.web.cern.ch/cmsprod/oldJobs.html'
+        rightCVSUrl = 'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/Skimming/test/tier1/skim_MET.py?revision=1.4'
+        wrongCVSUrls = ['http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/Skimming/test/tier1/skim_MET.py?revision=1.4&view=markup&pathrev=MAIN&sortby=date',
+                        'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/Skimming/test/tier1/skim_MET.py?revision=1.4&view=markup&sortby=author',
+                        'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/Skimming/test/tier1/skim_MET.py?revision=1.4&content-type=text%2Fplain',
+                        'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/Skimming/test/tier1/skim_MET.py?view=markup&revision=1.4&sortby=author']
+        self.assertEqual(fixCVSUrl(notCVSUrl), notCVSUrl,
+                         'Error: A url not from CVS was changed')
+        self.assertEqual(fixCVSUrl(rightCVSUrl), rightCVSUrl,
+                         'Error: A correct url from CVS was changed')
+        for url in wrongCVSUrls:
+            self.assertEqual(fixCVSUrl(url), rightCVSUrl,
+                         'Error: A wrong url (%s) from CVS was not changed (%s)'
+                         % (url, fixCVSUrl(url)))
     @attr("integration")
     def testPromptSkim(self):
         """

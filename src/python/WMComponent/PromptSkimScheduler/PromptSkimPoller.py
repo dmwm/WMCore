@@ -213,6 +213,7 @@ class PromptSkimPoller(BaseWorkerThread):
         """
         (datasetPath, guid) = blockInfo["BLOCK_NAME"].split("#", 1)
         (primary, processed, tier) = datasetPath[1:].split("/", 3)
+        runNumber = int(blockInfo["RUN_ID"])
         workloadName = "Run%s-%s-%s-%s" % (blockInfo["RUN_ID"], primary, processed, skimConfig.SkimName)
 
         if self.promptSkimWorkloads.has_key(blockInfo["RUN_ID"]):
@@ -252,6 +253,7 @@ class PromptSkimPoller(BaseWorkerThread):
                     "StdJobSplitAlgo": "FileBased",
                     "StdJobSplitArgs": {"files_per_job": 1,
                                         "include_parents": includeParents},
+                    "RunNumber"  : runNumber,
                     "ValidStatus": "VALID"}
 
         workload = self.promptSkimFactory(workloadName, wfParams)

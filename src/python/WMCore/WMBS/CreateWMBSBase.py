@@ -76,7 +76,7 @@ class CreateWMBSBase(DBCreator):
              lfn          VARCHAR(500) NOT NULL,
              filesize     BIGINT,
              events       INTEGER,
-             first_event  INTEGER      NOT NULL DEFAULT 0,
+             first_event  BIGINT       NOT NULL DEFAULT 0,
              merged       INT(1)       NOT NULL DEFAULT 0,
              UNIQUE (lfn))"""
 
@@ -288,8 +288,8 @@ class CreateWMBSBase(DBCreator):
         self.create["17wmbs_job_mask"] = \
           """CREATE TABLE wmbs_job_mask (
               job           INTEGER     NOT NULL,
-              FirstEvent    INTEGER,
-              LastEvent     INTEGER,
+              FirstEvent    BIGINT,
+              LastEvent     BIGINT,
               FirstLumi     INTEGER,
               LastLumi      INTEGER,
               FirstRun      INTEGER,

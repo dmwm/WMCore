@@ -73,9 +73,12 @@ class WMStatsWriter():
         return self.couchDB.updateDocument(request, 'WMStats', 'team', 
                                          fields={'team': team})
 
-    def insertTotalJobs(self, request, totalJobs):
-        return self.couchDB.updateDocument(request, 'WMStats', 'totalJobs', 
-                                         fields={'total_jobs': int(totalJobs)})
+    def insertTotalStats(self, request, totalStats):
+        """
+        update the total stats of given workflow (total_jobs, input_events, input_lumis, input_num_files)
+        """
+        return self.couchDB.updateDocument(request, 'WMStats', 'totalStats', 
+                                         fields=totalStats)
 
     def updateFromWMSpec(self, spec):
         # currently only update priority and siteWhitelist

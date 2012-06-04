@@ -11,6 +11,7 @@ import tempfile
 import urllib
 import shutil
 import logging
+import re
 
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessingWorkloadFactory
 from WMCore.WMRuntime.Tools.Scram import Scram
@@ -53,6 +54,20 @@ def getTestArguments():
 
     return arguments
 
+def fixCVSUrl(url):
+    """
+    _fixCVSUrl_
+
+    Checks the url, if it looks like a cvs url then make sure it has no
+    view option in it, so it can be downloaded correctly
+    """
+    cvsPatt = '(http://cmssw\.cvs\.cern\.ch.*\?).*(revision=[0-9]*\.[0-9]*).*'
+    cvsMatch = re.match(cvsPatt, url)
+    if cvsMatch:
+        url = cvsMatch.groups()[0] + cvsMatch.groups()[1]
+    return url
+
+
 class PromptSkimWorkloadFactory(DataProcessingWorkloadFactory):
     """
     _PromptSkimWorkloadFactory_
@@ -72,7 +87,7 @@ class PromptSkimWorkloadFactory(DataProcessingWorkloadFactory):
         logging.error("Injecting to config cache.\n");
         configTempDir = tempfile.mkdtemp()
         configPath = os.path.join(configTempDir, "cmsswConfig.py")
-        configString = urllib.urlopen(configUrl).read(-1)
+        configString = urllib.urlopen(fixCVSUrl(configUrl)).read(-1)
         configFile = open(configPath, "w")
         configFile.write(configString)
         configFile.close()

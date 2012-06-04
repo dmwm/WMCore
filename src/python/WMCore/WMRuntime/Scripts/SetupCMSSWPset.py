@@ -493,6 +493,19 @@ class SetupCMSSWPset(ScriptInterface):
             raise RuntimeError(m)
         return pileupDict
         
+    def handleProducersNumberOfEvents(self):
+        """
+        Some producer modules are initialized with a maximum number of events
+        to be generated, usually based on the process.maxEvents.input attribute
+        but after that is tweaked the producers number of events need to
+        be fixed as well. This method takes care of that.
+        """
+        producers = {}
+        producers.update(self.process.producers)
+        for producer in producers:
+            if hasattr(producers[producer], "nEvents"):
+                producers[producer].nEvents = cms.uint32(
+                                        self.process.maxEvents.input.value())
         
     def __call__(self):
         """
@@ -565,7 +578,15 @@ class SetupCMSSWPset(ScriptInterface):
 
         # make sure default parametersets for perf reports are installed
         self.handlePerformanceSettings()
+
+        # check for event numbers in the producers
+        self.handleProducersNumberOfEvents()
         
+        #Apply events per lumi section if available
+        if hasattr(self.step.data.application.configuration, "eventsPerLumi"):
+            self.process.source.numberEventsInLuminosityBlock = \
+                cms.untracked.uint32(self.step.data.application.configuration.eventsPerLumi)
+
         # accept an overridden TFC from the step
         if hasattr(self.step.data.application,'overrideCatalog'):
             print "Found a TFC override: %s" % self.step.data.application.overrideCatalog

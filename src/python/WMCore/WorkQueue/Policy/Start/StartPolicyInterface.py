@@ -70,6 +70,9 @@ class StartPolicyInterface(PolicyInterface):
         if self.args.get('SliceSize', 1) <= 0:
             error = WorkQueueWMSpecError(self.wmspec, 'Zero or negative SliceSize parameter')
             raise error
+        if self.args.get('SubSliceSize', 1) <= 0:
+            error = WorkQueueWMSpecError(self.wmspec, 'Zero or negative SubSliceSize parameter')
+            raise error
 
         # check input dataset is valid
         try:

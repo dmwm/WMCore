@@ -731,6 +731,9 @@ class WorkQueue(WorkQueueBase):
         """
         totalUnits = []
         totalToplevelJobs = 0
+        totalEvents = 0
+        totalLumis = 0
+        totalFiles = 0
         # split each top level task into constituent work elements
         # get the acdc server and db name
         for topLevelTask in wmspec.taskIterator():
@@ -754,7 +757,7 @@ class WorkQueue(WorkQueueBase):
                 totalToplevelJobs += unit['Jobs']
             totalUnits.extend(units)
 
-        return totalUnits, totalToplevelJobs
+        return totalUnits, {'total_jobs': totalToplevelJobs, 'input_events': totalEvents, 'input_lumis': totalLumis, 'input_num_files': totalFiles}
 
     def processInboundWork(self, inbound_work = None, throw = False):
         """Retrieve work from inbox, split and store
@@ -773,7 +776,7 @@ class WorkQueue(WorkQueueBase):
                 if work:
                     self.logger.info('Request "%s" already split - Resuming' % inbound['RequestName'])
                 else:
-                    work, totalJobs = self._splitWork(inbound['WMSpec'], None, inbound['Inputs'], inbound['Mask'])
+                    work, totalStats = self._splitWork(inbound['WMSpec'], None, inbound['Inputs'], inbound['Mask'])
                     self.backend.insertElements(work, parent = inbound) # if this fails, rerunning will pick up here
                     # save inbound work to signal we have completed queueing
                     
@@ -785,7 +788,7 @@ class WorkQueue(WorkQueueBase):
                         #only update for global queue
                         wmstatSvc = WMStatsWriter(self.params.get('WMStatsCouchUrl'))
                         #TODO need to handle error case?
-                        wmstatSvc.insertTotalJobs(inbound['WMSpec'].name(), totalJobs)
+                        wmstatSvc.insertTotalStats(inbound['WMSpec'].name(), totalStats)
                         
             except TERMINAL_EXCEPTIONS, ex:
                 self.logger.info('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))

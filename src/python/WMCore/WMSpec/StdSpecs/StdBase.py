@@ -79,6 +79,7 @@ class StdBase(object):
         self.overrideCatalog = None
         self.firstLumi = None
         self.firstEvent = None
+        self.runNumber = 0
         return
 
     def __call__(self, workloadName, arguments):
@@ -114,6 +115,7 @@ class StdBase(object):
         self.dashboardHost = arguments.get("DashboardHost", "cms-wmagent-job.cern.ch")
         self.dashboardPort = arguments.get("DashboardPort", 8884)
         self.overrideCatalog = arguments.get("OverrideCatalog", None)
+        self.runNumber = int(arguments.get("RunNumber", 0))
 
         if arguments.get("IncludeParents", False) == "True":
             self.includeParents = True
@@ -385,6 +387,7 @@ class StdBase(object):
         """
         haveFilterName = (filterName != None and filterName != "")
         haveProcString = (self.processingString != None and self.processingString != "")
+        haveRunNumber  = (self.runNumber != None and self.runNumber > 0)
 
         processedDataset = "%s-" % self.acquisitionEra
         if haveFilterName:
@@ -397,6 +400,11 @@ class StdBase(object):
             processingLFN = "%s-v%i" % (self.processingString, self.processingVersion)
         else:
             processingLFN = "v%i" % self.processingVersion
+
+        if haveRunNumber:
+            stringRunNumber = str(self.runNumber).zfill(9)
+            runSections = [stringRunNumber[i:i+3] for i in range(0, 9, 3)]
+            runLFN = "/".join(runSections)
 
 
         if parentTask.name() in analysisTaskTypes:
@@ -433,6 +441,10 @@ class StdBase(object):
             else:
                 unmergedLFN += "/%s" % processingLFN
                 mergedLFN += "/%s" % processingLFN
+
+            if haveRunNumber:
+                unmergedLFN += "/%s" % runLFN
+                mergedLFN += "/%s" % runLFN
 
             lfnBase(unmergedLFN)
             lfnBase(mergedLFN)

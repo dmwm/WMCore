@@ -67,10 +67,11 @@ class DashboardReporter(WMObject):
         Additionally the job should carry information about the task according
         to the description of the addTask method
         """
-        logging.info ("Handling created jobs: %s" % jobs)
+        logging.info ("Handling %d created jobs" % len(jobs))
+        logging.debug ("Handling created jobs: %s" % jobs)
 
         for job in jobs:
-            logging.info("Sending info for job %s" % str(job))
+            logging.debug("Sending info for job %s" % str(job))
 
             package = {}
             package['MessageType']      = 'JobMeta'
@@ -84,7 +85,7 @@ class DashboardReporter(WMObject):
             package['NEventsToProcess'] = job.get('nEventsToProc',
                                                     'NotAvailable')
 
-            logging.info("Sending: %s" % str(package))
+            logging.debug("Sending: %s" % str(package))
             result = apmonSend(taskid = package['taskId'],
                                jobid = package['jobId'],
                                params = package,
@@ -119,10 +120,11 @@ class DashboardReporter(WMObject):
             *location -> Computing element the job is destinated to
             *fwjr -> Post processing step information
         """
-        logging.info("Handling jobs: %s" % jobs)
+        logging.info("Handling %d jobs" % len(jobs))
+        logging.debug("Handling jobs: %s" % jobs)
 
         for job in jobs:
-            logging.info("Sending info for job %s" % str(job))
+            logging.debug("Sending info for job %s" % str(job))
 
             package = {}
             package['MessageType']       = 'JobStatus'
@@ -136,7 +138,7 @@ class DashboardReporter(WMObject):
             package['StatusDestination'] = job.get('location',
                                                    'NotAvailable')
 
-            logging.info("Sending: %s" % str(package))
+            logging.debug("Sending: %s" % str(package))
             result = apmonSend(taskid = package['taskId'],
                                jobid = package['jobId'],
                                params = package,
@@ -289,6 +291,7 @@ class DashboardReporter(WMObject):
         package['datasetFull']   = task['datasetFull']
         package['CMSUser']       = task['user']
 
+        logging.info("Sending %s info" % taskName)
         logging.debug("Sending task info: %s" % str(package))
         result = apmonSend(taskid = package['TaskName'],
                            jobid = package['JobName'], params = package,

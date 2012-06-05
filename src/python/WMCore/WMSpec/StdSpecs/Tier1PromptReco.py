@@ -10,6 +10,7 @@ import tempfile
 import urllib
 import shutil
 import logging
+import re
 
 import WMCore.Lexicon
 
@@ -189,8 +190,11 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
             skimTask = mergeTask.addTask(promptSkim.SkimName)
             parentCmsswStep = mergeTask.getStep('cmsRun1')
 
-            #Does this work?
-            self.processingVersion = promptSkim.ProcessingVersion
+            compoundProcVer = r"((?P<ProcString>[a-zA-Z0-9_]+)-)?v(?P<ProcVer>[0-9]+)"
+            match = re.match(compoundProcVer, promptSkim.ProcessingVersion)
+
+            self.processingString = match.group("ProcString")
+            self.processingVersion = int(match.group("ProcVer"))
 
             if promptSkim.TwoFileRead:
                 self.skimJobSplitArgs['include_parents'] = True

@@ -71,8 +71,11 @@ class PromptSkimTest(unittest.TestCase):
         dataProcArguments = getTestArguments()
         dataProcArguments["CouchUrl"] = os.environ["COUCHURL"]
         dataProcArguments["CouchDBName"] = "promptskim_t"
-
         testWorkload = promptSkimWorkload("TestWorkload", dataProcArguments)
+
+        #Test another processing version flavor
+        dataProcArguments["ProcessingVersion"] = "v1"
+        testWorkload = promptSkimWorkload("TestWorkload2", dataProcArguments)
         return
 
 if __name__ == '__main__':

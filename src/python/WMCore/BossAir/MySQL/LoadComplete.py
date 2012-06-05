@@ -43,7 +43,7 @@ class LoadComplete(DBFormatter):
                bl_runjob.status = 0
              INNER JOIN bl_status ON
                bl_status.id = bl_runjob.sched_status
-             INNER JOIN wmbs_users ON wmbs_users.id = bl_runjob.user_id
+             LEFT OUTER JOIN wmbs_users ON wmbs_users.id = bl_runjob.user_id
              INNER JOIN wmbs_location ON wmbs_location.id = bl_runjob.location
              WHERE wmbs_job.state = (SELECT id FROM wmbs_job_state WHERE name = 'executing')
              """

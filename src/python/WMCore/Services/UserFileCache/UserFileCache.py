@@ -57,7 +57,7 @@ class UserFileCache(Service):
                                                 url=self['endpoint'] + 'file',
                                                 params=params, verb='PUT')
 
-        return json.loads(resString)
+        return json.loads(resString)['result'][0]
 
     def checksum(self, fileName):
         """

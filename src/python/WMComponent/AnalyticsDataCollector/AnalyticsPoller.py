@@ -33,7 +33,8 @@ class AnalyticsPoller(BaseWorkerThread):
         self.agentInfo['agent_url'] = config.Agent.hostName
         # need to get campaign, user, owner info
         self.agentDocID = "agent+hostname"
-
+        self.summaryLevel = "Workflow"
+    
     def setup(self, parameters):
         """
         set db connection(couchdb, wmbs) to prepare to gether information
@@ -43,12 +44,12 @@ class AnalyticsPoller(BaseWorkerThread):
         self.localQueue = WorkQueueService(self.config.AnalyticsDataCollector.localQueueURL)
         
         # set the connection for local couchDB call
-        self.localCouchDB = LocalCouchDBData(self.config.AnalyticsDataCollector.localCouchURL)
+        self.localCouchDB = LocalCouchDBData(self.config.AnalyticsDataCollector.localCouchUR, self.summaryLevel)
         
         # interface to WMBS/BossAir db
         myThread = threading.currentThread()
         # set wmagent db data
-        self.wmagentDB = WMAgentDBData(myThread.dbi, myThread.logger)
+        self.wmagentDB = WMAgentDBData(self.summaryLevel, myThread.dbi, myThread.logger)
         # set the connection for local couchDB call
         self.localSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL)
         logging.info("Setting the replication to central monitor ...")
@@ -90,7 +91,7 @@ class AnalyticsPoller(BaseWorkerThread):
             uploadTime = int(time.time())
             logging.info("%s requests Data combined,\n uploading request data..." % len(combinedRequests))
             requestDocs = convertToRequestCouchDoc(combinedRequests, fwjrInfoFromCouch,
-                                                   self.agentInfo, uploadTime)
+                                                   self.agentInfo, uploadTime, self.summaryLevel)
             
             self.localSummaryCouchDB.uploadData(requestDocs)
             logging.info("Request data upload success\n %s request \n uploading agent data" % len(requestDocs))

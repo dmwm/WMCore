@@ -23,14 +23,15 @@ from WMComponent.AnalyticsDataCollector.DataCollectorEmulatorSwitch import emula
 @emulatorHook
 class LocalCouchDBData():
 
-    def __init__(self, couchURL):
+    def __init__(self, couchURL, summaryLevel):
         # set the connection for local couchDB call
         self.couchURL = couchURL
         self.couchURLBase, self.dbName = splitCouchServiceURL(couchURL)
         self.jobCouchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/jobs", False)
         self.fwjrsCouchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/fwjrs", False)
+        self.summaryLevel == summaryLevel
         
-    def getJobSummaryByWorkflowAndSite(self, taskFlag=False):
+    def getJobSummaryByWorkflowAndSite(self):
         """
         gets the job status information by workflow
     
@@ -61,7 +62,7 @@ class LocalCouchDBData():
 
         # reformat the doc to upload to reqmon db
         data = {}
-        if taskFlag:
+        if self.summaryLevel == "Task":
             for x in results.get('rows', []):
                 data.setdefault(x['key'][0], {})
                 data[x['key'][0]].setdefault(x['key'][1], {}) 
@@ -120,7 +121,8 @@ class LocalCouchDBData():
 @emulatorHook
 class WMAgentDBData():
 
-    def __init__(self, dbi, logger):
+    def __init__(self, summaryLevel, dbi, logger):
+        
         
         # interface to WMBS/BossAir db
         bossAirDAOFactory = DAOFactory(package = "WMCore.BossAir",
@@ -129,8 +131,11 @@ class WMAgentDBData():
                                     logger = logger, dbinterface = dbi)
         wmAgentDAOFactory = DAOFactory(package = "WMCore.Agent.Database", 
                                      logger = logger, dbinterface = dbi)
-        
-        self.batchJobAction = bossAirDAOFactory(classname = "JobStatusByWorkflowAndSite")
+        self.summaryLevel = summaryLevel
+        if self.summaryLevel == "Task":
+            self.batchJobByTaskAction = bossAirDAOFactory(classname = "JobStatusByTaskAndSite")
+        else:
+            self.batchJobAction = bossAirDAOFactory(classname = "JobStatusByWorkflowAndSite")
         self.jobSlotAction = wmbsDAOFactory(classname = "Locations.GetJobSlotsByCMSName")
         self.componentStatusAction = wmAgentDAOFactory(classname = "CheckComponentStatus")
 
@@ -178,7 +183,7 @@ def combineAnalyticsData(a, b, combineFunc = None):
                 result[key] = combineAnalyticsData(value, result[key])
     return result 
 
-def convertToRequestCouchDoc(combinedRequests, fwjrInfo, agentInfo, uploadTime):
+def convertToRequestCouchDoc(combinedRequests, fwjrInfo, agentInfo, uploadTime, summaryLevel):
     requestDocs = []
     for request, status in combinedRequests.items():
         doc = {}
@@ -186,7 +191,7 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, agentInfo, uploadTime):
         doc['type'] = "agent_request"
         doc['workflow'] = request
         # this will set doc['status'], and doc['sites']
-        tempData = _convertToStatusSiteFormat(status)
+        tempData = _convertToStatusSiteFormat(status, summaryLevel)
         doc['status'] = tempData['status']
         doc['sites'] = tempData['sites']
         doc['timestamp'] = uploadTime
@@ -224,7 +229,7 @@ def _setMultiLevelStatus(statusData, status, value):
         statusData[statusStruct[0]][statusStruct[1]] += value
     return
 
-def _convertToStatusSiteFormat(requestData):
+def _convertToStatusSiteFormat(requestData, summaryLevel = None):
     """
     convert data structure for couch db.
     "status": { "inWMBS": 100, "success": 1000, "inQueue": 100, "cooloff": 1000,
@@ -241,17 +246,22 @@ def _convertToStatusSiteFormat(requestData):
     data['status'] = {}
     data['sites'] = {}
     
-    for status, siteJob in requestData.items():
-        if type(siteJob) != dict:
-            _setMultiLevelStatus(data['status'], status, siteJob)
-        else:
-            for site, job in siteJob.items():
-                _setMultiLevelStatus(data['status'], status, int(job))
-                if site != 'Agent':
-                    if site is None:
-                        site = 'unknown'
-                    data['sites'].setdefault(site, {})
-                    _setMultiLevelStatus(data['sites'][site], status, int(job))
+    if summaryLevel != None and summaryLevel == 'Task':
+        data['tasks'] = {}
+        for task, taskData in requestData.item():
+             data['tasks'][task] = _convertToStatusSiteFormat(taskData)
+    else:
+        for status, siteJob in requestData.items():
+            if type(siteJob) != dict:
+                _setMultiLevelStatus(data['status'], status, siteJob)
+            else:
+                for site, job in siteJob.items():
+                    _setMultiLevelStatus(data['status'], status, int(job))
+                    if site != 'Agent':
+                        if site is None:
+                            site = 'unknown'
+                        data['sites'].setdefault(site, {})
+                        _setMultiLevelStatus(data['sites'][site], status, int(job))
     return data
 
 def _getCouchACDCHtmlBase(acdcCouchURL):

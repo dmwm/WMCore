@@ -285,6 +285,16 @@ class CMSSWStepHelper(CoreHelper):
         if overrideCatalog != None:
             self.data.application.overrideCatalog = overrideCatalog
 
+    def setEventsPerLumi(self, eventsPerLumi):
+        """
+        _setEventsPerLumi_
+        Add event per lumi information to the step, so it can be added later
+        to the process, this comes from user input
+        """
+        if eventsPerLumi != None:
+            setattr(self.data.application.configuration, "eventsPerLumi",
+                    eventsPerLumi)
+
     def setMulticoreCores(self, ncores):
         """
         _setMulticoreCores_

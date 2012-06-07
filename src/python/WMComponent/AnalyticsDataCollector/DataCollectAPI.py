@@ -27,7 +27,8 @@ class LocalCouchDBData():
         # set the connection for local couchDB call
         self.couchURL = couchURL
         self.couchURLBase, self.dbName = splitCouchServiceURL(couchURL)
-        self.couchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/jobs", False)
+        self.jobCouchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/jobs", False)
+        self.fwjrsCouchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/fwjrs", False)
         
     def getJobSummaryByWorkflowAndSite(self, taskFlag=False):
         """
@@ -55,7 +56,7 @@ class LocalCouchDBData():
         options = {"group": True, "stale": "ok"}
         # site of data should be relatively small (~1M) for put in the memory 
         # If not, find a way to stream
-        results = self.couchDB.loadView("JobDump", "jobStatusByWorkflowAndSite",
+        results = self.jobCouchDB.loadView("JobDump", "jobStatusByWorkflowAndSite",
                                         options)
 
         # reformat the doc to upload to reqmon db
@@ -75,6 +76,47 @@ class LocalCouchDBData():
         logging.info("Found %i requests" % len(data))
         return data
 
+    def getEventSummaryByWorkflow(self):
+        """
+        gets the job status information by workflow
+    
+        example
+        {"rows":[
+            {"key":['request_name1", "/test/output_dataset1"],
+             "value": {size: 20286644784714, events: 38938099, count: 6319, 
+                       dataset: "/test/output_dataset1"}},
+            {"key":['request_name1", "/test/output_dataset2"],
+             "value": {size: 20286644784714, events: 38938099, count: 6319, 
+                       dataset: "/test/output_dataset2"}},
+            {"key":['request_name1", "/test/output_dataset3"],
+             "value": {size: 20286644784714, events: 38938099, count: 6319, 
+                       dataset: "/test/output_dataset3"}},
+            {"key":['request_name1", "/test/output_dataset4"],
+             "value": {size: 20286644784714, events: 38938099, count: 6319, 
+                       dataset: "/test/output_dataset4"}},
+         ]}
+         and convert to 
+         {'request_name1': {'size_event': [{size: 20286644784714, events: 38938099, count: 6319, 
+                             dataset: "/test/output_dataset1"},
+                             {size: 20286644784714, events: 38938099, count: 6319, 
+                             dataset: "/test/output_dataset2"}]}
+                       
+          'request_name2': ...
+        """
+        options = {"group": True, "stale": "ok", "reduce":True}
+        # site of data should be relatively small (~1M) for put in the memory 
+        # If not, find a way to stream
+        results = self.fwjrsCouchDB.loadView("FWJRDump", "jobStatusByWorkflowAndSite",
+                                        options)
+
+        # reformat the doc to upload to reqmon db
+        data = {}
+        for x in results.get('rows', []):
+            data.setdefault(x['key'][0], [])
+            data[x['key'][0]].append(x['value']) 
+        logging.info("Found %i requests" % len(data))
+        return data
+    
 @emulatorHook
 class WMAgentDBData():
 
@@ -136,7 +178,7 @@ def combineAnalyticsData(a, b, combineFunc = None):
                 result[key] = combineAnalyticsData(value, result[key])
     return result 
 
-def convertToRequestCouchDoc(combinedRequests, agentInfo, uploadTime):
+def convertToRequestCouchDoc(combinedRequests, fwjrInfo, agentInfo, uploadTime):
     requestDocs = []
     for request, status in combinedRequests.items():
         doc = {}
@@ -148,6 +190,7 @@ def convertToRequestCouchDoc(combinedRequests, agentInfo, uploadTime):
         doc['status'] = tempData['status']
         doc['sites'] = tempData['sites']
         doc['timestamp'] = uploadTime
+        doc['size_event'] = fwjrInfo.get(request, [])
         requestDocs.append(doc)
     return requestDocs
 

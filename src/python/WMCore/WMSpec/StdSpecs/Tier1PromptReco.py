@@ -10,6 +10,7 @@ import tempfile
 import urllib
 import shutil
 import logging
+import re
 
 import WMCore.Lexicon
 
@@ -17,6 +18,7 @@ from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMRuntime.Tools.Scram import Scram
 from WMCore.WMInit import getWMBASE
 from WMCore.Cache.WMConfigCache import ConfigCache
+from WMCore.WMSpec.StdSpecs.PromptSkim import fixCVSUrl
 
 def getTestArguments():
     """
@@ -67,7 +69,7 @@ def injectIntoConfigCache(frameworkVersion, scramArch, initCommand,
     logging.info("Injecting to config cache.\n")
     configTempDir = tempfile.mkdtemp()
     configPath = os.path.join(configTempDir, "cmsswConfig.py")
-    configString = urllib.urlopen(configUrl).read(-1)
+    configString = urllib.urlopen(fixCVSUrl(configUrl)).read(-1)
     configFile = open(configPath, "w")
     configFile.write(configString)
     configFile.close()
@@ -188,8 +190,11 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
             skimTask = mergeTask.addTask(promptSkim.SkimName)
             parentCmsswStep = mergeTask.getStep('cmsRun1')
 
-            #Does this work?
-            self.processingVersion = promptSkim.ProcessingVersion
+            compoundProcVer = r"((?P<ProcString>[a-zA-Z0-9_]+)-)?v(?P<ProcVer>[0-9]+)"
+            match = re.match(compoundProcVer, promptSkim.ProcessingVersion)
+
+            self.processingString = match.group("ProcString")
+            self.processingVersion = int(match.group("ProcVer"))
 
             if promptSkim.TwoFileRead:
                 self.skimJobSplitArgs['include_parents'] = True

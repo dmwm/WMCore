@@ -77,6 +77,9 @@ class StdBase(object):
         self.dashboardHost = None
         self.dashboardPort = 0
         self.overrideCatalog = None
+        self.firstLumi = None
+        self.firstEvent = None
+        self.runNumber = 0
         return
 
     def __call__(self, workloadName, arguments):
@@ -112,6 +115,7 @@ class StdBase(object):
         self.dashboardHost = arguments.get("DashboardHost", "cms-wmagent-job.cern.ch")
         self.dashboardPort = arguments.get("DashboardPort", 8884)
         self.overrideCatalog = arguments.get("OverrideCatalog", None)
+        self.runNumber = int(arguments.get("RunNumber", 0))
 
         if arguments.get("IncludeParents", False) == "True":
             self.includeParents = True
@@ -175,7 +179,8 @@ class StdBase(object):
 
         Add dashboard monitoring for the given task.
         """
-        gb = 1024.0 * 1024.0 * 1024.0
+        #A gigabyte defined as 1024^3 (assuming RSS and VSize is in KiByte)
+        gb = 1024.0 * 1024.0
 
         monitoring = task.data.section_("watchdog")
         monitoring.interval = 600
@@ -252,7 +257,8 @@ class StdBase(object):
                             inputModule = None, scenarioName = None,
                             scenarioFunc = None, scenarioArgs = None, couchURL = None,
                             couchDBName = None, configDoc = None, splitAlgo = "LumiBased",
-                            splitArgs = {'lumis_per_job': 8}, seeding = None, totalEvents = None,
+                            splitArgs = {'lumis_per_job': 8}, seeding = None,
+                            totalEvents = None, eventsPerLumi = None,
                             userDN = None, asyncDest = None, owner_vogroup = "DEFAULT",
                             owner_vorole = "DEFAULT", stepType = "CMSSW",
                             userSandbox = None, userFiles = [], primarySubType = None,
@@ -306,6 +312,8 @@ class StdBase(object):
         if taskType in ["Production", 'PrivateMC'] and totalEvents != None:
             procTask.addGenerator(seeding)
             procTask.addProduction(totalevents = totalEvents)
+            procTask.setFirstEventAndLumi(firstEvent = self.firstEvent,
+                                          firstLumi = self.firstLumi)
         else:
             if inputDataset != None:
                 (primary, processed, tier) = self.inputDataset[1:].split("/")
@@ -336,6 +344,7 @@ class StdBase(object):
         procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
         procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                        scramArch = self.scramArch)
+        procTaskCmsswHelper.setEventsPerLumi(eventsPerLumi)
 
         configOutput = self.determineOutputModules(scenarioFunc, scenarioArgs,
                                                    configDoc, couchURL, couchDBName)
@@ -378,6 +387,7 @@ class StdBase(object):
         """
         haveFilterName = (filterName != None and filterName != "")
         haveProcString = (self.processingString != None and self.processingString != "")
+        haveRunNumber  = (self.runNumber != None and self.runNumber > 0)
 
         processedDataset = "%s-" % self.acquisitionEra
         if haveFilterName:
@@ -390,6 +400,11 @@ class StdBase(object):
             processingLFN = "%s-v%i" % (self.processingString, self.processingVersion)
         else:
             processingLFN = "v%i" % self.processingVersion
+
+        if haveRunNumber:
+            stringRunNumber = str(self.runNumber).zfill(9)
+            runSections = [stringRunNumber[i:i+3] for i in range(0, 9, 3)]
+            runLFN = "/".join(runSections)
 
 
         if parentTask.name() in analysisTaskTypes:
@@ -426,6 +441,10 @@ class StdBase(object):
             else:
                 unmergedLFN += "/%s" % processingLFN
                 mergedLFN += "/%s" % processingLFN
+
+            if haveRunNumber:
+                unmergedLFN += "/%s" % runLFN
+                mergedLFN += "/%s" % runLFN
 
             lfnBase(unmergedLFN)
             lfnBase(mergedLFN)

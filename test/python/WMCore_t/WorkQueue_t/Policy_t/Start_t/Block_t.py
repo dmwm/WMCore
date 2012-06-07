@@ -50,6 +50,9 @@ class BlockTestCase(unittest.TestCase):
                 self.assertEqual(1, unit['Jobs'])
                 self.assertEqual(Tier1ReRecoWorkload, unit['WMSpec'])
                 self.assertEqual(task, unit['Task'])
+                self.assertEqual(4, unit['NumberOfLumis'])
+                self.assertEqual(10, unit['NumberOfFiles'])
+                self.assertEqual(10000, unit['NumberOfEvents'])
             self.assertEqual(len(units),
                              len(dbs[inputDataset.dbsurl].getFileBlocksInfo(dataset)))
 

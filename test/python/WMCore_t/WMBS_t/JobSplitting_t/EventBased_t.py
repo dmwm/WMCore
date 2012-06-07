@@ -15,6 +15,8 @@ from WMCore.WMBS.Job import Job
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 
+from WMCore.DataStructs.Run import Run
+
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMFactory import WMFactory
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
@@ -113,6 +115,32 @@ class EventBasedTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
         return        
+
+    def generateFakeMCFile(self, numEvents = 100, firstEvent = 1,
+                           lastEvent = 100, firstLumi = 1, lastLumi = 10,
+                           index = 1):
+        #MC comes with only one MCFakeFile
+        singleMCFileset = Fileset(name = "MCTestFileset %i" % index)
+        singleMCFileset.create()
+        newFile = File("MCFakeFileTest %i" % index, size = 1000,
+                       events = numEvents,
+                       locations = set(["somese.cern.ch"]))
+        newFile.addRun(Run(1, *range(firstLumi, lastLumi + 1)))
+        newFile["first_event"] = firstEvent
+        newFile["last_event"] = lastEvent
+        newFile.create()
+        singleMCFileset.addFile(newFile)
+        singleMCFileset.commit()
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task="Test")
+        testWorkflow.create()
+
+        singleMCFileSubscription = Subscription(fileset = singleMCFileset,
+                                                workflow = testWorkflow,
+                                                split_algo = "EventBased",
+                                                type = "Production")
+        singleMCFileSubscription.create()
+        return singleMCFileSubscription
 
     def testExactEvents(self):
         """
@@ -322,6 +350,40 @@ class EventBasedTest(unittest.TestCase):
                    "ERROR: Job's first event is incorrect."
 
         return
+
+    def testMCEventSplitOver32bit(self):
+        """
+        _testMCEventSplitOver32bit_
+
+        Make sure that no events will go over a 32 bit unsigned integer
+        representation, event counter should be reset in that case.
+        Also test is not over cautious.
+        """
+        firstEvent = 3*(2**30) + 1
+        singleMCSubscription = self.generateFakeMCFile(numEvents = 2**30,
+                                                       firstEvent = firstEvent)
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",subscription = singleMCSubscription)
+
+        jobGroups = jobFactory(events_per_job = 2**30 - 1,
+                               events_per_lumi = 2**30 - 1)
+        self.assertEqual(len(jobGroups), 1,
+                         "Error: JobFactory did not return one JobGroup")
+        self.assertEqual(len(jobGroups[0].jobs), 2,
+                         "Error: JobFactory created %s jobs not two"
+                         % len(jobGroups[0].jobs))
+        for job in jobGroups[0].jobs:
+
+            firstJobCondition = (job["mask"].getMaxEvents() == 2**30 - 1 and
+                                 job["mask"]["FirstLumi"] == 1 and
+                                 job["mask"]["FirstEvent"] == firstEvent and
+                                 job["mask"]["LastEvent"] <= 2**32)
+            secondJobCondition = (job["mask"].getMaxEvents() == 1 and
+                                  job["mask"]["FirstLumi"] == 2 and
+                                  job["mask"]["FirstEvent"] == 1)
+            self.assertTrue(firstJobCondition or secondJobCondition,
+                            "Job mask: %s didn't pass neither of the conditions"
+                            % job["mask"])
 
     def test_addParents(self):
         """

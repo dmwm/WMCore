@@ -608,6 +608,8 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         # Set some versions
         schema['ProcessingVersion'] = 'pv2012'
         schema['AcquisitionEra']    = 'ae2012'
+        schema['FirstEvent'] = 1
+        schema['FirstLumi'] = 1
 
         try:
             raises = False
@@ -776,6 +778,117 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         
         return
 
+    def testK_LHEStepZero(self):
+        """
+        _LHEStepZero_
+
+        Test LHEStepZero workflows
+        """
+
+        userName     = 'Taizong'
+        groupName    = 'Li'
+        teamName     = 'Tang'
+        CMSSWVersion = 'CMSSW_3_5_8'
+        schema       = self.setupSchema(userName = userName,
+                                        groupName = groupName,
+                                        teamName = teamName,
+                                        CMSSWVersion = CMSSWVersion,
+                                        typename = "LHEStepZero")
+
+        # Set some versions
+        schema['ProcessingVersion'] = '2012'
+        schema['AcquisitionEra']    = 'ae2012'
+        schema['FirstEvent'] = 1
+        schema['FirstLumi'] = 1
+
+        try:
+            raises = False
+            result = self.jsonSender.put('request/testRequest', schema)
+        except HTTPException, ex:
+            raises = True
+            self.assertEqual(ex.status, 400)
+            self.assertTrue("Missing required field ProcConfigCacheID in workload validation" in ex.result)
+            pass
+        self.assertTrue(raises)
+
+        schema["ProcConfigCacheID"] = "fakeID"
+        schema["CouchDBName"] = self.couchDBName
+        schema["CouchURL"]    = os.environ.get("COUCHURL")
+        schema["PrimaryDataset"] = "ReallyFake"
+        schema["RequestNumEvents"] = 100
+        try:
+            raises = False
+            result = self.jsonSender.put('request/testRequest', schema)
+        except HTTPException, ex:
+            raises = True
+            self.assertEqual(ex.status, 400)
+            self.assertTrue("Failure to load ConfigCache while validating workload" in ex.result)
+            pass
+        self.assertTrue(raises)
+
+        configID = self.createConfig()
+        schema["ProcConfigCacheID"] = configID
+        schema["FilterEfficiency"] = -0.5
+
+        try:
+            raises = False
+            result = self.jsonSender.put('request/testRequest', schema)
+        except HTTPException, ex:
+            raises = True
+            self.assertEqual(ex.status, 400)
+            self.assertTrue("Negative filter efficiency for MC workflow" in ex.result)
+            pass
+        self.assertTrue(raises)
+
+        schema["FilterEfficiency"] = 1.0
+
+        try:
+            raises = False
+            result = self.jsonSender.put('request/testRequest', schema)
+        except HTTPException, ex:
+            raises = True
+            self.assertEqual(ex.status, 400)
+            self.assertTrue("No events per lumi information was entered" in ex.result)
+            pass
+        self.assertTrue(raises)
+
+        schema["EventsPerLumi"] = "-10"
+
+        try:
+            raises = False
+            result = self.jsonSender.put('request/testRequest', schema)
+        except HTTPException, ex:
+            raises = True
+            self.assertEqual(ex.status, 400)
+            self.assertTrue("The events per lumi input from the user is invalid, only positive numbers allowed" in ex.result)
+            pass
+        self.assertTrue(raises)
+
+        schema["EventsPerLumi"] = "101"
+
+        try:
+            raises = False
+            result = self.jsonSender.put('request/testRequest', schema)
+        except HTTPException, ex:
+            raises = True
+            self.assertEqual(ex.status, 400)
+            self.assertTrue("More events per lumi than total events requested" in ex.result)
+            pass
+        self.assertTrue(raises)
+
+        schema["EventsPerLumi"] = "20"
+        result = self.jsonSender.put('request/testRequest', schema)
+        requestName = result[0]['RequestName']
+
+        result = self.jsonSender.get('request/%s' % requestName)
+        request = result[0]
+        self.assertEqual(request['CMSSWVersion'], CMSSWVersion)
+        self.assertEqual(request['Group'], groupName)
+        self.assertEqual(request['Requestor'], userName)
+        self.assertEqual(request['ProcessingVersion'], schema['ProcessingVersion'])
+        self.assertEqual(request['AcquisitionEra'], schema['AcquisitionEra'])
+
+        return
 
 
 if __name__=='__main__':

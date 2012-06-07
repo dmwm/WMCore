@@ -107,6 +107,41 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         self.assertEqual(fixedPSet.maxEvents.input.value, -1,
                          "Error: Wrong maxEvents.")
 
+    def testEventsPerLumi(self):
+        """
+        _testEventsPerLumi_
+        Verify that you can put in events per lumi in the process.
+
+        """
+        from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
+        setupScript = SetupCMSSWPset()
+        setupScript.step = self.createTestStep()
+        setupScript.step.setEventsPerLumi(500)
+        setupScript.stepSpace = ConfigSection(name = "stepSpace")
+        setupScript.stepSpace.location = self.testDir
+        setupScript.job = self.createTestJob()
+        setupScript()
+
+        fixedPSetHandle = open(os.path.join(self.testDir, "PSet.pkl"))
+        fixedPSet = pickle.load(fixedPSetHandle)
+        fixedPSetHandle.close()
+
+        self.assertEqual(len(fixedPSet.source.fileNames.value), 2,
+                         "Error: Wrong number of files.")
+        self.assertEqual(len(fixedPSet.source.secondaryFileNames.value), 2,
+                         "Error: Wrong number of secondary files.")
+        self.assertEqual(fixedPSet.source.fileNames.value[0], "/some/file/one",
+                         "Error: Wrong input file.")
+        self.assertEqual(fixedPSet.source.fileNames.value[1], "/some/file/two",
+                         "Error: Wrong input file.")
+        self.assertEqual(fixedPSet.source.secondaryFileNames.value[0], "/some/parent/one",
+                         "Error: Wrong input file.")
+        self.assertEqual(fixedPSet.source.secondaryFileNames.value[1], "/some/parent/two",
+                         "Error: Wrong input file.")
+        self.assertEqual(fixedPSet.source.numberEventsInLuminosityBlock.value,
+                         500, "Error: Wrong number of events per luminosity block")
+        self.assertEqual(fixedPSet.maxEvents.input.value, -1,
+                         "Error: Wrong maxEvents.")
     
     def testChainedProcesing(self):
         """

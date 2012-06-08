@@ -105,7 +105,8 @@ def buildWorkloadForRequest(typename, schema):
     loadRequestSchema(workload = workload, requestSchema = schema)
     request['WorkloadSpec'] = workload.data
     request['SoftwareVersions'].append(schema.get('CMSSWVersion', "CMSSW_5_0_0"))
-    request['DbsUrl'] = (workload.getTopLevelTask()).dbsUrl()
+    # assume only one dbs for all the task
+    request['DbsUrl'] = (workload.getTopLevelTask()[0]).dbsUrl()
     return request
 
 

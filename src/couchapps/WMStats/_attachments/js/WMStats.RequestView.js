@@ -206,8 +206,8 @@ WMStats._RequestViewBase.prototype = {
     
     
     createTable: function (selector, viewName, options) {
-        if (!viewName) {viewName = WMStats.RequestTable.initView;}
-        if (!options) {options = WMStats.RequestTable.initOptions;}
+        if (!viewName) {viewName = this._initialView;}
+        if (!options) {options = this._options;}
         this._containerDiv = selector;
         var objPtr = this;
         $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display"></table>' );

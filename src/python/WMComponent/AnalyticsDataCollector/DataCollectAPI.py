@@ -92,7 +92,7 @@ class LocalCouchDBData():
         options = {"group": True, "stale": "ok", "reduce":True}
         # site of data should be relatively small (~1M) for put in the memory 
         # If not, find a way to stream
-        results = self.fwjrsCouchDB.loadView("FWJRDump", "jobStatusByWorkflowAndSite",
+        results = self.fwjrsCouchDB.loadView("FWJRDump", "outputByWorkflowName",
                                         options)
 
         # reformat the doc to upload to reqmon db

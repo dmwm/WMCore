@@ -169,12 +169,17 @@ class DashboardReporter(WMObject):
         """
         if job['fwjr'] == None:
             return
+
         performanceSteps = job['fwjr'].listSteps()
         for stepName in performanceSteps:
+
             step = job['fwjr'].retrieveStep(stepName)
-            if not hasattr(step, 'performance'):
+            if not (hasattr(step, 'performance') and hasattr(step, 'counter')):
                 continue
+
+            counter = step.counter
             performance = step.performance
+
             toReport = 3
             if not hasattr(performance, 'memory'):
                 performance.section_('memory')
@@ -185,9 +190,9 @@ class DashboardReporter(WMObject):
             if not hasattr(performance, 'cpu'):
                 performance.section_('cpu')
                 toReport -= 1
-            #There's nothing to report, get out
             if not toReport:
                 continue
+
             package = {}
             package['jobId']                  = '%s_%i' % (job['name'],
                                                 job['retry_count'])
@@ -241,6 +246,13 @@ class DashboardReporter(WMObject):
             package['MaxEventCPU']            = getattr(performance.cpu,
                                                         'MaxEventCPU', None)
 
+            trimmedPackage = {}
+            for key in package:
+                if key == 'taskId' or key == 'jobId':
+                    trimmedPackage[key] = package[key]
+                    continue
+                trimmedPackage['%d_%s' % (counter, key)] = package[key]
+            package = trimmedPackage
 
             logging.debug("Sending performance info: %s" % str(package))
             result = apmonSend(taskid = package['taskId'],

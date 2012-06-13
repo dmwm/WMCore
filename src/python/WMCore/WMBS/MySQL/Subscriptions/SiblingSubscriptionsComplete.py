@@ -15,7 +15,7 @@ class SiblingSubscriptionsComplete(DBFormatter):
     # processing of the file is complete and we can preform some other
     # action on it (usually deletion).
     sql = """SELECT wmbs_file_details.id, wmbs_file_details.events,
-                    wmbs_file_details.lfn, wmbs_location.se_name
+                    wmbs_file_details.lfn, wls.se_name
                     FROM wmbs_sub_files_available
                INNER JOIN wmbs_file_details ON
                  wmbs_sub_files_available.fileid = wmbs_file_details.id
@@ -29,8 +29,8 @@ class SiblingSubscriptionsComplete(DBFormatter):
                  wmbs_file_details.id = complete_files.fileid
                INNER JOIN wmbs_file_location ON
                  wmbs_file_details.id = wmbs_file_location.fileid
-               INNER JOIN wmbs_location ON
-                 wmbs_file_location.location = wmbs_location.id
+               INNER JOIN wmbs_location_senames wls ON
+                 wmbs_file_location.location = wls.location
              WHERE complete_files.complete_files =
                (SELECT COUNT(*) FROM wmbs_subscription
                 WHERE wmbs_subscription.id != :subscription AND

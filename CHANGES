@@ -1,3 +1,111 @@
+0.8.47 to 0.8.48:
+  - Guard against empty arguments with Config/DataProcessing configs.  Fixes #3797.
+  - Fix PromptSkimming processing version handling.  Fixes #3775.
+  - Change the default log level for dashboard reporting.  Fixes #3717.
+  - Ignore data from CouchDB that doesn't have a valid site.  Fixes #3786.
+  - Don't require bl_runjob to link to a valid user.  Fixes #3791.
+  - Add run number to PromptSkimming LFNs.  Fixes #3793.
+  - Fix races in PromptSkimming between workflow cleanup and data transfer in the T0.  Fixes #3787.
+  - Support Tier0 LFN conventions in the standard specs.  Fixes #3277.
+  - Update thresholds in the AlertGenerator config.
+  - Adapted UserFileCache module to the new rest (removed backward compatibility). Fixes #3780,#3662
+  - Force MySQL to use the best join order for the JobStatusForMonitoring query.  Fixes #3778.
+  - Allow requestors to specifiy an initial event and initial lumi.  Fixes #2272.
+  - Add events_per_lumi option to EventBased splitting.  Fixes #3744.
+  - Fix the running time calculation so that it ignores job restarts.  Fixes #3772.
+  - Fix the WMTweak firstLumi/event treatment.  Fixes #3714.
+  - Add a LHEStep0 workflow.  Fixes #3712.
+  - Add two new base LFNs to the request web interface options.  Fixes #3755.
+  - Modify the WMBS schema to allow for larger event numbers.  Fixes #3754.
+  - Make test division stable when adding new tests.  Fixes #3761.
+  - Attempt to trap os._exit() calls made by cherrypy.  Fixes #3760.
+  - Fix the unit tests for the couch based agent package.  Fixes #2178.
+  - Guard against incorrect config URLs in PromptSkimming.  Fixes #3767.
+  - Improve reports when a job is killed.  Fixes #3766.
+  - Fix performance monitoring thresholds.  Fixes #3765.
+  - Modified the wf name in the fake report. Fixes #2859
+  - Fix pileup support. Fixes #3711
+  - Update CVSROOT in buildrelease script.
+
+0.8.46 to 0.8.47:
+  - Update Lexicon to handle old tier0 LFNs.  Fixes #3752.
+  - Test alerts in the JobTracker unit test.  Fixes #3326.
+  - Add cron entries to build alert views.  Fixes #3736.
+  - Add support for security parameters using instances.  Fixes #3751.
+
+0.8.45 to 0.8.46:
+  - Alert system unit test fixes.  Fixes #3701.
+  - Fix problems with the GetSiteSE DAO.  Fixes #3318.
+  - Use a view that actually exists to trigger view rebuilding.
+  - Fix the Emulator unit test.  Fixes #3716.
+  - Added key and certificate to Un packUserTarball. Fixes #3479
+  - Fix cherrpy port/address handling.  Fixes #3709.
+  - Update the test harness so that testers have more control over what is run.  Fixes #3699.
+  - Fix another DAO that broke due to the multi-se changes.  Fixes #3700.
+  - Fix unit test breakage.  Fixes #3696.
+  - Allow overriding the TFC from the spec.  Fixes #3311.
+  - Resolve some problems automatically configuring resource control with sites that have more than one SE.
+  - Fix the Oracle SiblingSubscriptionsComplete DAO that was broken by the multi-SE patch.  Fixes #3318.
+  - Fix the GetSiteSE DAO.  Fixes #3687.
+  - Update the couch app stateTransition update function to work correctly if the document doesn't exist.
+
+0.8.44 to 0.8.45:
+  - Initial PromptReco spec.  Fixes #3684.
+  - Fixup LFN conventions.  Fixes #3653.
+  - Support sites with more than one SE.  Fixes #3318.
+  - Remove the CouchURL from the default Tier1PromptReco test arguments.  Fixes #3678.
+  - Fix the JobSubmitter unit test.  Fixes #3679.
+  - Fix problems with new dashboard reporting code and ReqMgr.  Fixes #3629.
+
+0.8.43 to 0.8.44:
+  - Dashboard fixes.  Fixes #3674.
+  - Support merging the new DQM format.  Fixes #3671.
+  - Support a four part processed dataset name in lexicon.  From #3653.
+
+0.8.42 to 0.8.43:
+  - Pull the site name from the site-local-config and report that as the CE.  Fixes #2774.
+  - More improvements to WN dashboard reporting.  Fixes #3656.
+  - Correct a typo from the dashboard cleanup in StdBase.  Fixes #3667.
+  - Remove the DashboardReporter component.  Better integrate dashboard reporting with the WMAgent JobStateMachine.  Fixes #3629.
+  - Cleanup runtime dashboard reporting.  Fixes #3656.
+  - Fix problems with ALCARECO handling in the Tier1PromptReco spec.  Clean up it's unit test.  Fixes #3620.
+  - Require positive parameters for the MC requests.  Fixes #3647.
+  - Fix problems with MultiCore jobs.
+
+0.8.41 to 0.8.42:
+  - Add global tag validation to the lexicon.  Fixes #3648.
+  - Load infomration necessary for dashboard reporting in the data discovery dao when killing jobs.  Fixes #3644.
+  - Remove unnecessary try/except statements from unit tests.  Fixes #3571.
+  - Restore default scenario handling to StdBase.  Fixes #3593.
+  - Remove tests for deprecated code.  Fixes #3595.
+  - Fix missing imports in WMBS_t.  Fixes #3535.
+  - Add job name and location to the BossAir LoadComplete DAO.  Fixes #3632.
+  - Allow the Jobs.GetType DAO to process a list of IDs.  Fixes #3640.
+  - Make the order that tests are run in stable.  Fixes #3641.
+  - Add the workflow type to the GetWorkflowTask DAO.  Fixes #3643.
+
+0.8.38a to 0.8.41:
+  - Fix several problems found during TaskChain commissioning (#3598):   
+     o Make dependent tasks run over the output of the merge task instead     
+       of the processing task.   
+     o Include TaskChain task parameters in the schema section of the workload   
+     o Don't add more events to a job than there are in the input file.
+  - For chained workflows with pileup, configure each chained step to use the pileup 
+    dataset.  Don't fail if there isn't a pileup section in the config.  Fixes #3628.
+  - fixing retrymanager unittests. Fixes #3613
+  - Have the WorkQueue guard against negative slice sizes.
+
+0.8.38 to 0.8.38a:
+  - DOM fix for Alert Visualization. Fixes #3634
+
+0.8.38 to 0.8.38:
+  - Include the job name in the JobSubmitter job cache.  Fixes #3630.
+  - Fix problems with the Agent harness with respect to logging levels.  Review all logging messages the alerts framework produces.  Fixes #3297.
+  - Escape the period in the tarball exclusion list for making sandboxes.  Fixes #3625.
+  - Fix reading in the pause count in the Paused RetryManager algo.  Fixes #3613.
+  - Reimplementation of the Alerts couchapp.  Fixes #1639.
+  - Added missing loggingInfo test file, using getTestBase to locate the data directory.
+
 0.8.37 to 0.8.38:
   - Add endpolicy info to workqueue inbox element
   - Only abort cancel request if agent hasn't deleted elements

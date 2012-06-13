@@ -108,12 +108,9 @@ config.section_("CoreDatabase")
 config.CoreDatabase.connectUrl = databaseUrl
 #config.CoreDatabase.socket = databaseSocket
 
-config.component_("DashboardReporter")
-config.DashboardReporter.namespace = "WMComponent.DashboardReporter.DashboardReporter"
-config.DashboardReporter.componentDir = config.General.workDir + "/DashboardReporter"
+config.section_("DashboardReporter")
 config.DashboardReporter.dashboardHost = "cms-wmagent-job.cern.ch"
 config.DashboardReporter.dashboardPort = 8884
-config.DashboardReporter.pollInterval = 60
 
 config.component_('WorkQueueManager')
 config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"
@@ -299,20 +296,20 @@ wmbsmonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'data/html/')
 
 
 
-# Alerts framework configuration
+# Alert framework configuration
 
 # common 'Alert' section (Alert "senders" use these values to determine destination)
 config.section_("Alert")
-# TODO port numbers need to be negotiated
 # destination for the alert messages
 config.Alert.address = "tcp://127.0.0.1:6557"
-# control channel (internal alerts system commands)
+# control channel (internal alert system commands)
 config.Alert.controlAddr = "tcp://127.0.0.1:6559"
 
 # AlertProcessor component
 # AlertProcessor values - values for Level soft, resp. critical
 # are also needed by this AlertGenerator test
 config.component_("AlertProcessor")
+config.AlertProcessor.logLevel = "INFO"
 config.AlertProcessor.namespace = "WMComponent.AlertProcessor.AlertProcessor"
 config.AlertProcessor.componentDir = os.path.join(config.General.workDir, "AlertProcessor")
 config.AlertProcessor.section_("critical")
@@ -330,76 +327,70 @@ config.AlertProcessor.critical.section_("sinks")
 config.AlertProcessor.soft.section_("sinks")
 config.AlertProcessor.critical.sinks.section_("couch") # in tests used: ConfigSection("couch")
 config.AlertProcessor.critical.sinks.couch.url = couchURL
-# TODO
-# database name to be later moved up
-config.AlertProcessor.critical.sinks.couch.database = "alerts"
+config.AlertProcessor.critical.sinks.couch.database = "alerts_critical"
 config.AlertProcessor.soft.sinks.section_("couch") # in tests used: ConfigSection("couch")
 config.AlertProcessor.soft.sinks.couch.url = couchURL
-# TODO
-# database name to be later moved up
-config.AlertProcessor.soft.sinks.couch.database = "alerts"
+config.AlertProcessor.soft.sinks.couch.database = "alerts_soft"
 # alerts delivery via email
-config.AlertProcessor.critical.sinks.section_("email")
+#config.AlertProcessor.critical.sinks.section_("email")
 # from must be a valid domain, at least when the destination address
 # was @cern.ch: it said email is queued but was never delivered,
 # may not always be the case though
-config.AlertProcessor.critical.sinks.email.fromAddr = "wmagent@%s" % serverHostName
-config.AlertProcessor.critical.sinks.email.toAddr = ["wmagentalerts@gmail.com"] # add more in the list
-config.AlertProcessor.critical.sinks.email.smtpServer = "cernmx.cern.ch"
-config.AlertProcessor.critical.sinks.email.smtpUser = None
-config.AlertProcessor.critical.sinks.email.smtpPass = None
-config.AlertProcessor.soft.sinks.section_("email")
+#config.AlertProcessor.critical.sinks.email.fromAddr = "wmagent@%s" % serverHostName
+#config.AlertProcessor.critical.sinks.email.toAddr = ["wmagentalerts@gmail.com"] # add more in the list
+#config.AlertProcessor.critical.sinks.email.smtpServer = "cernmx.cern.ch"
+#config.AlertProcessor.critical.sinks.email.smtpUser = None
+#config.AlertProcessor.critical.sinks.email.smtpPass = None
+#config.AlertProcessor.soft.sinks.section_("email")
 # from must be a valid domain, at least when the destination address
 # was @cern.ch: it said email is queued but was never delivered,
 # may not always be the case though
-config.AlertProcessor.soft.sinks.email.fromAddr = "wmagent@%s" % serverHostName
-config.AlertProcessor.soft.sinks.email.toAddr = ["wmagentalerts@gmail.com"] # add more in the list
-config.AlertProcessor.soft.sinks.email.smtpServer = "cernmx.cern.ch"
-config.AlertProcessor.soft.sinks.email.smtpUser = None
-config.AlertProcessor.soft.sinks.email.smtpPass = None
+#config.AlertProcessor.soft.sinks.email.fromAddr = "wmagent@%s" % serverHostName
+#config.AlertProcessor.soft.sinks.email.toAddr = ["wmagentalerts@gmail.com"] # add more in the list
+#config.AlertProcessor.soft.sinks.email.smtpServer = "cernmx.cern.ch"
+#config.AlertProcessor.soft.sinks.email.smtpUser = None
+#config.AlertProcessor.soft.sinks.email.smtpPass = None
 config.AlertProcessor.critical.sinks.section_("file")
 config.AlertProcessor.critical.sinks.file.outputfile = os.path.join(config.General.workDir, "AlertsFileSinkCritical.json")
 config.AlertProcessor.soft.sinks.section_("file")
 config.AlertProcessor.soft.sinks.file.outputfile = os.path.join(config.General.workDir, "AlertsFileSinkSoft.json")
-# TODO
-# there addresses have to be determined later, forward sink, actually may not even be used ...
-# nothing will probably be listening on these address, and in reality, these shall be remote addresses        
-config.AlertProcessor.critical.sinks.section_("forward")
-config.AlertProcessor.critical.sinks.forward.address = "tcp://127.0.0.1:55555"
-config.AlertProcessor.critical.sinks.forward.controlAddr = "tcp://127.0.0.1:44444"
-config.AlertProcessor.critical.sinks.forward.label = "ForwardSink"
-config.AlertProcessor.soft.sinks.section_("forward")
-config.AlertProcessor.soft.sinks.forward.address = "tcp://127.0.0.1:55555"
-config.AlertProcessor.soft.sinks.forward.controlAddr = "tcp://127.0.0.1:44444"
-config.AlertProcessor.soft.sinks.forward.label = "ForwardSink"
+# forward sink - should be remote addresses allowing alerts forwarding to a 
+# different AlertProcessor, actually may not even be used ... disable this sink for now
+#config.AlertProcessor.critical.sinks.section_("forward")
+#config.AlertProcessor.critical.sinks.forward.address = "tcp://127.0.0.1:55555"
+#config.AlertProcessor.critical.sinks.forward.controlAddr = "tcp://127.0.0.1:44444"
+#config.AlertProcessor.critical.sinks.forward.label = "ForwardSink"
+#config.AlertProcessor.soft.sinks.section_("forward")
+#config.AlertProcessor.soft.sinks.forward.address = "tcp://127.0.0.1:55555"
+#config.AlertProcessor.soft.sinks.forward.controlAddr = "tcp://127.0.0.1:44444"
+#config.AlertProcessor.soft.sinks.forward.label = "ForwardSink"
 # see comments on ticket 1640 - AlertCollector
 # currently, for development & testing, CouchSink and AlertCollector are virtually the same thing
 # though generally RESTSink is supposed to communicate with a generic REST server, not just CouchDB
 config.AlertProcessor.critical.sinks.section_("rest")
-# TODO
-# database name to be later moved up ("alertscollector")
-config.AlertProcessor.critical.sinks.rest.uri = couchURL + "/" + "alertscollector" 
+config.AlertProcessor.critical.sinks.rest.uri = couchURL + "/" + "alertscollector"
+# buffersize for the CMSCouch interface 
 config.AlertProcessor.critical.sinks.rest.bufferSize = 10
 config.AlertProcessor.soft.sinks.section_("rest")
-# TODO
-# database name to be later moved up ("alertscollector")
 config.AlertProcessor.soft.sinks.rest.uri = couchURL + "/" + "alertscollector"
+# buffersize for the CMSCouch interface
 config.AlertProcessor.critical.sinks.rest.bufferSize = 10
 
 # AlertGenerator component
 config.component_("AlertGenerator")
+config.AlertGenerator.logLevel = "INFO"
 config.AlertGenerator.namespace = "WMComponent.AlertGenerator.AlertGenerator"
 config.AlertGenerator.componentDir = os.path.join(config.General.workDir, "AlertGenerator")
 # configuration for overall machine load monitor: cpuPoller (percentage values)
 config.AlertGenerator.section_("cpuPoller")
-config.AlertGenerator.cpuPoller.soft = 70 # [percent]
-config.AlertGenerator.cpuPoller.critical = 90 # [percent]
+config.AlertGenerator.cpuPoller.soft = 8 # [percent]
+config.AlertGenerator.cpuPoller.critical = 10 # [percent]
 config.AlertGenerator.cpuPoller.pollInterval = 10 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering 
-config.AlertGenerator.cpuPoller.period = 30 # [second]
+config.AlertGenerator.cpuPoller.period = 120 # [second]
 # configuration for overall used physical memory monitor: memPoller (percentage of total physical memory)
 config.AlertGenerator.section_("memPoller")
-config.AlertGenerator.memPoller.soft = 70 # [percent]
+config.AlertGenerator.memPoller.soft = 85 # [percent]
 config.AlertGenerator.memPoller.critical = 90 # [percent]
 config.AlertGenerator.memPoller.pollInterval = 10 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
@@ -408,43 +399,43 @@ config.AlertGenerator.memPoller.period = 30 # [second]
 config.AlertGenerator.section_("diskSpacePoller")
 config.AlertGenerator.diskSpacePoller.soft = 70 # [percent]
 config.AlertGenerator.diskSpacePoller.critical = 90 # [percent]
-config.AlertGenerator.diskSpacePoller.pollInterval = 9 # [second]
+config.AlertGenerator.diskSpacePoller.pollInterval = 10 # [second]
 # configuration for particular components CPU usage: componentCPUPoller (percentage values)
 config.AlertGenerator.section_("componentsCPUPoller")
-config.AlertGenerator.componentsCPUPoller.soft = 40 # [percent]
-config.AlertGenerator.componentsCPUPoller.critical = 60 # [percent]
+config.AlertGenerator.componentsCPUPoller.soft = 70 # [percent]
+config.AlertGenerator.componentsCPUPoller.critical = 90 # [percent]
 config.AlertGenerator.componentsCPUPoller.pollInterval = 10 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.componentsCPUPoller.period = 30 # [second]
+config.AlertGenerator.componentsCPUPoller.period = 300 # [second]
 # configuration for particular components memory monitor: componentMemPoller (percentage of total physical memory)
 config.AlertGenerator.section_("componentsMemPoller")
-config.AlertGenerator.componentsMemPoller.soft = 40 # [percent]
-config.AlertGenerator.componentsMemPoller.critical = 60 # [percent] 
+config.AlertGenerator.componentsMemPoller.soft = 3 # [percent]
+config.AlertGenerator.componentsMemPoller.critical = 5 # [percent] 
 config.AlertGenerator.componentsMemPoller.pollInterval = 10  # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.componentsMemPoller.period = 30 # [second]
+config.AlertGenerator.componentsMemPoller.period = 120 # [second]
 # configuration for CouchDB database size monitor: couchDbSizePoller (gigabytes values)
 config.AlertGenerator.section_("couchDbSizePoller")
 config.AlertGenerator.couchDbSizePoller.couchURL = couchURL
-config.AlertGenerator.couchDbSizePoller.soft = 1 # GB
-config.AlertGenerator.couchDbSizePoller.critical = 2 # GB
+config.AlertGenerator.couchDbSizePoller.soft = 600 # GB
+config.AlertGenerator.couchDbSizePoller.critical = 650 # GB
 config.AlertGenerator.couchDbSizePoller.pollInterval = 10 # [second]
 # configuration for CouchDB CPU monitor: couchCPUPoller (percentage values)
 config.AlertGenerator.section_("couchCPUPoller")
 config.AlertGenerator.couchCPUPoller.couchURL = couchURL
-config.AlertGenerator.couchCPUPoller.soft = 40 # [percent]
-config.AlertGenerator.couchCPUPoller.critical = 60 # [percent]
+config.AlertGenerator.couchCPUPoller.soft = 250 # [percent]
+config.AlertGenerator.couchCPUPoller.critical = 300 # [percent]
 config.AlertGenerator.couchCPUPoller.pollInterval = 10 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.couchCPUPoller.period = 30 # [second]
+config.AlertGenerator.couchCPUPoller.period = 120 # [second]
 # configuration for CouchDB memory monitor: couchMemPoller (percentage values)
 config.AlertGenerator.section_("couchMemPoller")
 config.AlertGenerator.couchMemPoller.couchURL = couchURL
-config.AlertGenerator.couchMemPoller.soft = 40 # [percent]
-config.AlertGenerator.couchMemPoller.critical = 60 # [percent]
+config.AlertGenerator.couchMemPoller.soft = 7 # [percent]
+config.AlertGenerator.couchMemPoller.critical = 10 # [percent]
 config.AlertGenerator.couchMemPoller.pollInterval = 10 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.couchMemPoller.period = 30 # [second]
+config.AlertGenerator.couchMemPoller.period = 120 # [second]
 # configuration for CouchDB HTTP errors poller: couchErrorsPoller (number of error occurrences)
 # (once certain threshold of the HTTP error counters is exceeded, poller keeps sending alerts)
 config.AlertGenerator.section_("couchErrorsPoller")
@@ -454,11 +445,13 @@ config.AlertGenerator.couchErrorsPoller.critical = 200 # [number of error occurr
 config.AlertGenerator.couchErrorsPoller.observables = (404, 500) # HTTP status codes to watch over
 config.AlertGenerator.couchErrorsPoller.pollInterval = 10 # [second]
 
+# mysql*Poller sections were made optional and are defined in the
+# wmagent-mod-config file
+
 # alerts-related stuff associated with components, these values shall later
 # be moved into respective configuration sections 
 # e.g. next item(s) will be from WorkQueueManager when a special necessary view is implemented
 config.DBSUpload.alertUploadQueueSize = 2000
-
 
 config.component_("AnalyticsDataCollector")
 config.AnalyticsDataCollector.namespace = "WMComponent.AnalyticsDataCollector.AnalyticsDataCollector"
@@ -480,3 +473,4 @@ config.CleanUpManager.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchu
 config.CleanUpManager.centralWMStatsURL = "Central WMStats URL"
 config.CleanUpManager.DataKeepDays = 1 # delete after a day maybe change to a week
 config.CleanUpManager.cleanCouchInterval = 60 * 20 # 20 min
+

@@ -6,9 +6,6 @@ _TestMonitor_
 This is the test class for monitors
 """
 
-
-
-
 import threading
 import time
 import logging
@@ -87,14 +84,6 @@ def searchForEvent(file):
 
     return (None, None)
 
-
-
-
-
-
-
-
-
 class DashboardMonitor(WMRuntimeMonitor):
     """
     _DashboardMonitor_
@@ -149,8 +138,11 @@ class DashboardMonitor(WMRuntimeMonitor):
         """
         Job start notifier.
         """
-
-        self.dashboardInfo.jobStart()
+        try:
+            self.dashboardInfo.jobStart()
+        except Exception, ex:
+            logging.error(str(ex))
+            logging.error(str(traceback.format_exc()))
 
         return
 
@@ -160,8 +152,11 @@ class DashboardMonitor(WMRuntimeMonitor):
         Job End notification
 
         """
-
-        self.dashboardInfo.jobEnd()
+        try:
+            self.dashboardInfo.jobEnd()
+        except Exception, ex:
+            logging.error(str(ex))
+            logging.error(str(traceback.format_exc()))
 
         return
 
@@ -174,8 +169,11 @@ class DashboardMonitor(WMRuntimeMonitor):
         self.currentStepName  = getStepName(step)
         self.currentStepSpace = None
         self.startTime        = time.time()
-        self.dashboardInfo.stepStart(step = step)
-
+        try:
+            self.dashboardInfo.stepStart(step = step)
+        except Exception, ex:
+            logging.error(str(ex))
+            logging.error(str(traceback.format_exc()))
         return
 
     def stepEnd(self, step, stepReport):
@@ -186,8 +184,12 @@ class DashboardMonitor(WMRuntimeMonitor):
         self.currentStep      = None
         self.currentStepName  = None
         self.currentStepSpace = None
-        self.dashboardInfo.stepEnd(step = step,
+        try:
+            self.dashboardInfo.stepEnd(step = step,
                                    stepReport = stepReport)
+        except Exception, ex:
+            logging.error(str(ex))
+            logging.error(str(traceback.format_exc()))
         return
 
 
@@ -199,17 +201,23 @@ class DashboardMonitor(WMRuntimeMonitor):
 
         self.currentStep     = None
         self.currentStepName = None
-        self.dashboardInfo.stepKilled(step = step)
-
+        try:
+            self.dashboardInfo.stepKilled(step = step)
+        except Exception, ex:
+            logging.error(str(ex))
+            logging.error(str(traceback.format_exc()))
+        return
 
     def jobKilled(self, task):
         """
         Killed job notification
 
         """
-
-        self.dashboardInfo.jobKilled()
-
+        try:
+            self.dashboardInfo.jobKilled()
+        except Exception, ex:
+            logging.error(str(ex))
+            logging.error(str(traceback.format_exc()))
         return
 
 

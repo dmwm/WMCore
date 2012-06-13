@@ -116,7 +116,7 @@ def modifyConfiguration(config, **args):
             config.AlertGenerator.mysqlDbSizePoller.soft = 1 # GB
             config.AlertGenerator.mysqlDbSizePoller.critical = 2 # GB
             config.AlertGenerator.mysqlDbSizePoller.pollInterval = 10 # [second]
-
+            
     if hasattr(config,"WorkloadSummary"):
         splited = args["workload_summary_url"].strip().rstrip('/').rsplit('/', 1)
         config.WorkloadSummary.couchurl = args["couch_url"]
@@ -174,7 +174,7 @@ def modifyConfiguration(config, **args):
             config.AlertProcessor.critical.sinks.couch.url = args["couch_url"]
         if hasattr(config.AlertProcessor.soft.sinks, "couch"):
             config.AlertProcessor.soft.sinks.couch.url = args["couch_url"]
-        # the AlertsCollector database has be created beforehand (and couchapp pushed), this
+        # the AlertCollector database has be created beforehand (and couchapp pushed), this
         # location will change in the future , as described on the ticket 1640
         if hasattr(config.AlertProcessor.critical.sinks, "rest"):
             config.AlertProcessor.critical.sinks.rest.uri = args["couch_url"] + "/" + "alertscollector"
@@ -183,7 +183,11 @@ def modifyConfiguration(config, **args):
         if hasattr(config.AlertProcessor.critical.sinks, "file"):
             config.AlertProcessor.critical.sinks.file.outputfile = os.path.join(args['working_dir'], "AlertsFileSinkCritical.json")
         if hasattr(config.AlertProcessor.soft.sinks, "file"):
-            config.AlertProcessor.soft.sinks.file.outputfile = os.path.join(args['working_dir'], "AlertsFileSinkSoft.json")            
+            config.AlertProcessor.soft.sinks.file.outputfile = os.path.join(args['working_dir'], "AlertsFileSinkSoft.json")
+        if hasattr(config.AlertProcessor.critical.sinks, "email"):
+            config.AlertProcessor.critical.sinks.email.fromAddr = "wmagent@%s" % localhost
+        if hasattr(config.AlertProcessor.soft.sinks, "email"):
+            config.AlertProcessor.soft.sinks.email.fromAddr = "wmagent@%s" % localhost
     if  hasattr(config, "AlertGenerator"):
         if hasattr(config.AlertGenerator, "couchDbSizePoller"):
             config.AlertGenerator.couchDbSizePoller.couchURL = args["couch_url"]

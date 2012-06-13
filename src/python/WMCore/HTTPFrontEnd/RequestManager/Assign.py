@@ -47,7 +47,7 @@ class Assign(WebAPI):
             self.sites = []
         self.allMergedLFNBases =  [
             "/store/backfill/1", "/store/backfill/2", 
-            "/store/data",  "/store/mc"]
+            "/store/data",  "/store/mc", "/store/generator", "/store/relval"]
         self.allUnmergedLFNBases = ["/store/unmerged", "/store/temp"]
 
         self.mergedLFNBases = {
@@ -58,7 +58,8 @@ class Assign(WebAPI):
              "RelValMC" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
              "Resubmission" : ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data"],
              "MonteCarloFromGEN" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
-             "TaskChain": ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data"]}
+             "TaskChain": ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data", "/store/relval"],
+             "LHEStepZero": ["/store/backfill/1", "/store/backfill/2", "/store/generator"]}
 
         self.yuiroot = config.yuiroot
         cherrypy.engine.subscribe('start_thread', self.initThread)

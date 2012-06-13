@@ -63,6 +63,10 @@ class AnalyticsPoller(BaseWorkerThread):
             logging.info("Getting Job Couch Data ...")
             jobInfoFromCouch = self.localCouchDB.getJobSummaryByWorkflowAndSite()
             
+            #fwjr per request info
+            logging.info("Getting FWJRJob Couch Data ...")
+            fwjrInfoFromCouch = self.localCouchDB.getEventSummaryByWorkflow()
+            
             logging.info("Getting Batch Job Data ...")
             batchJobInfo = self.wmagentDB.getBatchJobInfo()
             
@@ -73,10 +77,11 @@ class AnalyticsPoller(BaseWorkerThread):
             
             # combine all the data from 3 sources
             logging.info("""Combining data from 
-                                   Job Couch(%s), 
+                                   Job Couch(%s),
+                                   FWJR(%s), 
                                    Batch Job(%s), 
                                    Local Queue(%s)  ...""" 
-                    % (len(jobInfoFromCouch), len(batchJobInfo), len(localQInfo)))
+                    % (len(jobInfoFromCouch), len(fwjrInfoFromCouch), len(batchJobInfo), len(localQInfo)))
             
             tempCombinedData = combineAnalyticsData(jobInfoFromCouch, batchJobInfo)
             combinedRequests = combineAnalyticsData(tempCombinedData, localQInfo)
@@ -84,7 +89,7 @@ class AnalyticsPoller(BaseWorkerThread):
             #set the uploadTime - should be the same for all docs
             uploadTime = int(time.time())
             logging.info("%s requests Data combined,\n uploading request data..." % len(combinedRequests))
-            requestDocs = convertToRequestCouchDoc(combinedRequests, 
+            requestDocs = convertToRequestCouchDoc(combinedRequests, fwjrInfoFromCouch,
                                                    self.agentInfo, uploadTime)
             
             self.localSummaryCouchDB.uploadData(requestDocs)

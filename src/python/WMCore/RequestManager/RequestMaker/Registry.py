@@ -105,6 +105,8 @@ def buildWorkloadForRequest(typename, schema):
     loadRequestSchema(workload = workload, requestSchema = schema)
     request['WorkloadSpec'] = workload.data
     request['SoftwareVersions'].append(schema.get('CMSSWVersion', "CMSSW_5_0_0"))
+    # assume only one dbs for all the task
+    request['DbsUrl'] = (workload.getTopLevelTask()[0]).dbsUrl()
     return request
 
 
@@ -120,7 +122,16 @@ def loadRequestSchema(workload, requestSchema):
         try:
             setattr(schema, key, value)
         except Exception, ex:
-            pass
+            # Attach TaskChain tasks
+            if type(value) == dict and requestSchema['RequestType'] == 'TaskChain' and 'Task' in key:
+                newSec = schema.section_(key)
+                for k, v in requestSchema[key].iteritems():
+                    try:
+                        setattr(newSec, k, v)
+                    except Exception, ex:
+                        pass
+            else:
+                pass
     schema.timeStamp = int(time.time())
     schema = workload.data.request.schema
     

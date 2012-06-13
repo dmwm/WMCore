@@ -121,7 +121,7 @@ td {
 table.display {
     margin: 0 auto;
     clear: both;
-    width: 100%;
+    width: 95%;
     
     /* Note Firefox 3.5 and before have a bug with border-collapse
      * ( https://bugzilla.mozilla.org/show%5Fbug.cgi?id=155955 ) 
@@ -543,9 +543,11 @@ table.display tr.gradeU {
 }
 
 div.box {
-    height: 100px;
+    height: 150px;
+    width: 100%;
     padding: 10px;
+    font-size: 0.8em;
     overflow: auto;
     border: 1px solid #8080FF;
-    background-color: #E5E5FF;
+    background-color: #E2E3CA;
 }

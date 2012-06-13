@@ -248,6 +248,14 @@ class CMSSWStepHelper(CoreHelper):
         self.data.output.keep = keepOutput
         return
 
+    def getPileup(self):
+        """
+        _getPileup_
+
+        Retrieve the pileup config from this step.
+        """
+        return getattr(self.data, "pileup", None)
+
     def setupPileup(self, pileupConfig, dbsUrl):
         """
         include pileup input configuration into this step configuration.
@@ -255,7 +263,7 @@ class CMSSWStepHelper(CoreHelper):
         (user input) and here is available as a dict.
 
         """
-        # so, e.g. this "cosmics": {"/some/cosmics/dataset", "minbias": "/some/minbias/dataset"}
+        # so, e.g. this {"cosmics": "/some/cosmics/dataset", "minbias": "/some/minbias/dataset"}
         # would translate into
         # self.data.pileup.comics.dataset = "/some/cosmics/dataset"
         # self.data.pileup.minbias.dataset = "/some/minbias/dataset"
@@ -264,6 +272,28 @@ class CMSSWStepHelper(CoreHelper):
             self.data.pileup.section_(pileupType)
             setattr(getattr(self.data.pileup, pileupType), "dataset", dataset)
         setattr(self.data, "dbsUrl", dbsUrl)
+
+    def setOverrideCatalog(self, overrideCatalog):
+        """
+        _setOverrideCatalog_
+
+        set the override catalog
+
+        needed at least at CERN to use production castor pools
+
+        """
+        if overrideCatalog != None:
+            self.data.application.overrideCatalog = overrideCatalog
+
+    def setEventsPerLumi(self, eventsPerLumi):
+        """
+        _setEventsPerLumi_
+        Add event per lumi information to the step, so it can be added later
+        to the process, this comes from user input
+        """
+        if eventsPerLumi != None:
+            setattr(self.data.application.configuration, "eventsPerLumi",
+                    eventsPerLumi)
 
     def setMulticoreCores(self, ncores):
         """

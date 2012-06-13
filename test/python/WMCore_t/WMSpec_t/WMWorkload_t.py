@@ -620,7 +620,10 @@ class WMWorkloadTest(unittest.TestCase):
                          "Errror: Wrong slice type.")
         self.assertEqual(testWorkload.startPolicyParameters()["SliceSize"], 2,
                          "Errror: Wrong slice size.")
-
+        self.assertFalse(testWorkload.startPolicyParameters().has_key("SubSliceType"),
+                         "Error: Shouldn't have sub-slice type.")
+        self.assertFalse(testWorkload.startPolicyParameters().has_key("SubSliceSize"),
+                         "Error: Shouldn't have sub-slice size.")
         procSplitParams = procTask.jobSplittingParameters()
         self.assertEqual(len(procSplitParams.keys()), 5,
                          "Error: Wrong number of params for proc task.")
@@ -705,6 +708,102 @@ class WMWorkloadTest(unittest.TestCase):
         stepHelper = procTask.getStepHelper("StageOut1")
         self.assertEqual(stepHelper.minMergeSize(), 2,
                          "Error: Wrong min merge size.")
+        return
+
+    def testUpdatingSubSplitParameters(self):
+        """
+        _testUpdatingSubSplitParameters_
+
+        Verify that the method to update the workqueue splitting parameters
+        work with sub split parameters.
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        testWorkload.setWorkQueueSplitPolicy("MonteCarlo", "EventBased",
+                                             {"events_per_job": 500,
+                                              "events_per_lumi": 100})
+        self.assertEqual(testWorkload.startPolicy(), "MonteCarlo",
+                         "Error: Wrong start policy: %s" %
+                         testWorkload.startPolicy())
+        self.assertEqual(testWorkload.startPolicyParameters()["SliceType"],
+                         "NumberOfEvents", "Errror: Wrong slice type.")
+        self.assertEqual(testWorkload.startPolicyParameters()["SliceSize"], 500,
+                         "Error: Wrong slice size.")
+        self.assertEqual(testWorkload.startPolicyParameters()["SubSliceType"],
+                         "NumberOfEventsPerLumi", "Error Wrong sub-slice type.")
+        self.assertEqual(testWorkload.startPolicyParameters()["SubSliceSize"],
+                         100, "Error: Wrong sub-slice size.")
+
+        prodTask = testWorkload.newTask("ProductionTask")
+        prodTask.setSplittingAlgorithm("EventBased",
+                                       events_per_job = 500,
+                                       events_per_lumi = 100)
+        prodTask.setTaskType("Production")
+        prodTaskCmssw = prodTask.makeStep("cmsRun1")
+        prodTaskCmssw.setStepType("CMSSW")
+        prodTaskStageOut = prodTaskCmssw.addStep("StageOut1")
+        prodTaskStageOut.setStepType("StageOut")
+        prodTaskStageOut.getTypeHelper().setMinMergeSize(2, 2)
+        prodTask.applyTemplates()
+
+        mergeTask = prodTask.addTask("MergeTask")
+        mergeTask.setTaskType("Merge")
+        mergeTask.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 2,
+                                        max_merge_events = 2, min_merge_size = 2)
+
+        testWorkload.setJobSplittingParameters("/TestWorkload/ProductionTask",
+                                               "EventBased",
+                                               {"events_per_job": 150,
+                                                "events_per_lumi": 15})
+
+        self.assertEqual(testWorkload.startPolicy(), "MonteCarlo",
+                         "Error: Wrong start policy: %s" %
+                         testWorkload.startPolicy())
+        self.assertEqual(testWorkload.startPolicyParameters()["SliceType"],
+                         "NumberOfEvents", "Errror: Wrong slice type.")
+        self.assertEqual(testWorkload.startPolicyParameters()["SliceSize"], 150,
+                         "Error: Wrong slice size.")
+        self.assertEqual(testWorkload.startPolicyParameters()["SubSliceType"],
+                         "NumberOfEventsPerLumi", "Error Wrong sub-slice type.")
+        self.assertEqual(testWorkload.startPolicyParameters()["SubSliceSize"],
+                         15, "Error: Wrong sub-slice size.")
+        prodSplitParams = prodTask.jobSplittingParameters()
+        self.assertEqual(len(prodSplitParams.keys()), 5,
+                         "Error: Wrong number of params for proc task.")
+        self.assertEqual(prodSplitParams["algorithm"], "EventBased",
+                         "Error: Wrong job splitting algo for proc task.")
+        self.assertEqual(prodSplitParams["events_per_job"], 150,
+                         "Error: Wrong number of files per job.")
+        self.assertEqual(prodSplitParams["events_per_lumi"], 15,
+                         "Error: Wrong number of files per job.")
+        self.assertEqual(prodSplitParams["siteWhitelist"], [],
+                         "Error: Site white list was updated.")
+        self.assertEqual(prodSplitParams["siteBlacklist"], [],
+                         "Error: Site black list was updated.")
+        stepHelper = prodTask.getStepHelper("cmsRun1")
+        self.assertEqual(getattr(stepHelper.data.application.configuration,
+                                 "eventsPerLumi", None), 15,
+                                 "Error: Wrong number of events per lumi")
+
+        stepHelper = prodTask.getStepHelper("StageOut1")
+        self.assertEqual(stepHelper.minMergeSize(), -1,
+                         "Error: Wrong min merge size: %s" % stepHelper.minMergeSize())
+
+        mergeSplitParams = mergeTask.jobSplittingParameters()
+        self.assertEqual(len(mergeSplitParams.keys()), 6,
+                         "Error: Wrong number of params for merge task.")
+        self.assertEqual(mergeSplitParams["algorithm"], "ParentlessMergeBySize",
+                         "Error: Wrong job splitting algo for merge task.")
+        self.assertEqual(mergeSplitParams["min_merge_size"], 2,
+                         "Error: Wrong min merge size.")
+        self.assertEqual(mergeSplitParams["max_merge_size"], 2,
+                         "Error: Wrong max merge size.")
+        self.assertEqual(mergeSplitParams["max_merge_events"], 2,
+                         "Error: Wrong max merge events.")
+        self.assertEqual(mergeSplitParams["siteWhitelist"], [],
+                         "Error: Site white list was updated.")
+        self.assertEqual(mergeSplitParams["siteBlacklist"], [],
+                         "Error: Site black list was updated.")
+
         return
 
     def testListJobSplittingParametersByTask(self):

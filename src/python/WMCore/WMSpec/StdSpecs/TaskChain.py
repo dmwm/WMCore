@@ -23,7 +23,7 @@ The main request parameters required are:
     "Requestor": "sfoulkes@fnal.gov",                 Person responsible
     "CMSSWVersion": "CMSSW_3_5_8",                    CMSSW Version (used for all tasks in chain)
     "ScramArch": "slc5_ia32_gcc434",                  Scram Arch (used for all tasks in chain)
-    "ProcessingVersion": "v1",                        Processing Version (used for all tasks in chain)
+    "ProcessingVersion": "1",                        Processing Version (used for all tasks in chain)
     "GlobalTag": "GR10_P_v4::All",                    Global Tag (used for all tasks)
     "CouchURL": "http://couchserver.cern.ch",         URL of CouchDB containing Config Cache
     "CouchDBName": "config_cache",                    Name of Couch Database containing config cache 
@@ -157,6 +157,7 @@ def validateProcFirstTask(task):
 getTaskN = lambda args, tasknum: args.get("Task%s" % tasknum, None)
 isGenerator = lambda args: not args["Task1"].has_key("InputDataset")
 parentTaskName = lambda args: args.get("InputTask", None)
+parentTaskModule = lambda args: args.get("InputFromOutputModule", None)
 
 class TaskChainWorkloadFactory(StdBase):
     def __init__(self):
@@ -201,8 +202,11 @@ class TaskChainWorkloadFactory(StdBase):
             self.runBlacklist   = taskConf.get("RunBlacklist", [])
             self.runWhitelist   = taskConf.get("RunWhitelist", [])
 
-            
-            task = self.makeTask(taskConf, self.taskMapping.get(parent, None) )
+            parentTask = None
+            if self.mergeMapping.has_key(parent):
+                parentTask = self.mergeMapping[parent][parentTaskModule(taskConf)]
+                
+            task = self.makeTask(taskConf, parentTask)
             if i == 1:
                 #  //
                 # // First task will either be generator or processing
@@ -220,6 +224,7 @@ class TaskChainWorkloadFactory(StdBase):
                     self.workload.setWorkQueueSplitPolicy("Block", taskConf['SplittingAlgorithm'],
                                                      taskConf['SplittingArguments'])
                     self.setupTask(task, taskConf)
+                self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
             else:
                 #  //
                 # // all subsequent tasks have to be processing tasks
@@ -311,10 +316,10 @@ class TaskChainWorkloadFactory(StdBase):
             #  ToDo: if None, need to throw here
             inputTaskRef = self.taskMapping[inputTask]
             # ToDo: key check in self.taskMapping for inputTask & throw if missing
-            inpMod = taskConf['InputFromOutputModule']
-            mergeTaskForMod = self.mergeMapping[inputTask][inpMod]
+            mergeTaskForMod = self.mergeMapping[inputTask][taskConf['InputFromOutputModule']]
             inpStep = mergeTaskForMod.getStep("cmsRun1")
-            
+            inpMod = "Merged"            
+
         scenario = None
         scenarioFunc = None
         scenarioArgs = {}

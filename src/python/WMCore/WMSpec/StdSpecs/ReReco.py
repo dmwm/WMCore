@@ -29,7 +29,7 @@ def getTestArguments():
         "InputDataset": "/MinimumBias/Commissioning10-v4/RAW",
         "CMSSWVersion": "CMSSW_3_5_8",
         "ScramArch": "slc5_ia32_gcc434",
-        "ProcessingVersion": "v2scf",
+        "ProcessingVersion": "2",
         "SkimInput": "output",
         "GlobalTag": "GR10_P_v4::All",
         
@@ -37,6 +37,8 @@ def getTestArguments():
         "CouchDBName": "scf_wmagent_configcache",
         
         "ProcScenario": "cosmics",
+        "DashboardHost": "127.0.0.1",
+        "DashboardPort": 8884,
         #"ProcConfigCacheID": "03da10e20c7b98c79f9d6a5c8900f83b",
 
         #"SkimConfigs": [{"SkimName": "Prescaler", "SkimInput": "output",

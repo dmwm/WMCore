@@ -26,7 +26,8 @@ def monitorDocFromRequestSchema(schema):
     doc["vo_role"] = schema.get('VoRole', "")
     doc["user_dn"] = schema.get('RequestorDN', "")
     doc["async_dest"] = schema.get('asyncDest', "")
-    
+    doc["dbs_url"] = schema.get("DbsUrl", "")
+    doc["publish_dbs_url"] = schema.get("PublishDbsUrl", "")
     # team name is not yet available need to be updated in assign status
     #doc['team'] = schema['team']
     return doc
@@ -50,12 +51,12 @@ class WMStatsWriter():
         """
         # add delete docs as well for the compaction
         # need to check whether delete and update is successful
-        if type(docs) == str:
+        if type(docs) == dict:
             docs = [docs]
         for doc in docs:
             self.couchDB.queue(doc)
         return self.couchDB.commit(returndocs = True)
-    
+
     def insertRequest(self, schema):
         doc = monitorDocFromRequestSchema(schema)
         result = self.couchDB.updateDocument(doc['_id'], 'WMStats', 
@@ -63,20 +64,23 @@ class WMStatsWriter():
                                     fields={'doc': JSONEncoder().encode(doc)})
         self.updateRequestStatus(doc['_id'], "new")
         return result
-    
+
     def updateRequestStatus(self, request, status):
         statusTime = {'status': status, 'update_time': int(time.time())}
         return self.couchDB.updateDocument(request, 'WMStats', 'requestStatus', 
                     fields={'request_status': JSONEncoder().encode(statusTime)})
-    
+
     def updateTeam(self, request, team):
         return self.couchDB.updateDocument(request, 'WMStats', 'team', 
                                          fields={'team': team})
-        
-    def insertTotalJobs(self, request, totalJobs):
-        return self.couchDB.updateDocument(request, 'WMStats', 'totalJobs', 
-                                         fields={'total_jobs': int(totalJobs)})
-    
+
+    def insertTotalStats(self, request, totalStats):
+        """
+        update the total stats of given workflow (total_jobs, input_events, input_lumis, input_num_files)
+        """
+        return self.couchDB.updateDocument(request, 'WMStats', 'totalStats', 
+                                         fields=totalStats)
+
     def updateFromWMSpec(self, spec):
         # currently only update priority and siteWhitelist
         # complex field needs to be JSON encoded 
@@ -87,7 +91,7 @@ class WMStatsWriter():
         return self.couchDB.updateDocument(spec.name(), 'WMStats', 
                     'generalFields', 
                     fields={'general_fields': JSONEncoder().encode(fields)})
-    
+
     def updateRequestsInfo(self, docs):
         """
         bulk update for request documents.
@@ -98,13 +102,12 @@ class WMStatsWriter():
             self.couchDB.updateDocument(doc['workflow'], 'WMStats', 
                         'generalFields', 
                         fields={'general_fields': JSONEncoder().encode(doc)})
-            
-    
+
     def updateAgentInfo(self, agentInfo):
         return self.couchDB.updateDocument(agentInfo['_id'], 'WMStats', 
                         'agentInfo', 
                         fields={'agent_info': JSONEncoder().encode(agentInfo)})
-        
+
     def deleteOldDocs(self, days):
         """
         delete the documents from wmstats db older than param 'days'
@@ -134,7 +137,7 @@ class WMStatsWriter():
             return {'delete': deleted, 'error': errorReport}
         else:
             return "nothing"
-                    
+
     def replicate(self, target):
         self.couchServer.replicate(self.dbName, target, continuous = True,
                                    filter = 'WMStats/repfilter', useReplicator = True)

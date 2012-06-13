@@ -11,6 +11,7 @@ import tempfile
 import urllib
 import shutil
 import logging
+import re
 
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessingWorkloadFactory
 from WMCore.WMRuntime.Tools.Scram import Scram
@@ -33,22 +34,41 @@ def getTestArguments():
         "AcquisitionEra": "WMAgentCommissioning10",
         "Requestor": "sfoulkes@fnal.gov",
         "InputDataset": "/MinimumBias/Commissioning10-v4/RAW",
-        "CMSSWVersion": "CMSSW_3_9_5",
+        "CMSSWVersion": "CMSSW_5_2_5_patch1",
 
-        "SkimConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/HeavyIonsAnalysis/Configuration/test/centralSkimsHI_SKIM.py?revision=1.7",
+        "SkimConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/Skimming/test/tier1/skim_MET.py?revision=1.4",
         "BlockName": ["SomeBlock"],
-        "CustodialSite": ["SomeSite"],
+        "CustodialSite": "SomeSite",
         "InitCommand": ". /uscmst1/prod/sw/cms/setup/shrc prod",
 
-        "ScramArch": "slc5_amd64_gcc434",
-        "ProcessingVersion": "v3",
+        "ScramArch": "slc5_amd64_gcc462",
+        "ProcessingVersion": "PromptSkim-v1",
         "GlobalTag": "GR10_P_V12::All",
-        
+
         "CouchURL": os.environ.get("COUCHURL", None),
         "CouchDBName": "scf_wmagent_configcache",
+
+        "DashboardHost": "127.0.0.1",
+        "DashboardPort": 8884,
+
+        "RunNumber" : 195099,
         }
 
     return arguments
+
+def fixCVSUrl(url):
+    """
+    _fixCVSUrl_
+
+    Checks the url, if it looks like a cvs url then make sure it has no
+    view option in it, so it can be downloaded correctly
+    """
+    cvsPatt = '(http://cmssw\.cvs\.cern\.ch.*\?).*(revision=[0-9]*\.[0-9]*).*'
+    cvsMatch = re.match(cvsPatt, url)
+    if cvsMatch:
+        url = cvsMatch.groups()[0] + cvsMatch.groups()[1]
+    return url
+
 
 class PromptSkimWorkloadFactory(DataProcessingWorkloadFactory):
     """
@@ -69,7 +89,7 @@ class PromptSkimWorkloadFactory(DataProcessingWorkloadFactory):
         logging.error("Injecting to config cache.\n");
         configTempDir = tempfile.mkdtemp()
         configPath = os.path.join(configTempDir, "cmsswConfig.py")
-        configString = urllib.urlopen(configUrl).read(-1)
+        configString = urllib.urlopen(fixCVSUrl(configUrl)).read(-1)
         configFile = open(configPath, "w")
         configFile.write(configString)
         configFile.close()
@@ -112,6 +132,12 @@ class PromptSkimWorkloadFactory(DataProcessingWorkloadFactory):
             logging.error("PromptSkimScheduler directory to find out what went")
             logging.error("wrong.")
             raise
+
+        compoundProcVer = r"((?P<ProcString>[a-zA-Z0-9_]+)-)?v(?P<ProcVer>[0-9]+)"
+        match = re.match(compoundProcVer, arguments["ProcessingVersion"])
+
+        arguments["ProcessingString"] = match.group("ProcString")
+        arguments["ProcessingVersion"] = match.group("ProcVer")
         
         workload = DataProcessingWorkloadFactory.__call__(self, workloadName, arguments)
 

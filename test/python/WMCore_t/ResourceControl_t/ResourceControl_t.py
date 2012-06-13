@@ -395,7 +395,7 @@ class ResourceControlTest(unittest.TestCase):
         self.assertEqual( siteInfo["site_name"], "testSite1",
                           "Error: Site name is wrong." )
         
-        self.assertEqual( siteInfo["se_name"], "testSE1",
+        self.assertEqual( siteInfo["se_name"], ["testSE1"],
                           "Error: SE name is wrong." )
         
         self.assertEqual( siteInfo["ce_name"], "testCE1",
@@ -571,6 +571,11 @@ class ResourceControlTest(unittest.TestCase):
                     self.assertEqual(thresh['priority'], 1)
                     self.assertEqual(thresh['max_slots'], 100)
                     self.assertEqual(thresh['total_slots'], 100)
+
+        # Verify that sites with more than one SE were added correctly.
+        nebInfo = myResourceControl.listSiteInfo("T2_US_Nebraska")
+        self.assertTrue(len(nebInfo["se_name"]) == 3)
+        return
 
     def testInsertAllSEs2(self):
         """

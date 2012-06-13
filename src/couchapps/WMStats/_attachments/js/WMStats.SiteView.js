@@ -9,8 +9,12 @@ WMStats.SiteView = (function() {
     
     var tableConfig = {
         "aoColumns": [
-            { "mDataProp": "agent_url", "sTitle": "agent"},
             { "mDataProp": "site", "sTitle": "site"},
+            { "mDataProp": "agent_url", "sTitle": "agent",
+               "fnRender": function ( o, val ) {
+                            return decodeURIComponent(o.aData.agent_url);
+                      }
+            },
             { "mDataProp": "queued.first", "sTitle": "queued first", 
                            "sDefaultContent": 0 },
             { "mDataProp": "queued.retry", "sTitle": "queued retry", 
@@ -58,7 +62,7 @@ WMStats.SiteView = (function() {
     }
 
     var createSiteTable = function(selector, data) {
-        var baseCols = ["timestamp", "agent_url", "site"];
+        var baseCols = ["timestamp", "site", "agent_url"];
         tableConfig.aaData = setSiteData(data, baseCols);
         return WMStats.Table(tableConfig).create(selector)
     }
@@ -66,7 +70,7 @@ WMStats.SiteView = (function() {
     var constructSiteKey = function(data) {
         /*
          * assemple keys from data for lasted site summary.
-         * key format is [timestamp, agent_url, site]
+         * key format is [timestamp, site, agent_url]
          */
         var keys = [];
         for (var i in data.rows){
@@ -88,7 +92,7 @@ WMStats.SiteView = (function() {
 
         WMStats.Couch.view('timeWithAgentSite', options,
               function(siteData) {
-                  return createSiteTable(_containerDiv + " table#siteTable", 
+                  return createSiteTable(_containerDiv + " table", 
                                          siteData.rows);
               },
               'json')
@@ -96,7 +100,7 @@ WMStats.SiteView = (function() {
     
     function createTable(selector){
         _containerDiv = selector;
-        $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display" id="siteTable"></table>' );
+        $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display"></table>' );
         WMStats.Couch.view(_viewName, _options, getLatestSiteKeyAndCreateTable)
     }
     

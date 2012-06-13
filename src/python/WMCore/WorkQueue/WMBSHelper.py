@@ -97,6 +97,7 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
             if liveJob["state"].lower() == 'executing':
                 # Then we need to kill this on the batch system
                 liveWMBSJob = Job(id = liveJob["id"])
+                liveWMBSJob.update(liveJob)
                 changeState.propagate(liveWMBSJob, "killed", liveJob["state"])
                 killableJobs.append(liveJob)
         # Now kill them
@@ -118,6 +119,7 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
             # Then we've killed it already
             continue
         liveWMBSJob = Job(id = liveJob["id"])
+        liveWMBSJob.update(liveJob)
         changeState.propagate(liveWMBSJob, "killed", liveJob["state"])
 
     if not existingTransaction:

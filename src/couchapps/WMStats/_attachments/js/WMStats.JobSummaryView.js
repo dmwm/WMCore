@@ -16,10 +16,10 @@ WMStats.JobSummaryView = (function() {
      // jquery datatable config
     var tableConfig = {
         "aoColumns": [
-            { "mDataProp": "status", "sTitle": "status"},               
+            { "mDataProp": "status", "sTitle": "status"},
             { "mDataProp": "site", "sTitle": "site"},
-            { "mDataProp": "count", "sTitle": "jobs"},
             { "mDataProp": "exitCode", "sTitle": "exit code"},
+            { "mDataProp": "count", "sTitle": "jobs"},
             { "mDataProp": "errorMsg", "sTitle": "error mesage", 
                            "sDefaultContent": ""}
          ]
@@ -61,8 +61,8 @@ WMStats.JobSummaryView = (function() {
             var statusSummary = {};
             statusSummary.status = data.rows[i].key[1];
             statusSummary.exitCode = data.rows[i].key[2];
-            statusSummary.errorMsg = data.rows[i].key[3];
-            statusSummary.site = data.rows[i].key[4];
+            statusSummary.site = data.rows[i].key[3];
+            statusSummary.errorMsg = data.rows[i].key[4];
             statusSummary.count = data.rows[i].value;
             jobSummary.status.push(statusSummary)
                      
@@ -75,8 +75,8 @@ WMStats.JobSummaryView = (function() {
     function createJobSummaryTable(data) {
         _setSummaryData(data);
         tableConfig.aaData = _data.status;
-        var selector =  _containerDiv + " table#" + _tableID;
-        $(selector).data('workflow', _data.workflow)
+        var selector =  _containerDiv + " table";
+        $(_containerDiv).data('workflow', _data.workflow)
         return WMStats.Table(tableConfig).create(selector)
     }
     
@@ -85,7 +85,7 @@ WMStats.JobSummaryView = (function() {
         _containerDiv = selector;
         options = {'reduce': true, 'group_level': 5, 'startkey':[workflow], 
                    'endkey':[workflow, {}]};
-        $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display" id="'+ _tableID + '"></table>') 
+        $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display"></table>') 
         WMStats.Couch.view(_viewName, options, createJobSummaryTable)
     }
     

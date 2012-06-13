@@ -5,39 +5,58 @@
 WMStats.namespace("Couch")
 
 WMStats.Couch = (function(){
-    // couchdb name for central summary db
-    var _dbName = "wmstats";
     // couchapp name
-    var _Design = "WMStats";
-    var _reqDetailPrefix = "/reqmgr/view/details/";
-    // this will depends on the variation of deployment
-    var _workloadSummaryPrefix = "/couchdb/workloadsummary/_design/WorkloadSummary/_show/histogramByWorkflow/";
-    
-    var _couchDB = $.couch.db(_dbName);
-    
-    function _combineOption(options, callback) {
+    var _Design = WMStats.Globals.COUCHAPP_DESIGN;
+    var _couchDB = $.couch.db(WMStats.Globals.COUCHDB_NAME);
+    var _config;
+
+    function _combineOption(options, callback, ajaxOptions) {
         //combine options and callbacks for jquery.couch.js
-        //TODO need to extend not just for success. (i.e failed case)
+        // ajaxOptions are object which contains jquery ajax options
+        // {'beforeSend': .., 'complete': ...}
         var options = options || {};
         options.success = callback;
+        var ajaxOptions = ajaxOptions || WMStats.Globals.AJAX_LOADING_STATUS
+        if (ajaxOptions) {
+            for (var opt in ajaxOptions) {
+                options[opt] = ajaxOptions[opt];
+            }
+        }
         return options
     }
-    
-    function view(name, options, callback){
+
+    function loadConfig(func) {
+        function callback(data) {
+            //fist set the global config value
+            var config;
+            if (!data.rows && (data.rows.length != 1)) {
+                //use default config
+                config = null;
+            } else {
+                config = data.rows[0].doc;
+            }
+            WMStats.Globals.CONFIG = config;
+            // then call the function
+            func();
+        }
+        _couchDB.view(_Design +"/config", 
+                      _combineOption({"include_docs": true}, callback))
+        
+    }
+
+    function view(name, options, callback, ajaxOptions){
         //make all the view stale options update_after
         var options = options || {};
         if (options.stale != undefined) {
                 options.stale = "update_after"
         }    
         return _couchDB.view(_Design +"/" + name, 
-                             _combineOption(options, callback));
+                             _combineOption(options, callback, ajaxOptions));
     }
     
-    function allDocs(options, callback){
-        return _couchDB.allDocs(_combineOption(options, callback));
+    function allDocs(options, callback, ajaxOptions){
+        return _couchDB.allDocs(_combineOption(options, callback, ajaxOptions));
     }
-    
-    return {'view': view, "allDocs": allDocs, 
-            "REQ_DETAIL_URL_PREFIX": _reqDetailPrefix,
-            "WORKLOAD_SUMMARY_URL_PREFIX": _workloadSummaryPrefix};
+
+    return {'loadConfig': loadConfig, 'view': view, "allDocs": allDocs};
 })()

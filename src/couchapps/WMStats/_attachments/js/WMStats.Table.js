@@ -3,6 +3,7 @@ WMStats.namespace("Table")
 WMStats.Table = function(config) {
     var _tableConfig = {"bProcessing": true,
                         "sDom": 'C<"clear">lfrtip',
+                        "aaSorting": []
                        };
     
     function _updateConfig(config) {
@@ -27,6 +28,9 @@ WMStats.Table = function(config) {
     
     function _create(selector, filterConfig) {
         var oTable = $(selector).dataTable(_tableConfig)
+        if ( oTable.length > 0 ) {
+                oTable.fnAdjustColumnSizing();
+        }
         if (filterConfig) {
             oTable.append(_footer());
             return oTable.columnFilter(filterConfig);

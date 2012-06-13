@@ -58,11 +58,8 @@ class MySQLTest(unittest.TestCase):
         
         # test handling of a non-existing process
         MySQLPoller._getProcessPID = lambda inst: 1212121212
-        poller = MySQLPoller(config.AlertGenerator.mysqlCPUPoller, generator)
-        # polling should not even happen so don't have to define sample function
-        poller.check()
-        self.assertEqual(poller._measurements, None)
-        self.assertEqual(poller._dbProcessDetail, None)
+        self.assertRaises(Exception, MySQLPoller,
+                          config.AlertGenerator.mysqlCPUPoller, generator)
         
 
     def testMySQLCPUPollerBasic(self):
@@ -189,9 +186,9 @@ class MySQLTest(unittest.TestCase):
         # test failing during set up
         poller = MySQLDbSizePoller(config.AlertGenerator.mysqlCPUPoller, generator)
         poller._query = "nonsense query"
-        poller._dbDirectory = poller._getDbDir()
+        # this will fail on the above query
+        self.assertRaises(Exception, poller._getDbDir)
         poller.check()
-        self.assertEquals(poller._dbDirectory, None)
         
         
     def testAlertGeneratorMySQLDbSizePollerSoftThreshold(self):

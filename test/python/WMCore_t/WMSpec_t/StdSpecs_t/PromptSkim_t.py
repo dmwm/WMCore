@@ -61,9 +61,9 @@ class PromptSkimTest(unittest.TestCase):
                          'Error: A wrong url (%s) from CVS was not changed (%s)'
                          % (url, fixCVSUrl(url)))
     @attr("integration")
-    def testPromptSkim(self):
+    def testPromptSkimA(self):
         """
-        _testPromptSkim_
+        _testPromptSkimA_
 
         Verify that PromptSkim workflows can be created.  Note that this
         requires a system that has all of the cms software installed on it.
@@ -76,6 +76,23 @@ class PromptSkimTest(unittest.TestCase):
         #Test another processing version flavor
         dataProcArguments["ProcessingVersion"] = "v1"
         testWorkload = promptSkimWorkload("TestWorkload2", dataProcArguments)
+        return
+
+    @attr("integration")
+    def testPromptSkimB(self):
+        """
+        _testPromptSkimB_
+
+        Verify that a PromptSkim workflow is not created when a inexistent
+        correct url is passed.  Note that this
+        requires a system that has all of the cms software installed on it.
+        """
+        dataProcArguments = getTestArguments()
+        dataProcArguments["SkimConfig"] = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/Skimming/test/tier1/IAmCorrectButIDontExist?revision=1.4"
+        dataProcArguments["CouchUrl"] = os.environ["COUCHURL"]
+        dataProcArguments["CouchDBName"] = "promptskim_t"
+        self.assertRaises(Exception, promptSkimWorkload, *["TestWorkload", dataProcArguments])
+
         return
 
 if __name__ == '__main__':

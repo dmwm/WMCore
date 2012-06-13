@@ -67,10 +67,11 @@ class DashboardReporter(WMObject):
         Additionally the job should carry information about the task according
         to the description of the addTask method
         """
-        logging.info ("Handling created jobs: %s" % jobs)
+        logging.info ("Handling %d created jobs" % len(jobs))
+        logging.debug ("Handling created jobs: %s" % jobs)
 
         for job in jobs:
-            logging.info("Sending info for job %s" % str(job))
+            logging.debug("Sending info for job %s" % str(job))
 
             package = {}
             package['MessageType']      = 'JobMeta'
@@ -84,7 +85,7 @@ class DashboardReporter(WMObject):
             package['NEventsToProcess'] = job.get('nEventsToProc',
                                                     'NotAvailable')
 
-            logging.info("Sending: %s" % str(package))
+            logging.debug("Sending: %s" % str(package))
             result = apmonSend(taskid = package['taskId'],
                                jobid = package['jobId'],
                                params = package,
@@ -119,10 +120,11 @@ class DashboardReporter(WMObject):
             *location -> Computing element the job is destinated to
             *fwjr -> Post processing step information
         """
-        logging.info("Handling jobs: %s" % jobs)
+        logging.info("Handling %d jobs" % len(jobs))
+        logging.debug("Handling jobs: %s" % jobs)
 
         for job in jobs:
-            logging.info("Sending info for job %s" % str(job))
+            logging.debug("Sending info for job %s" % str(job))
 
             package = {}
             package['MessageType']       = 'JobStatus'
@@ -136,7 +138,7 @@ class DashboardReporter(WMObject):
             package['StatusDestination'] = job.get('location',
                                                    'NotAvailable')
 
-            logging.info("Sending: %s" % str(package))
+            logging.debug("Sending: %s" % str(package))
             result = apmonSend(taskid = package['taskId'],
                                jobid = package['jobId'],
                                params = package,
@@ -167,80 +169,35 @@ class DashboardReporter(WMObject):
         """
         if job['fwjr'] == None:
             return
-        performanceSteps = job['fwjr'].listSteps()
-        for stepName in performanceSteps:
+
+        steps = job['fwjr'].listSteps()
+        for stepName in steps:
             step = job['fwjr'].retrieveStep(stepName)
-            if not hasattr(step, 'performance'):
+            if not hasattr(step, 'counter'):
                 continue
-            performance = step.performance
-            toReport = 3
-            if not hasattr(performance, 'memory'):
-                performance.section_('memory')
-                toReport -= 1
-            if not hasattr(performance, 'storage'):
-                performance.section_('storage')
-                toReport -= 1
-            if not hasattr(performance, 'cpu'):
-                performance.section_('cpu')
-                toReport -= 1
-            #There's nothing to report, get out
-            if not toReport:
-                continue
+
+            counter = step.counter
+
             package = {}
-            package['jobId']                  = '%s_%i' % (job['name'],
-                                                job['retry_count'])
-            package['taskId']                 = self.taskPrefix + \
-                                                job['workflow']
-            package['stepName']               = stepName
-            package['PeakValueRss'] 	      = getattr(performance.memory,
-                                                        'PeakValueRss', None)
-            package['PeakValuePss'] 	      = getattr(performance.memory,
-                                                        'PeakValuePss', None)
-            package['PeakValueVsize'] 	      = getattr(performance.memory,
-                                                        'PeakValueVsize', None)
-            package['writeTotalMB']           = getattr(performance.storage,
-                                                        'writeTotalMB', None)
-            package['readPercentageOps']      = getattr(performance.storage,
-                                                        'readPercentageOps',
-                                                        None)
-            package['readAveragekB']          = getattr(performance.storage,
-                                                        'readAveragekB', None)
-            package['readTotalMB']            = getattr(performance.storage,
-                                                        'readTotalMB', None)
-            package['readNumOps']             = getattr(performance.storage,
-                                                        'readNumOps', None)
-            package['readCachePercentageOps'] = getattr(performance.storage,
-                                                        'readCachePercentageOps'
-                                                        , None)
-            package['readMBSec']              = getattr(performance.storage,
-                                                        'readMBSec', None)
-            package['readMaxMSec']            = getattr(performance.storage,
-                                                        'readMaxMSec', None)
-            package['readTotalSecs']          = getattr(performance.storage,
-                                                        'readTotalSecs', None)
-            package['writeTotalSecs']         = getattr(performance.storage,
-                                                        'writeTotalSecs', None)
-            package['TotalJobCPU']            = getattr(performance.cpu,
-                                                        'TotalJobCPU', None)
-            package['AvgEventCPU']            = getattr(performance.cpu,
-                                                        'AvgEventCPU', None)
-            package['MaxEventTime']           = getattr(performance.cpu,
-                                                        'MaxEventTime', None)
-            package['AvgEventTime']           = getattr(performance.cpu,
-                                                        'AvgEventTime', None)
-            package['MinEventCPU']            = getattr(performance.cpu,
-                                                        'MinEventCPU', None)
-            package['TotalEventCPU']          = getattr(performance.cpu,
-                                                        'TotalEventCPU', None)
-            package['TotalJobTime']           = getattr(performance.cpu,
-                                                        'TotalJobTime', None)
-            package['MinEventTime']           = getattr(performance.cpu,
-                                                        'MinEventTime', None)
-            package['MaxEventCPU']            = getattr(performance.cpu,
-                                                        'MaxEventCPU', None)
+
+            package.update(self.getPerformanceInformation(step))
+            package.update(self.getEventInformation(stepName, job['fwjr']))
+
+            trimmedPackage = {}
+            for key in package:
+                if package[key] != None:
+                    trimmedPackage['%d_%s' % (counter, key)] = package[key]
+            package = trimmedPackage
+
+            if not package:
+                continue
+
+            package['jobId']    = '%s_%i' % (job['name'], job['retry_count'])
+            package['taskId']   = self.taskPrefix + job['workflow']
+            package['%d_stepName' % counter] = stepName
 
 
-            logging.debug("Sending performance info: %s" % str(package))
+            logging.debug("Sending step info: %s" % str(package))
             result = apmonSend(taskid = package['taskId'],
                                jobid = package['jobId'], params = package,
                                logr = logging, apmonServer = self.serverreport)
@@ -257,6 +214,123 @@ class DashboardReporter(WMObject):
         apmonFree()
 
         return
+
+    def getEventInformation(self, stepName, fwjr):
+        """
+        _getEventInformation_
+
+        Handles the information about input and output files in the step
+        and provides detailed event information to be sent to the dashboard
+        """
+
+        package = {}
+
+        package['inputEvents'] = 0
+        inputFiles = fwjr.getInputFilesFromStep(stepName = stepName)
+        for inputFile in inputFiles:
+            package['inputEvents'] += inputFile['events']
+
+        package['OutputEventInfo'] = ''
+        step = fwjr.retrieveStep(stepName)
+        outputModules = getattr(step, 'outputModules', None)
+
+        if outputModules:
+            for outputMod in outputModules:
+                outFiles = fwjr.getFilesFromOutputModule(step = stepName,
+                                                         outputModule = outputMod)
+                if not outFiles:
+                    continue
+                dataTier = None
+                events = 0
+                procDataset = None
+                for outFile in outFiles:
+                    if not dataTier:
+                        dataTier = outFile['dataset'].get('dataTier', None)
+                    if not procDataset:
+                        procDataset = outFile['dataset'].get('processedDataset', None)
+                    if not (dataTier and procDataset):
+                        logging.error('Output module %s has a file %s with incomplete info'
+                                        % (outputMod, outFile['lfn']))
+                        continue
+                    events += outFile['events']
+                if dataTier and procDataset:
+                    package['OutputEventInfo'] += '%s:%s:%d;' % (procDataset,
+                                                                dataTier,
+                                                                events)
+
+        if not (package['inputEvents'] or package['OutputEventInfo']):
+            return {}
+
+        package['OutputEventInfo'] = package['OutputEventInfo'][:-1]
+
+        return package
+
+    def getPerformanceInformation(self, step):
+        """
+        _getPerformanceInformation_
+
+        Handles the performance information about a step and builds a dict
+        to send to the dashboard
+        """
+        performance = step.performance
+
+        if not hasattr(performance, 'memory'):
+            performance.section_('memory')
+        if not hasattr(performance, 'storage'):
+            performance.section_('storage')
+        if not hasattr(performance, 'cpu'):
+            performance.section_('cpu')
+
+        package = {}
+
+        package['PeakValueRss']           = getattr(performance.memory,
+                                                    'PeakValueRss', None)
+        package['PeakValuePss']           = getattr(performance.memory,
+                                                    'PeakValuePss', None)
+        package['PeakValueVsize']           = getattr(performance.memory,
+                                                    'PeakValueVsize', None)
+        package['writeTotalMB']           = getattr(performance.storage,
+                                                    'writeTotalMB', None)
+        package['readPercentageOps']      = getattr(performance.storage,
+                                                    'readPercentageOps',
+                                                    None)
+        package['readAveragekB']          = getattr(performance.storage,
+                                                    'readAveragekB', None)
+        package['readTotalMB']            = getattr(performance.storage,
+                                                    'readTotalMB', None)
+        package['readNumOps']             = getattr(performance.storage,
+                                                    'readNumOps', None)
+        package['readCachePercentageOps'] = getattr(performance.storage,
+                                                    'readCachePercentageOps'
+                                                    , None)
+        package['readMBSec']              = getattr(performance.storage,
+                                                    'readMBSec', None)
+        package['readMaxMSec']            = getattr(performance.storage,
+                                                    'readMaxMSec', None)
+        package['readTotalSecs']          = getattr(performance.storage,
+                                                    'readTotalSecs', None)
+        package['writeTotalSecs']         = getattr(performance.storage,
+                                                    'writeTotalSecs', None)
+        package['TotalJobCPU']            = getattr(performance.cpu,
+                                                    'TotalJobCPU', None)
+        package['AvgEventCPU']            = getattr(performance.cpu,
+                                                    'AvgEventCPU', None)
+        package['MaxEventTime']           = getattr(performance.cpu,
+                                                    'MaxEventTime', None)
+        package['AvgEventTime']           = getattr(performance.cpu,
+                                                    'AvgEventTime', None)
+        package['MinEventCPU']            = getattr(performance.cpu,
+                                                    'MinEventCPU', None)
+        package['TotalEventCPU']          = getattr(performance.cpu,
+                                                    'TotalEventCPU', None)
+        package['TotalJobTime']           = getattr(performance.cpu,
+                                                    'TotalJobTime', None)
+        package['MinEventTime']           = getattr(performance.cpu,
+                                                    'MinEventTime', None)
+        package['MaxEventCPU']            = getattr(performance.cpu,
+                                                    'MaxEventCPU', None)
+
+        return package
 
     def addTask(self, task):
         """
@@ -289,6 +363,7 @@ class DashboardReporter(WMObject):
         package['datasetFull']   = task['datasetFull']
         package['CMSUser']       = task['user']
 
+        logging.info("Sending %s info" % taskName)
         logging.debug("Sending task info: %s" % str(package))
         result = apmonSend(taskid = package['TaskName'],
                            jobid = package['JobName'], params = package,

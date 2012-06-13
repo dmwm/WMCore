@@ -69,6 +69,7 @@ def destroyListCred( credNameList = [], credTimeleftList = { }, logger = None, t
 
     return
 
+#TODO not used anymore. #3810 deletes lasts unused dependencies in the client
 class CredentialException(WMException):
     """
     Credential exceptions should be defined in this class.
@@ -123,8 +124,9 @@ class Proxy(Credential):
         self.myproxyServer = args.get( "myProxySvr", 'myproxy.cern.ch')
         self.serverDN = args.get( "serverDN", '')
         self.userDN = args.get( "userDN", '')
-        self.proxyValidity = args.get( "proxyValidity", '')
-        self.myproxyValidity = args.get( "myproxyValidity", 4)
+        self.proxyValidity = args.get( "proxyValidity", '') #lenght of the proxy
+        self.myproxyValidity = args.get( "myproxyValidity", '168:00') #lenght of the myproxy
+        self.myproxyMinTime = args.get( "myproxyMinTime", 4) #threshold used in checkProxy
 
         # User vo paramaters
         self.vo = 'cms'
@@ -289,8 +291,8 @@ class Proxy(Credential):
 
             if serverRenewer and len( self.serverDN.strip() ) > 0:
                 serverCredName = sha1(self.serverDN).hexdigest()
-                myproxyDelegCmd += ' -x -R \'%s\' -Z \'%s\' -k %s -t 168:00 ' \
-                                   % (self.serverDN, self.serverDN, serverCredName )
+                myproxyDelegCmd += ' -x -R \'%s\' -Z \'%s\' -k %s -t 168:00 -c %s ' \
+                                   % (self.serverDN, self.serverDN, serverCredName, self.myproxyValidity )
             execute_command( self.setUI() +  myproxyDelegCmd, self.logger, self.commandTimeout )
 
         else:
@@ -373,7 +375,7 @@ class Proxy(Credential):
                 valid = False
                 return valid
 
-            minTime = self.myproxyValidity * 24 * 3600
+            minTime = self.myproxyMinTime * 24 * 3600
             # regex to extract the right information
             timeleftList = re.compile("timeleft: (?P<hours>[\\d]*):(?P<minutes>[\\d]*):(?P<seconds>[\\d]*)").findall(output)
             timeleft, hours, minutes, seconds = 0, 0, 0, 0

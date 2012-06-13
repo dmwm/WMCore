@@ -54,6 +54,8 @@ def getSyncCE(default = socket.gethostname()):
 
     return result
 
+
+
 class DashboardInfo():
     """
     An object to let you assemble the information needed for a Dashboard Report
@@ -80,6 +82,9 @@ class DashboardInfo():
         self.taskName = 'wmagent_%s' % self.workload.name()
         self.jobName  = '%s_%i' % (job['name'], job['retry_count'])
 
+        #Step counter
+        self.stepCount = 0
+
         #Job ending report stuff
         self.jobSuccess     = 0
         self.jobStarted     = False
@@ -100,7 +105,6 @@ class DashboardInfo():
         Fill with basic information upon job start, we shouldn't send anything
         until the first step starts.
         """
-
         #Announce that the job is running
         data = {}
         data['MessageType']       = 'JobStatus'
@@ -150,6 +154,8 @@ class DashboardInfo():
         """
 
         helper = WMStepHelper(step)
+        self.stepCount += 1
+
         data = None
         if not self.jobStarted:
             #It's the first step so let's send the exe that started and where
@@ -169,18 +175,19 @@ class DashboardInfo():
 
         #Now let's send the step information
         tmp = {'jobStart': data}
-        
+
         data = {}
         data['MessageType'] = 'jobRuntime-stepStart'
         data['MessageTS']   = time.strftime(self.tsFormat, time.gmtime())
         data['taskId']      = self.taskName
         data['jobId']       = self.jobName
-        data['ExeStart']    = helper.name()
+        data['%d_stepName' % self.stepCount]    = helper.name()
+        data['%d_ExeStart' % self.stepCount]    = helper.name()
 
         self.publish(data = data)
-        
+
         data.update(tmp)
-        
+
         return data
 
     def stepEnd(self, step, stepReport):
@@ -192,36 +199,42 @@ class DashboardInfo():
         helper = WMStepHelper(step)
 
         stepSuccess = stepReport.getStepExitCode(stepName = helper.name())
+        stepReport.setStepCounter(stepName = helper.name(), counter = self.stepCount)
         if self.jobSuccess == 0:
             self.jobSuccess = int(stepSuccess)
         if int(stepSuccess) != 0:
             self.failedStep = helper.name()
 
         data = {}
-        data['MessageType']              = 'jobRuntime-stepEnd'
-        data['MessageTS']                = time.strftime(self.tsFormat,
+        data['MessageType']                     = 'jobRuntime-stepEnd'
+        data['MessageTS']                       = time.strftime(self.tsFormat,
                                                          time.gmtime())
-        data['taskId']                   = self.taskName
-        data['jobId']                    = self.jobName
-        data['ExeEnd']                   = helper.name()
-        data['ExeExitCode']              = stepReport.getStepExitCode(
-                                                       stepName = helper.name())
+        data['taskId']                          = self.taskName
+        data['jobId']                           = self.jobName
+        data['%d_ExeEnd' % self.stepCount]      = helper.name()
+        data['%d_ExeExitCode' % self.stepCount] = stepReport.getStepExitCode(
+                                                    stepName = helper.name())
+
         if helper.name() == 'StageOut':
-            data['StageOutExitStatus']   = int(stepReport.stepSuccessful(
-                                                      stepName = helper.name()))
+            data['%d_StageOutExitStatus' % self.stepCount] = int(
+                        stepReport.stepSuccessful(stepName = helper.name()))
 
         times = stepReport.getTimes(stepName = helper.name())
-        data['ExeWCTime'] = times['stopTime'] - times['startTime']
+        if times['stopTime'] != None and times['startTime'] != None:
+            data['%d_ExeWCTime' % self.stepCount] = \
+                                       times['stopTime'] - times['startTime']
 
         step = stepReport.retrieveStep(step = helper.name())
 
         if hasattr(step, 'performance'):
             if hasattr(step.performance, 'cpu'):
-                data['ExeCPUTime'] = getattr(step.performance.cpu,
-                                             'TotalJobCPU', 0)
-                self.WrapperCPUTime += float(data['ExeCPUTime'])
+                data['%d_ExeCPUTime' % self.stepCount] = \
+                                                getattr(step.performance.cpu,
+                                                        'TotalJobCPU', 0)
+                self.WrapperCPUTime += float(data['%d_ExeCPUTime'
+                                                        % self.stepCount])
 
-        self.WrapperWCTime += data['ExeWCTime']
+        self.WrapperWCTime += data['%d_ExeWCTime' % self.stepCount]
         self.lastStep = helper.name()
 
         self.publish(data = data)
@@ -260,11 +273,13 @@ class DashboardInfo():
         helper = WMStepHelper(step)
 
         data = {}
-        data['MessageType']   = 'jobRuntime-stepKilled'
-        data['MessageTS']     = time.strftime(self.tsFormat, time.gmtime())
-        data['taskId']        = self.taskName
-        data['jobId']         = self.jobName
-        data['ExeEnd']        = helper.name()
+        data['MessageType']                       = 'jobRuntime-stepKilled'
+        data['MessageTS']                         = time.strftime(
+                                                        self.tsFormat,
+                                                        time.gmtime())
+        data['taskId']                            = self.taskName
+        data['jobId']                             = self.jobName
+        data['%d_ExeEnd' % self.stepCount]        = helper.name()
 
         self.lastStep = helper.name()
 

@@ -156,13 +156,14 @@ class DashboardInterfaceTest(unittest.TestCase):
         self.assertNotEqual(data['jobStart'], None)
         self.assertEqual(data['jobStart']['ExeStart'], step.name())
         self.assertEqual(data['jobStart']['WNHostName'], socket.gethostname())
-        self.assertEqual(data['ExeStart'], step.name())
+        self.assertEqual(data['1_ExeStart'], step.name())
 
         #Do the step end
         data = dbInfo.stepEnd(step = step.data, stepReport = report)
-        self.assertEqual(data['ExeEnd'], step.name())
-        self.assertEqual(data['ExeExitCode'], 0)
-        self.assertTrue(data['ExeWCTime'] >= 0)
+        self.assertEqual(data['1_ExeEnd'], step.name())
+        self.assertEqual(data['1_ExeExitCode'], 0)
+        self.assertTrue(data['1_ExeWCTime'] >= 0)
+        self.assertEqual(report.retrieveStep("cmsRun1").counter, 1)
 
         #Do a second step
         step = task.getStep(stepName = "cmsRun1")
@@ -170,13 +171,14 @@ class DashboardInterfaceTest(unittest.TestCase):
         #Do the step start (It's not the first step)
         data = dbInfo.stepStart(step = step.data)
         self.assertEqual(data['jobStart'], None)
-        self.assertEqual(data['ExeStart'], step.name())
+        self.assertEqual(data['2_ExeStart'], step.name())
 
         #Do the step end
         data = dbInfo.stepEnd(step = step.data, stepReport = report)
-        self.assertEqual(data['ExeEnd'], step.name())
-        self.assertEqual(data['ExeExitCode'], 0)
-        self.assertTrue(data['ExeWCTime'] >= 0)
+        self.assertEqual(data['2_ExeEnd'], step.name())
+        self.assertEqual(data['2_ExeExitCode'], 0)
+        self.assertTrue(data['2_ExeWCTime'] >= 0)
+        self.assertEqual(report.retrieveStep("cmsRun1").counter, 2)
 
         # End the job!
         data = dbInfo.jobEnd()
@@ -226,13 +228,14 @@ class DashboardInterfaceTest(unittest.TestCase):
         self.assertNotEqual(data['jobStart'], None)
         self.assertEqual(data['jobStart']['ExeStart'], step.name())
         self.assertEqual(data['jobStart']['WNHostName'], socket.gethostname())
-        self.assertEqual(data['ExeStart'], step.name())
+        self.assertEqual(data['1_ExeStart'], step.name())
 
         #Do the step end
         data = dbInfo.stepEnd(step = step.data, stepReport = report)
-        self.assertEqual(data['ExeEnd'], step.name())
-        self.assertNotEqual(data['ExeExitCode'], 0)
-        self.assertTrue(data['ExeWCTime'] >= 0)
+        self.assertEqual(data['1_ExeEnd'], step.name())
+        self.assertNotEqual(data['1_ExeExitCode'], 0)
+        self.assertTrue(data['1_ExeWCTime'] >= 0)
+        self.assertEqual(report.retrieveStep("cmsRun1").counter, 1)
 
         # End the job!
         data = dbInfo.jobEnd()
@@ -281,13 +284,13 @@ class DashboardInterfaceTest(unittest.TestCase):
         self.assertNotEqual(data['jobStart'], None)
         self.assertEqual(data['jobStart']['ExeStart'], step.name())
         self.assertEqual(data['jobStart']['WNHostName'], socket.gethostname())
-        self.assertEqual(data['ExeStart'], step.name())
+        self.assertEqual(data['1_ExeStart'], step.name())
 
         #Do the step end
         data = dbInfo.stepEnd(step = step.data, stepReport = report)
-        self.assertEqual(data['ExeEnd'], step.name())
-        self.assertNotEqual(data['ExeExitCode'], 0)
-        self.assertTrue(data['ExeWCTime'] >= 0)
+        self.assertEqual(data['1_ExeEnd'], step.name())
+        self.assertNotEqual(data['1_ExeExitCode'], 0)
+        self.assertTrue(data['1_ExeWCTime'] >= 0)
 
         # Kill the job!
         data = dbInfo.jobKilled()

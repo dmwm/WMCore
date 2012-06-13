@@ -1,3 +1,32 @@
+0.8.47 to 0.8.48:
+  - Guard against empty arguments with Config/DataProcessing configs.  Fixes #3797.
+  - Fix PromptSkimming processing version handling.  Fixes #3775.
+  - Change the default log level for dashboard reporting.  Fixes #3717.
+  - Ignore data from CouchDB that doesn't have a valid site.  Fixes #3786.
+  - Don't require bl_runjob to link to a valid user.  Fixes #3791.
+  - Add run number to PromptSkimming LFNs.  Fixes #3793.
+  - Fix races in PromptSkimming between workflow cleanup and data transfer in the T0.  Fixes #3787.
+  - Support Tier0 LFN conventions in the standard specs.  Fixes #3277.
+  - Update thresholds in the AlertGenerator config.
+  - Adapted UserFileCache module to the new rest (removed backward compatibility). Fixes #3780,#3662
+  - Force MySQL to use the best join order for the JobStatusForMonitoring query.  Fixes #3778.
+  - Allow requestors to specifiy an initial event and initial lumi.  Fixes #2272.
+  - Add events_per_lumi option to EventBased splitting.  Fixes #3744.
+  - Fix the running time calculation so that it ignores job restarts.  Fixes #3772.
+  - Fix the WMTweak firstLumi/event treatment.  Fixes #3714.
+  - Add a LHEStep0 workflow.  Fixes #3712.
+  - Add two new base LFNs to the request web interface options.  Fixes #3755.
+  - Modify the WMBS schema to allow for larger event numbers.  Fixes #3754.
+  - Make test division stable when adding new tests.  Fixes #3761.
+  - Attempt to trap os._exit() calls made by cherrypy.  Fixes #3760.
+  - Fix the unit tests for the couch based agent package.  Fixes #2178.
+  - Guard against incorrect config URLs in PromptSkimming.  Fixes #3767.
+  - Improve reports when a job is killed.  Fixes #3766.
+  - Fix performance monitoring thresholds.  Fixes #3765.
+  - Modified the wf name in the fake report. Fixes #2859
+  - Fix pileup support. Fixes #3711
+  - Update CVSROOT in buildrelease script.
+
 0.8.46 to 0.8.47:
   - Update Lexicon to handle old tier0 LFNs.  Fixes #3752.
   - Test alerts in the JobTracker unit test.  Fixes #3326.

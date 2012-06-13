@@ -160,7 +160,7 @@ class ApMon:
         """
         
         if self.__udpSocket != None:
-            self.logger.info("Closing UDP socket on ApMon object destroy.");
+            self.logger.debug("Closing UDP socket on ApMon object destroy.");
             self.__udpSocket.close();
             self.__udpSocket = None;
         self.__freed = True
@@ -219,7 +219,7 @@ class ApMon:
         # send this buffer to the destination, using udp datagrams
         try:
             self.__udpSocket.sendto(buffer, (host, port))
-            self.logger.info("Packet sent to "+host+":"+str(port)+" "+passwd)
+            self.logger.debug("Packet sent to "+host+":"+str(port)+" "+passwd)
         except socket.error, msg:
             self.logger.error("Cannot send packet to "+host+":"+str(port)+" "+passwd+": "+str(msg[1]))
         xdrPacker.reset()
@@ -343,7 +343,7 @@ class ApMon:
                 break
         destination = (host, port, passwd)
         if not alreadyAdded:
-            self.logger.info("Adding destination "+host+':'+`port`+' '+passwd)
+            self.logger.debug("Adding destination "+host+':'+`port`+' '+passwd)
             if(self.destinations.has_key(destination)):
                 tempDestinations[destination] = self.destinations[destination]  # reuse previous options
             else:

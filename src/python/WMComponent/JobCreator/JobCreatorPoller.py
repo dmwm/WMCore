@@ -103,7 +103,7 @@ def runSplitter(jobFactory, splitParams):
 def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
             wmTaskPrio = None, owner = None, ownerDN = None,
             ownerGroup = '', ownerRole = '',
-            scramArch = None, swVersion = None ):
+            scramArch = None, swVersion = None, agentNumber = 0 ):
         """
         _saveJob_
 
@@ -118,6 +118,7 @@ def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
                 job['sandbox'] = sandbox
 
         job['counter']   = jobNumber
+        job['agentNumber'] = agentNumber
         cacheDir         = job.getCache()
         job['cache_dir'] = cacheDir
         job['priority']  = wmTaskPrio
@@ -155,6 +156,7 @@ def creatorProcess(work, jobCacheDir):
         ownerRole    = work.get('ownerRole','')
         scramArch    = work.get('scramArch', None)
         swVersion    = work.get('swVersion', None)
+        agentNumber  = work.get('agentNumber', 0)
 
         if ownerDN == None:
             ownerDN = owner
@@ -193,7 +195,8 @@ def creatorProcess(work, jobCacheDir):
                     ownerGroup = ownerGroup,
                     ownerRole = ownerRole,
                     scramArch = scramArch,
-                    swVersion = swVersion )
+                    swVersion = swVersion,
+                    agentNumber = agentNumber)
 
     except Exception, ex:
         # Register as failure; move on
@@ -345,6 +348,7 @@ class JobCreatorPoller(BaseWorkerThread):
         #Variables
         self.defaultJobType     = config.JobCreator.defaultJobType
         self.limit              = getattr(config.JobCreator, 'fileLoadLimit', 500)
+        self.agentNumber        = int(getattr(config.Agent, 'agentNumber', 0))
 
         # initialize the alert framework (if available - config.Alert present)
         #    self.sendAlert will be then be available
@@ -588,6 +592,7 @@ class JobCreatorPoller(BaseWorkerThread):
                     tempDict['swVersion'] = wmTask.getSwVersion()
                     tempDict['scramArch'] = wmTask.getScramArch()
                     tempDict['jobNumber'] = jobNumber
+                    tempDict['agentNumber'] = self.agentNumber
 
                     jobGroup = creatorProcess(work = tempDict,
                                               jobCacheDir = self.jobCacheDir)

@@ -47,8 +47,6 @@ class PromptSkimPoller(BaseWorkerThread):
         # Workload related parameters
         self.promptSkimFactory = PromptSkimWorkloadFactory()
         self.tier1PromptRecoFactory = Tier1PromptRecoWorkloadFactory()
-        self.promptSkimWorkloads = {}
-        self.promptRecoWorkloads = {}
         self.workloadCache = self.config.PromptSkimScheduler.workloadCache
 
         if not os.path.exists(self.workloadCache):
@@ -127,17 +125,7 @@ class PromptSkimPoller(BaseWorkerThread):
         """
         (datasetPath, guid) = blockInfo["BLOCK_NAME"].split("#", 1)
         (primary, processed, tier) = datasetPath[1:].split("/", 3)
-        workloadName = "Run%s-%s-%s-%s" % (blockInfo["RUN_ID"], primary, processed, "Tier1PromptReco")
-
-        if self.promptRecoWorkloads.has_key(blockInfo["RUN_ID"]):
-            if self.promptRecoWorkloads[blockInfo["RUN_ID"]].has_key(primary):
-                workload = self.promptRecoWorkloads[blockInfo["RUN_ID"]][primary]
-                workload.setBlockWhitelist(blockInfo["BLOCK_NAME"])
-                specPath = os.path.join(self.workloadCache, workloadName, "%s.pkl" % guid)
-                workload.setSpecUrl(specPath)
-                workload.save(specPath)
-                self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)
-                return
+        workloadName = "Run%s-%s-%s-%s-%s" % (blockInfo["RUN_ID"], primary, processed, "Tier1PromptReco", guid)
 
         writeTiers = []
         if recoConfig.DoReco:
@@ -197,9 +185,6 @@ class PromptSkimPoller(BaseWorkerThread):
 
         self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)
 
-        if not self.promptRecoWorkloads.has_key(blockInfo["RUN_ID"]):
-            self.promptRecoWorkloads[blockInfo["RUN_ID"]] = {}
-        self.promptRecoWorkloads[blockInfo["RUN_ID"]][primary] = workload
         return
 
 
@@ -214,17 +199,7 @@ class PromptSkimPoller(BaseWorkerThread):
         (datasetPath, guid) = blockInfo["BLOCK_NAME"].split("#", 1)
         (primary, processed, tier) = datasetPath[1:].split("/", 3)
         runNumber = int(blockInfo["RUN_ID"])
-        workloadName = "Run%s-%s-%s-%s" % (blockInfo["RUN_ID"], primary, processed, skimConfig.SkimName)
-
-        if self.promptSkimWorkloads.has_key(blockInfo["RUN_ID"]):
-            if self.promptSkimWorkloads[blockInfo["RUN_ID"]].has_key(skimConfig.SkimName):
-                workload = self.promptSkimWorkloads[blockInfo["RUN_ID"]][skimConfig.SkimName]
-                workload.setBlockWhitelist(blockInfo["BLOCK_NAME"])
-                specPath = os.path.join(self.workloadCache, workloadName, "%s.pkl" % guid)
-                workload.setSpecUrl(specPath)
-                workload.save(specPath)
-                self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)
-                return
+        workloadName = "Run%s-%s-%s-%s-%s" % (blockInfo["RUN_ID"], primary, processed, skimConfig.SkimName, guid)
 
         if skimConfig.TwoFileRead:
             includeParents = True
@@ -268,9 +243,6 @@ class PromptSkimPoller(BaseWorkerThread):
 
         self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)
 
-        if not self.promptSkimWorkloads.has_key(blockInfo["RUN_ID"]):
-            self.promptSkimWorkloads[blockInfo["RUN_ID"]] = {}
-        self.promptSkimWorkloads[blockInfo["RUN_ID"]][skimConfig.SkimName] = workload
         return
 
     def pollForTransferredBlocks(self):

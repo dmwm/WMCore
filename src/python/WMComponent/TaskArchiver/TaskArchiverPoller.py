@@ -90,7 +90,7 @@ def uploadPublishWorkflow(workflow, ufcEndpoint, workDir):
     """
 
     ufc = UserFileCache({'endpoint': ufcEndpoint})
-    
+
     # Skip tasks ending in LogCollect, they have nothing interesting.
     taskNameParts = workflow.task.split('/')
     if taskNameParts.pop() in ['LogCollect']:
@@ -129,10 +129,10 @@ def uploadPublishWorkflow(workflow, ufcEndpoint, workDir):
     tgzFile.add(jsonName)
     tgzFile.close()
 
-    result = ufc.upload(fileName=tgzName, name=baseName, subDir=workflow.owner)
+    result = ufc.upload(fileName=tgzName, name=baseName)
     logging.debug('Upload result %s' % result)
     # If this doesn't work, exception will propogate up and block archiving the task
-    logging.info('Uploaded to URL %s with hashkey %s' % (result['url'], result['hashkey']))
+    logging.info('Uploaded with name %s and hashkey %s' % (result['name'], result['hashkey']))
     return
 
 
@@ -704,9 +704,9 @@ class TaskArchiverPoller(BaseWorkerThread):
             return uploadPublishWorkflow(workflow, ufcEndpoint=self.userFileCacheURL, workDir=workDir)
         except Exception, ex:
             logging.error('Upload failed for workflow: %s' % (workflow))
-            logging.error(str(ex))
+            logging.exception(ex) #Let's print the stacktrace with generic Exception
             return False
-    
+
 
     def deleteWorkflowFromCouch(self, workflowName):
         """

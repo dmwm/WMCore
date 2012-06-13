@@ -37,9 +37,7 @@ function(newDoc, oldDoc, userCtx) {
    // Authorization rules for Myapp DB
 
    // The following rule aplies for all operation types
-   var allowed = isGlobalAdm || matchesRole("production-operator","group:dataops")
-                             || matchesRole("production-manager","group:dataops")
-                             || matchesRole("web-service","facops");
+   var allowed = isGlobalAdm || matchesRole("operator","group:myapp");
 
    // Throw if user not validated
    if(!allowed) {

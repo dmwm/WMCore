@@ -13,6 +13,7 @@
       "from": "index.html",
       "to": "index.html"
   },
+
   {
     "from": "",
     "to": "_show/redirect"

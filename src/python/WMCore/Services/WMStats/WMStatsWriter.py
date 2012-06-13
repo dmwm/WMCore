@@ -27,6 +27,7 @@ def monitorDocFromRequestSchema(schema):
     doc["user_dn"] = schema.get('RequestorDN', "")
     doc["async_dest"] = schema.get('asyncDest', "")
     doc["dbs_url"] = schema.get("DbsUrl", "")
+    doc["publish_dbs_url"] = schema.get("PublishDbsUrl", "")
     # team name is not yet available need to be updated in assign status
     #doc['team'] = schema['team']
     return doc

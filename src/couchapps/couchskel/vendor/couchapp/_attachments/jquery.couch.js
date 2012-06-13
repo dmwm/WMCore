@@ -10,10 +10,6 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-// modified
-// change httpData(req, "json") -> parseJSON(req.responseText) to support 
-// jquery.js 1.5 or newer
-
 (function($) {
   $.couch = $.couch || {};
 
@@ -26,29 +22,10 @@
     return encodeURIComponent(docID);
   };
 
-  function prepareUserDoc(user_doc, new_password) {
-    if (typeof hex_sha1 == "undefined") {
-      alert("creating a user doc requires sha1.js to be loaded in the page");
-      return;
-    }
-    var user_prefix = "org.couchdb.user:";
-    user_doc._id = user_doc._id || user_prefix + user_doc.name;
-    if (new_password) {
-      // handle the password crypto
-      user_doc.salt = $.couch.newUUID();
-      user_doc.password_sha = hex_sha1(new_password + user_doc.salt);
-    }
-    user_doc.type = "user";
-    if (!user_doc.roles) {
-      user_doc.roles = [];
-    }
-    return user_doc;
-  };
-
   var uuidCache = [];
 
   $.extend($.couch, {
-    urlPrefix: '',
+    urlPrefix: couchroot,
     activeTasks: function(options) {
       ajax(
         {url: this.urlPrefix + "/_active_tasks"},
@@ -74,25 +51,28 @@
         }
       }
       if (value === null) {
-        req.type = "DELETE";
+        req.type = "DELETE";        
       } else if (value !== undefined) {
         req.type = "PUT";
         req.data = toJSON(value);
         req.contentType = "application/json";
-        req.processData = false;
+        req.processData = false
       }
 
       ajax(req, options,
         "An error occurred retrieving/updating the server configuration"
       );
     },
-
+    
     session: function(options) {
       options = options || {};
       $.ajax({
         type: "GET", url: this.urlPrefix + "/_session",
+        beforeSend: function(xhr) {
+            xhr.setRequestHeader('Accept', 'application/json');
+        },
         complete: function(req) {
-          var resp = $.parseJSON(req.responseText);
+          var resp = httpData(req, "json");
           if (req.status == 200) {
             if (options.success) options.success(resp);
           } else if (options.error) {
@@ -113,13 +93,32 @@
       });
     },
 
-    signup: function(user_doc, password, options) {
+    signup: function(user_doc, password, options) {      
       options = options || {};
       // prepare user doc based on name and password
-      user_doc = prepareUserDoc(user_doc, password);
+      user_doc = this.prepareUserDoc(user_doc, password);
       $.couch.userDb(function(db) {
         db.saveDoc(user_doc, options);
       });
+    },
+
+    prepareUserDoc: function(user_doc, new_password) {
+      if (typeof hex_sha1 == "undefined") {
+        alert("creating a user doc requires sha1.js to be loaded in the page");
+        return;
+      }
+      var user_prefix = "org.couchdb.user:";
+      user_doc._id = user_doc._id || user_prefix + user_doc.name;
+      if (new_password) {
+        // handle the password crypto
+        user_doc.salt = $.couch.newUUID();
+        user_doc.password_sha = hex_sha1(new_password + user_doc.salt);
+      }
+      user_doc.type = "user";
+      if (!user_doc.roles) {
+        user_doc.roles = [];
+      }
+      return user_doc;
     },
 
     login: function(options) {
@@ -127,8 +126,11 @@
       $.ajax({
         type: "POST", url: this.urlPrefix + "/_session", dataType: "json",
         data: {name: options.name, password: options.password},
+        beforeSend: function(xhr) {
+            xhr.setRequestHeader('Accept', 'application/json');
+        },
         complete: function(req) {
-          var resp = $.parseJSON(req.responseText);
+          var resp = httpData(req, "json");
           if (req.status == 200) {
             if (options.success) options.success(resp);
           } else if (options.error) {
@@ -144,8 +146,11 @@
       $.ajax({
         type: "DELETE", url: this.urlPrefix + "/_session", dataType: "json",
         username : "_", password : "_",
+        beforeSend: function(xhr) {
+            xhr.setRequestHeader('Accept', 'application/json');
+        },
         complete: function(req) {
-          var resp = $.parseJSON(req.responseText);
+          var resp = httpData(req, "json");
           if (req.status == 200) {
             if (options.success) options.success(resp);
           } else if (options.error) {
@@ -389,7 +394,7 @@
             dataType: "json", data: toJSON(doc),
             beforeSend : beforeSend,
             complete: function(req) {
-              var resp = $.parseJSON(req.responseText);
+              var resp = httpData(req, "json");
               if (req.status == 200 || req.status == 201 || req.status == 202) {
                 doc._id = resp.id;
                 doc._rev = resp.rev;
@@ -454,7 +459,7 @@
         copyDoc: function(docId, options, ajaxOptions) {
           ajaxOptions = $.extend(ajaxOptions, {
             complete: function(req) {
-              var resp = $.parseJSON(req.responseText);
+              var resp = httpData(req, "json");
               if (req.status == 201) {
                 if (options.success) options.success(resp);
               } else if (options.error) {
@@ -543,7 +548,7 @@
 
         setDbProperty: function(propName, propValue, options, ajaxOptions) {
           ajax({
-            type: "PUT",
+            type: "PUT", 
             url: this.uri + propName + encodeOptions(options),
             data : JSON.stringify(propValue)
           },
@@ -555,7 +560,7 @@
       };
     },
 
-    encodeDocId: encodeDocId,
+    encodeDocId: encodeDocId, 
 
     info: function(options) {
       ajax(
@@ -567,7 +572,7 @@
 
     replicate: function(source, target, ajaxOptions, repOpts) {
       repOpts = $.extend({source: source, target: target}, repOpts);
-      if (repOpts.continuous) {
+      if (repOpts.continuous && !repOpts.cancel) {
         ajaxOptions.successStatus = 202;
       }
       ajax({
@@ -597,16 +602,40 @@
     }
   });
 
+  var httpData = $.httpData || function( xhr, type, s ) { // lifted from jq1.4.4
+    var ct = xhr.getResponseHeader("content-type") || "",
+      xml = type === "xml" || !type && ct.indexOf("xml") >= 0,
+      data = xml ? xhr.responseXML : xhr.responseText;
+
+    if ( xml && data.documentElement.nodeName === "parsererror" ) {
+      $.error( "parsererror" );
+    }
+    if ( s && s.dataFilter ) {
+      data = s.dataFilter( data, type );
+    }
+    if ( typeof data === "string" ) {
+      if ( type === "json" || !type && ct.indexOf("json") >= 0 ) {
+        data = $.parseJSON( data );
+      } else if ( type === "script" || !type && ct.indexOf("javascript") >= 0 ) {
+        $.globalEval( data );
+      }
+    }
+    return data;
+  };
+
   function ajax(obj, options, errorMessage, ajaxOptions) {
+
+    var defaultAjaxOpts = {
+      contentType: "application/json",
+      headers:{"Accept": "application/json"}
+    };
+
     options = $.extend({successStatus: 200}, options);
-    ajaxOptions = $.extend({contentType: "application/json"}, ajaxOptions);
+    ajaxOptions = $.extend(defaultAjaxOpts, ajaxOptions);
     errorMessage = errorMessage || "Unknown error";
     $.ajax($.extend($.extend({
       type: "GET", dataType: "json", cache : !$.browser.msie,
       beforeSend: function(xhr){
-        if (options.beforeSend) {
-            options.beforeSend();
-        }
         if(ajaxOptions && ajaxOptions.headers){
           for (var header in ajaxOptions.headers){
             xhr.setRequestHeader(header, ajaxOptions.headers[header]);
@@ -614,11 +643,8 @@
         }
       },
       complete: function(req) {
-        if (options.complete) {
-            options.complete();
-        }
         try {
-          var resp = $.parseJSON(req.responseText);
+          var resp = httpData(req, "json");
         } catch(e) {
           if (options.error) {
             options.error(req.status, req, e);
@@ -648,6 +674,7 @@
       var commit = options.ensure_full_commit;
       delete options.ensure_full_commit;
       return function(xhr) {
+        xhr.setRequestHeader('Accept', 'application/json');
         xhr.setRequestHeader("X-Couch-Full-Commit", commit.toString());
       };
     }
@@ -659,7 +686,7 @@
     var buf = [];
     if (typeof(options) === "object" && options !== null) {
       for (var name in options) {
-        if ($.inArray(name, ["error", "success", "beforeSuccess", "ajaxStart", "beforeSend", "complete"]) >= 0)
+        if ($.inArray(name, ["error", "success", "beforeSuccess", "ajaxStart"]) >= 0)
           continue;
         var value = options[name];
         if ($.inArray(name, ["key", "startkey", "endkey"]) >= 0) {

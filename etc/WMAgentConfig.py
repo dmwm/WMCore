@@ -43,6 +43,7 @@ workloadSummaryURL = couchURL
 userEmail = "OP EMAIL"
 agentTeams = "team1,team2,cmsdataops"
 agentName = "WMAgentCommissioning"
+agentNumber = 0
 
 # List of BossAir plugins that this agent will use.
 bossAirPlugins = ["CondorPlugin"]
@@ -77,6 +78,7 @@ config.Agent.hostName = serverHostName
 config.Agent.contact = userEmail
 config.Agent.teamName = agentTeams
 config.Agent.agentName = agentName
+config.Agent.agentNumber = agentNumber
 config.Agent.useMsgService = False
 config.Agent.useTrigger = False
 config.Agent.useHeartbeat = True 

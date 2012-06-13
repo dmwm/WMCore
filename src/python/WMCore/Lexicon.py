@@ -240,7 +240,7 @@ def couchurl(candidate):
     return check('https?://(([a-zA-Z0-9:@\.\-_]){0,100})([a-z0-9\.]+)(:\d+|/couchdb)', candidate)
 
 def requestName(candidate):
-    return check(r'[a-zA-Z0-9\.\-_]{1,100}$', candidate)
+    return check(r'[a-zA-Z0-9\.\-_]{1,150}$', candidate)
 
 def check(regexp, candidate):
     assert re.compile(regexp).match(candidate) != None , \

@@ -52,8 +52,7 @@ class UserFileCache(Service):
         if name:
             params.append(('inputfilename', name))
 
-        resString = self["requests"].uploadFile(fileName=fileName,
-                                                fieldName='inputfile',
+        resString = self["requests"].uploadFile(fileName=fileName, fieldName='inputfile',
                                                 url=self['endpoint'] + 'file',
                                                 params=params, verb='PUT')
 

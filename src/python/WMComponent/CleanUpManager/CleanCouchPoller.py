@@ -68,7 +68,7 @@ class CleanCouchPoller(BaseWorkerThread):
                 report = self.deleteWorkflowFromJobCouch(workflowName, "FWJRDump")
                 logging.info("%s docs deleted from FWJRDump" % report)
                 
-                self.centralCouchDBWriter.updateRequestStatus(workflowName, "deleted")
+                self.centralCouchDBWriter.updateRequestStatus(workflowName, "archived")
                 logging.info("status updated to deleted %s" % workflowName)
                 
         except Exception, ex:

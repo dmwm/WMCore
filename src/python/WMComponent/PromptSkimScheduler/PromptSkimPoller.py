@@ -348,14 +348,14 @@ class PromptSkimPoller(BaseWorkerThread):
         doneItems = self.workQueue.statusInbox(status = 'Done')
         workflowsToClean = []
         for element in doneItems:
-            lastUpdateTime = element.updatetime
+            lastUpdateTime = float(element.updatetime)
             if not lastUpdateTime:
-                lastUpdateTime = element.timestamp
+                lastUpdateTime = float(element.timestamp)
             currentTime = time.time()
             if (currentTime - lastUpdateTime) < 86400*self.cleanupTimeout:
                 continue
             workflowsToClean.append(element['RequestName'])
-        self.workQueue.deleteWorkflows(*doneItems)
+        self.workQueue.deleteWorkflows(*workflowsToClean)
 
 
     def markInjected(self):

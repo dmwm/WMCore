@@ -755,6 +755,9 @@ class WorkQueue(WorkQueueBase):
                     msg += ' on events %d-%d' % (unit['Mask']['FirstEvent'], unit['Mask']['LastEvent'])
                 self.logger.info(msg)
                 totalToplevelJobs += unit['Jobs']
+                totalEvents += unit['NumberOfEvents']
+                totalLumis += unit['NumberOfLumis']
+                totalFiles += unit['NumberOfFiles']
             totalUnits.extend(units)
 
         return totalUnits, {'total_jobs': totalToplevelJobs, 'input_events': totalEvents, 'input_lumis': totalLumis, 'input_num_files': totalFiles}

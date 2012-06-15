@@ -77,8 +77,8 @@ class StdBase(object):
         self.dashboardHost = None
         self.dashboardPort = 0
         self.overrideCatalog = None
-        self.firstLumi = None
-        self.firstEvent = None
+        self.firstLumi = 1
+        self.firstEvent = 1
         self.runNumber = 0
         return
 

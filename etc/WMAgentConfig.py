@@ -44,6 +44,7 @@ workloadSummaryURL = couchURL
 userEmail = "OP EMAIL"
 agentTeams = "team1,team2,cmsdataops"
 agentName = "WMAgentCommissioning"
+agentNumber = 0
 
 # List of BossAir plugins that this agent will use.
 bossAirPlugins = ["CondorPlugin"]
@@ -78,6 +79,7 @@ config.Agent.hostName = serverHostName
 config.Agent.contact = userEmail
 config.Agent.teamName = agentTeams
 config.Agent.agentName = agentName
+config.Agent.agentNumber = agentNumber
 config.Agent.useMsgService = False
 config.Agent.useTrigger = False
 config.Agent.useHeartbeat = True 
@@ -332,24 +334,24 @@ config.AlertProcessor.soft.sinks.section_("couch") # in tests used: ConfigSectio
 config.AlertProcessor.soft.sinks.couch.url = couchURL
 config.AlertProcessor.soft.sinks.couch.database = "alerts_soft"
 # alerts delivery via email
-#config.AlertProcessor.critical.sinks.section_("email")
+config.AlertProcessor.critical.sinks.section_("email")
 # from must be a valid domain, at least when the destination address
 # was @cern.ch: it said email is queued but was never delivered,
 # may not always be the case though
-#config.AlertProcessor.critical.sinks.email.fromAddr = "wmagent@%s" % serverHostName
-#config.AlertProcessor.critical.sinks.email.toAddr = ["wmagentalerts@gmail.com"] # add more in the list
-#config.AlertProcessor.critical.sinks.email.smtpServer = "cernmx.cern.ch"
-#config.AlertProcessor.critical.sinks.email.smtpUser = None
-#config.AlertProcessor.critical.sinks.email.smtpPass = None
-#config.AlertProcessor.soft.sinks.section_("email")
+config.AlertProcessor.critical.sinks.email.fromAddr = "wmagent@%s" % serverHostName
+config.AlertProcessor.critical.sinks.email.toAddr = ["wmagentalerts@gmail.com"] # add more in the list
+config.AlertProcessor.critical.sinks.email.smtpServer = "cernmx.cern.ch"
+config.AlertProcessor.critical.sinks.email.smtpUser = None
+config.AlertProcessor.critical.sinks.email.smtpPass = None
+config.AlertProcessor.soft.sinks.section_("email")
 # from must be a valid domain, at least when the destination address
 # was @cern.ch: it said email is queued but was never delivered,
 # may not always be the case though
-#config.AlertProcessor.soft.sinks.email.fromAddr = "wmagent@%s" % serverHostName
-#config.AlertProcessor.soft.sinks.email.toAddr = ["wmagentalerts@gmail.com"] # add more in the list
-#config.AlertProcessor.soft.sinks.email.smtpServer = "cernmx.cern.ch"
-#config.AlertProcessor.soft.sinks.email.smtpUser = None
-#config.AlertProcessor.soft.sinks.email.smtpPass = None
+config.AlertProcessor.soft.sinks.email.fromAddr = "wmagent@%s" % serverHostName
+config.AlertProcessor.soft.sinks.email.toAddr = ["wmagentalerts@gmail.com"] # add more in the list
+config.AlertProcessor.soft.sinks.email.smtpServer = "cernmx.cern.ch"
+config.AlertProcessor.soft.sinks.email.smtpUser = None
+config.AlertProcessor.soft.sinks.email.smtpPass = None
 config.AlertProcessor.critical.sinks.section_("file")
 config.AlertProcessor.critical.sinks.file.outputfile = os.path.join(config.General.workDir, "AlertsFileSinkCritical.json")
 config.AlertProcessor.soft.sinks.section_("file")
@@ -385,65 +387,65 @@ config.AlertGenerator.componentDir = os.path.join(config.General.workDir, "Alert
 config.AlertGenerator.section_("cpuPoller")
 config.AlertGenerator.cpuPoller.soft = 8 # [percent]
 config.AlertGenerator.cpuPoller.critical = 10 # [percent]
-config.AlertGenerator.cpuPoller.pollInterval = 10 # [second]
+config.AlertGenerator.cpuPoller.pollInterval = 60 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering 
-config.AlertGenerator.cpuPoller.period = 120 # [second]
+config.AlertGenerator.cpuPoller.period = 300 # [second]
 # configuration for overall used physical memory monitor: memPoller (percentage of total physical memory)
 config.AlertGenerator.section_("memPoller")
 config.AlertGenerator.memPoller.soft = 85 # [percent]
 config.AlertGenerator.memPoller.critical = 90 # [percent]
-config.AlertGenerator.memPoller.pollInterval = 10 # [second]
+config.AlertGenerator.memPoller.pollInterval = 60 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.memPoller.period = 30 # [second]
+config.AlertGenerator.memPoller.period = 300 # [second]
 # configuration for available disk space monitor: diskSpacePoller (percentage usage per partition)
 config.AlertGenerator.section_("diskSpacePoller")
 config.AlertGenerator.diskSpacePoller.soft = 70 # [percent]
 config.AlertGenerator.diskSpacePoller.critical = 90 # [percent]
-config.AlertGenerator.diskSpacePoller.pollInterval = 10 # [second]
+config.AlertGenerator.diskSpacePoller.pollInterval = 600 # [second]
 # configuration for particular components CPU usage: componentCPUPoller (percentage values)
 config.AlertGenerator.section_("componentsCPUPoller")
 config.AlertGenerator.componentsCPUPoller.soft = 70 # [percent]
 config.AlertGenerator.componentsCPUPoller.critical = 90 # [percent]
-config.AlertGenerator.componentsCPUPoller.pollInterval = 10 # [second]
+config.AlertGenerator.componentsCPUPoller.pollInterval = 60 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
 config.AlertGenerator.componentsCPUPoller.period = 300 # [second]
 # configuration for particular components memory monitor: componentMemPoller (percentage of total physical memory)
 config.AlertGenerator.section_("componentsMemPoller")
 config.AlertGenerator.componentsMemPoller.soft = 3 # [percent]
 config.AlertGenerator.componentsMemPoller.critical = 5 # [percent] 
-config.AlertGenerator.componentsMemPoller.pollInterval = 10  # [second]
+config.AlertGenerator.componentsMemPoller.pollInterval = 60  # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.componentsMemPoller.period = 120 # [second]
+config.AlertGenerator.componentsMemPoller.period = 300 # [second]
 # configuration for CouchDB database size monitor: couchDbSizePoller (gigabytes values)
 config.AlertGenerator.section_("couchDbSizePoller")
 config.AlertGenerator.couchDbSizePoller.couchURL = couchURL
 config.AlertGenerator.couchDbSizePoller.soft = 600 # GB
 config.AlertGenerator.couchDbSizePoller.critical = 650 # GB
-config.AlertGenerator.couchDbSizePoller.pollInterval = 10 # [second]
+config.AlertGenerator.couchDbSizePoller.pollInterval = 600 # [second]
 # configuration for CouchDB CPU monitor: couchCPUPoller (percentage values)
 config.AlertGenerator.section_("couchCPUPoller")
 config.AlertGenerator.couchCPUPoller.couchURL = couchURL
 config.AlertGenerator.couchCPUPoller.soft = 250 # [percent]
 config.AlertGenerator.couchCPUPoller.critical = 300 # [percent]
-config.AlertGenerator.couchCPUPoller.pollInterval = 10 # [second]
+config.AlertGenerator.couchCPUPoller.pollInterval = 60 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.couchCPUPoller.period = 120 # [second]
+config.AlertGenerator.couchCPUPoller.period = 300 # [second]
 # configuration for CouchDB memory monitor: couchMemPoller (percentage values)
 config.AlertGenerator.section_("couchMemPoller")
 config.AlertGenerator.couchMemPoller.couchURL = couchURL
 config.AlertGenerator.couchMemPoller.soft = 7 # [percent]
 config.AlertGenerator.couchMemPoller.critical = 10 # [percent]
-config.AlertGenerator.couchMemPoller.pollInterval = 10 # [second]
+config.AlertGenerator.couchMemPoller.pollInterval = 60 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.couchMemPoller.period = 120 # [second]
+config.AlertGenerator.couchMemPoller.period = 300 # [second]
 # configuration for CouchDB HTTP errors poller: couchErrorsPoller (number of error occurrences)
 # (once certain threshold of the HTTP error counters is exceeded, poller keeps sending alerts)
 config.AlertGenerator.section_("couchErrorsPoller")
 config.AlertGenerator.couchErrorsPoller.couchURL = couchURL
 config.AlertGenerator.couchErrorsPoller.soft = 100 # [number of error occurrences]
 config.AlertGenerator.couchErrorsPoller.critical = 200 # [number of error occurrences]
-config.AlertGenerator.couchErrorsPoller.observables = (404, 500) # HTTP status codes to watch over
-config.AlertGenerator.couchErrorsPoller.pollInterval = 10 # [second]
+config.AlertGenerator.couchErrorsPoller.observables = (404, 403, 500) # HTTP status codes to watch over
+config.AlertGenerator.couchErrorsPoller.pollInterval = 600 # [second]
 
 # mysql*Poller sections were made optional and are defined in the
 # wmagent-mod-config file

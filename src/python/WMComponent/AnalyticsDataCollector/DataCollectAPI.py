@@ -176,7 +176,7 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, agentInfo, uploadTime):
         doc['status'] = tempData['status']
         doc['sites'] = tempData['sites']
         doc['timestamp'] = uploadTime
-        doc['size_event'] = fwjrInfo.get(request, [])
+        doc['output_progress'] = fwjrInfo.get(request, [])
         requestDocs.append(doc)
     return requestDocs
 

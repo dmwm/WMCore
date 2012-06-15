@@ -6,6 +6,7 @@ dbname = "__fill_dbname_here__";
 // so that it can run behind the frontend, with
 // or without rewrites.
 dbpath = document.location.href.split('/_design')[0];
+dbpath = dbpath.split('/index.html')[0];
 couchroot = dbpath.substring(0,dbpath.lastIndexOf('/'));
 
 function couchapp_load(scripts) {

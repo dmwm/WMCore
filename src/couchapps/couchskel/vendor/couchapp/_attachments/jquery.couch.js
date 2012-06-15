@@ -636,6 +636,9 @@
     $.ajax($.extend($.extend({
       type: "GET", dataType: "json", cache : !$.browser.msie,
       beforeSend: function(xhr){
+        if (options.beforeSend) {
+            options.beforeSend();
+        }
         if(ajaxOptions && ajaxOptions.headers){
           for (var header in ajaxOptions.headers){
             xhr.setRequestHeader(header, ajaxOptions.headers[header]);
@@ -643,6 +646,9 @@
         }
       },
       complete: function(req) {
+        if (options.complete) {
+            options.complete();
+        }
         try {
           var resp = httpData(req, "json");
         } catch(e) {
@@ -686,7 +692,7 @@
     var buf = [];
     if (typeof(options) === "object" && options !== null) {
       for (var name in options) {
-        if ($.inArray(name, ["error", "success", "beforeSuccess", "ajaxStart"]) >= 0)
+        if ($.inArray(name, ["error", "success", "beforeSuccess", "ajaxStart", "beforeSend", "complete"]) >= 0)
           continue;
         var value = options[name];
         if ($.inArray(name, ["key", "startkey", "endkey"]) >= 0) {

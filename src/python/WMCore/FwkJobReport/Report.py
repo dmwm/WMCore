@@ -1245,6 +1245,18 @@ class Report:
 
         return
 
+    def setStepCounter(self, stepName, counter):
+        """
+        _setStepCounter_
+
+        Assign a number to the step
+        """
+
+        reportStep = self.retrieveStep(stepName)
+        reportStep.counter = counter
+
+        return
+
     def checkForAdlerChecksum(self, stepName):
         """
         _checkForAdlerChecksum_

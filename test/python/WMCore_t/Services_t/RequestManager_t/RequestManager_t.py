@@ -9,12 +9,12 @@ from WMCore.Services.Requests import JSONRequests
 from WMCore.Services.RequestManager.RequestManager import RequestManager \
      as RequestManagerDS
 
-#decorator import for RESTServer setup
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
-from WMCore.WMSpec.StdSpecs.ReReco import getTestArguments
+import WMCore.WMSpec.StdSpecs.ReReco as ReReco
 
-from WMCore_t.RequestManager_t.ReqMgr_t import getRequestSchema, RequestManagerConfig
+from WMCore_t.RequestManager_t.ReqMgr_t import RequestManagerConfig
+
 
     
 class RequestManagerTest(RESTBaseUnitTest):
@@ -27,6 +27,7 @@ class RequestManagerTest(RESTBaseUnitTest):
     This test only test service call returns without error.
     The correctness of each function is tested in test/python/RequestManager_t/RequestMgr_t.py
     """
+    
     def initialize(self):
         self.couchDBName = "reqmgr_t_0"
         self.config = RequestManagerConfig(
@@ -38,12 +39,9 @@ class RequestManagerTest(RESTBaseUnitTest):
         self.config.setupCouchDatabase(dbName = self.couchDBName)
         self.config.setPort(8888)
         self.schemaModules = ["WMCore.RequestManager.RequestDB"]
-        return
+
         
     def setUp(self):
-        """
-        setUP global values
-        """
         RESTBaseUnitTest.setUp(self)
         self.testInit.setupCouch("%s" % self.couchDBName,
                                  "GroupUser", "ConfigCache")
@@ -51,19 +49,34 @@ class RequestManagerTest(RESTBaseUnitTest):
         self.params['endpoint'] = self.config.getServerUrl()
         self.reqService = RequestManagerDS(self.params)
         self.jsonSender = JSONRequests(self.config.getServerUrl())
-        self.requestSchema = getRequestSchema()
-        self.jsonSender.put('group/PeopleLikeMe')
         self.jsonSender.put('user/me?email=me@my.com')
+        self.jsonSender.put('group/PeopleLikeMe')
         self.jsonSender.put('group/PeopleLikeMe/me')
-        self.jsonSender.put('version/CMSSW_3_5_8')
-        r = self.jsonSender.put('request/' + self.requestSchema['RequestName'], 
-                                self.requestSchema)
+        self.jsonSender.put('version/CMSSW_3_5_8/slc5_ia32_gcc434')
+        
+        schema = ReReco.getTestArguments()
+        schema['RequestName'] = 'TestReReco'
+        schema['RequestType'] = 'ReReco'
+        schema['CmsPath'] = "/uscmst1/prod/sw/cms"
+        schema['Requestor'] = '%s' % "me"
+        schema['Group'] = '%s' % "PeopleLikeMe"
+        schema['BlockWhitelist'] = ['/dataset/dataset/dataset#alpha']
+        schema['BlockBlacklist'] = ['/dataset/dataset/dataset#beta']
+        schema['Campaign'] = 'MyTestCampaign'        
+        try:
+            r = self.jsonSender.put('request/' + schema['RequestName'], schema)                             
+        except Exception, ex:
+            print "Exception during set up, investigate exception instance attributes:"
+            print dir(ex)
+            return
         self.requestName = r[0]['RequestName']
+    
     
     def tearDown(self):
         self.config.deleteWorkloadCache()
         RESTBaseUnitTest.tearDown(self)
         self.testInit.tearDownCouch()
+
 
     @attr("integration")
     def testA_RequestManagerService(self):
@@ -95,13 +108,8 @@ class RequestManagerTest(RESTBaseUnitTest):
                         percent_complete = 100, percent_success = 90)
         
         self.reqService.reportRequestStatus(requestName, "running")
-        return
 
         
         
 if __name__ == '__main__':
-
     unittest.main()
-
-   
-    

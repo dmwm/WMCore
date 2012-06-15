@@ -58,6 +58,8 @@ class PromptSkimPoller(BaseWorkerThread):
         self.runConfigCache = None
         self.handleWorkflowInjection = not getattr(self.config.JobArchiver,
                                                    'handleInjected', True)
+        self.cleanupTimeout = int(getattr(self.config.PromptSkimScheduler, 'keepWorkflowsFor',
+                                          30))
 
         # Scram arch and path to cmssw needed to generate workflows.
         self.scramArch = self.config.PromptSkimScheduler.scramArch
@@ -100,6 +102,13 @@ class PromptSkimPoller(BaseWorkerThread):
         """
         self.pollForTransferredBlocks()
         self.markInjected()
+        try:
+            self.cleanUpInbox()
+        except Exception, ex:
+            logging.error('Could not cleanup inbox this cycle, will try next one')
+            logging.error('Error %s' % str(ex))
+            logging.error("Traceback: %s" % traceback.format_exc())
+
         return
 
     def getRunConfig(self, runNumber):
@@ -327,6 +336,27 @@ class PromptSkimPoller(BaseWorkerThread):
 
         self.t0astDBConn.commit()
         return
+
+    def cleanUpInbox(self):
+        """
+        _cleanUpInbox_
+
+        Go through the workflows in the local workqueue inbox and delete
+        those which are done and that have been there for more than a defined
+        timeout in days
+        """
+        doneItems = self.workQueue.statusInbox(status = 'Done')
+        workflowsToClean = []
+        for element in doneItems:
+            lastUpdateTime = float(element.updatetime)
+            if not lastUpdateTime:
+                lastUpdateTime = float(element.timestamp)
+            currentTime = time.time()
+            if (currentTime - lastUpdateTime) < 86400*self.cleanupTimeout:
+                continue
+            workflowsToClean.append(element['RequestName'])
+        self.workQueue.deleteWorkflows(*workflowsToClean)
+
 
     def markInjected(self):
         """

@@ -28,6 +28,22 @@ WMStats.Requests = function () {
         "rejected": 18
     }
     
+    function _combineObj(baseObj, additionObj, combineRule) {
+        var rule = combineRule || function(a, b) {return a}
+        for (var field in additionObj) {
+            if (!baseObj[field]) {
+                baseObj[field] = additionObj[field];
+            } else {
+                if (field == 'sites' || field == 'status') {
+                    _combineObj(baseObj[field], additionObj[field], function(a, b){return a+b})
+                } else {
+                    
+                }
+                
+            }
+        } 
+    }
+    
     function updateRequest(doc) {
         var request = getRequestByName(doc.workflow);
         if (!request) {
@@ -36,6 +52,7 @@ WMStats.Requests = function () {
             _dataByWorkflow[doc.workflow] = request;
         } 
         for (var field in doc) {
+            //TODO: need to update field instead of replacing
             request[field] = doc[field];
         }
     };

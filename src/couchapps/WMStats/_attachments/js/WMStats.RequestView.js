@@ -128,6 +128,25 @@ WMStats._RequestViewBase.keysFromIDs = function(data) {
         return keys;      
     }
 
+WMStats._RequestViewBase.requestAgentUrlKeys = function(requestList, requestAgentData) {
+        var keys = {};
+        var requestAgentUrlList = []
+        for (var i in data.rows){
+            var request = data.rows[i].key[0];
+            if (!keys[request]) {
+                keys[request] = [];
+            }
+            keys[resuest].push(data.rows[i].key[1]);
+        }
+        
+        for (var j; j < requestList.length; j++) {
+            for (var k in keys[requestList[j]]) {
+                reqeustAgentUrlList.push([requestList[j], keys[requestList[j]][k]]);
+            }
+        }
+        return reqeustAgentUrlList;
+    }
+
 WMStats._RequestViewBase.getOrDefault= function (baseObj, objList, val) {
     
     if (baseObj[objList[0]]) { 
@@ -190,21 +209,30 @@ WMStats._RequestViewBase.prototype = {
                                                          objPtr.filterConfig);
               })
     },
-    
-    _getLatestRequestIDsAndCreateTable: function (overviewData, objPtr) {
-        /*
-         * get list of request ids first from the couchDB then 
-         * get the details of the requests.
-         */
-        var options = {"keys": WMStats._RequestViewBase.keysFromIDs(overviewData), 
+
+    _getLatestRequestAgentUrlAndCreateTable: function (overviewData, keys, objPtr) {
+        var options = {"keys": keys, 
                        "reduce": true, "group": true, "descending": true};
         WMStats.Couch.view('latestRequest', options,
               function(agentIDs) {
                   objPtr._getRequestDetailsAndCreateTable(agentIDs, overviewData, objPtr)
               })
     },
-    
-    
+        
+    _getLatestRequestIDsAndCreateTable: function (overviewData, objPtr) {
+        /*
+         * get list of request ids first from the couchDB then 
+         * get the details of the requests.
+         */
+        var options = {"reduce": true, "group": true, "descending": true};
+        var requestList =  WMStats._RequestViewBase.keysFromIDs(overviewData);
+        WMStats.Couch.view('latestRequest', options,
+              function(requestAgentUrlData) {
+                  var keys = WMStats._RequestViewBase.requestAgentUrlKeys(requestList, requestAgentUrlData)
+                  objPtr._getLatestRequestAgentUrlAndCreateTable(overviewData, keys, objPtr)
+                })
+    },
+
     createTable: function (selector, viewName, options) {
         if (!viewName) {viewName = this._initialView;}
         if (!options) {options = this._options;}

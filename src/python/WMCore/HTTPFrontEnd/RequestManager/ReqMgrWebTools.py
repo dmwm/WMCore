@@ -287,7 +287,6 @@ def changeStatus(requestName, status):
     if not status in RequestStatus.NextStatus[oldStatus]:
         raise RuntimeError, "Cannot change status from %s to %s.  Allowed values are %s" % (
            oldStatus, status,  RequestStatus.NextStatus[oldStatus])
-    ChangeState.changeRequestStatus(requestName, status)
 
     if status == 'aborted':
         # delete from the workqueue

@@ -290,9 +290,6 @@ def changeStatus(requestName, status, wmstatUrl):
     if not status in RequestStatus.NextStatus[oldStatus]:
         raise RuntimeError, "Cannot change status from %s to %s.  Allowed values are %s" % (
            oldStatus, status,  RequestStatus.NextStatus[oldStatus])
-
-    ChangeState.changeRequestStatus(requestName, status, wmstatUrl = wmstatUrl)
-
     if status == 'aborted':
         # delete from the workqueue
         if not privileged() and not ownsRequest(request):

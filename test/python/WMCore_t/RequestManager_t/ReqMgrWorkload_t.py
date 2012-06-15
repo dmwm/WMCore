@@ -271,7 +271,6 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Missing required field RequestorDN in workload validation" in ex.result)
             pass
         self.assertTrue(raises)
 
@@ -418,7 +417,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
 
         schema['DbsUrl']            = 'http://fake.dbs.url/dbs'
         schema['AcquisitionEra']    = 'era'
-        schema['ProcessingVersion'] = 'v1'
+        schema['ProcessingVersion'] = 1
         result = self.jsonSender.put('request/testRequest', schema)
         requestName = result[0]['RequestName']
 
@@ -453,7 +452,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
             "Requestor": "sfoulkes@fnal.gov",
             "CMSSWVersion": "CMSSW_3_5_8",
             "ScramArch": "slc5_ia32_gcc434",
-            "ProcessingVersion": "v1",
+            "ProcessingVersion": 1,
             "GlobalTag": "GR10_P_v4::All",
             "CouchURL": os.environ["COUCHURL"],
             "CouchDBName": self.couchDBName,
@@ -606,7 +605,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                                         typename = "MonteCarlo")
 
         # Set some versions
-        schema['ProcessingVersion'] = 'pv2012'
+        schema['ProcessingVersion'] = '2012'
         schema['AcquisitionEra']    = 'ae2012'
         schema['FirstEvent'] = 1
         schema['FirstLumi'] = 1

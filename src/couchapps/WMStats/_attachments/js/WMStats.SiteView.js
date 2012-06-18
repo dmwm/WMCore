@@ -5,7 +5,7 @@ WMStats.SiteView = (function() {
     var _data = null;
     var _containerDiv = null;
     var _viewName = 'latestAgentSite';
-    var _options = {"reduce": true, "group_level": 2, "descending": true};
+    var _options = {"reduce": true, "group_level": 2};
     
     var tableConfig = {
         "aoColumns": [
@@ -74,7 +74,7 @@ WMStats.SiteView = (function() {
          */
         var keys = [];
         for (var i in data.rows){
-            keys.push([data.rows[i].value, data.rows[i].key[0], 
+            keys.push([data.rows[i].value.max, data.rows[i].key[0], 
                        data.rows[i].key[1]]);
         }
         return keys;      

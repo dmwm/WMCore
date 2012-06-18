@@ -128,7 +128,6 @@ WMStats._RequestViewBase.keysFromIDs = function(data) {
         return keys;      
     }
 
-<<<<<<< HEAD
 WMStats._RequestViewBase.requestAgentUrlKeys = function(requestList, requestAgentData) {
         var keys = {};
         var requestAgentUrlList = []
@@ -149,9 +148,6 @@ WMStats._RequestViewBase.requestAgentUrlKeys = function(requestList, requestAgen
     }
 
 WMStats._RequestViewBase.getOrDefault= function (baseObj, objList, val) {
-=======
-WMStats._RequestViewBase.getOrDefault = function (baseObj, objList, val) {
->>>>>>> monitoring
     
     if (baseObj[objList[0]]) { 
         if (objList.length == 1) {

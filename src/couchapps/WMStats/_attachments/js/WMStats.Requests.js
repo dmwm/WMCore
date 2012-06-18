@@ -5,6 +5,7 @@ WMStats.Requests = function () {
      */
     // request data by workflow name
     var _dataByWorkflow = {};
+    var _dataByWorkflowAndAgent = {}
     // number of requests in the data
     var length = 0;
     var statusOrder = {
@@ -28,18 +29,16 @@ WMStats.Requests = function () {
         "rejected": 18
     }
     
-    function _combineObj(baseObj, additionObj, combineRule) {
-        var rule = combineRule || function(a, b) {return a}
-        for (var field in additionObj) {
+    function _addJobs(baseObj, additionObj) {
+       for (var field in additionObj) {
             if (!baseObj[field]) {
                 baseObj[field] = additionObj[field];
             } else {
-                if (field == 'sites' || field == 'status') {
-                    _combineObj(baseObj[field], additionObj[field], function(a, b){return a+b})
-                } else {
-                    
+                if (typeof(baseObj[field]) == "object"){
+                    _addJobs(baseObj[field], additionObj[field]);
+                } else { // should be number
+                    baseObj[field] += additionObj[field];
                 }
-                
             }
         } 
     }
@@ -50,10 +49,18 @@ WMStats.Requests = function () {
             request = {}; 
             length++;
             _dataByWorkflow[doc.workflow] = request;
-        } 
+        }
+        var requestWithAgent = getRequestByNameAndAgent(doc.workflow, doc.agent_url);
+         
         for (var field in doc) {
-            //TODO: need to update field instead of replacing
-            request[field] = doc[field];
+            //handles when request is splited in more than one agents
+            if (request[field]  && (field == 'sites' || field == 'status')){
+                _addJobs(request[field], doc[field])
+            } else {
+                request[field] = doc[field];
+            }
+            //for request, agenturl structure
+            requestWithAgent[field] = doc[field];
         }
     };
     
@@ -65,6 +72,21 @@ WMStats.Requests = function () {
     
     function getRequestByName(workflow) {
         return _dataByWorkflow[workflow];
+    };
+    
+    function getRequestByNameAndAgent(workflow, agentUrl) {
+        if (!_dataByWorkflowAgent[workflow]) {
+                _dataByWorkflowAgent[workflow] = {}
+        }
+        
+        if (!agentUrl){
+            return _dataByWorkflowAgent[workflow];
+        } else {
+            if (!_dataByWorkflowAgent[workflow][agentUrl]){
+                _dataByWorkflowAgent[workflow][agentUrl] = {};
+            }
+            return _dataByWorkflowAgent[workflow][agentUrl];
+        }
     };
     
     function getDataByWorkflow() {

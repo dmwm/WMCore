@@ -128,6 +128,7 @@ WMStats._RequestViewBase.keysFromIDs = function(data) {
         return keys;      
     }
 
+<<<<<<< HEAD
 WMStats._RequestViewBase.requestAgentUrlKeys = function(requestList, requestAgentData) {
         var keys = {};
         var requestAgentUrlList = []
@@ -148,6 +149,9 @@ WMStats._RequestViewBase.requestAgentUrlKeys = function(requestList, requestAgen
     }
 
 WMStats._RequestViewBase.getOrDefault= function (baseObj, objList, val) {
+=======
+WMStats._RequestViewBase.getOrDefault = function (baseObj, objList, val) {
+>>>>>>> monitoring
     
     if (baseObj[objList[0]]) { 
         if (objList.length == 1) {
@@ -173,7 +177,7 @@ WMStats._RequestViewBase.formatReqDetailUrl = function (request) {
 
 WMStats._RequestViewBase.formatWorkloadSummarylUrl = function (request, status) {
     if (status == "completed" || status == "announced" ||
-        status == "closed-out" || status == "deleted") {
+        status == "closed-out" || status == "archived") {
         return '<a href="' + WMStats.Globals.WORKLOAD_SUMMARY_URL_PREFIX + 
                 encodeURIComponent(request) + '" target="_blank">' + status + '</a>';
     } else {

@@ -126,6 +126,8 @@ class PromptSkimWorkloadFactory(DataProcessingWorkloadFactory):
         try:
             configCache = ConfigCache(arguments["CouchURL"], arguments["CouchDBName"])
             arguments["ProcConfigCacheID"] = configCache.getIDFromLabel(workloadName)
+            if not arguments["ProcConfigCacheID"]:
+                raise Exception
         except Exception, ex:
             logging.error("There was an exception loading the config out of the")
             logging.error("ConfigCache.  Check the scramOutput.log file in the")

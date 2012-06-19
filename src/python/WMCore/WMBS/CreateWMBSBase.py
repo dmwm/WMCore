@@ -140,9 +140,9 @@ class CreateWMBSBase(DBCreator):
         self.create["07wmbs_workflow"] = \
           """CREATE TABLE wmbs_workflow (
              id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
-             spec         VARCHAR(500) NOT NULL,
+             spec         VARCHAR(550) NOT NULL,
              name         VARCHAR(255) NOT NULL,
-             task         VARCHAR(500) NOT NULL,
+             task         VARCHAR(550) NOT NULL,
              type         VARCHAR(255),
              owner        INTEGER      NOT NULL,
              injected     INT(1)       DEFAULT 0,

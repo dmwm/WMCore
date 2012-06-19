@@ -707,7 +707,7 @@ class ReqMgrTest(RESTBaseUnitTest):
                                         CMSSWVersion = CMSSWVersion)
 
         # Set some versions
-        schema['ProcessingVersion'] = 'pv2012'
+        schema['ProcessingVersion'] = '2012'
         schema['AcquisitionEra']    = 'ae2012'
         schema["PrimaryDataset"]    = "ReallyFake"
         schema["RequestNumEvents"]  = 100

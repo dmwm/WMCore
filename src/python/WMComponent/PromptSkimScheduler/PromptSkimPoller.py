@@ -47,8 +47,6 @@ class PromptSkimPoller(BaseWorkerThread):
         # Workload related parameters
         self.promptSkimFactory = PromptSkimWorkloadFactory()
         self.tier1PromptRecoFactory = Tier1PromptRecoWorkloadFactory()
-        self.promptSkimWorkloads = {}
-        self.promptRecoWorkloads = {}
         self.workloadCache = self.config.PromptSkimScheduler.workloadCache
 
         if not os.path.exists(self.workloadCache):
@@ -60,6 +58,8 @@ class PromptSkimPoller(BaseWorkerThread):
         self.runConfigCache = None
         self.handleWorkflowInjection = not getattr(self.config.JobArchiver,
                                                    'handleInjected', True)
+        self.cleanupTimeout = int(getattr(self.config.PromptSkimScheduler, 'keepWorkflowsFor',
+                                          30))
 
         # Scram arch and path to cmssw needed to generate workflows.
         self.scramArch = self.config.PromptSkimScheduler.scramArch
@@ -102,6 +102,13 @@ class PromptSkimPoller(BaseWorkerThread):
         """
         self.pollForTransferredBlocks()
         self.markInjected()
+        try:
+            self.cleanUpInbox()
+        except Exception, ex:
+            logging.error('Could not cleanup inbox this cycle, will try next one')
+            logging.error('Error %s' % str(ex))
+            logging.error("Traceback: %s" % traceback.format_exc())
+
         return
 
     def getRunConfig(self, runNumber):
@@ -127,17 +134,7 @@ class PromptSkimPoller(BaseWorkerThread):
         """
         (datasetPath, guid) = blockInfo["BLOCK_NAME"].split("#", 1)
         (primary, processed, tier) = datasetPath[1:].split("/", 3)
-        workloadName = "Run%s-%s-%s-%s" % (blockInfo["RUN_ID"], primary, processed, "Tier1PromptReco")
-
-        if self.promptRecoWorkloads.has_key(blockInfo["RUN_ID"]):
-            if self.promptRecoWorkloads[blockInfo["RUN_ID"]].has_key(primary):
-                workload = self.promptRecoWorkloads[blockInfo["RUN_ID"]][primary]
-                workload.setBlockWhitelist(blockInfo["BLOCK_NAME"])
-                specPath = os.path.join(self.workloadCache, workloadName, "%s.pkl" % guid)
-                workload.setSpecUrl(specPath)
-                workload.save(specPath)
-                self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)
-                return
+        workloadName = "Run%s-%s-%s-%s-%s" % (blockInfo["RUN_ID"], primary, processed, "Tier1PromptReco", guid)
 
         writeTiers = []
         if recoConfig.DoReco:
@@ -197,9 +194,6 @@ class PromptSkimPoller(BaseWorkerThread):
 
         self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)
 
-        if not self.promptRecoWorkloads.has_key(blockInfo["RUN_ID"]):
-            self.promptRecoWorkloads[blockInfo["RUN_ID"]] = {}
-        self.promptRecoWorkloads[blockInfo["RUN_ID"]][primary] = workload
         return
 
 
@@ -214,17 +208,7 @@ class PromptSkimPoller(BaseWorkerThread):
         (datasetPath, guid) = blockInfo["BLOCK_NAME"].split("#", 1)
         (primary, processed, tier) = datasetPath[1:].split("/", 3)
         runNumber = int(blockInfo["RUN_ID"])
-        workloadName = "Run%s-%s-%s-%s" % (blockInfo["RUN_ID"], primary, processed, skimConfig.SkimName)
-
-        if self.promptSkimWorkloads.has_key(blockInfo["RUN_ID"]):
-            if self.promptSkimWorkloads[blockInfo["RUN_ID"]].has_key(skimConfig.SkimName):
-                workload = self.promptSkimWorkloads[blockInfo["RUN_ID"]][skimConfig.SkimName]
-                workload.setBlockWhitelist(blockInfo["BLOCK_NAME"])
-                specPath = os.path.join(self.workloadCache, workloadName, "%s.pkl" % guid)
-                workload.setSpecUrl(specPath)
-                workload.save(specPath)
-                self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)
-                return
+        workloadName = "Run%s-%s-%s-%s-%s" % (blockInfo["RUN_ID"], primary, processed, skimConfig.SkimName, guid)
 
         if skimConfig.TwoFileRead:
             includeParents = True
@@ -268,9 +252,6 @@ class PromptSkimPoller(BaseWorkerThread):
 
         self.workQueue.queueWork(specPath, team = "PromptSkimming", request = workloadName)
 
-        if not self.promptSkimWorkloads.has_key(blockInfo["RUN_ID"]):
-            self.promptSkimWorkloads[blockInfo["RUN_ID"]] = {}
-        self.promptSkimWorkloads[blockInfo["RUN_ID"]][skimConfig.SkimName] = workload
         return
 
     def pollForTransferredBlocks(self):
@@ -355,6 +336,27 @@ class PromptSkimPoller(BaseWorkerThread):
 
         self.t0astDBConn.commit()
         return
+
+    def cleanUpInbox(self):
+        """
+        _cleanUpInbox_
+
+        Go through the workflows in the local workqueue inbox and delete
+        those which are done and that have been there for more than a defined
+        timeout in days
+        """
+        doneItems = self.workQueue.statusInbox(status = 'Done')
+        workflowsToClean = []
+        for element in doneItems:
+            lastUpdateTime = float(element.updatetime)
+            if not lastUpdateTime:
+                lastUpdateTime = float(element.timestamp)
+            currentTime = time.time()
+            if (currentTime - lastUpdateTime) < 86400*self.cleanupTimeout:
+                continue
+            workflowsToClean.append(element['RequestName'])
+        self.workQueue.deleteWorkflows(*workflowsToClean)
+
 
     def markInjected(self):
         """

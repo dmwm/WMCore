@@ -131,20 +131,20 @@ WMStats._RequestViewBase.keysFromIDs = function(data) {
 WMStats._RequestViewBase.requestAgentUrlKeys = function(requestList, requestAgentData) {
         var keys = {};
         var requestAgentUrlList = []
-        for (var i in data.rows){
-            var request = data.rows[i].key[0];
+        for (var i in requestAgentData.rows){
+            var request = requestAgentData.rows[i].key[0];
             if (!keys[request]) {
                 keys[request] = [];
             }
-            keys[resuest].push(data.rows[i].key[1]);
+            keys[request].push(requestAgentData.rows[i].key[1]);
         }
         
         for (var j; j < requestList.length; j++) {
             for (var k in keys[requestList[j]]) {
-                reqeustAgentUrlList.push([requestList[j], keys[requestList[j]][k]]);
+                requestAgentUrlList.push([requestList[j], keys[requestList[j]][k]]);
             }
         }
-        return reqeustAgentUrlList;
+        return requestAgentUrlList;
     }
 
 WMStats._RequestViewBase.getOrDefault= function (baseObj, objList, val) {

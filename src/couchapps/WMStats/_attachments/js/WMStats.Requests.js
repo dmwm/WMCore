@@ -5,7 +5,7 @@ WMStats.Requests = function () {
      */
     // request data by workflow name
     var _dataByWorkflow = {};
-    var _dataByWorkflowAndAgent = {}
+    var _dataByWorkflowAgent = {}
     // number of requests in the data
     var length = 0;
     var statusOrder = {

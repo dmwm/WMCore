@@ -1,10 +1,16 @@
 WMStats.namespace("Table")
 
 WMStats.Table = function(config) {
-    var _tableConfig = {"bProcessing": true,
-                        "sDom": 'C<"clear">lfrtip',
-                        "aaSorting": []
-                       };
+    var _tableConfig = {
+        //"sPaginationType": "full_numbers",
+        "sScrollX": "100%",
+        //"bScrollCollapse": true,
+        "bStateSave": true,
+        "bProcessing": true,
+        "iDisplayLength": 10,
+        "sDom": 'C<"clear">lfrtip',
+        "aaSorting": []
+        };
     
     function _updateConfig(config) {
         for (var prop in config) {
@@ -32,7 +38,7 @@ WMStats.Table = function(config) {
                 oTable.fnAdjustColumnSizing();
         }
         if (filterConfig) {
-            oTable.append(_footer());
+            //oTable.append(_footer());
             return oTable.columnFilter(filterConfig);
         } else {
             return oTable

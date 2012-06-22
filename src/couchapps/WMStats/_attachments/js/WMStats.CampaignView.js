@@ -23,6 +23,7 @@ WMStats.CampaignView = (function() {
     
     // jquery datatable config
     var tableConfig = {
+        "sScrollX": "",
         "aoColumns": [
             { "mDataProp": "campaign", "sTitle": "campaign"},               
             { "mDataProp": "new", "sTitle": "new", "sDefaultContent": 0},

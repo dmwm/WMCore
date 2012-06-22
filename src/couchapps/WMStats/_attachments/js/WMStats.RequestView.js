@@ -105,6 +105,7 @@ WMStats._RequestViewBase = function(initView, options, tableConfig, filterConfig
     }
     
     var defaultFilterConfig = {
+        "sPlaceHolder": "head:before",
         "aoColumns": [
             {type: "text", bRegex: true, bSmart: true},               
             {type: "text", bRegex: true, bSmart: true},

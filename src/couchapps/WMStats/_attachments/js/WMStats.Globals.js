@@ -5,7 +5,7 @@
  */
 WMStats.namespace("Globals")
 
-WMStats.Globals = function(){
+WMStats.Globals = function($){
     var _dbVariants = {'wmstats': 'tier1', 'tier0_wmstats': 'tier0', 'analysis_wmstats': 'analysis' }
     return {
         REQ_DETAIL_URL_PREFIX: "/reqmgr/view/details/",
@@ -20,4 +20,4 @@ WMStats.Globals = function(){
                         $.ajax({async: false, url: url, dataType: 'script', success: success})
                     }
     }
-}()
+}(jQuery)

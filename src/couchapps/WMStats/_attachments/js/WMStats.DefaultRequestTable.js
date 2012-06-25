@@ -1,42 +1,16 @@
-WMStats.namespace("RequestTable");
+WMStats.namespace("RequestTableDefaultConfig");
+WMStats.namespace("DefaultRequestTable");
 
-WMStats.RequestTable = (function() {
+WMStats.RequestTableDefaultConfig = function(requestData) {
     
-    var _initialView = 'requestByCampaignAndDate';
-    var _options = {'include_docs': true};
+    var formatReqDetailUrl = WMStats.Utils.formatReqDetailUrl;
+    var formatWorkloadSummarylUrl = WMStats.Utils.formatWorkloadSummarylUrl;
+    var _get = WMStats.Utils.get;
+    var _queuedTotal = requestData.queuedTotal;
+    var _failureTotal = requestData.failureTotal;
     
-    function _getOrDefault(baseObj, objList, val) {
-        
-        if (baseObj[objList[0]]) { 
-            if (objList.length == 1) {
-                return baseObj[objList[0]];
-            } else {
-                return _getOrDefault(baseObj[objList[0]], objList.slice(1), val);
-            }
-        } else {
-            return val;
-        } 
-    }
     
-    function _get(baseObj, objStr, val) {
-        objList = objStr.split('.');
-        return _getOrDefault(baseObj, objList, val); 
-    }
-    
-    function formatReqDetailUrl(request) {
-        return '<a href="' + WMStats.Globals.REQ_DETAIL_URL_PREFIX + encodeURIComponent(request) + '" target="_blank">' + request + '</a>';
-    }
-    
-    function formatWorkloadSummarylUrl(request, status) {
-        if (status == "completed" || status == "announced" ||
-            status == "closed-out" || status == "deleted") {
-            return '<a href="' + WMStats.Globals.WORKLOAD_SUMMARY_URL_PREFIX + encodeURIComponent(request) + '" target="_blank">' + status + '</a>';
-        } else {
-            return status;
-        }
-    }
-    
-    var _defaultTableConfig = {
+    var defaultTableConfig = {
         "aoColumns": [
             { "mDataProp": "workflow", "sTitle": "workflow",
               "fnRender": function ( o, val ) {
@@ -72,8 +46,7 @@ WMStats.RequestTable = (function() {
             { "sDefaultContent": 0,
               "sTitle": "queued", 
               "fnRender": function ( o, val ) {
-                            return (_get(o.aData, "status.queued.first", 0) + 
-                                    _get(o.aData, "status.queued.retry", 0));
+                            return (_queuedTotal(o.aData.workflow));
                           }
             },
             { "sDefaultContent": 0,
@@ -91,9 +64,7 @@ WMStats.RequestTable = (function() {
             { "sDefaultContent": 0,
               "sTitle": "failure",
               "fnRender": function ( o, val ) {
-                            return (_get(o.aData, "status.failure.create", 0) + 
-                                    _get(o.aData, "status.failure.submit", 0) + 
-                                    _get(o.aData, "status.failure.exception", 0));
+                            return (_failureTotal(o.aData.workflow));
                           }
             },
             
@@ -123,8 +94,8 @@ WMStats.RequestTable = (function() {
             { "sDefaultContent": 0,
               "sTitle": "queue injection",  
               "fnRender": function ( o, val ) {
-                              return (_get(o.aData, "status.inWMBS",  0) / 
-                                      _get(o.aData, 'total_jobs', 1) * 100 + '%');
+                              return ((_get(o.aData, "status.inWMBS",  0) / 
+                                      _get(o.aData, 'total_jobs', 1) * 100) + '%');
                         }
             }
             
@@ -132,9 +103,10 @@ WMStats.RequestTable = (function() {
         ]
     }
     
-    var _defaultFilterConfig = {
+    var defaultFilterConfig = {
+        "sPlaceHolder": "head:before",
         "aoColumns": [
-            {type: "text", bRegex: true, bSmart: true},
+            {type: "text", bRegex: true, bSmart: true},               
             {type: "text", bRegex: true, bSmart: true},
             {type: "text", bRegex: true, bSmart: true},
             {type: "text", bRegex: true, bSmart: true},
@@ -142,45 +114,20 @@ WMStats.RequestTable = (function() {
             {type: "text", bRegex: true, bSmart: true}
         ]
     }
-
-    function create(selector, data) {
-         var tableConfig = {};
-         var filterConfig = {};
-         if (WMStats.Globals.Variant == 'tier1') {
-             tableConfig = _defaultTableConfig;
-             filterConfig = _defaultFilterConfig;
-         } else if (WMStats.Globals.Variant == 'tier0') {
-             tableConfig = _defaultTableConfig;
-             filterConfig = _defaultFilterConfig;
-         } else if (WMStats.Globals.Variant == 'tier0') {
-             tableConfig = _defaultTableConfig;
-             filterConfig = _defaultFilterConfig;
-         }
-         tableConfig.aaData = data;
-         return WMStats.Table(tableConfig).create(selector, filterConfig)
+    
+    defaultTableConfig.aaData = requestData.getList();
+    
+    return {
+        tableConfig : defaultTableConfig,
+        filterConfig: defaultFilterConfig,
     }
-    
-    var tier1Config = {"initView": 'requestByCampaignAndDate',
-                       "initOption": {'include_docs': true},
-                       "create": create
-                      }
+};
 
-    var tier0Config = {"initView": 'requestByRunNumber',
-                       "initOption": {'include_docs': true},
-                       "create": create
-                      }
 
-    var analysisConfig = {"initView": 'requestByUser',
-                       "initOption": {'include_docs': true},
-                       "create": create
-                       }
-                      
-    
-    
-    if (WMStats.Globals.Variant == 'tier1') return tier1Config;
-    if (WMStats.Globals.Variant == 'tier0') return tier0Config;
-    if (WMStats.Globals.Variant == 'analysis') return analysisConfig;
-    //tier1Config is defualt config
-    return tier1Config;
-})();
-    
+WMStats.DefaultRequestTable = function (requestData, containerDiv) {
+        var config = WMStats.RequestTableDefaultConfig(requestData);
+        config.tableConfig.aaData = requestData.getList();
+        var selector = containerDiv + " table";
+        return WMStats.Table(config.tableConfig).create(selector, 
+                                                 config.filterConfig);
+}

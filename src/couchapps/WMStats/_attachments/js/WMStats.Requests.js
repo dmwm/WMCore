@@ -6,6 +6,7 @@ WMStats.Requests = function () {
     // request data by workflow name
     var _dataByWorkflow = {};
     var _dataByWorkflowAgent = {}
+    var _get = WMStats.Utils.get;
     // number of requests in the data
     var length = 0;
     var statusOrder = {
@@ -74,6 +75,32 @@ WMStats.Requests = function () {
         return _dataByWorkflow[workflow];
     };
     
+    function filterRequests(filter) {
+        var filteredRequest = {}
+        for (var workflowName in _dataByWorkflow) {
+            if (andFilter(_dataByWorkflow[workflowName], filter)){
+                filteredRequest[workflowName] =  _dataByWorkflow[workflowName];
+            }
+        }
+        return filteredRequest;
+    }
+    
+    function andFilter(base, filter) {
+        var includeFlag = true;
+        for (var property in filter) {
+            if (base[property] && contains(base[property], filter[property])) {
+                continue;
+            } else {
+                includeFlag = false;
+                break;
+            }
+        }
+        return includeFlag;
+    }
+    
+    function contains(a, b) {
+        return (a.indexOf(b) !== -1);
+    }
     function getRequestByNameAndAgent(workflow, agentUrl) {
         if (!_dataByWorkflowAgent[workflow]) {
                 _dataByWorkflowAgent[workflow] = {}
@@ -110,11 +137,44 @@ WMStats.Requests = function () {
         return 0;
     }
     
+    function getWMBSJobsTotal(request) {
+        var aData = _dataByWorkflow[request];
+        return (_get(aData, "status.success", 0) + 
+                _get(aData, "status.cooloff", 0) + 
+                _get(aData, "status.canceled", 0) +
+                _failureTotal(aData) +
+                _gueuedTotal(aData) +
+                _submittedTotal(aData));
+    }
+    
+    function failureTotal(request) {
+        var aData = _dataByWorkflow[request];
+        return (_get(aData, "status.failure.create", 0) + 
+                _get(aData, "status.failure.submit", 0) + 
+                _get(aData, "status.failure.exception", 0));
+    };
+    
+    function queuedTotal(request) {
+        var aData = _dataByWorkflow[request];
+        return (_get(aData, "status.queued.first", 0) + 
+                _get(aData, "status.queued.retry", 0));
+    };
+    
+    function submittedTotal(request) {
+        var aData = _dataByWorkflow[request];
+        return (_get(aData, "status.submit.first", 0) + 
+                _get(aData, "status.submit.retry", 0));
+    };
+
     return {'getDataByWorkflow': getDataByWorkflow,
             'updateBulkRequests': updateBulkRequests,
             'updateRequest': updateRequest,
             'getRequestByName': getRequestByName,
             'getList': getList,
-            'length': length
+            'length': length,
+            'getWMBSJobsTotal': getWMBSJobsTotal,
+            'failureTotal': failureTotal,
+            'queuedTotal': queuedTotal,
+            'submittedTotal': submittedTotal
             }
 }

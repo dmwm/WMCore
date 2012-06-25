@@ -5,7 +5,7 @@ WMStats.RequestTableDefaultConfig = function(requestData) {
     
     var formatReqDetailUrl = WMStats.Utils.formatReqDetailUrl;
     var formatWorkloadSummarylUrl = WMStats.Utils.formatWorkloadSummarylUrl;
-    var _get = WMStats.Utils.get;
+    var _get = requestData.getDataByWorkflow;
     var _queuedTotal = requestData.queuedTotal;
     var _failureTotal = requestData.failureTotal;
     
@@ -52,13 +52,13 @@ WMStats.RequestTableDefaultConfig = function(requestData) {
             { "sDefaultContent": 0,
               "sTitle": "pending", 
               "fnRender": function ( o, val ) {
-                            return _get(o.aData, "status.submitted.pending", 0);
+                            return _get(o.aData.workflow, "status.submitted.pending", 0);
                           }
             },
             { "sDefaultContent": 0,
               "sTitle": "running", 
               "fnRender": function ( o, val ) {
-                            return _get(o.aData, "status.submitted.running", 0);
+                            return _get(o.aData.workflow, "status.submitted.running", 0);
                           }
             },
             { "sDefaultContent": 0,
@@ -71,31 +71,31 @@ WMStats.RequestTableDefaultConfig = function(requestData) {
             { "sDefaultContent": 0,
               "sTitle": "canceled", 
               "fnRender": function ( o, val ) {
-                            return _get(o.aData, "status.canceled", 0);
+                            return _get(o.aData.workflow, "status.canceled", 0);
                           }},
             { "sDefaultContent": 0,
               "sTitle": "success",
               "fnRender": function ( o, val ) {
-                            return _get(o.aData, "status.success", 0);
+                            return _get(o.aData.workflow, "status.success", 0);
                           }},
             { "sDefaultContent": 0,
               "sTitle": "cooloff", 
               "fnRender": function ( o, val ) {
-                            return _get(o.aData, "status.cooloff", 0);
+                            return _get(o.aData.workflow, "status.cooloff", 0);
                           }
             },
             { "sDefaultContent": 0,
               "sTitle": "prev cooloff",
               "fnRender": function ( o, val ) {
-                            return (_get(o.aData, "status.submitted.retry", 0) + 
-                                    _get(o.aData, "status.queued.retry", 0));
+                            return (_get(o.aData.workflow, "status.submitted.retry", 0) + 
+                                    _get(o.aData.workflow, "status.queued.retry", 0));
                           }
             },
             { "sDefaultContent": 0,
               "sTitle": "queue injection",  
               "fnRender": function ( o, val ) {
-                              return ((_get(o.aData, "status.inWMBS",  0) / 
-                                      _get(o.aData, 'total_jobs', 1) * 100) + '%');
+                              return ((_get(o.aData.workflow, "status.inWMBS",  0) / 
+                                      _get(o.aData.workflow, 'total_jobs', 1) * 100) + '%');
                         }
             }
             

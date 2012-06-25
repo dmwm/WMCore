@@ -30,7 +30,8 @@ class AnalyticsPoller(BaseWorkerThread):
         self.agentInfo = {}
         self.agentInfo['agent_team'] = config.Agent.teamName
         self.agentInfo['agent'] = config.Agent.agentName
-        self.agentInfo['agent_url'] = config.Agent.hostName
+        # temporarly add port for the split test
+        self.agentInfo['agent_url'] = ("%s:%s" % (config.Agent.hostName, config.WMBSService.Webtools.port)) 
         # need to get campaign, user, owner info
         self.agentDocID = "agent+hostname"
 

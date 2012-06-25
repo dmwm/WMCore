@@ -8,7 +8,7 @@ WMStats.Requests = function () {
     var _dataByWorkflowAgent = {}
     var _get = WMStats.Utils.get;
     // number of requests in the data
-    var length = 0;
+    var _length = 0;
     var statusOrder = {
         "new": 1,
         "testing-approved": 2,
@@ -44,21 +44,24 @@ WMStats.Requests = function () {
         } 
     }
     
+    function getLength() {
+        return _length;
+    }
+    
     function updateRequest(doc) {
-        var request = getRequestByName(doc.workflow);
+        var request = getDataByWorkflow(doc.workflow);
         if (!request) {
-            request = {}; 
-            length++;
-            _dataByWorkflow[doc.workflow] = request;
+            _length++;
+            _dataByWorkflow[doc.workflow] = {};
         }
         var requestWithAgent = getRequestByNameAndAgent(doc.workflow, doc.agent_url);
          
         for (var field in doc) {
             //handles when request is splited in more than one agents
-            if (request[field]  && (field == 'sites' || field == 'status')){
-                _addJobs(request[field], doc[field])
+            if (_dataByWorkflow[doc.workflow][field]  && (field == 'sites' || field == 'status')){
+                _addJobs(_dataByWorkflow[doc.workflow][field], doc[field])
             } else {
-                request[field] = doc[field];
+                _dataByWorkflow[doc.workflow][field] = doc[field];
             }
             //for request, agenturl structure
             requestWithAgent[field] = doc[field];
@@ -70,11 +73,7 @@ WMStats.Requests = function () {
             updateRequest(docList[row].doc);
         }
     };
-    
-    function getRequestByName(workflow) {
-        return _dataByWorkflow[workflow];
-    };
-    
+
     function filterRequests(filter) {
         var filteredRequest = {}
         for (var workflowName in _dataByWorkflow) {
@@ -116,9 +115,12 @@ WMStats.Requests = function () {
         }
     };
     
-    function getDataByWorkflow() {
-        return _dataByWorkflow;
-    };
+    function getDataByWorkflow(request, keyString, defaultVal) {
+        "keyString is opject property separte by ."
+        if (!request) return _dataByWorkflow;
+        else if (!keyString) return _dataByWorkflow[request];
+        else return _get(_dataByWorkflow[request], keyString, defaultVal);
+    }
     
     function getList() {
         var list = [];
@@ -142,9 +144,9 @@ WMStats.Requests = function () {
         return (_get(aData, "status.success", 0) + 
                 _get(aData, "status.cooloff", 0) + 
                 _get(aData, "status.canceled", 0) +
-                _failureTotal(aData) +
-                _gueuedTotal(aData) +
-                _submittedTotal(aData));
+                failureTotal(request) +
+                queuedTotal(request) +
+                submittedTotal(request));
     }
     
     function failureTotal(request) {
@@ -169,9 +171,8 @@ WMStats.Requests = function () {
     return {'getDataByWorkflow': getDataByWorkflow,
             'updateBulkRequests': updateBulkRequests,
             'updateRequest': updateRequest,
-            'getRequestByName': getRequestByName,
             'getList': getList,
-            'length': length,
+            'getLength': getLength,
             'getWMBSJobsTotal': getWMBSJobsTotal,
             'failureTotal': failureTotal,
             'queuedTotal': queuedTotal,

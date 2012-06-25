@@ -29,7 +29,7 @@ WMStats._RequestViewBase.requestAgentUrlKeys = function(requestList, requestAgen
             keys[request].push(requestAgentData.rows[i].key[1]);
         }
         
-        for (var j; j < requestList.length; j++) {
+        for (var j=0; j < requestList.length; j++) {
             for (var k in keys[requestList[j]]) {
                 requestAgentUrlList.push([requestList[j], keys[requestList[j]][k]]);
             }

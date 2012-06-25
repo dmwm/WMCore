@@ -12,6 +12,7 @@ WMStats.ActiveRequestConfig = function(requestData) {
     
 
     var tableConfig = {
+        "iDisplayLength": 50,
         "aoColumns": [
             { "mDataProp": "workflow", "sTitle": "workflow",
               "fnRender": function ( o, val ) {

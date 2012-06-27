@@ -1,7 +1,7 @@
 WMStats.namespace("Table")
 
 WMStats.Table = function(config) {
-    var _tableConfig = {
+    var tableConfig = {
         //"sPaginationType": "full_numbers",
         "sScrollX": "100%",
         //"bScrollCollapse": true,
@@ -12,9 +12,9 @@ WMStats.Table = function(config) {
         "aaSorting": []
         };
     
-    function _updateConfig(config) {
+    function updateConfig(config) {
         for (var prop in config) {
-            _tableConfig[prop] = config[prop];
+            tableConfig[prop] = config[prop];
         }
         
     }
@@ -23,19 +23,19 @@ WMStats.Table = function(config) {
     function _footer() {
         var footer = '<tfoot><tr>';
       
-        for (var i in _tableConfig.aoColumns) {
-            if (_tableConfig.aoColumns[i].bVisible != false){
-                footer += '<th>' + _tableConfig.aoColumns[i]["sTitle"] + '</th>';
+        for (var i in tableConfig.aoColumns) {
+            if (tableConfig.aoColumns[i].bVisible != false){
+                footer += '<th>' + tableConfig.aoColumns[i]["sTitle"] + '</th>';
             }
         }
         footer += '</tr></tfoot>';
         return footer;
     }
     
-    function _create(selector, filterConfig) {
-        var oTable = $(selector).dataTable(_tableConfig)
+    function create(selector, filterConfig) {
+        var oTable = $(selector).dataTable(tableConfig)
         if ( oTable.length > 0 ) {
-                oTable.fnAdjustColumnSizing();
+            oTable.fnAdjustColumnSizing();
         }
         if (filterConfig) {
             //oTable.append(_footer());
@@ -45,10 +45,10 @@ WMStats.Table = function(config) {
         }
     }
     
-    if (config) {_updateConfig(config)}
+    if (config) {updateConfig(config)}
     
-    return {'config': _tableConfig,
-            'updateConfig': _updateConfig,
-            'create': _create
+    return {'config': tableConfig,
+            'updateConfig': updateConfig,
+            'create': create
             }
 }

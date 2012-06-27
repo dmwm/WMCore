@@ -18,16 +18,18 @@ WMStats.EventHandler = function($) {
                                         $(currenElement).addClass('green');
                                     }
     TableEventHandler.reqSummaryDiv = "requestSummary";
+    TableEventHandler.reqDetailDiv = "requestDetail";
     TableEventHandler.jobSummaryDiv = "jobSummary";
     TableEventHandler.jobDetailDiv = "jobDetail";
     
     TableEventHandler.prototype = { 
         constructor: TableEventHandler,
         
-        tableRowClick: function(divName, funcName) {
+        tableRowClick: function(divName, funcName, bind) {
+            var bind = bind ||'click' 
             var currentObj = this;
             var selector = this.containerID + " > div[name='" + divName + "'] table tbody tr"
-            $(selector).live('click', function () {
+            $(selector).live(bind, function () {
                 TableEventHandler.highlightRow(selector, this);
                 currentObj[funcName](this);
             });
@@ -45,6 +47,27 @@ WMStats.EventHandler = function($) {
                                             viewName, options)
         },
     
+        populateRequestTable: function(currentElement){
+            // create the request table
+            var nTds = $('td', currentElement);
+            var campaignName = $(nTds[0]).text();
+            var options = {'startkey':[campaignName], 'endkey':[campaignName, {}], 
+                           'include_docs': true};
+            var viewName = 'requestByCampaignAndDate';
+    
+             // clean up job summary and detail view. 
+            this.overviewAction(viewName, options);
+        },
+        
+        populateRequestDetail: function(currentElement){
+            // create the request table
+            var nTds = $('td', currentElement);
+            var workflowName = $(nTds[0]).text();
+             // clean up job summary and detail view.
+            WMStats.RequestDetailView.createDetailView(this.containerID +  " > div[name='" + TableEventHandler.reqDetailDiv + "']",
+                                                   workflowName)
+        },
+        
         populateRequestTable: function(currentElement){
             // create the request table
             var nTds = $('td', currentElement);
@@ -121,6 +144,10 @@ WMStats.EventHandler = function($) {
        
     var AlertViewHandler = new TableEventHandler("#tab-alert", null);
         AlertViewHandler.addTableEvents();
+        
+    var ActiveViewHandler = new TableEventHandler("#tab-active-request", null);
+        ActiveViewHandler.tableRowClick('requestSummary', "populateRequestDetail", 'mouseover');
+        ActiveViewHandler.addTableEvents();
     // actual event binding codes
     // row mouse over/ mouse out events
     $('tr').live('mouseover', function(event) {

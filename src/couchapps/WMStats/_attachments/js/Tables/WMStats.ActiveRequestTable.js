@@ -12,7 +12,9 @@ WMStats.ActiveRequestConfig = function(requestData) {
     
 
     var tableConfig = {
-        "iDisplayLength": 50,
+        "iDisplayLength": 25,
+        "sScrollX": "",
+        "sDom": 'lfrtip',
         "aoColumns": [
             { "mDataProp": "workflow", "sTitle": "workflow",
               "fnRender": function ( o, val ) {
@@ -47,7 +49,7 @@ WMStats.ActiveRequestConfig = function(requestData) {
             { "sDefaultContent": 0,
               "sTitle": "event progress", 
               "fnRender": function ( o, val ) {
-                            return ((_getData(o.aData.workflow, "output.progress.0.events", 0) /
+                            return ((_getData(o.aData.workflow, "output_progress.0.events", 0) /
                                      _getData(o.aData.workflow, "input_events", 1) * 100) + "%");
                           }
             },
@@ -56,6 +58,12 @@ WMStats.ActiveRequestConfig = function(requestData) {
               "fnRender": function ( o, val ) {
                             return ((_failureTotal(o.aData.workflow) /
                                     (_getData(o.aData.workflow, "status.success", 0) + _failureTotal(o.aData.workflow)) * 100)  + "%");
+                          }
+            },
+            { "sDefaultContent": 0,
+              "sTitle": "cool off ", 
+              "fnRender": function ( o, val ) {
+                            return (_getData(o.aData.workflow, "status.cooloff", 0));
                           }
             },
             /*

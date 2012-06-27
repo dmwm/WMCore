@@ -1,0 +1,28 @@
+.activeRequestContainer {
+    width: 1200px;
+    float: left;
+}
+.requestDetailContainer {
+    width: 400px;
+    padding-top: 100px;
+    padding-left: 50px;
+    float: left;
+}
+.tablePane {
+    position: relative;
+    clear: both;
+}
+
+.jobSummaryContainer {
+    width: 600px;
+    padding-top: 50px;
+    padding-left: 50px;
+    float: left;
+}
+
+.jobDetailContainer {
+    width: 800px;
+    padding-top: 50px;
+    padding-left: 50px;
+    float: left;
+}

@@ -15,6 +15,7 @@ WMStats.JobSummaryView = (function() {
     
      // jquery datatable config
     var tableConfig = {
+        "sDom": 'lfrtip',
         "aoColumns": [
             { "mDataProp": "status", "sTitle": "status"},
             { "mDataProp": "site", "sTitle": "site"},
@@ -23,7 +24,6 @@ WMStats.JobSummaryView = (function() {
             { "mDataProp": "errorMsg", "sTitle": "error mesage", 
                            "sDefaultContent": ""}
          ]
-            
     }
     
     function _formatHtml(jobSummary) {

@@ -74,12 +74,23 @@
     <div class="middle">
         <div id="tabs">
             <ul>
+                <li><a href="#tab-active-request">Active Requests</a></li>
                 <li><a href="#tab-overview">Campaign view</a></li>
                 <li><a href="#tab-site">Site view</a></li>
                 <li><a href="#tab-alert">Alert view</a></li>
                 <li><a href="#tab-agent">Agent view</a></li>
-                <li><a href="#tab-active-request">Active Requests</a></li>
             </ul>
+            <div id="tab-active-request">
+                <div class='search'>
+                    campaign: <input name="campaign" value=""></input>
+                    workflow: <input name="workflow" value=""></input>
+                    type: <input name="request_type" value=""></input>
+                </div>
+                <div class="activeRequestContainer" name="requestSummary"></div>
+                <div class="requestDetailContainer" name="requestDetail"></div>
+                <div class="tablePane jobSummaryContainer" name="jobSummary"></div>
+                <div class="tablePane jobDetailContainer" name="jobDetail"></div>
+            </div>
             <div class="module" id="tab-overview">
                 <div class="tablePane" name="overview"></div>
                 <div class="tablePane" name="requestSummary"></div>
@@ -99,17 +110,6 @@
             </div>
             <div id="tab-agent">
                 <div id="agentDiv"></div>
-            </div>
-            <div id="tab-active-request">
-                <div class='search'>
-                    campaign: <input name="campaign" value=""></input>
-                    workflow: <input name="workflow" value=""></input>
-                    type: <input name="request_type" value=""></input>
-                </div>
-                <div class="activeRequestContainer" name="requestSummary"></div>
-                <div class="requestDetailContainer" name="requestDetail"></div>
-                <div class="tablePane jobSummaryContainer" name="jobSummary"></div>
-                <div class="tablePane jobDetailContainer" name="jobDetail"></div>
             </div>
         </div>
     </div>

@@ -33,7 +33,8 @@ WMStats.Table = function(config) {
     }
     
     function create(selector, filterConfig) {
-        var oTable = $(selector).dataTable(tableConfig)
+        $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display"></table>' );
+        var oTable = $(selector + " table").dataTable(tableConfig)
         if ( oTable.length > 0 ) {
             oTable.fnAdjustColumnSizing();
         }

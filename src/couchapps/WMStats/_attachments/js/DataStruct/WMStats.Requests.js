@@ -1,5 +1,5 @@
 WMStats.namespace("Requests");
-WMStats.Requests = function () {
+WMStats.Requests = function (flag) {
     /*
      * Data structure for holding the request
      */
@@ -9,6 +9,10 @@ WMStats.Requests = function () {
     var _get = WMStats.Utils.get;
     // number of requests in the data
     var _length = 0;
+    var _filter = {};
+    var _filteredLength = 0;
+    var _filteredRequests = flag || WMStats.Requests(true);
+    
     var statusOrder = {
         "new": 1,
         "testing-approved": 2,
@@ -48,6 +52,14 @@ WMStats.Requests = function () {
         return _length;
     }
     
+    function getFilter() {
+        return _filter;
+    }
+    
+    function setFilter(filter) {
+        _filter = filter;
+    }
+    
     function updateRequest(doc) {
         var request = getDataByWorkflow(doc.workflow);
         if (!request) {
@@ -74,20 +86,23 @@ WMStats.Requests = function () {
         }
     };
 
-    function filterRequests(filter) {
-        var filteredRequest = {}
-        for (var workflowName in _dataByWorkflow) {
-            if (andFilter(_dataByWorkflow[workflowName], filter)){
-                filteredRequest[workflowName] =  _dataByWorkflow[workflowName];
+    function filterRequests() {
+        var requestData = _dataByWorkflow;
+        var filteredData = {}
+        filteredLength = 0;
+        for (var workflowName in requestData) {
+            if (andFilter(requestData[workflowName], _filter)){
+                filteredData[workflowName] =  requestData[workflowName];
             }
         }
-        return filteredRequest;
+        _filteredRequests.setDataByWorkflow(filteredData);
+        return _filteredRequests;
     }
     
     function andFilter(base, filter) {
         var includeFlag = true;
         for (var property in filter) {
-            if (base[property] && contains(base[property], filter[property])) {
+            if (base[property] !== undefined && contains(base[property], filter[property])) {
                 continue;
             } else {
                 includeFlag = false;
@@ -98,7 +113,8 @@ WMStats.Requests = function () {
     }
     
     function contains(a, b) {
-        return (a.indexOf(b) !== -1);
+        //TODO change to regular expression
+        return (!b || a.toLowerCase().indexOf(b.toLowerCase()) !== -1);
     }
     function getRequestByNameAndAgent(workflow, agentUrl) {
         if (!_dataByWorkflowAgent[workflow]) {
@@ -120,6 +136,11 @@ WMStats.Requests = function () {
         if (!request) return _dataByWorkflow;
         else if (!keyString) return _dataByWorkflow[request];
         else return _get(_dataByWorkflow[request], keyString, defaultVal);
+    }
+    
+    function setDataByWorkflow(data) {
+        "keyString is opject property separte by ."
+        _dataByWorkflow = data;
     }
     
     function getList() {
@@ -176,6 +197,9 @@ WMStats.Requests = function () {
             'getWMBSJobsTotal': getWMBSJobsTotal,
             'failureTotal': failureTotal,
             'queuedTotal': queuedTotal,
-            'submittedTotal': submittedTotal
+            'submittedTotal': submittedTotal,
+            'filterRequests': filterRequests,
+            'setFilter': setFilter,
+            'setDataByWorkflow': setDataByWorkflow
             }
 }

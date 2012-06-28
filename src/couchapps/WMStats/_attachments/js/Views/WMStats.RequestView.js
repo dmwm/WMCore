@@ -38,6 +38,7 @@ WMStats._RequestViewBase.requestAgentUrlKeys = function(requestList, requestAgen
     }
 
 WMStats._RequestViewBase.prototype = {
+
     setVisualization: function(visFunc) {
         //visFunc take 2 args (requestData, containerDiv)
         // requestData is instance of WMStatsRequests
@@ -95,7 +96,6 @@ WMStats._RequestViewBase.prototype = {
         if (!options) {options = this._options;}
         this._containerDiv = selector;
         var objPtr = this;
-        $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display"></table>' );
         if (viewName == "allDocs") {
             WMStats.Couch.allDocs(options, function (overviewData) {
                 objPtr._getLatestRequestIDsAndCreateTable(overviewData, objPtr)
@@ -105,6 +105,10 @@ WMStats._RequestViewBase.prototype = {
                 objPtr._getLatestRequestIDsAndCreateTable(overviewData, objPtr)
             });
         }
+    },
+    
+    clearData: function () {
+        delete this._data;
     }
 };
 

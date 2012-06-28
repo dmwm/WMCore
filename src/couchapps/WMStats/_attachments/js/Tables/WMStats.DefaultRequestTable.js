@@ -127,7 +127,7 @@ WMStats.RequestTableDefaultConfig = function(requestData) {
 WMStats.DefaultRequestTable = function (requestData, containerDiv) {
         var config = WMStats.RequestTableDefaultConfig(requestData);
         config.tableConfig.aaData = requestData.getList();
-        var selector = containerDiv + " table";
+        var selector = containerDiv;
         return WMStats.Table(config.tableConfig).create(selector, 
                                                  config.filterConfig);
 }

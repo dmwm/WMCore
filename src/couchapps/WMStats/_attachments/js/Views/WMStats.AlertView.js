@@ -29,14 +29,14 @@ WMStats.AlertView = (function() {
     function createAlertTable(data) {
         setAlertData(data.rows);
         tableConfig.aaData = _data;
-        var selector =  _containerDiv + " table";
+        var selector =  _containerDiv;
         return WMStats.Table(tableConfig).create(selector)
     }
     
     function createTable(selector, options){
         if (options) {_options = options;}
         _containerDiv = selector;
-        $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display"></table>' );
+        //$(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display"></table>' );
         WMStats.Couch.view(_viewName, _options, createAlertTable)
     }
     

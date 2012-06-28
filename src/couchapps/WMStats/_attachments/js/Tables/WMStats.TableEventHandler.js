@@ -1,9 +1,7 @@
-WMStats.namespace("EventHandler")
-
 /*
  * Add EventHandler 
  */
-WMStats.EventHandler = function($) {
+(function($) {
     
     // Super class for table event handling
     function TableEventHandler(containerID, populateRequestTable) {
@@ -171,4 +169,4 @@ WMStats.EventHandler = function($) {
             $(this).hide();
     });
 
-}(jQuery)
+})(jQuery)

@@ -102,7 +102,7 @@ WMStats.ActiveRequestConfig = function(requestData) {
 WMStats.ActiveRequestTable = function (requestData, containerDiv) {
         var config = WMStats.ActiveRequestConfig(requestData);
         config.tableConfig.aaData = requestData.getList();
-        var selector = containerDiv + " table";
+        var selector = containerDiv;
         return WMStats.Table(config.tableConfig).create(selector, 
                                                  config.filterConfig);
 }

@@ -37,6 +37,7 @@
     <script src="js/Views/WMStats.ActiveRequestView.js" type='text/javascript'> </script>
     <script src="js/Views/WMStats.RequestDetailView.js" type='text/javascript'> </script>
 
+    <script src="js/WMStats.EventHandler.js" type='text/javascript'> </script>
     <script>
     
     function applyTemplate(){
@@ -100,6 +101,11 @@
                 <div id="agentDiv"></div>
             </div>
             <div id="tab-active-request">
+                <div class='search'>
+                    campaign: <input name="campaign" value=""></input>
+                    workflow: <input name="workflow" value=""></input>
+                    type: <input name="request_type" value=""></input>
+                </div>
                 <div class="activeRequestContainer" name="requestSummary"></div>
                 <div class="requestDetailContainer" name="requestDetail"></div>
                 <div class="tablePane jobSummaryContainer" name="jobSummary"></div>

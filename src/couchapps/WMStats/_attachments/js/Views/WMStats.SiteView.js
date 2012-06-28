@@ -92,15 +92,14 @@ WMStats.SiteView = (function() {
 
         WMStats.Couch.view('timeWithAgentSite', options,
               function(siteData) {
-                  return createSiteTable(_containerDiv + " table", 
-                                         siteData.rows);
+                  return createSiteTable(_containerDiv, siteData.rows);
               },
               'json')
     };
     
     function createTable(selector){
         _containerDiv = selector;
-        $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display"></table>' );
+       // $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display"></table>' );
         WMStats.Couch.view(_viewName, _options, getLatestSiteKeyAndCreateTable)
     }
     

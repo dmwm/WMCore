@@ -135,6 +135,9 @@ def modifyConfiguration(config, **args):
         config.AsyncTransfer.couch_statinstance = args["couch_url"]
         config.AsyncTransfer.couch_user_monitoring_instance = args["couch_url"]
 
+    if hasattr(config,"DBSPublisher"):
+        config.DBSPublisher.couch_instance = args["couch_url"]
+
     if hasattr(config,"CRABInterface"):
         config.CRABInterface.Webtools.host = args["cs_hostname"]
         config.CRABInterface.Webtools.port = int(args["cs_port"])

@@ -5,12 +5,6 @@ touch Report.pkl
 # should be a bit nicer than before
 echo "WMAgent bootstrap starting..."
 # validate arguments
-echo "Hostname: `hostname`"
-echo "  UserID: `id`"
-echo "HostInfo: `uname -a`"
-echo "    Time: `date -u`"
-echo "Environment is:"
-env
 
 if [ "x" = "x$1" ]
 then
@@ -70,20 +64,20 @@ else
 fi
 
 # Should be ready to unpack and run this
-echo "WMAgent is unpacking the job... (`date -u`)"
+echo "WMAgent is unpacking the job..."
 python2.6 Unpacker.py --sandbox=$SANDBOX --package=JobPackage.pkl --index=$INDEX
 
 cd job
 export WMAGENTJOBDIR=$PWD
 export PYTHONPATH=$PYTHONPATH:$PWD/WMCore.zip:$PWD
-echo "WMAgent is now running the job...(`date -u`)"
+echo "WMAgent is now running the job..."
 python2.6 Startup.py
 jobrc=$?
-echo "WMAgent finished the job, is copying the pickled report (`date -u`)"
+echo "WMAgent finished the job, is copying the pickled report"
 cp WMTaskSpace/Report*.pkl ../
 ls -l WMTaskSpace
 ls -l WMTaskSpace/*
-echo "WMAgent is finished. The job had an exit code of $jobrc (`date -u`)"
+echo "WMAgent is finished. The job had an exit code of $jobrc "
 exit 0
 
 

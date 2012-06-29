@@ -41,7 +41,7 @@
             $(this.containerSelector(TableEventHandler.jobSummaryDiv)).empty();
             $(this.containerSelector(TableEventHandler.jobDetailDiv)).empty();
             
-            WMStats.RequestView.createTable(this.containerSelector(TableEventHandler.reqSummaryDiv), 
+            WMStats.RequestView.draw(this.containerSelector(TableEventHandler.reqSummaryDiv), 
                                             viewName, options)
         },
     

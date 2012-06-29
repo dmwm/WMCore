@@ -1,5 +1,5 @@
 WMStats.namespace("Requests");
-WMStats.Requests = function (flag) {
+WMStats.Requests = function (noFilterFlag) {
     /*
      * Data structure for holding the request
      */
@@ -11,7 +11,7 @@ WMStats.Requests = function (flag) {
     var _length = 0;
     var _filter = {};
     var _filteredLength = 0;
-    var _filteredRequests = flag || WMStats.Requests(true);
+    var _filteredRequests = noFilterFlag || WMStats.Requests(true);
     
     var statusOrder = {
         "new": 1,
@@ -46,6 +46,13 @@ WMStats.Requests = function (flag) {
                 }
             }
         } 
+    }
+    
+    function mapProperty(workflowData, property) {
+        if (property == 'request_status') {
+            return workflowData[property][workflowData[property].length - 1].status;
+        } 
+        return workflowData[property];
     }
     
     function getLength() {
@@ -102,7 +109,7 @@ WMStats.Requests = function (flag) {
     function andFilter(base, filter) {
         var includeFlag = true;
         for (var property in filter) {
-            if (base[property] !== undefined && contains(base[property], filter[property])) {
+            if (mapProperty(base, property) !== undefined && contains(mapProperty(base, property), filter[property])) {
                 continue;
             } else {
                 includeFlag = false;

@@ -91,7 +91,7 @@ WMStats._RequestViewBase.prototype = {
                 })
     },
 
-    createTable: function (selector, viewName, options) {
+    draw: function (selector, viewName, options) {
         if (!viewName) {viewName = this._initialView;}
         if (!options) {options = this._options;}
         this._containerDiv = selector;

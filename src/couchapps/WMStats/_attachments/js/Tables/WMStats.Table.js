@@ -1,6 +1,7 @@
 WMStats.namespace("Table")
 
-WMStats.Table = function(config) {
+WMStats.Table = function(config, tableSetting) {
+    var tableSetting = tableSetting || '<table cellpadding="0" cellspacing="0" border="0" class="display"></table>';
     var tableConfig = {
         //"sPaginationType": "full_numbers",
         "sScrollX": "100%",
@@ -33,7 +34,7 @@ WMStats.Table = function(config) {
     }
     
     function create(selector, filterConfig) {
-        $(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display"></table>' );
+        $(selector).html(tableSetting);
         var oTable = $(selector + " table").dataTable(tableConfig)
         if ( oTable.length > 0 ) {
             oTable.fnAdjustColumnSizing();

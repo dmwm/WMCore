@@ -1,7 +1,7 @@
 // Set the dbname below to the same name you used when pushing the couchapp.
 // This can only be determined during deployment time
-dbname = "__fill_dbname_here__";
-//dbname = "wmstats";
+//dbname = "__fill_dbname_here__";
+dbname = "wmstats";
 
 // Work around different mount points of couchdb
 // so that it can run behind the frontend, with

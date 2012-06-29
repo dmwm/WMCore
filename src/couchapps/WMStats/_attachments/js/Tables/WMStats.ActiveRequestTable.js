@@ -14,7 +14,7 @@ WMStats.ActiveRequestConfig = function(requestData) {
     var tableConfig = {
         "iDisplayLength": 25,
         "sScrollX": "",
-        "sDom": 'lfrtip',
+        "sDom": 'lrtip',
         "aoColumns": [
             { "mDataProp": "workflow", "sTitle": "workflow",
               "fnRender": function ( o, val ) {
@@ -101,8 +101,6 @@ WMStats.ActiveRequestConfig = function(requestData) {
 
 WMStats.ActiveRequestTable = function (requestData, containerDiv) {
         var config = WMStats.ActiveRequestConfig(requestData);
-        config.tableConfig.aaData = requestData.getList();
-        var selector = containerDiv;
-        return WMStats.Table(config.tableConfig).create(selector, 
+        return WMStats.Table(config.tableConfig).create(containerDiv, 
                                                  config.filterConfig);
 }

@@ -1,63 +1,35 @@
 WMStats.namespace("AgentView")
 
-WMStats.AgentView = (function() {
+WMStats.AgentView = (function(visFunc) {
     /*
-     * create campaign table view.
+     * create agent view.
      */
-    // campaign summary data
-    var _data = null;
-    // div id for the view
-    var _containerDiv = null;
-    // default couchdb view name to get the campaign dat
+    // default couchdb view name to get the agent data
     var _viewName = 'agentInfo';
     // default option
     var _options = {};
-    // id for the table.
-    var _tableID = "agentTable";
+
+    var _visFunc = visFunc || null;
+        // campaign summary data
+    var _data = null;
+    // div id for the view
+    var _containerDiv = null;
     
-    // jquery datatable config
-    var tableConfig = {
-        "aoColumns": [
-            { "mDataProp": "agent_url", "sTitle": "agent url",
-              "fnRender": function ( o, val ) {
-                            return decodeURIComponent(o.aData.agent_url);
-                      }
-            },               
-            { "mDataProp": "status", "sTitle": "status"},
-            { "mDataProp": "agent_team", "sTitle": "teams"},
-            { "mDataProp": "down_components", "sTitle": "components down", 
-              "sDefaultContent": ""}
-        ]
+    function setVisualization(visFunc) {
+        //visFunc take 2 args (requestData, containerDiv)
+        // requestData is instance of WMStatsRequests
+        _visFunc = visFunc;
+    };
+    
+    function visualize(data) {
+        return _visFunc(WMStats.Agents.setData(data), _containerDiv);
     }
     
-    function getData() {
-        return _data;
-    }
-    
-    
-    function setAgentData(data) {
-        var rows =[]
-        for (var i in data) {
-            var tableRow = data[i].value;
-            rows.push(tableRow)
-        }
-        _data = rows;
-        return rows
-    }
-    
-    function createAgentTable(data) {
-        setAgentData(data.rows);
-        tableConfig.aaData = _data;
-        var selector =  _containerDiv;
-        return WMStats.Table(tableConfig).create(selector)
-    }
-    
-   function createTable(selector) {
+   function draw(selector) {
         _containerDiv = selector;
-        //$(selector).html( '<table cellpadding="0" cellspacing="0" border="0" class="display" id="'+ _tableID + '"></table>' );
-        WMStats.Couch.view(_viewName, _options, createAgentTable)
+        WMStats.Couch.view(_viewName, _options, visualize)
     }
     
-    return {'getData': getData, 'createTable': createTable};
+    return {'setVisualization': setVisualization, 'draw': draw};
      
-})();
+})(WMStats.AgentTable);

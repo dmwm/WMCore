@@ -506,7 +506,7 @@ def requestDetails(requestName):
     WMCore.Lexicon.identifier(requestName)
     request = GetRequest.getRequestDetails(requestName)
     helper = loadWorkload(request)
-    schema = helper.data.request.schema.dictionary_()
+    schema = helper.data.request.schema.dictionary_whole_tree_()
     # take the stuff from the DB preferentially
     schema.update(request)
     task = helper.getTopLevelTask()[0]

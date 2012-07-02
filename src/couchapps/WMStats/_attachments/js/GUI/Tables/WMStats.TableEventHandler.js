@@ -62,8 +62,8 @@
             var nTds = $('td', currentElement);
             var workflowName = $(nTds[0]).text();
              // clean up job summary and detail view.
-            WMStats.RequestDetailView.createDetailView(this.containerID +  " > div[name='" + TableEventHandler.reqDetailDiv + "']",
-                                                   workflowName)
+            WMStats.RequestDetailList(workflowName,
+                      this.containerID +  " > div[name='" + TableEventHandler.reqDetailDiv + "']")
         },
         
         populateRequestTable: function(currentElement){
@@ -81,8 +81,8 @@
         populateJobTable: function(currentElement){
             var nTds = $('td', currentElement);
             var requestName = $(nTds[0]).text();
-            WMStats.JobSummaryView.createSummaryView(this.containerSelector(TableEventHandler.jobSummaryDiv),
-                                                     requestName);
+            WMStats.JobSummaryView.setRequest(requestName);
+            WMStats.JobSummaryView.draw(this.containerSelector(TableEventHandler.jobSummaryDiv));
             
             // 3. clean up job detail view.
             $(this.containerSelector(TableEventHandler.jobDetailDiv)).empty();
@@ -97,8 +97,8 @@
             summary.status = $(nTds[0]).text();
             summary.site = $(nTds[1]).text();
             summary.exitCode = Number($(nTds[2]).text());
-            WMStats.JobDetailView.createDetailView(this.containerSelector(TableEventHandler.jobDetailDiv), 
-                                                   summary);
+            WMStats.JobDetailView.setOptions(summary);
+            WMStats.JobDetailView.draw(this.containerSelector(TableEventHandler.jobDetailDiv));
         },
         
         addTableEvents: function() {

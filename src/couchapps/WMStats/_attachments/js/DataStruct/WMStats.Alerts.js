@@ -1,14 +1,16 @@
-WMStats.namespace("Agents");
+WMStats.namespace("Alerts");
 
-WMStats.Agents = function (couchData) {
+WMStats.Alerts = function (couchData) {
     
     var _data;
 
     function setData(data) {
         var dataRows = data.rows;
-        var rows = [];
+        var rows =[]
         for (var i in dataRows) {
-            var tableRow = dataRows[i].value;
+            var tableRow = {};
+            tableRow.workflow = dataRows[i].key;
+            tableRow.count = dataRows[i].value;
             rows.push(tableRow)
         }
         _data = rows;

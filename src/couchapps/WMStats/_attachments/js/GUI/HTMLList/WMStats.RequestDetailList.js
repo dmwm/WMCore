@@ -1,13 +1,6 @@
-WMStats.namespace("RequestDetailView")
-
-WMStats.RequestDetailView = (function() {
-    /*
-     * Create RequestDetail view
-     */
-    //div container for RequestDetail
-    var _containerDiv = null;
-    
-    function _formatHtml(workflowName) {
+WMStats.namespace('RequestDetailList');
+(function() { 
+    var format = function (workflowName) {
         var htmlstr = "";
         var allRequests = WMStats.ActiveRequestView.getData();
         var reqDoc = allRequests.getDataByWorkflow(workflowName);
@@ -27,11 +20,8 @@ WMStats.RequestDetailView = (function() {
         htmlstr += "</div>";
         return htmlstr;
     }
-
-    function createDetailView(selector, workflowName) {
-      $(selector).html(_formatHtml(workflowName));
-    }
     
-    return {'createDetailView': createDetailView};
-     
-})();
+    WMStats.RequestDetailList = function (data, containerDiv) {
+         $(containerDiv).html(format(data));
+    }
+})()

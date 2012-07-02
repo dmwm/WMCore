@@ -18,6 +18,11 @@ WMStats.Globals = function($){
         CONFIG: null, //this will be set when WMStats.Couch.loadConfig is called. just place holder or have default config
         loadScript: function (url, success) {
                         $.ajax({async: false, url: url, dataType: 'script', success: success})
-                    }
-    }
+            },
+        importScripts: function (scripts) {
+                        for (var i=0; i < scripts.length; i++) {
+                                document.write('<script src="'+scripts[i]+'"><\/script>')
+                                 }
+                      }
+        }
 }(jQuery)

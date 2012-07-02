@@ -1,17 +1,16 @@
-WMStats.namespace("Agents");
+WMStats.namespace("JobDetails");
 
-WMStats.Agents = function (couchData) {
+WMStats.JobDetails = function (couchData) {
     
     var _data;
 
     function setData(data) {
         var dataRows = data.rows;
-        var rows = [];
-        for (var i in dataRows) {
-            var tableRow = dataRows[i].value;
-            rows.push(tableRow)
+        var jobDetails = [];
+        for (var i in dataRows){
+            jobDetails.push(dataRows[i].doc);
         }
-        _data = rows;
+        _data = jobDetails;
     }
     
     function getData() {

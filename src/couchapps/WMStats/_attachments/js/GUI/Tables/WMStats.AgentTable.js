@@ -1,7 +1,7 @@
 WMStats.namespace("AgentConfig");
 WMStats.namespace("AgentTable");
 
-WMStats.AgentConfig = function(agentData) {
+WMStats.AgentConfig = function(data) {
         // jquery datatable config
     var tableConfig = {
         "aoColumns": [
@@ -17,7 +17,7 @@ WMStats.AgentConfig = function(agentData) {
             { "mDataProp": "timestamp", "sTitle": "last updated"}
         ]
     };
-    tableConfig.aaData = agentData;
+    tableConfig.aaData = data.getData();;
     
     var filterConfig = {};
     
@@ -27,8 +27,8 @@ WMStats.AgentConfig = function(agentData) {
     }
 }
 
-WMStats.AgentTable = function (agentData, containerDiv) {
-        var config = WMStats.AgentConfig(agentData);
+WMStats.AgentTable = function (data, containerDiv) {
+        var config = WMStats.AgentConfig(data);
         return WMStats.Table(config.tableConfig).create(containerDiv, 
                                                  config.filterConfig);
 }

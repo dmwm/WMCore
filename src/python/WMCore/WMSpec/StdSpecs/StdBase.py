@@ -224,10 +224,6 @@ class StdBase(object):
             workflow['datasetFull'] = dataset
             workflow['user'] = 'cmsdataops'
 
-            #These two make are not reported for now
-            workflow['GridName'] = 'NotAvailable'
-            workflow['nevtJob'] = 'NotAvailable'
-
             #Send the workflow info
             reporter.addTask(workflow)
         except:

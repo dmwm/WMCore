@@ -343,7 +343,6 @@ class DashboardReporter(WMObject):
             nevtJob -> Number of events per job
             tool -> JobSubmission tool (like Condor? or WMAgent)
             JSToolVersion -> 'tool' version
-            GridName -> Subject of user grid proxy
             TaskType -> Type of activity
             datasetFull -> Input dataset
             CMSUser -> owner of the workflow
@@ -355,7 +354,6 @@ class DashboardReporter(WMObject):
         package['nevtJob']       = task['nevtJob']
         package['tool']          = 'WMAgent'
         package['JSToolVersion'] = __version__
-        package['GridName']      = task['GridName']
         package['TaskType']      = task['TaskType']
         package['TaskName']      = self.taskPrefix + taskName
         package['JobName']       = 'taskMeta'

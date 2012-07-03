@@ -62,7 +62,8 @@ WMStats._RequestViewBase.prototype = {
                   
                   // set the data cache
                   objPtr._data = requestCache;
-                  
+                  // trigger custom events
+                  jQuery(objPtr._containerDiv).trigger('requestDataReady', objPtr._data)
                   // create gui
                   return objPtr._visFunc(objPtr._data, objPtr._containerDiv);
               })

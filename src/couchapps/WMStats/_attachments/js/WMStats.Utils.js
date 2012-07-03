@@ -33,3 +33,9 @@ WMStats.Utils.formatWorkloadSummarylUrl = function (request, status) {
         return status;
     }
 }
+
+WMStats.Utils.formatDate = function (timestamp) {
+    var date = new Date(timestamp * 1000);
+    return (date.getFullYear() + "-" + date.getMonth() + "-" + date.getDate() + 
+           " " + date.getHours() + ":" + date.getMinutes());
+}

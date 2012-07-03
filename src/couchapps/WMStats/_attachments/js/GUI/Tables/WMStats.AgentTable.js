@@ -14,7 +14,10 @@ WMStats.AgentConfig = function(data) {
             { "mDataProp": "agent_team", "sTitle": "teams"},
             { "mDataProp": "down_components", "sTitle": "components down", 
               "sDefaultContent": ""},
-            { "mDataProp": "timestamp", "sTitle": "last updated"}
+            { "mDataProp": "timestamp", "sTitle": "last updated",
+              "fnRender": function ( o, val ) {
+                            return WMStats.Utils.formatDate(o.aData.timestamp);
+                      }}
         ]
     };
     tableConfig.aaData = data.getData();;

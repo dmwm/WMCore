@@ -2,15 +2,26 @@
     width: 1200px;
     float: left;
 }
+.requestSummaryContainer {
+    padding-top: 20px;
+}
+
+.requestSummaryLayout {
+    width: 400px;
+    padding-top: 100px;
+    padding-left: 50px;
+    float: left;
+
+}
 .requestDetailContainer {
     width: 400px;
     padding-top: 100px;
     padding-left: 50px;
     float: left;
 }
-.tablePane {
-    position: relative;
-    clear: both;
+
+.agentSummaryContainer {
+    width: 800px;
 }
 
 .jobSummaryContainer {

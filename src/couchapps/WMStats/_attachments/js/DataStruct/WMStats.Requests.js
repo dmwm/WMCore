@@ -13,6 +13,21 @@ WMStats.Requests = function (noFilterFlag) {
     var _filteredLength = 0;
     var _filteredRequests = noFilterFlag || WMStats.Requests(true);
     
+    var _defaultSummary= function() {
+        return  {length: 0,
+                 totalJobs: 0,
+                 totalEvents: 0,
+                 processedEvents: 0,
+                 success: 0,
+                 pending: 0,
+                 running: 0,
+                 failure: 0,
+                 queued: 0};
+    };
+    
+    var _summary = _defaultSummary()
+    var _filteredSummary = _defaultSummary()
+    
     var statusOrder = {
         "new": 1,
         "testing-approved": 2,
@@ -32,6 +47,18 @@ WMStats.Requests = function (noFilterFlag) {
         "announced": 16,
         "aborted": 17,
         "rejected": 18
+    }
+    function updateSummary(request, summary) {
+        var aData = _dataByWorkflow[request];
+        summary.length += 1;
+        summary.totalJobs += getWMBSJobsTotal(request);
+        summary.totalEvents += Number(_get(aData, "input_events", 0));
+        summary.processedEvents += _get(aData, "output_progress.0.events", 0)
+        summary.failure += failureTotal(request);
+        summary.queued += queuedTotal(request);
+        summary.success += _get(aData, "status.success", 0);
+        summary.running += _get(aData, "status.submitted.running", 0);
+        summary.pending += _get(aData, "status.submitted.pending", 0);
     }
     
     function _addJobs(baseObj, additionObj) {
@@ -85,6 +112,7 @@ WMStats.Requests = function (noFilterFlag) {
             //for request, agenturl structure
             requestWithAgent[field] = doc[field];
         }
+        updateSummary(doc.workflow, _summary);
     };
     
     function updateBulkRequests(docList) {
@@ -96,10 +124,11 @@ WMStats.Requests = function (noFilterFlag) {
     function filterRequests() {
         var requestData = _dataByWorkflow;
         var filteredData = {}
-        filteredLength = 0;
+        _filteredSummary = _defaultSummary();
         for (var workflowName in requestData) {
             if (andFilter(requestData[workflowName], _filter)){
                 filteredData[workflowName] =  requestData[workflowName];
+                updateSummary(workflowName, _filteredSummary);
             }
         }
         _filteredRequests.setDataByWorkflow(filteredData);
@@ -123,6 +152,7 @@ WMStats.Requests = function (noFilterFlag) {
         //TODO change to regular expression
         return (!b || a.toLowerCase().indexOf(b.toLowerCase()) !== -1);
     }
+    
     function getRequestByNameAndAgent(workflow, agentUrl) {
         if (!_dataByWorkflowAgent[workflow]) {
                 _dataByWorkflowAgent[workflow] = {}
@@ -196,6 +226,14 @@ WMStats.Requests = function (noFilterFlag) {
                 _get(aData, "status.submit.retry", 0));
     };
 
+    function getSummary() {
+        return _summary;
+    }
+    
+    function getFilteredSummary() {
+        return _filteredSummary;
+    }
+    
     return {'getDataByWorkflow': getDataByWorkflow,
             'updateBulkRequests': updateBulkRequests,
             'updateRequest': updateRequest,
@@ -207,6 +245,8 @@ WMStats.Requests = function (noFilterFlag) {
             'submittedTotal': submittedTotal,
             'filterRequests': filterRequests,
             'setFilter': setFilter,
-            'setDataByWorkflow': setDataByWorkflow
+            'setDataByWorkflow': setDataByWorkflow,
+            'getSummary': getSummary,
+            'getFilteredSummary': getFilteredSummary
             }
 }

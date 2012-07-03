@@ -39,10 +39,10 @@
     function drawMonitor() {
         // select initial summary view by global value (tier0, tier1, analysis)
         WMStats.Overview.draw("#tab-overview > div[name='overview'] > div.body");
-        WMStats.SiteView.draw("#tab-site > div[name='overview'] > div.body");
-        WMStats.AlertView.draw("#tab-alert > div[name='requestSummary'] > div.body");
-        WMStats.AgentView.draw("#agentDiv");
-        WMStats.ActiveRequestView.draw("#tab-active-request > div[name='requestSummary']");
+        WMStats.SiteView.draw("#tab-site div[name='overview'] > div.body");
+        //WMStats.AlertView.draw("#tab-alert div[name='requestSummary'] > div.body");
+        WMStats.AgentView.draw("#tab-agent div[name='agentSummary']");
+        WMStats.ActiveRequestView.draw("#tab-active-request div[name='requestSummary']");
     }
     
     $(document).ready(function() {
@@ -69,40 +69,47 @@
                 <li><a href="#tab-active-request">Active Requests</a></li>
                 <li><a href="#tab-overview">Campaign view</a></li>
                 <li><a href="#tab-site">Site view</a></li>
+                <!--
                 <li><a href="#tab-alert">Alert view</a></li>
+                -->
                 <li><a href="#tab-agent">Agent view</a></li>
             </ul>
             <div id="tab-active-request">
-                <div class='search'>
+                <div name='search'>
                     campaign: <input name="campaign" value=""></input>
                     workflow: <input name="workflow" value=""></input>
                     type: <input name="request_type" value=""></input>
                     status: <input name="request_status" value=""></input>
                 </div>
                 <div class="activeRequestContainer" name="requestSummary"></div>
-                <div class="requestDetailContainer" name="requestDetail"></div>
+                <div class="requestDetailContainer">
+                    <div name="requestData"></div>
+                    <div name="requestDetail"></div>
+                </div>
                 <div class="tablePane jobSummaryContainer" name="jobSummary"></div>
                 <div class="tablePane jobDetailContainer" name="jobDetail"></div>
             </div>
             <div class="module" id="tab-overview">
                 <div class="tablePane" name="overview"></div>
-                <div class="tablePane" name="requestSummary"></div>
-                <div class="tablePane" name="jobSummary"></div>
-                <div class="tablePane" name="jobDetail"></div>
+                <div class="tablePane requestSummaryContainer" name="requestSummary"></div>
+                <div class="tablePane jobSummaryContainer" name="jobSummary"></div>
+                <div class="tablePane jobDetailContainer" name="jobDetail"></div>
             </div>
             <div class="module" id="tab-site">
                 <div class="tablePane" name="overview"></div>
-                <div class="tablePane" name="requestSummary"></div>
-                <div class="tablePane" name="jobSummary"></div>
-                <div class="tablePane" name="jobDetail"></div>
+                <div class="tablePane requestSummaryContainer" name="requestSummary"></div>
+                <div class="tablePane jobSummaryContainer" name="jobSummary"></div>
+                <div class="tablePane jobDetailContainer" name="jobDetail"></div>
             </div>
+            <!--
             <div class="module" id="tab-alert">
-                <div class="tablePane" name="requestSummary"></div>
-                <div class="tablePane" name="jobSummary"></div>
-                <div class="tablePane" name="jobDetail"></div>
+                <div class="tablePane requestSummaryContainer" name="requestSummary"></div>
+                <div class="tablePane jobSummaryContainer" name="jobSummary"></div>
+                <div class="tablePane jobDetailContainer" name="jobDetail"></div>
             </div>
+            -->
             <div id="tab-agent">
-                <div id="agentDiv"></div>
+                <div class="requestSummaryContainer" name="agentSummary"></div>
             </div>
         </div>
     </div>

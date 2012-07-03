@@ -35,29 +35,33 @@ WMStats.ActiveRequestConfig = function(requestData) {
             { "sDefaultContent": 0,
               "sTitle": "queue injection",  
               "fnRender": function ( o, val ) {
-                              return (_getData(o.aData.workflow, "status.inWMBS",  0) / 
-                                      _getData(o.aData.workflow, 'total_jobs', 1) * 100 + '%');
+                              var result = _getData(o.aData.workflow, "status.inWMBS",  0) / 
+                                          _getData(o.aData.workflow, 'total_jobs', 1) * 100
+                              return (result.toFixed(1) + '%');
                         }
             },
             { "sDefaultContent": 0,
               "sTitle": "job progress", 
               "fnRender": function ( o, val ) {
-                            return (((_getData(o.aData.workflow, "status.success", 0) + _failureTotal(o.aData.workflow)) /
-                                     _WMBSJobsTotal(o.aData.workflow) * 100)  + "%");
+                            var result = (_getData(o.aData.workflow, "status.success", 0) + _failureTotal(o.aData.workflow)) /
+                                     _WMBSJobsTotal(o.aData.workflow) * 100
+                            return  (result.toFixed(1) + "%");
                           }
             },
             { "sDefaultContent": 0,
               "sTitle": "event progress", 
               "fnRender": function ( o, val ) {
-                            return ((_getData(o.aData.workflow, "output_progress.0.events", 0) /
-                                     _getData(o.aData.workflow, "input_events", 1) * 100) + "%");
+                           var result = _getData(o.aData.workflow, "output_progress.0.events", 0) /
+                                      _getData(o.aData.workflow, "input_events", 1) * 100
+                            return (result.toFixed(1) + "%");
                           }
             },
             { "sDefaultContent": 0,
               "sTitle": "failure rate", 
               "fnRender": function ( o, val ) {
-                            return ((_failureTotal(o.aData.workflow) /
-                                    (_getData(o.aData.workflow, "status.success", 0) + _failureTotal(o.aData.workflow)) * 100)  + "%");
+                           var result = _failureTotal(o.aData.workflow) /
+                                    (_getData(o.aData.workflow, "status.success", 0) + _failureTotal(o.aData.workflow)) * 100
+                            return (result.toFixed(1)  + "%");
                           }
             },
             { "sDefaultContent": 0,

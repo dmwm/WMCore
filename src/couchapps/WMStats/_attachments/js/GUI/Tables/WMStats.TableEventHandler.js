@@ -63,7 +63,7 @@
             var workflowName = $(nTds[0]).text();
              // clean up job summary and detail view.
             WMStats.RequestDetailList(workflowName,
-                      this.containerID +  " > div[name='" + TableEventHandler.reqDetailDiv + "']")
+                      this.containerID +  " div[name='" + TableEventHandler.reqDetailDiv + "']")
         },
         
         populateRequestTable: function(currentElement){

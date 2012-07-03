@@ -4,7 +4,7 @@ WMStats.Table = function(config, tableSetting) {
     var tableSetting = tableSetting || '<table cellpadding="0" cellspacing="0" border="0" class="display"></table>';
     var tableConfig = {
         //"sPaginationType": "full_numbers",
-        "sScrollX": "100%",
+        //"sScrollX": "100%",
         //"bScrollCollapse": true,
         "bStateSave": true,
         "bProcessing": true,

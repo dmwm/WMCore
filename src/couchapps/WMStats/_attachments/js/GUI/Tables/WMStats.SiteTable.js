@@ -35,7 +35,10 @@ WMStats.SiteConfig = function(siteData) {
                            "sDefaultContent": 0 },
             { "mDataProp": "cooloff", "sTitle": "cool off", 
                            "sDefaultContent": 0 },
-            { "mDataProp": "timestamp", "sTitle": "updated"}
+            { "mDataProp": "timestamp", "sTitle": "updated",
+              "fnRender": function ( o, val ) {
+                            return WMStats.Utils.formatDate(o.aData.timestamp);
+                      }}
             //TODO add more data (consult dataops)
         ]
     };

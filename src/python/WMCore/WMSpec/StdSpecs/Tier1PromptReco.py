@@ -39,6 +39,8 @@ def getTestArguments():
         "InputDataset" : "/Cosmics/Commissioning12-v1/RAW",
         "WriteTiers" : ["AOD", "RECO", "DQM", "ALCARECO"],
         "AlcaSkims" : ["TkAlCosmics0T","MuAlGlobalCosmics","HcalCalHOCosmics"],
+        "DqmSequences" : [ "@common", "@jetmet" ],
+
         "CouchURL": None,
         "CouchDBName": "tier1promptreco_t",
         "InitCommand": os.environ.get("INIT_COMMAND", None),
@@ -127,6 +129,7 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
                                                scenarioFunc = "promptReco",
                                                scenarioArgs = { 'globalTag' : self.globalTag,
                                                                 'skims' : self.alcaSkims,
+                                                                'dqmSeq' : self.dqmSequences,
                                                                 'outputs' : recoOutputs },
                                                splitAlgo = self.procJobSplitAlgo,
                                                splitArgs = self.procJobSplitArgs,
@@ -234,6 +237,7 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
         self.procScenario = arguments['ProcScenario']
         self.writeTiers = arguments['WriteTiers']
         self.alcaSkims = arguments['AlcaSkims']
+        self.dqmSequences = arguments['DqmSequences']
         self.inputDataset = arguments['InputDataset']
         self.promptSkims = arguments['PromptSkims']
         self.couchURL = arguments['CouchURL']

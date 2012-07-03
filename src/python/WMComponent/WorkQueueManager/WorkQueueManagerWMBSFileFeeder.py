@@ -57,7 +57,7 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         self.queue.logger.info("Getting work and feeding WMBS files")
 
         # need to make sure jobs are created
-        resources = freeSlots(minusRunning = True, skipDrain = False,
+        resources = freeSlots(minusRunning = True, allowedStates = ['Normal', 'Draining'],
                               knownCmsSites = cmsSiteNames())
 
         for site in resources:

@@ -182,7 +182,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # create relevant sites in wmbs
         rc = ResourceControl()
         for site, se in self.queue.SiteDB.mapping.items():
-            rc.insertSite(site, 100, se, cmsName = site)
+            rc.insertSite(site, 100, 200, se, cmsName = site)
             daofactory = DAOFactory(package = "WMCore.WMBS",
                                     logger = threading.currentThread().logger,
                                     dbinterface = threading.currentThread().dbi)
@@ -1167,7 +1167,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(1, len(existing_wf))
         existing_wf = existing_wf[0]
         rc = ResourceControl()
-        rc.drainSite('T2_XX_SiteA')
+        rc.changeSiteState('T2_XX_SiteA', 'Draining')
         # pull more work, only elements from previously pulled wf should be acquired
         self.localQueue.pullWork(resources = {'doesnt exist' : 0}, draining_resources={'T2_XX_SiteA' : 10},
                                  continuousReplication = False)
@@ -1176,7 +1176,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # wmbs injection for draining sites continues to work
         self.assertTrue(self.localQueue.getWork({'T2_XX_SiteA' : 10}))
         # re-enable site and get remainder of work
-        rc.drainSite('T2_XX_SiteA', drain = False)
+        rc.changeSiteState('T2_XX_SiteA', 'Normal')
         self.assertTrue(self.localQueue.pullWork({'T2_XX_SiteA' : 100},
                                                  continuousReplication = False))
         syncQueues(self.localQueue)

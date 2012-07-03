@@ -49,8 +49,8 @@ class JobTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
 
         locationNew = self.daoFactory(classname = "Locations.New")
-        locationNew.execute(siteName = "test.site.ch", seName = "setest.site.ch", jobSlots = 300)
-        locationNew.execute(siteName = "test2.site.ch", seName = "setest2.site.ch", jobSlots = 300)
+        locationNew.execute(siteName = "test.site.ch", seName = "setest.site.ch")
+        locationNew.execute(siteName = "test2.site.ch", seName = "setest2.site.ch")
 
         return
           

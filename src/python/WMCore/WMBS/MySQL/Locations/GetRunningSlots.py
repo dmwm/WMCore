@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-_GetJobSlots_
+_GetRunningSlots_
 
-MySQL implementation of Locations.GetJobSlots
-Created on Mon Jun 18 15:26:58 2012
+MySQL implementation of Locations.GetRunningSlots
+Created on Mon Jun 18 12:39:14 2012
 
 @author: dballest
 """
-
 from WMCore.Database.DBFormatter import DBFormatter
 
-class GetJobSlots(DBFormatter):
-    sql = """SELECT pending_slots, running_slots FROM  wmbs_location
+class GetRunningSlots(DBFormatter):
+    sql = """SELECT running_slots FROM  wmbs_location
              WHERE site_name = :location
              """
 
@@ -19,6 +18,5 @@ class GetJobSlots(DBFormatter):
         binds = {"location": siteName}
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
-        formatted = self.formatDict(result)
 
-        return formatted
+        return result[0].fetchall()[0].values()[0]

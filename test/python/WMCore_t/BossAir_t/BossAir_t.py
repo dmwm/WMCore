@@ -127,7 +127,8 @@ class BossAirTest(unittest.TestCase):
         resourceControl = ResourceControl()
         for site in self.sites:
             resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site),
-                                       ceName = site, plugin = "CondorPlugin", jobSlots = 1000)
+                                       ceName = site, plugin = "CondorPlugin", pendingSlots = 1000,
+                                       runningSlots = 2000)
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
                                             maxSlots = 1000)
         resourceControl.insertSite(siteName = 'Xanadu', seName = 'se.Xanadu',

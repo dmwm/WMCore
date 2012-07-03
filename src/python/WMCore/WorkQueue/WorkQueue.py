@@ -600,7 +600,7 @@ class WorkQueue(WorkQueueBase):
             # find out available resources from wmbs
             from WMCore.WorkQueue.WMBSHelper import freeSlots
             sites = freeSlots(self.params['QueueDepth'], knownCmsSites = cmsSiteNames())
-            draining_sites = freeSlots(self.params['QueueDepth'], onlyDrain = True)
+            draining_sites = freeSlots(self.params['QueueDepth'], allowedStates = ['Draining'])
             # resources for new work are free wmbs resources minus what we already have queued
             _, resources = self.backend.availableWork(sites)
             draining_resources = draining_sites # don't minus available as large run-anywhere could decimate

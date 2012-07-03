@@ -104,8 +104,8 @@ def _combineSites(results, batchJobs):
                     item.setdefault(status, 0)
                     batchJob.setdefault(status, 0)
                     item[status] += batchJob[status]
-                item.setdefault('job_slots', 0)
-                batchJob.setdefault('job_slots', 0)
-                item['job_slots'] += batchJob['job_slots']
+                item.setdefault('pending_slots', 0)
+                batchJob.setdefault('pending_slots', 0)
+                item['pending_slots'] += batchJob['pending_slots']
         if newSite:
             results.append(batchJob)

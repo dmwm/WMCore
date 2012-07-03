@@ -100,15 +100,13 @@ class AnalysisWorkloadFactory(StdBase):
         logArchiveStep.addOverride('altLFN',  self.logBase)
 
         # Set up log collecting the same as Analysis
-        logCollectTask = self.addLogCollectTask(mainTask)
-        logCollectStep = logCollectTask.getStep('logCollect1')
-        logCollectStep.addOverride('userLogs',  True)
-        logCollectStep.addOverride('seName', self.seName)
-        logCollectStep.addOverride('lfnBase', self.logCollBase)
-        logCollectStep.addOverride('lfnPrefix', self.lcPrefix)
-        if not self.saveLogs:
-            logCollectStep.addOverride('dontStage', True)
-        else:
+        if self.saveLogs:
+            logCollectTask = self.addLogCollectTask(mainTask)
+            logCollectStep = logCollectTask.getStep('logCollect1')
+            logCollectStep.addOverride('userLogs',  True)
+            logCollectStep.addOverride('seName', self.seName)
+            logCollectStep.addOverride('lfnBase', self.logCollBase)
+            logCollectStep.addOverride('lfnPrefix', self.lcPrefix)
             logCollectStep.addOverride('dontStage', False)
 
         # Get the user output files we need

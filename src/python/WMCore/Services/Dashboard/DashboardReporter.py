@@ -62,7 +62,6 @@ class DashboardReporter(WMObject):
             retry_count -> retry count of the job
             taskType -> Workflow type (analysis, production, etc...)
             jobType -> Job type (merge, processing, etc...)
-            scheduler -> Scheduler?
             *NEventsToprocess -> Number of events the job will process
         Additionally the job should carry information about the task according
         to the description of the addTask method
@@ -79,7 +78,6 @@ class DashboardReporter(WMObject):
                                                job['workflow']
             package['jobId']            = '%s_%i' % (job['name'],
                                                     job['retry_count'])
-            package['scheduler']        = 'BossAir'
             package['TaskType']         = job['taskType']
             package['JobType']          = job['jobType']
             package['NEventsToProcess'] = job.get('nEventsToProc',
@@ -137,6 +135,9 @@ class DashboardReporter(WMObject):
                                         time.gmtime())
             package['StatusDestination'] = job.get('location',
                                                    'NotAvailable')
+
+            if 'plugin' in job:
+                package['scheduler']     = job['plugin'][:-6]
 
             logging.debug("Sending: %s" % str(package))
             result = apmonSend(taskid = package['taskId'],
@@ -342,8 +343,6 @@ class DashboardReporter(WMObject):
             nevtJob -> Number of events per job
             tool -> JobSubmission tool (like Condor? or WMAgent)
             JSToolVersion -> 'tool' version
-            GridName -> Subject of user grid proxy
-            scheduler -> Scheduler
             TaskType -> Type of activity
             datasetFull -> Input dataset
             CMSUser -> owner of the workflow
@@ -355,8 +354,6 @@ class DashboardReporter(WMObject):
         package['nevtJob']       = task['nevtJob']
         package['tool']          = 'WMAgent'
         package['JSToolVersion'] = __version__
-        package['GridName']      = task['GridName']
-        package['scheduler']     = task['scheduler']
         package['TaskType']      = task['TaskType']
         package['TaskName']      = self.taskPrefix + taskName
         package['JobName']       = 'taskMeta'

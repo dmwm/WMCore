@@ -20,6 +20,7 @@ class Create(CreateWMBSBase):
     sequence_tables.append('wmbs_fileset')
     sequence_tables.append('wmbs_file_details')
     sequence_tables.append('wmbs_location')
+    sequence_tables.append('wmbs_location_state')
     sequence_tables.append('wmbs_workflow') 
     sequence_tables.append('wmbs_subscription') 
     sequence_tables.append('wmbs_jobgroup')
@@ -145,15 +146,25 @@ class Create(CreateWMBSBase):
         self.constraints["01_idx_wmbs_file_runlumi_map"] = \
           """CREATE INDEX wmbs_file_runlumi_map_fileid ON wmbs_file_runlumi_map(fileid) %s""" % tablespaceIndex
         
+        self.create["05wmbs_location_state"] = \
+            """CREATE TABLE wmbs_location_state (
+               id   INTEGER NOT NULL,
+               name VARCHAR(100) NOT NULL) %s""" % tablespaceTable
+
+        self.indexes["01_pk_wmbs_location_state"] = \
+          """ALTER TABLE wmbs_location_state ADD
+               (CONSTRAINT wmbs_location_state_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
+
         self.create["06wmbs_location"] = \
           """CREATE TABLE wmbs_location (
                id          INTEGER      NOT NULL,
                site_name   VARCHAR(255) NOT NULL,
                cms_name    VARCHAR(255),
                ce_name     VARCHAR(255),
-               job_slots   INTEGER,
+               running_slots   INTEGER,
+               pending_slots   INTEGER,
                plugin      VARCHAR(255),
-               drain       VARCHAR(1)   DEFAULT 'F'
+               state       INTEGER NOT NULL
                ) %s""" % tablespaceTable
 
         self.indexes["01_pk_wmbs_location"] = \
@@ -163,6 +174,11 @@ class Create(CreateWMBSBase):
         self.indexes["02_pk_wmbs_location"] = \
           """ALTER TABLE wmbs_location ADD
                (CONSTRAINT wmbs_location_unique UNIQUE (site_name) %s)""" % tablespaceIndex        
+
+        self.constraints["01_fk_wmbs_location"] = \
+          """ALTER TABLE wmbs_location ADD
+               (CONSTRAINT fk_location_state FOREIGN KEY (state)
+                  REFERENCES wmbs_location_state(id))"""
 
         self.create["07wmbs_users"] = \
           """CREATE TABLE wmbs_users (
@@ -645,6 +661,13 @@ class Create(CreateWMBSBase):
             subTypeQuery = """INSERT INTO wmbs_sub_types (id, name)
                               VALUES (wmbs_sub_types_SEQ.nextval, '%s')""" % (self.subTypes[i])
             self.inserts["wmbs_sub_types_%s" % self.subTypes[i]] = subTypeQuery
+
+        locationStates = ["Normal", "Down", "Draining", "Finalizing"]
+
+        for i in locationStates:
+            locationStateQuery = """INSERT INTO wmbs_location_state (id, name)
+                                    VALUES (wmbs_location_state_SEQ.nextval, '%s')""" % i
+            self.inserts["wmbs_location_state_%s" % i] = locationStateQuery
 
         checksumTypes = ["cksum", "adler32", "md5"]
         for i in checksumTypes:

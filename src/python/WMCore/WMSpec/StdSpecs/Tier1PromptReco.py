@@ -6,19 +6,13 @@ Standard Tier1PromptReco workflow.
 """
 
 import os
-import tempfile
-import urllib
-import shutil
 import logging
-import re
 
 import WMCore.Lexicon
 
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-from WMCore.WMRuntime.Tools.Scram import Scram
-from WMCore.WMInit import getWMBASE
 from WMCore.Cache.WMConfigCache import ConfigCache
-from WMCore.WMSpec.StdSpecs.PromptSkim import fixCVSUrl
+from WMCore.WMSpec.StdSpecs.PromptSkim import injectIntoConfigCache, parseT0ProcVer
 
 def getTestArguments():
     """
@@ -37,6 +31,7 @@ def getTestArguments():
         "Requestor": "Dirk.Hufnagel@cern.ch",
         "ScramArch" : "slc5_amd64_gcc462",
         "ProcessingVersion" : "1",
+        "ProcessingString" : "Tier1PromptReco",
         "GlobalTag" : "GR_P_V29::All",
         "CMSSWVersion" : "CMSSW_5_2_1",
         # these must be overridden
@@ -44,9 +39,12 @@ def getTestArguments():
         "InputDataset" : "/Cosmics/Commissioning12-v1/RAW",
         "WriteTiers" : ["AOD", "RECO", "DQM", "ALCARECO"],
         "AlcaSkims" : ["TkAlCosmics0T","MuAlGlobalCosmics","HcalCalHOCosmics"],
+        "DqmSequences" : [ "@common", "@jetmet" ],
+
         "CouchURL": None,
         "CouchDBName": "tier1promptreco_t",
         "InitCommand": os.environ.get("INIT_COMMAND", None),
+        "RunNumber": 195360,
         #PromptSkims should be a list of ConfigSection objects with the
         #following attributes
         #DataTier: "RECO"
@@ -60,38 +58,6 @@ def getTestArguments():
         }
 
     return arguments
-
-def injectIntoConfigCache(frameworkVersion, scramArch, initCommand,
-                          configUrl, configLabel, couchUrl, couchDBName):
-    """
-    _injectIntoConfigCache_
-    """
-    logging.info("Injecting to config cache.\n")
-    configTempDir = tempfile.mkdtemp()
-    configPath = os.path.join(configTempDir, "cmsswConfig.py")
-    configString = urllib.urlopen(fixCVSUrl(configUrl)).read(-1)
-    configFile = open(configPath, "w")
-    configFile.write(configString)
-    configFile.close()
-
-    scramTempDir = tempfile.mkdtemp()
-    wmcoreBase = getWMBASE()
-    envPath = os.path.normpath(os.path.join(wmcoreBase, "../../../../../../../../apps/wmagent/etc/profile.d/init.sh"))
-    scram = Scram(version = frameworkVersion, architecture = scramArch,
-                  directory = scramTempDir, initialise = initCommand,
-                  envCmd = "source %s" % envPath)
-    scram.project()
-    scram.runtime()
-
-    scram("python2.6 %s/../../../bin/inject-to-config-cache %s %s PromptSkimmer cmsdataops %s %s None" % (wmcoreBase,
-                                                                                                 couchUrl,
-                                                                                                 couchDBName,
-                                                                                                 configPath,
-                                                                                                 configLabel))
-
-    shutil.rmtree(configTempDir)
-    shutil.rmtree(scramTempDir)
-    return
 
 class Tier1PromptRecoWorkloadFactory(StdBase):
     """
@@ -133,15 +99,37 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
         for dataTier in self.writeTiers:
             recoOutputs.append( { 'dataTier' : dataTier,
                                   'eventContent' : dataTier,
-                                  'filterName' : "Tier1PromptReco",
                                   'moduleLabel' : "write_%s" % dataTier } )
+
+        procConfigCacheID = None
+        if self.configURL != None:
+            configLabel = '%s-PromptReco' % self.workloadName
+            injectIntoConfigCache(self.frameworkVersion, self.scramArch,
+                                  self.initCommand, self.configURL, configLabel,
+                                  self.couchURL, self.couchDBName)
+            try:
+                configCache = ConfigCache(self.couchURL, self.couchDBName)
+                procConfigCacheID = configCache.getIDFromLabel(configLabel)
+                if not procConfigCacheID:
+                    logging.error("The configuration was not uploaded to couch")
+                    raise Exception
+            except Exception:
+                logging.error("There was an exception loading the config out of the")
+                logging.error("ConfigCache.  Check the scramOutput.log file in the")
+                logging.error("PromptSkimScheduler directory to find out what went")
+                logging.error("wrong.")
+                raise
 
         recoTask = workload.newTask("Reco")
         recoOutMods = self.setupProcessingTask(recoTask, taskType, self.inputDataset,
+                                               configDoc = procConfigCacheID,
+                                               couchURL = self.couchURL,
+                                               couchDBName = self.couchDBName,
                                                scenarioName = self.procScenario,
                                                scenarioFunc = "promptReco",
                                                scenarioArgs = { 'globalTag' : self.globalTag,
                                                                 'skims' : self.alcaSkims,
+                                                                'dqmSeq' : self.dqmSequences,
                                                                 'outputs' : recoOutputs },
                                                splitAlgo = self.procJobSplitAlgo,
                                                splitArgs = self.procJobSplitArgs,
@@ -150,13 +138,17 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
         self.addLogCollectTask(recoTask)
         recoMergeTasks = {}
         for recoOutLabel, recoOutInfo in recoOutMods.items():
-            if recoOutInfo['dataTier'] != "ALCARECO":
+            if recoOutInfo['dataTier'] != "ALCARECO" or not self.alcaSkims:
                 mergeTask = self.addMergeTask(recoTask,
                                     self.procJobSplitAlgo,
                                     recoOutLabel)
                 recoMergeTasks[recoOutInfo['dataTier']] = mergeTask
 
             else:
+                if self.procJobSplitAlgo == "EventBased":
+                    alcaSplitAlgo = "WMBSMergeBySize"
+                else:
+                    alcaSplitAlgo = "ParentlessMergeBySize"
                 alcaTask = recoTask.addTask("AlcaSkim")
                 alcaOutMods = self.setupProcessingTask(alcaTask, taskType,
                                                        inputStep = recoTask.getStep("cmsRun1"),
@@ -166,7 +158,7 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
                                                        scenarioArgs = { 'globalTag' : self.globalTag,
                                                                         'skims' : self.alcaSkims,
                                                                         'primaryDataset' : self.inputPrimaryDataset },
-                                                       splitAlgo = "WMBSMergeBySize",
+                                                       splitAlgo = alcaSplitAlgo,
                                                        splitArgs = {"max_merge_size": self.maxMergeSize,
                                                                     "min_merge_size": self.minMergeSize,
                                                                     "max_merge_events": self.maxMergeEvents},
@@ -190,23 +182,28 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
             skimTask = mergeTask.addTask(promptSkim.SkimName)
             parentCmsswStep = mergeTask.getStep('cmsRun1')
 
-            compoundProcVer = r"((?P<ProcString>[a-zA-Z0-9_]+)-)?v(?P<ProcVer>[0-9]+)"
-            match = re.match(compoundProcVer, promptSkim.ProcessingVersion)
 
-            self.processingString = match.group("ProcString")
-            self.processingVersion = int(match.group("ProcVer"))
+            parsedProcVer = parseT0ProcVer(promptSkim.ProcessingVersion,
+                                           'Tier1PromptSkim')
+            self.processingString = parsedProcVer["ProcString"]
+            self.processingVersion = parsedProcVer["ProcVer"]
+
 
             if promptSkim.TwoFileRead:
                 self.skimJobSplitArgs['include_parents'] = True
             else:
                 self.skimJobSplitArgs['include_parents'] = False
 
+            configLabel = '%s-%s' % (self.workloadName, promptSkim.SkimName)
             injectIntoConfigCache(self.frameworkVersion, self.scramArch,
-                                       self.initCommand, promptSkim.ConfigURL, self.workloadName,
+                                       self.initCommand, promptSkim.ConfigURL, configLabel,
                                        self.couchURL, self.couchDBName)
             try:
                 configCache = ConfigCache(self.couchURL, self.couchDBName)
-                procConfigCacheID = configCache.getIDFromLabel(self.workloadName)
+                procConfigCacheID = configCache.getIDFromLabel(configLabel)
+                if not procConfigCacheID:
+                    logging.error("The configuration was not uploaded to couch")
+                    raise Exception
             except Exception:
                 logging.error("There was an exception loading the config out of the")
                 logging.error("ConfigCache.  Check the scramOutput.log file in the")
@@ -240,11 +237,15 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
         self.procScenario = arguments['ProcScenario']
         self.writeTiers = arguments['WriteTiers']
         self.alcaSkims = arguments['AlcaSkims']
+        self.dqmSequences = arguments['DqmSequences']
         self.inputDataset = arguments['InputDataset']
         self.promptSkims = arguments['PromptSkims']
         self.couchURL = arguments['CouchURL']
         self.couchDBName = arguments['CouchDBName']
         self.initCommand = arguments['InitCommand']
+
+        #Optional parameters
+        self.configURL = arguments.get('ConfigURL', None)
 
 
         if arguments.has_key('Multicore'):

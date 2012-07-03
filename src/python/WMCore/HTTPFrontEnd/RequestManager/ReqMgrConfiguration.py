@@ -113,7 +113,7 @@ def reqMgrConfig(
     active.section_('create')
     active.create.object = 'WMCore.HTTPFrontEnd.RequestManager.WebRequestSchema'
     active.create.requestor = user
-    active.create.cmsswDefaultVersion = 'CMSSW_5_0_0'
+    active.create.cmsswDefaultVersion = 'CMSSW_5_2_5'
 
     if addMonitor:
         active.section_('GlobalMonitor')

@@ -216,7 +216,6 @@ class StdBase(object):
             workflow = {}
             workflow['name'] = self.workloadName
             workflow['application'] = self.frameworkVersion
-            workflow['scheduler'] = 'BossAir'
             workflow['TaskType'] = dashboardActivity
             #Let's try to build information about the inputDataset
             dataset = 'DoesNotApply'
@@ -224,10 +223,6 @@ class StdBase(object):
                 dataset = self.inputDataset
             workflow['datasetFull'] = dataset
             workflow['user'] = 'cmsdataops'
-
-            #These two make are not reported for now
-            workflow['GridName'] = 'NotAvailable'
-            workflow['nevtJob'] = 'NotAvailable'
 
             #Send the workflow info
             reporter.addTask(workflow)
@@ -372,6 +367,8 @@ class StdBase(object):
 
             procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
                                                         **scenarioArgs)
+        if forceUnmerged:
+            procTaskStageHelper.disableStraightToMerge()
 
         return outputModules
 

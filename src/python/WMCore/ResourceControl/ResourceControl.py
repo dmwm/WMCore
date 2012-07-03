@@ -26,8 +26,9 @@ class ResourceControl(WMConnectionBase):
                                          dbinterface = self.dbi)
         return
 
-    def insertSite(self, siteName, jobSlots = 0, seName = None,
-                   ceName = None, cmsName = None, plugin = None):
+    def insertSite(self, siteName, pendingSlots = 0, runningSlots = 0,
+                   seName = None, ceName = None, cmsName = None,
+                   plugin = None):
         """
         _insertSite_
 
@@ -35,19 +36,24 @@ class ResourceControl(WMConnectionBase):
         thresholds can be added.
         """
         insertAction = self.wmbsDAOFactory(classname = "Locations.New")
-        insertAction.execute(siteName = siteName, jobSlots = jobSlots,
+        insertAction.execute(siteName = siteName, pendingSlots = pendingSlots,
+                             runningSlots = runningSlots,
                              seName = seName, ceName = ceName,
                              plugin = plugin, cmsName = cmsName,
                              conn = self.getDBConn(),
                              transaction = self.existingTransaction())
         return
 
-    def drainSite(self, siteName, drain = True):
-        """Set a state to draining / re-enable it"""
-        drainAction = self.wmbsDAOFactory(classname = "Locations.SetDrain")
-        drainAction.execute(siteName = siteName, drain = drain,
-                             conn = self.getDBConn(),
-                             transaction = self.existingTransaction())
+    def changeSiteState(self, siteName, state):
+        """
+        _changeSiteState_
+        Set a site to some of the possible states
+
+        """
+        setStateAction = self.wmbsDAOFactory(classname = "Locations.SetState")
+        setStateAction.execute(siteName = siteName, state = state,
+                               conn = self.getDBConn(),
+                               transaction = self.existingTransaction())
 
     def listSiteInfo(self, siteName):
         """
@@ -80,7 +86,7 @@ class ResourceControl(WMConnectionBase):
         already exists it will be updated.
         """
         existingTransaction = self.beginTransaction()
-        
+
         subTypeAction = self.wmbsDAOFactory(classname = "Subscriptions.InsertType")
         subTypeAction.execute(subType = taskType, conn = self.getDBConn(),
                               transaction = self.existingTransaction())
@@ -100,13 +106,21 @@ class ResourceControl(WMConnectionBase):
 
         Retrieve a list of job threshold information as well as information on
         the number of jobs running for all the known sites.  This information is
-        returned in the form of a three level dictionary.  The first level is
-        keyed by the site name while the second is keyed by the task type.  The
-        final level has the following keys:
-          total_slots - Total number of slots available at the site
-          task_running_jobs - Number of jobs for this task running at the site
-          total_running_jobs - Total jobs running at the site
-          max_slots - Maximum number of job slots for this task at the site
+        returned in the form of a two level dictionary.  The first level is
+        keyed by the site name.  The second level has the following keys:
+          cms_name            - CMS name of the site
+          se_names            - List with associated SEs
+          state               - State of the site
+          total_pending_slots - Total number of pending slots available at the site
+          total_running_slots - Total number of running slots available at the site
+          total_pending_jobs  - Total jobs pending at the site
+          total_running_jobs  - Total jobs running at the site
+          thresholds          - List of dictionaries with threshold information ordered by descending priority
+        The threshold dictionaries have the following keys:
+          task_type           - Type of the task associated with the thresholds
+          max_slots           - Maximum running slots for the task type
+          task_running_jobs   - Running jobs for the task type
+          priority            - Priority assigned to the task type
         """
         listAction = self.daofactory(classname = "ListThresholdsForSubmit")
         return listAction.execute(conn = self.getDBConn(),
@@ -118,8 +132,8 @@ class ResourceControl(WMConnectionBase):
 
         This will return a two level dictionary with the first level being
         keyed by site name.  The second level will have the following keys:
-          total_slots - Total number of slots available at the site
-          running_jobs - Total number of jobs running at the site
+          total_slots - Total number of pending slots available at the site
+          pending_jobs - Total number of jobs pending at the site
         """
         listAction = self.daofactory(classname = "ListThresholdsForCreate")
         return listAction.execute(conn = self.getDBConn(),
@@ -137,20 +151,29 @@ class ResourceControl(WMConnectionBase):
                                    conn = self.getDBConn(),
                                    transaction = self.existingTransaction())
 
-    def setJobSlotsForSite(self, siteName, jobSlots):
+    def setJobSlotsForSite(self, siteName, pendingJobSlots = None,
+                           runningJobSlots = None):
         """
         _setJobSlotsForSite_
 
-        Set the number of job slots for the given site.
+        Set the number of running and/or pending job slots for the given site.
         """
-        slotsAction = self.daofactory(classname = "SetJobSlotsForSite")
-        slotsAction.execute(siteName, jobSlots, conn = self.getDBConn(),
-                            transaction = self.existingTransaction())
+        if pendingJobSlots != None:
+            pendingSlotsAction = self.daofactory(classname = "SetPendingJobSlotsForSite")
+            pendingSlotsAction.execute(siteName, pendingJobSlots,
+                                       conn = self.getDBConn(),
+                                       transaction = self.existingTransaction())
+
+        if runningJobSlots != None:
+            runningSlotsAction = self.daofactory(classname = "SetRunningJobSlotsForSite")
+            runningSlotsAction.execute(siteName, runningJobSlots,
+                                       conn = self.getDBConn(),
+                                       transaction = self.existingTransaction())
 
     def thresholdBySite(self, siteName):
         """
         _thresholdBySite_
-        
+
         List the thresholds of a single site
         """
         listActions = self.daofactory(classname = "ThresholdBySite")
@@ -159,7 +182,8 @@ class ResourceControl(WMConnectionBase):
                                    transaction = self.existingTransaction())
 
 
-    def insertAllSEs(self, siteName, jobSlots = 0, ceName = None, plugin = None,
+    def insertAllSEs(self, siteName, pendingSlots = 0, runningSlots = 0,
+                     ceName = None, plugin = None,
                      taskList = []):
         """
         _insertAllSEs_
@@ -186,7 +210,8 @@ class ResourceControl(WMConnectionBase):
             seNames = siteDB.cmsNametoSE(cmsName)
             for SE in seNames:
                 sName = '%s_%s' % (siteName, SE)
-                self.insertSite(siteName = sName, jobSlots = jobSlots, seName = SE,
+                self.insertSite(siteName = sName, pendingSlots = pendingSlots,
+                                seName = SE, runningSlots = runningSlots,
                                 ceName = ceName, cmsName = cmsName, plugin = plugin)
                 for task in taskList:
                     if not task.has_key('maxSlots') or not task.has_key('taskType') \
@@ -200,4 +225,4 @@ class ResourceControl(WMConnectionBase):
 
         return
 
-        
+

@@ -255,9 +255,9 @@ class ReqMgrRESTModel(RESTModel):
         if requestName == None:
             return GetRequest.getRequests()
         else:
-            result   = Utilities.requestDetails(requestName)
+            result = Utilities.requestDetails(requestName)
             try:
-                teamNames       = GetRequest.getAssignmentsByName(requestName)
+                teamNames = GetRequest.getAssignmentsByName(requestName)
                 result['teams'] = teamNames
             except:
                 # Ignore errors, then we just don't have a team name

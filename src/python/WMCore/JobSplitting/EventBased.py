@@ -77,7 +77,8 @@ class EventBased(JobFactory):
                     else:
                         self.newJob(name = self.getJobName(length=totalJobs))
                         self.currentJob.addFile(f)
-                        self.currentJob["mask"].setMaxAndSkipEvents(f["events"], 0)
+                        if f["events"]:
+                            self.currentJob["mask"].setMaxAndSkipEvents(f["events"], 0)
                         totalJobs += 1
                 else:
                     #This is a MCFakeFile, take lumis into account

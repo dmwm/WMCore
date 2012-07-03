@@ -31,6 +31,7 @@ class WorkQueueElement(dict):
         # even though ParentFlag is True it will have empty ParentData
         self.setdefault('ParentData', [])
         self.setdefault('ParentFlag', False)
+        # 0 jobs are valid where we need to accept all blocks (only dqm etc subscriptions will run)
         self.setdefault('Jobs', None)
         self.setdefault('WMSpec', None)
         self.setdefault('SiteWhitelist', [])

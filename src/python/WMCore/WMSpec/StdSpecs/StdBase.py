@@ -367,6 +367,8 @@ class StdBase(object):
 
             procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
                                                         **scenarioArgs)
+        if forceUnmerged:
+            procTaskStageHelper.disableStraightToMerge()
 
         return outputModules
 

@@ -31,6 +31,9 @@ class ResubmitBlock(StartPolicyInterface):
                 parentFlag = False
             self.newQueueElement(Inputs = {block['Name'] : block['Sites']},
                                  ParentFlag = parentFlag,
+                                 NumberOfLumis = block[self.lumiType],
+                                 NumberOfFiles = block['NumberOfFiles'],
+                                 NumberOfEvents = block['NumberOfEvents'],
                                  Jobs = ceil(float(block[self.args['SliceType']]) /
                                              float(self.args['SliceSize'])),
                                  ACDC = block['ACDC'],

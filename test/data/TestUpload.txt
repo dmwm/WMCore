@@ -1,1 +1,0 @@
-Simple file used to test the "streamed upload" with pyCurl

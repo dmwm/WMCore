@@ -109,6 +109,8 @@ def buildWorkloadForRequest(typename, schema):
     # is empty and will be worked out later ; do not use any defaults
     if schema.get('CMSSWVersion'):
         request['SoftwareVersions'].append(schema.get('CMSSWVersion'))
+    # assume only one dbs for all the task
+    request['DbsUrl'] = (workload.getTopLevelTask()[0]).dbsUrl()
     return request
 
 

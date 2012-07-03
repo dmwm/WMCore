@@ -94,8 +94,9 @@ WMStats.RequestTableDefaultConfig = function(requestData) {
             { "sDefaultContent": 0,
               "sTitle": "queue injection",  
               "fnRender": function ( o, val ) {
-                              return ((_get(o.aData.workflow, "status.inWMBS",  0) / 
-                                      _get(o.aData.workflow, 'total_jobs', 1) * 100) + '%');
+                              var result = (_get(o.aData.workflow, "status.inWMBS",  0) / 
+                                            _get(o.aData.workflow, 'total_jobs', 1) * 100)
+                              return (result.toFixed(1) + '%');
                         }
             }
             

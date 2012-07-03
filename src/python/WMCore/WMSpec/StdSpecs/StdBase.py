@@ -216,7 +216,6 @@ class StdBase(object):
             workflow = {}
             workflow['name'] = self.workloadName
             workflow['application'] = self.frameworkVersion
-            workflow['scheduler'] = 'BossAir'
             workflow['TaskType'] = dashboardActivity
             #Let's try to build information about the inputDataset
             dataset = 'DoesNotApply'

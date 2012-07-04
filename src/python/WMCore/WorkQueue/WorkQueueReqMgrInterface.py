@@ -4,9 +4,12 @@
 
 from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
+from WMCore.Database.CMSCouch import CouchError
+from WMCore.Database.CouchUtils import CouchConnectionError
 from WMCore import Lexicon
 import os
 import time
+import socket
 
 class WorkQueueReqMgrInterface():
     """Helper class for ReqMgr interaction"""
@@ -82,11 +85,17 @@ class WorkQueueReqMgrInterface():
                 self.logger.info("Marking request %s as failed in ReqMgr" % reqName)
                 self.reportRequestStatus(reqName, 'Failed', message = str(ex))
                 continue
-            except Exception, ex:
+            except (IOError, socket.error, CouchError, CouchConnectionError), ex:
+                # temporary problem - try again later
                 msg = 'Error processing request "%s": will try again later.' \
                 '\nError: "%s"' % (reqName, str(ex))
-                self.logger.info(msg)
-                #self.reportRequestStatus(reqName, 'failed', message = str(ex))
+                self.sendMessage(reqName, msg)
+                continue
+            except Exception, ex:
+                # Log exception as it isnt a communication problem
+                msg = 'Error processing request "%s": will try again later.' \
+                '\nSee log for details.\nError: "%s"' % (reqName, str(ex))
+                self.logger.exception('Unknown error processing %s' % reqName)
                 self.sendMessage(reqName, msg)
                 continue
 

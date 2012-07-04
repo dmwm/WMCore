@@ -13,6 +13,7 @@ from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
 from WMCore.ACDC.DataCollectionService import DataCollectionService
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 
 class ResubmitBlock(StartPolicyInterface):
     """Split elements into blocks"""
@@ -48,6 +49,8 @@ class ResubmitBlock(StartPolicyInterface):
         chunkSize = 200
         
         acdcInfo = task.getInputACDC()
+        if not acdcInfo:
+            raise WorkQueueWMSpecError(self.wmspec, 'No acdc section for %s' % task.getPathName())
         acdc = DataCollectionService(acdcInfo["server"], acdcInfo["database"])
         if self.data:
             acdcBlockSplit = ACDCBlock.splitBlockName(self.data.keys()[0])

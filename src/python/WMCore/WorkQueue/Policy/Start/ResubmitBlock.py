@@ -20,6 +20,7 @@ class ResubmitBlock(StartPolicyInterface):
         StartPolicyInterface.__init__(self, **args)
         self.args.setdefault('SliceType', 'NumberOfFiles')
         self.args.setdefault('SliceSize', 1)
+        self.lumiType = "NumberOfLumis"
 
     def split(self):
         """Apply policy to spec"""

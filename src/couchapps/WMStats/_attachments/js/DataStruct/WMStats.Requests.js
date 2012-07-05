@@ -220,6 +220,29 @@ WMStats.Requests = function (noFilterFlag) {
                 _get(aData, "status.queued.retry", 0));
     };
     
+    function estimateCompletionTime(request) {
+        //TODO need to improve the algo
+        // no infomation to calulate the estimate completion time
+        var aData = _dataByWorkflow[request];
+        var completedJobs = _get(aData, "status.success", 0) + failureTotal(request);
+        if (completedJobs == 0) return -1;
+        // get running start time.
+        var requestStatus = _get(aData, "request_status");
+        var lastStatus = requestStatus[requestStatus.length - 1];
+        
+        //request is done
+        if (lastStatus.status !== 'running') return 0;
+        
+        var totalJobs = getWMBSJobsTotal(request) - _get(aData, "status.canceled", 0);
+        // jobCompletion percentage 
+        var completionRatio = (completedJobs / totalJobs);
+        var queueInjectionRatio = _getData(aData, "status.inWMBS",  0) / _getData(aData, 'total_jobs', 1);
+        var duration = Math.round(Date.now() / 1000) - lastStatus.timestamp;
+        var timeLeft = Math.round(duration / (completionRatio * queueInjectionRatio));
+        
+        return timeLeft;
+    }
+    
     function submittedTotal(request) {
         var aData = _dataByWorkflow[request];
         return (_get(aData, "status.submit.first", 0) + 
@@ -247,6 +270,7 @@ WMStats.Requests = function (noFilterFlag) {
             'setFilter': setFilter,
             'setDataByWorkflow': setDataByWorkflow,
             'getSummary': getSummary,
-            'getFilteredSummary': getFilteredSummary
+            'getFilteredSummary': getFilteredSummary,
+            'estimateCompletionTime': estimateCompletionTime
             }
 }

@@ -39,3 +39,11 @@ WMStats.Utils.formatDate = function (timestamp) {
     return (date.getFullYear() + "-" + date.getMonth() + "-" + date.getDate() + 
            " " + date.getHours() + ":" + date.getMinutes());
 }
+
+WMStats.Utils.foramtDuration = function (timestamp) {
+    if (timestamp == -1) return "N/A";
+    var totalMin = Math.floor(timestamp / 60);
+    var hours = Math.floor(totalMin / 60);
+    var min = totalMin % 60;
+    return (hours + " h " + min + " m");
+}

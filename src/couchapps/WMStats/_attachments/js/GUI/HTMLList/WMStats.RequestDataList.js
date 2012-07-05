@@ -10,7 +10,7 @@ WMStats.namespace('RequestDataList');
         htmlstr += "<li> processed events: " + summary.processedEvents + "</li>";
         htmlstr += "<li> success jobs: " + summary.success + "</li>";
         htmlstr += "<li> failure jobs: " + summary.failure + "</li>";
-        htmlstr += "<li> queued jobs: " + summary.quequed + "</li>";
+        htmlstr += "<li> queued jobs: " + summary.queued + "</li>";
         htmlstr += "<li> running jobs: " + summary.running + "</li>";
         htmlstr += "<li> pending jobs: " + summary.pending + "</li>";
         htmlstr += "</ul>";

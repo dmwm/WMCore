@@ -9,7 +9,7 @@ WMStats.ActiveRequestConfig = function(requestData) {
     var  _WMBSJobsTotal =  requestData.getWMBSJobsTotal
     var _queuedTotal = requestData.queuedTotal;
     var _failureTotal = requestData.failureTotal;
-    
+    var _eta = requestData.estimateCompletionTime;
 
     var tableConfig = {
         "iDisplayLength": 25,
@@ -62,6 +62,12 @@ WMStats.ActiveRequestConfig = function(requestData) {
                            var result = _failureTotal(o.aData.workflow) /
                                     (_getData(o.aData.workflow, "status.success", 0) + _failureTotal(o.aData.workflow)) * 100
                             return (result.toFixed(1)  + "%");
+                          }
+            },
+            { "sDefaultContent": 0,
+              "sTitle": "Eestimated Completion", 
+              "fnRender": function ( o, val ) {
+                            return (WMStats.Utils.foramtDuration(_eta(o.aData.workflow)));
                           }
             },
             { "sDefaultContent": 0,

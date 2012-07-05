@@ -1,5 +1,5 @@
 .activeRequestContainer {
-    width: 1200px;
+    width: 1150px;
     float: left;
 }
 .requestSummaryContainer {
@@ -25,7 +25,7 @@
 }
 
 .jobSummaryContainer {
-    width: 800px;
+    width: 700px;
     padding-top: 50px;
     padding-left: 50px;
     float: left;

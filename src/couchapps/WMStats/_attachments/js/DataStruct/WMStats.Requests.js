@@ -236,8 +236,8 @@ WMStats.Requests = function (noFilterFlag) {
         var totalJobs = getWMBSJobsTotal(request) - _get(aData, "status.canceled", 0);
         // jobCompletion percentage 
         var completionRatio = (completedJobs / totalJobs);
-        var queueInjectionRatio = _getData(aData, "status.inWMBS",  0) / _getData(aData, 'total_jobs', 1);
-        var duration = Math.round(Date.now() / 1000) - lastStatus.timestamp;
+        var queueInjectionRatio = _get(aData, "status.inWMBS",  0) / _get(aData, 'total_jobs', 1);
+        var duration = Math.round(Date.now() / 1000) - lastStatus.update_time;
         var timeLeft = Math.round(duration / (completionRatio * queueInjectionRatio));
         
         return timeLeft;

@@ -155,7 +155,7 @@ class Fileset(WMBSBase, WMFileset):
 
         return self
 
-    def loadData(self): 
+    def loadData(self, parentage = 1): 
         """
         _loadData_
 
@@ -176,7 +176,7 @@ class Fileset(WMBSBase, WMFileset):
 
         for result in results:
             file = File(id = result["fileid"])
-            file.loadData(parentage = 1)
+            file.loadData(parentage = parentage)
             self.files.add(file)
 
         self.commitTransaction(existingTransaction)

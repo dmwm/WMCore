@@ -31,7 +31,10 @@ class CheckComponentStatus(DBFormatter):
         # If detail flag is true return list of components which were down
         resultList = self.format(result)
         if detail:
-            return resultList
+            componentList = []
+            for a in resultList:
+                componentList.append(a[0])
+            return componentList
 
         if len(resultList) > 0:
             return {'status': 'down'}

@@ -31,6 +31,7 @@ databaseSocket = "/opt/MySQL-5.1/var/lib/mysql/mysql.sock"
 # acdc database.
 couchURL = "http://USERNAME:PASSWORD@COUCHSERVER:5984"
 jobDumpDBName = "wmagent_jobdump"
+jobSummaryDBName = "wmagent_summary"
 acdcDBName = "wmagent_acdc"
 workqueueDBName = 'workqueue'
 workqueueInboxDbName = 'workqueue_inbox'
@@ -89,6 +90,7 @@ config.General.workDir = workDirectory
 config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = couchURL
 config.JobStateMachine.couchDBName = jobDumpDBName
+config.JobStateMachine.jobSummaryDBName = jobSummaryDBName
 
 config.section_("ACDC")
 config.ACDC.couchurl = couchURL
@@ -236,6 +238,8 @@ config.TaskArchiver.requireCouch  = True
 config.TaskArchiver.uploadPublishInfo = False
 config.TaskArchiver.uploadPublishDir  = None
 config.TaskArchiver.userFileCacheURL = 'http://USERFILECACHEHOST:UFCPORT/userfilecache/'
+# set to False couch data will be deleted from CleanUpManager
+config.TaskArchiver.deleteCouchData = False
 
 config.webapp_('WMBSService')
 config.WMBSService.default_expires = 0
@@ -450,3 +454,25 @@ config.AlertGenerator.couchErrorsPoller.pollInterval = 600 # [second]
 # be moved into respective configuration sections 
 # e.g. next item(s) will be from WorkQueueManager when a special necessary view is implemented
 config.DBSUpload.alertUploadQueueSize = 2000
+
+config.component_("AnalyticsDataCollector")
+config.AnalyticsDataCollector.namespace = "WMComponent.AnalyticsDataCollector.AnalyticsDataCollector"
+config.AnalyticsDataCollector.componentDir  = config.General.workDir + "/AnalyticsDataCollector"
+config.AnalyticsDataCollector.logLevel = globalLogLevel
+config.AnalyticsDataCollector.pollInterval = 600
+config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl,  config.JobStateMachine.couchDBName)
+config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
+config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+config.AnalyticsDataCollector.centralWMStatsURL = "Central WMStats URL"
+
+config.component_("CleanUpManager")
+config.CleanUpManager.namespace = "WMComponent.CleanUpManager.CleanUpManager"
+config.CleanUpManager.componentDir  = config.General.workDir + "/CleanUpManager"
+config.CleanUpManager.logLevel = globalLogLevel
+config.CleanUpManager.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl,  config.JobStateMachine.couchDBName)
+config.CleanUpManager.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
+config.CleanUpManager.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+config.CleanUpManager.centralWMStatsURL = "Central WMStats URL"
+config.CleanUpManager.DataKeepDays = 1 # delete after a day maybe change to a week
+config.CleanUpManager.cleanCouchInterval = 60 * 20 # 20 min
+

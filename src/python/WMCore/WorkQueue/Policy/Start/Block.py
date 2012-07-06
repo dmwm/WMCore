@@ -38,6 +38,9 @@ class Block(StartPolicyInterface):
             self.newQueueElement(Inputs = {block['block'] : self.data.get(block['block'], [])},
                                  ParentFlag = parentFlag,
                                  ParentData = parentList,
+                                 NumberOfLumis = int(block[self.lumiType]),
+                                 NumberOfFiles = int(block['NumberOfFiles']),
+                                 NumberOfEvents = int(block['NumberOfEvents']),
                                  Jobs = ceil(float(block[self.args['SliceType']]) /
                                              float(self.args['SliceSize']))
                                  )

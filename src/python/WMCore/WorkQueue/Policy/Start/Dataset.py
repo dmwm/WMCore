@@ -25,6 +25,9 @@ class Dataset(StartPolicyInterface):
         """Apply policy to spec"""
         dbs = self.dbs()
         work = 0
+        numFiles = 0
+        numEvents = 0
+        numLumis = 0
         inputDataset = self.initialTask.inputDataset()
         datasetPath = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
@@ -39,7 +42,10 @@ class Dataset(StartPolicyInterface):
 
         for block in blocks:
             work += float(block[self.args['SliceType']])
-
+            numLumis +=  int(block[self.lumiType])
+            numFiles += int(block['NumberOfFiles'])
+            numEvents += int(block['NumberOfEvents'])
+            
         dataset = dbs.getDBSSummaryInfo(dataset = datasetPath)
 
         # If the dataset which is not in dbs is passed, just return.
@@ -59,6 +65,9 @@ class Dataset(StartPolicyInterface):
 
         self.newQueueElement(Inputs = {dataset['path'] : self.data.get(dataset['path'], [])},
                              ParentFlag = parentFlag,
+                             NumberOfLumis = numLumis,
+                             NumberOfFiles = numFiles,
+                             NumberOfEvents = numEvents,
                              Jobs = ceil(float(work) /
                                          float(self.args['SliceSize']))
                              )

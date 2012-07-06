@@ -36,6 +36,7 @@ userEmail = "OPERATOR EMAIL"
 couchURL = "http://USERNAMEPASSWORD@COUCHSERVER:5984"
 configCacheDBName = "wmagent_configcache"
 reqMgrDBName = "reqmgrdb"
+wmstatDBName = "wmstats"
 
 # Agent name and team name.
 agentName = "WMAgentCommissioning"
@@ -90,6 +91,7 @@ config += reqMgrConfig(
     componentDir = os.path.join(config.General.workDir, "ReqMgr"),
     workloadCouchDB = reqMgrDBName,
     configCouchDB = configCacheDBName,
+    wmstatCouchDB = wmstatDBName,
     connectURL = databaseUrl,
     startup = "wmcoreD")
 

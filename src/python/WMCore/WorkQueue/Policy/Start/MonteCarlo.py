@@ -62,6 +62,8 @@ class MonteCarlo(StartPolicyInterface):
 
             mask['LastLumi'] = mask['FirstLumi'] + int(lumis) - 1 # inclusive range
             self.newQueueElement(WMSpec = self.wmspec,
+                                 NumberOfLumis = mask['LastLumi'] - mask['FirstLumi'],
+                                 NumberOfEvents = mask['LastEvent'] - mask['FirstEvent'],
                                  Jobs = jobs,
                                  Mask = copy(mask))
 

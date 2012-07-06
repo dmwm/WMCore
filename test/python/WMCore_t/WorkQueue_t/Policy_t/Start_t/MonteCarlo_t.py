@@ -27,7 +27,7 @@ class MonteCarloTestCase(unittest.TestCase):
         """Basic Production Workload"""
         # change split defaults for this test
         totalevents = 1000000
-        splitArgs = dict(SliceType = 'NumEvents', SliceSize = 100, MaxJobsPerElement = 5)
+        splitArgs = dict(SliceType = 'NumberOfEvents', SliceSize = 100, MaxJobsPerElement = 5)
 
         BasicProductionWorkload = monteCarloWorkload('MonteCarloWorkload', mcArgs)
         getFirstTask(BasicProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
@@ -52,9 +52,12 @@ class MonteCarloTestCase(unittest.TestCase):
                 if last_event > totalevents:
                     # this should be the last unit of work
                     last_event = totalevents
+                last_lumi = first_lumi + unit['Jobs'] - 1
                 self.assertEqual(unit['Mask']['LastEvent'], last_event)
-                self.assertEqual(unit['Mask']['LastLumi'], first_lumi + unit['Jobs'] - 1)
+                self.assertEqual(unit['Mask']['LastLumi'], last_lumi)
                 self.assertEqual(unit['Mask']['FirstRun'], first_run)
+                self.assertEqual(last_lumi - first_lumi, unit['NumberOfLumis'])
+                self.assertEqual(last_event - first_event, unit['NumberOfEvents'])
                 first_event = last_event + 1
                 first_lumi += unit['Jobs'] # one lumi per job
             self.assertEqual(unit['Mask']['LastEvent'], totalevents)

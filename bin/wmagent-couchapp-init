@@ -104,7 +104,7 @@ def createCronEntires(crontabLines):
     os.system("crontab %s/crontab" % tempDir)
     os.remove("%s/crontab" % tempDir)
     os.rmdir(tempDir)
-        
+
 
 def setupCron(couchUrl, couchDBName):
     """
@@ -134,13 +134,13 @@ def setupCron(couchUrl, couchDBName):
     crontabLines.append("0 0 * * * %s\n" % (compactCmd % compactViewUrl))
     crontabLines.append("0 0 * * * %s\n" % (compactCmd % compactDBUrl))
     createCronEntires(crontabLines)
-        
+
 
 def setupCronForAlerts(couchUrl, couchDBName, couchAppName):
     """
     Like above, set up periodic CouchDB views queries for the alertcollector DB.
     Shall need no % character hacking as the above.
-    
+
     """
     print "Setting up cron jobs for '%s'" % couchDBName
     views = ("all", "byhostname", "byhostnamebysource", "bysource", "hostnames", "sources")
@@ -150,8 +150,8 @@ def setupCronForAlerts(couchUrl, couchDBName, couchAppName):
     commands = ["curl -s '%s' > /dev/null" % url for url in urls]
     crontabLines = ["* * * * * %s\n" % command for command in commands]
     createCronEntires(crontabLines)
-    
-    
+
+
 def setupCronCompaction(couchUrl, couchDbName):
     """Add a simple couch compaction"""
     compactUrl = "%s/%s/_compact" % (couchUrl, couchDbName)
@@ -368,6 +368,7 @@ if __name__ == "__main__":
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "monitor", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_statinstance, wmagentConfig.AsyncTransfer.statitics_database, "stat", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_user_monitoring_instance, wmagentConfig.AsyncTransfer.user_monitoring_db, "UserMonitoring", basePath)
+        installCouchApp(wmagentConfig.DBSPublisher.couch_instance, wmagentConfig.DBSPublisher.files_database, "DBSPublisher", basePath)
         installCouchApp(agent_instance, agent_database, "Agent", baseWMCorePath)
         if options.cron:
             setupCronCompaction(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database)
@@ -377,7 +378,8 @@ if __name__ == "__main__":
 
     if hasattr(wmagentConfig, "reqmgr"):
         installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName, "ReqMgr")
-        createSymLinkWMStatsExternal()
+        # wmstatDBName is set to use specfic client {'wmstats': 'tier1', 'tier0_wmstats': 'tier0', 'analysis_wmstats': 'analysis' }
+        # which needs to be changed in wmagent for prompt skiming deployment script
         installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.wmstatDBName, "WMStats")
         if options.cron:
             setupCronCompaction(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName)

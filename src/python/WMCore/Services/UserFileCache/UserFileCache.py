@@ -52,10 +52,11 @@ class UserFileCache(Service):
         if name:
             params.append(('inputfilename', name))
 
-        resString = self["requests"].uploadFile(fileName=fileName, fieldName='inputfile', url=self['endpoint'] + 'file', \
-                                                params=params, verb='PUT')
+        resString = self["requests"].uploadFile(fileName=fileName, fieldName='inputfile',
+                                                url=self['endpoint'] + 'file',
+                                                params=params, verb='PUT')
 
-        return json.loads(resString)
+        return json.loads(resString)['result'][0]
 
     def checksum(self, fileName):
         """

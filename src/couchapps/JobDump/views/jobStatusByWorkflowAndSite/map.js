@@ -16,7 +16,7 @@ function(doc) {
               status = 'cooloff';
               break;
           case 'executing':
-              if (doc['states'][lastStateIndex - 1].oldstate == 'new') {
+              if (doc['states'][lastStateIndex - 1].oldstate == 'created') {
                   status = 'submitted_first';
               } else if (doc['states'][lastStateIndex - 1].oldstate == 'jobcooloff') {
                   status = 'submitted_retry';

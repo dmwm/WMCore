@@ -50,7 +50,13 @@ class SiblingProcessingBased(JobFactory):
             filesetClosed = True
 
         fileSites = {}
+        foundFiles = []
         for completeFile in completeFiles:
+            if completeFile["lfn"] not in foundFiles:
+                foundFiles.append(completeFile["lfn"])
+            else:
+                continue
+            
             if not fileSites.has_key(completeFile["se_name"]):
                 fileSites[completeFile["se_name"]] = []
 

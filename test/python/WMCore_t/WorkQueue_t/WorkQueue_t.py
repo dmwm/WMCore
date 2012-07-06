@@ -80,6 +80,9 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         EmulatorHelper.setEmulators(phedex = True, dbs = True, 
                                     siteDB = True, requestMgr = False)
+        # undo any customizations
+        Globals.GlobalParams.resetParams()
+
         #set up WMAgent config file for couchdb
         self.configFile = EmulatorSetup.setupWMAgentConfig()
 
@@ -179,7 +182,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # create relevant sites in wmbs
         rc = ResourceControl()
         for site, se in self.queue.SiteDB.mapping.items():
-            rc.insertSite(site, 100, se, cmsName = site)
+            rc.insertSite(site, 100, 200, se, cmsName = site)
             daofactory = DAOFactory(package = "WMCore.WMBS",
                                     logger = threading.currentThread().logger,
                                     dbinterface = threading.currentThread().dbi)
@@ -1164,7 +1167,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(1, len(existing_wf))
         existing_wf = existing_wf[0]
         rc = ResourceControl()
-        rc.drainSite('T2_XX_SiteA')
+        rc.changeSiteState('T2_XX_SiteA', 'Draining')
         # pull more work, only elements from previously pulled wf should be acquired
         self.localQueue.pullWork(resources = {'doesnt exist' : 0}, draining_resources={'T2_XX_SiteA' : 10},
                                  continuousReplication = False)
@@ -1173,12 +1176,38 @@ class WorkQueueTest(WorkQueueTestCase):
         # wmbs injection for draining sites continues to work
         self.assertTrue(self.localQueue.getWork({'T2_XX_SiteA' : 10}))
         # re-enable site and get remainder of work
-        rc.drainSite('T2_XX_SiteA', drain = False)
+        rc.changeSiteState('T2_XX_SiteA', 'Normal')
         self.assertTrue(self.localQueue.pullWork({'T2_XX_SiteA' : 100},
                                                  continuousReplication = False))
         syncQueues(self.localQueue)
         self.assertTrue(self.localQueue.getWork({'T2_XX_SiteA' : 100}))
 
+
+    def test0eventBlock(self):
+        """0 event blocks should be processed as usual"""
+        # use event splitting and 0 events so we get 0 jobs - verify this doesn't cause any problems
+        Globals.GlobalParams.setNumOfEventsPerFile(0)
+        self.processingSpec.setStartPolicy('Block', SliceType= 'NumberOfEvents')
+        self.processingSpec.save(self.processingSpec.specUrl())
+        self.globalQueue.queueWork(self.processingSpec.specUrl())
+        # all blocks pulled as each has 0 jobs
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1},
+                                                  continuousReplication = False), 2)
+        syncQueues(self.localQueue)
+        self.assertEqual(len(self.localQueue.status()), 2)
+        self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA' : 1})), 2)
+        for element in self.localQueue.status():
+            # check files added and subscription made
+            self.assertEqual(element['NumOfFilesAdded'], Globals.GlobalParams.numOfFilesPerBlock())
+            self.assertTrue(element['SubscriptionId'] >= 0)
+            self.assertEqual(element['Jobs'], 0)
+
+        # complete workflow
+        self.localQueue.performQueueCleanupActions(skipWMBS = True)
+        self.localQueue.doneWork([str(x.id) for x in self.localQueue.status()])
+        self.assertEqual(len(self.localQueue.status(status = 'Done')), 2)
+        syncQueues(self.localQueue)
+        self.assertEqual(len(self.globalQueue.status(status = 'Done')), 2)
 
 if __name__ == "__main__":
     unittest.main()

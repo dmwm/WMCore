@@ -35,8 +35,10 @@ def createOptionParser():
                            help = "Add all of the CMS sites to resource control.")
     myOptParser.add_option("--site-name", dest = "siteName",
                            help = "Specify the unique name of the location")
-    myOptParser.add_option("--site-slots", dest = "jobSlots",
-                           help = "Specify the maximum number of slots to use at the site")
+    myOptParser.add_option("--pending-slots", dest = "pendingSlots",
+                           help = "Specify the maximum number of pending slots to use at the site")
+    myOptParser.add_option("--running-slots", dest = "runningSlots",
+                           help = "Specify the maximum number of running slots to use at the site")
     myOptParser.add_option("--ce-name", dest = "ceName",
                            help = "Specify the CEName for the site")
     myOptParser.add_option("--se-name", dest = "seName",
@@ -51,10 +53,14 @@ def createOptionParser():
                            help = "Specify the priority of the threshold at the site (higher is better)")
     myOptParser.add_option("--plugin", dest = "plugin",
                            help = "Specify submit plugin to use for specific site")
-    myOptParser.add_option("--drain", dest = "drain", action="store_true",
-                           help = "Drain the site.")
-    myOptParser.add_option("--enable", dest = "drain", action="store_false",
-                           help = "Stop draining the site.")
+    myOptParser.add_option("--drain", dest = "state", action="store_const",
+                           const = 'Draining', help = "Drain the site.")
+    myOptParser.add_option("--finalize", dest = "state", action="store_const",
+                           const = 'Finalizing', help = "Finalize workflows at the site.")
+    myOptParser.add_option("--down", dest = "state", action="store_const",
+                           const = 'Down', help = "Stop submission to the site.")
+    myOptParser.add_option("--normal", dest = "state", action="store_const",
+                           const = 'Normal', help = "Normal operation for the site.")
 
     return myOptParser
 
@@ -67,7 +73,7 @@ def getCMSSiteInfo(pattern):
     """
     nameSEMapping = {}
     print "Querying SiteDB for site information..."
-    
+
     siteDB = SiteDBJSON()
     for seName in siteDB.cmsNametoList(pattern, "SE", "result.json"):
         cmsName = siteDB.seToCMSName(seName)
@@ -78,38 +84,42 @@ def getCMSSiteInfo(pattern):
 
     return nameSEMapping
 
-def addSites(resourceControl, allSites, ceName, plugin, jobSlots):
+def addSites(resourceControl, allSites, ceName, plugin, pendingSlots, runningSlots):
     """
     _addSites_
 
     Add the given sites to resource control and add tasks as well.
     """
-    if options.jobSlots == None:
-        jobSlots = 10
+    if options.pendingSlots == None:
+        pendingSlots = 10
     else:
-        jobSlots = options.jobSlots
+        pendingSlots = options.pendingSlots
+    if options.runningSlots == None:
+        runningSlots = 10
+    else:
+        runningSlots = options.runningSlots
 
     for siteName in allSites.keys():
         if ceName == None:
-            updateSiteInfo(resourceControl, siteName, jobSlots,
+            updateSiteInfo(resourceControl, siteName, pendingSlots, runningSlots,
                            siteName, allSites[siteName], plugin, siteName)
         else:
-            updateSiteInfo(resourceControl, siteName, jobSlots,
+            updateSiteInfo(resourceControl, siteName, pendingSlots, runningSlots,
                            ceName, allSites[siteName], plugin, siteName)
 
-        updateThresholdInfo(resourceControl, siteName, "Merge", jobSlots,
+        updateThresholdInfo(resourceControl, siteName, "Merge", runningSlots,
                             priority = 5)
-        updateThresholdInfo(resourceControl, siteName, "Cleanup", jobSlots,
+        updateThresholdInfo(resourceControl, siteName, "Cleanup", runningSlots,
                             priority = 5)
-        updateThresholdInfo(resourceControl, siteName, "LogCollect", jobSlots,
+        updateThresholdInfo(resourceControl, siteName, "LogCollect", runningSlots,
                             priority = 3)
-        updateThresholdInfo(resourceControl, siteName, "Skim", jobSlots,
+        updateThresholdInfo(resourceControl, siteName, "Skim", runningSlots,
                             priority = 2)
-        updateThresholdInfo(resourceControl, siteName, "Production", jobSlots,
-                            priority = 1)        
-        updateThresholdInfo(resourceControl, siteName, "Processing", jobSlots,
+        updateThresholdInfo(resourceControl, siteName, "Production", runningSlots,
                             priority = 1)
-        updateThresholdInfo(resourceControl, siteName, "Analysis", jobSlots,
+        updateThresholdInfo(resourceControl, siteName, "Processing", runningSlots,
+                            priority = 1)
+        updateThresholdInfo(resourceControl, siteName, "Analysis", runningSlots,
                             priority = 1)
 
     return
@@ -134,13 +144,16 @@ def printThresholds(resourceControl, desiredSiteName):
             print("No thresholds for site %s" % siteName)
             continue
 
-        siteSlots = siteThresholds[0]["total_slots"]
-        siteJobs = siteThresholds[0]["total_running_jobs"]        
-        drain = siteThresholds[0]["drain"]
-        drainMsg = ", Site is draining" if drain else ""
-        print "%s - %d running, %d slots total%s:" % (siteName, siteJobs, siteSlots, drainMsg)
+        pendingSlots = siteThresholds["total_pending_slots"]
+        runningSlots = siteThresholds["total_running_slots"]
+        pendingJobs = siteThresholds["total_pending_jobs"]
+        runningJobs = siteThresholds["total_running_jobs"]
+        state = siteThresholds["state"]
+        stateMsg = ", Site is %s" % state
+        print "%s - %d running, %d pending, %d running slots total, %d pending slots total%s:" % (
+                        siteName, runningJobs, pendingJobs, runningSlots, pendingSlots, stateMsg)
 
-        for task in siteThresholds:
+        for task in siteThresholds['thresholds']:
             print "  %s - %d running, %d max, priority %s" % \
                   (task['task_type'], task["task_running_jobs"],
                    task["max_slots"], str(task.get("priority", 1)))
@@ -148,12 +161,12 @@ def printThresholds(resourceControl, desiredSiteName):
                 taskWorkloads = resourceControl.listWorkloadsForTaskSite(task['task_type'], siteName)
                 for t in taskWorkloads:
                     print "    %d - %s" % (t["running"], t["task"])
-            
-        print ""    
 
-def updateSiteInfo(resourceControl, siteName, jobSlots = None,
-                   ceName = None, seName = None, plugin = None,
-                   cmsName = None):
+        print ""
+
+def updateSiteInfo(resourceControl, siteName, pendingSlots = None,
+                   runningSlots = None, ceName = None, seName = None,
+                   plugin = None, cmsName = None):
     """
     _updateSiteInfo_
 
@@ -161,8 +174,8 @@ def updateSiteInfo(resourceControl, siteName, jobSlots = None,
     information about sites in the database if it already exists.
     """
     if resourceControl.listSiteInfo(siteName) == None:
-        if jobSlots == None or ceName == None or seName == None or plugin == None:
-            print "You must specify the number of job slots, the SE name, "
+        if pendingSlots == None or runningSlots == None or ceName == None or seName == None or plugin == None:
+            print "You must specify the number of pending or running slots, the SE name, "
             print "the CE name and a plugin when adding a site."
             print ""
             myOptParser.print_help()
@@ -171,17 +184,20 @@ def updateSiteInfo(resourceControl, siteName, jobSlots = None,
         print "Adding %s to the resource control db..." % siteName
         if type(seName) == type([]):
             for singleSEName in seName:
-                resourceControl.insertSite(siteName = siteName, jobSlots = int(jobSlots),
-                                           seName = singleSEName, ceName = ceName,
+                resourceControl.insertSite(siteName = siteName, pendingSlots = int(pendingSlots),
+                                           runningSlots = int(runningSlots), seName = singleSEName, ceName = ceName,
                                            plugin = plugin, cmsName = cmsName)
         else:
-            resourceControl.insertSite(siteName = siteName, jobSlots = int(jobSlots),
+            resourceControl.insertSite(siteName = siteName, pendingSlots = int(pendingSlots),
+                                       runningSlots = int(runningSlots),
                                        seName = seName, ceName = ceName,
-                                       plugin = plugin, cmsName = cmsName)            
+                                       plugin = plugin, cmsName = cmsName)
         return
 
-    if jobSlots != None:
-        resourceControl.setJobSlotsForSite(siteName = siteName, jobSlots = jobSlots)
+    if pendingSlots != None or runningSlots != None:
+        resourceControl.setJobSlotsForSite(siteName = siteName,
+                                           pendingJobSlots = pendingSlots,
+                                           runningJobSlots = runningSlots)
 
     if seName != None:
         print "It's not possible to change a site's SE name after the site has"
@@ -206,27 +222,31 @@ def updateThresholdInfo(resourceControl, siteName, taskType, maxSlots, priority 
         print "thresholds."
         print ""
         myOptParser.print_help()
-        sys.exit(1)        
+        sys.exit(1)
 
     if maxSlots == None:
         print "You must provide the maximum number of slots."
         print ""
         myOptParser.print_help()
         sys.exit(1)
-    
+
     resourceControl.insertThreshold(siteName = siteName, taskType = taskType,
                                     maxSlots = int(maxSlots), priority = priority)
     return
 
-def drainSite(site, drain):
-    """Drain or re-enable a site"""
+def setSiteState(resourceControl, siteName, state):
+    """
+    _setSiteState_
+
+    Set an specific state to a site
+    """
     if resourceControl.listSiteInfo(siteName) == None:
-        print "You must add the site to the database before you can drain it"
+        print "You must add the site to the database before you can change its state"
         print ""
         myOptParser.print_help()
         sys.exit(1)
 
-        return resourceControl.drainSite(site, drain)
+    return resourceControl.changeSiteState(siteName, state)
 
 myOptParser = createOptionParser()
 (options, args) = myOptParser.parse_args()
@@ -240,25 +260,26 @@ else:
     if options.addT1s == True:
         t1Sites = getCMSSiteInfo("T1*")
         addSites(myResourceControl, t1Sites, options.ceName, options.plugin,
-                 options.jobSlots)
+                 options.pendingSlots, options.runningSlots)
     elif options.addT2s == True:
         t2Sites = getCMSSiteInfo("T2*")
         addSites(myResourceControl, t2Sites, options.ceName, options.plugin,
-                 options.jobSlots)
+                 options.pendingSlots, options.runningSlots)
     elif options.addAllSites == True:
         allSites = getCMSSiteInfo("*")
         addSites(myResourceControl, allSites, options.ceName, options.plugin,
-                 options.jobSlots)
+                 options.pendingSlots, options.runningSlots)
     elif options.siteName == None:
         print "You must specify a site name."
         myOptParser.print_help()
         sys.exit(1)
-    elif options.drain is not None:
-        drainSite(options.siteName, options.drain)
+    elif options.state is not None:
+        setSiteState(myResourceControl, options.siteName, options.state)
         sys.exit(0)
     elif options.taskType == None:
-        updateSiteInfo(myResourceControl, options.siteName, options.jobSlots,
-                       options.ceName, options.seName, options.plugin, options.cmsName)
+        updateSiteInfo(myResourceControl, options.siteName, options.pendingSlots,
+                       options.runningSlots, options.ceName, options.seName,
+                       options.plugin, options.cmsName)
         sys.exit(0)
     else:
         updateThresholdInfo(myResourceControl, options.siteName,

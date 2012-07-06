@@ -1,4 +1,14 @@
-[  
+[
+  {
+      "from": ":db/_design/:dname/*",
+      "to": "*"
+  },
+
+  {
+    "from": "vendor/*",
+    "to": "vendor/*"
+  },
+
   {
       "from": "index.html",
       "to": "index.html"
@@ -7,12 +17,12 @@
     "from": "",
     "to": "_show/redirect"
   },
-  
+
   {
     "from": "css/*",
     "to": "css/*"
   },
-  
+
   {
     "from": "images/*",
     "to": "images/*"

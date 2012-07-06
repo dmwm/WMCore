@@ -185,6 +185,8 @@ class TaskChainWorkloadFactory(StdBase):
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
         self.emulation = arguments.get("Emulation", False)
 
+        #Check for pileup configuration
+        self.pileupConfig = arguments.get("PileupConfig", None)
         
         numTasks = arguments['TaskChain']
         for i in range(1, numTasks+1):
@@ -274,6 +276,10 @@ class TaskChainWorkloadFactory(StdBase):
                                             splitArgs = splitArguments, stepType = cmsswStepType, 
                                             seeding = taskConf['Seeding'], totalEvents = taskConf['RequestNumEvents']
                                             )
+
+        if self.pileupConfig:
+            self.setupPileup(task, self.pileupConfig)
+
         self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
         procMergeTasks = {}
         for outputModuleName in outputMods.keys():

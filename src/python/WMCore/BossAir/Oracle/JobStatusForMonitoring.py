@@ -20,5 +20,5 @@ class JobStatusForMonitoring(MySQLJobStatusForMonitoring):
                INNER JOIN wmbs_workflow wwf ON wwf.id = ws.workflow
                LEFT OUTER JOIN wmbs_location wl ON wl.id = wj.location
                WHERE rj.status = :complete
-               GROUP BY wwf.name, plugin, st.name
+               GROUP BY wwf.name, wl.plugin, st.name, wu.cert_dn
     """

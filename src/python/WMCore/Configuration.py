@@ -240,17 +240,48 @@ class ConfigSection(object):
                         self._internal_docstrings[attr], attr))
         return result
 
+
     def dictionary_(self):
         """
         _dictionary_
 
-        Create a dictionary representation of this object
-
+        Create a dictionary representation of this object.
+        
+        This method does not take into account possible ConfigSections
+        as attributes of self (i.e. sub-ConfigSections) as the
+        dictionary_whole_tree_() method does.
+        The reason for this method to stay is that WebTools.Root.py
+        depends on a few places to check itself like:
+        if isinstance(param_value, ConfigSection) ...
+        
         """
         result = {}
         [ result.__setitem__(x, getattr(self, x))
           for x in self._internal_settings ]
         return result
+    
+    
+    def dictionary_whole_tree_(self):
+        """
+        Create a dictionary representation of this object.
+        
+        ConfigSection.dictionary_() method needs to expand possible
+        items that are ConfigSection instances (those which appear
+        in the _internal_children set).
+        Also these sub-ConfigSections have to be made dictionaries
+        rather than putting e.g.
+        'Task1': <WMCore.Configuration.ConfigSection object at 0x104ccb50>
+        
+        """
+        result = {}
+        for x in self._internal_settings:
+            if x in self._internal_children:
+                v = getattr(self, x)
+                result[x] = v.dictionary_whole_tree_()
+                continue
+            result.__setitem__(x, getattr(self, x)) # the same as result[x] = value
+        return result
+
 
     def document_(self, docstring, parameter = None):
         """

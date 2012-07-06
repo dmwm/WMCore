@@ -80,7 +80,7 @@ class GlobalParams(object):
 
     @staticmethod
     def setNumOfEventsPerFile(numOfEventsPerFile):
-        GlobalParams._num_of_events_per_filet = numOfEventsPerFile
+        GlobalParams._num_of_events_per_file = numOfEventsPerFile
     
     @staticmethod
     def setNumOfLumisPerBlock(numOfLumisPerBlock):

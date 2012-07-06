@@ -17,7 +17,7 @@ from DBSAPI.dbsApiException import *
 from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx
 from WMCore.Services.EmulatorSwitch import emulatorHook
 
-def remapDBS3Keys(data, stringify = True, **others):
+def remapDBS3Keys(data, stringify = False, **others):
     """Fields have been renamed between DBS2 and 3, take fields from DBS3
     and map to DBS2 values
     """
@@ -239,7 +239,7 @@ class DBS3Reader:
             msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
 
-        blocks = [remapDBS3Keys(block, block_name = 'Name') for block in blocks]
+        blocks = [remapDBS3Keys(block, stringify = True, block_name = 'Name') for block in blocks]
         # only raise if blockName not specified - mimic dbs2 error handling
         if not blocks and not blockName:
             msg = "DBSReader.getFileBlocksInfo(%s, %s): No matching data"
@@ -378,7 +378,7 @@ class DBS3Reader:
         for file in files:
             if lumis:
                 file["LumiList"] = lumiDict[file['logical_file_name']]
-            result.append(remapDBS3Keys(file))
+            result.append(remapDBS3Keys(file, stringify = True))
         return result
 
     def listFilesInBlockWithParents(self, fileBlockName):

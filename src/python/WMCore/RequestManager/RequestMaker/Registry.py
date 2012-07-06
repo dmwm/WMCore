@@ -104,8 +104,13 @@ def buildWorkloadForRequest(typename, schema):
     request.update(schema)
     loadRequestSchema(workload = workload, requestSchema = schema)
     request['WorkloadSpec'] = workload.data
-    request['SoftwareVersions'].append(schema.get('CMSSWVersion', "CMSSW_5_0_0"))
-    request['DbsUrl'] = (workload.getTopLevelTask()).dbsUrl()
+    # use the CMSSWVersion from the input schema only if it's defined (like
+    # for a new request). for example for a resubmission request, schema['CMSSWVersion']
+    # is empty and will be worked out later ; do not use any defaults
+    if schema.get('CMSSWVersion'):
+        request['SoftwareVersions'].append(schema.get('CMSSWVersion'))
+    # assume only one dbs for all the task
+    request['DbsUrl'] = (workload.getTopLevelTask()[0]).dbsUrl()
     return request
 
 

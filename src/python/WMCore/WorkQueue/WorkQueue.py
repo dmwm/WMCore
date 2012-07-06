@@ -603,7 +603,7 @@ class WorkQueue(WorkQueueBase):
             # find out available resources from wmbs
             from WMCore.WorkQueue.WMBSHelper import freeSlots
             sites = freeSlots(self.params['QueueDepth'], knownCmsSites = cmsSiteNames())
-            draining_sites = freeSlots(self.params['QueueDepth'], onlyDrain = True)
+            draining_sites = freeSlots(self.params['QueueDepth'], allowedStates = ['Draining'])
             # resources for new work are free wmbs resources minus what we already have queued
             _, resources = self.backend.availableWork(sites)
             draining_resources = draining_sites # don't minus available as large run-anywhere could decimate
@@ -755,6 +755,9 @@ class WorkQueue(WorkQueueBase):
                     msg += ' on events %d-%d' % (unit['Mask']['FirstEvent'], unit['Mask']['LastEvent'])
                 self.logger.info(msg)
                 totalToplevelJobs += unit['Jobs']
+                totalEvents += unit['NumberOfEvents']
+                totalLumis += unit['NumberOfLumis']
+                totalFiles += unit['NumberOfFiles']
             totalUnits.extend(units)
 
         return totalUnits, {'total_jobs': totalToplevelJobs, 'input_events': totalEvents, 'input_lumis': totalLumis, 'input_num_files': totalFiles}

@@ -30,9 +30,9 @@ class Usage(Exception):
 def importConfigTemplate(filename):
     """
     _importConfigTemplate_
-    
+
     Given filename, load it and grab the configuration object from it
-    
+
     """
     mod = imp.load_module("wmcore_config_input", open(filename, 'r'), filename, (".py", "r", imp.PY_SOURCE)   )
     config = getattr(mod, 'config', None)
@@ -44,31 +44,31 @@ def importConfigTemplate(filename):
 def saveConfiguration(configObject, outputPath):
     """
     _saveConfiguration_
-    
+
     Save the configuration to the output path provided
-    
+
     """
     saveConfigurationFile(configObject, outputPath)
     os.chmod(outputPath, 0600)
 
-    
+
 def modifyConfiguration(config, **args):
     """
     _modifyConfiguration_
-    
+
     Given the dictionary of key: value, look up the entry matching the key in the configuration
     and set it to that value in the config
-    
+
     """
     mapping = {
         "coredb_url" : [("CoreDatabase","connectUrl") ],
         "mysql_url" : [("CoreDatabase","connectUrl") ],
         "couch_url" : [("JobStateMachine", "couchurl"), ("ACDC", "couchurl"), ("WorkQueueManager", "couchurl"),
-                       
+
                        ],
         "working_dir" : [("General", "workDir")],
     }
-    
+
     for k,v in args.items():
         parameters = mapping.get(k, [])
         for p in parameters:
@@ -81,14 +81,14 @@ def modifyConfiguration(config, **args):
 
         if component == "JobCreator":
             compCfg.jobCacheDir = "%s/%s/JobCache" % (args['working_dir'], component)
-    
+
     localhost = socket.gethostname()
     for webapp in config.listWebapps_():
         compCfg = getattr(config, webapp)
         compCfg.componentDir = "%s/%s" % (args['working_dir'], webapp)
         # Webtool REST service host location
         compCfg.Webtools.host = localhost
-    
+
     # hostname locations
     config.Agent.hostName = localhost
 
@@ -99,29 +99,29 @@ def modifyConfiguration(config, **args):
         if hasattr(config,"AlertGenerator"):
             # configuration for MySQL server CPU monitor: mysqlCPUPoller (percentage values)
             config.AlertGenerator.section_("mysqlCPUPoller")
-            config.AlertGenerator.mysqlCPUPoller.soft = 40 # [percent]
-            config.AlertGenerator.mysqlCPUPoller.critical = 60 # [percent]
-            config.AlertGenerator.mysqlCPUPoller.pollInterval = 10 # [second]
+            config.AlertGenerator.mysqlCPUPoller.soft = 200 # [percent]
+            config.AlertGenerator.mysqlCPUPoller.critical = 250 # [percent]
+            config.AlertGenerator.mysqlCPUPoller.pollInterval = 60 # [second]
             # period during which measurements are collected before evaluating for possible alert triggering
-            config.AlertGenerator.mysqlCPUPoller.period = 30 # [second]
+            config.AlertGenerator.mysqlCPUPoller.period = 300 # [second]
             # configuration for MySQL memory monitor: mysqlMemPoller (percentage values)
             config.AlertGenerator.section_("mysqlMemPoller")
-            config.AlertGenerator.mysqlMemPoller.soft = 40 # [percent]
-            config.AlertGenerator.mysqlMemPoller.critical = 60 # [percent]
-            config.AlertGenerator.mysqlMemPoller.pollInterval = 10 # [second]
+            config.AlertGenerator.mysqlMemPoller.soft = 20 # [percent]
+            config.AlertGenerator.mysqlMemPoller.critical = 25 # [percent]
+            config.AlertGenerator.mysqlMemPoller.pollInterval = 60 # [second]
             # period during which measurements are collected before evaluating for possible alert triggering
-            config.AlertGenerator.mysqlMemPoller.period = 30 # [second]
+            config.AlertGenerator.mysqlMemPoller.period = 300 # [second]
             # configuration for MySQL database size: mysqlDbSizePoller (gigabytes values)
             config.AlertGenerator.section_("mysqlDbSizePoller")
-            config.AlertGenerator.mysqlDbSizePoller.soft = 1 # GB
-            config.AlertGenerator.mysqlDbSizePoller.critical = 2 # GB
-            config.AlertGenerator.mysqlDbSizePoller.pollInterval = 10 # [second]
-            
+            config.AlertGenerator.mysqlDbSizePoller.soft = 20 # GB
+            config.AlertGenerator.mysqlDbSizePoller.critical = 25 # GB
+            config.AlertGenerator.mysqlDbSizePoller.pollInterval = 600 # [second]
+
     if hasattr(config,"WorkloadSummary"):
         splited = args["workload_summary_url"].strip().rstrip('/').rsplit('/', 1)
         config.WorkloadSummary.couchurl = args["couch_url"]
         config.WorkloadSummary.database = splited[1]
-        
+
     if hasattr(config,"TaskArchiver"):
         splited = args["workload_summary_url"].strip().rstrip('/').rsplit('/', 1)
         config.TaskArchiver.workloadSummaryCouchURL = splited[0]
@@ -133,6 +133,10 @@ def modifyConfiguration(config, **args):
         config.AsyncTransfer.data_source = args["couch_url"]
         config.AsyncTransfer.serverDN = args["host_dn"]
         config.AsyncTransfer.couch_statinstance = args["couch_url"]
+        config.AsyncTransfer.couch_user_monitoring_instance = args["couch_url"]
+
+    if hasattr(config,"DBSPublisher"):
+        config.DBSPublisher.couch_instance = args["couch_url"]
 
     if hasattr(config,"CRABInterface"):
         config.CRABInterface.Webtools.host = args["cs_hostname"]
@@ -148,7 +152,7 @@ def modifyConfiguration(config, **args):
         config.CRABInterface.clientMapping = args["client_mapping"]
 
     if hasattr(config,"UserFileCache"):
-        config.UserFileCache.Webtools.host = args["ufc_hostname"]  
+        config.UserFileCache.Webtools.host = args["ufc_hostname"]
         config.UserFileCache.Webtools.port = int(args["ufc_port"])
         config.UserFileCache.views.active.userfilecache.serviceURL = args["ufc_service_url"]
         config.UserFileCache.userCacheDir = args["ufc_cachedir"]
@@ -168,7 +172,7 @@ def modifyConfiguration(config, **args):
                                                            localhost, config.reqmgr.Webtools.port)
         config.reqmgr.views.active.monitorSvc.workloadSummaryCouchURL = sanitizeURL(args["workload_summary_url"])['url']
 
-    # hating having to add this when WMAgentConfig.py has everything set up ... 
+    # hating having to add this when WMAgentConfig.py has everything set up ...
     if  hasattr(config, "AlertProcessor"):
         if hasattr(config.AlertProcessor.critical.sinks, "couch"):
             config.AlertProcessor.critical.sinks.couch.url = args["couch_url"]
@@ -197,7 +201,7 @@ def modifyConfiguration(config, **args):
             config.AlertGenerator.couchMemPoller.couchURL = args["couch_url"]
         if hasattr(config.AlertGenerator, "couchErrorsPoller"):
             config.AlertGenerator.couchErrorsPoller.couchURL = args["couch_url"]
-                        
+
     # custom global workqueue
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'GlobalQueue':
         if args.get('workqueue_db_name'):
@@ -241,24 +245,24 @@ def modifyConfiguration(config, **args):
 def main(argv=None):
     if argv is None:
         argv = sys.argv
-    
+
     inputFile = None
     outputFile = None
     parameters = {}
 
     try:
         try:
-            opts, args = getopt.getopt(argv[1:], "h", 
+            opts, args = getopt.getopt(argv[1:], "h",
             ["help", "input=", "output=", "mysql_socket=", "mysql_url=", "couch_url=",
              "working_dir=", "reqmgr_hostname=", "reqmgr_port=", "global_workqueue_url=",
-             "workqueue_db_name=", "cs_hostname=", "cs_port=", "host_dn=", "couch_url=",  
-             "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=", 
+             "workqueue_db_name=", "cs_hostname=", "cs_port=", "host_dn=", "couch_url=",
+             "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=",
              "ufc_service_url=", "ufc_cachedir=", "client_mapping=", "wmbs_service_port=",
              "workload_summary_url=", "coredb_url=", "wmstats_url="])
 
         except getopt.error, msg:
             raise Usage(msg)
-    
+
         # option processing
         for option, value in opts:
             if option in ("-h", "--help"):
@@ -270,15 +274,15 @@ def main(argv=None):
             if option in ('--mysql_socket', '--mysql_url', '--coredb_url', '--couch_url',
                           '--working_dir', '--reqmgr_hostname', '--reqmgr_port',
                           '--global_workqueue_url', '--workqueue_db_name',
-                          '--cs_hostname', '--cs_port', '--host_dn', '--couch_url', 
+                          '--cs_hostname', '--cs_port', '--host_dn', '--couch_url',
                           '--sb_hostname', '--sb_port', '--sb_basepath', '--ufc_hostname',
                           '--ufc_port', '--ufc_service_url', '--ufc_cachedir',
                           '--client_mapping', '--wmbs_service_port', '--workload_summary_url',
                           '--wmstats_url'):
 
                 parameters[option[2:]] = value
-    
-    
+
+
     except Usage, err:
         print >> sys.stderr, sys.argv[0].split("/")[-1] + ": " + str(err.msg)
         print >> sys.stderr, "\t for help use --help"
@@ -304,9 +308,9 @@ def main(argv=None):
         msg = "Error saving output configuration file:\n %s\n" % outputFile
         msg += str(ex)
         print >> sys.stderr, msg
-        return 5 
+        return 5
 
 if __name__ == "__main__":
     sys.exit(main())
-    
-  
+
+

@@ -100,11 +100,6 @@ _TweakParams = [
 
     ]
 
-#  //
-# // Standard util to pad a run/job number to make an LFN Group
-#//
-lfnGroup = lambda j : str(j.get("counter", 0) / 1000).zfill(4)
-
 class WMTweakMaskError(StandardError):
 
     def __init__(self, mask = None, msg = "Cannot set process from job mask"):
@@ -113,6 +108,18 @@ class WMTweakMaskError(StandardError):
 
     def __str__(self):
         return "Error: %s \n Mask: %s" % (self.message, str(self.mask))
+
+def lfnGroup(job):
+    """
+    _lfnGroup_
+
+    Determine the lfnGroup from the job counter and the agent number
+    provided in the job baggage, the job counter and agent number
+    default both to 0. The result will be a 5-digit string.
+    """
+    modifier = str(job.get("agentNumber", 0))
+    lfnGroup = modifier + str(job.get("counter", 0) / 1000).zfill(4)
+    return lfnGroup
 
 def hasParameter(pset, param, nopop = False):
     """

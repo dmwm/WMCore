@@ -1,3 +1,47 @@
+0.8.49 to 0.8.50:
+  - Improved ResourceControl and job scheduling.  Fixes #3888.
+  - Support DQM sequences in the PromptReco and Tier1PromptReco specs.  Fixes #3879.
+  - Fail input files for paused jobs that are failed.  Fixes #3897.
+  - Update run and lumi information in WMBS if it is missing.  Fixes #3875.
+  - Cleanups to the Tier1PromptReco spec.  Fixes #3850.
+  - Properly handle files with 0 events in the WorkQueue and job splitting.  Fixes #3596.
+  - Don't kill jobs with a state time of 0.  Fixes #3889.
+  - Make the ForceUnmerged parameter disable straight-to-merge.  Fixes #3890.
+  - Don't associate a CMSSW version with a request if one doesn't already exist.  Fixes #3883.
+  - Report the grid name properly to the dashboard.  Fixes #3808.
+  - Report the plugin used for job submission to the dashboard.  Fixes #3893.
+  - Improve logging in the bootstrapping code.  Fixes #3898.
+  - Ensure that CouchDB URLs do not end in a '/'.  Fixes #3899.
+  - Modified analysis WMSpec: it does not send a logcollect job if saveLog=False. Fixes #3855
+  - Modify the ParentlessMergeBySize and SiblingProcessingBased subscriptions so that 
+    they work correctly with files available at multiple sites. Fixes #3906.
+  - Handle some issue with the ConfigSection stuff with nested containers and nested ConfigSections.  Fixes #3891.
+  - Add DBSPublisher.couch_instance to wmagent-couchapp-init and wmagent-mod-config, fixes #3892
+  - Add storage to wmc-runtime package
+  - Fix bossair monitoring query to support oracle (T0)
+  - Add postfields parameters for DELETE verb. Fixes #3860
+
+0.8.48 to 0.8.49:
+  - Fixups from the last PromptSkimming fixups.  Fixes #3864.
+  - Fix ReqMgr unit test failures.  Fixes #3708.
+  - Cleanup the local workqueue inbox in the PromptSkimming system.  Fixes #3857.
+  - Don't abort a workflow if the user doesn't have permissins.  Fixes #3859.
+  - More white space fixes in UserFileCache.  Fixes #3813.
+  - Fix the handling of datasets that reside in more than one block.  Fixes #3845.
+  - Better protections in the PromptSkimming system for configs that don't get uploaded.  Fixes #3843.
+  - Update alert thresholds.  Fixes #3651.
+  - Add an extra digit to the LFN counter to that datasets produced by different WMAgent instances don't go into the same directory.  Fixes #3820.
+  - Stop the WorkQueue from polling the entire dataset in DBS for PromptSkimming workflows.  Fixes #3822.
+  - Fix the initialization of the first lumi and first event in StdBase.  Fixes #3828.
+  - Support a pileup parameter for TaskChain requests.  Fixes #3827.
+  - WMBSFileFeeder not feeding draining sites. Fixes #3834
+  - Report the number of events processed/produced by a job to the dashboard.  Fixes #3805.
+  - Identify step attributes with a counter for dashboard reporting.  Fixes #3803.
+  - Add Add couch_user_monitoring_instance to wmagent-mod-config, fixes #3823
+  - Add the possibility to specify the lenght of the myproxy.  Fixes #3819
+  - Remove unused subdir parameter. Fixes #3800
+  - Fix some white space corruption.  Fixes #3813.
+
 0.8.47 to 0.8.48:
   - Guard against empty arguments with Config/DataProcessing configs.  Fixes #3797.
   - Fix PromptSkimming processing version handling.  Fixes #3775.

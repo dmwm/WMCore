@@ -1,0 +1,9 @@
+WMStats.Globals.importScripts([
+    "js/DataStruct/WMStats.Requests.js",
+    "js/DataStruct/WMStats.Agents.js",
+    "js/DataStruct/WMStats.Sites.js",
+    "js/DataStruct/WMStats.JobSummary.js",
+    "js/DataStruct/WMStats.Campaigns.js",
+    "js/DataStruct/WMStats.Alerts.js",
+    "js/DataStruct/WMStats.JobDetails.js"
+])

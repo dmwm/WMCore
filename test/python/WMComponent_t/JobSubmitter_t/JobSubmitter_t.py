@@ -179,8 +179,8 @@ class JobSubmitterTest(unittest.TestCase):
         resourceControl = ResourceControl()
         for site in self.sites:
             resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site),
-                                       ceName = site, plugin = "CondorPlugin", jobSlots = 10000,
-                                       cmsName = site)
+                                       ceName = site, plugin = "CondorPlugin", pendingSlots = 10000,
+                                       runningSlots = 20000, cmsName = site)
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
                                             maxSlots = 10000)
 
@@ -652,9 +652,9 @@ class JobSubmitterTest(unittest.TestCase):
         ceName = "https://cream-1-fzk.gridka.de:8443/ce-cream/services/CREAM2  pbs cmsXS"
         #ceName = "127.0.0.1"
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationSlots  = self.daoFactory(classname = "Locations.SetJobSlots")
+        pendingSlots  = self.daoFactory(classname = "Locations.SetPendingSlots")
         locationAction.execute(siteName = siteName, seName = siteName, ceName = ceName)
-        locationSlots.execute(siteName = siteName, jobSlots = 1000)
+        pendingSlots.execute(siteName = siteName, pendingSlots = 1000)
 
         resourceControl = ResourceControl()
         resourceControl.insertSite(siteName = siteName, seName = siteName, ceName = ceName)

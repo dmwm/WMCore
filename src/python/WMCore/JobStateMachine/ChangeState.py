@@ -8,6 +8,7 @@ Propagate a job from one state to another.
 import time
 import logging
 import traceback
+import re
 
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Database.CMSCouch import CouchConflictError, CouchNotFoundError
@@ -16,6 +17,8 @@ from WMCore.JobStateMachine.Transitions import Transitions
 from WMCore.Services.UUID import makeUUID
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMConnectionBase import WMConnectionBase
+
+CMSSTEP = re.compile(r'^cmsRun[0-9]+$')
 
 class ChangeState(WMObject, WMConnectionBase):
     """
@@ -238,20 +241,21 @@ class ChangeState(WMObject, WMConnectionBase):
                         errmsgs[step] = [error for error in fwjrDocument["fwjr"]["steps"][step]["errors"]]
                     if "input" in fwjrDocument["fwjr"]["steps"][step] and "source" in fwjrDocument["fwjr"]["steps"][step]["input"]:
                         inputs.extend( [source["runs"] for source in fwjrDocument["fwjr"]['steps'][step]["input"]["source"] if "runs" in source] )
-                
+
                 outputs = []
                 outputDataset = None
-                for singlefile in job["fwjr"].getAllFiles():
-                    if singlefile:
-                        outputs.append({'type': singlefile.get('module_label', None),
-                                        'lfn': singlefile.get('lfn', None),
-                                        'location': list(singlefile.get('locations', set([]))) if len(singlefile.get('locations', set([]))) > 1
-                                                                                    else singlefile['locations'].pop(),
-                                        'checksums': singlefile.get('checksums', {}),
-                                        'size': singlefile.get('size', None) })
-                        #it should have one output dataset for all the files
-                        outputDataset = singlefile.get('dataset', None)
-                
+                for singlestep in job["fwjr"].listSteps(): 
+                    for singlefile in job["fwjr"].getAllFilesFromStep(step=singlestep): 
+                        if singlefile: 
+                            outputs.append({'type': 'output' if CMSSTEP.match(singlestep) else singlefile.get('module_label', None), 
+                                            'lfn': singlefile.get('lfn', None), 
+                                            'location': list(singlefile.get('locations', set([]))) if len(singlefile.get('locations', set([]))) > 1 
+                                                                                                   else singlefile['locations'].pop(), 
+                                            'checksums': singlefile.get('checksums', {}), 
+                                            'size': singlefile.get('size', None) }) 
+                            #it should have one output dataset for all the files
+                            outputDataset = singlefile.get('dataset', None) if not outputDataset else outputDataset 
+
                 jobSummary = {"_id": jobSummaryId,
                               "type": "jobsummary",
                               "retrycount": job["retry_count"],

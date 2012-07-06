@@ -66,10 +66,10 @@ class Block(StartPolicyInterface):
         blocks = []
         # Take data inputs or from spec
         if not self.data:
-            self.data = {datasetPath : []} # same structure as in WorkQueueElement
-            #blocks = dbs.getFileBlocksInfo(datasetPath, locations = False)
-        #else:
-            #dataItems = self.data.keys()
+            if blockWhiteList:
+                self.data = dict((block, []) for block in blockWhiteList)
+            else:
+                self.data = {datasetPath : []} # same structure as in WorkQueueElement
 
         for data in self.data:
             if data.find('#') > -1:
@@ -82,16 +82,17 @@ class Block(StartPolicyInterface):
                     blocks.append(str(block))
 
         for blockName in blocks:
+
+            # check block restrictions
+            if blockWhiteList and blockName not in blockWhiteList:
+                continue
+            if blockName in blockBlackList:
+                continue
+
             block = dbs.getDBSSummaryInfo(datasetPath, block = blockName)
             # blocks with 0 valid files should be ignored
             # - ideally they would be deleted but dbs can't delete blocks
             if not block['NumberOfFiles'] or block['NumberOfFiles'] == '0':
-                continue
-
-            # check block restrictions
-            if blockWhiteList and block['block'] not in blockWhiteList:
-                continue
-            if block['block'] in blockBlackList:
                 continue
 
             # check run restrictions

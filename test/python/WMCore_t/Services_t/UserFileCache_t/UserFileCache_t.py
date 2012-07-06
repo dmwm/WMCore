@@ -31,18 +31,18 @@ class UserFileCacheTest(unittest.TestCase):
         return
 
     def testUploadDownload(self):
-        if 'UFC_ENDPOINT' in os.environ:
+        if 'UFCURL' in os.environ:
             currdir = getTestBase()
             upfile = path.join(currdir, 'WMCore_t/Services_t/UserFileCache_t/test_file.tgz') #file to upload
-            ufc = UserFileCache({'endpoint':os.environ['UFC_ENDPOINT']})
+            ufc = UserFileCache({'endpoint':os.environ['UFCURL']})
 
             #named upload/download
             res = ufc.upload(upfile, 'name_publish.tgz')
-            ufc.download(name=res['result'][0]['name'], output='name_publish.tgz')
+            ufc.download(name=res['name'], output='name_publish.tgz')
 
             #hashkey upload/download
             res = ufc.upload(upfile)
-            ufc.download(res['result'][0]['hashkey'], output='pippo_publish_down.tgz')
+            ufc.download(res['hashkey'], output='pippo_publish_down.tgz')
 
 
 if __name__ == '__main__':

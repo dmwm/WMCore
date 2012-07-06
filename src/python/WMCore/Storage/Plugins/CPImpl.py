@@ -41,9 +41,5 @@ class CPImpl(StageOutImplV2):
             raise StageOutFailure, "Invalid file size"
         return toPfn
 
-
     def doDelete(self, pfn, seName, command, options, protocol  ):
         os.unlink(pfn)
-
-
-

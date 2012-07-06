@@ -61,6 +61,24 @@ WMStats.Requests = function (noFilterFlag) {
         summary.pending += _get(aData, "status.submitted.pending", 0);
     }
     
+    function updateRequestSummary(doc) {
+        var request = doc.workflow;
+        var aData = _dataByWorkflow[request];
+        
+        if (doc.type == "agent_request") {
+            _summary.totalJobs += getWMBSJobsTotal(doc);
+            _summary.processedEvents += _get(doc, "output_progress.0.events", 0)
+            _summary.failure += failureTotal(doc);
+            _summary.queued += queuedTotal(doc);
+            _summary.success += _get(doc, "status.success", 0);
+            _summary.running += _get(doc, "status.submitted.running", 0);
+            _summary.pending += _get(doc, "status.submitted.pending", 0);
+        } else if (doc.type == "reqmgr_request") {
+            _summary.totalEvents += Number(_get(doc, "input_events", 0));
+            _summary.length++;
+        }
+    }
+    
     function _addJobs(baseObj, additionObj) {
        for (var field in additionObj) {
             if (!baseObj[field]) {
@@ -95,24 +113,36 @@ WMStats.Requests = function (noFilterFlag) {
     }
     
     function updateRequest(doc) {
+
         var request = getDataByWorkflow(doc.workflow);
         if (!request) {
             _length++;
             _dataByWorkflow[doc.workflow] = {};
         }
+        
+        updateRequestSummary(doc);
+        
         var requestWithAgent = getRequestByNameAndAgent(doc.workflow, doc.agent_url);
          
         for (var field in doc) {
             //handles when request is splited in more than one agents
-            if (_dataByWorkflow[doc.workflow][field]  && (field == 'sites' || field == 'status')){
+            if (_dataByWorkflow[doc.workflow][field] && 
+                (field == 'sites' || field == 'status')){
                 _addJobs(_dataByWorkflow[doc.workflow][field], doc[field])
+            } else if (_dataByWorkflow[doc.workflow][field] && field == 'output_progress') {
+                var outProgress = _dataByWorkflow[doc.workflow].output_progress;
+                for (var index in outProgress){
+                    for (var prop in doc[field][index]) {
+                        outProgress[index][prop] += doc[field][index][prop];
+                        //TODO: need combine dataset separtely
+                    }
+                }
             } else {
                 _dataByWorkflow[doc.workflow][field] = doc[field];
             }
             //for request, agenturl structure
             requestWithAgent[field] = doc[field];
         }
-        updateSummary(doc.workflow, _summary);
     };
     
     function updateBulkRequests(docList) {
@@ -198,7 +228,12 @@ WMStats.Requests = function (noFilterFlag) {
     }
     
     function getWMBSJobsTotal(request) {
-        var aData = _dataByWorkflow[request];
+        if (typeof(request) == "string") {
+            var aData = _dataByWorkflow[request];
+        } else {
+            var aData = request;
+        }
+        
         return (_get(aData, "status.success", 0) + 
                 _get(aData, "status.cooloff", 0) + 
                 _get(aData, "status.canceled", 0) +
@@ -208,14 +243,22 @@ WMStats.Requests = function (noFilterFlag) {
     }
     
     function failureTotal(request) {
-        var aData = _dataByWorkflow[request];
+        if (typeof(request) == "string") {
+            var aData = _dataByWorkflow[request];
+        } else {
+            var aData = request;
+        }
         return (_get(aData, "status.failure.create", 0) + 
                 _get(aData, "status.failure.submit", 0) + 
                 _get(aData, "status.failure.exception", 0));
     };
     
     function queuedTotal(request) {
-        var aData = _dataByWorkflow[request];
+        if (typeof(request) == "string") {
+            var aData = _dataByWorkflow[request];
+        } else {
+            var aData = request;
+        }
         return (_get(aData, "status.queued.first", 0) + 
                 _get(aData, "status.queued.retry", 0));
     };
@@ -244,7 +287,11 @@ WMStats.Requests = function (noFilterFlag) {
     }
     
     function submittedTotal(request) {
-        var aData = _dataByWorkflow[request];
+        if (typeof(request) == "string") {
+            var aData = _dataByWorkflow[request];
+        } else {
+            var aData = request;
+        }
         return (_get(aData, "status.submit.first", 0) + 
                 _get(aData, "status.submit.retry", 0));
     };

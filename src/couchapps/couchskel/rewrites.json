@@ -20,6 +20,11 @@
   },
 
   {
+    "from": "_all_docs",
+    "to": "../../_all_docs"
+  },
+
+  {
     "from": "css/*",
     "to": "css/*"
   },

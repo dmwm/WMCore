@@ -29,7 +29,7 @@ class LocalCouchDBData():
         self.couchURLBase, self.dbName = splitCouchServiceURL(couchURL)
         self.jobCouchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/jobs", False)
         self.fwjrsCouchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/fwjrs", False)
-        self.summaryLevel == summaryLevel
+        self.summaryLevel = summaryLevel
         
     def getJobSummaryByWorkflowAndSite(self):
         """
@@ -62,7 +62,7 @@ class LocalCouchDBData():
 
         # reformat the doc to upload to reqmon db
         data = {}
-        if self.summaryLevel == "Task":
+        if self.summaryLevel == "task":
             for x in results.get('rows', []):
                 data.setdefault(x['key'][0], {})
                 data[x['key'][0]].setdefault(x['key'][1], {}) 
@@ -132,7 +132,7 @@ class WMAgentDBData():
         wmAgentDAOFactory = DAOFactory(package = "WMCore.Agent.Database", 
                                      logger = logger, dbinterface = dbi)
         self.summaryLevel = summaryLevel
-        if self.summaryLevel == "Task":
+        if self.summaryLevel == "task":
             self.batchJobByTaskAction = bossAirDAOFactory(classname = "JobStatusByTaskAndSite")
         else:
             self.batchJobAction = bossAirDAOFactory(classname = "JobStatusByWorkflowAndSite")
@@ -191,9 +191,17 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, agentInfo, uploadTime, 
         doc['type'] = "agent_request"
         doc['workflow'] = request
         # this will set doc['status'], and doc['sites']
-        tempData = _convertToStatusSiteFormat(status, summaryLevel)
-        doc['status'] = tempData['status']
-        doc['sites'] = tempData['sites']
+        if summaryLevel == 'task':
+            doc['tasks'] = _convertToStatusSiteFormat(status, summaryLevel)
+            data['status'] = {}
+            data['sites'] = {}
+            for task, taskData in doc['tasks']:
+                _combineJobsForStatusAndSite(taskData, data)
+        else:
+            tempData = _convertToStatusSiteFormat(status, summaryLevel)
+            doc['status'] = tempData['status']
+            doc['sites'] = tempData['sites']
+        
         doc['timestamp'] = uploadTime
         doc['output_progress'] = fwjrInfo.get(request, [])
         requestDocs.append(doc)
@@ -229,6 +237,20 @@ def _setMultiLevelStatus(statusData, status, value):
         statusData[statusStruct[0]][statusStruct[1]] += value
     return
 
+def _combineJobsForStatusAndSite(requestData, data):
+    for status, siteJob in requestData.items():
+        if type(siteJob) != dict:
+            _setMultiLevelStatus(data['status'], status, siteJob)
+        else:
+            for site, job in siteJob.items():
+                _setMultiLevelStatus(data['status'], status, int(job))
+                if site != 'Agent':
+                    if site is None:
+                        site = 'unknown'
+                    data['sites'].setdefault(site, {})
+                    _setMultiLevelStatus(data['sites'][site], status, int(job))
+    return
+
 def _convertToStatusSiteFormat(requestData, summaryLevel = None):
     """
     convert data structure for couch db.
@@ -246,22 +268,12 @@ def _convertToStatusSiteFormat(requestData, summaryLevel = None):
     data['status'] = {}
     data['sites'] = {}
     
-    if summaryLevel != None and summaryLevel == 'Task':
+    if summaryLevel != None and summaryLevel == 'task':
         data['tasks'] = {}
         for task, taskData in requestData.item():
              data['tasks'][task] = _convertToStatusSiteFormat(taskData)
     else:
-        for status, siteJob in requestData.items():
-            if type(siteJob) != dict:
-                _setMultiLevelStatus(data['status'], status, siteJob)
-            else:
-                for site, job in siteJob.items():
-                    _setMultiLevelStatus(data['status'], status, int(job))
-                    if site != 'Agent':
-                        if site is None:
-                            site = 'unknown'
-                        data['sites'].setdefault(site, {})
-                        _setMultiLevelStatus(data['sites'][site], status, int(job))
+       _combineJobsForStatusAndSite(requestData, data)
     return data
 
 def _getCouchACDCHtmlBase(acdcCouchURL):

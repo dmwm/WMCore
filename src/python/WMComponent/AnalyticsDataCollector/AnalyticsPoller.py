@@ -34,7 +34,7 @@ class AnalyticsPoller(BaseWorkerThread):
         self.agentInfo['agent_url'] = ("%s:%s" % (config.Agent.hostName, config.WMBSService.Webtools.port)) 
         # need to get campaign, user, owner info
         self.agentDocID = "agent+hostname"
-        self.summaryLevel = "Workflow"
+        self.summaryLevel = (config.AnalyticsDataCollector.summaryLevel).lower()
     
     def setup(self, parameters):
         """

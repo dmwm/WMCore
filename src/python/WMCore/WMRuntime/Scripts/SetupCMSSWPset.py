@@ -137,7 +137,6 @@ def fixupFileNames(process):
     if not hasattr(process.source, "fileNames"):
         process.source.fileNames = cms.untracked.vstring()
 
-
 def fixupSecondaryFileNames(process):
     """
     _fixupSecondaryFileNames_
@@ -185,9 +184,17 @@ class SetupCMSSWPset(ScriptInterface):
         if funcName == "merge":
             try:
                 from Configuration.DataProcessing.Merge import mergeProcess
-                self.process = mergeProcess([])
+                self.process = mergeProcess(**funcArgs)
             except Exception, ex:
                 msg = "Failed to create a merge process."
+                print msg
+                return None
+        elif funcName == "repack":
+            try:
+                from Configuration.DataProcessing.Repack import repackProcess
+                self.process = repackProcess(**funcArgs)
+            except Exception, ex:
+                msg = "Failed to create a repack process."
                 print msg
                 return None
         else:
@@ -244,7 +251,7 @@ class SetupCMSSWPset(ScriptInterface):
         if hasattr(self.process, "outputModules"):
             outputModuleNames = self.process.outputModules.keys()
         else:
-            outputModuleNames = self.process.outputModules_()            
+            outputModuleNames = self.process.outputModules_()
         for outMod in outputModuleNames:
             outModRef = getattr(self.process, outMod)
             if not hasattr(outModRef, "dataset"):
@@ -428,6 +435,8 @@ class SetupCMSSWPset(ScriptInterface):
                 # there should be either "input" or "secsource" attributes
                 # and both "MixingModule", "DataMixingModule" can have both
                 inputTypeAttrib = getattr(m, "input", None) or getattr(m, "secsource", None)
+                if not inputTypeAttrib:
+                    continue
                 inputTypeAttrib.fileNames = cms.untracked.vstring()
                 if pileupType == requestedPileupType:
                     # not all blocks may be stored on the local SE, loop over
@@ -484,6 +493,19 @@ class SetupCMSSWPset(ScriptInterface):
             raise RuntimeError(m)
         return pileupDict
         
+    def handleProducersNumberOfEvents(self):
+        """
+        Some producer modules are initialized with a maximum number of events
+        to be generated, usually based on the process.maxEvents.input attribute
+        but after that is tweaked the producers number of events need to
+        be fixed as well. This method takes care of that.
+        """
+        producers = {}
+        producers.update(self.process.producers)
+        for producer in producers:
+            if hasattr(producers[producer], "nEvents"):
+                producers[producer].nEvents = cms.uint32(
+                                        self.process.maxEvents.input.value())
         
     def __call__(self):
         """
@@ -497,7 +519,10 @@ class SetupCMSSWPset(ScriptInterface):
         scenario = getattr(self.step.data.application.configuration, "scenario", None)
         if scenario != None and scenario != "":
             funcName = getattr(self.step.data.application.configuration, "function", None)
-            funcArgs = pickle.loads(getattr(self.step.data.application.configuration, "pickledarguments", None))
+            if getattr(self.step.data.application.configuration, "pickledarguments", None) != None:
+                funcArgs = pickle.loads(getattr(self.step.data.application.configuration, "pickledarguments", None))
+            else:
+                funcArgs = {}
             try:
                 self.createProcess(scenario, funcName, funcArgs)
             except Exception, ex:
@@ -556,7 +581,15 @@ class SetupCMSSWPset(ScriptInterface):
 
         # make sure default parametersets for perf reports are installed
         self.handlePerformanceSettings()
+
+        # check for event numbers in the producers
+        self.handleProducersNumberOfEvents()
         
+        #Apply events per lumi section if available
+        if hasattr(self.step.data.application.configuration, "eventsPerLumi"):
+            self.process.source.numberEventsInLuminosityBlock = \
+                cms.untracked.uint32(self.step.data.application.configuration.eventsPerLumi)
+
         # accept an overridden TFC from the step
         if hasattr(self.step.data.application,'overrideCatalog'):
             print "Found a TFC override: %s" % self.step.data.application.overrideCatalog

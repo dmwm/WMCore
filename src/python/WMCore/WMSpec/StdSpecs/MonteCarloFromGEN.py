@@ -27,7 +27,7 @@ def getTestArguments():
         "InputDataset": "/MinimumBias/Commissioning10-v4/RAW",
         "CMSSWVersion": "CMSSW_3_5_8",
         "ScramArch": "slc5_ia32_gcc434",
-        "ProcessingVersion": "v2scf",
+        "ProcessingVersion": 2,
         "SkimInput": "output",
         "GlobalTag": "GR10_P_v4::All",
         
@@ -35,6 +35,8 @@ def getTestArguments():
         "CouchDBName": "scf_wmagent_configcache",
         
         "ProcConfigCacheID": "03da10e20c7b98c79f9d6a5c8900f83b",
+        "DashboardHost" : "127.0.0.1",
+        "DashboardPort" : 8884,
         }
 
     return arguments
@@ -65,6 +67,7 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
 
         workload = self.createWorkload()
         workload.setDashboardActivity("lheproduction")
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
         procTask = workload.newTask("MonteCarloFromGEN")
 
@@ -134,6 +137,11 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
                                                 couchURL = schema["CouchURL"],
                                                 couchDBName = schema["CouchDBName"],
                                                 getOutputModules = True)
+
+        if schema.get("StdJobSplitAlgo", "LumiBased") == "LumiBased":
+            if not schema.get("StdJobSplitArgs", {"lumis_per_job": 1}).get("lumis_per_job", 0) > 0:
+                self.raiseValidationException(msg = "Invalid number of lumis_per_job for MCFromGEN")
+                
         return
 
 

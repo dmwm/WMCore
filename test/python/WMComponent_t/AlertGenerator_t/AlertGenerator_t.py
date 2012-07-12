@@ -199,7 +199,7 @@ class AlertGeneratorTest(unittest.TestCase):
             # the method just calls prepareToStart() and waits for ever
             # self.proc.startDaemon() no good for this either ... puts everything
             # on background
-            self.generator.prepareToStart()
+            self.generator.prepareToStart() # is method of Harness
         except Exception, ex:
             print ex
             self.fail(str(ex))
@@ -210,7 +210,7 @@ class AlertGeneratorTest(unittest.TestCase):
         logging.debug("Going to stop the AlertGenerator ...")
         # stop via component method
         try:
-            self.generator.stopProcessor()
+            self.generator.stopAlertGenerator()
         except Exception, ex:
             logging.error(ex)
             self.fail(str(ex))
@@ -301,4 +301,4 @@ class AlertGeneratorTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()                
+    unittest.main()

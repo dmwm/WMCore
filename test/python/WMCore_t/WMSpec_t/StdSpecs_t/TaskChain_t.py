@@ -208,11 +208,13 @@ class TaskChainTests(unittest.TestCase):
             "Requestor": "sfoulkes@fnal.gov",
             "CMSSWVersion": "CMSSW_3_5_8",
             "ScramArch": "slc5_ia32_gcc434",
-            "ProcessingVersion": "v1",
+            "ProcessingVersion": 1,
             "GlobalTag": "GR10_P_v4::All",
             "CouchURL": self.testInit.couchUrl,
             "CouchDBName": self.testInit.couchDbName,
             "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],
+            "DashboardHost": "127.0.0.1",
+            "DashboardPort": 8884,
             "TaskChain" : 5,
             "Task1" :{
                 "TaskName" : "GenSim",
@@ -279,10 +281,13 @@ class TaskChainTests(unittest.TestCase):
         firstTask = self.workload.getTaskByPath("/PullingTheChain/GenSim")
 
         self._checkTask(firstTask, arguments['Task1'])
-        self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/DigiHLT"), arguments['Task2'])
-        self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/DigiHLT/Reco"), arguments['Task3'])
-        self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/DigiHLT/Reco/ALCAReco"), arguments['Task4'])
-        self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/DigiHLT/Reco/Skims"), arguments['Task5'])        
+        self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/GenSimMergewriteGENSIM/DigiHLT"), arguments['Task2'])
+        self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/GenSimMergewriteGENSIM/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco"),
+                        arguments['Task3'])
+        self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/GenSimMergewriteGENSIM/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco"),
+                        arguments['Task4'])
+        self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/GenSimMergewriteGENSIM/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims"),
+                        arguments['Task5'])        
         
         
         
@@ -299,9 +304,8 @@ class TaskChainTests(unittest.TestCase):
             inpMod = taskConf['InputFromOutputModule']
             inpTaskPath = task.getPathName()
             inpTaskPath = inpTaskPath.replace(task.name(), "")
-            inpTaskPath += "%sMerge%s/cmsRun1" % (inpTask, inpMod)
+            inpTaskPath += "cmsRun1"
             self.assertEqual(task.data.input.inputStep, inpTaskPath)
-            self.assertEqual(task.data.input.outputModule, inpMod)
 
         
         workflow = Workflow(name = self.workload.name(),
@@ -389,11 +393,13 @@ class TaskChainTests(unittest.TestCase):
             "Requestor": "sfoulkes@fnal.gov",
             "CMSSWVersion": "CMSSW_3_5_8",
             "ScramArch": "slc5_ia32_gcc434",
-            "ProcessingVersion": "v1",
+            "ProcessingVersion": 1,
             "GlobalTag": "DefaultGlobalTag",
             "CouchURL": self.testInit.couchUrl,
             "CouchDBName": self.testInit.couchDbName,
             "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],
+            "DashboardHost": "127.0.0.1",
+            "DashboardPort": 8884,
             "TaskChain" : 4,
             "Task1" :{
                 "TaskName" : "DigiHLT",
@@ -449,23 +455,25 @@ class TaskChainTests(unittest.TestCase):
 
 
         self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT"), arguments['Task1'])
-        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco"), arguments['Task2'])
-        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco/ALCAReco"), arguments['Task3'])
-        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco/Skims"), arguments['Task4'])
+        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco"), arguments['Task2'])
+        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco"),
+                        arguments['Task3'])
+        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims"),
+                        arguments['Task4'])
  
         digi = self.workload.getTaskByPath("/YankingTheChain/DigiHLT")
         digiStep = digi.getStepHelper("cmsRun1")
         self.assertEqual(digiStep.getGlobalTag(), arguments['GlobalTag'])
  
-        reco = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco")
+        reco = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco")
         recoStep = reco.getStepHelper("cmsRun1")
         self.assertEqual(recoStep.getGlobalTag(), arguments['Task2']['GlobalTag'])
  
-        alca = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco/ALCAReco")
+        alca = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco")
         alcaStep = alca.getStepHelper("cmsRun1")
         self.assertEqual(alcaStep.getGlobalTag(), arguments['Task3']['GlobalTag'])
 
-        skim = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco/Skims")
+        skim = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims")
         skimStep = skim.getStepHelper("cmsRun1")
         self.assertEqual(skimStep.getGlobalTag(), arguments['Task4']['GlobalTag'])
         
@@ -486,11 +494,13 @@ class TaskChainTests(unittest.TestCase):
             "Requestor": "sfoulkes@fnal.gov",
             "CMSSWVersion": "CMSSW_3_5_8",
             "ScramArch": "slc5_ia32_gcc434",
-            "ProcessingVersion": "v1",
+            "ProcessingVersion": 1,
             "GlobalTag": "GR10_P_v4::All",
             "CouchURL": self.testInit.couchUrl,
             "CouchDBName": self.testInit.couchDbName,
             "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],
+            "DashboardHost": "127.0.0.1",
+            "DashboardPort": 8884,
             "TaskChain" : 4,
             "Task1" :{
                 "TaskName" : "DigiHLT",
@@ -554,19 +564,21 @@ class TaskChainTests(unittest.TestCase):
 
 
         self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT"), arguments['Task1'])
-        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco"), arguments['Task2'])
-        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco/ALCAReco"), arguments['Task3'])
-        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco/Skims"), arguments['Task4'])
+        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco"), arguments['Task2'])
+        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergeALCARECOoutput/ALCAReco"),
+                        arguments['Task3'])
+        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergeRECOoutput/Skims"),
+                        arguments['Task4'])
         
         
         
-        reco = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco")
+        reco = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco")
         recoStep = reco.getStepHelper("cmsRun1")
         recoAppConf = recoStep.data.application.configuration
         self.assertEqual(recoAppConf.scenario, arguments['Task2']['Scenario'])
         self.assertEqual(recoAppConf.function, arguments['Task2']['ScenarioMethod'])
         
-        alca = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/Reco/ALCAReco")
+        alca = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergeALCARECOoutput/ALCAReco")
         alcaStep = alca.getStepHelper("cmsRun1")
         alcaAppConf = alcaStep.data.application.configuration
         self.assertEqual(alcaAppConf.scenario, arguments['Task3']['Scenario'])
@@ -588,12 +600,14 @@ class TaskChainTests(unittest.TestCase):
             "Requestor": "gutsche@fnal.gov",
             "CMSSWVersion": "CMSSW_3_5_8",
             "ScramArch": "slc5_ia32_gcc434",
-            "ProcessingVersion": "v1",
+            "ProcessingVersion": 1,
             "GlobalTag": "NOTSET",
             "CouchURL": self.testInit.couchUrl,
             "CouchDBName": self.testInit.couchDbName,
             "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],
             "RunWhitelist" : [171050],
+            "DashboardHost": "127.0.0.1",
+            "DashboardPort": 8884,
             "TaskChain" : 3,
             "Task1" :{
                 "TaskName" : "PromptReco",

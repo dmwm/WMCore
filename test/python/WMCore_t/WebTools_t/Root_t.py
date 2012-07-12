@@ -216,22 +216,34 @@ class RootTest(unittest.TestCase):
         active.section_('test')
         active.test.object = 'WMCore_t.WebTools_t.InstanceTestPage'
         active.test.section_('database')
-        instances = active.test.database.section_('instances')
-        foo = instances.section_('foo')
-        bar = instances.section_('bar')
-        baz = instances.section_('baz/zoink')
+        db_instances = active.test.database.section_('instances')
+        foo = db_instances.section_('foo')
+        bar = db_instances.section_('bar')
+        baz = db_instances.section_('baz/zoink')
         foo.connectUrl = 'sqlite:///foo'
         bar.connectUrl = 'sqlite:///bar'
         baz.connectUrl = 'sqlite:///baz/zoink'
+        active.test.section_('security')
+        security_instances = active.test.security.section_('instances')
+        sec_foo = security_instances.section_('foo')
+        sec_bar = security_instances.section_('bar')
+        sec_baz = security_instances.section_('baz/zoink')
+        sec_foo.sec_params = 'test_foo'
+        sec_bar.sec_params = 'test_bar'
+        sec_baz.sec_params = 'test_baz'
+
         server.start(blocking=False)
 
         for instance in config.UnitTests.instances:
-            url = 'http://127.0.0.1:8888/unittests/%s/test' % instance
+            url = 'http://127.0.0.1:%s/unittests/%s/test' % (cpconfig['server.socket_port'], instance)
             html = urllib2.urlopen(url).read()
             self.assertEquals(html, instance)
-            url = '%s/database' % url
-            html = urllib2.urlopen(url).read()
-            self.assertEquals(html, instances.section_(instance).connectUrl)
+            db_url = '%s/database' % url
+            html = urllib2.urlopen(db_url).read()
+            self.assertEquals(html, db_instances.section_(instance).connectUrl)
+            sec_url = '%s/security' % url
+            html = urllib2.urlopen(sec_url).read()
+            self.assertEquals(html, security_instances.section_(instance).sec_params)
         server.stop()
 
     def testUsingFilterTool(self):

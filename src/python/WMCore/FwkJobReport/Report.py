@@ -259,12 +259,20 @@ class Report:
 
             jsonStep["cleanup"] = {}
             jsonStep["parameters"] = {}
-            jsonStep["site"] = {}
+            jsonStep["site"] = self.getSiteName()
             jsonStep["analysis"] = {}
             jsonStep["logs"] = {}
             jsonReport["steps"][stepName] = jsonStep
 
         return jsonReport
+
+    def getSiteName(self):
+        """
+        _getSiteName_
+
+        Returns the site name attribute (no step specific)
+        """
+        return getattr(self.data, 'siteName', {})
 
     def getExitCode(self):
         """
@@ -1234,6 +1242,18 @@ class Report:
         reportStep.performance.VSizeMemory.min     = min
         reportStep.performance.VSizeMemory.max     = max
         reportStep.performance.VSizeMemory.average = average
+
+        return
+
+    def setStepCounter(self, stepName, counter):
+        """
+        _setStepCounter_
+
+        Assign a number to the step
+        """
+
+        reportStep = self.retrieveStep(stepName)
+        reportStep.counter = counter
 
         return
 

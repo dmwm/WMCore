@@ -64,14 +64,15 @@ def setUpAlertsMessaging(compInstance, compName = None):
         # dependencies in cases that Alerts are unwanted anyway
         # the import shall be put back up later once the issue disappears
         from WMCore.Alerts.ZMQ.Sender import Sender
+        logging.info("Creating Alerts Sender instance ...")
         sender = Sender(compInstance.config.Alert.address,
-                        callerClassName,
-                        compInstance.config.Alert.controlAddr)
+                        compInstance.config.Alert.controlAddr,
+                        callerClassName)
         sender.register()
-        logging.debug("Alerts messaging set up for '%s'" % callerClassName)
+        logging.info("Alerts messaging set up for %s" % callerClassName)
         return preAlert, sender
     else:
-        logging.debug("Alerts messaging not enabled for '%s'" % callerClassName)
+        logging.info("Alerts messaging not enabled for %s" % callerClassName)
         return None, None
         
         

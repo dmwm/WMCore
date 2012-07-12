@@ -8,6 +8,7 @@ import sys
 import datetime
 import os
 import time
+import logging
 
 from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource.CouchDBConnectionBase \
     import CouchDBConnectionBase
@@ -134,6 +135,9 @@ def getJobStateBySite(couchConfig):
     siteDict = None
     #result is sorted by site.
     for item in result['rows']:
+        if item['key'][1] == None:
+            logging.error("Site info is missing, Ignore data : %s" % item)
+            continue
         if currentSite == item['key'][1]:
             siteDict[item['key'][2]] = item['value']
         else:

@@ -24,7 +24,8 @@ dependencies = {
                         'systems':['wmc-base']
                         },
                 'wmc-runtime':{
-                        'packages': ['WMCore.WMRuntime', 'WMCore.WMSpec+', 'PSetTweaks', 'WMCore.FwkJobReport'],
+                        'packages': ['WMCore.WMRuntime', 'WMCore.WMSpec+', 'PSetTweaks', 'WMCore.FwkJobReport', 'WMCore.Storage+'],
+                        'modules' : ['WMCore.Algorithms.ParseXMLFile'],
                         'systems':['wmc-base']
                         },
                 'wmc-web':{
@@ -46,7 +47,10 @@ dependencies = {
                                      'WMCore.Services.RequestManager',
                                      'WMCore.Services.WorkQueue',
                                      'WMCore.Services.WMBS',
-                                     'WMCore.Services.WMAgent'],
+                                     'WMCore.Services.WMAgent',
+                                     'WMCore.Services.Dashboard',
+                                     'WMCore.Services.WMStats'],
+
                         'systems':['wmc-web', 'wmc-runtime'],
                         'statics': ['src/templates/WMCore/WebTools/RequestManager',
                                     'src/html/GlobalMonitor',
@@ -55,13 +59,14 @@ dependencies = {
                                     'src/couchapps/ReqMgr+',
                                     'src/couchapps/ConfigCache+',
                                     'src/couchapps/OpsClipboard+',
-                                    'src/couchapps/WorkloadSummary+'],
+                                    'src/couchapps/WorkloadSummary+',
+                                    'src/couchapps/WMStats+'],
                         },
                 'workqueue':{
                         'packages': ['WMCore.WorkQueue+', 'WMCore.Wrappers+',
                                      'WMCore.Services', 'WMCore.Services.DBS+', 'WMCore.Services.PhEDEx+',
                                      'WMCore.Services.RequestManager+', 'WMCore.Services.SiteDB+',
-                                     'WMCore.Services.JSONParser+',
+                                     'WMCore.Services.JSONParser+', 'WMCore.Services.WMStats+',
                                      'WMCore.WMSpec', 'WMCore.WMSpec.Steps',
                                      'WMCore.ACDC', 'WMCore.GroupUser', 'WMCore.Alerts'],
                         'modules' : ['WMCore.Algorithms.__init__', 'WMCore.Algorithms.Permissions',
@@ -109,17 +114,21 @@ dependencies = {
                 'wmclient':{
                         'systems': ['wmc-runtime', 'wmc-database']
                         },
+                #'reqmon':{
+                #        'packages': ['WMCore.HTTPFrontEnd',
+                #                     'WMCore.HTTPFrontEnd.GlobalMonitor+',
+                #                     'WMCore.Services',
+                #                     'WMCore.Services.RequestManager+',
+                #                     'WMCore.Services.WorkQueue+',
+                #                     'WMCore.Services.WMBS+',
+                #                     'WMCore.Services.WMAgent+'],
+                #       'modules': ['WMCore.Database.CMSCouch'],
+                #       'systems':['wmc-web'],
+                #        'statics': ['src/html/GlobalMonitor',
+                #                    'src/javascript/WMCore/WebTools/GlobalMonitor+']
+                #        },
+                
                 'reqmon':{
-                        'packages': ['WMCore.HTTPFrontEnd',
-                                     'WMCore.HTTPFrontEnd.GlobalMonitor+',
-                                     'WMCore.Services',
-                                     'WMCore.Services.RequestManager+',
-                                     'WMCore.Services.WorkQueue+',
-                                     'WMCore.Services.WMBS+',
-                                     'WMCore.Services.WMAgent+'],
-                        'modules': ['WMCore.Database.CMSCouch'],
-                        'systems':['wmc-web'],
-                        'statics': ['src/html/GlobalMonitor',
-                                    'src/javascript/WMCore/WebTools/GlobalMonitor+']
+                        'statics': ['src/couchapps/WMStats+'],
                         },
                }

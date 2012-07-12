@@ -27,7 +27,7 @@ def tarballExclusion(path):
 
     Eliminates all unnecessary packages
     """
-    patternList = ['.svn', '.git']
+    patternList = ['\.svn', '\.git']
 
     for pattern in patternList:
         if re.search(pattern, path):

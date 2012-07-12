@@ -18,16 +18,21 @@ UPDATE_INTERVAL_COARSENESS = 5 * 60
 
 def isGlobalDBS(dbs):
     """Is this the global dbs"""
-    # try to determine from name - save a trip to server
-    # fragile but if this url changes many other things will break also...
-    from urlparse import urlparse
-    url = urlparse(dbs.dbs.getServerUrl()) #DBSApi has url not DBSReader
-    if url.hostname.startswith('cmsdbsprod.cern.ch') and url.path.startswith('/cms_dbs_prod_global'):
+    try:
+        # try to determine from name - save a trip to server
+        # fragile but if this url changes many other things will break also...    
+        from urlparse import urlparse
+        url = urlparse(dbs.dbs.getServerUrl()) #DBSApi has url not DBSReader
+        if url.hostname.startswith('cmsdbsprod.cern.ch') and url.path.startswith('/cms_dbs_prod_global'):
+            return True
+        info = dbs.dbs.getServerInfo()
+        if info and info.get('InstanceName') == 'GLOBAL':
+            return True
+        return False
+    except Exception, ex:
+        # determin whether this is dbs3
+        dbs.dbs.serverinfo()
         return True
-    info = dbs.dbs.getServerInfo()
-    if info and info.get('InstanceName') == 'GLOBAL':
-        return True
-    return False
 
 def timeFloor(number, interval = UPDATE_INTERVAL_COARSENESS):
     """Get numerical floor of time to given interval"""

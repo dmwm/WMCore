@@ -26,7 +26,7 @@ class RunJob(dict):
                  cache_dir = None, status_time = None, packageDir = None,
                  sandbox = None, priority = None, site_cms_name = None,
                  taskType = None, possibleSites = [], sw_version = None,
-                 scram_arch = None, siteName = None ):
+                 scram_arch = None, siteName = None, jobName = None ):
         """
         Just make sure you init the dictionary fields.
 
@@ -57,6 +57,7 @@ class RunJob(dict):
         self.setdefault('swVersion', sw_version)
         self.setdefault('scramArch', scram_arch)
         self.setdefault('siteName', siteName)
+        self.setdefault('name', jobName)
 
         return
 

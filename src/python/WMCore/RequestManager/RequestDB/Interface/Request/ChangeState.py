@@ -9,6 +9,7 @@ State Change API methods
 import logging
 import WMCore.RequestManager.RequestDB.Connection as DBConnect
 from cherrypy import HTTPError
+from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 
 # TODO: Merge with getRequest.requestID
 def getRequestID(factory, requestName):
@@ -55,7 +56,7 @@ def changeRequestPriority(requestName, priority):
     return
 
 
-def changeRequestStatus(requestName, newState, priority = None):
+def changeRequestStatus(requestName, newState, priority = None, wmstatUrl = None):
     """
     _changeRequestStatus_
 
@@ -67,13 +68,18 @@ def changeRequestStatus(requestName, newState, priority = None):
     - *priority* : optional integer priority
 
     """
+    #TODO: should we make this mendatory?
+    if wmstatUrl:
+        wmstatSvc = WMStatsWriter(wmstatUrl)
+        wmstatSvc.updateRequestStatus(requestName, newState)
+
     factory = DBConnect.getConnection()
     reqId = getRequestID(factory, requestName)
     changeRequestIDStatus(reqId, newState, priority)
     return
 
 
-def assignRequest(requestName, teamName, priorityModifier = 0, prodMgr = None):
+def assignRequest(requestName, teamName, priorityModifier = 0, prodMgr = None, wmstatUrl = None):
     """
     _assignRequest_
 
@@ -89,6 +95,10 @@ def assignRequest(requestName, teamName, priorityModifier = 0, prodMgr = None):
 
 
     """
+    if wmstatUrl:
+        wmstatSvc = WMStatsWriter(wmstatUrl)
+        wmstatSvc.updateTeam(requestName, teamName)
+        
     factory = DBConnect.getConnection()
     reqId = getRequestID(factory, requestName)
     statusMap = factory(classname = "ReqStatus.Map").execute()
@@ -160,6 +170,7 @@ def putMessage(requestName, message):
     factory = DBConnect.getConnection()
     reqId = getRequestID(factory, requestName)
     #return factory(classname = "Progress.Message").execute(reqId, message)
+    message = message[:999]
     factory(classname = "Progress.Message").execute(reqId, message)
     return
 

@@ -32,8 +32,6 @@ class DBSBlock:
     Class for holding all the necessary equipment for a DBSBlock
     """
 
-
-
     def __init__(self, name, location, das):
         """
         Just the necessary objects
@@ -382,11 +380,11 @@ class DBSBlock:
         # Blocks loaded out of the buffer should
         # have both a creation time, and should
         # be in the buffer (duh)
-        self.startTime = blockInfo.get('CreationDate')
+        self.startTime = blockInfo.get('creation_date')
         self.inBuff    = True
 
         for key in blockInfo.keys():
-            self.data[key] = blockInfo.get(key)
+            self.data['block'][key] = blockInfo.get(key)
 
 
 

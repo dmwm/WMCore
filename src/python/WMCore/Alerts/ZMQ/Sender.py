@@ -5,6 +5,7 @@ ZMQ Sender, Alerts framework.
 
 
 import os
+import logging
 
 import zmq
 
@@ -24,7 +25,7 @@ class Sender(object):
     LINGER_DELAY = 1000 # [ms]
     
     
-    def __init__(self, target, label = None, controller = "tcp://127.0.0.1:5559"):
+    def __init__(self, target, controller, label = None):
         self._label = label or "Sender_%s" % os.getpid()
         self._context = zmq.Context()        
         # set up a channel to send work
@@ -35,6 +36,7 @@ class Sender(object):
         self._contChannel = self._context.socket(zmq.PUB)
         self._contChannel.setsockopt(zmq.LINGER, self.LINGER_DELAY)
         self._contChannel.connect(controller)
+        # socket closure will be done on garbage collection of Sender instance
         
         
     def __call__(self, alert):
@@ -43,6 +45,7 @@ class Sender(object):
         
         """ 
         self._workChannel.send_json(alert)
+        logging.debug("Alert %s sent." % alert)
         
         
     def register(self):
@@ -51,6 +54,7 @@ class Sender(object):
         
         """
         self._contChannel.send_json(RegisterMsg(self._label))
+        logging.debug("Register message sent for %s." % self._label)
         
         
     def unregister(self):
@@ -59,6 +63,7 @@ class Sender(object):
         
         """
         self._contChannel.send_json(UnregisterMsg(self._label))
+        logging.debug("Unregister message sent for %s." % self._label)
         
         
     def sendShutdown(self):
@@ -68,3 +73,4 @@ class Sender(object):
         
         """
         self._contChannel.send_json(ShutdownMsg())
+        logging.debug("Shutdown message sent.")

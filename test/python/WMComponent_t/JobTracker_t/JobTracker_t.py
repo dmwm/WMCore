@@ -537,20 +537,23 @@ class JobTrackerTest(unittest.TestCase):
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0)
 
-
         print ("Process took %f seconds to process %i classAds" %((stopTime - startTime),
                                                                   nJobs/2))
-
-
         p = pstats.Stats('testStats.stat')
         p.sort_stats('cumulative')
-        p.print_stats()
-
-        return
-
+        p.print_stats()        
         
-
+    
+    def testAlerts(self):
+        """
+        Tests only alerts triggered from JobTrackerPoller.
+        
+        """
+        config = self.getConfig()
+        jobTracker = JobTrackerPoller(config)
+        jobTracker.sendAlert(6, msg = "test message")
+        
+        
 
 if __name__ == '__main__':
     unittest.main()
-

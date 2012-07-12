@@ -96,7 +96,7 @@ var requestsView =
 			var reqId = data.rows[i].value['request_id'];
             var docId = data.rows[i].value['doc_id'];
             var state = data.rows[i].value['state'];
-            var updated = data.rows[i].value['updated'];
+            var updated = data.rows[i].value['updated'];	
             // alternate colours in table rows
             var rowColor = i % 2 === 0 ? "#FAFAFA" : "#E3E3E3";  
             requestsView.addTableRow(reqId, state, docId, updated, rowColor);
@@ -130,7 +130,6 @@ var requestsView =
     {
     	var url = requestsView.mainUrl + "_view/campaign";
         var options = {"method": "GET", "reloadPage": false};
-        var campaignOptions = document.getElementById("campaignselectid").options;
         utils.makeHttpRequest(url, requestsView.processRequestsData, null, options);        
         requestsView.setCampaignSelect();
     }, // update()

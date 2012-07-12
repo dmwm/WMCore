@@ -1,5 +1,6 @@
 import os
 import time
+import logging
 import unittest
 import inspect
 
@@ -7,7 +8,7 @@ from WMCore.Alerts.Alert import Alert
 from WMCore.Configuration import Configuration
 from WMCore.Alerts.ZMQ.Processor import Processor
 from WMCore.Alerts.ZMQ.Sender import Sender
-from WMCore.Alerts.ZMQ.Receiver import Receiver
+from WMCore.Alerts.ZMQ.Receiver import Receiver, ReceiverLogic
 from WMCore.Alerts.ZMQ.Sinks.FileSink import FileSink
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
@@ -15,10 +16,13 @@ from WMQuality.TestInitCouchApp import TestInitCouchApp
     
 def worker(addr, ctrl, nAlerts, workerId = "Processor_t"):
     """
-    Send a few alerts.
+    Instantiate an alert Sender instance and register with Received instance
+    identified by addr (alerts channel), ctrl (control channel) addresses.
+    Then send a desired amount of alerts, unregister and send Shutdown control
+    message instructing the Receive to stop and release sockets.
      
     """
-    s = Sender(addr, workerId, ctrl)
+    s = Sender(addr, ctrl, workerId)
     s.register()
     for i in range(0, nAlerts):
         a = Alert(Type = "Alert", Level = i)
@@ -40,6 +44,10 @@ class ProcessorTest(unittest.TestCase):
         Set up for tests.
         
         """
+        
+        l = logging.getLogger()
+        l.setLevel(logging.DEBUG)
+        
         self.addr = "tcp://127.0.0.1:5557"
         self.ctrl = "tcp://127.0.0.1:5559"
         
@@ -52,7 +60,7 @@ class ProcessorTest(unittest.TestCase):
         self.config.AlertProcessor.section_("soft")
         
         self.config.AlertProcessor.critical.level = 5
-        self.config.AlertProcessor.soft.level = 0
+        self.config.AlertProcessor.soft.level = 1
         self.config.AlertProcessor.soft.bufferSize = 3
         
         self.config.AlertProcessor.critical.section_("sinks")
@@ -62,11 +70,20 @@ class ProcessorTest(unittest.TestCase):
     def tearDown(self):
         for f in (self.criticalOutputFile, self.softOutputFile):
             if os.path.exists(f):
-                os.remove(f)
+                os.remove(f)    
         if hasattr(self, "testInit"):
             self.testInit.tearDownCouch()
-        
+        if hasattr(self, "receiver"):
+            # wait until the Receiver is shut by the Shutdown control
+            # message which the worker() function should have sent
+            while self.receiver.isReady():
+                logging.info("tearDown: Waiting for Receiver shutdown ...")
+                time.sleep(ReceiverLogic.TIMEOUT_AFTER_SHUTDOWN * 1.1)
+                if self.receiver.isReady():
+                    self.receiver.shutdown()
+            logging.info("tearDown: Is the Receiver shut down: %s" % (not self.receiver.isReady()))
 
+                
     def testProcessorBasic(self):
         str(self.config.AlertProcessor)
         p = Processor(self.config.AlertProcessor)
@@ -78,19 +95,17 @@ class ProcessorTest(unittest.TestCase):
         
         """
         processor = Processor(self.config.AlertProcessor)
-        rec = Receiver(self.addr, processor, self.ctrl)
-        rec.startReceiver() # non-blocking call
-        
+        # Receiver is waited for shutdown / shutdown explicitly in tearDown()        
+        self.receiver = Receiver(self.addr, processor, self.ctrl)
+        self.receiver.startReceiver() # non-blocking call
+
         # now sender tests control messages (register, unregister, shutdown)
-        s = Sender(self.addr, "Processor_t", self.ctrl)
+        s = Sender(self.addr, self.ctrl, "Processor_t")
         s.register()
         s.unregister()
         s.sendShutdown()
-  
-        # wait until the Receiver is shut by sending the above control messages
-        while rec.isReady():
-            time.sleep(0.3)
-            print "%s waiting for Receiver to shut ..." % inspect.stack()[0][3]
+        # give some time so that the previous call shuts down the receiver
+        time.sleep(ReceiverLogic.TIMEOUT_AFTER_SHUTDOWN * 1.1)
         
             
     def testProcessorWithReceiverAndFileSink(self):
@@ -103,19 +118,21 @@ class ProcessorTest(unittest.TestCase):
         config.soft.sinks.file.outputfile = self.softOutputFile
         
         processor = Processor(config)
-        rec = Receiver(self.addr, processor, self.ctrl)
-        rec.startReceiver() # non blocking call
+        # Receiver is waited for shutdown / shutdown explicitly in tearDown()
+        self.receiver = Receiver(self.addr, processor, self.ctrl)
+        self.receiver.startReceiver() # non blocking call
         
         # run worker(), this time directly without Process as above,
         # worker will send 10 Alerts to Receiver
         worker(self.addr, self.ctrl, 10)
         
-        # wait until the Receiver is shut by worker
-        while rec.isReady():
-            time.sleep(0.3)
-            print "%s waiting for Receiver to shut ..." % inspect.stack()[0][3]
-            
-        # now check the FileSink output files for content:
+        # wait until Receiver is shut down (by a message from worker(), then all
+        # alerts shall be delivered and could proceed to check if successfully delivered
+        while self.receiver.isReady():
+            time.sleep(ReceiverLogic.TIMEOUT_AFTER_SHUTDOWN * 1.5)
+            logging.info("%s: Waiting for Receiver shutdown ..." % inspect.stack()[0][3])
+        
+        # check the FileSink output files for content:
         # the soft Alerts has threshold level set to 0 so Alerts
         # with level 1 and higher, resp. for critical the level
         # was above set to 5 so 6 and higher out of worker's 0 .. 9
@@ -125,15 +142,17 @@ class ProcessorTest(unittest.TestCase):
         softList = softSink.load()
         criticalList = criticalSink.load()
         # check soft level alerts
-        self.assertEqual(len(softList), 9) # levels 1 .. 9 went in
-        for a, level in zip(softList, range(1, 9)):
+        # levels 1 .. 4 went in (level 0 is, according to the config not considered)
+        self.assertEqual(len(softList), 3) 
+        for a, level in zip(softList, range(1, 4)):
             self.assertEqual(a["Level"], level)
         # check 'critical' levels
-        self.assertEqual(len(criticalList), 4) # only levels 6 .. 9 went in
-        for a, level in zip(criticalList, range(6, 9)):
+        # only levels 5 .. 9 went in
+        self.assertEqual(len(criticalList), 5)
+        for a, level in zip(criticalList, range(5, 10)):
             self.assertEqual(a["Level"], level)
-            
-            
+        
+        
     def testProcessorWithReceiverAndCouchSink(self):
         # set up couch first
         self.testInit = TestInitCouchApp(__file__)
@@ -148,20 +167,25 @@ class ProcessorTest(unittest.TestCase):
         config.critical.sinks.couch.database = self.testInit.couchDbName
 
         # just send the Alert into couch
-
         processor = Processor(config)
-        rec = Receiver(self.addr, processor, self.ctrl)
-        rec.startReceiver() # non blocking call
+        # Receiver is waited for shutdown / shutdown explicitly in tearDown()
+        self.receiver = Receiver(self.addr, processor, self.ctrl)
+        self.receiver.startReceiver() # non blocking call
+        
+        
         
         # run worker(), this time directly without Process as above,
         # worker will send 10 Alerts to Receiver
         worker(self.addr, self.ctrl, 10)
+
+        # wait until Receiver is shut down (by a message from worker()
+        # also need to wait, otherwise tearDown kicks off and scrapes the
+        # couch so half of the alerts will be undelivered
         
-        # wait until the Receiver is shut by worker
-        while rec.isReady():
-            time.sleep(0.3)
-            print "%s waiting for Receiver to shut ..." % inspect.stack()[0][3]
-            
+        while self.receiver.isReady():
+            time.sleep(ReceiverLogic.TIMEOUT_AFTER_SHUTDOWN * 1.5)
+            logging.info("%s: Waiting for Receiver shutdown ..." % inspect.stack()[0][3])
+                            
             
 if __name__ == "__main__":
     unittest.main()

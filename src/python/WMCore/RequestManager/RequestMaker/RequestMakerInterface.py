@@ -65,8 +65,12 @@ class RequestMakerInterface:
         workload = self.makeWorkload(schema)
         self.loadRequestSchema(workload, schema)
         request['WorkflowSpec'] = workload
-        request['SoftwareVersions'].append(schema.get('CMSSWVersion', "CMSSW_5_0_0"))
+        # use the CMSSWVersion from the input schema only if it's defined (like
+        # for a new request) ; do not use any defaults
+        if schema.get('CMSSWVersion'):
+            request['SoftwareVersions'].append(schema.get('CMSSWVersion'))
         return request
+    
 
     def makeWorkload(self, schema):
         workload = newWorkload(schema['RequestName']).data

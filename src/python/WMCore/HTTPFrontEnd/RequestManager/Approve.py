@@ -11,6 +11,7 @@ class Approve(BulkOperations):
     """ Page for Physics group leaders to approve requests """
     def __init__(self, config):
         BulkOperations.__init__(self, config)
+        self.wmstatWriteURL = "%s/%s" % (config.couchUrl.rstrip('/'), config.wmstatDBName)
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
@@ -37,13 +38,13 @@ class Approve(BulkOperations):
         for requestName in requests:
             if kwargs['action'] == 'Reject':
                 participle = 'rejected'
-                ChangeState.changeRequestStatus(requestName, 'rejected')
+                ChangeState.changeRequestStatus(requestName, 'rejected', wmstatUrl = self.wmstatWriteURL)
             else:
                 participle = 'approved'
-                ChangeState.changeRequestStatus(requestName, 'assignment-approved')
+                ChangeState.changeRequestStatus(requestName, 'assignment-approved', wmstatUrl = self.wmstatWriteURL)
             priority = kwargs.get(requestName+':priority', '')
             if priority != '':
-                Utilities.changePriority(requestName, priority)
+                Utilities.changePriority(requestName, priority, self.wmstatWriteURL)
         return self.templatepage("Acknowledge", participle=participle, 
                                  requests=requests)
 

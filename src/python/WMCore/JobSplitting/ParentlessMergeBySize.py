@@ -42,8 +42,14 @@ class ParentlessMergeBySize(JobFactory):
         run boundaries is configurable.
         """
         fileGroups = {}
+        foundFiles = []
 
         for mergeableFile in mergeableFiles:
+            if mergeableFile["file_lfn"] not in foundFiles:
+                foundFiles.append(mergeableFile["file_lfn"])
+            else:
+                continue
+            
             if not fileGroups.has_key(mergeableFile["se_name"]):
                 if self.mergeAcrossRuns:
                     fileGroups[mergeableFile["se_name"]] = []

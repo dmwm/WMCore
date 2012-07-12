@@ -12,6 +12,7 @@ class Announce(BulkOperations):
     """ Page for Data Ops to announce requests """
     def __init__(self, config):
         BulkOperations.__init__(self, config)
+        self.wmstatWriteURL = "%s/%s" % (config.couchUrl.rstrip('/'), config.wmstatDBName)
         self.searchFields = ["RequestName", "RequestType"]
         try:
             self.dbsSender = JSONRequests(config.dbs3)
@@ -44,7 +45,7 @@ class Announce(BulkOperations):
         badDatasets = []
         for requestName in requests:
             WMCore.Lexicon.identifier(requestName)
-            ChangeState.changeRequestStatus(requestName, 'announced')
+            ChangeState.changeRequestStatus(requestName, 'announced', wmstatUrl = self.wmstatWriteURL)
             datasets.extend(Utilities.getOutputForRequest(requestName))
         for dataset in datasets:
             try:

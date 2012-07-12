@@ -11,12 +11,12 @@ Available means not acquired, complete or failed.
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetAvailableFiles(DBFormatter):
-    sql = """SELECT wmbs_sub_files_available.fileid, wmbs_location.se_name
+    sql = """SELECT wmbs_sub_files_available.fileid, wls.se_name
                     FROM wmbs_sub_files_available
                INNER JOIN wmbs_file_location ON
                  wmbs_sub_files_available.fileid = wmbs_file_location.fileid
-               INNER JOIN wmbs_location ON
-                 wmbs_file_location.location = wmbs_location.id
+               INNER JOIN wmbs_location_senames wls ON
+                 wmbs_file_location.location = wls.location
              WHERE wmbs_sub_files_available.subscription = :subscription"""
 
     def formatDict(self, results):
@@ -38,10 +38,12 @@ class GetAvailableFiles(DBFormatter):
         #Now the tricky part
         tempResults = {}
         for formattedResult in formattedResults:
-            if formattedResult["file"] not in tempResults.keys():
-                tempResults[formattedResult["file"]] = []
+            fileID = formattedResult['file']
+            if fileID not in tempResults.keys():
+                tempResults[fileID] = []
             if "se_name" in formattedResult.keys():
-                tempResults[formattedResult["file"]].append(formattedResult["se_name"])
+                if not formattedResult['se_name'] in tempResults[fileID]:
+                    tempResults[fileID].append(formattedResult["se_name"])
 
         finalResults = []
         for key in tempResults.keys():

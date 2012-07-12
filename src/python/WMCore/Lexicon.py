@@ -101,6 +101,10 @@ def identifier(candidate):
     """ letters, numbers, whitespace, periods, dashes, underscores """
     return check(r'[a-zA-Z0-9\s\.\-_]{1,100}$', candidate)
 
+def globalTag(candidate):
+    """ Identifier plus colons """
+    return check(r'[a-zA-Z0-9\s\.\-_:]{1,100}$', candidate)
+
 def dataset(candidate):
     """ A slash followed by an identifier,x3 """
     return check(r'(/[a-zA-Z0-9\.\-_]{1,700}){3}$', candidate)
@@ -112,7 +116,7 @@ def procdataset(candidate):
     """
     if candidate == '' or not candidate:
         return candidate
-    return check(r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+)?-v[0-9]*$', candidate)
+    return check(r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+){0,2}-v[0-9]*$', candidate)
 
 def procversion(candidate):
      return check(r'^[0-9]*$', candidate)
@@ -155,12 +159,12 @@ def lfn(candidate):
     /store/data
     /store/data/lustre
     """
-    regexp1 = '/([a-z]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)/([0-9]+)/([a-zA-Z0-9\-_]+).root'
-    regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)/([0-9]+)/([a-zA-Z0-9\-_]+).root'
+    regexp1 = '/([a-z]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}/([0-9]+)/([a-zA-Z0-9\-_]+).root'
+    regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}/([0-9]+)/([a-zA-Z0-9\-_]+).root'
     regexp3 = '/store/(temp/)*(user|group)/%(hnName)s/%(primDS)s/%(secondary)s/%(version)s/%(counter)s/%(root)s' % lfnParts
 
-    #tier0LFN = '/store/data/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s/%(root)s' % lfnParts
-    tier0LFN = '/store/(backfill/[0-9]/){0,1}(t0temp/){0,1}(data|express|hidata)/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(root)s' % lfnParts
+    oldStyleTier0LFN = '/store/data/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s/%(root)s' % lfnParts
+    tier0LFN = '/store/(backfill/[0-9]/){0,1}(t0temp/){0,1}(data|express|hidata)/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s/%(counter)s/%(root)s' % lfnParts
 
     storeResultsLFN = '/store/results/%(physics_group)s/%(primDS)s/%(secondary)s/%(primDS)s/%(tier)s/%(secondary)s/%(counter)s/%(root)s' % lfnParts
 
@@ -182,6 +186,11 @@ def lfn(candidate):
     try:
         return check(tier0LFN, candidate)
     except AssertionError:
+        pass
+
+    try:
+        return check(oldStyleTier0LFN, candidate)
+    except AssertionError:
         return check(storeResultsLFN, candidate)
 
 def lfnBase(candidate):
@@ -190,10 +199,10 @@ def lfnBase(candidate):
     i.e., for use in spec generation and parsing
     """
     regexp1 = '/([a-z]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)'
-    regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)'
+    regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}'
     regexp3 = '/(store)/(temp/)*(user|group)/%(hnName)s/%(primDS)s/%(secondary)s/%(version)s' % lfnParts
 
-    tier0LFN = '/store/(backfill/[0-9]/){0,1}(t0temp/){0,1}(data|express|hidata)/%(era)s/%(primDS)s/%(tier)s/%(version)s' % lfnParts
+    tier0LFN = '/store/(backfill/[0-9]/){0,1}(t0temp/){0,1}(data|express|hidata)/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s' % lfnParts
 
     try:
         return check(regexp1, candidate)
@@ -231,7 +240,7 @@ def couchurl(candidate):
     return check('https?://(([a-zA-Z0-9:@\.\-_]){0,100})([a-z0-9\.]+)(:\d+|/couchdb)', candidate)
 
 def requestName(candidate):
-    return check(r'[a-zA-Z0-9\.\-_]{1,100}$', candidate)
+    return check(r'[a-zA-Z0-9\.\-_]{1,150}$', candidate)
 
 def check(regexp, candidate):
     assert re.compile(regexp).match(candidate) != None , \

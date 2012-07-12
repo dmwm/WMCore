@@ -150,8 +150,8 @@ class Harness:
                            'INFO'     : logging.INFO,
                            'SQLDEBUG' : logging.SQLDEBUG}
             if hasattr(compSect, "logLevel") and \
-               compSect.logLevel in self.logMsg.keys():
-                logging.getLogger().setLevel(self.logMsg[compSect.logLevel])   
+                compSect.logLevel in self.logMsg.keys():
+                    logging.getLogger().setLevel(self.logMsg[compSect.logLevel])   
             WMLogging.sqldebug("wmcore level debug:")
 
             # If not previously set, force wmcore cache to current path
@@ -314,7 +314,7 @@ class Harness:
             self.heartbeatAPI = HeartbeatAPI(self.config.Agent.componentName)
             self.heartbeatAPI.registerComponent()
         
-        logging.info('>>>Starting initialization\n')
+        logging.info('>>>Starting initialization')
 
         logging.info('>>>Setting default transaction')
         myThread = threading.currentThread()

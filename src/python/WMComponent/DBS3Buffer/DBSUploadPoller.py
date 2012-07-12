@@ -178,7 +178,7 @@ class DBSUploadPoller(BaseWorkerThread):
         """
         Initialise class members
         """
-
+        logging.info("Running __init__ for DBS3 Uploader")
         #myThread = threading.currentThread()
         
         BaseWorkerThread.__init__(self)
@@ -313,6 +313,7 @@ class DBSUploadPoller(BaseWorkerThread):
         """
 
         try:
+            logging.info("Starting the DBSUpload Polling Cycle")
             self.loadBlocks()
             self.loadFiles()
             self.checkTimeout()
@@ -335,7 +336,7 @@ class DBSUploadPoller(BaseWorkerThread):
         Find all blocks; make sure they're in the cache
         """
         openBlocks = self.dbsUtil.findOpenBlocks()
-
+        logging.info("These are the openblocks: %s" % openBlocks)
 
         # Load them if we don't have them
         blocksToLoad = []
@@ -347,6 +348,7 @@ class DBSUploadPoller(BaseWorkerThread):
         # Now load the blocks
         try:
             loadedBlocks = self.dbsUtil.loadBlocks(blocknames = blocksToLoad)
+            logging.info("Loaded blocks: %s" % loadedBlocks)
         except WMException:
             raise
         except Exception, ex:
@@ -358,8 +360,8 @@ class DBSUploadPoller(BaseWorkerThread):
         
         for blockInfo in loadedBlocks:
             das  = blockInfo['DatasetAlgo']
-            loc  = blockInfo['location']
-            block = DBSBlock(name = blockInfo['Name'],
+            loc  = blockInfo['origin_site_name']
+            block = DBSBlock(name = blockInfo['block_name'],
                              location = loc, das = das)
             block.FillFromDBSBuffer(blockInfo)
             blockname = block.getName()
@@ -367,6 +369,7 @@ class DBSUploadPoller(BaseWorkerThread):
             # Now we have to load files...
             try:
                 files = self.dbsUtil.loadFilesByBlock(blockname = blockname)
+                logging.info("Have %i files for block %s" % (len(files), blockname))
             except WMException:
                 raise
             except Exception, ex:
@@ -565,16 +568,17 @@ class DBSUploadPoller(BaseWorkerThread):
         pre-existant block. 
         """
 
-        for block in dasBlocks:
+        for blockName in dasBlocks:
+            block = self.blockCache.get(blockName)
             if not self.isBlockOpen(newFile = newFile, block = block):
                 # Then the block can't fit the file
                 # Close the block
                 block.status = 'Pending'
-                self.blockCache[block.getName()] = block
-                dasBlocks.remove(block.getName())
+                self.blockCache[blockName] = block
+                dasBlocks.remove(blockName)
             else:
                 # Load it out of the cache
-                currentBlock = self.blockCache.get(block.getName())
+                currentBlock = blockName
                 return currentBlock
         # If there are no open blocks
         # Or we run out of blocks
@@ -622,6 +626,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 # but not process
                 blockForDBSBuffer.append(block)
 
+                
         if len(blocks) < 1:
             # Nothing to do
             return
@@ -686,6 +691,21 @@ class DBSUploadPoller(BaseWorkerThread):
                                  physicsGroup = dbsFile.get('physicsGroup', None))
             logging.debug("Found block %s in blocks" % block.getName())
             block.setPhysicsGroup(group = self.physicsGroup)
+            def replaceKeys(block, oldKey, newKey):
+                if oldKey in block.data.keys():
+                    block.data[newKey] = block.data[oldKey]
+                    del block.data[oldKey]
+                return    
+            replaceKeys(block, 'BlockSize', 'block_size')
+            replaceKeys(block, 'CreationDate', 'creation_date')
+            replaceKeys(block, 'NumberOfFiles', 'file_count')
+            replaceKeys(block, 'location', 'origin_site_name')
+            block.data['block']['block_size'] = float(block.data['block']['block_size'])
+            for key in ['insertedFiles', 'newFiles', 'DatasetAlgo', 'file_count',
+                        'block_size', 'origin_site_name', 'creation_date', 'open', 'Name']:
+                if key in block.data.keys():
+                    del block.data[key]
+
             encodedBlock = block.data
             logging.info("About to insert block %s" % block.getName())
             self.input.put({'name': block.getName(), 'block': encodedBlock})

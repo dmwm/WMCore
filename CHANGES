@@ -1,4 +1,6 @@
-0.8.50 to 0.9.0:
+Dummy info to test git functionality - melo
+
+8.50 to 0.9.0:
   - Massive monitoring rewrite.
   - Improve the performance of the ErrorHandler when loading jobs that have 
     input files with large numbers of lumi sections.  Fixes #3925.

@@ -45,7 +45,7 @@ class AnalyticsPoller(BaseWorkerThread):
         self.localQueue = WorkQueueService(self.config.AnalyticsDataCollector.localQueueURL)
         
         # set the connection for local couchDB call
-        self.localCouchDB = LocalCouchDBData(self.config.AnalyticsDataCollector.localCouchUR, self.summaryLevel)
+        self.localCouchDB = LocalCouchDBData(self.config.AnalyticsDataCollector.localCouchURL, self.summaryLevel)
         
         # interface to WMBS/BossAir db
         myThread = threading.currentThread()

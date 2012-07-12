@@ -48,10 +48,10 @@ class LocalCouchDBData():
          }
          if taskflag is set,
          convert to
-         {'request_name1': {'task_name1 : {'queue_first': { 'siteA': 100}}}
-          'request_name1': {'task_name1 : {'queue_first': { 'siteB': 100}}},
-          'request_name1': {'task_name2 : {'running': { 'siteA': 100}}}
-          'request_name1': {'task_name2 : {'success': { 'siteB': 100}}},
+         {'request_name1': {'tasks': {'task_name1 : {'queue_first': { 'siteA': 100}}}}
+          'request_name1': {'tasks':{'task_name1 : {'queue_first': { 'siteB': 100}}}},
+          'request_name1': {'tasks':{'task_name2 : {'running': { 'siteA': 100}}}}
+          'request_name1': {'tasks':{'task_name2 : {'success': { 'siteB': 100}}}},
          }
         """
         options = {"group": True, "stale": "ok"}
@@ -65,9 +65,10 @@ class LocalCouchDBData():
         if self.summaryLevel == "task":
             for x in results.get('rows', []):
                 data.setdefault(x['key'][0], {})
-                data[x['key'][0]].setdefault(x['key'][1], {}) 
-                data[x['key'][0]][x['key'][1]].setdefault(x['key'][2], {})
-                data[x['key'][0]][x['key'][1]][x['key'][2]][x['key'][3]] = x['value'] 
+                data[x['key'][0]].setdefault('tasks', {})
+                data[x['key'][0]]['tasks'].setdefault(x['key'][1], {}) 
+                data[x['key'][0]]['tasks'][x['key'][1]].setdefault(x['key'][2], {})
+                data[x['key'][0]]['tasks'][x['key'][1]][x['key'][2]][x['key'][3]] = x['value'] 
         else:
             for x in results.get('rows', []):
                 data.setdefault(x['key'][0], {})
@@ -133,7 +134,7 @@ class WMAgentDBData():
                                      logger = logger, dbinterface = dbi)
         self.summaryLevel = summaryLevel
         if self.summaryLevel == "task":
-            self.batchJobByTaskAction = bossAirDAOFactory(classname = "JobStatusByTaskAndSite")
+            self.batchJobAction = bossAirDAOFactory(classname = "JobStatusByTaskAndSite")
         else:
             self.batchJobAction = bossAirDAOFactory(classname = "JobStatusByWorkflowAndSite")
         self.jobSlotAction = wmbsDAOFactory(classname = "Locations.GetJobSlotsByCMSName")
@@ -192,11 +193,10 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, agentInfo, uploadTime, 
         doc['workflow'] = request
         # this will set doc['status'], and doc['sites']
         if summaryLevel == 'task':
-            doc['tasks'] = _convertToStatusSiteFormat(status, summaryLevel)
-            data['status'] = {}
-            data['sites'] = {}
-            for task, taskData in doc['tasks']:
-                _combineJobsForStatusAndSite(taskData, data)
+            tempData = _convertToStatusSiteFormat(status['tasks'], summaryLevel)
+            doc['tasks'] = tempData["tasks"]
+            doc['status'] = tempData['status']
+            doc['sites'] = tempData['sites']
         else:
             tempData = _convertToStatusSiteFormat(status, summaryLevel)
             doc['status'] = tempData['status']
@@ -270,8 +270,9 @@ def _convertToStatusSiteFormat(requestData, summaryLevel = None):
     
     if summaryLevel != None and summaryLevel == 'task':
         data['tasks'] = {}
-        for task, taskData in requestData.item():
+        for task, taskData in requestData.items():
              data['tasks'][task] = _convertToStatusSiteFormat(taskData)
+             _combineJobsForStatusAndSite(taskData, data)
     else:
        _combineJobsForStatusAndSite(requestData, data)
     return data

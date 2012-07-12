@@ -336,7 +336,14 @@ class StdBase(object):
         procTaskCmsswHelper.setGlobalTag(self.globalTag)
         procTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
         procTaskCmsswHelper.setErrorDestinationStep(stepName = procTaskLogArch.name())
-        procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
+
+        if forceMerged:
+            procTaskStageHelper.setMinMergeSize(0, 0)
+        elif forceUnmerged:
+            procTaskStageHelper.disableStraightToMerge()
+        else:
+            procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
+
         procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                        scramArch = self.scramArch)
         procTaskCmsswHelper.setEventsPerLumi(eventsPerLumi)
@@ -367,9 +374,6 @@ class StdBase(object):
 
             procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
                                                         **scenarioArgs)
-        if forceUnmerged:
-            procTaskStageHelper.disableStraightToMerge()
-
         return outputModules
 
     def addOutputModule(self, parentTask, outputModuleName,

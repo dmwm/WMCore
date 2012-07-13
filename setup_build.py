@@ -202,10 +202,14 @@ class BuildCommand(Command):
 
     user_options = build.user_options
     user_options.append(('system=', 's', 'build the specified system'))
+    user_options.append(('skip-docs', None, 'skip documentation'))
+    user_options.append(('compress', None, 'compress assets'))
 
     def initialize_options(self):
         # and add our additional option
         self.system = None
+        self.skip_docs = False
+        self.compress = False
 
     def finalize_options (self):
         # Check that the sub-system is valid
@@ -217,8 +221,43 @@ class BuildCommand(Command):
         force_rebuild()
 
     def generate_docs (self):
-	os.environ["PYTHONPATH"] = "%s/build/lib:%s" % (get_path_to_wmcore_root(), os.environ["PYTHONPATH"])
-	spawn(['make', '-C', 'doc', 'html', 'PROJECT=%s' % self.system.lower()])
+        if not self.skip_docs:
+	    os.environ["PYTHONPATH"] = "%s/build/lib:%s" % (get_path_to_wmcore_root(), os.environ["PYTHONPATH"])
+	    spawn(['make', '-C', 'doc', 'html', 'PROJECT=%s' % self.system.lower()])
+
+    def compress_assets(self):
+        if not self.compress:
+            for dir, files in self.distribution.data_files:
+                for f in files:
+                    if f.find("-min.") >= 0:
+                        print "removing", f
+                        os.remove(f)
+        else:
+            rxfileref = re.compile(r"(/[-A-Za-z0-9_]+?)(?:-min)?(\.(html|js|css))")
+            for dir, files in self.distribution.data_files:
+                files = [f for f in files if f.find("-min.") < 0]
+                if not files:
+                    continue
+                elif dir == 'data/javascript':
+                    spawn(['java', '-jar', os.environ["YUICOMPRESSOR"], '--type', 'js',
+                           '-o', (len(files) > 1 and '.js$:-min.js')
+                                  or files[0].replace(".js", "-min.js")]
+                          + files)
+                elif dir == 'data/css':
+                    spawn(['java', '-jar', os.environ["YUICOMPRESSOR"], '--type', 'css',
+                           '-o', (len(files) > 1 and '.css$:-min.css')
+                                  or files[0].replace(".css", "-min.css")]
+                          + files)
+                elif dir == 'data/templates':
+                    for f in files:
+                        if f.endswith(".html"):
+                            print "minifying", f
+                            minified = open(f).read()
+                            minified = re.sub(re.compile(r"\n\s*([<>])", re.S), r"\1", minified)
+                            minified = re.sub(re.compile(r"\n\s*", re.S), " ", minified)
+                            minified = re.sub(r"<!-- (.*?) -->", "", minified)
+                            minified = re.sub(rxfileref, r"\1-min\2", minified)
+                            open(f.replace(".html", "-min.html"), "w").write(minified)
 
     def run (self):
         # Have to get the build command here and set force, as the build plugins only refer to the
@@ -233,6 +272,7 @@ class BuildCommand(Command):
         cmd.ensure_finalized()
         cmd.run()
 	self.generate_docs()
+        self.compress_assets()
         self.distribution.have_run[command] = 1
 
 class InstallCommand(install):
@@ -249,6 +289,8 @@ class InstallCommand(install):
     user_options = install.user_options
     user_options.append(('system=', 's', 'install the specified system'))
     user_options.append(('patch', None, 'patch an existing installation (default: no patch)'))
+    user_options.append(('skip-docs', None, 'skip documentation'))
+    user_options.append(('compress', None, 'compress assets'))
 
     def initialize_options(self):
         # Call the base class
@@ -256,6 +298,8 @@ class InstallCommand(install):
         # and add our additionl options
         self.system = None
         self.patch = None
+        self.skip_docs = False
+        self.compress = False
 
     def finalize_options(self):
         # Check that the sub-system is valid

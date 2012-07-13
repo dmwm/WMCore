@@ -1,5 +1,3 @@
-Dummy info to test git functionality - melo
-
 8.50 to 0.9.0:
   - Massive monitoring rewrite.
   - Improve the performance of the ErrorHandler when loading jobs that have 

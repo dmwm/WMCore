@@ -105,18 +105,22 @@ class DQMUpload(Executor):
         # Do we have to upload analysis file to the DQM server
         if self.step.upload.active:
             logging.info("DQM Upload is ACTIVE.")
+
+            # FIXME : samir : This doesnt help in the T0 case. In the general (GlideIn case) we have another 
+            # Ways to implement it which are easier but this will be the last resort.
+ 
             # Pulling the proxy from the input sandbox
             # After this, the proxy will be in the local directory
             # The command bellow throws an exception if the sandbox
             # does not have the proxy file
-            try:
-                self.stepSpace.getFromSandbox(self.step.upload.proxy)
-            except Exception, ex:
-                msg = "Could not find proxy file in input sandbox:"
-                msg += str(ex) + "\n"
-                msg += traceback.format_exc()
-                logging.error(msg)
-                raise WMExecutionFailure(60318, "DQMUploadFailure", msg)
+            #try:
+            #    self.stepSpace.getFromSandbox(self.step.upload.proxy)
+            #except Exception, ex:
+            #    msg = "Could not find proxy file in input sandbox:"
+            #    msg += str(ex) + "\n"
+            #    msg += traceback.format_exc()
+            #    logging.error(msg)
+            #    raise WMExecutionFailure(60318, "DQMUploadFailure", msg)
      
         # Now, let's work...
 

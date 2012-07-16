@@ -1,3 +1,47 @@
+0.9.0 to 0.9.1:
+  - Merge pull request #20 from stuartw/patch/buildrelease/github
+  - Fix broken buildrelease script
+  - Merge pull request #19 from stuartw/patch/buildrelease/github
+  - Missed line in buildrelease move to github
+  - Modify buildrelease script for pure git
+  - Merge branch 'wmcore-rest'
+  - Merge pull request #17 from samircury/dqmupload-fix-proxy
+  - Merge pull request #18 from hufnagel/mydev
+  - add DQM harvest method to StdBase, fixes #3863
+  - add special DAO for Harvest job splitter, fixes #3825
+  - adding a DAO that Harvest Jobsplitter needs
+  - adding the harvest algorithm
+  - adds unit test for the Harvesting algorithm
+  - Commenting out the only part that prevents DQMUpload to work in T0
+  - Merge pull request #16 from sfoulkes/master
+  - Fix problems with disabling straight-to-merge.  Fixes #3909.
+  - Merge pull request #15 from sfoulkes/master
+  - Remove test lines from the CHANGES file.
+  - Merge remote branch 'upstream/master'
+  - Test commit.
+  - Dummy commmit, please ignore
+  - Merge branch 'svnmaster' into wmcore-rest
+  - Change XML output format to support arbitrary keys.
+  - Allow authz_match to work (and fail) if user is missing.
+  - Fix new substitutions to work also in absence of values.
+  - Allow value and file substitutions on the front page.
+  - Not all PUT/POST requests bodies have rfile.
+  - REST API classes from SiteDB.
+  - External files removed by automatic javascript compression.
+  - Add setup.py --compress option to minify HTML, CSS and JS assets.
+  - Split module documentation into individual files.
+  - Add setup.py --skip-docs option to skip documentation build.
+
+8.50 to 0.9.0:
+  - Massive monitoring rewrite.
+  - Improve the performance of the ErrorHandler when loading jobs that have 
+    input files with large numbers of lumi sections.  Fixes #3925.
+  - Make loading parentage information when loading files in a fileset optional.  Fixes #3919.
+  - Load the task name in the LoadFromIDWithWorkflow DAO.  Fixes #3922.
+  - Strip error message from GWQ to 1000 characters
+  - Log traceback for workqueue split errors if unknown exception
+  - Complain if no acdc section in resubmission task.
+
 0.8.49 to 0.8.50:
   - Improved ResourceControl and job scheduling.  Fixes #3888.
   - Support DQM sequences in the PromptReco and Tier1PromptReco specs.  Fixes #3879.

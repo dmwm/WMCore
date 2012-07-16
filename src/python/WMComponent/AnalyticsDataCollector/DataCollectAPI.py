@@ -37,6 +37,7 @@ class LocalCouchDBData():
     
         example
         {"rows":[
+
             {"key":['request_name1", 'task_name1', "queued_first", "siteA"],"value":100},
             {"key":['request_name1", 'task_name1', "queued_first", "siteB"],"value":100},
             {"key":['request_name1", 'task_name2', "running", "siteA"],"value":100},
@@ -123,8 +124,6 @@ class LocalCouchDBData():
 class WMAgentDBData():
 
     def __init__(self, summaryLevel, dbi, logger):
-        
-        
         # interface to WMBS/BossAir db
         bossAirDAOFactory = DAOFactory(package = "WMCore.BossAir",
                                        logger = logger, dbinterface = dbi)
@@ -132,6 +131,7 @@ class WMAgentDBData():
                                     logger = logger, dbinterface = dbi)
         wmAgentDAOFactory = DAOFactory(package = "WMCore.Agent.Database", 
                                      logger = logger, dbinterface = dbi)
+
         self.summaryLevel = summaryLevel
         if self.summaryLevel == "task":
             self.batchJobAction = bossAirDAOFactory(classname = "JobStatusByTaskAndSite")

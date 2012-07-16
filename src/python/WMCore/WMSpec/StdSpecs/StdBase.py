@@ -336,7 +336,14 @@ class StdBase(object):
         procTaskCmsswHelper.setGlobalTag(self.globalTag)
         procTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
         procTaskCmsswHelper.setErrorDestinationStep(stepName = procTaskLogArch.name())
-        procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
+
+        if forceMerged:
+            procTaskStageHelper.setMinMergeSize(0, 0)
+        elif forceUnmerged:
+            procTaskStageHelper.disableStraightToMerge()
+        else:
+            procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
+
         procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                        scramArch = self.scramArch)
         procTaskCmsswHelper.setEventsPerLumi(eventsPerLumi)
@@ -367,9 +374,6 @@ class StdBase(object):
 
             procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
                                                         **scenarioArgs)
-        if forceUnmerged:
-            procTaskStageHelper.disableStraightToMerge()
-
         return outputModules
 
     def addOutputModule(self, parentTask, outputModuleName,
@@ -555,8 +559,6 @@ class StdBase(object):
         else:
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge")
 
-
-
         self.addOutputModule(mergeTask, "Merged",
                              primaryDataset = getattr(parentOutputModule, "primaryDataset"),
                              dataTier = getattr(parentOutputModule, "dataTier"),
@@ -584,6 +586,71 @@ class StdBase(object):
         cleanupStep.setStepType("DeleteFiles")
         cleanupTask.applyTemplates()
         cleanupTask.setTaskPriority(self.priority + 5)
+        return
+
+    def addDQMHarvestTask(self, parentTask, parentOutputModuleName,
+                          uploadProxy, periodic_harvest_interval = 0,
+                          parentStepName = "cmsRun1", doLogCollect = True):
+        """
+        _addDQMHarvestTask_
+
+        Create a DQM harvest task to harvest the files produces by the parent task.
+        """
+        harvestTask = parentTask.addTask("%sDQMHarvest%s" % (parentTask.name(), parentOutputModuleName))
+        self.addDashboardMonitoring(harvestTask)
+        harvestTaskCmssw = harvestTask.makeStep("cmsRun1")
+        harvestTaskCmssw.setStepType("CMSSW")
+
+        harvestTaskUpload = harvestTaskCmssw.addStep("upload1")
+        harvestTaskUpload.setStepType("DQMUpload")
+        harvestTaskLogArch = harvestTaskCmssw.addStep("logArch1")
+        harvestTaskLogArch.setStepType("LogArchive")
+
+        harvestTask.setTaskLogBaseLFN(self.unmergedLFNBase)
+        if doLogCollect:
+            self.addLogCollectTask(harvestTask, taskName = "%s%sDQMHarvestLogCollect" % (parentTask.name(), parentOutputModuleName))
+
+        harvestTask.setTaskType("Processing")
+        harvestTask.applyTemplates()
+        harvestTask.setTaskPriority(self.priority + 5)
+
+        harvestTaskCmsswHelper = harvestTaskCmssw.getTypeHelper()
+        harvestTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
+                                          scramArch = self.scramArch)
+
+        harvestTaskCmsswHelper.setErrorDestinationStep(stepName = harvestTaskLogArch.name())
+        harvestTaskCmsswHelper.setGlobalTag(self.globalTag)
+        harvestTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
+
+        harvestTaskCmsswHelper.setUserLFNBase("/")
+
+        parentTaskCmssw = parentTask.getStep(parentStepName)
+        parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
+
+        harvestTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
+
+        harvestTask.setSplittingAlgorithm("Harvest",
+                                          periodic_harvest_interval = periodic_harvest_interval)
+
+        if getattr(parentOutputModule, "dataTier") == "DQMROOT":
+            harvestTaskCmsswHelper.setDataProcessingConfig(self.procScenario, "dqmHarvesting",
+                                                           globalTag = self.globalTag,
+                                                           datasetName = "/%s/%s/%s" % (getattr(parentOutputModule, "primaryDataset"),
+                                                                                        getattr(parentOutputModule, "processedDataset"),
+                                                                                        getattr(parentOutputModule, "dataTier")),
+                                                           runNumber = self.runNumber,
+                                                           newDQMIO = True)
+        else:
+            harvestTaskCmsswHelper.setDataProcessingConfig(self.procScenario, "dqmHarvesting",
+                                                           globalTag = self.globalTag,
+                                                           datasetName = "/%s/%s/%s" % (getattr(parentOutputModule, "primaryDataset"),
+                                                                                        getattr(parentOutputModule, "processedDataset"),
+                                                                                        getattr(parentOutputModule, "dataTier")),
+                                                           runNumber = self.runNumber)
+
+        harvestTaskUploadHelper = harvestTaskUpload.getTypeHelper()
+        harvestTaskUploadHelper.setProxyFile(uploadProxy)
+
         return
 
     def setupPileup(self, task, pileupConfig):

@@ -12,6 +12,8 @@ job in two ways:
 
 import logging
 
+from WMCore.DataStructs.Run import Run
+
 class Mask(dict):
     """
     _Mask_
@@ -190,24 +192,31 @@ class Mask(dict):
             # ALWAYS TRUE
             return runs
 
-        lumisToRemove = {}
+        runDict = {}
         for r in runs:
-            lumisToRemove = []
-            for l in r.lumis:
-                if not self.runLumiInMask(run = r.run, lumi = l):
-                    if not l in lumisToRemove:
-                        lumisToRemove.append(l)
+            if runDict.has_key(r.run):
+                runDict[r.run].lumis.extend(r.lumis)
+            else:
+                runDict[r.run] = r
 
-            for l in lumisToRemove:
-                r.lumis.remove(l)
+        maskRuns = set(self["runAndLumis"].keys())
+        passedRuns = set([r.run for r in runs])
+        filteredRuns = maskRuns.intersection(passedRuns)
 
         newRuns = set()
+        for runNumber in filteredRuns:
+            maskLumis = set()
+            for pair in self["runAndLumis"][runNumber]:
+                if pair[0] == pair[1]:
+                    maskLumis.add(pair[0])
+                else:                  
+                    maskLumis = maskLumis.union(range(pair[0], pair[1], 1))
+            
+            filteredLumis = set(runDict[runNumber].lumis).intersection(maskLumis)
+            if len(filteredLumis) > 0:
+                newRuns.add(Run(runNumber, *list(filteredLumis)))
 
-        for r in runs:
-            if len(r.lumis) >0:
-                newRuns.add(r)
         return newRuns
-
 
 
 class InclusiveMask(Mask):

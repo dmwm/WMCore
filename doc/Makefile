@@ -34,7 +34,7 @@ $(PROJECT):
 	[ -d $(PROJECT) ] || cp -rp wmcore $(PROJECT)
 
 apidoc: $(PROJECT)
-	python generate_modules.py -f -d $(PROJECT) -s rst $${PYTHONPATH%%:*}/WMCore
+	python generate_modules.py -f -d $(PROJECT) -s rst $${PYTHONPATH%%:*}
 	cp references.rst $(PROJECT)
 
 html: apidoc

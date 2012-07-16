@@ -16,7 +16,7 @@ CVSROOT="cmscvs.cern.ch:/local/reps/CMSSW"
 # use a tag so we only checkout a limited set,
 # doesn't need to be recent as we do an update on the changed files to remove sticky tag
 EXAMPLE_CMSDIST_TAG="builder_2011-08-02_16-19-02_wmagent"
-REMOTE='upstream'
+REMOTE='origin'
 
 while [ $# -ge 1 ]; do
   case $1 in
@@ -48,12 +48,12 @@ if ! echo ${GITBRANCH} | egrep -iq 'master|wmcore_' ; then
   exit 4
 fi
 
-if [ X"$(git status -s)" != X ]; then
-  git status
-  echo
-  echo "ABORTING - unclean working area"
-  exit 2
-fi
+#if [ X"$(git status -s)" != X ]; then
+#  git status
+#  echo
+#  echo "ABORTING - unclean working area"
+#  exit 2
+#fi
 
 if [ X$(git rev-parse --show-toplevel) != X$PWD ]; then
   echo "ABORTING - not in root directory $(git rev-parse --show-toplevel)"

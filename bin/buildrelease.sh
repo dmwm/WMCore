@@ -45,11 +45,6 @@ echo "Building new release of WMCore $VERSION on ${GITBRANCH}"
 
 if ! echo ${GITBRANCH} | egrep -iq 'master|wmcore_' ; then
   echo "ABORTING - Can only release from master or a WMCORE_X_Y_Z git checkout: ${GITBRANCH}"
-  exit 5
-fi
-
-if ! echo ${GITBRANCH} | egrep -iq 'master|wmcore_' ; then
-  echo "ABORTING - Can only release from master or a wmcore_X_Y_Z branch: ${BRANCH}"
   exit 4
 fi
 
@@ -66,8 +61,7 @@ if [ X$(git rev-parse --show-toplevel) != X$PWD ]; then
 fi
 
 # Check if tag exists
-git show-ref --verify --quiet -- "refs/tags/${VERSION}"
-if [ $? -eq 0 ]; then
+if git show-ref --verify --quiet -- "refs/tags/${VERSION}"; then
   echo "Tag $VERSION exists, skipping tag command"
   TAG=false
 fi

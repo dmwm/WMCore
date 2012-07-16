@@ -38,7 +38,6 @@ fi
 VERSION=$1
 GITBRANCH=$(git symbolic-ref HEAD 2>/dev/null)
 GITBRANCH=${GITBRANCH##refs/heads/}
-BRANCH=$(basename $(git svn tag -n test_stuart_20110812 | head -1 | awk '{print $2}'))
 
 echo "Building new release of WMCore $VERSION on ${GITBRANCH}"
 
@@ -49,8 +48,8 @@ if ! echo ${GITBRANCH} | egrep -iq 'master|wmcore_' ; then
   exit 5
 fi
 
-if ! echo ${BRANCH} | egrep -iq 'trunk|wmcore_' ; then
-  echo "ABORTING - Can only release from trunk or a WMCORE_X_Y_Z branch: ${BRANCH}"
+if ! echo ${GITBRANCH} | egrep -iq 'master|wmcore_' ; then
+  echo "ABORTING - Can only release from master or a wmcore_X_Y_Z branch: ${BRANCH}"
   exit 4
 fi
 

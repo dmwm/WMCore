@@ -1,11 +1,7 @@
 *.pyc
-<<<<<<< HEAD
-.*
-=======
 *-min.js
 *-min.css
 *-min.html
->>>>>>> master
 WMCORE_JENKINS_REPLACEMENT_SOURCE.tar.gz
 .noseids
 *.patch

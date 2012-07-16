@@ -16,12 +16,14 @@ CVSROOT="cmscvs.cern.ch:/local/reps/CMSSW"
 # use a tag so we only checkout a limited set,
 # doesn't need to be recent as we do an update on the changed files to remove sticky tag
 EXAMPLE_CMSDIST_TAG="builder_2011-08-02_16-19-02_wmagent"
+REMOTE='upstream'
 
 while [ $# -ge 1 ]; do
   case $1 in
     --skip-build ) BUILD=false; shift ;;
     --skip-tag ) TAG=false; shift ;;
     --repo= ) REPO={2#*=}; shift; shift ;;
+    --remote= ) REMOTE={2#*=}; shift; shift ;;
     -h ) perl -ne '/^##H/ && do { s/^##H ?//; print }' < $0 1>&2; exit 1 ;;
     -* ) echo "$0: unrecognised option $1, use -h for help" 1>&2; exit 1 ;;
     *  ) break ;;
@@ -36,9 +38,8 @@ fi
 VERSION=$1
 GITBRANCH=$(git symbolic-ref HEAD 2>/dev/null)
 GITBRANCH=${GITBRANCH##refs/heads/}
-BRANCH=$(basename $(git svn tag -n test_stuart_20110812 | head -1 | awk '{print $2}'))
 
-echo "Building new release of WMCore $VERSION from ${BRANCH} (${GITBRANCH})"
+echo "Building new release of WMCore $VERSION on ${GITBRANCH}"
 
 # some sanity checks
 
@@ -47,8 +48,8 @@ if ! echo ${GITBRANCH} | egrep -iq 'master|wmcore_' ; then
   exit 5
 fi
 
-if ! echo ${BRANCH} | egrep -iq 'trunk|wmcore_' ; then
-  echo "ABORTING - Can only release from trunk or a WMCORE_X_Y_Z branch: ${BRANCH}"
+if ! echo ${GITBRANCH} | egrep -iq 'master|wmcore_' ; then
+  echo "ABORTING - Can only release from master or a wmcore_X_Y_Z branch: ${BRANCH}"
   exit 4
 fi
 
@@ -64,14 +65,8 @@ if [ X$(git rev-parse --show-toplevel) != X$PWD ]; then
   exit 3
 fi
 
-# Not sure if we want this or not
-#echo "git svn fetch ..."
-#git svn fetch
-#echo "git svn rebase ..."
-#git svn rebase
-
 # Check if tag exists
-(git branch -r | grep -q "tags/$VERSION")
+git show-ref --verify --quiet -- "refs/tags/${VERSION}"
 if [ $? -eq 0 ]; then
   echo "Tag $VERSION exists, skipping tag command"
   TAG=false
@@ -102,13 +97,13 @@ if [ X${TAG} == Xtrue ]; then
   echo "committing local changes ..."
   git commit -a -s -m "$VERSION"
 
-  echo "pushing local changes to svn ..."
-  git svn dcommit
-
   echo "tagging release ..."
-  git svn tag $VERSION
+  git log --pretty=format:'  - %s' ${LASTCOMMIT}.. | git tag -a $VERSION -F -
 
-  echo "$VERSION tagged in svn"
+  echo "pushing to ${REMOTE} ..."
+  git push --tags ${REMOTE}
+
+  echo "$VERSION tagged"
 fi
 
 echo

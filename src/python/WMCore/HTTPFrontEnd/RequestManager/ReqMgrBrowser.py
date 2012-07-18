@@ -113,7 +113,6 @@ class ReqMgrBrowser(WebAPI):
         request = GetRequest.getRequestByName(requestName)
         helper = Utilities.loadWorkload(request)
         splittingDict = helper.listJobSplittingParametersByTask()
-        timeOutDict = helper.listTimeOutsByTask()
         taskNames = splittingDict.keys()
         taskNames.sort()
 
@@ -168,8 +167,6 @@ class ReqMgrBrowser(WebAPI):
         helper = Utilities.loadWorkload(request)
         logging.info("SetSplitting " + requestName + splittingTask + splittingAlgo + str(splitParams))
         helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams)
-        if submittedParams.get("timeout", "") != "":
-            helper.setTaskTimeOut(splittingTask, int(submittedParams["timeout"]))
         Utilities.saveWorkload(helper, request['RequestWorkflow'])
         return "Successfully updated splitting parameters for " + splittingTask \
                + " " + detailsBackLink(requestName)

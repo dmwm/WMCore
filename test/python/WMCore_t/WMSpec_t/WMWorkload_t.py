@@ -1085,28 +1085,6 @@ class WMWorkloadTest(unittest.TestCase):
 
         return
 
-    def testUpdatingTimeouts(self):
-        """
-        _testUpdatingTimeouts_
-
-        Verify that task timeouts are set correctly.
-        """
-        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
-
-        procTask = testWorkload.newTask("ProcessingTask")
-        procTask.setTaskType("Processing")
-        mergeTask = procTask.addTask("MergeTask")
-        mergeTask.setTaskType("Merge")
-
-        testWorkload.setTaskTimeOut("/TestWorkload/ProcessingTask", 60)
-        testWorkload.setTaskTimeOut("/TestWorkload/ProcessingTask/MergeTask", 30)
-
-        self.assertEqual(testWorkload.listTimeOutsByTask(),
-                         {"/TestWorkload/ProcessingTask": 60,
-                          "/TestWorkload/ProcessingTask/MergeTask": 30},
-                         "Error: Timeouts not set correctly.")
-        return
-
     def testDashboardActivity(self):
         """
         _testDashboardActivity_
@@ -1370,10 +1348,13 @@ class WMWorkloadTest(unittest.TestCase):
         mergeTask = procTask.addTask("MergeTask")
         mergeTask.setTaskType("Merge")
 
+        testWorkload.setupPerformanceMonitoring(maxRSS = 101, maxVSize = 102,
+                                                softTimeout = 100, gracePeriod = 1)
 
-        testWorkload.setupPerformanceMonitoring(maxRSS = 101, maxVSize = 102)
         self.assertEqual(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor.maxRSS, 101)
         self.assertEqual(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor.maxVSize, 102)
+        self.assertEqual(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor.softTimeout, 100)
+        self.assertEqual(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor.hardTimeout, 101)
         self.assertTrue(hasattr(testWorkload.data.tasks.ProcessingTask.tree.children.MergeTask, 'watchdog'))
         return
 

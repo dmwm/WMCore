@@ -344,11 +344,14 @@ class WMTaskTest(unittest.TestCase):
 
         testTask = makeWMTask("TestTask")
 
-        testTask.setPerformanceMonitor(maxRSS = 100, maxVSize = 101)
+        testTask.setPerformanceMonitor(maxRSS = 100, maxVSize = 101, softTimeout = 100,
+                                       gracePeriod = 1)
 
         self.assertEqual(testTask.data.watchdog.monitors, ['PerformanceMonitor'])
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxRSS,   100)
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxVSize, 101)
+        self.assertEqual(testTask.data.watchdog.PerformanceMonitor.softTimeout, 100)
+        self.assertEqual(testTask.data.watchdog.PerformanceMonitor.hardTimeout, 101)
         return
 
     def testProcessingVerAndAcquisitionEra(self):

@@ -939,38 +939,6 @@ class WMWorkloadHelper(PersistencyHelper):
                                                           None))
         return
 
-    def setTaskTimeOut(self, taskPath, taskTimeOut):
-        """
-        _setTaskTimeOut_
-
-        Set the timeout value for the given tasks in the workload.
-        """
-        taskHelper = self.getTaskByPath(taskPath)
-        if taskHelper == None:
-            return
-
-        taskHelper.setTaskTimeOut(taskTimeOut)
-        return
-
-    def listTimeOutsByTask(self, initialTask = None):
-        """
-        _listTimeOutsByTask_
-
-        Create a dictionary that maps task names to timeouts.
-        """
-        output = {}
-
-        if initialTask:
-            taskIterator = initialTask.childTaskIterator()
-        else:
-            taskIterator = self.taskIterator()
-
-        for task in taskIterator:
-            output[task.getPathName()] = task.getTaskTimeOut()
-            output.update(self.listTimeOutsByTask(task))
-
-        return output
-
     def listJobSplittingParametersByTask(self, initialTask = None):
         """
         _listJobSplittingParametersByTask_

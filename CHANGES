@@ -1,3 +1,6 @@
+0.9.6 to 0.9.7:
+  - Missing patch from #3945.
+
 0.9.5 to 0.9.6:
   - Attempt to handle invalid transactions better in the monitoring.  Fixes #3914.
   - Merge pull request #30 from ticoann/monitoring

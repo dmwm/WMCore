@@ -140,7 +140,56 @@ class testWMConfigCache(unittest.TestCase):
         configCache2.delete()
         return
 
+    def testC_testViewsCompressed(self):
+        """
+        _testViews_
+
+        Prototype test for what should be a lot of other tests.
+        """
+        PSetTweak = "Hello, I am a PSetTweak.  It's nice to meet you."
+        attach    = "Hello, I am an attachment"
+
+        configCache = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test')
+        configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
+        configCache.setPSetTweaks(PSetTweak = PSetTweak)
+        configCache.attachments['attach1'] = attach
+        configCache.document['md5_hash'] = "somemd5"
+        psetPath = os.path.join(getTestBase(), "WMCore_t/Cache_t/PSet.txt")        
+        configCache.addConfig(newConfig = psetPath, psetHash = None)        
+        configCache.save( enableCompression = True )
+        
+        configCache2 = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test')
+        configCache2.document['md5_hash'] = configCache.document['md5_hash']
+        configCache2.load()
+        
+        self.assertEqual(configCache2.attachments.get('attach1', None), attach)
+        configCache2.delete()
+        return
+    
     def testD_LoadConfigCache(self):
+        """
+        _LoadConfigCache_
+
+        Actually load the config cache using plain .load()
+        Tests to make sure that if we pass in an id field it gets used to load configs
+        """
+
+        configCache = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test')
+        configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
+        configCache.setLabel("labelA")
+        configCache.save()
+
+        configCache2 = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test',
+                                   id = configCache.getCouchID(),
+                                   rev = configCache.getCouchRev())
+        configCache2.load()
+        self.assertEqual(configCache2.document['owner'],
+                         {'group': 'testGroup', 'user': 'testOps'})
+        self.assertEqual(configCache2.document['description'],
+                         {'config_desc': None, 'config_label': 'labelA'})
+        return
+    
+    def testD_LoadConfigCacheCompressed(self):
         """
         _LoadConfigCache_
 

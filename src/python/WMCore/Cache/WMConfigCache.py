@@ -5,7 +5,7 @@ _WMConfigCache_
 Being in itself a wrapped class around a config cache
 """
 
-
+import zlib
 import urllib
 import logging
 import traceback
@@ -152,12 +152,17 @@ class ConfigCache(WMObject):
 
     @Decorators.requireGroup
     @Decorators.requireUser
-    def save(self):
+    def save(self, enableCompression = False):
         """
         _save_
 
         Save yourself!  Save your internal document.
         """
+        if enableCompression:
+            self.document['compressed'] = 1
+        else:
+            self.document['compressed'] = 0
+            
         rawResults = self.database.commit(doc = self.document)
 
         # We should only be committing one document at a time
@@ -178,19 +183,21 @@ class ConfigCache(WMObject):
         # Now do the attachments
         for attachName in self.attachments:
             self.saveAttachment(name = attachName,
-                                attachment = self.attachments[attachName])
+                                attachment = self.attachments[attachName],
+                                enableCompression = enableCompression)
 
 
         return
 
 
-    def saveAttachment(self, name, attachment):
+    def saveAttachment(self, name, attachment, enableCompression = False):
         """
         _saveAttachment_
 
         Save an attachment to the document
         """
-
+        if enableCompression:
+            attachment = zlib.compress(attachment, 9)
 
         retval = self.database.addAttachment(self.document["_id"],
                                              self.document["_rev"],
@@ -207,7 +214,6 @@ class ConfigCache(WMObject):
 
         self.document["_rev"] = retval['rev']
         self.document["_id"]  = retval['id']
-        self.attachments[name] = attachment
 
         return
 
@@ -251,6 +257,9 @@ class ConfigCache(WMObject):
 
 
         attach = self.database.getAttachment(self.document["_id"], name)
+        
+        if 'compressed' in self.document and self.document['compressed']:
+            attach = zlib.decompress(attach)
 
         if not overwrite:
             if name in self.attachments.keys():
@@ -377,7 +386,7 @@ class ConfigCache(WMObject):
             except KeyError:
                 msg = "Could not find outputModule %s in psetTweaks['process']" % outputModuleName
                 logging.error(msg)
-                raise ConfigCacheExcpetion(msg)
+                raise ConfigCacheException(msg)
             dataset = outModule.get("dataset", None)
             if dataset:
                 results[outputModuleName] = {"dataTier": outModule["dataset"]["dataTier"],

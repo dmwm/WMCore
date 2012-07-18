@@ -1,0 +1,11 @@
+WMStats.Globals.importScripts([
+    "js/Views/WMStats._ViewBase.js",
+    "js/Views/WMStats.Overview.js",
+    "js/Views/WMStats.RequestView.js",
+    "js/Views/WMStats.SiteView.js",
+    "js/Views/WMStats.JobSummaryView.js",
+    "js/Views/WMStats.JobDetailView.js",
+    "js/Views/WMStats.AgentView.js",
+    "js/Views/WMStats.AlertView.js",
+    "js/Views/WMStats.ActiveRequestView.js"
+])

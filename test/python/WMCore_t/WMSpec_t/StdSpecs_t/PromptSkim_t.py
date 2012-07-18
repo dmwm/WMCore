@@ -11,6 +11,7 @@ import os
 from WMCore.WMSpec.StdSpecs.PromptSkim import promptSkimWorkload
 from WMCore.WMSpec.StdSpecs.PromptSkim import getTestArguments
 from WMCore.WMSpec.StdSpecs.PromptSkim import fixCVSUrl
+from WMCore.WMSpec.StdSpecs.PromptSkim import parseT0ProcVer
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
@@ -21,7 +22,7 @@ class PromptSkimTest(unittest.TestCase):
     def setUp(self):
         """
         _setUp_
-        
+
         Initialize the database and couch.
         """
         self.testInit = TestInitCouchApp(__file__)
@@ -46,6 +47,13 @@ class PromptSkimTest(unittest.TestCase):
         return
 
     def testFixCVSUrl(self):
+        """
+        _testFixCVSUrl_
+
+        Check that the method identifies broken urls and fixes them,
+        also it leaves alone those urls which are not recognized
+        """
+
         notCVSUrl = 'http://cmsprod.web.cern.ch/cmsprod/oldJobs.html'
         rightCVSUrl = 'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/Skimming/test/tier1/skim_MET.py?revision=1.4'
         wrongCVSUrls = ['http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/Skimming/test/tier1/skim_MET.py?revision=1.4&view=markup&pathrev=MAIN&sortby=date',
@@ -60,6 +68,37 @@ class PromptSkimTest(unittest.TestCase):
             self.assertEqual(fixCVSUrl(url), rightCVSUrl,
                          'Error: A wrong url (%s) from CVS was not changed (%s)'
                          % (url, fixCVSUrl(url)))
+
+    def testParseT0ProcVer(self):
+        """
+        _testParseT0Procver_
+
+        Check that the parser function process correctly different
+        possibilities of processing versions sent by the T0
+        """
+        procVerJustNumber = '1'
+        procVerWithV = 'v1'
+        procVerWithString = 'PromptSkim-v1'
+        procVerWrong = 'ProcVer-v1-Wrong'
+
+        result = parseT0ProcVer(procVerJustNumber)
+        self.assertEqual(result, {'ProcVer' : 1, 'ProcString' : None})
+
+        result = parseT0ProcVer(procVerWithV)
+        self.assertEqual(result, {'ProcVer' : 1, 'ProcString' : None})
+
+        result = parseT0ProcVer(procVerWithString)
+        self.assertEqual(result, {'ProcVer' : 1, 'ProcString' : 'PromptSkim'})
+
+        result = parseT0ProcVer(procVerWithString, 'Overriden')
+        self.assertEqual(result, {'ProcVer' : 1, 'ProcString' : 'Overriden'})
+
+        result = parseT0ProcVer(procVerJustNumber, 'TestString')
+        self.assertEqual(result, {'ProcVer' : 1, 'ProcString' : 'TestString'})
+
+        self.assertRaises(Exception, parseT0ProcVer, procVerWrong)
+
+
     @attr("integration")
     def testPromptSkimA(self):
         """

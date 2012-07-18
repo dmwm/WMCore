@@ -13,6 +13,7 @@ from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
 from WMCore.ACDC.DataCollectionService import DataCollectionService
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 
 class ResubmitBlock(StartPolicyInterface):
     """Split elements into blocks"""
@@ -20,6 +21,7 @@ class ResubmitBlock(StartPolicyInterface):
         StartPolicyInterface.__init__(self, **args)
         self.args.setdefault('SliceType', 'NumberOfFiles')
         self.args.setdefault('SliceSize', 1)
+        self.lumiType = "NumberOfLumis"
 
     def split(self):
         """Apply policy to spec"""
@@ -31,6 +33,9 @@ class ResubmitBlock(StartPolicyInterface):
                 parentFlag = False
             self.newQueueElement(Inputs = {block['Name'] : block['Sites']},
                                  ParentFlag = parentFlag,
+                                 NumberOfLumis = block[self.lumiType],
+                                 NumberOfFiles = block['NumberOfFiles'],
+                                 NumberOfEvents = block['NumberOfEvents'],
                                  Jobs = ceil(float(block[self.args['SliceType']]) /
                                              float(self.args['SliceSize'])),
                                  ACDC = block['ACDC'],
@@ -48,6 +53,8 @@ class ResubmitBlock(StartPolicyInterface):
         chunkSize = 200
         
         acdcInfo = task.getInputACDC()
+        if not acdcInfo:
+            raise WorkQueueWMSpecError(self.wmspec, 'No acdc section for %s' % task.getPathName())
         acdc = DataCollectionService(acdcInfo["server"], acdcInfo["database"])
         if self.data:
             acdcBlockSplit = ACDCBlock.splitBlockName(self.data.keys()[0])

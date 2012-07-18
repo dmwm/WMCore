@@ -151,12 +151,13 @@ class StageOut(Executor):
                 if hasattr(self.step.output, 'minMergeSize') \
                        and hasattr(file, 'size') \
                        and not getattr(file, 'merged', False):
+
                     # We need both of those to continue, and we don't
                     # direct-to-merge
                     if getattr(self.step.output, 'doNotDirectMerge', False):
                         # Then we've been told explicitly not to do direct-to-merge
                         continue
-                    if file.size > self.step.output.minMergeSize:
+                    if file.size >= self.step.output.minMergeSize:
                         # Then this goes direct to merge
                         try:
                             file = self.handleLFNForMerge(mergefile = file, step = step)
@@ -173,7 +174,7 @@ class StageOut(Executor):
                              and not getattr(file, 'merged', False):
                         # Then direct-to-merge due to events if
                         # the file is large enough:
-                        if file.events > self.step.output.maxMergeEvents:
+                        if file.events >= self.step.output.maxMergeEvents:
                             # straight to merge
                             try:
                                 file = self.handleLFNForMerge(mergefile = file, step = step)

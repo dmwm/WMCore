@@ -26,9 +26,10 @@ from T0.State.Database.Writer import InsertBlock
 from T0.GenericTier0.Tier0DB import Tier0DB
 from T0.RunConfigCache.Cache import Cache
 
-from WMCore.WMSpec.StdSpecs.PromptSkim import PromptSkimWorkloadFactory
+from WMCore.WMSpec.StdSpecs.PromptSkim import PromptSkimWorkloadFactory, parseT0ProcVer
 from WMCore.WMSpec.StdSpecs.Tier1PromptReco import Tier1PromptRecoWorkloadFactory
 from WMCore.WorkQueue.WorkQueue import WorkQueue
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 
 class PromptSkimPoller(BaseWorkerThread):
     def __init__(self, config):
@@ -124,6 +125,7 @@ class PromptSkimPoller(BaseWorkerThread):
                                                            "RunConfig")
 
         return self.runConfigCache.getRunConfig(runNumber)
+
     def createTier1PromptRecoWorkloadsForBlock(self, acquisitionEra, processingScenario, recoConfig, blockInfo):
         """
         _createTier1PromptRecoWorkloadsForBlock_
@@ -134,6 +136,7 @@ class PromptSkimPoller(BaseWorkerThread):
         """
         (datasetPath, guid) = blockInfo["BLOCK_NAME"].split("#", 1)
         (primary, processed, tier) = datasetPath[1:].split("/", 3)
+        runNumber = int(blockInfo["RUN_ID"])
         workloadName = "Run%s-%s-%s-%s-%s" % (blockInfo["RUN_ID"], primary, processed, "Tier1PromptReco", guid)
 
         writeTiers = []
@@ -148,6 +151,12 @@ class PromptSkimPoller(BaseWorkerThread):
         if len(recoConfig.AlcaProducers) > 0:
             writeTiers.append("ALCARECO")
         alcaProducers = recoConfig.AlcaProducers
+        dqmSequences = recoConfig.DqmSequences
+
+        parsedProcVer = parseT0ProcVer(recoConfig.ProcessingVersion,
+                                       'Tier1PromptReco')
+        processingString = parsedProcVer['ProcString']
+        processingVersion = parsedProcVer['ProcVer']
 
         wfParams = {"AcquisitionEra": acquisitionEra,
                     "Requestor": "CMSPromptSkimming",
@@ -157,7 +166,9 @@ class PromptSkimPoller(BaseWorkerThread):
                     "InitCommand": self.initCommand,
                     "CouchURL": self.config.JobStateMachine.couchurl,
                     "CouchDBName": self.config.JobStateMachine.configCacheDBName,
-                    "ProcessingVersion": recoConfig.ProcessingVersion,
+                    "ConfigURL": recoConfig.ConfigURL,
+                    "ProcessingVersion": processingVersion,
+                    "ProcessingString": processingString,
                     "ProcScenario": processingScenario,
                     "GlobalTag": recoConfig.GlobalTag,
                     "UnmergedLFNBase": "/store/unmerged",
@@ -167,7 +178,9 @@ class PromptSkimPoller(BaseWorkerThread):
                     "MaxMergeEvents": self.maxMergeEvents,
                     "WriteTiers": writeTiers,
                     "AlcaSkims": alcaProducers,
+                    "DqmSequences" : dqmSequences,
                     "PromptSkims":  recoConfig.PromptSkims,
+                    "RunNumber"  : runNumber,
                     "StdJobSplitAlgo": "EventBased",
                     "StdJobSplitArgs": {"events_per_job": recoConfig.EventSplit},
                     "SkimJobSplitAlgo": "FileBased",
@@ -179,10 +192,10 @@ class PromptSkimPoller(BaseWorkerThread):
         workload.setOwner("CMSDataOps")
         workload.setBlockWhitelist(blockInfo["BLOCK_NAME"])
 
-        if recoConfig.CustodialNode.find("MSS") != -1:
-            site = recoConfig.CustodialNode[:-4]
+        if recoConfig.ProcessingNode.find("MSS") != -1:
+            site = recoConfig.ProcessingNode[:-4]
         else:
-            site = recoConfig.CustodialNode
+            site = recoConfig.ProcessingNode
         workload.setSiteWhitelist(site)
 
         if not os.path.exists(os.path.join(self.workloadCache, workloadName)):
@@ -264,7 +277,7 @@ class PromptSkimPoller(BaseWorkerThread):
         """
         logging.info("pollForTransferredBlocks(): Running...")
 
-        candidateBlocks = ListBlock.listBlockInfoByStatus(self.t0astDBConn,
+        candidateBlocks = ListBlock.listReleasedBlockInfoByStatus(self.t0astDBConn,
                                                           "Exported", "Migrated")
 
         logging.info("pollForTransferredBlocks(): Found %s blocks." % len(candidateBlocks))
@@ -274,17 +287,21 @@ class PromptSkimPoller(BaseWorkerThread):
             logging.info("pollForTransferredBlocks(): Candidate: %s" % candidateBlock["BLOCK_ID"])
             runConfig = self.getRunConfig(int(candidateBlock["RUN_ID"]))
 
-            skims = runConfig.getSkimConfiguration(candidateBlock["PRIMARY_ID"],
-                                                   candidateBlock["TIER_ID"])
-            tier1RecoConfig = runConfig.getTier1PromptRecoConfiguration(candidateBlock["PRIMARY_ID"])
+            skims = runConfig.getPromptSkimConfiguration(candidateBlock["PRIMARY_ID"],
+                                                         candidateBlock["TIER_ID"])
+            tier1RecoConfig = runConfig.getTier1RecoConfiguration(candidateBlock["PRIMARY_ID"])
 
-            if skims == None and tier1RecoConfig == None:
+            (datasetPath, guid) = candidateBlock["BLOCK_NAME"].split("#", 1)
+            (primary, processed, tier) = datasetPath[1:].split("/", 3)
+            isRaw = (tier == "RAW")
+
+            if not skims and not (tier1RecoConfig and isRaw):
                 InsertBlock.updateBlockStatusByID(self.t0astDBConn,
                                                   candidateBlock, "Skimmed")
                 self.t0astDBConn.commit()
                 logging.info("No skims or promptRecos for block %s" % candidateBlock["BLOCK_ID"])
 
-            elif skims != None:
+            if skims:
                 insertParents = False
                 for skimConfig in skims:
                     if skimConfig.TwoFileRead:
@@ -315,7 +332,7 @@ class PromptSkimPoller(BaseWorkerThread):
                     self.t0astDBConn.commit()
                     myThread.transaction.commit()
 
-            elif tier1RecoConfig != None:
+            if tier1RecoConfig and isRaw:
                 myThread = threading.currentThread()
                 myThread.transaction.begin()
 

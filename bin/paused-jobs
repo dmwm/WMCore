@@ -96,6 +96,7 @@ class pausedTool:
     def failJobs(self, jobs):
         for job in jobs:
             self.changer.propagate(job, 'killed', 'jobpaused')
+            job.failInputFiles()
             print "Failing job %d" % job['id']
 
     def main(self):

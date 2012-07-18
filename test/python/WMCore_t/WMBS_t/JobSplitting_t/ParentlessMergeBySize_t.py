@@ -64,6 +64,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         """
         locationAction = self.daoFactory(classname = "Locations.New")
         locationAction.execute(siteName = "s1", seName = "somese.cern.ch")
+        locationAction.execute(siteName = "s1", seName = "somese2.cern.ch")        
 
         changeStateDAO = self.daoFactory(classname = "Jobs.ChangeState")
 
@@ -223,8 +224,8 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             file.loadData()
             assert file["lfn"] in goldenFiles, \
                    "Error: Unknown file: %s" % file["lfn"]
-            assert file["locations"] == set(["somese.cern.ch"]), \
-                   "Error: File is missing a location."
+            self.assertTrue(file["locations"] == set(["somese.cern.ch", "somese2.cern.ch"]),
+                            "Error: File is missing a location.")
             goldenFiles.remove(file["lfn"])
 
             fileRun = list(file["runs"])[0].run
@@ -446,8 +447,8 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             for file in job.getFiles():
                 file.loadData()
                 jobLFNs.append(file["lfn"])
-                assert file["locations"] == set(["somese.cern.ch"]), \
-                       "Error: File is missing a location."
+                self.assertTrue(file["locations"] == set(["somese.cern.ch", "somese2.cern.ch"]),
+                                "Error: File is missing a location.")
 
                 fileRun = list(file["runs"])[0].run
                 fileLumi = min(list(file["runs"])[0])

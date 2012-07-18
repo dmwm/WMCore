@@ -6,10 +6,9 @@ CheckIn process for making a request
 
 """
 
-
-
-
+import sys
 import logging
+import traceback
 import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
 import WMCore.RequestManager.RequestDB.Interface.Request.MakeRequest as MakeRequest
 import WMCore.RequestManager.RequestDB.Interface.Request.Campaign as Campaign
@@ -25,7 +24,13 @@ class RequestCheckInError(WMException):
     """
 
 
-def raiseCheckInError(request, ex, msg):
+def _raiseCheckInError(request, ex, msg):
+    """
+    Private function called only from this module.
+    Always from the except exception block - the traceback
+    is put in the local log file.
+    
+    """
     requestName = request['RequestName']
     msg +='\n' + str(ex)
     msg += "\nUnable to check in new request %s" % requestName
@@ -40,10 +45,14 @@ def raiseCheckInError(request, ex, msg):
            raise RequestCheckInError("Bad state deleting request %s/%s.  Please contact a ReqMgr administrator" % (oldReqId/ reqId))
        else:
            RequestAdmin.deleteRequest(reqId)
-    raise RequestCheckInError( msg )
+    # get information about the last exception
+    trace = traceback.format_exception(*sys.exc_info())
+    traceString = ''.join(trace)
+    logging.error("%s\n%s" % (msg, traceString))
+    raise RequestCheckInError(msg)
 
 
-def checkIn(request, requestType = 'None'):
+def checkIn(request, requestType = 'None', wmstatSvc = None):
     """
     _CheckIn_
 
@@ -106,18 +115,18 @@ def checkIn(request, requestType = 'None'):
         else:
             MakeRequest.associateInputDataset(requestName, request['InputDatasets'])
     except Exception, ex:
-        raiseCheckInError(request, ex, "Unable to Associate input datasets to request")
+        _raiseCheckInError(request, ex, "Unable to Associate input datasets to request")
     try:
         for ds in request['OutputDatasets']:
             MakeRequest.associateOutputDataset(requestName, ds)
     except Exception, ex:
-        raiseCheckInError(request, ex, "Unable to Associate output datasets to request")
+        _raiseCheckInError(request, ex, "Unable to Associate output datasets to request")
 
     try:
         for sw in request['SoftwareVersions']:
             MakeRequest.associateSoftware(requestName, sw)
     except Exception, ex:
-        raiseCheckInError(request, ex, "Unable to associate software for this request")
+        _raiseCheckInError(request, ex, "Unable to associate software for this request")
 
     if request["RequestNumEvents"] != None:
         MakeRequest.updateRequestSize(requestName, request["RequestNumEvents"],
@@ -127,6 +136,8 @@ def checkIn(request, requestType = 'None'):
     campaign = request.get("Campaign", "")
     if campaign != "" and campaign != None:
         Campaign.associateCampaign(campaign, reqId)
-
+    
+    if wmstatSvc != None:
+        wmstatSvc.insertRequest(request)
     return
 

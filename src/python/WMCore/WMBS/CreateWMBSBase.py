@@ -41,6 +41,7 @@ class CreateWMBSBase(DBCreator):
                                "03wmbs_fileset_files",
                                "04wmbs_file_parent",
                                "05wmbs_file_runlumi_map",
+                               "05wmbs_location_state",
                                "06wmbs_location",
                                "07wmbs_file_location",
                                "07wmbs_users",
@@ -105,16 +106,23 @@ class CreateWMBSBase(DBCreator):
              FOREIGN KEY (fileid) references wmbs_file_details(id)
                ON DELETE CASCADE)"""
 
+        self.create["05wmbs_location_state"] = \
+            """CREATE TABLE wmbs_location_state (
+               id   INTEGER PRIMARY KEY AUTO_INCREMENT,
+               name VARCHAR(100) NOT NULL)"""
+
         self.create["06wmbs_location"] = \
           """CREATE TABLE wmbs_location (
              id          INTEGER      PRIMARY KEY AUTO_INCREMENT,
              site_name   VARCHAR(255) NOT NULL,
              cms_name    VARCHAR(255),
              ce_name     VARCHAR(255),
-             job_slots   INTEGER,
+             running_slots   INTEGER,
+             pending_slots   INTEGER,
              plugin      VARCHAR(255),
-             drain       VARCHAR(1)   DEFAULT 'F',
-             UNIQUE(site_name))"""
+             state       INTEGER NOT NULL,
+             UNIQUE(site_name),
+             FOREIGN KEY (state) REFERENCES wmbs_location_state(id))"""
 
         self.create["07wmbs_users"] = \
           """CREATE TABLE wmbs_users (
@@ -432,6 +440,13 @@ class CreateWMBSBase(DBCreator):
             subTypeQuery = """INSERT INTO wmbs_sub_types (name)
                                 VALUES ('%s')""" % (self.subTypes[i])
             self.inserts["wmbs_sub_types_%s" % self.subTypes[i]] = subTypeQuery
+
+        locationStates = ["Normal", "Down", "Draining", "Finalizing"]
+
+        for i in locationStates:
+            locationStateQuery = """INSERT INTO wmbs_location_state (name)
+                                    VALUES ('%s')""" % i
+            self.inserts["wmbs_location_state_%s" % i] = locationStateQuery
 
         checksumTypes = ['cksum', 'adler32', 'md5']
         for i in checksumTypes:

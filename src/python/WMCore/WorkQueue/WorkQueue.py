@@ -39,7 +39,7 @@ from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper
 from WMCore.Database.CMSCouch import CouchNotFoundError
 
 from WMCore import Lexicon
-
+from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 #  //
 # // Convenience constructor functions
 #//
@@ -186,7 +186,10 @@ class WorkQueue(WorkQueueBase):
         if type(self.params['Teams']) in types.StringTypes:
             self.params['Teams'] = [x.strip() for x in \
                                     self.params['Teams'].split(',')]
-
+        
+        if not self.params.get('LocalQueueFlag') and not self.params.get('WMStatsCouchUrl'):
+            raise RuntimeError, 'WMStatsCouchUrl config value mandatory'
+        
         self.dataLocationMapper = WorkQueueDataLocationMapper(self.logger, self.backend,
                                                               phedex = self.phedexService,
                                                               sitedb = self.SiteDB,
@@ -600,7 +603,7 @@ class WorkQueue(WorkQueueBase):
             # find out available resources from wmbs
             from WMCore.WorkQueue.WMBSHelper import freeSlots
             sites = freeSlots(self.params['QueueDepth'], knownCmsSites = cmsSiteNames())
-            draining_sites = freeSlots(self.params['QueueDepth'], onlyDrain = True)
+            draining_sites = freeSlots(self.params['QueueDepth'], allowedStates = ['Draining'])
             # resources for new work are free wmbs resources minus what we already have queued
             _, resources = self.backend.availableWork(sites)
             draining_resources = draining_sites # don't minus available as large run-anywhere could decimate
@@ -727,7 +730,10 @@ class WorkQueue(WorkQueueBase):
         mask can be used to specify i.e. event range.
         """
         totalUnits = []
-
+        totalToplevelJobs = 0
+        totalEvents = 0
+        totalLumis = 0
+        totalFiles = 0
         # split each top level task into constituent work elements
         # get the acdc server and db name
         for topLevelTask in wmspec.taskIterator():
@@ -748,9 +754,13 @@ class WorkQueue(WorkQueueBase):
                 if unit['Mask']:
                     msg += ' on events %d-%d' % (unit['Mask']['FirstEvent'], unit['Mask']['LastEvent'])
                 self.logger.info(msg)
+                totalToplevelJobs += unit['Jobs']
+                totalEvents += unit['NumberOfEvents']
+                totalLumis += unit['NumberOfLumis']
+                totalFiles += unit['NumberOfFiles']
             totalUnits.extend(units)
 
-        return totalUnits
+        return totalUnits, {'total_jobs': totalToplevelJobs, 'input_events': totalEvents, 'input_lumis': totalLumis, 'input_num_files': totalFiles}
 
     def processInboundWork(self, inbound_work = None, throw = False):
         """Retrieve work from inbox, split and store
@@ -769,10 +779,20 @@ class WorkQueue(WorkQueueBase):
                 if work:
                     self.logger.info('Request "%s" already split - Resuming' % inbound['RequestName'])
                 else:
-                    work = self._splitWork(inbound['WMSpec'], None, inbound['Inputs'], inbound['Mask'])
+                    work, totalStats = self._splitWork(inbound['WMSpec'], None, inbound['Inputs'], inbound['Mask'])
                     self.backend.insertElements(work, parent = inbound) # if this fails, rerunning will pick up here
                     # save inbound work to signal we have completed queueing
+                    
+                    # add the total work on wmstat summary
                     self.backend.updateInboxElements(inbound.id, Status = 'Acquired')
+                    
+                    # what would you do if it fails (currently globalqueue and wmstats will be in the same couchserver)             
+                    if not self.params.get('LocalQueueFlag'):
+                        #only update for global queue
+                        wmstatSvc = WMStatsWriter(self.params.get('WMStatsCouchUrl'))
+                        #TODO need to handle error case?
+                        wmstatSvc.insertTotalStats(inbound['WMSpec'].name(), totalStats)
+                        
             except TERMINAL_EXCEPTIONS, ex:
                 self.logger.info('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))
                 self.backend.updateInboxElements(inbound.id, Status = 'Failed')

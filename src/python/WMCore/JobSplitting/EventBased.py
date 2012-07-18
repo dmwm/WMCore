@@ -53,6 +53,8 @@ class EventBased(JobFactory):
                 currentEvent = f['first_event']
                 eventsInFile = f['events']
                 runs = list(f['runs'])
+                #We got the runs, clean the file.
+                f['runs'] = set()
 
                 if getParents:
                     parentLFNs = self.findParent(lfn = f['lfn'])
@@ -77,14 +79,11 @@ class EventBased(JobFactory):
                     else:
                         self.newJob(name = self.getJobName(length=totalJobs))
                         self.currentJob.addFile(f)
-                        self.currentJob["mask"].setMaxAndSkipEvents(f["events"], 0)
+                        if f["events"]:
+                            self.currentJob["mask"].setMaxAndSkipEvents(f["events"], 0)
                         totalJobs += 1
                 else:
-                    #This is a MCFakeFile, take lumis into account
-                    #If we need the data from WMBS, load it
-                    if self.package == 'WMCore.WMBS':
-                        loadRunLumi = self.daoFactory(classname = "Files.GetBulkRunLumi")
-
+                    #This assumes there's only one run which is the case for MC
                     lumis = runs[0].lumis
                     (firstLumi, lastLumi) = (min(lumis), max(lumis))
                     currentLumi = firstLumi

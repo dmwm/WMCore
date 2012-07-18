@@ -331,6 +331,10 @@ class DBS2Reader:
 
         result = []
         [ result.append(dict(x)) for x in files ]
+
+        for x in result:
+            x['ParentList'] = []
+
         return result
 
     def listFilesInBlockWithParents(self, fileBlockName):
@@ -447,11 +451,24 @@ class DBS2Reader:
 
         """
 
+        blockParents = self.listBlockParents(fileBlockName)
+        parentFiles = {}
+        for parentBlock in blockParents:
+            blockFiles = self.listFilesInBlock(parentBlock['Name'])
+            #Make the filelist a dictionary, speed up things later
+            for parentFile in blockFiles:
+                parentFiles[parentFile['LogicalFileName']] = parentFile
+
+        blockFiles = self.listFilesInBlockWithParents(fileBlockName)
+        #Now populate the parent lists
+        for blockFile in blockFiles:
+            for idx, parentFile in enumerate(blockFile['ParentList']):
+                blockFile['ParentList'][idx] = parentFiles[parentFile['LogicalFileName']]
+
         result = { fileBlockName: {
             "StorageElements" : self.listFileBlockLocation(fileBlockName),
-            "Files" : self.listFilesInBlockWithParents(fileBlockName),
+            "Files" : blockFiles,
             "IsOpen" : self.blockIsOpen(fileBlockName),
-
             }
                    }
         return result

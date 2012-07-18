@@ -131,10 +131,12 @@ class LoadForErrorHandler(DBFormatter):
                     for l in lumiDict[f['id']]:
                         run  = l['run']
                         lumi = l['lumi']
-                        if not fileRuns.has_key(run):
-                            fileRuns[run] = []
-                        if not lumi in fileRuns[run]:
+                        try:
                             fileRuns[run].append(lumi)
+                        except KeyError:
+                            fileRuns[run] = []
+                            fileRuns[run].append(lumi)
+                                                                                        
                 for r in fileRuns.keys():
                     newRun = Run(runNumber = r)
                     newRun.lumis = fileRuns[r]

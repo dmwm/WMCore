@@ -31,6 +31,7 @@ class WorkQueueElement(dict):
         # even though ParentFlag is True it will have empty ParentData
         self.setdefault('ParentData', [])
         self.setdefault('ParentFlag', False)
+        # 0 jobs are valid where we need to accept all blocks (only dqm etc subscriptions will run)
         self.setdefault('Jobs', None)
         self.setdefault('WMSpec', None)
         self.setdefault('SiteWhitelist', [])
@@ -53,6 +54,9 @@ class WorkQueueElement(dict):
         self.setdefault('ChildQueueUrl', None)
         self.setdefault('ParentQueueUrl', None)
         self.setdefault('WMBSUrl', None)
+        self.setdefault('NumberOfLumis', 0)
+        self.setdefault('NumberOfEvents', 0)
+        self.setdefault('NumberOfFiles', 0)
         # Number of files added to WMBS including parent files for this element. used only for monitoring purpose
         self.setdefault('NumOfFilesAdded', 0)
         # Mask used to constrain MC run/lumi ranges

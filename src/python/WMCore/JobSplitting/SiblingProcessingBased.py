@@ -34,7 +34,6 @@ class SiblingProcessingBased(JobFactory):
         
         fileAvail = daoFactory(classname = "Subscriptions.SiblingSubscriptionsComplete")
         completeFiles = fileAvail.execute(self.subscription["id"],
-                                          self.subscription["fileset"].id,
                                           conn = myThread.transaction.conn,
                                           transaction = True)
 
@@ -50,7 +49,13 @@ class SiblingProcessingBased(JobFactory):
             filesetClosed = True
 
         fileSites = {}
+        foundFiles = []
         for completeFile in completeFiles:
+            if completeFile["lfn"] not in foundFiles:
+                foundFiles.append(completeFile["lfn"])
+            else:
+                continue
+            
             if not fileSites.has_key(completeFile["se_name"]):
                 fileSites[completeFile["se_name"]] = []
 

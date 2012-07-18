@@ -80,6 +80,9 @@ class StdBase(object):
         self.firstLumi = 1
         self.firstEvent = 1
         self.runNumber = 0
+        self.timePerEvent = 60
+        self.memory = 2000
+        self.sizePerEvent = 512
         return
 
     def __call__(self, workloadName, arguments):
@@ -116,6 +119,9 @@ class StdBase(object):
         self.dashboardPort = arguments.get("DashboardPort", 8884)
         self.overrideCatalog = arguments.get("OverrideCatalog", None)
         self.runNumber = int(arguments.get("RunNumber", 0))
+        self.timePerEvent = int(arguments.get("TimePerEvent", 60))
+        self.memory = int(arguments.get("Memory", 2000))
+        self.sizePerEvent = int(arguments.get("SizePerEvent", 512))
 
         if arguments.get("IncludeParents", False) == "True":
             self.includeParents = True
@@ -181,18 +187,21 @@ class StdBase(object):
         """
         #A gigabyte defined as 1024^3 (assuming RSS and VSize is in KiByte)
         gb = 1024.0 * 1024.0
+        #Default timeout defined in CMS policy
+        softTimeout = 47.0 * 3600.0 + 40.0 * 60.0
+        hardTimeout = 47.0 * 3600.0 + 45.0 * 60.0
 
         monitoring = task.data.section_("watchdog")
-        monitoring.interval = 600
+        monitoring.interval = 300
         monitoring.monitors = ["DashboardMonitor", "PerformanceMonitor"]
         monitoring.section_("DashboardMonitor")
-        monitoring.DashboardMonitor.softTimeOut = 300000
-        monitoring.DashboardMonitor.hardTimeOut = 600000
         monitoring.DashboardMonitor.destinationHost = self.dashboardHost
         monitoring.DashboardMonitor.destinationPort = self.dashboardPort
         monitoring.section_("PerformanceMonitor")
-        monitoring.PerformanceMonitor.maxRSS = 4 * gb
-        monitoring.PerformanceMonitor.maxVSize = 4 * gb
+        monitoring.PerformanceMonitor.maxRSS = 2.3 * gb
+        monitoring.PerformanceMonitor.maxVSize = 2.3 * gb
+        monitoring.PerformanceMonitor.softTimeout = softTimeout
+        monitoring.PerformanceMonitor.hardTimeout = hardTimeout
         return task
 
 
@@ -216,7 +225,6 @@ class StdBase(object):
             workflow = {}
             workflow['name'] = self.workloadName
             workflow['application'] = self.frameworkVersion
-            workflow['scheduler'] = 'BossAir'
             workflow['TaskType'] = dashboardActivity
             #Let's try to build information about the inputDataset
             dataset = 'DoesNotApply'
@@ -224,10 +232,6 @@ class StdBase(object):
                 dataset = self.inputDataset
             workflow['datasetFull'] = dataset
             workflow['user'] = 'cmsdataops'
-
-            #These two make are not reported for now
-            workflow['GridName'] = 'NotAvailable'
-            workflow['nevtJob'] = 'NotAvailable'
 
             #Send the workflow info
             reporter.addTask(workflow)
@@ -248,8 +252,8 @@ class StdBase(object):
         workload.setOwnerDetails(self.owner, self.group, ownerProps)
         workload.setStartPolicy("DatasetBlock", SliceType = "NumberOfFiles", SliceSize = 1)
         workload.setEndPolicy("SingleShot")
-        workload.setAcquisitionEra(acquisitionEra = self.acquisitionEra)
-        workload.setProcessingVersion(processingVersion = self.processingVersion)
+        workload.setAcquisitionEra(acquisitionEras = self.acquisitionEra)
+        workload.setProcessingVersion(processingVersions = self.processingVersion)
         workload.setValidStatus(validStatus = self.validStatus)
         return workload
 
@@ -341,7 +345,14 @@ class StdBase(object):
         procTaskCmsswHelper.setGlobalTag(self.globalTag)
         procTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
         procTaskCmsswHelper.setErrorDestinationStep(stepName = procTaskLogArch.name())
-        procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
+
+        if forceMerged:
+            procTaskStageHelper.setMinMergeSize(0, 0)
+        elif forceUnmerged:
+            procTaskStageHelper.disableStraightToMerge()
+        else:
+            procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
+
         procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                        scramArch = self.scramArch)
         procTaskCmsswHelper.setEventsPerLumi(eventsPerLumi)
@@ -372,7 +383,6 @@ class StdBase(object):
 
             procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
                                                         **scenarioArgs)
-
         return outputModules
 
     def addOutputModule(self, parentTask, outputModuleName,
@@ -558,8 +568,6 @@ class StdBase(object):
         else:
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge")
 
-
-
         self.addOutputModule(mergeTask, "Merged",
                              primaryDataset = getattr(parentOutputModule, "primaryDataset"),
                              dataTier = getattr(parentOutputModule, "dataTier"),
@@ -587,6 +595,71 @@ class StdBase(object):
         cleanupStep.setStepType("DeleteFiles")
         cleanupTask.applyTemplates()
         cleanupTask.setTaskPriority(self.priority + 5)
+        return
+
+    def addDQMHarvestTask(self, parentTask, parentOutputModuleName,
+                          uploadProxy = None, periodic_harvest_interval = 0,
+                          parentStepName = "cmsRun1", doLogCollect = True):
+        """
+        _addDQMHarvestTask_
+
+        Create a DQM harvest task to harvest the files produces by the parent task.
+        """
+        harvestTask = parentTask.addTask("%sDQMHarvest%s" % (parentTask.name(), parentOutputModuleName))
+        self.addDashboardMonitoring(harvestTask)
+        harvestTaskCmssw = harvestTask.makeStep("cmsRun1")
+        harvestTaskCmssw.setStepType("CMSSW")
+
+        harvestTaskUpload = harvestTaskCmssw.addStep("upload1")
+        harvestTaskUpload.setStepType("DQMUpload")
+        harvestTaskLogArch = harvestTaskCmssw.addStep("logArch1")
+        harvestTaskLogArch.setStepType("LogArchive")
+
+        harvestTask.setTaskLogBaseLFN(self.unmergedLFNBase)
+        if doLogCollect:
+            self.addLogCollectTask(harvestTask, taskName = "%s%sDQMHarvestLogCollect" % (parentTask.name(), parentOutputModuleName))
+
+        harvestTask.setTaskType("Processing")
+        harvestTask.applyTemplates()
+        harvestTask.setTaskPriority(self.priority + 5)
+
+        harvestTaskCmsswHelper = harvestTaskCmssw.getTypeHelper()
+        harvestTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
+                                          scramArch = self.scramArch)
+
+        harvestTaskCmsswHelper.setErrorDestinationStep(stepName = harvestTaskLogArch.name())
+        harvestTaskCmsswHelper.setGlobalTag(self.globalTag)
+        harvestTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
+
+        harvestTaskCmsswHelper.setUserLFNBase("/")
+
+        parentTaskCmssw = parentTask.getStep(parentStepName)
+        parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
+
+        harvestTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
+
+        harvestTask.setSplittingAlgorithm("Harvest",
+                                          periodic_harvest_interval = periodic_harvest_interval)
+
+        if getattr(parentOutputModule, "dataTier") == "DQMROOT":
+            harvestTaskCmsswHelper.setDataProcessingConfig(self.procScenario, "dqmHarvesting",
+                                                           globalTag = self.globalTag,
+                                                           datasetName = "/%s/%s/%s" % (getattr(parentOutputModule, "primaryDataset"),
+                                                                                        getattr(parentOutputModule, "processedDataset"),
+                                                                                        getattr(parentOutputModule, "dataTier")),
+                                                           runNumber = self.runNumber,
+                                                           newDQMIO = True)
+        else:
+            harvestTaskCmsswHelper.setDataProcessingConfig(self.procScenario, "dqmHarvesting",
+                                                           globalTag = self.globalTag,
+                                                           datasetName = "/%s/%s/%s" % (getattr(parentOutputModule, "primaryDataset"),
+                                                                                        getattr(parentOutputModule, "processedDataset"),
+                                                                                        getattr(parentOutputModule, "dataTier")),
+                                                           runNumber = self.runNumber)
+        if uploadProxy: 
+            harvestTaskUploadHelper = harvestTaskUpload.getTypeHelper()
+            harvestTaskUploadHelper.setProxyFile(uploadProxy)
+
         return
 
     def setupPileup(self, task, pileupConfig):
@@ -662,6 +735,25 @@ class StdBase(object):
                 processingVersion = int(float(schema.get("ProcessingVersion", 0)))
             except ValueError:
                 self.raiseValidationException(msg = "Non-integer castable ProcessingVersion found")
+
+        performanceFields = ['TimePerEvent', 'Memory', 'SizePerEvent']
+
+        for field in performanceFields:
+            self._validatePerformanceField(field, schema)
+
+    def _validatePerformanceField(self, field, schema):
+        """
+        __validatePerformanceField_
+
+        Validates an integer field, that is mandatory. So it raises a validation
+        exception if the field is not in the schema or is not integer-castable.
+        """
+        try:
+            int(schema[field])
+        except KeyError:
+            self.raiseValidationException(msg = "The %s must be specified" % field)
+        except ValueError:
+            self.raiseValidationException(msg = "Please specify a valid %s" % field)
 
     def requireValidateFields(self, fields, schema, validate = False):
         """

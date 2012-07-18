@@ -22,6 +22,7 @@ def reqMgrConfig(
     configCouchDB = 'reqmgr_config_cache',
     workloadCouchDB = 'reqmgr_workload_cache',
     workloadSummaryCouchDB = "workloadsummary",
+    wmstatCouchDB = "wmstats",
     connectURL = None,
     startup = "Root.py",
     addMonitor = True):
@@ -66,6 +67,7 @@ def reqMgrConfig(
     config.reqmgr.couchUrl = couchurl
     config.reqmgr.configDBName = configCouchDB
     config.reqmgr.workloadDBName = workloadCouchDB
+    config.reqmgr.wmstatDBName = wmstatCouchDB
     config.reqmgr.security_roles = ['Admin', 'Developer', 'Data Manager', 'developer', 'admin', 'data-manager']
     config.reqmgr.yuiroot = yuiroot
     config.reqmgr.dbs3=dbs3
@@ -113,7 +115,7 @@ def reqMgrConfig(
     active.section_('create')
     active.create.object = 'WMCore.HTTPFrontEnd.RequestManager.WebRequestSchema'
     active.create.requestor = user
-    active.create.cmsswDefaultVersion = 'CMSSW_5_0_0'
+    active.create.cmsswDefaultVersion = 'CMSSW_5_2_5'
 
     if addMonitor:
         active.section_('GlobalMonitor')

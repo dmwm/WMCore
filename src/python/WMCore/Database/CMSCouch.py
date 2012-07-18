@@ -797,7 +797,7 @@ class CouchServer(CouchDBRequests):
 
     def replicate(self, source, destination, continuous = False,
                   create_target = False, cancel = False, doc_ids=False,
-                  filter = False, query_params = False):
+                  filter = False, query_params = False, useReplicator = False):
         """Trigger replication between source and destination. Options are as
         described in http://wiki.apache.org/couchdb/Replication, in summary:
             continuous = bool, trigger continuous replication
@@ -834,7 +834,10 @@ class CouchServer(CouchDBRequests):
             data["filter"] = filter
             if query_params:
                 data["query_params"] = query_params
-        self.post('/_replicate', data)
+        if useReplicator:
+            self.post('/_replicator', data)
+        else:
+            self.post('/_replicate', data)
 
     def status(self):
         """

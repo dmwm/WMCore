@@ -2,10 +2,9 @@
 """
 _DashboardInterface_t_
 
+Unit tests for the DashboardInterface module
 """
 
-import threading
-import logging
 import unittest
 import socket
 import os
@@ -13,20 +12,15 @@ import os.path
 
 from WMQuality.TestInit import TestInit
 
-# We need the DataStructs versions of these
 from WMCore.DataStructs.Job  import Job
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run  import Run
-
-# We're going to need one of these
 from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, getTestArguments
 from WMCore.FwkJobReport.Report     import Report
-
-from WMCore.WMRuntime.DashboardInterface import DashboardInfo
-from WMCore.WMRuntime.Bootstrap          import setupMonitoring
-
+from WMCore.WMRuntime.DashboardInterface import DashboardInfo, getUserProxyDN
 from WMCore.WMBase import getTestBase
 
+from nose.plugins.attrib import attr
 
 class DashboardInterfaceTest(unittest.TestCase):
     """
@@ -301,6 +295,20 @@ class DashboardInterfaceTest(unittest.TestCase):
         self.assertNotEqual(data['JobExitReason'].find('killed'), -1)
 
         return
+
+    @attr('integration')
+    def testGetDN(self):
+        """
+        _testGetDN_
+
+        Checks that we can get a DN
+        """
+        dn = getUserProxyDN()
+        if 'X509_USER_PROXY' in os.environ:
+            self.assertNotEqual(dn, None, 'Error: This should get a DN, if you have set one')
+        else:
+            self.assertEqual(dn, None, 'Error: There is no proxy in the environment, it should not get one')
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -59,4 +59,5 @@ class Request(dict):
         # // Workflow information
         #//
         self.setdefault("WorkflowSpec", None)
-
+        # DBS information
+        self.setdefault("DbsUrl", None)

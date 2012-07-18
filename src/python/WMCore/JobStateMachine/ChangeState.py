@@ -8,14 +8,17 @@ Propagate a job from one state to another.
 import time
 import logging
 import traceback
+import re
 
 from WMCore.Database.CMSCouch import CouchServer
-from WMCore.Database.CMSCouch import CouchConflictError
+from WMCore.Database.CMSCouch import CouchConflictError, CouchNotFoundError
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.JobStateMachine.Transitions import Transitions
 from WMCore.Services.UUID import makeUUID
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMConnectionBase import WMConnectionBase
+
+CMSSTEP = re.compile(r'^cmsRun[0-9]+$')
 
 class ChangeState(WMObject, WMConnectionBase):
     """
@@ -34,10 +37,12 @@ class ChangeState(WMObject, WMConnectionBase):
             self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
             self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname)
             self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % self.dbname)
+            self.jsumdatabase = self.couchdb.connectDatabase( getattr(self.config.JobStateMachine, 'jobSummaryDBName') )
         except Exception, ex:
             logging.error("Error connecting to couch: %s" % str(ex))
             self.jobsdatabase = None
-            self.fwjrdatabase = None
+            self.fwjrdatabase = None            
+            self.jsumdatabase = None
 
         try:
             self.dashboardReporter = DashboardReporter(config)
@@ -54,7 +59,7 @@ class ChangeState(WMObject, WMConnectionBase):
         self.maxUploadedInputFiles = getattr(self.config.JobStateMachine, 'maxFWJRInputFiles', 1000)
         return
 
-    def propagate(self, jobs, newstate, oldstate):
+    def propagate(self, jobs, newstate, oldstate, updatesummary = False):
         """
         Move the job from a state to another. Book keep the change to CouchDB.
         Report the information to the Dashboard.
@@ -76,7 +81,7 @@ class ChangeState(WMObject, WMConnectionBase):
 
         # 3. Document the state transition in couch
         try:
-            self.recordInCouch(jobs, newstate, oldstate)
+            self.recordInCouch(jobs, newstate, oldstate, updatesummary)
         except Exception, ex:
             logging.error("Error updating job in couch: %s" % str(ex))
             logging.error(traceback.format_exc())
@@ -105,7 +110,7 @@ class ChangeState(WMObject, WMConnectionBase):
         assert newstate in transitions[oldstate], \
                "Illegal state transition requested: %s -> %s" % (oldstate, newstate)
 
-    def recordInCouch(self, jobs, newstate, oldstate):
+    def recordInCouch(self, jobs, newstate, oldstate, updatesummary = False):
         """
         _recordInCouch_
 
@@ -195,7 +200,17 @@ class ChangeState(WMObject, WMConnectionBase):
                                                                                     timestamp)
                 self.jobsdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
 
+            # updating the status of the summary doc only when it is explicitely requested
+            # doc is already in couch
+            if updatesummary:
+                jobSummaryId = job["name"]
+                updateUri = "/" + self.jsumdatabase.name + "/_design/WMStats/_update/jobSummaryState/" + jobSummaryId
+                updateUri += "?newstate=%s&timestamp=%s" % (newstate, timestamp)
+                self.jsumdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
+                logging.debug("Updated job summary status for job %s" % jobSummaryId)
+
             if job.get("fwjr", None):
+
                 # If there are too many input files, strip them out
                 # of the FWJR, as they should already
                 # be in the database
@@ -206,6 +221,8 @@ class ChangeState(WMObject, WMConnectionBase):
                 except:
                     logging.error("Error while trying to strip input files from FWJR.  Ignoring.")
                     pass
+
+                # complete fwjr document
                 job["fwjr"].setTaskName(job["task"])
                 fwjrDocument = {"_id": "%s-%s" % (job["id"], job["retry_count"]),
                                 "jobid": job["id"],
@@ -214,6 +231,50 @@ class ChangeState(WMObject, WMConnectionBase):
                                 "type": "fwjr"}
                 self.fwjrdatabase.queue(fwjrDocument, timestamp = True)
 
+                jobSummaryId = job["name"]
+                # building a summary of fwjr
+                logging.debug("Pushing job summary for job %s" % jobSummaryId)
+                errmsgs = {}
+                inputs = []
+                for step in fwjrDocument["fwjr"]["steps"]:
+                    if "errors" in fwjrDocument["fwjr"]["steps"][step]:
+                        errmsgs[step] = [error for error in fwjrDocument["fwjr"]["steps"][step]["errors"]]
+                    if "input" in fwjrDocument["fwjr"]["steps"][step] and "source" in fwjrDocument["fwjr"]["steps"][step]["input"]:
+                        inputs.extend( [source["runs"] for source in fwjrDocument["fwjr"]['steps'][step]["input"]["source"] if "runs" in source] )
+
+                outputs = []
+                outputDataset = None
+                for singlestep in job["fwjr"].listSteps(): 
+                    for singlefile in job["fwjr"].getAllFilesFromStep(step=singlestep): 
+                        if singlefile: 
+                            outputs.append({'type': 'output' if CMSSTEP.match(singlestep) else singlefile.get('module_label', None), 
+                                            'lfn': singlefile.get('lfn', None), 
+                                            'location': list(singlefile.get('locations', set([]))) if len(singlefile.get('locations', set([]))) > 1 
+                                                                                                   else singlefile['locations'].pop(), 
+                                            'checksums': singlefile.get('checksums', {}), 
+                                            'size': singlefile.get('size', None) }) 
+                            #it should have one output dataset for all the files
+                            outputDataset = singlefile.get('dataset', None) if not outputDataset else outputDataset 
+
+                jobSummary = {"_id": jobSummaryId,
+                              "type": "jobsummary",
+                              "retrycount": job["retry_count"],
+                              "workflow": job["workflow"],
+                              "task": job["task"],
+                              "state": newstate,
+                              "site": job["fwjr"].getSiteName(),
+                              "exitcode": job["fwjr"].getExitCode(),
+                              "errors": errmsgs,
+                              "lumis": inputs,
+                              "outputdataset": outputDataset,
+                              "output": outputs }
+                if couchDocID is not None:
+                    try:
+                        jobSummary['_rev'] = self.jsumdatabase.document(id = jobSummaryId)['_rev']
+                    except CouchNotFoundError:
+                        pass
+                self.jsumdatabase.queue(jobSummary, timestamp = True)
+
         if len(couchRecordsToUpdate) > 0:
             self.setCouchDAO.execute(bulkList = couchRecordsToUpdate,
                                      conn = self.getDBConn(),
@@ -221,6 +282,7 @@ class ChangeState(WMObject, WMConnectionBase):
 
         self.jobsdatabase.commit()
         self.fwjrdatabase.commit()
+        self.jsumdatabase.commit()
         return
 
     def persist(self, jobs, newstate, oldstate):

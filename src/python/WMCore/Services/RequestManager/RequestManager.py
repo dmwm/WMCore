@@ -29,7 +29,12 @@ class RequestManager(Service):
         # application/x-www-form-urlencodeds
         dict.setdefault("content_type", 'application/x-www-form-urlencoded')
         dict.setdefault('cacheduration', 0)
-
+        dict.setdefault("accept_type", "application/json")
+        # cherrypy converts request.body to params when content type is set
+        # application/x-www-form-urlencoded
+        dict.setdefault("content_type", 'application/x-www-form-urlencoded')
+        self.encoder = JsonWrapper.dumps
+        self.decoder = JsonWrapper.loads
         Service.__init__(self, dict)
 
     def _getResult(self, callname, clearCache = True,
@@ -53,12 +58,8 @@ class RequestManager(Service):
         result = f.read()
         f.close()
 
-#        if self.responseType == "json":
-#            decoder = json.JSONDecoder()
-#            return decoder.decode(result)
-
         if result:
-            result = JsonWrapper.loads(result)
+            result = self.decoder(result)
         return result
 
     def getRequest(self, requestName = None):
@@ -68,8 +69,8 @@ class RequestManager(Service):
 
         """
         args = {}
-        args['requestName'] = requestName
-
+        if requestName:
+            args['requestName'] = requestName
         callname = 'request'
         return self._getResult(callname, args = args, verb = "GET")
 

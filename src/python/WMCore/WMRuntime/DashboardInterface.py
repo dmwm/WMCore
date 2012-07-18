@@ -6,6 +6,8 @@ import os
 import time
 import logging
 import socket
+import subprocess
+import re
 
 from WMCore.WMSpec.WMStep     import WMStepHelper
 from WMCore.WMSpec.WMWorkload import getWorkloadFromTask
@@ -54,6 +56,89 @@ def getSyncCE(default = socket.gethostname()):
 
     return result
 
+def _commandWrapper(command, process):
+    """
+    __commandWrapper_
+
+    Wrapper to execute a command using subprocess, the process object,
+    stdout and stderr can be retrieved from the process dictionary
+    """
+    try:
+        process['process'] = subprocess.Popen(command,
+                                          stdout = subprocess.PIPE,
+                                          stderr = subprocess.PIPE)
+        process['stdout'], process['stderr'] = process['process'].communicate()
+    except:
+        pass
+
+def _executeCommand(command, timeout):
+    """
+    __executeCommand_
+
+    Executes the command on a separate thread to prevent deadlocks,
+    if the command takes more than the timeout to end then it will be
+    terminated
+    """
+
+    process = {'process': None, 'stdout': None, 'stderr': None}
+    thread = threading.Thread(target = _commandWrapper,
+                              args = (command,process))
+    thread.start()
+    thread.join(timeout)
+    if thread.is_alive():
+        process['process'].terminate()
+        thread.join()
+        logging.error('Command: %s timed out, return code: %i'
+                        % (' '.join(command), process['process'].returncode))
+        return None
+    else:
+        return process['stdout']
+
+def _parseDN(subject):
+    """
+    __parseDN_
+
+    Find a valid certificate subject in the given string,
+    and if found strip the extra proxy strings from it
+    """
+    proxy = r'/CN=proxy'
+    limitedProxy = r'/CN=limited proxy'
+    dn = r'(?:(?:/[A-Za-z0-9=_\\/\s]+)+)'
+    subject = re.sub(proxy, '', subject)
+    subject = re.sub(limitedProxy, '', subject)
+    match = re.findall(dn, subject)
+    if match:
+        try:
+            return match[0]
+        except:
+            pass
+    return None
+
+def getUserProxyDN():
+    """
+    _getUserProxyDN_
+
+    Looks for the subject of the user proxy, and returns it.
+    The locations the method searches for the DN are:
+     1. grid-proxy-info --subject
+     2. openssl x509 -subject -noout -in $X509_USER_PROXY
+    If it can not be found returns None
+    """
+    timeout = 300
+
+    subject = None
+    command = ['grid-proxy-info', '-subject']
+    subject = _executeCommand(command, timeout)
+
+    if not subject and 'X509_USER_PROXY' in os.environ:
+        command = ['openssl', 'x509', '-subject',
+                   '-noout', '-in', os.environ['X509_USER_PROXY']]
+        subject = _executeCommand(command, timeout)
+
+    if subject:
+        subject = _parseDN(subject)
+
+    return subject
 
 
 class DashboardInfo():
@@ -166,6 +251,7 @@ class DashboardInfo():
                                                       time.gmtime())
             data['taskId']            = self.taskName
             data['jobId']             = self.jobName
+            data['GridName']          = getUserProxyDN()
             data['ExeStart']          = helper.name()
             data['SyncCE']            = getSyncCE()
             data['WNHostName']        = socket.gethostname()

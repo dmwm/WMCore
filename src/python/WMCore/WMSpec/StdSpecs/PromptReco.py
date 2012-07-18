@@ -46,6 +46,7 @@ def getTestArguments():
         "InputDataset" : "/Cosmics/Run2012A-v1/RAW",
         "WriteTiers" : ["RECO", "AOD", "DQM", "ALCARECO"],
         "AlcaSkims" : ["TkAlCosmics0T","MuAlGlobalCosmics","HcalCalHOCosmics"],
+        "DqmSequences" : [ "@common", "@jetmet" ],
 
         "InitCommand": os.environ.get("INIT_COMMAND", None),
 
@@ -147,6 +148,7 @@ class PromptRecoWorkloadFactory(StdBase):
                                                scenarioFunc = "promptReco",
                                                scenarioArgs = { 'globalTag' : self.globalTag,
                                                                 'skims' : self.alcaSkims,
+                                                                'dqmSeq' : self.dqmSequences,
                                                                 'outputs' : recoOutputs },
                                                splitAlgo = self.procJobSplitAlgo,
                                                splitArgs = self.procJobSplitArgs,
@@ -160,6 +162,10 @@ class PromptRecoWorkloadFactory(StdBase):
                                     self.procJobSplitAlgo,
                                     recoOutLabel)
                 recoMergeTasks[recoOutInfo['dataTier']] = mergeTask
+	    	if recoOutInfo['dataTier'] in [ "DQM", "DQMROOT" ]:
+			self.addDQMHarvestTask(mergeTask, "Merged",
+			uploadProxy = self.dqmUploadProxy,
+			doLogCollect = False)
 
             else:
                 alcaTask = recoTask.addTask("AlcaSkim")
@@ -242,11 +248,13 @@ class PromptRecoWorkloadFactory(StdBase):
         self.procScenario = arguments['ProcScenario']
         self.writeTiers = arguments['WriteTiers']
         self.alcaSkims = arguments['AlcaSkims']
+        self.dqmSequences = arguments['DqmSequences']
         self.inputDataset = arguments['InputDataset']
         self.promptSkims = arguments['PromptSkims']
         self.couchURL = arguments['CouchURL']
         self.couchDBName = arguments['CouchDBName']
         self.initCommand = arguments['InitCommand']
+        self.dqmUploadProxy = arguments['DQMUploadProxy']
 
 
         if arguments.has_key('Multicore'):

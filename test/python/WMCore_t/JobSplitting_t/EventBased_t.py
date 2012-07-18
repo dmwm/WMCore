@@ -43,6 +43,11 @@ class EventBasedTest(unittest.TestCase):
         newFile.setLocation('se02')
         self.singleFileFileset.addFile(newFile)
 
+        self.emptyFileFileset = Fileset(name = "TestFileset3")
+        newFile = File("/some/file/name", size = 1000, events = 0)
+        newFile.setdefault('se03')
+        self.emptyFileFileset.addFile(newFile)
+
         testWorkflow = Workflow()
         self.multipleFileSubscription = Subscription(fileset = self.multipleFileFileset,
                                                      workflow = testWorkflow,
@@ -52,6 +57,10 @@ class EventBasedTest(unittest.TestCase):
                                                    workflow = testWorkflow,
                                                    split_algo = "EventBased",
                                                    type = "Processing")
+        self.emptyFileSubscription = Subscription(fileset = self.emptyFileFileset,
+                                                  workflow = testWorkflow,
+                                                  split_algo = "EventBased",
+                                                  type = "Processing")
 
         return
 
@@ -79,6 +88,30 @@ class EventBasedTest(unittest.TestCase):
                                                 split_algo = "EventBased",
                                                 type = "Production")
         return singleMCFileSubscription
+
+    def testNoEvents(self):
+        """
+        _testNoEvents_
+
+        Test event based job splitting where there are no events in the
+        input file, make sure the mask events are None
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(self.emptyFileSubscription)
+        jobGroups = jobFactory(events_per_job = 100)
+
+        self.assertEqual(len(jobGroups), 1,
+                         "ERROR: JobFactory didn't return one JobGroup")
+        self.assertEqual(len(jobGroups[0].jobs), 1,
+                         "ERROR: JobFactory didn't create a single job")
+
+        job = jobGroups[0].jobs.pop()
+
+        self.assertEqual(job.getFiles(type = "lfn"), ["/some/file/name"],
+                         "ERROR: Job contains unknown files")
+        self.assertEqual(job["mask"].getMaxEvents(), None,
+                         "ERROR: Mask maxEvents is not None")
+
 
     def testExactEvents(self):
         """
@@ -458,6 +491,11 @@ class EventBasedTest(unittest.TestCase):
         self.assertEqual(job["mask"]["FirstLumi"], 1,
                 "Error: Job's first lumi is incorrect.")
 
+        singleMCSubscription = self.generateFakeMCFile(numEvents = 600,
+                                                       firstEvent = 201,
+                                                       lastEvent = 800)
+        splitter = SplitterFactory()
+        jobFactory = splitter(singleMCSubscription)
         jobGroups = jobFactory(events_per_job = 6000)
         self.assertEqual(len(jobGroups), 1,
                          "Error: JobFactory did not return one JobGroup")
@@ -472,6 +510,11 @@ class EventBasedTest(unittest.TestCase):
         self.assertEqual(job["mask"]["FirstLumi"], 1,
                 "Error: Job's first lumi is incorrect.")
 
+        singleMCSubscription = self.generateFakeMCFile(numEvents = 600,
+                                                       firstEvent = 201,
+                                                       lastEvent = 800)
+        splitter = SplitterFactory()
+        jobFactory = splitter(singleMCSubscription)
         jobGroups = jobFactory(events_per_job = 599)
         self.assertEqual(len(jobGroups), 1,
                          "Error: JobFactory did not return one JobGroup")
@@ -490,6 +533,11 @@ class EventBasedTest(unittest.TestCase):
                             "Job mask: %s didn't pass neither of the conditions"
                             % job["mask"])
 
+        singleMCSubscription = self.generateFakeMCFile(numEvents = 600,
+                                                       firstEvent = 201,
+                                                       lastEvent = 800)
+        splitter = SplitterFactory()
+        jobFactory = splitter(singleMCSubscription)
         jobGroups = jobFactory(events_per_job = 300)
         self.assertEqual(len(jobGroups), 1,
                          "Error: JobFactory did not return one JobGroup")
@@ -535,6 +583,10 @@ class EventBasedTest(unittest.TestCase):
         self.assertEqual(job["mask"]["FirstLumi"], 345,
                 "Error: Job's first lumi is incorrect.")
 
+        singleMCSubscription = self.generateFakeMCFile(firstLumi = 345,
+                                                       lastLumi = 345)
+        splitter = SplitterFactory()
+        jobFactory = splitter(singleMCSubscription)
         jobGroups = jobFactory(events_per_job = 1000)
         self.assertEqual(len(jobGroups), 1,
                          "Error: JobFactory did not return one JobGroup")
@@ -549,6 +601,10 @@ class EventBasedTest(unittest.TestCase):
         self.assertEqual(job["mask"]["FirstLumi"], 345,
                 "Error: Job's first lumi is incorrect.")
 
+        singleMCSubscription = self.generateFakeMCFile(firstLumi = 345,
+                                                       lastLumi = 345)
+        splitter = SplitterFactory()
+        jobFactory = splitter(singleMCSubscription)
         jobGroups = jobFactory(events_per_job = 99)
         self.assertEqual(len(jobGroups), 1,
                          "Error: JobFactory did not return one JobGroup")
@@ -567,6 +623,10 @@ class EventBasedTest(unittest.TestCase):
                             "Job mask: %s didn't pass neither of the conditions"
                             % job["mask"])
 
+        singleMCSubscription = self.generateFakeMCFile(firstLumi = 345,
+                                                       lastLumi = 345)
+        splitter = SplitterFactory()
+        jobFactory = splitter(singleMCSubscription)
         jobGroups = jobFactory(events_per_job = 50)
         self.assertEqual(len(jobGroups), 1,
                          "Error: JobFactory did not return one JobGroup")

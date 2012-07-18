@@ -75,24 +75,31 @@ def installWorkQueueCouchApp(couchUrl, couchDBName):
 def createSymLinkWMStatsExternal():
     """WMStats has to install jquery libraries to couchapp - handle this here"""
     
-    def createSymLink(source):
-        for file in os.listdir(source):
-            dest = os.path.join(externalDir, file)
-            if not os.path.exists(dest):
-                os.symlink(os.path.join(source, file), dest)
-                
-    jquery = os.path.join(os.environ.get('JQUERY_ROOT', ''), 'data', 'jquery')
-    jquery_ui = os.path.join(os.environ.get('JQUERY_UI_ROOT', ''), 'data', 'jquery-ui')
-    jquery_datatables = os.path.join(os.environ.get('JQUERY_DATATABLES_ROOT', ''), 'data', 'jquery-dataTables')
-    if not (jquery or jquery_ui or jquery_datatables):
-        raise RuntimeError, "Can't locate jquery jquery-ui jquery-datatables lib"
+    def createSymLink(directory):
+        source = os.path.join(couchskel, directory)
+        dest = os.path.join(externalDir, directory)
+        if not os.path.exists(dest):
+            print source
+            print dest
+            os.symlink(source, dest)
+
+    couchskelRoot = os.environ.get('COUCHSKEL_ROOT')
+    if not couchskelRoot:
+        raise RuntimeError, "Can't locate couchskel lib"
+    couchskel = os.path.join(couchskelRoot, 'data','couchapps', 'couchskel','vendor')
+
     basePath = couchAppRoot('WMStats')
     # make a temporary directory to create the couchapp structure
-    externalDir = os.path.join(basePath, 'WMStats', '_attachments', 'lib')
+    externalDir = os.path.join(basePath, 'WMStats', 'vendor')
+    try:
+         os.makedirs(externalDir)
+    except OSError, ex:
+        print str(ex)
+        pass
     
-    createSymLink(jquery)
-    createSymLink(jquery_ui)
-    createSymLink(jquery_datatables)
+    createSymLink('jquery')
+    createSymLink('datatables')
+    createSymLink('couchapp')
 
 
 def createCronEntires(crontabLines):
@@ -380,6 +387,7 @@ if __name__ == "__main__":
         installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName, "ReqMgr")
         # wmstatDBName is set to use specfic client {'wmstats': 'tier1', 'tier0_wmstats': 'tier0', 'analysis_wmstats': 'analysis' }
         # which needs to be changed in wmagent for prompt skiming deployment script
+        createSymLinkWMStatsExternal()
         installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.wmstatDBName, "WMStats")
         if options.cron:
             setupCronCompaction(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName)

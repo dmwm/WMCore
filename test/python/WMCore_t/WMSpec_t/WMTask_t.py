@@ -351,6 +351,22 @@ class WMTaskTest(unittest.TestCase):
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxVSize, 101)
         return
 
+    def testProcessingVerAndAcquisitionEra(self):
+       """
+       _testProcessingVerAndAcquisitionEra_
+
+       Test that we can add a processing version and acquisition era,
+       and then get it back.
+       """
+
+       testTask = makeWMTask("TestTask")
+       testTask.setAcquisitionEra("StoneAge")
+       testTask.setProcessingVersion("vLast")
+
+       self.assertEqual(testTask.getAcquisitionEra(), "StoneAge")
+       self.assertEqual(testTask.getProcessingVersion(), "vLast")
+       return
+
     def testParameters(self):
         """
         _testParameters_

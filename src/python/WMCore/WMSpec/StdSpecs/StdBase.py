@@ -252,8 +252,8 @@ class StdBase(object):
         workload.setOwnerDetails(self.owner, self.group, ownerProps)
         workload.setStartPolicy("DatasetBlock", SliceType = "NumberOfFiles", SliceSize = 1)
         workload.setEndPolicy("SingleShot")
-        workload.setAcquisitionEra(acquisitionEra = self.acquisitionEra)
-        workload.setProcessingVersion(processingVersion = self.processingVersion)
+        workload.setAcquisitionEra(acquisitionEras = self.acquisitionEra)
+        workload.setProcessingVersion(processingVersions = self.processingVersion)
         workload.setValidStatus(validStatus = self.validStatus)
         return workload
 

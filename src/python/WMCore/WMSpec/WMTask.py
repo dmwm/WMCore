@@ -992,6 +992,41 @@ class WMTaskHelper(TreeHelper):
                 IDs.append(ID)
         return IDs
 
+    def setProcessingVersion(self, procVer):
+        """
+        _setProcessingVersion_
+
+        Set the task processing version
+        """
+
+        self.data.parameters.processingVersion = procVer
+        return
+
+    def getProcessingVersion(self):
+        """
+        _getProcessingVersion_
+
+        Get the task processing version
+        """
+        return getattr(self.data.parameters, 'processingVersion', None)
+
+    def setAcquisitionEra(self, era):
+        """
+        _setAcquistionEra_
+
+        Set the task acquisition era
+        """
+
+        self.data.parameters.acquisitionEra = era
+        return
+
+    def getAcquisitionEra(self):
+        """
+        _getAcquisitionEra_
+
+        Get the task acquisition era
+        """
+        return getattr(self.data.parameters, 'acquisitionEra', None)
     
 class WMTask(ConfigSectionTree):
     """

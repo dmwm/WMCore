@@ -298,8 +298,8 @@ class CMSSW(Executor):
         stepHelper = WMStepHelper(self.step)
         typeHelper = stepHelper.getTypeHelper()
 
-        acquisitionEra = self.workload.getAcquisitionEra()
-        processingVer  = self.workload.getProcessingVersion()
+        acquisitionEra = self.task.getAcquisitionEra()
+        processingVer  = self.task.getProcessingVersion()
         validStatus    = self.workload.getValidStatus()
         inputPath      = self.task.getInputDatasetPath()
         globalTag      = typeHelper.getGlobalTag()

@@ -80,6 +80,9 @@ class StdBase(object):
         self.firstLumi = 1
         self.firstEvent = 1
         self.runNumber = 0
+        self.timePerEvent = 60
+        self.memory = 2000
+        self.sizePerEvent = 512
         return
 
     def __call__(self, workloadName, arguments):
@@ -116,6 +119,9 @@ class StdBase(object):
         self.dashboardPort = arguments.get("DashboardPort", 8884)
         self.overrideCatalog = arguments.get("OverrideCatalog", None)
         self.runNumber = int(arguments.get("RunNumber", 0))
+        self.timePerEvent = int(arguments.get("TimePerEvent", 60))
+        self.memory = int(arguments.get("Memory", 2000))
+        self.sizePerEvent = int(arguments.get("SizePerEvent", 512))
 
         if arguments.get("IncludeParents", False) == "True":
             self.includeParents = True
@@ -726,6 +732,25 @@ class StdBase(object):
                 processingVersion = int(float(schema.get("ProcessingVersion", 0)))
             except ValueError:
                 self.raiseValidationException(msg = "Non-integer castable ProcessingVersion found")
+
+        performanceFields = ['TimePerEvent', 'Memory', 'SizePerEvent']
+
+        for field in performanceFields:
+            self._validatePerformanceField(field, schema)
+
+    def _validatePerformanceField(self, field, schema):
+        """
+        __validatePerformanceField_
+
+        Validates an integer field, that is mandatory. So it raises a validation
+        exception if the field is not in the schema or is not integer-castable.
+        """
+        try:
+            int(schema[field])
+        except KeyError:
+            self.raiseValidationException(msg = "The %s must be specified" % field)
+        except ValueError:
+            self.raiseValidationException(msg = "Please specify a valid %s" % field)
 
     def requireValidateFields(self, fields, schema, validate = False):
         """

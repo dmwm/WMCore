@@ -464,6 +464,7 @@ config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (config.JobStateMachine.
 config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
 config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 config.AnalyticsDataCollector.centralWMStatsURL = "Central WMStats URL"
+config.AnalyticsDataCollector.summaryLevel = "task"
 
 config.component_("CleanUpManager")
 config.CleanUpManager.namespace = "WMComponent.CleanUpManager.CleanUpManager"

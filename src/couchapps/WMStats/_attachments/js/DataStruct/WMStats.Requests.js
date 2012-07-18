@@ -49,7 +49,7 @@ WMStats.Requests = function (noFilterFlag) {
         "rejected": 18
     }
     function updateSummary(request, summary) {
-        var aData = _dataByWorkflow[request];
+        var aData = getDataByWorkflow(request);
         summary.length += 1;
         summary.totalJobs += getWMBSJobsTotal(request);
         summary.totalEvents += Number(_get(aData, "input_events", 0));
@@ -63,7 +63,7 @@ WMStats.Requests = function (noFilterFlag) {
     
     function updateRequestSummary(doc) {
         var request = doc.workflow;
-        var aData = _dataByWorkflow[request];
+        var aData = getDataByWorkflow(request);
         
         if (doc.type == "agent_request") {
             _summary.totalJobs += getWMBSJobsTotal(doc);
@@ -152,7 +152,7 @@ WMStats.Requests = function (noFilterFlag) {
     };
 
     function filterRequests() {
-        var requestData = _dataByWorkflow;
+        var requestData = getDataByWorkflow();
         var filteredData = {}
         _filteredSummary = _defaultSummary();
         for (var workflowName in requestData) {
@@ -212,8 +212,8 @@ WMStats.Requests = function (noFilterFlag) {
     
     function getList() {
         var list = [];
-        for (var item in _dataByWorkflow) {
-            list.push(_dataByWorkflow[item])
+        for (var request in getDataByWorkflow()) {
+            list.push(getDataByWorkflow(request))
         }
         return list.sort(requestDateSort);
     }
@@ -229,7 +229,7 @@ WMStats.Requests = function (noFilterFlag) {
     
     function getWMBSJobsTotal(request) {
         if (typeof(request) == "string") {
-            var aData = _dataByWorkflow[request];
+            var aData = getDataByWorkflow(request);
         } else {
             var aData = request;
         }
@@ -244,7 +244,7 @@ WMStats.Requests = function (noFilterFlag) {
     
     function failureTotal(request) {
         if (typeof(request) == "string") {
-            var aData = _dataByWorkflow[request];
+            var aData = getDataByWorkflow(request);
         } else {
             var aData = request;
         }
@@ -255,7 +255,7 @@ WMStats.Requests = function (noFilterFlag) {
     
     function queuedTotal(request) {
         if (typeof(request) == "string") {
-            var aData = _dataByWorkflow[request];
+            var aData = getDataByWorkflow(request);
         } else {
             var aData = request;
         }
@@ -266,7 +266,7 @@ WMStats.Requests = function (noFilterFlag) {
     function estimateCompletionTime(request) {
         //TODO need to improve the algo
         // no infomation to calulate the estimate completion time
-        var aData = _dataByWorkflow[request];
+        var aData = getDataByWorkflow(request);
         var completedJobs = _get(aData, "status.success", 0) + failureTotal(request);
         if (completedJobs == 0) return -1;
         // get running start time.
@@ -288,7 +288,7 @@ WMStats.Requests = function (noFilterFlag) {
     
     function submittedTotal(request) {
         if (typeof(request) == "string") {
-            var aData = _dataByWorkflow[request];
+            var aData = getDataByWorkflow(request);
         } else {
             var aData = request;
         }

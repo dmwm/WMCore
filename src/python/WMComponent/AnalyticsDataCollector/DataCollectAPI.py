@@ -23,12 +23,13 @@ from WMComponent.AnalyticsDataCollector.DataCollectorEmulatorSwitch import emula
 @emulatorHook
 class LocalCouchDBData():
 
-    def __init__(self, couchURL):
+    def __init__(self, couchURL, summaryLevel):
         # set the connection for local couchDB call
         self.couchURL = couchURL
         self.couchURLBase, self.dbName = splitCouchServiceURL(couchURL)
         self.jobCouchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/jobs", False)
         self.fwjrsCouchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/fwjrs", False)
+        self.summaryLevel = summaryLevel
         
     def getJobSummaryByWorkflowAndSite(self):
         """
@@ -36,14 +37,22 @@ class LocalCouchDBData():
     
         example
         {"rows":[
-            {"key":['request_name1", "queued_first", "siteA"],"value":100},
-            {"key":['request_name1", "queued_first", "siteB"],"value":100},
-            {"key":['request_name1", "running", "siteA"],"value":100},
-            {"key":['request_name1", "success", "siteB"],"value":100}\
+
+            {"key":['request_name1", 'task_name1', "queued_first", "siteA"],"value":100},
+            {"key":['request_name1", 'task_name1', "queued_first", "siteB"],"value":100},
+            {"key":['request_name1", 'task_name2', "running", "siteA"],"value":100},
+            {"key":['request_name1", 'task_name2', "success", "siteB"],"value":100}\
          ]}
          and convert to 
          {'request_name1': {'queue_first': { 'siteA': 100}}
           'request_name1': {'queue_first': { 'siteB': 100}}
+         }
+         if taskflag is set,
+         convert to
+         {'request_name1': {'tasks': {'task_name1 : {'queue_first': { 'siteA': 100}}}}
+          'request_name1': {'tasks':{'task_name1 : {'queue_first': { 'siteB': 100}}}},
+          'request_name1': {'tasks':{'task_name2 : {'running': { 'siteA': 100}}}}
+          'request_name1': {'tasks':{'task_name2 : {'success': { 'siteB': 100}}}},
          }
         """
         options = {"group": True, "stale": "ok"}
@@ -54,11 +63,19 @@ class LocalCouchDBData():
 
         # reformat the doc to upload to reqmon db
         data = {}
-        for x in results.get('rows', []):
-            data.setdefault(x['key'][0], {})
-            data[x['key'][0]].setdefault(x['key'][1], {}) 
-            #data[x['key'][0]][x['key'][1]].setdefault(x['key'][2], {})
-            data[x['key'][0]][x['key'][1]][x['key'][2]] = x['value'] 
+        if self.summaryLevel == "task":
+            for x in results.get('rows', []):
+                data.setdefault(x['key'][0], {})
+                data[x['key'][0]].setdefault('tasks', {})
+                data[x['key'][0]]['tasks'].setdefault(x['key'][1], {}) 
+                data[x['key'][0]]['tasks'][x['key'][1]].setdefault(x['key'][2], {})
+                data[x['key'][0]]['tasks'][x['key'][1]][x['key'][2]][x['key'][3]] = x['value'] 
+        else:
+            for x in results.get('rows', []):
+                data.setdefault(x['key'][0], {})
+                data[x['key'][0]].setdefault(x['key'][2], {}) 
+                #data[x['key'][0]][x['key'][1]].setdefault(x['key'][2], {})
+                data[x['key'][0]][x['key'][2]][x['key'][3]] = x['value'] 
         logging.info("Found %i requests" % len(data))
         return data
 
@@ -106,8 +123,7 @@ class LocalCouchDBData():
 @emulatorHook
 class WMAgentDBData():
 
-    def __init__(self, dbi, logger):
-        
+    def __init__(self, summaryLevel, dbi, logger):
         # interface to WMBS/BossAir db
         bossAirDAOFactory = DAOFactory(package = "WMCore.BossAir",
                                        logger = logger, dbinterface = dbi)
@@ -115,8 +131,12 @@ class WMAgentDBData():
                                     logger = logger, dbinterface = dbi)
         wmAgentDAOFactory = DAOFactory(package = "WMCore.Agent.Database", 
                                      logger = logger, dbinterface = dbi)
-        
-        self.batchJobAction = bossAirDAOFactory(classname = "JobStatusByWorkflowAndSite")
+
+        self.summaryLevel = summaryLevel
+        if self.summaryLevel == "task":
+            self.batchJobAction = bossAirDAOFactory(classname = "JobStatusByTaskAndSite")
+        else:
+            self.batchJobAction = bossAirDAOFactory(classname = "JobStatusByWorkflowAndSite")
         self.jobSlotAction = wmbsDAOFactory(classname = "Locations.GetJobSlotsByCMSName")
         self.componentStatusAction = wmAgentDAOFactory(classname = "CheckComponentStatus")
 
@@ -164,7 +184,7 @@ def combineAnalyticsData(a, b, combineFunc = None):
                 result[key] = combineAnalyticsData(value, result[key])
     return result 
 
-def convertToRequestCouchDoc(combinedRequests, fwjrInfo, agentInfo, uploadTime):
+def convertToRequestCouchDoc(combinedRequests, fwjrInfo, agentInfo, uploadTime, summaryLevel):
     requestDocs = []
     for request, status in combinedRequests.items():
         doc = {}
@@ -172,9 +192,16 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, agentInfo, uploadTime):
         doc['type'] = "agent_request"
         doc['workflow'] = request
         # this will set doc['status'], and doc['sites']
-        tempData = _convertToStatusSiteFormat(status)
-        doc['status'] = tempData['status']
-        doc['sites'] = tempData['sites']
+        if summaryLevel == 'task':
+            tempData = _convertToStatusSiteFormat(status['tasks'], summaryLevel)
+            doc['tasks'] = tempData["tasks"]
+            doc['status'] = tempData['status']
+            doc['sites'] = tempData['sites']
+        else:
+            tempData = _convertToStatusSiteFormat(status, summaryLevel)
+            doc['status'] = tempData['status']
+            doc['sites'] = tempData['sites']
+        
         doc['timestamp'] = uploadTime
         doc['output_progress'] = fwjrInfo.get(request, [])
         requestDocs.append(doc)
@@ -210,7 +237,21 @@ def _setMultiLevelStatus(statusData, status, value):
         statusData[statusStruct[0]][statusStruct[1]] += value
     return
 
-def _convertToStatusSiteFormat(requestData):
+def _combineJobsForStatusAndSite(requestData, data):
+    for status, siteJob in requestData.items():
+        if type(siteJob) != dict:
+            _setMultiLevelStatus(data['status'], status, siteJob)
+        else:
+            for site, job in siteJob.items():
+                _setMultiLevelStatus(data['status'], status, int(job))
+                if site != 'Agent':
+                    if site is None:
+                        site = 'unknown'
+                    data['sites'].setdefault(site, {})
+                    _setMultiLevelStatus(data['sites'][site], status, int(job))
+    return
+
+def _convertToStatusSiteFormat(requestData, summaryLevel = None):
     """
     convert data structure for couch db.
     "status": { "inWMBS": 100, "success": 1000, "inQueue": 100, "cooloff": 1000,
@@ -227,17 +268,13 @@ def _convertToStatusSiteFormat(requestData):
     data['status'] = {}
     data['sites'] = {}
     
-    for status, siteJob in requestData.items():
-        if type(siteJob) != dict:
-            _setMultiLevelStatus(data['status'], status, siteJob)
-        else:
-            for site, job in siteJob.items():
-                _setMultiLevelStatus(data['status'], status, int(job))
-                if site != 'Agent':
-                    if site is None:
-                        site = 'unknown'
-                    data['sites'].setdefault(site, {})
-                    _setMultiLevelStatus(data['sites'][site], status, int(job))
+    if summaryLevel != None and summaryLevel == 'task':
+        data['tasks'] = {}
+        for task, taskData in requestData.items():
+             data['tasks'][task] = _convertToStatusSiteFormat(taskData)
+             _combineJobsForStatusAndSite(taskData, data)
+    else:
+       _combineJobsForStatusAndSite(requestData, data)
     return data
 
 def _getCouchACDCHtmlBase(acdcCouchURL):

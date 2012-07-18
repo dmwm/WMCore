@@ -225,7 +225,8 @@ class PromptRecoWorkloadFactory(StdBase):
             outputMods = self.setupProcessingTask(skimTask, "Skim", inputStep = parentCmsswStep, inputModule = "Merged",
                                                   couchURL = self.couchURL, couchDBName = self.couchDBName,
                                                   configDoc = procConfigCacheID, splitAlgo = self.skimJobSplitAlgo,
-                                                  splitArgs = self.skimJobSplitArgs)
+                                                  splitArgs = self.skimJobSplitArgs,
+                                                  userSandbox = self.userSandbox, userFiles = self.userFiles)
             self.addLogCollectTask(skimTask, taskName = "%sLogCollect" % promptSkim.SkimName)
 
             for outputModuleName in outputMods.keys():

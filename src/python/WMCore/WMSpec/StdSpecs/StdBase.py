@@ -122,6 +122,8 @@ class StdBase(object):
         self.timePerEvent = int(arguments.get("TimePerEvent", 60))
         self.memory = int(arguments.get("Memory", 2000))
         self.sizePerEvent = int(arguments.get("SizePerEvent", 512))
+        self.userSandbox = arguments.get("userSandbox", None)
+        self.userFiles = arguments.get("userFiles", [])
 
         if arguments.get("IncludeParents", False) == "True":
             self.includeParents = True

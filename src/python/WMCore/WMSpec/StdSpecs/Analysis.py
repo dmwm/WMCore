@@ -163,8 +163,6 @@ class AnalysisWorkloadFactory(StdBase):
         # Parameters for users
         self.owner_vogroup = arguments.get("VoGroup", '')
         self.owner_vorole = arguments.get("VoRole", '')
-        self.userSandbox = arguments.get("userSandbox", None)
-        self.userFiles = arguments.get("userFiles", [])
         self.outputFiles = arguments.get("OutputFiles", [])
         self.userName = arguments.get("Username",'jblow')
         self.saveLogs = arguments.get("SaveLogs", True)

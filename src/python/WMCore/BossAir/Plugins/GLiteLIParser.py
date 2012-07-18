@@ -5,15 +5,15 @@ class LoggingInfoParser:
     #Non capturing group: (?: )
     #Error messages can contain \n (that's why I used lookahead (?=-))
     sregExps = [
-                  #Extract the reason of the last failing Transfer (##0 ##3)
+                  #Extract the reason of the last failing Transfer (##0 ##3 ##8)
                   #The regex matches all the events, but only store the reason of failing Transfer. It is stored in group 1
                   #Assumption: the "- Result = FAIL" string is immediately after the reason
                   r'(?:(?:Event: Transfer\n(?:-\sReason\s+=\s+([^\n]*)\n- Result\s+=\s+FAIL\n|(?:(?!---).)*?\n)+.---\n)+|Event: (?!Transfer).*?---\n)+',
 
-                  #A pending event immediately followed by an abort. (##1)
-                  r'Event: Pending\n(?:-\sReason\s+=\s+(.*?)\n(?=-)|(?:(?!---).)*?\n)+.---\nEvent: Abort',
+                  #Broker Helper issue (##1 ##9)
+                  r'(BrokerHelper: no compatible resources)',
 
-                  #The last Done event. (##2 ##4 ##5 ##6 ##8)
+                  #The last Done event. (##2 ##4 ##5 ##6)
                   r'(?:(?:Event: Done\n(?:-\sReason\s+=\s+(.*?)\n(?=-)|(?:(?!---).)*?\n)+.---\n)+|Event: (?!Done).*?---\n)+',
 
                   #The last Abort event. (##7)

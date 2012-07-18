@@ -67,6 +67,7 @@ class ReqMgrBrowser(WebAPI):
         self.couchUrl = config.couchUrl
         self.configDBName = config.configDBName
         self.yuiroot = config.yuiroot
+        self.wmstatWriteURL = "%s/%s" % (self.couchUrl.rstrip('/'), config.wmstatDBName)
         cherrypy.engine.subscribe('start_thread', self.initThread)
 
     def initThread(self, thread_index):
@@ -112,7 +113,6 @@ class ReqMgrBrowser(WebAPI):
         request = GetRequest.getRequestByName(requestName)
         helper = Utilities.loadWorkload(request)
         splittingDict = helper.listJobSplittingParametersByTask()
-        timeOutDict = helper.listTimeOutsByTask()
         taskNames = splittingDict.keys()
         taskNames.sort()
 
@@ -151,6 +151,8 @@ class ReqMgrBrowser(WebAPI):
                 splitParams["halt_job_on_file_boundaries"] = False                
         elif splittingAlgo == "EventBased":
             splitParams["events_per_job"] = int(submittedParams["events_per_job"])
+            if submittedParams.has_key("events_per_lumi"):
+                splitParams["events_per_lumi"] = int(submittedParams["events_per_lumi"])
         elif 'Merg' in splittingTask:
             for field in ['min_merge_size', 'max_merge_size', 'max_merge_events']:
                 splitParams[field] = int(submittedParams[field])
@@ -165,8 +167,6 @@ class ReqMgrBrowser(WebAPI):
         helper = Utilities.loadWorkload(request)
         logging.info("SetSplitting " + requestName + splittingTask + splittingAlgo + str(splitParams))
         helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams)
-        if submittedParams.get("timeout", "") != "":
-            helper.setTaskTimeOut(splittingTask, int(submittedParams["timeout"]))
         Utilities.saveWorkload(helper, request['RequestWorkflow'])
         return "Successfully updated splitting parameters for " + splittingTask \
                + " " + detailsBackLink(requestName)
@@ -301,10 +301,10 @@ class ReqMgrBrowser(WebAPI):
                 status = v
                 priority = kwargs[requestName+':priority']
                 if priority != '':
-                    Utilities.changePriority(requestName, priority)
+                    Utilities.changePriority(requestName, priority, self.wmstatWriteURL)
                     message += "Changed priority for %s to %s\n" % (requestName, priority)
                 if status != "":
-                    Utilities.changeStatus(requestName, status)
+                    Utilities.changeStatus(requestName, status, self.wmstatWriteURL)
                     message += "Changed status for %s to %s\n" % (requestName, status)
                     if status == "assigned":
                         # make a page to choose teams

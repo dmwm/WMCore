@@ -5,8 +5,10 @@ within the Alert messaging framework.
 """
 
 import time
+import sys
 import logging
 import threading
+import traceback
 
 import psutil
 
@@ -101,8 +103,26 @@ class BasePoller(threading.Thread):
         # flag controlling run of the Thread
         self._stopFlag = False
         # thread own sleep time
-        self._threadSleepTime = 0.5 # seconds
+        self._threadSleepTime = 0.2 # seconds
+
+
+    def _handleFailedPolling(self, ex):
+        """
+        Handle (log and send alert) if polling failed.
         
+        """        
+        trace = traceback.format_exception(*sys.exc_info())
+        traceString = '\n '.join(trace)
+        errMsg = ("Polling failed in %s, reason: %s" % (self.__class__.__name__, ex))
+        logging.error("%s\n%s" % (errMsg, traceString))
+        a = Alert(**self.preAlert)
+        a["Source"] = self.__class__.__name__
+        a["Timestamp"] = time.time()
+        a["Details"] = dict(msg = errMsg)
+        a["Level"] = 10
+        logging.info("Sending an alert (%s): %s" % (self.__class__.__name__, a))
+        self.sender(a)
+
 
     def run(self):
         """
@@ -110,53 +130,86 @@ class BasePoller(threading.Thread):
         entry point for a thread. 
         
         """
-        # when running with multiprocessing, this was necessary, stick to it
-        # with threading as well - may create some thread-safety issues in ZMQ ...
+        logging.info("Thread %s started - run method." % self.__class__.__name__)
+        # when running with multiprocessing, it was necessary to create the
+        # sender instance in the same context. Stick to it with threading
+        # as well - may create some thread-safety issues in ZMQ ...
         self.sender = Sender(self.generator.config.Alert.address,
-                             self.__class__.__name__,
-                             self.generator.config.Alert.controlAddr)
-        self.sender.register()
+                             self.generator.config.Alert.controlAddr,
+                             self.__class__.__name__)
+        self.sender.register() 
+        logging.info("Thread %s alert sender created: alert addr: %s "
+                     "control addr: %s" % 
+                     (self.__class__.__name__,
+                      self.generator.config.Alert.address,
+                      self.generator.config.Alert.controlAddr))
         counter = self.config.pollInterval
         # want to periodically check whether the thread should finish,
         # would be impossible to terminate a sleeping thread
         while not self._stopFlag:
             if counter == self.config.pollInterval:
                 # it would feel that check() takes long time but there is
-                # specified a delay in case of psutil percentage calls                
-                self.check()
+                # specified a delay in case of psutil percentage calls
+                try:
+                    logging.debug("Poller %s check ..." % self.__class__.__name__)
+                    self.check()
+                except Exception, ex:
+                    self._handleFailedPolling(ex)
             counter -= self._threadSleepTime
             if counter <= 0:
                 counter = self.config.pollInterval
             if self._stopFlag:
                 break
             time.sleep(self._threadSleepTime)
+        logging.info("Thread %s - work loop terminated, finished." % self.__class__.__name__)
+        
+            
+    def stop(self):
+        """
+        Method sets the stopFlag so that run() while loop terminates
+        at its next iteration.
+        
+        """
+        self._stopFlag = True
                     
             
     def terminate(self):
         """
-        Methods added when Pollers were reimplemented to run as
+        Methods added when Pollers were re-implemented to run as
         multi-threaded rather than multiprocessing.
         This would be a slightly blocking call - wait for the thread to finish.
         
         """
-        self._stopFlag = True
+        self._stopFlag = True # keep it here as well in case on terminate method is called
+        logging.info("Thread %s terminate ..." % self.__class__.__name__)
         self.join(self._threadSleepTime + 0.1)
         if self.is_alive():
-            logging.error("Thread %s refuses to finish, continuing." % self.__class__.__name__)
+            logging.error("Thread %s refuses to finish, continuing." %
+                          self.__class__.__name__)
         else:
-            logging.debug("Thread %s finished." % self.__class__.__name__)
+            logging.info("Thread %s finished." % self.__class__.__name__)
             
         # deregister with the receiver
-        # (was true for multiprocessing implemention:
+        # (was true for multiprocessing implementation:
         # has to create a new sender instance and unregister the name. 
         # self.sender instance was created in different thread in run())
+        
+        # TODO revise registering/deregistering business for production ...
+        # remove unregistering (it seems to take long and wmcoreD which
+        # give only limited time for a component to shutdown, and if entire
+        # agent is being shutdown, there is no AlertProcessor to deregister with
+        # anyway
+        """
+        logging.info("Thread %s sending unregister message ..." % self.__class__.__name__)
         sender = Sender(self.generator.config.Alert.address,
-                        self.__class__.__name__,
-                        self.generator.config.Alert.controlAddr)
+                        self.generator.config.Alert.controlAddr,
+                        self.__class__.__name__)
         sender.unregister()
         # if messages weren't consumed, this should get rid of them
         del sender
+        """
         del self.sender
+        logging.info("Thread %s terminate finished." % self.__class__.__name__)
         
          
         
@@ -208,7 +261,7 @@ class PeriodPoller(BasePoller):
                     details["threshold"] = "%s%%" % threshold
                     a["Details"] = details                    
                     a["Level"] = level
-                    logging.debug(a)
+                    logging.debug("Sending an alert (%s): %s" % (self.__class__.__name__, a))
                     self.sender(a)
                     break # send only one alert, critical threshold tested first
         if avgPerc != None:

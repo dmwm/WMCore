@@ -19,6 +19,7 @@ import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
 from WMCore.HTTPFrontEnd.RequestManager.ReqMgrAuth import ReqMgrAuth
 import WMCore.RequestManager.OpsClipboard.Inject as OpsClipboard
 import WMCore.Lexicon
+from WMCore.Wrappers import JsonWrapper
 
 from WMCore.WebTools.WebAPI import WebAPI
 
@@ -40,13 +41,14 @@ class Assign(WebAPI):
         self.clipboardUrl = "%s/%s/_design/OpsClipboard/index.html" % (cleanUrl, self.clipboardDB)
         self.opshold = config.opshold
         self.configDBName = config.configDBName
+        self.wmstatWriteURL = "%s/%s" % (self.couchUrl.rstrip('/'), config.wmstatDBName)
         if not noSiteDB:
             self.sites = Utilities.sites(config.sitedb)
         else:
             self.sites = []
         self.allMergedLFNBases =  [
             "/store/backfill/1", "/store/backfill/2", 
-            "/store/data",  "/store/mc"]
+            "/store/data",  "/store/mc", "/store/generator", "/store/relval"]
         self.allUnmergedLFNBases = ["/store/unmerged", "/store/temp"]
 
         self.mergedLFNBases = {
@@ -57,7 +59,8 @@ class Assign(WebAPI):
              "RelValMC" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
              "Resubmission" : ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data"],
              "MonteCarloFromGEN" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
-             "TaskChain": ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data"]}
+             "TaskChain": ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data", "/store/relval"],
+             "LHEStepZero": ["/store/backfill/1", "/store/backfill/2", "/store/generator"]}
 
         self.yuiroot = config.yuiroot
         cherrypy.engine.subscribe('start_thread', self.initThread)
@@ -171,6 +174,15 @@ class Assign(WebAPI):
     @cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles)
     def handleAssignmentPage(self, **kwargs):
         """ handler for the main page """
+        #Accept Json encoded strings
+        decodedArgs = {}
+        for key in kwargs.keys():
+            try:
+                decodedArgs[key] = JsonWrapper.loads(kwargs[key])
+            except:
+                #Probably wasn't JSON
+                decodedArgs[key] = kwargs[key]
+        kwargs = decodedArgs
         # handle the checkboxes
         teams = []
         requestNames = []
@@ -186,7 +198,7 @@ class Assign(WebAPI):
         
         for requestName in requestNames:
             if kwargs['action'] == 'Reject':
-                ChangeState.changeRequestStatus(requestName, 'rejected') 
+                ChangeState.changeRequestStatus(requestName, 'rejected', wmstatUrl = self.wmstatWriteURL) 
             else:
                 assignments = GetRequest.getAssignmentsByName(requestName)
                 if teams == [] and assignments == []:
@@ -194,10 +206,10 @@ class Assign(WebAPI):
                 self.assignWorkload(requestName, kwargs)
                 for team in teams:
                     if not team in assignments:
-                        ChangeState.assignRequest(requestName, team)
+                        ChangeState.assignRequest(requestName, team, wmstatUrl = self.wmstatWriteURL)
                 priority = kwargs.get(requestName+':priority', '')
                 if priority != '':
-                    Utilities.changePriority(requestName, priority)
+                    Utilities.changePriority(requestName, priority, self.wmstatWriteURL)
         participle=kwargs['action']+'ed'
         if self.opshold and kwargs['action'] == 'Assign':
             participle='put into "ops-hold" state (see <a href="%s">OpsClipboard</a>)' % self.clipboardUrl
@@ -208,8 +220,9 @@ class Assign(WebAPI):
             #requests = [GetRequest.getRequestByName(requestName) for requestName in requestNames]
             requests = [Utilities.requestDetails(requestName) for requestName in requestNames]
             OpsClipboard.inject(self.couchUrl, self.clipboardDB, *requests)
-            for requestName in requestNames:
-                ChangeState.changeRequestStatus(requestName, 'ops-hold')
+            for request in requestNames:
+                ChangeState.changeRequestStatus(requestName, 'ops-hold', wmstatUrl = self.wmstatWriteURL)
+
         return self.templatepage("Acknowledge", participle=participle, requests=requestNames)
 
 
@@ -218,13 +231,17 @@ class Assign(WebAPI):
         request = GetRequest.getRequestByName(requestName)
         helper = Utilities.loadWorkload(request)
         for field in ["AcquisitionEra", "ProcessingVersion"]:
-            self.validate(kwargs[field], field)
+            if type(kwargs[field]) == dict:
+                for value in kwargs[field].values():
+                    self.validate(value, field)
+            else:
+                self.validate(kwargs[field], field)
         # Set white list and black list
         whiteList = kwargs.get("SiteWhitelist", [])
         blackList = kwargs.get("SiteBlacklist", [])
         helper.setSiteWildcardsLists(siteWhitelist = whiteList, siteBlacklist = blackList,
                                      wildcardDict = self.wildcardSites)
-        # Set ProcessingVersion and AcquisitionEra
+        # Set ProcessingVersion and AcquisitionEra, which could be json encoded dicts
         helper.setProcessingVersion(kwargs["ProcessingVersion"])
         helper.setAcquisitionEra(kwargs["AcquisitionEra"])
         #FIXME not validated
@@ -233,7 +250,9 @@ class Assign(WebAPI):
                                   int(kwargs["MaxMergeSize"]), 
                                   int(kwargs["MaxMergeEvents"]))
         helper.setupPerformanceMonitoring(int(kwargs["maxRSS"]), 
-                                          int(kwargs["maxVSize"]))
+                                          int(kwargs["maxVSize"]),
+                                          int(kwargs["SoftTimeout"]),
+                                          int(kwargs.get("GracePeriod", 300)))
         helper.setDashboardActivity(kwargs.get("dashboard", ""))
-        Utilities.saveWorkload(helper, request['RequestWorkflow'])
+        Utilities.saveWorkload(helper, request['RequestWorkflow'], self.wmstatWriteURL)
 

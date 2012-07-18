@@ -1,0 +1,134 @@
+<html>
+  <head>
+    <title>WMStats</title>
+    <style type="text/css" title="currentStyle">
+        @import "css/basic_table.css";
+        @import "css/basic_div.css";
+        @import "css/ColVis.css";
+        @import "css/layout-default-latest.css";
+        @import "css/jquery-ui-1.8.18.custom.css";
+        @import "css/layout.css"
+    </style>
+    </style>
+    <!-- Brings in all the dependencies needed for this couchapp -->
+    <script src="js/loader.js" type='text/javascript'> </script>
+
+    <!-- Globals is needed to be loaded before other library -->
+    <script src="js/WMStats.Globals.js" type='text/javascript'> </script>
+    <script src="js/WMStats.Utils.js" type='text/javascript'> </script>
+    <script src="js/WMStats.Couch.js" type='text/javascript'> </script>
+    
+    <!-- importing order is critical -->
+    <!-- data structure -->
+    <script src="js/DataStruct/import.js" type='text/javascript'> </script>
+    
+    <!-- table gui -->
+    <script src="js/GUI/Tables/import.js" type='text/javascript'> </script>
+    <script src="js/GUI/HTMLList/import.js" type='text/javascript'> </script>
+    <!-- Overview.js will load javascripts corresponding to variant dynamically  -->
+    <script src="js/Views/import.js" type='text/javascript'> </script>
+
+    <script src="js/WMStats.EventHandler.js" type='text/javascript'> </script>
+    <script>
+    
+    function applyTemplate(){
+        var tablePane = $('div.tablePane');
+        $('div.template.captionTable').children().clone().appendTo(tablePane);
+    }
+    
+    function drawMonitor() {
+        WMStats.ActiveRequestView.draw("#tab-active-request div[name='requestSummary']");
+        // select initial summary view by global value (tier0, tier1, analysis)
+        WMStats.Overview.draw("#tab-overview > div[name='overview'] > div.body");
+        WMStats.SiteView.draw("#tab-site div[name='overview'] > div.body");
+        //WMStats.AlertView.draw("#tab-alert div[name='requestSummary'] > div.body");
+        WMStats.AgentView.draw("#tab-agent div[name='agentSummary']");
+    }
+    
+    $(document).ready(function() {
+        //myLayout = $('body').layout();
+        $("#tabs").tabs();
+        applyTemplate();
+        drawMonitor();
+        //position the job block against request block
+        //$("div[name='requestSummary']").position({my:'left top', at:'left bottom', 
+        //                          of:"div[name='overview']", offset:'0 20'})
+        // $("div[name='jobSummary']").position({my:'left top', at:'left bottom', 
+        //                          of:"div[name='requestSummary']", offset:'0 5'})
+        // refresh table every 10 min                          
+        //$("div[name='requestDetail']").position({my:'left top', at:'right top', 
+        //                          of:"div[name='activeRequestDiv']", offset:'0 20'})
+        setInterval(drawMonitor, 300000)
+     } );
+    </script>
+  </head>
+<body>
+    <div class="middle">
+        <div id="tabs">
+            <ul>
+                <li><a href="#tab-active-request">Active Requests</a></li>
+                <li><a href="#tab-overview">Campaign view</a></li>
+                <li><a href="#tab-site">Site view</a></li>
+                <!--
+                <li><a href="#tab-alert">Alert view</a></li>
+                -->
+                <li><a href="#tab-agent">Agent view</a></li>
+            </ul>
+            <div id="tab-active-request">
+                <div name='search'>
+                    campaign: <input name="campaign" value=""></input>
+                    workflow: <input name="workflow" value=""></input>
+                    type: <input name="request_type" value=""></input>
+                    status: <input name="request_status" value=""></input>
+                </div>
+                <div class="activeRequestContainer" name="requestSummary"></div>
+                <div class="requestDetailContainer">
+                    <div> Total Stats</div>
+                    <div name="requestData"></div>
+                    <p></p>
+                    <div> Request Detail</div>
+                    <div name="requestDetail"></div>
+                </div>
+                <div class="tablePane jobSummaryContainer" name="jobSummary"></div>
+                <div class="tablePane jobDetailContainer" name="jobDetail"></div>
+            </div>
+            <div class="module" id="tab-overview">
+                <div class="tablePane" name="overview"></div>
+                <div class="tablePane requestSummaryContainer" name="requestSummary"></div>
+                <div class="tablePane jobSummaryContainer" name="jobSummary"></div>
+                <div class="tablePane jobDetailContainer" name="jobDetail"></div>
+            </div>
+            <div class="module" id="tab-site">
+                <div class="tablePane" name="overview"></div>
+                <div class="tablePane requestSummaryContainer" name="requestSummary"></div>
+                <div class="tablePane jobSummaryContainer" name="jobSummary"></div>
+                <div class="tablePane jobDetailContainer" name="jobDetail"></div>
+            </div>
+            <!--
+            <div class="module" id="tab-alert">
+                <div class="tablePane requestSummaryContainer" name="requestSummary"></div>
+                <div class="tablePane jobSummaryContainer" name="jobSummary"></div>
+                <div class="tablePane jobDetailContainer" name="jobDetail"></div>
+            </div>
+            -->
+            <div id="tab-agent">
+                <div class="requestSummaryContainer" name="agentSummary"></div>
+            </div>
+        </div>
+    </div>
+    <div id="loading_page">
+        Loading ...
+    </div>
+    <div id="templates">
+        <div class="template captionTable">
+            <div class="caption">
+                <span></span>
+                <img src="images/rollup.gif" alt="rollup" title="rolls up this module"/>
+            </div>
+            <div class="body">
+               <table cellpadding="0" cellspacing="0" border="0" class="display"></table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

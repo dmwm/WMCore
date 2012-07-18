@@ -85,10 +85,8 @@ class RequestHandler(object):
             curl.setopt(pycurl.POST, 1)
             if params:
                 curl.setopt(pycurl.POSTFIELDS, params)
-        elif verb == 'DELETE':
-            curl.setopt(pycurl.CUSTOMREQUEST, 'DELETE')
-        elif verb == 'PUT':
-            curl.setopt(pycurl.CUSTOMREQUEST, 'PUT')
+        elif verb == 'DELETE' or verb == 'PUT':
+            curl.setopt(pycurl.CUSTOMREQUEST, verb)
             curl.setopt(pycurl.HTTPHEADER, ['Transfer-Encoding: chunked'])
             curl.setopt(pycurl.POSTFIELDS, params)
         else:

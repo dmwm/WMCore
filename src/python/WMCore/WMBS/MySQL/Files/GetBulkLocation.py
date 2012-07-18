@@ -11,9 +11,10 @@ MySQL implementation of File.GetBulkLocation
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetBulkLocation(DBFormatter):
-    sql = """SELECT wmbs_location.se_name as site_name, :id as id  
-               FROM wmbs_location
-               WHERE wmbs_location.id IN (SELECT location FROM wmbs_file_location WHERE fileid = :id)
+    sql = """SELECT wls.se_name as site_name, :id as id  
+               FROM wmbs_location_senames wls
+               INNER JOIN wmbs_file_location wfl ON wfl.location = wls.location
+               WHERE wfl.fileid = :id
     """
     
     def getBinds(self, files=None):

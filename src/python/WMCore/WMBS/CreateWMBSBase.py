@@ -41,6 +41,7 @@ class CreateWMBSBase(DBCreator):
                                "03wmbs_fileset_files",
                                "04wmbs_file_parent",
                                "05wmbs_file_runlumi_map",
+                               "05wmbs_location_state",
                                "06wmbs_location",
                                "07wmbs_file_location",
                                "07wmbs_users",
@@ -59,7 +60,8 @@ class CreateWMBSBase(DBCreator):
                                "16wmbs_job_assoc",
                                "17wmbs_job_mask",
                                "18wmbs_checksum_type",
-                               "19wmbs_file_checksums"]
+                               "19wmbs_file_checksums",
+                               "20wmbs_location_senames",]
 
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
@@ -75,7 +77,7 @@ class CreateWMBSBase(DBCreator):
              lfn          VARCHAR(500) NOT NULL,
              filesize     BIGINT,
              events       INTEGER,
-             first_event  INTEGER      NOT NULL DEFAULT 0,
+             first_event  BIGINT       NOT NULL DEFAULT 0,
              merged       INT(1)       NOT NULL DEFAULT 0,
              UNIQUE (lfn))"""
 
@@ -104,17 +106,23 @@ class CreateWMBSBase(DBCreator):
              FOREIGN KEY (fileid) references wmbs_file_details(id)
                ON DELETE CASCADE)"""
 
+        self.create["05wmbs_location_state"] = \
+            """CREATE TABLE wmbs_location_state (
+               id   INTEGER PRIMARY KEY AUTO_INCREMENT,
+               name VARCHAR(100) NOT NULL)"""
+
         self.create["06wmbs_location"] = \
           """CREATE TABLE wmbs_location (
              id          INTEGER      PRIMARY KEY AUTO_INCREMENT,
              site_name   VARCHAR(255) NOT NULL,
              cms_name    VARCHAR(255),
-             se_name     VARCHAR(255),
              ce_name     VARCHAR(255),
-             job_slots   INTEGER,
+             running_slots   INTEGER,
+             pending_slots   INTEGER,
              plugin      VARCHAR(255),
-             drain       VARCHAR(1)   DEFAULT 'F',
-             UNIQUE(site_name))"""
+             state       INTEGER NOT NULL,
+             UNIQUE(site_name),
+             FOREIGN KEY (state) REFERENCES wmbs_location_state(id))"""
 
         self.create["07wmbs_users"] = \
           """CREATE TABLE wmbs_users (
@@ -140,9 +148,9 @@ class CreateWMBSBase(DBCreator):
         self.create["07wmbs_workflow"] = \
           """CREATE TABLE wmbs_workflow (
              id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
-             spec         VARCHAR(500) NOT NULL,
+             spec         VARCHAR(550) NOT NULL,
              name         VARCHAR(255) NOT NULL,
-             task         VARCHAR(500) NOT NULL,
+             task         VARCHAR(550) NOT NULL,
              type         VARCHAR(255),
              owner        INTEGER      NOT NULL,
              injected     INT(1)       DEFAULT 0,
@@ -288,8 +296,8 @@ class CreateWMBSBase(DBCreator):
         self.create["17wmbs_job_mask"] = \
           """CREATE TABLE wmbs_job_mask (
               job           INTEGER     NOT NULL,
-              FirstEvent    INTEGER,
-              LastEvent     INTEGER,
+              FirstEvent    BIGINT,
+              LastEvent     BIGINT,
               FirstLumi     INTEGER,
               LastLumi      INTEGER,
               FirstRun      INTEGER,
@@ -315,6 +323,14 @@ class CreateWMBSBase(DBCreator):
                 ON DELETE CASCADE,
               FOREIGN KEY (fileid) REFERENCES wmbs_file_details(id)
                 ON DELETE CASCADE)"""
+
+        self.create["20wmbs_location_senames"] = \
+          """CREATE TABLE wmbs_location_senames (
+               location   INTEGER,
+               se_name    VARCHAR(255),
+               UNIQUE(location, se_name),
+               FOREIGN KEY (location) REFERENCES wmbs_location(id)
+                 ON DELETE CASCADE)"""
 
 
         self.constraints["01_idx_wmbs_fileset_files"] = \
@@ -424,6 +440,13 @@ class CreateWMBSBase(DBCreator):
             subTypeQuery = """INSERT INTO wmbs_sub_types (name)
                                 VALUES ('%s')""" % (self.subTypes[i])
             self.inserts["wmbs_sub_types_%s" % self.subTypes[i]] = subTypeQuery
+
+        locationStates = ["Normal", "Down", "Draining", "Finalizing"]
+
+        for i in locationStates:
+            locationStateQuery = """INSERT INTO wmbs_location_state (name)
+                                    VALUES ('%s')""" % i
+            self.inserts["wmbs_location_state_%s" % i] = locationStateQuery
 
         checksumTypes = ['cksum', 'adler32', 'md5']
         for i in checksumTypes:

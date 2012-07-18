@@ -45,10 +45,12 @@ def getTestArguments():
         "InputDataset":      "/MinimumBias/Run2010A-Dec22ReReco_v1/USER",
         "CMSSWVersion":      "CMSSW_3_X_Y",
         "ScramArch": "slc5_ia32_gcc434",
-        "ProcessingVersion": "v1",
+        "ProcessingVersion": "1",
         # These may not be needed
         "GlobalTag": "GR10_P_v4::All",
         "CouchURL":         os.environ.get("COUCHURL", None),
+        "DashboardHost": "127.0.0.1",
+        "DashboardPort": 8884,
         }
 
     return arguments
@@ -107,8 +109,10 @@ class StoreResultsWorkloadFactory(StdBase):
         processedDatasetName = "%s-%s" % (self.acquisitionEra, self.processingVersion)
 
         workload = self.createWorkload()
-        mergeTask = workload.newTask("StoreResults")
+        workload.setDashboardActivity("StoreResults")
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
 
+        mergeTask = workload.newTask("StoreResults")
         self.addDashboardMonitoring(mergeTask)
         mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
 

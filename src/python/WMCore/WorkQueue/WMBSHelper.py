@@ -97,6 +97,7 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
             if liveJob["state"].lower() == 'executing':
                 # Then we need to kill this on the batch system
                 liveWMBSJob = Job(id = liveJob["id"])
+                liveWMBSJob.update(liveJob)
                 changeState.propagate(liveWMBSJob, "killed", liveJob["state"])
                 killableJobs.append(liveJob)
         # Now kill them
@@ -118,13 +119,14 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
             # Then we've killed it already
             continue
         liveWMBSJob = Job(id = liveJob["id"])
+        liveWMBSJob.update(liveJob)
         changeState.propagate(liveWMBSJob, "killed", liveJob["state"])
 
     if not existingTransaction:
         myThread.transaction.commit()
     return
 
-def freeSlots(multiplier = 1.0, minusRunning = False, onlyDrain = False, skipDrain = True, knownCmsSites = None):
+def freeSlots(multiplier = 1.0, minusRunning = False, allowedStates = ['Normal'], knownCmsSites = None):
     """
     Get free resources from wmbs.
 
@@ -140,15 +142,19 @@ def freeSlots(multiplier = 1.0, minusRunning = False, onlyDrain = False, skipDra
             continue
         if knownCmsSites and site['cms_name'] not in knownCmsSites:
             logging.warning("%s doesn't appear to be a known cms site, work may fail to be acquired for it" % site['cms_name'])
-        if onlyDrain and not site.get('drain'):
-            continue
-        if skipDrain and site.get('drain'):
+        if site['state'] not in allowedStates:
             continue
         slots = site['total_slots']
         if minusRunning:
-            slots -= site['running_jobs']
-        if slots > 0:
-            sites[site['cms_name']] += (slots * multiplier)
+            slots -= site['pending_jobs']
+        sites[site['cms_name']] += (slots * multiplier)
+
+    # At the end delete entries < 1
+    # This allows us to combine multiple sites under the same CMS_Name
+    # Without going nuts
+    for site in sites.keys():
+        if sites[site] < 1:
+            del sites[site]
     return dict(sites)
 
 class WMBSHelper(WMConnectionBase):
@@ -172,7 +178,9 @@ class WMBSHelper(WMConnectionBase):
 
         self.topLevelFileset = None
         self.topLevelSubscription = None
-        
+
+        self.mergeOutputMapping = {}
+
         # Initiate the pieces you need to run your own DAOs
         WMConnectionBase.__init__(self, "WMCore.WMBS")
         myThread = threading.currentThread()
@@ -304,6 +312,10 @@ class WMBSHelper(WMConnectionBase):
                             mergedOutputFileset.create()
                             mergedOutputFileset.markOpen(True)
 
+                            primaryDataset = getattr(getattr(outputModule, outputModuleName), "primaryDataset", None)
+                            if primaryDataset != None:
+                                self.mergeOutputMapping[mergedOutputFileset.id] = primaryDataset
+
                         self.createSubscription(childTask, outputFileset)
 
                 if mergedOutputFileset == None:
@@ -422,8 +434,15 @@ class WMBSHelper(WMConnectionBase):
         self.topLevelFileset.markOpen(False)
         return totalFiles
 
+    def getMergeOutputMapping(self):
+        """
+        _getMergeOutputMapping_
 
-
+        retrieves the relationship between primary
+        dataset and merge output fileset ids for
+        all merge tasks created
+        """
+        return self.mergeOutputMapping
 
 
     def _createFilesInDBSBuffer(self):
@@ -547,7 +566,7 @@ class WMBSHelper(WMConnectionBase):
            where child and parent files are in the same location  
         """
         wmbsParents = []
-        
+        dbsFile.setdefault("ParentList", [])
         for parent in dbsFile["ParentList"]:
             wmbsParents.append(self._addDBSFileToWMBSFile(parent, 
                                             storageElements, inFileset = False))

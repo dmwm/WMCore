@@ -22,6 +22,7 @@ from WMCore.WMSpec.WMStep import WMStepHelper
 
 from WMCore.FwkJobReport.MulticoreReader import readMultiJobReports 
 import WMCore.FwkJobReport.MulticoreUtils as ReportUtils
+from WMCore.WMRuntime.MergeBucket import MergeBucket
 
 
 def analysisFileLFN(fileName, lfnBase, job):
@@ -236,7 +237,7 @@ class CMSSW(Executor):
         # open the output files
         stdoutHandle = open( self.step.output.stdout , 'w')
         stderrHandle = open( self.step.output.stderr , 'w')
-
+        applicationStart = time.time()
         args = ['/bin/bash', configPath, scramSetup,
                                          scramArch,
                                          scramCommand,
@@ -292,13 +293,13 @@ class CMSSW(Executor):
         # If multicore is enabled, merged the output files and reports
         #
         if multicoreEnabled:
-            self.multicoreMerge(scram)
+            self.multicoreMerge(scram,applicationStart)
 
         stepHelper = WMStepHelper(self.step)
         typeHelper = stepHelper.getTypeHelper()
 
-        acquisitionEra = self.workload.getAcquisitionEra()
-        processingVer  = self.workload.getProcessingVersion()
+        acquisitionEra = self.task.getAcquisitionEra()
+        processingVer  = self.task.getProcessingVersion()
         validStatus    = self.workload.getValidStatus()
         inputPath      = self.task.getInputDatasetPath()
         globalTag      = typeHelper.getGlobalTag()
@@ -358,7 +359,7 @@ class CMSSW(Executor):
 
         return None
         
-    def multicoreMerge(self, scramRef):
+    def multicoreMerge(self, scramRef, applicationStart):
         """
         If this step is a multicore configured step, the output from the subprocesses needs to be merged
         together and the job report updated.

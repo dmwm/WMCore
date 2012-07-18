@@ -78,6 +78,7 @@ class LexiconTest(unittest.TestCase):
         assert procdataset('CMSSW_4_4_0_pre7_g494p02-START44_V2_special_110808-v1'), 'valid procdataset not validated'
         assert procdataset('Summer11-PU_S4_START42_V11-v1'), 'valid procdataset not validated'
         assert procdataset('CMSSW_3_0_0_pre3_IDEAL_30X-v1'), 'valid procdataset not validated'
+        assert procdataset('CMSSW_3_0_0_pre3_IDEAL_30X-my_filter-my_string-v1'), 'valid procdataset not validated'
 
     def testBadProcataset(self):
         # Check that invalid Procataset raise an exception
@@ -237,7 +238,6 @@ class LexiconTest(unittest.TestCase):
     def testBadCouchUrl(self):
         for notok in ['agent86@control.fnal.gov:5984', 'http:/localhost:443', 'http://www.myspace.com']:
             self.assertRaises(AssertionError, couchurl, notok)
-
     def testHNName(self):
         """
         _testHNName_
@@ -255,7 +255,6 @@ class LexiconTest(unittest.TestCase):
 
         Test the LFN checker in several modes, including user LFNs
         """
-
         lfnA = '/store/temp/user/ewv/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
         lfn(lfnA)
         lfnA = '/store/temp/user/cinquilli.nocern/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
@@ -276,13 +275,17 @@ class LexiconTest(unittest.TestCase):
         lfn(lfnA)
         lfnA = '/store/data/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
         lfn(lfnA)
-        lfnA = '/store/data/Run2010A/Cosmics/RECO/v4/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
+        lfnA = '/store/data/Run2010A/Cosmics/RECO/v4/000/143/316/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
         lfn(lfnA)
-        lfnA = '/store/t0temp/data/Run2010A/Cosmics/RECO/v4/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
+        lfnA = '/store/data/Run2010A/Cosmics/RECO/v4/000/143/316/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
         lfn(lfnA)
-        lfnA = '/store/backfill/1/data/Run2010A/Cosmics/RECO/v4/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
+        lfnA = '/store/t0temp/data/Run2010A/Cosmics/RECO/v4/000/143/316/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
         lfn(lfnA)
-        lfnA = '/store/backfill/1/t0temp/data/Run2010A/Cosmics/RECO/v4/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
+        lfnA = '/store/backfill/1/data/Run2010A/Cosmics/RECO/v4/000/143/316/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
+        lfn(lfnA)
+        lfnA = '/store/backfill/1/t0temp/data/Run2010A/Cosmics/RECO/v4/000/143/316/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
+        lfn(lfnA)
+        lfnA = '/store/backfill/1/Run2012B/Cosmics/RAW-RECO/PromptSkim-v1/000/194/912/00000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
         lfn(lfnA)
         lfnA = '/store/results/qcd/QCD_Pt80/StoreResults-Summer09-MC_31X_V3_7TeV-Jet30U-JetAODSkim-0a98be42532eba1f0545cc9b086ec3c3/QCD_Pt80/USER/StoreResults-Summer09-MC_31X_V3_7TeV-Jet30U-JetAODSkim-0a98be42532eba1f0545cc9b086ec3c3/0000/C44630AC-C0C7-DE11-AD4E-0019B9CAC0F8.root'
         lfn(lfnA)
@@ -305,6 +308,10 @@ class LexiconTest(unittest.TestCase):
         lfnA = '/store/temp/lustre/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000a/a_X-2.root'
         self.assertRaises(AssertionError, lfn, lfnA)
         lfnA = '/store/temp/lustre/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X;-2.root'
+        self.assertRaises(AssertionError, lfn, lfnA)
+        lfnA = '/store/temp/lustre/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/000/000/1000/a_X-2.root'
+        self.assertRaises(AssertionError, lfn, lfnA)
+        lfnA = '/store/temp/lustre/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/000/Iamralph/000/1000/a_X-2.root'
         self.assertRaises(AssertionError, lfn, lfnA)
 
 
@@ -605,6 +612,21 @@ class LexiconTest(unittest.TestCase):
         urlSplit = splitCouchServiceURL("https://cmsweb-dev.cern.ch/couchdb/workqueue")
         self.assertEqual("https://cmsweb-dev.cern.ch/couchdb", urlSplit[0])
         self.assertEqual("workqueue", urlSplit[1])
+
+        return
+
+    def testGlobalTag(self):
+        """
+        Test and check with some global tags.
+
+        """
+
+        gTag = 'START_V2::ALL'
+        globalTag(gTag)
+        gTag = 'START_V2;;ALL'
+        self.assertRaises(AssertionError, globalTag, gTag)
+        
+        return
 
 if __name__ == "__main__":
     unittest.main()

@@ -121,12 +121,12 @@ class WMAgentTest(unittest.TestCase):
 
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationSlots  = self.daoFactory(classname = "Locations.SetJobSlots")
+        pendingSlots  = self.daoFactory(classname = "Locations.SetPendingSlots")
 
 
         for site in self.sites:
             locationAction.execute(siteName = site, seName = 'se.%s' % (site), ceName = site)
-            locationSlots.execute(siteName = site, jobSlots = 1000)
+            pendingSlots.execute(siteName = site, pendingSlots = 1000)
 
 
         #Create sites in resourceControl

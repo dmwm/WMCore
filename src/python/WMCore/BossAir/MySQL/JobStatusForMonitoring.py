@@ -17,10 +17,10 @@ class JobStatusForMonitoring(DBFormatter):
     """
 
 
-    sql = """SELECT wwf.name as workflow, count(rj.wmbs_id) AS num_jobs, 
+    sql = """SELECT STRAIGHT_JOIN wwf.name as workflow, count(rj.wmbs_id) AS num_jobs, 
                     st.name AS status, wl.plugin AS plugin, wu.cert_dn AS owner
                FROM bl_runjob rj
-               INNER JOIN wmbs_users wu ON wu.id = rj.user_id
+               LEFT OUTER JOIN wmbs_users wu ON wu.id = rj.user_id
                INNER JOIN bl_status st ON rj.sched_status = st.id
                INNER JOIN wmbs_job wj ON wj.id = rj.wmbs_id
                INNER JOIN wmbs_jobgroup wjg ON wjg.id = wj.jobgroup

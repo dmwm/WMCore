@@ -14,6 +14,8 @@ from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 from WMCore.Lexicon import lfnBase, identifier
 from WMCore.WMException import WMException
 from WMCore.Database.CMSCouch import CouchNotFoundError
+from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
+from WMCore.Configuration import ConfigSection
 
 analysisTaskTypes = ['Analysis', 'PrivateMC']
 
@@ -57,7 +59,8 @@ class StdBase(object):
         self.inputPrimaryDataset = None
         self.inputProcessedDataset = None
         self.inputDataTier = None
-        self.processingVersion = None
+        self.processingVersion = 0
+        self.processingString  = None
         self.siteBlacklist = []
         self.siteWhitelist = []
         self.unmergedLFNBase = None
@@ -71,6 +74,15 @@ class StdBase(object):
         self.dbsUrl = None
         self.multicore = False
         self.multicoreNCores = 1
+        self.dashboardHost = None
+        self.dashboardPort = 0
+        self.overrideCatalog = None
+        self.firstLumi = 1
+        self.firstEvent = 1
+        self.runNumber = 0
+        self.timePerEvent = 60
+        self.memory = 2000
+        self.sizePerEvent = 512
         return
 
     def __call__(self, workloadName, arguments):
@@ -91,7 +103,8 @@ class StdBase(object):
             self.owner_vorole = arguments['VoRole']
         self.acquisitionEra = arguments.get("AcquisitionEra", None)
         self.scramArch = arguments.get("ScramArch", None)
-        self.processingVersion = arguments.get("ProcessingVersion", None)
+        self.processingVersion = int(arguments.get("ProcessingVersion", 0))
+        self.processingString = arguments.get("ProcessingString", None)
         self.siteBlacklist = arguments.get("SiteBlacklist", [])
         self.siteWhitelist = arguments.get("SiteWhitelist", [])
         self.unmergedLFNBase = arguments.get("UnmergedLFNBase", "/store/unmerged")
@@ -102,6 +115,13 @@ class StdBase(object):
         self.maxMergeEvents = arguments.get("MaxMergeEvents", 100000)
         self.validStatus = arguments.get("ValidStatus", "PRODUCTION")
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
+        self.dashboardHost = arguments.get("DashboardHost", "cms-wmagent-job.cern.ch")
+        self.dashboardPort = arguments.get("DashboardPort", 8884)
+        self.overrideCatalog = arguments.get("OverrideCatalog", None)
+        self.runNumber = int(arguments.get("RunNumber", 0))
+        self.timePerEvent = int(arguments.get("TimePerEvent", 60))
+        self.memory = int(arguments.get("Memory", 2000))
+        self.sizePerEvent = int(arguments.get("SizePerEvent", 512))
 
         if arguments.get("IncludeParents", False) == "True":
             self.includeParents = True
@@ -136,7 +156,7 @@ class StdBase(object):
             configCache.loadByID(configDoc)
             outputModules = configCache.getOutputModuleInfo()
         else:
-            if scenarioFunc in [ "promptReco", "expressProcessing" ]:
+            if 'outputs' in scenarioArgs and scenarioFunc in [ "promptReco", "expressProcessing", "repack" ]:
                 for output in scenarioArgs.get('outputs', []):
                     moduleLabel = output['moduleLabel']
                     outputModules[moduleLabel] = { 'dataTier' : output['dataTier'] }
@@ -144,13 +164,18 @@ class StdBase(object):
                         outputModules[moduleLabel]['primaryDataset'] = output['primaryDataset']
                     if output.has_key('filterName'):
                         outputModules[moduleLabel]['filterName'] = output['filterName']
+
+            elif 'writeTiers' in scenarioArgs and scenarioFunc == "promptReco":
+                for dataTier in scenarioArgs.get('writeTiers'):
+                    moduleLabel = "%soutput" % dataTier
+                    outputModules[moduleLabel] = { 'dataTier' : dataTier }
+
             elif scenarioFunc == "alcaSkim":
                 for alcaSkim in scenarioArgs.get('skims',[]):
                     moduleLabel = "ALCARECOStream%s" % alcaSkim
                     outputModules[moduleLabel] = { 'dataTier' : "ALCARECO",
                                                    'primaryDataset' : scenarioArgs.get('primaryDataset'),
                                                    'filterName' : alcaSkim }
-                    
 
         return outputModules
 
@@ -160,20 +185,60 @@ class StdBase(object):
 
         Add dashboard monitoring for the given task.
         """
-        gb = 1024.0 * 1024.0 * 1024.0
+        #A gigabyte defined as 1024^3 (assuming RSS and VSize is in KiByte)
+        gb = 1024.0 * 1024.0
+        #Default timeout defined in CMS policy
+        softTimeout = 47.0 * 3600.0 + 40.0 * 60.0
+        hardTimeout = 47.0 * 3600.0 + 45.0 * 60.0
 
         monitoring = task.data.section_("watchdog")
-        monitoring.interval = 600
+        monitoring.interval = 300
         monitoring.monitors = ["DashboardMonitor", "PerformanceMonitor"]
         monitoring.section_("DashboardMonitor")
-        monitoring.DashboardMonitor.softTimeOut = 300000
-        monitoring.DashboardMonitor.hardTimeOut = 600000
-        monitoring.DashboardMonitor.destinationHost = "cms-wmagent-job.cern.ch"
-        monitoring.DashboardMonitor.destinationPort = 8884
+        monitoring.DashboardMonitor.destinationHost = self.dashboardHost
+        monitoring.DashboardMonitor.destinationPort = self.dashboardPort
         monitoring.section_("PerformanceMonitor")
-        monitoring.PerformanceMonitor.maxRSS = 4 * gb
-        monitoring.PerformanceMonitor.maxVSize = 4 * gb
+        monitoring.PerformanceMonitor.maxRSS = 2.3 * gb
+        monitoring.PerformanceMonitor.maxVSize = 2.3 * gb
+        monitoring.PerformanceMonitor.softTimeout = softTimeout
+        monitoring.PerformanceMonitor.hardTimeout = hardTimeout
         return task
+
+
+    def reportWorkflowToDashboard(self, dashboardActivity):
+        """
+        _reportWorkflowToDashboard_
+        Gathers workflow information from the arguments and reports it to the
+        dashboard
+        """
+        try:
+        #Create a fake config
+            conf = ConfigSection()
+            conf.section_('DashboardReporter')
+            conf.DashboardReporter.dashboardHost = self.dashboardHost
+            conf.DashboardReporter.dashboardPort = self.dashboardPort
+
+            #Create the reporter
+            reporter = DashboardReporter(conf)
+
+            #Assemble the info
+            workflow = {}
+            workflow['name'] = self.workloadName
+            workflow['application'] = self.frameworkVersion
+            workflow['TaskType'] = dashboardActivity
+            #Let's try to build information about the inputDataset
+            dataset = 'DoesNotApply'
+            if hasattr(self, 'inputDataset'):
+                dataset = self.inputDataset
+            workflow['datasetFull'] = dataset
+            workflow['user'] = 'cmsdataops'
+
+            #Send the workflow info
+            reporter.addTask(workflow)
+        except:
+            #This is not critical, if it fails just leave it be
+            logging.error("There was an error with dashboard reporting")
+
 
     def createWorkload(self):
         """
@@ -187,8 +252,8 @@ class StdBase(object):
         workload.setOwnerDetails(self.owner, self.group, ownerProps)
         workload.setStartPolicy("DatasetBlock", SliceType = "NumberOfFiles", SliceSize = 1)
         workload.setEndPolicy("SingleShot")
-        workload.setAcquisitionEra(acquisitionEra = self.acquisitionEra)
-        workload.setProcessingVersion(processingVersion = self.processingVersion)
+        workload.setAcquisitionEra(acquisitionEras = self.acquisitionEra)
+        workload.setProcessingVersion(processingVersions = self.processingVersion)
         workload.setValidStatus(validStatus = self.validStatus)
         return workload
 
@@ -196,7 +261,8 @@ class StdBase(object):
                             inputModule = None, scenarioName = None,
                             scenarioFunc = None, scenarioArgs = None, couchURL = None,
                             couchDBName = None, configDoc = None, splitAlgo = "LumiBased",
-                            splitArgs = {'lumis_per_job': 8}, seeding = None, totalEvents = None,
+                            splitArgs = {'lumis_per_job': 8}, seeding = None,
+                            totalEvents = None, eventsPerLumi = None,
                             userDN = None, asyncDest = None, owner_vogroup = "DEFAULT",
                             owner_vorole = "DEFAULT", stepType = "CMSSW",
                             userSandbox = None, userFiles = [], primarySubType = None,
@@ -250,6 +316,8 @@ class StdBase(object):
         if taskType in ["Production", 'PrivateMC'] and totalEvents != None:
             procTask.addGenerator(seeding)
             procTask.addProduction(totalevents = totalEvents)
+            procTask.setFirstEventAndLumi(firstEvent = self.firstEvent,
+                                          firstLumi = self.firstLumi)
         else:
             if inputDataset != None:
                 (primary, processed, tier) = self.inputDataset[1:].split("/")
@@ -275,10 +343,19 @@ class StdBase(object):
         procTaskCmsswHelper.setUserSandbox(userSandbox)
         procTaskCmsswHelper.setUserFiles(userFiles)
         procTaskCmsswHelper.setGlobalTag(self.globalTag)
+        procTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
         procTaskCmsswHelper.setErrorDestinationStep(stepName = procTaskLogArch.name())
-        procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
+
+        if forceMerged:
+            procTaskStageHelper.setMinMergeSize(0, 0)
+        elif forceUnmerged:
+            procTaskStageHelper.disableStraightToMerge()
+        else:
+            procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
+
         procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                        scramArch = self.scramArch)
+        procTaskCmsswHelper.setEventsPerLumi(eventsPerLumi)
 
         configOutput = self.determineOutputModules(scenarioFunc, scenarioArgs,
                                                    configDoc, couchURL, couchDBName)
@@ -306,7 +383,6 @@ class StdBase(object):
 
             procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
                                                         **scenarioArgs)
-
         return outputModules
 
     def addOutputModule(self, parentTask, outputModuleName,
@@ -317,40 +393,69 @@ class StdBase(object):
         _addOutputModule_
 
         Add an output module to the given processing task.
+
         """
-        if parentTask.name() in analysisTaskTypes:
-            # TODO in case of user data need to implement policy to define
-            #  1  processedDataset
-            #  2  primaryDataset
-            #  ( 3  dataTier should be always 'USER'.)
-            #  4 then we'll know how to deal with Merge
-            dataTier = 'USER'
+        haveFilterName = (filterName != None and filterName != "")
+        haveProcString = (self.processingString != None and self.processingString != "")
+        haveRunNumber  = (self.runNumber != None and self.runNumber > 0)
 
-        if filterName != None and filterName != "":
-            processedDataset = "%s-%s-%s" % (self.acquisitionEra, filterName,
-                                             self.processingVersion)
-            processingString = "%s-%s" % (filterName, self.processingVersion)
+        processedDataset = "%s-" % self.acquisitionEra
+        if haveFilterName:
+            processedDataset += "%s-" % filterName
+        if haveProcString:
+            processedDataset += "%s-" % self.processingString
+        processedDataset += "v%i" % self.processingVersion
+
+        if haveProcString:
+            processingLFN = "%s-v%i" % (self.processingString, self.processingVersion)
         else:
-            processedDataset = "%s-%s" % (self.acquisitionEra,
-                                          self.processingVersion)
-            processingString = "%s" % (self.processingVersion)
+            processingLFN = "v%i" % self.processingVersion
+
+        if haveRunNumber:
+            stringRunNumber = str(self.runNumber).zfill(9)
+            runSections = [stringRunNumber[i:i+3] for i in range(0, 9, 3)]
+            runLFN = "/".join(runSections)
+
 
         if parentTask.name() in analysisTaskTypes:
-            if filterName:
-                unmergedLFN = "%s/%s/%s-%s/%s" % (self.unmergedLFNBase, primaryDataset,
-                                                  self.acquisitionEra, filterName,
-                                                  self.processingVersion)
+
+            # dataTier for user data is always USER
+            dataTier = "USER"
+
+            # output for user data is always unmerged
+            forceUnmerged = True
+
+            unmergedLFN = "%s/%s" % (self.unmergedLFNBase, primaryDataset)
+
+            if haveFilterName:
+                unmergedLFN += "/%s-%s" % (self.acquisitionEra, filterName)
             else:
-                unmergedLFN = "%s/%s/%s/%s" % (self.unmergedLFNBase, primaryDataset,
-                                               self.acquisitionEra, self.processingVersion)
-            mergedLFN = unmergedLFN
+                unmergedLFN += "/%s" % self.acquisitionEra
+
+            unmergedLFN += "/%s" % processingLFN
+
             lfnBase(unmergedLFN)
+
         else:
-            unmergedLFN = "%s/%s/%s/%s/%s" % (self.unmergedLFNBase, self.acquisitionEra,
-                                              primaryDataset, dataTier, processingString)
-            mergedLFN = "%s/%s/%s/%s/%s" % (self.mergedLFNBase, self.acquisitionEra,
-                                            primaryDataset, dataTier,
-                                            processingString)
+
+            unmergedLFN = "%s/%s/%s/%s" % (self.unmergedLFNBase,
+                                           self.acquisitionEra,
+                                           primaryDataset, dataTier)
+            mergedLFN = "%s/%s/%s/%s" % (self.mergedLFNBase,
+                                         self.acquisitionEra,
+                                         primaryDataset, dataTier)
+
+            if haveFilterName:
+                unmergedLFN += "/%s-%s" % (filterName, processingLFN)
+                mergedLFN += "/%s-%s" % (filterName, processingLFN)
+            else:
+                unmergedLFN += "/%s" % processingLFN
+                mergedLFN += "/%s" % processingLFN
+
+            if haveRunNumber:
+                unmergedLFN += "/%s" % runLFN
+                mergedLFN += "/%s" % runLFN
+
             lfnBase(unmergedLFN)
             lfnBase(mergedLFN)
 
@@ -426,14 +531,21 @@ class StdBase(object):
         parentTaskCmssw = parentTask.getStep(parentStepName)
         parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
 
+        mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
+
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
         mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                         scramArch = self.scramArch)
 
-        if getattr(parentOutputModule, "dataTier") == "DQM":
+        mergeTaskCmsswHelper.setErrorDestinationStep(stepName = mergeTaskLogArch.name())
+        mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
+        mergeTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
+
+        if getattr(parentOutputModule, "dataTier") in ["DQM", "DQMROOT"]:
             # DQM wants everything to be a single file per run, so we'll merge
             # accordingly.  We'll set the max_wait_time to two weeks as files
-            # tend to be garbage collected after that.
+            # tend to be garbage collected after that. Also effectively disable
+            # size thresholds for DQM merges (they do not apply).
             mergeTask.setSplittingAlgorithm(splitAlgo,
                                             max_merge_size = 21000000000,
                                             min_merge_size = 20000000000,
@@ -442,7 +554,6 @@ class StdBase(object):
                                             merge_across_runs = False,
                                             siteWhitelist = self.siteWhitelist,
                                             siteBlacklist = self.siteBlacklist)
-            mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge", dqm_format = True)
         else:
             mergeTask.setSplittingAlgorithm(splitAlgo,
                                             max_merge_size = self.maxMergeSize,
@@ -451,24 +562,18 @@ class StdBase(object):
                                             max_wait_time = self.maxWaitTime,
                                             siteWhitelist = self.siteWhitelist,
                                             siteBlacklist = self.siteBlacklist)
-            mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge")
 
-        mergeTaskCmsswHelper.setErrorDestinationStep(stepName = mergeTaskLogArch.name())
-        mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
+        if getattr(parentOutputModule, "dataTier") == "DQMROOT":
+            mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge", newDQMIO = True)
+        else:
+            mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge")
 
-        mergedLFN = "%s/%s/%s/%s/%s" % (self.mergedLFNBase, self.acquisitionEra,
-                                        getattr(parentOutputModule, "primaryDataset"),
-                                        getattr(parentOutputModule, "dataTier"),
-                                        self.processingVersion)
+        self.addOutputModule(mergeTask, "Merged",
+                             primaryDataset = getattr(parentOutputModule, "primaryDataset"),
+                             dataTier = getattr(parentOutputModule, "dataTier"),
+                             filterName = getattr(parentOutputModule, "filterName"),
+                             forceMerged = True)
 
-        mergeTaskCmsswHelper.addOutputModule("Merged",
-                                             primaryDataset = getattr(parentOutputModule, "primaryDataset"),
-                                             processedDataset = getattr(parentOutputModule, "processedDataset"),
-                                             dataTier = getattr(parentOutputModule, "dataTier"),
-                                             filterName = getattr(parentOutputModule, "filterName"),
-                                             lfnBase = mergedLFN)
-
-        mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
         self.addCleanupTask(parentTask, parentOutputModuleName)
         return mergeTask
 
@@ -492,16 +597,84 @@ class StdBase(object):
         cleanupTask.setTaskPriority(self.priority + 5)
         return
 
+    def addDQMHarvestTask(self, parentTask, parentOutputModuleName,
+                          uploadProxy = None, periodic_harvest_interval = 0,
+                          parentStepName = "cmsRun1", doLogCollect = True):
+        """
+        _addDQMHarvestTask_
+
+        Create a DQM harvest task to harvest the files produces by the parent task.
+        """
+        harvestTask = parentTask.addTask("%sDQMHarvest%s" % (parentTask.name(), parentOutputModuleName))
+        self.addDashboardMonitoring(harvestTask)
+        harvestTaskCmssw = harvestTask.makeStep("cmsRun1")
+        harvestTaskCmssw.setStepType("CMSSW")
+
+        harvestTaskUpload = harvestTaskCmssw.addStep("upload1")
+        harvestTaskUpload.setStepType("DQMUpload")
+        harvestTaskLogArch = harvestTaskCmssw.addStep("logArch1")
+        harvestTaskLogArch.setStepType("LogArchive")
+
+        harvestTask.setTaskLogBaseLFN(self.unmergedLFNBase)
+        if doLogCollect:
+            self.addLogCollectTask(harvestTask, taskName = "%s%sDQMHarvestLogCollect" % (parentTask.name(), parentOutputModuleName))
+
+        harvestTask.setTaskType("Processing")
+        harvestTask.applyTemplates()
+        harvestTask.setTaskPriority(self.priority + 5)
+
+        harvestTaskCmsswHelper = harvestTaskCmssw.getTypeHelper()
+        harvestTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
+                                          scramArch = self.scramArch)
+
+        harvestTaskCmsswHelper.setErrorDestinationStep(stepName = harvestTaskLogArch.name())
+        harvestTaskCmsswHelper.setGlobalTag(self.globalTag)
+        harvestTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
+
+        harvestTaskCmsswHelper.setUserLFNBase("/")
+
+        parentTaskCmssw = parentTask.getStep(parentStepName)
+        parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
+
+        harvestTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
+
+        harvestTask.setSplittingAlgorithm("Harvest",
+                                          periodic_harvest_interval = periodic_harvest_interval)
+
+        if getattr(parentOutputModule, "dataTier") == "DQMROOT":
+            harvestTaskCmsswHelper.setDataProcessingConfig(self.procScenario, "dqmHarvesting",
+                                                           globalTag = self.globalTag,
+                                                           datasetName = "/%s/%s/%s" % (getattr(parentOutputModule, "primaryDataset"),
+                                                                                        getattr(parentOutputModule, "processedDataset"),
+                                                                                        getattr(parentOutputModule, "dataTier")),
+                                                           runNumber = self.runNumber,
+                                                           newDQMIO = True)
+        else:
+            harvestTaskCmsswHelper.setDataProcessingConfig(self.procScenario, "dqmHarvesting",
+                                                           globalTag = self.globalTag,
+                                                           datasetName = "/%s/%s/%s" % (getattr(parentOutputModule, "primaryDataset"),
+                                                                                        getattr(parentOutputModule, "processedDataset"),
+                                                                                        getattr(parentOutputModule, "dataTier")),
+                                                           runNumber = self.runNumber)
+        if uploadProxy: 
+            harvestTaskUploadHelper = harvestTaskUpload.getTypeHelper()
+            harvestTaskUploadHelper.setProxyFile(uploadProxy)
+
+        return
+
     def setupPileup(self, task, pileupConfig):
         """
-        Support for pileup input for MonteCarlo and RelValMC workloads
+        _setupPileup_
 
+        Setup pileup for every CMSSW step in the task.
         """
-        # task is instance of WMTaskHelper (WMTask module)
-        # retrieve task helper (cmssw step helper), top step name is cmsRun1
-        stepName = task.getTopStepName()
-        stepHelper = task.getStepHelper(stepName)
-        stepHelper.setupPileup(pileupConfig, self.dbsUrl)
+        for stepName in task.listAllStepNames():
+            step = task.getStep(stepName)
+            if step.stepType() != "CMSSW":
+                continue
+            stepHelper = task.getStepHelper(stepName)
+            stepHelper.setupPileup(pileupConfig, self.dbsUrl)
+
         return
 
     def validateSchema(self, schema):
@@ -538,12 +711,49 @@ class StdBase(object):
 
         Named this way so that nobody else will try to use this name.
         """
-
+        self.masterValidation(schema = arguments)
         self.validateSchema(schema = arguments)
         workload = self.__call__(workloadName = workloadName, arguments = arguments)
         self.validateWorkload(workload)
 
         return workload
+
+    def masterValidation(self, schema):
+        """
+        _masterValidation_
+
+        This is validation for global inputs that have to be implemented for
+        multiple types of workflows in the exact same way.
+
+        Usually used for type-checking, etc.
+        """
+
+        try:
+            processingVersion = int(schema.get("ProcessingVersion", 0))
+        except ValueError:
+            try:
+                processingVersion = int(float(schema.get("ProcessingVersion", 0)))
+            except ValueError:
+                self.raiseValidationException(msg = "Non-integer castable ProcessingVersion found")
+
+        performanceFields = ['TimePerEvent', 'Memory', 'SizePerEvent']
+
+        for field in performanceFields:
+            self._validatePerformanceField(field, schema)
+
+    def _validatePerformanceField(self, field, schema):
+        """
+        __validatePerformanceField_
+
+        Validates an integer field, that is mandatory. So it raises a validation
+        exception if the field is not in the schema or is not integer-castable.
+        """
+        try:
+            int(schema[field])
+        except KeyError:
+            self.raiseValidationException(msg = "The %s must be specified" % field)
+        except ValueError:
+            self.raiseValidationException(msg = "Please specify a valid %s" % field)
 
     def requireValidateFields(self, fields, schema, validate = False):
         """

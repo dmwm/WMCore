@@ -29,7 +29,7 @@ class TestWorkloadFactory(object):
         workload.setOwner("sfoulkes@fnal.gov")
         workload.setStartPolicy("DatasetBlock", SliceType = "NumberOfFiles", SliceSize = 1)
         workload.setEndPolicy("SingleShot")
-        workload.data.properties.acquisitionEra = "WMAgentCommissioning10"
+        workload.setAcquisitionEra("WMAgentCommissioning10")
         return workload
 
     def setupProcessingTask(self, procTask):

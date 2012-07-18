@@ -92,6 +92,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.locationDict   = {}
         self.cmsNames       = {}
         self.drainSites     = []
+        self.sortedSites    = []
         self.packageSize    = getattr(self.config.JobSubmitter, 'packageSize', 500)
         self.collSize       = getattr(self.config.JobSubmitter, 'collectionSize',
                                       self.packageSize * 1000)
@@ -355,7 +356,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                        loadedJob.get("priority", None),
                        frozenset(possibleLocations),
                        loadedJob.get("scramArch", None),
-                       loadedJob.get("swVersion", None))
+                       loadedJob.get("swVersion", None),
+                       loadedJob["name"])
             
             self.jobDataCache[workflowName][jobID] = jobInfo
 
@@ -410,21 +412,32 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         for siteName in rcThresholds.keys():
             # Add threshold if we don't have it already
-            for threshold in rcThresholds[siteName]:
-                seName  = threshold["se_name"]
-                cmsName = threshold["cms_name"]
-                drain   = threshold["drain"]
+            cmsName = rcThresholds[siteName]["cms_name"]
+            state   = rcThresholds[siteName]["state"]
+
+            if not cmsName in self.cmsNames.keys():
+                self.cmsNames[cmsName] = []
+            if not siteName in self.cmsNames[cmsName]:
+                self.cmsNames[cmsName].append(siteName)
+            if state != "Normal" and cmsName not in self.drainSites:
+                self.drainSites.append(cmsName)
+
+            for seName in rcThresholds[siteName]["se_names"]:
                 if not seName in self.siteKeys.keys():
                     self.siteKeys[seName] = []
                 if not siteName in self.siteKeys[seName]:
                     self.siteKeys[seName].append(siteName)
-                if not cmsName in self.cmsNames.keys():
-                    self.cmsNames[cmsName] = []
-                if not siteName in self.cmsNames[cmsName]:
-                    self.cmsNames[cmsName].append(siteName)
-                if drain and cmsName not in self.drainSites:
-                    logging.debug("Site %s is draining." % cmsName)
-                    self.drainSites.append(cmsName)
+
+        #Sort the sites using the following criteria:
+        #T1 sites go first, then T2, then T3
+        #After that we fill first the bigger ones
+        #Python sorting is stable so let's do 2 sort passes, it should be fast
+        #Assume  that all CMS names start with T[0-9]+, which the lexicon guarantees
+        self.sortedSites = sorted(rcThresholds.keys(),
+                                  key = lambda x : rcThresholds[x]["total_pending_slots"],
+                                  reverse = True)
+        self.sortedSites = sorted(self.sortedSites, key = lambda x : rcThresholds[x]["cms_name"][0:2])
+        logging.debug('Will fill in the following order: %s' % str(self.sortedSites))
 
         return rcThresholds
 
@@ -447,46 +460,68 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         rcThresholds = self.getThresholds()
 
-        for siteName in rcThresholds.keys():
+        for siteName in self.sortedSites:
 
-            totalRunning = None
-            if not self.cachedJobs.has_key(siteName):
+            totalPending = None
+            if siteName not in self.cachedJobs:
                 logging.debug("No jobs for site %s" % siteName)
                 continue
             logging.debug("Have site %s" % siteName)
-
-
-
-            for threshold in rcThresholds.get(siteName, []):
+            try:
+                totalPendingSlots   = rcThresholds[siteName]["total_pending_slots"]
+                totalRunningSlots   = rcThresholds[siteName]["total_running_slots"]
+                totalRunning        = rcThresholds[siteName]["total_running_jobs"]
+                totalPending        = rcThresholds[siteName]["total_pending_jobs"]
+                state               = rcThresholds[siteName]["state"]
+            except KeyError, ex:
+                msg =  "Had invalid site info %s\n" % siteName['thresholds']
+                msg += str(ex)
+                logging.error(msg)
+                continue
+            for threshold in rcThresholds[siteName].get('thresholds', []):
                 try:
                     # Pull basic info for the threshold
-                    taskType     = threshold['task_type']
-                    seName       = threshold['se_name']
-                    maxSlots     = threshold['max_slots']
-                    totalSlots   = threshold['total_slots']
-                    taskRunning  = threshold["task_running_jobs"]
-                    if totalRunning == None:
-                        # Then we need to grab that too
-                        totalRunning = threshold["total_running_jobs"]
+                    taskType            = threshold["task_type"]
+                    maxSlots            = threshold["max_slots"]
+                    taskRunning         = threshold["task_running_jobs"]
                 except KeyError, ex:
                     msg =  "Had invalid threshold %s\n" % threshold
                     msg += str(ex)
                     logging.error(msg)
                     continue
 
+                #If the site is down, I don't care about it
+                if state == 'Down':
+                    continue
+
+                #If the site is Finalizing, only do merge, cleanup and logCollect
+                if state == 'Finalizing' and taskType not in ('Merge',
+                                                              'Cleanup',
+                                                              'LogCollect'):
+                    continue
+
+                #If the number of running exceeded the running slots in the
+                #site then get out
+                if totalRunningSlots >= 0 and totalRunning >= totalRunningSlots:
+                    continue
+
+                #If the task is running more than allowed then get out
+                if maxSlots >= 0 and taskRunning >= maxSlots:
+                    continue
+
                 # Ignore this threshold if we've cleaned out the site
-                if not self.cachedJobs.has_key(siteName):
+                if siteName not in self.cachedJobs:
                     continue
 
                 # Ignore this threshold if we have no jobs
                 # for it
-                if not self.cachedJobs[siteName].has_key(taskType):
+                if taskType not in self.cachedJobs[siteName]:
                     continue
 
                 taskCache = self.cachedJobs[siteName][taskType]
 
                 # Calculate number of jobs we need
-                nJobsRequired = min((totalSlots - totalRunning), (maxSlots - taskRunning))
+                nJobsRequired = totalPendingSlots - totalPending
                 breakLoop = False
                 logging.debug("nJobsRequired for task %s: %i" % (taskType, nJobsRequired))
 
@@ -568,14 +603,15 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'taskType': taskType,
                                'possibleSites': cachedJob[9],
                                'scramArch': cachedJob[10],
-                               'swVersion': cachedJob[11]}
+                               'swVersion': cachedJob[11],
+                               'name': cachedJob[12]}
 
                     # Add to jobsToSubmit
                     jobsToSubmit[package].append(jobDict)
 
                     # Deal with accounting
                     nJobsRequired -= 1
-                    totalRunning  += 1
+                    totalPending  += 1
 
                     if breakLoop:
                         break

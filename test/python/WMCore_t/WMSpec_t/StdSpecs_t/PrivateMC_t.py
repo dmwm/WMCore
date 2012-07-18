@@ -73,7 +73,7 @@ class PrivateMCTest(unittest.TestCase):
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "privatemc_t"
         defaultArguments["AnalysisConfigCacheDoc"] = self.injectAnalysisConfig()
-        defaultArguments["ProcessingVersion"] = 'v1'
+        defaultArguments["ProcessingVersion"] = 1
 
         processingFactory = PrivateMCWorkloadFactory()
         testWorkload = processingFactory("TestWorkload", defaultArguments)

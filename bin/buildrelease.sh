@@ -4,7 +4,8 @@ set -e
 ##H
 ##H options
 ##H --skip-build      Tag but do not build rpm's.
-##H --repo=           Provide the repo file to update, defaults to comp.releases.
+##H --repo=REPO       Provide the repo file to update, defaults to comp.releases.
+##H --remote=REMOTE   REMOTE repository to update, default to upstream.
 ##H
 ##H Tag & build a wmcore/wmagent release
 
@@ -12,16 +13,18 @@ TAG=true
 BUILD=true
 REPO=comp.releases
 VERSION=
-CVSROOT="cmscvs.cern.ch:/cvs_server/repositories/CMSSW"
+CVSROOT="cmscvs.cern.ch:/local/reps/CMSSW"
 # use a tag so we only checkout a limited set,
 # doesn't need to be recent as we do an update on the changed files to remove sticky tag
 EXAMPLE_CMSDIST_TAG="builder_2011-08-02_16-19-02_wmagent"
+REMOTE='origin'
 
 while [ $# -ge 1 ]; do
   case $1 in
     --skip-build ) BUILD=false; shift ;;
     --skip-tag ) TAG=false; shift ;;
-    --repo= ) REPO={2#*=}; shift; shift ;;
+    --repo=* ) REPO=${1#*=}; shift;;
+    --remote=* ) REMOTE=${1#*=}; shift;;
     -h ) perl -ne '/^##H/ && do { s/^##H ?//; print }' < $0 1>&2; exit 1 ;;
     -* ) echo "$0: unrecognised option $1, use -h for help" 1>&2; exit 1 ;;
     *  ) break ;;
@@ -36,43 +39,30 @@ fi
 VERSION=$1
 GITBRANCH=$(git symbolic-ref HEAD 2>/dev/null)
 GITBRANCH=${GITBRANCH##refs/heads/}
-BRANCH=$(basename $(git svn tag -n test_stuart_20110812 | head -1 | awk '{print $2}'))
 
-echo "Building new release of WMCore $VERSION from ${BRANCH} (${GITBRANCH})"
+echo "Building new release of WMCore $VERSION on ${GITBRANCH}"
 
 # some sanity checks
 
 if ! echo ${GITBRANCH} | egrep -iq 'master|wmcore_' ; then
   echo "ABORTING - Can only release from master or a WMCORE_X_Y_Z git checkout: ${GITBRANCH}"
-  exit 5
-fi
-
-if ! echo ${BRANCH} | egrep -iq 'trunk|wmcore_' ; then
-  echo "ABORTING - Can only release from trunk or a WMCORE_X_Y_Z branch: ${BRANCH}"
   exit 4
 fi
 
-if [ X"$(git status -s)" != X ]; then
-  git status
-  echo
-  echo "ABORTING - unclean working area"
-  exit 2
-fi
+#if [ X"$(git status -s)" != X ]; then
+#  git status
+#  echo
+#  echo "ABORTING - unclean working area"
+#  exit 2
+#fi
 
 if [ X$(git rev-parse --show-toplevel) != X$PWD ]; then
   echo "ABORTING - not in root directory $(git rev-parse --show-toplevel)"
   exit 3
 fi
 
-# Not sure if we want this or not
-#echo "git svn fetch ..."
-#git svn fetch
-#echo "git svn rebase ..."
-#git svn rebase
-
 # Check if tag exists
-(git branch -r | grep -q "tags/$VERSION")
-if [ $? -eq 0 ]; then
+if git show-ref --verify --quiet -- "refs/tags/${VERSION}"; then
   echo "Tag $VERSION exists, skipping tag command"
   TAG=false
 fi
@@ -102,13 +92,13 @@ if [ X${TAG} == Xtrue ]; then
   echo "committing local changes ..."
   git commit -a -s -m "$VERSION"
 
-  echo "pushing local changes to svn ..."
-  git svn dcommit
-
   echo "tagging release ..."
-  git svn tag $VERSION
+  git log --pretty=format:'  - %s' ${LASTCOMMIT}.. | git tag -a $VERSION -F -
 
-  echo "$VERSION tagged in svn"
+  echo "pushing to ${REMOTE} ..."
+  git push --tags ${REMOTE}
+
+  echo "$VERSION tagged"
 fi
 
 echo

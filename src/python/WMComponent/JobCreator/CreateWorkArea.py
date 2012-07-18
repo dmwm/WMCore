@@ -317,6 +317,9 @@ class CreateWorkArea:
 
         createDirectories(nameList)
 
+        #change permissions. See #3623
+        for directory in nameList:
+            os.chmod(directory,  0775)
 
         return
 

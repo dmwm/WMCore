@@ -22,9 +22,10 @@ class FileSink(object):
     
     def __init__(self, config):
         self.config = config
+        logging.info("Instantiating ...")
         self.encoder = json.encoder.JSONEncoder()
         self.decoder = json.decoder.JSONDecoder()
-        logging.debug("%s initialized." % self.__class__.__name__)
+        logging.info("Initialized.")
 
 
     @contextmanager
@@ -64,4 +65,4 @@ class FileSink(object):
             for a in alerts:
                 s = self.encoder.encode(a)
                 f.write("%s\n" % s)
-        logging.debug("%s stored alerts." % self.__class__.__name__)
+        logging.debug("Stored %s alerts." % len(alerts))

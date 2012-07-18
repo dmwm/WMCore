@@ -1,3 +1,257 @@
+0.9.6 to 0.9.7:
+  - Missing patch from #3945.
+
+0.9.5 to 0.9.6:
+  - Attempt to handle invalid transactions better in the monitoring.  Fixes #3914.
+  - Merge pull request #30 from ticoann/monitoring
+  - Fix ReqMgr handling of json encoded parameters.  Fixes #3933.
+  - Allow setting the processing version per task for TaskChain requests.  Fixes #3896.
+  - Fix rewrite rule for allDocs in couchskel.  Fixes #3932.
+  - Kill jobs by WallClock time from the WN.  Fixes #3945.
+  - Require performance information when creating a request.  Fixes #3942.
+  - More support for DQM Harveting in the PromptReco spec.  Fixes #3952.
+  - Merge branch 'master' of github.com:dmwm/WMCore
+  - Merge pull request #29 from hufnagel/mydev1
+  - remove sqlite support
+  - Merge pull request #28 from samircury/harvest-optional-proxy
+  - Merge pull request #26 from hufnagel/master
+  - Merge pull request #23 from dballesteros7/promptskimming
+  - Merge branch 'master' into harvest-optional-proxy
+  - Revert "adding the task without proxy"
+  - Revert "Now adds the proxy, all T0 share is commited in the other repo"
+  - making the proxy optional for the harvest task
+  - support Tier0 repack error datasets in WMCore, fixes #3949
+  - change unit test to cover another use case, fixes #3885
+  - rewrite SiblingSubscriptionsComplete DAO, fixes #3885
+
+0.9.3 to 0.9.5:
+  - Last time.
+
+0.9.2 to 0.9.3:
+  - Another attempt.
+
+0.9.1 to 0.9.2:
+  - New release to test build script.
+
+0.9.0 to 0.9.1:
+  - Merge pull request #20 from stuartw/patch/buildrelease/github
+  - Fix broken buildrelease script
+  - Merge pull request #19 from stuartw/patch/buildrelease/github
+  - Missed line in buildrelease move to github
+  - Modify buildrelease script for pure git
+  - Merge branch 'wmcore-rest'
+  - Merge pull request #17 from samircury/dqmupload-fix-proxy
+  - Merge pull request #18 from hufnagel/mydev
+  - add DQM harvest method to StdBase, fixes #3863
+  - add special DAO for Harvest job splitter, fixes #3825
+  - adding a DAO that Harvest Jobsplitter needs
+  - adding the harvest algorithm
+  - adds unit test for the Harvesting algorithm
+  - Commenting out the only part that prevents DQMUpload to work in T0
+  - Merge pull request #16 from sfoulkes/master
+  - Fix problems with disabling straight-to-merge.  Fixes #3909.
+  - Merge pull request #15 from sfoulkes/master
+  - Remove test lines from the CHANGES file.
+  - Merge remote branch 'upstream/master'
+  - Test commit.
+  - Dummy commmit, please ignore
+  - Merge branch 'svnmaster' into wmcore-rest
+  - Change XML output format to support arbitrary keys.
+  - Allow authz_match to work (and fail) if user is missing.
+  - Fix new substitutions to work also in absence of values.
+  - Allow value and file substitutions on the front page.
+  - Not all PUT/POST requests bodies have rfile.
+  - REST API classes from SiteDB.
+  - External files removed by automatic javascript compression.
+  - Add setup.py --compress option to minify HTML, CSS and JS assets.
+  - Split module documentation into individual files.
+  - Add setup.py --skip-docs option to skip documentation build.
+
+8.50 to 0.9.0:
+  - Massive monitoring rewrite.
+  - Improve the performance of the ErrorHandler when loading jobs that have 
+    input files with large numbers of lumi sections.  Fixes #3925.
+  - Make loading parentage information when loading files in a fileset optional.  Fixes #3919.
+  - Load the task name in the LoadFromIDWithWorkflow DAO.  Fixes #3922.
+  - Strip error message from GWQ to 1000 characters
+  - Log traceback for workqueue split errors if unknown exception
+  - Complain if no acdc section in resubmission task.
+
+0.8.49 to 0.8.50:
+  - Improved ResourceControl and job scheduling.  Fixes #3888.
+  - Support DQM sequences in the PromptReco and Tier1PromptReco specs.  Fixes #3879.
+  - Fail input files for paused jobs that are failed.  Fixes #3897.
+  - Update run and lumi information in WMBS if it is missing.  Fixes #3875.
+  - Cleanups to the Tier1PromptReco spec.  Fixes #3850.
+  - Properly handle files with 0 events in the WorkQueue and job splitting.  Fixes #3596.
+  - Don't kill jobs with a state time of 0.  Fixes #3889.
+  - Make the ForceUnmerged parameter disable straight-to-merge.  Fixes #3890.
+  - Don't associate a CMSSW version with a request if one doesn't already exist.  Fixes #3883.
+  - Report the grid name properly to the dashboard.  Fixes #3808.
+  - Report the plugin used for job submission to the dashboard.  Fixes #3893.
+  - Improve logging in the bootstrapping code.  Fixes #3898.
+  - Ensure that CouchDB URLs do not end in a '/'.  Fixes #3899.
+  - Modified analysis WMSpec: it does not send a logcollect job if saveLog=False. Fixes #3855
+  - Modify the ParentlessMergeBySize and SiblingProcessingBased subscriptions so that 
+    they work correctly with files available at multiple sites. Fixes #3906.
+  - Handle some issue with the ConfigSection stuff with nested containers and nested ConfigSections.  Fixes #3891.
+  - Add DBSPublisher.couch_instance to wmagent-couchapp-init and wmagent-mod-config, fixes #3892
+  - Add storage to wmc-runtime package
+  - Fix bossair monitoring query to support oracle (T0)
+  - Add postfields parameters for DELETE verb. Fixes #3860
+
+0.8.48 to 0.8.49:
+  - Fixups from the last PromptSkimming fixups.  Fixes #3864.
+  - Fix ReqMgr unit test failures.  Fixes #3708.
+  - Cleanup the local workqueue inbox in the PromptSkimming system.  Fixes #3857.
+  - Don't abort a workflow if the user doesn't have permissins.  Fixes #3859.
+  - More white space fixes in UserFileCache.  Fixes #3813.
+  - Fix the handling of datasets that reside in more than one block.  Fixes #3845.
+  - Better protections in the PromptSkimming system for configs that don't get uploaded.  Fixes #3843.
+  - Update alert thresholds.  Fixes #3651.
+  - Add an extra digit to the LFN counter to that datasets produced by different WMAgent instances don't go into the same directory.  Fixes #3820.
+  - Stop the WorkQueue from polling the entire dataset in DBS for PromptSkimming workflows.  Fixes #3822.
+  - Fix the initialization of the first lumi and first event in StdBase.  Fixes #3828.
+  - Support a pileup parameter for TaskChain requests.  Fixes #3827.
+  - WMBSFileFeeder not feeding draining sites. Fixes #3834
+  - Report the number of events processed/produced by a job to the dashboard.  Fixes #3805.
+  - Identify step attributes with a counter for dashboard reporting.  Fixes #3803.
+  - Add Add couch_user_monitoring_instance to wmagent-mod-config, fixes #3823
+  - Add the possibility to specify the lenght of the myproxy.  Fixes #3819
+  - Remove unused subdir parameter. Fixes #3800
+  - Fix some white space corruption.  Fixes #3813.
+
+0.8.47 to 0.8.48:
+  - Guard against empty arguments with Config/DataProcessing configs.  Fixes #3797.
+  - Fix PromptSkimming processing version handling.  Fixes #3775.
+  - Change the default log level for dashboard reporting.  Fixes #3717.
+  - Ignore data from CouchDB that doesn't have a valid site.  Fixes #3786.
+  - Don't require bl_runjob to link to a valid user.  Fixes #3791.
+  - Add run number to PromptSkimming LFNs.  Fixes #3793.
+  - Fix races in PromptSkimming between workflow cleanup and data transfer in the T0.  Fixes #3787.
+  - Support Tier0 LFN conventions in the standard specs.  Fixes #3277.
+  - Update thresholds in the AlertGenerator config.
+  - Adapted UserFileCache module to the new rest (removed backward compatibility). Fixes #3780,#3662
+  - Force MySQL to use the best join order for the JobStatusForMonitoring query.  Fixes #3778.
+  - Allow requestors to specifiy an initial event and initial lumi.  Fixes #2272.
+  - Add events_per_lumi option to EventBased splitting.  Fixes #3744.
+  - Fix the running time calculation so that it ignores job restarts.  Fixes #3772.
+  - Fix the WMTweak firstLumi/event treatment.  Fixes #3714.
+  - Add a LHEStep0 workflow.  Fixes #3712.
+  - Add two new base LFNs to the request web interface options.  Fixes #3755.
+  - Modify the WMBS schema to allow for larger event numbers.  Fixes #3754.
+  - Make test division stable when adding new tests.  Fixes #3761.
+  - Attempt to trap os._exit() calls made by cherrypy.  Fixes #3760.
+  - Fix the unit tests for the couch based agent package.  Fixes #2178.
+  - Guard against incorrect config URLs in PromptSkimming.  Fixes #3767.
+  - Improve reports when a job is killed.  Fixes #3766.
+  - Fix performance monitoring thresholds.  Fixes #3765.
+  - Modified the wf name in the fake report. Fixes #2859
+  - Fix pileup support. Fixes #3711
+  - Update CVSROOT in buildrelease script.
+
+0.8.46 to 0.8.47:
+  - Update Lexicon to handle old tier0 LFNs.  Fixes #3752.
+  - Test alerts in the JobTracker unit test.  Fixes #3326.
+  - Add cron entries to build alert views.  Fixes #3736.
+  - Add support for security parameters using instances.  Fixes #3751.
+
+0.8.45 to 0.8.46:
+  - Alert system unit test fixes.  Fixes #3701.
+  - Fix problems with the GetSiteSE DAO.  Fixes #3318.
+  - Use a view that actually exists to trigger view rebuilding.
+  - Fix the Emulator unit test.  Fixes #3716.
+  - Added key and certificate to Un packUserTarball. Fixes #3479
+  - Fix cherrpy port/address handling.  Fixes #3709.
+  - Update the test harness so that testers have more control over what is run.  Fixes #3699.
+  - Fix another DAO that broke due to the multi-se changes.  Fixes #3700.
+  - Fix unit test breakage.  Fixes #3696.
+  - Allow overriding the TFC from the spec.  Fixes #3311.
+  - Resolve some problems automatically configuring resource control with sites that have more than one SE.
+  - Fix the Oracle SiblingSubscriptionsComplete DAO that was broken by the multi-SE patch.  Fixes #3318.
+  - Fix the GetSiteSE DAO.  Fixes #3687.
+  - Update the couch app stateTransition update function to work correctly if the document doesn't exist.
+
+0.8.44 to 0.8.45:
+  - Initial PromptReco spec.  Fixes #3684.
+  - Fixup LFN conventions.  Fixes #3653.
+  - Support sites with more than one SE.  Fixes #3318.
+  - Remove the CouchURL from the default Tier1PromptReco test arguments.  Fixes #3678.
+  - Fix the JobSubmitter unit test.  Fixes #3679.
+  - Fix problems with new dashboard reporting code and ReqMgr.  Fixes #3629.
+
+0.8.43 to 0.8.44:
+  - Dashboard fixes.  Fixes #3674.
+  - Support merging the new DQM format.  Fixes #3671.
+  - Support a four part processed dataset name in lexicon.  From #3653.
+
+0.8.42 to 0.8.43:
+  - Pull the site name from the site-local-config and report that as the CE.  Fixes #2774.
+  - More improvements to WN dashboard reporting.  Fixes #3656.
+  - Correct a typo from the dashboard cleanup in StdBase.  Fixes #3667.
+  - Remove the DashboardReporter component.  Better integrate dashboard reporting with the WMAgent JobStateMachine.  Fixes #3629.
+  - Cleanup runtime dashboard reporting.  Fixes #3656.
+  - Fix problems with ALCARECO handling in the Tier1PromptReco spec.  Clean up it's unit test.  Fixes #3620.
+  - Require positive parameters for the MC requests.  Fixes #3647.
+  - Fix problems with MultiCore jobs.
+
+0.8.41 to 0.8.42:
+  - Add global tag validation to the lexicon.  Fixes #3648.
+  - Load infomration necessary for dashboard reporting in the data discovery dao when killing jobs.  Fixes #3644.
+  - Remove unnecessary try/except statements from unit tests.  Fixes #3571.
+  - Restore default scenario handling to StdBase.  Fixes #3593.
+  - Remove tests for deprecated code.  Fixes #3595.
+  - Fix missing imports in WMBS_t.  Fixes #3535.
+  - Add job name and location to the BossAir LoadComplete DAO.  Fixes #3632.
+  - Allow the Jobs.GetType DAO to process a list of IDs.  Fixes #3640.
+  - Make the order that tests are run in stable.  Fixes #3641.
+  - Add the workflow type to the GetWorkflowTask DAO.  Fixes #3643.
+
+0.8.38a to 0.8.41:
+  - Fix several problems found during TaskChain commissioning (#3598):   
+     o Make dependent tasks run over the output of the merge task instead     
+       of the processing task.   
+     o Include TaskChain task parameters in the schema section of the workload   
+     o Don't add more events to a job than there are in the input file.
+  - For chained workflows with pileup, configure each chained step to use the pileup 
+    dataset.  Don't fail if there isn't a pileup section in the config.  Fixes #3628.
+  - fixing retrymanager unittests. Fixes #3613
+  - Have the WorkQueue guard against negative slice sizes.
+
+0.8.38 to 0.8.38a:
+  - DOM fix for Alert Visualization. Fixes #3634
+
+0.8.38 to 0.8.38:
+  - Include the job name in the JobSubmitter job cache.  Fixes #3630.
+  - Fix problems with the Agent harness with respect to logging levels.  Review all logging messages the alerts framework produces.  Fixes #3297.
+  - Escape the period in the tarball exclusion list for making sandboxes.  Fixes #3625.
+  - Fix reading in the pause count in the Paused RetryManager algo.  Fixes #3613.
+  - Reimplementation of the Alerts couchapp.  Fixes #1639.
+  - Added missing loggingInfo test file, using getTestBase to locate the data directory.
+
+0.8.37 to 0.8.38:
+  - Add endpolicy info to workqueue inbox element
+  - Only abort cancel request if agent hasn't deleted elements
+  - reverting bogus hunk. fixes #3621
+  - Fix typo on workqueue view jobInjectionStatus.
+  - Fix bug that stopped messages being posted to a failed request
+  - Fix a GLiteLIParser regex. Fixes #3562
+  - fix Tier1PromptReco_t.py test. fixes #3594
+  - Pull the requestor DN from the cherrpy headers.  Fixes #3618.
+  - PromptSkimming fixups.  Fixes #3569.
+  - Add support for running PromptSkims and files reconstructed at the T1.  Fixes #3594.
+  - Allow ReqMgr admins to setup priorities.  Fixes #3611.
+  - Make it possible to retrieve a mapping of dataset to fileset id from the WMBSHelper class.  Fixes #3607.
+
+0.8.36 to 0.8.37:
+  - Improved support for the paused status.  Fixes #3597.
+  - Improvements to error handling and logging in the BossAir LSF plugin.  Fixes #3187 and #3587.
+  - Changes to StdBase and the runtime code to support repacking.  Fixes #3577.
+  - If work cancel isn't progressing (agent dead?) move to canceled
+  - Remove requests from WorkQueue if they are done for a long time in reqmgr
+  - Fix bug that stopped dangling specs being deleted from WorkQueue
+  - Account for all sites per CMSName before determining if it is ignorable in WMBSHelper
+
 0.8.35 to 0.8.36:
   - Add support for force merging and force unmerging in StdBase.  Fixes #3564.
   - Add support for PromptReconstruction at the Tier1s with the PromptSkimming system.  Fixes #3413.

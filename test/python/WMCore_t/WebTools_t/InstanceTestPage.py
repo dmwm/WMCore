@@ -19,3 +19,7 @@ class InstanceTestPage(Page):
     @expose
     def database(self):
         return self.config.database.connectUrl
+
+    @expose
+    def security(self):
+        return self.config.security.sec_params

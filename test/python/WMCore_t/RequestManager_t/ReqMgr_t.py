@@ -148,6 +148,9 @@ class ReqMgrTest(RESTBaseUnitTest):
         schema['Requestor'] = '%s' % userName
         schema['Group'] = '%s' % groupName
         schema['CustodialSite'] = 'US_T1_FNAL'
+        schema['TimePerEvent'] = '12'
+        schema['Memory'] = 3000
+        schema['SizePerEvent'] = 512
 
         return schema
 
@@ -707,7 +710,7 @@ class ReqMgrTest(RESTBaseUnitTest):
                                         CMSSWVersion = CMSSWVersion)
 
         # Set some versions
-        schema['ProcessingVersion'] = 'pv2012'
+        schema['ProcessingVersion'] = '2012'
         schema['AcquisitionEra']    = 'ae2012'
         schema["PrimaryDataset"]    = "ReallyFake"
         schema["RequestNumEvents"]  = 100

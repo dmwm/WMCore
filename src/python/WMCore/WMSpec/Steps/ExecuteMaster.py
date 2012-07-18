@@ -172,6 +172,8 @@ class ExecuteMaster:
         # Tell the watchdog that we're done with the step
         myThread.watchdogMonitor.notifyStepEnd(step = step,
                                                stepReport = executor.report)
+        executor.saveReport()
+
         return None
 
     def toStepDirectory(self, step):

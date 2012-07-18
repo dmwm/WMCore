@@ -65,7 +65,7 @@ class AlertProcessorTest(unittest.TestCase):
                 
         # stop via component method
         try:
-            alertProcessor.stopProcessor()
+            alertProcessor.stopAlertProcessor()
         except Exception, ex:
             print ex
             self.fail(str(ex))

@@ -15,13 +15,18 @@ class CouchSink(object):
     """     
     def __init__(self, config):
         self.config = config
+        logging.info("Instantiating ...")
         # test if the configured database does not exist, create it
         server = CouchServer(self.config.url)
         databases = server.listDatabases()
         if self.config.database not in databases:
+            logging.warn("'%s' database does not exist on %s, creating it ..." % 
+                         (self.config.database, self.config.url))
             server.createDatabase(self.config.database)
+            logging.warn("Created.")
+        logging.info("'%s' database exists on %s" % (self.config.database, self.config.url))
         self.database = Database(self.config.database, self.config.url)
-        logging.debug("%s initialized." % self.__class__.__name__)
+        logging.info("Initialized.")
         
         
     def send(self, alerts):
@@ -34,5 +39,5 @@ class CouchSink(object):
             doc = Document(None, a)
             retVal = self.database.commitOne(doc)
             retVals.append(retVal)
-        logging.debug("%s stored alerts, retVals: %s" % (self.__class__.__name__, retVals))
+        logging.debug("Stored %s alerts to CouchDB, retVals: %s" % (len(alerts), retVals))
         return retVals

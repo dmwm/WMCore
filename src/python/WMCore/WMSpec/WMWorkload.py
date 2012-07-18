@@ -630,23 +630,23 @@ class WMWorkloadHelper(PersistencyHelper):
                         filterName = getattr(outputModule, "filterName", None)
 
                         if filterName:
-                            processedDataset = "%s-%s-%s" % (self.data.properties.acquisitionEra,
+                            processedDataset = "%s-%s-%s" % (task.getAcquisitionEra(),
                                                              filterName,
-                                                             self.data.properties.processingVersion)
+                                                             task.getProcessingVersion())
                             processingString = "%s-%s" % (filterName,
-                                                          self.data.properties.processingVersion)
+                                                          task.getProcessingVersion())
                         else:
-                            processedDataset = "%s-%s" % (self.data.properties.acquisitionEra,
-                                                          self.data.properties.processingVersion)
-                            processingString = self.data.properties.processingVersion
+                            processedDataset = "%s-%s" % (task.getAcquisitionEra(),
+                                                          task.getProcessingVersion())
+                            processingString = task.getProcessingVersion()
 
                         unmergedLFN = "%s/%s/%s/%s/%s" % (self.data.properties.unmergedLFNBase,
-                                                          self.data.properties.acquisitionEra,
+                                                          task.getAcquisitionEra(),
                                                           getattr(outputModule, "primaryDataset"),
                                                           getattr(outputModule, "dataTier"),
                                                           processingString)
                         mergedLFN = "%s/%s/%s/%s/%s" % (self.data.properties.mergedLFNBase,
-                                                        self.data.properties.acquisitionEra,
+                                                        task.getAcquisitionEra(),
                                                         getattr(outputModule, "primaryDataset"),
                                                         getattr(outputModule, "dataTier"),
                                                         processingString)
@@ -667,26 +667,60 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def setAcquisitionEra(self, acquisitionEra):
+    def setAcquisitionEra(self, acquisitionEras, initialTask = None,
+                          parentAcquisitionEra = None):
         """
         _setAcquistionEra_
 
         Change the acquisition era for all tasks in the spec and then update
         all of the output LFNs and datasets to use the new acquisition era.
         """
-        self.data.properties.acquisitionEra = acquisitionEra
-        self.updateLFNsAndDatasets()
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            if type(acquisitionEras) == dict:
+                task.setAcquisitionEra(acquisitionEras.get(task.name(),
+                                       parentAcquisitionEra))
+                self.setAcquisitionEra(acquisitionEras, task,
+                                       acquisitionEras.get(task.name(),
+                                       parentAcquisitionEra))
+            else:
+                task.setAcquisitionEra(acquisitionEras)
+                self.setAcquisitionEra(acquisitionEras, task)
+
+        if not initialTask:
+            self.updateLFNsAndDatasets()
         return
 
-    def setProcessingVersion(self, processingVersion):
+    def setProcessingVersion(self, processingVersions, initialTask = None,
+                             parentProcessingVersion = None):
         """
         _setProcessingVersion_
 
         Change the processing version for all tasks in the spec and then update
         all of the output LFNs and datasets to use the new processing version.
         """
-        self.data.properties.processingVersion = processingVersion
-        self.updateLFNsAndDatasets()
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            if type(processingVersions) == dict:
+                task.setProcessingVersion(processingVersions.get(task.name(),
+                                          parentProcessingVersion))
+                self.setProcessingVersion(processingVersions, task,
+                                          processingVersions.get(task.name(),
+                                          parentProcessingVersion))
+            else:
+                task.setProcessingVersion(processingVersions)
+                self.setProcessingVersion(processingVersions, task)
+
+        if not initialTask:
+            self.updateLFNsAndDatasets()
         return
 
     def getAcquisitionEra(self):
@@ -696,7 +730,10 @@ class WMWorkloadHelper(PersistencyHelper):
         Get the acquisition era
         """
 
-        return getattr(self.data.properties, 'acquisitionEra', None)
+        topTasks = self.getTopLevelTask()
+
+        if len(topTasks):
+            return topTasks[0].getAcquisitionEra()
 
     def getProcessingVersion(self):
         """
@@ -705,7 +742,10 @@ class WMWorkloadHelper(PersistencyHelper):
         Get the processingVersion
         """
 
-        return getattr(self.data.properties, 'processingVersion', None)
+        topTasks = self.getTopLevelTask()
+
+        if len(topTasks):
+            return topTasks[0].getProcessingVersion()
 
     def setValidStatus(self, validStatus):
         """
@@ -819,17 +859,30 @@ class WMWorkloadHelper(PersistencyHelper):
         policyName should be either 'DatasetBlock', 'Dataset', 'MonteCarlo' 'Block'
         different policy could be added in the workqueue plug in.
         """
-        SplitAlgoToStartPolicy = {"FileBased": "NumberOfFiles",
-                                  "EventBased": "NumberOfEvents",
-                                  "LumiBased": "NumberOfLumis" }
+        SplitAlgoToStartPolicy = {"FileBased": ["NumberOfFiles"],
+                                  "EventBased": ["NumberOfEvents",
+                                                 "NumberOfEventsPerLumi"],
+                                  "LumiBased": ["NumberOfLumis"]}
         SplitAlgoToArgMap = {"NumberOfFiles": "files_per_job",
                              "NumberOfEvents": "events_per_job",
-                             "NumberOfLumis": "lumis_per_job"}
+                             "NumberOfLumis": "lumis_per_job",
+                             "NumberOfEventsPerLumi": "events_per_lumi"}
+        startPolicyArgs = {}
 
-        sliceType = SplitAlgoToStartPolicy.get(splitAlgo, "NumberOfFiles")
+        sliceTypes = SplitAlgoToStartPolicy.get(splitAlgo, ["NumberOfFiles"])
+        sliceType = sliceTypes[0]
         sliceSize = splitArgs.get(SplitAlgoToArgMap[sliceType], 1)
+        startPolicyArgs["SliceType"] = sliceType
+        startPolicyArgs["SliceSize"] = sliceSize
 
-        self.setStartPolicy(policyName, SliceType = sliceType, SliceSize = sliceSize)
+        if len(sliceTypes) > 1:
+            subSliceType = sliceTypes[1]
+            subSliceSize = splitArgs.get(SplitAlgoToArgMap[subSliceType],
+                                         sliceSize)
+            startPolicyArgs["SubSliceType"] = subSliceType
+            startPolicyArgs["SubSliceSize"] = subSliceSize
+
+        self.setStartPolicy(policyName, **startPolicyArgs)
         self.setEndPolicy("SingleShot")
         return
 
@@ -880,39 +933,11 @@ class WMWorkloadHelper(PersistencyHelper):
                     stepHelper.setMinMergeSize(minMergeSize, maxMergeEvents)
                 else:
                     stepHelper.disableStraightToMerge()
+            if taskHelper.isTopOfTree() and stepHelper.stepType() == "CMSSW" \
+                and taskHelper.taskType() == "Production":
+                stepHelper.setEventsPerLumi(splitArgs.get("events_per_lumi",
+                                                          None))
         return
-
-    def setTaskTimeOut(self, taskPath, taskTimeOut):
-        """
-        _setTaskTimeOut_
-
-        Set the timeout value for the given tasks in the workload.
-        """
-        taskHelper = self.getTaskByPath(taskPath)
-        if taskHelper == None:
-            return
-
-        taskHelper.setTaskTimeOut(taskTimeOut)
-        return
-
-    def listTimeOutsByTask(self, initialTask = None):
-        """
-        _listTimeOutsByTask_
-
-        Create a dictionary that maps task names to timeouts.
-        """
-        output = {}
-
-        if initialTask:
-            taskIterator = initialTask.childTaskIterator()
-        else:
-            taskIterator = self.taskIterator()
-
-        for task in taskIterator:
-            output[task.getPathName()] = task.getTaskTimeOut()
-            output.update(self.listTimeOutsByTask(task))
-
-        return output
 
     def listJobSplittingParametersByTask(self, initialTask = None):
         """
@@ -1182,17 +1207,17 @@ class WMWorkloadHelper(PersistencyHelper):
         
         return summary
 
-    def setupPerformanceMonitoring(self, maxRSS, maxVSize):
+    def setupPerformanceMonitoring(self, maxRSS, maxVSize, softTimeout,
+                                         gracePeriod):
         """
         _setupPerformanceMonitoring_
         
-        Attempt to automatically setup the performance monitoring
-        You should not use this and I make no guarantees for whether
-        it still works.
+        Setups performance monitors for all tasks in the workflow
         """
         for task in self.getAllTasks():
-            if task.taskType() in ['Production', 'Processing']:
-                task.setPerformanceMonitor(maxRSS = maxRSS, maxVSize = maxVSize)
+            task.setPerformanceMonitor(maxRSS = maxRSS, maxVSize = maxVSize,
+                                       softTimeout = softTimeout,
+                                       gracePeriod = gracePeriod)
 
         return
 
@@ -1250,8 +1275,6 @@ class WMWorkload(ConfigSection):
         # // properties of the Workload and all tasks there-in
         #//
         self.section_("properties")
-        self.properties.acquisitionEra = None
-        self.properties.processingVersion = None
         self.properties.unmergedLFNBase = "/store/unmerged"
         self.properties.mergedLFNBase = "/store/data"
         self.properties.dashboardActivity = None

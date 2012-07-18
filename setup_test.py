@@ -9,6 +9,8 @@ import os, sys, os.path
 import unittest
 import time
 import pickle
+import threading
+import hashlib
 
 # pylint and coverage aren't standard, but aren't strictly necessary
 # you should get them though
@@ -28,7 +30,7 @@ try:
     can_coverage = True
 except:
     pass
-
+can_coverage = False
 try:
     import nose
     from nose.plugins import Plugin, PluginTester
@@ -86,6 +88,20 @@ if can_nose:
                     result.append( prefix + "."+ subdir[:-3])
         return result
 
+    def trapExit( code ):
+        """
+        Cherrypy likes to call os._exit() which causes the interpreter to 
+        bomb without a chance of catching it. This sucks. This function
+        will replace os._exit() and throw an exception instead
+        """
+        if hasattr( threading.local(), "isMain" ) and threading.local().isMain:
+            # only trap the main thread
+            print "*******EXIT WAS TRAPPED**********"
+            raise RuntimeError, "os._exit() was called, we trapped it for testing"
+        else:
+            # subthreads can behave the same
+            os.DMWM_REAL_EXIT( code )
+
     class DetailedOutputter(Plugin):
         name = "detailed"
         def __init__(self):
@@ -136,7 +152,16 @@ if can_nose:
                           "Number of ways to split up the test suite"),
                          ('testCurrentSlice=',
                           None,
-                          "Which slice to run (zero-based index)")
+                          "Which slice to run (zero-based index)"),
+                         ('testingRoot=',
+                         None,
+                         "Primarily used by buildbot. Gives the path to the root of the test tree (i.e. the directory with WMCore_t)"),
+                        ('testMinimumIndex=',
+                         None,
+                         "The minimum ID to be executed (advanced use)"),
+                        ('testMaximumIndex=',
+                         None,
+                         "The maximum ID to be executed (advanced use)")
                          ]
 
         def initialize_options(self):
@@ -145,14 +170,24 @@ if can_nose:
             self.workerNodeTestsOnly = False
             self.testCertainPath = False
             self.quickTestMode = False
+            self.testingRoot = "test/python"
             self.testTotalSlices = 1
             self.testCurrentSlice = 0
+            self.testMinimumIndex = 0
+            self.testMaximumIndex = 9999999
             pass
 
         def finalize_options(self):
             pass
 
-        def callNose( self, args ):
+        def callNose( self, args, paths ):
+            # let people specify more than one path
+            pathList = paths.split(':')
+
+            # sometimes this doesn't get removed
+            if os.path.exists('.noseids'):
+                os.unlink('.noseids')
+
             # run once to get splits
             collectOnlyArgs = args[:]
             collectOnlyArgs.extend([ '-q', '--collect-only', '--with-id' ])
@@ -165,12 +200,27 @@ if can_nose:
             testIds = pickle.load(idhandle)['ids']
             idhandle.close()
 
+            print "path lists is %s" % pathList
+            # divide it up
             totalCases = len(testIds)
             myIds      = []
-            for id in sorted( testIds.keys() ):
-                if ( id % int(self.testTotalSlices) ) == int(self.testCurrentSlice):
-                    myIds.append( str(id) )
+            for id in testIds.keys():
+                if int(id) >= int(self.testMinimumIndex) and int(id) <= int(self.testMaximumIndex):
+                    # generate a stable ID for sorting
+                    if len(testIds[id]) == 3:
+                        testName = testIds[id][1] + testIds[id][2]
+                        testHash = hashlib.md5( testName ).hexdigest()
+                        hashSnip = testHash[:7]
+                        hashInt  = int( hashSnip, 16 )
+                    else:
+                        hashInt = id
 
+                    if ( hashInt % int(self.testTotalSlices) ) == int(self.testCurrentSlice):
+                        for path in pathList:
+                            if path in testIds[id][0]:
+                                myIds.append( str(id) )
+                                break
+            myIds = sorted( myIds )
             print "Out of %s cases, we will run %s" % (totalCases, len(myIds))
             if not myIds:
                 return True
@@ -180,6 +230,12 @@ if can_nose:
             return nose.run( argv=args )
 
         def run(self):
+
+            # trap os._exit
+            os.DMWM_REAL_EXIT = os._exit
+            os._exit = trapExit
+            threading.local().isMain = True
+
             testPath = 'test/python'
             if self.testCertainPath:
                 print "Using the tests below: %s" % self.testCertainPath
@@ -200,13 +256,13 @@ if can_nose:
                 WMQuality.TestInit.deleteDatabaseAfterEveryTest( "I'm Serious" )
                 time.sleep(4)
             if self.workerNodeTestsOnly:
-                args = [__file__,'--with-xunit', testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a','workerNodeTest']
+                args = [__file__,'--with-xunit', '-m', '(_t.py$)|(_t$)|(^test)','-a','workerNodeTest',self.testingRoot]
                 args.extend( quickTestArg )
-                retval = self.callNose(args)
+                retval = self.callNose(args, paths = testPath)
             elif not self.buildBotMode:
-                args = [__file__,'--with-xunit', testPath, '-m', '(_t.py$)|(_t$)|(^test)', '-a', '!workerNodeTest']
+                args = [__file__,'--with-xunit', '-m', '(_t.py$)|(_t$)|(^test)', '-a', '!workerNodeTest',self.testingRoot]
                 args.extend( quickTestArg )
-                retval = self.callNose(args)
+                retval = self.callNose(args, paths = testPath)
             else:
                 print "### We are in buildbot mode ###"
                 srcRoot = os.path.join(os.path.normpath(os.path.dirname(__file__)), 'src', 'python')
@@ -217,14 +273,17 @@ if can_nose:
                 moduleList = ",".join(modulesToCover)
                 sys.stdout.flush()
                 if not quickTestArg:
-                    retval = self.callNose([__file__,'--with-xunit', testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a',
+                    retval = self.callNose([__file__,'--with-xunit', '-m', '(_t.py$)|(_t$)|(^test)','-a',
                                              '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
                                              '--with-coverage','--cover-html','--cover-html-dir=coverageHtml','--cover-erase',
-                                             '--cover-package=' + moduleList, '--cover-inclusive'])
+                                             '--cover-package=' + moduleList, '--cover-inclusive',
+                                             self.testingRoot],
+                                             paths = testPath)
                 else:
-                    retval = self.callNose([__file__,'--with-xunit', testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a',
+                    retval = self.callNose([__file__,'--with-xunit', '-m', '(_t.py$)|(_t$)|(^test)','-a',
                          '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
-                         '--stop'])
+                         '--stop', self.testingRoot],
+                         paths = testPath)
 
             if retval:
                 sys.exit( 0 )

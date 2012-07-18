@@ -224,5 +224,33 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         reqMgrInt(globalQ)
         self.assertEqual(globalQ.status(WorkflowName=reqMgr.names[0])[0]['Status'], 'Canceled')
 
+    def testReqMgrWaitTime(self):
+        """If running request finished in Reqmgr and no update locally for a long time decalre request done"""
+        globalQ = self.setupGlobalWorkqueue()
+        reqMgr = fakeReqMgr()
+        reqMgrInt = WorkQueueReqMgrInterface()
+        reqMgrInt.reqMgr = reqMgr
+        reqMgrInt(globalQ)
+        # set reqmgr status to done
+        reqMgr.status[reqMgr.names[0]] = 'completed'
+        # Only running elements are eligible for cleanup
+        reqMgrInt(globalQ)
+        self.assertEqual(globalQ.status(WorkflowName=reqMgr.names[0])[0]['Status'], 'Available')
+        # Set running and element update time to the past (mimic time elapsing)
+        globalQ.setStatus('Running', WorkflowName = reqMgr.names[0])
+        element = globalQ.backend.inbox.document(reqMgr.names[0])
+        element['updatetime'] = 0
+        element['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement']['Status'] = 'Running'
+        globalQ.backend.inbox.commitOne(element)
+        elements = [globalQ.backend.db.document(x.id) for x in globalQ.status(RequestName = reqMgr.names[0])]
+        for element in elements:
+            element['updatetime'] = 0
+            element['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement']['Status'] = 'Running'
+            globalQ.backend.db.queue(element)
+        globalQ.backend.db.commit()
+        # workqueue should see an old done request and update status to match
+        reqMgrInt(globalQ)
+        self.assertEqual(globalQ.status(WorkflowName=reqMgr.names[0])[0]['Status'], 'Done')
+
 if __name__ == '__main__':
     unittest.main()

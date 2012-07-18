@@ -104,7 +104,6 @@ function generateProcessing(splitAlgo, splitParams) {
   procStr += ">Event Based</input></td>\n";
   procStr += generateInput("Events per job:", "events_per_job", splitParams);
   procStr += "<td></td></tr>\n"
-  procStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
 
   procStr += '<tr><td>Include parents: <select name="include_parents">';
   if ("include_parents" in splitParams) {
@@ -146,7 +145,6 @@ function generateSkim(splitAlgo, splitParams) {
   procStr += ">Two File Based</input></td>\n";
   procStr += generateInput("Files per job:", "files_per_job", splitParams);
   procStr += "</tr>";
-  procStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
   procStr += "</table>\n";
   return procStr;
 }
@@ -155,7 +153,6 @@ function generateCleanupLogCollect(splitParams) {
   var procStr = '<input type="hidden" name="splittingAlgo" value="FileBased"></input>\n';
   procStr += "<table>"
   procStr += generateInputRow("Files per job:", "files_per_job", splitParams);
-  procStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
   procStr += "</table>\n";
   return procStr;
 }
@@ -167,7 +164,6 @@ function generateMerge(splitAlgo, splitParams) {
   frmStr += generateInputRow("Max merge size:", "max_merge_size", splitParams);
   frmStr += generateInputRow("Max merge events:", "max_merge_events", splitParams);
   frmStr += generateInputRow("Max wait time (seconds):", "max_wait_time", splitParams);
-  frmStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
   frmStr += "</table>\n";
   return frmStr;
 }
@@ -176,7 +172,9 @@ function generateProduction(splitAlgo, splitParams) {
   var procStr = '<input type="hidden" name="splittingAlgo" value="EventBased"></input>\n';
   procStr += "<table>"
   procStr += generateInputRow("Events per job:", "events_per_job", splitParams);
-  procStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
+  if ("events_per_lumi" in splitParams) {
+    procStr += generateInputRow("Events per lumi:", "events_per_lumi", splitParams);
+  }
   procStr += "</table>\n";
   return procStr;
 }

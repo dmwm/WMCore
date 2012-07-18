@@ -37,11 +37,12 @@ class LoadForErrorHandler(DBFormatter):
 
     fileSQL = """SELECT wfd.id, wfd.lfn, wfd.filesize size, wfd.events, wfd.first_event,
                    wfd.merged, wja.job jobid,
-                   wl.se_name se_name
+                   wls.se_name se_name
                  FROM wmbs_file_details wfd
                  INNER JOIN wmbs_job_assoc wja ON wja.fileid = wfd.id
                  INNER JOIN wmbs_file_location wfl ON wfl.fileid = wfd.id
                  INNER JOIN wmbs_location wl ON wl.id = wfl.location
+                 INNER JOIN wmbs_location_senames wls ON wls.location = wfl.location
                  WHERE wja.job = :jobid"""
 
 
@@ -130,10 +131,12 @@ class LoadForErrorHandler(DBFormatter):
                     for l in lumiDict[f['id']]:
                         run  = l['run']
                         lumi = l['lumi']
-                        if not fileRuns.has_key(run):
-                            fileRuns[run] = []
-                        if not lumi in fileRuns[run]:
+                        try:
                             fileRuns[run].append(lumi)
+                        except KeyError:
+                            fileRuns[run] = []
+                            fileRuns[run].append(lumi)
+                                                                                        
                 for r in fileRuns.keys():
                     newRun = Run(runNumber = r)
                     newRun.lumis = fileRuns[r]

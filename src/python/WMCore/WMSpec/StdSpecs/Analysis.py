@@ -22,7 +22,9 @@ def getCommonTestArgs():
     args["CouchDBName"] = "test_wmagent_configcache"
     args["ScramArch"] =  "slc5_ia32_gcc434"
     args['CMSSWVersion'] = "CMSSW_4_2_0"
-    args["ProcessingVersion"] = "v2"
+    args["ProcessingVersion"] = 2
+    args['DashboardHost'] = "127.0.0.1"
+    args['DashboardPort'] = 8884
     return args
 
 def getTestArguments():
@@ -70,6 +72,7 @@ class AnalysisWorkloadFactory(StdBase):
         """
         self.workload = self.createWorkload()
         self.workload.setDashboardActivity("analysis")
+        self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
 
         lfnBase = '/store/temp/user/%s' % self.userName
         self.unmergedLFNBase = lfnBase
@@ -97,15 +100,13 @@ class AnalysisWorkloadFactory(StdBase):
         logArchiveStep.addOverride('altLFN',  self.logBase)
 
         # Set up log collecting the same as Analysis
-        logCollectTask = self.addLogCollectTask(mainTask)
-        logCollectStep = logCollectTask.getStep('logCollect1')
-        logCollectStep.addOverride('userLogs',  True)
-        logCollectStep.addOverride('seName', self.seName)
-        logCollectStep.addOverride('lfnBase', self.logCollBase)
-        logCollectStep.addOverride('lfnPrefix', self.lcPrefix)
-        if not self.saveLogs:
-            logCollectStep.addOverride('dontStage', True)
-        else:
+        if self.saveLogs:
+            logCollectTask = self.addLogCollectTask(mainTask)
+            logCollectStep = logCollectTask.getStep('logCollect1')
+            logCollectStep.addOverride('userLogs',  True)
+            logCollectStep.addOverride('seName', self.seName)
+            logCollectStep.addOverride('lfnBase', self.logCollBase)
+            logCollectStep.addOverride('lfnPrefix', self.lcPrefix)
             logCollectStep.addOverride('dontStage', False)
 
         # Get the user output files we need
@@ -180,7 +181,7 @@ class AnalysisWorkloadFactory(StdBase):
         self.globalTag = arguments.get("GlobalTag", None)
 
         self.inputDataset = arguments.get('InputDataset', None)
-        self.processingVersion = arguments.get('ProcessingVersion', 'v1')
+        self.processingVersion = arguments.get('ProcessingVersion', 1)
         self.origRequest = arguments.get('OriginalRequestName', '')
 
         # Sites

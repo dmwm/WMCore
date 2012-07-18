@@ -43,6 +43,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         
         locationAction = daofactory(classname = "Locations.New")
         locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", seName = "somese3.cern.ch")        
         locationAction.execute("site2", seName = "somese2.cern.ch")
 
         self.testFilesetA = Fileset(name = "FilesetA")
@@ -335,11 +336,11 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         allFiles = []
         for i in range(500):
             testFile = File(str(i), size = 1000, events = 100,
-                                  locations = set(["somese.cern.ch"]))
+                            locations = set(["somese.cern.ch"]))
             testFile.create()
             allFiles.append(testFile)
             testFileset.addFile(testFile)
-        testFileset.commit()            
+        testFileset.commit()
 
         testSubscriptionA = Subscription(fileset = testFileset,
                                          workflow = testWorkflowA,
@@ -363,7 +364,50 @@ class SiblingProcessingBasedTest(unittest.TestCase):
                          "Error: Wrong number of job groups returned.")
         self.assertEqual(len(result[0].jobs), 10,
                          "Error: Wrong number of jobs returned.")
-                             
+
         return
+
+    def testFilesWithoutOtherSubscriptions(self):
+        """
+        _testFilesWithoutOtherSubscriptions_
+
+        Test the case where files only in the delete subscription
+        can happen if cleanup of the other subscriptions is fast
+
+        """
+        testWorkflowA = Workflow(spec = "specA.xml", owner = "Steve",
+                                 name = "wfA", task = "Test")
+        testWorkflowA.create()
+
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+        allFiles = []
+        for i in range(500):
+            testFile = File(str(i), size = 1000, events = 100,
+                            locations = set(["somese.cern.ch"]))
+            testFile.create()
+            allFiles.append(testFile)
+            testFileset.addFile(testFile)
+        testFileset.commit()
+
+        testSubscriptionA = Subscription(fileset = testFileset,
+                                         workflow = testWorkflowA,
+                                         split_algo = "SiblingProcessingBased",
+                                         type = "Processing")
+        testSubscriptionA.create()
+
+        splitter = SplitterFactory()
+        deleteFactoryA = splitter(package = "WMCore.WMBS",
+                                  subscription = testSubscriptionA)
+
+        result = deleteFactoryA(files_per_job = 50)
+        self.assertEqual(len(result), 1,
+                         "Error: Wrong number of job groups returned.")
+        self.assertEqual(len(result[0].jobs), 10,
+                         "Error: Wrong number of jobs returned.")
+
+        return
+
 if __name__ == '__main__':
     unittest.main()

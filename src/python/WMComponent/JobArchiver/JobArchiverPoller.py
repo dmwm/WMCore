@@ -94,6 +94,8 @@ class JobArchiverPoller(BaseWorkerThread):
             
         self.uploadPublishInfo = getattr(self.config.JobArchiver, 'uploadPublishInfo', False)
         self.userFileCacheURL = getattr(self.config.JobArchiver, 'userFileCacheURL', None)
+        self.handleWorkflowInjection = getattr(self.config.JobArchiver,
+                                               'handleInjected', True)
 
         return
         
@@ -322,6 +324,10 @@ class JobArchiverPoller(BaseWorkerThread):
 
         Mark any workflows that have been fully injected as injected
         """
+
+        if not self.handleWorkflowInjection:
+            logging.debug("Component will not check workflows for injection status")
+            return
 
         myThread = threading.currentThread()
         getAction  = self.daoFactory(classname = "Workflow.GetInjectedWorkflows")

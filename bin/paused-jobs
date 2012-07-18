@@ -46,13 +46,26 @@ class pausedTool:
                 self.nJobs=a
 
         if not 'workflow' in locals() or not 'action' in locals():
-            sys.exit('Please give me at least a workflow and a task')
+            print "\n Usage : ./config/tier0/manage  execute-agent paused-jobs [OPTIONS] -r|--resume -w|--workflow <WorkflowName>[/TaskName]"
+            print """ 
+             [-w|--workflow] (mandatory)
+             [-f|--fail] (mandatory, this or resume)
+             [-r|--resume] (mandatory, this or fail)
+             [-n|--njobs] not implemented 
+            """
+            sys.exit('Please specify at least a workflow and a task')
 
         self.workflow=workflow
         self.action=action
 
     def getPaused(self):
-        pausedJobs = self.getJobs.execute(state = 'jobpaused' )
+
+        # Looks ugly but I didn't find a better idea to get all the 3 states with the current support for the query
+        pausedJobs = []
+        pausedJobs = pausedJobs+self.getJobs.execute(state = 'jobpaused' )
+        pausedJobs = pausedJobs+self.getJobs.execute(state = 'createpaused' )
+        pausedJobs = pausedJobs+self.getJobs.execute(state = 'submitpaused' )
+        
         jobs = self.getTask.execute(pausedJobs)
         return jobs
 
@@ -78,12 +91,13 @@ class pausedTool:
     def resumeJobs(self, jobs):
         for job in jobs:
             self.changer.propagate(job, 'created', 'jobpaused')
-            print ('Resuming job '+job['id'])
+            print "Resuming job %d" % job['id'] 
 
     def failJobs(self, jobs):
         for job in jobs:
             self.changer.propagate(job, 'killed', 'jobpaused')
-            print ('Failing job '+job['id'])
+            job.failInputFiles()
+            print "Failing job %d" % job['id']
 
     def main(self):
 

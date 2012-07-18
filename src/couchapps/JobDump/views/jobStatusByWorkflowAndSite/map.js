@@ -9,7 +9,8 @@ function(doc) {
               } else if (doc['states'][lastStateIndex].oldstate == 'jobcooloff') {
                   status = 'queued_retry';
               } else {
-                  throw "not valid transition";
+                  //TODO invalide transaction need to handle correctly
+                  status = 'queued_' + doc['states'][lastStateIndex].oldstate;
               };
               break;
           case 'jobcooloff':
@@ -21,7 +22,8 @@ function(doc) {
               } else if (doc['states'][lastStateIndex - 1].oldstate == 'jobcooloff') {
                   status = 'submitted_retry';
               } else {
-                  throw "not valid transition";
+                  //TODO invalide transaction need to handle correctly
+                  status = 'submitted_'+ doc['states'][lastStateIndex].oldstate;
               };
               break;
           case 'success':
@@ -35,7 +37,8 @@ function(doc) {
               } else if (doc['states'][lastStateIndex].oldstate == 'createfailed') {
                   status = 'failure_create';
               } else {
-                  throw "not valid transition";
+                  //TODO invalide transaction need to handle correctly
+                  status = 'failure_'+ doc['states'][lastStateIndex].oldstate;
               };
               break;
           case 'killed':
@@ -52,10 +55,12 @@ function(doc) {
                   } else if (doc['states'][lastStateIndex - 1].oldstate == 'createfailed') {
                       status = 'failure_create';
                   } else {
-                      throw "not valid transition";
+                      //TODO invalide transaction need to handle correctly
+                      status = 'failure_'+ doc['states'][lastStateIndex].oldstate;
                   };
               } else {
-                  throw "not valid transition";
+                  //TODO invalide transaction need to handle correctly
+                  status = 'cleanout_'+ doc['states'][lastStateIndex].oldstate;
               };
               break;
           default:

@@ -182,6 +182,11 @@ class SetupCMSSWPset(ScriptInterface):
         
         """
         if funcName == "merge":
+
+            baggage = self.job.getBaggage()
+            if getattr(baggage, "useErrorDataset", False):
+                funcArgs['outputmod_label'] = "MergedError"
+
             try:
                 from Configuration.DataProcessing.Merge import mergeProcess
                 self.process = mergeProcess(**funcArgs)

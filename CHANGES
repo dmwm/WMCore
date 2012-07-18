@@ -1,3 +1,26 @@
+0.9.5 to 0.9.6:
+  - Attempt to handle invalid transactions better in the monitoring.  Fixes #3914.
+  - Merge pull request #30 from ticoann/monitoring
+  - Fix ReqMgr handling of json encoded parameters.  Fixes #3933.
+  - Allow setting the processing version per task for TaskChain requests.  Fixes #3896.
+  - Fix rewrite rule for allDocs in couchskel.  Fixes #3932.
+  - Kill jobs by WallClock time from the WN.  Fixes #3945.
+  - Require performance information when creating a request.  Fixes #3942.
+  - More support for DQM Harveting in the PromptReco spec.  Fixes #3952.
+  - Merge branch 'master' of github.com:dmwm/WMCore
+  - Merge pull request #29 from hufnagel/mydev1
+  - remove sqlite support
+  - Merge pull request #28 from samircury/harvest-optional-proxy
+  - Merge pull request #26 from hufnagel/master
+  - Merge pull request #23 from dballesteros7/promptskimming
+  - Merge branch 'master' into harvest-optional-proxy
+  - Revert "adding the task without proxy"
+  - Revert "Now adds the proxy, all T0 share is commited in the other repo"
+  - making the proxy optional for the harvest task
+  - support Tier0 repack error datasets in WMCore, fixes #3949
+  - change unit test to cover another use case, fixes #3885
+  - rewrite SiblingSubscriptionsComplete DAO, fixes #3885
+
 0.9.3 to 0.9.5:
   - Last time.
 

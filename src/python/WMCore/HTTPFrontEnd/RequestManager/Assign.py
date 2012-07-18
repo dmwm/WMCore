@@ -236,7 +236,9 @@ class Assign(WebAPI):
                                   int(kwargs["MaxMergeSize"]), 
                                   int(kwargs["MaxMergeEvents"]))
         helper.setupPerformanceMonitoring(int(kwargs["maxRSS"]), 
-                                          int(kwargs["maxVSize"]))
+                                          int(kwargs["maxVSize"]),
+                                          int(kwargs["SoftTimeout"]),
+                                          int(kwargs.get("GracePeriod", 300)))
         helper.setDashboardActivity(kwargs.get("dashboard", ""))
         Utilities.saveWorkload(helper, request['RequestWorkflow'], self.wmstatWriteURL)
 

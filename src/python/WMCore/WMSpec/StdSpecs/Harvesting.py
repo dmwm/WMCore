@@ -69,8 +69,6 @@ class HarvestingWorkloadFactory(StdBase):
         monitoring.interval = 600
         monitoring.monitors = ["DashboardMonitor"]
         monitoring.section_("DashboardMonitor")
-        monitoring.DashboardMonitor.softTimeOut = 300000
-        monitoring.DashboardMonitor.hardTimeOut = 600000
         monitoring.DashboardMonitor.destinationHost = "cms-pamon.cern.ch"
         monitoring.DashboardMonitor.destinationPort = 8884
         return task

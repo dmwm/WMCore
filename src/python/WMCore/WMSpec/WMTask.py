@@ -864,31 +864,6 @@ class WMTaskHelper(TreeHelper):
         self.data.logBaseLFN = logBaseLFN
         return
 
-    def setTaskTimeOut(self, taskTimeOut):
-        """
-        _setTaskTimeOut_
-
-        Set the timeout for the task.
-        """
-        monitoring = self.data.section_("watchdog")
-        if not hasattr(self.data.watchdog, "monitors"):
-            monitoring.monitors = []
-        if not "DashboardMonitor" in monitoring.monitors:
-            monitoring.monitors.append("DashboardMonitor")
-            monitoring.section_("DashboardMonitor")
-        monitoring.DashboardMonitor.softTimeOut = taskTimeOut
-        monitoring.DashboardMonitor.hardTimeOut = taskTimeOut + 600
-        return
-
-    def getTaskTimeOut(self):
-        """
-        _getTaskTimeOut_
-
-        Get the timeout for the task.
-        """
-        return self.data.watchdog.DashboardMonitor.softTimeOut
-
-
     def setTaskPriority(self, priority):
         """
         _setTaskPriority_
@@ -935,7 +910,8 @@ class WMTaskHelper(TreeHelper):
 
         return self.data.notifications.targets
 
-    def setPerformanceMonitor(self, maxRSS = None, maxVSize = None):
+    def setPerformanceMonitor(self, maxRSS = None, maxVSize = None,
+                                    softTimeout = None, gracePeriod = None):
         """
         _setPerformanceMonitor_
 
@@ -947,8 +923,10 @@ class WMTaskHelper(TreeHelper):
         if not 'PerformanceMonitor' in monitoring.monitors:
             monitoring.monitors.append('PerformanceMonitor')
             monitoring.section_("PerformanceMonitor")
-        monitoring.PerformanceMonitor.maxRSS   = maxRSS
-        monitoring.PerformanceMonitor.maxVSize = maxVSize
+        monitoring.PerformanceMonitor.maxRSS      = maxRSS
+        monitoring.PerformanceMonitor.maxVSize    = maxVSize
+        monitoring.PerformanceMonitor.softTimeout = softTimeout
+        monitoring.PerformanceMonitor.hardTimeout = softTimeout + gracePeriod
         return
 
     def getSwVersion(self):

@@ -1199,14 +1199,17 @@ class WMWorkloadHelper(PersistencyHelper):
         
         return summary
 
-    def setupPerformanceMonitoring(self, maxRSS, maxVSize):
+    def setupPerformanceMonitoring(self, maxRSS, maxVSize, softTimeout,
+                                         gracePeriod):
         """
         _setupPerformanceMonitoring_
         
         Setups performance monitors for all tasks in the workflow
         """
         for task in self.getAllTasks():
-            task.setPerformanceMonitor(maxRSS = maxRSS, maxVSize = maxVSize)
+            task.setPerformanceMonitor(maxRSS = maxRSS, maxVSize = maxVSize,
+                                       softTimeout = softTimeout,
+                                       gracePeriod = gracePeriod)
 
         return
 

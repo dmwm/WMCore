@@ -187,18 +187,21 @@ class StdBase(object):
         """
         #A gigabyte defined as 1024^3 (assuming RSS and VSize is in KiByte)
         gb = 1024.0 * 1024.0
+        #Default timeout defined in CMS policy
+        softTimeout = 47.0 * 3600.0 + 40.0 * 60.0
+        hardTimeout = 47.0 * 3600.0 + 45.0 * 60.0
 
         monitoring = task.data.section_("watchdog")
-        monitoring.interval = 600
+        monitoring.interval = 300
         monitoring.monitors = ["DashboardMonitor", "PerformanceMonitor"]
         monitoring.section_("DashboardMonitor")
-        monitoring.DashboardMonitor.softTimeOut = 300000
-        monitoring.DashboardMonitor.hardTimeOut = 600000
         monitoring.DashboardMonitor.destinationHost = self.dashboardHost
         monitoring.DashboardMonitor.destinationPort = self.dashboardPort
         monitoring.section_("PerformanceMonitor")
-        monitoring.PerformanceMonitor.maxRSS = 4 * gb
-        monitoring.PerformanceMonitor.maxVSize = 4 * gb
+        monitoring.PerformanceMonitor.maxRSS = 2.3 * gb
+        monitoring.PerformanceMonitor.maxVSize = 2.3 * gb
+        monitoring.PerformanceMonitor.softTimeout = softTimeout
+        monitoring.PerformanceMonitor.hardTimeout = hardTimeout
         return task
 
 

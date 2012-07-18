@@ -1,3 +1,6 @@
+0.9.7 to 0.9.8:
+  - Strip run and lumi information from job objects as it can be huge and isn't needed.  Fixes #3946.
+
 0.9.6 to 0.9.7:
   - Missing patch from #3945.
 

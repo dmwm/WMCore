@@ -91,7 +91,7 @@ function(doc) {
           siteLocation = tmpSite;
       };
       
-      emit([doc['workflow'], statusMap(), siteLocation], 1)
+      emit([doc['workflow'], doc['task'], statusMap(), siteLocation], 1)
   };
 }
 

@@ -1,9 +1,14 @@
 [
   {
-      "from": ":db/_design/:dname/*",
+      "from": "_design/:dname/*",
       "to": "*"
   },
 
+  {
+    "from": "_all_docs",
+    "to": "../../_all_docs"
+  },
+  
   {
     "from": "vendor/*",
     "to": "vendor/*"

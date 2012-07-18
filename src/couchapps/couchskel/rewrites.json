@@ -1,6 +1,6 @@
 [
   {
-      "from": ":db/_design/:dname/*",
+      "from": ":_design/:dname/*",
       "to": "*"
   },
 
@@ -17,6 +17,11 @@
   {
     "from": "",
     "to": "_show/redirect"
+  },
+
+  {
+    "from": "_all_docs",
+    "to": "../../_all_docs"
   },
 
   {

@@ -116,6 +116,8 @@ class StdBase(object):
         self.dashboardPort = arguments.get("DashboardPort", 8884)
         self.overrideCatalog = arguments.get("OverrideCatalog", None)
         self.runNumber = int(arguments.get("RunNumber", 0))
+        self.userSandbox = arguments.get("userSandbox", None)
+        self.userFiles = arguments.get("userFiles", [])
 
         if arguments.get("IncludeParents", False) == "True":
             self.includeParents = True

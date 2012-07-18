@@ -87,7 +87,8 @@ class DataProcessingWorkloadFactory(StdBase):
                                                                                'moduleLabel' : "ALCARECOoutput" } ] },
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
                                               configDoc = self.procConfigCacheID, splitAlgo = self.procJobSplitAlgo,
-                                              splitArgs = self.procJobSplitArgs, stepType = cmsswStepType) 
+                                              splitArgs = self.procJobSplitArgs, stepType = cmsswStepType,
+                                              userSandbox = self.userSandbox, userFiles = self.userFiles) 
         self.addLogCollectTask(procTask)
         
 

@@ -491,6 +491,11 @@ class EventBasedTest(unittest.TestCase):
         self.assertEqual(job["mask"]["FirstLumi"], 1,
                 "Error: Job's first lumi is incorrect.")
 
+        singleMCSubscription = self.generateFakeMCFile(numEvents = 600,
+                                                       firstEvent = 201,
+                                                       lastEvent = 800)
+        splitter = SplitterFactory()
+        jobFactory = splitter(singleMCSubscription)
         jobGroups = jobFactory(events_per_job = 6000)
         self.assertEqual(len(jobGroups), 1,
                          "Error: JobFactory did not return one JobGroup")
@@ -505,6 +510,11 @@ class EventBasedTest(unittest.TestCase):
         self.assertEqual(job["mask"]["FirstLumi"], 1,
                 "Error: Job's first lumi is incorrect.")
 
+        singleMCSubscription = self.generateFakeMCFile(numEvents = 600,
+                                                       firstEvent = 201,
+                                                       lastEvent = 800)
+        splitter = SplitterFactory()
+        jobFactory = splitter(singleMCSubscription)
         jobGroups = jobFactory(events_per_job = 599)
         self.assertEqual(len(jobGroups), 1,
                          "Error: JobFactory did not return one JobGroup")
@@ -523,6 +533,11 @@ class EventBasedTest(unittest.TestCase):
                             "Job mask: %s didn't pass neither of the conditions"
                             % job["mask"])
 
+        singleMCSubscription = self.generateFakeMCFile(numEvents = 600,
+                                                       firstEvent = 201,
+                                                       lastEvent = 800)
+        splitter = SplitterFactory()
+        jobFactory = splitter(singleMCSubscription)
         jobGroups = jobFactory(events_per_job = 300)
         self.assertEqual(len(jobGroups), 1,
                          "Error: JobFactory did not return one JobGroup")
@@ -568,6 +583,10 @@ class EventBasedTest(unittest.TestCase):
         self.assertEqual(job["mask"]["FirstLumi"], 345,
                 "Error: Job's first lumi is incorrect.")
 
+        singleMCSubscription = self.generateFakeMCFile(firstLumi = 345,
+                                                       lastLumi = 345)
+        splitter = SplitterFactory()
+        jobFactory = splitter(singleMCSubscription)
         jobGroups = jobFactory(events_per_job = 1000)
         self.assertEqual(len(jobGroups), 1,
                          "Error: JobFactory did not return one JobGroup")
@@ -582,6 +601,10 @@ class EventBasedTest(unittest.TestCase):
         self.assertEqual(job["mask"]["FirstLumi"], 345,
                 "Error: Job's first lumi is incorrect.")
 
+        singleMCSubscription = self.generateFakeMCFile(firstLumi = 345,
+                                                       lastLumi = 345)
+        splitter = SplitterFactory()
+        jobFactory = splitter(singleMCSubscription)
         jobGroups = jobFactory(events_per_job = 99)
         self.assertEqual(len(jobGroups), 1,
                          "Error: JobFactory did not return one JobGroup")
@@ -600,6 +623,10 @@ class EventBasedTest(unittest.TestCase):
                             "Job mask: %s didn't pass neither of the conditions"
                             % job["mask"])
 
+        singleMCSubscription = self.generateFakeMCFile(firstLumi = 345,
+                                                       lastLumi = 345)
+        splitter = SplitterFactory()
+        jobFactory = splitter(singleMCSubscription)
         jobGroups = jobFactory(events_per_job = 50)
         self.assertEqual(len(jobGroups), 1,
                          "Error: JobFactory did not return one JobGroup")

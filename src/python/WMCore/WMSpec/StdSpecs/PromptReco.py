@@ -162,10 +162,6 @@ class PromptRecoWorkloadFactory(StdBase):
                                     self.procJobSplitAlgo,
                                     recoOutLabel)
                 recoMergeTasks[recoOutInfo['dataTier']] = mergeTask
-	    	if recoOutInfo['dataTier'] in [ "DQM", "DQMROOT" ]:
-			self.addDQMHarvestTask(mergeTask, "Merged",
-			#uploadProxy = self.dqmUploadProxy,
-			doLogCollect = False)
 
             else:
                 alcaTask = recoTask.addTask("AlcaSkim")

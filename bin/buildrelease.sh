@@ -4,7 +4,8 @@ set -e
 ##H
 ##H options
 ##H --skip-build      Tag but do not build rpm's.
-##H --repo=           Provide the repo file to update, defaults to comp.releases.
+##H --repo=REPO       Provide the repo file to update, defaults to comp.releases.
+##H --remote=REMOTE   REMOTE repository to update, default to upstream.
 ##H
 ##H Tag & build a wmcore/wmagent release
 
@@ -22,8 +23,8 @@ while [ $# -ge 1 ]; do
   case $1 in
     --skip-build ) BUILD=false; shift ;;
     --skip-tag ) TAG=false; shift ;;
-    --repo= ) REPO={2#*=}; shift; shift ;;
-    --remote= ) REMOTE={2#*=}; shift; shift ;;
+    --repo=* ) REPO=${1#*=}; shift;;
+    --remote=* ) REMOTE=${1#*=}; shift;;
     -h ) perl -ne '/^##H/ && do { s/^##H ?//; print }' < $0 1>&2; exit 1 ;;
     -* ) echo "$0: unrecognised option $1, use -h for help" 1>&2; exit 1 ;;
     *  ) break ;;

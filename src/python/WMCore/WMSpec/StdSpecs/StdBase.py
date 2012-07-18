@@ -589,7 +589,7 @@ class StdBase(object):
         return
 
     def addDQMHarvestTask(self, parentTask, parentOutputModuleName,
-                          uploadProxy, periodic_harvest_interval = 0,
+                          uploadProxy = None, periodic_harvest_interval = 0,
                           parentStepName = "cmsRun1", doLogCollect = True):
         """
         _addDQMHarvestTask_
@@ -647,9 +647,9 @@ class StdBase(object):
                                                                                         getattr(parentOutputModule, "processedDataset"),
                                                                                         getattr(parentOutputModule, "dataTier")),
                                                            runNumber = self.runNumber)
-
-        harvestTaskUploadHelper = harvestTaskUpload.getTypeHelper()
-        harvestTaskUploadHelper.setProxyFile(uploadProxy)
+        if uploadProxy: 
+            harvestTaskUploadHelper = harvestTaskUpload.getTypeHelper()
+            harvestTaskUploadHelper.setProxyFile(uploadProxy)
 
         return
 

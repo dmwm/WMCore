@@ -200,7 +200,7 @@ class testWMConfigCache(unittest.TestCase):
         configCache = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test')
         configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
         configCache.setLabel("labelA")
-        configCache.save()
+        configCache.save(enableCompression = True)
 
         configCache2 = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test',
                                    id = configCache.getCouchID(),

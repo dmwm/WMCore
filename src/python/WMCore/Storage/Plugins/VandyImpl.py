@@ -16,9 +16,7 @@ import logging
 
 class VandyImpl(StageOutImplV2):
     
-    
-    #BASEDIR='/Users/brumgard/Documents/workspace/VandyStageOut/src/scripts'
-    BASEDIR='/home/meloam/susy/lstore-client/cms-stageout/'
+    BASEDIR='/usr/local/ms-stageout/'
     
     def __init__(self, stagein=False):
         

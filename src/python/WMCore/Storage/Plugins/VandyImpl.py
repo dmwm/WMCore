@@ -16,9 +16,7 @@ import logging
 
 class VandyImpl(StageOutImplV2):
     
-    
-    #BASEDIR='/Users/brumgard/Documents/workspace/VandyStageOut/src/scripts'
-    BASEDIR='/usr/local/cms-stageout'
+    BASEDIR='/usr/local/ms-stageout/'
     
     def __init__(self, stagein=False):
         
@@ -36,21 +34,23 @@ class VandyImpl(StageOutImplV2):
 
         Creates the directory for vanderbilt
         """
-        
-        command = "%s %s" % (self._mkdirScript, os.path.dirname(targetPFN))
+        logging.info("Calling vandymkdir for %s" % targetPFN)
+        command = "%s %s" % (self._mkdirScript, targetPFN)
         
         # Calls the parent execute command to invoke the script which should 
         # throw a stage out error
         exitCode, output = runCommand(command)
+
+        logging.info("Making directory using command %s" % command)
         
         if exitCode != 0:
-            logging.error("Error creating directory")
-            logging.error(output)
+            logging.error("Error creating directory using command: %s" % command)
+            logging.error("Directory creation output: %s" % output)
     
     
     def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, 
                    protocol):
-        
+        raise RuntimeError, "test"
         # Figures out the src and dst files
         if stageOut:
             srcPath = fromPfn
@@ -70,8 +70,8 @@ class VandyImpl(StageOutImplV2):
         print(output)
     
         if exitCode != 0:
-            logging.error("Error in file transfer:")
-            logging.error(output)
+            logging.error("Error in file transfer using command %s:" % command)
+            logging.error("Ouput is: %s" % output)
             raise StageOutError, "Transfer failure"
     
         # Returns the path

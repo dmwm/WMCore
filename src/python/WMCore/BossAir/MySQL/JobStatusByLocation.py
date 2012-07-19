@@ -25,7 +25,7 @@ class JobStatusByLocation(DBFormatter):
                INNER JOIN wmbs_job wj ON wj.id = rj.wmbs_id
                RIGHT OUTER JOIN wmbs_location wl ON wl.id = wj.location
                WHERE rj.status = :complete
-               GROUP BY wl.cms_name, wl.plugin, st.name, wl.job_slots
+               GROUP BY wl.cms_name, wl.plugin, st.name, wl.pending_slots
           """
 
     def mappedStatusFormat(self, results):

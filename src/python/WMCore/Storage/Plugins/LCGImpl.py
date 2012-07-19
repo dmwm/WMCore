@@ -32,7 +32,9 @@ class LCGImpl(StageOutImplV2):
             error and skip retrying with this plugin
         """
         localFileName = fromPfn
-        fromPfn = self.prependFileProtocol(fromPfn)    
+        fromPfn = self.prependFileProtocol(fromPfn)
+        if not options:
+            options = ""
         transferCommand = "lcg-cp -b -D srmv2 --vo cms --srm-timeout 2400 --sendreceive-timeout 2400 --connect-timeout 300 --verbose %s %s %s " %\
                             ( options, fromPfn, toPfn )
         

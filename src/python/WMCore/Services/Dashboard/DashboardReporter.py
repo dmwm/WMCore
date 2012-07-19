@@ -340,7 +340,6 @@ class DashboardReporter(WMObject):
         Add a task to the Dashboard, jobs must contain the following information
         about the task:
             application -> CMSSW release
-            nevtJob -> Number of events per job
             tool -> JobSubmission tool (like Condor? or WMAgent)
             JSToolVersion -> 'tool' version
             TaskType -> Type of activity
@@ -351,7 +350,6 @@ class DashboardReporter(WMObject):
         package = {}
         package['MessageType']   = 'TaskMeta'
         package['application']   = task['application']
-        package['nevtJob']       = task['nevtJob']
         package['tool']          = 'WMAgent'
         package['JSToolVersion'] = __version__
         package['TaskType']      = task['TaskType']

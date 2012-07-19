@@ -246,12 +246,12 @@ class Assign(WebAPI):
         helper.setAcquisitionEra(kwargs["AcquisitionEra"])
         #FIXME not validated
         helper.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
-        helper.setMergeParameters(int(kwargs["MinMergeSize"]),
-                                  int(kwargs["MaxMergeSize"]), 
-                                  int(kwargs["MaxMergeEvents"]))
-        helper.setupPerformanceMonitoring(int(kwargs["maxRSS"]), 
-                                          int(kwargs["maxVSize"]),
-                                          int(kwargs["SoftTimeout"]),
+        helper.setMergeParameters(int(kwargs.get("MinMergeSize", 2147483648)),
+                                  int(kwargs.get("MaxMergeSize", 4294967296)),
+                                  int(kwargs.get("MaxMergeEvents", 50000)))
+        helper.setupPerformanceMonitoring(int(kwargs.get("maxRSS", 2411724)),
+                                          int(kwargs.get("maxVSize", 2411724)),
+                                          int(kwargs.get("SoftTimeout", 171600)),
                                           int(kwargs.get("GracePeriod", 300)))
         helper.setDashboardActivity(kwargs.get("dashboard", ""))
         Utilities.saveWorkload(helper, request['RequestWorkflow'], self.wmstatWriteURL)

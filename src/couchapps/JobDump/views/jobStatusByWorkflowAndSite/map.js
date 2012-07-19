@@ -6,7 +6,13 @@ function(doc) {
           case 'created':
               if (doc['states'][lastStateIndex].oldstate == 'new') {
                   status = 'queued_first';
+              } else if (doc['states'][lastStateIndex].oldstate == 'submitpaused') {
+                  status = 'queued_first';
+              } else if (doc['states'][lastStateIndex].oldstate == 'submitcooloff') {
+                  status = 'queued_first';
               } else if (doc['states'][lastStateIndex].oldstate == 'jobcooloff') {
+                  status = 'queued_retry';
+              } else if (doc['states'][lastStateIndex].oldstate == 'jobpaused') {
                   status = 'queued_retry';
               } else {
                   throw "not valid transition";
@@ -16,14 +22,21 @@ function(doc) {
               status = 'cooloff';
               break;
           case 'executing':
-              if (doc['states'][lastStateIndex - 1].oldstate == 'created') {
+              if (doc['states'][lastStateIndex - 1].oldstate == 'new') {
                   status = 'submitted_first';
+              } else if (doc['states'][lastStateInde - 1].oldstate == 'submitpaused') {
+                  status = 'submitted_first';
+              } else if (doc['states'][lastStateIndex - 1].oldstate == 'submitcooloff') {
+                  status = 'submitted_first';
+              } else if (doc['states'][lastStateIndex - 1].oldstate == 'jobpaused')  {
+                  status = 'submitted_retry';
               } else if (doc['states'][lastStateIndex - 1].oldstate == 'jobcooloff') {
                   status = 'submitted_retry';
               } else {
                   throw "not valid transition";
               };
               break;
+          // this case can be removed but in case of state transition update failure 
           case 'success':
               status = 'success';
               break;
@@ -38,12 +51,15 @@ function(doc) {
                   throw "not valid transition";
               };
               break;
+          // this case can be removed but in case of state transition update failure 
           case 'killed':
               status = 'canceled';
               break;
           case 'cleanout':
               if (doc['states'][lastStateIndex].oldstate == 'success') {
                   status = 'success';
+              } else if (doc['states'][lastStateIndex].oldstate == 'killed') {
+                  status = 'canceled'
               } else if (doc['states'][lastStateIndex].oldstate == 'exhausted') {
                   if (doc['states'][lastStateIndex - 1].oldstate == 'jobfailed') {
                       status = 'failure_exception';

@@ -44,7 +44,7 @@ class FileManager:
     Which make one attempt to perform the action and raises if it doesn't succeed. It is the plugins
     responsibility to verify that things are complete.
     """
-    def __init__(self, numberOfRetries = 30, retryPauseTime=60, **overrideParams):
+    def __init__(self, numberOfRetries = 3, retryPauseTime=15, **overrideParams):
         
         # set defaults
         self.failed = {}

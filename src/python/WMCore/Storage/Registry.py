@@ -72,11 +72,10 @@ def retrieveStageOutImpl(name, stagein=False, useNewVersion = False):
     if not useNewVersion:
         classRef  = Registry.StageOutImpl.get(name, None)
     else:
-        return _retrieveStageOutImpl2(name)
-    
-    if classRef == None:
-        msg = "Failed to find StageOutImpl for name: %s\n" % name
-        raise RegistryError, msg
+        try:
+            return _retrieveStageOutImpl2(name)
+        except ImportError:
+            raise RegistryError, "Stageout plugin %s doesn't exist" % name
     
     if not useNewVersion:
         return classRef(stagein)
@@ -101,7 +100,10 @@ pluginLookup = { 'test-win' : 'TestWinImpl',
                 "srm": 'SRMImpl',
                 "srmv2": 'SRMV2Impl',
                 "xrdcp": 'XRDCPImpl',
-                "vandy": 'VandyImpl'}
+                "vandy": 'VandyImpl',
+                # NOTE NOTE NOTE:
+                # do NOT implement this
+                "testFallbackToOldBackend" : 'TestBackendForFallbacksDontImplement'}
 
 def _retrieveStageOutImpl2(backendName):
     factory = WMCore.WMFactory.WMFactory(name = 'StageOutFactory',

@@ -198,8 +198,7 @@ class FNALImpl(StageOutImplV2):
         else:
             raise RuntimeError, "Unsupported storage method in doDelete: %s" % method
 
-    def doTransfer( self, sourcePFN, targetPFN, stageOut, seName, command,\
-		    checksums = None, options = None, protocol = None ):
+    def doTransfer( self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum ):
         """
             performs a transfer. stageOut tells you which way to go. returns the new pfn or
             raises on failure. StageOutError (and inherited exceptions) are for expected errors

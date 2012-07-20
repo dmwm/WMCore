@@ -101,6 +101,20 @@ class FileManagerTest(unittest.TestCase):
                                 'lfn-prefix': self.testDir})
         wrapper(fileForTransfer)
         self.assertTrue( os.path.exists(os.path.join(self.testDir, '/etc/hosts')))
+    
+    def testStageOutMgrWrapperRealCopyFallback(self):
+        self.testDir = tempfile.mkdtemp()
+        fileForTransfer = {'LFN': '/etc/hosts', \
+                           'PFN': '/etc/hosts', \
+                           'SEName' : None, \
+                           'StageOutCommand': None}
+        wrapper = StageOutMgr(  **{
+                                'command'    : 'testFallbackToOldBackend',
+                                'option'    : '', 
+                                'se-name'  : 'test-win', 
+                                'lfn-prefix': self.testDir})
+        wrapper(fileForTransfer)
+        self.assertTrue( os.path.exists(os.path.join(self.testDir, '/etc/hosts')))
 
     def testStageInMgrWrapperWin(self):
         fileForTransfer = {'LFN': '/etc/hosts', \
@@ -140,7 +154,20 @@ class FileManagerTest(unittest.TestCase):
                                 'se-name'  : 'test-win', 
                                 'lfn-prefix': self.testDir})
         wrapper(fileForTransfer)
-
+        
+    def testStageInMgrWrapperRealCopyFallback(self):
+        self.testDir = tempfile.mkdtemp()
+        fileForTransfer = {'LFN': '/etc/hosts', \
+                           'PFN': '/etc/hosts', \
+                           'SEName' : None, \
+                           'StageOutCommand': None}
+        wrapper = StageOutMgr(  **{
+                                'command'    : 'testFallbackToOldBackend',
+                                'option'    : '', 
+                                'se-name'  : 'test-win', 
+                                'lfn-prefix': self.testDir})
+        wrapper(fileForTransfer)
+        
     def testDeleteMgrWrapper(self):
         pass
 if __name__ == "__main__":

@@ -34,7 +34,7 @@ class CPImpl(StageOutImplV2):
 
         return
     
-    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksums ):
+    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum ):
         self.createOutputDirectory( toPfn )
         shutil.copy(fromPfn, toPfn)
         if os.path.getsize(fromPfn) != os.path.getsize(toPfn):

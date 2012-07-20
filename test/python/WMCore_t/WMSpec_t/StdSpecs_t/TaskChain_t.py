@@ -513,7 +513,7 @@ class TaskChainTests(unittest.TestCase):
                 "TaskName" : "Reco",
                 "InputTask" : "DigiHLT",
                 "InputFromOutputModule" : "writeRAWDIGI",
-                "Scenario" : "pp",
+                "ProcScenario" : "pp",
                 "ScenarioMethod" : "promptReco",
                 "ScenarioArguments" : { 'outputs' : [ { 'dataTier' : "RECO",
                                                         'moduleLabel' : "RECOoutput" },
@@ -528,7 +528,7 @@ class TaskChainTests(unittest.TestCase):
                 "TaskName" : "ALCAReco",
                 "InputTask" : "Reco",
                 "InputFromOutputModule" : "ALCARECOoutput",
-                "Scenario" : "pp",
+                "ProcScenario" : "pp",
                 "ScenarioMethod" : "alcaReco",
                 "ScenarioArguments" : { 'outputs' : [ { 'dataTier' : "ALCARECO",
                                                         'moduleLabel' : "ALCARECOoutput" } ] },
@@ -575,13 +575,13 @@ class TaskChainTests(unittest.TestCase):
         reco = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco")
         recoStep = reco.getStepHelper("cmsRun1")
         recoAppConf = recoStep.data.application.configuration
-        self.assertEqual(recoAppConf.scenario, arguments['Task2']['Scenario'])
+        self.assertEqual(recoAppConf.scenario, arguments['Task2']['ProcScenario'])
         self.assertEqual(recoAppConf.function, arguments['Task2']['ScenarioMethod'])
         
         alca = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergeALCARECOoutput/ALCAReco")
         alcaStep = alca.getStepHelper("cmsRun1")
         alcaAppConf = alcaStep.data.application.configuration
-        self.assertEqual(alcaAppConf.scenario, arguments['Task3']['Scenario'])
+        self.assertEqual(alcaAppConf.scenario, arguments['Task3']['ProcScenario'])
         self.assertEqual(alcaAppConf.function, arguments['Task3']['ScenarioMethod'])
         
     def testD(self):
@@ -614,7 +614,7 @@ class TaskChainTests(unittest.TestCase):
                 "InputDataset" : "/DoubleElectron/Run2011A-v1/RAW", 
                 "SplittingAlgorithm"  : "LumiBased",
                 "SplittingArguments" : {"lumis_per_job" : 1},
-                "Scenario" : "pp",
+                "ProcScenario" : "pp",
                 "ScenarioMethod" : "promptReco",
                 "ScenarioArguments" : { 'outputs' : [ { 'dataTier' : "RECO",
                                                         'moduleLabel' : "RECOoutput" },
@@ -630,7 +630,7 @@ class TaskChainTests(unittest.TestCase):
                 "TaskName" : "AlcaSkimming",
                 "InputTask" : "PromptReco",
                 "InputFromOutputModule" : "ALCARECOoutput",
-                "Scenario" : "pp",
+                "ProcScenario" : "pp",
                 "ScenarioMethod" : "alcaSkimming",
                 "ScenarioArguments" : { 'outputs' : [ { 'dataTier' : "ALCARECO",
                                                         'moduleLabel' : "ALCARECOoutput" } ],

@@ -65,6 +65,7 @@ class StdBase(object):
         self.siteWhitelist = []
         self.unmergedLFNBase = None
         self.mergedLFNBase = None
+        self.forceUserStorage = False
         self.minMergeSize = 2147483648
         self.maxMergeSize = 4294967296
         self.maxWaitTime = 24 * 3600
@@ -109,6 +110,7 @@ class StdBase(object):
         self.siteWhitelist = arguments.get("SiteWhitelist", [])
         self.unmergedLFNBase = arguments.get("UnmergedLFNBase", "/store/unmerged")
         self.mergedLFNBase = arguments.get("MergedLFNBase", "/store/data")
+        self.forceUserStorage = arguments.get("ForceUserStorage", False)
         self.minMergeSize = arguments.get("MinMergeSize", 2147483648)
         self.maxMergeSize = arguments.get("MaxMergeSize", 4294967296)
         self.maxWaitTime = arguments.get("MaxWaitTime", 24 * 3600)
@@ -419,7 +421,7 @@ class StdBase(object):
             runLFN = "/".join(runSections)
 
 
-        if parentTask.name() in analysisTaskTypes:
+        if self.forceUserStorage or parentTask.name() in analysisTaskTypes:
 
             # dataTier for user data is always USER
             dataTier = "USER"

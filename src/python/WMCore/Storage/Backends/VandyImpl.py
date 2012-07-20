@@ -31,9 +31,10 @@ class VandyImpl(StageOutImpl):
         StageOutImpl.__init__(self, stagein)
         
         
-        self._mkdirScript = os.path.join(VandyImpl.BASEDIR, 'vandyMkdir.sh')
-        self._cpScript    = os.path.join(VandyImpl.BASEDIR, 'vandyCp.sh')
-        self._rmScript    = os.path.join(VandyImpl.BASEDIR, 'vandyRm.sh')
+        self._mkdirScript    = os.path.join(VandyImpl.BASEDIR, 'vandyMkdir.sh')
+        self._cpScript       = os.path.join(VandyImpl.BASEDIR, 'vandyCp.sh')
+        self._rmScript       = os.path.join(VandyImpl.BASEDIR, 'vandyRm.sh')
+        self._downloadScript = os.path.join(VandyImpl.BASEDIR, 'vandyDownload.sh')
         
     def createSourceName(self, protocol, pfn):
         
@@ -71,8 +72,10 @@ class VandyImpl(StageOutImpl):
         targetPFN.
         
         """
-        
-        return "%s %s %s" % (self._cpScript, sourcePFN, targetPFN)
+        if self.stageIn:
+            return "%s %s %s" % (self._downloadScript, sourcePFN, targetPFN)
+        else:
+            return "%s %s %s" % (self._cpScript, sourcePFN, targetPFN)
           
     
     def removeFile(self, pfnToRemove):

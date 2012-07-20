@@ -217,7 +217,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
             if (currentTime - self.startTime) > self.hardTimeout:
                 killHard = True
                 msg += "Job exceeded soft timeout"
-
+        killProc = False
         if killProc:
             logging.error(msg)
             report  = Report.Report()

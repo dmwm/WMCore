@@ -27,7 +27,7 @@ class ReleasePeriodicJob(DBFormatter):
                       WHEN COUNT(wmbs_sub_files_acquired.subscription) > 0 THEN 0
                       WHEN COUNT(wmbs_job.id) = 0 THEN 1
                       ELSE 0
-                    END CASE
+                    END
              FROM wmbs_subscription
              INNER JOIN wmbs_sub_files_available ON
                wmbs_sub_files_available.subscription = wmbs_subscription.id

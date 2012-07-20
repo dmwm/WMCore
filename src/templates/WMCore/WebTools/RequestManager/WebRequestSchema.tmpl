@@ -76,18 +76,34 @@ Memory (Mbytes): <input type="text" name="Memory" size=10 value=2147483648 />
 Size per event (Kbytes): <input type="text" name="SizePerEvent" size=10 value=512000 /><br/>
 #end def
 
+#def dqmOptions
+DQM Sequences: <input type="text" name="DqmSequences" size=40 />
+DQM URL:
+<select name="DQMUploadUrl">
+    <option selected> https://cmsweb.cern.ch/dqm/dev </option>
+    <option> https://cmsweb.cern.ch/dqm/offline </option>
+    <option> https://cmsweb.cern.ch/dqm/relval </option>
+</select><br/>
+
+#end def
+
+#def scenarioBlock
+Scenario:
+  <select name="ProcScenario">
+    <option selected> pp</option>
+    <option>cosmics</option>
+    <option>hcalnzs</option>
+    <option>preprodmc</option>
+    <option>prodmc</option>
+    <option>relvalmc</option>
+    <option>relvalmcfs</option>
+  </select><br/>
+#end def
+
 #def configBlock($radioName, $scenarioName, $cacheName, $type)
 Configuration <br>
-  <input type="radio" name=$radioName value="scenario" /> Scenario
-    <select name="Scenario">
-      <option selected> pp</option>
-      <option>cosmics</option>
-      <option>hcalnzs</option>
-      <option>preprodmc</option>
-      <option>prodmc</option>
-      <option>relvalmc</option>
-      <option>relvalmcfs</option>
-    </select><br/>
+  <input type="radio" name=$radioName value="scenario" /> Scenario <br/>
+  $scenarioBlock
   <input type="radio" name=$radioName value="couchDB" /> $type ConfigCache ID
     <!--<input type="text" name="$cacheName" size=80 />
     <select name=$cacheName>
@@ -99,9 +115,7 @@ Configuration <br>
        <input name="$cacheName" size=80 id="couchinput" type="text">
        <div id="couchcontainer"></div>
     </div>
-  <br/>
-
-Global Tag: <input type="text" name="GlobalTag" size=20 value=""/> &nbsp &nbsp
+Global Tag: <input type="text" name="GlobalTag" size=20 value=""/> &nbsp &nbsp <br>
 #end def
 
 #def campaignBlock
@@ -193,6 +207,7 @@ First lumi: <input type="text" name="FirstLumi" size=10 value=1 /><br/>
 Include Parents: <select name="IncludeParents"><option>True</option><option selected>False</option></select><br/>
             $campaignBlock
             $configBlock("inputMode", "Scenario", "ProcConfigCacheID", "Reco")
+            $dqmOptions
             $ioBlock
             $skimBlock
             $runBlockBlock
@@ -249,6 +264,7 @@ Include Parents: <select name="IncludeParents"><option>True</option><option sele
             $campaignBlock
 Multicore: <input type="text" name="Multicore" size=2 value="" /> <br/>
             $configBlock("inputMode", "Scenario", "ProcConfigCacheID", "Processing")
+            $dqmOptions
             $ioBlock
             $runBlockBlock
             $performanceBlock
@@ -270,6 +286,8 @@ Include Parents: <select name="IncludeParents"><option>True</option><option sele
             $campaignBlock
             $ioBlock
 <br/>
+            $scenarioBlock
+            $dqmOptions
 Step One CacheCache ID: <input type="text" name="StepOneConfigCacheID" size=80 /><br/>
 Step One Output Module Name: <input type="text" name="StepOneOutputModuleName" size=20 /><br/>
 Step Two CacheCache ID: <input type="text" name="StepTwoConfigCacheID" size=80 /><br/>

@@ -191,12 +191,20 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, agentInfo, uploadTime, 
         doc.update(agentInfo)
         doc['type'] = "agent_request"
         doc['workflow'] = request
+        doc['status'] = {}
+        doc['sites'] = {}
         # this will set doc['status'], and doc['sites']
         if summaryLevel == 'task':
-            tempData = _convertToStatusSiteFormat(status['tasks'], summaryLevel)
-            doc['tasks'] = tempData["tasks"]
-            doc['status'] = tempData['status']
-            doc['sites'] = tempData['sites']
+            if status.has_key('tasks'):
+                tempData = _convertToStatusSiteFormat(status['tasks'], summaryLevel)
+                doc['tasks'] = tempData["tasks"]
+                doc['status'] = tempData['status']
+                doc['sites'] = tempData['sites']
+            #TODO need to handle this correctly by task
+            if status.has_key('inWMBS'):
+                doc['status']['inWMBS'] = status['inWMBS']
+            if status.has_key('inQueue'):
+                doc['status']['inQueue'] = status['inQueue']
         else:
             tempData = _convertToStatusSiteFormat(status, summaryLevel)
             doc['status'] = tempData['status']

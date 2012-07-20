@@ -89,7 +89,7 @@ class FileManager:
         log.info("Working on file: %s" % fileToStage['LFN'])
         lfn =           fileToStage['LFN']
         localFileName = fileToStage['PFN']
-
+        self.firstException = None
 
         log.info("Beginning %s" % ('StageOut' if stageOut else 'StageIn'))
         
@@ -125,7 +125,10 @@ class FileManager:
                 continue
         # if we're here, then nothing worked. transferfail.
         log.error("Error in stageout")
-        raise StageOutError, "Error in stageout, this has been logged in the logs"
+        if self.firstException:
+            raise self.firstException
+        else:
+            raise StageOutError, "Error in stageout, this has been logged in the logs"
     
     def deleteLFN(self, lfn):
         """
@@ -153,13 +156,15 @@ class FileManager:
             
             deleteSlave =  retrieveStageOutImpl(command, useNewVersion=True)
             
-            # do the copy. The implementation is responsible for its own verification
+            # do the delete. The implementation is responsible for its own verification
             try:
                 deleteSlave.doDelete( pfn, seName, command, options, protocol  )
             except StageOutError, ex:
                 log.info("Delete failed in an expected manner. Exception is:")
                 log.info("%s" % str(ex))
                 log.info(traceback.format_exc())
+                if not self.firstException:
+                    self.firstException = ex
                 continue
             # note to people who think it's cheeky to catch exception after ranting against it:
             # this makes sense because no matter what the exception, we want to keep going
@@ -169,13 +174,19 @@ class FileManager:
                 log.critical("Delete failed in an unexpected manner. Exception is:")
                 log.critical("%s" % str(ex))
                 log.info(traceback.format_exc())
+                if not self.firstException:
+                    self.firstException = ex
                 continue
             
             # successful deletions make it here
             return retval
         
         # unseuccessful transfers make it here
-        raise StageOutFailure("Could not delete", **retval)
+        if self.firstException:
+            raise self.firstException
+        else:
+            raise StageOutFailure("Could not delete", **retval)
+        
     def initialiseSiteConf(self):
         """
         _initialiseSiteConf_
@@ -317,6 +328,8 @@ class FileManager:
                 log.info("Sleeping for %s seconds" % self.retryPauseTime)
                 log.info(traceback.format_exc())
                 time.sleep( self.retryPauseTime )
+                if not self.firstException:
+                    self.firstException = ex
                 continue
             # note to people who think it's cheeky to catch exception after ranting against it:
             # this makes sense because no matter what the exception, we want to keep going
@@ -328,6 +341,8 @@ class FileManager:
                 log.critical("Since this is an unexpected error, we are continuing to the next method")
                 log.critical("and not retrying the same one")
                 log.critical(traceback.format_exc())
+                if not self.firstException:
+                    self.firstException = ex
                 break
             
             # successful transfers make it here

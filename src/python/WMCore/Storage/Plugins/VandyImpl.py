@@ -16,15 +16,18 @@ import logging
 
 class VandyImpl(StageOutImplV2):
     
-    BASEDIR='/usr/local/ms-stageout/'
+    
+    #BASEDIR='/Users/brumgard/Documents/workspace/VandyStageOut/src/scripts'
+    BASEDIR='/usr/local/cms-stageout'
     
     def __init__(self, stagein=False):
         
         StageOutImplV2.__init__(self)
         
-        self._mkdirScript = os.path.join(VandyImpl.BASEDIR, 'vandyMkdir.sh')
-        self._cpScript    = os.path.join(VandyImpl.BASEDIR, 'vandyCp.sh')
-        self._rmScript    = os.path.join(VandyImpl.BASEDIR, 'vandyRm.sh')
+        self._mkdirScript    = os.path.join(VandyImpl.BASEDIR, 'vandyMkdir.sh')
+        self._cpScript       = os.path.join(VandyImpl.BASEDIR, 'vandyCp.sh')
+        self._rmScript       = os.path.join(VandyImpl.BASEDIR, 'vandyRm.sh')
+        self._downloadScript = os.path.join(VandyImpl.BASEDIR, 'vandyDownload.sh')
     
     
     def createOutputDirectory(self, targetPFN):
@@ -34,44 +37,51 @@ class VandyImpl(StageOutImplV2):
 
         Creates the directory for vanderbilt
         """
-        logging.info("Calling vandymkdir for %s" % targetPFN)
-        command = "%s %s" % (self._mkdirScript, targetPFN)
+        
+        command = "%s %s" % (self._mkdirScript, os.path.dirname(targetPFN))
         
         # Calls the parent execute command to invoke the script which should 
         # throw a stage out error
         exitCode, output = runCommand(command)
-
-        logging.info("Making directory using command %s" % command)
         
         if exitCode != 0:
-            logging.error("Error creating directory using command: %s" % command)
-            logging.error("Directory creation output: %s" % output)
+            logging.error("Error creating directory")
+            logging.error(output)
     
     
     def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, 
                    protocol):
-        raise RuntimeError, "test"
+        """            
+            if stageOut is true:
+                The fromPfn is the LOCAL FILE NAME on the node, without file://
+                the toPfn is the target PFN, mapped from the LFN using the TFC or overrrides
+            if stageOut is false:
+                The toPfn is the LOCAL FILE NAME on the node, without file://
+                the fromPfn is the source PFN, mapped from the LFN using the TFC or overrrides
+        """
+        
         # Figures out the src and dst files
         if stageOut:
-            srcPath = fromPfn
             dstPath = toPfn
         else:
-            srcPath = toPfn
             dstPath = fromPfn
         
         # Creates the directory
         self.createOutputDirectory(os.path.dirname(dstPath))
         
         # Does the copy
-        command = "%s %s %s" % (self._cpScript, srcPath, dstPath)
-        
+        if stageOut:
+            command = "%s %s %s" % (self._cpScript, fromPfn, toPfn)
+        else:
+            command = "%s %s %s" % (self._downloadScript, fromPfn, toPfn)
+            
         exitCode, output = runCommand(command)
     
         print(output)
     
         if exitCode != 0:
-            logging.error("Error in file transfer using command %s:" % command)
-            logging.error("Ouput is: %s" % output)
+            logging.error("Error in file transfer:")
+            logging.error(output)
             raise StageOutError, "Transfer failure"
     
         # Returns the path

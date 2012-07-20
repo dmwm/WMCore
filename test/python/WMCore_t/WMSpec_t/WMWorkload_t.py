@@ -321,7 +321,7 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Site black list was updated.")
 
         mergeSplitParams = mergeTask.jobSplittingParameters()
-        self.assertEqual(len(mergeSplitParams.keys()), 6,
+        self.assertEqual(len(mergeSplitParams.keys()), 7,
                          "Error: Wrong number of params for merge task.")
         self.assertEqual(mergeSplitParams["algorithm"], "WMBSMergeBySize",
                          "Error: Wrong job splitting algo for merge task.")
@@ -331,6 +331,8 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Wrong max merge size.")
         self.assertEqual(mergeSplitParams["max_merge_events"], 1000,
                          "Error: Wrong max merge events.")
+        self.assertEqual(mergeSplitParams["merge_across_runs"], True,
+                         "Error: Wrong merge across runs.")
         self.assertEqual(mergeSplitParams["siteWhitelist"], [],
                          "Error: Site white list was updated.")
         self.assertEqual(mergeSplitParams["siteBlacklist"], [],
@@ -341,12 +343,14 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Wrong number of params for merge task.")
         self.assertEqual(mergeDQMSplitParams["algorithm"], "WMBSMergeBySize",
                          "Error: Wrong job splitting algo for merge task.")
-        self.assertEqual(mergeDQMSplitParams["min_merge_size"], 4,
+        self.assertEqual(mergeDQMSplitParams["min_merge_size"], 10,
                          "Error: Wrong min merge size: %s" % mergeDQMSplitParams)
-        self.assertEqual(mergeDQMSplitParams["max_merge_size"], 4,
+        self.assertEqual(mergeDQMSplitParams["max_merge_size"], 100,
                          "Error: Wrong max merge size.")
-        self.assertEqual(mergeDQMSplitParams["max_merge_events"], 4,
+        self.assertEqual(mergeDQMSplitParams["max_merge_events"], 1000,
                          "Error: Wrong max merge events.")
+        self.assertEqual(mergeDQMSplitParams["merge_across_runs"], False,
+                         "Error: Wrong merge across runs.")
         self.assertEqual(mergeDQMSplitParams["siteWhitelist"], [],
                          "Error: Site white list was updated.")
         self.assertEqual(mergeDQMSplitParams["siteBlacklist"], [],
@@ -397,7 +401,7 @@ class WMWorkloadTest(unittest.TestCase):
         procTaskCMSSWHelper.addOutputModule("OutputA",
                                             primaryDataset = primaryDataset,
                                             processedDataset = "bogusProcessed",
-                                            dataTier = "DATATIERA",
+                                            dataTier = "DQM",
                                             lfnBase = "bogusUnmerged",
                                             mergedLFNBase = "bogusMerged",
                                             filterName = None)
@@ -426,7 +430,7 @@ class WMWorkloadTest(unittest.TestCase):
         mergeTaskCMSSWHelper.addOutputModule("Merged",
                                              primaryDataset = "bogusPrimary",
                                              processedDataset = "bogusProcessed",
-                                             dataTier = "DATATIERA",
+                                             dataTier = "DQM",
                                              lfnBase = "bogusMerged",
                                              mergedLFNBase = "bogusMerged",
                                              filterName = None)
@@ -443,10 +447,22 @@ class WMWorkloadTest(unittest.TestCase):
         skimTaskCMSSWHelper.addOutputModule("SkimA",
                                             primaryDataset = primaryDataset,
                                             processedDataset = "bogusProcessed",
-                                            dataTier = "DATATIERA",
+                                            dataTier = "DATATIERC",
                                             lfnBase = "bogusUnmerged",
                                             mergedLFNBase = "bogusMerged",
                                             filterName = "bogusFilter")
+
+        harvestTask = mergeTask.addTask("HarvestTask")
+        harvestTask.setTaskType("Harvesting")
+        harvestTaskCMSSW = harvestTask.makeStep("cmsRun1")
+        harvestTaskCMSSW.setStepType("CMSSW")
+        harvestTaskCMSSWHelper = harvestTaskCMSSW.getTypeHelper()
+        harvestTask.applyTemplates()
+
+        harvestTaskCMSSWHelper.setDataProcessingConfig("pp", "dqmHarvesting",
+                                                       globalTag = "Bogus",
+                                                       datasetName = "/bogusPrimary/bogusProcessed/DQM",
+                                                       runNumber = 0)
 
         testWorkload.setAcquisitionEra(acquisitionEra)
 
@@ -488,6 +504,10 @@ class WMWorkloadTest(unittest.TestCase):
                 self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
                                  "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
 
+        self.assertEqual(harvestTaskCMSSWHelper.getDatasetName(),
+                         "/bogusPrimary/%s-None/DQM" % acquisitionEra,
+                         "Error: Wrong pickled dataset name")
+
         testWorkload.setProcessingVersion(procEra)
 
         for outputModule in outputModules:
@@ -524,6 +544,9 @@ class WMWorkloadTest(unittest.TestCase):
                 self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
                                  "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
 
+        self.assertEqual(harvestTaskCMSSWHelper.getDatasetName(),
+                         "/bogusPrimary/TestAcqEra-vTest/DQM",
+                         "Error: Wrong pickled dataset name")
 
         mergedLFNBase   = "/store/temp/merged"
         unmergedLFNBase = "/store/temp/unmerged"
@@ -570,11 +593,11 @@ class WMWorkloadTest(unittest.TestCase):
         outputDatasets = testWorkload.listOutputDatasets()
         self.assertEqual(len(outputDatasets), 3,
                          "Error: Wrong number of output datasets: %s" % testWorkload.listOutputDatasets())
-        self.assertTrue("/bogusPrimary/TestAcqEra-vTest/DATATIERA" in outputDatasets,
+        self.assertTrue("/bogusPrimary/TestAcqEra-vTest/DQM" in outputDatasets,
                         "Error: A dataset is missing")
         self.assertTrue("/bogusPrimary/TestAcqEra-vTest/DATATIERB" in outputDatasets,
                         "Error: A dataset is missing")
-        self.assertTrue("/bogusPrimary/TestAcqEra-bogusFilter-vTest/DATATIERA" in outputDatasets,
+        self.assertTrue("/bogusPrimary/TestAcqEra-bogusFilter-vTest/DATATIERC" in outputDatasets,
                         "Error: A dataset is missing")
         return
 

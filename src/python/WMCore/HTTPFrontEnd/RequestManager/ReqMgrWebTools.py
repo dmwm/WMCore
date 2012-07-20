@@ -379,7 +379,7 @@ def unidecode(data):
 def validate(schema):
     schema.validate()
     for field in ['RequestName', 'Requestor', 'RequestString',
-        'Campaign', 'Scenario', 'ProcConfigCacheID', 'inputMode',
+        'Campaign', 'ProcScenario', 'ProcConfigCacheID', 'inputMode',
         'CouchDBName', 'Group']:
         value = schema.get(field, '')
         if value and value != '':
@@ -423,14 +423,11 @@ def makeRequest(kwargs, couchUrl, couchDB, wmstatUrl):
     else:
         schema['RequestName'] = "%s_%s_%s" % (schema['Requestor'], currentTime, secondFraction)
     schema["Campaign"] = kwargs.get("Campaign", "")
-    if 'Scenario' in kwargs and 'ProcConfigCacheID' in kwargs:
+    if 'ProcScenario' in kwargs and 'ProcConfigCacheID' in kwargs:
         # Use input mode to delete the unused one
         inputMode = kwargs['inputMode']
-        inputValues = {'scenario':'Scenario',
-                       'couchDB':'ProdConfigCacheID'}
-        for n, v in inputValues.iteritems():
-            if n != inputMode:
-                schema[v] = ""
+        if inputMode == 'scenario':
+            del schema['ProcConfigCacheID']
 
     if kwargs.has_key("InputDataset"):
         schema["InputDatasets"] = [kwargs["InputDataset"]]

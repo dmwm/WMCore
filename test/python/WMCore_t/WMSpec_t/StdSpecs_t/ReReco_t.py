@@ -61,9 +61,11 @@ class ReRecoTest(unittest.TestCase):
         newConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
         newConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
         newConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
-        newConfig["pset_tweak_details"] ={"process": {"outputModules_": ['RECOoutput'],
+        newConfig["pset_tweak_details"] ={"process": {"outputModules_": ['RECOoutput', 'DQMoutput'],
                                                       "RECOoutput": {'dataset': {'filterName': 'RECOoutputFilter',
-                                                                                 'dataTier': 'RECO'}}}}
+                                                                                 'dataTier': 'RECO'}},
+                                                      "DQMoutput": {'dataset' : {'filterName': 'DQMoutputFilter',
+                                                                                 'dataTier': 'DQM'}}}}
         result = self.configDatabase.commitOne(newConfig)
         return result[0]["id"]
 
@@ -95,7 +97,7 @@ class ReRecoTest(unittest.TestCase):
 
         Verify that ReReco workflows can be created and inserted into WMBS
         correctly.  The ReReco workflow is just a DataProcessing workflow with
-        skims tacked on.  We'll only test the skims here.
+        skims tacked on.  We'll test the skims and DQMHarvest here.
         """
         skimConfig = self.injectSkimConfig()
         recoConfig = self.injectReRecoConfig()
@@ -236,6 +238,45 @@ class ReRecoTest(unittest.TestCase):
                              "Error: Wrong subscription type.")
             self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
                              "Error: Wrong split algo.")
+
+        dqmWorkflow = Workflow(name = "TestWorkload",
+                               task = "/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputDQMHarvestMerged")
+        dqmWorkflow.load()
+
+        topLevelFileset = Fileset(name = "/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/merged-Merged")
+        topLevelFileset.loadData()
+
+        dqmSubscription = Subscription(fileset = topLevelFileset, workflow = dqmWorkflow)
+        dqmSubscription.loadData()
+
+        self.assertEqual(dqmSubscription["type"], "Harvesting",
+                         "Error: Wrong subscription type.")
+        self.assertEqual(dqmSubscription["split_algo"], "Harvest",
+                         "Error: Wrong split algo.")
+
+        logArchOutput = dqmWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
+        unmergedLogArchOutput = dqmWorkflow.outputMap["logArchive"][0]["output_fileset"]
+        logArchOutput.loadData()
+        unmergedLogArchOutput.loadData()
+
+        self.assertEqual(logArchOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputDQMHarvestMerged/unmerged-logArchive",
+                         "Error: LogArchive output fileset is wrong.")
+        self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputDQMHarvestMerged/unmerged-logArchive",
+                     "Error: LogArchive output fileset is wrong.")
+
+        dqmHarvestLogCollect = Fileset(name = "/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputDQMHarvestMerged/unmerged-logArchive")
+        dqmHarvestLogCollect.loadData()
+        dqmHarvestLogCollectWorkflow = Workflow(name = "TestWorkload",
+                                               task = "/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputDQMHarvestMerged/DataProcessingMergeDQMoutputMergedDQMHarvestLogCollect")
+        dqmHarvestLogCollectWorkflow.load()
+
+        logCollectSub = Subscription(fileset = dqmHarvestLogCollect, workflow = dqmHarvestLogCollectWorkflow)
+        logCollectSub.loadData()
+
+        self.assertEqual(logCollectSub["type"], "LogCollect",
+                         "Error: Wrong subscription type.")
+        self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
+                         "Error: Wrong split algo.")
 
         return
 

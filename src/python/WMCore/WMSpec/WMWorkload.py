@@ -658,12 +658,37 @@ class WMWorkloadHelper(PersistencyHelper):
                         if taskType == "Merge":
                             setattr(outputModule, "lfnBase", mergedLFN)
                             setattr(outputModule, "mergedLFNBase", mergedLFN)
+
+                            if getattr(outputModule, "dataTier") in ["DQM", "DQMROOT"]:
+                                datasetName = "/%s/%s/%s" % (getattr(outputModule, "primaryDataset"),
+                                                             processedDataset,
+                                                             getattr(outputModule, "dataTier"))
+                                self.updateDatasetName(task, datasetName)
                         else:
                             setattr(outputModule, "lfnBase", unmergedLFN)
                             setattr(outputModule, "mergedLFNBase", mergedLFN)
 
             task.setTaskLogBaseLFN(self.data.properties.unmergedLFNBase)
             self.updateLFNsAndDatasets(task)
+
+        return
+
+    def updateDatasetName(self, mergeTask, datasetName):
+        """
+        _updateDatasetName_
+
+        Updates the dataset name argument of the mergeTask's harvesting
+        children tasks
+        """
+        for task in mergeTask.childTaskIterator():
+            if task.taskType() == "Harvesting":
+                for stepName in task.listAllStepNames():
+                    stepHelper = task.getStepHelper(stepName)
+
+                    if stepHelper.stepType() == "CMSSW" or \
+                           stepHelper.stepType() == "MulticoreCMSSW":
+                        cmsswHelper = stepHelper.getTypeHelper()
+                        cmsswHelper.setDatasetName(datasetName)
 
         return
 
@@ -842,9 +867,10 @@ class WMWorkloadHelper(PersistencyHelper):
                         if outputModule.dataTier == "DQM":
                             foundDQMOutput = True
                 
-            if task.taskType() == "Merge" and foundDQMOutput == False:
+            if task.taskType() == "Merge":
                 task.setSplittingParameters(min_merge_size = minSize,
                                             max_merge_size = maxSize,
+                                            merge_across_runs = not foundDQMOutput,
                                             max_merge_events = maxEvents)
 
             self.setMergeParameters(minSize, maxSize, maxEvents, task)

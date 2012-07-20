@@ -78,16 +78,16 @@ Size per event (Kbytes): <input type="text" name="SizePerEvent" size=10 value=51
 
 #def configBlock($radioName, $scenarioName, $cacheName, $type)
 Configuration <br>
+  <select name="ProcScenario">
+    <option selected> pp</option>
+    <option>cosmics</option>
+    <option>hcalnzs</option>
+    <option>preprodmc</option>
+    <option>prodmc</option>
+    <option>relvalmc</option>
+    <option>relvalmcfs</option>
+  </select><br/>
   <input type="radio" name=$radioName value="scenario" /> Scenario
-    <select name="Scenario">
-      <option selected> pp</option>
-      <option>cosmics</option>
-      <option>hcalnzs</option>
-      <option>preprodmc</option>
-      <option>prodmc</option>
-      <option>relvalmc</option>
-      <option>relvalmcfs</option>
-    </select><br/>
   <input type="radio" name=$radioName value="couchDB" /> $type ConfigCache ID
     <!--<input type="text" name="$cacheName" size=80 />
     <select name=$cacheName>

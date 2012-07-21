@@ -231,7 +231,10 @@ class Assign(WebAPI):
         request = GetRequest.getRequestByName(requestName)
         helper = Utilities.loadWorkload(request)
         for field in ["AcquisitionEra", "ProcessingVersion"]:
-            if type(kwargs[field]) == dict:
+            if not field in kwargs or (kwargs[field] == None):
+                # There wasn't one in the request, not the end of the world
+                kwargs[field] = None
+            elif type(kwargs[field]) == dict:
                 for value in kwargs[field].values():
                     self.validate(value, field)
             else:

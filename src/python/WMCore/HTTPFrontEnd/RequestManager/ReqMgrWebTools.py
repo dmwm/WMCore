@@ -107,6 +107,21 @@ def parseBlockList(l):
 
     return result
 
+def parseDqmSequences(l):
+    """ Changes a string into a list of strings """
+    result = None
+    if isinstance(l, list):
+       result = l
+    elif isinstance(l, basestring):
+        toks = l.lstrip(' [').rstrip(' ]').split(',')
+        if toks == ['']:
+            return []
+        # only one set of quotes
+        result = [str(tok.strip(' \'"')) for tok in toks]
+    else:
+        raise cherrypy.HTTPError(400, "Bad DQM sequences list of type " + type(l).__name__)
+    return result
+
 def parseSite(kw, name):
     """ puts site whitelist & blacklists into nice format"""
     value = kw.get(name, [])
@@ -461,6 +476,8 @@ def makeRequest(kwargs, couchUrl, couchDB, wmstatUrl):
     for blocklist in ["BlockWhitelist", "BlockBlacklist"]:
         if blocklist in kwargs:
             schema[blocklist] = parseBlockList(kwargs[blocklist])
+    if "DqmSequences" in kwargs:
+            schema["DqmSequences"] = parseDqmSequences(kwargs["DqmSequences"])
     validate(schema)
 
     # Get the DN

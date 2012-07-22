@@ -283,7 +283,7 @@ class DQMUpload(Executor):
 
         args['checksum'] = 'md5:' + m.hexdigest()
         args['size'] = str(os.stat(file)[6])
-        proxyLoc = os.environ.get('X509_USER_PROXY', None) or self.step.upload.proxy
+        proxyLoc = self.step.upload.proxy or os.environ.get('X509_USER_PROXY', None)
 
         class HTTPSCertAuth(HTTPS):
             def __init__(self, host, timeout):

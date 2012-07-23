@@ -281,7 +281,7 @@ WMStats.Requests = function (noFilterFlag) {
         var completionRatio = (completedJobs / totalJobs);
         var queueInjectionRatio = _get(aData, "status.inWMBS",  0) / _get(aData, 'total_jobs', 1);
         var duration = Math.round(Date.now() / 1000) - lastStatus.update_time;
-        var timeLeft = Math.round(duration / (completionRatio * queueInjectionRatio));
+        var timeLeft = Math.round((duration / (completionRatio * queueInjectionRatio)) - duration);
         
         return timeLeft;
     }

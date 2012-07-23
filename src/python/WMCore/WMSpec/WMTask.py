@@ -864,31 +864,6 @@ class WMTaskHelper(TreeHelper):
         self.data.logBaseLFN = logBaseLFN
         return
 
-    def setTaskTimeOut(self, taskTimeOut):
-        """
-        _setTaskTimeOut_
-
-        Set the timeout for the task.
-        """
-        monitoring = self.data.section_("watchdog")
-        if not hasattr(self.data.watchdog, "monitors"):
-            monitoring.monitors = []
-        if not "DashboardMonitor" in monitoring.monitors:
-            monitoring.monitors.append("DashboardMonitor")
-            monitoring.section_("DashboardMonitor")
-        monitoring.DashboardMonitor.softTimeOut = taskTimeOut
-        monitoring.DashboardMonitor.hardTimeOut = taskTimeOut + 600
-        return
-
-    def getTaskTimeOut(self):
-        """
-        _getTaskTimeOut_
-
-        Get the timeout for the task.
-        """
-        return self.data.watchdog.DashboardMonitor.softTimeOut
-
-
     def setTaskPriority(self, priority):
         """
         _setTaskPriority_
@@ -935,7 +910,8 @@ class WMTaskHelper(TreeHelper):
 
         return self.data.notifications.targets
 
-    def setPerformanceMonitor(self, maxRSS = None, maxVSize = None):
+    def setPerformanceMonitor(self, maxRSS = None, maxVSize = None,
+                                    softTimeout = None, gracePeriod = None):
         """
         _setPerformanceMonitor_
 
@@ -947,8 +923,10 @@ class WMTaskHelper(TreeHelper):
         if not 'PerformanceMonitor' in monitoring.monitors:
             monitoring.monitors.append('PerformanceMonitor')
             monitoring.section_("PerformanceMonitor")
-        monitoring.PerformanceMonitor.maxRSS   = maxRSS
-        monitoring.PerformanceMonitor.maxVSize = maxVSize
+        monitoring.PerformanceMonitor.maxRSS      = maxRSS
+        monitoring.PerformanceMonitor.maxVSize    = maxVSize
+        monitoring.PerformanceMonitor.softTimeout = softTimeout
+        monitoring.PerformanceMonitor.hardTimeout = softTimeout + gracePeriod
         return
 
     def getSwVersion(self):
@@ -1014,6 +992,41 @@ class WMTaskHelper(TreeHelper):
                 IDs.append(ID)
         return IDs
 
+    def setProcessingVersion(self, procVer):
+        """
+        _setProcessingVersion_
+
+        Set the task processing version
+        """
+
+        self.data.parameters.processingVersion = procVer
+        return
+
+    def getProcessingVersion(self):
+        """
+        _getProcessingVersion_
+
+        Get the task processing version
+        """
+        return getattr(self.data.parameters, 'processingVersion', None)
+
+    def setAcquisitionEra(self, era):
+        """
+        _setAcquistionEra_
+
+        Set the task acquisition era
+        """
+
+        self.data.parameters.acquisitionEra = era
+        return
+
+    def getAcquisitionEra(self):
+        """
+        _getAcquisitionEra_
+
+        Get the task acquisition era
+        """
+        return getattr(self.data.parameters, 'acquisitionEra', None)
     
 class WMTask(ConfigSectionTree):
     """

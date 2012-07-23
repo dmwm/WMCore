@@ -70,6 +70,12 @@ Software Release:
 </select><br/>
 #end def 
 
+#def performanceBlock
+Time per event (seconds): <input type="text" name="TimePerEvent" size=10 value=60 />
+Memory (Mbytes): <input type="text" name="Memory" size=10 value=2147483648 />
+Size per event (Kbytes): <input type="text" name="SizePerEvent" size=10 value=512000 /><br/>
+#end def
+
 #def configBlock($radioName, $scenarioName, $cacheName, $type)
 Configuration <br>
   <input type="radio" name=$radioName value="scenario" /> Scenario
@@ -190,15 +196,16 @@ Include Parents: <select name="IncludeParents"><option>True</option><option sele
             $ioBlock
             $skimBlock
             $runBlockBlock
+            $performanceBlock
             $trailerBlock("ReReco")
         </div>
         <div id="mc">
             $headerBlock
             $softwareBlock
 # of Events: <input type="text" name="RequestNumEvents" size=10 value=1000 />
-Time per event: <input type="text" name="TimePerEvent" size=10 value=60 />
 Filter efficiency: <input type="text" name="FilterEfficiency" size=10 value=1.0 />
 Total job time: <input type="text" name="TotalTime", value=32400 /><br/>
+            $performanceBlock
             $initialLumiEventBlock
             $configBlock("inputMode", "Scenario", "ProcConfigCacheID", "MC")
 Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
@@ -220,6 +227,7 @@ StepOne Output Module Name: <input type="text" name="StepOneOutputModuleName" si
 Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
 Data Pileup: <input type="text" name="DataPileup" size=80 /><br/>
 MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
+            $performanceBlock
             $trailerBlock("RelValMC")
         </div>
         <div id="storeResults">
@@ -231,6 +239,7 @@ CMS Path: <input type="text" name="CmsPath" size=50/><br/>
             $softwareBlock
             $campaignBlock
             $ioBlock
+            $performanceBlock
             $trailerBlock("StoreResults")
         </div>
         <div id="DataProcessing">
@@ -242,6 +251,7 @@ Multicore: <input type="text" name="Multicore" size=2 value="" /> <br/>
             $configBlock("inputMode", "Scenario", "ProcConfigCacheID", "Processing")
             $ioBlock
             $runBlockBlock
+            $performanceBlock
             $trailerBlock("DataProcessing")
         </div>
         <div id="Resubmission">
@@ -250,6 +260,7 @@ Original Request Name: <input type="text" name="OriginalRequestName" size=30/> <
 Initial Task Path: <input type="text" name="InitialTaskPath" size=30/><br/>
 ACDC Server URL: <input type="text" name="ACDCServer" size=30/><br/>
 ACDC Database Name: <input type="text" name="ACDCDatabase" size=30/><br/>
+            $performanceBlock
             $trailerBlock("Resubmission")
         </div>
         <div id="ReDigi">
@@ -270,6 +281,7 @@ Global Tag: <input type="text" name="GlobalTag" size=20 value=""/><br/>
 Data Pileup: <input type="text" name="DataPileup" size=80 /><br/>
 MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
             $runBlockBlock
+            $performanceBlock
             $trailerBlock("ReDigi")
     </div>
         <div id="MonteCarloFromGEN">
@@ -280,6 +292,7 @@ ConfigCache ID: <input type="text" name="ProcConfigCacheID" size=80 /><br/>
 Global Tag: <input type="text" name="GlobalTag" size=20 value=""/><br/>
             $ioBlock
             $runBlockBlock
+            $performanceBlock
             $trailerBlock("MonteCarloFromGEN")
         </div>
         <div id="lhe">
@@ -296,6 +309,7 @@ Global Tag: <input type="text" name="GlobalTag" size=20 value=""/><br/>
 Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
 Data Pileup: <input type="text" name="DataPileup" size=80 /><br/>
 MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
+            $performanceBlock
             $trailerBlock("LHEStepZero")
         </div>
 </div>

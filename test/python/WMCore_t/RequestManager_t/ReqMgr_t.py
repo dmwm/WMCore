@@ -148,6 +148,9 @@ class ReqMgrTest(RESTBaseUnitTest):
         schema['Requestor'] = '%s' % userName
         schema['Group'] = '%s' % groupName
         schema['CustodialSite'] = 'US_T1_FNAL'
+        schema['TimePerEvent'] = '12'
+        schema['Memory'] = 3000
+        schema['SizePerEvent'] = 512
 
         return schema
 

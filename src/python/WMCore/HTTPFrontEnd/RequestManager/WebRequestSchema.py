@@ -123,7 +123,7 @@ class WebRequestSchema(WebAPI):
                 decodedSchema[key] = schema[key]
 
         try:
-            request = Utilities.makeRequest(schema, self.couchUrl, self.workloadDBName, self.wmstatWriteURL)
+            request = Utilities.makeRequest(decodedSchema, self.couchUrl, self.workloadDBName, self.wmstatWriteURL)
         except RuntimeError, e:
             raise cherrypy.HTTPError(400, "Error creating request: %s" % e)
         except KeyError, e:

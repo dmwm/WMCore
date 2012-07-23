@@ -80,6 +80,9 @@ class StdBase(object):
         self.firstLumi = 1
         self.firstEvent = 1
         self.runNumber = 0
+        self.timePerEvent = 60
+        self.memory = 2000
+        self.sizePerEvent = 512
         return
 
     def __call__(self, workloadName, arguments):
@@ -116,6 +119,9 @@ class StdBase(object):
         self.dashboardPort = arguments.get("DashboardPort", 8884)
         self.overrideCatalog = arguments.get("OverrideCatalog", None)
         self.runNumber = int(arguments.get("RunNumber", 0))
+        self.timePerEvent = int(arguments.get("TimePerEvent", 60))
+        self.memory = int(arguments.get("Memory", 2000))
+        self.sizePerEvent = int(arguments.get("SizePerEvent", 512))
 
         if arguments.get("IncludeParents", False) == "True":
             self.includeParents = True
@@ -181,18 +187,21 @@ class StdBase(object):
         """
         #A gigabyte defined as 1024^3 (assuming RSS and VSize is in KiByte)
         gb = 1024.0 * 1024.0
+        #Default timeout defined in CMS policy
+        softTimeout = 47.0 * 3600.0 + 40.0 * 60.0
+        hardTimeout = 47.0 * 3600.0 + 45.0 * 60.0
 
         monitoring = task.data.section_("watchdog")
-        monitoring.interval = 600
+        monitoring.interval = 300
         monitoring.monitors = ["DashboardMonitor", "PerformanceMonitor"]
         monitoring.section_("DashboardMonitor")
-        monitoring.DashboardMonitor.softTimeOut = 300000
-        monitoring.DashboardMonitor.hardTimeOut = 600000
         monitoring.DashboardMonitor.destinationHost = self.dashboardHost
         monitoring.DashboardMonitor.destinationPort = self.dashboardPort
         monitoring.section_("PerformanceMonitor")
-        monitoring.PerformanceMonitor.maxRSS = 4 * gb
-        monitoring.PerformanceMonitor.maxVSize = 4 * gb
+        monitoring.PerformanceMonitor.maxRSS = 2.3 * gb
+        monitoring.PerformanceMonitor.maxVSize = 2.3 * gb
+        monitoring.PerformanceMonitor.softTimeout = softTimeout
+        monitoring.PerformanceMonitor.hardTimeout = hardTimeout
         return task
 
 
@@ -243,8 +252,8 @@ class StdBase(object):
         workload.setOwnerDetails(self.owner, self.group, ownerProps)
         workload.setStartPolicy("DatasetBlock", SliceType = "NumberOfFiles", SliceSize = 1)
         workload.setEndPolicy("SingleShot")
-        workload.setAcquisitionEra(acquisitionEra = self.acquisitionEra)
-        workload.setProcessingVersion(processingVersion = self.processingVersion)
+        workload.setAcquisitionEra(acquisitionEras = self.acquisitionEra)
+        workload.setProcessingVersion(processingVersions = self.processingVersion)
         workload.setValidStatus(validStatus = self.validStatus)
         return workload
 
@@ -589,7 +598,7 @@ class StdBase(object):
         return
 
     def addDQMHarvestTask(self, parentTask, parentOutputModuleName,
-                          uploadProxy, periodic_harvest_interval = 0,
+                          uploadProxy = None, periodic_harvest_interval = 0,
                           parentStepName = "cmsRun1", doLogCollect = True):
         """
         _addDQMHarvestTask_
@@ -647,9 +656,9 @@ class StdBase(object):
                                                                                         getattr(parentOutputModule, "processedDataset"),
                                                                                         getattr(parentOutputModule, "dataTier")),
                                                            runNumber = self.runNumber)
-
-        harvestTaskUploadHelper = harvestTaskUpload.getTypeHelper()
-        harvestTaskUploadHelper.setProxyFile(uploadProxy)
+        if uploadProxy: 
+            harvestTaskUploadHelper = harvestTaskUpload.getTypeHelper()
+            harvestTaskUploadHelper.setProxyFile(uploadProxy)
 
         return
 
@@ -726,6 +735,25 @@ class StdBase(object):
                 processingVersion = int(float(schema.get("ProcessingVersion", 0)))
             except ValueError:
                 self.raiseValidationException(msg = "Non-integer castable ProcessingVersion found")
+
+        performanceFields = ['TimePerEvent', 'Memory', 'SizePerEvent']
+
+        for field in performanceFields:
+            self._validatePerformanceField(field, schema)
+
+    def _validatePerformanceField(self, field, schema):
+        """
+        __validatePerformanceField_
+
+        Validates an integer field, that is mandatory. So it raises a validation
+        exception if the field is not in the schema or is not integer-castable.
+        """
+        try:
+            int(schema[field])
+        except KeyError:
+            self.raiseValidationException(msg = "The %s must be specified" % field)
+        except ValueError:
+            self.raiseValidationException(msg = "Please specify a valid %s" % field)
 
     def requireValidateFields(self, fields, schema, validate = False):
         """

@@ -99,6 +99,9 @@ class StartPolicyInterface(PolicyInterface):
         for data, sites in ele['Inputs'].items():
             if not sites:
                 raise WorkQueueWMSpecError(self.wmspec, 'Input data has no locations "%s"' % data)
+        # catch infinite splitting loops
+        if len(self.workQueueElements) > self.args.get('maxRequestSize', 1e8):
+            raise WorkQueueWMSpecError(self.wmspec, 'Too many elements (%d)' % self.args.get('MaxRequestElements', 1e8))
         self.workQueueElements.append(ele)
 
     def __call__(self, wmspec, task, data = None, mask = None, team = None):

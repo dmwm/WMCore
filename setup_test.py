@@ -208,7 +208,7 @@ if can_nose:
                 if int(id) >= int(self.testMinimumIndex) and int(id) <= int(self.testMaximumIndex):
                     # generate a stable ID for sorting
                     if len(testIds[id]) == 3:
-                        testName = testIds[id][1] + testIds[id][2]
+                        testName = "%s%s" % (testIds[id][1], testIds[id][2])
                         testHash = hashlib.md5( testName ).hexdigest()
                         hashSnip = testHash[:7]
                         hashInt  = int( hashSnip, 16 )

@@ -65,6 +65,13 @@ class WMStatsWriter():
         self.updateRequestStatus(doc['_id'], "new")
         return result
 
+    def insertGenericRequest(self, doc):
+        result = self.couchDB.updateDocument(doc['_id'], 'WMStats', 
+                                    'insertRequest',
+                                    fields={'doc': JSONEncoder().encode(doc)})
+        #self.updateRequestStatus(doc['_id'], "new")
+        return result
+    
     def updateRequestStatus(self, request, status):
         statusTime = {'status': status, 'update_time': int(time.time())}
         return self.couchDB.updateDocument(request, 'WMStats', 'requestStatus', 

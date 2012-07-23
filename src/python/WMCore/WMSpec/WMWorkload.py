@@ -13,6 +13,10 @@ from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop
 from WMCore.WMSpec.Persistency import PersistencyHelper
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
+
+# FIXME should pull this from StdBase, but that makes a circular
+# import...
+analysisTaskTypes = ['Analysis', 'PrivateMC']
 from WMCore.Lexicon import lfnBase, sanitizeURL
 from WMCore.WMException import WMException
 
@@ -628,7 +632,8 @@ class WMWorkloadHelper(PersistencyHelper):
                     for outputModuleName in stepHelper.listOutputModules():
                         outputModule = stepHelper.getOutputModule(outputModuleName)
                         filterName = getattr(outputModule, "filterName", None)
-
+                        haveFilterName = (filterName != None and filterName != "")
+                        
                         if filterName:
                             processedDataset = "%s-%s-%s" % (task.getAcquisitionEra(),
                                                              filterName,
@@ -640,27 +645,42 @@ class WMWorkloadHelper(PersistencyHelper):
                                                           task.getProcessingVersion())
                             processingString = task.getProcessingVersion()
 
-                        unmergedLFN = "%s/%s/%s/%s/%s" % (self.data.properties.unmergedLFNBase,
-                                                          task.getAcquisitionEra(),
-                                                          getattr(outputModule, "primaryDataset"),
-                                                          getattr(outputModule, "dataTier"),
-                                                          processingString)
-                        mergedLFN = "%s/%s/%s/%s/%s" % (self.data.properties.mergedLFNBase,
-                                                        task.getAcquisitionEra(),
-                                                        getattr(outputModule, "primaryDataset"),
-                                                        getattr(outputModule, "dataTier"),
-                                                        processingString)
-                        lfnBase(unmergedLFN)
-                        lfnBase(mergedLFN)
+                        if getattr(self.data.properties,"forceUserStorage",0) or taskType in analysisTaskTypes:
+                            unmergedLFN = "%s/%s" % (self.unmergedLFNBase, getattr(outputModule, "primaryDataset"))
+                
+                            if haveFilterName:
+                                unmergedLFN += "/%s-%s" % (self.acquisitionEra, filterName)
+                            else:
+                                unmergedLFN += "/%s" % self.acquisitionEra
+                
+                            unmergedLFN += "/%s" % processingString
+                            mergedLFN    = unmergedLFN
+                            lfnBase(unmergedLFN)
+                        else:
+                            unmergedLFN = "%s/%s/%s/%s/%s" % (self.data.properties.unmergedLFNBase,
+                                                              task.getAcquisitionEra(),
+                                                              getattr(outputModule, "primaryDataset"),
+                                                              getattr(outputModule, "dataTier"),
+                                                              processingString)
+                            mergedLFN = "%s/%s/%s/%s/%s" % (self.data.properties.mergedLFNBase,
+                                                            task.getAcquisitionEra(),
+                                                            getattr(outputModule, "primaryDataset"),
+                                                            getattr(outputModule, "dataTier"),
+                                                            processingString)
+                            lfnBase(unmergedLFN)
+                            lfnBase(mergedLFN)
+                            
                         setattr(outputModule, "processedDataset", processedDataset)
 
-                        # For merge tasks, we want all output to go to the merged LFN base.
                         if taskType == "Merge":
+                            # For merge tasks, we want all output to go to the merged LFN base.
                             setattr(outputModule, "lfnBase", mergedLFN)
                             setattr(outputModule, "mergedLFNBase", mergedLFN)
                         else:
+                            # Otherwise, send them to either spot
                             setattr(outputModule, "lfnBase", unmergedLFN)
                             setattr(outputModule, "mergedLFNBase", mergedLFN)
+
 
             task.setTaskLogBaseLFN(self.data.properties.unmergedLFNBase)
             self.updateLFNsAndDatasets(task)
@@ -804,7 +824,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return getattr(self.data.properties, 'custodialSite', None)
 
-    def setLFNBase(self, mergedLFNBase, unmergedLFNBase):
+    def setLFNBase(self, mergedLFNBase, unmergedLFNBase, forceUserOutput = 0):
         """
         _setLFNBase_
 
@@ -813,6 +833,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data.properties.mergedLFNBase = mergedLFNBase
         self.data.properties.unmergedLFNBase = unmergedLFNBase
+        self.data.properties.forceUserOutput = forceUserOutput
         self.updateLFNsAndDatasets()
         return
 

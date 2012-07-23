@@ -154,7 +154,15 @@ class FileManager:
             log.info("Attempting deletion method %s" % (methodCounter, ))
             log.info("Current method information: %s" % currentMethod)
             
-            deleteSlave =  retrieveStageOutImpl(command, useNewVersion=True)
+            try:
+                deleteSlave =  retrieveStageOutImpl(command, useNewVersion=True)
+            except RegistryError:
+                deleteSlave =  retrieveStageOutImpl(command, useNewVersion=False)
+                logging.error("Tried to load stageout backend %s, a new version isn't there yet" % command)
+                logging.error("Will try to fall back to the oldone, but it's really best to redo it")
+                logging.error("Here goes...")
+                deleteSlave.removeFile( pfn )
+                return retval
             
             # do the delete. The implementation is responsible for its own verification
             try:
@@ -285,10 +293,10 @@ class FileManager:
         return (seName, command, options, pfn, protocol)
     
     def stageIn(self,fileToStage):
-        self.stageFile(fileToStage, stageOut=False)
+        return self.stageFile(fileToStage, stageOut=False)
     
     def stageOut(self,fileToStage):
-        self.stageFile(fileToStage, stageOut=True)
+        return self.stageFile(fileToStage, stageOut=True)
   
     def _doTransfer(self, currentMethod, methodCounter, localFileName, pfn, stageOut):
         """
@@ -310,9 +318,9 @@ class FileManager:
             log.info("Current method information: %s" % currentMethod)
             
             try:
-                stageOutSlave =  retrieveStageOutImpl(command, useNewVersion=True)
+                stageOutSlave =  retrieveStageOutImpl(command, useNewVersion=True, stagein = not stageOut)
             except RegistryError:
-                stageOutSlave =  retrieveStageOutImpl(command, useNewVersion=False)
+                stageOutSlave =  retrieveStageOutImpl(command, useNewVersion=False, stagein = not stageOut)
                 logging.error("Tried to load stageout backend %s, a new version isn't there yet" % command)
                 logging.error("Will try to fall back to the oldone, but it's really best to redo it")
                 logging.error("Here goes...")

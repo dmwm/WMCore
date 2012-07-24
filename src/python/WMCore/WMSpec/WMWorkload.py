@@ -855,22 +855,14 @@ class WMWorkloadHelper(PersistencyHelper):
             taskIterator = self.taskIterator()
 
         for task in taskIterator:
-            foundDQMOutput = False
             for stepName in task.listAllStepNames():
                 stepHelper = task.getStepHelper(stepName)
                 if stepHelper.stepType() == "StageOut" and stepHelper.minMergeSize() != -1:
                     stepHelper.setMinMergeSize(minSize, maxEvents)
-                if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
-                    for outputModuleName in stepHelper.listOutputModules():
-                        outputModule = stepHelper.getOutputModule(outputModuleName)
-                        if outputModule.dataTier == "DQM":
-                            foundDQMOutput = True
                 
             if task.taskType() == "Merge":
                 task.setSplittingParameters(min_merge_size = minSize,
                                             max_merge_size = maxSize,
-                                            merge_across_runs = not foundDQMOutput,
                                             max_merge_events = maxEvents)
 
             self.setMergeParameters(minSize, maxSize, maxEvents, task)

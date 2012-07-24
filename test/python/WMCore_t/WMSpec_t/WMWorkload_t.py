@@ -274,8 +274,7 @@ class WMWorkloadTest(unittest.TestCase):
         mergeDQMTask.setInputReference(procTaskCMSSW, outputModule = "outputDQM")
         mergeDQMTask.setTaskType("Merge")
         mergeDQMTask.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 4,
-                                           max_merge_events = 4, min_merge_size = 4,
-                                           merge_across_runs = False)
+                                           max_merge_events = 4, min_merge_size = 4)
         mergeDQMTaskCMSSW = mergeDQMTask.makeStep("cmsRun1")
         mergeDQMTaskCMSSW.setStepType("CMSSW")
         mergeDQMTaskStageOut = mergeDQMTaskCMSSW.addStep("StageOut1")
@@ -321,7 +320,7 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Site black list was updated.")
 
         mergeSplitParams = mergeTask.jobSplittingParameters()
-        self.assertEqual(len(mergeSplitParams.keys()), 7,
+        self.assertEqual(len(mergeSplitParams.keys()), 6,
                          "Error: Wrong number of params for merge task.")
         self.assertEqual(mergeSplitParams["algorithm"], "WMBSMergeBySize",
                          "Error: Wrong job splitting algo for merge task.")
@@ -331,15 +330,13 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Wrong max merge size.")
         self.assertEqual(mergeSplitParams["max_merge_events"], 1000,
                          "Error: Wrong max merge events.")
-        self.assertEqual(mergeSplitParams["merge_across_runs"], True,
-                         "Error: Wrong merge across runs.")
         self.assertEqual(mergeSplitParams["siteWhitelist"], [],
                          "Error: Site white list was updated.")
         self.assertEqual(mergeSplitParams["siteBlacklist"], [],
                          "Error: Site black list was updated.")
 
         mergeDQMSplitParams = mergeDQMTask.jobSplittingParameters()
-        self.assertEqual(len(mergeDQMSplitParams.keys()), 7,
+        self.assertEqual(len(mergeDQMSplitParams.keys()), 6,
                          "Error: Wrong number of params for merge task.")
         self.assertEqual(mergeDQMSplitParams["algorithm"], "WMBSMergeBySize",
                          "Error: Wrong job splitting algo for merge task.")
@@ -349,8 +346,6 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Wrong max merge size.")
         self.assertEqual(mergeDQMSplitParams["max_merge_events"], 1000,
                          "Error: Wrong max merge events.")
-        self.assertEqual(mergeDQMSplitParams["merge_across_runs"], False,
-                         "Error: Wrong merge across runs.")
         self.assertEqual(mergeDQMSplitParams["siteWhitelist"], [],
                          "Error: Site white list was updated.")
         self.assertEqual(mergeDQMSplitParams["siteBlacklist"], [],

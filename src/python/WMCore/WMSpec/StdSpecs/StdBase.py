@@ -552,25 +552,13 @@ class StdBase(object):
         mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
         mergeTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
 
-        if getattr(parentOutputModule, "dataTier") in ["DQM", "DQMROOT"]:
-            # DQM wants everything to be a single run per file, so we'll merge
-            # accordingly.
-            mergeTask.setSplittingAlgorithm(splitAlgo,
-                                            max_merge_size = self.maxMergeSize,
-                                            min_merge_size = self.minMergeSize,
-                                            max_merge_events = self.maxMergeEvents,
-                                            max_wait_time = self.maxWaitTime,
-                                            merge_across_runs = False,
-                                            siteWhitelist = self.siteWhitelist,
-                                            siteBlacklist = self.siteBlacklist)
-        else:
-            mergeTask.setSplittingAlgorithm(splitAlgo,
-                                            max_merge_size = self.maxMergeSize,
-                                            min_merge_size = self.minMergeSize,
-                                            max_merge_events = self.maxMergeEvents,
-                                            max_wait_time = self.maxWaitTime,
-                                            siteWhitelist = self.siteWhitelist,
-                                            siteBlacklist = self.siteBlacklist)
+        mergeTask.setSplittingAlgorithm(splitAlgo,
+                                        max_merge_size = self.maxMergeSize,
+                                        min_merge_size = self.minMergeSize,
+                                        max_merge_events = self.maxMergeEvents,
+                                        max_wait_time = self.maxWaitTime,
+                                        siteWhitelist = self.siteWhitelist,
+                                        siteBlacklist = self.siteBlacklist)
 
         if getattr(parentOutputModule, "dataTier") == "DQMROOT":
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge",

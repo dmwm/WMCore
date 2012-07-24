@@ -170,13 +170,13 @@ class MaskTest(unittest.TestCase):
         self.assertEqual(len(newRuns), 1)
 
         runs = set()
-        runs.add(Run(1, 2, 148, 166, 185, 195, 203, 212))
+        runs.add(Run(1, 2, 9, 148, 166, 185, 195, 203, 212))
         newRuns = mask.filterRunLumisByMask(runs = runs)
         self.assertEqual(len(newRuns), 1)
 
         run = newRuns.pop()
         self.assertEqual(run.run, 1)
-        self.assertEqual(run.lumis, [2])
+        self.assertEqual(run.lumis, [2,9])
 
 
 if __name__ == '__main__':

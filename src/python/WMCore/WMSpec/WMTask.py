@@ -373,27 +373,29 @@ class WMTaskHelper(TreeHelper):
         setattr(self.data.production, "firstEvent", firstEvent)
         setattr(self.data.production, "firstLumi", firstLumi)
 
-    def getFirstEvent(self):
+    def getFirstEvent(self, default = None):
         """
         _getFirstEvent_
 
         Get first event to produce for the task
+        Return default if not in spec
         """
         if hasattr(self.data, "production"):
-            if hasattr(self.data.production, "firstLumi"):
+            if hasattr(self.data.production, "firstEvent"):
                 return self.data.production.firstEvent
-        return None
+        return default
 
-    def getFirstLumi(self):
+    def getFirstLumi(self, default = None):
         """
         _getFirstLumi_
 
         Get first lumi to produce for the task
+        Return default if not in spec
         """
         if hasattr(self.data, "production"):
             if hasattr(self.data.production, "firstLumi"):
                 return self.data.production.firstLumi
-        return None
+        return default
 
     def setSplittingParameters(self, **params):
         """

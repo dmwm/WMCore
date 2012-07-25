@@ -20,7 +20,7 @@ class MonteCarlo(StartPolicyInterface):
         self.args.setdefault('SliceType', 'NumberOfEvents')
         self.args.setdefault('SliceSize', 1000)         # events per job
         self.args.setdefault('SubSliceType', 'NumberOfEventsPerLumi')
-        self.args.setdefault('SubSliceSize', 1000) # events per lumi
+        self.args.setdefault('SubSliceSize', self.args['SliceSize']) # events per lumi
         self.args.setdefault('MaxJobsPerElement', 250)  # jobs per WQE
 
 
@@ -29,14 +29,11 @@ class MonteCarlo(StartPolicyInterface):
         # if not specified take standard defaults
         if not self.mask:
             self.mask = Mask(FirstRun = 1,
-                             FirstLumi = self.initialTask.getFirstLumi(),
-                             FirstEvent = self.initialTask.getFirstEvent(),
+                             FirstLumi = self.initialTask.getFirstLumi(1),
+                             FirstEvent = self.initialTask.getFirstEvent(1),
                              LastRun = 1,
-                             LastEvent = self.initialTask.getFirstEvent() +
+                             LastEvent = self.initialTask.getFirstEvent(1) +
                                              self.initialTask.totalEvents() - 1)
-        if not self.args['SubSliceType']:
-            self.args['SubSliceType'] = 'NumberOfEventsPerLumi'
-            self.args['SubSliceSize'] = self.args['SliceSize']
         mask = Mask(**self.mask)
 
         #First let's initialize some parameters
@@ -49,51 +46,31 @@ class MonteCarlo(StartPolicyInterface):
             current = mask['FirstEvent'] + stepSize - 1 # inclusive range
             if current > lastAllowedEvent:
                 current = lastAllowedEvent
+
+            nEvents = current - mask['FirstEvent'] + 1 # inclusive range
+
+            # loop around at 32 bit signed int
+            if current > (2**32 - 1):
+                current = current % (2**32 - 1)
+
+            # note LastEvent may be smaller than FirstEvent when 2**32 reached
             mask['LastEvent'] = current
 
             #Calculate the job splitting without actually doing it
-            nEvents = mask['LastEvent'] - mask['FirstEvent'] + 1
-            lumis_per_job = ceil(self.args['SliceSize'] /
-                                 float(self.args['SubSliceSize']))
-            remainingEvents = nEvents % self.args['SliceSize']
-            lumis = (nEvents / self.args['SliceSize']) * lumis_per_job
-            lumis += ceil(remainingEvents / float(self.args['SubSliceSize']))
-            jobs = ceil(lumis/lumis_per_job)
+            nLumis = int(ceil(nEvents / float(self.args['SubSliceSize'])))
+            mask['LastLumi'] = mask['FirstLumi'] + nLumis - 1 # inclusive range
+            jobs = int(ceil(nEvents / float(self.args['SliceSize'])))
 
-            mask['LastLumi'] = mask['FirstLumi'] + int(lumis) - 1 # inclusive range
-            nLumis = mask['LastLumi'] - mask['FirstLumi'] + 1
             self.newQueueElement(WMSpec = self.wmspec,
                                  NumberOfLumis = nLumis,
                                  NumberOfEvents = nEvents,
                                  Jobs = jobs,
                                  Mask = copy(mask))
 
-            if mask['LastEvent'] > (2**32 - 1):
-                #This is getting tricky, to ensure consecutive
-                #events numbers we must calculate where the jobSplitter
-                #will restart the firstEvent to 1 for the last time
-                #in the newly created unit
-                internalEvents = mask['FirstEvent']
-                accumulatedEvents = internalEvents
-                breakPoint = internalEvents
-
-                while accumulatedEvents < mask['LastEvent']:
-                    if (internalEvents + self.args['SliceSize'] - 1) > (2**32 - 1):
-                        internalEvents = 1
-                        breakPoint = accumulatedEvents
-                    else:
-                        internalEvents += self.args['SliceSize']
-                        accumulatedEvents += self.args['SliceSize']
-
-                leftoverEvents = mask['LastEvent'] - breakPoint + 1
-                mask['FirstEvent'] = leftoverEvents + 1
-
-            else:
-                mask['FirstEvent'] = mask['LastEvent'] + 1
-
+            # Increment beginning fields for next iteration
+            mask['FirstEvent'] = mask['LastEvent'] + 1
             mask['FirstLumi'] = mask['LastLumi'] + 1
             eventsAccounted += stepSize
-            lastAllowedEvent = (total - eventsAccounted) + mask['FirstEvent'] - 1
 
 
     def validate(self):

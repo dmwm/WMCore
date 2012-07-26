@@ -15,8 +15,7 @@ function(doc) {
               } else if (doc['states'][lastStateIndex].oldstate == 'jobpaused') {
                   status = 'queued_retry';
               } else {
-                  //TODO invalide transaction need to handle correctly
-                  status = 'queued_' + doc['states'][lastStateIndex].oldstate;
+                  throw "not valid transition";
               };
               break;
           case 'jobcooloff':
@@ -34,8 +33,7 @@ function(doc) {
               } else if (doc['states'][lastStateIndex - 1].oldstate == 'jobcooloff') {
                   status = 'submitted_retry';
               } else {
-                  //TODO invalide transaction need to handle correctly
-                  status = 'submitted_'+ doc['states'][lastStateIndex].oldstate;
+                  throw "not valid transition";
               };
               break;
           // this case can be removed but in case of state transition update failure 
@@ -50,8 +48,7 @@ function(doc) {
               } else if (doc['states'][lastStateIndex].oldstate == 'createfailed') {
                   status = 'failure_create';
               } else {
-                  //TODO invalide transaction need to handle correctly
-                  status = 'failure_'+ doc['states'][lastStateIndex].oldstate;
+                  throw "not valid transition";
               };
               break;
           // this case can be removed but in case of state transition update failure 
@@ -71,12 +68,10 @@ function(doc) {
                   } else if (doc['states'][lastStateIndex - 1].oldstate == 'createfailed') {
                       status = 'failure_create';
                   } else {
-                      //TODO invalide transaction need to handle correctly
-                      status = 'failure_'+ doc['states'][lastStateIndex].oldstate;
+                      throw "not valid transition";
                   };
               } else {
-                  //TODO invalide transaction need to handle correctly
-                  status = 'cleanout_'+ doc['states'][lastStateIndex].oldstate;
+                  throw "not valid transition";
               };
               break;
           default:

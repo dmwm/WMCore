@@ -17,16 +17,17 @@ class MonteCarlo(StartPolicyInterface):
     """Split elements into blocks"""
     def __init__(self, **args):
         StartPolicyInterface.__init__(self, **args)
-        self.args.setdefault('SliceType', 'NumberOfEvents')
-        self.args.setdefault('SliceSize', 1000)         # events per job
-        self.args.setdefault('SubSliceType', 'NumberOfEventsPerLumi')
-        self.args.setdefault('SubSliceSize', 1000) # events per lumi
-        self.args.setdefault('MaxJobsPerElement', 250)  # jobs per WQE
 
 
     def split(self):
         """Apply policy to spec"""
         # if not specified take standard defaults
+        self.args.setdefault('SliceType', 'NumberOfEvents')
+        self.args.setdefault('SliceSize', 1000)         # events per job
+        self.args.setdefault('SubSliceType', 'NumberOfEventsPerLumi')
+        self.args.setdefault('SubSliceSize', self.args['SliceSize']) # events per lumi
+        self.args.setdefault('MaxJobsPerElement', 250)  # jobs per WQE
+
         if not self.mask:
             self.mask = Mask(FirstRun = 1,
                              FirstLumi = self.initialTask.getFirstLumi(),
@@ -34,9 +35,6 @@ class MonteCarlo(StartPolicyInterface):
                              LastRun = 1,
                              LastEvent = self.initialTask.getFirstEvent() +
                                              self.initialTask.totalEvents() - 1)
-        if not self.args['SubSliceType']:
-            self.args['SubSliceType'] = 'NumberOfEventsPerLumi'
-            self.args['SubSliceSize'] = self.args['SliceSize']
         mask = Mask(**self.mask)
 
         #First let's initialize some parameters

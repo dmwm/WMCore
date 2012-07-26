@@ -382,7 +382,7 @@ class WMTaskHelper(TreeHelper):
         if hasattr(self.data, "production"):
             if hasattr(self.data.production, "firstLumi"):
                 return self.data.production.firstEvent
-        return None
+        return 1
 
     def getFirstLumi(self):
         """
@@ -393,7 +393,7 @@ class WMTaskHelper(TreeHelper):
         if hasattr(self.data, "production"):
             if hasattr(self.data.production, "firstLumi"):
                 return self.data.production.firstLumi
-        return None
+        return 1
 
     def setSplittingParameters(self, **params):
         """

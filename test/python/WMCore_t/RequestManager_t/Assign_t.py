@@ -127,6 +127,7 @@ class AssignTest(RESTBaseUnitTest):
                                                                 'T2*': 'T2_*',
                                                                 'T3*': 'T3_*',
                                                                 'US*': '_US_'}
+        self.config.UnitTests.views.active.rest.wmstatDBName = "wmstats"
         from WMCore.HTTPFrontEnd.RequestManager.Assign import Assign
         assign = Assign(config = self.config.UnitTests.views.active.rest, noSiteDB = True)
 

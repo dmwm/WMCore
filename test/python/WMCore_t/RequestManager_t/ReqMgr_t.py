@@ -59,6 +59,9 @@ class RequestManagerConfig(DefaultConfig):
     def _setupCouchUrl(self):
         self.UnitTests.views.active.rest.couchUrl = os.environ.get("COUCHURL",None)
 
+    def _setupWMStats(self):
+        self.UnitTests.views.active.rest.wmstatDBName = "wmstats"
+                               
     def deleteWorkloadCache(self):
         shutil.rmtree(self.UnitTests.views.active.rest.model.workloadCache)
     
@@ -70,6 +73,7 @@ class RequestManagerConfig(DefaultConfig):
         self._setWorkloadCache()
         self._setupCouchUrl()
         self._setupAssign()
+        self._setupWMStats()
 
     def setupCouchDatabase(self, dbName):
         self.UnitTests.views.active.rest.configDBName   = dbName

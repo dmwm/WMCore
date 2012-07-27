@@ -36,6 +36,22 @@
         $('div.template.captionTable').children().clone().appendTo(tablePane);
     }
     
+    function setSearch() {
+        var searchDiv = "div[name='search']";
+        var tier1Search = 'campaign: <input name="campaign" value=""></input>\
+                           workflow: <input name="workflow" value=""></input>\
+                           type: <input name="request_type" value=""></input>\
+                           status: <input name="request_status" value=""></input>';
+        var tier0Search = 'workflow: <input name="workflow" value=""></input>'
+                    
+        if (WMStats.Globals.VARIANT == "tier1") {
+            $(searchDiv).append(tier1Search);
+        } else if (WMStats.Globals.VARIANT == "tier0") {
+             $(searchDiv).append(tier0Search);
+        } else if (WMStats.Globals.VARIANT == "analysis") {
+             $(searchDiv).append(tier1Search);
+        } 
+    }
     function drawMonitor() {
         WMStats.ActiveRequestView.draw("#tab-active-request div[name='requestSummary']");
         // select initial summary view by global value (tier0, tier1, analysis)
@@ -48,6 +64,7 @@
     $(document).ready(function() {
         //myLayout = $('body').layout();
         $("#tabs").tabs();
+        setSearch();
         applyTemplate();
         drawMonitor();
         //position the job block against request block
@@ -75,12 +92,7 @@
                 <li><a href="#tab-agent">Agent view</a></li>
             </ul>
             <div id="tab-active-request">
-                <div name='search'>
-                    campaign: <input name="campaign" value=""></input>
-                    workflow: <input name="workflow" value=""></input>
-                    type: <input name="request_type" value=""></input>
-                    status: <input name="request_status" value=""></input>
-                </div>
+                <div name='search'></div>
                 <div class="activeRequestContainer" name="requestSummary"></div>
                 <div class="requestDetailContainer">
                     <div> Total Stats</div>

@@ -1,6 +1,11 @@
 .activeRequestContainer {
-    width: 1150px;
+    width: 60%;
     float: left;
+}
+
+.requestDetailContainer {
+    width: 300px;
+    margin-left: 80%;
 }
 .requestSummaryContainer {
     padding-top: 20px;
@@ -8,16 +13,10 @@
 
 .requestSummaryLayout {
     width: 400px;
-    padding-top: 100px;
+    padding-top: 50px;
     padding-left: 50px;
     float: left;
 
-}
-.requestDetailContainer {
-    width: 400px;
-    padding-top: 100px;
-    padding-left: 50px;
-    float: left;
 }
 
 .agentSummaryContainer {
@@ -25,15 +24,14 @@
 }
 
 .jobSummaryContainer {
-    width: 700px;
-    padding-top: 50px;
-    padding-left: 50px;
+    clear: both;
+    width: 30%;
+    margin-top: 20px;
     float: left;
 }
 
 .jobDetailContainer {
-    width: 800px;
-    padding-top: 50px;
-    padding-left: 50px;
-    float: left;
+    width: 60%;
+    margin-top: 20px;
+    margin-left: 40%;
 }

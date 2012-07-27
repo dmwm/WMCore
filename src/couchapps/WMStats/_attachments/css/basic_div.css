@@ -24,6 +24,7 @@ div.front{
 
 div.back{
     z-index: -1;
+    display: none;
 }
 
 div middle{

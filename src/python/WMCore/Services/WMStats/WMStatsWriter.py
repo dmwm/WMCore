@@ -59,17 +59,13 @@ class WMStatsWriter():
 
     def insertRequest(self, schema):
         doc = monitorDocFromRequestSchema(schema)
-        result = self.couchDB.updateDocument(doc['_id'], 'WMStats', 
-                                    'insertRequest',
-                                    fields={'doc': JSONEncoder().encode(doc)})
-        self.updateRequestStatus(doc['_id'], "new")
-        return result
+        return self.insertGenericRequest(doc)
 
     def insertGenericRequest(self, doc):
         result = self.couchDB.updateDocument(doc['_id'], 'WMStats', 
                                     'insertRequest',
                                     fields={'doc': JSONEncoder().encode(doc)})
-        #self.updateRequestStatus(doc['_id'], "new")
+        self.updateRequestStatus(doc['_id'], "new")
         return result
     
     def updateRequestStatus(self, request, status):

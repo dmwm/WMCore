@@ -66,36 +66,3 @@ WMStats.dataMap.convertToRows = function(requestData, columnFilter) {
     }
     return rows;
 }
-
-WMStats.Table.create = function(selector, data, config) {
-    /*
-     * create the Table with given data on the specified selector 
-     * (selector is css/jquery selector)
-     */
-    
-    function generateConfig() {
-        /*
-         * jquery.dataTables config
-         * Reference: http://datatables.net/ref
-         * */
-        
-        // default table config
-        var tableConfig = {'bProcessing': true}; 
-      
-        if (config) {
-            tableConfig = config;
-        }
-        
-        tableConfig.aoColumns = [];                   
-        for (var i in data.columns) {
-            tableConfig.aoColumns.push({'sTitle': data.columns[i]});
-        }
-        tableConfig.aaData = data.rows;
-        return tableConfig; 
-    }
-    
-    var oTableConfig = generateConfig();
-    var oTable = $(selector).dataTable(oTableConfig);
-    return oTable;
-}
-    

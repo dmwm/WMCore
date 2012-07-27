@@ -61,7 +61,6 @@ dbsBlockTimeout = 86400
 # Job retry information.  This includes the number of times a job will tried and
 # how long it will sit in cool off.
 maxJobRetries = 3
-retryAlgo = "SquaredAlgo"
 retryAlgoParams = {"create": 5000, "submit": 5000, "job": 5000}
 
 # The amount of time to wait after a workflow has completed before archiving it.
@@ -210,8 +209,10 @@ config.RetryManager.namespace = "WMComponent.RetryManager.RetryManager"
 config.RetryManager.componentDir  = config.General.workDir + "/RetryManager"
 config.RetryManager.logLevel = globalLogLevel
 config.RetryManager.pollInterval = 240
-config.RetryManager.coolOffTime = retryAlgoParams
-config.RetryManager.pluginName = retryAlgo
+config.RetryManager.plugins = {"default" : "SquaredAlgo"}
+config.RetryManager.section_("SquaredAlgo")
+config.RetryManager.SquaredAlgo.section_("default")
+config.RetryManager.SquaredAlgo.default.coolOffTime = retryAlgoParams
 
 config.component_("JobArchiver")
 config.JobArchiver.namespace = "WMComponent.JobArchiver.JobArchiver"

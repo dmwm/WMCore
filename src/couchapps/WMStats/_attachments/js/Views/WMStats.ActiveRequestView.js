@@ -1,28 +1,14 @@
 WMStats.namespace("ActiveRequestView");
-(function() {
-    var initView = 'requestByStatus'; 
-    var options = {'keys': [
-                            "new",
-                            //"testing-approved",
-                            //"testing",
-                            //"tested",
-                            //"test-failed",
-                            "assignment-approved",
-                            "assigned",
-                            "ops-hold",
-                            "negotiating",
-                            "acquired",
-                            "running",
-                            "failed",
-                            "epic-FAILED",
-                            "completed",
-                            "closed-out",
-                            //"announced",
-                            //"aborted",
-                            //"rejected"
-                            ], 
-                   'include_docs': true};
-                   
-    WMStats.ActiveRequestView = new WMStats._RequestViewBase(initView, options, 
-                                       WMStats.ActiveRequestTable);
-})()
+
+ (function($){
+    if (WMStats.Globals.VARIANT == "tier1") {
+        WMStats.Globals.loadScript("js/T1/WMStats.T1.ActiveRequestView.js", 
+                            function() {WMStats.ActiveRequestView = WMStats.T1.ActiveRequestView;})
+    } else if (WMStats.Globals.VARIANT == "tier0") {
+        WMStats.Globals.loadScript("js/T0/WMStats.T0.ActiveRequestView.js", 
+                            function() {WMStats.ActiveRequestView =  WMStats.T0.ActiveRequestView;})
+    } else if (WMStats.Globals.VARIANT == "analysis") {
+        WMStats.Globals.loadScript("js/T1/WMStats.T1.ActiveRequestView.js", 
+                            function() {WMStats.ActiveRequestView =  WMStats.T1.ActiveRequestView;})
+    } 
+})(jQuery);

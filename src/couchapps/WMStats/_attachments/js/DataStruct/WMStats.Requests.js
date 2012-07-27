@@ -2,6 +2,10 @@ WMStats.namespace("Requests");
 WMStats.Requests = function (noFilterFlag) {
     /*
      * Data structure for holding the request
+     * it handles 3 types (not very robust and modular)
+     * TODO: remove dependencies from different data type. (tier0, analysis, reqmgr)
+     * if possible
+     * reqmgr_request, agent_request, tier0_request.
      */
     // request data by workflow name
     var _dataByWorkflow = {};
@@ -75,6 +79,8 @@ WMStats.Requests = function (noFilterFlag) {
             _summary.pending += _get(doc, "status.submitted.pending", 0);
         } else if (doc.type == "reqmgr_request") {
             _summary.totalEvents += Number(_get(doc, "input_events", 0));
+            _summary.length++;
+        } else if (doc.type == "tier0_request") {
             _summary.length++;
         }
     }

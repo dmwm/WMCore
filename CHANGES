@@ -1,3 +1,7 @@
+0.9.9 to 0.9.10:
+  - add acive request tier0 support, layout change and hanle no request case
+  - group permission fix
+
 0.9.8 to 0.9.9:
   - add api for generic request insert (for T0)
   - fix estimated time and task level injection percentage

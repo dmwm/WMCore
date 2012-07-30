@@ -125,7 +125,7 @@ WMStats._RequestViewBase.prototype = {
                                 WMStats.RequestView =  WMStats.T0.RequestView;
                                 })
     } else if (WMStats.Globals.VARIANT == "analysis") {
-        WMStats.Globals.loadScript("js/T1/WMStats.Analysis.RequestView.js", 
+        WMStats.Globals.loadScript("js/Analysis/WMStats.Analysis.RequestView.js", 
                             function() {
                                 WMStats.RequestView =  WMStats.Analysis.RequestView;
                                 })

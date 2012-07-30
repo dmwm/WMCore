@@ -34,11 +34,10 @@ class RequestManager(Service):
         # application/x-www-form-urlencoded
         dict.setdefault("content_type", 'application/x-www-form-urlencoded')
         self.encoder = JsonWrapper.dumps
-        self.decoder = JsonWrapper.loads
         Service.__init__(self, dict)
 
     def _getResult(self, callname, clearCache = True,
-                   args = None, verb = "GET", encoder = None,
+                   args = None, verb = "GET", encoder = None, decoder = JsonWrapper.loads,
                    contentType = None):
         """
         _getResult_
@@ -58,8 +57,8 @@ class RequestManager(Service):
         result = f.read()
         f.close()
 
-        if result:
-            result = self.decoder(result)
+        if result and decoder:
+            result = decoder(result)
         return result
 
     def getRequest(self, requestName = None):
@@ -96,10 +95,10 @@ class RequestManager(Service):
         callname = 'assignment'
         return self._getResult(callname, args = args, verb = "GET")
 
-    def getWorkQueue(self):
+    def getWorkQueue(self, **args):
         "get list of workqueue urls from requestmanager"
         callname = 'workQueue'
-        return self._getResult(callname, verb = "GET")
+        return self._getResult(callname, args = args, verb = "GET")
 
 
     def putWorkQueue(self, requestName, prodAgentUrl = None):
@@ -138,3 +137,32 @@ class RequestManager(Service):
         return self._getResult(callname, args = msg, verb = "PUT", 
                                encoder = JsonWrapper.dumps, 
                                contentType = 'application/json')
+
+    def makeRequest(self, ScramArch = 'slc5_amd64_gcc434',
+                    DbsUrl = 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet',
+                    TimePerEvent = 60, Memory = 2147483648, SizePerEvent = 512000,
+                    **kwargs):
+        """Submit parameters to reqmgr and create request
+        See WMCore/HTTPFrontEnd/RequestManager/ReqMgrWebTools.py:makeRequest
+        for parameters
+        Returns details of created workflow.
+        """
+        kwargs.update({'ScramArch' : ScramArch, 'DbsUrl' : DbsUrl,
+                       'TimePerEvent' : TimePerEvent, 'Memory' : Memory,
+                       'SizePerEvent' : SizePerEvent})
+        return self._getResult('request', args = kwargs, verb = 'PUT',
+                                encoder = JsonWrapper.dumps,
+                                contentType = 'application/json',
+                                )
+
+    def assign(self, request, team, acquisitionEra = None, processingVersion = None,
+                action = 'Assign', **kwargs):
+        """Assign request"""
+        kwargs['Team' + team] = 'on'
+        kwargs['checkbox' + request] = 'on'
+        kwargs['action'] = action
+        kwargs['AcquisitionEra'] = acquisitionEra
+        kwargs['ProcessingVersion'] = processingVersion
+        # Can't use api url as assignment page has a lot of unique logic.
+        return self._getResult('../assign/handleAssignmentPage',
+                                args = kwargs, verb = 'POST', decoder = False)

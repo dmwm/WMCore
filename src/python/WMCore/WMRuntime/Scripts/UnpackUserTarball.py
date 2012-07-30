@@ -76,10 +76,10 @@ def UnpackUserTarball():
         tarFile = os.path.join(jobDir, os.path.basename(tarball))
 
         # Is it a URL or a file that exists in the jobDir?
-        if splitResult[0] in ['xrootd'] and splitResult[1]:
+        if splitResult[0] in ['xrootd', 'root']:
             print "Fetching tarball %s through xrootd" % tarball                
             try:
-                subprocess.check_call(['xrdcp', ['-d'], ['1'], ['-f'], tarball, 'TEMP_TARBALL.tgz'])
+                subprocess.check_call(['xrdcp', '-d', '1', '-f', tarball, 'TEMP_TARBALL.tgz'])
                 subprocess.check_call(['tar', 'xzf', 'TEMP_TARBALL.tgz'])
             except subprocess.CalledProcessError:
                 print "Couldn't retrieve/extract file from xrootd"

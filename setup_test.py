@@ -163,10 +163,10 @@ if can_nose:
                          ('testingRoot=',
                          None,
                          "Primarily used by buildbot. Gives the path to the root of the test tree (i.e. the directory with WMCore_t)"),
-                        ('testMinimumIndex=',
+                         ('testMinimumIndex=',
                          None,
                          "The minimum ID to be executed (advanced use)"),
-                        ('testMaximumIndex=',
+                         ('testMaximumIndex=',
                          None,
                          "The maximum ID to be executed (advanced use)")
                          ]
@@ -319,7 +319,7 @@ if can_nose:
             # if we got here, then sys.exit got cancelled by the alarm...
             sys.stderr.write("Failed to exit after 30 secs...something hung\n")
             sys.stderr.write("Forcing process to die")
-            os.DMWM_REAL_EXIT
+            os.DMWM_REAL_EXIT()
 
             
 else:

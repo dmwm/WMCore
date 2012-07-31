@@ -6,6 +6,7 @@ from glob import glob
 from os.path import splitext, basename, join as pjoin, walk
 from ConfigParser import ConfigParser, NoOptionError
 import os, sys, os.path
+import cherrypy, atexit, signal
 import unittest
 import time
 import pickle
@@ -102,7 +103,10 @@ if can_nose:
             # os._exit on child threads should just blow away the thread
             raise SystemExit, "os._exit() was called in a child thread. " +\
                               "Protecting the interpreter and trapping it"
-        
+
+    def signal_handler(signum, frame):
+        # null handler for sys.exit timeout
+        pass
 
 
     class DetailedOutputter(Plugin):
@@ -289,27 +293,35 @@ if can_nose:
                          paths = testPath)
                     
             threadCount = len(threading.enumerate())
+
             if threadCount > 1:
-                sys.stderr.write("There are %s threads running. Cherrypy may be acting up.\n" % threadCount)
-                import cherrypy
+                sys.stderr.write("There are %s threads running. Cherrypy may be acting up.\n" % len(threading.enumerate()))
+                sys.stderr.write("The threads are: \n%s\n" % threading.enumerate())
+                atexit.register(cherrypy.engine.stop)
                 cherrypy.engine.exit()
                 sys.stderr.write("Asked cherrypy politely to commit suicide\n")
+                sys.stderr.write("Now there are %s threads running\n" % len(threading.enumerate()))
+                sys.stderr.write("The threads are: \n%s\n" % threading.enumerate())
+                
             threadCount = len(threading.enumerate())
-            if threadCount > 1:
-                sys.stderr.write("Cherrypy's being stubborn and there's still %s threads. Grabbing a gun...\n" % threadCount)
-                import cherrypy
-                class MyCherryPyApplication(object):
-                    def default(self):
-                        sys.exit()
-                    default.exposed = True
-                cherrypy.quickstart(MyCherryPyApplication())
-                sys.stderr.write("There's %s threads now. That's all we can do..." % len(threading.enumerate()))
             print "Testing complete, there are now %s threads" % len(threading.enumerate())
+                        
+            # Set the signal handler and a 5-second alarm
+            signal.signal(signal.SIGALRM, signal_handler)
+            signal.alarm(60)
             
+            # try to exit
             if retval:
                 sys.exit( 0 )
             else:
                 sys.exit( 1 )
+                
+            # if we got here, then sys.exit got cancelled by the alarm...
+            sys.stderr.write("Failed to exit after 30 secs...something hung\n")
+            sys.stderr.write("Forcing process to die")
+            os.DMWM_REAL_EXIT
+
+            
 else:
     class TestCommand(Command):
         user_options = [ ]

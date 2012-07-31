@@ -287,7 +287,25 @@ if can_nose:
                          '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
                          '--stop', self.testingRoot],
                          paths = testPath)
-
+                    
+            threadCount = len(threading.enumerate())
+            if threadCount > 1:
+                sys.stderr.write("There are %s threads running. Cherrypy may be acting up.\n" % threadCount)
+                import cherrypy
+                cherrypy.engine.exit()
+                sys.stderr.write("Asked cherrypy politely to commit suicide\n")
+            threadCount = len(threading.enumerate())
+            if threadCount > 1:
+                sys.stderr.write("Cherrypy's being stubborn and there's still %s threads. Grabbing a gun...\n" % threadCount)
+                import cherrypy
+                class MyCherryPyApplication(object):
+                    def default(self):
+                        sys.exit()
+                    default.exposed = True
+                cherrypy.quickstart(MyCherryPyApplication())
+                sys.stderr.write("There's %s threads now. That's all we can do..." % len(threading.enumerate()))
+            print "Testing complete, there are now %s threads" % len(threading.enumerate())
+            
             if retval:
                 sys.exit( 0 )
             else:

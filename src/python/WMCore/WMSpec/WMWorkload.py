@@ -124,7 +124,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data.properties.dashboardActivity = dashboardActivity
         return
-    
+
     def getTopLevelTask(self):
         """
         _getTopLevelTask_
@@ -419,6 +419,7 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data.tasks.__delattr__(taskName)
         self.data.tasks.tasklist.remove(taskName)
         return
+
 
     def setSiteWildcardsLists(self, siteWhitelist, siteBlacklist, wildcardDict):
         """

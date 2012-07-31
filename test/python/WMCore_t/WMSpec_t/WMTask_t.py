@@ -392,6 +392,25 @@ class WMTaskTest(unittest.TestCase):
         testTask.setPrimarySubType(subType = "subType")
         self.assertEqual(testTask.getPrimarySubType(), "subType")
         return
+    
+    def testBuildLumiMask(self):
+        from WMCore.WMSpec.WMTask import buildLumiMask
+        runs=['3','4']
+        lumis=['1,4,23,45', '5,84,234,445']
+        expected = {'3':[[1,4],[23,45]],'4':[[5,84],[234,445]]}
+        
+        #working
+        self.assertEqual(buildLumiMask(runs, lumis), expected, "buildLumiMask")
+
+        #number of runs different than number of lumis
+        runs=['3']
+        lumis=['1,4,23,45', '5,84,234,445']
+        self.assertRaises(ValueError, buildLumiMask, runs, lumis)
+
+        #wrong format of the number of lumis
+        runs=['3', '4']
+        lumis=['1,4,23,45', '5,84,234']
+        self.assertRaises(ValueError, buildLumiMask, runs, lumis)
         
 
 if __name__ == '__main__':

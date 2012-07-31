@@ -44,6 +44,27 @@ def getTaskFromStep(stepRef):
     return WMTaskHelper(taskNode)
 
 
+def buildLumiMask(runs, lumis):
+    """
+        Runs are saved in the spec as a list of integers.
+        The lumi mask associated to eac run is saved as a list of strings
+        where each string is in a format like '1,4,23,45'
+
+        The method convert these parameters in the corresponding lumiMask,
+        e.g.:  runs=['3','4'], lumis=['1,4,23,45', '5,84,234,445'] => lumiMask = {'3':[[1,4],[23,45]],'4':[[5,84],[234,445]]}
+    """
+    
+    if len(runs) != len(lumis):
+        raise ValueError("runs and lumis must have same lenght")
+    for lumi in lumis:
+        if len(lumi.split(',')) % 2:
+            raise ValueError("Needs an even number of lumi in each element of lumis list")
+            
+            
+    lumiLists = [map(list, zip([int(y) for y in x.split(',')][::2], [int(y) for y in x.split(',')][1::2])) for x in lumis]
+    lumiMask = dict(zip(runs, lumiLists))
+    return lumiMask
+
 
 class WMTaskHelper(TreeHelper):
     """
@@ -1027,6 +1048,17 @@ class WMTaskHelper(TreeHelper):
         Get the task acquisition era
         """
         return getattr(self.data.parameters, 'acquisitionEra', None)
+
+    def getLumiMask(self):
+        """
+            return the lumi mask
+        """
+        runs = getattr(self.data.input.splitting, 'runs', None)
+        lumis = getattr(self.data.input.splitting, 'lumis', None)
+        if runs and lumis:
+            return buildLumiMask(runs, lumis)
+
+        return {}
     
 class WMTask(ConfigSectionTree):
     """

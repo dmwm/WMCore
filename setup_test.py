@@ -95,12 +95,15 @@ if can_nose:
         will replace os._exit() and throw an exception instead
         """
         if hasattr( threading.local(), "isMain" ) and threading.local().isMain:
-            # only trap the main thread
-            print "*******EXIT WAS TRAPPED**********"
-            raise RuntimeError, "os._exit() was called, we trapped it for testing"
-        else:
-            # subthreads can behave the same
-            os.DMWM_REAL_EXIT( code )
+            # The main thread should raise an exception
+            sys.stderr.write("*******EXIT WAS TRAPPED**********\n")
+            raise RuntimeError, "os._exit() was called in the main thread"
+        else:        
+            # os._exit on child threads should just blow away the thread
+            raise SystemExit, "os._exit() was called in a child thread. " +\
+                              "Protecting the interpreter and trapping it"
+        
+
 
     class DetailedOutputter(Plugin):
         name = "detailed"
@@ -284,7 +287,25 @@ if can_nose:
                          '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
                          '--stop', self.testingRoot],
                          paths = testPath)
-
+                    
+            threadCount = len(threading.enumerate())
+            if threadCount > 1:
+                sys.stderr.write("There are %s threads running. Cherrypy may be acting up.\n" % threadCount)
+                import cherrypy
+                cherrypy.engine.exit()
+                sys.stderr.write("Asked cherrypy politely to commit suicide\n")
+            threadCount = len(threading.enumerate())
+            if threadCount > 1:
+                sys.stderr.write("Cherrypy's being stubborn and there's still %s threads. Grabbing a gun...\n" % threadCount)
+                import cherrypy
+                class MyCherryPyApplication(object):
+                    def default(self):
+                        sys.exit()
+                    default.exposed = True
+                cherrypy.quickstart(MyCherryPyApplication())
+                sys.stderr.write("There's %s threads now. That's all we can do..." % len(threading.enumerate()))
+            print "Testing complete, there are now %s threads" % len(threading.enumerate())
+            
             if retval:
                 sys.exit( 0 )
             else:

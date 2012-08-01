@@ -186,10 +186,7 @@ class WorkQueue(WorkQueueBase):
         if type(self.params['Teams']) in types.StringTypes:
             self.params['Teams'] = [x.strip() for x in \
                                     self.params['Teams'].split(',')]
-        
-        if not self.params.get('LocalQueueFlag') and not self.params.get('WMStatsCouchUrl'):
-            raise RuntimeError, 'WMStatsCouchUrl config value mandatory'
-        
+
         self.dataLocationMapper = WorkQueueDataLocationMapper(self.logger, self.backend,
                                                               phedex = self.phedexService,
                                                               sitedb = self.SiteDB,
@@ -782,17 +779,18 @@ class WorkQueue(WorkQueueBase):
                     work, totalStats = self._splitWork(inbound['WMSpec'], None, inbound['Inputs'], inbound['Mask'])
                     self.backend.insertElements(work, parent = inbound) # if this fails, rerunning will pick up here
                     # save inbound work to signal we have completed queueing
-                    
+
                     # add the total work on wmstat summary
                     self.backend.updateInboxElements(inbound.id, Status = 'Acquired')
-                    
-                    # what would you do if it fails (currently globalqueue and wmstats will be in the same couchserver)             
-                    if not self.params.get('LocalQueueFlag'):
-                        #only update for global queue
-                        wmstatSvc = WMStatsWriter(self.params.get('WMStatsCouchUrl'))
-                        #TODO need to handle error case?
-                        wmstatSvc.insertTotalStats(inbound['WMSpec'].name(), totalStats)
-                        
+
+                    if not self.params.get('LocalQueueFlag') and self.params.get('WMStatsCouchUrl'):
+                        # only update global stats for global queue
+                        try:
+                            wmstatSvc = WMStatsWriter(self.params.get('WMStatsCouchUrl'))
+                            wmstatSvc.insertTotalStats(inbound['WMSpec'].name(), totalStats)
+                        except Exception, ex:
+                            self.logger.info('Error publishing %s to WMStats: %s' % (inbound['RequestName'], str(ex)))
+
             except TERMINAL_EXCEPTIONS, ex:
                 self.logger.info('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))
                 self.backend.updateInboxElements(inbound.id, Status = 'Failed')

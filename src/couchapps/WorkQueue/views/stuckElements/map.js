@@ -3,13 +3,38 @@ function(doc, site) {
 
 	// !code lib/workqueue_utils.js
 
-	// Show elements without updates for 24 hours
+	// list elements with known problems
 	if (ele) {
+		// only available elements
+		if (ele.Status != 'Available') {
+			return;
+		}
+
 		var input_sites = workqueue_utils.commonInputDataSites(ele);
 		// check for at least one site hosting input data
 		if (ele.Inputs && toJSON(ele.Inputs) != '{}' && !input_sites.length) {
 			emit('No site with data');
 			return;
+		}
+		// check for one site with both inputs and parents
+		var parent_sites = workqueue_utils.commonInputParentDataSites(ele);
+		if (ele.Inputs && toJSON(ele.Inputs) != '{}' && ele.ParentData && toJSON(ele.ParentData) != '{}') {
+			if (!parent_sites.length) {
+				emit('No site with all parent data');
+				return;
+			}
+			var parents_inputs_same_site = false;
+			for (var i =0; i < input_sites.length; i++) {
+				var site = input_sites[i];
+				if (parent_sites.indexOf(site) > -1) {
+					parents_inputs_same_site = true;
+					break;
+				}
+			}
+			if (!parents_inputs_same_site) {
+				emit('No site with both input & parent data');
+				return;
+			}
 		}
 		// check for at least one site with data in the whitelist
 		if (ele.SiteWhitelist.length && input_sites.length) {
@@ -38,11 +63,6 @@ function(doc, site) {
 				emit('Hosting site in blacklist');
 				return;
 			}
-		}
-
-		// element is stuck but not sure why?
-		if  ((doc.updatetime + 86400) < new Date().getTime() / 1000) {
-			emit('No progress for 24 hours');
 		}
 	}
 }

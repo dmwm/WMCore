@@ -86,7 +86,7 @@ class TestWorkloadFactory(object):
         logCollectStep = logCollectTask.makeStep("logCollect1")
         logCollectStep.setStepType("LogCollect")
         logCollectTask.applyTemplates()
-        logCollectTask.setSplittingAlgorithm("EndOfRun", files_per_job = 500)
+        logCollectTask.setSplittingAlgorithm("MinFileBased", files_per_job = 500)
         logCollectTask.setTaskType("LogCollect")
     
         parentTaskLogArch = parentTask.getStep("logArch1")

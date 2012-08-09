@@ -323,6 +323,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 possibleLocations = non_draining_sites
 
             if len(possibleLocations) == 0:
+                newJob['name'] = loadedJob['name']
                 badJobs.append(newJob)
                 continue
 

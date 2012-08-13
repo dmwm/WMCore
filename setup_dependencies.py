@@ -137,4 +137,9 @@ dependencies = {
                 'reqmon':{
                         'statics': ['src/couchapps/WMStats+'],
                         },
+                'alertscollector': 
+                {
+                        'statics': ['src/couchapps/AlertsCollector'],
+
+                },
                }

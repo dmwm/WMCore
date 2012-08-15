@@ -139,7 +139,6 @@ dependencies = {
                         },
                 'alertscollector': 
                 {
-                        'statics': ['src/couchapps/AlertsCollector'],
-
+                        'statics': ['src/couchapps/AlertsCollector+'],
                 },
                }

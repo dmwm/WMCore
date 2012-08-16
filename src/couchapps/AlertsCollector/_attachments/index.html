@@ -25,7 +25,7 @@
 			      title="Display only most recent Alerts.">
 			      most recent alerts</a>
 			</p>
-			<p><a href="./index.html?object=alertsView"
+			<p><a href="./index.html?object=alertsView&limit=no"
 			      title="Display all Alerts present in the CouchDB database, the loading may take very long.">
 			      all alerts</a>
 			</p>
@@ -56,14 +56,13 @@
 	switch(args.object)
 	{
 	case "atomFeed":
-		atomFeed.update();
+		// atomFeed.update();
 		break;
-	// this is default value
-	// list all alerts, posibility of filtering
+    // by default list alerts, only the most recent ones
 	case "alertsView":
 	default:
 		feature = alertsView;
-		if (args.limit)
+		if (args.limit === "yes" || args.limit === undefined)
 		{
 			input.limit = config.limitedViewNumOfAlerts;
 		}

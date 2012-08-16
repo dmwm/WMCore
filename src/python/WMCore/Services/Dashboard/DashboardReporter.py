@@ -136,7 +136,7 @@ class DashboardReporter(WMObject):
             package['StatusDestination'] = job.get('location',
                                                    'NotAvailable')
 
-            if 'plugin' in job:
+            if job.get('plugin', None):
                 package['scheduler']     = job['plugin'][:-6]
 
             logging.debug("Sending: %s" % str(package))

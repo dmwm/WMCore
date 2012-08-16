@@ -21,7 +21,7 @@ class StageOutImplV2:
         self.numRetries = 5
         pass
 
-    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol  ):
+    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksums):
         """
             performs a transfer. stageOut tells you which way to go. returns the new pfn or
             raises on failure. StageOutError (and inherited exceptions) are for expected errors
@@ -64,16 +64,20 @@ class StageOutImplV2:
             return pfn
     
     def runCommandFailOnNonZero(self, command):
+        logging.info("Executing %s" % command)
         (exitCode, output) = runCommand(command)
-        if not exitCode:
+        if exitCode:
             logging.error("Error in file transfer:")
-            logging.error(output)
+            logging.error("  Command executed was: %s" % command )
+            logging.error("  Output was: %s" % output )
+            logging.error("  Exit code was: %s" % exitCode )
             raise StageOutError, "Transfer failure"
         return (exitCode, output)
     
     def runCommandWarnOnNonZero(self, command):
+        logging.info("Executing %s" % command)
         (exitCode, output) = runCommand(command)
-        if not exitCode:
+        if exitCode:
             logging.error("Error in file transfer..ignoring:")
             logging.error(output)
         return (exitCode, output)

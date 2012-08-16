@@ -34,16 +34,12 @@ class CPImpl(StageOutImplV2):
 
         return
     
-    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol  ):
+    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum ):
         self.createOutputDirectory( toPfn )
         shutil.copy(fromPfn, toPfn)
         if os.path.getsize(fromPfn) != os.path.getsize(toPfn):
             raise StageOutFailure, "Invalid file size"
         return toPfn
 
-
     def doDelete(self, pfn, seName, command, options, protocol  ):
         os.unlink(pfn)
-
-
-

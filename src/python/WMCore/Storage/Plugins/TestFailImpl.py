@@ -25,7 +25,7 @@ class TestFailImpl(StageOutImplV2):
 
     """
 
-    def doTransfer(self, lfn, pfn, stageOut, seName, command, options, protocol  ):
+    def doTransfer(self, lfn, pfn, stageOut, seName, command, options, protocol, checksum  ):
         raise StageOutFailure("FailImpl returns FAIL!!!")
 
 

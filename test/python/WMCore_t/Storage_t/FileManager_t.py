@@ -101,6 +101,20 @@ class FileManagerTest(unittest.TestCase):
                                 'lfn-prefix': self.testDir})
         wrapper(fileForTransfer)
         self.assertTrue( os.path.exists(os.path.join(self.testDir, '/etc/hosts')))
+    
+    def testStageOutMgrWrapperRealCopyFallback(self):
+        self.testDir = tempfile.mkdtemp()
+        fileForTransfer = {'LFN': '/etc/hosts', \
+                           'PFN': '/etc/hosts', \
+                           'SEName' : None, \
+                           'StageOutCommand': None}
+        wrapper = StageOutMgr(  **{
+                                'command'    : 'testFallbackToOldBackend',
+                                'option'    : '', 
+                                'se-name'  : 'test-win', 
+                                'lfn-prefix': self.testDir})
+        wrapper(fileForTransfer)
+        self.assertTrue( os.path.exists(os.path.join(self.testDir, '/etc/hosts')))
 
     def testStageInMgrWrapperWin(self):
         fileForTransfer = {'LFN': '/etc/hosts', \
@@ -120,7 +134,7 @@ class FileManagerTest(unittest.TestCase):
                            'PFN': 'failtest', \
                            'SEName' : None, \
                            'StageOutCommand': None}
-        wrapper = StageOutMgr( numberOfRetries= 1,
+        wrapper = StageInMgr( numberOfRetries= 1,
                                retryPauseTime=0, **{
                                 'command'    : 'test-fail',
                                 'option'    : '', 
@@ -129,20 +143,59 @@ class FileManagerTest(unittest.TestCase):
         self.assertRaises(WMCore.Storage.StageOutError.StageOutError, wrapper.__call__, fileForTransfer)
 
     def testStageInMgrWrapperRealCopy(self):
+        
         self.testDir = tempfile.mkdtemp()
-        fileForTransfer = {'LFN': '/etc/hosts', \
-                           'PFN': '/etc/hosts', \
+        shutil.copy('/etc/hosts', self.testDir + '/INPUT')
+        fileForTransfer = {'LFN': '/INPUT', \
+                           'PFN': '%s/etc/hosts' % self.testDir, \
                            'SEName' : None, \
                            'StageOutCommand': None}
-        wrapper = StageOutMgr(  **{
+
+        wrapper = StageInMgr(  **{
                                 'command'    : 'cp',
                                 'option'    : '', 
                                 'se-name'  : 'test-win', 
                                 'lfn-prefix': self.testDir})
         wrapper(fileForTransfer)
+        
+    def testStageInMgrWrapperRealCopyFallback(self):
+        self.testDir = tempfile.mkdtemp()
+        shutil.copy('/etc/hosts', self.testDir + '/INPUT')
+        fileForTransfer = {'LFN': '/INPUT', \
+                           'PFN': '%s/etc/hosts' % self.testDir, \
+                           'SEName' : None, \
+                           'StageOutCommand': None}
 
+        wrapper = StageInMgr(  **{
+                                'command'    : 'testFallbackToOldBackend',
+                                'option'    : '', 
+                                'se-name'  : 'test-win', 
+                                'lfn-prefix': self.testDir})
+        wrapper(fileForTransfer)
+        
     def testDeleteMgrWrapper(self):
-        pass
+        self.testDir = tempfile.mkdtemp()
+        shutil.copy('/etc/hosts', self.testDir + '/INPUT')
+        fileForTransfer = {'LFN': '/INPUT', \
+                           'PFN': '%s/etc/hosts' % self.testDir, \
+                           'SEName' : None, \
+                           'StageOutCommand': None}
+
+        wrapper = StageInMgr(  **{
+                                'command'    : 'cp',
+                                'option'    : '', 
+                                'se-name'  : 'test-win', 
+                                'lfn-prefix': self.testDir})
+        retval = wrapper(fileForTransfer)
+        print "got the retval %s" % retval
+        newPfn = retval['PFN']
+        wrapper = DeleteMgr(**{
+                                'command'    : 'cp',
+                                'option'    : '', 
+                                'se-name'  : 'test-win', 
+                                'lfn-prefix': self.testDir})
+        wrapper(retval)
+        
 if __name__ == "__main__":
     import nose
     logging.basicConfig(level=logging.DEBUG)

@@ -56,11 +56,12 @@ class JobStatusByTaskAndSite(DBFormatter):
                                 globals(), locals(), [data['plugin']])
             plugIn = getattr(module, data['plugin'])
             state = self.MONITOR_STATE_MAP[plugIn.stateMap().get(data['status'])]
-            commonStates.setdefault(data['workflow'], {}) 
-            commonStates[data['workflow']].setdefault(data['task'], {}) 
-            commonStates[data['workflow']][data['task']].setdefault(state, {})
-            commonStates[data['workflow']][data['task']][state].setdefault(data['site'], 0)
-            commonStates[data['workflow']][data['task']][state][data['site']] += data['num_jobs']
+            commonStates.setdefault(data['workflow'], {})
+            commonStates[data['workflow']].setdefault('tasks', {})
+            commonStates[data['workflow']]['tasks'].setdefault(data['task'], {}) 
+            commonStates[data['workflow']]['tasks'][data['task']].setdefault(state, {})
+            commonStates[data['workflow']]['tasks'][data['task']][state].setdefault(data['site'], 0)
+            commonStates[data['workflow']]['tasks'][data['task']][state][data['site']] += data['num_jobs']
         return commonStates
 
     def execute(self, conn = None, transaction = False):

@@ -181,10 +181,18 @@ class JobTrackerPoller(BaseWorkerThread):
             jrBinds.append({'jobid': job['id'], 'fwjrpath': jrPath})
             #Make sure the job object goes packed with fwjr_path so it
             #can be persisted in couch
-            fwjr = Report()
-            fwjr.load(jrPath)
-            job["fwjr"] = fwjr
 
+            fwjr = Report()
+            try:
+                fwjr.load(jrPath)
+            except Exception:
+                #Something went wrong reading the pickle
+                logging.error("The pickle in %s could not be loaded, generating a new one" % jrPath)
+                fwjr = Report()
+                msg = "The job failed due to a timeout, unfortunately the original job report was lost"
+                fwjr.addError("NoJobReport", 99303, "NoJobReport", msg)
+                fwjr.save(jrPath)
+            job["fwjr"] = fwjr
         
         # Set all paths at once
         myThread.transaction.begin()

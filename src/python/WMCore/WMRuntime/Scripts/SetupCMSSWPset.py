@@ -12,7 +12,7 @@ import traceback
 import pickle
 
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
-from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog 
+from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog
 from PSetTweaks.PSetTweak import PSetTweak
 import WMCore.WMSpec.WMStep as WMStep
 from PSetTweaks.WMTweak import makeTweak, applyTweak
@@ -58,7 +58,7 @@ def fixupFirstRun(process):
     _fixupFirstRun_
 
     Make sure that the process has a firstRun parameter.
-    
+
     """
     if not hasattr(process.source, "firstRun"):
         process.source.firstRun = cms.untracked.uint32(0)
@@ -69,18 +69,18 @@ def fixupLastRun(process):
     _fixupLastRun_
 
     Make sure that the process has a lastRun parameter.
-    
+
     """
     if not hasattr(process.source, "lastRun"):
-        process.source.firstRun = cms.untracked.uint32(0)        
+        process.source.lastRun = cms.untracked.uint32(0)
 
 
 def fixupLumisToProcess(process):
     """
-    _fixupLumitsToProcess_
+    _fixupLumisToProcess_
 
     Make sure that the process has a lumisToProcess parameter.
-    
+
     """
     if not hasattr(process.source, "lumisToProcess"):
         process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange()
@@ -91,7 +91,7 @@ def fixupSkipEvents(process):
     _fixupSkipEvents_
 
     Make sure that the process has a skip events parameter.
-    
+
     """
     if not hasattr(process.source, "skipEvents"):
         process.source.skipEvents = cms.untracked.uint32(0)
@@ -101,10 +101,10 @@ def fixupFirstEvent(process):
     _fixupFirstEvent_
 
     Make sure that the process has a first event parameter.
-    
+
     """
     if not hasattr(process.source, "firstEvent"):
-        process.source.firstEvent = cms.untracked.uint32(0)        
+        process.source.firstEvent = cms.untracked.uint32(0)
 
 
 def fixupMaxEvents(process):
@@ -112,7 +112,7 @@ def fixupMaxEvents(process):
     _fixupMaxEvents_
 
     Make sure that the process has a max events parameter.
-    
+
     """
     if not hasattr(process, "maxEvents"):
         process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
@@ -126,7 +126,7 @@ def fixupFileNames(process):
 
     Make sure that the process has a fileNames parameter.  This will also
     configure lazy download for the process.
-    
+
     """
     # Old style lazy download enable that is overridden by the sites local config.
     if not process.services.has_key("AdaptorConfig"):
@@ -142,7 +142,7 @@ def fixupSecondaryFileNames(process):
     _fixupSecondaryFileNames_
 
     Make sure that the process has a secondaryFileNames parameter.
-    
+
     """
     if not hasattr(process.source, "secondaryFileNames"):
         process.source.secondaryFileNames = cms.untracked.vstring()
@@ -150,7 +150,7 @@ def fixupSecondaryFileNames(process):
 def fixupFirstLumi(process):
     """
     _fixupFirstLumi
-    
+
     Make sure that the process has firstLuminosityBlock parameter.
     """
     if not hasattr(process.source, "firstLuminosityBlock"):
@@ -172,14 +172,14 @@ class SetupCMSSWPset(ScriptInterface):
                  "process.source.lastRun": fixupLastRun,
                  "process.source.lumisToProcess": fixupLumisToProcess,
                  "process.source.firstLuminosityBlock": fixupFirstLumi}
-    
-    
+
+
     def createProcess(self, scenario, funcName, funcArgs):
         """
         _createProcess_
 
         Create a Configuration.DataProcessing PSet.
-        
+
         """
         if funcName == "merge":
 
@@ -223,7 +223,7 @@ class SetupCMSSWPset(ScriptInterface):
         _loadPSet_
 
         Load a PSet that was shipped with the job sandbox.
-        
+
         """
         psetModule = "WMTaskSpace.%s.PSet" % self.step.data._internal_name
 
@@ -245,7 +245,7 @@ class SetupCMSSWPset(ScriptInterface):
 
         Look over the process object and make sure that all of the attributes
         that we expect to exist actually exist.
-        
+
         """
         # Make sure that for each output module the following parameters exist
         # in the PSet returned from the framework:
@@ -270,52 +270,52 @@ class SetupCMSSWPset(ScriptInterface):
             if not hasattr(outModRef, "logicalFileName"):
                 outModRef.logicalFileName = cms.untracked.string("")
         return
-        
+
 
     def fixupLazyDownload(self):
         """
          _fixupLazyDownload_
-         
-         Activate lazy download for all files (TBD if this is correct, but it is the current behanviour) 
+
+         Activate lazy download for all files (TBD if this is correct, but it is the current behanviour)
          but disable for multicore jobs because it is very inefficient.
         """
-        
+
         if not hasattr(self.process.source, "fileNames"):
             # no source fileNames means no reading data => Irrelevant
             return
-            
+
         numberOfCores = 1
         if hasattr(self.step.data.application, "multicore"):
             numberOfCores = self.step.data.application.multicore.numberOfCores
         if numberOfCores != 1:  # job is multicore
             #override lazy download to be off despite what the site wants
             self.process.add_(
-                cms.Service("SiteLocalConfigService", 
+                cms.Service("SiteLocalConfigService",
                 overrideSourceCacheHintDir = cms.untracked.string("application-only")
                 )
-            ) 
+            )
         return
 
 
-    def applyTweak(self, setTweak):
+    def applyTweak(self, psetTweak):
         """
         _applyTweak_
 
         Apply a tweak to the process.
-        
+
         """
         tweak = PSetTweak()
         tweak.unpersist(psetTweak)
         applyTweak(self.process, tweak, self.fixupDict)
         return
-        
-        
+
+
     def handleSeeding(self):
         """
         _handleSeeding_
-        
+
         Handle Random Seed settings for the job
-        
+
         """
         baggage = self.job.getBaggage()
         seeding = getattr(baggage, "seeding", None)
@@ -333,28 +333,28 @@ class SetupCMSSWPset(ScriptInterface):
                 helper = RandomNumberServiceHelper(self.process.RandomNumberGeneratorService)
                 helper.populate()
             return
-    
+
     def handlePerformanceSettings(self):
         """
         _handlePerformanceSettings_
-        
+
         Install the standard performance report services
         """
         import FWCore.ParameterSet.Config as PSetConfig
-       
+
         # include the default performance report services
         self.process.add_(PSetConfig.Service("SimpleMemoryCheck"))
         self.process.add_(PSetConfig.Service("Timing"))
         self.process.Timing.summaryOnly = PSetConfig.untracked(PSetConfig.bool(True))
-    
-    
+
+
     def _handleChainedProcessing(self):
         """
         In order to handle chained processing it's necessary to feed
         output of one step/task (nomenclature ambiguous) to another.
         This method creates particular mapping in a working Trivial
         File Catalog (TFC).
-        
+
         """
         # first, create an instance of TrivialFileCatalog to override
         tfc = TrivialFileCatalog()
@@ -367,12 +367,12 @@ class SetupCMSSWPset(ScriptInterface):
                        mapping_type = "pfn-to-lfn")
 
         fixupFileNames(self.process)
-        fixupMaxEvents(self.process)        
+        fixupMaxEvents(self.process)
         self.process.source.fileNames.setValue([inputFile])
         self.process.maxEvents.input.setValue(-1)
 
         tfcName = "override_catalog.xml"
-        tfcPath = os.path.join(os.getcwd(), tfcName)            
+        tfcPath = os.path.join(os.getcwd(), tfcName)
         print "Creating override TFC, contents below, saving into '%s'" % tfcPath
         tfcStr = tfc.getXML()
         print tfcStr
@@ -385,7 +385,7 @@ class SetupCMSSWPset(ScriptInterface):
     def _handlePileup(self):
         """
         Handle pileup settings.
-                
+
         """
         # find out local site SE name
         siteConfig = loadSiteLocalConfig()
@@ -393,11 +393,11 @@ class SetupCMSSWPset(ScriptInterface):
         print "Running on site '%s', local SE name: '%s'" % (siteConfig.siteName, seLocalName)
 
         pileupDict = self._getPileupConfigFromJson()
-                
+
         # 2011-02-03 according to the most recent version of instructions, we do
         # want to differentiate between "MixingModule" and "DataMixingModule"
         mixModules, dataMixModules = self._getPileupMixingModules()
-                
+
         # 2011-02-03
         # on the contrary to the initial instructions (wave), there are
         # going to be only two types of pileup input datasets: "data" or "mc"
@@ -406,13 +406,13 @@ class SetupCMSSWPset(ScriptInterface):
         # the two pileupTypes hardcoded: and we are going to add the "mc"
         # datasets to "MixingModule"s and only add the "data" datasets to the
         # "DataMixingModule"s
-        
+
         # if the user in the configuration specifies different pileup types
         # than "data" or "mc", the following call will not modify anything
         self._processPileupMixingModules(pileupDict, seLocalName, dataMixModules, "data")
         self._processPileupMixingModules(pileupDict, seLocalName, mixModules, "mc")
-        
-        
+
+
     def _processPileupMixingModules(self, pileupDict, seLocalName, modules,
                                     requestedPileupType):
         """
@@ -420,20 +420,20 @@ class SetupCMSSWPset(ScriptInterface):
         The only considered types are "data" and "mc" (input to this method).
         If other pileup types are specified by the user, the method doesn't
         modify anything.
-        
+
         The method considers only files which are present on this local
         SE (seLocalName). The job will use only those. Dataset, divided into
         blocks, may not have all blocks present on a particular SE. However,
         all files belonging into a block will be present when reported by DBS.
-        
+
         The structure of the pileupDict: PileupFetcher._queryDbsAndGetPileupConfig
-        
+
         2011-02-03:
         According to the current implementation of helper testing module
         WMCore_t/WMRuntime_t/Scripts_t/WMTaskSpace/cmsRun1/PSet.py
         each type of modules instances can have either "secsource"
         or "input" attribute, so need to probe both, one shall succeed.
-        
+
         """
         for m in modules:
             for pileupType in self.step.data.pileup.listSections_():
@@ -445,12 +445,12 @@ class SetupCMSSWPset(ScriptInterface):
                 inputTypeAttrib.fileNames = cms.untracked.vstring()
                 if pileupType == requestedPileupType:
                     # not all blocks may be stored on the local SE, loop over
-                    # all blocks and consider only files stored locally                    
+                    # all blocks and consider only files stored locally
                     for blockDict in pileupDict[pileupType].values():
                         if seLocalName in blockDict["StorageElementNames"]:
                             for fileLFN in blockDict["FileList"]:
                                 inputTypeAttrib.fileNames.append(str(fileLFN))
-                    
+
     def _getPileupMixingModules(self):
         """
         Method returns two lists:
@@ -458,8 +458,8 @@ class SetupCMSSWPset(ScriptInterface):
             2) list of data mixing modules ("DataMixingModules")
         The first gets added only pileup files of type "mc", the
         second pileup files of type "data".
-                
-        """        
+
+        """
         mixModules, dataMixModules = [], []
         prodsAndFilters = {}
         prodsAndFilters.update(self.process.producers)
@@ -470,18 +470,18 @@ class SetupCMSSWPset(ScriptInterface):
             if value.type_() == "DataMixingModule":
                 dataMixModules.append(value)
         return mixModules, dataMixModules
-    
-    
+
+
     def _getPileupConfigFromJson(self):
         """
         There has been stored pileup configuration stored in a JSON file
         as a result of DBS querrying when running PileupFetcher,
         this method loads this configuration from sandbox and returns it
         as dictionary.
-        
+
         The PileupFetcher was called by WorkQueue which creates job's sandbox
         and sandbox gets migrated to the worker node.
-        
+
         """
         workingDir = self.stepSpace.location
         jsonPileupConfig = os.path.join(workingDir, "pileupconf.json")
@@ -494,10 +494,10 @@ class SetupCMSSWPset(ScriptInterface):
             pileupDict =  decoder.decode(json)
             f.close()
         except IOError:
-            m = "Could not read pileup JSON configuration file: '%s'" % jsonPileupConfig 
+            m = "Could not read pileup JSON configuration file: '%s'" % jsonPileupConfig
             raise RuntimeError(m)
         return pileupDict
-        
+
     def handleProducersNumberOfEvents(self):
         """
         Some producer modules are initialized with a maximum number of events
@@ -511,13 +511,13 @@ class SetupCMSSWPset(ScriptInterface):
             if hasattr(producers[producer], "nEvents"):
                 producers[producer].nEvents = cms.uint32(
                                         self.process.maxEvents.input.value())
-        
+
     def __call__(self):
         """
         _call_
 
         Examine the step configuration and construct a PSet from that.
-        
+
         """
         self.process = None
 
@@ -544,7 +544,7 @@ class SetupCMSSWPset(ScriptInterface):
 
         self.fixupProcess()
         self.fixupLazyDownload()
-        
+
         psetTweak = getattr(self.step.data.application.command, "psetTweak", None)
         if psetTweak != None:
             self.applyPSetTweak(psetTweak, self.fixupDict)
@@ -565,11 +565,11 @@ class SetupCMSSWPset(ScriptInterface):
             # Apply per job PSet Tweaks
             jobTweak = makeJobTweak(self.job)
             applyTweak(self.process, jobTweak, self.fixupDict)
-            
+
         # check for pileup settings presence, pileup support implementation
         # and if enabled, process pileup configuration / settings
         if hasattr(self.step.data, "pileup"):
-            self._handlePileup()        
+            self._handlePileup()
 
         # Apply per output module PSet Tweaks
         cmsswStep = self.step.getTypeHelper()
@@ -577,10 +577,10 @@ class SetupCMSSWPset(ScriptInterface):
             mod = cmsswStep.getOutputModule(om)
             outTweak = makeOutputTweak(mod, self.job)
             applyTweak(self.process, outTweak, self.fixupDict)
-            
+
         # revlimiter for testing
         #self.process.maxEvents.input = 2
-        
+
         # check for random seeds and the method of seeding which is in the job baggage
         self.handleSeeding()
 
@@ -589,7 +589,7 @@ class SetupCMSSWPset(ScriptInterface):
 
         # check for event numbers in the producers
         self.handleProducersNumberOfEvents()
-        
+
         #Apply events per lumi section if available
         if hasattr(self.step.data.application.configuration, "eventsPerLumi"):
             self.process.source.numberEventsInLuminosityBlock = \
@@ -609,16 +609,20 @@ class SetupCMSSWPset(ScriptInterface):
                 if inputFile["lfn"].find("unmerged") != -1:
                     self.process.source.overrideCatalog = \
                         cms.untracked.string("trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage-test.xml?protocol=dcap")
-        
+
         configFile = self.step.data.application.command.configuration
         workingDir = self.stepSpace.location
         handle = open("%s/%s" % (workingDir, configFile), 'w')
         try:
-            handle.write(self.process.dumpPython())
+            handle.write("import FWCore.ParameterSet.Config as cms\n")
+            handle.write("import pickle\n")
+            handle.write('process = pickle.loads("""')
+            handle.write(pickle.dumps(self.process))
+            handle.write('""")\n')
         except Exception, ex:
             print "Error writing out PSet:"
             print traceback.format_exc()
             raise ex
-        
+
         handle.close()
         return 0

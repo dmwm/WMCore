@@ -7,6 +7,7 @@ Created by Dave Evans on 2010-11-12.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
+import pickle
 import sys
 import os
 import json
@@ -14,19 +15,19 @@ import subprocess
 import FWCore.ParameterSet.Config as cms
 
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
-eventcount = lambda x: sum( [j['events'] for j in x ]) 
+eventcount = lambda x: sum( [j['events'] for j in x ])
 
 class SetupCMSSWMulticore(ScriptInterface):
     """
     _SetupCMSSWMulticore_
-    
+
     runtime Util to prime CMSSW multicore job
-    
+
     """
     def __call__(self):
         """
         Setup for Multicore
-        
+
         """
         step = self.step.data
         multicoreSettings = step.application.multicore
@@ -43,15 +44,15 @@ class SetupCMSSWMulticore(ScriptInterface):
             print 'Exception reading manifest:\n%s' % str(ex)
             return 2
         self.buildPSet()
-        
+
         return 0
-        
-        
-        
+
+
+
     def buildManifest(self):
         """
         _buildManifest_
-    
+
         Generate the JSON file describing the input files
         """
         utilProcess = subprocess.Popen(
@@ -72,16 +73,16 @@ class SetupCMSSWMulticore(ScriptInterface):
             msg += "Stderr: \n%s\n" % stderr
             print msg
             raise RuntimeError, msg
-    
+
         self.jsonfile = os.path.join(self.stepSpace.location, self.step.data.application.multicore.inputmanifest)
         if not os.path.exists(self.jsonfile):
             return 1000001
         return 0
-    
+
     def readManifest(self):
         """
         _readManifest_
-    
+
         Read the JSON manifest file and store the information about each input file
         """
         try:
@@ -94,7 +95,7 @@ class SetupCMSSWMulticore(ScriptInterface):
             msg += "\n\n"
             print msg
             raise RuntimeError, msg
-            
+
         for x in jsondata:
             data = {}
             lfn = str(x[u'file'])
@@ -102,33 +103,33 @@ class SetupCMSSWMulticore(ScriptInterface):
                 data[str(k)] = v
             self.files[lfn] = data
         return
-    
-    
+
+
     def buildPSet(self):
         """
         _buildPSet_
-    
+
         Build the Multicore PSet in options setting the number of cores
-        and the number of events per core 
-    
+        and the number of events per core
+
         """
         #ToDo: Adjust this if the job has an event mask
         eventTotal =  eventcount(self.files.values())
         numCores = self.step.data.application.multicore.numberOfCores
         if numCores == "auto":
-            p1 = subprocess.Popen("egrep \"^processor\" /proc/cpuinfo", shell = True, 
+            p1 = subprocess.Popen("egrep \"^processor\" /proc/cpuinfo", shell = True,
                                   stdout=subprocess.PIPE)
             p2 = subprocess.Popen("wc -l", stdin=p1.stdout, stdout=subprocess.PIPE, shell = True)
             output = p2.communicate()[0]
             numCores = int(output)
         else:
             numCores = int(numCores)
-            
+
         procCount = (eventTotal + numCores - 1) / numCores
-    
-    
+
+
         pset = self.loadPSet()
-    
+
         options = getattr(pset, "options", None)
         if options == None:
             pset.options = cms.untracked.PSet()
@@ -137,27 +138,31 @@ class SetupCMSSWMulticore(ScriptInterface):
         if multiProcesses == None:
             options.multiProcesses = cms.untracked.PSet()
             multiProcesses = getattr(options, "multiProcesses")
-    
+
         #multiProcesses.maxSequentialEventsPerChild = cms.untracked.uint32(procCount)
         #revlimiter
         multiProcesses.maxSequentialEventsPerChild = cms.untracked.uint32(2)
         multiProcesses.maxChildProcesses = cms.untracked.int32(numCores)
-    
+
         configFile = self.step.data.application.command.configuration
         workingDir = self.stepSpace.location
         handle = open("%s/%s" % (workingDir, configFile), 'w')
-        handle.write(pset.dumpPython())
+        handle.write("import FWCore.ParameterSet.Config as cms\n")
+        handle.write("import pickle\n")
+        handle.write('process = pickle.loads("""')
+        handle.write(pickle.dumps(pset))
+        handle.write('""")\n')
         handle.close()
-    
-    
+
+
     def loadPSet(self):
         """
         _loadPSet_
-    
+
         Load a PSet that was shipped with the job sandbox.
         """
         psetModule = "WMTaskSpace.%s.PSet" % self.step.data._internal_name
-    
+
         try:
             processMod = __import__(psetModule, globals(), locals(), ["process"], -1)
             process = processMod.process
@@ -166,12 +171,5 @@ class SetupCMSSWMulticore(ScriptInterface):
             msg += str(ex)
             print msg
             return 1
-    
-        return process
-    
-            
 
-        
-        
-        
-            
+        return process

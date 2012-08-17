@@ -104,11 +104,6 @@ if can_nose:
             raise SystemExit, "os._exit() was called in a child thread. " +\
                               "Protecting the interpreter and trapping it"
 
-    def signal_handler(signum, frame):
-        # null handler for sys.exit timeout
-        pass
-
-
     class DetailedOutputter(Plugin):
         name = "detailed"
         def __init__(self):
@@ -293,7 +288,17 @@ if can_nose:
                          paths = testPath)
                     
             threadCount = len(threading.enumerate())
-
+            # Set the signal handler and a 20-second alarm
+            def signal_handler( foo, bar ):
+                sys.stderr.write("Timeout reached trying to shut down. Force killing...\n")
+                sys.stderr.flush()
+                if retval:
+                    os.DMWM_REAL_EXIT( 0 )
+                else:
+                    os.DMWM_REAL_EXIT( 1 )
+            signal.signal(signal.SIGALRM, signal_handler )
+            signal.alarm(20)
+            
             if threadCount > 1:
                 sys.stderr.write("There are %s threads running. Cherrypy may be acting up.\n" % len(threading.enumerate()))
                 sys.stderr.write("The threads are: \n%s\n" % threading.enumerate())
@@ -305,11 +310,7 @@ if can_nose:
                 
             threadCount = len(threading.enumerate())
             print "Testing complete, there are now %s threads" % len(threading.enumerate())
-                        
-            # Set the signal handler and a 5-second alarm
-            signal.signal(signal.SIGALRM, signal_handler)
-            signal.alarm(60)
-            
+                                    
             # try to exit
             if retval:
                 sys.exit( 0 )

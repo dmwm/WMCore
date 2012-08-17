@@ -11,7 +11,8 @@ MySQL function to list jobs for submission
 from WMCore.Database.DBFormatter import DBFormatter
 
 class ListForSubmitter(DBFormatter):
-    sql = """SELECT wmbs_job.id AS id, wmbs_job.cache_dir AS cache_dir,
+    sql = """SELECT wmbs_job.id AS id, wmbs_job.name AS name,
+                    wmbs_job.cache_dir AS cache_dir,
                     wmbs_sub_types.name AS type, wmbs_job.retry_count AS retry_count,
                     wmbs_subscription.workflow as workflow
                     FROM wmbs_job

@@ -6,9 +6,10 @@ Implementation of StageOutImpl interface for SRM
 
 """
 import os
-import logging
 import tempfile
+import logging
 from subprocess import Popen, PIPE
+
 
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
@@ -38,11 +39,18 @@ class SRMImpl(StageOutImplV2):
         else:
             return pfn
 
+    def createPnfsPath(self,pfn) :
+        """
+        _createPnfsPath_
 
+        convert SRM pfn to PNDS pfn
 
-    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol  ):
+        """
+        return '/pnfs/cms/WAX' + pfn.split('=')[1]
+
+    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum  ):
         toPfn   = self.createSourceName(protocol, toPfn)
-        fromPfn = self.createSourceName(protocol, fromPfn)       
+        fromPfn = self.createSourceName(protocol, fromPfn)
         (_,reportFile) = tempfile.mkstemp()
         ourCommand = \
             self.generateCommandFromPreAndPostParts(\
@@ -68,11 +76,13 @@ class SRMImpl(StageOutImplV2):
             
         localSize = os.path.getsize( localPFN )
         logging.info("Local Size %s" % localSize)
-        #         filesize() { `srm-get-metadata -retry_num=0 %s 2>/dev/null | grep 'size :[0-9]' | cut -f2 -d":"`}
+        #         filesize() { cat "`dirname $1`/.(use)(2)(`basename $1`)'" | grep l= | sed -e's/.*;l=\([0-9]*\).*/\\1/'; }
         # the following replaces the above
-        p1 = Popen(["srm-get-metadata", '-retry_num=0', remotePFN], stdout=PIPE)
-        p2 = Popen(["grep", "size :[0-9]"], stdout=PIPE, stdin=p1.stdout)
-        p3 = Popen(["sed", "-f2",'-d":"'], stdout=PIPE,stdin=p2.stdout)
+        targetDirName  = os.path.dirname(targetPnfsPath)
+        targetBaseName = os.path.basename(targetPnfsPath)
+        p1 = Popen(["cat", "%s/.(use)(2)(%s)" % (targetDirName,targetBaseName)], stdout=PIPE)
+        p2 = Popen(["grep", "l="], stdout=PIPE, stdin=p1.stdout)
+        p3 = Popen(["sed", "-e's/.*;l=\([0-9]*\).*/\\1/'"], stdout=PIPE,stdin=p2.stdout)
         remoteSize = p3.communicate()[0]
         logging.info("Localsize: %s Remotesize: %s" % (localSize, remoteSize))
         if int(localSize) != int(remoteSize):
@@ -84,13 +94,14 @@ class SRMImpl(StageOutImplV2):
         
         return toPfn
 
+
     
     def doDelete(self, pfn, seName, command, options, protocol  ):
         """
         handle both srm and file pfn types
         """
         if pfn.startswith("srm://"):
-            self.runCommandWarnOnNonZero(["srm-advisory-delete", pfn])
+            self.runCommandWarnOnNonZero(["/bin/rm", "-f", self.createPnfsPath(pfn)])
         elif pfn.startswith("file:"):
             self.runCommandWarnOnNonZero(["/bin/rm", "-f", pfn.replace("file://", "", 1)])
         elif pfn.startswith('/'):
@@ -98,8 +109,5 @@ class SRMImpl(StageOutImplV2):
         else:
             logging.info("Tried to delete, but nothing knew how")
             logging.info("pfn: %s" % pfn)
-    
-
-
 
 

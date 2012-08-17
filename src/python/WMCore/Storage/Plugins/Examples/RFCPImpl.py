@@ -1,28 +1,27 @@
 #!/usr/bin/env python
 """
-_RFCP1Impl_
+_RFCPImpl_
 
-Implementation of StageOutImpl interface for RFIO in Castor-1
+Implementation of StageOutImpl interface for RFIO
 
 """
 import os
-import logging 
+import logging
 from subprocess import Popen, PIPE
 
+
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
-from WMCore.Storage.Execute import runCommandWithOutput as runCommand
-from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
 from WMCore.Storage.Execute import runCommand
+from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
 
 
-class RFCP1Impl(StageOutImplV2):
+class RFCPImpl(StageOutImplV2):
     """
-    _RFCP1Impl_
+    _RFCPImpl_
 
     Implement interface for rfcp command
     
     """
-
     def createOutputDirectory(self, targetPFN):
         """
         _createOutputDirectory_
@@ -30,7 +29,7 @@ class RFCP1Impl(StageOutImplV2):
         create dir with group permission
         """
         
-        targetdir= os.path.dirname(targetPFN)
+        targetdir= self.getDirname(targetPFN)
         needToMkdir = False
         try:
             self.runCommandFailOnNonZero(['rfstat', targetdir])
@@ -41,8 +40,7 @@ class RFCP1Impl(StageOutImplV2):
             logging.info('Creating directory %s' % targetdir)
             self.runCommandWarnOnNonZero(['rfmkdir', '-m', '775', '-p',targetdir])
 
-
-    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol  ):
+    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum  ):
         """
             performs a transfer. stageOut tells you which way to go. returns the new pfn or
             raises on failure. StageOutError (and inherited exceptions) are for expected errors
@@ -90,7 +88,7 @@ class RFCP1Impl(StageOutImplV2):
             raise StageOutFailure, "File sizes don't match"
         
         return toPfn
-
+    
 
     def doDelete(self, pfn, seName, command, options, protocol  ):
         """
@@ -100,8 +98,40 @@ class RFCP1Impl(StageOutImplV2):
             error and skip retrying with this plugin
         """
 
-        runCommand(["stageclr", "-M", pfn])
-        runCommand(["nsrm", pfn])
+        runCommand(["rfrm", "-M", pfn])
+
+    def getDirname(self, pfn ):
+        """
+        _getDirname_
+
+        Parse directory name out of rfio: PFN
+
+        """
+
+        start=0
+        path=""
+
+        if pfn.startswith( "rfio:" ):
+            if pfn.find( "path=" ) != -1:
+                # first form, everything after path= is the path
+                dummy,path = pfn.split("path=")
+            else:
+                if pfn.find( "?" ) != -1:
+                    # second form, path is between the third slash and the ?
+                    path,dummy = pfn.split("?")
+                else:
+                    # illegal form that seems to work rfio:///<path>
+                    path = pfn
+                start = path.find( "//" ) # find 1st two
+                start = path.find( "/", start+2 ) # find 3rd
+                if path.find( "/", start+1 ) == start+1:
+                    # if there is a 4th next get rid of the third
+                    start += 1
+                path = path[start:]
+        else:
+            path = pfn
+
+        return os.path.dirname( path )
 
 
 

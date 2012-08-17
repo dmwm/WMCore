@@ -24,9 +24,10 @@ class VandyImpl(StageOutImplV2):
         
         StageOutImplV2.__init__(self)
         
-        self._mkdirScript = os.path.join(VandyImpl.BASEDIR, 'vandyMkdir.sh')
-        self._cpScript    = os.path.join(VandyImpl.BASEDIR, 'vandyCp.sh')
-        self._rmScript    = os.path.join(VandyImpl.BASEDIR, 'vandyRm.sh')
+        self._mkdirScript    = os.path.join(VandyImpl.BASEDIR, 'vandyMkdir.sh')
+        self._cpScript       = os.path.join(VandyImpl.BASEDIR, 'vandyCp.sh')
+        self._rmScript       = os.path.join(VandyImpl.BASEDIR, 'vandyRm.sh')
+        self._downloadScript = os.path.join(VandyImpl.BASEDIR, 'vandyDownload.sh')
     
     
     def createOutputDirectory(self, targetPFN):
@@ -49,22 +50,31 @@ class VandyImpl(StageOutImplV2):
     
     
     def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, 
-                   protocol):
+                   protocol, checksum):
+        """            
+            if stageOut is true:
+                The fromPfn is the LOCAL FILE NAME on the node, without file://
+                the toPfn is the target PFN, mapped from the LFN using the TFC or overrrides
+            if stageOut is false:
+                The toPfn is the LOCAL FILE NAME on the node, without file://
+                the fromPfn is the source PFN, mapped from the LFN using the TFC or overrrides
+        """
         
         # Figures out the src and dst files
         if stageOut:
-            srcPath = fromPfn
             dstPath = toPfn
         else:
-            srcPath = toPfn
             dstPath = fromPfn
         
         # Creates the directory
         self.createOutputDirectory(os.path.dirname(dstPath))
         
         # Does the copy
-        command = "%s %s %s" % (self._cpScript, srcPath, dstPath)
-        
+        if stageOut:
+            command = "%s %s %s" % (self._cpScript, fromPfn, toPfn)
+        else:
+            command = "%s %s %s" % (self._downloadScript, fromPfn, toPfn)
+            
         exitCode, output = runCommand(command)
     
         print(output)

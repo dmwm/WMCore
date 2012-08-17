@@ -1,27 +1,30 @@
 #!/usr/bin/env python
 """
-_RFCPImpl_
+_RFCP2Impl_
 
-Implementation of StageOutImpl interface for RFIO
+Implementation of StageOutImpl interface for RFIO in Castor-2
 
 """
-import os
+import os 
+
+from WMCore.Storage.StageOutImplV2 import StageOutImplV2
+from WMCore.Storage.StageOutImplV2 import StageOutImplV2
+from WMCore.Storage.Execute import runCommandWithOutput as runCommand
+from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
+from WMCore.Storage.Execute import runCommand
 import logging
 from subprocess import Popen, PIPE
 
 
-from WMCore.Storage.StageOutImplV2 import StageOutImplV2
-from WMCore.Storage.Execute import runCommand
-from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
-
-
-class RFCPImpl(StageOutImplV2):
+class RFCP2Impl(StageOutImplV2):
     """
-    _RFCPImpl_
+    _RFCP2Impl_
 
     Implement interface for rfcp command
     
     """
+
+
     def createOutputDirectory(self, targetPFN):
         """
         _createOutputDirectory_
@@ -29,7 +32,7 @@ class RFCPImpl(StageOutImplV2):
         create dir with group permission
         """
         
-        targetdir= self.getDirname(targetPFN)
+        targetdir= os.path.dirname(targetPFN)
         needToMkdir = False
         try:
             self.runCommandFailOnNonZero(['rfstat', targetdir])
@@ -40,7 +43,8 @@ class RFCPImpl(StageOutImplV2):
             logging.info('Creating directory %s' % targetdir)
             self.runCommandWarnOnNonZero(['rfmkdir', '-m', '775', '-p',targetdir])
 
-    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol  ):
+
+    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum  ):
         """
             performs a transfer. stageOut tells you which way to go. returns the new pfn or
             raises on failure. StageOutError (and inherited exceptions) are for expected errors
@@ -88,7 +92,7 @@ class RFCPImpl(StageOutImplV2):
             raise StageOutFailure, "File sizes don't match"
         
         return toPfn
-    
+
 
     def doDelete(self, pfn, seName, command, options, protocol  ):
         """
@@ -98,40 +102,7 @@ class RFCPImpl(StageOutImplV2):
             error and skip retrying with this plugin
         """
 
-        runCommand(["rfrm", "-M", pfn])
-
-    def getDirname(self, pfn ):
-        """
-        _getDirname_
-
-        Parse directory name out of rfio: PFN
-
-        """
-
-        start=0
-        path=""
-
-        if pfn.startswith( "rfio:" ):
-            if pfn.find( "path=" ) != -1:
-                # first form, everything after path= is the path
-                dummy,path = pfn.split("path=")
-            else:
-                if pfn.find( "?" ) != -1:
-                    # second form, path is between the third slash and the ?
-                    path,dummy = pfn.split("?")
-                else:
-                    # illegal form that seems to work rfio:///<path>
-                    path = pfn
-                start = path.find( "//" ) # find 1st two
-                start = path.find( "/", start+2 ) # find 3rd
-                if path.find( "/", start+1 ) == start+1:
-                    # if there is a 4th next get rid of the third
-                    start += 1
-                path = path[start:]
-        else:
-            path = pfn
-
-        return os.path.dirname( path )
-
+        runCommand(["stageclr", "-M", pfn])
+        runCommand(["nsrm", pfn])
 
 

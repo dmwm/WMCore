@@ -206,6 +206,9 @@ if can_nose:
             idhandle = open( ".noseids", "r" )
             testIds = pickle.load(idhandle)['ids']
             idhandle.close()
+            
+            if os.path.exists("nosetests.xml"):
+                os.unlink("nosetests.xml")
 
             print "path lists is %s" % pathList
             # divide it up

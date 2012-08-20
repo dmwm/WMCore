@@ -56,8 +56,8 @@ class MonteCarloTestCase(unittest.TestCase):
                 self.assertEqual(unit['Mask']['LastEvent'], last_event)
                 self.assertEqual(unit['Mask']['LastLumi'], last_lumi)
                 self.assertEqual(unit['Mask']['FirstRun'], first_run)
-                self.assertEqual(last_lumi - first_lumi, unit['NumberOfLumis'])
-                self.assertEqual(last_event - first_event, unit['NumberOfEvents'])
+                self.assertEqual(last_lumi - first_lumi + 1, unit['NumberOfLumis'])
+                self.assertEqual(last_event - first_event + 1, unit['NumberOfEvents'])
                 first_event = last_event + 1
                 first_lumi += unit['Jobs'] # one lumi per job
             self.assertEqual(unit['Mask']['LastEvent'], totalevents)
@@ -159,7 +159,6 @@ class MonteCarloTestCase(unittest.TestCase):
                             2**30 + 1, 'Second unit has a wrong first event')
             self.assertEqual(unit2['Mask']['LastEvent'],
                              8*(2**30), 'Second unit has a wrong last event')
-            print unit3['Mask']
             self.assertEqual(unit3['Jobs'],
                              2, 'Third unit produced more jobs than expected')
             self.assertEqual(unit3['Mask']['FirstEvent'],

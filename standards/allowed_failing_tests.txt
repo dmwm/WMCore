@@ -72,8 +72,5 @@ WMCore_t.WMSpec_t.StdSpecs_t.MonteCarlo_t.MonteCarloTest.testRelValMCWithPileup
 WMCore_t.WMSpec_t.StdSpecs_t.PromptReco_t.PromptRecoTest.testPromptReco
 WMCore_t.WMSpec_t.StdSpecs_t.StoreResults_t.StoreResultsTest.testStoreResults
 WMCore_t.WebTools_t.REST_Exceptions_t.RESTTestFAIL.testNotSerialisableException
-WMCore_t.WorkQueue_t.Policy_t.Start_t.Dataset_t.DatasetTestCase.testTier1ReRecoWorkload
-WMCore_t.WorkQueue_t.Policy_t.Start_t.Dataset_t.DatasetTestCase.testWhiteBlackLists
-WMCore_t.WorkQueue_t.Policy_t.Start_t.MonteCarlo_t.MonteCarloTestCase.testBasicProductionWorkload
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest.testMultiTaskProduction
 nose.failure.Failure.runTest

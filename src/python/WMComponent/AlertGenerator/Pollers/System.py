@@ -33,13 +33,15 @@ class ProcessCPUPoller(object):
         
         """
         try:
+            # raises: psutil.error.AccessDenied, psutil.error.NoSuchProcess
             pollProcess = lambda proc: proc.get_cpu_percent(PeriodPoller.PSUTIL_INTERVAL)
             v = sum([pollProcess(p) for p in processDetail.allProcs])
             return v
-        except (psutil.error.AccessDenied, psutil.error.NoSuchProcess) as ex:
+        except psutil.error.AccessDenied as ex:
             m = ("Can't get CPU usage of %s, reason: %s" %
                  (processDetail.getDetails(), ex))
             raise Exception(m)
+        # psutil.error.NoSuchProcess is handled higher
 
     
 
@@ -61,13 +63,15 @@ class ProcessMemoryPoller(object):
         """
         try:
             # get_memory_info(): returns RSS, VMS tuple (for reference)
+            # raises: psutil.error.AccessDenied, psutil.error.NoSuchProcess
             pollProcess = lambda proc: proc.get_memory_percent()
             v = sum([pollProcess(p) for p in processDetail.allProcs])
             return v
-        except (psutil.error.AccessDenied, psutil.error.NoSuchProcess) as ex:
+        except psutil.error.AccessDenied as ex:
             m = ("Can't get memory usage of %s, reason: %s" %
                  (processDetail.getDetails(), ex))
             raise Exception(m)
+        # psutil.error.NoSuchProcess is handled higher
                 
         
 

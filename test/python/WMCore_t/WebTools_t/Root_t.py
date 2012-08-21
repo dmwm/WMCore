@@ -9,7 +9,9 @@ from cherrypy import engine, tree
 from cherrypy import config as cpconfig
 from tempfile import NamedTemporaryFile
 
-class RootTest(unittest.TestCase):
+# DISABLING because this doesn't properly shut down the cherrypy
+# server or clean up the state
+class RootTest():
 
     def getBaseConfiguration(self):
         config = Configuration()

@@ -125,7 +125,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         cooloffPre  = []
         passJobs    = []
 
-	# Retries < max retry count
+        # Retries < max retry count
         for ajob in jobs:
             # Retries < max retry count
             if ajob['retry_count'] < self.maxRetries:
@@ -214,7 +214,8 @@ class ErrorHandlerPoller(BaseWorkerThread):
         """
         idList = [x['id'] for x in jobList]
         loadList = self.loadJobsFromListFull(idList = idList)
-        logging.debug("Entering ACDC with %i jobs" % len(loadList))
+        logging.info("Starting to build ACDC with %i jobs" % len(loadList))
+        logging.info("This operation will take some time")
         for job in loadList:
             job.getMask()
 
@@ -346,8 +347,8 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
     def algorithm(self, parameters = None):
         """
-	Performs the handleErrors method, looking for each type of failure
-	And deal with it as desired.
+        Performs the handleErrors method, looking for each type of failure
+        And deal with it as desired.
         """
         logging.debug("Running error handling algorithm")
         myThread = threading.currentThread()
@@ -370,4 +371,3 @@ class ErrorHandlerPoller(BaseWorkerThread):
                and getattr(myThread.transaction, 'transaction', None) != None:
                 myThread.transaction.rollback()
             raise ErrorHandlerException(msg)
-

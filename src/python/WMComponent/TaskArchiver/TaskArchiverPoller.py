@@ -229,10 +229,9 @@ class TaskArchiverPoller(BaseWorkerThread):
 
     def algorithm(self, parameters = None):
         """
-	Performs the archiveJobs method, looking for each type of failure
-	And deal with it as desired.
+        Performs the archiveJobs method, looking for each type of failure
+        And deal with it as desired.
         """
-        logging.debug("Running algorithm for finding finished subscriptions")
         try:
             self.archiveTasks()
         except WMException:
@@ -262,8 +261,8 @@ class TaskArchiverPoller(BaseWorkerThread):
         finishing things up.
         """
 
-
         subList = self.findFinishedSubscriptions()
+        logging.info("Found %i finished subscriptions" % len(subList))
         if len(subList) == 0:
             return
 
@@ -741,5 +740,4 @@ class TaskArchiverPoller(BaseWorkerThread):
             self.fwjrdatabase.delete_doc(id = id, rev = rev)
 
         return
-
 

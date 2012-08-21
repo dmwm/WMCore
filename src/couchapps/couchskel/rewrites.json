@@ -62,5 +62,10 @@
   {
     "from": "_update/*",
     "to": "_update/*"
+  },
+
+  {
+      "from": ":id",
+      "to": "../../:id"
   }
 ]

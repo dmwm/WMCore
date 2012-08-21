@@ -116,7 +116,7 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('PhEDExEndpoint', None)
         self.params.setdefault('PopulateFilesets', True)
         self.params.setdefault('LocalQueueFlag', True)
-        self.params.setdefault('QueueRetryTime', 3600)
+        self.params.setdefault('QueueRetryTime', 86400)
         self.params.setdefault('stuckElementAlertTime', 86400)
         self.params.setdefault('reqmgrCompleteGraceTime', 604800)
         self.params.setdefault('cancelGraceTime', 604800)
@@ -799,7 +799,9 @@ class WorkQueue(WorkQueueBase):
             except Exception, ex:
                 # if request has been failing for too long permanently fail it.
                 if (float(inbound.timestamp) + self.params['QueueRetryTime']) < time.time():
-                    self.logger.info('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))
+                    self.logger.info('Failing workflow "%s" as not queued in %d secs: %s' % (inbound['RequestName'],
+                                                                                             self.params['QueueRetryTime'],
+                                                                                             str(ex)))
                     self.backend.updateInboxElements(inbound.id, Status = 'Failed')
                 else:
                     self.logger.info('Exception splitting work for wmspec "%s": %s' % (inbound['RequestName'], str(ex)))

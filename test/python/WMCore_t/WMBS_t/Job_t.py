@@ -487,69 +487,6 @@ class JobTest(unittest.TestCase):
 
         return
 
-    def testNewestStateChangeDAO(self):
-        """
-        _testNewestStateChangeDAO_
-
-        Test the Jobs.NewsetStateChangeForSub DAO that will return the current
-        state and time of state transition that last occured for a job created
-        by the given subscription.
-        """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task="Test")
-        testWorkflow.create()
-        
-        testWMBSFileset = Fileset(name = "TestFileset")
-        testWMBSFileset.create()
-        
-        testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow)
-        testSubscription.create()
-
-        newestStateDAO = self.daoFactory(classname = "Jobs.NewestStateChangeForSub")
-        result = newestStateDAO.execute(subscription = testSubscription["id"])
-
-        assert len(result) == 0, \
-               "ERROR: DAO returned more than 0 jobs..."
-
-        testJobGroup = JobGroup(subscription = testSubscription)
-        testJobGroup.create()
-        
-        testJobA = Job(name = "TestJobA")
-        testJobA.create(group = testJobGroup)
-
-        changeStateAction = self.daoFactory(classname = "Jobs.ChangeState")
-        testJobA["state"] = "created"
-        changeStateAction.execute([testJobA])
-
-        result = newestStateDAO.execute(subscription = testSubscription["id"])
-
-        assert len(result) == 1, \
-               "ERROR: Wrong number of jobs returned: %s" % len(result)
-
-        assert result[0]["name"] == "created", \
-               "ERROR: Job returned in wrong state: %s" % result[0]["name"]
-
-        testJobB = Job(name = "TestJobB")
-        testJobB.create(group = testJobGroup)
-
-        # We need to wait a little bit otherwise both jobs could be returned by
-        # the DAO as their state changes happened within the same second.
-        time.sleep(5)
-
-        testJobB["state"] = "createfailed"
-        changeStateAction.execute([testJobB])
-
-        result = newestStateDAO.execute(subscription = testSubscription["id"])
-
-        assert len(result) == 1, \
-               "ERROR: Wrong number of jobs returned: %s" % len(result)
-
-        assert result[0]["name"] == "createfailed", \
-               "ERROR: Job returned in wrong state: %s" % result[0]["name"]
-
-        return
-
     def testJobCacheDir(self):
         """
         _testJobCacheDir_

@@ -40,6 +40,7 @@ class MySQLPoller(PeriodPoller):
         Query the database and find out its PID file and read the PID number.
         
         """
+        logging.info("Reading MySQL PID ...")
         myThread = threading.currentThread()
         query = "SHOW VARIABLES LIKE 'pid_file'"
         try:
@@ -49,9 +50,10 @@ class MySQLPoller(PeriodPoller):
             pidFile = result[1]
             pidStr = open(pidFile, 'r').read()
             pid = int(pidStr)
+            logging.info("MySQL server PID: %s" % pid)
             return pid
         except Exception, ex:
-            msg = ("%s: could not read database PID, reason: %s" %
+            msg = ("%s: could not read MySQL PID, reason: %s" %
                    (self.__class__.__name__, ex))
             raise Exception(msg)
     
@@ -75,8 +77,13 @@ class MySQLPoller(PeriodPoller):
         
         """
         if self._dbProcessDetail:
-            PeriodPoller.check(self, self._dbProcessDetail, self._measurements)
-
+            try:
+                PeriodPoller.check(self, self._dbProcessDetail, self._measurements)
+            except psutil.error.NoSuchProcess as ex:
+                logging.error(ex)
+                logging.error("Updating info about the polled process ...")
+                self._setUp()
+                
 
 
 class MySQLDbSizePoller(DirectorySizePoller):
@@ -123,8 +130,8 @@ class MySQLMemoryPoller(MySQLPoller):
     @staticmethod 
     def sample(processDetail):
         """
-        Return a single float representing percentage usage of the main
-        memory by the process.
+        Return a single float representing percentage usage of the memory
+        by the process.
         
         """
         return ProcessMemoryPoller.sample(processDetail)

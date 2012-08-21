@@ -121,10 +121,9 @@ class JobArchiverPoller(BaseWorkerThread):
 
     def algorithm(self, parameters = None):
         """
-	Performs the archiveJobs method, looking for each type of failure
-	And deal with it as desired.
+        Performs the archiveJobs method, looking for each type of failure
+        And deal with it as desired.
         """
-        logging.debug("Running algorithm for finding finished subscriptions")
         try:
             self.archiveJobs()
             self.pollForClosable()
@@ -159,6 +158,7 @@ class JobArchiverPoller(BaseWorkerThread):
         myThread = threading.currentThread()
 
         doneList  = self.findFinishedJobs()
+        logging.info("Found %i finished jobs to archive" % len(doneList))
 
         self.cleanWorkArea(doneList)
 

@@ -8,6 +8,7 @@ import os
 import logging
 import types
 import time
+import psutil
 
 from WMCore.Database.CMSCouch import CouchServer
 from WMComponent.AlertGenerator.Pollers.Base import PeriodPoller
@@ -52,9 +53,9 @@ class CouchPoller(PeriodPoller):
         If such PID file does not exist, try default Couch PID file location.
         
         """
+        logging.info("Reading CouchDB PID file ...")
         pidFileName = "couchdb.pid"
         pidFileDefault = os.path.join("/var/run/couchdb", pidFileName)
-        
         try:
             couchURL = getattr(self.config, "couchURL", None)
             if not couchURL:
@@ -69,15 +70,15 @@ class CouchPoller(PeriodPoller):
             if os.path.exists(pidFile):
                 pidStr = open(pidFile, 'r').read()
                 pid = int(pidStr)
-                return pid
             else:
                 pidStr = open(pidFileDefault, 'r').read()
                 pid = int(pidStr)
-                return pid
         except Exception, ex:
             logging.error("%s: could not get CouchDB PID, reason: %s" %
                           (self.__class__.__name__, ex))
             raise
+        logging.info("CouchDB server PID: %s" % pid)
+        return pid
 
     
     def _setUp(self):
@@ -99,7 +100,12 @@ class CouchPoller(PeriodPoller):
         
         """
         if self._dbProcessDetail:
-            PeriodPoller.check(self, self._dbProcessDetail, self._measurements)
+            try:
+                PeriodPoller.check(self, self._dbProcessDetail, self._measurements)
+            except psutil.error.NoSuchProcess as ex:
+                logging.error(ex)
+                logging.error("Updating info about the polled process ...")
+                self._setUp()
 
 
 

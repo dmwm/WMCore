@@ -43,6 +43,11 @@ function(head, req) {
     // loop over elements, applying site restrictions
     var first = true;
     while (row = getRow()) {
+
+        if (resources.length == 0) {
+            break;
+        }
+
         for (var site in resources) {
             var ele = row["doc"]["WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement"];
 
@@ -50,7 +55,7 @@ function(head, req) {
 
             // check work is for a team in the request
             if (teams.length && ele["TeamName"] && teams.indexOf(ele["TeamName"]) === -1) {
-		continue;
+                continue;
             }
 
             // skip if we only want work from certain wf's which don't include this one.

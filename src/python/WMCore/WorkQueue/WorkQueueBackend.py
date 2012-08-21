@@ -314,9 +314,16 @@ class WorkQueueBackend(object):
         if teams:
             options['teams'] = teams
         if wfs:
-            options['wfs'] = wfs
-        result = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
-        result = json.loads(result)
+            result = []
+            for i in xrange(0, len(wfs), 20):
+                options['wfs'] = wfs[i:i+20]
+                data = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
+                result.extend(json.loads(data))
+            # sort final list
+            result.sort(key = lambda x: x['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement']['Priority'])
+        else:
+            result = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
+            result = json.loads(result)
         for i in result:
             element = CouchWorkQueueElement.fromDocument(self.db, i)
             elements.append(element)
@@ -332,6 +339,8 @@ class WorkQueueBackend(object):
                     else:
                         conditions.pop(site, None)
                     break
+            if not conditions:
+                break
         return elements, conditions
 
     def getActiveData(self):

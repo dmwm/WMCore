@@ -32,6 +32,8 @@ from WMCore.WebTools.Welcome import Welcome
 from WMCore.Agent.Harness import Harness
 from WMCore.WebTools.FrontEndAuth import FrontEndAuth, NullAuth
 
+lastTest = ""
+
 def mytime():
     """
     Utility to time stamp start of request handling.
@@ -100,12 +102,13 @@ class Root(Harness):
     """
     Create the appropriate cherrypy root object
     """
-    def __init__(self, config, webApp = None):
+    def __init__(self, config, webApp = None, testName = ""):
         """
         Initialise the object, pull out the necessary pieces of the configuration
         """
         self.homepage = None
         self.mode = 'component'
+        self.testName = testName
         if webApp == None:
             Harness.__init__(self, config, compName = "Webtools")
             self.appconfig = config.section_(self.config.Webtools.application)
@@ -124,6 +127,14 @@ class Root(Harness):
             self.coreDatabase = config.section_("CoreDatabase")
 
         return
+    
+    def getLastTest(self):
+        global lastTest
+        return lastTest
+    
+    def setLastTest(self):
+        global lastTest
+        lastTest = self.testName
 
     def _validateConfig(self):
         """

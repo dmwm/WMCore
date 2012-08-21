@@ -57,7 +57,8 @@ test_config = DefaultConfig('WMCore_t.WebTools_t.REST_Exceptions_t')
 test_config.Webtools.access_log_level = logging.WARNING
 test_config.Webtools.error_log_level = logging.WARNING        
 
-class RESTTest(unittest.TestCase):
+from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
+class RESTTestFAIL(unittest.TestCase):
 
     def setUp(self):
         self.config = test_config

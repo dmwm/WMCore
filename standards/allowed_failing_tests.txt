@@ -73,5 +73,6 @@ WMCore_t.WMSpec_t.StdSpecs_t.PromptReco_t.PromptRecoTest.testPromptReco
 WMCore_t.WMSpec_t.StdSpecs_t.StoreResults_t.StoreResultsTest.testStoreResults
 WMCore_t.WebTools_t.REST_t.RESTTest.testPing
 WMCore_t.WebTools_t.REST_Exceptions_t.RESTTestFAIL.testNotSerialisableException
+WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest.testConflicts
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest.testMultiTaskProduction
 nose.failure.Failure.runTest

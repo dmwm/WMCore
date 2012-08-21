@@ -298,7 +298,11 @@ if can_nose:
                     os.DMWM_REAL_EXIT( 1 )
             signal.signal(signal.SIGALRM, signal_handler )
             signal.alarm(20)
-            
+            marker = open("nose-marker.txt", "w")
+            marker.write("Ready to be slayed\n")
+            marker.flush()
+            marker.close()
+
             if threadCount > 1:
                 sys.stderr.write("There are %s threads running. Cherrypy may be acting up.\n" % len(threading.enumerate()))
                 sys.stderr.write("The threads are: \n%s\n" % threading.enumerate())

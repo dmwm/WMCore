@@ -1,4 +1,8 @@
 function (doc, req) {
+    if (doc === null) {
+        log("Error: missing doc id - " + req.id);
+        return [null, "ERROR: request not found - " + req.id];
+    }
     //request query is tightly coupled in WorkQueue.py _splitWork method
     var updateFlag = false; 
     if (!doc.total_jobs) {

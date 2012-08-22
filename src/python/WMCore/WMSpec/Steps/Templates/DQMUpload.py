@@ -79,7 +79,7 @@ class DQMUpload(Template):
         step.upload.URL = 'https://cmsweb.cern.ch/dqm/dev'
         step.upload.proxy = None
         step.section_("stageOut")
-        step.stageOut.active = True
+        step.stageOut.active = False
         step.stageOut.retryCount = 3
         step.stageOut.retryDelay = 300
         #step.stageOut.waitTime = 1200

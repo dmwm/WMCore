@@ -179,6 +179,14 @@ function generateProduction(splitAlgo, splitParams) {
   return procStr;
 }
 
+function generateHarvesting(splitAlgo, splitParams) {
+  var procStr = '<input type="hidden" name="splittingAlgo" value="Harvest"></input>\n';
+  procStr += "<table>"
+  procStr += generateInputRow("Periodic harvesting frequency:", "periodic_harvest_interval", splitParams);
+  procStr += "</table>\n";
+  return procStr;
+}
+
 function generateForm(taskName, splitAlgo, splitParams, taskType) {
   var frmStr = '<form name="' + taskName + '" action="../handleSplittingPage" method="POST">\n';
   frmStr += '<input type="hidden" name="requestName" VALUE="$requestName"></input>\n'; 
@@ -195,6 +203,8 @@ function generateForm(taskName, splitAlgo, splitParams, taskType) {
     frmStr += generateSkim(splitAlgo, splitParams);
   } else if (taskType == "Production" || taskType == "MultiProduction") {
     frmStr += generateProduction(splitAlgo, splitParams);
+  } else if (taskType == "Harvesting") {
+    frmStr += generateHarvesting(splitAlgo, splitParams);
   }
 
   frmStr += submitButton(taskName);

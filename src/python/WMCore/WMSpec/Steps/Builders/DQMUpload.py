@@ -13,7 +13,7 @@ class DQMUpload(Builder):
     """
     _DQMUpload_
 
-    Build a working area for a StageOut step
+    Build a working area for a DQMUpload step
 
     """
 

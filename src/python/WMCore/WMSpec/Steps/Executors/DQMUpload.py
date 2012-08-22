@@ -106,22 +106,14 @@ class DQMUpload(Executor):
         if self.step.upload.active:
             logging.info("DQM Upload is ACTIVE.")
 
-            # FIXME : samir : This doesnt help in the T0 case. In the general (GlideIn case) we have another 
-            # Ways to implement it which are easier but this will be the last resort.
- 
-            # Pulling the proxy from the input sandbox
-            # After this, the proxy will be in the local directory
-            # The command bellow throws an exception if the sandbox
-            # does not have the proxy file
-            #try:
-            #    self.stepSpace.getFromSandbox(self.step.upload.proxy)
-            #except Exception, ex:
-            #    msg = "Could not find proxy file in input sandbox:"
-            #    msg += str(ex) + "\n"
-            #    msg += traceback.format_exc()
-            #    logging.error(msg)
-            #    raise WMExecutionFailure(60318, "DQMUploadFailure", msg)
-     
+            if self.step.upload.proxy:
+                try:
+                   self.stepSpace.getFromSandbox(self.step.upload.proxy)
+                except Exception, ex:
+                    #Let it go, it wasn't in the sandbox. Then it must be
+                    #somewhere else
+                    pass
+
         # Now, let's work...
 
         # Search through steps for analysis files
@@ -291,7 +283,7 @@ class DQMUpload(Executor):
 
         args['checksum'] = 'md5:' + m.hexdigest()
         args['size'] = str(os.stat(file)[6])
-        proxyLoc = self.step.upload.proxy
+        proxyLoc = self.step.upload.proxy or os.environ.get('X509_USER_PROXY', None)
 
         class HTTPSCertAuth(HTTPS):
             def __init__(self, host, timeout):
@@ -319,17 +311,23 @@ class DQMUpload(Executor):
             msg += "  ==> %s: %s\n" % (arg, args[arg])
         logging.info(msg)
 
-        authreq = urllib2.Request(args['url'] + '/digest')
-        authreq.add_header('User-agent', ident)
-        result = urllib2.build_opener(HTTPSCertAuthenticate()).open(authreq)
-        cookie = result.headers.get('Set-Cookie')
-        if not cookie:
+        try:
+            authreq = urllib2.Request(args['url'] + '/digest')
+            authreq.add_header('User-agent', ident)
+            result = urllib2.build_opener(HTTPSCertAuthenticate()).open(authreq)
+            cookie = result.headers.get('Set-Cookie')
+            if not cookie:
+                raise RuntimeError
+        except Exception, ex:
             msg = "Unable to authenticate to DQM Server:\n"
-            msg += "%s\n" % self.args['url']
+            msg += "%s\n" % args['url']
             msg += "With Proxy from:\n"
             msg += "%s\n" % proxyLoc
+            msg += "Exception: %s\n" % str(ex)
+            msg += traceback.format_exc()
             logging.error(msg)
-            raise RuntimeError, msg
+            raise WMExecutionFailure(60318, "DQMUploadFailure", msg)
+
         cookie = cookie.split(";")[0]
 
         # open a connection and upload the file

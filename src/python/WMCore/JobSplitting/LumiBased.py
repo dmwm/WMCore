@@ -82,7 +82,7 @@ class LumiBased(JobFactory):
         splitOnFile     = bool(kwargs.get('halt_job_on_file_boundaries', True))
         ignoreACDC      = bool(kwargs.get('ignore_acdc_except', False))
         collectionName  = kwargs.get('collectionName', None)
-        splitOnRun      = kwargs.get('splitOnRun', True)
+        splitOnRun      = kwargs.get('splitOnRun', False)
         getParents      = kwargs.get('include_parents', False)
         runWhitelist    = kwargs.get('runWhitelist', [])
 

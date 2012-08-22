@@ -110,11 +110,11 @@ def validateSubTask(task, firstTask = False):
             raise WMSpecFactoryException(msg)
         
     # configuration checks
-    check = task.has_key("Scenario") or task.has_key("ConfigCacheID")
+    check = task.has_key("ProcScenario") or task.has_key("ConfigCacheID")
     if not check:
         msg = "Task %s has no Scenario or ConfigCacheID, one of these must be provided" % task['TaskName']
         raise WMSpecFactoryException(msg)
-    if task.has_key("Scenario"):
+    if task.has_key("ProcScenario"):
         if not task.has_key("ScenarioMethod"):
             msg = "Scenario Specified for Task %s but no ScenarioMethod provided" % task['TaskName']
             raise WMSpecFactoryException(msg)
@@ -331,16 +331,13 @@ class TaskChainWorkloadFactory(StdBase):
         scenarioArgs = {}
         couchUrl = self.couchURL
         couchDB = self.couchDBName
-        if taskConf.get("Scenario", None) != None:
-            scenario = taskConf['Scenario']
+        if taskConf.get("ProcScenario", None) != None:
+            self.procScenario = taskConf['ProcScenario']
             scenarioFunc = taskConf['ScenarioMethod']
             scenarioArgs = taskConf['ScenarioArguments']
-            couchUrl = None
-            couchDb = None
-            couchConfig = None            
             
         outputMods = self.setupProcessingTask(task, "Processing", inputDataset, inputStep = inpStep, inputModule=inpMod,
-                                            scenarioName = scenario, scenarioFunc = scenarioFunc, scenarioArgs = scenarioArgs,
+                                            scenarioName = self.procScenario, scenarioFunc = scenarioFunc, scenarioArgs = scenarioArgs,
                                             couchURL = couchUrl, couchDBName = couchDB,
                                             configDoc = configCacheID, splitAlgo = splitAlgorithm,
                                             splitArgs = splitArguments, stepType = cmsswStepType)

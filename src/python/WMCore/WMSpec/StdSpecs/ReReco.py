@@ -150,7 +150,7 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
                                                     couchURL = schema["CouchURL"],
                                                     couchDBName = schema["CouchDBName"],
                                                     getOutputModules = True)
-        elif not schema.get('ProcScenario', None) and not schema.get('Scenario', None):
+        elif not schema.get('ProcScenario', None):
             self.raiseValidationException(msg = "No Scenario or Config in Processing Request!")
 
         try:

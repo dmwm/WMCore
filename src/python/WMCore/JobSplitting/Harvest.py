@@ -4,6 +4,7 @@ _Harvest_
 
 """
 import threading
+import os
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.Services.UUID import makeUUID
@@ -85,6 +86,10 @@ class Harvest(JobFactory):
                 self.newJob(name = "%s-%s-%i" % (baseName, harvestType, jobCount))
                 for f in locationDict[location][run]:
                     self.currentJob.addFile(f)
+
+                #Check for proxy and ship it in the job if available
+                if 'X509_USER_PROXY' in os.environ:
+                    self.currentJob['proxyPath'] = os.environ['X509_USER_PROXY']
 
         return
 

@@ -83,6 +83,11 @@ class StdBase(object):
         self.timePerEvent = 60
         self.memory = 2000
         self.sizePerEvent = 512
+        self.periodicHarvestingInterval = 0
+        self.dqmUploadProxy = None
+        self.dqmUploadUrl = None
+        self.dqmSequences = None
+        self.procScenario = None
         return
 
     def __call__(self, workloadName, arguments):
@@ -122,6 +127,11 @@ class StdBase(object):
         self.timePerEvent = int(arguments.get("TimePerEvent", 60))
         self.memory = int(arguments.get("Memory", 2000))
         self.sizePerEvent = int(arguments.get("SizePerEvent", 512))
+        self.periodicHarvestingInterval = int(arguments.get("PeriodicHarvest", 0))
+        self.dqmUploadProxy = arguments.get("DQMUploadProxy", None)
+        self.dqmUploadUrl = arguments.get("DQMUploadUrl", "https://cmsweb.cern.ch/dqm/dev")
+        self.dqmSequences = arguments.get("DqmSequences", [])
+        self.procScenario = arguments.get("ProcScenario", None)
 
         if arguments.get("IncludeParents", False) == "True":
             self.includeParents = True
@@ -499,7 +509,8 @@ class StdBase(object):
         return logCollectTask
 
     def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModuleName,
-                     parentStepName = "cmsRun1", doLogCollect = True):
+                     parentStepName = "cmsRun1", doLogCollect = True,
+                     doHarvesting = True):
         """
         _addMergeTask_
 
@@ -541,30 +552,17 @@ class StdBase(object):
         mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
         mergeTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
 
-        if getattr(parentOutputModule, "dataTier") in ["DQM", "DQMROOT"]:
-            # DQM wants everything to be a single file per run, so we'll merge
-            # accordingly.  We'll set the max_wait_time to two weeks as files
-            # tend to be garbage collected after that. Also effectively disable
-            # size thresholds for DQM merges (they do not apply).
-            mergeTask.setSplittingAlgorithm(splitAlgo,
-                                            max_merge_size = 21000000000,
-                                            min_merge_size = 20000000000,
-                                            max_merge_events = 21000000000,
-                                            max_wait_time = 14 * 24 * 3600,
-                                            merge_across_runs = False,
-                                            siteWhitelist = self.siteWhitelist,
-                                            siteBlacklist = self.siteBlacklist)
-        else:
-            mergeTask.setSplittingAlgorithm(splitAlgo,
-                                            max_merge_size = self.maxMergeSize,
-                                            min_merge_size = self.minMergeSize,
-                                            max_merge_events = self.maxMergeEvents,
-                                            max_wait_time = self.maxWaitTime,
-                                            siteWhitelist = self.siteWhitelist,
-                                            siteBlacklist = self.siteBlacklist)
+        mergeTask.setSplittingAlgorithm(splitAlgo,
+                                        max_merge_size = self.maxMergeSize,
+                                        min_merge_size = self.minMergeSize,
+                                        max_merge_events = self.maxMergeEvents,
+                                        max_wait_time = self.maxWaitTime,
+                                        siteWhitelist = self.siteWhitelist,
+                                        siteBlacklist = self.siteBlacklist)
 
         if getattr(parentOutputModule, "dataTier") == "DQMROOT":
-            mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge", newDQMIO = True)
+            mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge",
+                                                         newDQMIO = True)
         else:
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge")
 
@@ -575,6 +573,9 @@ class StdBase(object):
                              forceMerged = True)
 
         self.addCleanupTask(parentTask, parentOutputModuleName)
+        if doHarvesting and getattr(parentOutputModule, "dataTier") in ["DQMROOT", "DQM"]:
+            self.addDQMHarvestTask(mergeTask, "Merged", self.dqmUploadProxy,
+                                   self.periodicHarvestingInterval)
         return mergeTask
 
     def addCleanupTask(self, parentTask, parentOutputModuleName):
@@ -619,7 +620,7 @@ class StdBase(object):
         if doLogCollect:
             self.addLogCollectTask(harvestTask, taskName = "%s%sDQMHarvestLogCollect" % (parentTask.name(), parentOutputModuleName))
 
-        harvestTask.setTaskType("Processing")
+        harvestTask.setTaskType("Harvesting")
         harvestTask.applyTemplates()
         harvestTask.setTaskPriority(self.priority + 5)
 
@@ -648,6 +649,7 @@ class StdBase(object):
                                                                                         getattr(parentOutputModule, "processedDataset"),
                                                                                         getattr(parentOutputModule, "dataTier")),
                                                            runNumber = self.runNumber,
+                                                           dqmSeq = self.dqmSequences,
                                                            newDQMIO = True)
         else:
             harvestTaskCmsswHelper.setDataProcessingConfig(self.procScenario, "dqmHarvesting",
@@ -655,11 +657,12 @@ class StdBase(object):
                                                            datasetName = "/%s/%s/%s" % (getattr(parentOutputModule, "primaryDataset"),
                                                                                         getattr(parentOutputModule, "processedDataset"),
                                                                                         getattr(parentOutputModule, "dataTier")),
-                                                           runNumber = self.runNumber)
-        if uploadProxy: 
-            harvestTaskUploadHelper = harvestTaskUpload.getTypeHelper()
-            harvestTaskUploadHelper.setProxyFile(uploadProxy)
+                                                           runNumber = self.runNumber,
+                                                           dqmSeq = self.dqmSequences)
 
+        harvestTaskUploadHelper = harvestTaskUpload.getTypeHelper()
+        harvestTaskUploadHelper.setProxyFile(uploadProxy)
+        harvestTaskUploadHelper.setServerURL(self.dqmUploadUrl)
         return
 
     def setupPileup(self, task, pileupConfig):
@@ -698,8 +701,16 @@ class StdBase(object):
         put it.
 
         If something breaks, raise a WMSpecFactoryException.  A message
-        in that excpetion will be transferred to an HTTP Error later on.
+        in that exception will be transferred to an HTTP Error later on.
         """
+
+        #Check the workload for harvesting task, if there is a
+        #harvesting task then a self.procScenario must be defined
+        for task in workload.getAllTasks():
+            if task.taskType() == "Harvesting":
+                if not self.procScenario:
+                    self.raiseValidationException(msg = "A DQM harvesting task was found, you must specify a scenario")
+
         return
 
     def factoryWorkloadConstruction(self, workloadName, arguments):

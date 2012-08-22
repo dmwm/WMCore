@@ -153,6 +153,8 @@ class ReqMgrBrowser(WebAPI):
             splitParams["events_per_job"] = int(submittedParams["events_per_job"])
             if submittedParams.has_key("events_per_lumi"):
                 splitParams["events_per_lumi"] = int(submittedParams["events_per_lumi"])
+        elif splittingAlgo == "Harvest":
+            splitParams["periodic_harvest_interval"] = int(submittedParams["periodic_harvest_interval"])
         elif 'Merg' in splittingTask:
             for field in ['min_merge_size', 'max_merge_size', 'max_merge_events']:
                 splitParams[field] = int(submittedParams[field])

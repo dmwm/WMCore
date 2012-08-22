@@ -107,6 +107,21 @@ def parseBlockList(l):
 
     return result
 
+def parseDqmSequences(l):
+    """ Changes a string into a list of strings """
+    result = None
+    if isinstance(l, list):
+       result = l
+    elif isinstance(l, basestring):
+        toks = l.lstrip(' [').rstrip(' ]').split(',')
+        if toks == ['']:
+            return []
+        # only one set of quotes
+        result = [str(tok.strip(' \'"')) for tok in toks]
+    else:
+        raise cherrypy.HTTPError(400, "Bad DQM sequences list of type " + type(l).__name__)
+    return result
+
 def parseSite(kw, name):
     """ puts site whitelist & blacklists into nice format"""
     value = kw.get(name, [])
@@ -379,7 +394,7 @@ def unidecode(data):
 def validate(schema):
     schema.validate()
     for field in ['RequestName', 'Requestor', 'RequestString',
-        'Campaign', 'Scenario', 'ProcConfigCacheID', 'inputMode',
+        'Campaign', 'ProcScenario', 'ProcConfigCacheID', 'inputMode',
         'CouchDBName', 'Group']:
         value = schema.get(field, '')
         if value and value != '':
@@ -423,14 +438,11 @@ def makeRequest(kwargs, couchUrl, couchDB, wmstatUrl):
     else:
         schema['RequestName'] = "%s_%s_%s" % (schema['Requestor'], currentTime, secondFraction)
     schema["Campaign"] = kwargs.get("Campaign", "")
-    if 'Scenario' in kwargs and 'ProcConfigCacheID' in kwargs:
+    if 'ProcScenario' in kwargs and 'ProcConfigCacheID' in kwargs:
         # Use input mode to delete the unused one
         inputMode = kwargs['inputMode']
-        inputValues = {'scenario':'Scenario',
-                       'couchDB':'ProdConfigCacheID'}
-        for n, v in inputValues.iteritems():
-            if n != inputMode:
-                schema[v] = ""
+        if inputMode == 'scenario':
+            del schema['ProcConfigCacheID']
 
     if kwargs.has_key("InputDataset"):
         schema["InputDatasets"] = [kwargs["InputDataset"]]
@@ -464,6 +476,8 @@ def makeRequest(kwargs, couchUrl, couchDB, wmstatUrl):
     for blocklist in ["BlockWhitelist", "BlockBlacklist"]:
         if blocklist in kwargs:
             schema[blocklist] = parseBlockList(kwargs[blocklist])
+    if "DqmSequences" in kwargs:
+            schema["DqmSequences"] = parseDqmSequences(kwargs["DqmSequences"])
     validate(schema)
 
     # Get the DN

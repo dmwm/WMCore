@@ -197,6 +197,35 @@ class CMSSWStepHelper(CoreHelper):
 
         return pickle.loads(self.data.application.configuration.pickledarguments)['globalTag']
 
+    def setDatasetName(self, datasetName):
+        """
+        _setDatasetName_
+
+        Set the dataset name in the pickled arguments
+        """
+        self.data.application.configuration.section_('arguments')
+        self.data.application.configuration.arguments.datasetName = datasetName
+
+        args = {}
+        if hasattr(self.data.application.configuration, "pickledarguments"):
+            args = pickle.loads(self.data.application.configuration.pickledarguments)
+        args['datasetName'] = datasetName
+        self.data.application.configuration.pickledarguments = pickle.dumps(args)
+
+        return
+
+    def getDatasetName(self):
+        """
+        _setDatasetName_
+
+        Retrieve the dataset name from the pickled arguments
+        """
+        if hasattr(self.data.application.configuration, "arguments"):
+            if hasattr(self.data.application.configuration.arguments, "datasetName"):
+                return self.data.application.configuration.arguments.datasetName
+
+        return pickle.loads(self.data.application.configuration.pickledarguments).get('datasetName', None)
+
     def setUserSandbox(self, userSandbox):
         """
         _setUserSandbox_

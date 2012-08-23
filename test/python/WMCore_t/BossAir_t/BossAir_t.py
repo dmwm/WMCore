@@ -117,12 +117,6 @@ class BossAirTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
         self.getJobs = self.daoFactory(classname = "Jobs.GetAllJobs")
 
-
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationSlots  = self.daoFactory(classname = "Locations.SetJobSlots")
-
-
-
         #Create sites in resourceControl
         resourceControl = ResourceControl()
         for site in self.sites:

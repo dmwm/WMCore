@@ -26,17 +26,6 @@ class Harvest(JobFactory):
     job and the creation of a new job.
 
     """
-    def getRunSet(self, fileInfo):
-
-        runSet = set()
-        if len(fileInfo.getRuns()) == 1:
-            run = fileInfo.getRuns().pop()
-            runSet.add(run.run)
-        else:
-            for Run in fileInfo.getRuns():
-                runSet.add(Run.run)
-
-        return frozenset(runSet)
 
     def createJobsLocationWise(self, fileset):
 
@@ -54,7 +43,11 @@ class Harvest(JobFactory):
         for fileInfo in allFiles:
 
             locSet = frozenset(fileInfo['locations'])
-            runSet = self.getRunSet(fileInfo)
+            runSet = fileInfo.getRuns()
+
+            #Cache run information
+            runDict[fileInfo['lfn']] = runSet
+            fileInfo['runs'] = set()
 
             if len(locSet) == 0:
                 msg = "File %s has no locations!" % fileInfo['lfn']
@@ -68,10 +61,10 @@ class Harvest(JobFactory):
                 if location not in locationDict.keys():
                     locationDict[location] = {}
                 for run in runSet:
-                    if run in locationDict[location].keys():
-                        locationDict[location][run].append(fileInfo)
+                    if run.run in locationDict[location].keys():
+                        locationDict[location][run.run].append(fileInfo)
                     else:
-                        locationDict[location][run] = [fileInfo]
+                        locationDict[location][run.run] = [fileInfo]
 
         # create separate jobs for different locations
         self.newGroup()
@@ -85,6 +78,10 @@ class Harvest(JobFactory):
                 jobCount += 1
                 self.newJob(name = "%s-%s-%i" % (baseName, harvestType, jobCount))
                 for f in locationDict[location][run]:
+                    for fileRun in runDict[f['lfn']]:
+                        if fileRun.run == run:
+                            self.currentJob['mask'].addRun(fileRun)
+                            break
                     self.currentJob.addFile(f)
 
                 #Check for proxy and ship it in the job if available

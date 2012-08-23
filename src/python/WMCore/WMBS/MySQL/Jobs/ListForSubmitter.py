@@ -14,7 +14,8 @@ class ListForSubmitter(DBFormatter):
     sql = """SELECT wmbs_job.id AS id, wmbs_job.name AS name,
                     wmbs_job.cache_dir AS cache_dir,
                     wmbs_sub_types.name AS type, wmbs_job.retry_count AS retry_count,
-                    wmbs_subscription.workflow as workflow
+                    wmbs_subscription.workflow as workflow,
+                    wmbs_workflow.name as request_name
                     FROM wmbs_job
                INNER JOIN wmbs_jobgroup ON
                  wmbs_job.jobgroup = wmbs_jobgroup.id
@@ -24,6 +25,8 @@ class ListForSubmitter(DBFormatter):
                  wmbs_subscription.subtype = wmbs_sub_types.id
                INNER JOIN wmbs_job_state ON
                  wmbs_job.state = wmbs_job_state.id
+               INNER JOIN wmbs_workflow ON
+                 wmbs_subscription.workflow = wmbs_workflow.id
              WHERE wmbs_job_state.name = 'created'"""
 
     def execute(self, conn = None, transaction = False):

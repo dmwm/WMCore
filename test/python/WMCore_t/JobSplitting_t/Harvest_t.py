@@ -23,7 +23,7 @@ from WMCore.JobStateMachine.ChangeState import ChangeState
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
-from WMCore.Services.UUID import makeUUID
+from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMQuality.TestInit import TestInit
 
 
@@ -57,15 +57,9 @@ class HarvestTest(unittest.TestCase):
         config = self.getConfig()
         self.changer = ChangeState(config)
 
-        myThread.dbi.processData("""INSERT INTO wmbs_location
-                                    (id, site_name, se_name)
-                                    VALUES (wmbs_location_SEQ.nextval, 'SomeSite', 'SomeSE')
-                                    """, transaction = False)
-
-        myThread.dbi.processData("""INSERT INTO wmbs_location
-                                    (id, site_name, se_name)
-                                    VALUES (wmbs_location_SEQ.nextval, 'SomeSite2', 'SomeSE2')
-                                    """, transaction = False)
+        myResourceControl = ResourceControl()
+        myResourceControl.insertSite("SomeSite", 10, 20, "SomeSE", "SomeCE")
+        myResourceControl.insertSite("SomeSite2", 10, 20, "SomeSE2", "SomeCE2")
 
         self.fileset1 = Fileset(name = "TestFileset1")
         for file in range(11):
@@ -115,13 +109,15 @@ class HarvestTest(unittest.TestCase):
 
         return config
 
-    def finishJobs(self, jobGroups):
+    def finishJobs(self, jobGroups, subscription = None):
         """
         _finishJobs_
 
         """
-        for f in self.subscription1.acquiredFiles():
-            self.subscription1.completeFiles(f)
+        if not subscription:
+            subscription = self.subscription1
+        for f in subscription.acquiredFiles():
+            subscription.completeFiles(f)
 
         for jobGroup in jobGroups:
             self.changer.propagate(jobGroup.jobs, 'executing', 'created')
@@ -290,6 +286,95 @@ class HarvestTest(unittest.TestCase):
         self.assertEqual(len(jobGroups[0].getJobs()), 4 , "We didn't get 4 jobs for adding 2 different runs to SomeSE2")
 
         return
+
+    def testMultipleRunHarvesting(self):
+        """
+        _testMultipleRunHarvesting_
+
+        Add some files with multiple runs in each, make sure the jobs
+        are created by location and run. Verify each job mask afterwards.
+        Note that in this test run are splitted between sites,
+        in real life that MUST NOT happen we still don't support that.
+        """
+        multipleFilesFileset = Fileset(name = "TestFileset")
+
+        newFile = File("/some/file/test1", size = 1000, events = 100)
+        newFile.addRun(Run(1,*[1,3,4,5,6,7]))
+        newFile.addRun(Run(2,*[1,2,4,5,6,7]))
+        newFile.setLocation('SomeSE')
+        multipleFilesFileset.addFile(newFile)
+        newFile = File("/some/file/test2", size = 1000, events = 100)
+        newFile.addRun(Run(1,*[2,8]))
+        newFile.addRun(Run(2,*[3,8]))
+        newFile.setLocation('SomeSE2')
+        multipleFilesFileset.addFile(newFile)
+        multipleFilesFileset.create()
+
+        harvestingWorkflow = Workflow(spec = "spec.xml",
+                                      owner = "hufnagel",
+                                      name = "TestWorkflow",
+                                      task="Test")
+        harvestingWorkflow.create()
+
+        harvestSub  = Subscription(fileset = multipleFilesFileset,
+                                   workflow = harvestingWorkflow,
+                                   split_algo = "Harvest",
+                                   type = "Harvesting")
+        harvestSub.create()
+
+        jobFactory = self.splitterFactory(package = "WMCore.WMBS", subscription = harvestSub)
+        jobGroups = jobFactory(periodic_harvest_interval = 2)
+        self.assertEqual(len(jobGroups), 1, "A single job group was not created")
+        self.assertEqual(len(jobGroups[0].getJobs()), 4,
+                             "Four jobs were not created")
+
+        for job in jobGroups[0].getJobs():
+            runs = job['mask'].getRunAndLumis()
+            self.assertEqual(len(runs), 1, "Job has more than one run configured")
+            possibleLumiPairs = {1 : [[1,1],[3,7],[2,2],[8,8]],
+                                 2 : [[1,2],[4,7],[3,3],[8,8]]}
+            run = runs.keys()[0]
+            for lumiPair in runs[run]:
+                self.assertTrue(lumiPair in possibleLumiPairs[run], "Strange lumi pair in the job mask")
+
+        self.finishJobs(jobGroups, harvestSub)
+
+        newFile = File("/some/file/test3", size = 1000, events = 100)
+        newFile.addRun(Run(1,*range(9,15)))
+        newFile.setLocation('SomeSE2')
+        multipleFilesFileset.addFile(newFile)
+        multipleFilesFileset.commit()
+
+        time.sleep(2)
+
+        jobGroups = jobFactory(periodic_harvest_interval = 2)
+        self.assertEqual(len(jobGroups), 1, "A single job group was not created")
+        self.assertEqual(len(jobGroups[0].getJobs()), 4, "Four jobs were not created")
+
+        for job in jobGroups[0].getJobs():
+            runs = job['mask'].getRunAndLumis()
+            self.assertEqual(len(runs), 1, "Job has more than one run configured")
+            possibleLumiPairs = {1 : [[1,1],[3,7],[2,2],[8,8],[9,14]],
+                                 2 : [[1,2],[4,7],[3,3],[8,8]]}
+            run = runs.keys()[0]
+            for lumiPair in runs[run]:
+                self.assertTrue(lumiPair in possibleLumiPairs[run], "Strange lumi pair in the job mask")
+
+        self.finishJobs(jobGroups, harvestSub)
+        multipleFilesFileset.markOpen(False)
+
+        jobGroups = jobFactory(periodic_harvest_interval = 2)
+        self.assertEqual(len(jobGroups), 1, "A single job group was not created")
+        self.assertEqual(len(jobGroups[0].getJobs()), 4, "Four jobs were not created")
+
+        for job in jobGroups[0].getJobs():
+            runs = job['mask'].getRunAndLumis()
+            self.assertEqual(len(runs), 1, "Job has more than one run configured")
+            possibleLumiPairs = {1 : [[1,1],[3,7],[2,2],[8,8],[9,14]],
+                                 2 : [[1,2],[4,7],[3,3],[8,8]]}
+            run = runs.keys()[0]
+            for lumiPair in runs[run]:
+                self.assertTrue(lumiPair in possibleLumiPairs[run], "Strange lumi pair in the job mask")
 
 if __name__ == '__main__':
     unittest.main()

@@ -5,7 +5,6 @@ _Pset_
 Bogus CMSSW PSet for testing runtime code.
 """
 
-import pickle
 import FWCore.ParameterSet.Config as cms
 
 class Container():
@@ -41,7 +40,7 @@ class Process():
         datamixing1.setType("DataMixingModule")
         datamixing2 = cms.PSet(input = cms.PSet(fileNames = cms.untracked.vstring()))
         datamixing2.setType("DataMixingModule")
-        
+
         self.producers["mix1"] = mixing1
         self.producers["datamix1"] = datamixing1
         self.filters["mix2"] = mixing2
@@ -64,13 +63,5 @@ class Process():
         self.services[service.serviceName] = service
         setattr(self, service.serviceName, service)
         return
-
-    def dumpPython(self):
-        """
-        _dumpPython_
-
-        Pickle this object so that we can examine it later.
-        """
-        return pickle.dumps(self)
 
 process = Process()

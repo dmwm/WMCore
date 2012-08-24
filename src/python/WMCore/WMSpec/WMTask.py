@@ -830,8 +830,8 @@ class WMTaskHelper(TreeHelper):
         for taskStep in taskSteps:
             reportPath = os.path.join(jobLocation, taskStep, "Report.pkl")
             if os.path.isfile(reportPath):
-                stepReport = Report.Report(taskStep)
-                stepReport.unpersist(reportPath)
+                stepReport = Report.Report()
+                stepReport.unpersist(reportPath, taskStep)
                 finalReport.setStep(taskStep, stepReport.retrieveStep(taskStep))
             else:
                 # Then we have a missing report

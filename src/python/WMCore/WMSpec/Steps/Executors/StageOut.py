@@ -125,8 +125,8 @@ class StageOut(Executor):
                               % (step, stepLocation))
                 continue
             # First, get everything from a file and 'unpersist' it
-            stepReport = Report(step)
-            stepReport.unpersist(reportLocation)
+            stepReport = Report()
+            stepReport.unpersist(reportLocation, step)
             taskID = getattr(stepReport.data, 'id', None)
 
             # Don't stage out files from bad steps.

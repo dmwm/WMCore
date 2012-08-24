@@ -323,7 +323,7 @@ class Report:
         handle.close()
         return
 
-    def unpersist(self, filename):
+    def unpersist(self, filename, reportname = None):
         """
         _unpersist_
 
@@ -332,6 +332,11 @@ class Report:
         handle = open(filename, 'r')
         self.data = cPickle.load(handle)
         handle.close()
+
+        # old self.report (if it existed) became unattached
+        if reportname:
+            self.report = getattr(self.data, reportname)
+
         return
 
     def addOutputModule(self, moduleName):
@@ -467,8 +472,6 @@ class Report:
         # All right, the rest should be JSONalizable python primitives
         for entry in keyList:
             setattr(fileRef, entry, attrs[entry])
-
-
 
         return fileRef
 

@@ -1209,5 +1209,38 @@ class WorkQueueTest(WorkQueueTestCase):
         syncQueues(self.localQueue)
         self.assertEqual(len(self.globalQueue.status(status = 'Done')), 2)
 
+    def testOpenBlocks(self):
+        """New files added to open blocks are inserted correctly"""
+        # open block
+        Globals.GlobalParams.setBlocksOpenForWriting(True)
+        # queue as normal and inject 1 block to wmbs
+
+        self.globalQueue.queueWork(self.processingSpec.specUrl())
+        self.localQueue.pullWork({'T2_XX_SiteA' : 100, 'T2_XX_SiteB' : 100},
+                                 continuousReplication = False)
+        syncQueues(self.localQueue)
+        work = self.localQueue.getWork({'T2_XX_SiteA' : 1})
+        numFilesAdded = sum(x['NumOfFilesAdded'] for x in work)
+        self.assertEqual(numFilesAdded, Globals.GlobalParams.numOfFilesPerBlock())
+        # Add more files
+        Globals.GlobalParams.setNumOfFilesPerBlock(Globals.GlobalParams.numOfFilesPerBlock() + 3)
+        self.localQueue.performQueueCleanupActions()
+        newNumFilesAdded = sum(x['NumOfFilesAdded'] for x in self.localQueue.status())
+        self.assertEqual(newNumFilesAdded, Globals.GlobalParams.numOfFilesPerBlock())
+        self.assertNotEqual(numFilesAdded, newNumFilesAdded)
+        # ensure all current files injected but request does not appear ready for cleanup
+        work = self.localQueue.getWork({'T2_XX_SiteA' : 100, 'T2_XX_SiteB' : 100})
+        self.localQueue.performQueueCleanupActions()
+        newNumFilesAdded = sum(x['NumOfFilesAdded'] for x in self.localQueue.status())
+        self.assertFalse(self.localQueue.getWMBSInjectionStatus(self.processingSpec.name()))
+        # close blocks
+        Globals.GlobalParams.setBlocksOpenForWriting(False)
+        self.localQueue.performQueueCleanupActions()
+        # no new files should be added
+        Globals.GlobalParams.setNumOfFilesPerBlock(Globals.GlobalParams.numOfFilesPerBlock() + 3)
+        self.localQueue.performQueueCleanupActions()
+        newNumFilesAdded2 = sum(x['NumOfFilesAdded'] for x in self.localQueue.status())
+        self.assertEqual(newNumFilesAdded2, newNumFilesAdded)
+
 if __name__ == "__main__":
     unittest.main()

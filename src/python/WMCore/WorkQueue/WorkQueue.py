@@ -377,6 +377,29 @@ class WorkQueue(WorkQueueBase):
 
         return sub
 
+    def addNewFilesToOpenSubscriptions(self, *elements):
+        """Inject new files to wmbs for running elements that have new files.
+            Assumes elements are from the same workflow"""
+        wmspec = None
+        for ele in elements:
+            if not ele.isRunning() or not ele['SubscriptionId'] or not ele:
+                continue
+            if not ele['Inputs'] or not ele['OpenForNewData']:
+                continue
+            if not wmspec:
+                wmspec = self.backend.getWMSpec(ele['RequestName'])
+            blockName, dbsBlock = self._getDBSBlock(ele, wmspec)
+            if ele['NumOfFilesAdded'] != len(dbsBlock['Files']):
+                self.logger.info("Adding new files to open block %s (%s)" % (blockName, ele.id))
+                from WMCore.WorkQueue.WMBSHelper import WMBSHelper
+                wmbsHelper = WMBSHelper(wmspec, ele['TaskName'], blockName, ele['Mask'], self.params['CacheDir'])
+                ele['NumOfFilesAdded'] += wmbsHelper.createSubscriptionAndAddFiles(block = dbsBlock)[1]
+                self.backend.updateElements(ele.id, NumOfFilesAdded = ele['NumOfFilesAdded'])
+            if dbsBlock['IsOpen'] != ele['OpenForNewData']:
+                self.logger.info("Closing open block %s (%s)" % (blockName, ele.id))
+                self.backend.updateElements(ele.id, OpenForNewData = dbsBlock['IsOpen'])
+                ele['OpenForNewData'] = dbsBlock['IsOpen']
+
     def _assignToChildQueue(self, queue, *elements):
         """Assign work from parent to queue"""
         for ele in elements:
@@ -698,6 +721,8 @@ class WorkQueue(WorkQueueBase):
                         else:
                             self.logger.info('Waiting for parent queue to delete "%s"' % result['RequestName'])
                         continue
+
+                    self.addNewFilesToOpenSubscriptions(*elements)
 
                     updated_elements = [x for x in result['Elements'] if x.modified]
                     for x in updated_elements:

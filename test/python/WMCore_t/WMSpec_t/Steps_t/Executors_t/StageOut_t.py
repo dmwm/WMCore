@@ -215,7 +215,7 @@ class otherStageOutTest(unittest.TestCase):
 
     @attr('integration')
     def testCPBackendStageOutAgainstReportNew(self):
-        myReport = Report('cmsRun1')
+        myReport = Report()
         myReport.unpersist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         myReport.data.cmsRun1.status = 0
         myReport.persist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
@@ -230,7 +230,7 @@ class otherStageOutTest(unittest.TestCase):
 
     @attr('integration')
     def testCPBackendStageOutAgainstReportFailedStepNew(self):
-        myReport = Report('cmsRun1')
+        myReport = Report()
         myReport.unpersist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         myReport.data.cmsRun1.status = 1
         myReport.persist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
@@ -247,7 +247,7 @@ class otherStageOutTest(unittest.TestCase):
     @attr('integration')
     def testCPBackendStageOutAgainstReportOld(self):
         
-        myReport = Report('cmsRun1')
+        myReport = Report()
         myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         myReport.data.cmsRun1.status = 0
         myReport.persist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
@@ -262,7 +262,7 @@ class otherStageOutTest(unittest.TestCase):
 
     @attr('integration') 
     def testCPBackendStageOutAgainstReportFailedStepOld(self):
-        myReport = Report('cmsRun1')
+        myReport = Report()
         myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         myReport.data.cmsRun1.status = 1
         myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
@@ -280,7 +280,7 @@ class otherStageOutTest(unittest.TestCase):
     def testOnWorkerNodes(self):
         raise RuntimeError
         # Stage a file out, stage it back in, check it, delete it
-        myReport = Report('cmsRun1')
+        myReport = Report()
         myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         myReport.data.cmsRun1.status = 1
         del myReport.data.cmsRun1.output
@@ -305,7 +305,7 @@ class otherStageOutTest(unittest.TestCase):
         print "stageout done"
         
         # pull in the report with the stage out info
-        myReport = Report('cmsRun1')
+        myReport = Report()
         myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         print "Got the stage out data back"
         print myReport.data

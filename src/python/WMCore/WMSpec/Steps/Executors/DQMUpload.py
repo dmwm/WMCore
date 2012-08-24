@@ -130,8 +130,8 @@ class DQMUpload(Executor):
                 continue
 
             # First, get everything from a file and 'unpersist' it
-            stepReport = Report(step)
-            stepReport.unpersist(reportLocation)
+            stepReport = Report()
+            stepReport.unpersist(reportLocation, step)
 
             # Don't upload nor stage out files from bad steps.
             if not stepReport.stepSuccessful(step):

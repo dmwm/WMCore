@@ -173,7 +173,11 @@ class StdBase(object):
             elif scenarioFunc == "alcaSkim":
                 for alcaSkim in scenarioArgs.get('skims',[]):
                     moduleLabel = "ALCARECOStream%s" % alcaSkim
-                    outputModules[moduleLabel] = { 'dataTier' : "ALCARECO",
+                    if alcaSkim == "PromptCalibProd":
+                        dataTier = "ALCAPROMPT"
+                    else:
+                        dataTier = "ALCARECO"
+                    outputModules[moduleLabel] = { 'dataTier' : dataTier,
                                                    'primaryDataset' : scenarioArgs.get('primaryDataset'),
                                                    'filterName' : alcaSkim }
 

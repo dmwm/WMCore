@@ -1,5 +1,9 @@
 function (doc, req) { 
     statusObj = JSON.parse(req.query.request_status);
+    if (doc === null) {
+        log("Error: missing doc id - " + req.id);
+        return [null, "ERROR: request not found - " + req.id];
+    }
     if (!doc.request_status) {
         doc.request_status = new Array();
         doc.request_status.push(statusObj);

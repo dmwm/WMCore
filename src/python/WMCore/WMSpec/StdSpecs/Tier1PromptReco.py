@@ -234,10 +234,8 @@ class Tier1PromptRecoWorkloadFactory(StdBase):
         # Required parameters that must be specified by the Requestor.
         self.frameworkVersion = arguments['CMSSWVersion']
         self.globalTag = arguments['GlobalTag']
-        self.procScenario = arguments['ProcScenario']
         self.writeTiers = arguments['WriteTiers']
         self.alcaSkims = arguments['AlcaSkims']
-        self.dqmSequences = arguments['DqmSequences']
         self.inputDataset = arguments['InputDataset']
         self.promptSkims = arguments['PromptSkims']
         self.couchURL = arguments['CouchURL']

@@ -121,11 +121,6 @@ class DataProcessingWorkloadFactory(StdBase):
         # Get the ProcConfigCacheID
         self.procConfigCacheID = arguments.get("ProcConfigCacheID", None)
 
-        if arguments.has_key("Scenario"):
-            self.procScenario = arguments.get("Scenario", None)
-        else:
-            self.procScenario = arguments.get("ProcScenario", None)
-
         # Optional arguments that default to something reasonable.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
         self.blockBlacklist = arguments.get("BlockBlacklist", [])

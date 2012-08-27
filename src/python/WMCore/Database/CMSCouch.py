@@ -573,7 +573,7 @@ class RotatingDatabase(Database):
         self.server = CouchServer(url)
 
         # self is the "active" database
-        Database.__init__(self, self._get_new_name(), url, size)
+        Database.__init__(self, self.basename, url, size)
         # forcibly make sure I exist
         self.server.connectDatabase(self.name)
 

@@ -76,7 +76,7 @@ class DBSReader:
         result = { block : {
             "StorageElements" : self.listFileBlockLocation(block),
             "Files" : self.listFilesInBlock(block),
-            "IsOpen" : False,
+            "IsOpen" : self.dataBlocks._openForWriting(),
             }
                 }
         return result
@@ -99,7 +99,7 @@ class DBSReader:
         result = { fileBlockName: {
             "StorageElements" : self.listFileBlockLocation(fileBlockName),
             "Files" : self.listFilesInBlockWithParents(fileBlockName),
-            "IsOpen" : False,
+            "IsOpen" : self.dataBlocks._openForWriting(),
 
             }
                    }
@@ -142,6 +142,7 @@ class DBSReader:
 
             result['path'] = dataset
             result['block'] = block
+            result['OpenForWriting'] = '1' if self.dataBlocks._openForWriting() else '0'
 
         if dataset:
             if self.dataBlocks.getBlocks(dataset):

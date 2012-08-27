@@ -42,7 +42,8 @@ class Block(StartPolicyInterface):
                                  NumberOfFiles = int(block['NumberOfFiles']),
                                  NumberOfEvents = int(block['NumberOfEvents']),
                                  Jobs = ceil(float(block[self.args['SliceType']]) /
-                                             float(self.args['SliceSize']))
+                                             float(self.args['SliceSize'])),
+                                 OpenForNewData = True if str(block.get('OpenForWriting')) == '1' else False
                                  )
 
 

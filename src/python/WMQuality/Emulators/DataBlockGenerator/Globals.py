@@ -41,6 +41,7 @@ class GlobalParams(object):
     _num_of_lumis_per_block = 2
     _num_of_events_per_file = 1000
     _size_of_file = 20000000
+    _blocks_open_for_writing = False
     
     @staticmethod
     def numOfBlocksPerDataset():
@@ -94,7 +95,15 @@ class GlobalParams(object):
     def getRunNumberForBlock(blockName):
         #assumes blockName is contains number after '#'
         return int(blockName.split('#')[-1])
-    
+
+    @staticmethod
+    def setBlocksOpenForWriting(blocksOpenForWriting):
+        GlobalParams._blocks_open_for_writing = blocksOpenForWriting
+
+    @staticmethod
+    def blocksOpenForWriting():
+        return GlobalParams._blocks_open_for_writing
+
     @staticmethod
     def resetParams():
         """
@@ -106,4 +115,5 @@ class GlobalParams(object):
         GlobalParams._num_of_lumis_per_block = 2
         GlobalParams._num_of_events_per_file = 1000
         GlobalParams._size_of_file = 20000000
+        GlobalParams._blocks_open_for_writing = False
         

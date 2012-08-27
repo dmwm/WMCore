@@ -61,6 +61,8 @@ class WorkQueueElement(dict):
         self.setdefault('NumOfFilesAdded', 0)
         # Mask used to constrain MC run/lumi ranges
         self.setdefault('Mask', None)
+        # is new data being added to the inputs i.e. open block with new files?
+        self.setdefault('OpenForNewData', False)
 
         # set to true when updated from a WorkQueueElementResult
         self.modified = False
@@ -139,7 +141,8 @@ class WorkQueueElement(dict):
 
     def inEndState(self):
         """Have we finished processing"""
-        return self.isComplete() or self.isFailed() or self.isCanceled()
+        # elements only finished once they are no longer open for new data
+        return not self['OpenForNewData'] and (self.isComplete() or self.isFailed() or self.isCanceled())
 
     def isComplete(self):
         return self['Status'] == 'Done'

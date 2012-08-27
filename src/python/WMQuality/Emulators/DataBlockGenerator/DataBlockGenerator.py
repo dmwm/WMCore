@@ -25,9 +25,16 @@ class DataBlockGenerator(object):
                                      'NumberOfFiles' : GlobalParams.numOfFilesPerBlock(),
                                      'NumberOfLumis' : GlobalParams.numOfLumisPerBlock(),
                                      'Size' : size,
-                                     'Parents' : ()}
+                                     'Parents' : (),
+                                     'OpenForWriting' : '1' if self._openForWriting() else '0'}
                                      )
         return blocks
+
+    def _openForWriting(self):
+      """Is block open or closed?
+      Should do this on a block by block basis but so far not needed,
+      just make a global state"""
+      return GlobalParams.blocksOpenForWriting()
 
     def getParentBlock(self, block, numberOfParents = 1):
         blocks = []

@@ -431,7 +431,7 @@ class WMBSHelper(WMConnectionBase):
         # Add files to DBSBuffer
         self._createFilesInDBSBuffer()
 
-        self.topLevelFileset.markOpen(False)
+        self.topLevelFileset.markOpen(block.get('IsOpen', False))
         return totalFiles
 
     def getMergeOutputMapping(self):

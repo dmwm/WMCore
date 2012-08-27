@@ -117,7 +117,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 logging.debug("Config: %s" % config)
             except:
                 pass
-            raise JobSubmitterException(msg)
+            raise JobSubmitterPollerException(msg)
 
 
         # Now the DAOs
@@ -359,7 +359,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                        loadedJob.get("scramArch", None),
                        loadedJob.get("swVersion", None),
                        loadedJob["name"],
-                       loadedJob.get("proxyPath", None))
+                       loadedJob.get("proxyPath", None),
+                       newJob['request_name'])
             
             self.jobDataCache[workflowName][jobID] = jobInfo
 
@@ -607,7 +608,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'scramArch': cachedJob[10],
                                'swVersion': cachedJob[11],
                                'name': cachedJob[12],
-                               'proxyPath': cachedJob[13]}
+                               'proxyPath': cachedJob[13],
+                               'requestName': cachedJob[14]}
 
                     # Add to jobsToSubmit
                     jobsToSubmit[package].append(jobDict)
@@ -638,8 +640,6 @@ class JobSubmitterPoller(BaseWorkerThread):
         Actually do the submission of the jobs
         """
 
-        agentName = self.config.Agent.agentName
-        lenWork   = 0
         jobList   = []
         idList    = []
 

@@ -1,3 +1,64 @@
+0.9.10 to 0.9.11:
+  - have TaskArchiver accept missing working directory
+  - add support for Alca Harvesting
+  - fix some issues in the fwj report
+  - WorkQueue: Handle open blocks.
+  - Create an inactive doc in the old active db and not in the actual active one.
+  - Include RequestName in the Condor JDL
+  - simplify and cleanup DQMUpload code
+  - Fix workqueue mc splitting to normally use 1 lumi section per job.
+  - Fix MonitoringDAO BossAir test
+  - Implement general DQM Harvesting in WMAgent
+  - Implement general DQM Harvesting in WMAgent
+  - Fix unit tests for UnpackUserTarball_t
+  - remove job unit test dependency on removed dao
+  - Whitelisting failing tests
+  - log error message instead of stoping the process when request is not exist in wmstats when status is updated
+  - add unittest for couch view
+  - Fixing a flaky test
+  - More informative component logs
+  - Switch from dumpPython to pickle.
+  - Merge pull request #4016 from PerilousApricot/bugfix/webtools-test
+  - Fix #4006 long url on get work for draining sites.
+  - Increase workqueue retry time to 1 day.
+  - Fix setup_test for zero-case runs
+  - Fix WorkQueue Monte Carlo splitting test case.
+  - Reload PID information for MySQL,CouchDB servers during polling.
+  - More testing fixes
+  - Fixing REST unittests
+  - Add try_patch script to WMCore
+  - Merge pull request #3993 from hufnagel/mydev1
+  - remove obsolete Periodic and EndOfRun job splitters
+  - Updating new storage/stageout plugins
+  - rewrites updated, by default get only recent alerts
+  - validation, rewrites, replilter added
+  - AlertsCollector - setup_dependencies.py update
+  - Protect JobTracker from bad pickles
+  - Bugfix DashboardReporter
+  - AlertsCollector - setup_dependencies.py update
+  - Bugfix for JobSubmitterPoller
+  - change taskarchiver subscription delete order
+  - make FindDASToUpload Oracle DAO functional, fixes #3770
+  - remove obsolete HarvestingScheduler component
+  - AlertsCollector imported to WMCore cloned from github
+  - Stop WorkQueue crashing on wmstats errors.
+  - Improve workqueue stuck elements diagnostics
+  - Updating failing test list
+  - Adding known-to-fail-test list.
+  - Need to call the function, not just look at it
+  - Turns out, cherrypy.quickstart will start up new threads, so that stackoverflow suggestion was no good
+  - Add cherrypy-slaying abilities to the test mode
+  - Refines how to trap os._exit in testing mode
+  - Fix pending, submit status report
+  - Updating patch for xrootd
+  - Loading job name and making jsm able to work if no steps in fwjr - fixes #3963
+  - Add support for tarballs stored in xrootd.
+  - Update vandy plugin to work better with stagein
+  - ACDC chops off one lumi at the end of the masks
+  - Fixing analysis case when loading js from wmstats couchapp
+  - Handle files with multiple runs in Harvest
+  - add couchskel update in wmagent-couchapp-init manage script and spec needs to be updated as well
+
 0.9.9 to 0.9.10:
   - add acive request tier0 support, layout change and hanle no request case
   - group permission fix

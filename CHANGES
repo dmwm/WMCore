@@ -1,3 +1,6 @@
+0.9.11 to 0.9.12:
+  - Fix build problems due to global cherrypy in setup_test.
+
 0.9.10 to 0.9.11:
   - have TaskArchiver accept missing working directory
   - add support for Alca Harvesting

@@ -6,7 +6,7 @@ from glob import glob
 from os.path import splitext, basename, join as pjoin, walk
 from ConfigParser import ConfigParser, NoOptionError
 import os, sys, os.path
-import cherrypy, atexit, signal
+import atexit, signal
 import unittest
 import time
 import pickle
@@ -307,6 +307,7 @@ if can_nose:
             marker.close()
 
             if threadCount > 1:
+                import cherrypy
                 sys.stderr.write("There are %s threads running. Cherrypy may be acting up.\n" % len(threading.enumerate()))
                 sys.stderr.write("The threads are: \n%s\n" % threading.enumerate())
                 atexit.register(cherrypy.engine.stop)

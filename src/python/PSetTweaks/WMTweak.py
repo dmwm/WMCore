@@ -82,7 +82,6 @@ _TweakParams = [
     "process.source.inputCommands",
     "process.source.dropDescendantsOfDroppedBranches",
 
-
     # maxevents
     "process.maxEvents.input",
     "process.maxEvents.output",
@@ -97,6 +96,7 @@ _TweakParams = [
 
     # random seeds
     "process.RandomNumberGeneratorService.*.initialSeed",
+    "process.GlobalTag.globaltag",
 
     ]
 

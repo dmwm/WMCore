@@ -440,7 +440,7 @@ def makeRequest(kwargs, couchUrl, couchDB, wmstatUrl):
     schema["Campaign"] = kwargs.get("Campaign", "")
     if 'ProcScenario' in kwargs and 'ProcConfigCacheID' in kwargs:
         # Use input mode to delete the unused one
-        inputMode = kwargs['inputMode']
+        inputMode = kwargs.get('inputMode', None)
         if inputMode == 'scenario':
             del schema['ProcConfigCacheID']
 

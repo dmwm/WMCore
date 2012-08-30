@@ -74,7 +74,7 @@ class AlcaHarvest(Executor):
             analysisFiles = stepReport.getAnalysisFilesFromStep(step)
 
             # are we in validation mode ?
-            dropboxValidation = False
+            dropboxValidation = True
 
             # make sure all conditions from this job get the same uuid
             uuid = makeUUID()
@@ -97,7 +97,7 @@ class AlcaHarvest(Executor):
                     shutil.copy2(os.path.join(stepLocation, sqlitefile), filenameDB)
 
                     # if we run in validation mode, upload to different destination
-                    if dropboxValidation != "False":
+                    if dropboxValidation:
                         analysisFile.destDB = analysisFile.destDBValidation
 
                     textoutput = "destDB %s\n" % analysisFile.destDB
@@ -119,7 +119,12 @@ class AlcaHarvest(Executor):
                     os.chmod(filenameDB, stat.S_IREAD | stat.S_IWRITE | stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
                     os.chmod(filenameTXT, stat.S_IREAD | stat.S_IWRITE | stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
 
-                    if dropboxValidation == "False":
+                    if dropboxValidation:
+
+                        files2copy.append(filenameDB)
+                        files2copy.append(filenameTXT)
+
+                    else:
 
                         fout = tarfile.open(filenameTAR, "w:bz2")
                         fout.add(filenameDB)
@@ -129,11 +134,6 @@ class AlcaHarvest(Executor):
                         os.chmod(filenameTAR, stat.S_IREAD | stat.S_IWRITE | stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
 
                         files2copy.append(filenameTAR)
-
-                    else:
-
-                        files2copy.append(filenameDB)
-                        files2copy.append(filenameTXT)
 
             # check and create target directory
             if not os.path.isdir(self.step.condition.dir):
@@ -161,7 +161,21 @@ class AlcaHarvest(Executor):
                 # add fake output file to job report
                 stepReport.addOutputFile(self.step.condition.outLabel,
                                          file = { 'lfn' : targetFile,
-                                                  'pfn' : targetFile })
+                                                  'pfn' : targetFile,
+                                                  'module_label' : self.step.condition.outLabel })
+
+            if len(files2copy) == 0:
+
+                # no output from AlcaHarvest is a valid result, can
+                # happen if calibration algorithms produced no output
+                # due to not enough statistics or other reasons
+                #
+                # add fake placeholder output file to job report
+                logging.info("==> no sqlite files from AlcaHarvest job, creating placeholder file record")
+                stepReport.addOutputFile(self.step.condition.outLabel,
+                                         file = { 'lfn' : "/no/output",
+                                                  'pfn' : "/no/output",
+                                                  'module_label' : self.step.condition.outLabel })
 
             # Am DONE with report
             # Persist it

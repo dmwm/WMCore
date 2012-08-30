@@ -422,8 +422,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                 self.cmsNames[cmsName] = []
             if not siteName in self.cmsNames[cmsName]:
                 self.cmsNames[cmsName].append(siteName)
-            if state != "Normal" and cmsName not in self.drainSites:
-                self.drainSites.append(cmsName)
+            if state != "Normal" and siteName not in self.drainSites:
+                self.drainSites.append(siteName)
 
             for seName in rcThresholds[siteName]["se_names"]:
                 if not seName in self.siteKeys.keys():

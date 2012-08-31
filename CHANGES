@@ -1,3 +1,6 @@
+0.9.12 to 0.9.13:
+  - Revert "Create an inactive doc in the old active db and not in the actual active one."
+
 0.9.11 to 0.9.12:
   - Fix build problems due to global cherrypy in setup_test.
 

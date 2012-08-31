@@ -1,0 +1,144 @@
+WMStats.namespace("_RequestModelBase");
+
+WMStats._RequestModelBase = function(initView, options, visFunc) {
+
+    this._initialView = initView || 'requestByCampaignAndDate';
+    this._options = options || {'include_docs': true};
+    this._visFunc = visFunc || null;
+    this._data = null;
+    this._trigger = "requestReady";
+}
+//Class method
+WMStats._RequestModelBase.keysFromIDs = function(data) {
+        var keys = [];
+        for (var i in data.rows){
+            if (data.rows[i].value && data.rows[i].value.id) {
+                keys.push(data.rows[i].value.id);
+            } else {
+                keys.push(data.rows[i].id);
+            }
+        }
+        return keys;      
+    }
+
+WMStats._RequestModelBase.requestAgentUrlKeys = function(requestList, requestAgentData) {
+        var keys = {};
+        var requestAgentUrlList = []
+        for (var i in requestAgentData.rows){
+            var request = requestAgentData.rows[i].key[0];
+            if (!keys[request]) {
+                keys[request] = [];
+            }
+            keys[request].push(requestAgentData.rows[i].key[1]);
+        }
+        
+        for (var j=0; j < requestList.length; j++) {
+            for (var k in keys[requestList[j]]) {
+                requestAgentUrlList.push([requestList[j], keys[requestList[j]][k]]);
+            }
+        }
+        return requestAgentUrlList;
+    }
+
+WMStats._RequestModelBase.prototype = {
+    
+    // deprecated
+    setVisualization: function(visFunc) {
+        //visFunc take 2 args (requestData, containerDiv)
+        // requestData is instance of WMStatsRequests
+        this._visFunc = visFunc;
+    },
+    
+    setTrigger: function(triggerName) {
+        this._trigger = triggerName;
+    },
+    
+    // deprecated
+    getData: function() {
+        return this._data;
+    },
+    
+    getRequests: function() {
+        return this._data;
+    },
+    
+    _getRequestDetailsAndTriggerEvent: function (agentIDs, reqmgrData, objPtr) {
+        var options = {'keys': WMStats._RequestModelBase.keysFromIDs(agentIDs), 'reduce': false, 
+                       'include_docs': true};
+        WMStats.Couch.allDocs(options,
+              function(agentData) {
+                  // combine reqmgrData(reqmgr_request) and 
+                  // agent_request(agentData) data 
+                  var requestCache = WMStats.Requests()
+                  requestCache.updateBulkRequests(reqmgrData.rows)
+                  requestCache.updateBulkRequests(agentData.rows)
+                  
+                  // set the data cache
+                  objPtr._data = requestCache;
+                  // trigger custom events
+                  jQuery(WMStats.Globals.Event).triggerHandler(objPtr._trigger, objPtr._data)
+                  // create gui
+                  //return objPtr._visFunc(objPtr._data, objPtr._containerDiv);
+              })
+    },
+
+    _getLatestRequestAgentUrlAndCreateTable: function (overviewData, keys, objPtr) {
+        var options = {"keys": keys, 
+                       "reduce": true, "group": true, "descending": true};
+        WMStats.Couch.view('latestRequest', options,
+              function(agentIDs) {
+                  objPtr._getRequestDetailsAndTriggerEvent(agentIDs, overviewData, objPtr)
+              })
+    },
+        
+    _getLatestRequestIDsAndCreateTable: function (overviewData, objPtr) {
+        /*
+         * get list of request ids first from the couchDB then 
+         * get the details of the requests.
+         */
+        var options = {"reduce": true, "group": true, "descending": true};
+        var requestList =  WMStats._RequestModelBase.keysFromIDs(overviewData);
+        WMStats.Couch.view('latestRequest', options,
+              function(requestAgentUrlData) {
+                  var keys = WMStats._RequestModelBase.requestAgentUrlKeys(requestList, requestAgentUrlData)
+                  objPtr._getLatestRequestAgentUrlAndCreateTable(overviewData, keys, objPtr)
+                })
+    },
+
+    retrieveData: function (viewName, options) {
+        
+        if (!viewName) {viewName = this._initialView;}
+        if (!options) {options = this._options;}
+        var objPtr = this;
+        if (viewName == "allDocs") {
+            WMStats.Couch.allDocs(options, function (overviewData) {
+                objPtr._getLatestRequestIDsAndCreateTable(overviewData, objPtr)
+            });
+        } else {
+            WMStats.Couch.view(viewName, options,  function (overviewData) {
+                objPtr._getLatestRequestIDsAndCreateTable(overviewData, objPtr)
+            });
+        }
+    },
+    
+    // deprecated
+    draw: function (selector, viewName, options) {
+        if (!viewName) {viewName = this._initialView;}
+        if (!options) {options = this._options;}
+        this._containerDiv = selector;
+        var objPtr = this;
+        if (viewName == "allDocs") {
+            WMStats.Couch.allDocs(options, function (overviewData) {
+                objPtr._getLatestRequestIDsAndCreateTable(overviewData, objPtr)
+            });
+        } else {
+            WMStats.Couch.view(viewName, options,  function (overviewData) {
+                objPtr._getLatestRequestIDsAndCreateTable(overviewData, objPtr)
+            });
+        }
+    },
+    
+    clearRequests: function () {
+        delete this._data;
+    }
+};

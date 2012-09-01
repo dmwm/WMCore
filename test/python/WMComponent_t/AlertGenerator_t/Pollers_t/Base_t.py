@@ -116,6 +116,7 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(d["pid"], pid)
         self.assertEqual(d["component"], name)
         self.assertEqual(d["numChildrenProcesses"], numChildren)
+        pd.refresh()
                 
         
     def testMeasurementsBasic(self):

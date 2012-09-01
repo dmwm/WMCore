@@ -6,7 +6,6 @@ utilisation by particular processes, etc.
 """
 
 import logging
-import time
 import subprocess
 
 import psutil
@@ -202,8 +201,8 @@ class DiskSpacePoller(BasePoller):
                         details = dict(mountPoint = mount, usage = "%s%%" % perc,
                                        threshold = "%s%%" % threshold)
                         a = Alert(**self.preAlert)
+                        a.setTimestamp()
                         a["Source"] = self.__class__.__name__
-                        a["Timestamp"] = time.time()
                         a["Details"] = details
                         a["Level"] = level
                         logging.debug("Sending an alert (%s): %s" % (self.__class__.__name__, a))
@@ -295,8 +294,8 @@ class DirectorySizePoller(BasePoller):
                 details = dict(databasedir = self._dbDirectory, usage = usageStr,
                                threshold = threshold)
                 a = Alert(**self.preAlert)
+                a.setTimestamp()
                 a["Source"] = self._myName
-                a["Timestamp"] = time.time()
                 a["Details"] = details
                 a["Level"] = level                
                 logging.debug("Sending an alert (%s): %s" % (self.__class__.__name__, a))

@@ -7,7 +7,6 @@ Module for all CouchDb related polling.
 import os
 import logging
 import types
-import time
 import psutil
 
 from WMCore.Database.CMSCouch import CouchServer
@@ -103,8 +102,8 @@ class CouchPoller(PeriodPoller):
             try:
                 PeriodPoller.check(self, self._dbProcessDetail, self._measurements)
             except psutil.error.NoSuchProcess as ex:
-                logging.error(ex)
-                logging.error("Updating info about the polled process ...")
+                logging.warn(ex)
+                logging.warn("Updating info about the polled process ...")
                 self._setUp()
 
 
@@ -253,8 +252,8 @@ class CouchErrorsPoller(BasePoller):
                                        occurrences = occurrences, 
                                        threshold = threshold)
                         a = Alert(**self.preAlert)
+                        a.setTimestamp()
                         a["Source"] = self.__class__.__name__
-                        a["Timestamp"] = time.time()
                         a["Details"] = details
                         a["Level"] = level
                         logging.debug("Sending an alert (%s): %s" % (self.__class__.__name__, a))

@@ -4,8 +4,8 @@ within the Alert messaging framework.
 
 """
 
-import time
 import sys
+import time
 import logging
 import threading
 import traceback
@@ -29,16 +29,25 @@ class ProcessDetail(object):
         self.pid = int(pid)
         self.name = name
         self.proc = psutil.Process(self.pid)
-        # the list of processes is created during start-up, it may be desirable
-        # to refresh this list of subprocesses in the course of component process
-        # checking if more processes are spawned values are during component's life-time
         self.children = self.proc.get_children()
         self.allProcs = [self.proc] + self.children
+        
+        
+    def refresh(self):
+        """
+        Some child processes may have been spawned or finished.
+        Update the list of child processes.
+        
+        """
+        self.children = self.proc.get_children()
+        self.allProcs = [self.proc] + self.children        
 
 
     def getDetails(self):
+        childrenPIDs = [c.pid for c in self.children]
         return dict(pid = self.pid, component = self.name,
-                    numChildrenProcesses = len(self.children))
+                    numChildrenProcesses = len(self.children),
+                    children = childrenPIDs)
         
         
 
@@ -116,8 +125,8 @@ class BasePoller(threading.Thread):
         errMsg = ("Polling failed in %s, reason: %s" % (self.__class__.__name__, ex))
         logging.error("%s\n%s" % (errMsg, traceString))
         a = Alert(**self.preAlert)
+        a.setTimestamp()
         a["Source"] = self.__class__.__name__
-        a["Timestamp"] = time.time()
         a["Details"] = dict(msg = errMsg)
         a["Level"] = 10
         logging.info("Sending an alert (%s): %s" % (self.__class__.__name__, a))
@@ -256,8 +265,8 @@ class PeriodPoller(BasePoller):
             for threshold, level in zip(self.thresholds, self.levels): 
                 if avgPerc >= threshold:
                     a = Alert(**self.preAlert)
+                    a.setTimestamp()
                     a["Source"] = self.__class__.__name__
-                    a["Timestamp"] = time.time()
                     details["threshold"] = "%s%%" % threshold
                     a["Details"] = details                    
                     a["Level"] = level

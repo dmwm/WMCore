@@ -1,4 +1,5 @@
 import unittest
+import time
 
 from WMCore.Alerts.Alert import Alert
 from WMCore.Alerts.Alert import RegisterMsg, UnregisterMsg, ShutdownMsg
@@ -23,6 +24,7 @@ class AlertTest(unittest.TestCase):
         self.assertEqual(a["Component"], None)
         self.assertEqual(a["Details"], {})
         self.assertEqual(a["Timestamp"], None)
+        self.assertEqual(a["TimestampDecoded"], None)
         
         details = dict(detail = "detail")
         a = Alert(Level = 5, Source = "src", Type = "type", Workload = "work",
@@ -36,6 +38,17 @@ class AlertTest(unittest.TestCase):
         self.assertEqual(a["Timestamp"], "time")
         a.toMsg()
         
+        
+    def testSetTimestamp(self):
+        a = Alert()
+        self.assertEqual(a["Timestamp"], None)
+        self.assertEqual(a["TimestampDecoded"], None)        
+        a.setTimestamp()
+        self.assertTrue(isinstance(a["Timestamp"], float))
+        tsd = a["TimestampDecoded"]
+        tsdTested = time.strftime(a.TIMESTAMP_FORMAT, time.gmtime(a["Timestamp"]))
+        self.assertEqual(tsd, tsdTested)
+                
         
     def testRegisterMsg(self):
         msg = RegisterMsg("mylabel")

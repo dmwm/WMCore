@@ -4,6 +4,8 @@ Representation of management messages within the Alert framework.
 
 """
 
+import time
+
 
 class Alert(dict):
     """
@@ -14,7 +16,10 @@ class Alert(dict):
     TEMPLATE = (u"Alert: Component: %(Component)s, Source: %(Source)s, "
                 "Type: %(Type)s, Level: %(Level)s, Workload: %(Workload)s, "
                 "HostName %(HostName)s, AgentName: %(AgentName)s, "
-                "Timestamp: %(Timestamp)s, Details: %(Details)s")
+                "Timestamp: %(Timestamp)s, TimestampDecoded: %(TimestampDecoded)s, "
+                "Details: %(Details)s")
+    
+    TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 
     
     def __init__(self, **args):
@@ -26,6 +31,9 @@ class Alert(dict):
         self.setdefault("Component", None)
         self.setdefault("Details", {})
         self.setdefault("Timestamp", None)
+        # this is slightly redundant but it's convenient e.g. on an alert email
+        # to see when the alert was generated without decoding the Timestamp
+        self.setdefault("TimestampDecoded", None)
         # add a few values which are read from the configuration (Agent section)
         # (here are the first letters capitalised)
         self.setdefault("HostName", None)
@@ -36,6 +44,17 @@ class Alert(dict):
 
 
     level = property(lambda x: x.get("Level"))
+    
+    
+    def setTimestamp(self):
+        """
+        Set time stamp attributes of a newly created alert instance.
+        
+        """
+        t = time.time()
+        timeStruct = time.gmtime(t) # convert time object to time struct
+        self["Timestamp"] = t
+        self["TimestampDecoded"] = time.strftime(self.TIMESTAMP_FORMAT, timeStruct)
     
     
     def toMsg(self):

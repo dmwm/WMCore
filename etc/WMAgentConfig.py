@@ -338,7 +338,12 @@ config.AlertProcessor.critical.sinks.section_("email")
 # from must be a valid domain, at least when the destination address
 # was @cern.ch: it said email is queued but was never delivered,
 # may not always be the case though
-config.AlertProcessor.critical.sinks.email.fromAddr = "wmagent@%s" % serverHostName
+# noreply@ will ensure that on an undeliverable email (e.g.
+# for queueing too long to be delivered), the CERN exchange server
+# generates a NDL (non-deliverable report) which again is
+# undeliverable since the wmagent machine doesn't run any email service,
+# with noreply@ it goes to /dev/null 
+config.AlertProcessor.critical.sinks.email.fromAddr = "noreply@cern.ch"
 config.AlertProcessor.critical.sinks.email.toAddr = ["wmagentalerts@gmail.com"] # add more in the list
 config.AlertProcessor.critical.sinks.email.smtpServer = "cernmx.cern.ch"
 config.AlertProcessor.critical.sinks.email.smtpUser = None
@@ -347,7 +352,7 @@ config.AlertProcessor.soft.sinks.section_("email")
 # from must be a valid domain, at least when the destination address
 # was @cern.ch: it said email is queued but was never delivered,
 # may not always be the case though
-config.AlertProcessor.soft.sinks.email.fromAddr = "wmagent@%s" % serverHostName
+config.AlertProcessor.soft.sinks.email.fromAddr = "noreply@cern.ch"
 config.AlertProcessor.soft.sinks.email.toAddr = ["wmagentalerts@gmail.com"] # add more in the list
 config.AlertProcessor.soft.sinks.email.smtpServer = "cernmx.cern.ch"
 config.AlertProcessor.soft.sinks.email.smtpUser = None
@@ -444,7 +449,8 @@ config.AlertGenerator.section_("couchErrorsPoller")
 config.AlertGenerator.couchErrorsPoller.couchURL = couchURL
 config.AlertGenerator.couchErrorsPoller.soft = 100 # [number of error occurrences]
 config.AlertGenerator.couchErrorsPoller.critical = 200 # [number of error occurrences]
-config.AlertGenerator.couchErrorsPoller.observables = (404, 403, 500) # HTTP status codes to watch over
+# remove 404 for the moment, there is way too many of them and no interest generated
+config.AlertGenerator.couchErrorsPoller.observables = (403, 500) # HTTP status codes to watch over
 config.AlertGenerator.couchErrorsPoller.pollInterval = 600 # [second]
 
 # mysql*Poller sections were made optional and are defined in the

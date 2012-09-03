@@ -49,7 +49,7 @@ def processWorker(myinput, tmp):
                 tmpname = tmpname + jobid
                 report.cmsRun1.output.output.files.file0.lfn = tmpname + '.root'
 
-            if hasattr(report, 'logAtch1') and hasattr(report.logArch1, 'output'):
+            if hasattr(report, 'logArch1') and hasattr(report.logArch1, 'output'):
                 tmpname = report.logArch1.output.logArchive.files.file0.lfn.split('.tar.gz')[0]
                 tmpname = tmpname + jobid
                 report.logArch1.output.logArchive.files.file0.lfn = tmpname + '.root'

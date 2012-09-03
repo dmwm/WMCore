@@ -25,7 +25,7 @@ class UpdateWorkerError(DBFormatter):
                  "worker_name": workerName, 
                  "last_error": int(time.time()),
                  "state": "Error",
-                 "error_message": errorMessage}
+                 "error_message": errorMessage[:1000]}
         
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)

@@ -76,7 +76,7 @@ class HarvestTest(unittest.TestCase):
         self.subscription1  = Subscription(fileset = self.fileset1,
                                            workflow = workflow1,
                                            split_algo = "Harvest",
-                                           type = "Harvest")
+                                           type = "Harvesting")
 
         self.subscription1.create()
 

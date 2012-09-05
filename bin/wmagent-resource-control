@@ -111,6 +111,8 @@ def addSites(resourceControl, allSites, ceName, plugin, pendingSlots, runningSlo
                             priority = 5)
         updateThresholdInfo(resourceControl, siteName, "Cleanup", runningSlots,
                             priority = 5)
+        updateThresholdInfo(resourceControl, siteName, "Harvesting", runningSlots,
+                            priority = 5)
         updateThresholdInfo(resourceControl, siteName, "LogCollect", runningSlots,
                             priority = 3)
         updateThresholdInfo(resourceControl, siteName, "Skim", runningSlots,

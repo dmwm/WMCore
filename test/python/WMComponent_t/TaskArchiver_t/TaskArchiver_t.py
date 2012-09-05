@@ -207,7 +207,7 @@ class TaskArchiverTest(unittest.TestCase):
         testFileA.setLocation('malpaquet')
 
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
-        testFileB.addRun(Run(10, *[12312]))
+        testFileB.addRun(Run(10, *[12314]))
         testFileB.setLocation('malpaquet')
 
         testFileA.create()
@@ -521,6 +521,8 @@ class TaskArchiverTest(unittest.TestCase):
 
         self.assertEqual(workloadSummary['errors']['/TestWorkload/ReReco']['failureTime'], 500)
         self.assertTrue(workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1'].has_key('99999'))
+        self.assertEquals(workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1']['99999']['runs'], {'10' : [12312]},
+                          "Wrong lumi information in the summary for failed jobs")
         return
 
     def atestC_Profile(self):

@@ -168,6 +168,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         else:
             self.workQueue = None
 
+        self.maxProcessSize    = getattr(self.config.TaskArchiver, 'maxProcessSize', 250)
         self.timeout           = getattr(self.config.TaskArchiver, "timeOut", None)
         self.nOffenders        = getattr(self.config.TaskArchiver, 'nOffenders', 3)
         self.deleteCouchData   = getattr(self.config.TaskArchiver, 'deleteCouchData', True)
@@ -515,83 +516,76 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         # Loop over all failed jobs
         workflowData['errors'] = {}
-        for jobid in failedJobs:
-            errorCouch = self.fwjrdatabase.loadView("FWJRDump", "errorsByJobID",
-                                                    options = {"startkey": [jobid, 0],
-                                                               "endkey": [jobid, {}]})['rows']
-            job    = self.jobsdatabase.document(id = str(jobid))
-            inputs = [x['lfn'] for x in job['inputfiles']]
-            runsA  = []
-            for x in job['inputfiles']:
-                try:
-                    runsA.append(x['runs'][0])
-                except IndexError:
-                    # No runs in this input file
-                    # Ignore it
-                    pass
-            maskA  = job['mask']
 
-            # Have to transform this because JSON is too stupid to understand ints
-            # Also for some reason we're getting a strange problem where the mask
-            # isn't being loaded at all.  I'm not sure what to do there except drop it.
-            try:
-                for key in maskA['runAndLumis'].keys():
-                    maskA['runAndLumis'][int(key)] = maskA['runAndLumis'][key]
-                    del maskA['runAndLumis'][key]
-            except KeyError:
-                # We don't have a mask.  Not much we can do about this
-                maskA = Mask()
-            mask   = Mask()
-            mask.update(maskA)
-            runs   = []
-            # Turn arbitrary format into real runs
-            for r in runsA:
-                run = Run(runNumber = r['run_number'])
-                run.lumis = r.get('lumis', [])
-                runs.append(run)
-            # Get rid of runs that aren't in the mask
-            runs = mask.filterRunLumisByMask(runs = runs)
-            for err in errorCouch:
-                task   = err['value']['task']
-                step   = err['value']['step']
-                errors = err['value']['error']
-                logs   = err['value']['logs']
-                start  = err['value']['start']
-                stop   = err['value']['stop']
-                if not task in workflowData['errors'].keys():
-                    workflowData['errors'][task] = {'failureTime': 0}
-                if not step in workflowData['errors'][task].keys():
-                    workflowData['errors'][task][step] = {}
-                workflowData['errors'][task]['failureTime'] += (stop - start)
-                stepFailures = workflowData['errors'][task][step]
-                for error in errors:
-                    exitCode = str(error['exitCode'])
-                    if not exitCode in stepFailures.keys():
-                        stepFailures[exitCode] = {"errors": [],
-                                                  "jobs":   0,
-                                                  "input":  [],
-                                                  "runs":   {},
-                                                  "logs":   []}
-                    stepFailures[exitCode]['jobs'] += 1 # Increment job counter
-                    if len(stepFailures[exitCode]['errors']) == 0 or \
-                           exitCode == '99999':
-                        # Only record the first error for an exit code
-                        # unless exit code is 99999 (general panic)
-                        stepFailures[exitCode]['errors'].append(error)
-                    # Add input LFNs to structure
-                    for inputLFN in inputs:
-                        if not inputLFN in stepFailures[exitCode]['input']:
-                            stepFailures[exitCode]['input'].append(inputLFN)
-                    # Add runs to structure
-                    for run in runs:
-                        if not str(run.run) in stepFailures[exitCode]['runs'].keys():
-                            stepFailures[exitCode]['runs'][str(run.run)] = []
-                        for l in run.lumis:
-                            if not l in stepFailures[exitCode]['runs'][str(run.run)]:
-                                stepFailures[exitCode]['runs'][str(run.run)].append(l)
-                    for log in logs:
-                        if not log in stepFailures[exitCode]["logs"]:
-                            stepFailures[exitCode]["logs"].append(log)
+        #Get the job information from WMBS, a la ErrorHandler
+        #This will probably take some time, better warn first
+        logging.info("Starting to load  the failed job information")
+        logging.info("This may take some time")
+
+        #Let's split the list of failed jobs in chunks
+        while len(failedJobs) > 0:
+            chunkList = failedJobs[:self.maxProcessSize]
+            failedJobs = failedJobs[self.maxProcessSize:]
+            logging.info("Processing %d this cycle, %d jobs remaining" % (self.maxProcessSize, len(failedJobs)))
+
+            loadJobs = self.daoFactory(classname = "Jobs.LoadForTaskArchiver")
+            jobList = loadJobs.execute(chunkList)
+            for job in jobList:
+                errorCouch = self.fwjrdatabase.loadView("FWJRDump", "errorsByJobID",
+                                                        options = {"startkey": [job['id'], 0],
+                                                                   "endkey": [job['id'], {}]})['rows']
+
+                #Get the input files
+                inputLFNs = [x['lfn'] for x in job['input_files']]
+                runs = []
+                for inputFile in job['input_files']:
+                    runs.extend(inputFile.getRuns())
+
+                # Get rid of runs that aren't in the mask
+                mask = job['mask']
+                runs = mask.filterRunLumisByMask(runs = runs)
+
+                for err in errorCouch:
+                    task   = err['value']['task']
+                    step   = err['value']['step']
+                    errors = err['value']['error']
+                    logs   = err['value']['logs']
+                    start  = err['value']['start']
+                    stop   = err['value']['stop']
+                    if not task in workflowData['errors'].keys():
+                        workflowData['errors'][task] = {'failureTime': 0}
+                    if not step in workflowData['errors'][task].keys():
+                        workflowData['errors'][task][step] = {}
+                    workflowData['errors'][task]['failureTime'] += (stop - start)
+                    stepFailures = workflowData['errors'][task][step]
+                    for error in errors:
+                        exitCode = str(error['exitCode'])
+                        if not exitCode in stepFailures.keys():
+                            stepFailures[exitCode] = {"errors": [],
+                                                      "jobs":   0,
+                                                      "input":  [],
+                                                      "runs":   {},
+                                                      "logs":   []}
+                        stepFailures[exitCode]['jobs'] += 1 # Increment job counter
+                        if len(stepFailures[exitCode]['errors']) == 0 or \
+                               exitCode == '99999':
+                            # Only record the first error for an exit code
+                            # unless exit code is 99999 (general panic)
+                            stepFailures[exitCode]['errors'].append(error)
+                        # Add input LFNs to structure
+                        for inputLFN in inputLFNs:
+                            if not inputLFN in stepFailures[exitCode]['input']:
+                                stepFailures[exitCode]['input'].append(inputLFN)
+                        # Add runs to structure
+                        for run in runs:
+                            if not str(run.run) in stepFailures[exitCode]['runs'].keys():
+                                stepFailures[exitCode]['runs'][str(run.run)] = []
+                            for l in run.lumis:
+                                if not l in stepFailures[exitCode]['runs'][str(run.run)]:
+                                    stepFailures[exitCode]['runs'][str(run.run)].append(l)
+                        for log in logs:
+                            if not log in stepFailures[exitCode]["logs"]:
+                                stepFailures[exitCode]["logs"].append(log)
 
         # Now we have the workflowData in the right format
         # Time to send them on

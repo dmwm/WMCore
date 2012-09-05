@@ -36,16 +36,16 @@ from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
 from WMCore.Database.CMSCouch               import CouchServer
 
 
-def retrieveWMSpec(workflow):
+def retrieveWMSpec(workflow = None, wmWorkloadURL = None):
     """
     _retrieveWMSpec_
 
     Given a subscription, this function loads the WMSpec associated with that workload
     """
-    #workflow = subscription['workflow']
-    wmWorkloadURL = workflow.spec
+    if not wmWorkloadURL and workflow:
+        wmWorkloadURL = workflow.spec
 
-    if not os.path.isfile(wmWorkloadURL):
+    if not wmWorkloadURL or not os.path.isfile(wmWorkloadURL):
         logging.error("WMWorkloadURL %s is empty" % (wmWorkloadURL))
         return None
 

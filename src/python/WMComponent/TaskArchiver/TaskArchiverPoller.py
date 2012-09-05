@@ -6,9 +6,12 @@
 The actual taskArchiver algorithm
 
 Procedure:
-a) Takes as input all finished subscriptions
-      This is defined by the Subscriptions.GetFinishedSubscriptions DAO
-b) Calls the WMBS.Subscription.DeleteEverything() method on them.
+a) Find and marks a finished all newly finished subscriptions
+      This is defined by the Subscriptions.GetAndMarkNewFinishedSubscriptions DAO
+b) Look for finished workflows as defined in the Workflow.GetFinishedWorkflows DAO
+c) Upload couch summary information
+d) Call WMBS.Subscription.deleteEverything() on all the associated subscriptions
+e) Delete couch information and working directories
 
 This should be a simple process.  Because of the long time between
 the submission of subscriptions projected and the short time to run
@@ -27,30 +30,25 @@ __all__ = []
 
 import json
 import logging
-import math
 import os.path
-import pickle
 import shutil
 import tarfile
 import threading
 import traceback
-import time
 
-from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from WMCore.Algorithms                           import MathAlgos
+from WMCore.DAOFactory                           import DAOFactory
+from WMCore.DataStructs.Mask                     import Mask
+from WMCore.DataStructs.Run                      import Run
+from WMCore.Database.CMSCouch                    import CouchServer
+from WMCore.Lexicon                              import sanitizeURL
 from WMCore.Services.UserFileCache.UserFileCache import UserFileCache
-
-from WMCore.WMBS.Subscription   import Subscription
-from WMCore.WMBS.Fileset        import Fileset
-from WMCore.DAOFactory          import DAOFactory
-from WMCore.WorkQueue.WorkQueue import localQueue
-from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
-from WMCore.WMException         import WMException
-from WMCore.Database.CMSCouch   import CouchServer
-from WMCore.DataStructs.Run     import Run
-from WMCore.DataStructs.Mask    import Mask
-from WMCore.Algorithms          import MathAlgos
-from WMCore.Lexicon             import sanitizeURL
-from WMCore.WMSpec.WMWorkload   import WMWorkloadHelper
+from WMCore.WMBS.Subscription                    import Subscription
+from WMCore.WMBS.Workflow                        import Workflow
+from WMCore.WMException                          import WMException
+from WMCore.WorkQueue.WorkQueue                  import localQueue
+from WMCore.WorkQueue.WorkQueueExceptions        import WorkQueueNoMatchingElements
+from WMCore.WorkerThreads.BaseWorkerThread       import BaseWorkerThread
 
 from WMComponent.JobCreator.CreateWorkArea   import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
@@ -170,7 +168,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         else:
             self.workQueue = None
 
-        self.timeout           = getattr(self.config.TaskArchiver, "timeOut", 0)
+        self.timeout           = getattr(self.config.TaskArchiver, "timeOut", None)
         self.nOffenders        = getattr(self.config.TaskArchiver, 'nOffenders', 3)
         self.deleteCouchData   = getattr(self.config.TaskArchiver, 'deleteCouchData', True)
         self.uploadPublishInfo = getattr(self.config.TaskArchiver, 'uploadPublishInfo', False)
@@ -211,8 +209,12 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         # initialize the alert framework (if available)
         self.initAlerts(compName = "TaskArchiver")
-        return
 
+        #Load the cleanout state ID and save it
+        stateIDDAO = self.daoFactory(classname = "Jobs.GetStateID")
+        self.stateID = stateIDDAO.execute("cleanout")
+
+        return
 
     def terminate(self, params):
         """
@@ -224,15 +226,18 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.algorithm(params)
         return
 
-
-
-
     def algorithm(self, parameters = None):
         """
-        Performs the archiveJobs method, looking for each type of failure
-        And deal with it as desired.
+        _algorithm_
+
+        Executes the two main methods of the poller:
+        1. findAndMarkFinishedSubscriptions
+        2. archiveTasks
+        Final result is that finished workflows get their summary built and uploaded to couch,
+        and all traces of them are removed from the agent WMBS and couch (this last one on demand).
         """
         try:
+            self.findAndMarkFinishedSubscriptions()
             self.archiveTasks()
         except WMException:
             myThread = threading.currentThread()
@@ -251,55 +256,76 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         return
 
+    def findAndMarkFinishedSubscriptions(self):
+        """
+        _findAndMarkFinishedSubscriptions_
+
+        Find new finished subscriptions and mark as finished in WMBS.
+        """
+        myThread = threading.currentThread()
+
+        myThread.transaction.begin()
+
+        #Get the subscriptions that are now finished and mark them as such
+        logging.info("Polling for finished subscriptions")
+        finishedSubscriptions = self.daoFactory(classname = "Subscriptions.GetAndMarkNewFinishedSubscriptions")
+        finishedSubscriptions.execute(self.stateID, timeOut = self.timeout)
+
+        myThread.transaction.commit()
+
+        return
 
     def archiveTasks(self):
         """
         _archiveTasks_
 
-        archiveTasks will handle the master task of looking for finished subscriptions,
-        checking to see if they've finished, and then notifying the workQueue and
-        finishing things up.
+        This method will call several auxiliary methods to do the following:
+        1. Get finished workflows (a finished workflow is defined in Workflow.GetFinishedWorkflows)
+        2. Gather the summary information from each workflow/task and upload it to couch
+        3. Notify the WorkQueue about finished subscriptions
+        4. If all succeeds, delete all information about the workflow from couch and WMBS
         """
+        #Get the finished workflows, in descending order
+        finishedWorkflowsDAO = self.daoFactory(classname = "Workflow.GetFinishedWorkflows")
+        finishedwfs = finishedWorkflowsDAO.execute()
 
-        subList = self.findFinishedSubscriptions()
-        logging.info("Found %i finished subscriptions" % len(subList))
-        if len(subList) == 0:
-            return
+        #Only delete those where the upload and notification succeeded
+        logging.info("Found %d candidate workflows for deletion" % len(finishedwfs))
+        wfsToDelete = {}
+        for workflow in finishedwfs:
+            try:
+                #Upload summary to couch
+                spec = retrieveWMSpec(wmWorkloadURL = finishedwfs[workflow]["spec"])
+                if not spec:
+                    raise Exception(msg = "Couldn't load spec from %s" % workflow[1])
+                self.archiveWorkflowSummary(spec = spec)
 
-        if self.workQueue != None:
-            doneIDs  = self.notifyWorkQueue(subList)
-            doneSubs = [x for x in subList if x['id'] in doneIDs]
-            # Only kill subscriptions updated in workqueue
-            self.killSubscriptions(doneSubs)
-        else:
-            self.killSubscriptions(subList)
+                #Notify the WorkQueue, if there is one
+                if self.workQueue != None:
+                    subList = []
+                    for l in finishedwfs[workflow]["workflows"].values():
+                        subList.extend(l)
+                    self.notifyWorkQueue(subList)
+
+                wfsToDelete[workflow] = {"spec" : spec, "workflows": finishedwfs[workflow]["workflows"]}
+
+            except TaskArchiverPollerException, ex:
+                #Something didn't go well when notifying the workqueue, abort!!!
+                logging.error(str(ex))
+                self.sendAlert(1, msg = str(ex))
+                continue
+            except Exception, ex:
+                #Something didn't go well on couch, abort!!!
+                msg = "Couldn't upload summary for workflow %s, will try again next time\n" % workflow[0]
+                msg += "Nothing will be deleted until the summary is in couch\n"
+                msg += "Exception message: %s" % str(ex)
+                logging.error(msg)
+                self.sendAlert(3, msg = msg)
+                continue
+
+        self.killWorkflows(wfsToDelete)
 
         return
-
-    def findFinishedSubscriptions(self):
-        """
-        _findFinishedSubscriptions_
-
-        Figures out which one of the subscriptions is actually finished.
-        """
-        subList = []
-
-        myThread = threading.currentThread()
-
-        myThread.transaction.begin()
-
-        subscriptionList = self.daoFactory(classname = "Subscriptions.GetFinishedSubscriptions")
-        subscriptions    = subscriptionList.execute(timeOut = self.timeout)
-
-        for subscription in subscriptions:
-            wmbsSubscription = Subscription(id = subscription['id'])
-            subList.append(wmbsSubscription)
-            logging.info("Found subscription %i" %subscription['id'])
-
-        myThread.transaction.commit()
-
-        return subList
-
 
     def notifyWorkQueue(self, subList):
         """
@@ -309,97 +335,89 @@ class TaskArchiverPoller(BaseWorkerThread):
         or set of subscriptions, is done.  Receives confirmation
         """
 
-        if len(subList) < 1:
-            return []
-
-        subIDs = []
-
         for sub in subList:
             try:
-                self.workQueue.doneWork(SubscriptionId = sub['id'])
-                subIDs.append(sub['id'])
+                self.workQueue.doneWork(SubscriptionId = sub)
             except WorkQueueNoMatchingElements:
-                # subscription wasn't known to workqueue, feel free to clean up
-                subIDs.append(sub['id'])
+                #Subscription wasn't known to WorkQueue, feel free to clean up
+                pass
             except Exception, ex:
-                msg =  "Error talking to workqueue: %s\n" % str(ex)
-                msg += "Tried to complete the following: %s\n" % subIDs
-                logging.error(msg)
-                self.sendAlert(1, msg = msg)
+                msg = "Error talking to workqueue: %s\n" % str(ex)
+                msg += "Tried to complete the following: %s\n" % sub
+                raise TaskArchiverPollerException(msg)
 
-        return subIDs
+        return
 
-
-    def killSubscriptions(self, doneList):
+    def killWorkflows(self, workflows):
         """
-        _killSubscriptions_
+        _killWorkflows_
 
-        Actually dump the subscriptions
+        Delete all the information in couch and WMBS about the given
+        workflow, go through all subscriptions and delete one by
+        one.
+        The input is a dictionary with workflow names as keys, fully loaded WMWorkloads and
+        subscriptions lists as values
         """
-        for sub in doneList:
-            logging.info("Deleting subscription %i" % sub['id'])
+        for workflow in workflows:
+            logging.info("Deleting workflow %s" % workflow)
             try:
-                sub.load()
-                sub['workflow'].load()
-                wf = sub['workflow']
-                if self.uploadPublishInfo:
-                    self.createAndUploadPublish(wf)
-                sub.deleteEverything()
-                workflow = sub['workflow']
+                #Get the task-workflow ids, sort them by ID,
+                #higher ID first so we kill
+                #the leaves of the tree first, root last
+                workflowsIDs = workflows[workflow]["workflows"].keys()
+                workflowsIDs.sort(reverse = True)
 
-                if workflow.exists():
-                    # Then there are other subscriptions attached
-                    # to the workflow
-                    continue
+                #Now go through all tasks and load the WMBS workflow objects
+                wmbsWorkflows = []
+                for wfID in workflowsIDs:
+                    wmbsWorkflow = Workflow(id = wfID)
+                    wmbsWorkflow.load()
+                    wmbsWorkflows.append(wmbsWorkflow)
 
-                # If we deleted the workflow, it's time to delete
-                # the work directories
+                #Time to shoot one by one
+                for wmbsWorkflow in wmbsWorkflows:
+                    if self.uploadPublishInfo:
+                        self.createAndUploadPublish(wmbsWorkflow)
 
-                # Now we have to delete the task area.
-                workDir, taskDir = getMasterName(startDir = self.jobCacheDir,
-                                                 workflow = workflow)
-                logging.info("About to delete work directory %s" % taskDir)
-                if os.path.exists(taskDir):
-                    if os.path.isdir(taskDir):
-                        shutil.rmtree(taskDir)
-                    else:
-                        # What we think of as a working directory is not a directory
-                        # This should never happen and there is no way we can recover
-                        # from this here. Bail out now and have someone look at things. 
-                        msg = "Work directory is not a directory, this should never happen: %s" % taskDir
+                    #Load all the associated subscriptions and shoot them one by one
+                    subIDs = workflows[workflow]["workflows"][wmbsWorkflow.id]
+                    for subID in subIDs:
+                        subscription = Subscription(id = subID)
+                        subscription.load()
+                        subscription.deleteEverything()
+
+                    #Check that the workflow is gone
+                    if wmbsWorkflow.exists():
+                        #Something went bad, this workflow
+                        #should be gone by now
+                        msg = "Workflow %s, Task %s was not deleted completely" % (wmbsWorkflow.name,
+                                                                                   wmbsWorkflow.task)
                         raise TaskArchiverPollerException(msg)
-                else:
-                    msg = "Attempted to delete work directory but it was already gone: %s" % taskDir
-                    logging.debug(msg)
 
-                # Now check if the workflow is done
-                if not workflow.countWorkflowsBySpec() == 0:
-                    continue
+                    #Now delete directories
+                    _, taskDir = getMasterName(startDir = self.jobCacheDir,
+                                               workflow = wmbsWorkflow)
+                    logging.info("About to delete work directory %s" % taskDir)
+                    if os.path.exists(taskDir):
+                        if os.path.isdir(taskDir):
+                            shutil.rmtree(taskDir)
+                        else:
+                            # What we think of as a working directory is not a directory
+                            # This should never happen and there is no way we can recover
+                            # from this here. Bail out now and have someone look at things.
+                            msg = "Work directory is not a directory, this should never happen: %s" % taskDir
+                            raise TaskArchiverPollerException(msg)
+                    else:
+                        msg = "Attempted to delete work directory but it was already gone: %s" % taskDir
+                        logging.debug(msg)
 
-                # If the WMSpec is done, then we have to delete
-                # the sandbox, and send off the couch summary
-
-                # First load the WMSpec
-                try:
-                    logging.debug("Loading spec to delete sandbox dir for task %s" % workflow.task)
-                    spec     = retrieveWMSpec(workflow = workflow)
-                    wmTask   = spec.getTaskByPath(workflow.task)
-                except Exception, ex:
-                    # If this happens, we're well and truly screwed.
-                    # We've passed the deletion point.  We can't recover
-                    # Abort this.  There will be no couch summary
-                    msg =  "Critical error in opening spec after workflow deletion"
-                    msg += "Task: %s" % workflow.task
-                    msg += str(ex)
-                    msg += "There will be NO workflow summary for this task"
-                    raise TaskArchiverPollerException(msg)
-
-                # Then pull its info from couch and archive it
-                self.archiveCouchSummary(workflow = workflow, spec = spec)
-                self.deleteWorkflowFromCouch(workflowName = workflow.task.split('/')[1])
+                #Now we now the workflow as a whole is gone, we can delete the information from couch
+                spec = workflows[workflow]["spec"]
+                topTask = spec.getTopLevelTask()[0]
+                self.deleteWorkflowFromCouch(workflowName = workflow)
 
                 # Now take care of the sandbox
-                sandbox  = getattr(wmTask.data.input, 'sandbox', None)
+                sandbox = getattr(topTask.data.input, 'sandbox', None)
                 if sandbox:
                     sandboxDir = os.path.dirname(sandbox)
                     if os.path.isdir(sandboxDir):
@@ -407,32 +425,34 @@ class TaskArchiverPoller(BaseWorkerThread):
                         logging.debug("Sandbox dir deleted")
                     else:
                         logging.error("Attempted to delete sandbox dir but it was already gone: %s" % sandboxDir)
+
             except Exception, ex:
-                msg =  "Critical error while deleting subscription %i\n" % sub['id']
+                msg = "Critical error while deleting workflow %s\n" % workflow
                 msg += str(ex)
                 msg += str(traceback.format_exc())
                 logging.error(msg)
                 self.sendAlert(2, msg = msg)
-                # Matt's patch had this following raising commented out too ...
-                #raise TaskArchiverPollerException(msg)
 
-        return
-
-
-    def archiveCouchSummary(self, workflow, spec):
+    def archiveWorkflowSummary(self, spec):
         """
-        _archiveCouchSummary_
+        _archiveWorkflowSummary_
 
-        For each workflow pull its information from couch and turn it into
+        For each workflow pull its information from couch and WMBS and turn it into
         a summary for archiving
         """
 
         failedJobs = []
-        jobErrors  = []
-        outputLFNs = []
 
         workflowData = {'retryData': {}}
-        workflowName     = workflow.task.split('/')[1]
+        workflowName = spec.name()
+
+        #First make sure that we didn't upload something already
+        #Could be the that the WMBS deletion epic failed,
+        #so we can skip this if there is a summary already up there
+        #TODO: With multiple agents sharing workflows, we will need to differentiate and combine summaries for a request
+        if self.workdatabase.documentExists(workflowName):
+            logging.info("Couch summary for %s already exists, proceeding only with cleanup" % workflowName)
+            return
 
         # Set campaign
         workflowData['campaign'] = spec.getCampaign()
@@ -471,7 +491,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                 workflowData['performance'][key][attr] = perf[key][attr]
 
 
-        workflowData["_id"]          = workflow.task.split('/')[1]
+        workflowData["_id"] = workflowName
         try:
             workflowData["ACDCServer"]   = sanitizeURL(self.config.ACDC.couchurl)['url']
             workflowData["ACDCDatabase"] = self.config.ACDC.database
@@ -479,8 +499,7 @@ class TaskArchiverPoller(BaseWorkerThread):
             # We're missing the ACDC info.
             # Keep going
             logging.error("ACDC info missing from config.  Skipping this step in the workflow summary.")
-            logging.debug("Error: %s" % str(ex))
-
+            logging.error("Error: %s" % str(ex))
 
 
         # Attach output
@@ -560,9 +579,9 @@ class TaskArchiverPoller(BaseWorkerThread):
                         # unless exit code is 99999 (general panic)
                         stepFailures[exitCode]['errors'].append(error)
                     # Add input LFNs to structure
-                    for input in inputs:
-                        if not input in stepFailures[exitCode]['input']:
-                            stepFailures[exitCode]['input'].append(input)
+                    for inputLFN in inputs:
+                        if not inputLFN in stepFailures[exitCode]['input']:
+                            stepFailures[exitCode]['input'].append(inputLFN)
                     # Add runs to structure
                     for run in runs:
                         if not str(run.run) in stepFailures[exitCode]['runs'].keys():
@@ -577,12 +596,8 @@ class TaskArchiverPoller(BaseWorkerThread):
         # Now we have the workflowData in the right format
         # Time to send them on
         logging.debug("About to commit workflow summary to couch")
-        try:
-            self.workdatabase.commitOne(workflowData)
-        except Exception, ex:
-            msg = "Error while attempting to commit to couch: %s" % str(ex)
-            self.sendAlert(3, msg = msg)
-            raise
+        self.workdatabase.commitOne(workflowData)
+
         logging.debug("Finished committing workflow summary to couch")
 
         return

@@ -454,7 +454,9 @@ class WorkQueue(WorkQueueBase):
                                      self.params["BossAirConfig"])
                     except Exception, ex:
                         self.logger.error('Aborting %s wmbs subscription failed: %s' % (workflow, str(ex)))
-            self.backend.updateInboxElements(*[x.id for x in inbox_elements if x['Status'] != 'Canceled'], Status = 'Canceled')
+            # Don't update as fails sometimes due to conflicts (#3856)
+            [x.load().__setitem__('Status', 'Canceled') for x in inbox_elements if x['Status'] != 'Canceled']
+            self.backend.saveElements(*inbox_elements)
             # delete elements - no longer need them
             self.backend.deleteElements(*elements)
 

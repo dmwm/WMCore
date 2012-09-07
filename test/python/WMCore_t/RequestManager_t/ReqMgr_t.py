@@ -75,6 +75,7 @@ class RequestManagerConfig(DefaultConfig):
         self.UnitTests.views.active.rest.configDBName   = dbName
         self.UnitTests.views.active.rest.workloadDBName = dbName
         self.UnitTests.views.active.rest.clipboardDB    = dbName
+        self.UnitTests.views.active.rest.wmstatDBName   = "%s_wmstats" % dbName
 
     def _setupAssign(self):
         self.UnitTests.views.active.rest.opshold    = False
@@ -98,6 +99,8 @@ class ReqMgrTest(RESTBaseUnitTest):
         RESTBaseUnitTest.setUp(self)
         self.testInit.setupCouch("%s" % self.couchDBName,
                                  "GroupUser", "ConfigCache")
+        self.testInit.setupCouch("%s_wmstats" % self.couchDBName,
+                                 "WMStats")
 
         reqMgrHost      = self.config.getServerUrl()
         self.jsonSender = JSONRequests(reqMgrHost)

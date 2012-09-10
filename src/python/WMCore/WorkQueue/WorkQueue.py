@@ -456,9 +456,9 @@ class WorkQueue(WorkQueueBase):
                         self.logger.error('Aborting %s wmbs subscription failed: %s' % (workflow, str(ex)))
             # Don't update as fails sometimes due to conflicts (#3856)
             [x.load().__setitem__('Status', 'Canceled') for x in inbox_elements if x['Status'] != 'Canceled']
-            self.backend.saveElements(*inbox_elements)
+            updated_inbox_ids = [x.id for x in self.backend.saveElements(*inbox_elements)]
             # delete elements - no longer need them
-            self.backend.deleteElements(*elements)
+            self.backend.deleteElements(*[x for x in elements if x['ParentQueueId'] in updated_inbox_ids])
 
         # if global queue, update non-acquired to Canceled, update parent to CancelRequested
         else:

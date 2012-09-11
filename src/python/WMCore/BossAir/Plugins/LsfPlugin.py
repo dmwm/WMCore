@@ -36,7 +36,8 @@ class LsfPlugin(BasePlugin):
         For a given name, return a global state
 
         """
-        stateDict = {'PEND': 'Pending',
+        stateDict = {'New':  'Pending',
+                     'PEND': 'Pending',
                      'PSUSP': 'Pending',
                      'WAIT': 'Pending',
                      'RUN': 'Running',

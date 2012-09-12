@@ -224,6 +224,8 @@ class TaskChainTests(unittest.TestCase):
                 "RequestNumEvents" : 10000,
                 "Seeding" : "Automatic",
                 "PrimaryDataset" : "RelValTTBar",
+                "DataPileup" : "/minbias/some/data",
+                "MCPileup" : "/minbias/some/mc"
             },
             "Task2" : {
                 "TaskName" : "DigiHLT",
@@ -232,6 +234,8 @@ class TaskChainTests(unittest.TestCase):
                 "ConfigCacheID" : processorDocs['DigiHLT'],
                 "SplittingAlgorithm" : "FileBased",
                 "SplittingArguments" : {"files_per_job" : 1 },
+                "DataPileup" : "/minbias/some/data",
+                "MCPileup" : "/minbias/some/mc"
             },
             "Task3" : {
                 "TaskName" : "Reco",
@@ -307,7 +311,14 @@ class TaskChainTests(unittest.TestCase):
             inpTaskPath += "cmsRun1"
             self.assertEqual(task.data.input.inputStep, inpTaskPath)
 
-        
+        if "MCPileup" in taskConf or "DataPileup" in taskConf:
+            mcDataset = taskConf.get('MCPileup', None)
+            dataDataset = taskConf.get('DataPileup', None)
+            if mcDataset:
+                self.assertEquals(task.data.steps.cmsRun1.pileup.mc.dataset, [mcDataset])
+            if dataDataset:
+                self.assertEquals(task.data.steps.cmsRun1.pileup.data.dataset, [dataDataset])
+
         workflow = Workflow(name = self.workload.name(),
                             task = task.getPathName())
         workflow.load()

@@ -1,12 +1,16 @@
 WMStats.namespace("_StructBase")
 
+WMStats._StructBase = function() {
+    this._data = null;
+}
+
 WMStats._StructBase.prototype = {
 
     getData: function() {
-        return _data;
+        return this._data;
     },
     
-    setData: function(data) {
-        _data = data
+    setData: function(couchData) {
+        this._data = this.convertCouchData(couchData)
     }
 }

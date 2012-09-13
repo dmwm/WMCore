@@ -18,8 +18,23 @@ function(doc) {
                   throw "not valid transition";
               };
               break;
+          case 'createcooloff':
+              status = 'cooloff_create';
+              break;
+          case 'submitcooloff':
+              status = 'cooloff_submit';
+              break;
           case 'jobcooloff':
-              status = 'cooloff';
+              status = 'cooloff_job';
+              break;
+          case 'createpaused':
+              status = 'paused_create';
+              break;
+          case 'submitpaused':
+              status = 'paused_submit';
+              break;
+          case 'jobpaused':
+              status = 'paused_job';
               break;
           case 'executing':
               if (doc['states'][lastStateIndex - 1].oldstate == 'new') {

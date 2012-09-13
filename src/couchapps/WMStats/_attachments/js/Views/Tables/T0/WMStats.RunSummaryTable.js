@@ -1,0 +1,57 @@
+WMStats.namespace("RunSummaryTable");
+
+WMStats.RunSummaryTable = function (data, containerDiv) {
+    
+    var tableConfig = {
+        "sScrollX": "",
+        "aoColumns": [
+            { "mDataProp": "key", "sTitle": "run"},               
+            { "mDataProp": function (source, type, val) { 
+                              return source.summary.summaryStruct.numRequests;
+                           }, "sTitle": "requests", "sDefaultContent": 0, 
+            },
+            { "mDataProp": function (source, type, val) { 
+                              return source.summary.getJobStatus("success");
+                           }, "sTitle": "success", "sDefaultContent": 0, 
+            },
+            { "mDataProp": function (source, type, val) { 
+                              return source.summary.getTotalFailure();
+                           }, "sTitle": "failure", "sDefaultContent": 0, 
+            },
+            { "sDefaultContent": 0,
+              "sTitle": "job progress", 
+              "mDataProp": function (source, type, val) { 
+                            var totalJobs = source.summary.getWMBSTotalJobs() || 1;
+                            var result = (source.summary.getJobStatus("success") + 
+                                          source.summary.getTotalFailure()) /
+                                          totalJobs * 100
+                            if (type === 'display') {
+                                return result.toFixed(1) + "%";
+                            }
+                            return result.toFixed(1);
+                          }
+            },
+            { "mDataProp": function (source, type, val) { 
+                              return source.summary.getJobStatus("submitted.pending");
+                           }, "sTitle": "pending", "sDefaultContent": 0, 
+            },
+            { "mDataProp": function (source, type, val) { 
+                              return source.summary.getJobStatus("submitted.running");
+                           }, "sTitle": "running", "sDefaultContent": 0, 
+            },
+            { "mDataProp": function (source, type, val) { 
+                              return source.summary.getTotalCooloff();
+                           }, "sTitle": "cool off", "sDefaultContent": 0, 
+            },
+            { "mDataProp": function (source, type, val) { 
+                              return source.summary.getTotalPaused();
+                           }, "sTitle": "job paused", "sDefaultContent": 0, 
+            }
+        ]
+    }
+    tableConfig.aaData = data.getList();
+    
+    var filterConfig = {};
+    
+    return WMStats.Table(tableConfig).create(containerDiv,filterConfig);
+}

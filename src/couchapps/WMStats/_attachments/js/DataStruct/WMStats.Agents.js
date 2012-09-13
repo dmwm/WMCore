@@ -2,28 +2,18 @@ WMStats.namespace("Agents");
 
 WMStats.Agents = function (couchData) {
     
-    var _data;
-
-    function setData(data) {
-        var dataRows = data.rows;
-        var rows = [];
-        for (var i in dataRows) {
-            var tableRow = dataRows[i].value;
-            rows.push(tableRow)
-        }
-        _data = rows;
-    }
+    var agentData = new WMStats._StructBase();
     
-    function getData() {
-        return _data;
-    }
+    agentData.convertCouchData = function(data) {
+                                     var dataRows = data.rows;
+                                     var rows = [];
+                                     for (var i in dataRows) {
+                                         var tableRow = dataRows[i].value;
+                                         rows.push(tableRow)
+                                     }
+                                     return rows;
+                                 }
+    if (couchData) agentData.setData(couchData);
     
-    if (couchData) {
-        setData(couchData);
-    }
-    
-    return {
-        getData: getData,
-        setData: setData
-    }
+    return agentData
 }

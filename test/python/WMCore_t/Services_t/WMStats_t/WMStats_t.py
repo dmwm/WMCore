@@ -8,6 +8,7 @@ from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMStatsDocGenerator import *
+from WMCore.WMSpec.WMWorkload import newWorkload
 class WMStatsTest(unittest.TestCase):
     """
     """
@@ -47,6 +48,16 @@ class WMStatsTest(unittest.TestCase):
         totalStats = {'total_jobs': 100, 'input_events': 1000, 'input_lumis': 1234, 'input_num_file': 5}
         self.assertEquals(self.wmstatsWriter.insertTotalStats(schema[0]['RequestName'], totalStats), 'OK', 'update fail')
         self.assertEquals(self.wmstatsWriter.insertTotalStats("not_exist_schema", totalStats),
+                          'ERROR: request not found - not_exist_schema')
+        spec1 = newWorkload(schema[0]['RequestName'])
+        production = spec1.newTask("Production")
+        production.setTaskType("Merge")
+        production.setSiteWhitelist(['TEST_SITE'])
+        self.assertEquals(self.wmstatsWriter.updateFromWMSpec(spec1), 'OK', 'update fail')
+        spec2 = newWorkload("not_exist_schema")
+        production = spec2.newTask("Production")
+        production.setTaskType("Merge")
+        self.assertEquals(self.wmstatsWriter.updateFromWMSpec(spec2),
                           'ERROR: request not found - not_exist_schema')
 
 if __name__ == '__main__':

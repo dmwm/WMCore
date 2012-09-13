@@ -91,16 +91,16 @@ class JobArchiverPoller(BaseWorkerThread):
             msg += str(ex)
             logging.error(msg)
             #raise JobArchiverPollerException(msg)
-            
+
         self.uploadPublishInfo = getattr(self.config.JobArchiver, 'uploadPublishInfo', False)
         self.userFileCacheURL = getattr(self.config.JobArchiver, 'userFileCacheURL', None)
         self.handleWorkflowInjection = getattr(self.config.JobArchiver,
                                                'handleInjected', True)
 
         return
-        
-                
-                
+
+
+
     def setup(self, parameters):
         """
         Load DB objects required for queries
@@ -117,7 +117,7 @@ class JobArchiverPoller(BaseWorkerThread):
         logging.debug("terminating. doing one more pass before we die")
         self.algorithm(params)
         return
-    
+
 
     def algorithm(self, parameters = None):
         """
@@ -151,7 +151,7 @@ class JobArchiverPoller(BaseWorkerThread):
     def archiveJobs(self):
         """
         _archiveJobs_
-        
+
         archiveJobs will handle the master task of looking for finished jobs,
         and running the code that cleans them out.
         """
@@ -164,22 +164,24 @@ class JobArchiverPoller(BaseWorkerThread):
 
         successList = []
         failList    = []
-
-
+        killList    = []
 
         for job in doneList:
             if job["outcome"] == "success":
                 successList.append(job)
+            elif job["outcome"] == "killed":
+                killList.append(job)
             else:
                 failList.append(job)
-                
+
         myThread.transaction.begin()
 
-        if self.uploadPublishInfo: 
+        if self.uploadPublishInfo:
             self.createAndUploadPublish(successList)
-            
+
         self.changeState.propagate(successList, "cleanout", "success")
         self.changeState.propagate(failList, "cleanout", "exhausted")
+        self.changeState.propagate(killList, "cleanout", "killed")
         myThread.transaction.commit()
 
 
@@ -194,7 +196,7 @@ class JobArchiverPoller(BaseWorkerThread):
         jobListAction = self.daoFactory(classname = "Jobs.GetAllJobs")
         jobList1 = jobListAction.execute(state = "success")
         jobList2 = jobListAction.execute(state = "exhausted")
-        jobList3 = jobListAction.execute(state = "killed")        
+        jobList3 = jobListAction.execute(state = "killed")
 
         jobList.extend(jobList1)
         jobList.extend(jobList2)
@@ -208,13 +210,13 @@ class JobArchiverPoller(BaseWorkerThread):
         binds = []
         for jobID in jobList:
             binds.append({"jobid": jobID})
-        
+
 
         results = self.loadAction.execute(jobID = binds)
 
         if not type(results) == list:
             results = [results]
-        
+
         doneList = []
 
         for entry in results:
@@ -230,7 +232,7 @@ class JobArchiverPoller(BaseWorkerThread):
     def cleanWorkArea(self, doneList):
         """
         _cleanWorkArea_
-        
+
         Upon workQueue realizing that a subscriptions is done, everything
         regarding those jobs is cleaned up.
         """
@@ -238,7 +240,7 @@ class JobArchiverPoller(BaseWorkerThread):
         for job in doneList:
             #print "About to clean cache for job %i" % (job['id'])
             self.cleanJobCache(job)
-        
+
         return
 
     def cleanJobCache(self, job):
@@ -343,7 +345,7 @@ class JobArchiverPoller(BaseWorkerThread):
             except:
                 # Do nothing if it complains
                 pass
-        
+
         # Now, mark as injected those that returned True
         if len(injected) > 0:
             myThread.transaction.begin()
@@ -359,7 +361,7 @@ class JobArchiverPoller(BaseWorkerThread):
         """
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        
+
         closableFilesetDAO = self.daoFactory(classname = "Fileset.ListClosable")
         closableFilesets = closableFilesetDAO.execute()
 
@@ -376,7 +378,7 @@ class JobArchiverPoller(BaseWorkerThread):
         taskList = {}
         for job in jobList:
             taskList[(job['workflow'], job['task'])] = job['cache_dir']
-          
+
         for (workflow, task) in taskList.keys():
             wf = Workflow(name=workflow, task=task)
             wf.load()
@@ -385,5 +387,5 @@ class JobArchiverPoller(BaseWorkerThread):
             except Exception, ex:
                 logging.error('Upload failed for workflow, task: %s, %s' % (workflow, task))
                 logging.error(str(ex))
-                
+
         return

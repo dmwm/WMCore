@@ -1,3 +1,40 @@
+0.9.13 to 0.9.14:
+  - Put a transition for killed job in JobArchiverPoller
+  - add unit test
+  - fixes when requests need to be updated but not in the wmstats monitor
+  - Fix Condor JDL
+  - remove couchskel link from the script. wmagent.spec 1.131 needs to be used.
+  - Modify build script for wmcore/wmagent rpm merge
+  - Add options to the paused jobs tool
+  - Improve workqueue cancellation error handling
+  - Improve WorkQueue handling of conflicts on cancel.
+  - Fix ResourceControl unit test
+  - Merge pull request #4075 from dballesteros7/bugfix-reqmgr-lhe
+  - Bugfix LHE request web interface
+  - Merge pull request #4071 from dballesteros7/add-harvesting-threshold
+  - Merge pull request #4072 from hufnagel/siblingcomplete
+  - Bugfix for harvesting tasktype
+  - optimizing SiblingSubscriptionsComplete DAO
+  - cut off error message passed to DAO
+  - Fix typo in MockPlugin. Fixes 3931.
+  - fix Tier0 DBS2 upload problems
+  - Merge pull request #4060 from zdenekmaxa/alertsfwpollerfixes
+  - Alert emails from address set to noreply@cern.ch. Process pollers refreshing 
+    list of child processes each poll interval. Alerts no longer generated on 
+    disappeared processes (can easily be re-enabled).
+  - cleanup views
+  - refactor wmstast add support for tier0 run view implement caching
+  - Merge pull request #4056 from hufnagel/alcaharvest-runtime
+  - Merge pull request #4049 from dballesteros7/job-submitter
+  - Merge pull request #4051 from mmascher/setGlobaltag
+  - Merge pull request #4057 from dballesteros7/bugfix-create-request
+  - Merge pull request #4058 from cinquo/glite-plugin
+  - Fixing dictionary copy issues when retrieving user's proxy
+  - fixes in AlcaHarvest runtime code to make it play nice with the JobAccountant
+  - Bugfix create request
+  - Added the globaltag parameter to the WMTweak. Fixes #3998
+  - Bugfix for the JobSubmitter
+
 0.9.12 to 0.9.13:
   - Revert "Create an inactive doc in the old active db and not in the actual active one."
 

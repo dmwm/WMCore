@@ -124,12 +124,11 @@ echo "Note: this may fail if the config files don't have all the necessary info 
  cd $TMP; \
  cvs -d ${CVSROOT} co -r ${EXAMPLE_CMSDIST_TAG} CMSDIST; \
  cd ${TMP}/CMSDIST; \
- cvs -d $CVSROOT update -A wmagent.spec wmagent-dev.spec wmcore.spec ${REPO}; \
+ cvs -d $CVSROOT update -A wmagent.spec wmagent-dev.spec ${REPO}; \
  perl -p -i -e "s{### RPM.*}{### RPM cms wmagent $VERSION}g" wmagent.spec; \
  perl -p -i -e "s{### RPM.*}{### RPM cms wmagent-dev $VERSION}g" wmagent-dev.spec; \
- perl -p -i -e "s{### RPM.*}{### RPM cms wmcore $VERSION}g" wmcore.spec; \
- perl -p -i -e "s{\+ HEAD/.*wmcore.spec}{+ HEAD/$VERSION wmcore.spec}g" ${REPO}; \
- cvs commit -m"wmagent $VERSION" wmagent.spec wmagent-dev.spec wmcore.spec ${REPO};
+ perl -p -i -e "s{\+ HEAD/.*wmagent.spec}{+ HEAD/$VERSION wmagent.spec}g" ${REPO}; \
+ cvs commit -m"wmagent $VERSION" wmagent.spec wmagent-dev.spec ${REPO};
 )
 if [ $? -ne 0 ]; then
   echo "RPM Request failed - please request manually"

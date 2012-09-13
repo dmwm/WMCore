@@ -189,9 +189,9 @@ def modifyConfiguration(config, **args):
         if hasattr(config.AlertProcessor.soft.sinks, "file"):
             config.AlertProcessor.soft.sinks.file.outputfile = os.path.join(args['working_dir'], "AlertsFileSinkSoft.json")
         if hasattr(config.AlertProcessor.critical.sinks, "email"):
-            config.AlertProcessor.critical.sinks.email.fromAddr = "wmagent@%s" % localhost
+            config.AlertProcessor.critical.sinks.email.fromAddr = "noreply@cern.ch"
         if hasattr(config.AlertProcessor.soft.sinks, "email"):
-            config.AlertProcessor.soft.sinks.email.fromAddr = "wmagent@%s" % localhost
+            config.AlertProcessor.soft.sinks.email.fromAddr = "noreply@cern.ch"
     if  hasattr(config, "AlertGenerator"):
         if hasattr(config.AlertGenerator, "couchDbSizePoller"):
             config.AlertGenerator.couchDbSizePoller.couchURL = args["couch_url"]

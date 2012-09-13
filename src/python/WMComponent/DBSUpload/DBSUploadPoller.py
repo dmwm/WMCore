@@ -62,22 +62,25 @@ def createDatasetFromInfo(info):
     Create a dataset object from basic information
 
     """
-    dataset = {'ID':               info.get('Dataset'),
-               'Path':             info.get('Path'),
-               'ProcessedDataset': info.get('ProcessedDataset'),
-               'PrimaryDataset':   info.get('PrimaryDataset'),
-               'DataTier':         info.get('DataTier'),
-               'Algo':             info.get('Algo'),
-               'AlgoInDBS':        info.get('AlgoInDBS', None),
-               'DASInDBS':         info.get('DASInDBS', None),
-               'status':           info.get('ValidStatus', 'PRODUCTION'),
-               'globalTag':        info.get('GlobalTag', ''),
-               'parent':           info.get('Parent', '')
+    dataset = {'ID':               info['Dataset'],
+               'Path':             info['Path'],
+               'ProcessedDataset': info['ProcessedDataset'],
+               'PrimaryDataset':   info['PrimaryDataset'],
+               'DataTier':         info['DataTier'],
+               'Algo':             info['Algo'],
+               'AlgoInDBS':        info['AlgoInDBS'],
+               'DASInDBS':         info['DASInDBS'],
+               'status':           info['ValidStatus'],
+               'globalTag':        info['GlobalTag'],
+               'parent':           info['Parent']
                }
-    if dataset['globalTag'] == None:
-        dataset['globalTag'] = ''
+
     if dataset['status'] == None:
         dataset['status'] = 'PRODUCTION'
+
+    if dataset['globalTag'] == None:
+        dataset['globalTag'] = ''
+
     return dataset
 
 def createAlgoFromInfo(info):
@@ -86,12 +89,12 @@ def createAlgoFromInfo(info):
 
     """
     
-    algo = {'ApplicationName':    info.get('ApplicationName'),
-            'ApplicationFamily':  info.get('ApplicationFamily'),
-            'ApplicationVersion': info.get('ApplicationVersion'),
-            'PSetHash':           info.get('PSetHash'),
+    algo = {'ApplicationName':    info['ApplicationName'],
+            'ApplicationFamily':  info['ApplicationFamily'],
+            'ApplicationVersion': info['ApplicationVersion'],
+            'PSetHash':           info['PSetHash'],
             'PSetContent':        None,
-            'InDBS':              info.get('AlgoInDBS', None)
+            'InDBS':              info['AlgoInDBS']
             }
 
     configString = info.get('PSetContent')

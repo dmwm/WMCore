@@ -889,7 +889,7 @@ class CondorPlugin(BasePlugin):
             jdl.append('x509userproxy = %s\n' % job['proxyPath'])
 
         if job.get('requestName', None):
-            jdl.append('+WMAgent_RequestName = %s\n' % job['requestName'])
+            jdl.append('+WMAgent_RequestName = "%s"\n' % job['requestName'])
 
         return jdl
 

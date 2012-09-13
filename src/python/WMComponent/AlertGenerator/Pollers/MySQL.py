@@ -80,8 +80,8 @@ class MySQLPoller(PeriodPoller):
             try:
                 PeriodPoller.check(self, self._dbProcessDetail, self._measurements)
             except psutil.error.NoSuchProcess as ex:
-                logging.error(ex)
-                logging.error("Updating info about the polled process ...")
+                logging.warn(ex)
+                logging.warn("Updating info about the polled process ...")
                 self._setUp()
                 
 

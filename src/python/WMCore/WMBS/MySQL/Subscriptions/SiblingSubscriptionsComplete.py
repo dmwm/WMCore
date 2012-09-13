@@ -31,8 +31,8 @@ class SiblingSubscriptionsComplete(DBFormatter):
                    wmbs_subscription.id != :subscription
                  LEFT OUTER JOIN wmbs_sub_files_complete ON
                    wmbs_sub_files_complete.fileid = wmbs_sub_files_available.fileid AND
-                   wmbs_sub_files_complete.subscription = wmbs_subscription.id AND
-                   wmbs_sub_files_complete.subscription != :subscription
+                   wmbs_sub_files_complete.subscription = wmbs_subscription.id
+               WHERE wmbs_sub_files_available.subscription = :subscription
                GROUP BY wmbs_sub_files_available.fileid
                HAVING COUNT(wmbs_subscription.id) = COUNT(wmbs_sub_files_complete.fileid)
              ) available_files

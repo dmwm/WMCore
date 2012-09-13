@@ -15,6 +15,7 @@ import tempfile
 import os
 import time
 import types
+from copy import deepcopy
 
 from WMCore.Wrappers import JsonWrapper as json
 from WMCore.Credential.Proxy           import Proxy
@@ -1432,11 +1433,11 @@ class gLitePlugin(BasePlugin):
         """
 
         logging.debug("Retrieving proxy for %s" % userdn)
-        config = self.defaultDelegation
+        config = deepcopy(self.defaultDelegation)
         config['userDN'] = userdn
         config['group'] = group
         config['role'] = role
-        proxy = Proxy(self.defaultDelegation)
+        proxy = Proxy(config)
         proxyPath = proxy.getProxyFilename( True )
         timeleft = proxy.getTimeLeft( proxyPath )
         if timeleft is not None and timeleft > 3600:

@@ -10,7 +10,6 @@ of actual messages.
 """
 
 
-import time
 import logging
 
 from WMCore.Configuration import Configuration
@@ -93,7 +92,7 @@ def getSendAlert(sender, preAlert):
     def sendAlertFunc(level, **args):
         if sender:
             alert = Alert(**preAlert)
-            alert["Timestamp"] = time.time()
+            alert.setTimestamp()
             alert["Level"] = level
             alert["Details"] = args
             sender(alert)

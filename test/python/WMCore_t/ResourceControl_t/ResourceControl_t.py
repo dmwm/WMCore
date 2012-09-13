@@ -610,7 +610,7 @@ class ResourceControlTest(unittest.TestCase):
         result = myResourceControl.listThresholdsForSubmit()
         self.assertTrue('T1_US_FNAL' in result.keys())
         for x in result.keys():
-            self.assertEqual(len(result[x]['thresholds']), 7)
+            self.assertEqual(len(result[x]['thresholds']), 8)
             self.assertEqual(result[x]['total_pending_slots'], 100)
             self.assertEqual(result[x]['total_running_slots'], 500)
             for thresh in result[x]['thresholds']:

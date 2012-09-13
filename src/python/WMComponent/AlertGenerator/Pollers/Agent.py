@@ -87,7 +87,7 @@ class ComponentsPoller(PeriodPoller):
             self._components.append(pd)
             self._compMeasurements.append(Measurements(self.numOfMeasurements))
             m = ("%s: loaded process information on %s:%s" % (myName, compName, compPID))
-            logging.debug(m)
+            logging.info(m)
         except (psutil.error.NoSuchProcess, psutil.error.AccessDenied), ex:
             logging.error("%s: component %s ignored, reason: %s" % (myName, compName, ex))
  
@@ -128,6 +128,14 @@ class ComponentsPoller(PeriodPoller):
                 newPID = componentsInfo[processDetail.name]
                 if int(newPID) == processDetail.pid:
                     # ok, component still runs under the same PID
+                    # update list of child processes (some may have (dis)appeared)
+                    logging.debug("Component %s runs under the same PID, refreshing"
+                                  " list of child processes ..." % processDetail.getDetails())
+                    try:
+                        processDetail.refresh()
+                    except psutil.error.NoSuchProcess as ex:
+                        logging.error("Could not update list of children processes "
+                                      "for %s, reason: %s" % (processDetail.getDetails(), ex))
                     del componentsInfo[processDetail.name]
                 else:
                     logging.warn("Component %s seems to have been restarted "
@@ -155,8 +163,12 @@ class ComponentsPoller(PeriodPoller):
     def check(self):
         self._updateComponentsInfo()
         for processDetail, measurements in zip(self._components, self._compMeasurements):
-            PeriodPoller.check(self, processDetail, measurements)
-
+            try:
+                PeriodPoller.check(self, processDetail, measurements)
+            except psutil.error.NoSuchProcess as ex:
+                logging.warn("Observed process or its child process(es) disappeared, "
+                             "update at the next polling attempt, reason: %s." % ex)
+                
 
             
 class ComponentsCPUPoller(ComponentsPoller):

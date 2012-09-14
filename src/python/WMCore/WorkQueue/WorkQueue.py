@@ -380,6 +380,8 @@ class WorkQueue(WorkQueueBase):
     def addNewFilesToOpenSubscriptions(self, *elements):
         """Inject new files to wmbs for running elements that have new files.
             Assumes elements are from the same workflow"""
+        if not self.params['LocalQueueFlag']:
+            return
         wmspec = None
         for ele in elements:
             if not ele.isRunning() or not ele['SubscriptionId'] or not ele:

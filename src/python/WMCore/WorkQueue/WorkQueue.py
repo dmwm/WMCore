@@ -399,6 +399,7 @@ class WorkQueue(WorkQueueBase):
                 self.backend.updateElements(ele.id, NumOfFilesAdded = ele['NumOfFilesAdded'])
             if dbsBlock['IsOpen'] != ele['OpenForNewData']:
                 self.logger.info("Closing open block %s (%s)" % (blockName, ele.id))
+                self.backend.updateInboxElements(ele['ParentQueueId'], OpenForNewData = dbsBlock['IsOpen'])
                 self.backend.updateElements(ele.id, OpenForNewData = dbsBlock['IsOpen'])
                 ele['OpenForNewData'] = dbsBlock['IsOpen']
 

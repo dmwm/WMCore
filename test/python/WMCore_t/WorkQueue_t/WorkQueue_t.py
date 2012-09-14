@@ -1241,6 +1241,9 @@ class WorkQueueTest(WorkQueueTestCase):
         self.localQueue.performQueueCleanupActions()
         newNumFilesAdded2 = sum(x['NumOfFilesAdded'] for x in self.localQueue.status())
         self.assertEqual(newNumFilesAdded2, newNumFilesAdded)
+        # cleanup now progresses
+        syncQueues(self.localQueue)
+        self.assertTrue(self.localQueue.getWMBSInjectionStatus(self.processingSpec.name()))
 
 if __name__ == "__main__":
     unittest.main()

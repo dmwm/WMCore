@@ -1,3 +1,8 @@
+0.9.14 to 0.9.15:
+  - Merge branch 'master' of github.com:dmwm/WMCore
+  - Fix bug where open blocks wouldn't be closed in global
+  - Skip adding new files to open blocks in global queue
+
 0.9.13 to 0.9.14:
   - Put a transition for killed job in JobArchiverPoller
   - add unit test

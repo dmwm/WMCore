@@ -45,6 +45,7 @@ Example initial generation task:
     "RequestNumEvents" : 10000,                       Total number of events to generate
     "Seeding" : "AutomaticSeeding",                   Random seeding method
     "PrimaryDataset" : "RelValTTBar",                 Primary Dataset to be created
+    "DataPileup" : "/MinBias/Run2012Z-v1/RECO"        Pileup dataset for the task
 },
 
 Example initial processing task
@@ -55,6 +56,7 @@ Example initial processing task
      "InputDataset" : "/MinimumBias/Commissioning10-v4/GEN-SIM", Input Dataset to be processed
      "SplittingAlgorithm"  : "FileBased",                        Splitting Algorithm
      "SplittingArguments" : {"files_per_job" : 1},               Size of jobs in terms of splitting algorithm
+     "MCPileup" : "/MinBias/Summer12-v1/GEN-SIM-DIGI-RECO        Pileup dataset for the task
  },
  
  All subsequent Task entries will process the output of one of the preceeding steps:
@@ -150,6 +152,23 @@ def validateProcFirstTask(task):
     if task['InputDataset'].count('/') != 3:
         raise WMSpecFactoryException("Need three slashes in InputDataset %s " % task['InputDataset'])
 
+def parsePileupConfig(taskConfig):
+    """
+    _parsePileupConfig_
+
+    If the pileup config is defined as MCPileup and DataPileup
+    then make sure we get the usual dictionary as
+    PileupConfig : {'mc' : '/mc/procds/tier', 'data': '/minbias/procds/tier'}
+
+    This overrides any existing PileupConfig attribute in the task dict,
+    the requestor shouldn't have put both forms of the pileup config anyway.
+    """
+    pileUpConfig = {}
+    if taskConfig.get('MCPileup', None):
+        pileUpConfig['mc'] = [taskConfig['MCPileup']]
+    if taskConfig.get('DataPileup', None):
+        pileUpConfig['data'] = [taskConfig['DataPileup']]
+    taskConfig['PileupConfig'] = pileUpConfig
 
 #
 # simple utils for data mining the request dictionary
@@ -184,9 +203,6 @@ class TaskChainWorkloadFactory(StdBase):
         # Optional arguments that default to something reasonable.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
         self.emulation = arguments.get("Emulation", False)
-
-        #Check for pileup configuration
-        self.pileupConfig = arguments.get("PileupConfig", None)
         
         numTasks = arguments['TaskChain']
         for i in range(1, numTasks+1):
@@ -277,8 +293,10 @@ class TaskChainWorkloadFactory(StdBase):
                                             seeding = taskConf['Seeding'], totalEvents = taskConf['RequestNumEvents']
                                             )
 
-        if self.pileupConfig:
-            self.setupPileup(task, self.pileupConfig)
+        if 'MCPileup' in taskConf or 'DataPileup' in taskConf:
+            parsePileupConfig(taskConf)
+        if taskConf.get('PileupConfig', None):
+            self.setupPileup(task, taskConf['PileupConfig'])
 
         self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
         procMergeTasks = {}
@@ -342,7 +360,12 @@ class TaskChainWorkloadFactory(StdBase):
                                             configDoc = configCacheID, splitAlgo = splitAlgorithm,
                                             splitArgs = splitArguments, stepType = cmsswStepType)
                                         
-        
+
+        if 'MCPileup' in taskConf or 'DataPileup' in taskConf:
+            parsePileupConfig(taskConf)
+        if taskConf.get('PileupConfig', None):
+            self.setupPileup(task, taskConf['PileupConfig'])
+
         self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
         procMergeTasks = {}
         for outputModuleName in outputMods.keys():

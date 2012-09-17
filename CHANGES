@@ -1,3 +1,6 @@
+0.9.15 to 0.9.16:
+  - Fix the support for PileUp in TaskChain requests
+
 0.9.14 to 0.9.15:
   - Merge branch 'master' of github.com:dmwm/WMCore
   - Fix bug where open blocks wouldn't be closed in global

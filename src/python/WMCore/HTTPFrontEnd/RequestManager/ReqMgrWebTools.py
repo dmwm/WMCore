@@ -444,6 +444,9 @@ def makeRequest(kwargs, couchUrl, couchDB, wmstatUrl):
         if inputMode == 'scenario':
             del schema['ProcConfigCacheID']
 
+    if 'EnableDQMHarvest' not in kwargs:
+        schema["EnableHarvesting"] = False
+
     if kwargs.has_key("InputDataset"):
         schema["InputDatasets"] = [kwargs["InputDataset"]]
     if kwargs.has_key("FilterEfficiency"):

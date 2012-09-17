@@ -77,12 +77,16 @@ Size per event (Kbytes): <input type="text" name="SizePerEvent" size=10 value=51
 #end def
 
 #def dqmOptions
+<input type="checkbox" name="EnableDQMHarvest"/>Enable DQM Harvesting<br/>
 DQM Sequences: <input type="text" name="DqmSequences" size=40 />
 DQM URL:
 <select name="DQMUploadUrl">
     <option selected> https://cmsweb.cern.ch/dqm/dev </option>
     <option> https://cmsweb.cern.ch/dqm/offline </option>
     <option> https://cmsweb.cern.ch/dqm/relval </option>
+    <option> https://cmsweb-testbed.cern.ch/dqm/dev </option>
+    <option> https://cmsweb-testbed.cern.ch/dqm/offline </option>
+    <option> https://cmsweb-testbed.cern.ch/dqm/relval </option>
 </select><br/>
 
 #end def

@@ -88,6 +88,7 @@ class StdBase(object):
         self.dqmUploadUrl = None
         self.dqmSequences = None
         self.procScenario = None
+        self.enableHarvesting = True
         return
 
     def __call__(self, workloadName, arguments):
@@ -132,6 +133,7 @@ class StdBase(object):
         self.dqmUploadUrl = arguments.get("DQMUploadUrl", "https://cmsweb.cern.ch/dqm/dev")
         self.dqmSequences = arguments.get("DqmSequences", [])
         self.procScenario = arguments.get("ProcScenario", None)
+        self.enableHarvesting = arguments.get("EnableHarvesting", True)
 
         if arguments.get("IncludeParents", False) == "True":
             self.includeParents = True
@@ -513,8 +515,7 @@ class StdBase(object):
         return logCollectTask
 
     def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModuleName,
-                     parentStepName = "cmsRun1", doLogCollect = True,
-                     doHarvesting = True):
+                     parentStepName = "cmsRun1", doLogCollect = True):
         """
         _addMergeTask_
 
@@ -577,7 +578,7 @@ class StdBase(object):
                              forceMerged = True)
 
         self.addCleanupTask(parentTask, parentOutputModuleName)
-        if doHarvesting and getattr(parentOutputModule, "dataTier") in ["DQMROOT", "DQM"]:
+        if self.enableHarvesting and getattr(parentOutputModule, "dataTier") in ["DQMROOT", "DQM"]:
             self.addDQMHarvestTask(mergeTask, "Merged", self.dqmUploadProxy,
                                    self.periodicHarvestingInterval)
         return mergeTask
@@ -710,10 +711,12 @@ class StdBase(object):
 
         #Check the workload for harvesting task, if there is a
         #harvesting task then a self.procScenario must be defined
-        for task in workload.getAllTasks():
-            if task.taskType() == "Harvesting":
-                if not self.procScenario:
-                    self.raiseValidationException(msg = "A DQM harvesting task was found, you must specify a scenario")
+        #Only if the harvesting is enable for this request
+        if self.enableHarvesting:
+            for task in workload.getAllTasks():
+                if task.taskType() == "Harvesting":
+                    if not self.procScenario:
+                        self.raiseValidationException(msg = "A DQM harvesting task was found, you must specify a scenario")
 
         return
 

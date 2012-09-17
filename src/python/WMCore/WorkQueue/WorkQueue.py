@@ -828,7 +828,8 @@ class WorkQueue(WorkQueueBase):
                     raise
             except Exception, ex:
                 # if request has been failing for too long permanently fail it.
-                if (float(inbound.timestamp) + self.params['QueueRetryTime']) < time.time():
+                # last update time was when element was assigned to this queue
+                if (float(inbound.updatetime) + self.params['QueueRetryTime']) < time.time():
                     self.logger.info('Failing workflow "%s" as not queued in %d secs: %s' % (inbound['RequestName'],
                                                                                              self.params['QueueRetryTime'],
                                                                                              str(ex)))

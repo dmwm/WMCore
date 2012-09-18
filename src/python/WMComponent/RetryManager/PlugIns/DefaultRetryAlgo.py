@@ -7,10 +7,7 @@ _DefaultRetryAlgo_
 This is the default.  It's alarmingly simple.
 """
 
-import time
-import datetime
 import logging
-import threading
 
 from WMComponent.RetryManager.PlugIns.RetryAlgoBase import RetryAlgoBase
 
@@ -23,18 +20,19 @@ class DefaultRetryAlgo(RetryAlgoBase):
     """
 
 
-    def isReady(self, job, jobType):
+    def isReady(self, job, cooloffType):
         """
         Actual function that does the work
 
         """
 
         # Get the cooloff time
-        cooloffTime = self.config.RetryManager.coolOffTime.get(jobType.lower(), None)
-        
+        cooloffDict = self.getAlgoParam(job['jobType'])
+        cooloffTime = cooloffDict.get(cooloffType.lower(), None)
+
         if not cooloffTime:
             logging.error('Unknown cooloffTime for type %s: passing' %(type))
-            return
+            return False
 
         currentTime = self.timestamp()
         if currentTime - job['state_time'] > cooloffTime:

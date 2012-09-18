@@ -18,14 +18,15 @@ class LinearAlgo(RetryAlgoBase):
     """
 
 
-    def isReady(self, job, jobType):
+    def isReady(self, job, cooloffType):
         """
         Actual function that does the work
 
         """
 
         # Get the cooloff time
-        baseTimeout = self.config.RetryManager.coolOffTime.get(jobType.lower(), 10)
+        baseTimeoutDict = self.getAlgoParam(job['jobType'])
+        baseTimeout = baseTimeoutDict.get(cooloffType.lower(), 10)
         cooloffTime = baseTimeout * job['retry_count']
         
         currentTime = self.timestamp()

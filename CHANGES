@@ -1,114 +1,130 @@
+0.9.16 to 0.9.17:
+  - Add the ability to turn off DQM Harvesting.  Pull request #4093:
+    o If the "DisableHarvest" parameter is present in any request DQM harvesting
+      will be disabled.
+  - Make the RetryManager more flexible.  Pull request #3961:
+    o Different job types can be assigned different cool off parameters and
+      algorithms.
+  - Fix handling of request timeouts in the WorkQueue.  Fixes #4087.
+  - Fix the CleanupManager so that it doesn't crash when they are issues
+    communicating with couch.  Fixes #4088.
+
 0.9.15 to 0.9.16:
-  - Fix the support for PileUp in TaskChain requests
+  - Add support for specifying pileup information for individual tasks in
+    TaskChain requests.  Pull request #4084.
+      o The MCPileup or DataPileup parameter may be added to any task
+        dictionary.
 
 0.9.14 to 0.9.15:
-  - Merge branch 'master' of github.com:dmwm/WMCore
-  - Fix bug where open blocks wouldn't be closed in global
-  - Skip adding new files to open blocks in global queue
+  - Only add new files to open blocks in the Local WorkQueue.
+  - Fix the closing of open blocks in the Global WorkQueue.
 
 0.9.13 to 0.9.14:
-  - Put a transition for killed job in JobArchiverPoller
-  - add unit test
-  - fixes when requests need to be updated but not in the wmstats monitor
-  - Fix Condor JDL
-  - remove couchskel link from the script. wmagent.spec 1.131 needs to be used.
-  - Modify build script for wmcore/wmagent rpm merge
-  - Add options to the paused jobs tool
-  - Improve workqueue cancellation error handling
-  - Improve WorkQueue handling of conflicts on cancel.
-  - Fix ResourceControl unit test
-  - Merge pull request #4075 from dballesteros7/bugfix-reqmgr-lhe
-  - Bugfix LHE request web interface
-  - Merge pull request #4071 from dballesteros7/add-harvesting-threshold
-  - Merge pull request #4072 from hufnagel/siblingcomplete
-  - Bugfix for harvesting tasktype
-  - optimizing SiblingSubscriptionsComplete DAO
-  - cut off error message passed to DAO
-  - Fix typo in MockPlugin. Fixes 3931.
-  - fix Tier0 DBS2 upload problems
-  - Merge pull request #4060 from zdenekmaxa/alertsfwpollerfixes
-  - Alert emails from address set to noreply@cern.ch. Process pollers refreshing 
-    list of child processes each poll interval. Alerts no longer generated on 
-    disappeared processes (can easily be re-enabled).
-  - cleanup views
-  - refactor wmstast add support for tier0 run view implement caching
-  - Merge pull request #4056 from hufnagel/alcaharvest-runtime
-  - Merge pull request #4049 from dballesteros7/job-submitter
-  - Merge pull request #4051 from mmascher/setGlobaltag
-  - Merge pull request #4057 from dballesteros7/bugfix-create-request
-  - Merge pull request #4058 from cinquo/glite-plugin
-  - Fixing dictionary copy issues when retrieving user's proxy
-  - fixes in AlcaHarvest runtime code to make it play nice with the JobAccountant
-  - Bugfix create request
-  - Added the globaltag parameter to the WMTweak. Fixes #3998
-  - Bugfix for the JobSubmitter
+  - Refactor WMStats monitoring.  Include support for the Tier0 with monitoring
+    of runs and paused jobs.  Pull request #4059.
+  - Add options to filter by site and task in the paused jobs tool.  Fixes #4061.
+  - Change alert address alert emails are sent from to noreplay@cern.ch.
+    Improve the behavior of process pollers.  Pull request #4060.
+  - Fix Tier0 DBS2 upload problems.  Pull request #4064.
+  - Fix a typo in the MockPlugin.  Fixes #3931.
+  - Cut off error messages at a 1000 characters in the UpdateWorkerError DAO.
+    Pull request #4062.
+  - Improve the performance of the SiblingSubscriptionsComplete DAO.  Pull
+    request #4072.
+  - Add the Harvesting task type when adding tasks for the resource control.
+    Pull request #4071.
+  - Remove the duplicate TimePerEvent field in the ReqMgr request creation form.
+    Pull request #4075.
+  - Fix the Resource Control unit test which was broken by #4071.  Pull
+    request #4077.
+  - Improve WorkQueue cancellation handling.  Fixes #3856.
+  - Remove the symlink to the couchskel from the wmagent-couchapp-init script.
+    Pull request #4081.
+  - Fix Condor JDL so that all strings are quoted.  Pull request #4083.
+  - Don't throw 500 errors in the ReqMgr if a request isn't in WMStats.  Pull
+    request #4082.
+  - Look for killed jobs in the JobArchiverPoller.  Pull request #4085.
 
 0.9.12 to 0.9.13:
-  - Revert "Create an inactive doc in the old active db and not in the actual active one."
+  - Make the inputMode parameter optional and default it to couchDb.  Pull
+    request #4057.
+  - Fix the AlcaHarvest run time code so that it's output works with the
+    JobAccountant.  Pull request #4056.
+  - Fix issues in the gLite BossAir plugin when retrieving a user's proxy.
+    Pull request #4058.
 
 0.9.11 to 0.9.12:
-  - Fix build problems due to global cherrypy in setup_test.
+  - Store CMS Names in the drain list instead of site names.  This fixes
+    draining in the JobSubmitter.  Pul request #4049.
+  - Add the GlobalTag parameter to WMTweaks.  Pull request #4051.
+  - Fix build problems due to import of cherrpy.  Pull request #4054.
 
 0.9.10 to 0.9.11:
-  - have TaskArchiver accept missing working directory
-  - add support for Alca Harvesting
-  - fix some issues in the fwj report
-  - WorkQueue: Handle open blocks.
-  - Create an inactive doc in the old active db and not in the actual active one.
-  - Include RequestName in the Condor JDL
-  - simplify and cleanup DQMUpload code
-  - Fix workqueue mc splitting to normally use 1 lumi section per job.
-  - Fix MonitoringDAO BossAir test
-  - Implement general DQM Harvesting in WMAgent
-  - Implement general DQM Harvesting in WMAgent
-  - Fix unit tests for UnpackUserTarball_t
-  - remove job unit test dependency on removed dao
-  - Whitelisting failing tests
-  - log error message instead of stoping the process when request is not exist in wmstats when status is updated
-  - add unittest for couch view
-  - Fixing a flaky test
-  - More informative component logs
-  - Switch from dumpPython to pickle.
-  - Merge pull request #4016 from PerilousApricot/bugfix/webtools-test
-  - Fix #4006 long url on get work for draining sites.
-  - Increase workqueue retry time to 1 day.
-  - Fix setup_test for zero-case runs
-  - Fix WorkQueue Monte Carlo splitting test case.
-  - Reload PID information for MySQL,CouchDB servers during polling.
-  - More testing fixes
-  - Fixing REST unittests
-  - Add try_patch script to WMCore
-  - Merge pull request #3993 from hufnagel/mydev1
-  - remove obsolete Periodic and EndOfRun job splitters
-  - Updating new storage/stageout plugins
-  - rewrites updated, by default get only recent alerts
-  - validation, rewrites, replilter added
-  - AlertsCollector - setup_dependencies.py update
-  - Protect JobTracker from bad pickles
-  - Bugfix DashboardReporter
-  - AlertsCollector - setup_dependencies.py update
-  - Bugfix for JobSubmitterPoller
-  - change taskarchiver subscription delete order
-  - make FindDASToUpload Oracle DAO functional, fixes #3770
-  - remove obsolete HarvestingScheduler component
-  - AlertsCollector imported to WMCore cloned from github
-  - Stop WorkQueue crashing on wmstats errors.
-  - Improve workqueue stuck elements diagnostics
-  - Updating failing test list
-  - Adding known-to-fail-test list.
-  - Need to call the function, not just look at it
-  - Turns out, cherrypy.quickstart will start up new threads, so that stackoverflow suggestion was no good
-  - Add cherrypy-slaying abilities to the test mode
-  - Refines how to trap os._exit in testing mode
-  - Fix pending, submit status report
-  - Updating patch for xrootd
-  - Loading job name and making jsm able to work if no steps in fwjr - fixes #3963
-  - Add support for tarballs stored in xrootd.
-  - Update vandy plugin to work better with stagein
-  - ACDC chops off one lumi at the end of the masks
-  - Fixing analysis case when loading js from wmstats couchapp
-  - Handle files with multiple runs in Harvest
-  - add couchskel update in wmagent-couchapp-init manage script and spec needs to be updated as well
+  - Improve automated unit testing including a known-failing-tests whitelist.
+  - Rewrite AllertsCollector for cmsweb.  Pull request #4008.
+  - Add a script that allows running tests against the DMWM Jenkins.  Pull
+    request #4015.
+  - Use pickle instead of dumpPython when serializing CMSSW PSets.  Fixes #4009.
+  - Make ErrorHandler, TaskArchiver and JobArchiver logs more verbose so that it
+    is easier to tell if a component is locked up.  Pull request #4024.
+  - Implement general DQM harvesting in WMAgent.  Pull request #4032:
+    o Any workflow that produces DQM or DQMROOT data will have that data
+      harvested and uploaded to the DQM GUI.
+    o The ProcScenario parameter is now mandatory.  This parameter will be
+      passed to Configuration.DataProcessing to create the harvesting config.
+      If the inputMode parameter is "scenario" than the same scenarion will be
+      used to create the processing config.
+    o There is an optional parameter DqmSequences that can be submitted at
+      request creation time.  It is a list of strings just like a block
+      black/white list.
+  - Handle open blocks in the WorkQueue.  If a request runs over open blocks
+    periodically check them.  Once a block is closed it will be injected into
+    WMBS.  Fixes #3980.
+  - Add support for Alca Harvesting.  Pull request #4045.
+  - Fix loading of javascript for the Analysis view in WMStats.  Pull request #45
+  - Fix issues between wmagent-couchapp-init and couchskel.  Pull request #42
+  - Load the the job in the ListForSubmitter DAO so that the job is handled
+    properly during submission errors.  Pull request #3964.
+  - Fix the UnpackUserTarball script to work with XRootD.  Pull request #3955.
+  - Fix reporting of pending and submit jobs in WMStats.  Pull request #3985.
+  - Improve WorkQueue stuck element diagnostics.  Add checks for parent data
+    locations.
+  - Prevent WorkQueue from crashing on WMStats errors.
+  - Remove the HarvestingScheduler component.  Pull request #3995.
+  - Make the FindDASToUpload DAO work on Oracle.  Pull request #3996.
+  - Change the TaskArchiver subscription delete order to avoid deleting
+    directories out of order.  Pull request #3997.
+  - Make sure the name attributes exists in jobs handled by the JobSubmitter
+    so that jobs that fail submission don't crash when being reorted to
+    the JobDump.  Pull request #4001.
+  - Correctly handle jobs that don't have plugins when reporting their state
+    to the dashboard.  Pull request #4003.
+  - Project the JobTracker from invalid FrameworkJobReports.  Pull
+    request #4004.
+  - Fix the filtering of run and lumi information when interacting with ACDC.
+    Pull request #3952.
+  - Update the new storage/stageout plugins.  Pull request #43.
+  - Update the Vanderbilt storage plugin to work better with stagein.  Pull
+    request #3951.
+  - Remove obsolete Periodic and EndOfRun job splitters.  Pull request #3993.
+  - Fix WorkQueue MonteCarlo splitting unit tests.
+  - Increase the WorkQueue retry time to one day.
+  - Limit the WorkQueue get work call to a managebale number of workflows.
+    Fixes #4006.
+  - Do not cause the ReqMgr to throw an error if a request does not exist in
+    WMStats.  Pull request #4021.
+  - Remove DAOs for the deprecated Periodic and EndOfRun job splitting
+    algorithms.  Pull request #4030.
+  - Fix unit tests for UnpackUserTarball.  Fixes #3680.
+  - Fix BossAir unit tests.  Pull request #4025.
+  - Change WorkQueue splitting to use one lumi section per job instead of 1000
+    events per lumi section.  Pull request #3956.
+  - Simplify and cleanup the DQM harvesting code.  Pull request #4034.
+  - Include the request name in the condor JDL.  Pull request #4040.
+  - Fix issues initializing the FWJR.  Pull request #4042.
+  - Improve handling of missing directories in the TaskArchiver.  Pull
+    request #4046.
+
 
 0.9.9 to 0.9.10:
   - add acive request tier0 support, layout change and hanle no request case

@@ -1,4 +1,5 @@
-WMStats.namespace("ActiveRequestController"); 
+WMStats.namespace("ActiveRequestController");
+WMStats.ActiveRequestController.CategoryData = null;
 
 (function($){
     // Rewqest view filter event handler
@@ -25,6 +26,7 @@ WMStats.namespace("ActiveRequestController");
             categoryData = WMStats.RequestsByKey(category, summaryStruct);
             categoryData.categorize(filteredData);
         }
+        WMStats.ActiveRequestController.CategoryData = categoryData;
         return categoryData;
     }
     function drawRequestSummary() {
@@ -53,6 +55,13 @@ WMStats.namespace("ActiveRequestController");
             drawRequestSummary();
         })
 
+    $(WMStats.Globals.Event).on('agentDataReady', 
+        function(event, agentData) {
+            //refresh filter cache.
+            WMStats.AgentStatusGUI(agentData, "div[name='agent-status']");
+            WMStats.AgentTable(agentData, "#tab-agent div[name='agentSummary']");
+        })
+        
     $(document).on('keyup', "div[name='filterDiv'] input", 
         function() {
             //refresh filter cache.

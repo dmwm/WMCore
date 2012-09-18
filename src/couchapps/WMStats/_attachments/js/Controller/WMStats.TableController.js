@@ -4,10 +4,14 @@
 (function($) {
     
     var _activeController = function (workflowName){
+        var allData = WMStats.ActiveRequestController.CategoryData;
+        /*
         var allRequests = WMStats.ActiveRequestModel.getRequests();
         var reqDoc = allRequests.getDataByWorkflow(workflowName);
         var reqSummary = allRequests.getSummary(workflowName);
         return {request: reqDoc, summary: reqSummary};
+        */
+        return allData.getData(workflowName);
     }
     
     // Super class for table event handling

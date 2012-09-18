@@ -252,7 +252,14 @@ WMStats.GenericRequests.prototype = {
         else return this._get(this._dataByWorkflow[request], keyString, defaultVal);
     },
     
-    getData: function() {
+    getData: function(workflow) {
+        if (workflow){
+            var requestsObj = {};
+            requestsObj[workflow] = this._dataByWorkflow[workflow]
+            return {requests: requestsObj,
+                    summary: this.getSummary(workflow),
+                    key: workflow}
+        }
         return this._dataByWorkflow;
     },
     

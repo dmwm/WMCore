@@ -2,7 +2,7 @@ WMStats.namespace('RequestDetailList');
 (function() { 
     var format = function (requestStruct) {
         var htmlstr = "";
-        var reqDoc = requestStruct.request;
+        var reqDoc = requestStruct.requests[requestStruct.key];
         var reqSummary = requestStruct.summary;
         
         htmlstr += "<div class='requestInfoBox' id='requestDetail-0'>"
@@ -14,6 +14,8 @@ WMStats.namespace('RequestDetailList');
             htmlstr += "<li> request type: " + reqDoc.request_type + "</li>";
             htmlstr += "<li> input dataset: " + reqDoc.inputdataset + "</li>";
             htmlstr += "<li> input events: " + reqDoc.input_events + "</li>";
+        }
+        if (reqSummary) {
             htmlstr += "<li> output events: " + reqSummary.summaryStruct.processedEvents + "</li>";
             htmlstr += "<li> queued (first): " + reqSummary.getJobStatus("queued.first", 0) + "</li>";
             htmlstr += "<li> queued (retried): " + reqSummary.getJobStatus("queued.retry", 0) + "</li>";

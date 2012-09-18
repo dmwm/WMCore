@@ -44,7 +44,9 @@
         // select initial summary view by global value (tier0, tier1, analysis)
         //WMStats.SiteModel.draw("#tab-site div[name='overview'] > div.body");
         //WMStats.AlertModel.draw("#tab-alert div[name='requestSummary'] > div.body");
-        WMStats.AgentModel.draw("#tab-agent div[name='agentSummary']");
+        WMStats.AgentModel.retrieveData();
+        //WMStats.AgentModel.setVisualization(WMStats.AgentsStatusGUI);
+        //WMStats.AgentModel.draw("#tab-agent div[name='agentSummary']");
     }
     
     $(document).ready(function() {
@@ -62,7 +64,7 @@
         // refresh table every 10 min                          
         //$("div[name='requestDetail']").position({my:'left top', at:'right top', 
         //                          of:"div[name='activeRequestDiv']", offset:'0 20'})
-        setInterval(retrieveData, 300000)
+        setInterval(retrieveData, 100000)
      } );
     </script>
   </head>
@@ -78,6 +80,7 @@
                 <li><a href="#tab-agent">Agent view</a></li>
             </ul>
             <div id="tab-active-request">
+                <div name="agent-status"></div>
                 <div name="category-change"></div>
                 <div name='filterDiv'></div>
                 <div class="activeRequestContainer" name="requestSummary"></div>

@@ -42,7 +42,7 @@ WMStats._ModelBase.prototype = {
         }
     },
     
-    retreiveData: function () {
+    retrieveData: function () {
         return WMStats.Couch.view(this._initialView, this._options, 
                                jQuery.proxy(this.callback, this))
     },

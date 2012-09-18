@@ -73,7 +73,7 @@ class CleanCouchPoller(BaseWorkerThread):
                 
         except Exception, ex:
             logging.error(str(ex))
-            raise
+            logging.error("Error occurred, will try again next cycle")
 
     def deleteWorkflowFromJobCouch(self, workflowName, db):
         """
@@ -92,7 +92,7 @@ class CleanCouchPoller(BaseWorkerThread):
             couchDB = self.fwjrdatabase
             view = "fwjrsByWorkflowName"
         
-        options = {"startkey": [workflowName], "endkey": [workflowName, {}]}
+        options = {"startkey": [workflowName], "endkey": [workflowName, {}], "stale": "ok"}
         jobs = couchDB.loadView(db, view, options = options)['rows']
         for j in jobs:
             doc = {}

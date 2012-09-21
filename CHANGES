@@ -1,3 +1,6 @@
+0.9.17 to 0.9.18:
+  - Fix WMStats user validation.  Pull request #4103.
+
 0.9.16 to 0.9.17:
   - Add the ability to turn off DQM Harvesting.  Pull request #4093:
     o If the "DisableHarvest" parameter is present in any request DQM harvesting

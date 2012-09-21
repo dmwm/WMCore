@@ -42,13 +42,6 @@ WMStats._RequestModelBase.requestAgentUrlKeys = function(requestList, requestAge
 
 WMStats._RequestModelBase.prototype = {
     
-    // deprecated
-    setVisualization: function(visFunc) {
-        //visFunc take 2 args (requestData, containerDiv)
-        // requestData is instance of WMStatsRequests
-        this._visFunc = visFunc;
-    },
-    
     setTrigger: function(triggerName) {
         this._trigger = triggerName;
     },
@@ -121,23 +114,7 @@ WMStats._RequestModelBase.prototype = {
         }
     },
     
-    // deprecated
-    draw: function (selector, viewName, options) {
-        if (!viewName) {viewName = this._initialView;}
-        if (!options) {options = this._options;}
-        this._containerDiv = selector;
-        var objPtr = this;
-        if (viewName == "allDocs") {
-            WMStats.Couch.allDocs(options, function (overviewData) {
-                objPtr._getLatestRequestIDsAndCreateTable(overviewData, objPtr)
-            });
-        } else {
-            WMStats.Couch.view(viewName, options,  function (overviewData) {
-                objPtr._getLatestRequestIDsAndCreateTable(overviewData, objPtr)
-            });
-        }
-    },
-    
+
     clearRequests: function () {
         delete this._data;
     }

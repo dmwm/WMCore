@@ -3,17 +3,9 @@
  */
 (function($) {
     
-    var _activeController = function (workflowName){
-        var allData = WMStats.ActiveRequestController.CategoryData;
-        /*
-        var allRequests = WMStats.ActiveRequestModel.getRequests();
-        var reqDoc = allRequests.getDataByWorkflow(workflowName);
-        var reqSummary = allRequests.getSummary(workflowName);
-        return {request: reqDoc, summary: reqSummary};
-        */
-        return allData.getData(workflowName);
-    }
-    
+    //custom events
+    var E = WMStats.CustomEvents;
+
     // Super class for table event handling
     function TableEventHandler(containerID, populateRequestTable) {
         this.containerID = containerID;
@@ -26,85 +18,61 @@
                                         $(selector).removeClass('green');
                                         $(currenElement).addClass('green');
                                     }
-    TableEventHandler.reqSummaryDiv = "requestSummary";
-    TableEventHandler.reqDetailDiv = "requestDetail";
-    TableEventHandler.jobSummaryDiv = "jobSummary";
-    TableEventHandler.jobDetailDiv = "jobDetail";
-    
+
     TableEventHandler.prototype = { 
         constructor: TableEventHandler,
         
-        tableRowClick: function(divName, funcName, bind) {
-            var bind = bind ||'click' 
+        tableRowBind: function(bind, parentSelector, func) {
             var currentObj = this;
-            var selector = this.containerID + " > div[name='" + divName + "'] table tbody tr"
+            var selector =  parentSelector + " table tbody tr"
             $(selector).live(bind, function () {
                 TableEventHandler.highlightRow(selector, this);
-                currentObj[funcName](this);
+                currentObj[func](this);
             });
         },
-        
-        containerSelector: function(divName) {
-            return this.containerID +  " > div[name='" + divName + "'] > div.body";
-        },
-        
-        overviewAction: function(viewName, options) {
-            $(this.containerSelector(TableEventHandler.jobSummaryDiv)).empty();
-            $(this.containerSelector(TableEventHandler.jobDetailDiv)).empty();
-            
-            WMStats.RequestModel.retrieveData(viewName, options);
-        },
-    
-        populateRequestTable: function(currentElement){
+
+        populateRequestSummary: function(currentElement){
             // create the request table
             var nTds = $('td', currentElement);
-            var campaignName = $(nTds[0]).text();
-            var options = {'startkey':[campaignName], 'endkey':[campaignName, {}], 
-                           'include_docs': true};
-            var viewName = 'requestByCampaignAndDate';
-    
-             // clean up job summary and detail view. 
-            this.overviewAction(viewName, options);
+            var categoryKey = $(nTds[0]).text();
+            
+            // need to get from the cache
+            var category = WMStats.Controls.getCategoryButtonValue();
+            var categoryData = getCategorizedData(category);
+            var requestData = WMStats.Requests();
+            requestData.setDataByWorkflow(categoryData.getData(categoryKey).requests);
+            
+            $(WMStats.Globals.Event).triggerHandler(E.REQUEST_SUMMARY_READY, requestData);
+        },
+        
+        populateJobSummary: function(currentElement){
+            var nTds = $('td', currentElement);
+            var requestName = $(nTds[0]).text();
+            WMStats.JobSummaryModel.setRequest(requestName);
+            WMStats.JobSummaryModel.retrieveData();
         },
         
         populateRequestDetail: function(currentElement){
             // create the request table
             var nTds = $('td', currentElement);
             var workflowName = $(nTds[0]).text();
-             // clean up job summary and detail view.
-            var detailData = _activeController(workflowName);
-            WMStats.RequestDetailList(detailData,
-                      this.containerID +  " div[name='" + TableEventHandler.reqDetailDiv + "']")
+            $(WMStats.Globals.Event).triggerHandler(E.REQUEST_DETAIL_READY, workflowName);
         },
-        
-        populateRequestTable: function(currentElement){
+
+        populateCategoryDetail: function(currentElement){
             // create the request table
             var nTds = $('td', currentElement);
-            var campaignName = $(nTds[0]).text();
-            var options = {'startkey':[campaignName], 'endkey':[campaignName, {}], 
-                           'include_docs': true};
-            var viewName = 'requestByCampaignAndDate';
-    
-             // clean up job summary and detail view. 
-            this.overviewAction(viewName, options);
+            var categoryKey = $(nTds[0]).text();
+             // clean up job summary and detail view.
+            $(WMStats.Globals.Event).triggerHandler(E.CATEGORY_DETAIL_READY, categoryKey);
         },
-        
-        populateJobTable: function(currentElement){
-            var nTds = $('td', currentElement);
-            var requestName = $(nTds[0]).text();
-            WMStats.JobSummaryModel.setRequest(requestName);
-            WMStats.JobSummaryModel.draw(this.containerSelector(TableEventHandler.jobSummaryDiv));
-            
-            // 3. clean up job detail view.
-            $(this.containerSelector(TableEventHandler.jobDetailDiv)).empty();
-        },
-        
+
         populateJobDetail: function (currentElement){
             // 2. create the job detail view
             var nTds = $('td', currentElement);
             var summary = {};
-            
-            summary.workflow = $(this.containerSelector(TableEventHandler.jobSummaryDiv)).data("workflow");
+            // need to get the workflow name with out depeniding on the selector
+            summary.workflow = $("#job_view div.summary_data").data("workflow");
             summary.status = $(nTds[0]).text();
             summary.site = $(nTds[1]).text();
             if (summary.site ==="{}"){
@@ -112,18 +80,14 @@
             }
             summary.exitCode = Number($(nTds[2]).text());
             WMStats.JobDetailModel.setOptions(summary);
-            WMStats.JobDetailModel.draw(this.containerSelector(TableEventHandler.jobDetailDiv));
+            WMStats.JobDetailModel.retrieveData();
         },
         
-        addTableEvents: function() {
-            this.tableRowClick('overview', "populateRequestTable");
-            this.tableRowClick('requestSummary', "populateJobTable");
-            this.tableRowClick('jobSummary', "populateJobDetail");
-        }
     };
     
     // create new instance and activate the event hander
-    var OverviewHandler = new TableEventHandler("#tab-overview");
+    /*
+    var OverviewHandler = new TableEventHandler("#data_board");
         OverviewHandler.addTableEvents();
     
     var SiteModelHandler = new TableEventHandler("#tab-site", 
@@ -156,10 +120,21 @@
        
     var AlertModelHandler = new TableEventHandler("#tab-alert", null);
         AlertModelHandler.addTableEvents();
-        
-    var ActiveModelHandler = new TableEventHandler("#tab-active-request", null);
-        ActiveModelHandler.tableRowClick('requestSummary', "populateRequestDetail", 'mouseover');
-        ActiveModelHandler.addTableEvents();
+    */
+   
+    var ActiveModelHandler = new TableEventHandler();
+        ActiveModelHandler.tableRowBind("click", "#category_view div.summary_data",
+                                         "populateRequestSummary");
+        ActiveModelHandler.tableRowBind("click", "#request_view div.summary_data", 
+                                        "populateJobSummary");
+        ActiveModelHandler.tableRowBind("click","#job_view div.summary_data", 
+                                         "populateJobDetail");
+        ActiveModelHandler.tableRowBind('mouseover', "#category_view div.summary_data", 
+                                        "populateCategoryDetail");
+        ActiveModelHandler.tableRowBind('mouseover', "#request_view div.summary_data",
+                                        "populateRequestDetail");
+                                        
+        //ActiveModelHandler.tableRowClick(TableEventHandler.reqSummaryDiv , "populateRequestDetail", 'mouseover');
     // actual event binding codes
     // row mouse over/ mouse out events
     $('tr').live('mouseover', function(event) {

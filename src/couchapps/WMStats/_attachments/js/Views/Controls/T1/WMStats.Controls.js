@@ -18,7 +18,7 @@ WMStats.Controls = function($){
         var categoryBottons = 
         '<nav class="category-button">\
             <input type="radio" name="category-select" value="requests" id="request-category" checked="checked"></input>\
-            <label for="request-category">Requests</label>\
+            <label for="request-category">All Requests</label>\
             <input type="radio" name="category-select" value="campaign" id="campaign-category"></input>\
             <label for="campaign-category">Campaign</label>\
             <input type="radio" name="category-select" value="sites" id="site-category"></input>\

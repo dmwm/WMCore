@@ -35,6 +35,7 @@ WMStats.Table = function(config, tableSetting) {
     }
     
     function create(selector, filterConfig) {
+        $(selector).empty();
         $(selector).html(tableSetting);
         var oTable = $(selector + " table").dataTable(tableConfig)
         if ( oTable.length > 0 ) {

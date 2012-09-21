@@ -10,5 +10,4 @@ WMStats.JobDetailModel.setOptions = function(summary) {
               'limit': 3};
 };
 
-WMStats.JobDetailModel.setTrigger("jobDetailReady");
-WMStats.JobDetailModel.setVisualization(WMStats.JobDetailList);
+WMStats.JobDetailModel.setTrigger(WMStats.CustomEvents.JOB_DETAIL_READY);

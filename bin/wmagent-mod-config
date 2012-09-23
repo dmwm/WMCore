@@ -134,9 +134,15 @@ def modifyConfiguration(config, **args):
         config.AsyncTransfer.serverDN = args["host_dn"]
         config.AsyncTransfer.couch_statinstance = args["couch_url"]
         config.AsyncTransfer.couch_user_monitoring_instance = args["couch_url"]
+        config.AsyncTransfer.user_monitoring_instance = args["wmstats_url"]
+        config.AsyncTransfer.serviceCert = args["ops_proxy"]
+
 
     if hasattr(config,"DBSPublisher"):
         config.DBSPublisher.couch_instance = args["couch_url"]
+        config.DBSPublisher.serverDN = args["host_dn"]
+        config.DBSPublisher.userFileCacheEndpoint = args["ufc_service_url"]
+        config.DBSPublisher.serviceCert = args["ops_proxy"]
 
     if hasattr(config,"CRABInterface"):
         config.CRABInterface.Webtools.host = args["cs_hostname"]
@@ -209,7 +215,7 @@ def modifyConfiguration(config, **args):
             config.WorkQueueManager.inboxDatabase = config.WorkQueueManager.dbname + '_inbox'
         config.WorkQueueManager.reqMgrConfig['endpoint'] = "http://%s:%s/reqmgr/reqMgr/" % (args["reqmgr_hostname"], args["reqmgr_port"])
         config.WorkQueueManager.queueParams['WMStatsCouchUrl'] = "%s/%s" % (config.WorkQueueManager.couchurl.rstrip(), config.WorkQueueManager.wmstatDBName)
-        
+
     # Custom Local WorkQueue
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'LocalQueue':
         if args.get("global_workqueue_url", None):
@@ -225,21 +231,21 @@ def modifyConfiguration(config, **args):
             config.WMBSService.Webtools.port = int(args['wmbs_service_port'])
         config.WMBSService.views.active.wmbs.couchConfig.couchURL = sanitizeURL(args["couch_url"])['url']
         config.WMBSService.views.active.wmagent.couchConfig.couchURL = sanitizeURL(args["couch_url"])['url']
-    
-    # custom AnalyticsDataCollector 
+
+    # custom AnalyticsDataCollector
     if hasattr(config, "AnalyticsDataCollector"):
         config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.couchDBName)
         config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
         config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
         config.AnalyticsDataCollector.centralWMStatsURL = args["wmstats_url"]
 
-    # custom CleanUpManager 
+    # custom CleanUpManager
     if hasattr(config, "CleanUpManager"):
         config.CleanUpManager.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.couchDBName)
         config.CleanUpManager.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
         config.CleanUpManager.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
         config.CleanUpManager.centralWMStatsURL = args["wmstats_url"]
-        
+
     return config
 
 def main(argv=None):
@@ -258,7 +264,7 @@ def main(argv=None):
              "workqueue_db_name=", "cs_hostname=", "cs_port=", "host_dn=", "couch_url=",
              "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=",
              "ufc_service_url=", "ufc_cachedir=", "client_mapping=", "wmbs_service_port=",
-             "workload_summary_url=", "coredb_url=", "wmstats_url="])
+             "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy="])
 
         except getopt.error, msg:
             raise Usage(msg)
@@ -278,7 +284,7 @@ def main(argv=None):
                           '--sb_hostname', '--sb_port', '--sb_basepath', '--ufc_hostname',
                           '--ufc_port', '--ufc_service_url', '--ufc_cachedir',
                           '--client_mapping', '--wmbs_service_port', '--workload_summary_url',
-                          '--wmstats_url'):
+                          '--wmstats_url', '--ops_proxy'):
 
                 parameters[option[2:]] = value
 

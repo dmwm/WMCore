@@ -8,6 +8,7 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
 import pickle
+import traceback
 import sys
 import os
 import json
@@ -145,15 +146,24 @@ class SetupCMSSWMulticore(ScriptInterface):
         multiProcesses.maxChildProcesses = cms.untracked.int32(numCores)
 
         configFile = self.step.data.application.command.configuration
+        configPickle = getattr(self.step.data.application.command, "configurationPickle", "PSet.pkl")
         workingDir = self.stepSpace.location
         handle = open("%s/%s" % (workingDir, configFile), 'w')
-        handle.write("import FWCore.ParameterSet.Config as cms\n")
-        handle.write("import pickle\n")
-        handle.write('process = pickle.loads("""')
-        handle.write(pickle.dumps(pset))
-        handle.write('""")\n')
-        handle.close()
-
+        pHandle = open("%s/%s" % (workingDir, configPickle), 'wb')
+        try:
+            pickle.dump(pset, pHandle)
+            handle.write("import FWCore.ParameterSet.Config as cms\n")
+            handle.write("import pickle\n")
+            handle.write("handle = open('%s', 'rb')\n" % configPickle)
+            handle.write("process = pickle.load(handle)\n")
+            handle.write("handle.close()\n")
+        except Exception, ex:
+            print "Error writing out PSet:"
+            print traceback.format_exc()
+            raise ex
+        finally:
+            handle.close()
+            pHandle.close()
 
     def loadPSet(self):
         """

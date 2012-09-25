@@ -36,7 +36,7 @@ class JobStatusByTaskAndSite(DBFormatter):
     MONITOR_STATE_MAP = {'Pending': 'submitted_pending', 
                          'Running': 'submitted_running', 
                          'Complete': 'submitted_running',
-                         'Error': 'submitted_runnig'}
+                         'Error': 'submitted_running'}
     
     def mappedStatusFormat(self, results):
         """

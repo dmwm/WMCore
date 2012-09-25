@@ -19,7 +19,17 @@ class _MockDBSApi():
     def getServerInfo(self):
         """getServerInfo"""
         return {'InstanceName' : 'GLOBAL'}
-
+    
+    def listFiles(self, datasetPath, retriveList):
+        res = []
+        dbg = DataBlockGenerator()
+        for block in dbg.getBlocks(datasetPath):
+            files = dbg.getFiles(block['Name'])
+            for f in files:
+                f['Block'] = block
+                res.append(f)
+            
+        return res
 
 #//     - ignore some params in dbs spec - silence pylint warnings
 # pylint: disable-msg=W0613,R0201

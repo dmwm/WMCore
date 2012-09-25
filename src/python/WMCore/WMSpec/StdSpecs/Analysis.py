@@ -133,8 +133,8 @@ class AnalysisWorkloadFactory(StdBase):
 
         # Force ACDC input if present
         self.inputStep = None
-        if self.ACDCID:
-            analysisTask.addInputACDC(self.ACDCURL, self.ACDCDBName, self.origRequest, self.ACDCID)
+        if self.Submission > 1: #resubmit
+            analysisTask.addInputACDC(self.ACDCURL, self.ACDCDBName, self.origRequest, None)
             self.inputDataset = None
             self.workload.setWorkQueueSplitPolicy("ResubmitBlock", self.analysisJobSplitAlgo, self.analysisJobSplitArgs)
         else:
@@ -194,10 +194,12 @@ class AnalysisWorkloadFactory(StdBase):
         # ACDC and job splitting
         self.ACDCURL = arguments.get("ACDCUrl", "")
         self.ACDCDBName = arguments.get("ACDCDBName", "wmagent_acdc")
-        self.ACDCID = arguments.get("ACDCDoc", None)
+        self.Runs  = arguments.get("Runs" , None)
+        self.Lumis = arguments.get("Lumis", None)
+        self.Submission = arguments.get("Submission", 1)
         self.analysisJobSplitAlgo  = arguments.get("JobSplitAlgo", "EventBased")
 
-        if self.ACDCID and self.analysisJobSplitAlgo not in ['LumiBased']:
+        if self.Lumis and self.analysisJobSplitAlgo not in ['LumiBased']:
             raise RuntimeError('Running on selected lumis only supported in split mode(s) %s' %
                                'LumiBased')
 
@@ -205,15 +207,9 @@ class AnalysisWorkloadFactory(StdBase):
             self.analysisJobSplitArgs = arguments.get('JobSplitArgs', {'events_per_job' : 1000})
         elif self.analysisJobSplitAlgo == 'LumiBased':
             self.analysisJobSplitArgs = arguments.get('JobSplitArgs', {'lumis_per_job' : 15})
-            if self.ACDCID:
-                self.analysisJobSplitArgs.update(
-                            {'filesetName' : self.ACDCID,
-                             'collectionName' : self.origRequest,
-                             'couchURL' : self.ACDCURL,
-                             'couchDB' : self.ACDCDBName,
-                             'owner' : self.owner,
-                             'group' : self.group,
-                            })
+            if self.Lumis:
+                self.analysisJobSplitArgs.update({'lumis' : self.Lumis})
+                self.analysisJobSplitArgs.update({'runs'  : self.Runs})
             self.analysisJobSplitArgs.update(
                            {'halt_job_on_file_boundaries' : False,
                             'splitOnRun' : False,
@@ -246,3 +242,15 @@ class AnalysisWorkloadFactory(StdBase):
             self.raiseValidationException(msg = msg)
 
         return
+    
+
+
+def analysisWorkload(workloadName, arguments):
+    """
+    _analysisWorkload_
+
+    Instantiate the AnalysisWorkflowFactory and have it generate a workload for
+    the given parameters.
+    """
+    myAnalysisFactory = AnalysisWorkloadFactory()
+    return myAnalysisFactory(workloadName, arguments)

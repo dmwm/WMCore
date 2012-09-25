@@ -20,7 +20,7 @@ from WMCore.DataStructs.Run import Run
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.WMBS.File               import File
 from WMCore.DataStructs.Fileset     import Fileset
-
+from WMCore.WMSpec.WMTask           import buildLumiMask
 
 def isGoodLumi(goodRunList, run, lumi):
     """
@@ -60,13 +60,13 @@ def isGoodRun(goodRunList, run):
 
     return False
 
+
 class LumiBased(JobFactory):
     """
     Split jobs by number of events
     """
 
     locations = []
-
 
     def algorithm(self, *args, **kwargs):
         """
@@ -85,8 +85,13 @@ class LumiBased(JobFactory):
         splitOnRun      = kwargs.get('splitOnRun', False)
         getParents      = kwargs.get('include_parents', False)
         runWhitelist    = kwargs.get('runWhitelist', [])
+        runs            = kwargs.get('runs', None)
+        lumis           = kwargs.get('lumis', None)
 
         goodRunList = {}
+        if runs and lumis:
+            goodRunList = buildLumiMask(runs, lumis)
+
         # If we have runLumi info, we need to load it from couch
         if collectionName:
             try:

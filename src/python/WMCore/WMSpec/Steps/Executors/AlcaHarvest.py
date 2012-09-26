@@ -73,9 +73,6 @@ class AlcaHarvest(Executor):
             # Pulling out the analysis files from each step
             analysisFiles = stepReport.getAnalysisFilesFromStep(step)
 
-            # are we in validation mode ?
-            dropboxValidation = True
-
             # make sure all conditions from this job get the same uuid
             uuid = makeUUID()
 
@@ -92,15 +89,11 @@ class AlcaHarvest(Executor):
                                                       analysisFile.tag, uuid)
                     filenameDB = filenamePrefix + ".db"
                     filenameTXT = filenamePrefix + ".txt"
-                    filenameTAR = filenamePrefix + ".tar.bz2"
 
                     shutil.copy2(os.path.join(stepLocation, sqlitefile), filenameDB)
 
-                    # if we run in validation mode, upload to different destination
-                    if dropboxValidation:
-                        analysisFile.destDB = analysisFile.destDBValidation
-
                     textoutput = "destDB %s\n" % analysisFile.destDB
+                    textoutput += "destDBValidation %s\n" % analysisFile.destDBValidation
                     textoutput += "tag %s\n" % analysisFile.tag
                     textoutput += "inputtag %s\n" % analysisFile.inputtag
                     textoutput += "since\n"
@@ -119,21 +112,8 @@ class AlcaHarvest(Executor):
                     os.chmod(filenameDB, stat.S_IREAD | stat.S_IWRITE | stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
                     os.chmod(filenameTXT, stat.S_IREAD | stat.S_IWRITE | stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
 
-                    if dropboxValidation:
-
-                        files2copy.append(filenameDB)
-                        files2copy.append(filenameTXT)
-
-                    else:
-
-                        fout = tarfile.open(filenameTAR, "w:bz2")
-                        fout.add(filenameDB)
-                        fout.add(filenameTXT)
-                        fout.close()
-
-                        os.chmod(filenameTAR, stat.S_IREAD | stat.S_IWRITE | stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
-
-                        files2copy.append(filenameTAR)
+                    files2copy.append(filenameDB)
+                    files2copy.append(filenameTXT)
 
             # check and create target directory
             if not os.path.isdir(self.step.condition.dir):

@@ -302,7 +302,8 @@ class Create(CreateWMBSBase):
                workflow    INTEGER      NOT NULL,
                split_algo  VARCHAR(255) NOT NULL,
                subtype     INTEGER      NOT NULL,
-               last_update INTEGER      NOT NULL
+               last_update INTEGER      NOT NULL,
+               finished    INTEGER      DEFAULT 0
                ) %s""" % tablespaceTable
 
         self.indexes["01_pk_wmbs_subscription"] = \

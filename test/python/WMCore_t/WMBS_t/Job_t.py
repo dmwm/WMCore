@@ -20,6 +20,7 @@ from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset as Fileset
 from WMCore.WMBS.Job import Job
 from WMCore.WMBS.JobGroup import JobGroup
+from WMCore.WMBS.Mask     import Mask
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMFactory import WMFactory
@@ -1120,6 +1121,62 @@ class JobTest(unittest.TestCase):
 
         return
 
+    def testLoadForTaskArchiver(self):
+        """
+        _testLoadForTaskArchiver_
+
+        Tests the return of the DAO for the TaskArchiver
+        """
+        #Create 2 jobs
+        jobA = self.createTestJob()
+        jobB = self.createTestJob()
+
+        #Put a mask in one
+        mask = Mask()
+        mask.addRunAndLumis(1, [45])
+        mask.save(jobA['id'])
+
+        #Execute the DAO
+        taskArchiverDAO = self.daoFactory(classname = "Jobs.LoadForTaskArchiver")
+        jobs = taskArchiverDAO.execute([jobA['id'], jobB['id']])
+
+        #Sort the jobs and check the results, we care about id, input files and mask
+        jobs.sort(key = lambda x: x['id'])
+
+        jobAprime = jobs[0]
+        lfns = [x['lfn'] for x in jobAprime['input_files']]
+        self.assertTrue('/this/is/a/lfnA' in lfns, 'Missing LFN lfnA from the input files')
+        self.assertTrue('/this/is/a/lfnB' in lfns, 'Missing LFN lfnB from the input files')
+
+        for inFile in jobAprime['input_files']:
+            if inFile['lfn'] == '/this/is/a/lfnA':
+                run = inFile['runs'].pop()
+                self.assertEquals(run.run, 1, 'The run number is wrong')
+                self.assertEquals(run.lumis, [45], 'The lumis are wrong')
+            else:
+                run = inFile['runs'].pop()
+                self.assertEquals(run.run, 1, 'The run number is wrong')
+                self.assertEquals(run.lumis, [46], 'The lumis are wrong')
+
+        mask = jobAprime['mask']
+        self.assertEquals(mask['runAndLumis'], {1 : [[45, 45]]}, "Wrong run and lumis in mask")
+
+        jobBprime = jobs[1]
+        for inFile in jobBprime['input_files']:
+            if inFile['lfn'] == '/this/is/a/lfnA':
+                run = inFile['runs'].pop()
+                self.assertEquals(run.run, 1, 'The run number is wrong')
+                self.assertEquals(run.lumis, [45], 'The lumis are wrong')
+            else:
+                run = inFile['runs'].pop()
+                self.assertEquals(run.run, 1, 'The run number is wrong')
+                self.assertEquals(run.lumis, [46], 'The lumis are wrong')
+        runs = []
+        for inputFile in jobBprime['input_files']:
+            runs.extend(inputFile.getRuns())
+        self.assertEquals(jobBprime['mask'].filterRunLumisByMask(runs = runs), runs, "Wrong mask in jobB")
+
+        return
 
     def testMask(self):
         """

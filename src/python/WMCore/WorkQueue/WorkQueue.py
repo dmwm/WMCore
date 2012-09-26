@@ -716,7 +716,7 @@ class WorkQueue(WorkQueueBase):
 
                     parent = result['ParentQueueElement']
                     if parent.modified:
-                        self.backend.updateInboxElements(parent.id, **parent.statusMetrics())
+                        self.backend.saveElements(parent)
 
                     if result.inEndState():
                         if elements:

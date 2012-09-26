@@ -67,7 +67,6 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         config.component_("WorkQueueManager")
         config.section_("General")
         config.General.workDir = "."
-        config.WorkQueueManager.team = 'team_usa'
         config.WorkQueueManager.requestMgrHost = 'cmssrv49.fnal.gov:8585'
         config.WorkQueueManager.serviceUrl = "http://cmssrv18.fnal.gov:6660"
 
@@ -82,7 +81,6 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         globalQ = globalQueue(DbName = self.globalQDB,
                               InboxDbName = self.globalQInboxDB,
                               QueueURL = self.globalQCouchUrl,
-                              Teams = ["The A-Team", "some other bloke"],
                               **kwargs)
         return globalQ
 

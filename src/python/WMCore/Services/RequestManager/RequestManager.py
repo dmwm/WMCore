@@ -110,6 +110,10 @@ class RequestManager(Service):
         args['url'] = str(prodAgentUrl)
         return self._getResult(callname, args = args, verb = "PUT")
 
+    def getTeam(self):
+        """Return teams known to this ReqMgr"""
+        return self._getResult('team', verb = 'GET').keys()
+
     def putTeam(self, team):
         args = {'team': team}
         callname = 'team'

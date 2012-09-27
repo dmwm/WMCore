@@ -186,6 +186,7 @@ class CreateWMBSBase(DBCreator):
              split_algo  VARCHAR(255) NOT NULL,
              subtype     INTEGER      NOT NULL,
              last_update INTEGER      NOT NULL,
+             finished    INT(1)       DEFAULT 0,
              FOREIGN KEY(fileset)  REFERENCES wmbs_fileset(id)
                ON DELETE CASCADE,
              FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)

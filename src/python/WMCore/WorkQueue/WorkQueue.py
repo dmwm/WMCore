@@ -129,7 +129,7 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('WMBSUrl', None) # this will only be set on local Queue
         if self.params.get('WMBSUrl'):
             self.params['WMBSUrl'] = Lexicon.sanitizeURL(self.params['WMBSUrl'])['url']
-        self.params.setdefault('Teams', [''])
+        self.params.setdefault('Teams', [])
         self.params.setdefault('DrainMode', False)
         if self.params.get('CacheDir'):
             try:
@@ -716,7 +716,7 @@ class WorkQueue(WorkQueueBase):
 
                     parent = result['ParentQueueElement']
                     if parent.modified:
-                        self.backend.updateInboxElements(parent.id, **parent.statusMetrics())
+                        self.backend.saveElements(parent)
 
                     if result.inEndState():
                         if elements:

@@ -21,7 +21,7 @@ class Block(StartPolicyInterface):
         self.args.setdefault('SliceType', 'NumberOfFiles')
         self.args.setdefault('SliceSize', 1)
         self.lumiType = "NumberOfLumis"
-        
+
     def split(self):
         """Apply policy to spec"""
         dbs = self.dbs()
@@ -63,6 +63,8 @@ class Block(StartPolicyInterface):
         blockBlackList = task.inputBlockBlacklist()
         runWhiteList = task.inputRunWhitelist()
         runBlackList = task.inputRunBlacklist()
+        if task.getLumiMask(): #if we have a lumi mask get only the relevant blocks
+            maskedBlocks = self.getMaskedBlocks(task, dbs, datasetPath)
 
         blocks = []
         # Take data inputs or from spec
@@ -82,12 +84,14 @@ class Block(StartPolicyInterface):
                 for block in dbs.listFileBlocks(data):
                     blocks.append(str(block))
 
-        for blockName in blocks:
 
+        for blockName in blocks:
             # check block restrictions
             if blockWhiteList and blockName not in blockWhiteList:
                 continue
             if blockName in blockBlackList:
+                continue
+            if task.getLumiMask() and blockName not in maskedBlocks:
                 continue
 
             block = dbs.getDBSSummaryInfo(datasetPath, block = blockName)
@@ -96,8 +100,17 @@ class Block(StartPolicyInterface):
             if not block['NumberOfFiles'] or block['NumberOfFiles'] == '0':
                 continue
 
+            #check lumi restrictions
+            if task.getLumiMask():
+                accepted_lumis = sum( [ len(maskedBlocks[blockName][file]) for file in maskedBlocks[blockName] ] )
+                #use the information given from getMaskedBlocks to compute che size of the block
+                block['NumberOfFiles'] = len(maskedBlocks[blockName])
+                #ratio =  lumis which are ok in the block / total num lumis
+                ratio_accepted = 1. * accepted_lumis / float(block['NumberOfLumis'])
+                block['NumberOfEvents'] = float(block['NumberOfEvents']) * ratio_accepted
+                block[self.lumiType] = accepted_lumis
             # check run restrictions
-            if runWhiteList or runBlackList:
+            elif runWhiteList or runBlackList:
                 # listRuns returns a run number per lumi section
                 full_lumi_list = dbs.listRuns(block = block['block'])
                 runs = set(full_lumi_list)
@@ -126,3 +139,43 @@ class Block(StartPolicyInterface):
 
             validBlocks.append(block)
         return validBlocks
+
+    def getMaskedBlocks(self, task, dbs, datasetPath):
+        """ Get the blocks which pass the lumi mask restrictions. For each block return the list of lumis
+            which were ok (given the lumi mask). The data structure returned is the following:
+
+            {
+                "block1" : {"file1" : [2,3,4,6,7], "file5" : [10,12,13,15,17], ...}
+                "block2" : {"file2" : [22,23,24,26,27], "file7" : [310,312,313,315,317], ...}
+            }
+
+        """
+        maskedBlocks = {}
+        lumiMask = task.getLumiMask()
+
+        files = dbs.dbs.listFiles(datasetPath, retriveList=["retrive_lumi", "retrive_run"])
+        #go through the lumi and get a list of blocks after applying the lumi mask
+        for file in files:
+            for lumi in file['LumiList']:
+                if self._applyMask(lumi['LumiSectionNumber'], lumi['RunNumber'], lumiMask):
+                    #initialize the block if needed
+                    if file['Block']['Name'] not in maskedBlocks:
+                        maskedBlocks[ file['Block']['Name'] ] = {}
+                    #initialize the file if needed
+                    if file['LogicalFileName'] not in maskedBlocks[ file['Block']['Name'] ]:
+                        maskedBlocks[ file['Block']['Name'] ][ file['LogicalFileName'] ] = []
+                    #append the lumi
+                    maskedBlocks[ file['Block']['Name'] ][ file['LogicalFileName'] ].append( lumi['LumiSectionNumber'] )
+
+        return maskedBlocks
+
+    def _applyMask(self, lumi, run, lumiMask):
+        """
+            Return True if the lumi and the run can be found in lumiMask
+            E.g.: lumi=3, run=5, lumiMask={'1':[...], '5':[[1,7],...]} => True
+        """
+        if str(run) in lumiMask:
+            for section in lumiMask[str(run)]:
+                if int(section[0]) <= int(lumi) <= int(section[1]):
+                    return True
+        return False

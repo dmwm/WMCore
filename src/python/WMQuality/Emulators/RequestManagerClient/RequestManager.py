@@ -81,4 +81,7 @@ class RequestManager(dict):
         This is just for clean up not part of emulated function
         """
         self.specGenerator.removeSpecs()
-    
+
+    def getTeam(self):
+        """Give a fake team name"""
+        return ["The A-Team", "some other bloke"]

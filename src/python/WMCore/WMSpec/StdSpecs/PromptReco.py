@@ -154,13 +154,14 @@ class PromptRecoWorkloadFactory(StdBase):
                                                splitArgs = self.procJobSplitArgs,
                                                stepType = cmsswStepType,
                                                forceUnmerged = True)
-        self.addLogCollectTask(recoTask)
+        if self.doLogCollect:
+            self.addLogCollectTask(recoTask, taskName = "RecoLogCollect")
+
         recoMergeTasks = {}
         for recoOutLabel, recoOutInfo in recoOutMods.items():
             if recoOutInfo['dataTier'] != "ALCARECO":
-                mergeTask = self.addMergeTask(recoTask,
-                                    self.procJobSplitAlgo,
-                                    recoOutLabel)
+                mergeTask = self.addMergeTask(recoTask, self.procJobSplitAlgo, recoOutLabel,
+                                              doLogCollect = self.doLogCollect)
                 recoMergeTasks[recoOutInfo['dataTier']] = mergeTask
 
             else:
@@ -178,12 +179,13 @@ class PromptRecoWorkloadFactory(StdBase):
                                                                     "min_merge_size": self.minMergeSize,
                                                                     "max_merge_events": self.maxMergeEvents},
                                                        stepType = cmsswStepType)
-                self.addLogCollectTask(alcaTask,
-                                       taskName = "AlcaSkimLogCollect")
+                if self.doLogCollect:
+                    self.addLogCollectTask(alcaTask, taskName = "AlcaSkimLogCollect")
                 self.addCleanupTask(recoTask, recoOutLabel)
+
                 for alcaOutLabel, alcaOutInfo in alcaOutMods.items():
-                    self.addMergeTask(alcaTask, self.procJobSplitAlgo,
-                                      alcaOutLabel)
+                    self.addMergeTask(alcaTask, self.procJobSplitAlgo, alcaOutLabel,
+                                      doLogCollect = self.doLogCollect)
 
         for promptSkim in self.promptSkims:
             if not promptSkim.DataTier in recoMergeTasks:
@@ -222,11 +224,12 @@ class PromptRecoWorkloadFactory(StdBase):
                                                   couchURL = self.couchURL, couchDBName = self.couchDBName,
                                                   configDoc = procConfigCacheID, splitAlgo = self.skimJobSplitAlgo,
                                                   splitArgs = self.skimJobSplitArgs)
-            self.addLogCollectTask(skimTask, taskName = "%sLogCollect" % promptSkim.SkimName)
+            if self.doLogCollect:
+                self.addLogCollectTask(skimTask, taskName = "%sLogCollect" % promptSkim.SkimName)
 
             for outputModuleName in outputMods.keys():
-                self.addMergeTask(skimTask, self.skimJobSplitAlgo,
-                                  outputModuleName)
+                self.addMergeTask(skimTask, self.skimJobSplitAlgo, outputModuleName,
+                                  doLogCollect = self.doLogCollect)
 
         return workload
 
@@ -249,7 +252,6 @@ class PromptRecoWorkloadFactory(StdBase):
         self.couchDBName = arguments['CouchDBName']
         self.initCommand = arguments['InitCommand']
 
-
         if arguments.has_key('Multicore'):
             numCores = arguments.get('Multicore')
             if numCores == None or numCores == "":
@@ -260,6 +262,9 @@ class PromptRecoWorkloadFactory(StdBase):
             else:
                 self.multicore = True
                 self.multicoreNCores = numCores
+
+        # Do we run log collect ? (Tier0 does not support it yet)
+        self.doLogCollect = arguments.get("DoLogCollect", True)
 
         # Optional arguments that default to something reasonable.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")

@@ -279,14 +279,14 @@ if can_nose:
                 sys.stdout.flush()
                 if not quickTestArg:
                     retval = self.callNose([__file__,'--with-xunit', '-m', '(_t.py$)|(_t$)|(^test)','-a',
-                                             '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
+                                             '!workerNodeTest,!integration,!performance,!lifecycle,!__integration__,!__performance__,!__lifecycle__',
                                              '--with-coverage','--cover-html','--cover-html-dir=coverageHtml','--cover-erase',
                                              '--cover-package=' + moduleList, '--cover-inclusive',
                                              self.testingRoot],
                                              paths = testPath)
                 else:
                     retval = self.callNose([__file__,'--with-xunit', '-m', '(_t.py$)|(_t$)|(^test)','-a',
-                         '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
+                         '!workerNodeTest,!integration,!performance,!lifecycle,!__integration__,!__performance__,!__lifecycle__',
                          '--stop', self.testingRoot],
                          paths = testPath)
                     

@@ -40,7 +40,7 @@ class PauseAlgo(RetryAlgoBase):
         if retryByTimeOut :
             # If reached the pauseCount, we want the job to pause instead of retrying
             if job['retry_count'] > 0 and not (job['retry_count'] % pauseCount):
-                self.changer.propagate(job, pauseMap[job['state']], job['state'])
+                self.changer.propagate(job, pauseMap[job['state']], job['state'],  updatesummary=True)
                 return False
             else:
                 return True 

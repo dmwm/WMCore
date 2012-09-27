@@ -579,8 +579,10 @@ class StdBase(object):
 
         self.addCleanupTask(parentTask, parentOutputModuleName)
         if self.enableHarvesting and getattr(parentOutputModule, "dataTier") in ["DQMROOT", "DQM"]:
-            self.addDQMHarvestTask(mergeTask, "Merged", self.dqmUploadProxy,
-                                   self.periodicHarvestingInterval)
+            self.addDQMHarvestTask(mergeTask, "Merged",
+                                   uploadProxy = self.dqmUploadProxy,
+                                   periodic_harvest_interval= self.periodicHarvestingInterval,
+                                   doLogCollect = doLogCollect)
         return mergeTask
 
     def addCleanupTask(self, parentTask, parentOutputModuleName):

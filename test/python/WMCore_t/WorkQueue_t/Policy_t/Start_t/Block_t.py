@@ -151,6 +151,26 @@ class BlockTestCase(unittest.TestCase):
         units = Block(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset + '#2'])
+        
+    def testLumiMask(self):
+        """Lumi mask test"""
+        rerecoArgs2 = {}
+        rerecoArgs2.update(rerecoArgs)
+        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs2)
+        inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
+        dataset = "/%s/%s/%s" % (inputDataset.primary,
+                                     inputDataset.processed,
+                                     inputDataset.tier)
+        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+
+        # Block blacklist
+        lumiWorkload = rerecoWorkload('ReRecoWorkload',
+                                              rerecoArgs2)
+        task = getFirstTask(lumiWorkload)
+        task.data.input.splitting.runs = ['1'] 
+        task.data.input.splitting.lumis = ['1,1']
+        units = Block(**self.splitArgs)(lumiWorkload, task)
+        self.assertEqual(len(units), 1)
 
 
     def testDataDirectiveFromQueue(self):

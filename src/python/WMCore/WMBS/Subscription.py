@@ -548,6 +548,20 @@ class Subscription(WMBSBase, WMSubscription):
         
         return True
 
+    def markFinished(self, finished = True):
+        """
+        _markFinished_
+
+        Sets the finished status of the subscription
+        to the given value
+        """
+
+        action = self.daofactory(classname = "Subscriptions.MarkFinishedSubscriptions")
+        action.execute(self['id'], conn = self.getDBConn(),
+                       transaction = self.existingTransaction())
+        self.commitTransaction(self.existingTransaction)
+
+        return
 
     def bulkCommit(self, jobGroups):
         """

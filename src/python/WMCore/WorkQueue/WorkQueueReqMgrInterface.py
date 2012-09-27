@@ -173,6 +173,8 @@ class WorkQueueReqMgrInterface():
     def getAvailableRequests(self, *teams):
         """Get requests for the given teams"""
         results = []
+        if not teams:
+            teams = self.reqMgr.getTeam()
         for team in teams:
             try:
                 reqs = self.reqMgr.getAssignment(team)

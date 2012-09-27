@@ -381,6 +381,7 @@ class CMSSW(Template):
         step.application.section_("command")
         step.application.command.executable = "cmsRun"
         step.application.command.configuration = "PSet.py"
+        step.application.command.configurationPickle = "PSet.pkl"
         step.application.command.configurationHash = None
         step.application.command.psetTweak = None
         step.application.command.arguments = ""

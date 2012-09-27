@@ -73,6 +73,29 @@ class SetupCMSSWPsetTest(unittest.TestCase):
                             parents = set([File(lfn = "/some/parent/two")])))
         return newJob
 
+    def loadProcessFromPSet(self):
+        """
+        _loadProcessFromPSet_
+
+        This requires changing the working directory,
+        do so in a safe manner to encapsulate the change to this method only
+        """
+
+        currentPath = os.getcwd()
+        loadedProcess = None
+        try:
+            if not os.path.isdir(self.testDir):
+                raise
+            os.chdir(self.testDir)
+            testFile = "PSet.py"
+            pset = imp.load_source('process', testFile)
+            loadedProcess = pset.process
+        except Exception, ex:
+            self.fail("An exception was caught while trying to load the PSet, %s" % str(ex))
+        finally:
+            os.chdir(currentPath)
+
+        return loadedProcess
 
     def testPSetFixup(self):
         """
@@ -89,9 +112,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         setupScript.job = self.createTestJob()
         setupScript()
 
-        testFile = os.path.join(self.testDir, "PSet.py")
-        pset = imp.load_source('process', testFile)
-        fixedPSet = pset.process
+        fixedPSet = self.loadProcessFromPSet()
 
         self.assertEqual(len(fixedPSet.source.fileNames.value), 2,
                          "Error: Wrong number of files.")
@@ -123,9 +144,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         setupScript.job = self.createTestJob()
         setupScript()
 
-        testFile = os.path.join(self.testDir, "PSet.py")
-        pset = imp.load_source('process', testFile)
-        fixedPSet = pset.process
+        fixedPSet = self.loadProcessFromPSet()
 
         self.assertEqual(len(fixedPSet.source.fileNames.value), 2,
                          "Error: Wrong number of files.")

@@ -611,18 +611,23 @@ class SetupCMSSWPset(ScriptInterface):
                         cms.untracked.string("trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage-test.xml?protocol=dcap")
 
         configFile = self.step.data.application.command.configuration
+        configPickle = getattr(self.step.data.application.command, "configurationPickle", "PSet.pkl")
         workingDir = self.stepSpace.location
         handle = open("%s/%s" % (workingDir, configFile), 'w')
+        pHandle = open("%s/%s" % (workingDir, configPickle), 'wb')
         try:
+            pickle.dump(self.process, pHandle)
             handle.write("import FWCore.ParameterSet.Config as cms\n")
             handle.write("import pickle\n")
-            handle.write('process = pickle.loads("""')
-            handle.write(pickle.dumps(self.process))
-            handle.write('""")\n')
+            handle.write("handle = open('%s', 'rb')\n" % configPickle)
+            handle.write("process = pickle.load(handle)\n")
+            handle.write("handle.close()\n")
         except Exception, ex:
             print "Error writing out PSet:"
             print traceback.format_exc()
             raise ex
+        finally:
+            handle.close()
+            pHandle.close()
 
-        handle.close()
         return 0

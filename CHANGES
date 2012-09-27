@@ -1,3 +1,28 @@
+0.9.18 to 0.9.19:
+  - Write the CMSSW configuration as a binary pickle file to avoid issues
+    with non-binary pickled configs.  Pull request #4109. 
+  - Make LogCollect optional for PromptReco.  Pull request #4068.
+  - Make teams optional for the Global WorkQueue.
+  - Set several move parameters for AsyncStageout in 
+    wmagent-mod-config.  Pull request #4106.
+  - Remove unneeded parameters in the Async Stageout inputAsyncStageOut
+    view.  Pull request #4101.
+  - Increate the size of the LFN column in DBSBuffer.  Fixes #4907.
+  - Add the "New" state to the LSF BossAir plugin map.  Pull request #4080.
+  - Initial version of the ReqMgr integration tests.  Pull request #4070.
+  - In the paused-jobs utility update the job summary when unpausing jobs.
+    Pull request #4111.
+  - Propagate job state changes to WMStats in the RetryManager's PauseAlgo.
+    Pull request #4096.
+  - Bug fixes for AlcaHarvesting.  Pull request #4105.
+  - Put the LumiMask in the spec instead of pulling from ACDC.  Fixes #3968. 
+  - Improve the TaskArchiver so that it pulls run and lumi information from
+    WMBS instead of the JobDump.  Improve the queries used to find finished
+    subscriptions.  Pull request #4073.
+  - Fix a typo.  Pull request #4107.
+  - Fix the WorkQueue so that couch conflicts don't block request completion.
+  - Add a view to aid in T0 backlog monitoring.  Pull request #4065.
+
 0.9.17 to 0.9.18:
   - Fix WMStats user validation.  Pull request #4103.
 

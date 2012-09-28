@@ -39,28 +39,43 @@ height: 30px;
 background: #7878FF;
 }
 
+#message_board { 
+    position: relative;
+    margin-top:5px;
+    margin-right: 39%;
+}
+
+#agent_alert { 
+    padding:5px;
+    height: 60px;
+    width: 47%;
+    float: right;
+    overflow: auto
+}
+
+#request_alert { 
+    position: relative;
+    padding:5px;
+    width: 50%;
+    height: 60px;
+    margin-right: 50%;
+    overflow: auto
+}
+
 #summary_board { 
-position: relative;
-padding:1% 5px;
-height: 60px;
-background: #b7d84b;
-margin-top:10px;
-margin-right: 42%;
+    background: #b7d84b;
+    float: right;
+    width: 38%;
+    height: 60px;
+    margin-top:5px;
+    
 }
 
 /* property for message board */
 .stable, .warning, .error {
     border: 1px solid;
-    padding:1% 5px;
-    width: 38%;
-    height: 60px;
-    margin-top:10px;
     opacity: 1;
-    float: right;
     font: bold 10px verdana;
-    -webkit-border-radius: 10px;
-    -moz-border-radius: 10px;
-    border-radius: 10px;
 }
 
 .stable {
@@ -76,31 +91,17 @@ margin-right: 42%;
     background: #FFBABA url('../css/images/badge-circle-cross-16.png') no-repeat 10px center;
 }
 
+.roundEdge {
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+}
+
 #main_board { 
 position: relative;
 margin-top:10px;
 background: #ffffff;
 clear: both
-}
-
-
-#status_board{ 
-position: relative;
-width: 69%;
-height: 30px;
-background: #469800;
-opacity: 1;
-float: right;
-}
-
-#hierarchy_board{ 
-position: relative;
-width: 30%;
-height: 30px;
-margin-top:10px;
-margin-right:70%;
-background: #469800;
-opacity: 1;
 }
 
 #filter_board { 
@@ -112,6 +113,23 @@ font: 10px verdana;
 margin-top: 5px;
 }
 
+#status_board{ 
+    position: relative;
+    width: 69%;
+    height: 30px;
+    margin-top:5px;
+    background: #469800;
+    opacity: 1;
+    float: right;
+}
+
+#tab_board{ 
+    position: relative;
+    height: 30px;
+    margin-top:5px;
+    margin-right:70%;
+}
+
 #filter_summary{ 
     border: 1px solid;
     position: relative;
@@ -120,9 +138,6 @@ margin-top: 5px;
     margin-top: 5px;
     overflow-y: auto;
     overflow-x: hidden;
-}
-#filter_summary li{ 
-    display: inline;
 }
 
 #data_board{ 
@@ -137,33 +152,77 @@ margin-top: 5px;
     border-radius: 5px
 }
 
-.detail_data{ 
+#request_view .detail_data, #category_view .detail_data{ 
     position: absolute;
     top: 0px;
     right: 0px;
     padding: 10px 10px 30px 10px;
-    float: right;
+    width: 30%;
+    font-size: 1em;
 }
 
-.summary_data{ 
+#request_view .summary_data, #category_view .summary_data{ 
     position: relative;
     padding: 10px 10px 30px;
     margin-right:40%;
 }
 
-
-div.box {
-    font-size: 0.8em;
-    width: 100%;
-    background-color: #E2E3CA;
+#job_view .detail_data{ 
+    position: relative;
+    padding: 10px 10px 30px 10px;
+    font-size: 1em;
+    margin-left: 40%
 }
 
-.requestInfoBox {
+#job_view .summary_data{ 
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    padding: 10px 10px 30px;
+    width: 30%;
+}
+
+.tabs { position: relative; padding: .2em; zoom: 1; } /* position: relative prevents IE scroll bug (element with position: relative inside container with overflow: auto appear as "fixed") */
+.tabs .tabs-nav { margin: 0; padding: .2em .2em 0; }
+.tabs .tabs-nav li { list-style: none; float: left; position: relative; top: 1px; margin: 0 .2em 1px 0; border-bottom: 0 !important; padding: 0; white-space: nowrap; display: inline}
+.tabs .tabs-nav li a { float: left; padding: .5em 1em; text-decoration: none; display: block}
+.tabs .tabs-nav li.tabs-selected { margin-bottom: 0; padding-bottom: 1px; }
+.tabs .tabs-nav li.tabs-selected a, .tabs .tabs-nav li.tabs-disabled a { cursor: text; }
+.tabs .tabs-nav li a, .tabs .tabs-nav li.tabs-active a { cursor: pointer; } /* first selector in group seems obsolete, but required to overcome bug in Opera applying cursor: text overall if defined elsewhere... */
+
+div.jobDetailBox {
+    font-size: 0.9em;
+    background-color: #E2E3CA;
+    overflow: auto;
+}
+
+.requestSummaryBox {
     height: auto;
-    width: 300px;
-    padding: 10px;
-    font-size: 0.8em;
+    font-size: 1em;
     overflow: auto;
     border: 1px solid #8080FF;
     background-color: #F2F0F2;
+}
+
+.requestSummaryBox li{
+    display: inline;
+    padding-left: 10px;
+}
+
+.requestDetailBox {
+    height: auto;
+    width: 300px;
+    padding: 10px;
+    font-size: 1em;
+    overflow: auto;
+    border: 1px solid #8080FF;
+    background-color: #F2F0F2;
+}
+a.requestAlert:hover {
+    background-color:yellow;
+    cursor: pointer;
+}
+
+.reviewed {
+    background-color:white;
 }

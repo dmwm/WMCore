@@ -113,7 +113,6 @@ WMStats._RequestModelBase.prototype = {
             });
         }
     },
-    
 
     clearRequests: function () {
         delete this._data;

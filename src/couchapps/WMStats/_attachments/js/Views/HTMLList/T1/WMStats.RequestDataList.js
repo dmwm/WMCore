@@ -3,12 +3,13 @@ WMStats.namespace('RequestDataList');
     var format = function (summary) {
         var summaryStruct = summary.summaryStruct
         htmlstr = "";
-        htmlstr += "<div class='requestInfoBox' id='requestDetail-0'>"
+        htmlstr += "<div class='requestSummaryBox'>"
         htmlstr += "<ul>";
         htmlstr += "<li> requests: " + summary.summaryStruct.length + "</li>";
         htmlstr += "<li> total created jobs: " + summary.getWMBSTotalJobs() + "</li>";
         htmlstr += "<li> total events: " + summary.summaryStruct.totalEvents + "</li>";
         htmlstr += "<li> processed events: " + summary.summaryStruct.processedEvents + "</li>";
+        htmlstr += "<li> cooloff jobs: " + summary.getTotalCooloff() + "</li>";
         htmlstr += "<li> success jobs: " + summary.getJobStatus('success') + "</li>";
         htmlstr += "<li> failure jobs: " + summary.getTotalFailure() + "</li>";
         htmlstr += "<li> queued jobs: " + summary.getTotalQueued() + "</li>";

@@ -15,16 +15,28 @@ WMStats.namespace("GenericController");
     });
     
     WMStats.GenericController.switchView = function (showSelector, hideSelectors) {
-        if (!hideSelectors) {
-            $("#category_view").hide();
-            $("#request_view").hide();
-            $("#job_view").hide();
+        if (!showSelector) {
+            showSelector = WMStats.Env.View;
+        } else if (!hideSelectors) {
+            var viewList = ["#category_view", "#request_view", "#job_view"];
+            for (var i in viewList) {
+                if (showSelector != viewList[i]){
+                    $(viewList[i]).hide();
+                }
+                
+            }
         } else {
             for (var i in hideSelectors) {
                 $(hideSelectors[i]).hide();
             }
         }
         $(showSelector).show();
-    }
+        WMStats.Env.View = showSelector;
+    };
+    
+    $(document).on('click', "#tab_board li a", function(event){
+        WMStats.GenericController.switchView(this.hash);
+        event.preventDefault();
+    });
 
 })(jQuery)

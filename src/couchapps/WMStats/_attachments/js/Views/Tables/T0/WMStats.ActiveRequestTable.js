@@ -74,7 +74,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
                           }
             },
             { "sDefaultContent": 0,
-              "sTitle": "job paused", 
+              "sTitle": "paused", 
               "fnRender": function ( o, val ) {
                             var reqSummary = requestData.getSummary(o.aData.workflow);
                             return  reqSummary.getTotalPaused();
@@ -89,8 +89,12 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
             //TODO add more data (consult dataops)
         ]
     }
-
-    tableConfig.aaData = requestData.getList();
+    
+    function runNumerDesc(a, b) {
+        return (Number(b.run) - Number(a.run));
+    }
+    
+    tableConfig.aaData = requestData.getList(runNumerDesc);
     
     return WMStats.Table(tableConfig).create(containerDiv, null);
 }

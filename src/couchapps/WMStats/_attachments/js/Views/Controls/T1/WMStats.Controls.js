@@ -38,9 +38,17 @@ WMStats.Controls = function($){
         return WMStats.Utils.createInputFilter(_filterSelector);
     };
     
+    function setTabs(selector) {
+        var tabs = '<ul><li><a href="#category_view">Category</a></li>\
+                    <li><a href="#request_view">Requests</a></li>\
+                    <li><a href="#job_view">Jobs</a></li></ul>'
+        $(selector).append(tabs).addClass("tabs");
+        $(selector + " ul").addClass("tabs-nav");
+    };
     
     return {
         setFilter: setFilter,
+        setTabs: setTabs,
         setCategoryButton: setCategoryButton,
         getCategoryButtonValue: getCategoryButtonValue,
         getFilter: getFilter,

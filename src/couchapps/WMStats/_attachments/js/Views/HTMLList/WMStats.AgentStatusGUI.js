@@ -4,11 +4,20 @@ WMStats.AgentStatusGUI = function (data, containerDiv) {
     var currentTime = Math.round(new Date().getTime() / 1000);
     var dataList = data.getData();
     var collectiveStatus = "ok";
+    var agentPollingCycle = 600;
     
     function getStatus(agentInfo) {
-        if (currentTime - agentInfo.timestamp > 600) {return "agent_down"};
-        if (agentInfo.down_components.length > 0) {return "component_down"};
-        return "ok";
+        var lastUpdatedDuration = currentTime - agentInfo.timestamp;
+        if (lastUpdatedDuration > agentPollingCycle) {
+            return {staus: "agent_down", 
+                    message: WMStats.Utils.foramtDuration(lastUpdatedDuration)};
+        };
+        if (agentInfo.down_components.length > 0) {
+            return {staus: "component_down",
+                    message: agentInfo.down_components};
+        };
+        return {status: "ok", 
+                message: WMStats.Utils.foramtDuration(lastUpdatedDuration)};
     };
     function setStatus(status) {
         if (collectiveStatus == "ok") {
@@ -20,15 +29,15 @@ WMStats.AgentStatusGUI = function (data, containerDiv) {
     var htmlList = "<ul>";
     
     for (var index in dataList) {
-        var status = getStatus(dataList[index]);
-        if (status == "agent_down") {
+        var statusInfo = getStatus(dataList[index]);
+        if (statusInfo.staus == "agent_down") {
             setStatus("error");
-            htmlList += ('<li>' + dataList[index].agent_url + '</li>');
-        } else if (status == "component_down") {
+        } else if (statusInfo.staus == "component_down") {
             setStatus("warning");
-            htmlList += ('<li>' + dataList[index].agent_url + ': ' + 
-                          dataList[index].down_components +'</li>');
         }
+        htmlList += ('<li>' + dataList[index].agent_url + ": " + 
+                              statusInfo.message +'</li>');
+        
     }
     
     htmlList += "</ul>";

@@ -7,9 +7,32 @@ WMStats.namespace("Globals")
 
 WMStats.Globals = function($){
     var _dbVariants = {'wmstats': 'tier1', 'tier0_wmstats': 'tier0', 'analysis_wmstats': 'analysis' }
+
+    function getReqDetailPrefix () {
+        if (_dbVariants[dbname] == "tier1") {
+            return "/reqmgr/view/details/";
+        } else if (_dbVariants[dbname] == "analysis") {
+            return "/am_reqmgr/view/details/";
+        } else {
+            return null;
+        }
+        
+    };
+    
+    function getWorkloadSummaryPrefix () {
+        if (_dbVariants[dbname] == "tier1") {
+            return "/couchdb/workloadsummary/_design/WorkloadSummary/_show/histogramByWorkflow/";
+        } else if (_dbVariants[dbname] == "analysis") {
+            return "/couchdb/analysis_workloadsummary/_design/WorkloadSummary/_show/histogramByWorkflow/";
+        } else {
+            return null;
+        }
+        
+    };
+    
     return {
-        REQ_DETAIL_URL_PREFIX: "/reqmgr/view/details/",
-        WORKLOAD_SUMMARY_URL_PREFIX: "/couchdb/workloadsummary/_design/WorkloadSummary/_show/histogramByWorkflow/",
+        REQ_DETAIL_URL_PREFIX: getReqDetailPrefix(),
+        WORKLOAD_SUMMARY_URL_PREFIX: getWorkloadSummaryPrefix(),
         AJAX_LOADING_STATUS: {beforeSend: function(){$('#loading_page').addClass('front').show()}, 
                               complete: function(){$('#loading_page').hide()}},
         COUCHDB_NAME: dbname,

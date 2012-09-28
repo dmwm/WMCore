@@ -5,6 +5,7 @@ WMStats.JobSummaryTable = function (data, containerDiv) {
     var tableConfig = {
         "sDom": 'lfrtip',
         "aoColumns": [
+            { "mDataProp": "task", "sTitle": "task"},
             { "mDataProp": "status", "sTitle": "status"},
             { "mDataProp": "site", "sTitle": "site"},
             { "mDataProp": "exitCode", "sTitle": "exit code"},

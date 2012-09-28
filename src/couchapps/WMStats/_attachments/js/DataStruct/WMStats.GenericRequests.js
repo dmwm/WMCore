@@ -272,12 +272,16 @@ WMStats.GenericRequests.prototype = {
         this._dataByWorkflow = data;
     },
     
-    getList: function() {
+    getList: function(sortFunc) {
         var list = [];
         for (var request in this.getDataByWorkflow()) {
             list.push(this.getDataByWorkflow(request))
         }
-        return list.sort(this._requestDateSort);
+        if (sortFunc) {
+            return list.sort(sortFunc);
+        } else {
+            return list.sort(this._requestDateSort);
+        }
     },
 
     getSummary: function(workflow) {
@@ -286,12 +290,27 @@ WMStats.GenericRequests.prototype = {
         if (workflow) {
             return summary.createSummaryFromRequestDoc(this.getDataByWorkflow(workflow));
         } else {
+            //TODO need to cache the information
             for (var request in this.getDataByWorkflow()) {
                 summary.updateFromRequestDoc(this.getDataByWorkflow(request));
             }
             return summary;
         }
+    },
+    
+    getAlertRequests: function() {
+        var alertRequests = [];
+        for (var workflow in this.getDataByWorkflow()) {
+            var reqSummary = this.getSummary(workflow);
+            var coolOff = reqSummary.getTotalCooloff();
+            var paused = reqSummary.getTotalPaused();
+            if (coolOff > 0 || paused > 0) {
+                alertRequests.push(this.getData(workflow));
+            }
+        }
+        return alertRequests;
     }
+    
 };
 
 WMStats.RequestsByKey = function (category, summaryFunc) {
@@ -343,12 +362,16 @@ WMStats.RequestsByKey = function (category, summaryFunc) {
         }
     };
     
-    function getList() {
+    function getList(sortFunc) {
         var list = [];
         for (var key in _data) {
             list.push(_data[key])
         }
-        return list;
+        if (sortFunc) {
+            return list.sort(sortFunc);
+        } else {
+            return list;
+        }
     };
     
     return {

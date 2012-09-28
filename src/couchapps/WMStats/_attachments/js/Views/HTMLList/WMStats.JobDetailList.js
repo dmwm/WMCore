@@ -5,7 +5,7 @@ WMStats.namespace('JobDetailList');
         var jobDetails = data.getData();
         for (var index in jobDetails) {
             var jobDoc = jobDetails[index];
-            htmlstr += "<div class='box' id='jobDetail-" + index + "'>"
+            htmlstr += "<div class='jobDetailBox' id='jobDetail-" + index + "'>"
             htmlstr += "<ul>";
             htmlstr += "<li> job id: " + jobDoc._id + "</li>";
             htmlstr += "<li> workflow: " + jobDoc.workflow + "</li>";

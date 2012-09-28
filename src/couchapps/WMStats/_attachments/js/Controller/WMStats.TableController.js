@@ -73,12 +73,13 @@
             var summary = {};
             // need to get the workflow name with out depeniding on the selector
             summary.workflow = $("#job_view div.summary_data").data("workflow");
-            summary.status = $(nTds[0]).text();
-            summary.site = $(nTds[1]).text();
+            summary.task = $(nTds[0]).text();
+            summary.status = $(nTds[1]).text();
+            summary.site = $(nTds[2]).text();
             if (summary.site ==="{}"){
                 summary.site = {};
             }
-            summary.exitCode = Number($(nTds[2]).text());
+            summary.exitCode = Number($(nTds[3]).text());
             WMStats.JobDetailModel.setOptions(summary);
             WMStats.JobDetailModel.retrieveData();
         },

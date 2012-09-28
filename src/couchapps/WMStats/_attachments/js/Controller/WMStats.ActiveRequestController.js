@@ -32,13 +32,17 @@ function getCategorizedData(category) {
     
     var E = WMStats.CustomEvents;
     // Rewqest view filter event handler
+    function drawTotalRequestSummary() {
+        var requestData = WMStats.ActiveRequestModel.getRequests();
+        WMStats.RequestDataList(requestData.getSummary(), "#summary_board");
+    };
     
     function drawFilteredRequestSummary() {
         var filteredData = getActiveFilteredData(true);
         WMStats.RequestDataList(filteredData.getSummary(), "#filter_summary");
     };
     
-    function drawDataBoard() {
+    function drawDataBoard(cachedView) {
         
         var category = WMStats.Controls.getCategoryButtonValue();
         
@@ -55,22 +59,28 @@ function getCategorizedData(category) {
         // extend to other view type 
         var view = WMStats.CategoryTableMap.get(category);
         view(categoryData, divSelector);
-        WMStats.GenericController.switchView(viewSelector)
+        if (cachedView){
+            WMStats.GenericController.switchView();
+        } else {
+            WMStats.GenericController.switchView(viewSelector);
+        }
         
     }
     
     $(WMStats.Globals.Event).on(E.REQUESTS_LOADED, 
         function(event, requestData) {
+            drawTotalRequestSummary()
             //refresh filter cache.
             getActiveFilteredData();
-            drawDataBoard();
+            drawDataBoard(true);
             drawFilteredRequestSummary();
+            WMStats.RequestAlertGUI(requestData, "#request_alert");
         })
 
     $(WMStats.Globals.Event).on(E.AGENTS_LOADED, 
         function(event, agentData) {
             //refresh filter cache.
-            WMStats.AgentStatusGUI(agentData, "#message_board");
+            WMStats.AgentStatusGUI(agentData, "#agent_alert");
         })
     
     $(WMStats.Globals.Event).on(E.CATEGORY_SUMMARY_READY, 
@@ -123,12 +133,19 @@ function getCategorizedData(category) {
         function() {
             //refresh filter cache.
             getActiveFilteredData();
-            drawDataBoard();
+            drawDataBoard(true);
             drawFilteredRequestSummary();
         })
 
     $(document).on('change', 'input[name="category-select"][type="radio"]', function() {
         drawDataBoard();
         })
+
+    $(document).on('click', 'a.requestAlert', function() {
+        var workflow = $(this).text();
+        WMStats.JobSummaryModel.setRequest(workflow);
+        WMStats.JobSummaryModel.retrieveData();
+        $(this).addClass('reviewed');
+       })
 
 })(jQuery);

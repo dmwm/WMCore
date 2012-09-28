@@ -23,17 +23,7 @@ WMStats._ModelBase.prototype = {
         this._data = this._dataStruct(data);
         jQuery(WMStats.Globals.Event).triggerHandler(this._trigger, this._data)
     },
-    /*
-    draw: function(selector, cache) {
-        this._containerDiv = selector;
-        if (cache && this._data) {
-            return this._visFunc(this._data, this._containerDiv);
-        } else {
-            return WMStats.Couch.view(this._initialView, this._options, 
-                               jQuery.proxy(this.callback, this))
-        }
-    },
-    */
+
     retrieveData: function () {
         return WMStats.Couch.view(this._initialView, this._options, 
                                jQuery.proxy(this.callback, this))

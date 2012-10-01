@@ -309,8 +309,12 @@ WMStats.GenericRequests.prototype = {
             }
         }
         return alertRequests;
-    }
+    },
     
+    getRequestStatusAndTime: function(workflowName) {
+        var workflowData = this._dataByWorkflow[workflowName]
+        return  workflowData["request_status"][workflowData["request_status"].length - 1];
+    }
 };
 
 WMStats.RequestsByKey = function (category, summaryFunc) {

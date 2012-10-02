@@ -384,6 +384,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                     subIDs = workflows[workflow]["workflows"][wmbsWorkflow.id]
                     for subID in subIDs:
                         subscription = Subscription(id = subID)
+                        subscription['workflow'] = wmbsWorkflow
                         subscription.load()
                         subscription.deleteEverything()
 

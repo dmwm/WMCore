@@ -218,6 +218,19 @@ class TaskArchiverTest(unittest.TestCase):
         testWMBSFileset.commit()
         testWMBSFileset.markOpen(0)
 
+        outputWMBSFileset = Fileset(name = '%sOutput' % filesetName)
+        outputWMBSFileset.create()
+        testFileC = File(lfn = "/this/is/a/lfnC" , size = 1024, events = 10)
+        testFileC.addRun(Run(10, *[12312]))
+        testFileC.setLocation('malpaquet')
+        testFileC.create()
+        outputWMBSFileset.addFile(testFileC)
+        outputWMBSFileset.commit()
+        outputWMBSFileset.markOpen(0)
+
+        testWorkflow.addOutput('output', outputWMBSFileset)
+
+
         testSubscription = Subscription(fileset = testWMBSFileset,
                                         workflow = testWorkflow)
         testSubscription.create()

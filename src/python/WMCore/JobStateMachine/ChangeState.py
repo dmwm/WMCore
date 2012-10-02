@@ -35,9 +35,9 @@ class ChangeState(WMObject, WMConnectionBase):
 
         try:
             self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
-            self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname)
-            self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % self.dbname)
-            self.jsumdatabase = self.couchdb.connectDatabase( getattr(self.config.JobStateMachine, 'jobSummaryDBName') )
+            self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname, size = 250)
+            self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % self.dbname, size = 250)
+            self.jsumdatabase = self.couchdb.connectDatabase( getattr(self.config.JobStateMachine, 'jobSummaryDBName'), size = 250 )
         except Exception, ex:
             logging.error("Error connecting to couch: %s" % str(ex))
             self.jobsdatabase = None

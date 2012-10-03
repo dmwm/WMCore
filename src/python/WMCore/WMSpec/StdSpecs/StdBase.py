@@ -717,8 +717,13 @@ class StdBase(object):
         if self.enableHarvesting:
             for task in workload.getAllTasks():
                 if task.taskType() == "Harvesting":
-                    if not self.procScenario:
-                        self.raiseValidationException(msg = "A DQM harvesting task was found, you must specify a scenario")
+                    for stepName in task.listAllStepNames():
+                        step = task.getStep(stepName)
+                        if step.stepType() != "CMSSW":
+                            continue
+                        cmsswHelper = task.getTypeHelper(stepName)
+                        if not cmsswHelper.getScenario():
+                            self.raiseValidationException(msg = "A DQM harvesting task was found, you must specify a scenario")
 
         return
 

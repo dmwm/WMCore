@@ -687,10 +687,8 @@ class ReqMgrTest(RESTBaseUnitTest):
         result = self.jsonSender.put("request", schema)
         self.assertEqual(result[1], 200)
         requestName = result[0]["RequestName"]
-        # AcquisitionEra is returned here, but in fact on server is not stored until assign
-        # see below - when retrieving the request it's None ...
-        # [just to mark ReqMgr1 peculiarities]
-        self.assertTrue(schema["AcquisitionEra"], result[0]["AcquisitionEra"])        
+        acquisitionEra = result[0]["AcquisitionEra"]
+        self.assertTrue(schema["AcquisitionEra"], acquisitionEra)
         # set some non-default priority
         # when cloning a request which had some non default priority,
         # the priority values were lost when creating a cloned request, the
@@ -702,7 +700,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         # shall have the same stuff in
         response = self.jsonSender.get("request/%s" % requestName)
         origRequest = response[0]
-        self.assertEquals(origRequest["AcquisitionEra"], "None") # was not stored, see above
+        self.assertEquals(origRequest["AcquisitionEra"], acquisitionEra)
         # test that the priority was correctly set in the brand-new request
         self.assertEquals(origRequest["ReqMgrRequestBasePriority"], priority)
         

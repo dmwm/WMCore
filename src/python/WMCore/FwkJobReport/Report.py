@@ -1119,7 +1119,7 @@ class Report:
 
         return fileRefs
 
-    def setAcquisitionProcessing(self, acquisitionEra, processingVer):
+    def setAcquisitionProcessing(self, acquisitionEra, processingVer, processingStr = None):
         """
         _setAcquisitionProcessing_
 
@@ -1133,6 +1133,7 @@ class Report:
         for f in fileRefs:
             f.acquisitionEra = acquisitionEra
             f.processingVer  = processingVer
+            f.processingStr  = processingStr
 
         return
 

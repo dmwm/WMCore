@@ -178,7 +178,8 @@ class ReqMgrClient(object):
             have to be hacked here, as if they were ticked on a web form.
             This hack is the reason why the requestArgs have to get
             to this method deep-copied if subsequent request assignment happens.
-            
+        This must pass the arguments JSON encoded since some of them can be complex types
+        such as JSON objects/python dictionaries.
         """
         def doAssignRequest(assignArgs, requestName):
             assignArgs["action"] = "Assign"        
@@ -188,7 +189,10 @@ class ReqMgrClient(object):
             # have to remove this one, otherwise it will get confused with "Team+team"
             # TODO this needs to be put right with proper REST interface
             del assignArgs["Team"]
-            encodedParams = urllib.urlencode(assignArgs, True)
+            jsonEncodedParams = {}
+            for paramKey in assignArgs.keys():
+                jsonEncodedParams[paramKey] = json.dumps(assignArgs[paramKey])
+            encodedParams = urllib.urlencode(jsonEncodedParams, True)
             logging.info("Assigning request '%s' ..." % requestName)
             status, data = self._httpRequest("POST", "/reqmgr/assign/handleAssignmentPage",
                                              data=encodedParams, headers=self.textHeaders)
@@ -316,13 +320,15 @@ class ReqMgrClient(object):
         self.team(None) # argument has no meaning
         currentRequests = self.queryRequests(config)
         requestNames = []
-        config.assignRequests = True # createRequest will subsequently also assignRequests
+        config.assignRequests = True # check in the request for assignment
         requestNames.append(self.createRequest(config, restApi = True))
+        self.assignRequests(config)
         # TODO - hack
         # TaskChain request type doesn't have web GUI, can't then test
         # web GUI call for that.
         if config.requestArgs["createRequest"]["RequestType"] != "TaskChain":
             requestNames.append(self.createRequest(config, restApi = False))
+        self.assignRequests(config)
         config.requestNames = requestNames        
         self.queryRequests(config)
         # test priority changing (final priority will be sum of the current
@@ -527,7 +533,7 @@ def processRequestArgs(intputConfigFile, commandLineJson):
         for k, v in items:
             if isinstance(v, dict):
                 check(v.items())
-            if isinstance(v, unicode) and v.endswith("OVERRIDE-ME"):
+            if isinstance(v, unicode) and (v.endswith("OVERRIDE-ME") or v.endswith("OVERRIDE_ME")):
                 logging.warn("Not properly set: %s: %s" % (k, v))
     check(requestArgs.items())
     return requestArgs

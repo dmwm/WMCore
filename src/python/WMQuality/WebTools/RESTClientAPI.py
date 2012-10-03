@@ -75,7 +75,7 @@ def methodTest(verb, url, request_input={}, accept='text/json', contentType = No
     if expireTime != 0:
         timeStamp = make_rfc_timestamp(expireTime)
         assert expires == timeStamp,\
-                 'Expires header incorrect (%s) != (%s)' % (expires % timeStamp)
+                 'Expires header incorrect (%s) != (%s)' % (expires, timeStamp)
 
     return data, expires
 

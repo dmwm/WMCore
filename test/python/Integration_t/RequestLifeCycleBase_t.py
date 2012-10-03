@@ -17,8 +17,8 @@ class RequestLifeCycleBase_t():
     request = None
     request_name = None
     workqueue = None
-    endpoint = os.environ.get('REQMGRURL', 'https://localhost:8443/reqmgr/reqMgr')
-    reqmgr = RequestManager({'endpoint' : endpoint})
+    endpoint = os.environ.get('REQMGRBASEURL', 'https://localhost:8443')
+    reqmgr = RequestManager({'endpoint' : endpoint + '/reqmgr/reqMgr'})
     team = 'TestTeam'
 
     def setUp(self):

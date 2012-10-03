@@ -1,23 +1,31 @@
 WMStats.namespace("Controls");
 WMStats.Controls = function($){
+    
     var _filterSelector;
     var _categorySelector;
     
     function setFilter(selector) {
-        var inputFilter = '<div name="filter">\
-                           workflow: <input name="workflow" value=""></input>\
-                           </div>';
-        $(selector).append(inputFilter);
-        _filterSelector = selector + ' div[name="filter"] input';
-    }
+       $(selector).append('<div name="filter">\
+                            campaign: <input name="campaign" value=""></input>\
+                            workflow: <input name="workflow" value=""></input>\
+                            type: <input name="request_type" value=""></input>\
+                            status: <input name="request_status" value=""></input>\
+                            user dn: <input name="user_dn" value=""></input>\
+                           </div>');
+       _filterSelector = selector + ' div[name="filter"] input';
+    };
     
     function setCategoryButton(selector) {
         var categoryBottons = 
         '<nav class="category-button">\
-            <input type="radio" name="category-select" value="requests" id="request-category" checked="checked">\
+            <input type="radio" name="category-select" value="requests" id="request-category" checked="checked"></input>\
             <label for="request-category">All Requests</label>\
-            <input type="radio" name="category-select" value="run" id="run-category">\
-            <label for="run-category">Run</label>\
+            <input type="radio" name="category-select" value="user_dn"" id="user-category"></input>\
+            <label for="user-category">User DN</label>\
+            <input type="radio" name="category-select" value="campaign" id="campaign-category"></input>\
+            <label for="campaign-category">Campaign</label>\
+            <input type="radio" name="category-select" value="sites" id="site-category"></input>\
+            <label for="site-category">Site</label>\
          </nav>';
         
         $(selector).append(categoryBottons);
@@ -32,7 +40,6 @@ WMStats.Controls = function($){
     function getFilter() {
         return WMStats.Utils.createInputFilter(_filterSelector);
     };
-    
     
     function setTabs(selector) {
         var tabs = '<ul><li><a href="#category_view">Category</a></li>\
@@ -50,6 +57,7 @@ WMStats.Controls = function($){
         getFilter: getFilter,
         requests: "requests",
         sites: "sites",
-        run: "run"
+        userDN: "user_dn",
+        campaign: "campaign"
     }
 }(jQuery);

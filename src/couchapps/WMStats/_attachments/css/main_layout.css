@@ -171,15 +171,11 @@ margin-top: 5px;
     position: relative;
     padding: 10px 10px 30px 10px;
     font-size: 1em;
-    margin-left: 40%
 }
 
 #job_view .summary_data{ 
-    position: absolute;
-    top: 0px;
-    left: 0px;
+    position: relative;
     padding: 10px 10px 30px;
-    width: 30%;
 }
 
 .tabs { position: relative; padding: .2em; zoom: 1; } /* position: relative prevents IE scroll bug (element with position: relative inside container with overflow: auto appear as "fixed") */

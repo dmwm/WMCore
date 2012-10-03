@@ -1691,11 +1691,6 @@ class SubscriptionTest(unittest.TestCase):
         testMergedOutputFileset4 = Fileset(name = "TestMergedOutputFileset4")
         testMergedOutputFileset4.create()
 
-        testOutputFileset1.markOpen(False)
-        testOutputFileset2.markOpen(False)
-        testOutputFileset3.markOpen(False)
-        testOutputFileset4.markOpen(False)
-
         testInputFileset = Fileset(name = "TestInputFileset")
         testInputFileset.create()
         testInputFileset.markOpen(False)
@@ -1741,6 +1736,7 @@ class SubscriptionTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
         injected = daoFactory(classname = "Workflow.MarkInjectedWorkflows")
         injected.execute(names = ["wf001", "wf002", "wf003"], injected = True)
+        #The first subscription is finished since the input fileset is closed and no jobs are present
         newFinishedDAO = daoFactory(classname = "Subscriptions.GetAndMarkNewFinishedSubscriptions")
         newFinishedDAO.execute(self.stateID)
         finishedDAO = daoFactory(classname = "Subscriptions.GetFinishedSubscriptions")
@@ -1749,13 +1745,19 @@ class SubscriptionTest(unittest.TestCase):
         self.assertEquals(len(finishedSubs), 2,
                           "Error: Wrong number of finished subscriptions.")
 
-        self.assertEquals(finishedSubs[0]["id"], testSubscription3["id"],
+        self.assertEquals(finishedSubs[0]["id"], testSubscription1["id"],
                           "Error: Wrong subscription id.")
+
+        #Mark all output filesets which are input of another subscription as closed
+        #That should make them all candidates for finalization
+        testOutputFileset1.markOpen(False)
+        testOutputFileset2.markOpen(False)
+        testOutputFileset3.markOpen(False)
 
         newFinishedDAO.execute(self.stateID)
         finishedSubs = finishedDAO.execute()
 
-        self.assertEquals(len(finishedSubs), 3,
+        self.assertEquals(len(finishedSubs), 4,
                           "Error: Wrong number of finished subscriptions.")
 
         return

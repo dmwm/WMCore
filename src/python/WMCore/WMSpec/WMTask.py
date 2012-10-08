@@ -782,7 +782,131 @@ class WMTaskHelper(TreeHelper):
         """
         self.data.constraints.sites.blacklist = siteBlacklist
         return
-    
+
+    def listOutputDatasetsAndModules(self):
+        """
+        _listOutputDatasetsAndModules_
+
+        Get the output datasets per output module for this task
+        """
+        outputDatasets = []
+        for stepName in self.listAllStepNames():
+                stepHelper = self.getStepHelper(stepName)
+
+                if not getattr(stepHelper.data.output, "keep", True):
+                    continue
+
+                if stepHelper.stepType() == "CMSSW" or \
+                       stepHelper.stepType() == "MulticoreCMSSW":
+                    for outputModuleName in stepHelper.listOutputModules():
+                        outputModule = stepHelper.getOutputModule(outputModuleName)
+                        outputDataset = "/%s/%s/%s" % (outputModule.primaryDataset,
+                                                       outputModule.processedDataset,
+                                                       outputModule.dataTier)
+                        outputDatasets.append({"outputModule"  : outputModuleName,
+                                               "outputDataset" : outputDataset})
+
+        return outputDatasets
+
+    def setSubscriptionInformation(self, custodialSites = None, nonCustodialSites = None,
+                                         autoApproveSites = None, priority = "Low",
+                                         primaryDataset = None, dataTier = None):
+        """
+        _setSubscriptionsInformation_
+
+        Set the subscription information for this task's datasets
+        The subscriptions information is structured as follows:
+        data.subscriptions.outputModules is a list of all output modules with configured datasets
+        data.subscriptions.<outputModule>.dataset
+        data.subscriptions.<outputModule>.custodialSites
+        data.subscriptions.<outputModule>.nonCustodialSites
+        data.subscriptions.<outputModule>.autoApproveSites
+        data.subscriptions.<outputModule>.priority
+
+        The filters arguments allow to define a dataTier and primaryDataset. Only datasets
+        matching those values will be configured.
+        """
+
+        if not hasattr(self.data, "subscriptions"):
+            self.data.section_("subscriptions")
+            self.data.subscriptions.outputModules = []
+
+        outputDatasets = self.listOutputDatasetsAndModules()
+
+        for entry in outputDatasets:
+            outputDataset = entry["outputDataset"]
+            outputModule = entry["outputModule"]
+
+            primDs = outputDataset.split('/')[1]
+            tier = outputDataset.split('/')[3]
+            if primaryDataset and primDs != primaryDataset:
+                continue
+            if dataTier and tier != dataTier:
+                continue
+
+            if outputModule not in self.data.subscriptions.outputModules:
+                self.data.subscriptions.outputModules.append(outputModule)
+                outputModuleSection = self.data.subscriptions.section_(outputModule)
+                outputModuleSection.dataset = outputDataset
+                outputModuleSection.custodialSites = []
+                outputModuleSection.nonCustodialSites = []
+                outputModuleSection.autoApproveSites = []
+                outputModuleSection.priority = "Low"
+
+            outputModuleSection = getattr(self.data.subscriptions, outputModule)
+            if custodialSites:
+                outputModuleSection.custodialSites = custodialSites
+            if nonCustodialSites:
+                outputModuleSection.nonCustodialSites = nonCustodialSites
+            if autoApproveSites:
+                outputModuleSection.autoApproveSites = autoApproveSites
+            outputModuleSection.priority = priority
+
+        return
+
+    def updateSubscriptionDataset(self, outputModuleName, outputModuleInfo):
+        """
+        _updateSubscriptionDataset_
+
+        Updates the dataset in the subscription information for the given output module,
+        if the given output module doesn't exist it does nothing.
+        """
+        if not hasattr(self.data, "subscriptions"):
+            return
+
+        if hasattr(self.data.subscriptions, outputModuleName):
+            subscriptionInfo = getattr(self.data.subscriptions, outputModuleName)
+            subscriptionInfo.dataset = '/%s/%s/%s' % (getattr(outputModuleInfo, "primaryDataset"),
+                                                      getattr(outputModuleInfo, "processedDataset"),
+                                                      getattr(outputModuleInfo, "dataTier"))
+        return
+
+    def getSubscriptionInformation(self):
+        """
+        _getSubscriptionInformation_
+
+        Get the subscription configuration for the task
+        return a dictionary with the following structure
+        {<dataset> : {CustodialSites : [],
+                      NonCustodialSites : [],
+                      AutoApproveSites : [],
+                      Priority : Low
+                     }
+        }
+        """
+        if not hasattr(self.data, "subscriptions"):
+            return {}
+
+        subInformation = {}
+        for outputModule in self.data.subscriptions.outputModules:
+            outputModuleSection = getattr(self.data.subscriptions, outputModule)
+            dataset = outputModuleSection.dataset
+            subInformation[dataset] = {"CustodialSites" : outputModuleSection.custodialSites,
+                                       "NonCustodialSites" : outputModuleSection.nonCustodialSites,
+                                       "AutoApproveSites" : outputModuleSection.autoApproveSites,
+                                       "Priority" : outputModuleSection.priority}
+        return subInformation
+
     def parentProcessingFlag(self):
         """
         _parentProcessingFlag_
@@ -1081,6 +1205,7 @@ class WMTask(ConfigSectionTree):
         self.section_("constraints")
         self.section_("input")
         self.section_("notifications")
+        self.section_("subscriptions")
         self.notifications.targets = []
         self.input.sandbox = None
         self.input.section_("splitting")
@@ -1088,6 +1213,7 @@ class WMTask(ConfigSectionTree):
         self.constraints.section_("sites")
         self.constraints.sites.whitelist = []
         self.constraints.sites.blacklist = []
+        self.subscriptions.outputModules = []
         self.input.section_("WMBS")
 
 

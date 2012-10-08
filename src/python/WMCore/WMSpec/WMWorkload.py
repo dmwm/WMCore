@@ -655,6 +655,9 @@ class WMWorkloadHelper(PersistencyHelper):
                         lfnBase(mergedLFN)
                         setattr(outputModule, "processedDataset", processedDataset)
 
+                        #Once we change an output module we must update the subscription information
+                        task.updateSubscriptionDataset(outputModuleName, outputModule)
+
                         # For merge tasks, we want all output to go to the merged LFN base.
                         if taskType == "Merge":
                             setattr(outputModule, "lfnBase", mergedLFN)
@@ -1034,6 +1037,120 @@ class WMWorkloadHelper(PersistencyHelper):
                     outputDatasets.append(anotherDataset)
 
         return outputDatasets
+
+    def setSubscriptionInformationWildCards(self, wildcardDict, custodialSites = None,
+                                            nonCustodialSites = None, autoApproveSites = None,
+                                            priority = "Low", primaryDataset = None,
+                                            dataTier = None):
+        """
+        _setSubscriptonInformationWildCards_
+
+        Set the given subscription information for all datasets
+        in the workload that match the given primary dataset (if any), site lists can have wildcards.
+        See WMWorkload.WMWorkloadHelper.setSiteWildcardsLists for details on the wildcardDict
+        """
+
+        if type(custodialSites) != type([]):
+            custodialSites = [custodialSites]
+        if type(nonCustodialSites) != type([]):
+            nonCustodialSites = [nonCustodialSites]
+        if type(autoApproveSites) != type([]):
+            autoApproveSites = [autoApproveSites]
+
+        newCustodialList = self.removeWildcardsFromList(siteList = custodialSites, wildcardDict = wildcardDict)
+        newNonCustodialList = self.removeWildcardsFromList(siteList = nonCustodialSites, wildcardDict = wildcardDict)
+        newAutoApproveList = self.removeWildcardsFromList(siteList = autoApproveSites, wildcardDict = wildcardDict)
+
+        for site in newCustodialList:
+            if '*' in site:
+                msg = "Invalid wildcard site %s in custodial site list!" % site
+                raise WMWorkloadException(msg)
+        for site in newNonCustodialList:
+            if '*' in site:
+                msg = "Invalid wildcard site %s in non custodial site list!" % site
+                raise WMWorkloadException(msg)
+        for site in newAutoApproveList:
+            if '*' in site:
+                msg = "Invalid wildcard site %s in auto approval site list!" % site
+                raise WMWorkloadException(msg)
+
+        self.setSubscriptionInformation(custodialSites = newCustodialList,
+                                        nonCustodialSites = newNonCustodialList,
+                                        autoApproveSites = newAutoApproveList,
+                                        priority = priority,
+                                        primaryDataset = primaryDataset,
+                                        dataTier = dataTier)
+
+    def setSubscriptionInformation(self, initialTask = None, custodialSites = None,
+                                         nonCustodialSites = None, autoApproveSites = None,
+                                         priority = "Low", primaryDataset = None,
+                                         dataTier = None):
+        """
+        _setSubscriptionInformation_
+
+        Set the given subscription information for all datasets
+        in the workload that match the given primaryDataset (if any)
+        """
+
+        if type(custodialSites) != type([]):
+            custodialSites = [custodialSites]
+        if type(nonCustodialSites) != type([]):
+            nonCustodialSites = [nonCustodialSites]
+        if type(autoApproveSites) != type([]):
+            autoApproveSites = [autoApproveSites]
+
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            task.setSubscriptionInformation(custodialSites, nonCustodialSites,
+                                            autoApproveSites, priority,
+                                            primaryDataset, dataTier)
+            self.setSubscriptionInformation(task, custodialSites, nonCustodialSites,
+                                            autoApproveSites, priority,
+                                            primaryDataset, dataTier)
+
+        return
+
+    def getSubscriptionInformation(self, initialTask = None):
+        """
+        _getSubscriptionInformation_
+
+        Get the subscription information for the whole workload, this is given by
+        dataset and aggregated according to the information from each individual task
+        See WMTask.WMTaskHelper.getSubscriptionInformation for the output structure
+        """
+        subInfo = {}
+
+        #Add site lists without duplicates
+        extendWithoutDups = lambda x, y : x + list(set(y) - set(x))
+        #Choose the lowest priority
+        solvePrioConflicts = lambda x, y : y if x == "High" or y == "Low" else x
+
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+            subInfo = initialTask.getSubscriptionInformation()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            taskSubInfo = self.getSubscriptionInformation(task)
+            for dataset in taskSubInfo:
+                if dataset in subInfo:
+                    subInfo[dataset]["CustodialSites"]    = extendWithoutDups(taskSubInfo[dataset]["CustodialSites"],
+                                                                              subInfo[dataset]["CustodialSites"])
+                    subInfo[dataset]["NonCustodialSites"] = extendWithoutDups(taskSubInfo[dataset]["NonCustodialSites"],
+                                                                              subInfo[dataset]["NonCustodialSites"])
+                    subInfo[dataset]["AutoApproveSites"]  = extendWithoutDups(taskSubInfo[dataset]["AutoApproveSites"],
+                                                                              subInfo[dataset]["AutoApproveSites"])
+                    subInfo[dataset]["Priority"]          = solvePrioConflicts(taskSubInfo[dataset]["Priority"],
+                                                                               taskSubInfo[dataset]["Priority"])
+                else:
+                    subInfo[dataset] = taskSubInfo[dataset]
+
+        return subInfo
 
     def getUnmergedLFNBase(self):
         """

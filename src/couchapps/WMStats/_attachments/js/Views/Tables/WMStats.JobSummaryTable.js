@@ -5,6 +5,14 @@ WMStats.JobSummaryTable = function (data, containerDiv) {
     var tableConfig = {
         "sDom": 'lfrtip',
         "aoColumns": [
+            { "mDataProp": function (source, type, val) {
+                if (type == 'display') {
+                    //var taskList = source.task.split('/');
+                    //return taskList[taskList.length - 1];
+                    return source.task;
+                }
+                return source.task;
+            }, "sTitle": "task"},
             { "mDataProp": "status", "sTitle": "status"},
             { "mDataProp": "site", "sTitle": "site"},
             { "mDataProp": "exitCode", "sTitle": "exit code"},

@@ -543,24 +543,3 @@ table.display tr.gradeX {
 table.display tr.gradeU {
     background-color: #ddd;
 }
-
-div.box {
-    height: 150px;
-    width: 100%;
-    padding: 10px;
-    font-size: 0.8em;
-    overflow: auto;
-    border: 1px solid #8080FF;
-    background-color: #E2E3CA;
-}
-
-.requestInfoBox {
-    height: auto;
-    width: 100%;
-    padding: 10px;
-    font-size: 0.8em;
-    overflow: auto;
-    border: 1px solid #8080FF;
-    background-color: #F2F0F2;
-}
-

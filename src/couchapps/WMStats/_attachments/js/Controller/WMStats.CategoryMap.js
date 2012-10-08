@@ -24,7 +24,7 @@ WMStats.CategoryTableMap = function(){
 }()
 
 //register mapping
-WMStats.CategorySummaryMap.add('sites', WMStats.SiteSummary);
+WMStats.CategorySummaryMap.add(WMStats.Controls.sites, WMStats.SiteSummary);
 WMStats.CategoryTableMap.add(WMStats.Controls.sites, WMStats.SiteSummaryTable);
 
 WMStats.CategoryTableMap.add(WMStats.Controls.requests, WMStats.ActiveRequestTable);

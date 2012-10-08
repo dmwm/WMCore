@@ -54,6 +54,7 @@ function getCategorizedData(category) {
         }
         
         var divSelector = viewSelector + " div.summary_data";
+        $(viewSelector + " div.detail_data").empty();
         $(divSelector).empty();
         var categoryData = getCategorizedData(category);
         // extend to other view type 
@@ -89,6 +90,7 @@ function getCategorizedData(category) {
             var categoryData = getCategorizedData(category);
             // extend to other view type 
             var view = WMStats.CategoryTableMap.get(category);
+            $("#category_view div.detail_data").empty();
             view(categoryData, "#category_view div.summary_data");
             WMStats.GenericController.switchView("#category_view");
             WMStats.ActiveRequestController.CategoryData = categoryData;
@@ -97,12 +99,14 @@ function getCategorizedData(category) {
     $(WMStats.Globals.Event).on(E.REQUEST_SUMMARY_READY, 
         function(event, data) {
             //refresh filter cache.
+            $("#request_view div.detail_data").empty();
             WMStats.ActiveRequestTable(data, "#request_view div.summary_data");
             WMStats.GenericController.switchView("#request_view");
         })
 
     $(WMStats.Globals.Event).on(E.JOB_SUMMARY_READY, 
         function(event, data) {
+            $("#job_view div.detail_data").empty();
             WMStats.JobSummaryTable(data, "#job_view div.summary_data");
             WMStats.GenericController.switchView("#job_view");
         })
@@ -148,4 +152,8 @@ function getCategorizedData(category) {
         $(this).addClass('reviewed');
        })
 
+    $(document).on('click', "#tab_board li a", function(event){
+        WMStats.GenericController.switchView(this.hash);
+        event.preventDefault();
+    });
 })(jQuery);

@@ -17,9 +17,9 @@ WMStats.Controls = function($){
     function setCategoryButton(selector) {
         var categoryBottons = 
         '<nav class="category-button">\
-            <input type="radio" name="category-select" value="requests" id="request-category" checked="checked"></input>\
+            <input type="radio" name="category-select" value="requests" id="request-category"></input>\
             <label for="request-category">All Requests</label>\
-            <input type="radio" name="category-select" value="campaign" id="campaign-category"></input>\
+            <input type="radio" name="category-select" value="campaign" id="campaign-category" checked="checked"></input>\
             <label for="campaign-category">Campaign</label>\
             <input type="radio" name="category-select" value="sites" id="site-category"></input>\
             <label for="site-category">Site</label>\
@@ -39,9 +39,9 @@ WMStats.Controls = function($){
     };
     
     function setTabs(selector) {
-        var tabs = '<ul><li><a href="#category_view">Category</a></li>\
-                    <li><a href="#request_view">Requests</a></li>\
-                    <li><a href="#job_view">Jobs</a></li></ul>'
+        var tabs = '<ul><li class="first"><a href="#category_view">Category</a></li>\
+                    <li><a href="#request_view">&#187 Requests</a></li>\
+                    <li><a href="#job_view">&#187 Jobs</a></li></ul>'
         $(selector).append(tabs).addClass("tabs");
         $(selector + " ul").addClass("tabs-nav");
     };

@@ -32,11 +32,8 @@ WMStats.namespace("GenericController");
         }
         $(showSelector).show();
         WMStats.Env.View = showSelector;
+        // select the tab
+        $('#tab_board li').removeClass("tabs-selected");
+        $('#tab_board a[href="' + showSelector +'"]').parent().addClass("tabs-selected")
     };
-    
-    $(document).on('click', "#tab_board li a", function(event){
-        WMStats.GenericController.switchView(this.hash);
-        event.preventDefault();
-    });
-
 })(jQuery)

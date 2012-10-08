@@ -262,6 +262,7 @@ class ChangeState(WMObject, WMConnectionBase):
                               "retrycount": job["retry_count"],
                               "workflow": job["workflow"],
                               "task": job["task"],
+                              "jobtype": job["jobType"],
                               "state": newstate,
                               "site": job["fwjr"].getSiteName(),
                               "exitcode": job["fwjr"].getExitCode(),

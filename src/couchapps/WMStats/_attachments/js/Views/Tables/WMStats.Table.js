@@ -11,7 +11,8 @@ WMStats.Table = function(config, tableSetting) {
         "bProcessing": true,
         "iDisplayLength": 10,
         "sDom": 'C<"clear">lfrtip',
-        "aaSorting": []
+        "aaSorting": [],
+        "bAutoWidth": false
         };
     
     function updateConfig(config) {

@@ -1,5 +1,5 @@
 function(doc) {
-  if (doc.type == "reqmgr_request"){
+  if (doc.request_status){
     emit(doc.request_status[doc.request_status.length - 1].status, null);
   }
 }

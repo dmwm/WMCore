@@ -43,7 +43,7 @@
         applyTemplate();
         WMStats.Controls.setFilter("#filter_board");
         WMStats.Controls.setTabs("#tab_board");
-        WMStats.Controls.setCategoryButton("#status_board");
+        WMStats.Controls.setCategoryButton("#category_button");
         retrieveData();
         // 5 min update
         setInterval(retrieveData, 300000)
@@ -64,9 +64,16 @@
         <div id="status_board"></div>
         <div id="tab_board"></div>
         <div id="data_board">
-            <div id="category_view" class="viewPane"></div>
+            <div id="category_view">
+                <div id="category_button"></div>
+                <div class="detail_data"></div>
+                <div class="summary_data"></div>
+            </div>
             <div id="request_view" class="viewPane"></div>
-            <div id="job_view" class="viewPane"></div>
+            <div id="job_view">
+                <div class="summary_data"></div>
+                <div class="detail_data"></div>
+            </div>
         </div>
     </div>
     <div id="loading_page">

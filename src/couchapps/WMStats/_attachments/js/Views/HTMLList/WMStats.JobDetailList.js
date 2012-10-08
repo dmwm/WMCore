@@ -35,9 +35,11 @@ WMStats.namespace('JobDetailList');
                 htmlstr += "<li> lfn:" + jobDoc.output[i].lfn +"</li>";
                 
                 htmlstr += "<li> location: ";
+                htmlstr += jobDoc.output[i].location;
+                /*
                 for (var j in jobDoc.output[i].location) {
                     htmlstr += jobDoc.output[i].location[j] + " ";
-                }
+                }*/
                 htmlstr += "</li>";
                 htmlstr += "<li> checksums: adler32: " + jobDoc.output[i].checksums.adler32 + 
                             " cksum: " + jobDoc.output[i].checksums.cksum + "</li>";

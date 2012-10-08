@@ -68,7 +68,6 @@ background: #7878FF;
     width: 38%;
     height: 60px;
     margin-top:5px;
-    
 }
 
 /* property for message board */
@@ -105,12 +104,12 @@ clear: both
 }
 
 #filter_board { 
-position: relative;
-height: 35px;
-background: #b7d84b;
-opacity: 1;
-font: 10px verdana;
-margin-top: 5px;
+    position: relative;
+    background: #b7d84b;
+    opacity: 1;
+    font: 0.9em verdana;
+    margin-top: 5px;
+    padding: 5px 50px 5px 50px;
 }
 
 #status_board{ 
@@ -118,7 +117,7 @@ margin-top: 5px;
     width: 69%;
     height: 30px;
     margin-top:5px;
-    background: #469800;
+    padding-top: 5px;
     opacity: 1;
     float: right;
 }
@@ -131,14 +130,11 @@ margin-top: 5px;
 }
 
 #filter_summary{ 
-    border: 1px solid;
     position: relative;
     height: 40px;
     font: bold 10px verdana;
     margin-top: 5px;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
+    }
 
 #data_board{ 
     position: relative;
@@ -151,6 +147,18 @@ margin-top: 5px;
     -moz-border-radius: 5px;
     border-radius: 5px
 }
+
+#category_button{ 
+    position: relative;
+    margin: 5px;
+    padding: 5px 30px;
+    /*border: 1px dotted #E0A21B;*/
+    font: 0.9em;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    
+    }
 
 #request_view .detail_data, #category_view .detail_data{ 
     position: absolute;
@@ -182,10 +190,21 @@ margin-top: 5px;
 .tabs .tabs-nav { margin: 0; padding: .2em .2em 0; }
 .tabs .tabs-nav li { list-style: none; float: left; position: relative; top: 1px; margin: 0 .2em 1px 0; border-bottom: 0 !important; padding: 0; white-space: nowrap; display: inline}
 .tabs .tabs-nav li a { float: left; padding: .5em 1em; text-decoration: none; display: block}
-.tabs .tabs-nav li.tabs-selected { margin-bottom: 0; padding-bottom: 1px; }
+.tabs .tabs-nav li.tabs-selected { margin-bottom: 0; padding-bottom: 1px; font-weight: bold; color: #E6B517;}
 .tabs .tabs-nav li.tabs-selected a, .tabs .tabs-nav li.tabs-disabled a { cursor: text; }
 .tabs .tabs-nav li a, .tabs .tabs-nav li.tabs-active a { cursor: pointer; } /* first selector in group seems obsolete, but required to overcome bug in Opera applying cursor: text overall if defined elsewhere... */
 
+/*
+.tabs .tabs-nav li:before {
+    content: ">>";
+    color: #1B28E0;
+    border-bottom: 0;
+    }
+    
+.tabs .tabs-nav li.first:before {
+    content: " ";
+    }
+*/
 div.jobDetailBox {
     font-size: 0.9em;
     background-color: #E2E3CA;
@@ -207,12 +226,13 @@ div.jobDetailBox {
 
 .requestDetailBox {
     height: auto;
-    width: 300px;
+    width: 250px;
     padding: 10px;
     font-size: 1em;
     overflow: auto;
     border: 1px solid #8080FF;
     background-color: #F2F0F2;
+    float: right;
 }
 a.requestAlert:hover {
     background-color:yellow;

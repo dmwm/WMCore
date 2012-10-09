@@ -13,6 +13,7 @@ Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
 import os
+import shutil
 import threading
 import logging
 import gc
@@ -70,6 +71,7 @@ class AccountantWorker(WMConnectionBase):
         self.addFileAction           = self.daofactory(classname = "Files.Add")
         self.jobCompleteInput        = self.daofactory(classname = "Jobs.CompleteInput")
         self.setBulkOutcome          = self.daofactory(classname = "Jobs.SetOutcomeBulk")
+        self.getWorkflowSpec         = self.daofactory(classname = "Workflow.GetSpecAndNameFromTask")
 
         self.dbsStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.SetStatus")
         self.dbsParentStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.GetParentStatus")
@@ -93,6 +95,9 @@ class AccountantWorker(WMConnectionBase):
 
         # Decide whether or not to attach jobReport to returned value
         self.returnJobReport = getattr(config.JobAccountant, 'returnReportFromWorker', False)
+
+        # Store location for the specs for DBS
+        self.specDir = getattr(config.JobAccountant, 'specDir', None)
 
         # Hold data for later commital
         self.dbsFilesToCreate  = []
@@ -520,6 +525,13 @@ class AccountantWorker(WMConnectionBase):
         runLumiBinds  = []
         selfChecksums = None
 
+        taskPaths = map(lambda x: x.get('task', None), self.dbsFilesToCreate)
+        taskPaths = filter(None, taskPaths)
+        taskMap   = self.getWorkflowSpec.execute(taskPaths,
+                                                 conn = self.getDBConn(),
+                                                 transaction = self.existingTransaction())
+
+
         for dbsFile in self.dbsFilesToCreate:
             # Append a tuple in the format specified by DBSBufferFiles.Add
             # Also run insertDatasetAlgo
@@ -556,15 +568,15 @@ class AccountantWorker(WMConnectionBase):
                     raise AccountantWorkerException(msg)
 
             # Handle inserting the workflow using the taskPath and the requestName
-            taskPath   = str(dbsFile.get('task', None))
-            workflowID = None
-            if not '/' in taskPath:
-                logging.error("Could not find / character in taskPath")
-                logging.error("Could not find request Name!")
+            taskPath     = str(dbsFile.get('task', None))
+            workflowID   = None
+            workflowName = taskMap.get(taskPath, {}).get('name', None)
+            specPath     = taskMap.get(taskPath, {}).get('spec', None)
+            if not (taskPath and workflowName and specPath):
+                logging.error("Could not find workflow in WMBS")
                 logging.error("Not doing workflow association!")
             else:
-                requestName = taskPath.split('/')[1]
-                workflowPath = '%s:%s' % (requestName, taskPath)
+                workflowPath = '%s:%s' % (workflowName, taskPath)
                 if workflowPath in self.workflowPaths:
                     for wf in self.workflowIDs:
                         if wf['workflowPath'] == workflowPath:
@@ -572,8 +584,26 @@ class AccountantWorker(WMConnectionBase):
                             break
                 if not workflowID:
                     # Then we have to insert the workflow by hand
-                    workflowID = self.insertWorkflow.execute(requestName = requestName,
-                                                             taskPath    = taskPath)
+                    # Copy the spec to the DBSBuffer spec dir, if not possible
+                    # then don't store the spec in the DBSBuffer database
+                    if self.specDir:
+                        specFile = "%s.pkl" % workflowName
+                        targetFile = os.path.join(self.specDir, specFile)
+                        try:
+                            if not os.path.exists(self.specDir):
+                                os.mkdir(self.specDir)
+                            if not os.path.exists(targetFile):
+                                shutil.copy(specPath, targetFile)
+                            specPath = targetFile
+                        except Exception, ex:
+                            logging.error("Failed copying spec to target dir")
+                            logging.error("Message: %s" % str(ex))
+                            specPath = None
+                    else:
+                        specPath = None
+                    workflowID = self.insertWorkflow.execute(requestName = workflowName,
+                                                             taskPath    = taskPath,
+                                                             specPath    = specPath)
                     self.workflowPaths.append(workflowPath)
                     self.workflowIDs.append({'workflowPath': workflowPath, 'workflowID': workflowID})
                     

@@ -228,7 +228,8 @@ class Create(DBCreator):
           """CREATE TABLE dbsbuffer_workflow (
                id           INTEGER,
                name         VARCHAR2(255),
-               task         VARCHAR2(255)) %s """ % tablespaceTable
+               task         VARCHAR2(255),
+               spec         VARCHAR2(255)) %s """ % tablespaceTable
 
         self.create["10dbsbuffer_workflow_seq"] = \
           """CREATE SEQUENCE dbsbuffer_workflow_seq

@@ -66,6 +66,21 @@ WMStats.Requests = function(noFilterFlag) {
         
         return timeLeft;
     }
+    
+    tier1Requests.requestNotPulledAlert = function() {
+        var alertRequests = [];
+        for (var workflow in this.getDataByWorkflow()) {
+            var reqStatusInfo = this.getRequestStatusAndTime(workflow);
+            if (reqStatusInfo.status == "assigned") {
+                var currentTime = Math.round(new Date().getTime() / 1000);
+                // not updated for 20 min
+                if ((currentTime - reqStatusInfo.update_time) > 600) {
+                    alertRequests.push(this.getData(workflow));
+                }
+            }
+        }
+        return alertRequests;
+    }
 
     return tier1Requests;
 }

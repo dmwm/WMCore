@@ -22,8 +22,7 @@ WMStats.ActiveRequestModel = function() {
                             "rejected"
                             ], 
                    'include_docs': true};
-    var reqModel = new WMStats._RequestModelBase(initView, options, 
-                                       WMStats.ActiveRequestTable);
-    reqModel.setTrigger('activeRequestReady');
+    var reqModel = new WMStats._RequestModelBase(initView, options);
+    reqModel.setTrigger(WMStats.CustomEvents.REQUESTS_LOADED);
     return reqModel;
 }()

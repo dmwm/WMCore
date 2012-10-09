@@ -252,7 +252,14 @@ WMStats.GenericRequests.prototype = {
         else return this._get(this._dataByWorkflow[request], keyString, defaultVal);
     },
     
-    getData: function() {
+    getData: function(workflow) {
+        if (workflow){
+            var requestsObj = {};
+            requestsObj[workflow] = this._dataByWorkflow[workflow]
+            return {requests: requestsObj,
+                    summary: this.getSummary(workflow),
+                    key: workflow}
+        }
         return this._dataByWorkflow;
     },
     
@@ -265,12 +272,16 @@ WMStats.GenericRequests.prototype = {
         this._dataByWorkflow = data;
     },
     
-    getList: function() {
+    getList: function(sortFunc) {
         var list = [];
         for (var request in this.getDataByWorkflow()) {
             list.push(this.getDataByWorkflow(request))
         }
-        return list.sort(this._requestDateSort);
+        if (sortFunc) {
+            return list.sort(sortFunc);
+        } else {
+            return list.sort(this._requestDateSort);
+        }
     },
 
     getSummary: function(workflow) {
@@ -279,11 +290,30 @@ WMStats.GenericRequests.prototype = {
         if (workflow) {
             return summary.createSummaryFromRequestDoc(this.getDataByWorkflow(workflow));
         } else {
+            //TODO need to cache the information
             for (var request in this.getDataByWorkflow()) {
                 summary.updateFromRequestDoc(this.getDataByWorkflow(request));
             }
             return summary;
         }
+    },
+    
+    getAlertRequests: function() {
+        var alertRequests = [];
+        for (var workflow in this.getDataByWorkflow()) {
+            var reqSummary = this.getSummary(workflow);
+            var coolOff = reqSummary.getTotalCooloff();
+            var paused = reqSummary.getTotalPaused();
+            if (coolOff > 0 || paused > 0) {
+                alertRequests.push(this.getData(workflow));
+            }
+        }
+        return alertRequests;
+    },
+    
+    getRequestStatusAndTime: function(workflowName) {
+        var workflowData = this._dataByWorkflow[workflowName]
+        return  workflowData["request_status"][workflowData["request_status"].length - 1];
     }
 };
 
@@ -336,12 +366,16 @@ WMStats.RequestsByKey = function (category, summaryFunc) {
         }
     };
     
-    function getList() {
+    function getList(sortFunc) {
         var list = [];
         for (var key in _data) {
             list.push(_data[key])
         }
-        return list;
+        if (sortFunc) {
+            return list.sort(sortFunc);
+        } else {
+            return list;
+        }
     };
     
     return {

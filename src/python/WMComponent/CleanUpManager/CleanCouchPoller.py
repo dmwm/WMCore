@@ -69,7 +69,7 @@ class CleanCouchPoller(BaseWorkerThread):
                 logging.info("%s docs deleted from FWJRDump" % report)
                 
                 self.centralCouchDBWriter.updateRequestStatus(workflowName, "archived")
-                logging.info("status updated to deleted %s" % workflowName)
+                logging.info("status updated to archived %s" % workflowName)
                 
         except Exception, ex:
             logging.error(str(ex))

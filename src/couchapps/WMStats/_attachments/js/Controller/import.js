@@ -1,4 +1,5 @@
 WMStats.Globals.importScripts([
+    "js/Controller/WMStats.Env.js",
     "js/Controller/WMStats.GenericController.js",
     "js/Controller/WMStats.ActiveRequestController.js",
     "js/Controller/WMStats.CategoryMap.js",

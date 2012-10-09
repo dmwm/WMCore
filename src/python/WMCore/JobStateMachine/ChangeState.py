@@ -11,14 +11,50 @@ import traceback
 import re
 
 from WMCore.Database.CMSCouch import CouchServer
-from WMCore.Database.CMSCouch import CouchConflictError, CouchNotFoundError
+from WMCore.Database.CMSCouch import CouchNotFoundError, CouchError
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.JobStateMachine.Transitions import Transitions
-from WMCore.Services.UUID import makeUUID
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMConnectionBase import WMConnectionBase
 
 CMSSTEP = re.compile(r'^cmsRun[0-9]+$')
+
+def discardConflictingDocument(couchDbInstance, data, result):
+    """
+    _discardConflictingDocument_
+
+    This should be passed to the queue and commit calls of CMSCouch
+    in order to tell it what to do with conflicting documents.
+    In this case we trash the old one and replace with what we were
+    trying to commit, this is available in the data argument.
+    And the result tells us the id of the conflicting document
+    """
+
+    conflictingId = result["id"]
+
+    try:
+        if not couchDbInstance.documentExists(conflictingId):
+            # It doesn't exist, this is odd
+            # Don't try again
+            return result
+
+        # Get the revision to override
+        originalDocRev = couchDbInstance.document(conflictingId)["_rev"]
+
+        # Look for the data to be commited
+        retval = result
+        for doc in data["docs"]:
+            if doc["_id"] == conflictingId:
+                doc["_rev"] = originalDocRev
+                retval = couchDbInstance.commitOne(doc)
+                break
+
+        return retval
+    except CouchError, ex:
+        logging.error("Couldn't resolve conflict when updating document with id %s" % result["id"])
+        logging.error("Error: %s" % str(ex))
+        return result
+
 
 class ChangeState(WMObject, WMConnectionBase):
     """
@@ -185,7 +221,7 @@ class ChangeState(WMObject, WMConnectionBase):
 
                 couchRecordsToUpdate.append({"jobid": job["id"],
                                              "couchid": jobDocument["_id"]})
-                self.jobsdatabase.queue(jobDocument)
+                self.jobsdatabase.queue(jobDocument, callback = discardConflictingDocument)
             else:
                 # We send a PUT request to the stateTransition update handler.
                 # Couch expects the parameters to be passed as arguments to in
@@ -229,7 +265,7 @@ class ChangeState(WMObject, WMConnectionBase):
                                 "retrycount": job["retry_count"],
                                 "fwjr": job["fwjr"].__to_json__(None),
                                 "type": "fwjr"}
-                self.fwjrdatabase.queue(fwjrDocument, timestamp = True)
+                self.fwjrdatabase.queue(fwjrDocument, timestamp = True, callback = discardConflictingDocument)
 
                 jobSummaryId = job["name"]
                 # building a summary of fwjr
@@ -281,8 +317,8 @@ class ChangeState(WMObject, WMConnectionBase):
                                      conn = self.getDBConn(),
                                      transaction = self.existingTransaction())
 
-        self.jobsdatabase.commit()
-        self.fwjrdatabase.commit()
+        self.jobsdatabase.commit(callback = discardConflictingDocument)
+        self.fwjrdatabase.commit(callback = discardConflictingDocument)
         self.jsumdatabase.commit()
         return
 

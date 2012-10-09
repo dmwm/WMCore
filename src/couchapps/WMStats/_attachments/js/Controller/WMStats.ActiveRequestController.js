@@ -123,7 +123,9 @@ function getCategorizedData(category) {
             var allRequests = WMStats.ActiveRequestModel.getRequests();
             var reqDoc = allRequests.getDataByWorkflow(workflow);
             var reqSummary = allRequests.getSummary(workflow);
-            var data = {requests: reqDoc, summary: reqSummary};
+            var requests = {};
+            requests[workflow] = reqDoc;
+            var data = {key: workflow, requests: requests, summary: reqSummary};
         
             WMStats.RequestDetailList(data, "#request_view div.detail_data");
         })

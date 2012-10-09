@@ -16,7 +16,7 @@ if (WMStats.Globals.VARIANT == "tier1") {
                                    "js/Views/HTMLList/T0/WMStats.RequestDataList.js"])
 } else if (WMStats.Globals.VARIANT == "analysis") {
     //import analysis specific table
-    WMStats.Globals.importScripts(["js/Views/HTMLList/T1/WMStats.RequestDetailList.js",
+    WMStats.Globals.importScripts(["js/Views/HTMLList/Analysis/WMStats.RequestDetailList.js",
                                    "js/Views/HTMLList/T1/WMStats.RequestAlertGUI.js",
                                    "js/Views/HTMLList/T1/WMStats.RequestDataList.js"])
 } 

@@ -89,6 +89,7 @@ class WorkQueueReqMgrInterface():
                 # temporary problem - try again later
                 msg = 'Error processing request "%s": will try again later.' \
                 '\nError: "%s"' % (reqName, str(ex))
+                self.logger.info(msg)
                 self.sendMessage(reqName, msg)
                 continue
             except Exception, ex:

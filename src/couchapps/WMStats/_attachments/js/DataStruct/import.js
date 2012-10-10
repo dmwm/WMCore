@@ -12,13 +12,15 @@ WMStats.Globals.importScripts([
 
 if (WMStats.Globals.VARIANT == "tier1") {
     //import tier1 specific table
-    WMStats.Globals.importScripts(["js/DataStruct/T1/WMStats.Requests.js",
+    WMStats.Globals.importScripts(["js/DataStruct/T1/WMStats.RequestSummary.js",
                                    "js/DataStruct/T1/WMStats.CampaignSummary.js"])
 } else if (WMStats.Globals.VARIANT == "tier0") {
     //import tie0 specific table
-    WMStats.Globals.importScripts(["js/DataStruct/T0/WMStats.Requests.js",
+    WMStats.Globals.importScripts(["js/DataStruct/T0/WMStats.RequestSummary.js",
                                    "js/DataStruct/T0/WMStats.RunSummary.js"])
 } else if (WMStats.Globals.VARIANT == "analysis") {
     //import analysis specific table
-    WMStats.Globals.importScripts(["js/DataStruct/T1/WMStats.Requests.js"])
+    WMStats.Globals.importScripts(["js/DataStruct/T1/WMStats.RequestSummary.js",
+                                   "js/DataStruct/T1/WMStats.CampaignSummary.js",
+                                   "js/DataStruct/Analysis/WMStats.UserSummary.js"])
 } 

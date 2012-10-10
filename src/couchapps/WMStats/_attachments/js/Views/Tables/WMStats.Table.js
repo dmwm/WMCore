@@ -11,7 +11,8 @@ WMStats.Table = function(config, tableSetting) {
         "bProcessing": true,
         "iDisplayLength": 10,
         "sDom": 'C<"clear">lfrtip',
-        "aaSorting": []
+        "aaSorting": [],
+        "bAutoWidth": false
         };
     
     function updateConfig(config) {
@@ -35,6 +36,7 @@ WMStats.Table = function(config, tableSetting) {
     }
     
     function create(selector, filterConfig) {
+        $(selector).empty();
         $(selector).html(tableSetting);
         var oTable = $(selector + " table").dataTable(tableConfig)
         if ( oTable.length > 0 ) {

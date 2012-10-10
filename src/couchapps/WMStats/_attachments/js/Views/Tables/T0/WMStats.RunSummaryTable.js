@@ -45,11 +45,16 @@ WMStats.RunSummaryTable = function (data, containerDiv) {
             },
             { "mDataProp": function (source, type, val) { 
                               return source.summary.getTotalPaused();
-                           }, "sTitle": "job paused", "sDefaultContent": 0, 
+                           }, "sTitle": "paused", "sDefaultContent": 0, 
             }
         ]
     }
-    tableConfig.aaData = data.getList();
+    
+    function runNumerDesc(a, b) {
+        return (Number(b.key) - Number(a.key));
+    }
+    
+    tableConfig.aaData = data.getList(runNumerDesc);
     
     var filterConfig = {};
     

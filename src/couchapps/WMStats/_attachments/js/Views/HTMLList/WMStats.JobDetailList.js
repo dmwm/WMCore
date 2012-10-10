@@ -5,8 +5,9 @@ WMStats.namespace('JobDetailList');
         var jobDetails = data.getData();
         for (var index in jobDetails) {
             var jobDoc = jobDetails[index];
-            htmlstr += "<div class='box' id='jobDetail-" + index + "'>"
+            htmlstr += "<div class='jobDetailBox' id='jobDetail-" + index + "'>"
             htmlstr += "<ul>";
+            htmlstr += "<li> job id: " + jobDoc._id + "</li>";
             htmlstr += "<li> workflow: " + jobDoc.workflow + "</li>";
             htmlstr += "<li> task: " + jobDoc.task + "</li>";
             htmlstr += "<li> state: " + jobDoc.state + "</li>";
@@ -34,9 +35,11 @@ WMStats.namespace('JobDetailList');
                 htmlstr += "<li> lfn:" + jobDoc.output[i].lfn +"</li>";
                 
                 htmlstr += "<li> location: ";
+                htmlstr += jobDoc.output[i].location;
+                /*
                 for (var j in jobDoc.output[i].location) {
                     htmlstr += jobDoc.output[i].location[j] + " ";
-                }
+                }*/
                 htmlstr += "</li>";
                 htmlstr += "<li> checksums: adler32: " + jobDoc.output[i].checksums.adler32 + 
                             " cksum: " + jobDoc.output[i].checksums.cksum + "</li>";

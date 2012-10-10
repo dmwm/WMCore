@@ -224,6 +224,8 @@ class TaskChainTests(unittest.TestCase):
                 "RequestNumEvents" : 10000,
                 "Seeding" : "Automatic",
                 "PrimaryDataset" : "RelValTTBar",
+                "DataPileup" : "/minbias/some/data",
+                "MCPileup" : "/minbias/some/mc"
             },
             "Task2" : {
                 "TaskName" : "DigiHLT",
@@ -232,6 +234,8 @@ class TaskChainTests(unittest.TestCase):
                 "ConfigCacheID" : processorDocs['DigiHLT'],
                 "SplittingAlgorithm" : "FileBased",
                 "SplittingArguments" : {"files_per_job" : 1 },
+                "DataPileup" : "/minbias/some/data",
+                "MCPileup" : "/minbias/some/mc"
             },
             "Task3" : {
                 "TaskName" : "Reco",

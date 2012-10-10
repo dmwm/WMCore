@@ -39,9 +39,6 @@ def getTestArguments():
         "ProcScenario": "cosmics",
         "DashboardHost": "127.0.0.1",
         "DashboardPort": 8884,
-        "TimePerEvent" : 1,
-        "Memory"       : 1,
-        "SizePerEvent" : 1,
         #"ProcConfigCacheID": "03da10e20c7b98c79f9d6a5c8900f83b",
 
         #"SkimConfigs": [{"SkimName": "Prescaler", "SkimInput": "output",

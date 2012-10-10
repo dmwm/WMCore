@@ -8,6 +8,7 @@ function(doc) {
 			                emit(doc.timestamp, 
 					{'workflow' : workflow,
 			  		 'jobid' : job,
+   	           			 'task' : task,
        		                         '_id': doc['output'][module]['lfn'], 
 				     	 'checksums': doc['output'][module]['checksums'],
 	                              	 'size': doc['output'][module]['size'], 

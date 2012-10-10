@@ -10,8 +10,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 class LoadFromName(DBFormatter):
     sql = """SELECT wmbs_workflow.id, wmbs_workflow.spec, wmbs_workflow.name,
                     wmbs_users.cert_dn as dn, wmbs_users.owner as owner,
-                    wmbs_users.grp as grp, wmbs_users.group_name as vogrp,
-                    wmbs_users.role_name as vorole, wmbs_workflow.task,
+                    wmbs_users.grp as grp, wmbs_workflow.task,
                     wmbs_workflow.type
              FROM wmbs_workflow
              INNER JOIN wmbs_users ON

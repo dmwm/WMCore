@@ -45,8 +45,6 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         RESTBaseUnitTest.setUp(self)
         self.testInit.setupCouch("%s" % self.couchDBName,
                                  "GroupUser", "ConfigCache")
-        self.testInit.setupCouch("%s_wmstats" % self.couchDBName,
-                                 "WMStats")
 
         reqMgrHost      = self.config.getServerUrl()
         self.jsonSender = JSONRequests(reqMgrHost)
@@ -660,6 +658,8 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], CMSSWVersion)
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
+        self.assertEqual(request['ProcessingVersion'], schema['ProcessingVersion'])
+        self.assertEqual(request['AcquisitionEra'], schema['AcquisitionEra'])
 
         return
 
@@ -884,6 +884,8 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], CMSSWVersion)
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
+        self.assertEqual(request['ProcessingVersion'], schema['ProcessingVersion'])
+        self.assertEqual(request['AcquisitionEra'], schema['AcquisitionEra'])
 
         return
 

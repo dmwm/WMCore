@@ -49,8 +49,6 @@ from WMCore.WMException                          import WMException
 from WMCore.WorkQueue.WorkQueue                  import localQueue
 from WMCore.WorkQueue.WorkQueueExceptions        import WorkQueueNoMatchingElements
 from WMCore.WorkerThreads.BaseWorkerThread       import BaseWorkerThread
-from WMCore.BossAir.Plugins.gLitePlugin          import getDefaultDelegation
-from WMCore.Credential.Proxy                    import Proxy
 
 from WMComponent.JobCreator.CreateWorkArea   import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
@@ -83,38 +81,13 @@ class FileEncoder(json.JSONEncoder):
             return list(obj)
         return json.JSONEncoder.default(self, obj)
 
-def getProxy(config, userdn, group, role):
-    """
-    _getProxy_
-    """
-    defaultDelegation = getDefaultDelegation(config, "cms", "myproxy.cern.ch", threading.currentThread().logger)
-    defaultDelegation['userDN'] = userdn
-    defaultDelegation['group'] = group
-    defaultDelegation['role'] = role
-
-    logging.debug("Retrieving proxy for %s" % userdn)
-    proxy = Proxy(defaultDelegation)
-    proxyPath = proxy.getProxyFilename( True )
-    timeleft = proxy.getTimeLeft( proxyPath )
-    if timeleft is not None and timeleft > 3600:
-        return (True, proxyPath)
-    proxyPath = proxy.logonRenewMyProxy()
-    timeleft = proxy.getTimeLeft( proxyPath )
-    if timeleft is not None and timeleft > 0:
-        return (True, proxyPath)
-    return (False, None)
-
-def uploadPublishWorkflow(config, workflow, ufcEndpoint, workDir):
+def uploadPublishWorkflow(workflow, ufcEndpoint, workDir):
     """
     Write out and upload to the UFC a JSON file
     with all the info needed to publish this dataset later
     """
-    retok, proxyfile = getProxy(config, workflow.dn, workflow.vogroup, workflow.vorole)
-    if not retok:
-        logging.info("Cannot get the user's proxy")
-        return False
 
-    ufc = UserFileCache({'endpoint': ufcEndpoint, 'cert': proxyfile, 'key': proxyfile})
+    ufc = UserFileCache({'endpoint': ufcEndpoint})
 
     # Skip tasks ending in LogCollect, they have nothing interesting.
     taskNameParts = workflow.task.split('/')
@@ -411,7 +384,6 @@ class TaskArchiverPoller(BaseWorkerThread):
                     subIDs = workflows[workflow]["workflows"][wmbsWorkflow.id]
                     for subID in subIDs:
                         subscription = Subscription(id = subID)
-                        subscription['workflow'] = wmbsWorkflow
                         subscription.load()
                         subscription.deleteEverything()
 
@@ -742,7 +714,7 @@ class TaskArchiverPoller(BaseWorkerThread):
             workDir, taskDir = getMasterName(startDir=self.jobCacheDir, workflow=workflow)
 
         try:
-            return uploadPublishWorkflow(self.config, workflow, ufcEndpoint=self.userFileCacheURL, workDir=workDir)
+            return uploadPublishWorkflow(workflow, ufcEndpoint=self.userFileCacheURL, workDir=workDir)
         except Exception, ex:
             logging.error('Upload failed for workflow: %s' % (workflow))
             logging.exception(ex) #Let's print the stacktrace with generic Exception

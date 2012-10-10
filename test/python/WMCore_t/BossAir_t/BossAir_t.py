@@ -197,7 +197,6 @@ class BossAirTest(unittest.TestCase):
         config.section_("BossAir")
         config.BossAir.pluginNames = ['TestPlugin', 'CondorPlugin']
         config.BossAir.pluginDir   = 'WMCore.BossAir.Plugins'
-        config.BossAir.UISetupScript = '/afs/cern.ch/cms/LCG/LCG-2/UI/cms_ui_env.sh'
 
         config.component_("JobSubmitter")
         config.JobSubmitter.logLevel      = 'INFO'

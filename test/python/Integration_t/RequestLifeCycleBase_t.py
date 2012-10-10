@@ -17,7 +17,7 @@ class RequestLifeCycleBase_t():
     request = None
     request_name = None
     workqueue = None
-    endpoint = os.environ.get('REQMGRBASEURL', 'https://localhost:8443')
+    endpoint = 'https://localhost:8443'
     reqmgr = RequestManager({'endpoint' : endpoint + '/reqmgr/reqMgr'})
     team = 'TestTeam'
 
@@ -103,7 +103,8 @@ class RequestLifeCycleBase_t():
         while True:
             workqueue = self.reqmgr.getWorkQueue(request = self.__class__.request_name)
             if workqueue:
-                self.__class__.workqueue = WorkQueue(workqueue[0])
+                #self.__class__.workqueue = WorkQueue(workqueue[0])
+                self.__class__.workqueue = WorkQueue("https://localhost:8444/couchdb/workqueue")
                 self.__class__.request = self.__class__.reqmgr.getRequest(self.__class__.request_name)
                 self.assertTrue(self.__class__.request['RequestStatus'] in ('acquired', 'running'))
                 request = [x for x in self.__class__.workqueue.getJobStatusByRequest() if \

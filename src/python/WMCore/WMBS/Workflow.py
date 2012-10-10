@@ -45,7 +45,7 @@ class Workflow(WMBSBase, WMWorkflow):
 
         if self.dn == "unknown":
             self.dn = owner
-
+            
         self.id = id
         return
 
@@ -168,8 +168,6 @@ class Workflow(WMBSBase, WMWorkflow):
         self.owner = result["owner"]
         self.dn = result["dn"]
         self.group = result["grp"]
-        self.vorole = result["vogrp"]
-        self.vogroup = result["vorole"]
         self.task = result["task"]
         self.wfType = result["type"]
 

@@ -106,130 +106,6 @@ def processWorker(input, results):
     return 0
 
 
-def checkUI(setupScript, manualenvprefix, requestedversion = '3.2'):
-    """
-    _checkUI_
-
-    check if the glite UI is setup
-    input: string
-    output: boolean
-    """
-
-    result = False
-
-    cmd = 'source %s && export LD_LIBRARY_PATH=%s:$LD_LIBRARY_PATH && glite-version' % (setupScript, manualenvprefix)
-    pipe = subprocess.Popen(cmd, stdout = subprocess.PIPE,
-                            stderr = subprocess.PIPE, shell = True)
-    stdout, stderr = pipe.communicate()
-    errcode = pipe.returncode
-
-    logging.info("gLite UI '%s' version detected" % stdout.strip() )
-    if len(stderr) == 0 and errcode == 0:
-        gliteversion = stdout.strip()
-        if gliteversion.find( str(requestedversion) ) == 0:
-            result = True
-
-    return result
-
-
-def getDefaultDelegation(config, vo, myproxy, logger, manualenvprefix=''):
-    """ The function returns a dictionary which can be used to build a Credential.Proxy object.
-        Relevant information are taken from the configuration
-    """
-    defaultDelegation = {
-                              'vo': vo,
-                              'logger': logger,
-                              'proxyValidity' : '192:00',
-                              'min_time_left' : 36000
-                        }
-
-    #if server_key/server_cert are not in defaultDelegation then $HOMW/.globus/host(key|cert).pem are taken
-    if hasattr(config.BossAir, 'delegatedServerKey'):
-        if os.path.isfile(config.BossAir.delegatedServerKey):
-            defaultDelegation['server_key'] = config.BossAir.delegatedServerKey
-        else:
-            logging.error("Cannot find the file in config.BossAir.delegatedServerKey parameter: " + config.BossAir.delegatedServerKey)
-
-    if hasattr(config.BossAir, 'delegatedServerCert'):
-        if os.path.isfile(config.BossAir.delegatedServerCert):
-            defaultDelegation['server_cert'] = config.BossAir.delegatedServerCert
-        else:
-            logging.error("Cannot find the file in config.BossAir.delegatedServerCert parameter: " + config.BossAir.delegatedServerCert)
-
-    ## if we switch None to os.environ['X509_USER_PROXY'] this will be automatic
-    singleproxy  = getattr(config.BossAir, 'manualProxyPath', None)
-
-    if singleproxy is None:
-        hostcertpath = None
-        if hasattr(config.BossAir, 'delegatedServerCert'):
-            hostcertpath = config.BossAir.delegatedServerCert
-        elif 'X509_HOST_CERT' in os.environ:
-            if os.path.isfile(os.environ['X509_HOST_CERT']):
-                hostcertpath = os.environ['X509_HOST_CERT']
-            else:
-                logging.error('The X509_HOST_CERT environment variable points to a non-existant file: ' + os.environ['X509_HOST_CERT'])
-        elif os.path.isfile(os.path.join(os.environ['HOME'], '.globus/hostcert.pem')):
-            hostcertpath = os.path.join(os.environ['HOME'], '.globus/hostcert.pem')
-        elif os.path.isfile('/etc/grid-security/hostcert.pem'):
-            hostcertpath = '/etc/grid-security/hostcert.pem'
-        if hostcertpath:
-            command = 'grid-cert-info -subject -file %s' % hostcertpath
-            pipe = subprocess.Popen(command, stdout = subprocess.PIPE,
-                                    stderr = subprocess.PIPE, shell = True)
-            stdout, stderr = pipe.communicate()
-            if pipe.returncode is 0:
-                setattr(config.Agent, 'serverDN', stdout)
-                logging.info('Retrieved agent DN %s ' % stdout)
-            else:
-                logging.error('Failed to retrieve agent DN from %s due to "%s".' % (hostcertpath, stdout + '\n' + stderr) )
-        if getattr ( config.Agent, 'serverDN' , None ) is None:
-            msg = "Error: serverDN parameter required and not provided " + \
-                  "in the configuration"
-            raise BossAirPluginException( msg )
-        if getattr ( config.BossAir, 'proxyDir', None) is None:
-            msg = "Error: proxyDir parameter required and " + \
-                  "not provided in the configuration"
-            raise BossAirPluginException( msg )
-        else:
-            if not os.path.exists(config.BossAir.proxyDir):
-                logging.debug("proxyDir not found: creating it...")
-                try:
-                    os.mkdir(config.BossAir.proxyDir)
-                except Exception, ex:
-                    msg = "Error: problem when creating proxyDir " + \
-                          "directory - '%s'" % str(ex)
-                    raise BossAirPluginException( msg )
-            elif not os.path.isdir(config.BossAir.proxyDir):
-                msg = "Error: proxyDir '%s' is not a directory" \
-                       % str(config.BossAir.proxyDir)
-                raise BossAirPluginException( msg )
-        defaultDelegation['credServerPath'] = config.BossAir.proxyDir
-        defaultDelegation['serverDN'] = config.Agent.serverDN
-    else:
-        logging.debug("Using manually provided proxy '%s' " % singleproxy)
-
-    defaultDelegation['myProxySvr'] = getattr(config.BossAir, 'myproxyhost', myproxy )
-
-    setupScript = getattr(config.BossAir, 'UISetupScript', None)
-    if setupScript is None:
-        msg = "Setup script not provided in the configuration: need to " + \
-              "specify the 'UISetupScript' complete path."
-        raise BossAirPluginException( msg )
-    elif not os.path.exists( setupScript ):
-        msg = "Setup script not found: check if '%s' is really there." \
-               % setupScript
-        raise BossAirPluginException( msg )
-    elif not checkUI(setupScript, manualenvprefix):
-        msg = "gLite environment has not been set properly through '%s'." \
-               % setupScript
-        raise BossAirPluginException( msg )
-    defaultDelegation['uisource'] = setupScript
-
-    return defaultDelegation
-
-
-
-
 class gLitePlugin(BasePlugin):
     """
     Prototype for gLite Plugin
@@ -279,14 +155,78 @@ class gLitePlugin(BasePlugin):
                         'Purged']
 
 
+        self.defaultDelegation = {
+                                  'vo': self.defaultjdl['vo'],
+                                  'logger': myThread.logger,
+                                  'myProxySvr': self.defaultjdl['myproxyhost'],
+                                  'proxyValidity' : '192:00',
+                                  'min_time_left' : 36000
+                                 }
 
-        # This isn't anymore needed, but in the future...
-        self.manualenvprefix = getattr(self.config.BossAir, 'gLitePrefixEnv', '')
+        #if server_key/server_cert are not in defaultDelegation then $HOMW/.globus/host(key|cert).pem are taken
+        if hasattr(self.config.BossAir, 'delegatedServerKey'):
+            if os.path.isfile(self.config.BossAir.delegatedServerKey):
+                self.defaultDelegation['server_key'] = self.config.BossAir.delegatedServerKey
+            else:
+                logging.error("Cannot find the file in config.BossAir.delegatedServerKey parameter: " + config.BossAir.delegatedServerKey)
 
-        self.defaultDelegation = getDefaultDelegation(config=self.config, vo=self.defaultjdl['vo'], logger=myThread.logger, \
-                                                    myproxy=self.defaultjdl['myproxyhost'], manualenvprefix=self.manualenvprefix)
+        if hasattr(self.config.BossAir, 'delegatedServerCert'):
+            if os.path.isfile(self.config.BossAir.delegatedServerCert):
+                self.defaultDelegation['server_cert'] = self.config.BossAir.delegatedServerCert
+            else:
+                logging.error("Cannot find the file in config.BossAir.delegatedServerCert parameter: " + config.BossAir.delegatedServerCert)
 
-        self.singleproxy = getattr(config.BossAir, 'manualProxyPath', None)
+        ## if we switch None to os.environ['X509_USER_PROXY'] this will be automatic
+        self.singleproxy  = getattr(self.config.BossAir, 'manualProxyPath', None)
+
+        if self.singleproxy is None:
+            hostcertpath = None
+            if hasattr(self.config.BossAir, 'delegatedServerCert'):
+                hostcertpath = self.config.BossAir.delegatedServerCert
+            elif 'X509_HOST_CERT' in os.environ:
+                if os.path.isfile(os.environ['X509_HOST_CERT']):
+                    hostcertpath = os.environ['X509_HOST_CERT']
+                else:
+                    logging.error('The X509_HOST_CERT environment variable points to a non-existant file: ' + os.environ['X509_HOST_CERT'])
+            elif os.path.isfile(os.path.join(os.environ['HOME'], '.globus/hostcert.pem')):
+                hostcertpath = os.path.join(os.environ['HOME'], '.globus/hostcert.pem')
+            elif os.path.isfile('/etc/grid-security/hostcert.pem'):
+                hostcertpath = '/etc/grid-security/hostcert.pem'
+            if hostcertpath:
+                command = 'grid-cert-info -subject -file %s' % hostcertpath
+                pipe = subprocess.Popen(command, stdout = subprocess.PIPE,
+                                        stderr = subprocess.PIPE, shell = True)
+                stdout, stderr = pipe.communicate()
+                if pipe.returncode is 0:
+                    setattr(self.config.Agent, 'serverDN', stdout)
+                    logging.info('Retrieved agent DN %s ' % stdout)
+                else:
+                    logging.error('Failed to retrieve agent DN from %s due to "%s".' % (hostcertpath, stdout + '\n' + stderr) )
+            if getattr ( self.config.Agent, 'serverDN' , None ) is None:
+                msg = "Error: serverDN parameter required and not provided " + \
+                      "in the configuration"
+                raise BossAirPluginException( msg )
+            if getattr ( self.config.BossAir, 'proxyDir', None) is None:
+                msg = "Error: proxyDir parameter required and " + \
+                      "not provided in the configuration"
+                raise BossAirPluginException( msg )
+            else:
+                if not os.path.exists(self.config.BossAir.proxyDir):
+                    logging.debug("proxyDir not found: creating it...")
+                    try:
+                        os.mkdir(self.config.BossAir.proxyDir)
+                    except Exception, ex:
+                        msg = "Error: problem when creating proxyDir " + \
+                              "directory - '%s'" % str(ex)
+                        raise BossAirPluginException( msg )
+                elif not os.path.isdir(self.config.BossAir.proxyDir):
+                    msg = "Error: proxyDir '%s' is not a directory" \
+                           % str(self.config.BossAir.proxyDir)
+                    raise BossAirPluginException( msg )
+            self.defaultDelegation['credServerPath'] = self.config.BossAir.proxyDir
+            self.defaultDelegation['serverDN'] = self.config.Agent.serverDN
+        else:
+            logging.debug("Using manually provided proxy '%s' " % self.singleproxy)
 
         # These are the pool settings.
         self.nProcess       = getattr(self.config.BossAir, 'gLiteProcesses', 4)
@@ -300,12 +240,28 @@ class gLitePlugin(BasePlugin):
         self.gliteConfig  = getattr(self.config.BossAir, 'gLiteConf', None)
         self.defaultjdl['service'] = getattr(self.config.BossAir, 'gliteWMS', None)
         self.basetimeout  = getattr(self.config.JobSubmitter, 'getTimeout', 300 )
-        self.defaultjdl['myproxyhost'] = self.defaultDelegation['myProxySvr'] #defaultDelegation['myProxySvr'] is taken from the config (if there)
+        self.defaultjdl['myproxyhost'] = self.defaultDelegation['myProxySvr'] = getattr(self.config.BossAir, 'myproxyhost', self.defaultDelegation['myProxySvr'] )
 
 
         self.wmsMode = getattr(self.config.BossAir, 'submitWMSMode', False)
 
-        self.setupScript = self.defaultDelegation['uisource']
+        # This isn't anymore needed, but in the future...
+        self.manualenvprefix = getattr(self.config.BossAir, 'gLitePrefixEnv', '')
+
+        self.setupScript = getattr(self.config.BossAir, 'UISetupScript', None)
+        if self.setupScript is None:
+            msg = "Setup script not provided in the configuration: need to " + \
+                  "specify the 'UISetupScript' complete path."
+            raise BossAirPluginException( msg )
+        elif not os.path.exists( self.setupScript ):
+            msg = "Setup script not found: check if '%s' is really there." \
+                   % self.setupScript
+            raise BossAirPluginException( msg )
+        elif not self.checkUI():
+            msg = "gLite environment has not been set properly through '%s'." \
+                   % self.setupScript
+            raise BossAirPluginException( msg )
+        self.defaultDelegation['uisource'] = self.setupScript
 
         if not self.unpacker:
             wmcoreBasedir = WMCore.WMInit.getWMBASE()
@@ -1424,6 +1380,31 @@ class gLitePlugin(BasePlugin):
             siteInfo = self.locationAction.execute(siteName = jobSite)
             self.locationDict[jobSite] = siteInfo[0].get('se_name', None)
         return self.locationDict[jobSite]
+
+    def checkUI(self, requestedversion = '3.2'):
+        """
+        _checkUI_
+
+        check if the glite UI is setup
+        input: string
+        output: boolean
+        """
+
+        result = False
+
+        cmd = 'source %s && export LD_LIBRARY_PATH=%s:$LD_LIBRARY_PATH && glite-version' % (self.setupScript, self.manualenvprefix)
+        pipe = subprocess.Popen(cmd, stdout = subprocess.PIPE,
+                                stderr = subprocess.PIPE, shell = True)
+        stdout, stderr = pipe.communicate()
+        errcode = pipe.returncode
+
+        logging.info("gLite UI '%s' version detected" % stdout.strip() )
+        if len(stderr) == 0 and errcode == 0:
+            gliteversion = stdout.strip()
+            if gliteversion.find( str(requestedversion) ) == 0:
+                result = True
+
+        return result
 
 
     def validateProxy(self, user):

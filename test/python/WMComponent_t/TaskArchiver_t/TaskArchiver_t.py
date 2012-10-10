@@ -57,7 +57,6 @@ class TaskArchiverTest(unittest.TestCase):
     _setup_done = False
     _teardown = False
     _maxMessage = 10
-    OWNERDN = os.environ['OWNERDN'] if 'OWNERDN' in os.environ else "Generic/OWNERDN"
 
     def setUp(self):
         """
@@ -160,18 +159,6 @@ class TaskArchiverTest(unittest.TestCase):
         config.Alert.address = "tcp://127.0.0.1:5557"
         config.Alert.controlAddr = "tcp://127.0.0.1:5559"
 
-        config.section_("BossAir")
-        config.BossAir.UISetupScript = '/afs/cern.ch/cms/LCG/LCG-2/UI/cms_ui_env.sh'
-        config.BossAir.gliteConf = '/afs/cern.ch/cms/LCG/LCG-2/UI/conf/glite_wms_CERN.conf'
-        config.BossAir.credentialDir = '/home/crab/ALL_SETUP/credentials/'
-        config.BossAir.gLiteProcesses = 2
-        config.BossAir.gLitePrefixEnv = "/lib64/"
-        config.BossAir.pluginNames = ["gLitePlugin"]
-        config.BossAir.manualProxyPath = os.environ['X509_USER_PROXY']
-
-        config.section_("Agent")
-        config.Agent.serverDN = "/we/bypass/myproxy/logon"
-
         return config
 
 
@@ -207,8 +194,8 @@ class TaskArchiverTest(unittest.TestCase):
 
         myThread = threading.currentThread()
 
-        testWorkflow = Workflow(spec = specLocation, owner = self.OWNERDN,
-                                name = name, task = task, owner_vogroup="", owner_vorole="")
+        testWorkflow = Workflow(spec = specLocation, owner = "Simon",
+                                name = name, task = task)
         testWorkflow.create()
         self.inject.execute(names = [name], injected = True)
 
@@ -316,8 +303,8 @@ class TaskArchiverTest(unittest.TestCase):
         for i in range(0, nSubs):
             # Make a bunch of subscriptions
             localName = '%s-%i' % (name, i)
-            testWorkflow = Workflow(spec = spec, owner = self.OWNERDN,
-                                    name = localName, task="Test", owner_vogroup="", owner_vorole="")
+            testWorkflow = Workflow(spec = spec, owner = "Simon",
+                                    name = localName, task="Test")
             testWorkflow.create()
 
             testWMBSFileset = Fileset(name = localName)
@@ -745,8 +732,7 @@ class TaskArchiverTest(unittest.TestCase):
         return
 
 
-    # Requires a running UserFileCache to succeed. https://cmsweb.cern.ch worked for me
-    # The environment variable OWNERDN needs to be set. Used to retrieve an already delegated proxy and contact the ufc
+    # Requires a running UserFileCache to succeed
     @attr('integration')
     def testPublishJSONCreate(self):
         """

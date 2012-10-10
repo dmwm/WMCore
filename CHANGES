@@ -1,3 +1,22 @@
+0.9.19 to 0.9.20:
+  - Improvements to the WMStats monitor layout.  Add support for running without a
+    ReqMgr to support the Tier0 and Analysis.  Pul request #4157.
+  - Combine the TaskArchiver and CleanupManager to handle cases where the 
+    ReqMgr is not used.  Pull request #4142.
+  - Upload the toPublish.json with the user's credentials. Fixes #4135
+  - Fix RequestManager unittests.  Pull request #3958.
+  - Fix ReqMgr and WorkQueue URL for the integration tests.
+  - Merge pull request #4125 from dballesteros7/fix-taskarchiver-bug
+  - Fix the cleaning of filesets with no subscriptions in the TaskArchiver.
+    Pull request #4125.
+  - Fix the inputAsyncStageOut view: delete undefined task variable.  Pull request #4123.
+  - Use copy.copy instead of copy.deepcopy so that we don't try to copy the logging
+    object in the gLite BossAir plugin.  Pull request #4120.
+  - Add a log message in WorkQueueReqMgrInterface when there is a problem processing
+    a request.  Pull rquest #4122.
+  - Fix TaskChain unit test.  Pull request #4119.
+  - Reduce default couchdb queue size for ChangeState.  Pull request #4079.
+
 0.9.18 to 0.9.19:
   - Write the CMSSW configuration as a binary pickle file to avoid issues
     with non-binary pickled configs.  Pull request #4109. 

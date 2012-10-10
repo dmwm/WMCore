@@ -36,9 +36,10 @@ class CleanCouchPoller(BaseWorkerThread):
         Called at startup
         """
         # set the connection for local couchDB call
-        self.wmstatsCouchDB = WMStatsWriter(self.config.CleanUpManager.localWMStatsURL)
-        self.centralCouchDBWriter = WMStatsWriter(self.config.CleanUpManager.centralWMStatsURL)
-        self.centralCouchDBReader = WMStatsReader(self.config.CleanUpManager.centralWMStatsURL)
+        self.useReqMgrForCompletionCheck   = getattr(self.config.TaskArchiver, 'useReqMgrForCompletionCheck', True)
+        self.wmstatsCouchDB = WMStatsWriter(self.config.TaskArchiver.localWMStatsURL)
+        self.centralCouchDBWriter = WMStatsWriter(self.config.TaskArchiver.centralWMStatsURL)
+        self.centralCouchDBReader = WMStatsReader(self.config.TaskArchiver.centralWMStatsURL)
         jobDBurl = sanitizeURL(self.config.JobStateMachine.couchurl)['url']
         jobDBName = self.config.JobStateMachine.couchDBName
         self.jobCouchdb  = CouchServer(jobDBurl)
@@ -51,13 +52,16 @@ class CleanCouchPoller(BaseWorkerThread):
         """
         try:
             logging.info("Cleaning up the old request docs")
-            report = self.wmstatsCouchDB.deleteOldDocs(self.config.CleanUpManager.DataKeepDays)
+            report = self.wmstatsCouchDB.deleteOldDocs(self.config.TaskArchiver.DataKeepDays)
             logging.info("%s docs deleted" % report)
             logging.info("getting complete and announced requests")
             
             #TODO: define what is deletable status. Also add the code to delet summary document, 
             # request summary and job summary
-            deletableWorkflows = self.centralCouchDBReader.workflowsByStatus(["announced"])
+            if self.useReqMgrForCompletionCheck:
+                deletableWorkflows = self.centralCouchDBReader.workflowsByStatus(["announced"])
+            else:
+                deletableWorkflows = self.centralCouchDBReader.workflowsByStatus(["completed"])
             
             logging.info("Ready to delete %s" % deletableWorkflows)     
             for workflowName in deletableWorkflows:
@@ -69,7 +73,7 @@ class CleanCouchPoller(BaseWorkerThread):
                 logging.info("%s docs deleted from FWJRDump" % report)
                 
                 self.centralCouchDBWriter.updateRequestStatus(workflowName, "archived")
-                logging.info("status updated to deleted %s" % workflowName)
+                logging.info("status updated to archived %s" % workflowName)
                 
         except Exception, ex:
             logging.error(str(ex))

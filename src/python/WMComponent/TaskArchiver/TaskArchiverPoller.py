@@ -54,7 +54,7 @@ from WMCore.Credential.Proxy                    import Proxy
 
 from WMComponent.JobCreator.CreateWorkArea   import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
-
+from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 
 class TaskArchiverPollerException(WMException):
     """
@@ -198,7 +198,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.maxProcessSize    = getattr(self.config.TaskArchiver, 'maxProcessSize', 250)
         self.timeout           = getattr(self.config.TaskArchiver, "timeOut", None)
         self.nOffenders        = getattr(self.config.TaskArchiver, 'nOffenders', 3)
-        self.deleteCouchData   = getattr(self.config.TaskArchiver, 'deleteCouchData', True)
+        self.useReqMgrForCompletionCheck   = getattr(self.config.TaskArchiver, 'useReqMgrForCompletionCheck', True)
         self.uploadPublishInfo = getattr(self.config.TaskArchiver, 'uploadPublishInfo', False)
         self.uploadPublishDir  = getattr(self.config.TaskArchiver, 'uploadPublishDir', None)
         self.userFileCacheURL  = getattr(self.config.TaskArchiver, 'userFileCacheURL', None)
@@ -207,7 +207,10 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.histogramKeys  = getattr(self.config.TaskArchiver, "histogramKeys", [])
         self.histogramBins  = getattr(self.config.TaskArchiver, "histogramBins", 10)
         self.histogramLimit = getattr(self.config.TaskArchiver, "histogramLimit", 5.0)
-
+        
+        if not self.useReqMgrForCompletionCheck:
+            #sets the local monitor summary couch db
+            self.wmstatsCouchDB = WMStatsWriter(self.config.TaskArchiver.localWMStatsURL);
         # Start a couch server for getting job info
         # from the FWJRs for committal to archive
         try:
@@ -334,6 +337,11 @@ class TaskArchiverPoller(BaseWorkerThread):
                     for l in finishedwfs[workflow]["workflows"].values():
                         subList.extend(l)
                     self.notifyWorkQueue(subList)
+                
+                #Now we now the workflow as a whole is gone, we can delete the information from couch
+                if not self.useReqMgrForCompletionCheck:
+                    self.wmstatsCouchDB.updateRequestStatus(workflow, "completed")
+                    logging.info("status updated to completed %s" % workflow)
 
                 wfsToDelete[workflow] = {"spec" : spec, "workflows": finishedwfs[workflow]["workflows"]}
 
@@ -440,10 +448,8 @@ class TaskArchiverPoller(BaseWorkerThread):
                         msg = "Attempted to delete work directory but it was already gone: %s" % taskDir
                         logging.debug(msg)
 
-                #Now we now the workflow as a whole is gone, we can delete the information from couch
                 spec = workflows[workflow]["spec"]
                 topTask = spec.getTopLevelTask()[0]
-                self.deleteWorkflowFromCouch(workflowName = workflow)
 
                 # Now take care of the sandbox
                 sandbox = getattr(topTask.data.input, 'sandbox', None)
@@ -747,39 +753,3 @@ class TaskArchiverPoller(BaseWorkerThread):
             logging.error('Upload failed for workflow: %s' % (workflow))
             logging.exception(ex) #Let's print the stacktrace with generic Exception
             return False
-
-
-    def deleteWorkflowFromCouch(self, workflowName):
-        """
-        _deleteWorkflowFromCouch_
-
-        If we are asked to delete the workflow from couch, delete it
-        to clear up some space.
-
-        Load the document IDs and revisions out of couch by workflowName,
-        then order a delete on them.
-        """
-
-        if not self.deleteCouchData:
-            return
-
-
-        jobs = self.jobsdatabase.loadView("JobDump", "jobsByWorkflowName",
-                                          options = {"startkey": [workflowName],
-                                                     "endkey": [workflowName, {}]})['rows']
-        for j in jobs:
-            id  = j['value']['id']
-            rev = j['value']['rev']
-            self.jobsdatabase.delete_doc(id = id, rev = rev)
-
-        jobs = self.fwjrdatabase.loadView("FWJRDump", "fwjrsByWorkflowName",
-                                          options = {"startkey": [workflowName],
-                                                     "endkey": [workflowName, {}]})['rows']
-
-        for j in jobs:
-            id  = j['value']['id']
-            rev = j['value']['rev']
-            self.fwjrdatabase.delete_doc(id = id, rev = rev)
-
-        return
-

@@ -728,7 +728,10 @@ class BossAirAPI(WMConnectionBase):
                 #Build a better job message
                 reportedMsg = killMsg + '\n Job last known status was: %s' % job.get('globalState', 'Unknown')
                 condorErrorReport.addError("JobKilled", 61302, "JobKilled", reportedMsg)
-                condorErrorReport.save(filename = reportName)
+                try:
+                    condorErrorReport.save(filename = reportName)
+                except IOError, ioe:
+                    logging.warning('Cannot write report %s because of %s' % (reportName, ioe))
 
         return
 

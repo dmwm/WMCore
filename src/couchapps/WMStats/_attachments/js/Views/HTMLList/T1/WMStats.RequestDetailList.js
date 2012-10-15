@@ -10,10 +10,15 @@ WMStats.namespace('RequestDetailList');
         if (reqDoc) {
             htmlstr += "<li> campaign: " + reqDoc.campaign + "</li>";
             htmlstr += "<li> workflow: " + reqDoc.workflow + "</li>";
+            htmlstr += "<li> requetor: " + reqDoc.requestor + "</li>";
             htmlstr += "<li> request date: " + reqDoc.request_date + "</li>";
             htmlstr += "<li> request type: " + reqDoc.request_type + "</li>";
+            htmlstr += "<li> user dn: " + reqDoc.user_dn + "</li>";
+            htmlstr += "<li> vo role: " + reqDoc.vo_role + "</li>";
+            htmlstr += "<li> vo group: " + reqDoc.vo_group + "</li>";
             htmlstr += "<li> input dataset: " + reqDoc.inputdataset + "</li>";
             htmlstr += "<li> input events: " + reqDoc.input_events + "</li>";
+            htmlstr += "<li> site white list: " + reqDoc.site_white_list + "</li>";
         }
         if (reqSummary) {
             htmlstr += "<li> output events: " + reqSummary.summaryStruct.processedEvents + "</li>";

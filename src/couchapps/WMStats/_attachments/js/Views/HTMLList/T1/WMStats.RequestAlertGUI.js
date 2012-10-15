@@ -16,8 +16,8 @@ WMStats.RequestAlertGUI = function (requestData, containerDiv) {
         }
         
         for (var i in notPulledRequests) {
-            var key = notPulledRequests[i].key;
-            htmlList += ('<li>' + key + ': not pulled by GQ</li>');
+            var key = notPulledRequests[i].request.key;
+            htmlList += ('<li>' + key + ':' + notPulledRequests[i].message + '</li>');
         }
         
         htmlList += "</ul>";

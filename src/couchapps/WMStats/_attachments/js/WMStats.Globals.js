@@ -12,7 +12,7 @@ WMStats.Globals = function($){
         if (_dbVariants[dbname] == "tier1") {
             return "/reqmgr/view/details/";
         } else if (_dbVariants[dbname] == "analysis") {
-            return "/am_reqmgr/view/details/";
+            return "/an_reqmgr/view/details/";
         } else {
             return null;
         }

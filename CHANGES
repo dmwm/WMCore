@@ -1,3 +1,10 @@
+0.9.20 to 0.9.21:
+  - Include the jobType in all jobs run through ChangeState.  Pull request #4169.
+  - Change the monitor status when assignRequest is called directly.  Pull request #4166.
+  - Include the JobSubmmary link to the WMStats job summary.  Pull request #4168.
+  - Fix alerts not sent in StatusPoller, wrong usage of getattr, and print the stacktrace 
+    of the generic Exception thrown.  Pull request #4161.
+
 0.9.19 to 0.9.20:
   - Improvements to the WMStats monitor layout.  Add support for running without a
     ReqMgr to support the Tier0 and Analysis.  Pul request #4157.

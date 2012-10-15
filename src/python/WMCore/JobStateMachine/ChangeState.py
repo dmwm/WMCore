@@ -258,6 +258,7 @@ class ChangeState(WMObject, WMConnectionBase):
                             outputDataset = singlefile.get('dataset', None) if not outputDataset else outputDataset 
 
                 jobSummary = {"_id": jobSummaryId,
+                              "wmbsid": job["id"],
                               "type": "jobsummary",
                               "retrycount": job["retry_count"],
                               "workflow": job["workflow"],
@@ -370,7 +371,8 @@ class ChangeState(WMObject, WMConnectionBase):
         for idx, job in enumerate(jobs):
             if job["couch_record"] == None:
                 jobIDsToCheck.append(job["id"])
-            if job.get("task", None) == None or job.get("workflow", None) == None:
+            if job.get("task", None) == None or job.get("workflow", None) == None \
+                or job.get("taskType", None) == None or job.get("jobType", None) == None:
                 jobTasksToCheck.append(job["id"])
             jobMap[job["id"]] = idx
 
@@ -390,16 +392,10 @@ class ChangeState(WMObject, WMConnectionBase):
                 jobs[idx]["task"] = jobTask["task"]
                 jobs[idx]["workflow"] = jobTask["name"]
                 jobs[idx]["taskType"] = jobTask["type"]
+                jobs[idx]["jobType"]  = jobTask["subtype"]
 
     def completeCreatedJobsInformation(self, jobs, incrementRetry = False):
-        jobIDsToCheck = []
-        jobMap = {}
-        for idx, job in enumerate(jobs):
-            #Check if the job already has a jobType defined, which is likely
-            #only if it comes from the JobCreator component
-            if "jobType" not in job:
-                jobIDsToCheck.append(job["id"])
-                jobMap[job["id"]] = idx
+        for job in jobs:
             #It there's no jobID in the mask then it's not loaded
             if "jobID" not in job["mask"]:
                 #Make sure the daofactory was not stripped
@@ -413,13 +409,3 @@ class ChangeState(WMObject, WMConnectionBase):
             #Increment retry when commanded
             if incrementRetry:
                 job["retry_count"] += 1
-
-        #Let's continue with the jobTypes, get all the types at once and add them
-        #to the jobs
-        if len(jobIDsToCheck) > 0 :
-            jobTypes = self.jobTypeDAO.execute(jobID = jobIDsToCheck,
-                                               conn = self.getDBConn(),
-                                               transaction = self.existingTransaction())
-            for jobType in jobTypes:
-                idx = jobMap[jobType["id"]]
-                jobs[idx]["jobType"] = jobType["type"]

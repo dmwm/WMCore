@@ -7,7 +7,8 @@ WMStats.namespace('JobDetailList');
             var jobDoc = jobDetails[index];
             htmlstr += "<div class='jobDetailBox' id='jobDetail-" + index + "'>"
             htmlstr += "<ul>";
-            htmlstr += "<li> job id: " + jobDoc._id + "</li>";
+            htmlstr += "<li> job name: " + jobDoc._id + "</li>";
+            htmlstr += "<li> wmbs job id: " + jobDoc.wmbsid + "</li>";
             htmlstr += "<li> workflow: " + jobDoc.workflow + "</li>";
             htmlstr += "<li> task: " + jobDoc.task + "</li>";
             htmlstr += "<li> state: " + jobDoc.state + "</li>";

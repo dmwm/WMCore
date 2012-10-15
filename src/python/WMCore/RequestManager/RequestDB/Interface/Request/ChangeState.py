@@ -95,14 +95,9 @@ def assignRequest(requestName, teamName, priorityModifier = 0, prodMgr = None, w
 
 
     """
-    if wmstatUrl:
-        wmstatSvc = WMStatsWriter(wmstatUrl)
-        wmstatSvc.updateTeam(requestName, teamName)
-        
+
     factory = DBConnect.getConnection()
     reqId = getRequestID(factory, requestName)
-    statusMap = factory(classname = "ReqStatus.Map").execute()
-    statusId = statusMap['assigned']
 
     teamId = factory(classname = "Team.ID").execute(teamName)
     if teamId == None:
@@ -110,15 +105,14 @@ def assignRequest(requestName, teamName, priorityModifier = 0, prodMgr = None, w
         msg += "Failed to assign request %s to team %s" % (requestName, teamName)
         raise RuntimeError, msg
 
-
+    if wmstatUrl:
+        wmstatSvc = WMStatsWriter(wmstatUrl)
+        wmstatSvc.updateTeam(requestName, teamName)
 
     assigner = factory(classname = "Assignment.New")
     assigner.execute(reqId, teamId, priorityModifier)
 
-    stateChanger = factory(classname = "Request.SetStatus")
-    stateChanger.execute(reqId, statusId)
-
-
+    changeRequestStatus(requestName, 'assigned', priority = None, wmstatUrl = wmstatUrl)
 
     if prodMgr != None:
         addPM = factory(classname = "Progress.ProdMgr")

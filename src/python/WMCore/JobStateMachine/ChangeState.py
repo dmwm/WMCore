@@ -258,6 +258,7 @@ class ChangeState(WMObject, WMConnectionBase):
                             outputDataset = singlefile.get('dataset', None) if not outputDataset else outputDataset 
 
                 jobSummary = {"_id": jobSummaryId,
+                              "wmbsid": job["id"],
                               "type": "jobsummary",
                               "retrycount": job["retry_count"],
                               "workflow": job["workflow"],

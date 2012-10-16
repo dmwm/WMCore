@@ -108,7 +108,7 @@ class Create(DBCreator):
           """CREATE TABLE dbsbuffer_file
                (
                  id                    NUMBER(11)    NOT NULL ENABLE,
-                 lfn                   VARCHAR2(255) NOT NULL ENABLE,
+                 lfn                   VARCHAR2(500) NOT NULL ENABLE,
                  filesize              NUMBER(11),
                  events                INTEGER,
                  cksum                 NUMBER(11),

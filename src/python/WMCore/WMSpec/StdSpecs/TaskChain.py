@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 """
-TaskChain.py
+_TaskChain_
 
 Created by Dave Evans on 2011-06-15.
 Copyright (c) 2011 Fermilab. All rights reserved.
@@ -16,19 +16,16 @@ processing tasks are specified as sub dictionaries.
 The top level dict should contain the parameter TaskChain and the value is the number of processing tasks to be run.
 For each count in the chain, a dictionary entry named Task1...N should be made with a value being another dictionary.
 
-The main request parameters required are:
+Any parameters in the Main request will be used throughout the different task unless they are overriden, exceptions are
+CouchDB parameters the main request parameters are:
 
 {
-    "AcquisitionEra": "ReleaseValidation",            Acq Era
+    "CMSSWVersion": "CMSSW_3_5_8",                    CMSSW Version
+    "ScramArch": "slc5_ia32_gcc434",                  Scram Arch
     "Requestor": "sfoulkes@fnal.gov",                 Person responsible
-    "CMSSWVersion": "CMSSW_3_5_8",                    CMSSW Version (used for all tasks in chain)
-    "ScramArch": "slc5_ia32_gcc434",                  Scram Arch (used for all tasks in chain)
-    "ProcessingVersion": "1",                        Processing Version (used for all tasks in chain)
-    "GlobalTag": "GR10_P_v4::All",                    Global Tag (used for all tasks)
-    "CouchURL": "http://couchserver.cern.ch",         URL of CouchDB containing Config Cache
-    "CouchDBName": "config_cache",                    Name of Couch Database containing config cache 
-                                                       - Will contain all configs for all Tasks
-    "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],   Site whitelist 
+    "GlobalTag": "GR10_P_v4::All",                    Global Tag
+    "CouchURL": "http://couchserver.cern.ch",         URL of CouchDB containing ConfigCache (Used for all sub-tasks)
+    "CouchDBName": "config_cache",                    Name of Couch Database containing config cache (Used for all sub-tasks)
     "TaskChain" : 4,                                  Define number of tasks in chain.
 }
 
@@ -38,53 +35,55 @@ Task1 will be either a generation or processing task:
 Example initial generation task:
 
 "Task1" :{
-    "TaskName" : "GenSim",                            Task Name
-    "ConfigCacheID" : generatorDoc,                   Generator Config id
-    "SplittingAlgorithm"  : "EventBased",             Splitting Algorithm
-    "SplittingArguments" : {"events_per_job" : 250},  Size of jobs in terms of splitting algorithm
-    "RequestNumEvents" : 10000,                       Total number of events to generate
-    "Seeding" : "AutomaticSeeding",                   Random seeding method
-    "PrimaryDataset" : "RelValTTBar",                 Primary Dataset to be created
-    "DataPileup" : "/MinBias/Run2012Z-v1/RECO"        Pileup dataset for the task
+    "TaskName"           : "GenSim",                 Task Name
+    "ConfigCacheID"      : generatorDoc,             Generator Config id
+    "SplittingAlgorithm" : "EventBased",             Splitting Algorithm
+    "SplittingArguments" : {"events_per_job" : 250}, Size of jobs in terms of splitting algorithm
+    "RequestNumEvents"   : 10000,                    Total number of events to generate
+    "Seeding"            : "AutomaticSeeding",       Random seeding method
+    "PrimaryDataset"     : "RelValTTBar",            Primary Dataset to be created
+    "ScramArch"          : "slc5_amd64_gcc462",      Particular scramArch for this task
+    "CMSSWVersion"       : "CMSSW_5_3_5",            Particular CMSSW version for this task
 },
 
 Example initial processing task
 
 "Task1" :{
-     "TaskName" : "DigiHLT",                                     Task Name
-     "ConfigCacheID" : processorDocs['DigiHLT'],                 Processing Config id
-     "InputDataset" : "/MinimumBias/Commissioning10-v4/GEN-SIM", Input Dataset to be processed
-     "SplittingAlgorithm"  : "FileBased",                        Splitting Algorithm
-     "SplittingArguments" : {"files_per_job" : 1},               Size of jobs in terms of splitting algorithm
-     "MCPileup" : "/MinBias/Summer12-v1/GEN-SIM-DIGI-RECO        Pileup dataset for the task
+     "TaskName"           : "DigiHLT",                                 Task Name
+     "ConfigCacheID"      : someHash,                                  Processing Config id
+     "InputDataset"       : "/MinimumBias/Commissioning10-v4/GEN-SIM", Input Dataset to be processed
+     "SplittingAlgorithm" : "FileBased",                               Splitting Algorithm
+     "SplittingArguments" : {"files_per_job" : 1},                     Size of jobs in terms of splitting algorithm
+     "MCPileup"           : "/MinBias/Summer12-v1/GEN-SIM-DIGI-RECO",  Pileup MC dataset for the task
+     "DataPileup"         : "/MinimumBias/Run2011A-v1/RAW"             Pileup data dataset for the task
+     "GlobalTag"          : "GR_P_V42::All"                            Global tag for  this task
+     "KeepOutput"         : False                                      Indicates if the output data from this dataset should be kept in merged area
  },
- 
- All subsequent Task entries will process the output of one of the preceeding steps:
+
+ All subsequent Task entries will process the output of one of the preceeding steps, the primary dataset can be changed from the input.
+
  Example:
- 
+
  "Task2" : {
-     "TaskName" : "Reco",                               Task Name
-     "InputTask" : "DigiHLT",                           Input Task Name (Task Name field of a previous Task entry)
-     "InputFromOutputModule" : "writeRAWDIGI",          OutputModule name in the input task that will provide files to process
-     "ConfigCacheID" : "17612875182763812763812",       Processing Config id
-     "SplittingAlgorithm" : "FileBased",                Splitting Algorithm
-     "SplittingArguments" : {"files_per_job" : 1 },     Size of jobs in terms of splitting algorithm
+     "TaskName"              : "Reco",                        Task Name
+     "InputTask"             : "DigiHLT",                     Input Task Name (Task Name field of a previous Task entry)
+     "InputFromOutputModule" : "writeRAWDIGI",                OutputModule name in the input task that will provide files to process
+     "ConfigCacheID"         : "17612875182763812763812",     Processing Config id
+     "SplittingAlgorithm"    : "FileBased",                   Splitting Algorithm
+     "SplittingArguments"    : {"files_per_job" : 1 },        Size of jobs in terms of splitting algorithm
+     "DataPileup"            : "/MinimumBias/Run2011A-v1/RAW" Pileup data dataset for the task
  },
+
  "Task3" : {
-     "TaskName" : "ALCAReco",                           Task Name
-     "InputTask" : "Reco",                              Input Task Name (Task Name field of a previous Task entry)
-     "InputFromOutputModule" : "writeALCA",             OutputModule name in the input task that will provide files to process
-     "ConfigCacheID" : "12871372323918187281",          Processing Config id    
-     "SplittingAlgorithm" : "FileBased",                Splitting Algorithm
-     "SplittingArguments" : {"files_per_job" : 1 },     Size of jobs in terms of splitting algorithm
- 
+     "TaskName"              : "ALCAReco",             Task Name
+     "InputTask"             : "Reco",                 Input Task Name (Task Name field of a previous Task entry)
+     "InputFromOutputModule" : "writeALCA",            OutputModule name in the input task that will provide files to process
+     "ConfigCacheID"         : "12871372323918187281", Processing Config id
+     "SplittingAlgorithm"    : "FileBased",            Splitting Algorithm
+     "SplittingArguments"    : {"files_per_job" : 1 }, Size of jobs in terms of splitting algorithm
  },
-
-
 """
 
-import sys
-import os
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase, WMSpecFactoryException
 
 # Validate functions
@@ -124,11 +123,7 @@ def validateSubTask(task, firstTask = False):
         if not scenArgs.has_key("writeTiers"):
             msg = "task %s ScenarioArgs does not contain writeTiers argument" % task['TaskName']
             raise WMSpecFactoryException, msg
-        
-            
 
-
-    
 def validateGenFirstTask(task):
     """
     _validateGenFirstTask_
@@ -178,11 +173,116 @@ isGenerator = lambda args: not args["Task1"].has_key("InputDataset")
 parentTaskName = lambda args: args.get("InputTask", None)
 parentTaskModule = lambda args: args.get("InputFromOutputModule", None)
 
+
+class ParameterStorage(object):
+    """
+    _ParameterStorage_
+
+    Decorator class which storages global parameters,
+    sets them to local values before executing the passed function
+    and restores them afterwards. This is only suited to decorate the
+    setupTask and setupGeneratorTask in TaskChainWorkloadFactory.
+    """
+
+    def __init__(self, func):
+        """
+        __init__
+
+        Stores the function and valid parameters to save/restore.
+
+        Supported parameters are:
+
+        Global tag, CMSSW version, Scram arch
+        Primary Dataset, Processing Version, Processing String, Acquisition Era
+
+        The validParameters dictionary contains a mapping from the name of the attribute
+        in StdBase to the argument key in the task dictionaries
+        """
+        self.func = func
+        self.validParameters = {'globalTag' : 'GlobalTag',
+                                'frameworkVersion' : 'CMSSWVersion',
+                                'scramArch' : 'ScramArch',
+                                'inputPrimaryDataset' : 'PrimaryDataset',
+                                'processingVersion' : 'ProcessingVersion',
+                                'processingString' : 'ProcessingString',
+                                'acquisitionEra' : 'AcquisitionEra'
+                                }
+        return
+
+    def __get__(self, instance, owner):
+        """
+        __get__
+
+        Get method for the class, store the calling instance for latter use
+        """
+        self.obj = instance
+        self.cls = owner
+        return self.__call__
+
+    def __call__(self, task, taskConf):
+        """
+        __call__
+
+        Store the global parameters, alters the parameters
+        using the taskConf argument. Executes the stored
+        method, then restores the parameters and resets the local instance.
+        """
+        self.storeParameters()
+        self.alterParameters(taskConf)
+        self.func(self.obj, task, taskConf)
+        self.restoreParameters(taskConf)
+        self.resetParameters()
+        return
+
+    def storeParameters(self):
+        """
+        _storeParameters_
+
+        Store the original parameters in the decorator
+        """
+        for param in self.validParameters:
+            globalValue = getattr(self.obj, param, None)
+            setattr(self, param, globalValue)
+        return
+
+    def alterParameters(self, taskConf):
+        """
+        _alterParameters_
+
+        Alter the parameters with the specific task configuration
+        """
+        for param in self.validParameters:
+            if self.validParameters[param] in taskConf:
+                taskValue = taskConf[self.validParameters[param]]
+                setattr(self.obj, param, taskValue)
+        return
+
+    def restoreParameters(self, taskConf):
+        """
+        _restoreParameters_
+
+        Restore the parameters to the global values
+        """
+        for param in self.validParameters:
+            globalValue = getattr(self, param)
+            setattr(self.obj, param, globalValue)
+        return
+
+    def resetParameters(self):
+        """
+        _resetParameters_
+
+        Reset parameters to None
+        """
+        for param in self.validParameters:
+            setattr(self, param, None)
+        return
+
 class TaskChainWorkloadFactory(StdBase):
     def __init__(self):
         StdBase.__init__(self)
-        self.taskMapping = {}
         self.mergeMapping = {}
+        self.taskMapping = {}
         self.arguments = {}
         self.multicore = False
         self.multicoreNCores = 1
@@ -200,6 +300,7 @@ class TaskChainWorkloadFactory(StdBase):
         self.couchDBName = arguments['CouchDBName']
         self.frameworkVersion = arguments["CMSSWVersion"]
         self.globalTag = arguments.get("GlobalTag", None)
+
         # Optional arguments that default to something reasonable.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
         self.emulation = arguments.get("Emulation", False)
@@ -221,40 +322,34 @@ class TaskChainWorkloadFactory(StdBase):
             self.runWhitelist   = taskConf.get("RunWhitelist", [])
 
             parentTask = None
-            if self.mergeMapping.has_key(parent):
+            if parent in self.mergeMapping:
                 parentTask = self.mergeMapping[parent][parentTaskModule(taskConf)]
                 
             task = self.makeTask(taskConf, parentTask)
             if i == 1:
-                #  //
-                # // First task will either be generator or processing
-                #//
+                # First task will either be generator or processing
+                self.workload.setDashboardActivity("relval")
                 if isGenerator(arguments):
                     # generate mc events
-                    self.workload.setDashboardActivity("production")
                     self.workload.setWorkQueueSplitPolicy("MonteCarlo", taskConf['SplittingAlgorithm'], 
                                                           taskConf['SplittingArguments'])
                     self.workload.setEndPolicy("SingleShot")
                     self.setupGeneratorTask(task, taskConf)
                 else:
                     # process an existing dataset
-                    self.workload.setDashboardActivity("reprocessing")
                     self.workload.setWorkQueueSplitPolicy("Block", taskConf['SplittingAlgorithm'],
                                                      taskConf['SplittingArguments'])
                     self.setupTask(task, taskConf)
                 self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
             else:
-                #  //
-                # // all subsequent tasks have to be processing tasks
-                #//
+                # all subsequent tasks have to be processing tasks
                 self.setupTask(task, taskConf)
-            # keep a lookup table of tasks for setting parentage later
-            self.taskMapping[task.name()] = task
+            self.taskMapping[task.name()] = taskConf
             
         return self.workload  
 
             
-    def makeTask(self, taskConf, parentTask = None ):
+    def makeTask(self, taskConf, parentTask = None):
         """
         _makeTask_
         
@@ -268,7 +363,8 @@ class TaskChainWorkloadFactory(StdBase):
         else:
             task = parentTask.addTask(taskConf['TaskName'])
         return task
-        
+
+    @ParameterStorage
     def setupGeneratorTask(self, task, taskConf):
         """
         _setupGeneratorTask_
@@ -277,21 +373,16 @@ class TaskChainWorkloadFactory(StdBase):
         """
         cmsswStepType = "CMSSW"
         configCacheID = taskConf['ConfigCacheID']
-        splitAlgorithm = taskConf['SplittingAlgorithm']
-        splitArguments = taskConf['SplittingArguments']
-        
-        globalGlobalTag = self.globalTag
-        if taskConf.has_key('GlobalTag'):
-            self.globalTag = taskConf['GlobalTag']
+        splitAlgorithm = taskConf.get('SplittingAlgorithm', 'EventBased')
+        splitArguments = taskConf.get('SplittingArguments', {'events_per_job': int((24*3600)/float(self.timePerEvent))})
+        keepOutput = taskConf.get('KeepOutput', True)
 
-        self.inputPrimaryDataset = taskConf['PrimaryDataset']
-        outputMods = self.setupProcessingTask(task, "Production", None,
-                                            scenarioName = None, scenarioFunc = None, scenarioArgs = {},
-                                            couchURL = self.couchURL, couchDBName = self.couchDBName,
-                                            configDoc = configCacheID, splitAlgo = splitAlgorithm,
-                                            splitArgs = splitArguments, stepType = cmsswStepType, 
-                                            seeding = taskConf['Seeding'], totalEvents = taskConf['RequestNumEvents']
-                                            )
+        outputMods = self.setupProcessingTask(task, "Production",
+                                              couchURL = self.couchURL, couchDBName = self.couchDBName,
+                                              configDoc = configCacheID, splitAlgo = splitAlgorithm,
+                                              splitArgs = splitArguments, stepType = cmsswStepType,
+                                              seeding = taskConf['Seeding'], totalEvents = taskConf['RequestNumEvents'],
+                                              forceUnmerged = not keepOutput)
 
         if 'MCPileup' in taskConf or 'DataPileup' in taskConf:
             parsePileupConfig(taskConf)
@@ -299,15 +390,21 @@ class TaskChainWorkloadFactory(StdBase):
             self.setupPileup(task, taskConf['PileupConfig'])
 
         self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
-        procMergeTasks = {}
-        for outputModuleName in outputMods.keys():
-            outputModuleInfo = outputMods[outputModuleName]
-            mergeTask = self.addMergeTask(task, taskConf['SplittingAlgorithm'],
-                                          outputModuleName)
-            procMergeTasks[str(outputModuleName)] = mergeTask
-        self.mergeMapping[task.name()] = procMergeTasks
-        self.globalTag = globalGlobalTag
+        if keepOutput:
+            procMergeTasks = {}
+            for outputModuleName in outputMods.keys():
+                mergeTask = self.addMergeTask(task, taskConf['SplittingAlgorithm'],
+                                              outputModuleName)
+                procMergeTasks[str(outputModuleName)] = mergeTask
+            self.mergeMapping[task.name()] = procMergeTasks
+        else:
+            procTasks = {}
+            for outputModuleName in outputMods:
+                self.addCleanupTask(task, outputModuleName)
+                procTasks[outputModuleName] = task
+            self.mergeMapping[task.name()] = procTasks
         
+    @ParameterStorage
     def setupTask(self, task, taskConf):
         """
         _setupTask_
@@ -316,35 +413,44 @@ class TaskChainWorkloadFactory(StdBase):
         a processing task
         """
        
-        cmsswStepType = "CMSSW"
-        configCacheID = taskConf.get('ConfigCacheID', None)
-        splitAlgorithm = taskConf['SplittingAlgorithm']
-        splitArguments = taskConf['SplittingArguments']
-        globalGlobalTag = self.globalTag
-        if taskConf.has_key('GlobalTag'):
-            self.globalTag = taskConf['GlobalTag']
+        cmsswStepType  = "CMSSW"
+        configCacheID  = taskConf.get('ConfigCacheID', None)
+        splitAlgorithm = taskConf.get('SplittingAlgorithm', 'LumiBased')
+        splitArguments = taskConf.get('SplittingArguments', {'lumis_per_job': 8})
+        keepOutput     = taskConf.get('KeepOutput', True)
 
-        #  //
-        # //  in case the initial task is a processing task, we have an input dataset, otherwise
-        #//   we look up the parent task and step
+        # in case the initial task is a processing task, we have an input dataset, otherwise
+        # we look up the parent task and step
         inputDataset = taskConf.get("InputDataset", None)
         if inputDataset != None:
             self.inputDataset = inputDataset
-            (self.inputPrimaryDataset, self.inputProcessedDataset,
-             self.inputDataTier) = self.inputDataset[1:].split("/")
+            if self.inputPrimaryDataset:
+                (_, self.inputProcessedDataset,
+                 self.inputDataTier) = self.inputDataset[1:].split("/")
+            else:
+                (self.inputPrimaryDataset, self.inputProcessedDataset,
+                 self.inputDataTier) = self.inputDataset[1:].split("/")
             inpStep = None
             inpMod = None
         else:
             self.inputDataset = None
-            inputTask = taskConf.get("InputTask", None)
-            #  ToDo: if None, need to throw here
-            inputTaskRef = self.taskMapping[inputTask]
-            # ToDo: key check in self.taskMapping for inputTask & throw if missing
-            mergeTaskForMod = self.mergeMapping[inputTask][taskConf['InputFromOutputModule']]
-            inpStep = mergeTaskForMod.getStep("cmsRun1")
-            inpMod = "Merged"            
+            inputTask = taskConf["InputTask"]
+            inputTaskConf = self.taskMapping[inputTask]
+            parentTaskForMod = self.mergeMapping[inputTask][taskConf['InputFromOutputModule']]
+            inpStep = parentTaskForMod.getStep("cmsRun1")
+            if not inputTaskConf.get('KeepOutput', True):
+                inpMod = taskConf['InputFromOutputModule']
+                # Check if the splitting has to be changed
+                if inputTaskConf.get('SplittingAlgorithm', 'LumiBased') == 'EventBased' \
+                   and (('InputDataset' in inputTaskConf) or ('InputTask' in inputTaskConf)):
+                    splitAlgorithm = 'WMBSMergeBySize'
+                    splitArguments = {'max_merge_size'   : self.maxMergeSize,
+                                      'min_merge_size'   : self.minMergeSize,
+                                      'max_merge_events' : self.maxMergeEvents,
+                                      'max_wait_time'    : self.maxWaitTime}
+            else:
+                inpMod = "Merged"
 
-        scenario = None
         scenarioFunc = None
         scenarioArgs = {}
         couchUrl = self.couchURL
@@ -353,13 +459,14 @@ class TaskChainWorkloadFactory(StdBase):
             self.procScenario = taskConf['ProcScenario']
             scenarioFunc = taskConf['ScenarioMethod']
             scenarioArgs = taskConf['ScenarioArguments']
-            
-        outputMods = self.setupProcessingTask(task, "Processing", inputDataset, inputStep = inpStep, inputModule=inpMod,
-                                            scenarioName = self.procScenario, scenarioFunc = scenarioFunc, scenarioArgs = scenarioArgs,
-                                            couchURL = couchUrl, couchDBName = couchDB,
-                                            configDoc = configCacheID, splitAlgo = splitAlgorithm,
-                                            splitArgs = splitArguments, stepType = cmsswStepType)
-                                        
+
+        outputMods = self.setupProcessingTask(task, "Processing", inputDataset, inputStep = inpStep, inputModule = inpMod,
+                                              scenarioName = self.procScenario, scenarioFunc = scenarioFunc, scenarioArgs = scenarioArgs,
+                                              couchURL = couchUrl, couchDBName = couchDB,
+                                              configDoc = configCacheID, splitAlgo = splitAlgorithm,
+                                              splitArgs = splitArguments, stepType = cmsswStepType,
+                                              forceUnmerged = not keepOutput)
+
 
         if 'MCPileup' in taskConf or 'DataPileup' in taskConf:
             parsePileupConfig(taskConf)
@@ -367,14 +474,19 @@ class TaskChainWorkloadFactory(StdBase):
             self.setupPileup(task, taskConf['PileupConfig'])
 
         self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
-        procMergeTasks = {}
-        for outputModuleName in outputMods.keys():
-            outputModuleInfo = outputMods[outputModuleName]
-            mergeTask = self.addMergeTask(task, taskConf['SplittingAlgorithm'],
-                                          outputModuleName)
-            procMergeTasks[str(outputModuleName)] = mergeTask
-        self.mergeMapping[task.name()] = procMergeTasks
-        self.globalTag = globalGlobalTag
+        if keepOutput:
+            procMergeTasks = {}
+            for outputModuleName in outputMods.keys():
+                mergeTask = self.addMergeTask(task, splitAlgorithm,
+                                              outputModuleName)
+                procMergeTasks[str(outputModuleName)] = mergeTask
+            self.mergeMapping[task.name()] = procMergeTasks
+        else:
+            procTasks = {}
+            for outputModuleName in outputMods:
+                self.addCleanupTask(task, outputModuleName)
+                procTasks[outputModuleName] = task
+            self.mergeMapping[task.name()] = procTasks
         return
 
     def validateSchema(self, schema):
@@ -418,10 +530,10 @@ class TaskChainWorkloadFactory(StdBase):
 
             # Validate the existence of the configCache
             if task.has_key("ConfigCacheID"):
-                outMod = self.validateConfigCacheExists(configID = task['ConfigCacheID'],
-                                                        couchURL = schema["CouchURL"],
-                                                        couchDBName = schema["CouchDBName"],
-                                                        getOutputModules = True)
+                self.validateConfigCacheExists(configID = task['ConfigCacheID'],
+                                               couchURL = schema["CouchURL"],
+                                               couchDBName = schema["CouchDBName"],
+                                               getOutputModules = True)
         return
 
 

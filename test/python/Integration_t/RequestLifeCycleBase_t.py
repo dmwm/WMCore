@@ -72,7 +72,7 @@ class RequestLifeCycleBase_t():
             try:
                 self.__class__.request = self.__class__.reqmgr.makeRequest(**self.__class__.requestParams)['WMCore.RequestManager.DataStructs.Request.Request']
                 break
-            except HTTPError:
+            except:
                 tries += 1
                 if tries > 3:
                     raise

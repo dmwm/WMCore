@@ -702,7 +702,7 @@ class WorkQueue(WorkQueueBase):
                 self.logger.debug("Queue status follows:")
                 results = endPolicy(elements, parents, self.params['EndPolicySettings'])
                 for result in results:
-                    self.logger.debug("Request %s, Status %s, Full info: %s" % (result['RequestName'], result['Status'], result))
+                    self.logger.debug("Element %s in %s, Status %s, Full info: %s" % (result['ParentQueueElement'].id, result['RequestName'], result['Status'], result))
 
                     # check for cancellation requests (affects entire workflow)
                     if result['Status'] == 'CancelRequested':
@@ -719,8 +719,8 @@ class WorkQueue(WorkQueueBase):
                         self.backend.saveElements(parent)
 
                     if result.inEndState():
-                        if elements:
-                            self.logger.info("Request %s finished (%s)" % (result['RequestName'], parent.statusMetrics()))
+                        if result['Elements']:
+                            self.logger.info("Element %s in %s finished (%s)" % (parent.id, result['RequestName'], parent.statusMetrics()))
                             self.backend.deleteElements(*result['Elements'])
                             finished_elements.extend(result['Elements'])
                         else:

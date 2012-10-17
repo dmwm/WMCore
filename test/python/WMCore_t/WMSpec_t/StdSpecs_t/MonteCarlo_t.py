@@ -19,7 +19,7 @@ from WMCore.WMSpec.StdSpecs.MonteCarlo import getTestArguments, monteCarloWorklo
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
-
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
 
 class MonteCarloTest(unittest.TestCase):
     def setUp(self):
@@ -32,12 +32,14 @@ class MonteCarloTest(unittest.TestCase):
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setupCouch("montecarlo_t", "ConfigCache")        
+        self.testInit.setupCouch("montecarlo_t", "ConfigCache")
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
+        self.testInit.generateWorkDir()
 
         couchServer = CouchServer(os.environ["COUCHURL"])
-        self.configDatabase = couchServer.connectDatabase("rereco_t")        
+        self.configDatabase = couchServer.connectDatabase("rereco_t")
+        EmulatorHelper.setEmulators(dbs = True)
         return
 
 
@@ -46,10 +48,12 @@ class MonteCarloTest(unittest.TestCase):
         _tearDown_
 
         Clear out the database.
-        
+
         """
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
+        self.testInit.delWorkDir()
+        EmulatorHelper.resetEmulators()
         return
 
 
@@ -222,12 +226,56 @@ class MonteCarloTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
         
-        testWMBSHelper = WMBSHelper(testWorkload, "Production", "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "Production", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
-        
+
         self._commonMonteCarloTest()
 
+        return
+
+    def testMonteCarloExtension(self):
+        """
+        Create a Monte Carlo workflow and verify that it is injected correctly
+        into WMBS and invoke its detailed test. This uses a non-zero first
+        event and lumi. Check that the splitting arguments are correctly
+        set for the lfn counter.
+
+        """
+        defaultArguments = getTestArguments()
+        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = "rereco_t"
+        defaultArguments["ProcConfigCacheID"] = self.injectMonteCarloConfig()
+        defaultArguments["FirstEvent"] = 3571428573
+        defaultArguments["FirstLumi"] = 26042
+        defaultArguments["TimePerEvent"] = 15
+        defaultArguments["FilterEfficiency"] = 0.014
+        defaultArguments["TotalTime"] = 28800
+
+        initial_lfn_counter = 26042 # Same as the previous number of jobs + 1 which is the same value of the first lumi
+
+        testWorkload = monteCarloWorkload("TestWorkload", defaultArguments)
+        testWorkload.setSpecUrl("somespec")
+        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
+
+        testWMBSHelper = WMBSHelper(testWorkload, "Production", "SomeBlock", cachepath = self.testInit.testDir)
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+
+        self._commonMonteCarloTest()
+
+        productionTask = testWorkload.getTaskByPath('/TestWorkload/Production')
+        productionSplitting = productionTask.jobSplittingParameters()
+        self.assertTrue("initial_lfn_counter" in productionSplitting, "No initial lfn counter was stored")
+        self.assertEqual(productionSplitting["initial_lfn_counter"], initial_lfn_counter, "Wrong initial LFN counter")
+
+        for outputMod in ["OutputA", "OutputB"]:
+            mergeTask = testWorkload.getTaskByPath('/TestWorkload/Production/ProductionMerge%s' % outputMod)
+            mergeSplitting = mergeTask.jobSplittingParameters()
+            self.assertTrue("initial_lfn_counter" in mergeSplitting, "No initial lfn counter was stored")
+            self.assertEqual(mergeSplitting["initial_lfn_counter"], initial_lfn_counter, "Wrong initial LFN counter")
+
+        return
 
     def testRelValMCWithPileup(self):
         """
@@ -238,24 +286,24 @@ class MonteCarloTest(unittest.TestCase):
         """
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
-        defaultArguments["CouchDBName"] = "rereco_t"        
+        defaultArguments["CouchDBName"] = "rereco_t"
         defaultArguments["ProcConfigCacheID"] = self.injectMonteCarloConfig()
-        
+
         # add pile up configuration
-        defaultArguments["PileupConfig"] = {"mc": ["/some/cosmics/dataset1","/some/cosmics/dataset2"],
+        defaultArguments["PileupConfig"] = {"mc": ["/some/cosmics/dataset1", "/some/cosmics/dataset2"],
                                             "data": ["/some/minbias/dataset3"]}
 
         testWorkload = monteCarloWorkload("TestWorkload", defaultArguments)
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
-        
-        testWMBSHelper = WMBSHelper(testWorkload, "Production", "SomeBlock")
+
+        testWMBSHelper = WMBSHelper(testWorkload, "Production", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
-        
+
         self._commonMonteCarloTest()
 
-        
+        return
 
 if __name__ == '__main__':
     unittest.main()

@@ -96,7 +96,7 @@ if [ X${TAG} == Xtrue ]; then
   git log --pretty=format:'  - %s' ${LASTCOMMIT}.. | git tag -a $VERSION -F -
 
   echo "pushing to ${REMOTE} ..."
-  git push --tags ${REMOTE}
+  git push --tags ${REMOTE} ${GITBRANCH}
 
   echo "$VERSION tagged"
 fi

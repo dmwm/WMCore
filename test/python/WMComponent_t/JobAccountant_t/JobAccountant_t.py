@@ -52,6 +52,7 @@ class JobAccountantTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setupCouch("jobaccountant_t", "JobDump")
+        self.testInit.setupCouch("jobaccountant_wmstats_t", "WMStats")
         self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer",
                                                 "WMCore.WMBS"],
                                 useDefault = False)
@@ -71,7 +72,7 @@ class JobAccountantTest(unittest.TestCase):
         self.getJobTypeAction = self.daofactory(classname = "Jobs.GetType")
         self.getOutputMapAction = self.daofactory(classname = "Jobs.GetOutputMap")
 
-        self.dbsbufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+        self.dbsbufferFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
                                            logger = myThread.logger,
                                            dbinterface = myThread.dbi)
         self.countDBSFilesAction = self.dbsbufferFactory(classname = "CountFiles")
@@ -110,11 +111,13 @@ class JobAccountantTest(unittest.TestCase):
         config.section_("JobStateMachine")
         config.JobStateMachine.couchurl = os.getenv("COUCHURL")
         config.JobStateMachine.couchDBName = "jobaccountant_t"
+        config.JobStateMachine.jobSummaryDBName = "jobaccountant_wmstats_t"
 
         config.component_("JobAccountant")
         config.JobAccountant.pollInterval = 60
         config.JobAccountant.componentDir = os.getcwd()
         config.JobAccountant.logLevel = 'SQLDEBUG'
+        config.JobAccountant.specDir = self.testDir
         return config
 
     def setupDBForJobFailure(self, jobName, fwjrName):
@@ -654,6 +657,8 @@ class JobAccountantTest(unittest.TestCase):
         Initialize the database so that we can test the result of a skim job
         that produced merged output.  This needs to setup merge workflows and
         filesset to hold the "merged" files.
+        Also set a "spec" file and tasks so the jobAccountant can copy this
+        information to the dbsbuffer workflow table.
         """
         self.recoOutputFileset = Fileset(name = "RECO")
         self.recoOutputFileset.create()
@@ -666,8 +671,12 @@ class JobAccountantTest(unittest.TestCase):
         self.cleanupFileset = Fileset(name = "Cleanup")
         self.cleanupFileset.create()
 
-        self.testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
-                                     name = "TestWF", task = "None")
+        falseSpec = os.path.join(WMCore.WMBase.getTestBase(),
+                                 "WMComponent_t/JobAccountant_t/fwjrs",
+                                 "MergedSkimSuccess.pkl")
+
+        self.testWorkflow = Workflow(spec = falseSpec, owner = "Steve",
+                                     name = "TestWF", task = "TestTopTask")
         self.testWorkflow.create()
         self.testWorkflow.addOutput("output", self.recoOutputFileset,
                                     self.mergedRecoOutputFileset)
@@ -676,13 +685,13 @@ class JobAccountantTest(unittest.TestCase):
                                     self.mergedAlcaOutputFileset)
         self.testWorkflow.addOutput("ALCARECOStreamCombined", self.cleanupFileset, None)
 
-        self.testRecoMergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
-                                              name = "TestRecoMergeWF", task = "None")
+        self.testRecoMergeWorkflow = Workflow(spec = falseSpec, owner = "Steve",
+                                              name = "TestRecoMergeWF", task = "TestRecoMergeTask")
         self.testRecoMergeWorkflow.create()
         self.testRecoMergeWorkflow.addOutput("Merged", self.mergedRecoOutputFileset)
 
-        self.testAlcaMergeWorkflow = Workflow(spec = "wf003.xml", owner = "Steve",
-                                              name = "TestAlcaMergeWF", task = "None")
+        self.testAlcaMergeWorkflow = Workflow(spec = falseSpec, owner = "Steve",
+                                              name = "TestAlcaMergeWF", task = "TestAlcaTask")
         self.testAlcaMergeWorkflow.create()
         self.testAlcaMergeWorkflow.addOutput("Merged", self.mergedAlcaOutputFileset)
 
@@ -807,8 +816,11 @@ class JobAccountantTest(unittest.TestCase):
         self.mergedAodOutputFileset = Fileset(name = "MergedAOD")
         self.mergedAodOutputFileset.create()
 
+        falseSpec = os.path.join(WMCore.WMBase.getTestBase(),
+                                 "WMComponent_t/JobAccountant_t/fwjrs",
+                                 "MergeSuccess.pkl")
         self.testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
-                                     name = "TestWF", task = "None")
+                                     name = "Steves", task = "/Steves/Stupid/ProcessingTask")
         self.testWorkflow.create()
         self.testWorkflow.addOutput("output", self.recoOutputFileset,
                                     self.mergedRecoOutputFileset)
@@ -816,13 +828,13 @@ class JobAccountantTest(unittest.TestCase):
                                     self.mergedAodOutputFileset)
 
         self.testRecoMergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
-                                              name = "TestRecoMergeWF", task = "None")
+                                              name = "Steves", task = "/Steves/Stupid/RecoMergeTask")
         self.testRecoMergeWorkflow.create()
         self.testRecoMergeWorkflow.addOutput("Merged", self.mergedRecoOutputFileset,
                                              self.mergedRecoOutputFileset)
 
-        self.testAodMergeWorkflow = Workflow(spec = "wf003.xml", owner = "Steve",
-                                             name = "TestAodMergeWF", task = "None")
+        self.testAodMergeWorkflow = Workflow(spec = falseSpec, owner = "Steve",
+                                             name = "Steves", task = "/Steves/Stupid/Task")
         self.testAodMergeWorkflow.create()
         self.testAodMergeWorkflow.addOutput("Merged", self.mergedAodOutputFileset,
                                             self.mergedAodOutputFileset)
@@ -962,6 +974,8 @@ class JobAccountantTest(unittest.TestCase):
         result = myThread.dbi.processData("SELECT * FROM dbsbuffer_workflow")[0].fetchall()[0]
         self.assertEqual(result[1], 'Steves')
         self.assertEqual(result[2], '/Steves/Stupid/Task')
+        self.assertEqual(result[3], os.path.join(self.testDir,
+                                    "Steves.pkl"))
 
         result = myThread.dbi.processData("SELECT workflow FROM dbsbuffer_file WHERE id = 4")[0].fetchall()[0][0]
         self.assertEqual(result, 1)
@@ -1016,7 +1030,9 @@ class JobAccountantTest(unittest.TestCase):
         result = myThread.dbi.processData("SELECT * FROM dbsbuffer_workflow")[0].fetchall()[0]
         self.assertEqual(result[1], 'Steves')
         self.assertEqual(result[2], '/Steves/Stupid/Task')
-        
+        self.assertEqual(result[3], os.path.join(self.testDir,
+                                    "Steves.pkl"))
+
         result = myThread.dbi.processData("SELECT workflow FROM dbsbuffer_file WHERE id = 4")[0].fetchall()[0][0]
         self.assertEqual(result, 1)
 
@@ -1069,7 +1085,9 @@ class JobAccountantTest(unittest.TestCase):
         result = myThread.dbi.processData("SELECT * FROM dbsbuffer_workflow")[0].fetchall()[0]
         self.assertEqual(result[1], 'Steves')
         self.assertEqual(result[2], '/Steves/Stupid/Task')
-        
+        self.assertEqual(result[3], os.path.join(self.testDir,
+                                    "Steves.pkl"))
+
         result = myThread.dbi.processData("SELECT workflow FROM dbsbuffer_file WHERE id = 1")[0].fetchall()[0][0]
         self.assertEqual(result, 1)
         
@@ -1549,145 +1567,6 @@ class JobAccountantTest(unittest.TestCase):
         #p.print_stats()
 
         return
-
-    def setupDBForMergedSkimSuccess(self):
-        """
-        _setupDBForMergedSkimSuccess_
-
-        Initialize the database so that we can test the result of a skim job
-        that produced merged output.  This needs to setup merge workflows and
-        filesset to hold the "merged" files.
-        """
-        self.recoOutputFileset = Fileset(name = "RECO")
-        self.recoOutputFileset.create()
-        self.mergedRecoOutputFileset = Fileset(name = "MergedRECO")
-        self.mergedRecoOutputFileset.create()
-        self.alcaOutputFileset = Fileset(name = "ALCA")
-        self.alcaOutputFileset.create()
-        self.mergedAlcaOutputFileset = Fileset(name = "MergedALCA")
-        self.mergedAlcaOutputFileset.create()
-
-        self.testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
-                                     name = "TestWF", task = "None")
-        self.testWorkflow.create()
-        self.testWorkflow.addOutput("output", self.recoOutputFileset,
-                                    self.mergedRecoOutputFileset)
-        self.testWorkflow.addOutput("ALCARECOStreamCombined", self.alcaOutputFileset,
-                                    self.mergedAlcaOutputFileset)
-
-        self.testRecoMergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
-                                              name = "TestRecoMergeWF", task = "None")
-        self.testRecoMergeWorkflow.create()
-        self.testRecoMergeWorkflow.addOutput("Merged", self.mergedRecoOutputFileset,
-                                             self.mergedRecoOutputFileset)
-
-        self.testAlcaMergeWorkflow = Workflow(spec = "wf003.xml", owner = "Steve",
-                                              name = "TestAlcaMergeWF", task = "None")
-        self.testAlcaMergeWorkflow.create()
-        self.testAlcaMergeWorkflow.addOutput("Merged", self.mergedAlcaOutputFileset,
-                                             self.mergedAlcaOutputFileset)
-
-        inputFile = File(lfn = "/path/to/some/lfn", size = 600000, events = 60000,
-                         locations = "cmssrm.fnal.gov")
-        inputFile.create()
-
-        testFileset = Fileset(name = "TestFileset")
-        testFileset.create()
-        testFileset.addFile(inputFile)
-        testFileset.commit()
-
-        # Insert parent
-        pFile = DBSBufferFile(lfn = "/path/to/some/lfn", size = 600000, events = 60000)
-        pFile.setAlgorithm(appName = "cmsRun", appVer = "UNKNOWN",
-                           appFam = "RECO", psetHash = "GIBBERISH",
-                           configContent = "MOREGIBBERISH")
-        pFile.setDatasetPath("/bogus/dataset/path")
-        pFile.addRun(Run(1, *[45]))
-        pFile.create()
-
-        self.testSubscription = Subscription(fileset = testFileset,
-                                             workflow = self.testWorkflow,
-                                             split_algo = "EventBased",
-                                             type = "Processing")
-
-        self.testMergeRecoSubscription = Subscription(fileset = self.recoOutputFileset,
-                                                      workflow = self.testRecoMergeWorkflow,
-                                                      split_algo = "WMBSMergeBySize",
-                                                      type = "Merge")
-
-        self.testMergeAlcaSubscription = Subscription(fileset = self.alcaOutputFileset,
-                                                      workflow = self.testAlcaMergeWorkflow,
-                                                      split_algo = "WMBSMergeBySize",
-                                                      type = "Merge")
-        self.testSubscription.create()
-        self.testMergeRecoSubscription.create()
-        self.testMergeAlcaSubscription.create()
-        self.testSubscription.acquireFiles()
-
-        testJobGroup = JobGroup(subscription = self.testSubscription)
-        testJobGroup.create()
-
-        self.testJob = Job(name = "SplitJobA", files = [inputFile])
-        self.testJob.create(group = testJobGroup)
-        self.testJob["state"] = "complete"
-        self.testJob.save()
-        self.stateChangeAction.execute(jobs = [self.testJob])
-
-        self.setFWJRAction.execute(self.testJob["id"],
-                                   os.path.join(WMCore.WMBase.getTestBase(),
-                                                "WMComponent_t/JobAccountant_t/fwjrs",
-                                                "MergedSkimSuccess.pkl"))
-        return
-
-    def testMergedSkim(self):
-        """
-        _testMergedSkim_
-
-        Test how the accounant handles a skim that produces merged out.  Verify
-        that merged files are inserted into the correct output filesets.
-        """
-        self.setupDBForMergedSkimSuccess()
-
-        config = self.createConfig()
-        accountant = JobAccountantPoller(config)
-        accountant.setup()
-        accountant.algorithm()
-
-        jobReport = Report()
-        jobReport.unpersist(os.path.join(WMCore.WMBase.getTestBase(),
-                                         "WMComponent_t/JobAccountant_t/fwjrs",
-                                         "MergedSkimSuccess.pkl"))
-        self.verifyFileMetaData(self.testJob["id"], jobReport.getAllFilesFromStep("cmsRun1"), site = "srm-cms.cern.ch")
-        self.verifyJobSuccess(self.testJob["id"])
-
-        self.recoOutputFileset.loadData()
-        self.mergedRecoOutputFileset.loadData()
-        self.alcaOutputFileset.loadData()
-        self.mergedAlcaOutputFileset.loadData()
-
-        assert len(self.recoOutputFileset.getFiles(type = "list")) == 0, \
-               "Error: files should go straight to the merged reco fileset."
-        assert len(self.alcaOutputFileset.getFiles(type = "list")) == 0, \
-               "Error: files should go straight to the merged alca fileset."
-
-        assert len(self.mergedRecoOutputFileset.getFiles(type = "list")) == 1, \
-               "Error: Should be only one file in the merged reco fileset."
-        assert len(self.mergedAlcaOutputFileset.getFiles(type = "list")) == 1, \
-               "Error: Should be only one file in the merged alca fileset."
-
-        for fwjrFile in jobReport.getAllFilesFromStep("cmsRun1"):
-            if fwjrFile["dataset"]["dataTier"] == "RECO":
-                assert fwjrFile["lfn"] in self.mergedRecoOutputFileset.getFiles(type = "lfn"), \
-                       "Error: file is missing from reco output fileset."
-            else:
-                assert fwjrFile["lfn"] in self.mergedAlcaOutputFileset.getFiles(type = "lfn"), \
-                       "Error: file is missing from alca output fileset."
-
-        self.verifyDBSBufferContents("Processing", ["/path/to/some/lfn"],
-                                     jobReport.getAllFilesFromStep("cmsRun1"))
-        return
-
-
 
     def testReportReturn(self):
         """

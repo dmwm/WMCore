@@ -253,6 +253,22 @@ class Assign(WebAPI):
                                           int(kwargs.get("maxVSize", 2411724)),
                                           int(kwargs.get("SoftTimeout", 171600)),
                                           int(kwargs.get("GracePeriod", 300)))
+        # Set phedex subscription information
+        custodialList = kwargs.get("CustodialSites", [])
+        nonCustodialList = kwargs.get("NonCustodialSites", [])
+        if "AutoApprove" in kwargs:
+            autoApproveList = nonCustodialList
+        else:
+            autoApproveList = []
+        priority = kwargs.get("Priority", "Low")
+        if priority not in ["Low", "Normal", "High"]:
+            raise cherrypy.HTTPError(400, "Invalid subscription priority")
+
+        helper.setSubscriptionInformationWildCards(wildcardDict = self.wildcardSites,
+                                                   custodialSites = custodialList,
+                                                   nonCustodialSites = nonCustodialList,
+                                                   autoApproveSites = autoApproveList,
+                                                   priority = priority)
         helper.setDashboardActivity(kwargs.get("dashboard", ""))
         Utilities.saveWorkload(helper, request['RequestWorkflow'], self.wmstatWriteURL)
 

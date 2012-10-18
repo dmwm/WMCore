@@ -411,7 +411,58 @@ class WMTaskTest(unittest.TestCase):
         runs=['3', '4']
         lumis=['1,4,23,45', '5,84,234']
         self.assertRaises(ValueError, buildLumiMask, runs, lumis)
-        
+
+    def testSubscriptionInformation(self):
+        """
+        _testSubscriptionInformation_
+
+        Check the three methods related to the subscription information in a task
+        Make sure that we can set the subscription information for all datasets produced by this task
+        and we can select only some primaryDatasets/DataTiers, and check that we can update the dataset
+        in a subscription information section.
+        """
+        testTask = makeWMTask("TestTask")
+        cmsswStep = testTask.makeStep("cmsRun1")
+        cmsswStep.setStepType("CMSSW")
+        testTask.applyTemplates()
+        cmsswHelper = cmsswStep.getTypeHelper()
+        cmsswHelper.addOutputModule("outputRECO", primaryDataset = "OneParticle",
+                                    processedDataset = "DawnOfAnEra-v1", dataTier = "RECO")
+        cmsswHelper.addOutputModule("outputDQM", primaryDataset = "TwoParticles",
+                                    processedDataset = "DawnOfAnEra-v1", dataTier = "DQM")
+        cmsswHelper.addOutputModule("outputAOD", primaryDataset = "OneParticle",
+                                    processedDataset = "DawnOfAnEra-v1", dataTier = "AOD")
+
+        self.assertEqual(testTask.getSubscriptionInformation(), {}, "There should not be any subscription info")
+
+        testTask.setSubscriptionInformation(["mercury"], ["mars", "earth"],
+                                            ["earth"], "High",
+                                            "OneParticle")
+        subInfo = testTask.getSubscriptionInformation()
+
+        outputRecoSubInfo = {"CustodialSites" : ["mercury"],
+                             "NonCustodialSites" : ["mars", "earth"],
+                             "AutoApproveSites" : ["earth"],
+                             "Priority" : "High"}
+        self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"],
+                         outputRecoSubInfo, "The RECO subscription information is wrong")
+        self.assertTrue("/OneParticle/DawnOfAnEra-v1/AOD" in subInfo, "The AOD subscription information is wrong")
+        self.assertFalse("/TwoParticles/DawnOfAnEra-v1/DQM" in subInfo, "The DQM subscription information is wrong")
+
+        testTask.setSubscriptionInformation(["jupiter"], primaryDataset = "TwoParticles")
+        subInfo = testTask.getSubscriptionInformation()
+        self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"],
+                         outputRecoSubInfo, "The RECO subscription information is wrong")
+        self.assertTrue("/OneParticle/DawnOfAnEra-v1/AOD" in subInfo, "The AOD subscription information is wrong")
+        self.assertTrue("/TwoParticles/DawnOfAnEra-v1/DQM" in subInfo, "The DQM subscription information is wrong")
+
+        recoutOutputModule = cmsswHelper.getOutputModule("outputRECO")
+        setattr(recoutOutputModule, "primaryDataset", "ThreeParticles")
+        testTask.updateSubscriptionDataset("outputRECO", recoutOutputModule)
+        subInfo = testTask.getSubscriptionInformation()
+        self.assertEqual(subInfo["/ThreeParticles/DawnOfAnEra-v1/RECO"],
+                        outputRecoSubInfo, "The RECO subscription information is wrong")
+        self.assertFalse("/OneParticle/DawnOfAnEra-v1/RECO" in subInfo, "The RECO subscription information is wrong")
 
 if __name__ == '__main__':
     unittest.main()

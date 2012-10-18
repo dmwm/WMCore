@@ -87,11 +87,14 @@ class PromptSkimTest(unittest.TestCase):
         result = parseT0ProcVer(procVerWithV)
         self.assertEqual(result, {'ProcVer' : 1, 'ProcString' : None})
 
+        result = parseT0ProcVer(procVerWithV, 'PromptSkim')
+        self.assertEqual(result, {'ProcVer' : 1, 'ProcString' : 'PromptSkim'})
+
         result = parseT0ProcVer(procVerWithString)
         self.assertEqual(result, {'ProcVer' : 1, 'ProcString' : 'PromptSkim'})
 
-        result = parseT0ProcVer(procVerWithString, 'Overriden')
-        self.assertEqual(result, {'ProcVer' : 1, 'ProcString' : 'Overriden'})
+        result = parseT0ProcVer(procVerWithString, 'Minor')
+        self.assertEqual(result, {'ProcVer' : 1, 'ProcString' : 'PromptSkim'})
 
         result = parseT0ProcVer(procVerJustNumber, 'TestString')
         self.assertEqual(result, {'ProcVer' : 1, 'ProcString' : 'TestString'})
@@ -108,8 +111,10 @@ class PromptSkimTest(unittest.TestCase):
         requires a system that has all of the cms software installed on it.
         """
         dataProcArguments = getTestArguments()
-        dataProcArguments["CouchUrl"] = os.environ["COUCHURL"]
+        dataProcArguments["CouchURL"] = os.environ["COUCHURL"]
         dataProcArguments["CouchDBName"] = "promptskim_t"
+        dataProcArguments["EnvPath"] = os.environ.get("EnvPath", None)
+        dataProcArguments["BinPath"] = os.environ.get("BinPath", None)
         testWorkload = promptSkimWorkload("TestWorkload", dataProcArguments)
 
         #Test another processing version flavor
@@ -128,7 +133,9 @@ class PromptSkimTest(unittest.TestCase):
         """
         dataProcArguments = getTestArguments()
         dataProcArguments["SkimConfig"] = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/Skimming/test/tier1/IAmCorrectButIDontExist?revision=1.4"
-        dataProcArguments["CouchUrl"] = os.environ["COUCHURL"]
+        dataProcArguments["CouchURL"] = os.environ["COUCHURL"]
+        dataProcArguments["EnvPath"] = os.environ.get("EnvPath", None)
+        dataProcArguments["BinPath"] = os.environ.get("BinPath", None)
         dataProcArguments["CouchDBName"] = "promptskim_t"
         self.assertRaises(Exception, promptSkimWorkload, *["TestWorkload", dataProcArguments])
 

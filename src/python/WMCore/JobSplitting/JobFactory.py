@@ -113,7 +113,7 @@ class JobFactory(WMObject):
         map(lambda x: x.startGroup(self.currentGroup), self.generators)
 
 
-    def newJob(self, name=None, files=None):
+    def newJob(self, name=None, files=None, failedJob=False):
         """
         Instantiate a new Job onject, apply all the generators to it
         """
@@ -129,7 +129,11 @@ class JobFactory(WMObject):
         # All production jobs must be run 1
         if self.subscription["type"] == "Production":
             self.currentJob["mask"].setMaxAndSkipRuns(0, 1)
-                        
+
+        # Some jobs are not meant to be submitted, ever
+        if failedJob:
+            self.currentJob["failedOnCreation"] = True
+
         self.nJobs += 1
         for gen in self.generators:
             gen(self.currentJob)

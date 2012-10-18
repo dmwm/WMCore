@@ -148,7 +148,14 @@ class ReqMgrBrowser(WebAPI):
             if str(submittedParams["halt_job_on_file_boundaries"]) == "True":
                 splitParams["halt_job_on_file_boundaries"] = True
             else:
-                splitParams["halt_job_on_file_boundaries"] = False                
+                splitParams["halt_job_on_file_boundaries"] = False
+        elif splittingAlgo == "EventAwareLumiBased":
+            splitParams["events_per_job"] = int(submittedParams["avg_events_per_job"])
+            splitParams["max_events_per_lumi"] = int(submittedParams["max_events_per_lumi"])
+            if str(submittedParams["halt_job_on_file_boundaries"]) == "True":
+                splitParams["halt_job_on_file_boundaries"] = True
+            else:
+                splitParams["halt_job_on_file_boundaries"] = False
         elif splittingAlgo == "EventBased":
             splitParams["events_per_job"] = int(submittedParams["events_per_job"])
             if submittedParams.has_key("events_per_lumi"):

@@ -884,7 +884,8 @@ class WMWorkloadHelper(PersistencyHelper):
         SplitAlgoToStartPolicy = {"FileBased": ["NumberOfFiles"],
                                   "EventBased": ["NumberOfEvents",
                                                  "NumberOfEventsPerLumi"],
-                                  "LumiBased": ["NumberOfLumis"]}
+                                  "LumiBased": ["NumberOfLumis"],
+                                  "EventAwareLumiBased" : ["NumberOfEvents"]}
         SplitAlgoToArgMap = {"NumberOfFiles": "files_per_job",
                              "NumberOfEvents": "events_per_job",
                              "NumberOfLumis": "lumis_per_job",

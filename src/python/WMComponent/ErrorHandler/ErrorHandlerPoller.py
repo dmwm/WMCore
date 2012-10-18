@@ -128,18 +128,15 @@ class ErrorHandlerPoller(BaseWorkerThread):
         # Retries < max retry count
         for ajob in jobs:
             # Retries < max retry count
-            if ajob['retry_count'] < self.maxRetries:
+            if ajob['retry_count'] < self.maxRetries and jobType != 'create':
                 cooloffPre.append(ajob)
-            # Check if Retries >= max retry count
-            elif ajob['retry_count'] >= self.maxRetries:
+            # Check if Retries >= max retry count or it is a createfailed job
+            elif ajob['retry_count'] >= self.maxRetries or jobType == 'create':
                 exhaustJobs.append(ajob)
                 msg = "Exhausting job %i" % ajob['id']
                 logging.error(msg)
                 self.sendAlert(4, msg = msg)
                 logging.debug("JobInfo: %s" % ajob)
-            else:
-                logging.debug("Job %i had %s retries remaining" \
-                              % (ajob['id'], str(ajob['retry_count'])))
 
         if self.readFWJR:
             # Then we have to check each FWJR for exit status

@@ -697,11 +697,13 @@ class JobCreatorPoller(BaseWorkerThread):
         Mark jobGroup as ready in changeState
         """
         try:
+            createFailedJobs = filter(lambda x : x.get('failedOnCreation', False), wmbsJobGroup.jobs)
             self.changeState.propagate(wmbsJobGroup.jobs, 'created', 'new')
+            self.changeState.propagate(createFailedJobs, 'createfailed', 'created')
         except WMException:
             raise
         except Exception, ex:
-            msg =  "Unhandled exception while calling changeState.\n"
+            msg = "Unhandled exception while calling changeState.\n"
             msg += str(ex)
             logging.error(msg)
             self.sendAlert(6, msg = msg)

@@ -22,6 +22,8 @@ from WMComponent.TaskArchiver.TaskArchiverPoller import uploadPublishWorkflow
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.JobStateMachine.ChangeState    import ChangeState
 
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
+
 from WMCore.WMBS.Job          import Job
 from WMCore.DAOFactory        import DAOFactory
 from WMCore.WMBS.Fileset      import Fileset
@@ -342,6 +344,9 @@ class JobArchiverPoller(BaseWorkerThread):
             try:
                 if self.workQueue.getWMBSInjectionStatus(workflowName = name):
                     injected.append(name)
+            except WorkQueueNoMatchingElements:
+                # workflow not known - free to cleanup
+                injected.append(name)
             except:
                 # Do nothing if it complains
                 pass

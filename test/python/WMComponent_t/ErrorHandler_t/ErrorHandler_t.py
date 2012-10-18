@@ -234,7 +234,8 @@ class ErrorHandlerTest(unittest.TestCase):
         
         config = self.getConfig()
         changer = ChangeState(config)
-        changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
+        changer.propagate(testJobGroup.jobs, 'created', 'new')
+        changer.propagate(testJobGroup.jobs, 'createfailed', 'created')
 
         idList = self.getJobs.execute(state = 'CreateFailed')
         self.assertEqual(len(idList), self.nJobs)
@@ -246,18 +247,7 @@ class ErrorHandlerTest(unittest.TestCase):
         idList = self.getJobs.execute(state = 'CreateFailed')
         self.assertEqual(len(idList), 0)
 
-        idList = self.getJobs.execute(state = 'CreateCooloff')
-        self.assertEqual(len(idList), self.nJobs)
-
-        changer.propagate(testJobGroup.jobs, 'new', 'CreateCooloff')
-        changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
-
-        # Now exhaust them
-        for job in testJobGroup.jobs:
-            job['retry_count'] = 6
-            job.save()
-        testErrorHandler.algorithm(None)
-
+        #These should go directly to exhausted
         idList = self.getJobs.execute(state = 'Exhausted')
         self.assertEqual(len(idList), self.nJobs)
 

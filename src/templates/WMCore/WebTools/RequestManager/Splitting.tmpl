@@ -93,7 +93,27 @@ function generateProcessing(splitAlgo, splitParams) {
   } else {
     procStr += "<option>True</option><option select>False</option>\n";
   }
- 
+
+  procStr += "</select></input></td></tr>\n";
+  procStr += '<tr><td><input type="radio" name="splittingAlgo" value="EventAwareLumiBased"';
+
+  if (splitAlgo == "EventAwareLumiBased") {
+    procStr += " checked";
+  }
+  procStr += ">Event Aware Lumi Based</input></td>\n";
+  procStr += generateInput("Optimal events per job:", "avg_events_per_job", splitParams);
+  procStr += generateInput("Max events in single lumi:", "max_events_per_lumi", splitParams);
+  procStr += '<td>Split files between jobs: <select name="halt_job_on_file_boundaries">';
+  if ("halt_job_on_file_boundaries" in splitParams) {
+    if (splitParams["halt_job_on_file_boundaries"] == true) {
+      procStr += "<option selected>True</option><option>False</option>\n";
+    } else {
+      procStr += "<option>True</option><option selected>False</option>\n";
+    }
+  } else {
+    procStr += "<option>True</option><option select>False</option>\n";
+  }
+
   procStr += "</select></input></td></tr>\n";
   procStr += '<tr><td><input type="radio" name="splittingAlgo" value="EventBased"';
 

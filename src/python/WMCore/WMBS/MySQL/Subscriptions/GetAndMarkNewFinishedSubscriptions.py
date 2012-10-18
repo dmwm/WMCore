@@ -27,7 +27,8 @@ class GetAndMarkNewFinishedSubscriptions(DBFormatter):
              WHERE wmbs_subscription.id IN (
                SELECT id FROM (
                  SELECT complete_subscription.id
-                 FROM ( SELECT wmbs_subscription.id, wmbs_subscription.fileset
+                 FROM ( SELECT wmbs_subscription.id, wmbs_subscription.fileset,
+                               wmbs_workflow.name
                         FROM wmbs_subscription
                             INNER JOIN wmbs_fileset ON
                                 wmbs_fileset.id = wmbs_subscription.fileset AND
@@ -39,11 +40,6 @@ class GetAndMarkNewFinishedSubscriptions(DBFormatter):
                                 wmbs_sub_files_available.subscription = wmbs_subscription.id
                             LEFT OUTER JOIN wmbs_sub_files_acquired ON
                                 wmbs_sub_files_acquired.subscription = wmbs_subscription.id
-                            LEFT OUTER JOIN wmbs_workflow_output ON
-                                wmbs_workflow_output.workflow_id = wmbs_subscription.workflow
-                            LEFT OUTER JOIN wmbs_subscription child_subscription ON
-                                child_subscription.fileset = wmbs_workflow_output.output_fileset AND
-                                child_subscription.finished = 0
                             LEFT OUTER JOIN wmbs_jobgroup ON
                                 wmbs_jobgroup.subscription = wmbs_subscription.id
                             LEFT OUTER JOIN wmbs_job ON
@@ -54,7 +50,6 @@ class GetAndMarkNewFinishedSubscriptions(DBFormatter):
                         GROUP BY wmbs_subscription.id, wmbs_subscription.fileset
                         HAVING COUNT(wmbs_sub_files_available.subscription) = 0
                         AND COUNT(wmbs_sub_files_acquired.subscription) = 0
-                        AND COUNT(child_subscription.fileset) = 0
                         AND COUNT(wmbs_job.id) = 0 ) complete_subscription
                      INNER JOIN wmbs_fileset ON
                          wmbs_fileset.id = complete_subscription.fileset
@@ -67,8 +62,11 @@ class GetAndMarkNewFinishedSubscriptions(DBFormatter):
                      LEFT OUTER JOIN wmbs_subscription child_subscription ON
                          child_subscription.fileset = child_fileset.fileset AND
                          child_subscription.finished = 0
+                     LEFT OUTER JOIN wmbs_workflow child_workflow ON
+                         child_subscription.workflow = child_workflow.id AND
+                         child_workflow.name != complete_subscription.name
                  GROUP BY complete_subscription.id
-                 HAVING COUNT(child_subscription.fileset) = 0 ) deletable_subscriptions )
+                 HAVING COUNT(child_workflow.name) = 0 ) deletable_subscriptions )
              """
 
     def execute(self, state, timeOut = None, conn = None, transaction = False):

@@ -27,7 +27,7 @@ from T0.GenericTier0.Tier0DB import Tier0DB
 from T0.RunConfigCache.Cache import Cache
 
 from WMCore.WMSpec.StdSpecs.PromptSkim import PromptSkimWorkloadFactory, parseT0ProcVer
-from WMCore.WMSpec.StdSpecs.Tier1PromptReco import Tier1PromptRecoWorkloadFactory
+from WMCore.WMSpec.StdSpecs.PromptReco import PromptRecoWorkloadFactory
 from WMCore.WorkQueue.WorkQueue import WorkQueue
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 
@@ -47,7 +47,7 @@ class PromptSkimPoller(BaseWorkerThread):
 
         # Workload related parameters
         self.promptSkimFactory = PromptSkimWorkloadFactory()
-        self.tier1PromptRecoFactory = Tier1PromptRecoWorkloadFactory()
+        self.promptRecoFactory = PromptRecoWorkloadFactory()
         self.workloadCache = self.config.PromptSkimScheduler.workloadCache
 
         if not os.path.exists(self.workloadCache):
@@ -188,7 +188,7 @@ class PromptSkimPoller(BaseWorkerThread):
                                          "include_parents": True},
                     "ValidStatus": "VALID"}
 
-        workload = self.tier1PromptRecoFactory(workloadName, wfParams)
+        workload = self.promptRecoFactory(workloadName, wfParams)
         workload.setOwner("CMSDataOps")
         workload.setBlockWhitelist(blockInfo["BLOCK_NAME"])
 

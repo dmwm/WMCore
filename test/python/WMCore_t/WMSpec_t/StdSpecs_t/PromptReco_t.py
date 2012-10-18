@@ -7,7 +7,6 @@ Unit tests for the new Tier1 PromptReconstruction workflow.
 
 import unittest
 import os
-import threading
 
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
@@ -397,7 +396,10 @@ class PromptRecoTest(unittest.TestCase):
         self.setupPromptSkimConfigObject()
         testArguments = getTestArguments()
         testArguments["PromptSkims"] = [self.promptSkim]
-
+        testArguments["CouchURL"] = os.environ["COUCHURL"]
+        testArguments["CouchDBName"] = "promptreco_t"
+        testArguments["EnvPath"] = os.environ.get("EnvPath", None)
+        testArguments["BinPath"] = os.environ.get("BinPath", None)
 
         testWorkload = promptrecoWorkload("TestWorkload", testArguments)
         testWorkload.setSpecUrl("somespec")

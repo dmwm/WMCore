@@ -70,7 +70,8 @@ def fixCVSUrl(url):
     return url
 
 def injectIntoConfigCache(frameworkVersion, scramArch, initCommand,
-                          configUrl, configLabel, couchUrl, couchDBName):
+                          configUrl, configLabel, couchUrl, couchDBName,
+                          envPath = None, binPath = None):
     """
     _injectIntoConfigCache_
     """
@@ -84,14 +85,22 @@ def injectIntoConfigCache(frameworkVersion, scramArch, initCommand,
 
     scramTempDir = tempfile.mkdtemp()
     wmcoreBase = getWMBASE()
-    envPath = os.path.normpath(os.path.join(wmcoreBase, "../../../../../../../../apps/wmagent/etc/profile.d/init.sh"))
+    if not envPath:
+        envPath = os.path.normpath(os.path.join(wmcoreBase, "../../../../../../../../apps/wmagent/etc/profile.d/init.sh"))
     scram = Scram(version = frameworkVersion, architecture = scramArch,
                   directory = scramTempDir, initialise = initCommand,
                   envCmd = "source %s" % envPath)
     scram.project()
     scram.runtime()
 
-    scram("python2.6 %s/../../../bin/inject-to-config-cache %s %s PromptSkimmer cmsdataops %s %s None" % (wmcoreBase,
+    if not binPath:
+        scram("python2.6 %s/../../../bin/inject-to-config-cache %s %s PromptSkimmer cmsdataops %s %s None" % (wmcoreBase,
+                                                                                                              couchUrl,
+                                                                                                              couchDBName,
+                                                                                                              configPath,
+                                                                                                              configLabel))
+    else:
+        scram("python2.6 %s/inject-to-config-cache %s %s PromptSkimmer cmsdataops %s %s None" % (binPath,
                                                                                                  couchUrl,
                                                                                                  couchDBName,
                                                                                                  configPath,
@@ -105,7 +114,7 @@ def parseT0ProcVer(procVer, procString = None):
     compoundProcVer = r"^(((?P<ProcString>[a-zA-Z0-9_]+)-)?v)?(?P<ProcVer>[0-9]+)$"
     match = re.match(compoundProcVer, procVer)
     if match:
-        return {'ProcString' : procString or match.group('ProcString'),
+        return {'ProcString' : match.group('ProcString') or procString,
                 'ProcVer' : int(match.group('ProcVer'))}
     logging.error('Processing version %s is not compatible'
                                 % procVer)
@@ -129,7 +138,8 @@ class PromptSkimWorkloadFactory(DataProcessingWorkloadFactory):
         """
         injectIntoConfigCache(arguments["CMSSWVersion"], arguments["ScramArch"],
                               arguments["InitCommand"], arguments["SkimConfig"], workloadName,
-                              arguments["CouchURL"], arguments["CouchDBName"])
+                              arguments["CouchURL"], arguments["CouchDBName"],
+                              arguments.get("EnvPath", None), arguments.get("BinPath", None))
 
         try:
             configCache = ConfigCache(arguments["CouchURL"], arguments["CouchDBName"])

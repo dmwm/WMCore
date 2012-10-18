@@ -5,18 +5,15 @@ _PromptReco_
 Standard PromptReco workflow.
 """
 
-import os
-import tempfile
-import urllib
-import shutil
-import logging
-
-import WMCore.Lexicon
-
-from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-from WMCore.WMRuntime.Tools.Scram import Scram
-from WMCore.WMInit import getWMBASE
 from WMCore.Cache.WMConfigCache import ConfigCache
+from WMCore.WMSpec.StdSpecs.PromptSkim import injectIntoConfigCache, \
+                                              parseT0ProcVer
+from WMCore.WMSpec.StdSpecs.StdBase import StdBase
+import WMCore.Lexicon
+import logging
+import os
+
+
 
 def getTestArguments():
     """
@@ -48,7 +45,10 @@ def getTestArguments():
         "AlcaSkims" : ["TkAlCosmics0T","MuAlGlobalCosmics","HcalCalHOCosmics"],
         "DqmSequences" : [ "@common", "@jetmet" ],
 
+        "CouchURL": None,
+        "CouchDBName": "promptreco_t",
         "InitCommand": os.environ.get("INIT_COMMAND", None),
+        "RunNumber": 195360,
 
         #PromptSkims should be a list of ConfigSection objects with the
         #following attributes
@@ -59,46 +59,11 @@ def getTestArguments():
         #ProcessingVersion: PromptSkim-v1
         "PromptSkims": [],
 
-        "CouchURL": None,
-        "CouchDBName": None,
-
         "DashboardHost": "127.0.0.1",
         "DashboardPort": 8884,
         }
 
     return arguments
-
-def injectIntoConfigCache(frameworkVersion, scramArch, initCommand,
-                          configUrl, configLabel, couchUrl, couchDBName):
-    """
-    _injectIntoConfigCache_
-    """
-    logging.info("Injecting to config cache.\n")
-    configTempDir = tempfile.mkdtemp()
-    configPath = os.path.join(configTempDir, "cmsswConfig.py")
-    configString = urllib.urlopen(configUrl).read(-1)
-    configFile = open(configPath, "w")
-    configFile.write(configString)
-    configFile.close()
-
-    scramTempDir = tempfile.mkdtemp()
-    wmcoreBase = getWMBASE()
-    envPath = os.path.normpath(os.path.join(wmcoreBase, "../../../../../../../../apps/wmagent/etc/profile.d/init.sh"))
-    scram = Scram(version = frameworkVersion, architecture = scramArch,
-                  directory = scramTempDir, initialise = initCommand,
-                  envCmd = "source %s" % envPath)
-    scram.project()
-    scram.runtime()
-
-    scram("python2.6 %s/../../../bin/inject-to-config-cache %s %s PromptSkimmer cmsdataops %s %s None" % (wmcoreBase,
-                                                                                                 couchUrl,
-                                                                                                 couchDBName,
-                                                                                                 configPath,
-                                                                                                 configLabel))
-
-    shutil.rmtree(configTempDir)
-    shutil.rmtree(scramTempDir)
-    return
 
 class PromptRecoWorkloadFactory(StdBase):
     """
@@ -155,7 +120,7 @@ class PromptRecoWorkloadFactory(StdBase):
                                                stepType = cmsswStepType,
                                                forceUnmerged = True)
         if self.doLogCollect:
-            self.addLogCollectTask(recoTask, taskName = "RecoLogCollect")
+            self.addLogCollectTask(recoTask)
 
         recoMergeTasks = {}
         for recoOutLabel, recoOutInfo in recoOutMods.items():
@@ -199,20 +164,27 @@ class PromptRecoWorkloadFactory(StdBase):
             skimTask = mergeTask.addTask(promptSkim.SkimName)
             parentCmsswStep = mergeTask.getStep('cmsRun1')
 
-            #Does this work?
-            self.processingVersion = promptSkim.ProcessingVersion
+            parsedProcVer = parseT0ProcVer(promptSkim.ProcessingVersion,
+                                           'PromptSkim')
+            self.processingString = parsedProcVer["ProcString"]
+            self.processingVersion = parsedProcVer["ProcVer"]
 
             if promptSkim.TwoFileRead:
                 self.skimJobSplitArgs['include_parents'] = True
             else:
                 self.skimJobSplitArgs['include_parents'] = False
 
+            configLabel = '%s-%s' % (self.workloadName, promptSkim.SkimName)
             injectIntoConfigCache(self.frameworkVersion, self.scramArch,
-                                       self.initCommand, promptSkim.ConfigURL, self.workloadName,
-                                       self.couchURL, self.couchDBName)
+                                       self.initCommand, promptSkim.ConfigURL, configLabel,
+                                       self.couchURL, self.couchDBName,
+                                       self.envPath, self.binPath)
             try:
                 configCache = ConfigCache(self.couchURL, self.couchDBName)
-                procConfigCacheID = configCache.getIDFromLabel(self.workloadName)
+                procConfigCacheID = configCache.getIDFromLabel(configLabel)
+                if procConfigCacheID:
+                    logging.error("The configuration was not uploaded to couch")
+                    raise Exception
             except Exception:
                 logging.error("There was an exception loading the config out of the")
                 logging.error("ConfigCache.  Check the scramOutput.log file in the")
@@ -251,6 +223,10 @@ class PromptRecoWorkloadFactory(StdBase):
         self.couchURL = arguments['CouchURL']
         self.couchDBName = arguments['CouchDBName']
         self.initCommand = arguments['InitCommand']
+
+        #Optional parameters
+        self.envPath = arguments.get('EnvPath', None)
+        self.binPath = arguments.get('BinPath', None)
 
         if arguments.has_key('Multicore'):
             numCores = arguments.get('Multicore')

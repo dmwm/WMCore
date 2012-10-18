@@ -52,7 +52,7 @@ class LHEStepZeroTest(MonteCarloTest):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
 
-        testWMBSHelper = WMBSHelper(testWorkload, "Production", "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "Production", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 

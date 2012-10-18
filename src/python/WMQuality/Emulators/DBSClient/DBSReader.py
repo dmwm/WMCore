@@ -3,14 +3,18 @@
     Mocked DBS interface for Start Policy unit tests
 """
 
-from DBSAPI.dbsApi import DbsApi
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 
 class _MockDBSApi():
     """Mock dbs api"""
     def __init__(self, args):
         # just make sure args value complies with dbs args
-        DbsApi(args)
+        try:
+            from DBSAPI.dbsApi import DbsApi
+            DbsApi(args)
+        except ImportError:
+            # No dbsApi available, carry on
+            pass
         self.args = args
 
     def getServerUrl(self):
@@ -62,6 +66,16 @@ class DBSReader:
                 block['StorageElementList'] = [{'Role' : '', 'Name' : x} for x in \
                                                self.listFileBlockLocation(block['Name'])]
         return blocks
+
+    def lfnsInBlock(self, fileBlockName):
+        """
+        _lfnsInBlock_
+        Get a fake list of LFNs for the block
+        """
+
+        files = self.listFilesInBlock(fileBlockName)
+
+        return [x['LogicalFileName'] for x in files]
 
     def listFileBlocks(self, dataset, onlyClosedBlocks = False,
                        blockName = '*'):

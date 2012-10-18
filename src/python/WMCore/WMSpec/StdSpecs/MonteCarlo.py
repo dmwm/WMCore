@@ -13,6 +13,7 @@ fetches from DBS the information about pileup input.
 """
 
 import os
+import math
 
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
@@ -89,7 +90,7 @@ class MonteCarloWorkloadFactory(StdBase):
         for outputModuleName in outputMods.keys():
             outputModuleInfo = outputMods[outputModuleName]
             self.addMergeTask(prodTask, self.prodJobSplitAlgo,
-                              outputModuleName)
+                              outputModuleName, lfn_counter = self.previousJobCount)
 
         return workload
     
@@ -113,8 +114,8 @@ class MonteCarloWorkloadFactory(StdBase):
         filterEfficiency = float(arguments.get("FilterEfficiency", 1.0))
         totalTime        = int(arguments.get("TotalTime", 9 * 3600))
         self.totalEvents = int(int(arguments["RequestNumEvents"]) / filterEfficiency)
-        self.firstEvent  = int(arguments["FirstEvent"])
-        self.firstLumi   = int(arguments["FirstLumi"])
+        self.firstEvent  = int(arguments.get("FirstEvent", 1))
+        self.firstLumi   = int(arguments.get("FirstLumi", 1))
 
         # pileup configuration for the first generation task
         self.pileupConfig = arguments.get("PileupConfig", None)
@@ -139,6 +140,10 @@ class MonteCarloWorkloadFactory(StdBase):
         self.prodJobSplitAlgo  = arguments.get("ProdJobSplitAlgo", "EventBased")
         self.prodJobSplitArgs  = arguments.get("ProdJobSplitArgs",
                                                {"events_per_job": eventsPerJob})
+        self.previousJobCount  = 0
+        if self.firstEvent > 1 or self.firstLumi > 1:
+            self.previousJobCount = int(math.ceil(self.firstEvent/float(self.prodJobSplitArgs["events_per_job"])))
+            self.prodJobSplitArgs["initial_lfn_counter"] = self.previousJobCount
         
         return self.buildWorkload()
 

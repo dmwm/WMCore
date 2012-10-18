@@ -515,7 +515,8 @@ class StdBase(object):
         return logCollectTask
 
     def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModuleName,
-                     parentStepName = "cmsRun1", doLogCollect = True):
+                     parentStepName = "cmsRun1", doLogCollect = True,
+                     lfn_counter = 0):
         """
         _addMergeTask_
 
@@ -563,7 +564,8 @@ class StdBase(object):
                                         max_merge_events = self.maxMergeEvents,
                                         max_wait_time = self.maxWaitTime,
                                         siteWhitelist = self.siteWhitelist,
-                                        siteBlacklist = self.siteBlacklist)
+                                        siteBlacklist = self.siteBlacklist,
+                                        initial_lfn_counter = lfn_counter)
 
         if getattr(parentOutputModule, "dataTier") == "DQMROOT":
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge",

@@ -54,8 +54,6 @@ WMCore_t.WMBS_t.JobSplitting_t.ParentlessMergeBySize_t.ParentlessMergeBySizeTest
 WMCore_t.WMBS_t.Job_t.JobTest.testNewestStateChangeDAO
 WMCore_t.WMRuntime_t.Scripts_t.UnpackUserTarball_t.UnpackUserTarballTest.testFileAndURLSandbox
 WMCore_t.WMRuntime_t.Scripts_t.UnpackUserTarball_t.UnpackUserTarballTest.testUrlSandbox
-WMCore_t.WMSpec_t.StdSpecs_t.LHEStepZero_t.MonteCarloTest.testRelValMCWithPileup
-WMCore_t.WMSpec_t.StdSpecs_t.MonteCarlo_t.MonteCarloTest.testRelValMCWithPileup
 WMCore_t.WMSpec_t.StdSpecs_t.PromptReco_t.PromptRecoTest.testPromptReco
 WMCore_t.WMSpec_t.StdSpecs_t.StoreResults_t.StoreResultsTest.testStoreResults
 WMCore_t.WebTools_t.REST_t.RESTTest.testPing

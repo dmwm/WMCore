@@ -1,3 +1,17 @@
+0.9.21 to 0.9.22:
+  - Store phedex subscription information in workloads and propagate this
+    information to DBSBuffer so that we can be smarter about which PhEDEx
+    subscriptions are made.  Pull request #4171.
+  - Better handling of the initial LFN counter.  Pull request #4174.
+  - Obsolete Alerts couchapp removed, AlertsCollector replication finalized.
+  - Fix file deletions in the CERN rfcp stageout plugin.  Pull request #4126.
+  - Change the query used to find completed subscriptions so that subscriptions
+    are deleted top down instead of bottom up.  Pull reuqest #4167.
+  - Make TaskChain more configurable.  Pull request #4175.
+  - Add a job splitting algorithms that is a hybrid of LumiBased and
+    EventBased.  Pull request #4127.
+  - Merge the Tier1PromptReco and PromptReco specs.  Pull request #4118.
+
 0.9.20 to 0.9.21:
   - Include the jobType in all jobs run through ChangeState.  Pull request #4169.
   - Change the monitor status when assignRequest is called directly.  Pull request #4166.

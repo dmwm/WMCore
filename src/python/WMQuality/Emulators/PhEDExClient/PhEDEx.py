@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """
-    Mocked Phedex interface
+_PhEDEx_
+
+PhEDEx Emulator
 """
 
 
@@ -13,6 +15,10 @@
 from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
 from WMQuality.Emulators.DataBlockGenerator.DataBlockGenerator import DataBlockGenerator
 
+from xml.dom.minidom import parseString
+
+
+
 filesInDataset = GlobalParams.numOfFilesPerBlock() * GlobalParams.numOfBlocksPerDataset()
 filesInBlock = GlobalParams.numOfFilesPerBlock()
 
@@ -23,6 +29,7 @@ class PhEDEx(dict):
         # add the end point to prevent the existence check fails.
         self['endpoint'] = "phedex_emulator"
         self.dataBlocks = DataBlockGenerator()
+        self.subRequests = {}
         
     def injectBlocks(self, node, xmlData, verbose = 0, strict = 1):
 
@@ -37,10 +44,36 @@ class PhEDEx(dict):
 
     def subscribe(self, subscription, xmlData):
         """
-        do nothing don't subscribe.
+        Store the subscription information in the object,
+        tests can retrieve it and verify it
         """
 
-        return None
+        args = {}
+
+        args['node'] = []
+        for node in subscription.nodes:
+            args['node'].append(node)
+
+        document = parseString(xmlData)
+        datasets = document.getElementsByTagName("dataset")
+        for dataset in datasets:
+            datasetName = dataset.getAttribute("name")
+
+        if datasetName not in self.subRequests:
+            self.subRequests[datasetName] = []
+
+        args['data'] = xmlData
+        args['level'] = subscription.level
+        args['priority'] = subscription.priority
+        args['move'] = subscription.move
+        args['static'] = subscription.static
+        args['custodial'] = subscription.custodial
+        args['group'] = subscription.group
+        args['request_only'] = subscription.request_only
+
+        self.subRequests[datasetName].append(args)
+
+        return
 
     def getReplicaInfoForFiles(self, **args):
         """
@@ -77,9 +110,6 @@ class PhEDEx(dict):
         """
         _getNodeMap_
 
-        TODO: Need to be implemented correctly,
-        Currently not used
-
         Retrieve information about nodes known to this PhEDEx instance.  Each
         node entry will have the following keys:
           name       - PhEDEx node name
@@ -87,9 +117,48 @@ class PhEDEx(dict):
           kind       - Node type, e.g. 'Disk' or 'MSS'
           technology - Node technology, e.g. 'Castor'
           id         - Node id
+
+        Return some MSS, Buffer and Disk nodes
         """
 
-        return None
+        nodeMappings = {"phedex" : {"node" : []}}
+
+        nodeMappings["phedex"]["node"].append({"name" : "T1_US_FNAL_MSS",
+                                               "kind" : "MSS",
+                                               "se"   : "cmssrm.fnal.gov",
+                                               "technology" : "dCache",
+                                               "id" : 1})
+        nodeMappings["phedex"]["node"].append({"name" : "T1_US_FNAL_Buffer",
+                                               "kind" : "Buffer",
+                                               "se"   : "cmssrm.fnal.gov",
+                                               "technology" : "dCache",
+                                               "id" : 2})
+        nodeMappings["phedex"]["node"].append({"name" : "T1_UK_RAL_MSS",
+                                               "kind" : "MSS",
+                                               "se"   : "srm-cms.gridpp.rl.ac.uk",
+                                               "technology" : "Castor",
+                                               "id" : 3})
+        nodeMappings["phedex"]["node"].append({"name" : "T1_UK_RAL_Buffer",
+                                               "kind" : "Buffer",
+                                               "se"   : "srm-cms.gridpp.rl.ac.uk",
+                                               "technology" : "Castor",
+                                               "id" : 4})
+        nodeMappings["phedex"]["node"].append({"name" : "T1_UK_RAL_Disk",
+                                               "kind" : "Disk",
+                                               "se"   : "srm-cms-disk.gridpp.rl.ac.uk",
+                                               "technology" : "Disk",
+                                               "id" : 5})
+        nodeMappings["phedex"]["node"].append({"name" : "T2_CH_CERN",
+                                               "kind" : "Disk",
+                                               "se"   : "srm-eoscms.cern.ch",
+                                               "technology" : "Disk",
+                                               "id" : 6})
+        nodeMappings["phedex"]["node"].append({"name" : "T3_CO_Uniandes",
+                                               "kind" : "Disk",
+                                               "se"   : "moboro.uniandes.edu.co",
+                                               "technology" : "DPM",
+                                               "id" : 7})
+        return nodeMappings
 
     def getReplicaInfoForBlocks(self, **args):
         """

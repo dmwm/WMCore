@@ -77,6 +77,27 @@ Site Blacklist:
        <option>$site</option>
    #end for
 </select>
+<h4> PhEDEx Subscriptions </h4>
+Custodial Sites:
+<select name="CustodialSites" multiple size=10>
+   #for $site in $sites:
+     <option>$site</option>
+   #end for
+</select> &nbsp&nbsp&nbsp&nbsp
+Non-Custodial Sites:
+<select name="NonCustodialSites" multiple size=10>
+   #for $site in $sites:
+       <option>$site</option>
+   #end for
+</select><br/>
+Auto Approve Non-Custodial:
+<input type="checkbox" name="AutoApprove"/>
+Priority:
+<select name="Priority">
+<option selected>Low</option>
+<option>Normal</option>
+<option>High</option>
+</select>
 <h4>LFN Bases</h4>
 #def optionsMenu($allOptions, $default)
   #for $option in $allOptions

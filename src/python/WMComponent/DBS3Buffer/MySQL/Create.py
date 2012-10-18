@@ -69,6 +69,7 @@ class Create(DBCreator):
                id           INTEGER PRIMARY KEY AUTO_INCREMENT,
                name         VARCHAR(255),
                task         VARCHAR(255),
+               spec         VARCHAR(255),
                UNIQUE(name, task)) ENGINE = InnoDB"""
         
         self.create["04dbsbuffer_file"] = \

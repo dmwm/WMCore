@@ -9,19 +9,15 @@ back down and verify that everything is complete.
 
 import threading
 import time
-import os
 import unittest
 import logging
 
 from WMComponent.PhEDExInjector.PhEDExInjectorPoller import PhEDExInjectorPoller
-from WMComponent.PhEDExInjector.PhEDExInjectorSubscriber import PhEDExInjectorSubscriber
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.UUID import makeUUID
 
-from WMCore.Agent.Configuration import Configuration
-from WMCore.WMFactory import WMFactory
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
 from WMQuality.TestInit import TestInit
@@ -233,7 +229,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         Stuff the database and have the poller upload files to PhEDEx.  Retrieve
         replica information for the uploaded blocks and verify that all files
-        have been injected.  Also verify that files have been subscribed to MSS.
+        have been injected.
         """
         return
         self.stuffDatabase()
@@ -284,19 +280,6 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         replicaInfo = self.retrieveReplicaInfoForBlock(self.blockBName)
         assert replicaInfo["is_open"] == "y", \
                "Error: block should be open."
-
-        subscriber = PhEDExInjectorSubscriber(self.createConfig())
-        subscriber.setup(parameters = None)
-        subscriber.algorithm(parameters = None)        
-
-        subAResult = self.phedex.subscriptions(dataset = self.testDatasetA)
-        self.assertEqual(len(subAResult["phedex"]["dataset"]), 1,
-                         "Error: Subscription was not made.")
-        datasetASub = subAResult["phedex"]["dataset"][0]
-        self.assertTrue(datasetASub["files"] == "3" and datasetASub["name"] == self.testDatasetA,
-                        "Error: Metadata is incorrect for sub.")
-        self.assertEqual(datasetASub["subscription"][0]["node"], "T1_CH_CERN_MSS",
-                         "Error: Node is wrong.")
         return
 
 

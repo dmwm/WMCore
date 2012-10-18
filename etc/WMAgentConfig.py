@@ -148,7 +148,8 @@ config.PhEDExInjector.namespace = "WMComponent.PhEDExInjector.PhEDExInjector"
 config.PhEDExInjector.componentDir = config.General.workDir + "/PhEDExInjector"
 config.PhEDExInjector.logLevel = globalLogLevel
 config.PhEDExInjector.maxThreads = 1
-config.PhEDExInjector.subscribeMSS = True
+config.PhEDExInjector.subscribeDatasets = True
+config.PhEDExInjector.safeOperationMode = False
 config.PhEDExInjector.phedexurl = "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
 config.PhEDExInjector.pollInterval = 100
 config.PhEDExInjector.subscribeInterval = 43200
@@ -159,6 +160,7 @@ config.JobAccountant.componentDir = config.General.workDir + "/JobAccountant"
 config.JobAccountant.logLevel = globalLogLevel
 config.JobAccountant.workerThreads = 1
 config.JobAccountant.pollInterval = 60
+config.JobAccountant.specDir = config.General.workDir + "/JobAccountant/SpecCache"
 
 config.component_("JobCreator")
 config.JobCreator.namespace = "WMComponent.JobCreator.JobCreator"

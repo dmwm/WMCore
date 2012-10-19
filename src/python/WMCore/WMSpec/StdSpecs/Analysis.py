@@ -77,7 +77,7 @@ class AnalysisWorkloadFactory(StdBase):
         lfnBase = '/store/temp/user/%s' % self.userName
         self.unmergedLFNBase = lfnBase
         self.userOutBase = '%s/CRAB-Out' % lfnBase
-        self.logBase = '/store/temp/user/%s/logs/' % self.userName
+        self.logBase = '/store/temp/user/%s/logs' % self.userName
         self.logCollBase = '/store/user/%s/CRAB-Out' % self.userName
         self.lcPrefix, self.seName = remoteLFNPrefix(site=self.asyncDest, lfn=self.logCollBase)
 

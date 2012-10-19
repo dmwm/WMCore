@@ -1,3 +1,8 @@
+0.9.22 to 0.9.23:
+  - Improve error handling in AnalysisDataCollector.  Fixes #4187.
+  - Removing extra slash from analysis spec.  Fixes #4131.
+  - Bugfix for validation of DQM Harvesting parameters.  Pull request #4129.
+
 0.9.21 to 0.9.22:
   - Store phedex subscription information in workloads and propagate this
     information to DBSBuffer so that we can be smarter about which PhEDEx

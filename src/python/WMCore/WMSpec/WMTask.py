@@ -1184,6 +1184,14 @@ class WMTaskHelper(TreeHelper):
 
         return {}
     
+    def deleteChild(self, childName):
+        """
+        _deleteChild_
+
+        Remove the child task from the tree, if it exists
+        """
+        self.deleteNode(childName)
+
 class WMTask(ConfigSectionTree):
     """
     _WMTask_

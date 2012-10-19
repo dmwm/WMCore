@@ -1186,6 +1186,92 @@ class WMWorkloadTest(unittest.TestCase):
 
         return
 
+    def testIgnoreOutputModules(self):
+        """
+        _testIgnoreOutputModules_
+
+        Checks that we can reduce a workload based on ignore certain
+        output modules and also the affected steps are marked correctly
+        to ignore such modules
+        """
+
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        testWorkload.setOwnerDetails("sfoulkes", "DMWM")
+        procTask = testWorkload.newTask("ProcessingTask")
+        procTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        procTask.setTaskType("Processing")
+        procTaskCmssw = procTask.makeStep("cmsRun1")
+        procTaskCmssw.setStepType("CMSSW")
+        procTask.applyTemplates()
+        procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
+        procTaskCmsswHelper.addOutputModule("badOutput",
+                                            primaryDataset = "primary",
+                                            processedDataset = "processed",
+                                            dataTier = "tier",
+                                            filterName = "filter",
+                                            lfnBase = "/store/data",
+                                            mergedLFNBase = "/store/unmerged")
+
+        procTaskCmsswHelper.addOutputModule("goodOutput",
+                                            primaryDataset = "primary",
+                                            processedDataset = "processed",
+                                            dataTier = "tier",
+                                            filterName = "filter",
+                                            lfnBase = "/store/data",
+                                            mergedLFNBase = "/store/unmerged")
+
+        procTaskStageOut = procTaskCmssw.addStep("StageOut1")
+        procTaskStageOut.setStepType("StageOut")
+        procTaskStageOut.getTypeHelper().setMinMergeSize(2, 2)
+        procTask.applyTemplates()
+
+        mergeTask = procTask.addTask("MergeTask")
+        mergeTask.setTaskType("Merge")
+        mergeTask.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 2,
+                                        max_merge_events = 2, min_merge_size = 2)
+        mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
+        mergeTaskCmssw.setStepType("CMSSW")
+        mergeTask.applyTemplates()
+        mergeTask.setInputReference(procTask, outputModule = "badOutput")
+
+        mergeTask2 = procTask.addTask("MergeTask2")
+        mergeTask2.setTaskType("Merge")
+        mergeTask2.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 2,
+                                        max_merge_events = 2, min_merge_size = 2)
+        mergeTask2Cmssw = mergeTask2.makeStep("cmsRun1")
+        mergeTask2Cmssw.setStepType("CMSSW")
+        mergeTask2.applyTemplates()
+        mergeTask2.setInputReference(procTask, outputModule = "goodOutput")
+
+        cleanupTask = procTask.addTask("CleanupTask")
+        cleanupTask.setTaskType("Cleanup")
+        cleanupTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 50)
+        cleanupTaskCmssw = cleanupTask.makeStep("cmsRun1")
+        cleanupTaskCmssw.setStepType("CMSSW")
+        cleanupTask.applyTemplates()
+        cleanupTask.setInputReference(procTask, outputModule = "badOutput")
+
+        skimTask = mergeTask2.addTask("SkimTask")
+        skimTask.setTaskType("Skim")
+        skimTaskCmssw = skimTask.makeStep("cmsRun1")
+        skimTaskCmssw.setStepType("CMSSW")
+        skimTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        skimTask.applyTemplates()
+
+        testWorkload.ignoreOutputModules(["badOutput"])
+
+        self.assertFalse(testWorkload.getTaskByPath("/TestWorkload/ProcessingTask/MergeTask"),
+                         "Error: Merge task is available")
+        self.assertFalse(testWorkload.getTaskByPath("/TestWorkload/ProcessingTask/CleanupTask"),
+                         "Error: Cleanup task is available")
+        self.assertTrue(testWorkload.getTaskByPath("/TestWorkload/ProcessingTask/MergeTask2"),
+                         "Error: Second merge task is not available")
+        self.assertTrue(testWorkload.getTaskByPath("/TestWorkload/ProcessingTask/MergeTask2/SkimTask"),
+                         "Error: Skim task is not available")
+
+        self.assertEquals(procTaskCmssw.getIgnoredOutputModules(), ["badOutput"])
+        return
+
     def testSetCMSSWParams(self):
         """
         _testSetCMSSWParams_

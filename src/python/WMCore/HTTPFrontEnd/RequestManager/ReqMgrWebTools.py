@@ -107,11 +107,17 @@ def parseBlockList(l):
 
     return result
 
-def parseDqmSequences(l):
-    """ Changes a string into a list of strings """
+def parseStringListWithoutValidation(l):
+    """
+    _parseStringListWithoutValidation
+
+    Changes a string into a list of  generic strings,
+    this doesn't validate the strings in the list
+    against the Lexicon
+    """
     result = None
     if isinstance(l, list):
-       result = l
+        result = l
     elif isinstance(l, basestring):
         toks = l.lstrip(' [').rstrip(' ]').split(',')
         if toks == ['']:
@@ -119,7 +125,7 @@ def parseDqmSequences(l):
         # only one set of quotes
         result = [str(tok.strip(' \'"')) for tok in toks]
     else:
-        raise cherrypy.HTTPError(400, "Bad DQM sequences list of type " + type(l).__name__)
+        raise cherrypy.HTTPError(400, "Bad list of type " + type(l).__name__)
     return result
 
 def parseSite(kw, name):
@@ -480,7 +486,10 @@ def makeRequest(kwargs, couchUrl, couchDB, wmstatUrl):
         if blocklist in kwargs:
             schema[blocklist] = parseBlockList(kwargs[blocklist])
     if "DqmSequences" in kwargs:
-            schema["DqmSequences"] = parseDqmSequences(kwargs["DqmSequences"])
+        schema["DqmSequences"] = parseStringListWithoutValidation(kwargs["DqmSequences"])
+    if "IgnoredOutputModules" in kwargs:
+        schema["IgnoredOutputModules"] = parseStringListWithoutValidation(kwargs["IgnoredOutputModules"])
+
     validate(schema)
 
     # Get the DN

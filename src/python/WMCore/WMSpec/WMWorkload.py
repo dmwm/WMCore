@@ -1262,6 +1262,51 @@ class WMWorkloadHelper(PersistencyHelper):
                                                         newTopLevelTask.name()))
         return
 
+    def ignoreOutputModules(self, badModules, initialTask = None):
+        """
+        _ignoreOutputModules_
+
+        If there is a list of ignored output modules the following must be done:
+        - Trim the workload tree so that no task that depends on the merged output of the ignored modules
+          exists in the tree, also eliminate the merge task for such modules
+        - Add flags to make the runtime code ignore the files from this module so they are not
+          staged out
+        """
+
+        if not badModules:
+            return
+
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            #Find the children tasks that have a bad output module as
+            #input, disown them. Can't delete them on the spot, save the names in a list
+            childTasksToDelete = []
+            for childTask in task.childTaskIterator():
+                taskInput = childTask.inputReference()
+                inputOutputModule = getattr(taskInput, "outputModule", None)
+                if inputOutputModule in badModules:
+                    childTasksToDelete.append(childTask.name())
+
+            #Now delete
+            for childTaskName in childTasksToDelete:
+                task.deleteChild(childTaskName)
+
+            if childTasksToDelete:
+                #Tell any CMSSW step to ignore the output modules
+                for stepName in task.listAllStepNames():
+                    stepHelper = task.getStepHelper(stepName)
+                    if stepHelper.stepType() == "CMSSW" or \
+                       stepHelper.stepType() == "MulticoreCMSSW":
+                        stepHelper.setIgnoredOutputModules(badModules)
+            #Go deeper in the tree
+            self.ignoreOutputModules(badModules, task)
+
+        return
+
     def setCMSSWParams(self, cmsswVersion = None, globalTag = None,
                        scramArch = None, initialTask = None):
         """

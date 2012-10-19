@@ -18,6 +18,7 @@ from WMCore.WMSpec.StdSpecs.ReDigi import getTestArguments, reDigiWorkload
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
 
 class ReDigiTest(unittest.TestCase):
     def setUp(self):
@@ -32,9 +33,12 @@ class ReDigiTest(unittest.TestCase):
         self.testInit.setupCouch("redigi_t", "ConfigCache")        
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
+        self.testInit.generateWorkDir()
 
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("redigi_t")
+
+        EmulatorHelper.setEmulators(dbs = True)
         return
 
     def tearDown(self):
@@ -45,6 +49,8 @@ class ReDigiTest(unittest.TestCase):
         """
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
+        self.testInit.delWorkDir()
+        EmulatorHelper.resetEmulators()
         return
 
     def injectReDigiConfigs(self, combinedStepOne = False):
@@ -116,7 +122,7 @@ class ReDigiTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
 
-        testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
@@ -646,7 +652,7 @@ class ReDigiTest(unittest.TestCase):
         self.assertTrue(cmsRun1PileupConfig.mc.dataset, "/some/cosmics/dataset")
         self.assertTrue(cmsRun2PileupConfig.mc.dataset, "/some/cosmics/dataset")
         
-        testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
@@ -682,7 +688,7 @@ class ReDigiTest(unittest.TestCase):
         self.assertTrue(len(cmsRun2Step.listOutputModules()) == 2,
                         "Error: Wrong number of output modules in cmsRun2.")
 
-        testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
@@ -709,7 +715,7 @@ class ReDigiTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
         
-        testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
@@ -735,7 +741,7 @@ class ReDigiTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
         
-        testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 

@@ -106,5 +106,5 @@ class AnalyticsPoller(BaseWorkerThread):
             logging.info("Agent data upload success\n %s request" % len(agentDocs))
         
         except Exception, ex:
+            logging.error("Error occured: will retry later")
             logging.error(str(ex))
-            raise

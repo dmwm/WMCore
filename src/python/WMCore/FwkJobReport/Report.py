@@ -984,6 +984,28 @@ class Report:
 
         return
 
+    def deleteOutputModuleForStep(self, stepName, moduleName):
+        """
+        _deleteOutputModuleForStep_
+
+        Delete any reference to the given output module in the step report
+        that includes deleting any output file it produced
+        """
+        stepReport = self.retrieveStep(step = stepName)
+
+        if not stepReport:
+            return
+
+        listOfModules = getattr(stepReport, 'outputModules', [])
+
+        if moduleName not in listOfModules:
+            return
+
+        delattr(stepReport.output, moduleName)
+        listOfModules.remove(moduleName)
+
+        return
+
     def setStepStartTime(self, stepName):
         """
         _setStepStatus_

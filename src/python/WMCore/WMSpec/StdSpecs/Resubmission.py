@@ -27,8 +27,8 @@ class ResubmissionWorkloadFactory(StdBase):
         helper = loadWorkload(originalRequest)
         helper.truncate(arguments["RequestName"], arguments["InitialTaskPath"],
                         arguments["ACDCServer"], arguments["ACDCDatabase"])
+        helper.ignoreOutputModules(arguments.get("IgnoredOutputModules", []))
         return helper
-
 
     def validateSchema(self, schema):
         """

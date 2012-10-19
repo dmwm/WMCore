@@ -706,6 +706,29 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertEqual(report.data.cmsRun1.testVar, 'test01')
         
         return
-    
+
+    def testDeleteOutputModule(self):
+        """
+        _testDeleteOutputModule_
+
+        If asked delete an output module, if it doesn't
+        exist then do nothing
+        """
+        originalReport = Report("cmsRun1")
+        originalReport.parse(self.xmlPath)
+
+        self.assertTrue(originalReport.getOutputModule("cmsRun1", "outputALCARECORECO"),
+                        "Error: Report XML doesn't have the module for the test, invalid test")
+
+        originalOutputModules = len(originalReport.retrieveStep("cmsRun1").outputModules)
+        print originalReport.data
+        originalReport.deleteOutputModuleForStep("cmsRun1", "outputALCARECORECO")
+        print originalReport.data
+        self.assertFalse(originalReport.getOutputModule("cmsRun1", "outputALCARECORECO"),
+                        "Error: The output module persists after deletion")
+        self.assertEqual(len(originalReport.retrieveStep("cmsRun1").outputModules), originalOutputModules - 1,
+                         "Error: The number of output modules is incorrect after deletion")
+
+
 if __name__ == "__main__":
     unittest.main()

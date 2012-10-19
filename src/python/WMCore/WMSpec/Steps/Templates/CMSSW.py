@@ -216,7 +216,7 @@ class CMSSWStepHelper(CoreHelper):
 
     def getDatasetName(self):
         """
-        _setDatasetName_
+        _getDatasetName_
 
         Retrieve the dataset name from the pickled arguments
         """
@@ -225,6 +225,17 @@ class CMSSWStepHelper(CoreHelper):
                 return self.data.application.configuration.arguments.datasetName
 
         return pickle.loads(self.data.application.configuration.pickledarguments).get('datasetName', None)
+
+    def getScenario(self):
+        """
+        _getScenario_
+
+        Retrieve the scenario from the pickled arguments, if any
+        """
+        if hasattr(self.data.application.configuration, "scenario"):
+            return self.data.application.configuration.scenario
+
+        return None
 
     def setUserSandbox(self, userSandbox):
         """

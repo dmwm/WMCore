@@ -67,8 +67,16 @@ class RequestLifeCycleBase_t():
     def test10InjectRequest(self):
         """Can inject a request"""
         self.__class__.requestParams.setdefault('RequestString', self.__class__.__name__)
-        self.__class__.request = self.__class__.reqmgr.makeRequest(**self.__class__.requestParams)['WMCore.RequestManager.DataStructs.Request.Request']
-        self.__class__.request_name = self.__class__.request['RequestName']
+        tries = 0
+        while True:
+            try:
+                self.__class__.request = self.__class__.reqmgr.makeRequest(**self.__class__.requestParams)['WMCore.RequestManager.DataStructs.Request.Request']
+                self.__class__.request_name = self.__class__.request['RequestName']
+                break
+            except:
+                tries += 1
+                if tries > 3:
+                    raise
         self.assertTrue(self.__class__.request)
         self.assertTrue(self.__class__.request_name)
         print "Injected request %s" % self.__class__.request_name

@@ -1,3 +1,8 @@
+0.9.23 to 0.9.24:
+  - Add the ability to ignore select output modules in ACDC requests.  Pull request #4099.
+  - Ensure canceled workflows get cleaned up.  Pull request #4160.
+  - Set SplitOnRun back to true in LumiBased.  Pull request #4128.
+
 0.9.22 to 0.9.23:
   - Improve error handling in AnalysisDataCollector.  Fixes #4187.
   - Removing extra slash from analysis spec.  Fixes #4131.

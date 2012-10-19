@@ -3,7 +3,7 @@ function(doc) {
     if (ele) {
         if (!ele.OpenForNewData &&
             (ele.Status == 'Running' || ele.Status == 'Done'
-             || ele.Status == 'Failed')) {
+             || ele.Status == 'Failed' || ele.Status == 'Canceled')) {
             emit(ele.RequestName, true);
         } else {
             emit(ele.RequestName, false);

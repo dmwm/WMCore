@@ -10,6 +10,7 @@ import time
 import urllib
 
 from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, Document
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
 from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement, fixElementConflicts
 from WMCore.Wrappers import JsonWrapper as json
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
@@ -445,6 +446,6 @@ class WorkQueueBackend(object):
             if data['rows']:
                 return data['rows'][0]['value']
             else:
-                raise ValueError("%s not exist in the queue" % request)
+                raise WorkQueueNoMatchingElements("%s not found" % request)
         else:
             return [{x['key']: x['value']} for x in data.get('rows', [])]

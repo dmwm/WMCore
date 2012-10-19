@@ -153,6 +153,17 @@ def addTopNode(currentNode, newNode):
     newNode.tree.parent = nodeName(currentNode)
     return
 
+def deleteNode(topNode, childName):
+    """
+    _deleteNode_
+
+    Given a node within the tree, delete the child
+    with the given name if it exists
+    """
+    if hasattr(topNode.tree.children, childName):
+        delattr(topNode.tree.children, childName)
+        topNode.tree.childNames.remove(childName)
+
 def getNode(node, nodeNameToGet):
     """
     _getNode_
@@ -297,7 +308,17 @@ class TreeHelper:
         """
         if isinstance(newNode, TreeHelper):
             return addTopNode(self.data, newNode.data)
-        return addTopNode(self.data, newNode)        
+        return addTopNode(self.data, newNode)
+
+    def deleteNode(self, nodeName):
+        """
+        _deleteNode
+
+        Delete a child node given its name,
+        if it doesn't exists then do nothing
+        """
+        deleteNode(self.data, nodeName)
+        return
 
     def allNodeNames(self):
         """get list of all known node names in the tree containing this node"""

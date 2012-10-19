@@ -392,7 +392,7 @@ class WMTaskTest(unittest.TestCase):
         testTask.setPrimarySubType(subType = "subType")
         self.assertEqual(testTask.getPrimarySubType(), "subType")
         return
-    
+
     def testBuildLumiMask(self):
         from WMCore.WMSpec.WMTask import buildLumiMask
         runs=['3','4']
@@ -463,6 +463,30 @@ class WMTaskTest(unittest.TestCase):
         self.assertEqual(subInfo["/ThreeParticles/DawnOfAnEra-v1/RECO"],
                         outputRecoSubInfo, "The RECO subscription information is wrong")
         self.assertFalse("/OneParticle/DawnOfAnEra-v1/RECO" in subInfo, "The RECO subscription information is wrong")
+
+    def testDeleteChild(self):
+        """
+        _testDeleteChild_
+
+        Test that we can remove all reference from a child
+        and other children are left intact
+        """
+
+        task1 = makeWMTask("task1")
+
+        task2a = task1.addTask("task2a")
+        task2b = task1.addTask("task2b")
+        task2c = task1.addTask("task2c")
+
+        task1.deleteChild("task2a")
+        childrenNumber = 0
+        for childTask in task1.childTaskIterator():
+            if childTask.name() == task2a.name():
+                self.fail("Error: It was possible to find the deleted child")
+            childrenNumber += 1
+        self.assertEqual(childrenNumber, 2, "Error: Wrong number of children tasks")
+
+        return
 
 if __name__ == '__main__':
     unittest.main()

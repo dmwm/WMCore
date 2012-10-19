@@ -323,6 +323,10 @@ class CMSSW(Executor):
 
         if self.step.output.keep != True:
             self.report.killOutput()
+        else:
+            #Check that we only keep the desired output
+            for module in stepHelper.getIgnoredOutputModules():
+                self.report.deleteOutputModuleForStep(stepName = self.stepName, moduleName = module)
 
         # Add stageout LFN to existing TFileService files
         reportAnalysisFiles = self.report.getAnalysisFilesFromStep(self.stepName)

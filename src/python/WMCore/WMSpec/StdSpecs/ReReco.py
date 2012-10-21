@@ -27,7 +27,7 @@ def getTestArguments():
         "AcquisitionEra": "WMAgentCommissioning10",
         "Requestor": "sfoulkes@fnal.gov",
         "InputDataset": "/MinimumBias/Commissioning10-v4/RAW",
-        "CMSSWVersion": "CMSSW_3_5_8",
+        "CMSSWVersion": "CMSSW_3_9_7",
         "ScramArch": "slc5_ia32_gcc434",
         "ProcessingVersion": "2",
         "SkimInput": "output",

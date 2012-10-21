@@ -16,7 +16,6 @@ import cherrypy
 import json
 import threading
 import urllib
-import logging
 
 import WMCore.Lexicon
 from WMCore.Wrappers import JsonWrapper
@@ -424,25 +423,31 @@ class ReqMgrRESTModel(RESTModel):
         return index
 
     def putRequest(self, requestName=None, status=None, priority=None):
-        """ Checks the request n the body with one arg, and changes the status with kwargs """
         request = None
         if requestName:
             request = self.findRequest(requestName)
         if request == None:
-            """ Creates a new request, with a JSON-encoded schema that is sent in the
-            body of the request """
+            # Create a new request, with a JSON-encoded schema that is
+            # sent in the body of the HTTP request
             body = cherrypy.request.body.read()
-            schema = Utilities.unidecode(JsonWrapper.loads(body))
-            schema.setdefault('CouchURL', Utilities.removePasswordFromUrl(self.couchUrl))
-            schema.setdefault('CouchDBName', self.configDBName)
+            reqInputArgs = Utilities.unidecode(JsonWrapper.loads(body))
+            reqInputArgs.setdefault('CouchURL', Utilities.removePasswordFromUrl(self.couchUrl))
+            reqInputArgs.setdefault('CouchDBName', self.configDBName)
             try:
-                request = Utilities.makeRequest(schema, self.couchUrl, self.workloadDBName, self.wmstatWriteURL)
-            except cherrypy.HTTPError:
+                self.info("Creating a request for: '%s'\n\tworkloadDB: '%s'\n\twmstatUrl: "
+                             "'%s' ..." % (reqInputArgs, self.workloadDBName,
+                                           Utilities.removePasswordFromUrl(self.wmstatWriteURL)))
+                request = Utilities.makeRequest(self, reqInputArgs, self.couchUrl,
+                                                self.workloadDBName, self.wmstatWriteURL)
+            except cherrypy.HTTPError as ex:
+                self.error("Create request failed, reason: %s" % ex)
                 # Assume that this is a valid HTTPError
                 raise
-            except WMException, ex:
+            except WMException as ex:
+                self.error("Create request failed, reason: %s" % ex)
                 raise cherrypy.HTTPError(400, ex._message)
-            except Exception, ex:
+            except Exception as ex:
+                self.error("Create request failed, reason: %s" % ex)
                 raise cherrypy.HTTPError(400, ex.message)
         # see if status & priority need to be upgraded
         if status != None:
@@ -451,13 +456,16 @@ class ReqMgrRESTModel(RESTModel):
                 raise cherrypy.HTTPError(403, "Cannot change status without a team.  Please use PUT /reqmgr/rest/assignment/<team>/<requestName>")
             try:
                 Utilities.changeStatus(requestName, status, self.wmstatWriteURL)
-            except RuntimeError, e:
+            except RuntimeError as ex:
                 # ignore some of these errors: https://svnweb.cern.ch/trac/CMSDMWM/ticket/2002
                 if status != 'announced' and status != 'closed-out':
-                    raise cherrypy.HTTPError(403, "Failed to change status: %s" % str(e))
+                    self.error("RuntimeError while changeStatus: reason: %s" % ex)
+                    raise cherrypy.HTTPError(403, "Failed to change status: %s" % str(ex))
         if priority != None:
-            Utilities.changePriority(requestName, priority, self.wmstatWriteURL) 
+            Utilities.changePriority(requestName, priority, self.wmstatWriteURL)
+        self.info("Request '%s' created." % request['RequestName']) 
         return request
+
 
     def putAssignment(self, team, requestName):
         """ Assigns this request to this team """

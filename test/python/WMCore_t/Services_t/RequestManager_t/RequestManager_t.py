@@ -2,6 +2,7 @@ import os
 import unittest
 import tempfile
 import shutil
+import logging
 
 from nose.plugins.attrib import attr
 
@@ -39,12 +40,15 @@ class RequestManagerTest(RESTBaseUnitTest):
         self.config.setupCouchDatabase(dbName = self.couchDBName)
         self.config.setPort(8888)
         self.schemaModules = ["WMCore.RequestManager.RequestDB"]
-
+                
         
     def setUp(self):
         RESTBaseUnitTest.setUp(self)
-        self.testInit.setupCouch("%s" % self.couchDBName,
-                                 "GroupUser", "ConfigCache")
+        self.testInit.setupCouch("%s" % self.couchDBName, "GroupUser", "ConfigCache")
+        self.testInit.setupCouch("%s_wmstats" % self.couchDBName, "WMStats")
+        # logging stuff from TestInit is broken, setting myself
+        l = logging.getLogger()
+        l.setLevel(logging.DEBUG)
         self.params = {}
         self.params['endpoint'] = self.config.getServerUrl()
         self.reqService = RequestManagerDS(self.params)
@@ -66,10 +70,9 @@ class RequestManagerTest(RESTBaseUnitTest):
         try:
             r = self.jsonSender.put('request/' + schema['RequestName'], schema)                             
         except Exception, ex:
-            print "Exception during set up, investigate exception instance attributes:"
-            print dir(ex)
+            print "Exception during set up, reason: %s" % ex
             return
-        self.requestName = r[0]['RequestName']
+        self.requestName = r[0]['RequestName'] 
     
     
     def tearDown(self):

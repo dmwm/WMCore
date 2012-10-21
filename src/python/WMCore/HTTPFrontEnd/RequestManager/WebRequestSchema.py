@@ -123,10 +123,20 @@ class WebRequestSchema(WebAPI):
                 decodedSchema[key] = schema[key]
 
         try:
-            request = Utilities.makeRequest(decodedSchema, self.couchUrl, self.workloadDBName, self.wmstatWriteURL)
+            self.info("Creating a request for: '%s'\n\tworkloadDB: '%s'\n\twmstatUrl: "
+                      "'%s' ..." % (decodedSchema, self.workloadDBName,
+                                    Utilities.removePasswordFromUrl(self.wmstatWriteURL)))
+            request = Utilities.makeRequest(self, decodedSchema, self.couchUrl, self.workloadDBName, self.wmstatWriteURL)
         except RuntimeError, e:
-            raise cherrypy.HTTPError(400, "Error creating request: %s" % e)
+            msg = "Create request failed, reason: %s" % e
+            self.error(msg)
+            raise cherrypy.HTTPError(400, msg)
         except KeyError, e:
-            raise cherrypy.HTTPError(400, "Error creating request: %s" % e)        
+            msg = "Create request failed, reason: %s" % e
+            self.error(msg)
+            raise cherrypy.HTTPError(400, msg)
+        except Exception as ex:
+            self.error("Create request failed, reason: %s" % ex)
+            raise cherrypy.HTTPError(400, "Create request failed, check logs.")
         baseURL = cherrypy.request.base
         raise cherrypy.HTTPRedirect('%s/reqmgr/view/details/%s' % (baseURL, request['RequestName']))

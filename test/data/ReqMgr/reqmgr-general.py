@@ -1,11 +1,10 @@
 """
-Development helper script capable of (according to supplied arguments):
+Development helper script (according to supplied arguments):
     o fresh ReqMgr instance set up (creating user, group, team ...)
     o querying requests stored at ReqMgr instance
     o deleting requests from ReqMgr instance
     o creating new requests in the ReqMgr instance
-    o routing requests through states (optionally will also inject
-        a request reaching "ops-hold" state into the OpsClipboard couchapp database)
+    o routing requests through states
             
 ReqMgr setup function:
 2012-01-16
@@ -42,7 +41,6 @@ import WMCore.WMSpec.StdSpecs.ReReco as ReReco
 from WMCore.Services.RequestManager.RequestManager import RequestManager
 # for direct REST API queries
 from WMCore.Services.Requests import JSONRequests
-import WMCore.RequestManager.OpsClipboard.Inject as OpsClipboard
 
 
 
@@ -116,34 +114,9 @@ class ReqMgrTester(object):
             logging.info("Deleting request (request_name): '%s'" % reqName)
             logging.info("Query: '%s':" % urlQuery)
             r = self.restSender.delete(urlQuery)
-
-            
-    def injectOpsClipboard(self, reqName, couchUrl, couchDbName):
-        """
-        Once a request reaches "ops-hold" state, it can be injected into
-        CouchDB, application OpsClipboard, for further manipulation.
-        Do this here with the reqName request.
-        
-        OpsClipboard.inject() method which does in the CouchDB injection
-        is called from WMCore/HTTPFrontEnd/RequestManager/Assign.py
-            handleAssignmentPage method (which currently, 2012-01, doesn't
-            have any unittest nor REST API) (used only from the Assignment webpage)
-            
-        Works when running locally accessing CouchDB behind frontend:
-        py test/data/ReqMgr/reqmgr-load_example_data.py -u https://localhost:2000/reqmgr/reqMgr/ \
-            -t testinguser_120131_213320_2161 -i -o https://localhost:2000/couchdb/ \
-            -a ops_clipboard        
-        
-        """
-        # find out campaign name associated with this request
-        r = self.restSender.get("request/%s" % reqName)
-        campaign = r[0]["Campaign"]
-        logging.info("Campaign: %s" % campaign)
-        requests = [{u"RequestName": reqName, u"CampaignName": campaign}]
-        OpsClipboard.inject(couchUrl, couchDbName, *requests)
             
             
-    def requestChangeStates(self, reqName, injectOpsClipboard, couchUrl, couchDbName):
+    def requestChangeStates(self, reqName):
         """
         Route the request (spec. by the request name) in the input
         through a series of possible request states.
@@ -172,10 +145,7 @@ class ReqMgrTester(object):
         for query in statesQueries:
             changeState(reqName, query)
             
-        if injectOpsClipboard:
-            self.injectOpsClipboard(reqName, couchUrl, couchDbName)
-                
-        
+                    
     def setup(self):
         """
         Setup ReqMgr instance for dealing with requests - needs to create
@@ -226,12 +196,7 @@ def _processCmdLineArgs(args):
             break
     else:
         errExit(parser)
-    if getattr(opts, "injectOpsClipboard", None) and not getattr(opts, "couchUrl", None):
-        errExit(parser)
-    if getattr(opts, "injectOpsClipboard", None) and not getattr(opts, "database", None):
-        errExit(parser)
     return opts
-
 
 
 def _defineCmdLineOptions(parser):
@@ -249,17 +214,7 @@ def _defineCmdLineOptions(parser):
     parser.add_option("-c", "--createRequests", help=help)
     help = "Route a specified request through a series of request states."
     parser.add_option("-t", "--requestChangeStates", help=help)
-    help = "CouchURL (injecting a request into CouchDB."
-    parser.add_option("-o", "--couchUrl", help=help)
-    help = "CouchDB database name (injecting a request into CouchDB."
-    parser.add_option("-a", "--database", help=help)
-    help = ("Inject a request reaching \"ops-hold\" state into "
-            "CouchDB - OpsClipboard (depends on --requestChangeStates, "
-            "--couchUrl, --database defined).")
-    parser.add_option("-i", "--injectOpsClipboard", action="store_true",
-                      dest="injectOpsClipboard", help=help)
         
-
 
 def main():
     logging.basicConfig(level = logging.DEBUG)
@@ -268,8 +223,7 @@ def main():
     if opts.reqMgrSetup:
         tester.setup()
     if opts.requestChangeStates:
-        tester.requestChangeStates(opts.requestChangeStates, opts.injectOpsClipboard,
-                                   opts.couchUrl, opts.database)
+        tester.requestChangeStates(opts.requestChangeStates)
     elif opts.createRequests:
         tester.createRequests(int(opts.createRequests))
     elif opts.deleteRequests:

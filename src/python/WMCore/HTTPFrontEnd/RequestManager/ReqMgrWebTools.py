@@ -53,8 +53,6 @@ def addSiteWildcards(wildcardKeys, sites, wildcardSites):
         if found:
             sites.append(k)
 
-    return
-
 
 def parseRunList(l):
     """ Changes a string into a list of integers """
@@ -79,7 +77,6 @@ def parseRunList(l):
             raise cherrypy.HTTPError(400, "Given runList without integer run numbers")
         if not tmp == r:
             raise cherrypy.HTTPError(400, "Given runList without valid integer run numbers")
-
     return result
     #raise RuntimeError, "Bad Run list of type " + type(l).__name__
 
@@ -104,7 +101,6 @@ def parseBlockList(l):
             WMCore.Lexicon.block(candidate = block)
         except AssertionError, ex:
             raise cherrypy.HTTPError(400, "Block in blockList has invalid name")
-
     return result
 
 def parseStringListWithoutValidation(l):
@@ -168,7 +164,6 @@ def allScramArchsAndVersions():
                 if str(attr.name) == 'label':
                     releaseList.append(str(attr.value))
         result[str(arch)] = releaseList
-
     return result
 
 def updateScramArchsAndCMSSWVersions():
@@ -189,7 +184,6 @@ def updateScramArchsAndCMSSWVersions():
     for scramArch in allArchsAndVersions.keys():
         SoftwareAdmin.updateSoftware(scramArch = scramArch,
                                      softwareNames = allArchsAndVersions[scramArch])
-    return
 
 def allSoftwareVersions():
     """ Downloads a list of all software versions from the tag collector """
@@ -323,10 +317,8 @@ def changeStatus(requestName, status, wmstatUrl):
             abortRequest(requestName)
         else:
             raise cherrypy.HTTPError(400, "You cannot abort a request in state %s" % oldStatus)
-
     #FIXME needs logic about who is allowed to do which transition
     ChangeState.changeRequestStatus(requestName, status, wmstatUrl = wmstatUrl)
-    return
 
 def prepareForTable(request):
     """ Add some fields to make it easier to display a request """
@@ -423,95 +415,105 @@ def validate(schema):
         if value and value != '':
             WMCore.Lexicon.cmsswversion(schema[field])
         
-def makeRequest(kwargs, couchUrl, couchDB, wmstatUrl):
-    logging.info(kwargs)
-    """ Handles the submission of requests """
+        
+def makeRequest(webApi, reqInputArgs, couchUrl, couchDB, wmstatUrl):
+    """
+    Handles the submission of requests.
+    
+    """
     # make sure no extra spaces snuck in
-    for k, v in kwargs.iteritems():
+    for k, v in reqInputArgs.iteritems():
         if isinstance(v, str):
-            kwargs[k] = v.strip()
+            reqInputArgs[k] = v.strip()
+            
+    webApi.info("makeRequest(): reqInputArgs: '%s'" %  reqInputArgs)
     # Create a new schema
-    schema = RequestSchema()
-    schema.update(kwargs)
+    reqSchema = RequestSchema()
+    reqSchema.update(reqInputArgs)
     
     currentTime = time.strftime('%y%m%d_%H%M%S',
                              time.localtime(time.time()))
     secondFraction = int(10000 * (time.time()%1.0))
-    requestString = schema.get('RequestString', "")
+    requestString = reqSchema.get('RequestString', "")
     if requestString != "":
-        schema['RequestName'] = "%s_%s_%s_%s" % (
-        schema['Requestor'], requestString, currentTime, secondFraction)
+        reqSchema['RequestName'] = "%s_%s_%s_%s" % (
+        reqSchema['Requestor'], requestString, currentTime, secondFraction)
     else:
-        schema['RequestName'] = "%s_%s_%s" % (schema['Requestor'], currentTime, secondFraction)
-    schema["Campaign"] = kwargs.get("Campaign", "")
-    if 'ProcScenario' in kwargs and 'ProcConfigCacheID' in kwargs:
+        reqSchema['RequestName'] = "%s_%s_%s" % (reqSchema['Requestor'], currentTime, secondFraction)
+        
+    # TODO
+    # the request arguments below shall be handled automatically by either
+    # being specified in the input or already have correct default
+    # values in the schema definition
+    
+    reqSchema["Campaign"] = reqInputArgs.get("Campaign", "")
+    if 'ProcScenario' in reqInputArgs and 'ProcConfigCacheID' in reqInputArgs:
         # Use input mode to delete the unused one
-        inputMode = kwargs.get('inputMode', None)
+        inputMode = reqInputArgs.get('inputMode', None)
         if inputMode == 'scenario':
-            del schema['ProcConfigCacheID']
+            del reqSchema['ProcConfigCacheID']
 
-    if 'EnableDQMHarvest' not in kwargs:
-        schema["EnableHarvesting"] = False
+    if 'EnableDQMHarvest' not in reqInputArgs:
+        reqSchema["EnableHarvesting"] = False
 
-    if kwargs.has_key("InputDataset"):
-        schema["InputDatasets"] = [kwargs["InputDataset"]]
-    if kwargs.has_key("FilterEfficiency"):
-        kwargs["FilterEfficiency"] = float(kwargs["FilterEfficiency"])
+    if reqInputArgs.has_key("InputDataset"):
+        reqSchema["InputDatasets"] = [reqInputArgs["InputDataset"]]
+    if reqInputArgs.has_key("FilterEfficiency"):
+        reqInputArgs["FilterEfficiency"] = float(reqInputArgs["FilterEfficiency"])
     skimNumber = 1
     # a list of dictionaries
-    schema["SkimConfigs"] = []
-    while kwargs.has_key("SkimName%s" % skimNumber):
+    reqSchema["SkimConfigs"] = []
+    while reqInputArgs.has_key("SkimName%s" % skimNumber):
         d = {}
-        d["SkimName"] = kwargs["SkimName%s" % skimNumber]
-        d["SkimInput"] = kwargs["SkimInput%s" % skimNumber]
-        d["Scenario"] = kwargs["Scenario"]
+        d["SkimName"] = reqInputArgs["SkimName%s" % skimNumber]
+        d["SkimInput"] = reqInputArgs["SkimInput%s" % skimNumber]
+        d["Scenario"] = reqInputArgs["Scenario"]
 
-        if kwargs.get("Skim%sConfigCacheID" % skimNumber, None) != None:
-            d["ConfigCacheID"] = kwargs["Skim%sConfigCacheID" % skimNumber]
+        if reqInputArgs.get("Skim%sConfigCacheID" % skimNumber, None) != None:
+            d["ConfigCacheID"] = reqInputArgs["Skim%sConfigCacheID" % skimNumber]
 
-        schema["SkimConfigs"].append(d)
+        reqSchema["SkimConfigs"].append(d)
         skimNumber += 1
 
-    if kwargs.has_key("DataPileup") or kwargs.has_key("MCPileup"):
-        schema["PileupConfig"] = {}
-        if kwargs.has_key("DataPileup") and kwargs["DataPileup"] != "":
-            schema["PileupConfig"]["data"] = [kwargs["DataPileup"]]
-        if kwargs.has_key("MCPileup") and kwargs["MCPileup"] != "":
-            schema["PileupConfig"]["mc"] = [kwargs["MCPileup"]]
+    if reqInputArgs.has_key("DataPileup") or reqInputArgs.has_key("MCPileup"):
+        reqSchema["PileupConfig"] = {}
+        if reqInputArgs.has_key("DataPileup") and reqInputArgs["DataPileup"] != "":
+            reqSchema["PileupConfig"]["data"] = [reqInputArgs["DataPileup"]]
+        if reqInputArgs.has_key("MCPileup") and reqInputArgs["MCPileup"] != "":
+            reqSchema["PileupConfig"]["mc"] = [reqInputArgs["MCPileup"]]
 
     for runlist in ["RunWhitelist", "RunBlacklist"]:
-        if runlist in kwargs:
-            schema[runlist] = parseRunList(kwargs[runlist])
+        if runlist in reqInputArgs:
+            reqSchema[runlist] = parseRunList(reqInputArgs[runlist])
     for blocklist in ["BlockWhitelist", "BlockBlacklist"]:
-        if blocklist in kwargs:
-            schema[blocklist] = parseBlockList(kwargs[blocklist])
-    if "DqmSequences" in kwargs:
-        schema["DqmSequences"] = parseStringListWithoutValidation(kwargs["DqmSequences"])
-    if "IgnoredOutputModules" in kwargs:
-        schema["IgnoredOutputModules"] = parseStringListWithoutValidation(kwargs["IgnoredOutputModules"])
+        if blocklist in reqInputArgs:
+            reqSchema[blocklist] = parseBlockList(reqInputArgs[blocklist])
+    if "DqmSequences" in reqInputArgs:
+        reqSchema["DqmSequences"] = parseStringListWithoutValidation(reqInputArgs["DqmSequences"])
+    if "IgnoredOutputModules" in reqInputArgs:
+        reqSchema["IgnoredOutputModules"] = parseStringListWithoutValidation(reqInputArgs["IgnoredOutputModules"])
 
-    validate(schema)
+    validate(reqSchema)
 
     # Get the DN
-    schema['RequestorDN'] = cherrypy.request.user.get('dn', 'unknown')
+    reqSchema['RequestorDN'] = cherrypy.request.user.get('dn', 'unknown')
     
     try:
-        request = buildWorkloadForRequest(typename = kwargs["RequestType"],
-                                          schema = schema)
+        request = buildWorkloadForRequest(typename = reqInputArgs["RequestType"],
+                                          schema = reqSchema)
     except WMSpecFactoryException, ex:
-        msg = ex._message
-        raise HTTPError(400, "Error in Workload Validation: %s" % msg)
+        raise HTTPError(400, "Error in Workload Validation: %s" % ex._message)
     helper = WMWorkloadHelper(request['WorkloadSpec'])
-    helper.setCampaign(schema["Campaign"])
-    if "CustodialSite" in schema.keys():
-        helper.setCustodialSite(siteName = schema['CustodialSite'])
-    elif len(schema.get("SiteWhitelist", [])) == 1:
+    helper.setCampaign(reqSchema["Campaign"])
+    if "CustodialSite" in reqSchema.keys():
+        helper.setCustodialSite(siteName = reqSchema['CustodialSite'])
+    elif len(reqSchema.get("SiteWhitelist", [])) == 1:
         # If there is only one site in the site whitelist we should
         # set it as the custodial site.
         # Oli says so.
-        helper.setCustodialSite(siteName = schema['SiteWhitelist'][0])
-    if "RunWhitelist" in schema:
-        helper.setRunWhitelist(schema["RunWhitelist"])
+        helper.setCustodialSite(siteName = reqSchema['SiteWhitelist'][0])
+    if "RunWhitelist" in reqSchema:
+        helper.setRunWhitelist(reqSchema["RunWhitelist"])
     # can't save Request object directly, because it makes it hard to retrieve the _rev
     metadata = {}
     metadata.update(request)
@@ -524,12 +526,20 @@ def makeRequest(kwargs, couchUrl, couchDB, wmstatUrl):
     workloadUrl = helper.saveCouch(couchUrl, couchDB, metadata=metadata)
     request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
     try:
-        wmstatSvc = WMStatsWriter(wmstatUrl)
-        CheckIn.checkIn(request, kwargs['RequestType'], wmstatSvc)
+        CheckIn.checkIn(request, reqInputArgs['RequestType'])
     except CheckIn.RequestCheckInError, ex:
         msg = ex._message
         raise HTTPError(400, "Error in Request check-in: %s" % msg)
+    
+    try:
+        wmstatSvc = WMStatsWriter(wmstatUrl)
+        wmstatSvc.insertRequest(request)
+    except Exception as ex:
+        webApi.error("Could not update WMStats, reason: %s" % ex)
+        raise HTTPError(400, "Creating request failed, could not update WMStats.")
+        
     return request
+
 
 def requestDetails(requestName):
     """ Adds details from the Couch document as well as the database """
@@ -581,4 +591,3 @@ def associateCampaign(campaign, requestName, couchURL, couchDBName):
     helper = loadWorkload(request)
     helper.setCampaign(campaign = campaign)
     helper.saveCouch(couchUrl = couchURL, couchDBName = couchDBName)
-    return   

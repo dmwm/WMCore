@@ -41,7 +41,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
     def algorithm(self, parameters):
         """
         retrieve work from RequestManager and send updates
-	    """
+            """
         try:
             return self.reqMgr(self.wq)
         except Exception, ex:

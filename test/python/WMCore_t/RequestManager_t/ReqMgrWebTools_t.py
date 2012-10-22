@@ -6,7 +6,7 @@ Unittest for ReqMgr utilities
 """
 
 import unittest
-from WMCore.HTTPFrontEnd.RequestManager import ReqMgrWebTools 
+from WMCore.HTTPFrontEnd.RequestManager import ReqMgrWebTools
 
 class ReqMgrWebToolsTest(unittest.TestCase):
     """
@@ -32,7 +32,7 @@ class ReqMgrWebToolsTest(unittest.TestCase):
         Do nothing
         """
         return
-    
+
     def testA_ParseRunList(self):
         l0 = ''
         l1 = ' [1,  2,  3 ] '
@@ -45,7 +45,7 @@ class ReqMgrWebToolsTest(unittest.TestCase):
         self.assertEqual(ReqMgrWebTools.parseRunList(l2), [1,2,3])
         self.assertEqual(ReqMgrWebTools.parseRunList(l3), [1,2,3])
         self.assertEqual(ReqMgrWebTools.parseRunList(l4), [1,2,3])
-  
+
     def testB_ParseBlockList(self):
         l3 = '  ["/test/test/test#Barack", "  /test/test/test#Sarah  ",/test/test/test#George]'
         self.assertEqual(ReqMgrWebTools.parseBlockList(l3), ['/test/test/test#Barack',

@@ -13,7 +13,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class List(DBFormatter):
     sql = "select id, name, open, last_update from wmbs_fileset order by last_update, name"
-    
+
     def format(self, result):
         """
         Some standardised formatting

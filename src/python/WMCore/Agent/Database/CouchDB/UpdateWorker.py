@@ -12,7 +12,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.Agent.Database.CouchDB.CouchService import CouchService
 
 class UpdateWorker(DBFormatter):
-    
+
 
     def execute(self, componentID, workerName, state = None,
                 pid = None, conn = None, transaction = False):
@@ -23,7 +23,7 @@ class UpdateWorker(DBFormatter):
         service = CouchService(serverUrl, database)
 
         worker_doc = {}
-        worker_doc = service.loadDoc(componentID) 
+        worker_doc = service.loadDoc(componentID)
 
         if worker_doc:
 

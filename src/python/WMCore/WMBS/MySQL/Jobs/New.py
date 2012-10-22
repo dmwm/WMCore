@@ -15,12 +15,12 @@ import logging
 from WMCore.Database.DBFormatter import DBFormatter
 
 class New(DBFormatter):
-    sql = """INSERT INTO wmbs_job (jobgroup, name, state, state_time, 
+    sql = """INSERT INTO wmbs_job (jobgroup, name, state, state_time,
                                    couch_record, cache_dir, location, outcome,
-                                   fwjr_path) VALUES 
+                                   fwjr_path) VALUES
               (:jobgroup, :name,
                (SELECT id FROM wmbs_job_state WHERE name = 'new'),
-               :state_time, :couch_record, :cache_dir, 
+               :state_time, :couch_record, :cache_dir,
                (SELECT id FROM wmbs_location WHERE site_name = :location),
                :outcome, :fwjr_path)"""
 
@@ -53,7 +53,7 @@ class New(DBFormatter):
             result[job['name']] = job['id']
 
         return result
-    
+
     def execute(self, jobgroup = None, name = None, couch_record = None, location = None, cache_dir = None,
                 outcome = None, fwjr = None, conn = None, transaction = False, jobList = None):
 
@@ -68,9 +68,9 @@ class New(DBFormatter):
 
         if jobList:
             binds = self.getBinds(jobList)
-            
+
             self.dbi.processData(self.sql, binds, conn = conn, transaction = transaction)
-            
+
             binds2 = []
             for d in binds:
                 binds2.append({'name': d['name'], 'jobgroup': d['jobgroup']})
@@ -79,18 +79,17 @@ class New(DBFormatter):
             result = self.dbi.processData(self.getIDsql, binds2, conn = conn, transaction = transaction)
             return self.format(result)
 
-        
+
 
         elif jobgroup and name:
-            binds = {"jobgroup": jobgroup, "name": name, 
+            binds = {"jobgroup": jobgroup, "name": name,
                      "couch_record": couch_record, "state_time": int(time.time()),
                      "location": location, "cache_dir": cache_dir, "outcome": boolOutcome, "fwjr_path": fwjr}
 
             self.dbi.processData(self.sql, binds, conn = conn,
-                                 transaction = transaction)            
+                                 transaction = transaction)
             return
 
         else:
             logging.error('Asked for new jobs in Jobs.New without jobgroup and name!')
             return
-        

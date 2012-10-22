@@ -7,6 +7,3 @@ Database test methods
 
 """
 __all__ = []
-
-
-

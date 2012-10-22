@@ -23,8 +23,8 @@ class RESTSink(object):
     """
     Alert sink for posting alerts to a REST server.
     The class acts as a REST client.
-    
-    """     
+
+    """
     def __init__(self, config):
         # configuration values:
         #     'uri' attribute (URL of the REST server and resource name)
@@ -32,7 +32,7 @@ class RESTSink(object):
         #         http://servername:port/databaseName
         self.config = config
         logging.info("Instantiating ...")
-        
+
         # the class currently relies only on 1 REST server possibility - the
         # CouchDB server. as explained above, .database will be replaced by
         # .connection if both a generic REST server as well as CouchDB are to
@@ -53,12 +53,12 @@ class RESTSink(object):
                             (self.config.uri, dbName))
         self._database = Database(dbName, url)
         logging.info("Initialized.")
-                
-        
+
+
     def send(self, alerts):
         """
         Send a list of alerts to a REST server.
-        
+
         """
         for a in alerts:
             doc = Document(None, a)

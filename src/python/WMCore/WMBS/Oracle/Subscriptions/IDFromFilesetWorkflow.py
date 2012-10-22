@@ -10,5 +10,5 @@ Oracle implementation of Subscriptions.IDFromFilesetWorkflow
 
 from WMCore.WMBS.MySQL.Subscriptions.IDFromFilesetWorkflow import IDFromFilesetWorkflow as IDFromFilesetWorkflowMySQL
 
-class IDFromFilesetWorkflow(IDFromFilesetWorkflowMySQL):    
+class IDFromFilesetWorkflow(IDFromFilesetWorkflowMySQL):
     pass

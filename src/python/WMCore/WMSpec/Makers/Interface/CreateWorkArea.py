@@ -86,8 +86,8 @@ class CreateScript:
             if self.shell == 'csh':
                 self.addLine('export %s $%s:%s' %(var, var, value))
             else:
-                self.addLine('export %s=$%s:%s' %(var, var, value))            
-        
+                self.addLine('export %s=$%s:%s' %(var, var, value))
+
 
     def save(self):
         """
@@ -104,7 +104,7 @@ class CreateScript:
 class CreateWorkArea:
     """
     Basic class for doing the JobMaker dirty work
-    
+
     """
 
 
@@ -181,7 +181,7 @@ class CreateWorkArea:
 
         myThread = threading.currentThread()
 
-        
+
         #We need the workflow to get the spec
         if self.workflow == None:
             # If we have something in the workflow,
@@ -231,7 +231,7 @@ class CreateWorkArea:
         """
         This should handle the master tasks of creating a working area
         It should take a valid jobGroup and call the functions that create the components
-        
+
         """
         myThread = threading.currentThread()
 
@@ -260,7 +260,7 @@ class CreateWorkArea:
                 #Create a new jobCollection
                 #Increment jobCreator if there's already something there
                 jobCounter += self.createJobCollection(jobCounter, taskDir)
-                
+
             jobCounter = jobCounter + 1
 
             name = self.getDirectoryName(jid)
@@ -278,7 +278,7 @@ class CreateWorkArea:
         return
 
 
-    
+
 
     def createJobCollection(self, jobCounter, taskDir):
         """
@@ -305,7 +305,7 @@ class CreateWorkArea:
         else:
             #You're screwed
             raise Exception ('There was something in the way at %s, but we could not determine what it was' %(jobCollDir))
-        
+
 
 
     def createDirectories(self, dirList):
@@ -328,7 +328,7 @@ class CreateWorkArea:
         if len(dirList) > 0:
             cmdArgs.extend(dirList)
             cmdList.append(cmdArgs)
-            
+
         logging.info('Executing makedir commands')
         for command in cmdList:
             pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
@@ -336,16 +336,16 @@ class CreateWorkArea:
 
 
         return
-        
 
-        
+
+
 
     def createLocalBin(self, workdir, binName = 'localBin'):
         """
         Creates a localBin in the working directory
 
         """
-        
+
         myThread = threading.currentThread()
 
         binPath = workdir + '/' + binName
@@ -382,7 +382,7 @@ class CreateWorkArea:
             raise Exception(msg)
 
         RunScript = CreateScript(scriptPath)
-    
+
         RunScript.getEnv()
         RunScript.startScript()
         RunScript.addLine('export PRODAGENT_JOBSPEC=$1')
@@ -425,9 +425,9 @@ class CreateWorkArea:
 
         EnvScript.save()
 
-        
 
-    
+
+
 
     def getDirectoryName(self, jid):
         """
@@ -460,7 +460,5 @@ class CreateWorkArea:
         task = self.workflow.task
         if task.startswith("/" + workload + "/"):
             task = task[len(workload) + 2:]
-            
+
         return os.path.join(self.startDir, workload), os.path.join(self.startDir, workload, task)
-
-

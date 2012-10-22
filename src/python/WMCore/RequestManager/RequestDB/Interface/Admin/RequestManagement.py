@@ -22,4 +22,3 @@ def deleteRequest(requestId):
     deleteReq = factory(classname = "Request.Delete")
     deleteReq.execute(requestId)
     return
-

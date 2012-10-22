@@ -10,4 +10,3 @@ from WMComponent.DBSUpload.Database.MySQL.FindDASToUpload import FindDASToUpload
 
 class FindDASToUpload(MySQLFindDASToUpload):
     pass
-

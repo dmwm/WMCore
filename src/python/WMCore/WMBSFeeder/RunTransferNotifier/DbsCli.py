@@ -64,7 +64,7 @@ def sendMessage(host, port, dbsInst, userInput, page, limit, xml=0, case='on',
         data = response.read()
     except urllib2.HTTPError, e:
         if e.code==201:
-            print e.headers       
+            print e.headers
             print e.msg
             pass
         else:

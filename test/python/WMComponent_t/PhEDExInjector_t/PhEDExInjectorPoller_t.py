@@ -30,7 +30,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
     Unit tests for the PhEDExInjector.  Create some database inside DBSBuffer
     and then have the PhEDExInjector upload the data to PhEDEx.  Pull the data
-    back down and verify that everything is complete.    
+    back down and verify that everything is complete.
     """
 
     def setUp(self):
@@ -41,7 +41,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         """
         self.phedexURL = "https://cmsweb.cern.ch/phedex/datasvc/json/test"
         self.dbsURL = "http://vocms09.cern.ch:8880/cms_dbs_int_local_yy_writer/servlet/DBSServlet"
-        
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -73,7 +73,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         Delete the database.
         """
         self.testInit.clearDatabase()
-        
+
     def stuffDatabase(self, custodialSite = "srm-cms.cern.ch"):
         """
         _stuffDatabase_
@@ -117,8 +117,8 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         testFileC.setDatasetPath(self.testDatasetA)
         testFileC.setCustodialSite(custodialSite = custodialSite)
         testFileC.addRun(Run(2, *[45]))
-        testFileC.create()        
-                                        
+        testFileC.create()
+
         self.testFilesA.append(testFileA)
         self.testFilesA.append(testFileB)
         self.testFilesA.append(testFileC)
@@ -143,7 +143,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         testFileE.setDatasetPath(self.testDatasetB)
         testFileE.setCustodialSite(custodialSite = custodialSite)
         testFileE.addRun(Run(2, *[45]))
-        testFileE.create()        
+        testFileE.create()
 
         self.testFilesB.append(testFileD)
         self.testFilesB.append(testFileE)
@@ -175,7 +175,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         fileStatus.execute(testFileB["lfn"], "LOCAL")
         fileStatus.execute(testFileC["lfn"], "LOCAL")
         fileStatus.execute(testFileD["lfn"], "LOCAL")
-        fileStatus.execute(testFileE["lfn"], "LOCAL")        
+        fileStatus.execute(testFileE["lfn"], "LOCAL")
         return
 
     def createConfig(self):
@@ -215,7 +215,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                 if result["phedex"].has_key("block"):
                     if len(result["phedex"]["block"]) != 0:
                         return result["phedex"]["block"][0]
-            
+
             attempts += 1
             time.sleep(20)
 
@@ -262,7 +262,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
             goldenLFNs.remove(replicaFile["name"])
 
         assert len(goldenLFNs) == 0, \
-               "Error: Files missing from PhEDEx replica: %s" % goldenLFNs        
+               "Error: Files missing from PhEDEx replica: %s" % goldenLFNs
 
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
@@ -325,7 +325,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         uninjectedFiles = getUninjected.execute()
         self.assertEqual(uninjectedFiles.keys(), ['se.fnal.gov'])
         return
-        
+
 
 if __name__ == '__main__':
     unittest.main()

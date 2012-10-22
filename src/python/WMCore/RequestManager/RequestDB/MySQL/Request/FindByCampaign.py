@@ -33,7 +33,7 @@ class FindByCampaign(DBFormatter):
              JOIN reqmgr_campaign_assoc assoc
                ON req.request_id = assoc.request_id
              WHERE stat.status_name = ':req_status' AND assoc.campaign_id = :campaign_id
-             """ 
+             """
             binds = {"req_status": reqStatus, "campaign_id": campaignId}
         else:
             self.sql = """
@@ -46,7 +46,3 @@ class FindByCampaign(DBFormatter):
         result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return dict(self.format(result))
-
-
-
-

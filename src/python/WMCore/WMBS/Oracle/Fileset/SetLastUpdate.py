@@ -13,4 +13,3 @@ from WMCore.WMBS.MySQL.Fileset.SetLastUpdate import SetLastUpdate as SetLastUpda
 
 class SetLastUpdate(SetLastUpdateFilesetMySQL):
     sql = SetLastUpdateFilesetMySQL.sql
-

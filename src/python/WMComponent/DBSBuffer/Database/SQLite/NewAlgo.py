@@ -20,11 +20,11 @@ class NewAlgo(MySQLNewAlgo):
     sql = """INSERT INTO dbsbuffer_algo (app_name, app_ver, app_fam, pset_hash,
                                          config_content, in_dbs)
                SELECT :app_name, :app_ver, :app_fam, :pset_hash,
-                 :config_content, 0 WHERE NOT EXISTS   
+                 :config_content, 0 WHERE NOT EXISTS
                    (SELECT * FROM dbsbuffer_algo WHERE app_name = :app_name AND
                       app_ver = :app_ver AND app_fam = :app_fam AND
-                      pset_hash = :pset_hash)"""    
-    
+                      pset_hash = :pset_hash)"""
+
     existsSQL = """SELECT id FROM dbsbuffer_algo WHERE app_name = :app_name AND
                      app_ver = :app_ver AND app_fam = :app_fam AND
                      pset_hash = :pset_hash"""

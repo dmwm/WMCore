@@ -25,7 +25,7 @@ class Exit127(DiagnosticHandler):
         msg = "Executable Not Found"
         executor.report.addError(executor.step._internal_name,
                                  50110, "ExecutableNotFound", msg)
-        
+
 class Exit126(DiagnosticHandler):
     """
     Handle bad permissions
@@ -63,7 +63,7 @@ class Exit60515(DiagnosticHandler):
             logTail = BasicAlgos.tail(errLog, 25)
             msg += '\n Adding last ten lines of SCRAM error log:\n'
             msg += "".join(logTail)
-            
+
         executor.report.addError(executor.step._internal_name,
                                  60515, "SCRAMScriptFailure", msg)
 
@@ -78,7 +78,7 @@ class CMSDefaultHandler(DiagnosticHandler):
 
     Default handler for miscellaneous CMSSW errors.
     """
-    
+
 
     def __call__(self, errCode, executor, **args):
         logging.critical("%s Diagnostic Handler invoked" % self.__class__.__name__)
@@ -93,7 +93,7 @@ class CMSDefaultHandler(DiagnosticHandler):
             if hasattr(excepInst, 'detail'):
                 description = excepInst.detail
             msg += str(excepInst)
-        
+
         if os.path.exists(jobRepXml):
             # job report XML exists, load the exception information from it
             executor.report.parse(jobRepXml)
@@ -123,15 +123,15 @@ class CMSDefaultHandler(DiagnosticHandler):
             logTail = BasicAlgos.tail(errLog, 25)
             msg += '\n Adding last ten lines of SCRAM error log:\n'
             msg += "".join(logTail)
-                
+
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
         executor.report.addError(executor.step._internal_name,
                                  errCode, description, msg)
-        
+
         return
-    
-        
+
+
 
 
 class CMSRunHandler(DiagnosticHandler):
@@ -151,7 +151,7 @@ class CMSRunHandler(DiagnosticHandler):
         msg = "Exit %s: %s Exception from cmsRun" % (self.code, self.desc)
         jobRepXml = os.path.join(executor.step.builder.workingDir,
                                  executor.step.output.jobReport)
-        
+
         if os.path.exists(jobRepXml):
             # job report XML exists, load the exception information from it
             executor.report.parse(jobRepXml)
@@ -172,7 +172,7 @@ class CMSRunHandler(DiagnosticHandler):
             logTail = BasicAlgos.tail(errLog, 10)
             msg += '\n Adding last ten lines of CMSSW stdout:\n'
             msg += "".join(logTail)
-                
+
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
         if errSection == None:
@@ -185,7 +185,7 @@ class CMSRunHandler(DiagnosticHandler):
 
         print executor.report.report.errors
         return
-        
+
 class EDMExceptionHandler(DiagnosticHandler):
     """
     _EDMExceptionHandler_
@@ -194,7 +194,7 @@ class EDMExceptionHandler(DiagnosticHandler):
     EDM error code and report that.
 
     If the job report isnt there, thats a specific failure
-    
+
     """
     def __call__(self, errCode, executor, **args):
         """
@@ -237,15 +237,15 @@ class EDMExceptionHandler(DiagnosticHandler):
             executor.report.addError(executor.step._internal_name,
                                      50115, "MissingJobReport", msg)
             return
-        
+
         # job report XML exists, load the exception information from it
         executor.report.parse(jobRepXml)
 
 
-        
-                              
-        
-        
+
+
+
+
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
         if errSection == None:
@@ -271,7 +271,7 @@ class EDMExceptionHandler(DiagnosticHandler):
         return
 
 
-    
+
 class CMSSW(Diagnostic):
     """
     Master diagnostic class
@@ -295,10 +295,8 @@ class CMSSW(Diagnostic):
 
         self.defaultHandler = CMSDefaultHandler()
 
-        
+
         # for all the exception codes between 1 and 225, use a default that attempts to read the code
         # from the job report
         catchAll = EDMExceptionHandler()
         [ self.handlers.__setitem__(x, catchAll) for x in range(0, 255) if not self.handlers.has_key(x) ]
-
-        

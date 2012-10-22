@@ -42,4 +42,3 @@ def setPriority(hnUsername, priority):
     userPriority = factory(classname = "Requestor.SetPriority")
     result = userPriority.execute(hnUsername, priority)
     return result
-

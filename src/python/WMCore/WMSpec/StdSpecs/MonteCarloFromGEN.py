@@ -14,7 +14,7 @@ def getTestArguments():
     _getTestArguments_
 
     This should be where the default REQUIRED arguments go
-    This serves as documentation for what is currently required 
+    This serves as documentation for what is currently required
     by the standard MonteCarloFromGEN workload in importable format.
 
     NOTE: These are test values.  If used in real workflows they
@@ -30,10 +30,10 @@ def getTestArguments():
         "ProcessingVersion": 2,
         "SkimInput": "output",
         "GlobalTag": "GR10_P_v4::All",
-        
+
         "CouchURL": os.environ.get("COUCHURL", None),
         "CouchDBName": "scf_wmagent_configcache",
-        
+
         "ProcConfigCacheID": "03da10e20c7b98c79f9d6a5c8900f83b",
         "DashboardHost" : "127.0.0.1",
         "DashboardPort" : 8884,
@@ -124,7 +124,7 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
     def validateSchema(self, schema):
         """
         _validateSchema_
-        
+
         Check for required fields, and some skim facts
         """
         arguments = getTestArguments()
@@ -141,7 +141,7 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
         if schema.get("StdJobSplitAlgo", "LumiBased") == "LumiBased":
             if not schema.get("StdJobSplitArgs", {"lumis_per_job": 1}).get("lumis_per_job", 0) > 0:
                 self.raiseValidationException(msg = "Invalid number of lumis_per_job for MCFromGEN")
-                
+
         return
 
 

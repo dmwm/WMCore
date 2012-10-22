@@ -44,7 +44,7 @@ class ThreadSlave:
         The constructor creates separate instances
         for objects that we do not want to share.
         Objects that are used as a thread slave
-        Inherit from this to ensure they do not 
+        Inherit from this to ensure they do not
         conflict with these methods.
 
         If needed the developer can add additional
@@ -55,7 +55,7 @@ class ThreadSlave:
         # we also keep a reference to our component (we can
         # use this for read only things in the argument list).
         # assign this later
-        self.component = None 
+        self.component = None
         #a slave is created in its master thread so we can exploit
         #this to get a reference to its dbfactory object.
         myThread = threading.currentThread()
@@ -98,7 +98,7 @@ class ThreadSlave:
         else:
             # FIXME we aren't using the DIALECT environment variable anymore
             myThread.dialect = os.getenv("DIALECT")
-        
+
         #TODO: remove as much as possible logging statements or make them debug
         myThread.logger = logging.getLogger()
 
@@ -113,7 +113,7 @@ class ThreadSlave:
         logging.info("THREAD: Loading backend")
         logging.info("THREAD constructor finished")
 
-    # FIXME: enable the (configurable) possibility to retrieve 
+    # FIXME: enable the (configurable) possibility to retrieve
     # work in bulk (handy when we need to update databases)
     def retrieveWork(self):
         """
@@ -130,13 +130,13 @@ class ThreadSlave:
             self.initInThread()
         else:
             # init creates a transaction that will call begin.
-            myThread.transaction.begin() 
+            myThread.transaction.begin()
         args = {'thread_pool_id' : self.args['thread_pool_id'], \
             'component' : self.args['componentName']}
         result = self.query.selectWork(args, \
             self.args['thread_pool_table_buffer_out'])
         # we might need to look into multiple buffers and move work to find it.
-        # from keeping track of the number of messages for us we know it 
+        # from keeping track of the number of messages for us we know it
         # is there.
         if result[0] == None:
             self.query.moveWorkToBufferOut(args, \
@@ -152,7 +152,7 @@ class ThreadSlave:
                 self.args['thread_pool_buffer_size'])
         result = self.query.selectWork(args, \
                 self.args['thread_pool_table_buffer_out'])
-        
+
         if result[0] == None:
             # FIXME: make proper exception
             raise Exception("ERROR: How can that be!!")
@@ -160,28 +160,28 @@ class ThreadSlave:
         myThread.workId = str(result[0])
         # get the actual work now:
         result = self.query.retrieveWork({'id':myThread.workId}, \
-            self.args['thread_pool_table_buffer_out'])        
+            self.args['thread_pool_table_buffer_out'])
         self.query.tagWork({'id' : myThread.workId}, \
             self.args['thread_pool_table_buffer_out'])
         # we commit here because if the component crashes this is where
         # if will look for lost threads (the ones that are in the process state
-        myThread.transaction.commit() 
+        myThread.transaction.commit()
         return (result[1], cPickle.loads(base64.decodestring(result[2])))
 
-    def removeWork(self):          
+    def removeWork(self):
         """
         _removeWork_
 
         Once the work is finished the entry is removed from the queue.
         """
         myThread = threading.currentThread()
-        myThread.transaction.begin() 
+        myThread.transaction.begin()
         self.query.removeWork({'id' : myThread.workId}, \
             self.args['thread_pool_table_buffer_out'])
-        # this method is called once the thread is finished and 
+        # this method is called once the thread is finished and
         # we commit everything.
         myThread.transaction.commit()
- 
+
         logging.debug("THREAD: Removed Work")
 
     def __call__(self, parameters):

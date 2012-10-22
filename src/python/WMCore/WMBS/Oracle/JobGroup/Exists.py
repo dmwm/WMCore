@@ -13,4 +13,3 @@ from WMCore.WMBS.MySQL.JobGroup.Exists import Exists as ExistsJobGroupMySQL
 
 class Exists(ExistsJobGroupMySQL):
     pass
-    

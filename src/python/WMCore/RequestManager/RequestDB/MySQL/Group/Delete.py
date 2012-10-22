@@ -24,10 +24,9 @@ class Delete(DBFormatter):
         Delete the named group from the database
 
         """
-        self.sql = "DELETE FROM reqmgr_group WHERE group_name=:group_name" 
+        self.sql = "DELETE FROM reqmgr_group WHERE group_name=:group_name"
         binds = {"group_name": groupName}
 
         result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = transaction)
         return self.format(result)
-

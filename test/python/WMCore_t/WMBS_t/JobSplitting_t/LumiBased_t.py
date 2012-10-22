@@ -54,7 +54,7 @@ class LumiBasedTest(unittest.TestCase):
         Create two subscriptions: One that contains a single file and one that
         contains multiple files.
         """
-        
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -62,7 +62,7 @@ class LumiBasedTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.testInit.setupCouch("lumi_t", "GroupUser", "ACDC")
-        
+
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
@@ -85,14 +85,14 @@ class LumiBasedTest(unittest.TestCase):
 
         """
         self.testInit.clearDatabase()
-        self.testInit.tearDownCouch()        
+        self.testInit.tearDownCouch()
         return
 
 
     def createSubscription(self, nFiles, lumisPerFile, twoSites = False, rand = False):
         """
         _createSubscription_
-        
+
         Create a subscription for testing
         """
 
@@ -100,9 +100,9 @@ class LumiBasedTest(unittest.TestCase):
 
         testFileset = Fileset(name = baseName)
         testFileset.create()
-        parentFile = File('%s_parent' % (baseName), size = 1000, events = 100, 
-                          locations = set(["somese.cern.ch"])) 
-        parentFile.create() 
+        parentFile = File('%s_parent' % (baseName), size = 1000, events = 100,
+                          locations = set(["somese.cern.ch"]))
+        parentFile.create()
         for i in range(nFiles):
             newFile = File(lfn = '%s_%i' % (baseName, i), size = 1000,
                            events = 100, locations = "somese.cern.ch")
@@ -128,7 +128,7 @@ class LumiBasedTest(unittest.TestCase):
                         lumis.append((100 * i) + lumi)
                 newFile.addRun(Run(i, *lumis))
                 newFile.create()
-                newFile.addParent(parentFile['lfn']) 
+                newFile.addParent(parentFile['lfn'])
                 testFileset.addFile(newFile)
         testFileset.commit()
 
@@ -260,7 +260,7 @@ class LumiBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 10)
-        
+
         # In this case it should slice things up so that each job only has one run
         # in it.
         self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
@@ -284,7 +284,7 @@ class LumiBasedTest(unittest.TestCase):
         self.assertEqual(len(j['input_files']), 3)
         for f in j['input_files']:
             self.assertTrue(f['events'], 100)
-            self.assertTrue(f['size'], 1000) 
+            self.assertTrue(f['size'], 1000)
         return
 
     def createTestWorkload(self):
@@ -292,7 +292,7 @@ class LumiBasedTest(unittest.TestCase):
         _createTestWorkload_
 
         """
-        workload = newWorkload("ACDCTest")        
+        workload = newWorkload("ACDCTest")
         reco = workload.newTask("reco")
         skim1 = reco.addTask("skim1")
         workload.setOwnerDetails(name = "evansde77", group = "DMWM")
@@ -312,7 +312,7 @@ class LumiBasedTest(unittest.TestCase):
         # second step uses an input reference
         cmsRunSkim = skim1.makeStep("cmsRun2")
         cmsRunSkim.setStepType("CMSSW")
-        skim1.applyTemplates()        
+        skim1.applyTemplates()
         skim1.setInputReference(cmsRunReco, outputModule = "outputRECO")
 
         return workload
@@ -343,13 +343,13 @@ class LumiBasedTest(unittest.TestCase):
         testFileC.create()
         testJobB = getJob(workload)
         testJobB.addFile(testFileC)
-        
+
         testFileD = File(lfn = makeUUID(), size = 1024, events = 1024, locations = "somese.cern.ch")
         testFileD.addRun(Run(1, 7))
         testFileD.create()
         testJobC = getJob(workload)
         testJobC.addFile(testFileD)
-                         
+
         testFileE = File(lfn = makeUUID(), size = 1024, events = 1024, locations = "somese.cern.ch")
         testFileE.addRun(Run(1, 11, 12))
         testFileE.create()
@@ -490,30 +490,30 @@ class LumiBasedTest(unittest.TestCase):
         return
 
 
-    def testE_getParents(self): 
-        """ 
-        _getParents_ 
-        
-        Test the TwoFileBased version of this code 
-        """ 
-        
-        
-        splitter = SplitterFactory() 
-        
-        oneSetSubscription = self.createSubscription(nFiles = 10, lumisPerFile = 1) 
-        jobFactory = splitter(package = "WMCore.WMBS", 
-                              subscription = oneSetSubscription) 
-        
-        jobGroups = jobFactory(lumis_per_job = 3, 
-                               split_files_between_job = True, 
-                               include_parents = True) 
-        self.assertEqual(len(jobGroups), 1) 
-        self.assertEqual(len(jobGroups[0].jobs), 10) 
-        for job in jobGroups[0].jobs: 
-            self.assertTrue(len(job['input_files']), 1) 
-            f = job['input_files'][0] 
-            self.assertEqual(len(f['parents']), 1) 
-            self.assertEqual(f['lfn'].split('_')[0], 
+    def testE_getParents(self):
+        """
+        _getParents_
+
+        Test the TwoFileBased version of this code
+        """
+
+
+        splitter = SplitterFactory()
+
+        oneSetSubscription = self.createSubscription(nFiles = 10, lumisPerFile = 1)
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = oneSetSubscription)
+
+        jobGroups = jobFactory(lumis_per_job = 3,
+                               split_files_between_job = True,
+                               include_parents = True)
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 10)
+        for job in jobGroups[0].jobs:
+            self.assertTrue(len(job['input_files']), 1)
+            f = job['input_files'][0]
+            self.assertEqual(len(f['parents']), 1)
+            self.assertEqual(f['lfn'].split('_')[0],
                              list(f['parents'])[0]['lfn'].split('_')[0])
 
         return
@@ -528,14 +528,14 @@ class LumiBasedTest(unittest.TestCase):
         """
 
 
-        splitter = SplitterFactory() 
-        
-        oneSetSubscription = self.createSubscription(nFiles = 10, lumisPerFile = 1) 
-        jobFactory = splitter(package = "WMCore.WMBS", 
-                              subscription = oneSetSubscription) 
-        
-        jobGroups = jobFactory(lumis_per_job = 10, 
-                               split_files_between_job = True, 
+        splitter = SplitterFactory()
+
+        oneSetSubscription = self.createSubscription(nFiles = 10, lumisPerFile = 1)
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = oneSetSubscription)
+
+        jobGroups = jobFactory(lumis_per_job = 10,
+                               split_files_between_job = True,
                                runWhitelist = [1])
 
         self.assertEqual(len(jobGroups), 1)
@@ -546,17 +546,17 @@ class LumiBasedTest(unittest.TestCase):
         return
 
 
-        
-                
-                
 
 
 
-        
 
-            
-        
-        
+
+
+
+
+
+
+
 
 
 if __name__ == '__main__':

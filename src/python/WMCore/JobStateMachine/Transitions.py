@@ -31,7 +31,7 @@ class Transitions(dict):
     def states(self):
         """
         _states_
-        
+
         Return a list of all known states, derive it in case we add new final
         states other than cleanout.
         """

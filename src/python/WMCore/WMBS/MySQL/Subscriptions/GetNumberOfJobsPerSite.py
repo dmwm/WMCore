@@ -42,7 +42,7 @@ class GetNumberOfJobsPerSite(DBFormatter):
         """
 
         _buildBinds_
-        
+
         Build a list of binds
 
         """
@@ -55,7 +55,7 @@ class GetNumberOfJobsPerSite(DBFormatter):
 
         return binds
 
-        
+
     def execute(self, location, subscription, state, conn = None, transaction = False):
         """
         _execute_

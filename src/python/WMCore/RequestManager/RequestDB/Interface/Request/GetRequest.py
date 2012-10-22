@@ -80,7 +80,7 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
         request['SoftwareVersions'] = ['DEPRECATED']
     else:
         request['SoftwareVersions'] = swVers.values()
-    
+
     getDatasetsIn = factory(classname = "Datasets.GetInput")
     getDatasetsOut = factory(classname = "Datasets.GetOutput")
     datasetsIn = getDatasetsIn.execute(requestId)
@@ -138,7 +138,7 @@ def getRequestByPrepID(prepID):
     getID = factory(classname = "Request.FindByPrepID")
     requestIDs = getID.execute(prepID)
     return requestIDs
-    
+
 def getRequestDetails(requestName):
     """ Return a dict with the intimate details of the request """
     request = getRequestByName(requestName)
@@ -168,7 +168,7 @@ def getAllRequestDetails():
         del details['RequestUpdates']
         del details['RequestMessages']
         result.append(details)
-    return result 
+    return result
 
 
 def getRequestAssignments(requestId):
@@ -208,9 +208,9 @@ def getOverview():
     getSummary = factory(classname = "Request.GetOverview")
     result = getSummary.execute()
     for request in result:
-       getCampaign = factory(classname = "Campaign.GetByRequest")
-       campaign = getCampaign.execute(request["request_id"])
-       request["campaign"] = campaign
+        getCampaign = factory(classname = "Campaign.GetByRequest")
+        campaign = getCampaign.execute(request["request_id"])
+        request["campaign"] = campaign
     return result
 
 def getGlobalQueues():
@@ -228,4 +228,3 @@ def getGlobalQueues():
     for url in results:
         queues.append(url.replace('workqueuemonitor', 'workqueue'))
     return queues
-

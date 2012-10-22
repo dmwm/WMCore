@@ -44,15 +44,15 @@ def coroutine(func):
 def dispatcher(targets, config):
     """
     Function to dispatch an alert to a set of targets based on the level
-    of the Alert instance. 
-    
+    of the Alert instance.
+
     Targets arg should be a dict of coroutines to handle the appropriate
     level of alert message and contain routines for handling
     "soft" and "critical" alerts.
-    
+
     Alerts are not duplicated, based on its level, an alerts ends up either
     in 'soft', resp. 'critical' sinks.
-    
+
     """
     while True:
         alert = (yield)
@@ -63,22 +63,22 @@ def dispatcher(targets, config):
         # alert level for soft threshold
         if alert.level >= config.soft.level:
             targets["soft"].send(alert)
-                    
 
-            
+
+
 @coroutine
 def handleSoft(targets, config):
     """
-    Handler for soft-level alerts, essentially acts as an in-memory buffer to 
+    Handler for soft-level alerts, essentially acts as an in-memory buffer to
     store N alerts and dispatch them to a set of handlers.
-    
+
     """
     alertBuffer = []
     bufferSize  = getattr(config, "bufferSize", 100)
     while True:
         alert = (yield)
         alertBuffer.append(alert)
-        if len(alertBuffer) >= bufferSize: 
+        if len(alertBuffer) >= bufferSize:
             for target in targets.values():
                 # if sending to a particular sink fails, the entire component
                 # should remain functional
@@ -100,7 +100,7 @@ def handleSoft(targets, config):
 def handleCritical(targets, config):
     """
     Handler for critical level alerts.
-    
+
     """
     while True:
         alert = (yield)
@@ -119,17 +119,17 @@ def handleCritical(targets, config):
                      (ex, target.__class__.__name__, traceString))
                 logging.error(m)
 
-            
-    
+
+
 class Processor(object):
     """
     Alert handling processor that dispatches alerts into a handler pipeline.
-    
+
     """
     def __init__(self, config):
         softFunctions = {}
         criticalFunctions = {}
-        
+
         def getSinkInstance(sinkName, sinkConfig):
             sinkClass = sinksMap[sinkName]
             sinkInstance = None
@@ -156,31 +156,31 @@ class Processor(object):
                         r[sink] = sinkInstance
             return r
 
-        # set up methods for the soft-level alert handler which will buffer 
+        # set up methods for the soft-level alert handler which will buffer
         # and flush to the sinks when the buffer is full
         logging.info("Instantiating 'soft' sinks ...")
         softFunctions = getFunctions(config.soft)
-        
+
         # set up handlers for critical-level alerts
         # critical alerts are passed straight through to the handlers
         # as they arrive, no buffering takes place
         logging.info("Instantiating 'critical' sinks ...")
         criticalFunctions = getFunctions(config.critical)
-         
+
         pipelineFunctions = {
             "soft": handleSoft(softFunctions, config.soft),
             "critical": handleCritical(criticalFunctions, config.critical)
         }
         self.pipeline = dispatcher(pipelineFunctions, config)
         logging.info("Initialized.")
-        
-        
+
+
     def __call__(self, alertData):
         """
         Inject a new alert into the processing pipeline
         The alert data will be plain JSON & needs to be converted into
         an alert instance before being dispatched to the pipeline
-        
+
         """
         logging.debug("Processing incoming Alert data to sinks ...")
         alert = Alert()

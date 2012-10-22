@@ -24,9 +24,9 @@ def requireConnection(funcRef):
 def requireGroup(funcRef):
     """
     _requireGroup_
-    
+
     Decorator method to enforce setting a group attribute
-    
+
     """
     def wrapper(self, *args, **opts):
         if getattr(self, "group", None) == None:
@@ -39,7 +39,7 @@ def requireGroup(funcRef):
 def requireUser(funcRef):
     """
     _requireUser_
-    
+
     Decorator method to enforce setting a user attribute for another
     object
     """
@@ -49,4 +49,3 @@ def requireUser(funcRef):
             raise RuntimeError, msg
         return funcRef(self, *args, **opts)
     return wrapper
-

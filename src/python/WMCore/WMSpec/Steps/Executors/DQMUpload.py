@@ -39,7 +39,7 @@ class DQMUpload(Executor):
 
     Execute a DQMUpload Step
 
-    """        
+    """
 
     def pre(self, emulator = None):
         """
@@ -109,7 +109,7 @@ class DQMUpload(Executor):
             stepReport.persist(reportLocation)
 
         return
-    
+
     def post(self, emulator = None):
         """
         _post_
@@ -120,7 +120,7 @@ class DQMUpload(Executor):
         # Another emulator check
         if emulator != None:
             return emulator.emulatePost(self.step)
-        
+
         print "Steps.Executors.DQMUpload.post called"
         return None
 

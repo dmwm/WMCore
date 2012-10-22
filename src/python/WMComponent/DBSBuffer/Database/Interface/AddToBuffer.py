@@ -26,7 +26,7 @@ class AddToBuffer(WMConnectionBase):
 
     def __init__(self, logger=None, dbfactory = None):
         pass
-    
+
     def addFile(self, file, dataset=0):
         """
         Add the file to the buffer
@@ -36,28 +36,28 @@ class AddToBuffer(WMConnectionBase):
 
         existingTransaction = self.beginTransaction()
 
-        bufferFile = DBSBufferFile(lfn = file['LFN'], size = file['Size'], events = file['TotalEvents'], 
-				cksum=file['Checksum'], dataset=dataset)
+        bufferFile = DBSBufferFile(lfn = file['LFN'], size = file['Size'], events = file['TotalEvents'],
+                                cksum=file['Checksum'], dataset=dataset)
 
-	runLumiList=file.getLumiSections()
-	runList=[x['RunNumber'] for x in runLumiList]
+        runLumiList=file.getLumiSections()
+        runList=[x['RunNumber'] for x in runLumiList]
 
-	for runNumber in runList:
-		lumis = [int(y['LumiSectionNumber']) for y in runLumiList if y['RunNumber']==runNumber]
-		run=Run(runNumber, *lumis)
-		bufferFile.addRun(run)
-                
+        for runNumber in runList:
+            lumis = [int(y['LumiSectionNumber']) for y in runLumiList if y['RunNumber']==runNumber]
+            run=Run(runNumber, *lumis)
+            bufferFile.addRun(run)
+
         if bufferFile.exists() == False:
             bufferFile.create()
             bufferFile.setLocation(se=file['SEName'], immediateSave = True)
-	else:
+        else:
             bufferFile.load()
-	# Lets add the file to DBS Buffer as well
+        # Lets add the file to DBS Buffer as well
         #UPDATE File Count
 
-	self.updateDSFileCount(dataset=dataset)
+        self.updateDSFileCount(dataset=dataset)
 
-	#Parent files
+        #Parent files
         bufferFile.addParents(file.inputFiles)
 
         self.commitTransaction(existingTransaction)
@@ -70,7 +70,7 @@ class AddToBuffer(WMConnectionBase):
         myThread = threading.currentThread()
 
         existingTransaction = self.beginTransaction()
-        
+
         factory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                              logger = myThread.logger,
                              dbinterface = myThread.dbi)
@@ -79,7 +79,7 @@ class AddToBuffer(WMConnectionBase):
 
         self.commitTransaction(existingTransaction)
         return
-    
+
     def addAlgo(self, algo):
         # Add the algo to the buffer (API Call)
         # dataset object contains the algo information
@@ -98,7 +98,7 @@ class AddToBuffer(WMConnectionBase):
         return
 
     def updateDSFileCount(self, dataset):
-	myThread = threading.currentThread()
+        myThread = threading.currentThread()
 
         existingTransaction = self.beginTransaction()
 
@@ -129,7 +129,7 @@ class AddToBuffer(WMConnectionBase):
     def loadDBSBufferFilesBulk(self, fileObjs):
         """
         _loadDBSBufferFilesBulk_
-        
+
         Yes, this is a stupid place to put it.
         No, there's not better place.
         """
@@ -154,7 +154,7 @@ class AddToBuffer(WMConnectionBase):
         results = loadFiles.execute(files = binds, conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
 
-        
+
         for entry in results:
             # Add loaded information
             dbsfile = DBSBufferFile(id=entry['id'])
@@ -163,7 +163,7 @@ class AddToBuffer(WMConnectionBase):
 
         for dbsfile in dbsFiles:
             if 'runInfo' in dbsfile.keys():
-                # Then we have to replace it with a real run
+            # Then we have to replace it with a real run
                 for r in dbsfile['runInfo'].keys():
                     run = Run(runNumber = r)
                     run.extend(dbsfile['runInfo'][r])
@@ -175,10 +175,10 @@ class AddToBuffer(WMConnectionBase):
                     newFile = DBSBufferFile(lfn = lfn)
                     dbsfile['parents'].add(newFile)
                 del dbsfile['parentLFNs']
-        
+
 
 
         self.commitTransaction(existingTransaction)
-    
+
 
         return dbsFiles

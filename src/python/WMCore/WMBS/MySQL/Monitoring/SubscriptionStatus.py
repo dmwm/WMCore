@@ -64,7 +64,7 @@ class SubscriptionStatus(DBFormatter):
                       GROUP BY wmbs_jobgroup.subscription, wmbs_job_state.name) job_info ON
                      wmbs_subscription.id = job_info.subscription
                  WHERE wmbs_sub_types.name = :subscriptionType"""
-    
+
     def format(self, result):
         """
         _format_
@@ -95,7 +95,7 @@ class SubscriptionStatus(DBFormatter):
             else:
                 if result["success_count"] != None:
                     filesetDict["running"] += result["job_count"]
-                    
+
         results = []
         for workflowName in workflows.keys():
             for filesetName in workflows[workflowName].keys():
@@ -113,15 +113,15 @@ class SubscriptionStatus(DBFormatter):
                     percentComplete = int((success + failure) / (success + failure + running) * 100)
                     percentSuccess = int(success / (success + failure + running) * 100)
 
-                subId = workflows[workflowName][filesetName]["subId"]                
-                    
+                subId = workflows[workflowName][filesetName]["subId"]
+
                 results.append({"subscription_id": subId,
                                 "workflow_name": workflowName,
                                 "fileset_name": filesetName,
                                 "percent_complete": percentComplete,
                                 "percent_success": percentSuccess})
         return results
-        
+
     def execute(self, subscriptionType = None, conn = None,
                 transaction = False):
         if subscriptionType == None:
@@ -131,5 +131,5 @@ class SubscriptionStatus(DBFormatter):
             bindVars = {"subscriptionType": subscriptionType}
             result = self.dbi.processData(self.typeSql, bindVars, conn = conn,
                                           transaction = transaction)
-            
+
         return self.format(result)

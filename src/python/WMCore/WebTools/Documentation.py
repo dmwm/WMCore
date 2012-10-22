@@ -3,7 +3,7 @@
 """
 The documentation for the framework
 """
-    
+
 
 
 
@@ -24,13 +24,13 @@ class Documentation(TemplatedPage):
         index = "<h1>Documentation</h1>\n<ol>"
         for t in templates:
             if '.tmpl' in t:
-                index = "%s\n<li><a href='%s'>%s</a></li>" % (index, 
-                                                      t.replace('.tmpl', ''), 
+                index = "%s\n<li><a href='%s'>%s</a></li>" % (index,
+                                                      t.replace('.tmpl', ''),
                                                       t.replace('.tmpl', ''))
         index = "%s\n<li><a href='https://twiki.cern.ch/twiki/bin/view/CMS/DMWebtools'>twiki</a>" % (index)
         index = "%s\n<ol>" % (index)
         return index
-    
+
     @expose
     def default(self, *args, **kwargs):
         """

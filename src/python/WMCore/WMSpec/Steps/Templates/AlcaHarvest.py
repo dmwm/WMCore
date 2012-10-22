@@ -67,6 +67,3 @@ class AlcaHarvest(Template):
 
         """
         return AlcaHarvestStepHelper(step)
-
-
-

@@ -53,9 +53,9 @@ def combineListOfDict(matchKey, baseList, applyList, errorKey = None, **kwargs):
             baseListDict.pop(aItem[matchKey])
         else:
             resultList.append(aItem)
-            
+
     resultList.extend(baseListDict.values())
-    
+
     if len(errorUrls) != 0:
         # update list of error urls (global wq, local wq)
         for resultDict in resultList:
@@ -65,7 +65,7 @@ def combineListOfDict(matchKey, baseList, applyList, errorKey = None, **kwargs):
                     errorKeyCollection = [resultDict[errorKey]]
                 else:
                     errorKeyCollection = resultDict[errorKey]
-                
+
                 for errorUrl, errorMsg in errorUrls.items():
                     if errorUrl in resultDict[errorKey]:
                         resultDict.setdefault("error", "")

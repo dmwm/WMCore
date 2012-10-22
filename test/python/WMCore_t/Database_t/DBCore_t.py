@@ -24,7 +24,7 @@ class DBCoreTest(unittest.TestCase):
                                 useDefault = False)
 
         return
-            
+
     def tearDown(self):
         """
         Delete the databases
@@ -81,7 +81,7 @@ class DBCoreTest(unittest.TestCase):
 
         assert len(resultSets) == 1, \
                "Error: Wrong number of ResultSets returned."
-        
+
         results = resultSets[0].fetchall()
 
         assert len(results) == 1, \
@@ -94,7 +94,7 @@ class DBCoreTest(unittest.TestCase):
                "Error: Column two is wrong."
         assert results[0][2] == "three", \
                "Error: Column three is wrong."
-               
+
         return
 
     def testProcessDataOneBind(self):
@@ -112,13 +112,13 @@ class DBCoreTest(unittest.TestCase):
 
         myThread = threading.currentThread()
         myThread.dbi.processData(insertSQL, binds = bindsA)
-        myThread.dbi.processData(insertSQL, binds = bindsB)        
+        myThread.dbi.processData(insertSQL, binds = bindsB)
 
         resultSets = myThread.dbi.processData(selectSQL, bindsA)
 
         assert len(resultSets) == 1, \
                "Error: Wrong number of ResultSets returned."
-        
+
         results = resultSets[0].fetchall()
 
         assert len(results) == 1, \
@@ -136,7 +136,7 @@ class DBCoreTest(unittest.TestCase):
 
         assert len(resultSets) == 1, \
                "Error: Wrong number of ResultSets returned."
-        
+
         results = resultSets[0].fetchall()
 
         assert len(results) == 1, \
@@ -148,7 +148,7 @@ class DBCoreTest(unittest.TestCase):
         assert results[0][1] == 2, \
                "Error: Column two is wrong."
         assert results[0][2] == "one", \
-               "Error: Column three is wrong."        
+               "Error: Column three is wrong."
 
         return
 
@@ -172,18 +172,18 @@ class DBCoreTest(unittest.TestCase):
 
         myThread = threading.currentThread()
         myThread.dbi.processData(insertSQL, binds = bindsA)
-        myThread.dbi.processData(insertSQL, binds = bindsB)        
+        myThread.dbi.processData(insertSQL, binds = bindsB)
 
         resultSets = myThread.dbi.processData(selectSQL, bindsA)
 
         assert len(resultSets) == 1, \
                "Error: Wrong number of ResultSets returned."
-        
+
         results = resultSets[0].fetchall()
 
         assert len(results) == 4, \
                "Error: Wrong number of rows returned."
-        
+
         for result in results:
             assert len(result) == 3, \
                    "Error: Wrong number of columns returned."
@@ -200,12 +200,12 @@ class DBCoreTest(unittest.TestCase):
 
         assert len(resultSets) == 1, \
                "Error: Wrong number of ResultSets returned."
-        
+
         results = resultSets[0].fetchall()
 
         assert len(results) == 2, \
                "Error: Wrong number of rows returned."
-        
+
         for result in results:
             assert len(result) == 3, \
                    "Error: Wrong number of columns returned."
@@ -216,7 +216,7 @@ class DBCoreTest(unittest.TestCase):
                     break
 
         assert len(bindsB) == 0, \
-               "Error: Missing rows from select."        
+               "Error: Missing rows from select."
 
         return
 
@@ -233,7 +233,7 @@ class DBCoreTest(unittest.TestCase):
 
         for i in range(1501):
             bindsB.append({"one": (i + 1) * 2, "two": i, "three": str(i * 5)})
-            
+
         insertSQL = "INSERT INTO test_tablea VALUES (:one, :two, :three)"
         selectSQL = \
           """SELECT column1, column2, column3 FROM test_tablea
@@ -241,16 +241,16 @@ class DBCoreTest(unittest.TestCase):
 
         myThread = threading.currentThread()
         myThread.dbi.processData(insertSQL, binds = bindsA)
-        myThread.dbi.processData(insertSQL, binds = bindsB)        
+        myThread.dbi.processData(insertSQL, binds = bindsB)
 
         resultSets = myThread.dbi.processData(selectSQL, bindsA)
         results = []
         for resultSet in resultSets:
             results.extend(resultSet.fetchall())
-        
+
         assert len(results) == 3001, \
                "Error: Wrong number of rows returned: %d" % len(results)
-        
+
         for result in results:
             assert len(result) == 3, \
                    "Error: Wrong number of columns returned."
@@ -270,7 +270,7 @@ class DBCoreTest(unittest.TestCase):
 
         assert len(results) == 1501, \
                "Error: Wrong number of rows returned."
-        
+
         for result in results:
             assert len(result) == 3, \
                    "Error: Wrong number of columns returned."
@@ -281,7 +281,7 @@ class DBCoreTest(unittest.TestCase):
                     break
 
         assert len(bindsB) == 0, \
-               "Error: Missing rows from select."                
+               "Error: Missing rows from select."
 
         return
 
@@ -296,10 +296,10 @@ class DBCoreTest(unittest.TestCase):
 
         bindsA = {"val1": 2012211901}
         bindsB = {"val1": 20122119010}
-        
+
         myThread = threading.currentThread()
         myThread.dbi.processData(insertSQL, binds = bindsA)
-        myThread.dbi.processData(insertSQL, binds = bindsB)        
+        myThread.dbi.processData(insertSQL, binds = bindsB)
 
         resultSets = myThread.dbi.processData(selectSQL)
         results = []
@@ -312,11 +312,9 @@ class DBCoreTest(unittest.TestCase):
         assert bindsA["val1"] in results, \
                "Error: Value one is missing."
         assert bindsB["val1"] in results, \
-               "Error: Value one is missing."        
+               "Error: Value one is missing."
 
         return
-    
+
 if __name__ == "__main__":
-    unittest.main()     
-                   
-    
+    unittest.main()

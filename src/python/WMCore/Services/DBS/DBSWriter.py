@@ -43,7 +43,7 @@ class _CreateDatasetOperator:
     def __init__(self, apiRef, workflow):
         self.apiRef = apiRef
         self.workflow = workflow
-        
+
     def __call__(self, pnode):
         if pnode.type != "CMSSW":
             return
@@ -52,22 +52,22 @@ class _CreateDatasetOperator:
         try:
             cfgInt = pnode.cfgInterface
             cfgMeta = cfgInt.configMetadata
-            cfgMeta['Type'] = self.workflow.parameters["RequestCategory"]      
+            cfgMeta['Type'] = self.workflow.parameters["RequestCategory"]
         except Exception, ex:
             msg = "Unable to Extract cfg data from workflow"
             msg += str(ex)
             logging.error(msg)
             return
-            
+
         for dataset in datasets:
             primary = DBSWriterObjects.createPrimaryDataset(
                 dataset, self.apiRef)
             algo = DBSWriterObjects.createAlgorithm(
                 dataset, cfgMeta, self.apiRef)
-            
+
             processed = DBSWriterObjects.createProcessedDataset(
                 primary, algo, dataset, self.apiRef)
-            
+
         return
 
 class _CreateMergeDatasetOperator:
@@ -80,91 +80,91 @@ class _CreateMergeDatasetOperator:
     def __init__(self, apiRef, workflow):
         self.apiRef = apiRef
         self.workflow = workflow
-    
+
     def __call__(self, pnode):
         if pnode.type != "CMSSW":
             return
         for dataset in pnode._OutputDatasets:
-            
+
             primary = DBSWriterObjects.createPrimaryDataset(
                 dataset, self.apiRef)
-            
+
             mergeAlgo = DBSWriterObjects.createMergeAlgorithm(dataset,
                                                               self.apiRef)
             DBSWriterObjects.createProcessedDataset(
                 primary, mergeAlgo, dataset, self.apiRef)
-            
+
             inputDataset = dataset.get('ParentDataset', None)
             if inputDataset == None:
                 continue
             processedDataset = dataset["ProcessedDataset"]
             self.apiRef.insertMergedDataset(
                 inputDataset, processedDataset, mergeAlgo)
-            
+
             # algorithm used when process jobs produce merged files directly
             # doesnt contain pset content - taken from processing (same hash)
             mergeDirectAlgo = DBSWriterObjects.createAlgorithm(
                 dataset, None, self.apiRef)
             self.apiRef.insertAlgoInPD(makeDSName2(dataset), mergeDirectAlgo)
-            
+
             logging.debug("ProcessedDataset: %s"%processedDataset)
             logging.debug("inputDataset: %s"%inputDataset)
             logging.debug("mergeAlgo: %s"%mergeAlgo)
         return
 
-    
+
 def _remapBlockParentage(dsPath, data):
     """
     _RemapBlockParentage
-    
+
     Remap the parentage of a block and its constiuent files
-    
+
     o Remove child relations - to be set by child ds when exported
     o Remove unmerged file and processed dataset parents
-    
+
     """
-        
+
     # TODO: Throw on unmerged migrations?
-    
+
     def dropNode(node):
-            logging.debug("_remapBlockParentage: Dropping %s node" % node.nodeName)
-            logging.debug("_remapBlockParentage: Node contents: %s" % node.toxml())
-            node.parentNode.removeChild(node)       
-    
+        logging.debug("_remapBlockParentage: Dropping %s node" % node.nodeName)
+        logging.debug("_remapBlockParentage: Node contents: %s" % node.toxml())
+        node.parentNode.removeChild(node)
+
     def unmergedDropper(node, name):
         # strip un-merged tags - how to do this better?
         if node.getAttribute(name).count('unmerged') != 0:
             dropNode(node)
 
     dsContents = minidom.parseString(data)
-    
+
     # remove other paths from proc ds - screws up ds parentage
     for proc in dsContents.getElementsByTagName('processed_dataset'):
         for path in proc.getElementsByTagName('path'):
             if path.getAttribute('dataset_path') != dsPath:
                 dropNode(path)
-    
+
     # remove file children - let this be set by a file setting its parents
     for child in dsContents.getElementsByTagName('file_child'):
         dropNode(child)
-    
+
     # remap processing ds parentage
     for proc_parent in \
         dsContents.getElementsByTagName('processed_dataset_parent'):
         unmergedDropper(proc_parent, 'path')
-        
+
     # remap file parentage
     for afile in dsContents.getElementsByTagName('file'):
         for aparent in afile.getElementsByTagName('file_parent'):
             unmergedDropper(aparent, 'lfn')
-    
+
     result = dsContents.toxml()
     dsContents.unlink()
     return result
-        
-    
-            
-        
+
+
+
+
 #  //
 # // Util lambda for matching files with the same dataset and se name
 #//
@@ -199,22 +199,22 @@ class DBSWriter:
         args = { "url" : url, "level" : 'ERROR'}
         args.update(contact)
         try:
-         self.dbs           = DbsApi(args)
-         self.args          = args
-         self.version       = args.get('version', None)
-         self.globalDBSUrl  = args.get('globalDBSUrl', None)
-         self.globalVersion = args.get('globalVersion', None)
-         if self.globalDBSUrl:
-             globalArgs = {'url': url, 'level': 'ERROR'}
-             globalArgs.update(contact)
-             self.globalDBS = DbsApi(globalArgs)
-         
+            self.dbs           = DbsApi(args)
+            self.args          = args
+            self.version       = args.get('version', None)
+            self.globalDBSUrl  = args.get('globalDBSUrl', None)
+            self.globalVersion = args.get('globalVersion', None)
+            if self.globalDBSUrl:
+                globalArgs = {'url': url, 'level': 'ERROR'}
+                globalArgs.update(contact)
+                self.globalDBS = DbsApi(globalArgs)
+
         except DbsException, ex:
             msg = "Error in DBSWriterError with DbsApi\n"
             msg += "%s\n" % formatEx(ex)
             raise DBSWriterError(msg)
         self.reader = DBSReader(**args)
-        
+
     def createDatasets(self, workflowSpec):
         """
         _createDatasets_
@@ -233,7 +233,7 @@ class DBSWriter:
             msg += "%s\n" % formatEx(ex)
             raise DBSWriterError(msg)
         return
-        
+
     def insertFilesForDBSBuffer(self, files, procDataset, algos,
                                 jobType = "NotMerge", insertDetectorData = False,
                                 maxFiles = 100, maxSize = 99999999, timeOut = None,
@@ -245,27 +245,27 @@ class DBSWriter:
         """
         #TODO: Whats the purpose of insertDetectorData
 
-	if len(files) < 1: 
-		return 
+        if len(files) < 1:
+            return
         affectedBlocks = []
         insertFiles =  []
         addedRuns=[]
         seName = None
-        
+
         #Get the algos in insertable form
         # logging.error("About to input algos")
         # logging.error(algos)
         ialgos = [DBSWriterObjects.createAlgorithmForInsert(dict(algo)) for algo in algos ]
 
         #print ialgos
-       
+
         for outFile in files:
             #  //
             # // Convert each file into a DBS File object
             #//
             lumiList = []
 
-	    #Somehing similar should be the real deal when multiple runs/lumi could be returned from wmbs file
+            #Somehing similar should be the real deal when multiple runs/lumi could be returned from wmbs file
 
             for runlumiinfo in outFile.getRuns():
                 lrun=long(runlumiinfo.run)
@@ -280,19 +280,19 @@ class DBSWriter:
                     )
                 #Only added if not added by another file in this loop, why waste a call to DBS
                 if lrun not in addedRuns:
-                	self.dbs.insertRun(run)
-                    	addedRuns.append(lrun) #save it so we do not try to add it again to DBS
-			logging.debug("run %s added to DBS " % str(lrun))
-                for alsn in runlumiinfo:    
-                	lumi = DbsLumiSection(
-                    		LumiSectionNumber = long(alsn),
-                    		StartEventNumber = 0,
-                    		EndEventNumber = 0,
-                    		LumiStartTime = 0,
-                    		LumiEndTime = 0,
-                    		RunNumber = lrun,
-                	)
-                	lumiList.append(lumi)
+                    self.dbs.insertRun(run)
+                    addedRuns.append(lrun) #save it so we do not try to add it again to DBS
+                    logging.debug("run %s added to DBS " % str(lrun))
+                for alsn in runlumiinfo:
+                    lumi = DbsLumiSection(
+                            LumiSectionNumber = long(alsn),
+                            StartEventNumber = 0,
+                            EndEventNumber = 0,
+                            LumiStartTime = 0,
+                            LumiEndTime = 0,
+                            RunNumber = lrun,
+                    )
+                    lumiList.append(lumi)
 
             logging.debug("lumi list created for the file")
 
@@ -321,21 +321,21 @@ class DBSWriter:
                     dbsfile['Adler32'] = str(outFile['checksums'][entry])
                 elif entry.lower() == 'md5':
                     dbsfile['Md5'] = str(outFile['checksums'][entry])
-            
 
-            
+
+
             #This check comes from ProdAgent, not sure if its required
             if len(outFile["locations"]) > 0:
-                  seName = list(outFile["locations"])[0]
-                  logging.debug("SEname associated to file is: %s"%seName)
+                seName = list(outFile["locations"])[0]
+                logging.debug("SEname associated to file is: %s"%seName)
             else:
                 msg = "Error in DBSWriter.insertFiles\n"
                 msg += "No SEname associated to file"
                 #print "FAKING seName for now"
-		#seName="cmssrm.fnal.gov"
+                #seName="cmssrm.fnal.gov"
                 raise DBSWriterError(msg)
             insertFiles.append(dbsfile)
-        #  //Processing Jobs: 
+        #  //Processing Jobs:
         # // Insert the lists of sorted files into the appropriate
         #//  fileblocks
 
@@ -389,18 +389,18 @@ class DBSWriter:
             filesToCommit.append(file)
             if len(filesToCommit) >= fileCommitLength:
                     # Only commit the files if there are more of them then the maximum length
-                    try:
-                        self.dbs.insertFiles(procDataset, filesToCommit, fileBlock)
-                        filesToCommit = []
-                        logging.debug("Inserted files: %s to FileBlock: %s" \
-                                      % ( ([ x['LogicalFileName'] for x in insertFiles ]),fileBlock['Name']))
-                    
-                    except DbsException, ex:
-                        msg = "Error in DBSWriter.insertFiles\n"
-                        msg += "Cannot insert processed files:\n"
-                        msg += " %s\n" % ([ x['LogicalFileName'] for x in insertFiles ],)
-                        msg += "%s\n" % formatEx(ex)
-                        raise DBSWriterError(msg)
+                try:
+                    self.dbs.insertFiles(procDataset, filesToCommit, fileBlock)
+                    filesToCommit = []
+                    logging.debug("Inserted files: %s to FileBlock: %s" \
+                                  % ( ([ x['LogicalFileName'] for x in insertFiles ]),fileBlock['Name']))
+
+                except DbsException, ex:
+                    msg = "Error in DBSWriter.insertFiles\n"
+                    msg += "Cannot insert processed files:\n"
+                    msg += " %s\n" % ([ x['LogicalFileName'] for x in insertFiles ],)
+                    msg += "%s\n" % formatEx(ex)
+                    raise DBSWriterError(msg)
 
 
         if len(filesToCommit) > 0:
@@ -409,19 +409,19 @@ class DBSWriter:
                 filesToCommit = []
                 logging.debug("Inserted files: %s to FileBlock: %s" \
                               % ( ([ x['LogicalFileName'] for x in insertFiles ]),fileBlock['Name']))
-                
+
             except DbsException, ex:
                 msg = "Error in DBSWriter.insertFiles\n"
                 msg += "Cannot insert processed files:\n"
                 msg += " %s\n" % ([ x['LogicalFileName'] for x in insertFiles ],)
                 msg += "%s\n" % formatEx(ex)
                 raise DBSWriterError(msg)
-            
+
 
         if not fileBlock in affectedBlocks:
             affectedBlocks.append(fileBlock)
 
-            
+
 
 
         ## Do bulk inserts now for DBS
@@ -440,9 +440,9 @@ class DBSWriter:
         #        fileBlock['OpenForWriting'] = '0'
         #        if not fileBlock in affectedBlocks:
         #            affectedBlocks.append(fileBlock)
-        #        
-        #            
-        #            
+        #
+        #
+        #
         #        # Then we need a new block
         #        try:
         #            fileBlock = DBSWriterObjects.getDBSFileBlock(
@@ -469,7 +469,7 @@ class DBSWriter:
         #                # NOTE To Anzar From Anzar (File cloning as in DBS API can be done here and then I can use Bulk insert on Merged files as well)
         #                self.dbs.insertMergedFile(file['ParentList'],
         #                                          file)
-        #                
+        #
         #            except DbsException, ex:
         #                msg = "Error in DBSWriter.insertFiles\n"
         #                msg += "Cannot insert merged file:\n"
@@ -488,15 +488,15 @@ class DBSWriter:
         #                filesToCommit = []
         #                logging.debug("Inserted files: %s to FileBlock: %s" \
         #                              % ( ([ x['LogicalFileName'] for x in insertFiles ]),fileBlock['Name']))
-        #            
+        #
         #            except DbsException, ex:
         #                msg = "Error in DBSWriter.insertFiles\n"
         #                msg += "Cannot insert processed files:\n"
         #                msg += " %s\n" % ([ x['LogicalFileName'] for x in insertFiles ],)
         #                msg += "%s\n" % formatEx(ex)
         #                raise DBSWriterError(msg)
-        #            
-        #            
+        #
+        #
         #
         #
         ## If we still have files to commit, commit them
@@ -510,20 +510,20 @@ class DBSWriter:
         #        filesToCommit = []
         #        logging.debug("Inserted files: %s to FileBlock: %s" \
         #                      % ( ([ x['LogicalFileName'] for x in insertFiles ]),fileBlock['Name']))
-        #        
+        #
         #    except DbsException, ex:
         #        msg = "Error in DBSWriter.insertFiles\n"
         #        msg += "Cannot insert processed files:\n"
         #        msg += " %s\n" % ([ x['LogicalFileName'] for x in insertFiles ],)
         #        msg += "%s\n" % formatEx(ex)
         #        raise DBSWriterError(msg)
-            
+
 
         if not fileBlock in affectedBlocks:
             affectedBlocks.append(fileBlock)
 
         return list(affectedBlocks)
-            
+
 
 
 
@@ -538,8 +538,8 @@ class DBSWriter:
         Process the files in the FwkJobReport instance and insert
         them into the associated datasets
 
-        A list of affected fileblock names is returned both for merged 
-        and unmerged fileblocks. Only merged blocks will have to be managed. 
+        A list of affected fileblock names is returned both for merged
+        and unmerged fileblocks. Only merged blocks will have to be managed.
         #for merged file
         #blocks to facilitate management of those blocks.
         #This list is not populated for processing jobs since we dont really
@@ -552,11 +552,11 @@ class DBSWriter:
         affectedBlocks = set()
 
         if len(fwkJobRep.files)<=0:
-           msg = "Error in DBSWriter.insertFiles\n"
-           msg += "No files found in FrameWorkJobReport for:\n"
-           msg += "==> JobSpecId: %s"%fwkJobRep.jobSpecId
-           msg += " Workflow: %s"%fwkJobRep.workflowSpecId
-           raise DBSWriterError(msg)
+            msg = "Error in DBSWriter.insertFiles\n"
+            msg += "No files found in FrameWorkJobReport for:\n"
+            msg += "==> JobSpecId: %s"%fwkJobRep.jobSpecId
+            msg += " Workflow: %s"%fwkJobRep.workflowSpecId
+            raise DBSWriterError(msg)
 
 
         for outFile in fwkJobRep.sortFiles():
@@ -565,9 +565,9 @@ class DBSWriter:
             #//
             seName = None
             if outFile.has_key("SEName"):
-               if outFile['SEName'] :
-                  seName = outFile['SEName']
-                  logging.debug("SEname associated to file is: %s"%seName)
+                if outFile['SEName'] :
+                    seName = outFile['SEName']
+                    logging.debug("SEname associated to file is: %s"%seName)
 ## remove the fallback to site se-name if no SE is associated to File
 ## because it's likely that there is some stage out problem if there
 ## is no SEName associated to the file.
@@ -575,7 +575,7 @@ class DBSWriter:
 #                if fwkJobRep.siteDetails.has_key("se-name"):
 #                   seName = fwkJobRep.siteDetails['se-name']
 #                   seName = str(seName)
-#                   logging.debug("site SEname: %s"%seName) 
+#                   logging.debug("site SEname: %s"%seName)
             if not seName:
                 msg = "Error in DBSWriter.insertFiles\n"
                 msg += "No SEname associated to files in FrameWorkJobReport for "
@@ -599,30 +599,30 @@ class DBSWriter:
                 raise DBSWriterError(msg)
 
             if len(dbsFiles)<=0:
-               msg="No DbsFile instances created. Not enough info in the FrameWorkJobReport for"
-               msg += "==> JobSpecId: %s"%fwkJobRep.jobSpecId
-               msg += " Workflow: %s"%fwkJobRep.workflowSpecId
-               raise DBSWriterError(msg)  
+                msg="No DbsFile instances created. Not enough info in the FrameWorkJobReport for"
+                msg += "==> JobSpecId: %s"%fwkJobRep.jobSpecId
+                msg += " Workflow: %s"%fwkJobRep.workflowSpecId
+                raise DBSWriterError(msg)
 
             for f in dbsFiles:
                 datasetName = makeDBSDSName(f)
                 hashName = "%s-%s" % (seName, datasetName)
-                
+
                 if not insertLists.has_key(hashName):
                     insertLists[hashName] = _InsertFileList(seName,
                                                             datasetName)
                 insertLists[hashName].append(f)
-                
+
                 if not orderedHashes.count(hashName):
                     orderedHashes.append(hashName)
-            
 
-        #  //Processing Jobs: 
+
+        #  //Processing Jobs:
         # // Insert the lists of sorted files into the appropriate
         #//  fileblocks
 
         for hash in orderedHashes:
-            
+
             fileList = insertLists[hash]
             procDataset = fileList[0]['Dataset']
 
@@ -653,7 +653,7 @@ class DBSWriter:
                     try:
                         self.dbs.insertMergedFile(mergedFile['ParentList'],
                                                   mergedFile)
-                        
+
                     except DbsException, ex:
                         msg = "Error in DBSWriter.insertFiles\n"
                         msg += "Cannot insert merged file:\n"
@@ -678,7 +678,7 @@ class DBSWriter:
                     msg += " %s\n" % (
                         [ x['LogicalFileName'] for x in fileList ],
                         )
-                    
+
                     msg += "%s\n" % formatEx(ex)
                     raise DBSWriterError(msg)
                 logging.debug("Inserted files: %s to FileBlock: %s"%( ([ x['LogicalFileName'] for x in fileList ]),fileBlock['Name']))
@@ -707,7 +707,7 @@ class DBSWriter:
         #//
 
         fileblockName = fileBlock['Name']
-        
+
         blockInstance = self.dbs.listBlocks(block_name=fileblockName)
         if len(blockInstance) > 1:
             msg = "Multiple Blocks matching name: %s\n" % fileblockName
@@ -729,7 +729,7 @@ class DBSWriter:
                     self.dbs.insertFiles(procDataset, filesToCommit, fileBlock)
                     filesToCommit = []
 
-                    
+
                 except DbsException, ex:
                     msg = "Error in DBSWriter.insertFiles\n"
                     msg += "Cannot insert processed files:\n"
@@ -737,8 +737,8 @@ class DBSWriter:
 
             # Attempting to migrate to global
             if self.globalDBSUrl:
-                
-                self.dbs.dbsMigrateBlock(srcURL = self.args['url'], 
+
+                self.dbs.dbsMigrateBlock(srcURL = self.args['url'],
                                          dstURL = self.globalDBSUrl,
                                          block_name = fileblockName,
                                          srcVersion = self.version,
@@ -752,8 +752,8 @@ class DBSWriter:
                 logging.error("Should've migrated block %s because it was already closed, but didn't" % (fileblockName))
             return True
 
-        
-        
+
+
         #  //
         # // We have an open block, sum number of files and file sizes
         #//
@@ -761,7 +761,7 @@ class DBSWriter:
         #fileCount = int(blockInstance.get('NumberOfFiles', 0))
         fileCount = len(fileBlock['files'])
         totalSize = float(blockInstance.get('BlockSize', 0))
-        
+
         msg = "Fileblock: %s\n ==> Size: %s Files: %s\n" % (
             fileblockName, totalSize, fileCount)
         logging.warning(msg)
@@ -779,29 +779,29 @@ class DBSWriter:
             closeBlock = True
             msg = "Closing Block Based on files: %s" % fileblockName
             logging.debug(msg)
-            
+
         if maxSize != None:
             if totalSize >= maxSize:
                 closeBlock = True
                 msg = "Closing Block Based on size: %s" % fileblockName
                 logging.debug(msg)
-                
+
 
         if closeBlock:
             # Now we need to commit files
             if len(filesToCommit) > 0:
-               try:
-                   self.dbs.insertFiles(procDataset, filesToCommit, fileBlock)
-                   filesToCommit = []
-                   #logging.debug("Inserted files: %s to FileBlock: %s" \
-                   #              % ( ([ x['LogicalFileName'] for x in insertFiles ]),fileBlock['Name']))
-                   
-               except DbsException, ex:
-                   msg = "Error in DBSWriter.insertFiles\n"
-                   msg += "Cannot insert processed files:\n"
-                   #msg += " %s\n" % ([ x['LogicalFileName'] for x in insertFiles ],)
-                   msg += "%s\n" % formatEx(ex)
-                   raise DBSWriterError(msg)
+                try:
+                    self.dbs.insertFiles(procDataset, filesToCommit, fileBlock)
+                    filesToCommit = []
+                    #logging.debug("Inserted files: %s to FileBlock: %s" \
+                    #              % ( ([ x['LogicalFileName'] for x in insertFiles ]),fileBlock['Name']))
+
+                except DbsException, ex:
+                    msg = "Error in DBSWriter.insertFiles\n"
+                    msg += "Cannot insert processed files:\n"
+                    #msg += " %s\n" % ([ x['LogicalFileName'] for x in insertFiles ],)
+                    msg += "%s\n" % formatEx(ex)
+                    raise DBSWriterError(msg)
             #  //
             # // Close the block
             #//
@@ -809,7 +809,7 @@ class DBSWriter:
                 DBSWriterObjects.createDBSFileBlock(fileblockName)
                 )
             if self.globalDBSUrl:
-                self.dbs.dbsMigrateBlock(srcURL = self.args['url'], 
+                self.dbs.dbsMigrateBlock(srcURL = self.args['url'],
                                          dstURL = self.globalDBSUrl,
                                          block_name = fileblockName,
                                          srcVersion = self.version,
@@ -824,8 +824,8 @@ class DBSWriter:
             else:
                 logging.error("Should've migrated block %s, but didn't" % (fileblockName))
         return closeBlock
-    
-        
+
+
 
     def migrateDatasetBlocks(self, inputDBSUrl, datasetPath, blocks):
         """
@@ -851,13 +851,13 @@ class DBSWriter:
         # // Hook onto input DBSUrl and verify that the dataset & blocks
         #//  exist
         reader = DBSReader(inputDBSUrl)
-        
+
         inputBlocks = reader.listFileBlocks(datasetPath)
-        
+
         for block in blocks:
             #  //
             # // Test block exists at source
-            #// 
+            #//
             if block not in inputBlocks:
                 msg = "Block name:\n ==> %s\n" % block
                 msg += "Not found in input dataset:\n ==> %s\n" % datasetPath
@@ -877,7 +877,7 @@ class DBSWriter:
                     msg += "Skipping Migration of that block"
                     logging.warning(msg)
                     continue
-                
+
             try:
                 xferData = reader.dbs.listDatasetContents(datasetPath,  block)
             except DbsException, ex:
@@ -887,9 +887,9 @@ class DBSWriter:
                 msg += "Block name:\n ==> %s\n" % block
                 msg += "%s\n" % formatEx(ex)
                 raise DBSWriterError(msg)
-            
+
             xferData = _remapBlockParentage(datasetPath, xferData)
-            
+
             try:
                 self.dbs.insertDatasetContents(xferData)
             except DbsException, ex:
@@ -900,10 +900,10 @@ class DBSWriter:
                 msg += "%s\n" % formatEx(ex)
                 raise DBSWriterError(msg)
             del xferData
-            
-        
+
+
         return
-    
+
     def importDatasetWithExistingParents(self, sourceDBS, sourceDatasetPath, targetDBS,
                       onlyClosed = True):
         """
@@ -915,7 +915,7 @@ class DBSWriter:
         - *sourceDBS* : URL for input DBS instance
 
         - *sourceDatasetPath* : Dataset Path to be imported
-        
+
         - *targetDBS* : URL for DBS to have dataset imported to
 
         """
@@ -947,7 +947,7 @@ class DBSWriter:
                         logging.info(sename)
                     continue
 
-            
+
             try:
                 xferData = reader.dbs.listDatasetContents(
                     sourceDatasetPath,  block
@@ -977,8 +977,8 @@ class DBSWriter:
                 msg += "Block has no locations defined: %s" % block
                 raise DBSWriterError(msg)
             for sename in locations:
-                self.dbs.addReplicaToBlock(block,sename)            
-        
+                self.dbs.addReplicaToBlock(block,sename)
+
         return
 
     def importDataset(self, sourceDBS, sourceDatasetPath, targetDBS,
@@ -994,7 +994,7 @@ class DBSWriter:
         - *sourceDatasetPath* : Dataset Path to be imported
 
         - *targetDBS* : URL for DBS to have dataset imported to
-                                                                                                              
+
         """
         reader = DBSReader(sourceDBS)
         inputBlocks = reader.getFileBlocksInfo(sourceDatasetPath, onlyClosed, locations = False)
@@ -1038,7 +1038,7 @@ class DBSWriter:
                 msg += "Block name:\n ==> %s\n" % block
                 msg += "%s\n" % formatEx(ex)
                 raise DBSWriterError(msg)
-                    
+
             locations = reader.listFileBlockLocation(block)
             # only empty file blocks can have no location
             if not locations and str(inputBlock['NumberOfFiles']) != "0":
@@ -1047,18 +1047,18 @@ class DBSWriter:
                 raise DBSWriterError(msg)
             for sename in locations:
                 self.dbs.addReplicaToBlock(block,sename)
-                                                                                
+
         return
-    
+
 
     def importDatasetWithoutParentage(self, sourceDBS, sourceDatasetPath, targetDBS,
                       onlyClosed = True):
         """
         _importDataset_
-                                                                                                                                      
+
         Import a dataset into the local scope DBS with one level parentage,
-        however it has severe limitation on its use due to the "ReadOnly" concept. 
-                                                                                                                                      
+        however it has severe limitation on its use due to the "ReadOnly" concept.
+
         - *sourceDBS* : URL for input DBS instance
 
         - *sourceDatasetPath* : Dataset Path to be imported
@@ -1093,8 +1093,8 @@ class DBSWriter:
                         self.dbs.addReplicaToBlock(block,sename)
                         logging.info(sename)
                     continue
-                                                                               
-            try:                                                       
+
+            try:
                 self.dbs.migrateDatasetContents(sourceDBS, targetDBS, sourceDatasetPath, block_name=block, noParentsReadOnly = True )
             except DbsException, ex:
                 msg = "Error in DBSWriter.importDatasetWithoutParentage\n"
@@ -1109,26 +1109,26 @@ class DBSWriter:
             if not locations and str(inputBlock['NumberOfFiles']) != "0":
                 msg = "Error in DBSWriter.importDatasetWithoutParentage\n"
                 msg += "Block has no locations defined: %s" % block
-                raise DBSWriterError(msg)            
+                raise DBSWriterError(msg)
             for sename in locations:
                 self.dbs.addReplicaToBlock(block,sename)
-                
+
         return
 
 
     def getOutputDatasetsWithPSet(payloadNode):
         """
         _getOutputDatasetsWithPSet_
-        
+
         Extract all the information about output datasets from the
         payloadNode object provided, including the {{}} format PSet cfg
-        
+
         Returns a list of DatasetInfo objects including App details
         from the node.
-        
+
         """
         result = []
-        
+
         for item in payloadNode._OutputDatasets:
             resultEntry = DatasetInfo()
             resultEntry.update(item)
@@ -1136,16 +1136,16 @@ class DBSWriter:
             resultEntry["ApplicationProject"] = payloadNode.application['Project']
             resultEntry["ApplicationVersion"] = payloadNode.application['Version']
             resultEntry["ApplicationFamily"] = item.get("OutputModuleName", "AppFamily")
-            
+
             try:
                 config = payloadNode.cfgInterface
                 psetStr = config.originalContent()
                 resultEntry['PSetContent'] = psetStr
             except Exception, ex:
                 resultEntry['PSetContent'] = None
-        
+
             result.append(resultEntry)
-            
+
         return _sortDatasets(result)
 
 

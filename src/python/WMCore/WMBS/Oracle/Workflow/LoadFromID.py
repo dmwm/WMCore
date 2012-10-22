@@ -12,4 +12,4 @@ __all__ = []
 from WMCore.WMBS.MySQL.Workflow.LoadFromID import LoadFromID as LoadWorkflowMySQL
 
 class LoadFromID(LoadWorkflowMySQL):
-    sql = LoadWorkflowMySQL.sql 
+    sql = LoadWorkflowMySQL.sql

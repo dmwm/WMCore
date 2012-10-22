@@ -73,11 +73,3 @@ class StoreFailMgr:
                 continue
 
         return stagedOutFiles
-
-
-
-
-
-
-
-

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" 
+"""
 _Monitoring_t_
 
 Unit tests for the WMBS Monitoring DAO objects.
@@ -28,7 +28,7 @@ class MonitoringTest(unittest.TestCase):
     def setUp(self):
         """
         _setUp_
-        
+
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.
         """
@@ -38,16 +38,16 @@ class MonitoringTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
 
-        myThread = threading.currentThread()        
+        myThread = threading.currentThread()
         self.daoFactory = DAOFactory(package="WMCore.WMBS",
                                      logger = myThread.logger,
-                                     dbinterface = myThread.dbi)        
+                                     dbinterface = myThread.dbi)
         return
-                                                                
+
     def tearDown(self):
         """
         _tearDown_
-        
+
         Drop all the WMBS tables.
         """
         self.testInit.clearDatabase()
@@ -89,7 +89,7 @@ class MonitoringTest(unittest.TestCase):
             assert subType in schemaTypes, \
                    "Error: Missing subscription type: %s" % subType
 
-        return    
+        return
 
     def testListRunningJobs(self):
         """
@@ -124,7 +124,7 @@ class MonitoringTest(unittest.TestCase):
 
         testJobC = Job(name = makeUUID(), files = [])
         testJobC["couch_record"] = makeUUID()
-        testJobC.create(group = testJobGroup)        
+        testJobC.create(group = testJobGroup)
         testJobC["state"] = "new"
 
         changeStateAction = self.daoFactory(classname = "Jobs.ChangeState")
@@ -148,9 +148,9 @@ class MonitoringTest(unittest.TestCase):
                 assert runningJob["state"] == testJobC["state"], \
                        "Error: Running job has wrong state."
                 assert runningJob["couch_record"] == testJobC["couch_record"], \
-                       "Error: Running job has wrong couch record."                
+                       "Error: Running job has wrong couch record."
 
         return
 
 if __name__ == "__main__":
-        unittest.main()
+    unittest.main()

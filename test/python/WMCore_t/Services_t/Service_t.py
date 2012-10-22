@@ -307,7 +307,7 @@ class ServiceTest(unittest.TestCase):
         self.assertRaises(IncompleteRead, myService.getData, 'foo', '')
         cherrypy.engine.exit()
         cherrypy.engine.stop()
-        
+
     @attr("integration")
     def testSlowResponse(self):
         """

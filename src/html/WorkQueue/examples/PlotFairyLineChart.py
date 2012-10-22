@@ -16,7 +16,7 @@ try:
 except:
     # Prior to 2.6 requires simplejson
     import simplejson as json
-    
+
 
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import STATES
 from WMQuality.WebTools.RESTClientAPI import makeRequest
@@ -78,7 +78,7 @@ hardCodedPlotData = urllib.quote(json.dumps(plotDefinition, ensure_ascii = True)
 
 # write result file / generate result html snippet
 outputFile = open(FILE_NAME, 'w')
-finalPage = pageTemplate % {"url": PLOT_SERVICE_URL, "plotType": "Scatter", 
+finalPage = pageTemplate % {"url": PLOT_SERVICE_URL, "plotType": "Scatter",
                             "hardCodedData": hardCodedPlotData}
 outputFile.write(finalPage)
 outputFile.close()

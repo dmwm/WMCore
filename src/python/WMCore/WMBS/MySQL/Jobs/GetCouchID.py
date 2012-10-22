@@ -32,7 +32,7 @@ class GetCouchID(DBFormatter):
             return None
 
         return result[0][0]
-        
+
     def execute(self, jobID, conn = None, transaction = False):
         """
         _execute_
@@ -51,9 +51,9 @@ class GetCouchID(DBFormatter):
                                           transaction = transaction)
 
             return self.formatDict(result)
-            
-        
+
+
         result = self.dbi.processData(self.sql, {"jobid": jobID}, conn = conn,
                                       transaction = transaction)
-        
+
         return self.format(result)

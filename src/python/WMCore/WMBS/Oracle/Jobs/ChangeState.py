@@ -14,5 +14,3 @@ from WMCore.WMBS.MySQL.Jobs.ChangeState import ChangeState as BaseDAO
 
 class ChangeState(BaseDAO):
     pass
-
-

@@ -28,8 +28,8 @@ class StageOutStepHelper(CoreHelper):
         target.input         = infile
         target.output        = outfile
         target.stageOut      = stageOut
-        self.data.filecount += 1 
-    
+        self.data.filecount += 1
+
     def disableRetries(self):
         """
             handy for testing, without the 10 minute retry loop
@@ -66,7 +66,7 @@ class StageOutStepHelper(CoreHelper):
         straight to merge is disabled -1 will be returned.
         """
         return getattr(self.data.output, "minMergeSize", -1)
-    
+
 class StageOut(Template):
     """
     _StageOut_
@@ -94,6 +94,3 @@ class StageOut(Template):
 
         """
         return StageOutStepHelper(step)
-
-
-

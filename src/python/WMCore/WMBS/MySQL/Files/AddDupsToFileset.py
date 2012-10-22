@@ -14,7 +14,7 @@ class AddDupsToFileset(DBFormatter):
                     INNER JOIN wmbs_fileset_files wff ON wff.fileid = wfd.id
                     WHERE wff.fileset = :fileset
                     AND wfd.lfn = :lfn"""
-    
+
     sql = """INSERT IGNORE INTO wmbs_fileset_files (fileid, fileset, insert_time)
                SELECT wmbs_file_details.id, :fileset, :insert_time
                FROM wmbs_file_details
@@ -44,8 +44,8 @@ class AddDupsToFileset(DBFormatter):
                       wmbs_subscription.workflow = wmbs_workflow.id
                     WHERE wmbs_file_details.lfn = :lfn AND
                           wmbs_workflow.name = :workflow AND
-                          wmbs_fileset_files.fileset != :fileset)""" 
-        
+                          wmbs_fileset_files.fileset != :fileset)"""
+
     def execute(self, file, fileset, workflow, conn = None, transaction = False):
         binds      = []
         availBinds = []
@@ -64,15 +64,15 @@ class AddDupsToFileset(DBFormatter):
             # We removed all the files
             # There's nothing more for us to do.
             return
-        
+
         for fileLFN in file:
             binds.append({"lfn": fileLFN, "fileset": fileset,
                           "insert_time": timestamp, "workflow": workflow})
             availBinds.append({"lfn": fileLFN, "fileset": fileset,
                                "workflow": workflow})
-            
+
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
         self.dbi.processData(self.sqlAvail, availBinds, conn = conn,
-                             transaction = transaction)        
+                             transaction = transaction)
         return

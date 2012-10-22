@@ -53,8 +53,3 @@ class Sandbox:
             #raise or return None here??
             raise RuntimeError, msg
         return os.path.join(self.directory, filename)
-
-
-
-
-

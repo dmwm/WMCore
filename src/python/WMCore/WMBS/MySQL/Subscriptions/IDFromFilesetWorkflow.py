@@ -22,7 +22,7 @@ class IDFromFilesetWorkflow(DBFormatter):
             return result[0][0]
         else:
             return False
-        
+
     def execute(self, workflow = None, fileset = None, conn = None,
                 transaction = False):
         result = self.dbi.processData(self.sql, {"workflow": workflow, "fileset": fileset},

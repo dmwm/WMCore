@@ -26,7 +26,7 @@ class FileBasedTest(unittest.TestCase):
     Test file based job splitting.
     """
 
-    
+
     def setUp(self):
         """
         _setUp_
@@ -58,7 +58,7 @@ class FileBasedTest(unittest.TestCase):
 
         #self.multipleFileSubscription.create()
         #self.singleFileSubscription.create()
-        
+
         return
 
     def tearDown(self):
@@ -91,7 +91,7 @@ class FileBasedTest(unittest.TestCase):
 
         assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                "ERROR: Job contains unknown files."
-        
+
         return
 
     def testMoreFiles(self):
@@ -103,9 +103,9 @@ class FileBasedTest(unittest.TestCase):
         """
         splitter = SplitterFactory()
         jobFactory = splitter(self.singleFileSubscription)
-        
+
         jobGroups = jobFactory(files_per_job = 10)
-        
+
         assert len(jobGroups) == 1, \
                "ERROR: JobFactory didn't return one JobGroup."
 
@@ -116,7 +116,7 @@ class FileBasedTest(unittest.TestCase):
 
         assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                "ERROR: Job contains unknown files."
-        
+
         return
 
     def test2FileSplit(self):
@@ -128,9 +128,9 @@ class FileBasedTest(unittest.TestCase):
         """
         splitter = SplitterFactory()
         jobFactory = splitter(self.multipleFileSubscription)
-        
+
         jobGroups = jobFactory(files_per_job = 2)
-        
+
         assert len(jobGroups) == 1, \
                "ERROR: JobFactory didn't return one JobGroup."
 
@@ -159,9 +159,9 @@ class FileBasedTest(unittest.TestCase):
         """
         splitter = SplitterFactory()
         jobFactory = splitter(self.multipleFileSubscription)
-        
+
         jobGroups = jobFactory(files_per_job = 3)
-        
+
         self.assertEqual(len(jobGroups), 1)
 
         self.assertEqual(len(jobGroups[0].jobs), 4)
@@ -178,7 +178,7 @@ class FileBasedTest(unittest.TestCase):
 
         self.assertEqual(len(fileList), 10)
 
-        return    
+        return
 
 if __name__ == '__main__':
     unittest.main()

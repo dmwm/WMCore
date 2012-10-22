@@ -15,7 +15,7 @@ def createWorkload(name="BasicProcessing"):
     workload.setOwner("DMWMTest")
     workload.setStartPolicy('DatasetBlock')
     workload.setEndPolicy('SingleShot')
-    
+
     #  //
     # // set up the production task
     #//
@@ -34,7 +34,7 @@ def createWorkload(name="BasicProcessing"):
         processed = "CRAFT09-PromptReco-v1",
         tier = "RECO",
         dbsurl = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
-    
+
     #  //
     # // rereco cmssw step
     #//
@@ -42,26 +42,26 @@ def createWorkload(name="BasicProcessing"):
     # TODO: Anywhere helper.data is accessed means we need a method added to the
     # type based helper class to provide a clear API.
     rerecoCmsswHelper = rerecoCmssw.getTypeHelper()
-    
-    
+
+
     rerecoCmsswHelper.cmsswSetup(
         "CMSSW_3_1_2",
         softwareEnvironment = " . /uscmst1/prod/sw/cms/bashrc prod"
         )
-    
+
     rerecoCmsswHelper.setDataProcessingConfig(
         "cosmics", "promptReco", globalTag = "GLOBAL::BALLS",
         writeTiers = ['RECO'])
-    
+
     rerecoCmsswHelper.addOutputModule(
         "outputRECO", primaryDataset = "Primary",
         processedDataset = "Processed",
         dataTier = "RECO")
-    
+
     #Add a stageOut step
     skimStageOutHelper = skimStageOut.getTypeHelper()
     skimLogArchHelper  = skimLogArch.getTypeHelper()
-    
-    
+
+
     rereco.addGenerator("BasicNaming")
     return workload

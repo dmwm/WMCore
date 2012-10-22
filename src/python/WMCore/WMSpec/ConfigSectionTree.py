@@ -50,7 +50,7 @@ def listNodes(topNode):
 def listChildNodes(topNode):
     """
     _listChildNodes_
-    
+
     ListNodes but without including the top node
     """
     result = []
@@ -205,12 +205,12 @@ def nodeIterator(node):
 def nodeChildIterator(node):
     """
     _nodeChildeIterator_
-    
+
     iterate over all nodes in order, except for the top node passed to this method
     """
     for i in listChildNodes(node):
         yield getNode(node, i)
-    
+
 def firstGenNodeChildIterator(node):
     """
     _firstGenNodeChildIterator_
@@ -320,6 +320,7 @@ class TreeHelper:
         deleteNode(self.data, nodeName)
         return
 
+
     def allNodeNames(self):
         """get list of all known node names in the tree containing this node"""
         return allNodeNames(self.data)
@@ -344,7 +345,7 @@ class TreeHelper:
         """
         for i in listNodes(self.data):
             yield getNode(self.data, i)
-            
+
     def nodeChildIterator(self):
         """
         generator for processing all subnodes in execution order
@@ -359,7 +360,7 @@ class TreeHelper:
         Iterate over all the first generation child nodes.
         """
         for i in listFirstGenChildNodes(self.data):
-            yield getNode(self.data, i)        
+            yield getNode(self.data, i)
 
     def pythoniseDict(self, **options):
         """
@@ -438,5 +439,3 @@ class ConfigSectionTree(ConfigSection):
         self.tree.section_("children")
         self.tree.childNames = []
         self.tree.parent = None
-
-

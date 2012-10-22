@@ -23,4 +23,3 @@ class AddChecksumByLFN(MySQLAddChecksumByLFN):
              WHERE NOT EXISTS (SELECT fileid FROM dbsbuffer_file_checksums WHERE
                                fileid = (SELECT id FROM dbsbuffer_file WHERE lfn = :lfn)
                                AND typeid = (SELECT id FROM dbsbuffer_checksum_type WHERE type = :cktype))"""
-

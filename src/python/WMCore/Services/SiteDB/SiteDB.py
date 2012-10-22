@@ -16,8 +16,8 @@ from WMCore.Services.Service import Service
 from WMCore.Services.JSONParser.JSONParser import JSONParser
 from WMCore.Services.EmulatorSwitch import emulatorHook
 
-# emulator hook is used to swap the class instance 
-# when emulator values are set. 
+# emulator hook is used to swap the class instance
+# when emulator values are set.
 # Look WMCore.Services.EmulatorSwitch module for the values
 @emulatorHook
 class SiteDBJSON(Service):
@@ -196,4 +196,3 @@ class SiteDBJSON(Service):
 #        # need to call CMSNametoPhEDExNode?cms_name= but can't find a way to do
 #        # that. So simply raise an error
 #        raise ValueError, "Unable to find CMS name for \'%s\'" % node
-

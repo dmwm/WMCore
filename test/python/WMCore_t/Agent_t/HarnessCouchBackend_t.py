@@ -95,4 +95,3 @@ class HarnessCouchBackend_t(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

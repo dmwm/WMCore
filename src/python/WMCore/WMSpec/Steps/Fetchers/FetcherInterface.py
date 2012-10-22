@@ -35,7 +35,3 @@ class FetcherInterface(object):
         msg = "FetcherInterface.__call__(wmTask) not overridden by:\n"
         msg += "%s implementation\n" % self.__class__.__name__
         raise NotImplementedError, msg
-
-
-
-

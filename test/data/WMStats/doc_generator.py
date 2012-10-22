@@ -5,10 +5,10 @@ NUM_OF_REQUEST = 30
 ITERATIONS =50 # number of jobs updated
 NUM_OF_JOBS_PER_REQUEST = 10
 #To use curl to insert doc
-#curl -d @sample_docs.json -X POST -H "Content-Type:application/json" $DB_URL/_bulk_docs 
+#curl -d @sample_docs.json -X POST -H "Content-Type:application/json" $DB_URL/_bulk_docs
 
 def generate_reqmgr_requests(number=NUM_OF_REQUEST):
-    """ 
+    """
     generate the request with following structure
       {
        "_id": "cmsdataops_sryu_test4_120111_114950_128",
@@ -43,8 +43,8 @@ def generate_reqmgr_requests(number=NUM_OF_REQUEST):
            "cmsdataops"
        ]
     }
-    """   
-    docs = [] 
+    """
+    docs = []
     for i in xrange(number):
         doc = {"_id": "test_workflow_%s" % i,
                "inputdataset": "/Photon/Run2011A-v1/RAW",
@@ -61,14 +61,14 @@ def generate_reqmgr_requests(number=NUM_OF_REQUEST):
                                   {"status": "assignment-approved", "update_time": 1326304216},
                                   {"status": "assigned", "update_time": 1326304227}
                                  ],
-                "site_white_list": ["T1_DE_KIT"], 
+                "site_white_list": ["T1_DE_KIT"],
                 "teams": ["cmsdataops"]
                 }
         docs.append(doc)
     return docs
 
 def generate_agent_requests(number=NUM_OF_REQUEST, iterations=ITERATIONS):
-    """ 
+    """
     generate the request with following structure
       {
        "_id": "af27057919546ff8f3fc8d7f18233355",
@@ -96,7 +96,7 @@ def generate_agent_requests(number=NUM_OF_REQUEST, iterations=ITERATIONS):
     """
     current_time = int(time.time())
     docs = []
-    for cycle in xrange(iterations): 
+    for cycle in xrange(iterations):
         for i in xrange(number):
             doc = {"status": {"inWMBS": 12,
                               "submitted": {"retry": 2, "running": 2, "pending": 2, "first": 2},
@@ -106,10 +106,10 @@ def generate_agent_requests(number=NUM_OF_REQUEST, iterations=ITERATIONS):
                               "cooloff": 2,
                               "success": 2
                              },
-                    
+
                 "workflow": "test_workflow_%s" % i,
                 "timestamp": current_time + (cycle * 10),
-                "sites": {"T1_DE_KIT": 
+                "sites": {"T1_DE_KIT":
                              {
                               "submitted": {"retry": 1, "running": 1, "pending": 1, "first": 1},
                               "failure": {"exception": 1, "create": 1, "submit": 1},
@@ -118,7 +118,7 @@ def generate_agent_requests(number=NUM_OF_REQUEST, iterations=ITERATIONS):
                               "cooloff": 1,
                               "success": 1
                              },
-                          "T1_US_FNAL": 
+                          "T1_US_FNAL":
                              {
                               "submitted": {"retry": 1, "running": 1, "pending": 1, "first": 1},
                               "failure": {"exception": 1, "create": 1, "submit": 1},
@@ -135,7 +135,7 @@ def generate_agent_requests(number=NUM_OF_REQUEST, iterations=ITERATIONS):
             }
             docs.append(doc)
     return docs
-   
+
 
 def generate_jobsummary(request, number=NUM_OF_JOBS_PER_REQUEST):
     """
@@ -163,20 +163,20 @@ def generate_jobsummary(request, number=NUM_OF_JOBS_PER_REQUEST):
                  'location': singlefile.get('locations', None),
                  'checksums': singlefile.get('checksums', {}),
                      'size': singlefile.get('size', None) } for singlefile in job["fwjr"].getAllFiles() if singlefile ]
-                     
-                     
-    job status 
-    ['new', 'created', 'executing', 'complete', 'createfailed', 'submitfailed', 
+
+
+    job status
+    ['new', 'created', 'executing', 'complete', 'createfailed', 'submitfailed',
      'jobfailed', 'createcooloff',  'submitcooloff', 'jobcooloff', 'success',
      'exhausted', 'killed']
     """
-    
+
     #TODO: Make more realistic
     docs = []
-    statusList = ['new', 'created', 'executing', 'complete', 'createfailed', 'submitfailed', 
+    statusList = ['new', 'created', 'executing', 'complete', 'createfailed', 'submitfailed',
      'jobfailed', 'createcooloff',  'submitcooloff', 'jobcooloff', 'success',
      'exhausted', 'killed']
-    
+
     for i in xrange(number):
         status = statusList[random.randint(0, len(statusList)-1)]
         errmsgs = {}
@@ -189,9 +189,9 @@ def generate_jobsummary(request, number=NUM_OF_JOBS_PER_REQUEST):
             exitCode = 0
 
         jobSummary = {"_id": "jobid_%s_%s" % (request, i),
-                  "type": "jobsummary", 
+                  "type": "jobsummary",
                   "retrycount": random.randint(0,5),
-                  "workflow": request, 
+                  "workflow": request,
                   "task": "/%s/task_%s" % (request, i),
                   "state": status,
                   "site": "T1_US_FNAL",
@@ -222,21 +222,18 @@ if __name__ == "__main__":
                         default=NUM_OF_REQUEST,
                         type="int",
                         help="The number of requests to simulate, default=%s" % NUM_OF_REQUEST)
-    
+
         return parser.parse_args()[0]
-    
+
     options = parse_opts()
     reqmgr_requests = generate_reqmgr_requests(options.requests)
     agent_requests = generate_agent_requests(options.requests, options.iterations)
-    
+
     docList = []
     docList.extend(reqmgr_requests)
     docList.extend(agent_requests)
     for req in agent_requests:
         docList.extend(generate_jobsummary(req['workflow']))
     docs = {"docs": docList};
-    
+
     json.dump(docs, open("sample_docs.json", "w+"))
-    
-    
-    

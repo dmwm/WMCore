@@ -243,17 +243,17 @@ class ConfigurationTest(unittest.TestCase):
         pythonise = config.SectionA.pythonise_()
 
         assert "SectionA.section_('Section1')" in pythonise, "Pythonise failed: Could not find Section1"
-        assert "SectionA.Section1.x = 100"     in pythonise, "Pythonise failed: Could not find x"        
-        
+        assert "SectionA.Section1.x = 100"     in pythonise, "Pythonise failed: Could not find x"
+
         self.assertEqual(config.listSections_(), ['SectionB', 'SectionA'])
         self.assertEqual(config.SectionA.listSections_(), ['Section2', 'Section1'])
-    
-    
+
+
     def testG_testStaticReferenceToConfigurationInstance(self):
         """
         test Configuration.getInstance() which returns reference
         to the Configuration object instance.
-        
+
         """
         config = Configuration()
         instance = Configuration.getInstance()
@@ -262,13 +262,13 @@ class ConfigurationTest(unittest.TestCase):
         self.assertTrue(hasattr(instance, "testsection"))
         config.testsection.var = 10
         self.assertEquals(instance.testsection.var, 10)
-        
-        
+
+
     def testH_ConfigSectionDictionariseInternalChildren(self):
-        """        
+        """
         The test checks if any item of the dictionary_whole_tree_()
         result is not unexpanded instance of ConfigSection.
-        
+
         """
         config = ConfigSection("config")
         config.value1 = "MyValue1"
@@ -280,7 +280,7 @@ class ConfigurationTest(unittest.TestCase):
         for values in d.values():
             self.assertFalse(isinstance(values, ConfigSection))
         self.assertEqual(d["Task1"]["subSection"]["value3"], "MyValue3")
-        
+
 
 if __name__ == '__main__':
     unittest.main()

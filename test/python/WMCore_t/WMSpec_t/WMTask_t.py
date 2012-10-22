@@ -61,9 +61,9 @@ class WMTaskTest(unittest.TestCase):
         task2a = task1.addTask("task2a")
         task2b = task1.addTask("task2b")
         task2c = task1.addTask("task2c")
-        
+
         task3 = task2a.addTask("task3")
-        
+
         step1 = makeWMStep("step1")
         step1.addStep("step1a")
         step1.addStep("step1b")
@@ -98,7 +98,7 @@ class WMTaskTest(unittest.TestCase):
         self.assertEqual(task2a.getStep("step4"), None)
         self.assertEqual(task2b.getStep("step2"), None)
         self.assertEqual(task2c.getStep("step1"), None)
-        
+
         self.assertEqual(task1.listNodes(), ['task1', 'task2a', 'task3', 'task2b', 'task2c'])
         return
 
@@ -134,7 +134,7 @@ class WMTaskTest(unittest.TestCase):
                "Error: Site missing from black list."
 
         return
-               
+
     def testJobSplittingArgs(self):
         """
         _testJobSplittingArgs_
@@ -149,7 +149,7 @@ class WMTaskTest(unittest.TestCase):
 
         assert testTask.taskType() == "Processing", \
                "Error: Wrong task type."
-        
+
         testTask.setSplittingAlgorithm("MadeUpAlgo", events_per_job = 100,
                                        max_job_size = 24,
                                        one_more_param = "Hello")
@@ -258,7 +258,7 @@ class WMTaskTest(unittest.TestCase):
                "Error: Wrong number of blocks in white list."
         assert "Block6" in testTask.inputBlockWhitelist(), \
                "Error: Block missing from white list."
-        
+
         testTask.setInputBlockBlacklist(["Block7", "Block8"])
 
         assert len(testTask.inputBlockBlacklist()) == 2, \
@@ -267,7 +267,7 @@ class WMTaskTest(unittest.TestCase):
                "Error: Block missing from black list."
         assert "Block8" in testTask.inputBlockBlacklist(), \
                "Error: Block missing from black list."
-        
+
         testTask.setInputRunWhitelist([6])
 
         assert len(testTask.inputRunWhitelist()) == 1, \
@@ -283,7 +283,7 @@ class WMTaskTest(unittest.TestCase):
                "Error: Run missing from black list."
         assert 8 in testTask.inputRunBlacklist(), \
                "Error: Run missing from black list."
-               
+
         return
 
 
@@ -355,20 +355,20 @@ class WMTaskTest(unittest.TestCase):
         return
 
     def testProcessingVerAndAcquisitionEra(self):
-       """
-       _testProcessingVerAndAcquisitionEra_
-
-       Test that we can add a processing version and acquisition era,
-       and then get it back.
-       """
-
-       testTask = makeWMTask("TestTask")
-       testTask.setAcquisitionEra("StoneAge")
-       testTask.setProcessingVersion("vLast")
-
-       self.assertEqual(testTask.getAcquisitionEra(), "StoneAge")
-       self.assertEqual(testTask.getProcessingVersion(), "vLast")
-       return
+        """
+        _testProcessingVerAndAcquisitionEra_
+        
+        Test that we can add a processing version and acquisition era,
+        and then get it back.
+        """
+        
+        testTask = makeWMTask("TestTask")
+        testTask.setAcquisitionEra("StoneAge")
+        testTask.setProcessingVersion("vLast")
+        
+        self.assertEqual(testTask.getAcquisitionEra(), "StoneAge")
+        self.assertEqual(testTask.getProcessingVersion(), "vLast")
+        return
 
     def testParameters(self):
         """
@@ -388,7 +388,7 @@ class WMTaskTest(unittest.TestCase):
         # should be the taskType
         testTask.setTaskType("SillyTask")
         self.assertEqual(testTask.getPrimarySubType(), "SillyTask")
-        
+
         testTask.setPrimarySubType(subType = "subType")
         self.assertEqual(testTask.getPrimarySubType(), "subType")
         return
@@ -398,7 +398,7 @@ class WMTaskTest(unittest.TestCase):
         runs=['3','4']
         lumis=['1,4,23,45', '5,84,234,445']
         expected = {'3':[[1,4],[23,45]],'4':[[5,84],[234,445]]}
-        
+
         #working
         self.assertEqual(buildLumiMask(runs, lumis), expected, "buildLumiMask")
 
@@ -487,6 +487,7 @@ class WMTaskTest(unittest.TestCase):
         self.assertEqual(childrenNumber, 2, "Error: Wrong number of children tasks")
 
         return
+
 
 if __name__ == '__main__':
     unittest.main()

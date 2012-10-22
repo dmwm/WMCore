@@ -48,8 +48,8 @@ def globalQueue(logger = None, dbi = None, **kwargs):
     """
     defaults = {'PopulateFilesets' : False,
                 'LocalQueueFlag': False,
-                'SplittingMapping' : {'DatasetBlock' : 
-                                        {'name': 'Dataset', 
+                'SplittingMapping' : {'DatasetBlock' :
+                                        {'name': 'Dataset',
                                          'args': {}}
                                       },
                 }
@@ -160,7 +160,7 @@ class WorkQueue(WorkQueueBase):
                                                    {'name': 'ResubmitBlock',
                                                     'args': {}}
                                                   )
-        
+
         self.params.setdefault('EndPolicySettings', {})
 
         assert(self.params['TrackLocationOrSubscription'] in ('subscription',
@@ -288,7 +288,7 @@ class WorkQueue(WorkQueueBase):
                                            ChildQueueUrl = None, WMBSUrl = None)
 
     def getWork(self, siteJobs):
-        """ 
+        """
         Get available work from the queue, inject into wmbs & mark as running
 
         siteJob is dict format of {site: estimateJobSlot}

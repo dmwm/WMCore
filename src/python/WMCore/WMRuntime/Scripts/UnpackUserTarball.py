@@ -77,7 +77,7 @@ def UnpackUserTarball():
 
         # Is it a URL or a file that exists in the jobDir?
         if splitResult[0] in ['xrootd', 'root']:
-            print "Fetching tarball %s through xrootd" % tarball                
+            print "Fetching tarball %s through xrootd" % tarball
             try:
                 subprocess.check_call(['xrdcp', '-d', '1', '-f', tarball, 'TEMP_TARBALL.tgz'])
                 subprocess.check_call(['tar', 'xzf', 'TEMP_TARBALL.tgz'])
@@ -87,7 +87,7 @@ def UnpackUserTarball():
             finally:
                 if os.path.exists('TEMP_TARBALL.tgz'):
                     os.unlink('TEMP_TARBALL.tgz')
-                    
+
         elif splitResult[0] in ['http','https'] and splitResult[1]:
             retriever = getRetriever( splitResult[0] )
             with tempfile.NamedTemporaryFile() as tempFile:

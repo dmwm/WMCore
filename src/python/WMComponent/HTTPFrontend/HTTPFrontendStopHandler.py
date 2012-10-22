@@ -17,5 +17,3 @@ class HTTPFrontendStopHandler(BaseHandler):
      # this we overload from the base handler
     def __call__(self, event, payload):
         self.component.stop()
-
-

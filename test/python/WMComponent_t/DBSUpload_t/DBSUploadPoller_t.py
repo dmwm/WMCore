@@ -40,10 +40,10 @@ from WMComponent.DBSUpload.DBSInterface import *
 
 class DBSUploadTest(unittest.TestCase):
     """
-    TestCase for DBSUpload module 
-    
+    TestCase for DBSUpload module
+
     Note:
-      This fails if you use the in-memory syntax for sqlite 
+      This fails if you use the in-memory syntax for sqlite
       i.e. (DATABASE = sqlite://)
     """
     _maxMessage = 10
@@ -52,7 +52,7 @@ class DBSUploadTest(unittest.TestCase):
     def setUp(self):
         """
         _setUp_
-        
+
         setUp function for unittest
 
         """
@@ -60,16 +60,16 @@ class DBSUploadTest(unittest.TestCase):
         self.couchDB      = "config_test"
         self.configURL    = "RANDOM;;URL;;NAME"
         self.configString = "This is a random string"
-        
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = 
+        self.testInit.setSchema(customModules =
                                 ["WMComponent.DBS3Buffer",
                                  'WMCore.Agent.Database'],
                                 useDefault = False)
         self.testInit.setupCouch(self.couchDB, "GroupUser", "ConfigCache")
-      
+
         myThread = threading.currentThread()
         self.bufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                         logger = myThread.logger,
@@ -78,7 +78,7 @@ class DBSUploadTest(unittest.TestCase):
         locationAction = self.bufferFactory(classname = "DBSBufferFiles.AddLocation")
         locationAction.execute(siteName = "se1.cern.ch")
         locationAction.execute(siteName = "se1.fnal.gov")
-        locationAction.execute(siteName = "malpaquet") 
+        locationAction.execute(siteName = "malpaquet")
 
 
         # Set heartbeat
@@ -95,7 +95,7 @@ class DBSUploadTest(unittest.TestCase):
         f = open(psetPath, 'w')
         f.write(self.configString)
         f.close()
-        
+
         configCache.addConfig(newConfig = psetPath, psetHash = None)
         configCache.save()
         self.configURL = "%s;;%s;;%s" % (os.environ["COUCHURL"],
@@ -107,10 +107,10 @@ class DBSUploadTest(unittest.TestCase):
     def tearDown(self):
         """
         _tearDown_
-        
+
         tearDown function for unittest
         """
-        
+
         self.testInit.clearDatabase(modules = ["WMComponent.DBS3Buffer",
                                                'WMCore.Agent.Database'])
 
@@ -161,11 +161,11 @@ class DBSUploadTest(unittest.TestCase):
         # these are destination addresses where AlertProcessor:Receiver listens
         config.section_("Alert")
         config.Alert.address = "tcp://127.0.0.1:5557"
-        config.Alert.controlAddr = "tcp://127.0.0.1:5559"        
+        config.Alert.controlAddr = "tcp://127.0.0.1:5559"
         # configure threshold of DBS upload queue size alert threshold
         # reference: trac ticket #1628
         config.DBSUpload.alertUploadQueueSize = 2000
-        
+
         return config
 
 
@@ -322,7 +322,7 @@ class DBSUploadTest(unittest.TestCase):
         # Both of the parent blocks should have transferred
         # So the child block should now transfer
         testDBSUpload.algorithm()
-        
+
         result = myThread.dbi.processData("SELECT status FROM dbsbuffer_block")[0].fetchall()
         self.assertEqual(result, [('InGlobalDBS',), ('InGlobalDBS',), ('Open',)])
 
@@ -390,7 +390,7 @@ class DBSUploadTest(unittest.TestCase):
             testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
                                   appFam = tier, psetHash = "GIBBERISH_PART2",
                                   configContent = self.configURL)
-            testFile.setDatasetPath(datasetPath)        
+            testFile.setDatasetPath(datasetPath)
             testFile.addRun(Run( 1, *[46]))
             testFile.create()
 
@@ -413,7 +413,7 @@ class DBSUploadTest(unittest.TestCase):
             testFile.setAlgorithm(appName = name, appVer = "CMSSW_3_1_1",
                                   appFam = tier, psetHash = "GIBBERISH",
                                   configContent = self.configURL)
-            testFile.setDatasetPath('/%s/%s_3/%s' % (name, name, tier))        
+            testFile.setDatasetPath('/%s/%s_3/%s' % (name, name, tier))
             testFile.addRun(Run( 1, *[46]))
             testFile.create()
 
@@ -426,7 +426,7 @@ class DBSUploadTest(unittest.TestCase):
         result    = listBlocks(apiRef = globeAPI, datasetPath = '/%s/%s_3/%s' % (name, name, tier))
         self.assertEqual(len(result), 1)
 
-        
+
         # Well, all the blocks got there, so we're done
         return
 
@@ -612,7 +612,7 @@ class DBSUploadTest(unittest.TestCase):
 
 
         return
-    
+
     @attr('integration')
     def testF_DBSUploadQueueSizeCheckForAlerts(self):
         """
@@ -621,21 +621,21 @@ class DBSUploadTest(unittest.TestCase):
         DBSUploadPoller.uploadBlocks() method.
         As done here, it probably can't be deterministic, yet the feature
         shall be checked.
-        
+
         """
         sizeLevelToTest = 1
         myThread = threading.currentThread()
         config = self.createConfig()
         # threshold / value to check
         config.DBSUpload.alertUploadQueueSize = sizeLevelToTest
-        
+
         # without this uploadBlocks method returns immediately
         name = "ThisIsATest_%s" % (makeUUID())
         tier = "RECO"
         nFiles = sizeLevelToTest + 1
         files = self.getFiles(name = name, tier = tier, nFiles = nFiles)
         datasetPath = '/%s/%s/%s' % (name, name, tier)
-        
+
         # load components that are necessary to check status
         # (this seems necessary, else some previous tests started failing)
         factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")
@@ -643,13 +643,13 @@ class DBSUploadTest(unittest.TestCase):
 
         dbsInterface = DBSInterface(config = config)
         localAPI = dbsInterface.getAPIRef()
-        globeAPI = dbsInterface.getAPIRef(globalRef = True)        
+        globeAPI = dbsInterface.getAPIRef(globalRef = True)
         testDBSUpload = DBSUploadPoller(config)
         # this is finally where the action (alert) should be triggered from
         testDBSUpload.algorithm()
 
         return
-                
+
 
 if __name__ == '__main__':
     unittest.main()

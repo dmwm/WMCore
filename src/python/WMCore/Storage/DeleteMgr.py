@@ -62,7 +62,7 @@ class DeleteMgr:
 
         if self.override == False:
             self.siteCfg = loadSiteLocalConfig()
-            
+
         if self.override:
             self.initialiseOverride()
         else:
@@ -335,6 +335,3 @@ class DeleteMgr:
 
 ##    mgr.searchTFC(lfn)
 ##    mgr(LFN = lfn, PFN = pfn, GUID=None)
-
-
-

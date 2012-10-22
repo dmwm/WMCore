@@ -49,7 +49,7 @@ def usersInGroup(groupName):
     userIds = groupAssocs.execute(groupId)
     userNames =  factory(classname = "Requestor.NameFromID")
     for userId in userIds:
-       result.append(userNames.execute(userId))
+        result.append(userNames.execute(userId))
     return result
 
 
@@ -67,4 +67,3 @@ def priority(groupName):
     """ returns the priority of the group """
     factory = DBConnect.getConnection()
     return factory(classname = "Group.GetPriority")
-

@@ -12,5 +12,3 @@ from WMCore.WMBS.MySQL.Subscriptions.SucceededJobs import SucceededJobs as Succe
 
 class SucceededJobs(SucceededJobsMySQL):
     pass
-
-

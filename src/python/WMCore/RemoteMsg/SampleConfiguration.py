@@ -5,11 +5,11 @@ config = Configuration()
 
 
 # If used within a WMCore component, just include the RemoteMsg section
-# in your WMCore configuration file (and don't forget to set the 
+# in your WMCore configuration file (and don't forget to set the
 # config.RemoteMsg.inComponent attribute).
 
 
-# RemoteMsg: 
+# RemoteMsg:
 config.section_('RemoteMsg')
 
 # If in a WMCore component, set this to the appropriate name

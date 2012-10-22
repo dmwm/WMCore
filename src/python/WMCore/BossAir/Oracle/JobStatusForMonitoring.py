@@ -9,7 +9,7 @@ from WMCore.BossAir.MySQL.JobStatusForMonitoring \
      import JobStatusForMonitoring as MySQLJobStatusForMonitoring
 
 class JobStatusForMonitoring(MySQLJobStatusForMonitoring):
-    sql = """SELECT wwf.name as workflow, count(rj.wmbs_id) AS num_jobs, 
+    sql = """SELECT wwf.name as workflow, count(rj.wmbs_id) AS num_jobs,
                     st.name AS status, wl.plugin AS plugin, wu.cert_dn AS owner
                FROM bl_runjob rj
                INNER JOIN wmbs_users wu ON wu.id = rj.user_id

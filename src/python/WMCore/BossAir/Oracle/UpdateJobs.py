@@ -14,4 +14,3 @@ class UpdateJobs(MySQLUpdateJobs):
 
     Update jobs with new values
     """
-

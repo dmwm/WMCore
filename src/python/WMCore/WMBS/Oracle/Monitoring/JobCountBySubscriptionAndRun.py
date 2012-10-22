@@ -14,6 +14,6 @@ from WMCore.WMBS.MySQL.Monitoring.JobCountBySubscriptionAndRun \
 class JobCountBySubscriptionAndRun(JobCountBySubscriptionAndRunMySQL):
     """
     _JobCountBySubscription_
-    
-    return the number of jobs grouped by their status and run for given a subscription (fileset, workflow pair)  
+
+    return the number of jobs grouped by their status and run for given a subscription (fileset, workflow pair)
     """

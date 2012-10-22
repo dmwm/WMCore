@@ -18,7 +18,7 @@ class GetAcquiredFiles(GetAvailableFiles):
              WHERE wmsfa.subscription = :subscription
              """
 
-        
+
     def execute(self, subscription = None, conn = None, transaction = False):
         results = self.dbi.processData(self.sql, {"subscription": subscription},
                                        conn = conn, transaction = transaction)

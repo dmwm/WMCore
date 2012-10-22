@@ -13,4 +13,3 @@ from WMCore.WMBS.MySQL.Files.GetParentIDsByID import GetParentIDsByID \
 
 class GetParentIDsByID(GetParentIDsMySQL):
     pass
-    

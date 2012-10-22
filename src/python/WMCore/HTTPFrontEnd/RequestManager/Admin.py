@@ -36,7 +36,7 @@ class Admin(WebAPI):
         """ Checks if alphanumeric, tolerating spaces """
         if isinstance(v, list):
             for entry in v:
-                 self.validate(entry)
+                self.validate(entry)
         else:
             try:
                 WMCore.Lexicon.identifier(v)
@@ -62,7 +62,7 @@ class Admin(WebAPI):
         self.validate(groups)
         self.validate(requests)
         self.validate(allGroups)
-        return self.templatepage("User", user=userName, groups=groups, 
+        return self.templatepage("User", user=userName, groups=groups,
             allGroups=allGroups, requests=requests, priority=priority)
 
     @cherrypy.expose
@@ -200,4 +200,3 @@ class Admin(WebAPI):
         """ Registers all versions in the TC """
         Utilities.updateScramArchsAndCMSSWVersions()
         return "Updated versions to current standard"
-

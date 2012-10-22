@@ -28,14 +28,14 @@ class LoadFiles(DBFormatter):
         column name in Oracle from FILEID to FILE.
         """
         formattedResults = DBFormatter.formatDict(self, results)
-        
+
         dictResults = []
         for formattedResult in formattedResults:
             dictResult = {}
             if "file" in formattedResult.keys():
                 dictResult["id"] = int(formattedResult["file"])
                 dictResults.append(dictResult)
-        
+
         return dictResults
 
     def execute(self, id, conn = None, transaction = False):
@@ -44,8 +44,8 @@ class LoadFiles(DBFormatter):
 
         Execute the SQL for the given job ID and then format and return
         the result.
-        """        
+        """
         result = self.dbi.processData(self.sql, {"jobid": id}, conn = conn,
                                       transaction = transaction)
-        
+
         return self.formatDict(result)

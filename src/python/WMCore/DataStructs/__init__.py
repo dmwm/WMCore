@@ -6,6 +6,3 @@ A set of base objects to be used/inherited elsewhere
 
 """
 __all__ = []
-
-
-

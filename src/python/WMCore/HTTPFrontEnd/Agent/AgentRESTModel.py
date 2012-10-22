@@ -12,7 +12,7 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.Requests import JSONRequests
 from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource.CouchDBConnectionBase \
     import CouchDBConnectionBase
- 
+
 
 class AgentRESTModel(RESTModel):
     """
@@ -22,7 +22,7 @@ class AgentRESTModel(RESTModel):
     def __init__(self, config = {}):
         RESTModel.__init__(self, config)
 
-        self.daofactory = DAOFactory(package = "WMCore.Agent.Database", 
+        self.daofactory = DAOFactory(package = "WMCore.Agent.Database",
                                      logger = self, dbinterface = self.dbi)
 
         self._addDAO('GET', "heartbeatInfo", "GetHeartbeatInfo")
@@ -31,11 +31,11 @@ class AgentRESTModel(RESTModel):
         self._addMethod('GET', "heartbeat", self.getHeartBeatWarning)
          #External couch call
         self._addMethod('GET', "acdclink", self.getACDCInfo)
-    
+
     def getACDCInfo(self):
         couchDBBase = CouchDBConnectionBase(self.config.couchConfig)
         return {'url': couchDBBase.getCouchACDCHtmlBase()}
-    
+
     def getHeartBeatWarning(self):
         results = self.methods["GET"]["heartbeatInfo"]["call"]()
         for result in results:

@@ -258,5 +258,3 @@ class PerformanceMonitor(WMRuntimeMonitor):
                 os.kill(stepPID, signal.SIGTERM)
 
         return
-
-

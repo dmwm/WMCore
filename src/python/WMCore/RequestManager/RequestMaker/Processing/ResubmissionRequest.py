@@ -28,7 +28,7 @@ class ResubmissionRequest(RequestMakerInterface):
                         schema["ACDCServer"], schema["ACDCDatabase"])
 
         return helper.data
-        
+
 class ResubmissionSchema(RequestSchema):
     """
     _ResubmissionSchema_

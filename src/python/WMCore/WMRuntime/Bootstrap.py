@@ -69,8 +69,8 @@ def getSyncCE():
         pop.wait()
         exitCode = pop.poll()
         if exitCode:
-            return result 
-        
+            return result
+
         content = pop.fromchild.read()
         result = content.strip()
         return result
@@ -239,7 +239,7 @@ def createInitialReport(job, task, logLocation):
         logging.error(msg)
         #TODO: Make less goatballs for testing purposes
         return
-        
+
     report  = Report.Report()
 
 
@@ -301,7 +301,7 @@ def createErrorReport(exitCode, errorType, errorDetails = None,
 
     return
 
-    
+
 
 
 
@@ -314,7 +314,7 @@ def setupLogging(logDir):
     """
     try:
         logFile = "%s/jobLog.%s.log" % (logDir, os.getpid())
-        
+
         logHandler = RotatingFileHandler(logFile, "a", 1000000000, 3)
         logFormatter = logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
         logHandler.setFormatter(logFormatter)
@@ -329,7 +329,7 @@ def setupLogging(logDir):
     except Exception, ex:
         msg = "Error setting up logging in dir %s:\n" % logDir
         msg += str(ex)
-        raise BootstrapException, msg        
+        raise BootstrapException, msg
     return
 
 
@@ -347,5 +347,4 @@ def setupMonitoring(logPath):
     except Exception, ex:
         msg = "Error setting up Watchdog monitoring:\n"
         msg += str(ex)
-        raise BootstrapException, msg       
-
+        raise BootstrapException, msg

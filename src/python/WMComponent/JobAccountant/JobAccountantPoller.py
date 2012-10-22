@@ -37,11 +37,11 @@ class JobAccountantPoller(BaseWorkerThread):
         self.accountantWorkSize = getattr(self.config.JobAccountant,
                                           'accountantWorkSize', 100)
         # initialize the alert framework (if available - config.Alert present)
-        #    self.sendAlert will be then be available    
-        self.initAlerts(compName = "JobAccountant")        
+        #    self.sendAlert will be then be available
+        self.initAlerts(compName = "JobAccountant")
 
         return
-    
+
     def setup(self, parameters = None):
         """
         _setup_
@@ -58,7 +58,7 @@ class JobAccountantPoller(BaseWorkerThread):
                                 dbinterface = myThread.dbi)
         self.getJobsAction = daoFactory(classname = "Jobs.GetFWJRByState")
         return
-    
+
     def algorithm(self, parameters = None):
         """
         _algorithm_

@@ -38,7 +38,7 @@ class RetryAlgoBase(object):
 
     def convertdatetime(self, t):
         return int(time.mktime(t.timetuple()))
-          
+
     def timestamp(self):
         """
         generate a timestamp

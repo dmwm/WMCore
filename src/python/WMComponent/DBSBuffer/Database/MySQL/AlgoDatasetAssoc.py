@@ -48,5 +48,5 @@ class AlgoDatasetAssoc(DBFormatter):
         formattedResult = self.formatDict(result)
         if len(formattedResult) == 1:
             return formattedResult[0]["id"]
-        
+
         return None

@@ -31,7 +31,7 @@ class WMException(exceptions.Exception):
 
         #  //
         # // Init data dictionary with defaults
-        #// 
+        #//
         self.data = {}
         self.data.setdefault("ClassName", None)
         self.data.setdefault("ModuleName", None)
@@ -43,7 +43,7 @@ class WMException(exceptions.Exception):
             self.data.setdefault("ErrorNr", 0)
         else:
             self.data.setdefault("ErrorNr", errorNo)
-        
+
         self._message = message
         self.data.update(data)
 
@@ -58,7 +58,7 @@ class WMException(exceptions.Exception):
                 modName = excepModule.__name__
                 self['ModuleName'] = modName
 
-                
+
         #  //
         # // Find out where the exception came from
         #//
@@ -90,7 +90,7 @@ class WMException(exceptions.Exception):
         make exception look like a dictionary
         """
         self.data[key] = value
-        
+
     def addInfo(self, **data):
         """
         _addInfo_
@@ -136,7 +136,3 @@ class WMException(exceptions.Exception):
         strg += self.traceback
         strg += '\n'
         return strg
-
-
-
-

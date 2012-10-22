@@ -29,7 +29,7 @@ def _raiseCheckInError(request, ex, msg):
     Private function called only from this module.
     Always from the except exception block - the traceback
     is put in the local log file.
-    
+
     """
     requestName = request['RequestName']
     msg +='\n' + str(ex)
@@ -39,12 +39,12 @@ def _raiseCheckInError(request, ex, msg):
     # make absolutely sure you're deleting the right one
     oldReqId = request['RequestID']
     if reqId:
-       # make absolutely sure you're deleting the right one
-       oldReqId = request['RequestID']
-       if oldReqId != reqId:
-           raise RequestCheckInError("Bad state deleting request %s/%s.  Please contact a ReqMgr administrator" % (oldReqId/ reqId))
-       else:
-           RequestAdmin.deleteRequest(reqId)
+        # make absolutely sure you're deleting the right one
+        oldReqId = request['RequestID']
+        if oldReqId != reqId:
+            raise RequestCheckInError("Bad state deleting request %s/%s.  Please contact a ReqMgr administrator" % (oldReqId/ reqId))
+        else:
+            RequestAdmin.deleteRequest(reqId)
     # get information about the last exception
     trace = traceback.format_exception(*sys.exc_info())
     traceString = ''.join(trace)
@@ -65,7 +65,7 @@ def checkIn(request, requestType = 'None'):
     # // First try and register the request in the DB
     #//
     requestName = request['RequestName']
-    
+
     # test if the software versions are registered first
     versions  = SoftwareManagement.listSoftware()
     scramArch = request.get('ScramArch')

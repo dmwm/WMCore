@@ -24,15 +24,15 @@ class CouchObject_t(unittest.TestCase):
         cObj.cdb_url = self.url
 
         self.assertEqual(cObj.connected, False)
-        
+
         cObj.connect()
-        
+
         self.assertEqual(cObj.connected, True)
-        
-        
+
+
     def testB(self):
         """test create/drop of document"""
-        
+
         class TestObject(CouchObject):
             def __init__(self):
                 CouchObject.__init__(self)
@@ -41,30 +41,30 @@ class CouchObject_t(unittest.TestCase):
                 self.setdefault("Right", "Nut")
                 self.setdefault("Left", "Nut")
             document_id = property(lambda x : "test-%s" % x['name'] )
-                
-                
+
+
         cObj = TestObject()
         cObj.setCouch(self.url, self.database)
-        
-        
+
+
         cObj['name'] = "CouchObjectUnitTest"
         cObj['data'] = {  "key1": "value1", "key2": "value2"}
         cObj['listOfStuff'] = [1,2,3,4,5,6,7]
-        
-        
+
+
         cObj.create()
-        
-        
+
+
         cObj.get()
-        
+
         cObj2 = TestObject()
         cObj2.setCouch(self.url, self.database)
         cObj2['name'] = "CouchObjectUnitTest"
         cObj2.get()
-        
-        cObj.drop()
-   
 
-    
+        cObj.drop()
+
+
+
 if __name__ == '__main__':
     unittest.main()

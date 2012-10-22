@@ -80,11 +80,11 @@ def getJobSummaryByWorkflow(couchConfig):
 
     options = {"group": True, "group_level": 1, "stale": "ok"}
     result = changeStateDB.loadView("JobDump", "statusByWorkflowName",
-                                    options)    
+                                    options)
 
     quotedJobsDBName = couchDBBase.getCouchDBName() + "%2Fjobs"
     quotedFWJRDBName = couchDBBase.getCouchDBName() + "%2Ffwjrs"
-    
+
     couchDocBase = couchDBBase.getCouchDBHtmlBase(quotedFWJRDBName, "FWJRDump",
                                                   "workflowSummary")
     # reformat to match other type. (not very performative)
@@ -98,12 +98,12 @@ def getJobSummaryByWorkflow(couchConfig):
                    'endkey':'["%s",{}]' % item['key'][0],
                    "reduce": "false",
                    "stale": "ok"}
-    
+
         dictItem['couch_job_info_base'] = couchDBBase.getCouchDBHtmlBase(quotedJobsDBName,
-                                                                         "JobDump", "replace_to_Jobs", 
+                                                                         "JobDump", "replace_to_Jobs",
                                                                          'statusByWorkflowName', options = options,
                                                                          type = "list")
-        
+
         formatted.append(dictItem)
 
     return formatted
@@ -152,4 +152,3 @@ def getJobStateBySite(couchConfig):
         formatted.append(siteDict)
 
     return formatted
-

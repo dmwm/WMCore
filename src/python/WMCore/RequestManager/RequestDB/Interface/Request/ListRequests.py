@@ -87,4 +87,3 @@ def listRequestsByProdMgr(prodMgrName):
     reqFind = factory(classname = "Request.FindByProdMgr")
     result = reqFind.execute(prodMgrName)
     return result
-

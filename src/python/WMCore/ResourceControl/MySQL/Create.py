@@ -14,7 +14,7 @@ from WMCore.Database.DBCreator import DBCreator
 class Create(DBCreator):
     """
     _Create_
-    
+
     Class for creating MySQL specific schema for resource control.
     """
     def __init__(self, logger = None, dbi = None, params = None):

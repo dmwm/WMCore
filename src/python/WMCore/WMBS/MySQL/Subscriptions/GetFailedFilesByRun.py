@@ -16,7 +16,7 @@ class GetFailedFilesByRun(DBFormatter):
                INNER JOIN wmbs_file_runlumi_map wm ON (wm.fileid = wf.fileid)
              WHERE wf.subscription = :subscription AND run = :run
              """
-             
+
     def formatDict(self, results):
         """
         _formatDict_
@@ -34,11 +34,10 @@ class GetFailedFilesByRun(DBFormatter):
                 formattedResult["file"] = int(formattedResult["fileid"])
 
         return formattedResults
-    
+
     def execute(self, subscription, run, conn = None,
                 transaction = False):
         binds = {"subscription": subscription, "run": run}
         results = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = transaction)
         return self.formatDict(results)
-

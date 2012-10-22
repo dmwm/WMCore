@@ -16,7 +16,7 @@ class GetChildren(DBFormatter):
                  dbsbuffer_file.id = dbsbuffer_file_parent.child
              WHERE dbsbuffer_file_parent.parent =
                (SELECT id FROM dbsbuffer_file WHERE lfn = :lfn)"""
-    
+
     def format(self, results):
         """
         _format_
@@ -29,7 +29,7 @@ class GetChildren(DBFormatter):
         for result in results:
             status.append(result[0])
         return status
-        
+
     def execute(self, lfn, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, {"lfn": lfn}, conn = conn,
                                       transaction = transaction)

@@ -16,7 +16,7 @@ def getTestArguments():
     _getTestArguments_
 
     This should be where the default REQUIRED arguments go
-    This serves as documentation for what is currently required 
+    This serves as documentation for what is currently required
     by the standard ReReco workload in importable format.
 
     NOTE: These are test values.  If used in real workflows they
@@ -32,10 +32,10 @@ def getTestArguments():
         "ProcessingVersion": "2",
         "SkimInput": "output",
         "GlobalTag": "GR10_P_v4::All",
-        
+
         "CouchURL": os.environ.get("COUCHURL", None),
         "CouchDBName": "scf_wmagent_configcache",
-        
+
         "ProcScenario": "cosmics",
         "DashboardHost": "127.0.0.1",
         "DashboardPort": 8884,
@@ -77,7 +77,7 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
         for mergeTask in procTask.childTaskIterator():
             if mergeTask.taskType() == "Merge":
                 procMergeTasks[mergeTask.data.input.outputModule] = mergeTask
-        
+
         for skimConfig in self.skimConfigs:
             if not procMergeTasks.has_key(skimConfig["SkimInput"]):
                 # This is an extremely rare case - we have to wait until the entire system is built to get to this point
@@ -87,7 +87,7 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
                 error += "Please change your skim input to be one of the following: %s" % procMergeTasks.keys()
                 self.raiseValidationException(msg = error)
 
-        
+
             mergeTask = procMergeTasks[skimConfig["SkimInput"]]
             skimTask = mergeTask.addTask(skimConfig["SkimName"])
             parentCmsswStep = mergeTask.getStep("cmsRun1")
@@ -140,7 +140,7 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
     def validateSchema(self, schema):
         """
         _validateSchema_
-        
+
         Check for required fields, and some skim facts
         """
         requiredFields = ["CMSSWVersion", "ScramArch",
@@ -173,6 +173,3 @@ def rerecoWorkload(workloadName, arguments):
     """
     myReRecoFactory = ReRecoWorkloadFactory()
     return myReRecoFactory(workloadName, arguments)
-
-
-

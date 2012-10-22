@@ -78,4 +78,3 @@ def userInfo(hnUserName):
     users = factory(classname = "Requestor.GetUserInfo")
     result = users.execute(hnUserName)
     return result
-

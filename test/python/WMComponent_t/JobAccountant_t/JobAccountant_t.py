@@ -436,7 +436,7 @@ class JobAccountantTest(unittest.TestCase):
                     fwjrRuns[run.run].remove(lumi)
 
                 if len(fwjrRuns[run.run]) == 0:
-                        del fwjrRuns[run.run]
+                    del fwjrRuns[run.run]
 
             assert len(fwjrRuns.keys()) == 0, \
                    "Error: Missing runs, lumis: %s" % fwjrRuns
@@ -522,7 +522,7 @@ class JobAccountantTest(unittest.TestCase):
                     fwjrRuns[run.run].remove(lumi)
 
                 if len(fwjrRuns[run.run]) == 0:
-                        del fwjrRuns[run.run]
+                    del fwjrRuns[run.run]
 
             assert len(fwjrRuns.keys()) == 0, \
                    "Error: Missing runs, lumis: %s" % fwjrRuns
@@ -1090,7 +1090,7 @@ class JobAccountantTest(unittest.TestCase):
 
         result = myThread.dbi.processData("SELECT workflow FROM dbsbuffer_file WHERE id = 1")[0].fetchall()[0][0]
         self.assertEqual(result, 1)
-        
+
         return
 
     def testNoFileReport(self):

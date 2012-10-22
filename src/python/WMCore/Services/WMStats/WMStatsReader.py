@@ -25,7 +25,7 @@ class WMStatsReader():
         for item in result["rows"]:
             workflowList.append(item["id"])
         return workflowList
-    
+
     def replicate(self, target):
-        self.couchServer.replicate(self.dbName, target, 
+        self.couchServer.replicate(self.dbName, target,
                                    continuous = True)

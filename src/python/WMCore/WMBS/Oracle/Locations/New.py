@@ -7,7 +7,7 @@ Oracle implementation of Locations.New
 
 from WMCore.WMBS.MySQL.Locations.New import New as NewLocationMySQL
 
-class New(NewLocationMySQL):    
+class New(NewLocationMySQL):
     sql = """INSERT INTO wmbs_location (id, site_name, ce_name, running_slots, pending_slots, plugin, cms_name, state)
                SELECT wmbs_location_SEQ.nextval, :location, :cename, :running_slots AS running_slots,
                :pending_slots AS pending_slots,

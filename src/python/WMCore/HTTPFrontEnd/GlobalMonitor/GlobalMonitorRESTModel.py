@@ -22,7 +22,7 @@ class GlobalMonitorRESTModel(RESTModel):
     def __init__(self, config = {}):
 
         RESTModel.__init__(self, config)
-        
+
         self.serviceURL = self.config.serviceURL
         self.serviceLevel = self.config.serviceLevel
         self.workloadSummaryCouchURL = self.config.workloadSummaryCouchURL
@@ -48,17 +48,17 @@ class GlobalMonitorRESTModel(RESTModel):
         if DataCache.isRequestDataExpired():
             DataCache.setRequestData(getRequestOverview(self.serviceURL, self.serviceLevel))
         return DataCache.getRequestData()
-        
+
     def getAgentMonitor(self):
         if DataCache.isAgentDataExpired():
             DataCache.setAgentData(getAgentOverview(self.serviceURL, self.serviceLevel))
         return DataCache.getAgentData()
-    
+
     def getSiteMonitor(self):
         if DataCache.isSiteDataExpired():
             DataCache.setSiteData(getSiteOverview(self.serviceURL, self.serviceLevel))
         return DataCache.getSiteData()
-    
+
     def getEnvValues(self):
         if self.config.serviceURL.lower() == 'local':
             reqURL = ""

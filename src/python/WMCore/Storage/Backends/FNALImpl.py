@@ -41,8 +41,8 @@ def pnfsPfn2(pfn):
     # handle lustre location
     for i in range(checkPathsCount):
         if pfn.find(checkPaths[i]) != -1:
-          pfnSplit = pfn.split(checkPaths[i], 1)[1]
-	  filePath = "%s%s" % (checkPathsReplace[i],pfnSplit)
+            pfnSplit = pfn.split(checkPaths[i], 1)[1]
+            filePath = "%s%s" % (checkPathsReplace[i],pfnSplit)
     return filePath
 
 
@@ -182,10 +182,10 @@ class FNALImpl(StageOutImpl):
             print "Created Target PFN with dCache Door: ", pfn
         else:
             print "Translating PFN: %s\n To use lustre" % pfn
-    	    for i in range(checkPathsCount):
-              if pfn.find(checkPaths[i]) != -1:
-                pfnSplit = pfn.split(checkPaths[i], 1)[1]
-                pfn = "%s%s" % (checkPathsReplace[i],pfnSplit)
+            for i in range(checkPathsCount):
+                if pfn.find(checkPaths[i]) != -1:
+                    pfnSplit = pfn.split(checkPaths[i], 1)[1]
+                    pfn = "%s%s" % (checkPathsReplace[i],pfnSplit)
         return pfn
 
 
@@ -270,8 +270,8 @@ fi
 
         dcapLocation = 0
         for i in range(checkPathsCount):
-          if sourcePFN.find(checkPaths[i]) != -1:
-            dcapLocation = 1
+            if sourcePFN.find(checkPaths[i]) != -1:
+                dcapLocation = 1
 
         # Even if matched above, some paths are not lustre
         for path in srmPaths:
@@ -331,10 +331,10 @@ fi
             return result
 
         else:
-    	    for i in range(checkPathsCount):
-              if sourcePFN.find(checkPaths[i]) != -1:
-                pfnSplit = sourcePFN.split(checkPaths[i], 1)[1]
-                filePath = "%s%s" % (checkPathsReplace[i],pfnSplit)
+            for i in range(checkPathsCount):
+                if sourcePFN.find(checkPaths[i]) != -1:
+                    pfnSplit = sourcePFN.split(checkPaths[i], 1)[1]
+                    filePath = "%s%s" % (checkPathsReplace[i],pfnSplit)
             original_size = os.stat(filePath)[6]
             print "Local File Size is: %s" % original_size
             result = "/bin/cp "
@@ -365,9 +365,9 @@ fi
             self.executeCommand(command)
         else:
             for i in range(checkPathsCount):
-              if pfnToRemove.find(checkPaths[i]) != -1:
-                pfnSplit = pfnToRemove.split(checkPaths[i], 1)[1]
-                pfnToRemove = "%s%s" % (checkPathsReplace[i],pfnSplit)
+                if pfnToRemove.find(checkPaths[i]) != -1:
+                    pfnSplit = pfnToRemove.split(checkPaths[i], 1)[1]
+                    pfnToRemove = "%s%s" % (checkPathsReplace[i],pfnSplit)
             command = "/bin/rm %s" % pfnToRemove
             self.executeCommand(command)
 

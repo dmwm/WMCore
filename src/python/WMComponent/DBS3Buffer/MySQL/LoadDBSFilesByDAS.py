@@ -14,7 +14,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class LoadDBSFilesByDAS(DBFormatter):
     fileInfoSQL = """SELECT files.id AS id, files.lfn AS lfn, files.filesize AS filesize,
-                    files.events AS events, 
+                    files.events AS events,
                     files.status AS status,
                     files.block_id AS block,
                     dbsbuffer_algo.app_name AS app_name, dbsbuffer_algo.app_ver AS app_ver,
@@ -61,7 +61,7 @@ class LoadDBSFilesByDAS(DBFormatter):
 
 
 
-    
+
 
 
     def formatFileInfo(self, result):
@@ -77,22 +77,22 @@ class LoadDBSFilesByDAS(DBFormatter):
         for resultDict in resultList:
             resultDict["appName"] = resultDict["app_name"]
             del resultDict["app_name"]
-            
+
             resultDict["appVer"] = resultDict["app_ver"]
             del resultDict["app_ver"]
-            
+
             resultDict["appFam"] = resultDict["app_fam"]
             del resultDict["app_fam"]
-            
+
             resultDict["psetHash"] = resultDict["pset_hash"]
             del resultDict["pset_hash"]
-            
+
             resultDict["configContent"] = resultDict["config_content"]
             del resultDict["config_content"]
-            
+
             resultDict["datasetPath"] = resultDict["dataset_path"]
             del resultDict["dataset_path"]
-            
+
             resultDict["size"] = resultDict["filesize"]
             del resultDict["filesize"]
 
@@ -159,7 +159,7 @@ class LoadDBSFilesByDAS(DBFormatter):
         Assemble runLumis into the appropriate format
 
         """
-        
+
         resultList = self.formatDict(result)
 
         interimDictionary = {}
@@ -206,21 +206,21 @@ class LoadDBSFilesByDAS(DBFormatter):
         return finalList
 
 
-    
+
     def getBinds(self, files):
         binds = []
         files = self.dbi.makelist(files)
         for f in files:
             binds.append({'fileid': f})
         return binds
-    
+
     def execute(self, das, conn = None, transaction = False):
         """
         Execute multiple SQL queries to extract all binding information
         Use the first query to get the fileIDs
 
         """
-        result   = self.dbi.processData(self.fileInfoSQL, {'das': das, 'status': 'NOTUPLOADED'}, 
+        result   = self.dbi.processData(self.fileInfoSQL, {'das': das, 'status': 'NOTUPLOADED'},
                                         conn = conn,
                                         transaction = transaction)
         fileInfo = self.formatFileInfo(result)
@@ -264,8 +264,8 @@ class LoadDBSFilesByDAS(DBFormatter):
                                         conn = conn,
                                         transaction = transaction)
         parInfo  = self.parentInfo(result)
-        fullResults = self.merge(fullResults, parInfo)        
-        
+        fullResults = self.merge(fullResults, parInfo)
+
 
 
         return fullResults
@@ -274,7 +274,7 @@ class LoadDBSFilesByDAS(DBFormatter):
     def merge(self, listA, listB, field = 'id'):
         """
         _merge_
-        
+
         Merge together two file lists based on the ID field
         """
 
@@ -287,12 +287,12 @@ class LoadDBSFilesByDAS(DBFormatter):
 
 
         return listA
-        
+
 
     def groupByID(self, inputList, key):
         """
         Group all the entries in a list of dictionaries together by ID
-        
+
 
         """
 
@@ -311,5 +311,3 @@ class LoadDBSFilesByDAS(DBFormatter):
 
 
         return finalList
-
-

@@ -13,4 +13,3 @@ from WMCore.WMBS.MySQL.Subscriptions.MarkFinishedSubscriptions import MarkFinish
 
 class MarkFinishedSubscriptions(MySQLMarkFinishedSubscriptions):
     pass
-

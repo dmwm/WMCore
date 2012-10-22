@@ -24,7 +24,7 @@ class RemoveDuplicates(DBFormatter):
         for file in files:
             binds.append({"lfn": file["lfn"], "workflow": workflow})
             newFiles[file["lfn"]] = file
-            
+
         results = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
         for result in self.formatDict(results):

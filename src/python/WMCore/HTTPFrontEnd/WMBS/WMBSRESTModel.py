@@ -18,7 +18,7 @@ class WMBSRESTModel(RESTModel):
     implementing the GET verb.
     """
     def __init__(self, config = {}):
-        
+
         RESTModel.__init__(self, config)
 
 
@@ -47,9 +47,9 @@ class WMBSRESTModel(RESTModel):
         self._addDAO('GET', "listsubtypes", "Monitoring.ListSubTypes")
         self._addDAO('GET', "listjobstates", "Monitoring.ListJobStates")
         self._addDAO('GET', "listjobsbysub", "Monitoring.ListJobsBySub",
-                    args = ["subscriptionId"], 
+                    args = ["subscriptionId"],
                     validation = [self.subscriptionIDValidate])
-        self._addDAO('GET', "subscriptionstatus", 
+        self._addDAO('GET', "subscriptionstatus",
                     "Monitoring.SubscriptionStatus",
                     args = ["subscriptionType"],
                     validation = [self.subTypeValidate])
@@ -57,12 +57,12 @@ class WMBSRESTModel(RESTModel):
         self._addMethod('GET', "listjobstatus", self.listJobStatus,
                     args = ["jobState", "interval"],
                     validation = [self.jobStatusValidate])
-        
+
         self._addDAO('GET', "workflowstatus", "Workflow.Status")
         self._addDAO('GET', "workflowsummary", "Monitoring.WorkflowSummary")
         self._addDAO('GET', "tasksummary", "Monitoring.TaskSummaryByWorkflow",
                     args = ["workflowName"])
-        
+
         self._addDAO('GET', "failedjobsbyworkflow", "Monitoring.FailedJobsByWorkflow",
                     args = ["workflowName"])
 
@@ -70,28 +70,28 @@ class WMBSRESTModel(RESTModel):
                     args = ["taskID"])
 
         self._addDAO('GET', "test", "Workflow.Test")
-        
-        resourceDAOFactory = DAOFactory(package = "WMCore.ResourceControl", 
+
+        resourceDAOFactory = DAOFactory(package = "WMCore.ResourceControl",
                                         logger = self, dbinterface = self.dbi)
 
         self._addDAO('GET', "listthresholdsforsubmit", "ListThresholdsForSubmit",
-                     args = ["tableFormat"], 
+                     args = ["tableFormat"],
                      validation = [self.setTableFormat],
                      daoFactory = resourceDAOFactory)
-        
+
         self._addDAO('GET', "listthresholdsforcreate", "ListThresholdsForCreate",
-                     args = ["tableFormat"], 
+                     args = ["tableFormat"],
                      validation = [self.setTableFormat],
                      daoFactory = resourceDAOFactory)
-        
+
         self._addDAO('GET', "thresholdbysite", "ThresholdBySite",
-                     args = ["site"], 
+                     args = ["site"],
                      daoFactory = resourceDAOFactory)
-        
+
         self._addDAO('GET', "listtaskbysite", "ListWorkloadsForTaskSite",
-                     args = ["taskType", "siteName"], 
+                     args = ["taskType", "siteName"],
                      daoFactory = resourceDAOFactory)
-        
+
         self._addDAO('GET', "listthresholds", "ListThresholds",
                      daoFactory = resourceDAOFactory)
 
@@ -114,7 +114,7 @@ class WMBSRESTModel(RESTModel):
                        args = ['jobID'])
 
         return
-    
+
     def getJobSummary(self):
         from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource import JobInfo
         return JobInfo.getJobSummaryByWorkflow(self.config.couchConfig)
@@ -145,30 +145,30 @@ class WMBSRESTModel(RESTModel):
         interval = int(input.setdefault("interval", 7200))
 
         return input
-    
+
     def listJobStatus(self, jobState, interval):
-        
+
         endTime = int(time.time())
         startTime = endTime - int(interval)
         # running state is recorded in wmbs
         # TODO: find the better way to handle this
         if jobState == "running":
             return self.methods["GET"]["listrunningjobs"]["call"]()
-        
+
         # need to fix this
         # other complete states are recorded in couch
-        # 
+        #
 #        if jobState == "all":
 #            endKey = 'endkey=%d' % startTime
 #            startKey = 'startkey=%d' % endTime
 #            order = 'descending=true'
-#            base = '/tier1_skimming/_design/jobdump/_view/stateChangesByTime?' 
-#            url = "%s&%s&%s&%s" % (base, order, endKey, startKey)            
+#            base = '/tier1_skimming/_design/jobdump/_view/stateChangesByTime?'
+#            url = "%s&%s&%s&%s" % (base, order, endKey, startKey)
 #        else:
 #            endKey = 'endkey=["%s",%d]' % (jobState, startTime)
 #            startKey = 'startkey=["%s",%d]' % (jobState, endTime)
 #            order = 'descending=true'
-#            base = '/tier1_skimming/_design/jobdump/_view/stateChangesByState?' 
+#            base = '/tier1_skimming/_design/jobdump/_view/stateChangesByState?'
 #            url = "%s&%s&%s&%s" % (base, order, endKey, startKey)
 #
 #        myRequester = JSONRequests(url = "cmssrv52:5984")
@@ -185,17 +185,17 @@ class WMBSRESTModel(RESTModel):
 #                dasResult.append({"couch_record": result["id"],
 #                                  "timestamp": result["key"],
 #                                  "state": result["value"][1],
-#                                  "job_name": result["value"][0]})                
+#                                  "job_name": result["value"][0]})
 #        return dasResult
 
     def subscriptionIDValidate(self, input):
         input["subscriptionId"] = int(input["subscriptionId"])
         return input
-            
+
     def subTypeValidate(self, input):
         input.setdefault("subscriptionType", "All")
         return input
-    
+
     def setTableFormat(self, input):
         input.setdefault("tableFormat", True)
         if type(input['tableFormat']) == str:

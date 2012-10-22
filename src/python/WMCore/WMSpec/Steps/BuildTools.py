@@ -198,6 +198,3 @@ def makeDirectory(step):
     processDir(dirs, topDir)
 
     return topDir
-
-
-

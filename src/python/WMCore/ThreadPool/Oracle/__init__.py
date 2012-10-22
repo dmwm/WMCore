@@ -4,8 +4,7 @@
 __init__
 
 
-This module implements the Oracle backend for the 
+This module implements the Oracle backend for the
 persistent threadpool.
 
 """
-

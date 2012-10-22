@@ -18,10 +18,10 @@ class FailFiles(DBFormatter):
     delAva = """DELETE FROM wmbs_sub_files_available
                 WHERE subscription = :subscription AND
                       fileid = :fileid"""
-    
+
     delCom = """DELETE FROM wmbs_sub_files_complete
                 WHERE subscription = :subscription AND
-                      fileid = :fileid"""    
+                      fileid = :fileid"""
 
     def execute(self, subscription = None, file = None, conn = None,
                 transaction = False):
@@ -33,5 +33,5 @@ class FailFiles(DBFormatter):
         self.dbi.processData(self.delAva, binds, conn = conn,
                              transaction = transaction)
         self.dbi.processData(self.delCom, binds, conn = conn,
-                             transaction = transaction)        
+                             transaction = transaction)
         return

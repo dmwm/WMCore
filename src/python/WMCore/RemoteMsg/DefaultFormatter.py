@@ -24,7 +24,7 @@ except:
     import simplejson as json
 
 class DefaultFormatter(object):
-    """ 
+    """
     _DefaultFormatter_. This formatter is capable of encoding in json, using
     json. If you need support for other data types, please implement
     your own class offering a 'supportedTypes' attribute and a 'format' method
@@ -32,22 +32,22 @@ class DefaultFormatter(object):
     """
     def __init__(self):
         self.supportedTypes = ['text/json', 'text/x-json', 'application/json']
-        
+
 
     def format(self, data):
         """
         Returns a string represent 'data' in one of the supported types.
         If the client has expressed preference, this should be honored if
-        possible. If not possible (or there was no preference) a default 
+        possible. If not possible (or there was no preference) a default
         type will be used.
         """
         datatype = accept(self.supportedTypes)
         response.headers['Content-Type'] = datatype
-    
+
         if datatype in ('text/json', 'text/x-json', 'application/json'):
             # Serialise to json
             return self.tojson(data)
-    
+
         # Default... return in json anyway
         return self.tojson(data)
 

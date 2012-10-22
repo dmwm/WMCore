@@ -2,9 +2,9 @@
 """
 _RunBased_
 
-Run based splitting algorithm that will produce a set of jobs for files in a 
+Run based splitting algorithm that will produce a set of jobs for files in a
 (complete) run. Produces files one run at a time (run:JobGroup) - if the algo
-created jobs over more than one run would have confusion in the JobGroup 
+created jobs over more than one run would have confusion in the JobGroup
 creation and/or tracking.
 
 If file spans a run will need to create a mask for that file.
@@ -21,10 +21,10 @@ class RunBased(JobFactory):
     def algorithm(self, *args, **kwargs):
         """
         _algorithm_
-        
+
         Implement run splitting algorithm. Assumes that if a file with a run is
         present, then all files for that run are also present.
-        
+
         kwargs can take:
         files_per_job - e.g. 20 - Number of files per each split job
         """
@@ -32,7 +32,7 @@ class RunBased(JobFactory):
         requireRunClosed = bool(kwargs.get("require_run_closed", False))
 
         #baseName = makeUUID()
-                
+
         # Select all primary files for the first present run
         curRun = None
         primaryFiles = []
@@ -51,11 +51,11 @@ class RunBased(JobFactory):
         for location in locationDict.keys():
             fileList = locationDict[location]
             for f in fileList:
-                
+
                 #If it is a WMBS object, load all data
                 if hasattr(f, "loadData"):
                     f.loadData()
-                    
+
                 #Die if there are no runs
                 if len(f['runs']) < 1:
                     msg = "File %s claims to contain %s runs!" %(f['lfn'], len(f['runs']))
@@ -77,7 +77,7 @@ class RunBased(JobFactory):
 
             for run in runDict.keys():
                 #Find the runs in the dictionary we assembled and split the files in them
-            
+
                 self.newGroup()
                 baseName = makeUUID()
 
@@ -90,6 +90,5 @@ class RunBased(JobFactory):
                             jobFiles.append(runDict[run].pop())
 
                     # Create the job
-                    currentJob = self.newJob('%s-%s' % (baseName, len(self.currentGroup.newjobs)), 
+                    currentJob = self.newJob('%s-%s' % (baseName, len(self.currentGroup.newjobs)),
                                              files = jobFiles)
-

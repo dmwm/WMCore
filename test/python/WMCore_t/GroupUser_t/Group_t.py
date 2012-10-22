@@ -32,6 +32,6 @@ class Group_t(unittest.TestCase):
         g2.get()
 
         g1.drop()
-    
+
 if __name__ == '__main__':
     unittest.main()

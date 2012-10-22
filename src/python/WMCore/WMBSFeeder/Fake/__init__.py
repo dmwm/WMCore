@@ -6,4 +6,3 @@ A feeder implementation that generates fake files.
 
 """
 __all__ = []
-

@@ -13,10 +13,10 @@ from WMCore.Database.DBFormatter import DBFormatter
 class IsCompleteOnRun(DBFormatter):
     """
     _IsCompleteOnRun_
-    
+
     Return number of files for available, complete, failed status
     for a given run and a given subscription.
-    
+
     TODO: can use left outer join to check the completeness.
     Not sure join is more expensive than multiple select with count
     """
@@ -27,13 +27,13 @@ class IsCompleteOnRun(DBFormatter):
                 LEFT OUTER JOIN wmbs_sub_files_complete wc ON (wc.fileid = wff.fileid AND wc.subscription = ws.id)
                 WHERE
                  wf.fileid IS NULL AND wc.fileid IS NULL AND
-                 ws.id = :subID AND wrm.run = :runID                 
+                 ws.id = :subID AND wrm.run = :runID
           """
 
     def format(self, result):
         result = DBFormatter.format(self, result)
         return result[0][0]
-        
+
     def execute(self, subID, runID, conn = None, transaction = False):
         binds = self.getBinds(subID=subID, runID=runID)
         result = self.dbi.processData(self.sql, binds, conn = conn,

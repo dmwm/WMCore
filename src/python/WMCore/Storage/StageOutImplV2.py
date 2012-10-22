@@ -27,21 +27,21 @@ class StageOutImplV2:
             raises on failure. StageOutError (and inherited exceptions) are for expected errors
             such as temporary connection failures. Anything else will be handled as an unexpected
             error and skip retrying with this plugin
-            
+
             if stageOut is true:
                 The fromPfn is the LOCAL FILE NAME on the node, without file://
                 the toPfn is the target PFN, mapped from the LFN using the TFC or overrrides
             if stageOut is false:
                 The toPfn is the LOCAL FILE NAME on the node, without file://
                 the fromPfn is the source PFN, mapped from the LFN using the TFC or overrrides
-            
+
             this behavior is because most transfer commands will switch their direction
             simply by swapping the order of the arguments. the stageOut flag is provided
             however, because sometimes you want to pass different command line args
-                
+
         """
         raise NotImplementedError
-    
+
     def doDelete(self, pfn, seName, command, options, protocol  ):
         """
             deletes a file, raises on error
@@ -62,7 +62,7 @@ class StageOutImplV2:
             return "file:%s" % pfn
         else:
             return pfn
-    
+
     def runCommandFailOnNonZero(self, command):
         logging.info("Executing %s" % command)
         (exitCode, output) = runCommand(command)
@@ -73,7 +73,7 @@ class StageOutImplV2:
             logging.error("  Exit code was: %s" % exitCode )
             raise StageOutError, "Transfer failure"
         return (exitCode, output)
-    
+
     def runCommandWarnOnNonZero(self, command):
         logging.info("Executing %s" % command)
         (exitCode, output) = runCommand(command)
@@ -81,7 +81,7 @@ class StageOutImplV2:
             logging.error("Error in file transfer..ignoring:")
             logging.error(output)
         return (exitCode, output)
-    
+
     def generateCommandFromPreAndPostParts(self, pre,post,options):
         """
         simply put, this will return an array with [pre, options.split(), post]
@@ -92,4 +92,3 @@ class StageOutImplV2:
             temp.extend(options.split())
         temp.extend(post)
         return temp
-        

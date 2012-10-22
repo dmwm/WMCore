@@ -11,10 +11,9 @@ class New(NewMySQL):
     typesSQL = """INSERT INTO wmbs_sub_types (id, name)
                     SELECT wmbs_sub_types_SEQ.nextval, :subtype FROM dual
                     WHERE NOT EXISTS (SELECT id FROM wmbs_sub_types WHERE name = :subtype)"""
-    
+
     sql = """INSERT INTO wmbs_subscription (id, fileset, workflow, subtype,
-                                            split_algo, last_update) 
+                                            split_algo, last_update)
                SELECT wmbs_subscription_SEQ.nextval, :fileset, :workflow, id,
                       :split_algo, :timestamp FROM wmbs_sub_types
                WHERE name = :subtype"""
-

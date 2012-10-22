@@ -9,4 +9,3 @@ from WMCore.WMBS.MySQL.Workflow.InsertOutput import InsertOutput as InsertOutput
 
 class InsertOutput(InsertOutputMySQL):
     pass
-    

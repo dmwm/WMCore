@@ -36,7 +36,7 @@ class HTTPFrontEnd(Harness):
             factory.loadObject('WMComponent.HTTPFrontend.HTTPFrontendStartHandler', self)
         self.messages['HTTPFrontendStop'] = \
             factory.loadObject('WMComponent.HTTPFrontend.HTTPFrontendStopHandler', self)
- 
+
 
     def start(self):
         """
@@ -55,5 +55,3 @@ class HTTPFrontEnd(Harness):
 
     def stop(self):
         cherrypy.engine.stop()
-        
-

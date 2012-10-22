@@ -14,9 +14,7 @@ from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.Exists import Exists as
 class Exists(MySQLExists):
     """
     _Exists_
-    
+
     SQLite implementation of Files.Exists
     """
     pass
-    
-

@@ -15,7 +15,7 @@ from WMCore.WMBS.MySQL.Subscriptions.GetFailedFiles import \
      GetFailedFiles
 
 class GetFailedFilesByLimit(GetFailedFiles):
-    
+
     sql = GetFailedFiles.sql + " LIMIT :maxLimit"
 
     def execute(self, subscription, limit, conn = None, transaction = False):

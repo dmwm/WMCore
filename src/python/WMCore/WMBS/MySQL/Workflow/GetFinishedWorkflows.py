@@ -60,4 +60,3 @@ class GetFinishedWorkflows(DBFormatter):
             wfs[entry['name']]['workflows'][entry['workflow_id']].append(entry['sub_id'])
 
         return wfs
-

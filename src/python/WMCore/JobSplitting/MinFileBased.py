@@ -18,7 +18,7 @@ import logging
 import gc
 
 from WMCore.JobSplitting.JobFactory import JobFactory
-from WMCore.WMBS.File               import File 
+from WMCore.WMBS.File               import File
 
 class MinFileBased(JobFactory):
     def algorithm(self, *args, **kwargs):
@@ -33,7 +33,7 @@ class MinFileBased(JobFactory):
         filesPerJob   = int(kwargs.get("files_per_job", 10))
         jobsPerGroup  = int(kwargs.get("jobs_per_group", 0))
         runBoundaries = kwargs.get("respect_run_boundaries", False)
-        getParents    = kwargs.get("include_parents", False) 
+        getParents    = kwargs.get("include_parents", False)
         filesInJob    = 0
         listOfFiles   = []
 
@@ -62,11 +62,11 @@ class MinFileBased(JobFactory):
             self.newGroup()
             jobRun = None
             for f in fileList:
-                if getParents: 
-                    parentLFNs = self.findParent(lfn = f['lfn']) 
-                    for lfn in parentLFNs: 
-                        parent = File(lfn = lfn) 
-                        f['parents'].add(parent) 
+                if getParents:
+                    parentLFNs = self.findParent(lfn = f['lfn'])
+                    for lfn in parentLFNs:
+                        parent = File(lfn = lfn)
+                        f['parents'].add(parent)
                 fileRun = f.get('minrun', None)
                 if filesInJob == 0 or filesInJob == filesPerJob or (runBoundaries and fileRun != jobRun):
                     if jobsPerGroup:
@@ -82,14 +82,14 @@ class MinFileBased(JobFactory):
                         # then we shouldn't create a new job
                         continue
                     self.newJob(name = self.getJobName())
-                    
+
                     jobsInGroup += 1
                     jobRun       = fileRun
-                    
+
                 filesInJob += 1
                 self.currentJob.addFile(f)
                 fileCounter += 1
-                
+
                 listOfFiles.append(f)
 
         return

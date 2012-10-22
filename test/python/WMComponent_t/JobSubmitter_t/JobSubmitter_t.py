@@ -139,7 +139,7 @@ def getCondorRunningJobs(user):
     return nJobs
 
 
-        
+
 
 class JobSubmitterTest(unittest.TestCase):
     """
@@ -161,12 +161,12 @@ class JobSubmitterTest(unittest.TestCase):
                                 useDefault = False)
         self.testInit.setupCouch("jobsubmitter_t/jobs", "JobDump")
         self.testInit.setupCouch("jobsubmitter_t/fwjrs", "FWJRDump")
-        
+
         myThread = threading.currentThread()
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
-        
+
         locationAction = self.daoFactory(classname = "Locations.New")
         locationSlots  = self.daoFactory(classname = "Locations.SetJobSlots")
 
@@ -191,7 +191,7 @@ class JobSubmitterTest(unittest.TestCase):
         self.componentName = 'JobSubmitter'
         self.heartbeatAPI  = HeartbeatAPI(self.componentName)
         self.heartbeatAPI.registerComponent()
-            
+
         return
 
     def tearDown(self):
@@ -248,7 +248,7 @@ class JobSubmitterTest(unittest.TestCase):
                            fileset = testFileset,
                            sub = testSubscription.exists(),
                            site = site, bl = bl, wl = wl)
-                                         
+
 
 
             testFileset.commit()
@@ -256,7 +256,7 @@ class JobSubmitterTest(unittest.TestCase):
             jobGroupList.append(testJobGroup)
 
         return jobGroupList
-            
+
 
 
     def makeNJobs(self, name, task, nJobs, jobGroup, fileset, sub, site = None, bl = [], wl = []):
@@ -310,7 +310,7 @@ class JobSubmitterTest(unittest.TestCase):
             output.close()
 
         return testJob, testFile
-        
+
 
     def getConfig(self, configPath = os.path.join(WMCore.WMInit.getWMBASE(), 'src/python/WMComponent/JobSubmitter/DefaultConfig.py')):
         """
@@ -375,7 +375,7 @@ class JobSubmitterTest(unittest.TestCase):
 
 
         return config
-    
+
     def createTestWorkload(self, workloadName = 'Test', emulator = True):
         """
         _createTestWorkload_
@@ -386,7 +386,7 @@ class JobSubmitterTest(unittest.TestCase):
         workload = testWorkload("Tier1ReReco")
         rereco = workload.getTask("ReReco")
 
-        
+
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
@@ -415,7 +415,7 @@ class JobSubmitterTest(unittest.TestCase):
             argValue = index -1
             if indexFlag:
                 batch    = index - 1
-            
+
             inputFileString = '%s, %s, %s' % (os.path.join(self.testDir, 'workloadTest/TestWorkload',
                                                            'TestWorkload-Sandbox.tar.bz2'),
                                               os.path.join(self.testDir, 'workloadTest/TestWorkload',
@@ -445,7 +445,7 @@ class JobSubmitterTest(unittest.TestCase):
 
         return
 
-            
+
 
 
     @attr('integration')
@@ -487,7 +487,7 @@ class JobSubmitterTest(unittest.TestCase):
 
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
-        
+
 
         jobSubmitter = JobSubmitterPoller(config = config)
         jobSubmitter.algorithm()
@@ -506,7 +506,7 @@ class JobSubmitterTest(unittest.TestCase):
             loc = getLocationAction.execute(jobid = id)
             self.assertEqual(loc, [['T2_US_UCSD']])
 
-        
+
         # Check on the JDL
         submitFile = None
         for file in os.listdir(config.JobSubmitter.submitDir):
@@ -516,7 +516,7 @@ class JobSubmitterTest(unittest.TestCase):
         self.checkJDL(config = config, cacheDir = cacheDir,
                       submitFile = submitFile, site = 'T2_US_UCSD')
 
-        
+
 
         #if os.path.exists('CacheDir'):
         #    shutil.rmtree('CacheDir')
@@ -545,7 +545,7 @@ class JobSubmitterTest(unittest.TestCase):
 
         del jobSubmitter
 
-        
+
         return
 
 
@@ -618,7 +618,7 @@ class JobSubmitterTest(unittest.TestCase):
 
         return
 
-        
+
     def testD_CreamCETest(self):
         """
         _CreamCETest_
@@ -660,7 +660,7 @@ class JobSubmitterTest(unittest.TestCase):
         resourceControl.insertSite(siteName = siteName, seName = siteName, ceName = ceName)
         resourceControl.insertThreshold(siteName = siteName, taskType = 'Processing', \
                                         maxSlots = 10000)
-        
+
 
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
                                             task = workload.getTask("ReReco"),
@@ -727,7 +727,7 @@ class JobSubmitterTest(unittest.TestCase):
         for group in jobGroupList:
             changeState.propagate(group.jobs, 'created', 'new')
 
-        
+
 
 
         jobSubmitter = JobSubmitterPoller(config = config)
@@ -915,7 +915,7 @@ class JobSubmitterTest(unittest.TestCase):
     def testF_OverloadTest(self):
         """
         _OverloadTest_
-        
+
         Test and see what happens if you put in more jobs
         Then the sites can handle
         """
@@ -950,7 +950,7 @@ class JobSubmitterTest(unittest.TestCase):
         for group in jobGroupList:
             changeState.propagate(group.jobs, 'created', 'new')
 
-        
+
 
 
         jobSubmitter = JobSubmitterPoller(config = config)
@@ -1022,7 +1022,7 @@ class JobSubmitterTest(unittest.TestCase):
 
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
-        
+
 
         jobSubmitter = JobSubmitterPoller(config = config)
         jobSubmitter.algorithm()
@@ -1039,7 +1039,7 @@ class JobSubmitterTest(unittest.TestCase):
         result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
         self.assertEqual(len(result), nSubs * nJobs)
 
-        
+
         # Check on the JDL
         submitFile = None
         for file in os.listdir(config.JobSubmitter.submitDir):
@@ -1055,7 +1055,7 @@ class JobSubmitterTest(unittest.TestCase):
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, nJobs * nSubs)
 
-        
+
 
 
         # Now clean-up
@@ -1068,4 +1068,4 @@ class JobSubmitterTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

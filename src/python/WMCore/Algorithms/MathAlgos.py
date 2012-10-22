@@ -73,7 +73,7 @@ def getAverageStdDev(numList):
     if type(stdDev) != float and type(stdDev) != int:
         stdDev = 0.0
 
-    
+
 
     return average, stdDev
 
@@ -117,7 +117,7 @@ def createHistogram(numList, nBins, limit):
     if len(histEvents) < 1:
         # Nothing to do?
         return histogram
-        
+
 
     histEvents.sort()
     upperBound = max(histEvents)
@@ -160,15 +160,15 @@ def createHistogram(numList, nBins, limit):
         if len(binList) < 1:
             # Nothing to do here, leave defaults
             continue
-        
+
         binAvg, binStdDev = getAverageStdDev(numList = binList)
         bin['average'] = binAvg
         bin['stdDev']  = binStdDev
         bin['nEvents'] = len(binList)
 
-    
-        
-                          
+
+
+
 
     return histogram
 
@@ -217,5 +217,3 @@ def getLargestValues(dictList, key, n = 1):
                                          reverse = True)
 
     return sortedList[:n]
-    
-    

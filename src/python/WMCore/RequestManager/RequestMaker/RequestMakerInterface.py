@@ -70,7 +70,7 @@ class RequestMakerInterface:
         if schema.get('CMSSWVersion'):
             request['SoftwareVersions'].append(schema.get('CMSSWVersion'))
         return request
-    
+
 
     def makeWorkload(self, schema):
         workload = newWorkload(schema['RequestName']).data
@@ -91,4 +91,3 @@ class RequestMakerInterface:
         workload.owner.Requestor = schema.Requestor
         if hasattr(schema, 'RequestPriority'):
             workload.request.priority = schema.RequestPriority
-

@@ -16,7 +16,7 @@ class DataFormatterTest(unittest.TestCase):
 
         self.applyList1 = [{'name': 'test_a', 'size': 2, 'list': [3, 4]},
                           {'name': 'test_d', 'size': 2, 'list': [1, 2]}]
-        
+
         self.applyList2 = [{'name': 'test_a', 'size': 3, 'list': [5, 6, 7]}]
 
         self.errorList = [{'error_url': "error_123", 'error': "123 error"},
@@ -26,12 +26,12 @@ class DataFormatterTest(unittest.TestCase):
     def testcombineListOfDict(self):
 
         # normal combine test
-        
-        result =  [{'name': 'test_a', 'error_key': 'error_123', 
-                    'list': [5, 6, 7], 'size': 3}, 
-                   {'list': [1, 2], 'name': 'test_d', 'size': 2}, 
-                   {'list': [1, 2], 'name': 'test_c', 'size': 2}, 
-                   {'error_key': ['error_123', 'error_456'], 
+
+        result =  [{'name': 'test_a', 'error_key': 'error_123',
+                    'list': [5, 6, 7], 'size': 3},
+                   {'list': [1, 2], 'name': 'test_d', 'size': 2},
+                   {'list': [1, 2], 'name': 'test_c', 'size': 2},
+                   {'error_key': ['error_123', 'error_456'],
                     'list': [1], 'name': 'test_b', 'size': 1}]
         interList = combineListOfDict('name', self.baseList, self.applyList1)
 
@@ -54,8 +54,8 @@ class DataFormatterTest(unittest.TestCase):
 
         # test error case
         result =   [{'list': [1, 2], 'name': 'test_c', 'size': 2},
-                    {'error_key': ['error_123', 'error_456'], 
-                     'size': 1, 'list': [1], 'name': 'test_b', 
+                    {'error_key': ['error_123', 'error_456'],
+                     'size': 1, 'list': [1], 'name': 'test_b',
                      'error': '123 error, 456 error'},
                      {'error': '123 error', 'size': 1, 'list': 1,
                      'name': 'test_a', 'error_key': 'error_123'}]

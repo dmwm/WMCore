@@ -6,7 +6,7 @@ class Sparkline(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,BinnedNumericSeri
     '''
     Draw one or more small series without marked axes, intended
     for quick visualisation of trends.
-    
+
     Multiple series can either be drawn overlaid on the same
     (invisble) axis or on separate, stacked axes. They can also
     be labelled with auto-scaled text taking up 'text_fraction'
@@ -27,31 +27,31 @@ class Sparkline(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,BinnedNumericSeri
         axes.set_axis_off()
         if len(self.props.series)==0:
             return
-        
+
         left = float(self.props.padding_left)/self.props.width + self.props.text_fraction
         left_nolabel = float(self.props.padding_left)/self.props.width
         bottom = float(self.props.padding_bottom)/self.props.width
         width = (1 - float(self.props.padding_right)/self.props.width - left)
         width_nolabel = float(self.props.avail_width)/self.props.width
         height = float(1 - (self.props.height-self.props.topbound) - self.props.padding_bottom)
-        
-        
-        
+
+
+
         plot_height = height/len(self.props.series)
-                
+
         text_pixels = (self.props.text_fraction*0.9)*self.props.avail_width
         text_height = float(self.props.avail_height)/len(self.props.series)
-        
+
         text_right = float(self.props.padding_left)/self.props.width+(self.props.text_fraction*0.9)
         text_mid = [(self.props.padding_bottom+(i+0.5)*text_height)/self.props.height for i in range(len(self.props.series))]
-        
+
         if self.props.overlay:
             for series in self.props.series:
                 linestyle = self.props.linestyle if series.get('linestyle',None)==None else series['linestyle']
                 marker = self.props.marker if series.get('marker',None)==None else series['marker']
                 linewidth = self.props.linewidth if series.get('linewidth',None)==None else series['linewidth']
                 axes.plot(series['values'],color=series['colour'],linestyle=linestyle,marker=marker,linewidth=linewidth)
-            
+
             if self.props.labelled:
                 axes.set_position((left,bottom,width,height))
                 for i,series in enumerate(self.props.series):
@@ -78,5 +78,3 @@ class Sparkline(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,BinnedNumericSeri
                         #print 'text_size',text_size
                         #print 'text_right',text_right,'text_mid',text_mid[i]
                         self.figure.text(text_right,text_mid[i],label,color=series['colour'],ha='right',va='center',fontsize=text_size)
-                
-                

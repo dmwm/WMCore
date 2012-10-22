@@ -46,8 +46,8 @@ from WMCore.DAOFactory                      import DAOFactory
 from WMCore.JobSplitting.SplitterFactory    import SplitterFactory
 from WMCore.WMBS.Subscription               import Subscription
 from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
-                                            
-                                            
+
+
 from WMCore.WMSpec.Seeders.SeederManager                import SeederManager
 from WMCore.JobStateMachine.ChangeState                 import ChangeState
 from WMComponent.JobCreator.CreateWorkArea              import CreateWorkArea
@@ -67,7 +67,7 @@ def _VmB(VmKey):
     _proc_status = '/proc/%d/status' % os.getpid()
     _scale = {'kB': 1024.0, 'mB': 1024.0*1024.0,
               'KB': 1024.0, 'MB': 1024.0*1024.0}
-    
+
     # get pseudo file  /proc/<pid>/status
     try:
         t = open(_proc_status)
@@ -89,26 +89,26 @@ def _VmB(VmKey):
 def retrieveWMSpec(subscription):
     """
     _retrieveWMSpec_
-    
+
     Given a subscription, this function loads the WMSpec associated with that workload
     """
     workflow = subscription['workflow']
     wmWorkloadURL = workflow.spec
-    
+
     if not os.path.isfile(wmWorkloadURL):
         logging.error("WMWorkloadURL %s is empty" % (wmWorkloadURL))
         return None
-    
+
     wmWorkload = WMWorkloadHelper(WMWorkload("workload"))
-    wmWorkload.load(wmWorkloadURL)  
-    
+    wmWorkload.load(wmWorkloadURL)
+
     return wmWorkload
 
 
 def retrieveJobSplitParams(wmWorkload, task):
     """
     _retrieveJobSplitParams_
-    
+
     Retrieve job splitting parameters from the workflow.  The way this is
     setup currently sucks, we have to know all the job splitting parameters
     up front.  The following are currently supported:
@@ -137,10 +137,10 @@ def retrieveJobSplitParams(wmWorkload, task):
 def runSplitter(jobFactory, splitParams):
     """
     _runSplitter_
-    
+
     Run the jobSplitting as a coroutine method, yielding values as required
     """
-    
+
     groups = ['test']
     while groups != []:
         groups = jobFactory(**splitParams)
@@ -150,7 +150,7 @@ def runSplitter(jobFactory, splitParams):
 def doMemoryCheck(msgString):
     """
     _doMemoryCheck_
-    
+
     Check the memory usage
     Print to log debug
     """
@@ -166,7 +166,7 @@ def doMemoryCheck(msgString):
 
 
 
-    
+
 
 class JobCreatorWorker:
     """
@@ -204,7 +204,7 @@ class JobCreatorWorker:
         self.limit          = configDict.get('fileLoadLimit', 500)
 
 
-        
+
         self.createWorkArea  = CreateWorkArea()
 
         self.changeState = ChangeState(self.config)
@@ -230,11 +230,11 @@ class JobCreatorWorker:
                 logging.error("Got non-existant subscription")
                 logging.error("Assuming parameters in error: returning")
                 return subscriptionID
-            
+
             myThread.transaction.begin()
-            
+
             logging.info("About to call subscription %i" %subscriptionID)
-            
+
             wmbsSubscription = Subscription(id = subscriptionID)
             wmbsSubscription.load()
             wmbsSubscription["workflow"].load()
@@ -244,7 +244,7 @@ class JobCreatorWorker:
 
 
 
-            
+
 
             if not workflow.task or not wmWorkload:
                 # Then we have a problem
@@ -259,7 +259,7 @@ class JobCreatorWorker:
                 logging.error("Have no task for workflow %i" % (workflow.id))
                 logging.error("Aborting Subscription %i" % (subscriptionID))
                 continue
-                
+
             else:
                 wmTask = wmWorkload.getTaskByPath(workflow.task)
                 if hasattr(wmTask.data, 'seeders'):
@@ -270,7 +270,7 @@ class JobCreatorWorker:
 
             logging.info("About to enter JobFactory")
             logging.debug("Going to call wmbsJobFactory with limit %i" % (self.limit))
-            
+
             # My hope is that the job factory is smart enough only to split un-split jobs
             wmbsJobFactory = self.splitterFactory(package = "WMCore.WMBS",
                                                   subscription = wmbsSubscription,
@@ -283,7 +283,7 @@ class JobCreatorWorker:
             myThread.transaction.commit()
 
             # Turn on the jobFactory
-            myThread.transaction.begin()            
+            myThread.transaction.begin()
             wmbsJobFactory.open()
 
             # Create a function to hold it
@@ -295,7 +295,7 @@ class JobCreatorWorker:
                 # generate and process new jobs
 
                 # First we need the jobs.
-                
+
                 try:
                     wmbsJobGroups = jobSplittingFunction.next()
                     logging.info("Retrieved %i jobGroups from jobSplitter" % (len(wmbsJobGroups)))
@@ -311,14 +311,14 @@ class JobCreatorWorker:
                                               conn = myThread.transaction.conn,
                                               transaction = True)
                 logging.debug("Have %i jobs for this workflow already" % (jobNumber))
-                
-                
-            
+
+
+
                 for wmbsJobGroup in wmbsJobGroups:
 
                     logging.debug("Processing jobGroup %i" % (wmbsJobGroup.exists()))
                     logging.debug("Processing %i jobs" % (len(wmbsJobGroup.jobs)) )
-                
+
                     # Create a directory
                     self.createWorkArea.processJobs(jobGroup = wmbsJobGroup,
                                                     startDir = self.jobCacheDir,
@@ -327,12 +327,12 @@ class JobCreatorWorker:
                                                     transaction = myThread.transaction,
                                                     conn = myThread.transaction.conn)
 
-                    
+
                     for job in wmbsJobGroup.jobs:
                         jobNumber += 1
                         self.saveJob(job = job, workflow = workflow,
                                      wmTask = wmTask, jobNumber = jobNumber)
-            
+
 
                     self.advanceJobGroup(wmbsJobGroup)
 
@@ -398,13 +398,13 @@ class JobCreatorWorker:
 
         return
 
-    
+
 
 
     def advanceJobGroup(self, wmbsJobGroup):
         """
         Pass this on to the jobCreator, which actually does the work
-        
+
         """
 
         #Create the job
@@ -414,10 +414,3 @@ class JobCreatorWorker:
                      % (wmbsJobGroup.id))
 
         return
-
-
-    
-
-
-
-    

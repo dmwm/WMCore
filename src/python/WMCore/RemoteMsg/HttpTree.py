@@ -5,7 +5,7 @@ _HttpTree_
 
 This modules contains a class which maps HTTP service endpoints
 to python methods. It defines the behaviour of cherrypy for incoming
-requests. The main method is 'msg', which will decode requests as 
+requests. The main method is 'msg', which will decode requests as
 messages and act on them according to configuration (see the 'RemoteMsg'
 module documentation).
 """
@@ -23,23 +23,23 @@ from CommonUtil import undojson
 from WMCore.Database.Transaction import Transaction
 
 class HttpTree(object):
-    """ 
-    _HttpTree_     
+    """
+    _HttpTree_
     """
     def __init__(self, params):
         """
-        Constructor. 
- 
+        Constructor.
+
         The required params are as follow:
           msgQueue, handlerMap, msgLock, formatter
- 
+
         The optional params are the following:
           component, dbFactory, dialect, queue (default True)
- 
+
         If component is present, dbFactory and dialect must be
         also present.
-        
-        """ 
+
+        """
 
         for test in ("msgQueue", "handlerMap", "msgLock", "formatter"):
             if not test in params:
@@ -50,7 +50,7 @@ class HttpTree(object):
         self.msgLock = params["msgLock"]
         self.formatter = params["formatter"]
 #        self.handlerLock = handlerLock
-       
+
         self.queueMode = True
         if params.has_key("queueMode"):
             self.queueMode = params["queueMode"]
@@ -60,10 +60,10 @@ class HttpTree(object):
             self.myComp = params["component"]
             self.dbFactory = params["dbFactory"]
             self.dialect = params["dialect"]
- 
+
         self.mylogger = logging.getLogger("RemoteMsg")
- 
-        
+
+
     def initInThread(self):
         """
         Copy necessary things to our thread, so that handlers can take it
@@ -87,7 +87,7 @@ class HttpTree(object):
         """
         self.queueMode = value
 
-    @expose 
+    @expose
     def index(self):
         """
         Default index page for our HTTP server. It just shows an informative
@@ -107,35 +107,35 @@ class HttpTree(object):
     @expose
     def msgList(self, **kwd):
         """
-        Endpoint for message list. This method is not required. It is just 
+        Endpoint for message list. This method is not required. It is just
         a utility that will return a list of the messages in the queue.
         """
         if self.myComp:
             self.initInThread()
-       
+
         self.msgLock.acquire()
         result = []
         for msg in self.msgQueue:
             result.append(msg)
         self.msgLock.release()
         return self.formatter.format(result)
-       
-    
-    @expose 
+
+
+    @expose
     def msg(self, msgType = None, payload = None, **kwd):
         """
         Defines the endpoint for the message service. Request on it will
-        be interpreted as messages. They will be enqueued or handled, 
+        be interpreted as messages. They will be enqueued or handled,
         depending on configuration.
         """
         if self.myComp:
             self.initInThread()
-        
+
         sync = False
         if kwd.has_key('sync'):
-            if kwd['sync'] == 'True': 
+            if kwd['sync'] == 'True':
                 sync = True
-           
+
         try:
             payload = undojson(payload)
         except Exception, inst:
@@ -146,7 +146,7 @@ class HttpTree(object):
             data = {'msgType':msgType, 'payload':payload, \
                     'result':'Error', 'info':info}
             return self.formatter.format(data)
-     
+
         # If queueMode = True, we should store there the message
         if self.queueMode:
             if msgType:
@@ -158,7 +158,7 @@ class HttpTree(object):
             data = {'msgType': msgType, 'payload': payload, 'result': \
                     'Received', 'info': 'Message Enqueued'}
             return self.formatter.format(data)
-     
+
         handled = False
         for known in self.handlerMap:
             if msgType == known:
@@ -181,7 +181,7 @@ class HttpTree(object):
             self.mylogger.debug("Ignoring")
             result = "Error"
             info = "Wrong message format, or unknown msgType!"
- 
+
         data = {'msgType': msgType, 'payload': payload, \
                 'result': result, 'info': info}
         return self.formatter.format(data)

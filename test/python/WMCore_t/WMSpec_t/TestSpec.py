@@ -63,7 +63,7 @@ class TestWorkloadFactory(object):
         procTaskCmsswHelper.setGlobalTag("TestGlobalTag::All")
         procTaskCmsswHelper.cmsswSetup("CMSSW_3_5_8_patch3", softwareEnvironment = "",
                                        scramArch = "slc5_amd64_gcc434")
-        
+
         procTaskCmsswHelper.setDataProcessingConfig("cosmics", "PromptReco")
 
         if self.emulation:
@@ -72,13 +72,13 @@ class TestWorkloadFactory(object):
             procTaskCmsswHelper.data.emulator.emulatorName = "CMSSW"
             procTaskStageOutHelper.data.emulator.emulatorName = "StageOut"
             procTaskLogArchHelper.data.emulator.emulatorName = "LogArchive"
-            
+
         return procTask
 
     def addLogCollectTask(self, parentTask, taskName = "LogCollect"):
         """
         _addLogCollecTask_
-        
+
         Create a LogCollect task for log archives that are produced by the
         parent task.
         """
@@ -88,7 +88,7 @@ class TestWorkloadFactory(object):
         logCollectTask.applyTemplates()
         logCollectTask.setSplittingAlgorithm("MinFileBased", files_per_job = 500)
         logCollectTask.setTaskType("LogCollect")
-    
+
         parentTaskLogArch = parentTask.getStep("logArch1")
         logCollectTask.setInputReference(parentTaskLogArch, outputModule = "logArchive")
         return
@@ -97,7 +97,7 @@ class TestWorkloadFactory(object):
                         filterName):
         """
         _addOutputModule_
-        
+
         Add an output module to the geven processing task.  This will also
         create merge and cleanup tasks for the output of the output module.
         A handle to the merge task is returned to make it easy to use the merged
@@ -108,7 +108,7 @@ class TestWorkloadFactory(object):
                                                  "v1")
         else:
             processedDatasetName = "WMAgentCommissioning10-v1"
-        
+
         unmergedLFN = "%s/%s/%s" % ("/store/temp/WMAgent/unmerged", dataTier,
                                     processedDatasetName)
         mergedLFN = "%s/%s/%s" % ("/store/temp/WMAgent/merged", dataTier,
@@ -130,7 +130,7 @@ class TestWorkloadFactory(object):
         Create a test workload.
         """
         self.emulation = emulation
-        
+
         workload = self.createWorkload()
         procTask = workload.newTask("ReReco")
 
@@ -151,4 +151,3 @@ def testWorkload(emulation = False):
 
 if __name__ == "__main__":
     testWorkload()
-    

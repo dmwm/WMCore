@@ -11,7 +11,7 @@ class BulkHeritageParent(DBFormatter):
     sql = """INSERT INTO dbsbuffer_file_parent (child, parent) VALUES
                ((SELECT id FROM dbsbuffer_file WHERE lfn = :child),
                (SELECT id FROM dbsbuffer_file WHERE lfn = :parent)) """
-    
+
     def execute(self, binds, conn = None, transaction = False):
         """
         _execute_
@@ -23,4 +23,3 @@ class BulkHeritageParent(DBFormatter):
                              transaction = transaction)
 
         return
-    

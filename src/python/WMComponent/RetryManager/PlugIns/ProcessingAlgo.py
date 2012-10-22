@@ -97,4 +97,3 @@ class ProcessingAlgo(RetryAlgoBase):
             # Hope this gets passed back by reference
 
         return True
-

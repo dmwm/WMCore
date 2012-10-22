@@ -32,7 +32,7 @@ class JobStatusLite(Harness):
         self.config = config
         #self.config.JobStatusLite.pollInterval
         #self.config.JobStatusLite.queryInterval
-        
+
         print "JobStatusLite.__init__"
 
     def preInitialization(self):

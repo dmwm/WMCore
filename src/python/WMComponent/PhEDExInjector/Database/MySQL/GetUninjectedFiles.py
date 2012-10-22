@@ -16,12 +16,12 @@ class GetUninjectedFiles(DBFormatter):
                     dbsbuffer_dataset.custodial_site AS custodial_site,
                     dbsbuffer_location.se_name AS location,
                     dbsbuffer_file_checksums.cksum as cksum,
-                    dbsbuffer_checksum_type.type as cktype                    
+                    dbsbuffer_checksum_type.type as cktype
                     FROM dbsbuffer_file
                INNER JOIN dbsbuffer_file_checksums ON
                  dbsbuffer_file.id = dbsbuffer_file_checksums.fileid
                INNER JOIN dbsbuffer_checksum_type ON
-                 dbsbuffer_file_checksums.typeid = dbsbuffer_checksum_type.id                 
+                 dbsbuffer_file_checksums.typeid = dbsbuffer_checksum_type.id
                INNER JOIN dbsbuffer_algo_dataset_assoc ON
                  dbsbuffer_file.dataset_algo = dbsbuffer_algo_dataset_assoc.id
                INNER JOIN dbsbuffer_dataset ON
@@ -58,10 +58,10 @@ class GetUninjectedFiles(DBFormatter):
                 location = row['custodial_site']
             else:
                 location = row['location']
-                
+
             if location not in formattedResult.keys():
                 formattedResult[location] = {}
-                
+
             locationDict = formattedResult[location]
             if row["dataset"] not in locationDict.keys():
                 locationDict[row["dataset"]] = {}
@@ -71,7 +71,7 @@ class GetUninjectedFiles(DBFormatter):
                 datasetDict[row["blockname"]] = {"is-open": "y",
                                                  "files": []}
 
-            blockDict = datasetDict[row["blockname"]]            
+            blockDict = datasetDict[row["blockname"]]
             for file in blockDict["files"]:
                 if file["lfn"] == row["lfn"]:
                     file["checksum"][row["cktype"]] = row["cksum"]
@@ -83,7 +83,7 @@ class GetUninjectedFiles(DBFormatter):
                                            "checksum": cksumDict})
 
         return formattedResult
-                 
+
     def execute(self, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, conn = conn,
                                       transaction = transaction)

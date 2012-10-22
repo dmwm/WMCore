@@ -24,8 +24,8 @@ class CouchAppTestHarness:
     """
     Test Harness for installing a couch database instance with several couchapps
     in a unittest.setUp and wiping it out in a unittest.tearDown
-    
-    
+
+
     """
     def __init__(self, dbName, couchUrl = None):
         self.couchUrl = os.environ.get("COUCHURL", couchUrl)
@@ -64,7 +64,7 @@ class TestInitCouchApp(TestInit):
     """
     TestInit with baked in Couch goodness
     """
-    
+
     def __init__(self, testClassName, dropExistingDb=True):
         TestInit.__init__(self, testClassName)
         self.databases = []
@@ -89,7 +89,7 @@ class TestInitCouchApp(TestInit):
     def setupCouch(self, dbName, *couchapps):
         """
         _setupCouch_
-        
+
         Call in the setUp of your test to build a couch instance with the dbname provided
         and the required list of couchapps from WMCore/src/couchapps
         """
@@ -101,11 +101,11 @@ class TestInitCouchApp(TestInit):
 
     couchUrl = property(lambda x: x.couch.couchUrl)
     couchDbName = property(lambda x: x.couch.dbName)
-        
+
     def tearDownCouch(self):
         """
         _tearDownCouch_
-        
+
         call this in tearDown to erase all evidence of your couch misdemeanours
         """
         for database in self.databases:

@@ -2,7 +2,7 @@
 """
 _RESTFormatter_
 
-A basic REST formatter. The formatter takes the data from the API call, turns it into the 
+A basic REST formatter. The formatter takes the data from the API call, turns it into the
 appropriate format and sets the CherryPy header appropriately.
 
 Could add YAML via http://pyyaml.org/
@@ -17,15 +17,15 @@ class RESTFormatter(TemplatedPage):
     def __init__(self, config):
         self.supporttypes = {'application/xml': self.xml,
                    'application/atom+xml': self.atom,
-                   'text/json': self.json, 
-                   'text/x-json': self.json, 
+                   'text/json': self.json,
+                   'text/x-json': self.json,
                    'application/json': self.json,
                    'text/html': self.to_string,
                    'text/plain': self.to_string,
                    '*/*': self.to_string}
 
         TemplatedPage.__init__(self, config)
-     
+
     def json(self, data):
         thunker = JSONThunker()
         data = thunker.thunk(data)
@@ -40,10 +40,10 @@ class RESTFormatter(TemplatedPage):
         return self.templatepage('Atom', data = data,
                                 config = self.config,
                                 path = request.path_info)
-    
+
     def to_string(self, data):
         return str(data)
-    
+
     def format(self, data, datatype, expires):
         response_data = ''
         if datatype not in self.supporttypes.keys():
@@ -53,7 +53,7 @@ class RESTFormatter(TemplatedPage):
                                                 'type': 'HTTPError',
             'message': '%s is not supported. Valid accept headers are: %s' %\
                     (datatype, self.supporttypes.keys())})
-        
+
         try:
             response_data = self.supporttypes[datatype](data)
         except HTTPError, h:

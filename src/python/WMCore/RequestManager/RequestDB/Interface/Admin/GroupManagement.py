@@ -107,4 +107,3 @@ def setPriority(groupName, priority):
     groupPriority = factory(classname = "Group.SetPriority")
     result = groupPriority.execute(groupName, priority)
     return result
-

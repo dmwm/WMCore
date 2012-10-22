@@ -13,7 +13,7 @@ from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.GetBlock import GetBloc
 class GetBlock(MySQLGetBlock):
     """
     _GetBlock_
-    
+
     Oracle implementation of DBSBufferFiles.GetBlock
     """
     pass

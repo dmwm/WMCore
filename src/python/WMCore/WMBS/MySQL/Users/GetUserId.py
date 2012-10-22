@@ -27,5 +27,3 @@ class GetUserId(DBFormatter):
             return int(id[0][0])
 
         return None
-
-

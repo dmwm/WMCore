@@ -31,12 +31,12 @@ class Interface:
             msg += " Exception: %s" % str(ex)
             print msg
             raise CouchConnectionError(msg)
-        
-        
+
+
     def documentsOwned(self, group, user):
         """
         _documentsOwned_
-        
+
         Get a list of doc IDs that are owned by the group/user pair
 
         """
@@ -46,19 +46,19 @@ class Interface:
                 )
         output = map(lambda x : str(x[u'id']), result[u'rows'])
         return output
-        
+
 
 
     def callUpdate(self, update, document, **args ):
         """
         _callUpdate_
-        
+
         Wrapper primarily for calling/testing update methods on the groupuser couchapp
-        
+
          * update - name of the update method in the couchapp
          * document - ID of the document to be updated
          * args  - key:value dict of args to be encoded in the PUT request
-        
+
         """
         updateUri = "/" + self.couch.name + "/_design/GroupUser/_update/"+ update + "/" + document
         argsstr = "?"

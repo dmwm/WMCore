@@ -18,7 +18,7 @@ class BulkAddByLFN(DBFormatter):
       fileset
     """
     sql = """INSERT INTO wmbs_fileset_files (fileid, fileset, insert_time)
-               SELECT id, :fileset, :timestamp FROM wmbs_file_details WHERE lfn = :lfn"""    
+               SELECT id, :fileset, :timestamp FROM wmbs_file_details WHERE lfn = :lfn"""
 
     sqlAvail = """INSERT INTO wmbs_sub_files_available (subscription, fileid)
                     SELECT wmbs_subscription.id AS subscription,
@@ -26,7 +26,7 @@ class BulkAddByLFN(DBFormatter):
                       INNER JOIN wmbs_file_details ON
                         wmbs_file_details.lfn = :lfn
                     WHERE wmbs_subscription.fileset = :fileset"""
-    
+
     def execute(self, binds, conn = None, transaction = False):
         timestamp = int(time.time())
         newBinds = []

@@ -17,7 +17,7 @@ def getSites(block):
         sites = ['T2_XX_SiteA', 'T2_XX_SiteB']
         _BLOCK_LOCATIONS[block] = sites
     else:
-         sites = ['T2_XX_SiteA', 'T2_XX_SiteB','T2_XX_SiteC']
+        sites = ['T2_XX_SiteA', 'T2_XX_SiteB','T2_XX_SiteC']
     return sites
 
 # This can be replace to PhEDEx subscription call
@@ -26,7 +26,7 @@ def moveBlock(blockSites):
     _BLOCK_LOCATIONS.update(blockSites)
 
 class GlobalParams(object):
-    
+
     # WARNING: do not change the default value:
     # unittests will break.
     # If they are needed to be changed in some unittests
@@ -42,11 +42,11 @@ class GlobalParams(object):
     _num_of_events_per_file = 1000
     _size_of_file = 20000000
     _blocks_open_for_writing = False
-    
+
     @staticmethod
     def numOfBlocksPerDataset():
         return GlobalParams._num_of_blocks_per_dataset
-    
+
     @staticmethod
     def numOfFilesPerBlock():
         return GlobalParams._num_of_files_per_block
@@ -54,11 +54,11 @@ class GlobalParams(object):
     @staticmethod
     def numOfRunsPerFile():
         return GlobalParams._num_of_runs_per_file
-    
+
     @staticmethod
     def numOfEventsPerFile():
         return GlobalParams._num_of_events_per_file
-    
+
     @staticmethod
     def numOfLumisPerBlock():
         return GlobalParams._num_of_lumis_per_block
@@ -66,11 +66,11 @@ class GlobalParams(object):
     @staticmethod
     def sizeOfFile():
         return GlobalParams._size_of_file
-    
+
     @staticmethod
     def setNumOfBlocksPerDataset(numOfBlocksPerDataset):
         GlobalParams._num_of_blocks_per_dataset = numOfBlocksPerDataset
-    
+
     @staticmethod
     def setNumOfFilesPerBlock(numOfFilesPerBlock):
         GlobalParams._num_of_files_per_block = numOfFilesPerBlock
@@ -82,7 +82,7 @@ class GlobalParams(object):
     @staticmethod
     def setNumOfEventsPerFile(numOfEventsPerFile):
         GlobalParams._num_of_events_per_file = numOfEventsPerFile
-    
+
     @staticmethod
     def setNumOfLumisPerBlock(numOfLumisPerBlock):
         GlobalParams._num_of_lumis_per_block = numOfLumisPerBlock
@@ -116,4 +116,3 @@ class GlobalParams(object):
         GlobalParams._num_of_events_per_file = 1000
         GlobalParams._size_of_file = 20000000
         GlobalParams._blocks_open_for_writing = False
-        

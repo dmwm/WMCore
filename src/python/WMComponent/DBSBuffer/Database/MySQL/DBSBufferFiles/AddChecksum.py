@@ -15,7 +15,7 @@ class AddChecksum(DBFormatter):
              SELECT :fileid, (SELECT id FROM dbsbuffer_checksum_type WHERE type = :cktype), :cksum FROM dual
              WHERE NOT EXISTS (SELECT fileid FROM dbsbuffer_file_checksums WHERE
                                fileid = :fileid AND typeid = (SELECT id FROM dbsbuffer_checksum_type WHERE type = :cktype))"""
-                
+
     def execute(self, fileid = None, cktype = None, cksum = None, bulkList = None, conn = None,
                 transaction = False):
 
@@ -24,7 +24,7 @@ class AddChecksum(DBFormatter):
         else:
             binds = {'fileid': fileid, 'cktype': cktype, 'cksum': cksum}
 
-        result = self.dbi.processData(self.sql, binds, 
+        result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = transaction)
 
         return

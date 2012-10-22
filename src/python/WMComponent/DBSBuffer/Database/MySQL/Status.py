@@ -27,7 +27,7 @@ class Status(DBFormatter):
                  dbsbuffer_algo_dataset_assoc.algo_id = dbsbuffer_algo.id
                WHERE dbsbuffer_dataset.path != "bogus"
                GROUP BY dbsbuffer_dataset.path, dbsbuffer_algo.app_name, dbsbuffer_algo.app_ver"""
-    
+
     def converDecimalToInt(self, results):
         for result in results:
             if result['events'] != None:
@@ -35,7 +35,7 @@ class Status(DBFormatter):
             if result['filesize'] != None:
                 result['filesize'] = int(result['filesize'])
         return results
-                             
+
     def execute(self, conn = None, transaction = False):
         results = self.dbi.processData(self.sql, conn = conn, transaction = transaction)
         results = self.formatDict(results)

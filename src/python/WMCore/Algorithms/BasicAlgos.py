@@ -28,17 +28,17 @@ def tail(filename, nLines = 20):
     pos, lines = nLines+1, []
     while len(lines) <= nLines:
         try:
-                f.seek(-pos, 2)
+            f.seek(-pos, 2)
         except IOError:
-                f.seek(0)
-                break
+            f.seek(0)
+            break
         finally:
-                lines = list(f)
+            lines = list(f)
         pos *= 2
 
 
     f.close()
-        
+
     return lines[-nLines:]
 
 
@@ -79,5 +79,3 @@ def getFileInfo(filename):
                 'LastModification': time.strftime("%m/%d/%Y %I:%M:%S %p",time.localtime(filestats[stat.ST_MTIME])),
                 'LastAccess': time.strftime("%m/%d/%Y %I:%M:%S %p",time.localtime(filestats[stat.ST_ATIME]))}
     return fileInfo
-    
-

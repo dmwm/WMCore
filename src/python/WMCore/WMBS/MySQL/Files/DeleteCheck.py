@@ -15,8 +15,8 @@ class DeleteCheck(DBFormatter):
     sql = """DELETE FROM wmbs_file_details WHERE id = :id AND
            NOT EXISTS (SELECT fileset FROM wmbs_fileset_files WHERE fileid = :id
            AND fileset != :fileset)"""
-    
-        
+
+
     def execute(self, file = None, fileset = None, conn = None, transaction = False):
         if type(file) == list:
             if len(file) < 1:
@@ -26,6 +26,6 @@ class DeleteCheck(DBFormatter):
                 binds.append({'id': entry, 'fileset': fileset})
         else:
             binds = {'id': file, 'fileset': fileset}
-        self.dbi.processData(self.sql, binds, 
+        self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = transaction)
         return True #or raise

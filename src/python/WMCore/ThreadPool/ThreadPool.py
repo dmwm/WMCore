@@ -24,7 +24,7 @@ from WMCore.WMFactory import WMFactory
 class ThreadPool(Queue):
     """
     _ThreadPool_
-    
+
     A class used for creating persistent thread pools.
     To use this you need to use the ThreadSlave class
     """
@@ -35,7 +35,7 @@ class ThreadPool(Queue):
         _init_
 
         Initializes pool, and resets lost threads (e.g. lost during crash).
- 
+
         """
 
         #Queue.__init__(self, slaves)
@@ -48,7 +48,7 @@ class ThreadPool(Queue):
         compName = self.component.config.Agent.componentName
         self.threadPoolId = 'tp_threadpool_'+ \
             compName+'_'+threadPoolID
-        # if set to false the peristent thread pool table is 
+        # if set to false the peristent thread pool table is
         # created per threadpool id.
         self.oneQueue = True
         # the size of the buffer to minimize single inserts in large tables.
@@ -66,7 +66,7 @@ class ThreadPool(Queue):
             myThread.dialect)
         self.query = factory.loadObject("Queries")
 
-        # check which tables we need to use. 
+        # check which tables we need to use.
         self.poolTable = 'tp_threadpool'
         self.poolTableBufferIn = 'tp_threadpool_buffer_in'
         self.poolTableBufferOut = 'tp_threadpool_buffer_out'
@@ -101,7 +101,7 @@ class ThreadPool(Queue):
     def prepareSlave(self, slave):
         """
         Prepares a slave to make sure it accesses
-        the proper tables and is associated to the 
+        the proper tables and is associated to the
         correct pool.
         """
         slave.args['thread_pool_table'] = self.poolTable
@@ -117,7 +117,7 @@ class ThreadPool(Queue):
         """
         Counts how many messages for this pool are in the database.
         This is used when the pool is initialized to deal with entries
-        that might be made before a crash and to establish an in 
+        that might be made before a crash and to establish an in
         memory queue length
         """
 
@@ -132,7 +132,7 @@ class ThreadPool(Queue):
     def enqueue( self, key, *parameters ):
         """
         _enqueue_
-        
+
         Add a new work item to the queue.
         This may result in threads being spawned if there are threads
         available.
@@ -146,7 +146,7 @@ class ThreadPool(Queue):
         myThread = threading.currentThread()
         myThread.transaction.begin()
         self.query.insertWork(args, self.poolTableBufferIn)
-        # we need to commit here otherwise the thread transaction might not 
+        # we need to commit here otherwise the thread transaction might not
         # see it. check if this buffer needs to be flushed.
         myThread.transaction.commit()
         myThread.transaction.begin()
@@ -155,9 +155,9 @@ class ThreadPool(Queue):
              'thread_pool_id' : self.threadPoolId}, self.poolTableBufferIn)
         if bufferSize > self.bufferSize:
             self.query.moveWorkFromBufferIn(self.poolTableBufferIn, \
-                self.poolTable) 
-        #FIXME: we should call the msgService finsih method here before 
-        #this commit so we know the event/payload is transferred to a thread. 
+                self.poolTable)
+        #FIXME: we should call the msgService finsih method here before
+        #this commit so we know the event/payload is transferred to a thread.
         myThread.transaction.commit()
         #logging.info("THREADPOOL: Enqueued item")
 
@@ -185,18 +185,18 @@ class ThreadPool(Queue):
                 thread = threading.Thread( target = self.slaveThread, \
                     args=(slave,) )
                 thread.start()
-    
+
         self.lock.release()
 
         #if thread != None:
             #thread.join()
 
-        
+
 
     def slaveThread( self, slaveServer ):
         """
         _slaveThread_
-        
+
         This thread executes the method for each work item.
 
         """
@@ -235,9 +235,9 @@ class ThreadPool(Queue):
                 self.lock.notify()
             else:
                 # sleep for some random time.
-                time.sleep(random.randint(1, 5)) 
+                time.sleep(random.randint(1, 5))
                 self.lock.acquire()
-                
+
 
         # This thread is all done: put it back in the queue
         #~ print "slave thread exiting"
@@ -245,4 +245,3 @@ class ThreadPool(Queue):
         assert( self.activeCount >= 0 )
         self.slaveQueue.append( slaveServer )
         self.lock.release()
-

@@ -1312,7 +1312,7 @@ class Report:
         _stripInputFiles_
 
         If we need to compact the FWJR the easiest way is just to
-        trim the number of input files.  
+        trim the number of input files.
         """
 
         for stepName in self.data.steps:
@@ -1347,5 +1347,3 @@ def addFiles(file1, file2):
                     if l not in thisRun.lumis:
                         thisRun.lumis.append(l)
     return
-
-

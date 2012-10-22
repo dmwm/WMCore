@@ -3,7 +3,7 @@ _Create_
 
 Implementation of Createfor Oracle.
 
-Inherit from CreateAgent, and add Oracle specific substitutions (e.g. 
+Inherit from CreateAgent, and add Oracle specific substitutions (e.g.
 use trigger and sequence to mimic auto increment in MySQL.
 """
 
@@ -18,7 +18,7 @@ class Create(CreateAgentBase):
     """
     sequenceTables = ["wm_components"]
     seqStartNum = 40
-    
+
     def __init__(self, logger = None, dbi = None, params = None):
         """
         _init_
@@ -27,7 +27,7 @@ class Create(CreateAgentBase):
         constraints and inserts.
         """
         CreateAgentBase.__init__(self, logger, dbi, params)
-        
+
         self.create["01wm_components"] = \
           """CREATE TABLE wm_components (
              id               INTEGER      NOT NULL,
@@ -36,12 +36,12 @@ class Create(CreateAgentBase):
              update_threshold INTEGER      NOT NULL,
              PRIMARY KEY (id),
              UNIQUE (name))"""
-             
-             
+
+
         for tableName in self.sequenceTables:
             seqname = '%s_SEQ' % tableName
             self.create["%s%s" % (self.seqStartNum, seqname)] = """
-            CREATE SEQUENCE %s start with 1 
+            CREATE SEQUENCE %s start with 1
             increment by 1 nomaxvalue cache 100""" % seqname
 
             triggerName = '%s_TRG' % tableName

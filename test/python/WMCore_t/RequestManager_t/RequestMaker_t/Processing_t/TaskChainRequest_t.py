@@ -14,53 +14,53 @@ from WMCore.RequestManager.RequestMaker.Processing.TaskChainRequest import TaskC
 class TaskChainRequestTest(unittest.TestCase):
     def setUp(self):
         pass
-        
+
     def testA(self):
         """test with generation TaskChain"""
-        
+
         request = {
-            "AcquisitionEra": "ReleaseValidation", 
-            "Requestor": "sfoulkes",      
-            "CMSSWVersion": "CMSSW_3_5_8",         
-            "ScramArch": "slc5_ia32_gcc434",       
-            "ProcessingVersion": "v1",             
-            "GlobalTag": "GR10_P_v4::All",         
+            "AcquisitionEra": "ReleaseValidation",
+            "Requestor": "sfoulkes",
+            "CMSSWVersion": "CMSSW_3_5_8",
+            "ScramArch": "slc5_ia32_gcc434",
+            "ProcessingVersion": "v1",
+            "GlobalTag": "GR10_P_v4::All",
             "CouchURL": "http://couchserver.cern.ch",
-            "CouchDBName": "config_cache",                                                               
+            "CouchDBName": "config_cache",
             "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],
-            "TaskChain" : 3,                               
+            "TaskChain" : 3,
         }
-        
-        
+
+
         request['Task1'] = {
-            "TaskName" : "GenSim", 
+            "TaskName" : "GenSim",
             "ConfigCacheID" : "ConfigIDHere",
             "SplittingAlgorithm"  : "EventBased",
             "SplittingArguments" : {"events_per_job" : 250},
-            "RequestSizeEvents" : 10000,                    
-            "Seeding" : "Automatic",                        
-            "PrimaryDataset" : "RelValTTBar",               
+            "RequestSizeEvents" : 10000,
+            "Seeding" : "Automatic",
+            "PrimaryDataset" : "RelValTTBar",
         }
-        
+
         request['Task2'] = {
-            "TaskName" : "DigiHLT",                   
-              "InputTask" : "GenSim",             
+            "TaskName" : "DigiHLT",
+              "InputTask" : "GenSim",
               "InputFromOutputModule" : "writeGENSIM",
               "ConfigCacheID" : "17612875182763812763812",
-              "SplittingAlgorithm" : "FileBased",         
+              "SplittingAlgorithm" : "FileBased",
               "SplittingArguments" : {"files_per_job" : 1 }
         }
-        
+
         request['Task3'] = {
-             "TaskName" : "Reco",                   
-               "InputTask" : "DigiHLT",             
+             "TaskName" : "Reco",
+               "InputTask" : "DigiHLT",
                "InputFromOutputModule" : "writeDIGIRECO",
                "ConfigCacheID" : "17612875182763812763812",
-               "SplittingAlgorithm" : "FileBased",         
+               "SplittingAlgorithm" : "FileBased",
                "SplittingArguments" : {"files_per_job" : 1 }
         }
-         
-        
+
+
         schema = TaskChainSchema()
         schema.update(request)
         schema.validate()
@@ -69,21 +69,21 @@ class TaskChainRequestTest(unittest.TestCase):
         """test with processing TaskChain"""
 
         request = {
-            "AcquisitionEra": "ReleaseValidation", 
-            "Requestor": "sfoulkes",      
-            "CMSSWVersion": "CMSSW_3_5_8",         
-            "ScramArch": "slc5_ia32_gcc434",       
-            "ProcessingVersion": "v1",             
-            "GlobalTag": "GR10_P_v4::All",         
+            "AcquisitionEra": "ReleaseValidation",
+            "Requestor": "sfoulkes",
+            "CMSSWVersion": "CMSSW_3_5_8",
+            "ScramArch": "slc5_ia32_gcc434",
+            "ProcessingVersion": "v1",
+            "GlobalTag": "GR10_P_v4::All",
             "CouchURL": "http://couchserver.cern.ch",
-            "CouchDBName": "config_cache",                                                               
+            "CouchDBName": "config_cache",
             "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],
-            "TaskChain" : 3,                               
+            "TaskChain" : 3,
         }
 
 
         request['Task1'] = {
-            "TaskName" : "ReadStuff", 
+            "TaskName" : "ReadStuff",
             "ConfigCacheID" : "ConfigIDHere",
             "SplittingAlgorithm"  : "EventBased",
             "SplittingArguments" : {"events_per_job" : 250},
@@ -91,20 +91,20 @@ class TaskChainRequestTest(unittest.TestCase):
         }
 
         request['Task2'] = {
-            "TaskName" : "DigiHLT",                   
-              "InputTask" : "ReadStuff",             
+            "TaskName" : "DigiHLT",
+              "InputTask" : "ReadStuff",
               "InputFromOutputModule" : "writeStuff",
               "ConfigCacheID" : "17612875182763812763812",
-              "SplittingAlgorithm" : "FileBased",         
+              "SplittingAlgorithm" : "FileBased",
               "SplittingArguments" : {"files_per_job" : 1 }
         }
 
         request['Task3'] = {
-             "TaskName" : "Reco",                   
-               "InputTask" : "DigiHLT",             
+             "TaskName" : "Reco",
+               "InputTask" : "DigiHLT",
                "InputFromOutputModule" : "writeDIGIRECO",
                "ConfigCacheID" : "17612875182763812763812",
-               "SplittingAlgorithm" : "FileBased",         
+               "SplittingAlgorithm" : "FileBased",
                "SplittingArguments" : {"files_per_job" : 1 }
         }
 

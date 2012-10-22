@@ -48,18 +48,16 @@ class WorkQueueTestCase(unittest.TestCase):
         self.testInit.setupCouch(self.localQInboxDB, *self.couchApps)
         self.testInit.setupCouch(self.localQDB2, *self.couchApps)
         self.testInit.setupCouch(self.localQInboxDB2, *self.couchApps)
-        
+
         self.workDir = self.testInit.generateWorkDir()
         return
 
     def tearDown(self):
         """
         _tearDown_
-        
+
         Drop all the WMBS tables.
         """
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
-        
-    

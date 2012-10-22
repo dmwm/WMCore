@@ -22,14 +22,14 @@ class StageOutTest(unittest.TestCase):
     def setUp(self):
         '''create the builder object and the temporary directory'''
         self.tempDir = tempfile.mkdtemp()
-        
+
         try:
             self.testBuilder = StepFactory.getStepBuilder("StageOut")
         except Exception, ex:
             msg = "Failed to instantiate Builder:\n"
             msg += str(ex)
-            self.fail(msg)      
-        
+            self.fail(msg)
+
     def tearDown(self):
         '''remove the temp directory we created'''
         shutil.rmtree( self.tempDir )
@@ -41,9 +41,9 @@ class StageOutTest(unittest.TestCase):
         mytemplate(mystep.data)
         self.testBuilder(mystep.data, "testTask", self.tempDir)
         self.assertTrue(os.path.exists(self.tempDir))
-        self.assertTrue(os.path.exists("%s/DummyStagingStep/__init__.py" 
+        self.assertTrue(os.path.exists("%s/DummyStagingStep/__init__.py"
                                        % self.tempDir))
-    
+
     def testCustomBuild(self):
         ''' add in a custom directory and verify it gets created'''
         mytemplate = StepFactory.getStepTemplate("StageOut")
@@ -54,15 +54,15 @@ class StageOutTest(unittest.TestCase):
         helper.addDirectory( 'testdirectory2/testsubdir' )
         self.testBuilder(mystep.data, "testTask", self.tempDir)
         self.assertTrue(os.path.exists(self.tempDir))
-        self.assertTrue(os.path.exists("%s/DummyStagingStep/__init__.py" 
+        self.assertTrue(os.path.exists("%s/DummyStagingStep/__init__.py"
                                        % self.tempDir))
-        self.assertTrue(os.path.exists("%s/DummyStagingStep/testdirectory1" 
+        self.assertTrue(os.path.exists("%s/DummyStagingStep/testdirectory1"
                                        % self.tempDir))
-        self.assertTrue(os.path.exists("%s/%s/testdirectory2/testsubdir" 
+        self.assertTrue(os.path.exists("%s/%s/testdirectory2/testsubdir"
                                        % (self.tempDir, 'DummyStagingStep')))
 
-            
-        
+
+
 
 
 if __name__ == "__main__":

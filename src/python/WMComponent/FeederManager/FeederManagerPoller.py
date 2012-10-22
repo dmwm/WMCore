@@ -82,14 +82,14 @@ class FeederManagerPoller(BaseWorkerThread):
 
             listFileset[filesetToUpdate.name] = filesetToUpdate
 
-        # Update the list of the fileset to watch 
+        # Update the list of the fileset to watch
         for oldFileset in self.fileset_watch:
 
             if oldFileset not in listFileset:
 
                 fileset_watch_temp.append(oldFileset)
-        # Remove from the list of the fileset to update the ones which are not 
-        # in ManagedFilesets anymore 
+        # Remove from the list of the fileset to update the ones which are not
+        # in ManagedFilesets anymore
         for oldTempFileset in fileset_watch_temp:
             del self.fileset_watch[oldTempFileset]
 

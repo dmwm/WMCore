@@ -7,9 +7,3 @@ Module containing common components for filtering
 sites (white lists and black lists)
 
 """
-
-
-
-
-
-

@@ -390,8 +390,8 @@ class gLitePlugin(BasePlugin):
         errorReport = Report()
         errorReport.addError(title, code, title, mesg)
         errorReport.save(filename = reportName)
-        if putReportInJob: 
-            job['fwjr'] = errorReport 
+        if putReportInJob:
+            job['fwjr'] = errorReport
 
 
     def close(self, input, result):
@@ -1335,9 +1335,9 @@ class gLitePlugin(BasePlugin):
 
         jdl += 'Requirements = '
         if jobList[0].has_key('swVersion') and jobList[0]['swVersion'] is not None:
-             jdl += 'Member("VO-cms-%s", other.GlueHostApplicationSoftwareRunTimeEnvironment) && ' % jobList[0]['swVersion']
+            jdl += 'Member("VO-cms-%s", other.GlueHostApplicationSoftwareRunTimeEnvironment) && ' % jobList[0]['swVersion']
         if jobList[0].has_key('scramArch') and jobList[0]['scramArch'] is not None:
-             jdl += 'Member("VO-cms-%s", other.GlueHostApplicationSoftwareRunTimeEnvironment) && ' % jobList[0]['scramArch']
+            jdl += 'Member("VO-cms-%s", other.GlueHostApplicationSoftwareRunTimeEnvironment) && ' % jobList[0]['scramArch']
 
         jdl += '(other.GlueHostNetworkAdapterOutboundIP) ' + \
                '&& other.GlueCEStateStatus == "%s" ' \

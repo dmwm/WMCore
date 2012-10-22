@@ -12,7 +12,7 @@ class Container():
     Empty class to emulate a PSet.
     """
     _type = None
-    
+
     def setType(self, type):
         """
         _setType_
@@ -97,7 +97,7 @@ def int32(value = 0):
 
     Signed integer parameter.
     """
-    return ConfigObject("uint32", value)    
+    return ConfigObject("uint32", value)
 
 def bool(value = True):
     """
@@ -124,7 +124,7 @@ def PSet(**attributes):
     newPSet = Container()
     for attributeName in attributes.keys():
         setattr(newPSet, attributeName, attributes[attributeName])
-        
+
     return newPSet
 
 def Service(serviceName):

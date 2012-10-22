@@ -15,13 +15,13 @@ class CloseBlockFiles(DBFormatter):
               WHERE df.block_id = (SELECT id FROM dbsbuffer_block
                                     WHERE blockname = :name)"""
 
-    
+
     def execute(self, blockname, status, conn = None, transaction = False):
         """
         _execute_
 
         List as InDBS all files for a given blockname
         """
-        self.dbi.processData(self.sql, {'name': blockname, 'status': status}, 
+        self.dbi.processData(self.sql, {'name': blockname, 'status': status},
                              conn = conn, transaction = transaction)
-        return 
+        return

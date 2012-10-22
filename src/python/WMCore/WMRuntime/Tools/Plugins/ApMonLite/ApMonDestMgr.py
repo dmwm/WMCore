@@ -72,7 +72,7 @@ class ApMonDestMgr(list):
 
         """
         map(_Disconnect, self)
-        
+
 
     def send(self, **args):
         """
@@ -86,6 +86,3 @@ class ApMonDestMgr(list):
         for dest in self:
             dest.send(**args)
         return
-    
-
-

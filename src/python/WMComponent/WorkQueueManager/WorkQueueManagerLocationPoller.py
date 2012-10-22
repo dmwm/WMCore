@@ -34,8 +34,8 @@ class WorkQueueManagerLocationPoller(BaseWorkerThread):
     def algorithm(self, parameters):
         """
         Update locations
-	    """
-        
+            """
+
         self.queue.logger.info("Updating data locations")
         try:
             self.queue.updateLocationInfo()

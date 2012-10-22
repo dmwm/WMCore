@@ -31,10 +31,10 @@ class MonteCarloFromGENTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setupCouch("mclhe_t", "ConfigCache")
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)        
+                                useDefault = False)
 
         couchServer = CouchServer(os.environ["COUCHURL"])
-        self.configDatabase = couchServer.connectDatabase("mclhe_t")        
+        self.configDatabase = couchServer.connectDatabase("mclhe_t")
         return
 
     def tearDown(self):
@@ -75,12 +75,12 @@ class MonteCarloFromGENTest(unittest.TestCase):
         correctly.
         """
         arguments = getTestArguments()
-        arguments["ProcConfigCacheID"] = self.injectConfig()
+        arguments["ConfigCacheID"] = self.injectConfig()
         arguments["CouchDBName"] = "mclhe_t"
         testWorkload = monteCarloFromGENWorkload("TestWorkload", arguments)
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DMWM")
-        
+
         testWMBSHelper = WMBSHelper(testWorkload, "MonteCarloFromGEN", "SomeBlock")
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
@@ -143,7 +143,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
             self.assertEqual(logArchOutput.name, "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMerge%s/merged-logArchive" % goldenOutputMod,
                              "Error: LogArchive output fileset is wrong: %s" % logArchOutput.name)
             self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMerge%s/merged-logArchive" % goldenOutputMod,
-                             "Error: LogArchive output fileset is wrong.")            
+                             "Error: LogArchive output fileset is wrong.")
 
         topLevelFileset = Fileset(name = "TestWorkload-MonteCarloFromGEN-SomeBlock")
         topLevelFileset.loadData()
@@ -233,7 +233,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
         self.assertEqual(logCollectSub["type"], "LogCollect",
                          "Error: Wrong subscription type.")
         self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
-                         "Error: Wrong split algo.")                
+                         "Error: Wrong split algo.")
 
         return
 

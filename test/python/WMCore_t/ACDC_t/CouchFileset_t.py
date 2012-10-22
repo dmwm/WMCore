@@ -35,7 +35,7 @@ class CouchFileset_t(unittest.TestCase):
         self.owner.connect()
         self.owner.create()
         return
-        
+
     def tearDown(self):
         """
         _tearDown_
@@ -52,13 +52,13 @@ class CouchFileset_t(unittest.TestCase):
         correctly.
         """
         testCollectionA = CouchCollection(database = self.testInit.couchDbName,
-                                          url = self.testInit.couchUrl, 
+                                          url = self.testInit.couchUrl,
                                           name = "Thunderstruck")
         testCollectionB = CouchCollection(database = self.testInit.couchDbName,
-                                          url = self.testInit.couchUrl, 
+                                          url = self.testInit.couchUrl,
                                           name = "StruckThunder")
         testCollectionA.setOwner(self.owner)
-        testCollectionB.setOwner(self.owner)        
+        testCollectionB.setOwner(self.owner)
 
         testFiles = []
         for i in range(5):
@@ -80,12 +80,12 @@ class CouchFileset_t(unittest.TestCase):
         testCollectionB.addFileset(testFilesetC)
         testFilesetA.add(testFiles)
         testFilesetB.add(testFiles)
-        testFilesetC.add(testFiles)        
+        testFilesetC.add(testFiles)
 
         testFilesetC.drop()
 
         testCollectionC = CouchCollection(database = self.testInit.couchDbName,
-                                          url = self.testInit.couchUrl, 
+                                          url = self.testInit.couchUrl,
                                           name = "StruckThunder")
         testCollectionC.setOwner(self.owner)
         testCollectionC.populate()
@@ -96,7 +96,7 @@ class CouchFileset_t(unittest.TestCase):
                          "Error: Wrong number of files in fileset.")
 
         testCollectionD = CouchCollection(database = self.testInit.couchDbName,
-                                          url = self.testInit.couchUrl, 
+                                          url = self.testInit.couchUrl,
                                           name = "Thunderstruck")
         testCollectionD.setOwner(self.owner)
         testCollectionD.populate()
@@ -104,7 +104,7 @@ class CouchFileset_t(unittest.TestCase):
         self.assertEqual(len(testCollectionD["filesets"]), 1,
                          "Error: There should be one fileset in this collection.")
         self.assertEqual(testCollectionD["filesets"][0].fileCount(), 5,
-                         "Error: Wrong number of files in fileset.")        
+                         "Error: Wrong number of files in fileset.")
         return
 
     def testListFiles(self):
@@ -114,7 +114,7 @@ class CouchFileset_t(unittest.TestCase):
         Verify that the files iterator works correctly.
         """
         testCollection = CouchCollection(database = self.testInit.couchDbName,
-                                         url = self.testInit.couchUrl, 
+                                         url = self.testInit.couchUrl,
                                          name = "Thunderstruck")
         testCollection.setOwner(self.owner)
         testFileset = CouchFileset(database = self.testInit.couchDbName,
@@ -147,7 +147,7 @@ class CouchFileset_t(unittest.TestCase):
         correctly.
         """
         testCollection = CouchCollection(database = self.testInit.couchDbName,
-                                         url = self.testInit.couchUrl, 
+                                         url = self.testInit.couchUrl,
                                          name = "Thunderstruck")
         testCollection.setOwner(self.owner)
         testFileset = CouchFileset(database = self.testInit.couchDbName,

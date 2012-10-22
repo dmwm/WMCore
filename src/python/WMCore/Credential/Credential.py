@@ -76,5 +76,3 @@ class Credential:
         Destroy user credential
         """
         raise NotImplementedError
-
-

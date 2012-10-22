@@ -14,4 +14,3 @@ class CompleteJob(MySQLCompleteJob):
 
     Label jobs as complete
     """
-

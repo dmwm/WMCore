@@ -25,8 +25,8 @@ class PrivateMCRequest(RequestMakerInterface):
         RequestMakerInterface.__init__(self)
 
     def makeWorkload(self, schema):
-       factory = PrivateMCWorkloadFactory()
-       return factory(schema['RequestName'], schema).data
+        factory = PrivateMCWorkloadFactory()
+        return factory(schema['RequestName'], schema).data
 
 
 class PrivateMCSchema(RequestSchema):

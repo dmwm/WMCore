@@ -27,4 +27,3 @@ class GetStateID(DBFormatter):
         stateId = self.formatOne(result)
 
         return stateId[0]
-

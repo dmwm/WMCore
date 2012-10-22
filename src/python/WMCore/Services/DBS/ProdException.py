@@ -28,7 +28,7 @@ class ProdException(exceptions.Exception):
 
         #  //
         # // Init data dictionary with defaults
-        #// 
+        #//
         self.data = {}
         self.data.setdefault("ClassName", None)
         self.data.setdefault("ModuleName", None)
@@ -40,7 +40,7 @@ class ProdException(exceptions.Exception):
             self.data.setdefault("ErrorNr",0)
         else:
             self.data.setdefault("ErrorNr",errorNo)
-        
+
         self.message = message
         self.data.update(data)
 
@@ -55,7 +55,7 @@ class ProdException(exceptions.Exception):
                 modName = excepModule.__name__
                 self['ModuleName'] = modName
 
-                
+
         #  //
         # // Find out where the exception came from
         #//
@@ -84,7 +84,7 @@ class ProdException(exceptions.Exception):
         make exception look like a dictionary
         """
         self.data[key] = value
-        
+
     def addInfo(self, **data):
         """
         _addInfo_
@@ -127,7 +127,3 @@ class ProdException(exceptions.Exception):
         for key, value in self.data.items():
             strg += "\t%s : %s\n" % (key, value, )
         return strg
-
-
-
-

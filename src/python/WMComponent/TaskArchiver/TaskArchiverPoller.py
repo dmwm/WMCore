@@ -211,6 +211,9 @@ class TaskArchiverPoller(BaseWorkerThread):
         if not self.useReqMgrForCompletionCheck:
             #sets the local monitor summary couch db
             self.wmstatsCouchDB = WMStatsWriter(self.config.TaskArchiver.localWMStatsURL);
+            self.centralCouchDBWriter = self.wmstatsCouchDB;
+        else:
+            self.centralCouchDBWriter = WMStatsWriter(self.config.TaskArchiver.centralWMStatsURL);
         # Start a couch server for getting job info
         # from the FWJRs for committal to archive
         try:
@@ -322,6 +325,7 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         #Only delete those where the upload and notification succeeded
         logging.info("Found %d candidate workflows for deletion" % len(finishedwfs))
+        abortedWorkflows = self.centralCouchDBWriter.workflowsByStatus(["aborted"], format = "dict");
         wfsToDelete = {}
         for workflow in finishedwfs:
             try:
@@ -342,6 +346,10 @@ class TaskArchiverPoller(BaseWorkerThread):
                 if not self.useReqMgrForCompletionCheck:
                     self.wmstatsCouchDB.updateRequestStatus(workflow, "completed")
                     logging.info("status updated to completed %s" % workflow)
+
+                if workflow in abortedWorkflows:
+                    self.centralCouchDBWriter.updateRequestStatus(workflow, "aborted-completed")
+                    logging.info("status updated to aborted-completed %s" % workflow)
 
                 wfsToDelete[workflow] = {"spec" : spec, "workflows": finishedwfs[workflow]["workflows"]}
 

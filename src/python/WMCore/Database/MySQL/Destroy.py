@@ -7,7 +7,7 @@ Implementation of Destroy for MySQL
 
 from WMCore.Database.DBFormatter import DBFormatter
 
-class Destroy(DBFormatter):    
+class Destroy(DBFormatter):
 
     def execute(self, subscription = None, conn = None, transaction = False):
 

@@ -38,14 +38,14 @@ from WMCore_t.WMSpec_t.TestSpec         import testWorkload
 
 class ErrorHandlerTest(unittest.TestCase):
     """
-    TestCase for TestErrorHandler module 
+    TestCase for TestErrorHandler module
     """
     def setUp(self):
         """
         setup for test.
         """
         myThread = threading.currentThread()
-        
+
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection(destroyAllDatabase = True)
@@ -67,7 +67,7 @@ class ErrorHandlerTest(unittest.TestCase):
 
         self.dataCS = DataCollectionService(url = self.testInit.couchUrl,
                                             database = "errorhandler_t")
-        
+
         return
 
     def tearDown(self):
@@ -94,7 +94,7 @@ class ErrorHandlerTest(unittest.TestCase):
         config.CoreDatabase.socket     = os.getenv("DBSOCK")
 
         config.component_("ErrorHandler")
-        # The log level of the component. 
+        # The log level of the component.
         config.ErrorHandler.logLevel = 'DEBUG'
         # The namespace of the component
         config.ErrorHandler.namespace = 'WMComponent.ErrorHandler.ErrorHandler'
@@ -133,15 +133,15 @@ class ErrorHandlerTest(unittest.TestCase):
         workload.data.request.section_('schema')
         workload.data.request.schema.Requestor = 'nobody'
         workload.data.request.schema.Group     = 'testers'
-        
-        
+
+
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
 
         return workload
 
-    
+
 
     def createTestJobGroup(self, nJobs = 10, retry_count = 1,
                            workloadPath = 'test', fwjrPath = None,
@@ -156,10 +156,10 @@ class ErrorHandlerTest(unittest.TestCase):
         testWorkflow = Workflow(spec = workloadPath, owner = "cmsdataops", group = "cmsdataops",
                                 name = workloadName, task="/TestWorkload/ReReco")
         testWorkflow.create()
-        
+
         testWMBSFileset = Fileset(name = "TestFileset")
         testWMBSFileset.create()
-        
+
         testSubscription = Subscription(fileset = testWMBSFileset,
                                         workflow = testWorkflow)
         testSubscription.create()
@@ -204,21 +204,21 @@ class ErrorHandlerTest(unittest.TestCase):
             testJob.addFile(testFileB)
             testJob.save()
 
-        
+
         testJobGroup.commit()
 
 
         testSubscription.acquireFiles(files = [testFileA, testFileB])
         testSubscription.save()
         myThread.transaction.commit()
-        
+
         return testJobGroup
 
 
     def testA_Create(self):
         """
         WMComponent_t.ErrorHandler_t.ErrorHandler_t:testCreate()
-        
+
         Mimics creation of component and test jobs failed in create stage.
         """
 
@@ -227,11 +227,11 @@ class ErrorHandlerTest(unittest.TestCase):
         workload = self.createWorkload(workloadName = workloadName)
         workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload',
                                     'WMSandbox', 'WMWorkload.pkl')
-        
+
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs,
                                                workloadPath = workloadPath,
                                                workloadName = workloadName)
-        
+
         config = self.getConfig()
         changer = ChangeState(config)
         changer.propagate(testJobGroup.jobs, 'created', 'new')
@@ -274,7 +274,7 @@ class ErrorHandlerTest(unittest.TestCase):
     def testB_Submit(self):
         """
         WMComponent_t.ErrorHandler_t.ErrorHandler_t:testSubmit()
-        
+
         Mimics creation of component and test jobs failed in submit stage.
         """
         workloadName = 'TestWorkload'
@@ -282,7 +282,7 @@ class ErrorHandlerTest(unittest.TestCase):
         workload = self.createWorkload(workloadName = workloadName)
         workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload',
                                     'WMSandbox', 'WMWorkload.pkl')
-        
+
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs,
                                                workloadPath = workloadPath)
 
@@ -319,7 +319,7 @@ class ErrorHandlerTest(unittest.TestCase):
 
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs,
                                                workloadPath = workloadPath)
-        
+
         config = self.getConfig()
         changer = ChangeState(config)
         changer.propagate(testJobGroup.jobs, 'created', 'new')
@@ -386,7 +386,7 @@ class ErrorHandlerTest(unittest.TestCase):
         idList = self.getJobs.execute(state = 'Exhausted')
         self.assertEqual(len(idList), self.nJobs)
 
-        
+
 
         # Did we fail the files?
         self.assertEqual(len(testSubscription.filesOfStatus("Acquired")), 0)
@@ -399,7 +399,7 @@ class ErrorHandlerTest(unittest.TestCase):
         Test our ability to fail jobs based on the information in the FWJR
         """
         workloadName = 'TestWorkload'
-        
+
         workload = self.createWorkload(workloadName = workloadName)
         workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload',
                                     'WMSandbox', 'WMWorkload.pkl')
@@ -411,7 +411,7 @@ class ErrorHandlerTest(unittest.TestCase):
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs,
                                                workloadPath = workloadPath,
                                                fwjrPath = fwjrPath)
-        
+
         config = self.getConfig()
         config.ErrorHandler.readFWJR         = True
         config.ErrorHandler.failureExitCodes = [8020]
@@ -468,7 +468,7 @@ class ErrorHandlerTest(unittest.TestCase):
 
         return
 
-        
+
 
 
 
@@ -486,7 +486,7 @@ class ErrorHandlerTest(unittest.TestCase):
         nJobs = 1000
 
         testJobGroup = self.createTestJobGroup(nJobs = nJobs)
-        
+
         config = self.getConfig()
         changer = ChangeState(config)
         changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
@@ -512,9 +512,8 @@ class ErrorHandlerTest(unittest.TestCase):
         p = pstats.Stats('profStats.stat')
         p.sort_stats('cumulative')
         p.print_stats(0.2)
-        
+
         return
 
 if __name__ == '__main__':
     unittest.main()
-

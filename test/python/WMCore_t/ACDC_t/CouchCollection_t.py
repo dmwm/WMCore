@@ -33,7 +33,7 @@ class CouchCollection_t(unittest.TestCase):
                               self.testInit.couchDbName)
         self.owner.connect()
         self.owner.create()
-        
+
     def tearDown(self):
         """
         _tearDown_
@@ -42,7 +42,7 @@ class CouchCollection_t(unittest.TestCase):
         """
         self.testInit.tearDownCouch()
         return
-        
+
     def testCreatePopulateDrop(self):
         """
         _testCreatePopulateDrop_
@@ -50,15 +50,15 @@ class CouchCollection_t(unittest.TestCase):
         Test creating, populating and dropping a collection.
         """
         testCollectionA = CouchCollection(database = self.testInit.couchDbName,
-                                          url = self.testInit.couchUrl, 
+                                          url = self.testInit.couchUrl,
                                           name = "Thunderstruck")
         testCollectionB = CouchCollection(database = self.testInit.couchDbName,
-                                          url = self.testInit.couchUrl, 
+                                          url = self.testInit.couchUrl,
                                           name = "StruckThunder")
         testCollectionA.setOwner(self.owner)
-        testCollectionB.setOwner(self.owner)        
+        testCollectionB.setOwner(self.owner)
         testCollectionA.create()
-        testCollectionB.create()        
+        testCollectionB.create()
 
         # There should be nothing in couch.  Documents are only added for
         # filesets and files.
@@ -72,7 +72,7 @@ class CouchCollection_t(unittest.TestCase):
         for i in range(10):
             testFile = File(lfn = makeUUID(), size = random.randint(1024, 4096),
                             events = random.randint(1024, 4096))
-            testFilesB.append(testFile)            
+            testFilesB.append(testFile)
 
         testFilesetA = CouchFileset(database = self.testInit.couchDbName,
                                     url = self.testInit.couchUrl,
@@ -96,7 +96,7 @@ class CouchCollection_t(unittest.TestCase):
 
         # Try to populate testFilesetA
         testCollectionC = CouchCollection(database = self.testInit.couchDbName,
-                                          url = self.testInit.couchUrl, 
+                                          url = self.testInit.couchUrl,
                                           name = "ThunderStruck")
         testCollectionC.setOwner(self.owner)
         testCollectionC.populate()
@@ -106,7 +106,7 @@ class CouchCollection_t(unittest.TestCase):
 
         # Try to populate testFilesetB
         testCollectionD = CouchCollection(database = self.testInit.couchDbName,
-                                          url = self.testInit.couchUrl, 
+                                          url = self.testInit.couchUrl,
                                           name = "StruckThunder")
         testCollectionD.setOwner(self.owner)
         testCollectionD.populate()
@@ -129,6 +129,6 @@ class CouchCollection_t(unittest.TestCase):
                                  "Error: Wrong file size.")
 
         return
-    
+
 if __name__ == '__main__':
-	unittest.main()
+    unittest.main()

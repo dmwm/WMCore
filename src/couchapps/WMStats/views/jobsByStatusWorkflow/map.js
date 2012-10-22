@@ -9,6 +9,7 @@ function(doc) {
         }
     }
     listErrors.sort();
-    emit([doc.workflow, doc.task, doc.state, doc.exitcode, doc.site, listErrors], null);
+    emit([doc.workflow, doc.task, doc.state, doc.exitcode, doc.site, listErrors], 
+         {'id': doc['_id'], 'rev': doc['_rev']});
   }
 }

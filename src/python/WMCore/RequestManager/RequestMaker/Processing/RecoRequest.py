@@ -25,10 +25,10 @@ class RecoRequest(RequestMakerInterface):
         RequestMakerInterface.__init__(self)
 
     def makeWorkload(self, schema):
-       # FIXME
-       return rerecoWorkload(schema['RequestName'], schema).data
+        # FIXME
+        return rerecoWorkload(schema['RequestName'], schema).data
 
-        
+
 class RecoSchema(RequestSchema):
     """
     _ReReco_
@@ -64,4 +64,3 @@ class RecoSchema(RequestSchema):
 
 
 registerRequestType("Reco", RecoRequest, RecoSchema)
-

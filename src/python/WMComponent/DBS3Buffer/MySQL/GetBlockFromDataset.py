@@ -22,7 +22,7 @@ class GetBlockFromDataset(DBFormatter):
                INNER JOIN dbsbuffer_dataset ON dbsbuffer_algo_dataset_assoc.dataset_id = dbsbuffer_dataset.id
                WHERE dbsbuffer_dataset.Path = :dataset
     """
-                       
+
     def execute(self, dataset = None, conn = None,
                 transaction = False):
         """
@@ -32,7 +32,7 @@ class GetBlockFromDataset(DBFormatter):
         """
 
         binds = {'dataset': dataset}
-        
+
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                           transaction = transaction)
 

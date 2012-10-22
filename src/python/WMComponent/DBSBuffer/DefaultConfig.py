@@ -13,7 +13,7 @@ from WMCore.Agent.Configuration import Configuration
 
 config = Configuration()
 config.component_("DBSBuffer")
-#The log level of the component. 
+#The log level of the component.
 config.DBSBuffer.logLevel = 'INFO'
 #The namespace of the buffer. Used to load the module as daemon
 config.DBSBuffer.namespace = 'WMComponent.DBSBuffer.DBSBuffer'
@@ -25,4 +25,3 @@ config.DBSBuffer.maxThreads = 1
 #
 config.DBSBuffer.jobSuccessHandler = \
     'WMComponent.DBSBuffer.Handler.JobSuccess'
-

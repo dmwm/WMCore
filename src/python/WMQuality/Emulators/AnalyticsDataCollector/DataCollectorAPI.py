@@ -18,9 +18,9 @@ NUM_REQUESTS = 2
 NUM_SITES = 3
 NUM_JOBS_EACH = 1
 JOB_SLOTS = 1000
-COUCH_JOB_STATUS = ['queued_first', 'queued_retry', 'cooloff', 'submitted_first', 
-                    'submitted_retry', 'success', 
-                    'failure_exception', 'failure_submit', 
+COUCH_JOB_STATUS = ['queued_first', 'queued_retry', 'cooloff', 'submitted_first',
+                    'submitted_retry', 'success',
+                    'failure_exception', 'failure_submit',
                     'failure_create', 'failure_cancel']
 QUEUE_JOB_STATUS = ['inQueue', 'inWMBS']
 BATCH_JOB_STATUS = ['submitted_pending', 'submitted_running']
@@ -33,11 +33,11 @@ class LocalCouchDBData():
         self.couchURL = couchURL
         self.couchURLBase, self.dbName = splitCouchServiceURL(couchURL)
         logging.info("connect couch %s:  %s" % (self.couchURLBase, self.dbName))
-        
+
     def getJobSummaryByWorkflowAndSite(self):
         """
         gets the job status information by workflow
-    
+
         example
         {"rows":[
             {"key":['request_name1", "queued_first", "siteA"],"value":100},
@@ -45,8 +45,8 @@ class LocalCouchDBData():
             {"key":['request_name1", "running", "siteA"],"value":100},
             {"key":['request_name1", "success", "siteB"],"value":100}\
          ]}
-         
-         and convert to 
+
+         and convert to
          {'request_name1': {'queue_first'; { 'siteA': 100}}
           'request_name1': {'queue_first'; { 'siteB': 100}}
          }
@@ -76,12 +76,12 @@ class ReqMonDBData():
 class WMAgentDBData():
 
     def __init__(self, dbi, logger):
-        
+
         # interface to WMBS/BossAir db
         print "Using %s Emulator" % self.__class__
-        
+
     def getHeartBeatWarning(self, agentURL, acdcLink):
-        
+
         agentInfo = {}
         agentInfo['status'] = 'ok'
         agentInfo['url'] = agentURL
@@ -103,7 +103,7 @@ class WMAgentDBData():
         return doc
 
     def getJobSlotInfo(self):
-        
+
         results = []
         for i in range(NUM_SITES):
             doc = {}

@@ -31,9 +31,3 @@ class TestFailImpl(StageOutImplV2):
 
     def doDelete(self, lfn, pfn, seName, command, options, protocol  ):
         raise StageOutFailure("FailImpl returns FAIL!!!")
-
-
-
-
-
-

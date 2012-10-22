@@ -23,7 +23,7 @@ class CompleteInput(MySQLCompleteInput):
                        wmbs_job_assoc.job = wmbs_job.id
                      INNER JOIN wmbs_jobgroup ON
                        wmbs_job.jobgroup = wmbs_jobgroup.id
-                   WHERE wmbs_jobgroup.subscription = job_files.subscriptionid    
+                   WHERE wmbs_jobgroup.subscription = job_files.subscriptionid
                    GROUP BY job_files.subscriptionid, job_files.fileid
                    HAVING COUNT(wmbs_job_assoc.job) = SUM(wmbs_job.outcome)"""
 
@@ -31,4 +31,4 @@ class CompleteInput(MySQLCompleteInput):
                SELECT :fileid, :subid FROM DUAL
                WHERE NOT EXISTS
                  (SELECT * FROM wmbs_sub_files_complete
-                  WHERE fileid = :fileid AND subscription = :subid)"""    
+                  WHERE fileid = :fileid AND subscription = :subid)"""

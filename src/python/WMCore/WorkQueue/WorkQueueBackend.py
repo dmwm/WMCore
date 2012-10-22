@@ -82,7 +82,7 @@ class WorkQueueBackend(object):
                                       query_params = {'childUrl' : self.queueUrl, 'parentUrl' : self.parentCouchUrl},
                                       continuous = continuous)
         except Exception, ex:
-                self.logger.warning('Replication to %s failed: %s' % (self.parentCouchUrl, str(ex)))
+            self.logger.warning('Replication to %s failed: %s' % (self.parentCouchUrl, str(ex)))
 
 
     def getElementsForSplitting(self):
@@ -98,7 +98,7 @@ class WorkQueueBackend(object):
             ele['WMSpec'] = specs[ele['RequestName']]
         del specs
         return elements
- 
+
 
     def insertWMSpec(self, wmspec):
         """
@@ -121,7 +121,7 @@ class WorkQueueBackend(object):
     def insertElements(self, units, parent = None):
         """
         Insert element to database
-        
+
         @param parent is the parent WorkQueueObject these element's belong to.
                                             i.e. a workflow which has been split
         """
@@ -150,7 +150,7 @@ class WorkQueueBackend(object):
 
     def createWork(self, spec, **kwargs):
         """Return the Inbox element for this spec.
-        
+
         This does not persist it to the database.
         """
         kwargs.update({'WMSpec' : spec,
@@ -167,7 +167,7 @@ class WorkQueueBackend(object):
 
         status, elementIDs & filters are 'AND'ed together to filter elements.
         returnIdOnly causes the element not to be loaded and only the id returned
-        db is used to specify which database to return from 
+        db is used to specify which database to return from
         loadSpec causes the workflow for each spec to be loaded.
         WorkflowName may be used in the place of RequestName
         """

@@ -209,9 +209,9 @@ class Mask(dict):
             for pair in self["runAndLumis"][runNumber]:
                 if pair[0] == pair[1]:
                     maskLumis.add(pair[0])
-                else:                  
+                else:
                     maskLumis = maskLumis.union(range(pair[0], pair[1] + 1, 1))
-            
+
             filteredLumis = set(runDict[runNumber].lumis).intersection(maskLumis)
             if len(filteredLumis) > 0:
                 newRuns.add(Run(runNumber, *list(filteredLumis)))
@@ -240,5 +240,3 @@ class ExclusiveMask(Mask):
     def __init__(self):
         Mask.__init__(self)
         self['inclusive'] = False
-
-

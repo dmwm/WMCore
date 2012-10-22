@@ -1,4 +1,4 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 #pylint: disable-msg=C0301
 """
 Slave used for RemoveWorkflowFromManagement handler

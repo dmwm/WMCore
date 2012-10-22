@@ -7,7 +7,7 @@ class PauseAlgo(RetryAlgoBase):
     """
     _PauseAlgo_
 
-	This implements the Paused job algorithm, explanation of the concept in #3114
+        This implements the Paused job algorithm, explanation of the concept in #3114
     """
     def __init__ (self, config):
         RetryAlgoBase.__init__(self, config)
@@ -43,6 +43,6 @@ class PauseAlgo(RetryAlgoBase):
                 self.changer.propagate(job, pauseMap[job['state']], job['state'],  updatesummary=True)
                 return False
             else:
-                return True 
+                return True
         else:
-            return False         
+            return False

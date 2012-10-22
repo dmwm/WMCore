@@ -13,14 +13,14 @@ from Validators import *
 class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
     '''
     A hierarchical pie chart, as per GNOME Baobab and KDE Filelight.
-    
+
     The plot consists of concentric circles which are progressively subdivided
     into smaller and smaller elements. This works very well for visualising
     directory structures in filesystems to show overall space usage, but
     can be applied to any other form of subdividable data.
-    
+
     The data should be a nested series of dictionaries, of the form:
-    
+
     {
      'label': 'root',
      'value': 1000,
@@ -31,24 +31,24 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
                    }
                   ]
     }
-     
+
     Nodes may optionally include 'height' or 'colour', to override the defaults.
-    
-    
+
+
     etc, etc. This data should always include a root element reflecting the
     total volume, but which will not be shown. Elements from depth=1 will be
     displayed. At each level, the sum of child values must be less than or
     equal the parent value. Negative values should also not be used.
-    
+
     At each level, only elements which would appear larger than `minpixel' are
     actually displayed. All others are merged together into a reduced-height
     block.
-    
+
     The plotter attempts to draw the label for each node inside the area, after
     it has been truncated appropriately. The optimum of radial and tangential is
     picked depending on available length, and the text size determined
     appropriately.
-    
+
     This plot may sometimes cause Agg to complain about excessive rendering
     complexity. The exact scenario this happens in is not understood yet,
     try changing the plot size, minpixel, minimum label size or disable
@@ -72,34 +72,34 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
         self.props = Props()
         super(Baobab,self).__init__(Axes_Projection='polar',Axes_Square=True,Padding_Left=50,Padding_Right=50,Padding_Bottom=50)
     def validate(self,input):
-       if not 'data' in input:
-           return "No 'data' element."
-       data = input['data']
-       if data.get('value',0)<=0: 
-           return "Root element value is 0 or negative."
-       if len(data.get('children',[]))==0:
-           return "Root element has no children."
-       return True
+        if not 'data' in input:
+            return "No 'data' element."
+        data = input['data']
+        if data.get('value',0)<=0:
+            return "Root element value is 0 or negative."
+        if len(data.get('children',[]))==0:
+            return "Root element has no children."
+        return True
     def extract(self,input):
         self.props.data = input['data']
     def predata(self):
         axes = self.figure.gca()
         axes.set_axis_off()
-         
+
         def depth_recursor(here):
             if len(here.get('children',[]))>0:
                 return max([depth_recursor(c) for c in here.get('children',[])])+1
             return 1
-        
+
         self.props.max_depth = depth_recursor(self.props.data)
-        
+
     def data(self):
-        
+
         axes = self.figure.gca()
 
         theta = lambda x: x*(2*math.pi)/self.props.data.get('value',0)
         rad = lambda depth, radians: ((((float(depth)+2)/(self.props.max_depth+3))*self.props.width)/2.)*radians
-        
+
         if self.props.format=='binary':
             locator = BinaryMaxNLocator(self.props.scale_number)
             formatter = BinFormatter()
@@ -109,7 +109,7 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
         else:
             locator = matplotlib.ticker.MaxNLocator(self.props.scale_number)
             formatter = lambda x: str(x)
-        
+
         def bar_recursor(depth,here,startx):
             if len(here.get('children',[]))>0:
                 left=[theta(startx)]
@@ -144,21 +144,21 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
                 return left,height,width,bottom,name,value,colour
             else:
                 return [theta(startx)],[here.get('height',1)],[theta(here.get('value',0))],[depth],[here.get('label','')],[here.get('value',0)],[here.get('colour',None)]
-    
+
         left,height,width,bottom,name,value,colours = bar_recursor(0,self.props.data,0)
-        
+
         for i,l in enumerate(left):
             if colours[i]==None:
                 colours[i] = self.props.colourmap(l/(2*math.pi))
             elif colours[i]=='dumped_colour':
                 colours[i] = self.props.dropped_colour
-        
+
         self.props.max_height = max(bottom)
-    
+
         unit = self.props.unit
-        
+
         if self.props.scale:
-            
+
             boundaries = locator.bin_boundaries(0,self.props.data.get('value',0))[:-1]
             for b in boundaries:
                 lx = theta(b)
@@ -174,7 +174,7 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
                 axes.add_line(Line2D((0,0),(0.75,self.props.max_height+3),linewidth=0,alpha=0,zorder=-3))
             else:
                 axes.add_line(Line2D((0,0),(0.75,self.props.max_height+1.5),linewidth=0,alpha=0,zorder=-3))
-    
+
         bars = axes.bar(left=left[1:],height=height[1:],width=width[1:],bottom=bottom[1:],color=colours[1:])
 
         if self.props.labelled:
@@ -183,11 +183,11 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
             for l,h,w,b,n,v in zip(left[1:],height[1:],width[1:],bottom[1:],name[1:],value[1:]):
                 cx = l+w*0.5
                 cy = b+h*0.5
-                
+
                 angle_deg = cx*(180/math.pi)
                 angle_rad = angle_deg
                 angle_tan = angle_deg - 90
-                
+
                 if angle_deg>90 and angle_deg<=180:
                     angle_rad += 180
                 if angle_deg>180 and angle_deg<=270:
@@ -220,4 +220,3 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
                             axes.text(cx,cy,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=text_size)
             if self.props.central_label:
                 axes.text(0,0,formatter(self.props.data.get('value',0))+unit,horizontalalignment='center',verticalalignment='center',weight='bold')
-        

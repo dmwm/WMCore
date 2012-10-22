@@ -13,6 +13,3 @@ class GetRunLumiFile(MySQLGetRunLumiFile):
     """
     Oracle implementation of GetRunLumiFile
     """
-
-
-

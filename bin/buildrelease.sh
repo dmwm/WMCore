@@ -76,7 +76,7 @@ if [ X${TAG} == Xtrue ]; then
   LASTCOMMITLINE=$(git log -n1 --oneline -E --grep="^[0-9]+\.[0-9]+\.[0-9]+$")
   LASTCOMMIT=$(echo ${LASTCOMMITLINE} | awk '{print $1}')
   LASTVERSION=$(echo ${LASTCOMMITLINE} | awk '{print $2}')
-  TMP=$(mktemp -t ${LASTVERSION})
+  TMP=$(mktemp -t wmcore.${LASTVERSION}.XXXXX)
   echo "${LASTVERSION} to ${VERSION}:" >> $TMP
   git log --pretty=format:'  - %s' ${LASTCOMMIT}.. >> $TMP
   echo "" >> $TMP

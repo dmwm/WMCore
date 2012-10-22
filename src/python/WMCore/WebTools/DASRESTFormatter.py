@@ -52,14 +52,14 @@ class DASRESTFormatter(RESTFormatter):
                    'results': results,
                   }
         return dasdata
-    
+
     def dasjson(self, data):
         "Return DAS compliant json"
         data = runDas(self, func, data, expires)
         thunker = JSONThunker()
         data = thunker.thunk(data)
         return JsonWrapper.dumps(data)
-    
+
     def xml(self, data):
         "Return DAS compliant xml"
         das = runDas(self, func, data, expires)
@@ -72,10 +72,10 @@ class DASRESTFormatter(RESTFormatter):
         header = "%s\n<das %s>" % (header, string)
         xmldata = header + das['results'].__str__() + "</das>"
         return xmldata
-    
+
     def plist(self, data):
         "Return DAS compliant plist xml"
-        
+
         data_struct = runDas(self, func, data, expires)
         plist_str = plistlib.writePlistToString(data_struct)
         return plist_str

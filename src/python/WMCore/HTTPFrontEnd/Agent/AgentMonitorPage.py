@@ -3,7 +3,7 @@
 """
 The documentation for the framework
 """
-    
+
 
 
 
@@ -62,4 +62,3 @@ class AgentMonitorPage(TemplatedPage):
         return serveFile('text/css',
                           path.join(self.config.css,
                                     'WMCore', 'WebTools'), *args)
-

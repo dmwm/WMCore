@@ -57,10 +57,10 @@ class WMConnectionBase:
 
         Retrieve the database connection that is associated with the current
         dataabase transaction.
-        It transaction exists, it will return connection 
+        It transaction exists, it will return connection
         which that transaction belong to.
-        This won't create the transaction if it doesn't exist, it will just return 
-        None. 
+        This won't create the transaction if it doesn't exist, it will just return
+        None.
         """
         myThread = threading.currentThread()
 

@@ -19,7 +19,7 @@ from WMCore.Storage.Execute import runCommandWithOutput
 class RFCPCERNImpl(StageOutImpl):
     """
     _RFCPCERNImpl_
-    
+
     """
 
     def __init__(self, stagein=False):

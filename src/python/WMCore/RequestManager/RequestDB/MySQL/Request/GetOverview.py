@@ -31,17 +31,17 @@ class GetOverview(DBFormatter):
                         ON rp.request_id = r.request_id
                 ORDER BY CASE status %s, r.request_id DESC
           """
-          
+
     caseStr = ""
     i = 0
-    
+
     for status in StatusList:
         i += 1
         caseStr += "WHEN '%s' THEN %s " % (status, i)
     caseStr += "END"
-    
+
     sql = sql % caseStr
-    
+
 
     def execute(self, conn = None, trans = False):
         """

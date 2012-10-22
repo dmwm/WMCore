@@ -36,4 +36,3 @@ if __name__ == '__main__':
     os.fchmod(2, 0664)
     if monitor.isAlive():
         monitor.shutdown()
-

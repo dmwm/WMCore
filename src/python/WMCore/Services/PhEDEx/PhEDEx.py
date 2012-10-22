@@ -4,15 +4,15 @@ from WMCore.Services.Service import Service
 from WMCore.Wrappers import JsonWrapper
 from WMCore.Services.EmulatorSwitch import emulatorHook
 
-# emulator hook is used to swap the class instance 
-# when emulator values are set. 
+# emulator hook is used to swap the class instance
+# when emulator values are set.
 # Look WMCore.Services.EmulatorSwitch module for the values
 @emulatorHook
 class PhEDEx(Service):
 
     """
     API for dealing with retrieving information from PhEDEx DataService
-    
+
     according to documentation
     https://cmsweb.cern.ch/phedex/datasvc/doc
     """
@@ -94,7 +94,7 @@ class PhEDEx(Service):
         args['node'] = []
         for node in subscription.nodes:
             args['node'].append(node)
-        
+
         args['data'] = xmlData
         args['level'] = subscription.level
         args['priority'] = subscription.priority
@@ -113,7 +113,7 @@ class PhEDEx(Service):
 
         Get replicas for given blocks
         kwargs are options passed through to phedex
-        
+
         block          block name, can be multiple (*)
         node           node name, can be multiple (*)
         se             storage element name, can be multiple (*)
@@ -137,7 +137,7 @@ class PhEDEx(Service):
         _getReplicaInfoForFiles_
 
         Retrieve file replica information from PhEDEx.
-        
+
         block          block name, with '*' wildcards, can be multiple (*).  required when no lfn is specified.
         node           node name, can be multiple (*)
         se             storage element name, can be multiple (*)
@@ -167,7 +167,7 @@ class PhEDEx(Service):
 
         Get subscriptios for blocks and datasets
         kwargs are options passed through to phedex
-        
+
         dataset          dataset name (wildcards)
         block            block name (wildcards)
         node             node name (wildcards)
@@ -176,7 +176,7 @@ class PhEDEx(Service):
         request          request number which created the subscription.
         custodial        y or n to filter custodial/non subscriptions.
                            default is null (either)
-        group            group name filter 
+        group            group name filter
         priority         priority, one of "low", "normal" and "high"
         move             y (move) or n (replica)
         suspended        y or n, default is either
@@ -269,8 +269,8 @@ class PhEDEx(Service):
         """
         _getBestNodeName_
 
-        Convert SE to Name giving back one of the following types: 
-        Buffer, MSS, and Disk (in order). See 2817 
+        Convert SE to Name giving back one of the following types:
+        Buffer, MSS, and Disk (in order). See 2817
         """
         if nodeNameMap==None:
             nodeNameMap = self.getNodeMap()
@@ -331,7 +331,7 @@ class PhEDEx(Service):
         if node:
             return True
         else:
-            return False 
+            return False
 
     def getPFN(self, nodes=[], lfns=[], destination=None, protocol='srmv2', custodial='n'):
         """
@@ -357,7 +357,7 @@ class PhEDEx(Service):
 
 
         return result_dict
-    
+
     def _testNonExistentInEmulator(self):
         # This is a dummy function to use in unittests to make sure the right class is
         # instantiated

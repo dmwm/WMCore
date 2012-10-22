@@ -35,7 +35,6 @@ class CreateBlocks(DBFormatter):
 
         self.dbi.processData(self.sql, bindVars, conn = conn,
                              transaction = transaction)
-            
+
 
         return
-    

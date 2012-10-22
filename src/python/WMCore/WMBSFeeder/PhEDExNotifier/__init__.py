@@ -6,5 +6,3 @@ Notifies consumers of new transfers
 
 """
 __all__ = []
-
-

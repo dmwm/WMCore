@@ -16,4 +16,3 @@ class SetDatasetAlgo(MySQLSetDatasetAlgo):
     Identical to MySQL version
 
     """
-

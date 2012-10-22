@@ -23,7 +23,7 @@ class ProcessDetail(object):
     Class holds details about a particular process, e.g.
     corresponding psutil.Process instance, list of process's children
     also as psutil.Process instances, etc.
-    
+
     """
     def __init__(self, pid, name):
         self.pid = int(pid)
@@ -31,16 +31,16 @@ class ProcessDetail(object):
         self.proc = psutil.Process(self.pid)
         self.children = self.proc.get_children()
         self.allProcs = [self.proc] + self.children
-        
-        
+
+
     def refresh(self):
         """
         Some child processes may have been spawned or finished.
         Update the list of child processes.
-        
+
         """
         self.children = self.proc.get_children()
-        self.allProcs = [self.proc] + self.children        
+        self.allProcs = [self.proc] + self.children
 
 
     def getDetails(self):
@@ -48,25 +48,25 @@ class ProcessDetail(object):
         return dict(pid = self.pid, component = self.name,
                     numChildrenProcesses = len(self.children),
                     children = childrenPIDs)
-        
-        
+
+
 
 class Measurements(list):
     """
-    Information on measurements which are collected over a period of time. 
-    
+    Information on measurements which are collected over a period of time.
+
     """
     def __init__(self, numOfMeasurements):
         """
         Instance of polling measurements.
         numOfMeasurements - how many polling measurements shall be collected
             over a period of time before evaluation of the collected values.
-            
+
         """
         list.__init__(self)
         self._numOfMeasurements = numOfMeasurements
-        
-        
+
+
     def clear(self):
         self[:] = []
 
@@ -79,7 +79,7 @@ class BasePoller(threading.Thread):
     Starting from Thread entry point method run(), methods run
     in different thread contexts. The only shared variable shall
     be _stopFlag.
-    
+
     """
     def __init__(self, config, generator):
         threading.Thread.__init__(self)
@@ -98,10 +98,10 @@ class BasePoller(threading.Thread):
         # possible mismatch would make a bit of chaos)
         self.levels = [self.generator.config.AlertProcessor.critical.level,
                        self.generator.config.AlertProcessor.soft.level]
-        
+
         # critical, soft threshold values
         self.thresholds = [self.config.critical, self.config.soft]
-        
+
         # pre-generated alert values, but before sending always new instance is created
         # these values are used to update the newly created instance
         dictAlert = dict(Type = "WMAgent",
@@ -118,8 +118,8 @@ class BasePoller(threading.Thread):
     def _handleFailedPolling(self, ex):
         """
         Handle (log and send alert) if polling failed.
-        
-        """        
+
+        """
         trace = traceback.format_exception(*sys.exc_info())
         traceString = '\n '.join(trace)
         errMsg = ("Polling failed in %s, reason: %s" % (self.__class__.__name__, ex))
@@ -136,8 +136,8 @@ class BasePoller(threading.Thread):
     def run(self):
         """
         This method is called from the AlertGenerator component instance and is
-        entry point for a thread. 
-        
+        entry point for a thread.
+
         """
         logging.info("Thread %s started - run method." % self.__class__.__name__)
         # when running with multiprocessing, it was necessary to create the
@@ -146,9 +146,9 @@ class BasePoller(threading.Thread):
         self.sender = Sender(self.generator.config.Alert.address,
                              self.generator.config.Alert.controlAddr,
                              self.__class__.__name__)
-        self.sender.register() 
+        self.sender.register()
         logging.info("Thread %s alert sender created: alert addr: %s "
-                     "control addr: %s" % 
+                     "control addr: %s" %
                      (self.__class__.__name__,
                       self.generator.config.Alert.address,
                       self.generator.config.Alert.controlAddr))
@@ -171,23 +171,23 @@ class BasePoller(threading.Thread):
                 break
             time.sleep(self._threadSleepTime)
         logging.info("Thread %s - work loop terminated, finished." % self.__class__.__name__)
-        
-            
+
+
     def stop(self):
         """
         Method sets the stopFlag so that run() while loop terminates
         at its next iteration.
-        
+
         """
         self._stopFlag = True
-                    
-            
+
+
     def terminate(self):
         """
         Methods added when Pollers were re-implemented to run as
         multi-threaded rather than multiprocessing.
         This would be a slightly blocking call - wait for the thread to finish.
-        
+
         """
         self._stopFlag = True # keep it here as well in case on terminate method is called
         logging.info("Thread %s terminate ..." % self.__class__.__name__)
@@ -197,12 +197,12 @@ class BasePoller(threading.Thread):
                           self.__class__.__name__)
         else:
             logging.info("Thread %s finished." % self.__class__.__name__)
-            
+
         # deregister with the receiver
         # (was true for multiprocessing implementation:
-        # has to create a new sender instance and unregister the name. 
+        # has to create a new sender instance and unregister the name.
         # self.sender instance was created in different thread in run())
-        
+
         # TODO revise registering/deregistering business for production ...
         # remove unregistering (it seems to take long and wmcoreD which
         # give only limited time for a component to shutdown, and if entire
@@ -219,27 +219,27 @@ class BasePoller(threading.Thread):
         """
         del self.sender
         logging.info("Thread %s terminate finished." % self.__class__.__name__)
-        
-         
-        
+
+
+
 class PeriodPoller(BasePoller):
     """
     Collects samples over a configurable period of time.
     Collected samples are evaluated once in the period and compared
     with soft, resp. critical thresholds.
-    
+
     """
-    
+
     # interval for psutil cpu percent usage sampling calls: from psutil doc:
     # it's recommended for accuracy that this function be called with at
     # least 0.1 seconds between calls.
-    PSUTIL_INTERVAL = 0.2    
-    
-    
+    PSUTIL_INTERVAL = 0.2
+
+
     def __init__(self, config, generator):
         BasePoller.__init__(self, config, generator)
-                        
-    
+
+
     def check(self, pd, measurements):
         """
         Method is used commonly for system properties (e.g. overall CPU) as well
@@ -247,10 +247,10 @@ class PeriodPoller(BasePoller):
         pd - (processDetail) - information about monitored process, may be None if
             this method is called from system monitoring pollers (e.g. CPU usage).
         measurements - Measurements class instance.
-        
+
         """
         v = self.sample(pd)
-        measurements.append(v)        
+        measurements.append(v)
         avgPerc = None
         if len(measurements) >= measurements._numOfMeasurements:
             # evaluate: calculate average value and react
@@ -261,14 +261,14 @@ class PeriodPoller(BasePoller):
             if pd:
                 details.update(pd.getDetails())
             measurements.clear()
-            
-            for threshold, level in zip(self.thresholds, self.levels): 
+
+            for threshold, level in zip(self.thresholds, self.levels):
                 if avgPerc >= threshold:
                     a = Alert(**self.preAlert)
                     a.setTimestamp()
                     a["Source"] = self.__class__.__name__
                     details["threshold"] = "%s%%" % threshold
-                    a["Details"] = details                    
+                    a["Details"] = details
                     a["Level"] = level
                     logging.debug("Sending an alert (%s): %s" % (self.__class__.__name__, a))
                     self.sender(a)

@@ -31,7 +31,7 @@ class GetMigratedBlocks(DBFormatter):
              WHERE dbsbuffer_block.status = 'InGlobalDBS'
              AND NOT EXISTS (SELECT dbf.id FROM dbsbuffer_file dbf
                               WHERE dbf.block_id = dbsbuffer_block.id
-                              AND dbf.in_phedex = 0)"""    
+                              AND dbf.in_phedex = 0)"""
 
     def formatDict(self, result):
         """
@@ -61,7 +61,7 @@ class GetMigratedBlocks(DBFormatter):
                                                  "files": []}
 
         return formattedResult
-                 
+
     def execute(self, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, conn = conn,
                                       transaction = transaction)

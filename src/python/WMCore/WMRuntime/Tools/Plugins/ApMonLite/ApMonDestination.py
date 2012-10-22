@@ -18,8 +18,8 @@ from WMCore.WMRuntime.Tools.Plugins.ApMonLite.ApMonException import ApMonExcepti
 #//
 _ValuePackers = {
     types.StringType:  (0, xdrlib.Packer.pack_string), # strings
-    types.IntType   :  (2, xdrlib.Packer.pack_int),	# integer XDR_INT32
-    types.FloatType :  (5, xdrlib.Packer.pack_double),	# float XDR_REAL64
+    types.IntType   :  (2, xdrlib.Packer.pack_int),     # integer XDR_INT32
+    types.FloatType :  (5, xdrlib.Packer.pack_double),  # float XDR_REAL64
     }
 
 
@@ -42,7 +42,7 @@ class ApMonDestination(dict):
         self.setdefault("InstanceID", random.randint(0, 0x7FFFFFFE))
         self.setdefault("SequenceNumber", 0)
         self.udpSocket = None
-                        
+
     def connect(self):
         """
         _connect_
@@ -60,8 +60,8 @@ class ApMonDestination(dict):
                 msg += "Unable to create UDP Socket:\n"
                 msg += str(ex)
                 raise ApMonException(msg, Destination = str(self))
-            
-            
+
+
         return
 
     def disconnect(self):
@@ -89,7 +89,7 @@ class ApMonDestination(dict):
 
         Exceptions within this class will be propagated back as
         ApMonExceptions.
-        
+
         """
         try:
             udpPacket = self.makeUDPPacket(**params)
@@ -99,8 +99,8 @@ class ApMonDestination(dict):
             raise ApMonException(msg, Destination = str(self))
 
         return self.udpBroadcast(udpPacket)
-    
-    
+
+
 
     def makeUDPPacket(self, **params):
         #  //
@@ -112,12 +112,12 @@ class ApMonDestination(dict):
         #//
         __version__ = "WMCore_Version_Disabled"
         packer.pack_string ("v:%sp:%s" % (__version__, self['Passwd']))
-    
+
         #  //
         # // Now we pack these two random undocumented integers...
         #//  after incrementing them, with a wrap to 0 after 2000M
         self['SequenceNumber'] = (self['SequenceNumber'] + 1) % 2000000000
-        
+
         packer.pack_int (self['InstanceID'])
         packer.pack_int (self['SequenceNumber'])
 
@@ -149,9 +149,9 @@ class ApMonDestination(dict):
     def packParameter(self, packerRef, name, value):
         """
         _packParameter_
-        
+
         Pack a key:value pair into the packer provided based on type
-        
+
         """
         #  //
         # // validate name
@@ -180,12 +180,12 @@ class ApMonDestination(dict):
     def udpBroadcast(self, bufferContent):
         """
         _udpBroadcast_
-        
-        send bufferContent to the host and port provided 
-        
+
+        send bufferContent to the host and port provided
+
         If not already connected, open and close connection, else
         use current connection
-        
+
         """
         openedSocket = False
         if self.udpSocket == None:
@@ -198,7 +198,7 @@ class ApMonDestination(dict):
             returnValue = 1
         except Exception, ex:
             returnValue = 2
-        if openedSocket: 
+        if openedSocket:
             self.disconnect()
         return returnValue
 
@@ -208,7 +208,3 @@ class ApMonDestination(dict):
         result += "%s:" % self["Host"]
         result += "%s>" % self["Port"]
         return result
-
-
-
-    

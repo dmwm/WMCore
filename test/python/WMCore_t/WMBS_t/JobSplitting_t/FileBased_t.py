@@ -45,27 +45,27 @@ class FileBasedTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
-        
+
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
-        
+
         locationAction = daofactory(classname = "Locations.New")
         locationAction.execute(siteName = "site1", seName = "somese.cern.ch")
         locationAction.execute(siteName = "site2", seName = "otherse.cern.ch")
-        
+
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         self.multipleFileFileset.create()
-        parentFile = File('/parent/lfn/', size = 1000, events = 100, 
-                          locations = set(["somese.cern.ch"])) 
-        parentFile.create() 
+        parentFile = File('/parent/lfn/', size = 1000, events = 100,
+                          locations = set(["somese.cern.ch"]))
+        parentFile.create()
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100,
                            locations = set(["somese.cern.ch"]))
             newFile.addRun(Run(i, *[45]))
             newFile.create()
-            newFile.addParent(lfn = parentFile['lfn']) 
+            newFile.addParent(lfn = parentFile['lfn'])
             self.multipleFileFileset.addFile(newFile)
         self.multipleFileFileset.commit()
 
@@ -112,7 +112,7 @@ class FileBasedTest(unittest.TestCase):
                                                      type = "Processing")
         self.multipleSiteSubscription.create()
         return
-    
+
     def tearDown(self):
         """
         _tearDown_
@@ -125,7 +125,7 @@ class FileBasedTest(unittest.TestCase):
     def createLargeFileBlock(self):
         """
         _createLargeFileBlock_
-        
+
         Creates a large group of files for testing
         """
         testFileset = Fileset(name = "TestFilesetX")
@@ -136,7 +136,7 @@ class FileBasedTest(unittest.TestCase):
             newFile.create()
             testFileset.addFile(newFile)
         testFileset.commit()
-            
+
         testWorkflow = Workflow(spec = "spec.xml", owner = "mnorman",
                                 name = "wf003", task="Test" )
         testWorkflow.create()
@@ -180,7 +180,7 @@ class FileBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.singleFileSubscription)
-        
+
         jobGroups = jobFactory(files_per_job = 10)
 
         self.assertEqual(len(jobGroups), 1)
@@ -189,7 +189,7 @@ class FileBasedTest(unittest.TestCase):
         self.assertEqual(job.getFiles(type = "lfn"), ["/some/file/name"])
 
         return
-        
+
 
 
     def test2FileSplit(self):
@@ -202,7 +202,7 @@ class FileBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.multipleFileSubscription)
-        
+
         jobGroups = jobFactory(files_per_job = 2)
 
         self.assertEqual(len(jobGroups), 1)
@@ -214,7 +214,7 @@ class FileBasedTest(unittest.TestCase):
             for file in job.getFiles(type = "lfn"):
                 fileList.append(file)
         self.assertEqual(len(fileList), 10)
-        
+
         return
 
     def test3FileSplit(self):
@@ -227,7 +227,7 @@ class FileBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.multipleFileSubscription)
-        
+
         jobGroups = jobFactory(files_per_job = 3)
 
         self.assertEqual(len(jobGroups), 1)
@@ -239,7 +239,7 @@ class FileBasedTest(unittest.TestCase):
             for file in job.getFiles(type = "lfn"):
                 fileList.append(file)
         self.assertEqual(len(fileList), 10)
-        
+
         return
 
 
@@ -251,7 +251,7 @@ class FileBasedTest(unittest.TestCase):
 
         This should test whether or not the FileBased algorithm understands that files at seperate sites
         cannot be in the same jobGroup (this is the current standard).
-        
+
         """
         myThread = threading.currentThread()
 
@@ -267,13 +267,13 @@ class FileBasedTest(unittest.TestCase):
         fileList = []
         self.assertEqual(len(jobGroups[1].jobs[0].getFiles()), 5)
 
-        
+
         return
-    
+
     def testLimit(self):
         """
         _testLimit_
-        
+
         Test what happens when you limit the number of files.
         This should run each separate file in a separate loop,
         creating one jobGroups with one job with one file
@@ -282,8 +282,8 @@ class FileBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.multipleFileSubscription)
-                              
-        
+
+
         jobGroups = jobFactory(files_per_job = 10, limit_file_loading = True,
                                file_load_limit = 1)
 
@@ -310,35 +310,35 @@ class FileBasedTest(unittest.TestCase):
 
         return
 
-    def test_getParents(self): 
-        """ 
-        _getParents_ 
-        
-        Check that we can do the same as the TwoFileBased 
-        """ 
-        splitter = SplitterFactory() 
-        jobFactory = splitter(package = "WMCore.WMBS", 
-                              subscription = self.multipleFileSubscription) 
-        
-        jobGroups = jobFactory(files_per_job = 2, 
-                               include_parents  = True) 
-        
-        self.assertEqual(len(jobGroups), 1) 
-        self.assertEqual(len(jobGroups[0].jobs), 5) 
-        
-        fileList = [] 
-        for job in jobGroups[0].jobs: 
-            self.assertEqual(len(job.getFiles()), 2) 
-            for file in job.getFiles(type = "lfn"): 
-                fileList.append(file) 
-        self.assertEqual(len(fileList), 10) 
-        
-        for j in jobGroups[0].jobs: 
-            for f in j['input_files']: 
-                self.assertEqual(len(f['parents']), 1) 
-                self.assertEqual(list(f['parents'])[0]['lfn'], '/parent/lfn/') 
-                
-        return 
+    def test_getParents(self):
+        """
+        _getParents_
+
+        Check that we can do the same as the TwoFileBased
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.multipleFileSubscription)
+
+        jobGroups = jobFactory(files_per_job = 2,
+                               include_parents  = True)
+
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 5)
+
+        fileList = []
+        for job in jobGroups[0].jobs:
+            self.assertEqual(len(job.getFiles()), 2)
+            for file in job.getFiles(type = "lfn"):
+                fileList.append(file)
+        self.assertEqual(len(fileList), 10)
+
+        for j in jobGroups[0].jobs:
+            for f in j['input_files']:
+                self.assertEqual(len(f['parents']), 1)
+                self.assertEqual(list(f['parents'])[0]['lfn'], '/parent/lfn/')
+
+        return
 
 
 
@@ -352,7 +352,7 @@ class FileBasedTest(unittest.TestCase):
 
             func = self.crazyAssFunction(jobFactory = jobFactory, file_load_limit = 500)
 
-            
+
 
             startTime = time.time()
             goFlag    = True
@@ -362,7 +362,7 @@ class FileBasedTest(unittest.TestCase):
                     self.jobGroups.extend(res)
                 except StopIteration:
                     goFlag = False
-                    
+
             stopTime  = time.time()
             return jobGroups
 
@@ -409,7 +409,7 @@ class FileBasedTest(unittest.TestCase):
         #cProfile.runctx("runCode(self, jobFactory)", globals(), locals(), "coroutine.stats")
 
         jobGroups = self.jobGroups
-        
+
         self.assertEqual(len(jobGroups), 10)
         for group in jobGroups:
             self.assertEqual(len(group.jobs), 500)

@@ -9,4 +9,3 @@ from WMCore.WMBS.MySQL.Users.UpdateHyperNewsName import UpdateHyperNewsName as M
 
 class UpdateHyperNewsName(MySQLUpdateHyperNewsName):
     pass
-

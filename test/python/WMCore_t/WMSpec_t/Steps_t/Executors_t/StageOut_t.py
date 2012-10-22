@@ -42,7 +42,7 @@ from nose.plugins.attrib import attr
 
 #
 class StageOutTest:
-        
+
     def setUp(self):
         self.testInit = TestInit(__file__)
         self.testDir = self.testInit.generateWorkDir()
@@ -68,8 +68,8 @@ class StageOutTest:
         os.mkdir( self.stepDir )
         builder = StageOutBuilder.StageOut()
         builder( step.data, 'Production', self.stepDir)
-        
-        
+
+
     def makeReport(self, fileName):
         myReport = Report('oneitem')
         myReport.addStep('stageOut1')
@@ -79,10 +79,10 @@ class StageOutTest:
         file2 = myReport.addOutputFile('module2', {'lfn': 'FILE2', 'size' : 1, 'events' : 1})
         file3 = myReport.addOutputFile('module2', {'lfn': 'FILE3', 'size' : 1, 'events' : 1})
         myReport.persist( fileName )
-            
+
     def tearDown(self):
-        self.testInit.delWorkDir()        
-        
+        self.testInit.delWorkDir()
+
     def testUnitTestBackend(self):
         executor = StageOutExecutor.StageOut()
         self.realstep.addFile("testin1", "testout1")
@@ -100,24 +100,24 @@ class StageOutTest:
         executor.execute( )
 #        # ride the fail whale, hope we get a fail wail.
 #        testOverrides["command"] = "test-fail"
-#        self.realstep.data.override = testOverrides  
-#        executor.step = self.realstep.data      
+#        self.realstep.data.override = testOverrides
+#        executor.step = self.realstep.data
 #        self.assertRaises(StageOutError.StageOutFailure,
-#                          executor.execute)    
-        
+#                          executor.execute)
+
     def setLocalOverride(self, step):
         step.section_('override')
         step.override.command    = 'cp'
         step.override.option     = ''
         step.override.__setattr__('lfn-prefix', self.testDir +"/")
         step.override.__setattr__('se-name','DUMMYSE')
-        
-        
-class otherStageOutTest(unittest.TestCase):       
+
+
+class otherStageOutTest(unittest.TestCase):
 
     def setUp(self):
         # stolen from CMSSWExecutor_t. thanks, dave
-        
+
         # first, delete all the sandboxen and taskspaces
         #    because of caching, this leaks from other tests in other files
         #    this sucks because the other tests are using sandboxen that
@@ -140,26 +140,26 @@ class otherStageOutTest(unittest.TestCase):
             except:
                 pass
             del sys.modules[modname]
-            
+
         self.oldpath = sys.path[:]
         self.testInit = TestInit(__file__)
 
-            
+
         self.testDir = self.testInit.generateWorkDir()
         self.job = Job(name = "/UnitTests/DeleterTask/DeleteTest-test-job")
         shutil.copyfile('/etc/hosts', os.path.join(self.testDir, 'testfile'))
-        
+
         self.workload = newWorkload("UnitTests")
         self.task = self.workload.newTask("DeleterTask")
-        
+
         cmsswHelper = self.task.makeStep("cmsRun1")
         cmsswHelper.setStepType('CMSSW')
         stepHelper = cmsswHelper.addStep("DeleteTest")
         stepHelper.setStepType('StageOut')
 
         self.cmsswstep = cmsswHelper.data
-        self.cmsswHelper = cmsswHelper        
-        
+        self.cmsswHelper = cmsswHelper
+
 
         self.stepdata = stepHelper.data
         self.stephelp = StageOutTemplate.StageOutStepHelper(stepHelper.data)
@@ -169,23 +169,23 @@ class otherStageOutTest(unittest.TestCase):
         taskMaker = TaskMaker(self.workload, os.path.join(self.testDir))
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
-        
-        
+
+
         self.task.build(os.path.join(self.testDir, 'UnitTests'))
 
         sys.path.insert(0, self.testDir)
         sys.path.insert(0, os.path.join(self.testDir, 'UnitTests'))
 
-        
+
 #        binDir = inspect.getsourcefile(ModuleLocator)
 #        binDir = binDir.replace("__init__.py", "bin")
 #
 #        if not binDir in os.environ['PATH']:
 #            os.environ['PATH'] = "%s:%s" % (os.environ['PATH'], binDir)
         open( os.path.join( self.testDir, 'UnitTests', '__init__.py'),'w').close()
-        shutil.copyfile( os.path.join( os.path.dirname( __file__ ), 'MergeSuccess.pkl'), 
+        shutil.copyfile( os.path.join( os.path.dirname( __file__ ), 'MergeSuccess.pkl'),
                          os.path.join( self.testDir, 'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
-            
+
     def tearDown(self):
         sys.path = self.oldpath[:]
         self.testInit.delWorkDir()
@@ -208,7 +208,7 @@ class otherStageOutTest(unittest.TestCase):
                 reload(sys.modules[modname])
             except:
                 pass
-            del sys.modules[modname]    
+            del sys.modules[modname]
         myThread = threading.currentThread()
         if hasattr(myThread, "factory"):
             myThread.factory = {}
@@ -243,10 +243,10 @@ class otherStageOutTest(unittest.TestCase):
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'hosts' )))
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
         return
-        
+
     @attr('integration')
     def testCPBackendStageOutAgainstReportOld(self):
-        
+
         myReport = Report()
         myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         myReport.data.cmsRun1.status = 0
@@ -260,13 +260,13 @@ class otherStageOutTest(unittest.TestCase):
         self.assertTrue( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
         return
 
-    @attr('integration') 
+    @attr('integration')
     def testCPBackendStageOutAgainstReportFailedStepOld(self):
         myReport = Report()
         myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         myReport.data.cmsRun1.status = 1
         myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
-        
+
         executor = StageOutExecutor.StageOut()
         executor.initialise( self.stepdata, self.job)
         self.setLocalOverride(self.stepdata)
@@ -275,7 +275,7 @@ class otherStageOutTest(unittest.TestCase):
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'hosts' )))
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
         return
-    
+
     @attr('workerNodeTest')
     def testOnWorkerNodes(self):
         raise RuntimeError
@@ -290,11 +290,11 @@ class otherStageOutTest(unittest.TestCase):
         myReport.data.cmsRun1.output.stagingTestOutput.fileCount = 0
         targetFiles = [ '/store/temp/WMAgent/storetest-%s' % time.time(),
                         '/store/unmerged/WMAgent/storetest-%s' % time.time()]
-        
+
         for file in targetFiles:
             print "Adding file for StageOut %s" % file
             self.addStageOutFile(myReport, file )
-        
+
         myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         executor = StageOutExecutor.StageOut()
 
@@ -303,47 +303,47 @@ class otherStageOutTest(unittest.TestCase):
         print "beginning stageout"
         executor.execute( )
         print "stageout done"
-        
+
         # pull in the report with the stage out info
         myReport = Report()
         myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         print "Got the stage out data back"
         print myReport.data
 
-        
+
         # now, transfer them back
         # TODO make a stagein step in the task - Melo
         import WMCore.Storage.FileManager as FileManagerModule
         fileManager = FileManagerModule.FileManager( numberOfRetries = 10, retryPauseTime = 1)
         for file in targetFiles:
             print "Staging in %s" % file
-            
+
             fileManager.stageOut( fileToStage = { 'LFN' : file,
                                     'PFN' : '%s/%s' % (self.testDir, file) },
                                     stageOut = False)
             self.assertTrue( os.path.exists( '%s/%s' % (self.testDir, file)))
             self.assertEqual( os.path.getsize('/etc/hosts', '%s/%s' % (self.testDir, file)))
-        
+
         # now, should delete the files we made
         for file in targetFiles:
             print "deleting %s" % file
             fileManager.deleteLFN(file)
-        
-        # try staging in again to make sure teh files are gone        
+
+        # try staging in again to make sure teh files are gone
         for file in targetFiles:
             print "Staging in (should fail) %s" % file
             self.assertRaises( StageOutError, \
                                FileManagerModule.FileManager.stageOut, \
                                fileManager,fileToStage = { 'LFN' : file,
                                     'PFN' : '%s/%s' % (self.testDir, file) },
-                                    stageOut = False )            
+                                    stageOut = False )
 
-        
-        
+
+
         # need to make sure files didn't show up
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'hosts' )))
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
-        
+
     def addStageOutFile(self, myReport, lfn):
         myId = myReport.data.cmsRun1.output.stagingTestOutput.fileCount
         mySection = myReport.data.cmsRun1.output.stagingTestOutput.section_('file%s' % myId)
@@ -362,17 +362,17 @@ class otherStageOutTest(unittest.TestCase):
         mySection.size = 37556367
         myReport.data.cmsRun1.output.stagingTestOutput.fileCount = myId + 1
 
-        
-        
-        
-            
+
+
+
+
     def setLocalOverride(self, step):
         step.section_('override')
         step.override.command    = 'cp'
         step.override.option     = ''
         step.override.__setattr__('lfn-prefix', self.testDir +"/")
-        step.override.__setattr__('se-name','DUMMYSE')        
-        
+        step.override.__setattr__('se-name','DUMMYSE')
+
 
 
 if __name__ == "__main__":

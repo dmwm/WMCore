@@ -425,4 +425,3 @@ def makeTweakFromJSON(jsonDictionary):
     for param, value in jsoniser.parameters.items():
         tweak.addParameter(param , value)
     return tweak
-

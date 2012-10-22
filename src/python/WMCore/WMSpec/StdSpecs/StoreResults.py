@@ -159,7 +159,7 @@ class StoreResultsWorkloadFactory(StdBase):
     def validateSchema(self, schema):
         """
         _validateSchema_
-        
+
         Check for required fields, and some skim facts
         """
         arguments = getTestArguments()

@@ -50,6 +50,3 @@ def getScript(scriptName):
         msg = "Error creating object %s in ScriptFactory:\n" % scriptName
         msg += str(ex)
         raise ScriptFactoryException(msg)
-
-
-

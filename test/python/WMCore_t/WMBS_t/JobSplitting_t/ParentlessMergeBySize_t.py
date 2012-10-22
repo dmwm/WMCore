@@ -64,21 +64,21 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         """
         locationAction = self.daoFactory(classname = "Locations.New")
         locationAction.execute(siteName = "s1", seName = "somese.cern.ch")
-        locationAction.execute(siteName = "s1", seName = "somese2.cern.ch")        
+        locationAction.execute(siteName = "s1", seName = "somese2.cern.ch")
 
         changeStateDAO = self.daoFactory(classname = "Jobs.ChangeState")
 
         self.mergeFileset = Fileset(name = "mergeFileset")
         self.mergeFileset.create()
         self.bogusFileset = Fileset(name = "bogusFileset")
-        self.bogusFileset.create()        
+        self.bogusFileset.create()
 
         mergeWorkflow = Workflow(name = "mergeWorkflow", spec = "bunk2",
                                  owner = "Steve", task="Test")
         mergeWorkflow.create()
         markWorkflow = self.daoFactory(classname = "Workflow.MarkInjectedWorkflows")
         markWorkflow.execute(names = [mergeWorkflow.name], injected = True)
-        
+
         self.mergeSubscription = Subscription(fileset = self.mergeFileset,
                                               workflow = mergeWorkflow,
                                               split_algo = "ParentlessMergeBySize")
@@ -116,7 +116,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
                      first_event = 2048, locations = set(["somese.cern.ch"]))
         fileC.addRun(Run(1, *[46]))
         fileC.create()
-        
+
         fileI = File(lfn = "fileI", size = 1024, events = 1024,
                      first_event = 0, locations = set(["somese.cern.ch"]))
         fileI.addRun(Run(2, *[46]))
@@ -211,7 +211,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
 
         assert len(result[0].jobs) == 1, \
                "Error: One job should have been returned: %s" % len(result[0].jobs)
-        
+
         goldenFiles = ["file1", "file2", "file3", "file4", "fileA", "fileB",
                       "fileC", "fileI", "fileII", "fileIII", "fileIV"]
 
@@ -253,7 +253,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             currentLumi = fileLumi
             currentEvent = fileEvent
 
-        return    
+        return
 
     def testMaxMergeSize(self):
         """
@@ -285,7 +285,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
 
         for job in result[0].jobs:
             jobFiles = job.getFiles()
-            
+
             if jobFiles[0]["lfn"] in goldenFilesA:
                 goldenFiles = goldenFilesA
             elif jobFiles[0]["lfn"] in goldenFilesB:
@@ -360,7 +360,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
 
         for job in result[0].jobs:
             jobFiles = job.getFiles()
-            
+
             if jobFiles[0]["lfn"] in goldenFilesA:
                 goldenFiles = goldenFilesA
             elif jobFiles[0]["lfn"] in goldenFilesB:
@@ -431,7 +431,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
 
         assert len(result[0].jobs) == 2, \
                "Error: Two jobs should have been returned: %s" % len(result[0].jobs)
-        
+
         goldenFilesA = ["file1", "file2", "file3", "file4", "fileA", "fileB",
                         "fileC"]
         goldenFilesB = ["fileI", "fileII", "fileIII", "fileIV"]
@@ -482,8 +482,8 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
                 self.assertEqual(jobLFNs, goldenFilesB,
                                  "Error: LFNs do not match.")
                 goldenFilesB = []
-                
-        return    
+
+        return
 
     def testMaxMergeSizeNoRunMerge(self):
         """
@@ -516,7 +516,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
 
         for job in result[0].jobs:
             jobFiles = job.getFiles()
-            
+
             if jobFiles[0]["lfn"] in goldenFilesA:
                 goldenFiles = goldenFilesA
             elif jobFiles[0]["lfn"] in goldenFilesB:
@@ -528,7 +528,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             currentLumi = 0
             currentEvent = 0
             for file in jobFiles:
-                self.assertTrue(file["lfn"] in goldenFiles, 
+                self.assertTrue(file["lfn"] in goldenFiles,
                                 "Error: Unknown file in merge jobs.")
                 self.assertTrue(file["locations"] == set(["somese.cern.ch"]),
                                 "Error: File is missing a location.")
@@ -592,7 +592,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
 
         for job in result[0].jobs:
             jobFiles = job.getFiles()
-            
+
             if jobFiles[0]["lfn"] in goldenFilesA:
                 goldenFiles = goldenFilesA
             elif jobFiles[0]["lfn"] in goldenFilesB:
@@ -675,14 +675,14 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         for job in result[0].jobs:
             firstInputFile = job.getFiles()[0]
             baseLocation = list(firstInputFile["locations"])[0]
-            
+
             for inputFile in job.getFiles():
                 assert len(inputFile["locations"]) == 1, \
                        "Error: Wrong number of locations"
 
                 assert list(inputFile["locations"])[0] == baseLocation, \
                        "Error: Wrong location."
-                       
+
         return
 
 
@@ -749,6 +749,6 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         self.assertEqual(len(jobGroup.jobs), 2)
         return
 
-    
+
 if __name__ == '__main__':
     unittest.main()

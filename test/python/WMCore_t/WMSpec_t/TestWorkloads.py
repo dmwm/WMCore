@@ -76,5 +76,3 @@ def twoTaskTree():
 
 
     return workload
-
-

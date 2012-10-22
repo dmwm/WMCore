@@ -14,47 +14,44 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class AddRunLumi(DBFormatter):
 
-    sql = """INSERT IGNORE wmbs_file_runlumi_map (fileid, run, lumi) 
-            select id, :run, :lumi from wmbs_file_details 
+    sql = """INSERT IGNORE wmbs_file_runlumi_map (fileid, run, lumi)
+            select id, :run, :lumi from wmbs_file_details
             where lfn = :lfn"""
 
     def getBinds(self, file=None, runs=None):
 
-	binds = []
+        binds = []
 
         if type(file) == list:
             for entry in file:
                 binds.extend(self.getBinds(file = entry['lfn'], runs = entry['runs']))
             return binds
 
-	if type(file) == type('string'):
-		lfn = file
-		
-	elif type(file) == type({}):
-		lfn = file('lfn')
-	else:
-	    raise Exception, "Type of file argument is not allowed: %s" \
+        if type(file) == type('string'):
+            lfn = file
+
+        elif type(file) == type({}):
+            lfn = file('lfn')
+        else:
+            raise Exception, "Type of file argument is not allowed: %s" \
                                 % type(file)
 
-	if isinstance(runs, set):
-		for run in runs:
-			for lumi in run: 
-				binds.append({'lfn': lfn,
-						'run': run.run,
-						'lumi':lumi})
-	else:
+        if isinstance(runs, set):
+            for run in runs:
+                for lumi in run:
+                    binds.append({'lfn': lfn,
+                                    'run': run.run,
+                                    'lumi':lumi})
+        else:
             raise Exception, "Type of runs argument is not allowed: %s" \
                                 % type(runs)
-	return binds
-				
+        return binds
+
     def format(self, result):
         return True
-    
+
     def execute(self, file=None, runs=None, conn = None, transaction = False):
         binds = self.getBinds(file, runs)
-        result = self.dbi.processData(self.sql, binds, 
+        result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = transaction)
         return self.format(result)
-
-
-

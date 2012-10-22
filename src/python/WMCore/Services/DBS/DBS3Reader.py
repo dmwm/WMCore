@@ -233,7 +233,7 @@ class DBS3Reader:
         if blockName:
             args['block_name'] = blockName
         try:
-             blocks = self.dbs.listBlocks(**args)
+            blocks = self.dbs.listBlocks(**args)
         except DbsException, ex:
             msg = "Error in DBSReader.getFileBlocksInfo(%s)\n" % dataset
             msg += "%s\n" % formatEx(ex)
@@ -268,7 +268,7 @@ class DBS3Reader:
         if onlyClosedBlocks:
             args['detail'] = True
         try:
-             blocks = self.dbs.listBlocks(**args)
+            blocks = self.dbs.listBlocks(**args)
         except DbsException, ex:
             msg = "Error in DBSReader.listFileBlocks(%s)\n" % dataset
             msg += "%s\n" % formatEx(ex)
@@ -294,7 +294,7 @@ class DBS3Reader:
         """
         self.checkDatasetPath(dataset)
         try:
-             blocks = self.dbs.listBlocks(dataset = dataset, detail = True)
+            blocks = self.dbs.listBlocks(dataset = dataset, detail = True)
         except DbsException, ex:
             msg = "Error in DBSReader.listFileBlocks(%s)\n" % dataset
             msg += "%s\n" % formatEx(ex)
@@ -341,7 +341,7 @@ class DBS3Reader:
         Get a list of files in the named fileblock
         TODO: lumis can be false when lumi splitting is not required
         However WMBSHelper expect file['LumiList'] to get the run number
-        so for now it will be always true. 
+        so for now it will be always true.
         We need to clean code up when dbs2 is completely deprecated.
         calling lumis for run number is expensive.
         """
@@ -356,7 +356,7 @@ class DBS3Reader:
             msg += "DBSReader.listFilesInBlock(%s)\n" % fileBlockName
             msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
-        
+
         if lumis:
             try:
                 lumiLists = self.dbs.listFileLumis(block_name = fileBlockName)
@@ -365,15 +365,15 @@ class DBS3Reader:
                 msg += "DBSReader.listFileLumis(%s)\n" % fileBlockName
                 msg += "%s\n" % formatEx(ex)
                 raise DBSReaderError(msg)
-            
-            lumiDict = {}    
+
+            lumiDict = {}
             for lumis in lumiLists:
                 lumiDict.setdefault(lumis['logical_file_name'], [])
                 item = {}
                 item["RunNumber"] = lumis['run_num']
                 item['LumiSectionNumber'] = lumis['lumi_section_num']
                 lumiDict[lumis['logical_file_name']].append(item)
-                
+
         result = []
         for file in files:
             if lumis:
@@ -589,11 +589,11 @@ class DBS3Reader:
          _checkDatasetPath_
         """
         if pathName in ("", None):
-           raise DBSReaderError("Invalid Dataset Path name: => %s <=" % pathName)
+            raise DBSReaderError("Invalid Dataset Path name: => %s <=" % pathName)
 
     def checkBlockName(self, blockName):
         """
          _checkBlockName_
         """
         if blockName in ("", "*", None):
-           raise DBSReaderError("Invalid Block name: => %s <=" % blockName)
+            raise DBSReaderError("Invalid Block name: => %s <=" % blockName)

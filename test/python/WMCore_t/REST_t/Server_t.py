@@ -10,15 +10,15 @@ srcfile = os.path.abspath(__file__).rsplit("/", 1)[-1].split(".")[0]
 dbspec = {}
 
 class FakeApp:
-  appname = "app"
+    appname = "app"
 
 class FakeConf:
-  db = srcfile + ".dbspec"
+    db = srcfile + ".dbspec"
 
 RESTFrontPage(None, None, "/", "/dev/null", {})
 MiniRESTApi(FakeApp(), None, "/")
 RESTApi(FakeApp(), None, "/")
 DBConnectionPool("x", {})
 if threading.current_thread().name == "MainThread":
-  DatabaseRESTApi(FakeApp(), FakeConf(), "/")
+    DatabaseRESTApi(FakeApp(), FakeConf(), "/")
 RESTEntity(FakeApp(), None, None, "/")

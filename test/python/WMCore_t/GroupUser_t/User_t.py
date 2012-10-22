@@ -52,13 +52,13 @@ class User_t(unittest.TestCase):
         doc1 = Document()
         doc1['test-data'] = {"key1" : "value1"}
         doc2 = Document()
-        doc2['test-data'] = {"key2" : "value2"} 
+        doc2['test-data'] = {"key2" : "value2"}
         id1 = g1.couch.commitOne(doc1)[0]
         id2 = g1.couch.commitOne(doc2)[0]
         doc1['_id'] = id1[u'id']
         doc1['_rev'] = id1[u'rev']
         doc2['_id'] = id2[u'id']
-        doc2['_rev'] = id2[u'rev']        
+        doc2['_rev'] = id2[u'rev']
 
         u1.ownThis(doc1)
         u1.ownThis(doc2)
@@ -76,10 +76,10 @@ class User_t(unittest.TestCase):
 
 
         g1.couch.delete_doc(id1[u'id'])
-        g1.couch.delete_doc(id2[u'id'])    
+        g1.couch.delete_doc(id2[u'id'])
         u1.drop()
         g1.drop()
-    
-    
+
+
 if __name__ == '__main__':
     unittest.main()

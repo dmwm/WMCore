@@ -26,14 +26,14 @@ import os.path
 import sys
 
 
-class WMInitException(WMException): 
-    """ 
-    WMInitException 
-
-    You should never, ever see one of these. 
-    I'm not optimistic that this will be the case. 
+class WMInitException(WMException):
     """
-        
+    WMInitException
+
+    You should never, ever see one of these.
+    I'm not optimistic that this will be the case.
+    """
+
 def connectToDB():
     """
     _connectToDB_
@@ -43,21 +43,21 @@ def connectToDB():
     if not os.environ.has_key("WMAGENT_CONFIG"):
         print "Please set WMAGENT_CONFIG to point at your WMAgent configuration."
         sys.exit(1)
-        
+
     if not os.path.exists(os.environ["WMAGENT_CONFIG"]):
         print "Can't find config: %s" % os.environ["WMAGENT_CONFIG"]
         sys.exit(1)
 
     wmAgentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
-    
+
     if not hasattr(wmAgentConfig, "CoreDatabase"):
         print "Your config is missing the CoreDatabase section."
         sys.exit(1)
-        
+
     socketLoc = getattr(wmAgentConfig.CoreDatabase, "socket", None)
     connectUrl = getattr(wmAgentConfig.CoreDatabase, "connectUrl", None)
     (dialect, junk) = connectUrl.split(":", 1)
-    
+
     myWMInit = WMInit()
     myWMInit.setDatabaseConnection(dbConfig = connectUrl, dialect = dialect,
                                    socketLoc = socketLoc)
@@ -67,7 +67,7 @@ class WMInit:
 
     def __init__(self):
         return
-    
+
     def getWMBASE(self):
         """ for those that don't want to use the static version"""
         return getWMBASE()
@@ -96,18 +96,18 @@ class WMInit:
     def setDatabaseConnection(self, dbConfig, dialect, socketLoc = None):
         """
         Sets the default connection parameters, without having to worry
-        much on what attributes need to be set. This is esepcially 
+        much on what attributes need to be set. This is esepcially
         advantagous for developers of third party projects that want
         to use only parts of the WMCore lib.
 
-        The class differentiates between different formats used by external 
-        projects. External project formats that are supported can activated 
+        The class differentiates between different formats used by external
+        projects. External project formats that are supported can activated
         it by setting the flavor flag.
         """
         myThread = threading.currentThread()
-        if getattr(myThread, "dialect", None) != None: 
+        if getattr(myThread, "dialect", None) != None:
             # Database is already initialized, we'll create a new
-            # transaction and move on. 
+            # transaction and move on.
             if hasattr(myThread, "transaction"):
                 if myThread.transaction != None:
                     myThread.transaction.commit()
@@ -115,18 +115,18 @@ class WMInit:
             myThread.transaction = Transaction(myThread.dbi)
             return
 
-        options = {}            
+        options = {}
         if dialect.lower() == 'mysql':
             dialect = 'MySQL'
             if socketLoc != None:
-                options['unix_socket'] = socketLoc            
+                options['unix_socket'] = socketLoc
         elif dialect.lower() == 'oracle':
             dialect = 'Oracle'
         elif dialect.lower() == 'http':
             dialect = 'CouchDB'
         else:
-            msg = "Unsupported dialect %s !" % dialect 
-            logging.error(msg) 
+            msg = "Unsupported dialect %s !" % dialect
+            logging.error(msg)
             raise WMInitException(msg)
 
         myThread.dialect = dialect
@@ -138,7 +138,7 @@ class WMInit:
         # initialized.  I'd rather have the user handle that, so we'll commit
         # it here.
         myThread.transaction = Transaction(myThread.dbi)
-        myThread.transaction.commit()                
+        myThread.transaction.commit()
         return
 
     def setSchema(self, modules = [], params = None):
@@ -146,7 +146,7 @@ class WMInit:
         Creates the schema in the database based on the modules
         input.
 
-        This method needs to have been preceded by the 
+        This method needs to have been preceded by the
         setDatabaseConnection.
         """
         myThread = threading.currentThread()
@@ -208,23 +208,23 @@ class WMInit:
 
         return
 
-    def checkDatabaseContents(self): 
-        """ 
-        _checkDatabaseContents_ 
+    def checkDatabaseContents(self):
+        """
+        _checkDatabaseContents_
 
-        Check and see if anything is in the database. 
-        This should be called by methods about to build the schema to make sure 
-        that the DB itself is empty. 
-        """ 
+        Check and see if anything is in the database.
+        This should be called by methods about to build the schema to make sure
+        that the DB itself is empty.
+        """
 
-        myThread = threading.currentThread() 
-        daoFactory = DAOFactory(package = "WMCore.Database", 
-                                logger  = myThread.logger, 
-                                dbinterface = myThread.dbi) 
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package = "WMCore.Database",
+                                logger  = myThread.logger,
+                                dbinterface = myThread.dbi)
 
-        testDAO = daoFactory(classname = "ListUserContent") 
+        testDAO = daoFactory(classname = "ListUserContent")
 
         result = testDAO.execute()
         myThread.dbi.engine.dispose()
-        
+
         return result

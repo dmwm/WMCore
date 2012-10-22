@@ -36,7 +36,7 @@ class GetLocation(DBFormatter):
     #    else:
     #        return results[0][0]
 
-        
+
     def execute(self, jobid, conn = None, transaction = False):
         """
         _execute_
@@ -51,5 +51,5 @@ class GetLocation(DBFormatter):
             return tmp
         result = self.dbi.processData(self.sql, {"jobid": jobid}, conn = conn,
                                       transaction = transaction)
-        
+
         return self.format(result)

@@ -81,7 +81,7 @@ class ConfigTest(unittest.TestCase):
     def initComponents(self, configPath):
         """
         _initComponents_
-        
+
         Start up the various components using the config
         """
 
@@ -144,9 +144,9 @@ class ConfigTest(unittest.TestCase):
             config.WorkloadSummary.couchurl    = os.environ['COUCHURL']
             config.WorkloadSummary.database    = '%s/workloadsummary' % self.dbName
 
-        
+
         # Get all components
-        
+
 
         components.append(JobCreator(config = config))
         components.append(JobSubmitter(config = config))
@@ -190,7 +190,7 @@ class ConfigTest(unittest.TestCase):
         configPath = os.path.join(WMCore.WMInit.getWMBASE(),
                                   'etc', 'WMAgentConfig.py')
 
-    
+
         self.initComponents(configPath = configPath)
 
 
@@ -208,7 +208,7 @@ class ConfigTest(unittest.TestCase):
         configPath = os.path.join(WMCore.WMInit.getWMBASE(),
                                   'etc', 'WMAgentPromptSkimConfig.py')
 
-    
+
         self.initComponents(configPath = configPath)
 
 
@@ -217,4 +217,4 @@ class ConfigTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

@@ -7,7 +7,7 @@ CouchDB URL as needed as CLI argument could be
     $COUCHURL env.variable
     https://localhost:2000/couchdb/ [tunnel to the VM development instance]
     https://maxadmwm.cern.ch/couchdb/" [VM development instance, via frontend]
-    
+
     actually, it's not possible (envisaged) to acquire CouchDB admin rights
     when running CouchDB behind frontend. This would need fiddling with
     local.ini settings on dev-vm CouchDB instance, otherwise admin operations
@@ -19,7 +19,7 @@ CouchDB URL as needed as CLI argument could be
     reads COUCHURL from env. variable rather than taking into account
     its input argument - the couchUrl as specified on CLI would need
     to be used there.
-    
+
 """
 
 import os
@@ -40,21 +40,21 @@ class CouchAppTester(object):
         self.couchUrl = couchUrl
         self.dbName = dbName
         self.couch = Database(dbName, couchUrl)
-        
-        
+
+
     def queryAll(self):
         print "Quering all docs in the database '%s'..." % self.dbName
         r = self.couch.allDocs()
         print "total_rows: %s" % r[u"total_rows"]
         for row in r[u"rows"]:
-            print row 
-        
-    
+            print row
+
+
     def couchapp(self, couchappName):
         """
         Drop database in CouchDB.
         Reload (push) the couchapp couchappName (likely to be "OpsClipboard").
-        
+
         """
         print "Pushing couchapp '%s' ..." % couchappName
         # here probably need to specify the couchUrl, otherwise default env COUCHURL
@@ -62,12 +62,12 @@ class CouchAppTester(object):
         testInit = TestInitCouchApp(__file__, dropExistingDb=True)
         # should now drop the CouchDB db, create a new one and push the couchapp
         testInit.setupCouch(self.dbName, couchappName)
-        
-        
+
+
     def createRequests(self, numRequests):
         """
         Create numRequests in CouchDB.
-        
+
         """
         print "Creating %s requests ..." % numRequests
         # attempt to do this on CouchDB behind frontend - as described above
@@ -78,7 +78,7 @@ class CouchAppTester(object):
         # in order to load a couchapp view - need to have couchapp name, e.g.:
         #results = self.couch.loadView("OpsClipboard", "all")
         #print results
-        
+
 
 
 def _processCmdLineArgs(args):
@@ -123,7 +123,7 @@ def main():
     if opts.createRequests:
         tester.createRequests(int(opts.createRequests))
     tester.queryAll()
-        
+
     print "Finished."
 
 

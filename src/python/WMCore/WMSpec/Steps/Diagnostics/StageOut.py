@@ -33,7 +33,7 @@ class SOMExceptionHandler(DiagnosticHandler):
             msg += str(args.get('ex'))
         if args.get('ExceptionInstance', False):
             msg += str(args.get('ExceptionInstance'))
-        
+
         #jobRepXml = os.path.join(executor.step.builder.workingDir,
         #                         executor.step.output.jobReport)
 
@@ -42,11 +42,11 @@ class SOMExceptionHandler(DiagnosticHandler):
         #    msg = "No Job Report Found: %s" % jobRepXml
         #    executor.report.addError(50115, "MissingJobReport", msg)
         #    return
-        
+
         # job report XML exists, load the exception information from it
         #executor.report.parse(jobRepXml)
-        
-        
+
+
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
         if errSection == None:
@@ -58,7 +58,7 @@ class SOMExceptionHandler(DiagnosticHandler):
             if executor.report.report.status == 0:
                 msg = "Job Report contains no error report, but StageOutManager exited non-zero: %s" % errCode
 
-                
+
         executor.report.addError(executor.step._internal_name,
                                  errCode, description, msg)
 
@@ -72,5 +72,5 @@ class StageOut(Diagnostic):
         # Set defaults
         catchAll            = SOMExceptionHandler()
         self.defaultHandler = catchAll
-        
+
         [ self.handlers.__setitem__(x, catchAll) for x in range(0, 255) if not self.handlers.has_key(x) ]

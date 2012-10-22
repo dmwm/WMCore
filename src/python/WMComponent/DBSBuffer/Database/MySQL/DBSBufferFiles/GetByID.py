@@ -12,18 +12,18 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class GetByID(DBFormatter):
     sql = """SELECT files.id AS id, files.lfn AS lfn, files.filesize AS filesize,
-                    files.events AS events, 
+                    files.events AS events,
                     files.status AS status,
                     dbsbuffer_algo.app_name AS app_name, dbsbuffer_algo.app_ver AS app_ver,
                     dbsbuffer_algo.app_fam AS app_fam, dbsbuffer_algo.pset_hash AS pset_hash,
-                    dbsbuffer_algo.config_content, dbsbuffer_dataset.path AS dataset_path 
+                    dbsbuffer_algo.config_content, dbsbuffer_dataset.path AS dataset_path
              FROM dbsbuffer_file files
              INNER JOIN dbsbuffer_algo_dataset_assoc ON
                files.dataset_algo = dbsbuffer_algo_dataset_assoc.id
              INNER JOIN dbsbuffer_algo ON
                dbsbuffer_algo_dataset_assoc.algo_id = dbsbuffer_algo.id
              INNER JOIN dbsbuffer_dataset ON
-               dbsbuffer_algo_dataset_assoc.dataset_id = dbsbuffer_dataset.id                    
+               dbsbuffer_algo_dataset_assoc.dataset_id = dbsbuffer_dataset.id
              WHERE files.id = :fileid"""
 
     def format(self, result):
@@ -57,16 +57,16 @@ class GetByID(DBFormatter):
         del resultDict["filesize"]
 
         return resultDict
-    
+
     def getBinds(self, files):
         binds = []
         files = self.dbi.makelist(files)
         for f in files:
             binds.append({'fileid': f})
         return binds
-    
+
     def execute(self, files, conn = None, transaction = False):
         binds = self.getBinds(files)
-        result = self.dbi.processData(self.sql, binds, 
+        result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = transaction)
         return self.format(result)

@@ -80,9 +80,3 @@ class New(DBFormatter):
         if result == []:
             return None
         return result[0]
-
-
-
-
-
-

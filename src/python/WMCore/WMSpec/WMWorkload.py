@@ -863,7 +863,7 @@ class WMWorkloadHelper(PersistencyHelper):
                 stepHelper = task.getStepHelper(stepName)
                 if stepHelper.stepType() == "StageOut" and stepHelper.minMergeSize() != -1:
                     stepHelper.setMinMergeSize(minSize, maxEvents)
-                
+
             if task.taskType() == "Merge":
                 task.setSplittingParameters(min_merge_size = minSize,
                                             max_merge_size = maxSize,
@@ -989,17 +989,17 @@ class WMWorkloadHelper(PersistencyHelper):
     def listInputDatasets(self):
         """
         _listInputDatasets_
-    
+
         List all the input datasets in the workload
         """
         inputDatasets = []
-    
+
         taskIterator = self.taskIterator()
         for task in taskIterator:
             path = task.getInputDatasetPath()
             if path:
                 inputDatasets.append(path)
-                
+
         return inputDatasets
 
     def listOutputDatasets(self, initialTask = None):
@@ -1253,7 +1253,7 @@ class WMWorkloadHelper(PersistencyHelper):
                 if inputStep != None:
                     inputStep = inputStep.replace(parentTaskPath, "/" + newWorkloadName)
                     childTask.setInputStep(inputStep)
-                    
+
                 adjustPathsForTask(childTask, childTask.getPathName())
 
             return
@@ -1332,7 +1332,7 @@ class WMWorkloadHelper(PersistencyHelper):
                                                   scramArch = scramArch)
                         else:
                             stepHelper.cmsswSetup(cmsswVersion = cmsswVersion)
-                        
+
                     if globalTag != None:
                         stepHelper.setGlobalTag(globalTag)
 
@@ -1350,7 +1350,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         for task in self.taskIterator():
             for stepName in task.listAllStepNames():
-                
+
                 stepHelper = task.getStepHelper(stepName)
                 if stepHelper.stepType() != "CMSSW" and stepHelper.stepType() != "MulticoreCMSSW":
                     continue
@@ -1358,18 +1358,18 @@ class WMWorkloadHelper(PersistencyHelper):
                 if not version in versions:
                     versions.append(version)
         return versions
-        
+
 
     def generateWorkloadSummary(self):
         """
         _generateWorkloadSummary_
-        
+
         Generates a dictionary with the following information:
         task paths
         ACDC
         input datasets
         output datasets
-        
+
         Intended for use in putting WMSpec info into couch
         """
         summary = {'tasks': [],
@@ -1378,7 +1378,7 @@ class WMWorkloadHelper(PersistencyHelper):
                    'output': [],
                    'owner' : {},
                    }
-    
+
         summary['tasks']  = self.listAllTaskPathNames()
         summary['output'] = self.listOutputDatasets()
         summary['input']  = self.listInputDatasets()
@@ -1386,14 +1386,14 @@ class WMWorkloadHelper(PersistencyHelper):
         summary['performance'] = {}
         for t in summary['tasks']:
             summary['performance'][t] = {}
-        
+
         return summary
 
     def setupPerformanceMonitoring(self, maxRSS, maxVSize, softTimeout,
                                          gracePeriod):
         """
         _setupPerformanceMonitoring_
-        
+
         Setups performance monitors for all tasks in the workflow
         """
         for task in self.getAllTasks():
@@ -1415,9 +1415,9 @@ class WMWorkloadHelper(PersistencyHelper):
             result.extend(t.getConfigCacheIDs())
         return result
 
-        
 
-        
+
+
 
 class WMWorkload(ConfigSection):
     """

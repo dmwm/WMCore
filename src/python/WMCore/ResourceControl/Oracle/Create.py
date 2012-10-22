@@ -15,10 +15,10 @@ from WMCore.Database.DBCreator import DBCreator
 class Create(DBCreator):
     """
     _Create_
-    
+
     Class for creating Oracle specific schema for resource control.
     """
-    def __init__(self, logger = None, dbi = None, params = None):    
+    def __init__(self, logger = None, dbi = None, params = None):
         myThread = threading.currentThread()
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
         self.create = {}
@@ -46,4 +46,4 @@ class Create(DBCreator):
 
         self.constraints["rc_threshold_fk2"] = \
           """ALTER TABLE rc_threshold ADD
-               (CONSTRAINT rc_threshold_fk2 FOREIGN KEY (sub_type_id) REFERENCES wmbs_sub_types(id) ON DELETE CASCADE)"""               
+               (CONSTRAINT rc_threshold_fk2 FOREIGN KEY (sub_type_id) REFERENCES wmbs_sub_types(id) ON DELETE CASCADE)"""

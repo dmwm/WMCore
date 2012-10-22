@@ -23,8 +23,8 @@ def makeNonBlocking(fd):
     try:
         fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NDELAY)
     except AttributeError:
-	fcntl.fcntl(fd, fcntl.F_SETFL, fl | fcntl.FNDELAY)
-    
+        fcntl.fcntl(fd, fcntl.F_SETFL, fl | fcntl.FNDELAY)
+
 
 def runCommand(command):
     """
@@ -34,11 +34,11 @@ def runCommand(command):
     echo all output to sys.stdout and sys.stderr
 
     Returns the exitCode
-    
+
     """
     child = popen2.Popen3(command, 1) # capture stdout and stderr from command
     child.tochild.close()             # don't need to talk to child
-    outfile = child.fromchild 
+    outfile = child.fromchild
     outfd = outfile.fileno()
     errfile = child.childerr
     errfd = errfile.fileno()
@@ -47,28 +47,28 @@ def runCommand(command):
     outdata = errdata = ''
     outeof = erreof = 0
     while 1:
-	ready = select.select([outfd,errfd],[],[]) # wait for input
-	if outfd in ready[0]:
+        ready = select.select([outfd,errfd],[],[]) # wait for input
+        if outfd in ready[0]:
             try:
                 outchunk = outfile.read()
             except Exception, ex:
                 msg = "Unable to read stdout chunk... skipping"
                 print msg
                 outchunk = ''
-	    if outchunk == '': outeof = 1
-	    sys.stdout.write(outchunk)
-	if errfd in ready[0]:
+            if outchunk == '': outeof = 1
+            sys.stdout.write(outchunk)
+        if errfd in ready[0]:
             try:
                 errchunk = errfile.read()
             except Exception, ex:
                 msg = "Unable to read stderr chunk... skipping"
                 print msg, str(ex)
                 errchunk = ""
-	    if errchunk == '': erreof = 1
+            if errchunk == '': erreof = 1
             sys.stderr.write(errchunk)
-	if outeof and erreof: break
-	select.select([],[],[],.1) # give a little time for buffers to fill
-        
+        if outeof and erreof: break
+        select.select([],[],[],.1) # give a little time for buffers to fill
+
     err = child.wait()
     if os.WIFEXITED(err):
         return os.WEXITSTATUS(err)
@@ -86,11 +86,11 @@ def runCommandWithOutput(command):
     echo all output to sys.stdout and sys.stderr
 
     Returns the exitCode and the a string containing std out & error
-    
+
     """
     child = popen2.Popen3(command, 1) # capture stdout and stderr from command
     child.tochild.close()             # don't need to talk to child
-    outfile = child.fromchild 
+    outfile = child.fromchild
     outfd = outfile.fileno()
     errfile = child.childerr
     errfd = errfile.fileno()
@@ -121,7 +121,7 @@ def runCommandWithOutput(command):
             output += errchunk
         if outeof and erreof: break
         select.select([],[],[],.1) # give a little time for buffers to fill
-        
+
     err = child.wait()
     if os.WIFEXITED(err):
         err = os.WEXITSTATUS(err)
@@ -154,4 +154,3 @@ def execute(command):
         print msg
         raise StageOutError(msg, Command = command, ExitCode = exitCode)
     return
-

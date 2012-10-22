@@ -17,7 +17,7 @@ from WMQuality.TestInit import TestInit
 
 class DBSBufferDatasetTest(unittest.TestCase):
 
-    
+
     def setUp(self):
         """
         _setUp_
@@ -65,16 +65,16 @@ class DBSBufferDatasetTest(unittest.TestCase):
                                             configContent = "MOREGIBBERISH2")
         self.algo2ID = listResult[0]["id"]
 
-          
-    def tearDown(self):        
+
+    def tearDown(self):
         """
         _tearDown_
-        
+
         Drop all the DBSBuffer tables.
         """
         self.testInit.clearDatabase()
 
-            
+
     def testCreate(self):
         """
         _testCreate_
@@ -201,7 +201,7 @@ class DBSBufferDatasetTest(unittest.TestCase):
         assert result[0]["dataset_id"] == self.datasetID, \
                "ERROR: Wrong dataset associated with algorithm"
         assert result[0]["in_dbs"] == 1, \
-               "ERROR: Dataset/Algo association should be in DBS"         
+               "ERROR: Dataset/Algo association should be in DBS"
 
         updateAssocAction.execute(assocID = assocID, inDBS = 0)
 
@@ -214,7 +214,7 @@ class DBSBufferDatasetTest(unittest.TestCase):
         assert result[0]["dataset_id"] == self.datasetID, \
                "ERROR: Wrong dataset associated with algorithm"
         assert result[0]["in_dbs"] == 0, \
-               "ERROR: Dataset/Algo association shouldn't be in DBS"         
+               "ERROR: Dataset/Algo association shouldn't be in DBS"
 
         return
 
@@ -267,9 +267,9 @@ class DBSBufferDatasetTest(unittest.TestCase):
         result = listAssocAction.execute(assocID = assocID)
 
         assert result[0]["in_dbs"] == 0, \
-               "ERROR: Dataset/Algo association should be in DBS"        
+               "ERROR: Dataset/Algo association should be in DBS"
 
         return
 
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

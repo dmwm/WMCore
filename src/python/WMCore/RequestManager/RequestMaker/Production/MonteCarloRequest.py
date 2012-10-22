@@ -25,8 +25,8 @@ class MonteCarloRequest(RequestMakerInterface):
         RequestMakerInterface.__init__(self)
 
     def makeWorkload(self, schema):
-       factory = MonteCarloWorkloadFactory()
-       return factory(schema['RequestName'], schema).data
+        factory = MonteCarloWorkloadFactory()
+        return factory(schema['RequestName'], schema).data
 
 
 class MonteCarloSchema(RequestSchema):
@@ -39,11 +39,11 @@ class MonteCarloSchema(RequestSchema):
     def __init__(self):
         RequestSchema.__init__(self)
         self.setdefault("CMSSWVersion", None)
-        self.setdefault("ProdConfigCacheID", None)
+        self.setdefault("ConfigCacheID", None)
         self.setdefault("PileupDataset", None)
         self.validateFields = [
             "CMSSWVersion",
-            "ProdConfigCacheID",
+            "ConfigCacheID",
             "PrimaryDataset"
             ]
 

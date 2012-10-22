@@ -12,7 +12,7 @@ import psutil
 from WMQuality.TestInit import TestInit
 from WMCore.Configuration import Configuration
 from WMComponent.AlertGenerator.AlertGenerator import AlertGenerator
-from WMComponent_t.AlertGenerator_t.Pollers_t import utils 
+from WMComponent_t.AlertGenerator_t.Pollers_t import utils
 # poller final implementations
 from WMComponent.AlertGenerator.Pollers.System import CPUPoller
 from WMComponent.AlertGenerator.Pollers.System import MemoryPoller
@@ -46,7 +46,7 @@ finalPollerClasses = [CouchErrorsPoller,
                       MemoryPoller,
                       CPUPoller]
 
-        
+
 def getConfig(testDir):
     periodAlertGeneratorPollers = 40 # [second]
     config = Configuration()
@@ -65,14 +65,14 @@ def getConfig(testDir):
     config.AlertProcessor.section_("soft")
     config.AlertProcessor.critical.level = 5
     config.AlertProcessor.soft.level = 1
-    
+
     # common 'Alert' section
     config.section_("Alert")
     # destination for the alert messages
     config.Alert.address = "tcp://127.0.0.1:6557"
     # control channel (internal alerts system commands)
     config.Alert.controlAddr = "tcp://127.0.0.1:6559"
-    
+
     config.component_("AlertGenerator")
     config.AlertGenerator.componentDir = testDir
     config.AlertGenerator.logLevel     = 'DEBUG'
@@ -81,7 +81,7 @@ def getConfig(testDir):
     config.AlertGenerator.cpuPoller.soft = 70 # [percent]
     config.AlertGenerator.cpuPoller.critical = 90 # [percent]
     config.AlertGenerator.cpuPoller.pollInterval = 10 # [second]
-    # period during which measurements are collected before evaluating for possible alert triggering 
+    # period during which measurements are collected before evaluating for possible alert triggering
     config.AlertGenerator.cpuPoller.period = periodAlertGeneratorPollers # [second]
     # configuration for overall used physical memory monitor: memPoller (percentage of total physical memory)
     config.AlertGenerator.section_("memPoller")
@@ -105,7 +105,7 @@ def getConfig(testDir):
     # configuration for particular components memory monitor: componentMemPoller (percentage of total physical memory)
     config.AlertGenerator.section_("componentsMemPoller")
     config.AlertGenerator.componentsMemPoller.soft = 40 # [percent]
-    config.AlertGenerator.componentsMemPoller.critical = 60 # [percent] 
+    config.AlertGenerator.componentsMemPoller.critical = 60 # [percent]
     config.AlertGenerator.componentsMemPoller.pollInterval = 10  # [second]
     # period during which measurements are collected before evaluating for possible alert triggering
     config.AlertGenerator.componentsMemPoller.period = periodAlertGeneratorPollers # [second]
@@ -158,10 +158,10 @@ def getConfig(testDir):
     config.AlertGenerator.couchErrorsPoller.critical = 200 # [number of error occurrences]
     config.AlertGenerator.couchErrorsPoller.observables = (404, 500) # HTTP status codes to watch over
     config.AlertGenerator.couchErrorsPoller.pollInterval = 10 # [second]
-    
+
     return config
-    
-    
+
+
 
 class AlertGeneratorTest(unittest.TestCase):
     def setUp(self):
@@ -182,7 +182,7 @@ class AlertGeneratorTest(unittest.TestCase):
 
 
     def tearDown(self):
-        self.testInit.clearDatabase()       
+        self.testInit.clearDatabase()
         self.testInit.delWorkDir()
         self.generator = None
         # if the directory and file "/tmp/TestComponent/Daemon.xml" after
@@ -191,7 +191,7 @@ class AlertGeneratorTest(unittest.TestCase):
         if os.path.exists(d):
             shutil.rmtree(d)
 
-        
+
     def _startComponent(self):
         self.generator = AlertGenerator(self.config)
         try:
@@ -204,8 +204,8 @@ class AlertGeneratorTest(unittest.TestCase):
             print ex
             self.fail(str(ex))
         logging.debug("AlertGenerator and its sub-components should be running now ...")
-        
-        
+
+
     def _stopComponent(self):
         logging.debug("Going to stop the AlertGenerator ...")
         # stop via component method
@@ -215,13 +215,13 @@ class AlertGeneratorTest(unittest.TestCase):
             logging.error(ex)
             self.fail(str(ex))
         logging.debug("AlertGenerator should be stopped now.")
-        
+
 
     def testAlertProcessorBasic(self):
         """
         Just tests starting and stopping the component machinery.
         Should start and stop all configured pollers.
-        
+
         """
         # the generator will run full-fledged pollers that may get triggered
         # to send some alerts. need to consume such in order to avoid clashes
@@ -238,30 +238,30 @@ class AlertGeneratorTest(unittest.TestCase):
         receiver.shutdown()
         print "%s alerts captured by the way (test %s)." % (len(handler.queue),
                                                             inspect.stack()[0][3])
-        
+
 
     def testAllFinalClassPollerImplementations(self):
         """
         Any new end (final) implementation of new poller(s) should be add
         here to test its basic flow chain.
-        
+
         """
         config = getConfig("/tmp")
-        # create some non-sence config section. just need a bunch of values defined        
+        # create some non-sence config section. just need a bunch of values defined
         config.AlertGenerator.section_("bogusPoller")
         # only couch-related pollers require couchURL, this way it'll be used at the
         # other ones as well, should do no harm ; it's just because all pollers are
         # probed here in a single test ...
         config.AlertGenerator.bogusPoller.couchURL = os.getenv("COUCHURL", None)
         config.AlertGenerator.bogusPoller.soft = 5 # [percent]
-        config.AlertGenerator.bogusPoller.critical = 50 # [percent] 
+        config.AlertGenerator.bogusPoller.critical = 50 # [percent]
         config.AlertGenerator.bogusPoller.pollInterval = 0.2  # [second]
         config.AlertGenerator.bogusPoller.period = 0.5
         # currently only CouchErrorsPoller uses this config value
         config.AlertGenerator.bogusPoller.observables = 4000
-        
+
         # need to create some temp directory, real process and it's
-        # Daemon.xml so that is looks like agents component process 
+        # Daemon.xml so that is looks like agents component process
         # and check back the information, give its own PID
         pid = os.getpid()
         config.component_("TestComponent")
@@ -272,7 +272,7 @@ class AlertGeneratorTest(unittest.TestCase):
         f = open(self.testComponentDaemonXml, 'w')
         f.write(utils.daemonXmlContent % dict(PID_TO_PUT = pid))
         f.close()
-        
+
         generator = utils.AlertGeneratorMock(config)
         pollers = []
         for pollerClass in finalPollerClasses:
@@ -280,7 +280,7 @@ class AlertGeneratorTest(unittest.TestCase):
             # poller may send something during below check(), satisfy sender method
             p.sender = lambda alert: 1 + 1
             pollers.append(p)
-            
+
         for poller in pollers:
             poller.check()
             if hasattr(poller, "_measurements"):
@@ -291,12 +291,12 @@ class AlertGeneratorTest(unittest.TestCase):
                 for measurements in poller._compMeasurements:
                     self.assertEqual(len(measurements), 1)
                     self.assertTrue(isinstance(measurements[0], types.FloatType))
-                    
+
         shutil.rmtree(d)
-            
+
         # don't do shutdown() on poller - will take a while and it's not
         # necessary anyway - BasePoller.start() which does register is not
-        # called here so the threads are not running in fact    
+        # called here so the threads are not running in fact
 
 
 

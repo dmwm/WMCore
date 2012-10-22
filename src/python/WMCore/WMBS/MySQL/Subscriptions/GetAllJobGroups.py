@@ -28,7 +28,7 @@ class GetAllJobGroups(DBFormatter):
                 jobGroupIDs.append(int(row))
 
         return jobGroupIDs
-        
+
     def execute(self, subscription = None, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, {"subscription": subscription},
                                       conn = conn, transaction = transaction)

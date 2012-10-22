@@ -14,7 +14,7 @@ from WMCore.Database.DBCreator import DBCreator
 class Create(DBCreator):
     """
     _Create_
-    
+
     Class for creating MySQL specific schema for persistent messages.
     """
     def __init__(self):
@@ -23,7 +23,7 @@ class Create(DBCreator):
         self.create = {}
         self.constraints = {}
 
-        self.create['threadpool'] = """      
+        self.create['threadpool'] = """
 CREATE TABLE tp_threadpool(
    id                      integer      PRIMARY KEY AUTOINCREMENT,
    event                   varchar(255) NOT NULL,
@@ -35,7 +35,7 @@ CREATE TABLE tp_threadpool(
    FOREIGN KEY(state) references tp_queued_process_enum(value)
    )
 """
-        self.create['threadpool_buffer_in'] = """      
+        self.create['threadpool_buffer_in'] = """
 CREATE TABLE tp_threadpool_buffer_in(
    id                      integer      PRIMARY KEY AUTOINCREMENT,
    event                   varchar(255) NOT NULL,
@@ -47,7 +47,7 @@ CREATE TABLE tp_threadpool_buffer_in(
    FOREIGN KEY(state) references tp_queued_process_enum(value)
    )
 """
-        self.create['threadpool_buffer_out'] = """      
+        self.create['threadpool_buffer_out'] = """
 CREATE TABLE tp_threadpool_buffer_out(
    id                      integer      PRIMARY KEY AUTOINCREMENT,
    event                   varchar(255) NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE tp_queued_process_enum (
         self.create['tp_queued_process_enum_insert1'] = """
 INSERT INTO tp_queued_process_enum VALUES('queued')
 """
-        
+
         self.create['tp_queued_process_enum_insert2'] = """
 INSERT INTO tp_queued_process_enum VALUES('process')
 """

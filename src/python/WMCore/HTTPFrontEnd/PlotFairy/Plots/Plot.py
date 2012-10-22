@@ -5,10 +5,10 @@ import sys
 import traceback
 '''
 The Plot class is a base class for PlotFairy plots to inherit from. Authors of
-new plots should override the plot(self, data) method. Plots should be 
+new plots should override the plot(self, data) method. Plots should be
 instantiated via a factory, and be stateless.
 '''
-import matplotlib.pyplot 
+import matplotlib.pyplot
 from Utils import Props,elem
 
 class null(object):
@@ -62,7 +62,7 @@ class Plot(type):
                 return self._error(str(e))
                 #return self._error(traceback.format_exc())
         attrs['__call__']=__call__
-        
+
         def __init__(self,*args,**kwargs):
             self.props = Props()
             self.validators = []
@@ -70,7 +70,7 @@ class Plot(type):
             super(self.__class__,self).__init__(*args,**kwargs)
         if not '__init__' in attrs:
             attrs['__init__']=__init__
-        
+
         def _error(self,msg):
             height = self.props.get('height',600)
             width = self.props.get('width',800)
@@ -83,7 +83,7 @@ class Plot(type):
             self.figure = matplotlib.pyplot.figure(figsize=(height/dpi,width/dpi),dpi=dpi)
             self.figure.text(0.5,0.5,'Error!\n%s'%msg,ha='center',va='center',weight='bold',color='r')
             return self.figure
-            
+
         if not '_error' in attrs:
             attrs['_error']=_error
         def __del__(self):
@@ -97,7 +97,7 @@ class Plot(type):
         _validate_calls = []
         _extract_calls = []
         _build_calls = []
-        
+
         def doc(self):
             head = elem('head',elem('title','Plotfairy::Documentation::%s'%self.__class__.__name__))
             header = elem('div',elem('h1','Documentation for Plotfairy::%s'%self.__class__.__name__))
@@ -108,10 +108,10 @@ class Plot(type):
             mixins = elem('div',elem('h2','Mixins')) \
                     +elem('div','Uses'+elem('ul','\n'.join([elem('li',k.__name__) for k in self.__class__.__bases__]))) \
                     +elem('div','Method order'+elem('ul','\n'.join([elem('li','%s::%s'%(f.im_class.__name__ if hasattr(f,'im_class') else self.__class__.__name__,f.__name__)) for f in self._validate_calls+self._extract_calls+self._build_calls])))
-            return elem('html',head+elem('body',header+docstr+validators+mixins))        
-            
+            return elem('html',head+elem('body',header+docstr+validators+mixins))
+
         attrs['doc']=doc
-        
+
         for klass in bases:
             if hasattr(klass,'validate'):
                 _validate_calls.append(getattr(klass,'validate'))

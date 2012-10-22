@@ -50,4 +50,3 @@ def associateCampaign(campaignName, requestID):
     add = factory(classname = "Campaign.NewAssoc")
     result = add.execute(requestID, campaignID)
     return result
-

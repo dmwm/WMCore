@@ -85,4 +85,3 @@ class BuildMaster:
             stepType = step.stepType
             builder = StepFactory.getStepBuilder(stepType)
             builder(step, task.name(), self.taskSpace)
-

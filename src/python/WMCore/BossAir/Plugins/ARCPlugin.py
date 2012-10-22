@@ -20,7 +20,7 @@ from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 
 def gen_wrapper_script():
     code = "#!/bin/bash\n\n"
-    
+
     code += "env\n"
 
     code += "# Make sure python is version 2.6\n"
@@ -89,25 +89,25 @@ def splitNgstatOutput(output):
     s = ""
     for line in output.split('\n'):
 
-         if len(line) == 0:
-              continue
+        if len(line) == 0:
+            continue
 
-         if line[0].isspace():
-              s += '\n' + line
-         elif re.match("This job was only very recently submitted", line):
-              s += ' ' + line
-         else:
-              if len(s) > 0:
-                   jobs.append(s + '\n')
-              s = line
+        if line[0].isspace():
+            s += '\n' + line
+        elif re.match("This job was only very recently submitted", line):
+            s += ' ' + line
+        else:
+            if len(s) > 0:
+                jobs.append(s + '\n')
+            s = line
     if len(s) > 0:
-         jobs.append(s)
+        jobs.append(s)
 
     return jobs
 
 
 class ARCPlugin(BasePlugin):
-    
+
 
     @staticmethod
     def stateMap():
@@ -131,7 +131,7 @@ class ARCPlugin(BasePlugin):
 
                      "DELETED":    "Error",    # Killed by system
                      "FAILED":     "Error",
-                     
+
                      "LOST":       "Error"
                      }
         return stateDict
@@ -179,7 +179,7 @@ class ARCPlugin(BasePlugin):
                 logging.debug("Failed job")
 
             n += 1
-            
+
         logging.info("%i successful job submissions, %i failures" % (len(success), len(failure)))
         return success, failure
 
@@ -293,11 +293,11 @@ class ARCPlugin(BasePlugin):
             if j.get('cache_dir', None) == None:
                 logging.warning("job %s has no 'cache_dir'" % j['id'])
                 continue
-            
+
             if j.get('retry_count', None) == None:
                 logging.warning("job %s has no 'retry_count'" % j['id'])
                 continue
-            
+
             #reportName = 'Report.%i.pkl' % j['retry_count']
             reportName = 'Report.pkl'
             reportPath = os.path.join(j['cache_dir'], reportName)

@@ -11,5 +11,3 @@ class GetProdMgr(DBFormatter):
         binds = {"request_id": requestId}
         result = self.dbi.processData(self.sql, binds, conn = conn, transaction = trans)
         return self.formatOne(result)
-
-      

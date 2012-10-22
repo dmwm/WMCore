@@ -35,7 +35,7 @@ def getApmonInstance( logr, apmonServer ):
                     apmonInstance = apmon.ApMon(apmonServer, logr)
             except Exception, e :
                 pass
-    return apmonInstance 
+    return apmonInstance
 
 #
 # Method to free the apmon instance
@@ -69,5 +69,3 @@ def apmonSend(taskid, jobid, params, logr, apmonServer) :
         except Exception, e:
             pass
     return 1
-
-

@@ -16,7 +16,7 @@ import WMCore.FwkJobReport.XMLParser as ReportReader
 def readMultiJobReports(multiReportFile, stepName, directory):
     """
     _readMultiJobReports_
-    
+
     Read a multi report and return a list of report instances indexed by it
     """
     result = []
@@ -33,4 +33,3 @@ def readMultiJobReports(multiReportFile, stepName, directory):
                     result.append(reportInstance)
 
     return result
-

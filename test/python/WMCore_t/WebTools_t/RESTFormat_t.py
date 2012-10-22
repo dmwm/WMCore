@@ -88,4 +88,3 @@ class RESTFormatTest(RESTBaseUnitTest):
 
 if __name__ == "__main__":
     unittest.main()
-

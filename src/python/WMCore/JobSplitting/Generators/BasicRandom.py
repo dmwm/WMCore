@@ -30,8 +30,3 @@ class BasicRandom(GeneratorInterface):
                 "RandomSeeder.%s" %(x),
                 self.instance.randint(1, self.maxInt)
                 )
-
-
-
-
-

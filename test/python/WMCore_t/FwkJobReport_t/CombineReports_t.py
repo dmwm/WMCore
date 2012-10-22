@@ -18,12 +18,12 @@ from WMCore.FwkJobReport.MulticoreUtils import Aggregator, updateMulticoreReport
 def testReports():
     """
     _testReports_
-    
+
     Build a bunch of performance reports for tests
     """
     reports = []
 
-    report1 = Report("cmsRun1") 
+    report1 = Report("cmsRun1")
     reports.append(report1)
     performance = report1.report.performance
     performance.section_('memory')
@@ -51,9 +51,9 @@ def testReports():
     performance.cpu.TotalJobTime = '5697.5'
     performance.cpu.MinEventTime = '0.699774'
     performance.cpu.MaxEventCPU = '20.7558'
-    
-    
-    report2 = Report("cmsRun1") 
+
+
+    report2 = Report("cmsRun1")
     reports.append(report2)
     performance = report2.report.performance
     performance.section_('memory')
@@ -81,8 +81,8 @@ def testReports():
     performance.cpu.TotalJobTime = '5690.01'
     performance.cpu.MinEventTime = '0.496432'
     performance.cpu.MaxEventCPU = '19.485'
-    
-    report3 = Report("cmsRun1") 
+
+    report3 = Report("cmsRun1")
     reports.append(report3)
     performance = report3.report.performance
     performance.section_('memory')
@@ -110,7 +110,7 @@ def testReports():
     performance.cpu.TotalJobTime = '5696.24'
     performance.cpu.MinEventTime = '0.686953'
     performance.cpu.MaxEventCPU = '24.7832'
-    
+
     report4 = Report("cmsRun1")
     reports.append(report4)
     performance = report4.report.performance
@@ -139,14 +139,14 @@ def testReports():
     performance.cpu.TotalJobTime = '5693.04'
     performance.cpu.MinEventTime = '0.667495'
     performance.cpu.MaxEventCPU = '20.8438'
-    
+
     return reports
 
 
 class CombineReports_t(unittest.TestCase):
     """
     TestCase to combine performance reports for a multicore job
-    
+
     """
     def testA(self):
         """ read a set of reports"""
@@ -168,25 +168,25 @@ class CombineReports_t(unittest.TestCase):
             self.fail(msg)
         timestamp = time.time()
         mergetimes = [ 1,2,3,4,5,6,7,8 ]
-        
+
         finalReport = Report("cmsRun1")
         finalReport.report.performance = report
-        
+
         updateMulticoreReport(finalReport, 8, timestamp , timestamp + 100 , timestamp - 1000, *mergetimes)
-        
+
         performance = finalReport.report.performance
         self.assertEqual(performance.multicore.maxMergeTime , 8)
         self.assertEqual(performance.multicore.minMergeTime , 1)
-        self.assertEqual(performance.multicore.coresUsed , 4)  
-        
+        self.assertEqual(performance.multicore.coresUsed , 4)
+
         self.assertEqual(performance.cpu.TotalJobTime,
             AggrFunctions['cpu.TotalJobTime'](aggr.values['cpu.TotalJobTime']))
         self.assertEqual(performance.storage.readTotalSecs,
             AggrFunctions['storage.readTotalSecs'](aggr.values['storage.readTotalSecs']))
         self.assertEqual(performance.memory.PeakValueVsize,
             AggrFunctions['memory.PeakValueVsize'](aggr.values['memory.PeakValueVsize']))
-        
+
         self.assertEqual(performance.multicore.stepEfficiency, 1)
-    
+
 if __name__ == '__main__':
     unittest.main()

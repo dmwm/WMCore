@@ -15,7 +15,7 @@ remote messages. It could be mapped to a msgType using the
 import time
 
 class SimpleHandler(object):
-    """ 
+    """
     _SimpleHandler_
     """
     def __init__(self, params = None):
@@ -32,7 +32,7 @@ class SimpleHandler(object):
         print "\nSimpleHandler received: msgType: %s" % (msgType)
         print "                payload: "+payload
         print "Ended: SimpleHandler at %s" % (time.ctime())
- 
+
         result = ['This is an example of what can be returned', \
                    0, {'dict': 'also'}]
         return result

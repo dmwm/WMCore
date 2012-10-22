@@ -63,19 +63,19 @@ class FeederManagerTest(unittest.TestCase):
         config = self.testInit.getConfiguration()
         self.testInit.generateWorkDir(config)
 
-	config.component_("FeederManager")
-	config.FeederManager.logLevel = "INFO"
-	config.FeederManager.componentName = "FeederManager"
-	config.FeederManager.componentDir = \
-	    os.path.join(os.getenv("TESTDIR"), "FeederManager")
-	config.FeederManager.addDatasetWatchHandler = \
-	    'WMComponent.FeederManager.Handler.DefaultAddDatasetWatch'
+        config.component_("FeederManager")
+        config.FeederManager.logLevel = "INFO"
+        config.FeederManager.componentName = "FeederManager"
+        config.FeederManager.componentDir = \
+            os.path.join(os.getenv("TESTDIR"), "FeederManager")
+        config.FeederManager.addDatasetWatchHandler = \
+            'WMComponent.FeederManager.Handler.DefaultAddDatasetWatch'
 
-	# The maximum number of threads to process each message type
-	config.FeederManager.maxThreads = 10
+        # The maximum number of threads to process each message type
+        config.FeederManager.maxThreads = 10
 
-	# The poll interval at which to look for new fileset/feeder association
-	config.FeederManager.pollInterval = 60
+        # The poll interval at which to look for new fileset/feeder association
+        config.FeederManager.pollInterval = 60
 
         return config
 
@@ -93,11 +93,11 @@ class FeederManagerTest(unittest.TestCase):
         for i in xrange(0, FeederManagerTest._maxMessage):
             for j in xrange(0, 3):
                 feederManagerdict = {'payload':{'FeederType':'NO Feeder',
-	                             'dataset' : 'NO DATASET', 'FileType' : 'NO FILE TYPE',
-                  		     'StartRun' : 'NO START RUN' }}
+                                     'dataset' : 'NO DATASET', 'FileType' : 'NO FILE TYPE',
+                                     'StartRun' : 'NO START RUN' }}
 
                 testFeederManager.handleMessage( type = 'AddDatasetWatch',
-                   			         payload = feederManagerdict )
+                                                 payload = feederManagerdict )
 
         time.sleep(30)
 
@@ -111,4 +111,3 @@ class FeederManagerTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

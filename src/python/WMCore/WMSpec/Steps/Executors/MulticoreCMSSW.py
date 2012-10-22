@@ -29,7 +29,7 @@ import WMCore.FwkJobReport.XMLParser as ReportReader
 def readMultiJobReports(multiReportFile, stepName, directory):
     """
     _readMultiJobReports_
-    
+
     Read a multi report and return a list of report instances indexed by it
     """
     result = []
@@ -77,9 +77,9 @@ class MulticoreCMSSW(Executor):
                 self.stepSpace.getFromSandbox(psetTweak)
 
         #Todo: Discover number of cores available to the job and set the number of
-        # cores. 
-        
-        
+        # cores.
+
+
         self.step.runtime.scramPreScripts.append("SetupCMSSWMulticore")
         self.step.runtime.scramPreScripts.append("SetupCMSSWPset")
         return None
@@ -108,23 +108,23 @@ class MulticoreCMSSW(Executor):
         cmsswCommand   = self.step.application.command.executable
         cmsswConfig    = self.step.application.command.configuration
         cmsswArguments = self.step.application.command.arguments
-        
+
         logging.info("Executing MulticoreCMSSW step")
 
         multicoreSettings = self.step.application.multicore
         numberOfCores = multicoreSettings.numberOfCores
         logging.info("Multicore configured for %s cores" % numberOfCores)
-        
-        
-        
+
+
+
         #Todo:  Create input file list from job writing filelist one per line to
         filelist = open(multicoreSettings.inputfilelist,'w')
         for inputFile in self.job['input_files']:
             filelist.write("%s\n" % inputFile['lfn'])
         filelist.close()
-        
-        
-        
+
+
+
         #
         # scram bootstrap
         #
@@ -135,7 +135,7 @@ class MulticoreCMSSW(Executor):
             directory = self.step.builder.workingDir,
             architecture = scramArch,
             )
-        
+
         logging.info("Running SCRAM")
         try:
             projectOutcome = scram.project()
@@ -145,7 +145,7 @@ class MulticoreCMSSW(Executor):
             logging.critical("Error running SCRAM")
             logging.critical(msg)
             raise WMExecutionFailure(60513, "ScramSetupFailure", msg)
-        
+
         if projectOutcome > 0:
             msg = scram.diagnostic()
             #self.report.addError(60513, "ScramSetupFailure", msg)
@@ -236,7 +236,7 @@ class MulticoreCMSSW(Executor):
         logging.info("Executing CMSSW. args: %s" % args)
         spawnedChild = subprocess.Popen( args, 0, None, None, stdoutHandle,
                                              stderrHandle )
-        
+
         #(stdoutData, stderrData) = spawnedChild.communicate()
         # the above line replaces the bottom block. I'm unsure of why
         # nobody used communicate(), but I'm leaving this just in case
@@ -315,7 +315,7 @@ class MulticoreCMSSW(Executor):
         #//
         for f in inputFiles.values():
             self.report.addInputFile(f['module_label'], **f)
-        
+
         #  //
         # // Now roll through the merges, run the merge and edit the master job report with the outcome
         #//
@@ -347,7 +347,7 @@ class MulticoreCMSSW(Executor):
         self.report.report.performance = aggregator.aggregate()
         ReportUtils.updateMulticoreReport(self.report, len(mergeBuckets), mergesStart , mergesComplete,
                                           totalJobTime , *mergeTiming)
-        
+
         return
 
     def post(self, emulator = None):

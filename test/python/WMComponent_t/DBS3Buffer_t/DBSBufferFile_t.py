@@ -43,13 +43,13 @@ class DBSBufferFileTest(unittest.TestCase):
 
         locationAction = self.daoFactory(classname = "DBSBufferFiles.AddLocation")
         locationAction.execute(siteName = "se1.cern.ch")
-        locationAction.execute(siteName = "se1.fnal.gov")        
+        locationAction.execute(siteName = "se1.fnal.gov")
 
-        
-    def tearDown(self):        
+
+    def tearDown(self):
         """
         _tearDown_
-        
+
         Drop all the DBSBuffer tables.
         """
         self.testInit.clearDatabase()
@@ -86,7 +86,7 @@ class DBSBufferFileTest(unittest.TestCase):
     def testCreateTransaction(self):
         """
         _testCreateTransaction_
-        
+
         Begin a transaction and then create a file in the database.  Afterwards,
         rollback the transaction.  Use the File class's exists() method to
         to verify that the file doesn't exist before it was created, exists
@@ -95,32 +95,32 @@ class DBSBufferFileTest(unittest.TestCase):
         """
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        
+
         testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024,
                                  events = 10)
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                               appFam = "RECO", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
         testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
-        
+
         assert testFile.exists() == False, \
                "ERROR: File exists before it was created"
         testFile.addRun(Run(1, *[45]))
         testFile.create()
-        
+
         assert testFile.exists() > 0, \
                "ERROR: File does not exist after it was created"
-        
+
         myThread.transaction.rollback()
 
         assert testFile.exists() == False, \
                "ERROR: File exists after transaction was rolled back."
-        return    
-     
+        return
+
     def testDeleteTransaction(self):
         """
         _testDeleteTransaction_
-        
+
         Create a file and commit it to the database.  Start a new transaction
         and delete the file.  Rollback the transaction after the file has been
         deleted.  Use the file class's exists() method to verify that the file
@@ -133,26 +133,26 @@ class DBSBufferFileTest(unittest.TestCase):
                               appFam = "RECO", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
         testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
-        
+
         assert testFile.exists() == False, \
                "ERROR: File exists before it was created"
-        
+
         testFile.addRun(Run(1, *[45]))
         testFile.create()
-        
+
         assert testFile.exists() > 0, \
                "ERROR: File does not exist after it was created"
-        
+
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        
+
         testFile.delete()
-        
+
         assert testFile.exists() == False, \
                "ERROR: File exists after it has been deleted"
-        
+
         myThread.transaction.rollback()
-        
+
         assert testFile.exists() > 0, \
                "ERROR: File does not exist after transaction was rolled back."
         return
@@ -160,7 +160,7 @@ class DBSBufferFileTest(unittest.TestCase):
     def testGetParentLFNs(self):
         """
         _testGetParentLFNs_
-        
+
         Create three files and set them to be parents of a fourth file.  Check
         to make sure that getParentLFNs() on the child file returns the correct
         LFNs.
@@ -172,23 +172,23 @@ class DBSBufferFileTest(unittest.TestCase):
                                      configContent = "MOREGIBBERISH")
         testFileParentA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileParentA.addRun(Run(1, *[45]))
-        
+
         testFileParentB = DBSBufferFile(lfn = "/this/is/a/parent/lfnB", size = 1024,
                                         events = 20)
         testFileParentB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
-        testFileParentB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFileParentB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileParentB.addRun(Run(1, *[45]))
-        
+
         testFileParentC = DBSBufferFile(lfn = "/this/is/a/parent/lfnC", size = 1024,
                                         events = 20)
         testFileParentC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
-        testFileParentC.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFileParentC.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileParentC.addRun(Run( 1, *[45]))
-        
+
         testFileParentA.create()
         testFileParentB.create()
         testFileParentC.create()
@@ -201,10 +201,10 @@ class DBSBufferFileTest(unittest.TestCase):
         testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFile.addRun(Run( 1, *[45]))
         testFile.create()
-        
+
         testFile.addParents([testFileParentA["lfn"], testFileParentB["lfn"],
                              testFileParentC["lfn"]])
-        
+
         parentLFNs = testFile.getParentLFNs()
 
         assert len(parentLFNs) == 3, \
@@ -217,17 +217,17 @@ class DBSBufferFileTest(unittest.TestCase):
             assert parentLFN in goldenLFNs, \
                    "ERROR: Unknown parent lfn"
             goldenLFNs.remove(parentLFN)
-                   
+
         testFile.delete()
         testFileParentA.delete()
         testFileParentB.delete()
         testFileParentC.delete()
         return
-    
+
     def testLoad(self):
         """
         _testLoad_
-        
+
         Test the loading of file meta data using the ID of a file and the
         LFN of a file.
         """
@@ -239,7 +239,7 @@ class DBSBufferFileTest(unittest.TestCase):
                                configContent = "MOREGIBBERISH")
         testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileA.create()
-                                                        
+
         testFileB = DBSBufferFile(lfn = testFileA["lfn"])
         testFileB.load()
         testFileC = DBSBufferFile(id = testFileA["id"])
@@ -257,7 +257,7 @@ class DBSBufferFileTest(unittest.TestCase):
                "ERROR: File size is not an integer type."
         assert type(testFileB["events"]) == int or type(testFileB["events"]) == long, \
                "ERROR: File events is not an integer type."
-        
+
         assert type(testFileC["id"]) == int or type(testFileC["id"]) == long, \
                "ERROR: File id is not an integer type."
         assert type(testFileC["size"]) == int or type(testFileC["size"]) == long, \
@@ -271,7 +271,7 @@ class DBSBufferFileTest(unittest.TestCase):
     def testAddChild(self):
         """
         _testAddChild_
-        
+
         Add a child to some parent files and make sure that all the parentage
         information is loaded/stored correctly from the database.
         """
@@ -281,18 +281,18 @@ class DBSBufferFileTest(unittest.TestCase):
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
         testFileParentA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
-        
+
         testFileParentA.addRun(Run( 1, *[45]))
         testFileParentB = DBSBufferFile(lfn = "/this/is/a/parent/lfnB", size = 1024,
                                         events = 20)
         testFileParentB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
-        testFileParentB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFileParentB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileParentB.addRun(Run( 1, *[45]))
         testFileParentA.create()
         testFileParentB.create()
-        
+
         testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10)
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
@@ -300,19 +300,19 @@ class DBSBufferFileTest(unittest.TestCase):
         testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
-        
+
         testFileParentA.addChildren("/this/is/a/lfn")
         testFileParentB.addChildren("/this/is/a/lfn")
-        
+
         testFileB = DBSBufferFile(id = testFileA["id"])
         testFileB.load(parentage = 1)
-        
+
         goldenFiles = [testFileParentA, testFileParentB]
         for parentFile in testFileB["parents"]:
             assert parentFile in goldenFiles, \
                    "ERROR: Unknown parent file"
             goldenFiles.remove(parentFile)
-            
+
         assert len(goldenFiles) == 0, \
                "ERROR: Some parents are missing"
         return
@@ -331,15 +331,15 @@ class DBSBufferFileTest(unittest.TestCase):
         testFileParentA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
-        testFileParentA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFileParentA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileParentA.addRun(Run( 1, *[45]))
-        
+
         testFileParentB = DBSBufferFile(lfn = "/this/is/a/parent/lfnB", size = 1024,
                               events = 20)
         testFileParentB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
-        testFileParentB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFileParentB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileParentB.addRun(Run( 1, *[45]))
         testFileParentA.create()
         testFileParentB.create()
@@ -356,7 +356,7 @@ class DBSBufferFileTest(unittest.TestCase):
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        
+
         testFileParentB.addChildren("/this/is/a/lfn")
 
         testFileB = DBSBufferFile(id = testFileA["id"])
@@ -382,9 +382,9 @@ class DBSBufferFileTest(unittest.TestCase):
 
         assert len(goldenFiles) == 0, \
               "ERROR: Some parents are missing"
-        
+
         return
-    
+
     def testSetLocation(self):
         """
         _testSetLocation_
@@ -396,10 +396,10 @@ class DBSBufferFileTest(unittest.TestCase):
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
-        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
-        
+
         testFileA.setLocation(["se1.fnal.gov", "se1.cern.ch"])
         testFileA.setLocation(["bunkse1.fnal.gov", "bunkse1.cern.ch"],
                               immediateSave = False)
@@ -415,7 +415,7 @@ class DBSBufferFileTest(unittest.TestCase):
             goldenLocations.remove(location)
 
         assert len(goldenLocations) == 0, \
-              "ERROR: Some locations are missing"    
+              "ERROR: Some locations are missing"
         return
 
     def testSetLocationTransaction(self):
@@ -431,15 +431,15 @@ class DBSBufferFileTest(unittest.TestCase):
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
-        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
-        
+
         testFileA.setLocation(["se1.fnal.gov"])
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        
+
         testFileA.setLocation(["se1.cern.ch"])
         testFileA.setLocation(["bunkse1.fnal.gov", "bunkse1.cern.ch"],
                               immediateSave = False)
@@ -469,7 +469,7 @@ class DBSBufferFileTest(unittest.TestCase):
 
         assert len(goldenLocations) == 0, \
               "ERROR: Some locations are missing"
-        return    
+        return
 
     def testLocationsConstructor(self):
         """
@@ -485,7 +485,7 @@ class DBSBufferFileTest(unittest.TestCase):
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
-        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
 
@@ -494,9 +494,9 @@ class DBSBufferFileTest(unittest.TestCase):
         testFileB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
-        testFileB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFileB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileB.addRun(Run( 1, *[45]))
-        testFileB.create()        
+        testFileB.create()
 
         testFileC = DBSBufferFile(id = testFileA["id"])
         testFileC.load()
@@ -506,7 +506,7 @@ class DBSBufferFileTest(unittest.TestCase):
             assert location in goldenLocations, \
                    "ERROR: Unknown file location"
             goldenLocations.remove(location)
-            
+
         assert len(goldenLocations) == 0, \
               "ERROR: Some locations are missing"
 
@@ -518,9 +518,9 @@ class DBSBufferFileTest(unittest.TestCase):
             assert location in goldenLocations, \
                    "ERROR: Unknown file location"
             goldenLocations.remove(location)
-            
+
         assert len(goldenLocations) == 0, \
-              "ERROR: Some locations are missing"        
+              "ERROR: Some locations are missing"
         return
 
     def testAddRunSet(self):
@@ -535,13 +535,13 @@ class DBSBufferFileTest(unittest.TestCase):
                               appFam = "RECO", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
         testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
-        
+
         testFile.create()
         runSet = set()
         runSet.add(Run( 1, *[45]))
         runSet.add(Run( 2, *[67, 68]))
         testFile.addRunSet(runSet)
-        
+
         assert (runSet - testFile["runs"]) == set(), \
             "Error: addRunSet is not updating set correctly"
 
@@ -560,7 +560,7 @@ class DBSBufferFileTest(unittest.TestCase):
         createAction.execute(block = "someblockname", locations = ["se1.cern.ch"])
 
         setBlockAction = self.daoFactory(classname = "DBSBufferFiles.SetBlock")
-        getBlockAction = self.daoFactory(classname = "DBSBufferFiles.GetBlock")        
+        getBlockAction = self.daoFactory(classname = "DBSBufferFiles.GetBlock")
 
         testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
                                  locations = "se1.fnal.gov")
@@ -568,7 +568,7 @@ class DBSBufferFileTest(unittest.TestCase):
                               appFam = "RECO", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
         testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
-        
+
         testFile.create()
 
         setBlockAction.execute(lfn = testFile["lfn"], blockName = "someblockname")
@@ -606,7 +606,7 @@ class DBSBufferFileTest(unittest.TestCase):
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
         testFileC.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
-        testFileC.create()                
+        testFileC.create()
 
         countAction = self.daoFactory(classname = "CountFiles")
 
@@ -623,7 +623,7 @@ class DBSBufferFileTest(unittest.TestCase):
         do not already exist in the database.
         """
         myThread = threading.currentThread()
-        
+
         testFile = DBSBufferFile(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
                                  locations = "se1.fnal.gov")
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
@@ -652,7 +652,7 @@ class DBSBufferFileTest(unittest.TestCase):
             goldenLFNs.remove(parentLFN)
 
         self.assertEqual(len(goldenLFNs), 0, "Error: missing LFNs...")
-        
+
         # Check that the bogus dataset is listed as inDBS
         sqlCommand = """SELECT in_dbs FROM dbsbuffer_algo_dataset_assoc das
                           INNER JOIN dbsbuffer_dataset ds ON das.dataset_id = ds.id
@@ -694,14 +694,14 @@ class DBSBufferFileTest(unittest.TestCase):
         testFileChildB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                     appFam = "RECO", psetHash = "GIBBERISH",
                                     configContent = "MOREGIBBERISH")
-        testFileChildB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFileChildB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileChildC = DBSBufferFile(lfn = "/this/is/a/child/lfnC", size = 1024,
                                         events = 20)
         testFileChildC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                     appFam = "RECO", psetHash = "GIBBERISH",
                                     configContent = "MOREGIBBERISH")
-        testFileChildC.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
-        
+        testFileChildC.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+
         testFileChildA.create()
         testFileChildB.create()
         testFileChildC.create()
@@ -711,16 +711,16 @@ class DBSBufferFileTest(unittest.TestCase):
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                               appFam = "RECO", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
-        testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFile.create()
 
         testFileChildA.addParents([testFile["lfn"]])
         testFileChildB.addParents([testFile["lfn"]])
-        testFileChildC.addParents([testFile["lfn"]])        
+        testFileChildC.addParents([testFile["lfn"]])
 
         getChildrenAction = self.daoFactory(classname = "DBSBufferFiles.GetChildren")
         childLFNs = getChildrenAction.execute(testFile["lfn"])
-        
+
         assert len(childLFNs) == 3, \
                "ERROR: Parent does not have the right amount of children."
 
@@ -731,7 +731,7 @@ class DBSBufferFileTest(unittest.TestCase):
             assert childLFN in goldenLFNs, \
                    "ERROR: Unknown child lfn"
             goldenLFNs.remove(childLFN)
-                   
+
         return
 
     def testGetParentStatusDAO(self):
@@ -754,7 +754,7 @@ class DBSBufferFileTest(unittest.TestCase):
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                               appFam = "RECO", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
-        testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFile.create()
 
         testFileChild.addParents([testFile["lfn"]])
@@ -781,7 +781,7 @@ class DBSBufferFileTest(unittest.TestCase):
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
-        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
 
@@ -792,7 +792,7 @@ class DBSBufferFileTest(unittest.TestCase):
         testFileB.load()
 
         self.assertEqual(testFileB['locations'], set(['se1.cern.ch']))
-        
+
         return
 
 
@@ -802,7 +802,7 @@ class DBSBufferFileTest(unittest.TestCase):
 
         """
 
-        
+
         testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10)
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
@@ -849,14 +849,14 @@ class DBSBufferFileTest(unittest.TestCase):
         testFileChildB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                     appFam = "RECO", psetHash = "GIBBERISH",
                                     configContent = "MOREGIBBERISH")
-        testFileChildB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFileChildB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileChildC = DBSBufferFile(lfn = "/this/is/a/child/lfnC", size = 1024,
                                         events = 20)
         testFileChildC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                     appFam = "RECO", psetHash = "GIBBERISH",
                                     configContent = "MOREGIBBERISH")
-        testFileChildC.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
-        
+        testFileChildC.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+
         testFileChildA.create()
         testFileChildB.create()
         testFileChildC.create()
@@ -884,14 +884,14 @@ class DBSBufferFileTest(unittest.TestCase):
                  {'lfn': "/this/is/a/child/lfnB", 'cktype': 'cksum', 'cksum': 101},
                  {'lfn': "/this/is/a/child/lfnC", 'cktype': 'adler32', 'cksum': 201},
                  {'lfn': "/this/is/a/child/lfnC", 'cktype': 'cksum', 'cksum': 101}]
-        setCksumAction.execute(bulkList = binds)        
+        setCksumAction.execute(bulkList = binds)
 
         testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024,
                                  events = 10)
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                               appFam = "RECO", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
-        testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFile.create()
 
         testFileChildA.addParents([testFile["lfn"]])
@@ -956,8 +956,8 @@ class DBSBufferFileTest(unittest.TestCase):
         self.assertEqual(myThread.dbi.processData("SELECT custodial_site FROM dbsbuffer_dataset")[0].fetchall()[0][0],
                          'testCustody')
         return
-        
-    
-        
+
+
+
 if __name__ == "__main__":
     unittest.main()

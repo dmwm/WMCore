@@ -27,9 +27,9 @@ class PhEDExNotifierComponent(FeederImpl):
     _PhEDExNotifierComponent_
 
     """
-    
+
     def __init__( self, nodes, phedexURL = "https://cmsweb.cern.ch/phedex/datasvc/json/prod/fileReplicas", dbsURL = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet" ):
-        
+
         # Add the node specification the URL
         nodeList = self.makelist( nodes )
         for node in nodeList:
@@ -83,7 +83,7 @@ class PhEDExNotifierComponent(FeederImpl):
             print "%s" % aString
 
         phedex = eval( aString.replace( "null", "None" ), {}, {} )
-        
+
         blocks = phedex[ 'phedex' ][ 'block' ]
         if len( blocks ) == 0:
             print "PhEDExNotifier: Found no blocks, expected one or more"
@@ -91,8 +91,8 @@ class PhEDExNotifierComponent(FeederImpl):
             self.doBlock( block[ 'name' ], fileset )
 
     def doBlock( self, entity, fileset ):
-    
-        connection = urlopen( self.nodeURL + "&block=%s" % quote( entity ) )        
+
+        connection = urlopen( self.nodeURL + "&block=%s" % quote( entity ) )
         aString = connection.read()
         connection.close()
 
@@ -101,7 +101,7 @@ class PhEDExNotifierComponent(FeederImpl):
             print "%s" % aString
 
         phedex = eval( aString.replace( "null", "None" ), {}, {} )
-        
+
         blocks = phedex[ 'phedex' ][ 'block' ]
         if len( blocks ) != 1:
             print "PhEDExNotifier: Found %d blocks, expected 1, will only consider first block" % len( blocks)
@@ -138,7 +138,7 @@ class PhEDExNotifierComponent(FeederImpl):
         try:
             # List all lumi sections of the file
             lumiSections = self.dbsapi.listFileLumis( lfn )
-                
+
         except DbsDatabaseError,e:
             print e
 

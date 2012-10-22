@@ -26,23 +26,23 @@ rerecoArgs = getTestArguments()
 mcArgs = getMCArgs()
 
 class WMSpecGenerator(object):
-    
+
     def __init__(self, dirLocation=None):
         if not dirLocation:
-            dirLocation = tempfile.mkdtemp() 
+            dirLocation = tempfile.mkdtemp()
         if not os.path.exists(dirLocation):
             os.makedirs(dirLocation)
         self.dir = dirLocation
-    
+
     def _save(self, spec):
-        specFile =  os.path.join(self.dir, spec.name() + ".spec")   
+        specFile =  os.path.join(self.dir, spec.name() + ".spec")
         # Basic production Spec
         spec.setSpecUrl(specFile)
         # save create pickled file
         spec.save(spec.specUrl())
-        
+
         return specFile
-    
+
     def _selectReturnType(self, spec, returnType, splitter = None):
         if splitter != None:
             spec.setStartPolicy(splitter)
@@ -58,7 +58,7 @@ class WMSpecGenerator(object):
     def createProductionSpec(self, specName, returnType="spec", splitter = None):
         spec = BasicProductionWorkload(specName)
         return self._selectReturnType(spec, returnType, splitter)
-    
+
     def createProcessingSpec(self, specName, returnType="spec", splitter = None):
         #spec = BasicProcessingWorkload(specName)
         spec = BasicProcessingWorkload(specName)
@@ -73,11 +73,11 @@ class WMSpecGenerator(object):
             print dbsUrl
             spec.taskIterator().next().data.input.dataset.dbsurl = dbsUrl
         return self._selectReturnType(spec, returnType, splitter)
-    
+
     def createMCSpec(self, specName, returnType="spec", splitter = None):
         spec =  TestMCWorkload(specName, mcArgs)
         return self._selectReturnType(spec, returnType, splitter)
-    
+
     def createRandomProductionSpecs(self, size=10):
         specNameBase = "FakeSpec"
         specs = {}
@@ -86,7 +86,7 @@ class WMSpecGenerator(object):
             sepc, specUrl = self.createProductionSpec(specName)
             specs[specName] = specUrl
         return specs
-            
+
     def removeSpecs(self):
         #TODO: needs a smarter way to clean up the spec files.
         # avoid accidently deleting other codes

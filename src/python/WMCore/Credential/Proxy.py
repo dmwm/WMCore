@@ -476,7 +476,7 @@ class Proxy(Credential):
 
         if retcode > 0 :
             self.logger.error("Unable to retrieve delegated proxy for user DN %s! Exit code:%s output:%s" \
-	                      % (self.userDN, retcode, msg) )
+                              % (self.userDN, retcode, msg) )
             return proxyFilename
 
         self.vomsExtensionRenewal(proxyFilename, voAttribute)

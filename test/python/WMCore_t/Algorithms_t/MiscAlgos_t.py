@@ -12,7 +12,7 @@ from WMCore.Algorithms import MiscAlgos
 class MiscAlgosTest(unittest.TestCase):
     """
     _MiscAlgosTest_
-    
+
     """
 
     def setUp(self):
@@ -53,4 +53,4 @@ class MiscAlgosTest(unittest.TestCase):
         return
 
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

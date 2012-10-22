@@ -62,15 +62,15 @@ class Run(WMObject):
             msg = "Adding together two different runs"
             msg += "Run %s does not equal Run %s" % (self.run, rhs.run)
             raise RuntimeError, msg
-        
+
         #newRun = Run(self.run, *self)
         #[ newRun.append(x) for x in rhs if x not in newRun ]
         [ self.lumis.append(x) for x in rhs.lumis if x not in self.lumis ]
-        
+
         return self
     def __iter__(self):
         return self.lumis.__iter__()
-    
+
     def __next__(self):
         return self.lumis.__next__()
     def __len__(self):

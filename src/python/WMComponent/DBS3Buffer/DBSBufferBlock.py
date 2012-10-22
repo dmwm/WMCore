@@ -40,8 +40,8 @@ class DBSBlock:
           name:  The blockname in full
           location: The SE-name of the site the block is at
         """
-        
-        
+
+
         self.data      = {'dataset_conf_list':    [],   # List of dataset configurations
                           'file_conf_list':       [],   # List of files, with the configuration for each
                           'files':                [],   # List of file objects
@@ -54,8 +54,8 @@ class DBSBlock:
                           'dataset':              {},   # Dict of processed dataset info
                           'physics_group_name':   {},   # Physics Group Name
                           'file_parent_list':     []}   # List of file parents
-                          
-        self.files     = [] 
+
+        self.files     = []
         self.encoder   = JSONRequests()
         self.status    = 'Open'
         self.inBuff    = False
@@ -68,7 +68,7 @@ class DBSBlock:
         self.data['block']['origin_site_name'] = location
         self.data['block']['open_for_writing'] = 0  # If we're sending a block, it better be open
 
-        return                      
+        return
 
 
     def encode(self):
@@ -86,12 +86,12 @@ class DBSBlock:
     def addFile(self, dbsFile):
         """
         _addFile_
-        
+
         Add a DBSBufferFile object to our block
         """
 
-        
-        
+
+
         if dbsFile['id'] in [x['id'] for x in self.files]:
             msg =  "Duplicate file inserted into DBSBlock: %i\n" % (dbsFile['id'])
             msg += "Ignoring this file for now!\n"
@@ -101,7 +101,7 @@ class DBSBlock:
             l.sort()
             logging.debug("First file: %s    Last file: %s" % (l[0], l[-1]))
             return
-        
+
         self.files.append(dbsFile)
         # Assemble information for the file itself
         fileDict = {}
@@ -125,23 +125,23 @@ class DBSBlock:
             for lumi in run.lumis:
                 lumiList.append({'lumi_section_num': lumi, 'run_num': run.run})
         fileDict['file_lumi_list'] = lumiList
-                
+
         # Append to the files list
         self.data['files'].append(fileDict)
-        
+
         # now add file to data
         parentLFNs = dbsFile.getParentLFNs()
         for lfn in parentLFNs:
             self.addFileParent(child = dbsFile['lfn'], parent = lfn)
-            
-            
+
+
         # Do the algo
         algo = self.addConfiguration(release = dbsFile['appVer'],
                                      psetHash = dbsFile['psetHash'],
                                      appName = dbsFile['appName'],
                                      outputLabel = dbsFile['appFam'],
                                      globalTag = dbsFile['globalTag'])
-        
+
         # Now add the file with the algo
         # Try to avoid messing with pointers here
         fileAlgo = {}
@@ -163,25 +163,25 @@ class DBSBlock:
                         primaryType  = dbsFile.get('primaryType', 'DATA'),
                         datasetType  = dbsFile.get('datasetType', 'PRODUCTION'),
                         physicsGroup = dbsFile.get('physicsGroup', None))
-       
+
         return
 
     def addFileParent(self, child, parent):
         """
         _addFileParent_
-        
+
         Add file parents to the data block
         """
         info = {'parent_logical_file_name': parent,
                 'logical_file_name': child}
         self.data['file_parent_list'].append(info)
-        
+
         return
 
     def addBlockParent(self, parent):
         """
         _addBlockParent_
-        
+
         Add the parents of the block
         """
 
@@ -237,7 +237,7 @@ class DBSBlock:
         """
 
         return self.data['dataset'].get('dataset', False)
-        
+
 
 
     def setDataset(self, datasetName, primaryType,
@@ -335,7 +335,7 @@ class DBSBlock:
     def getTime(self):
         """
         _getTime_
-        
+
         Return the time the block has been running
         """
 
@@ -355,7 +355,7 @@ class DBSBlock:
         """
         _getLocation_
 
-        Get location 
+        Get location
         """
 
         return self.location
@@ -385,8 +385,3 @@ class DBSBlock:
 
         for key in blockInfo.keys():
             self.data['block'][key] = blockInfo.get(key)
-
-
-
-
-

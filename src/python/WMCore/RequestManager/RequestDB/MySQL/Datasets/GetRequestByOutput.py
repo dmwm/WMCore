@@ -2,7 +2,7 @@
 """
 _GetRequestByOutput_
 
-Get request ID for an output datasets 
+Get request ID for an output datasets
 
 """
 
@@ -33,6 +33,3 @@ class GetRequestByOutput(DBFormatter):
         result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return self.format(result)
-
-
-

@@ -13,4 +13,3 @@ class GetUserId(MySQLGetUserId):
 
     Load user pars by ID
     """
-

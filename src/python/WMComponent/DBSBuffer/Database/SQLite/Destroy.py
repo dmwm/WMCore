@@ -25,7 +25,7 @@ class Destroy(DBCreator):
 
 
         self.delete["11dbsbuffer_block"]              = "DROP TABLE dbsbuffer_block"
-        self.delete["10dbsbuffer_dataset"]            = "DROP TABLE dbsbuffer_dataset" 
+        self.delete["10dbsbuffer_dataset"]            = "DROP TABLE dbsbuffer_dataset"
         self.delete["09dbsbuffer_algo"]               = "DROP TABLE dbsbuffer_algo"
         self.delete["08dbsbuffer_algo_dataset_assoc"] = "DROP TABLE dbsbuffer_algo_dataset_assoc"
         self.delete["07dbsbuffer_file"]               = "DROP TABLE dbsbuffer_file"
@@ -35,4 +35,3 @@ class Destroy(DBCreator):
         self.delete["03dbsbuffer_file_location"]      = "DROP TABLE dbsbuffer_file_location"
         self.delete["02dbsbuffer_checksum_type"]      = "DROP TABLE dbsbuffer_checksum_type"
         self.delete["01dbsbuffer_file_checksums"]     = "DROP TABLE dbsbuffer_file_checksums"
-

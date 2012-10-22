@@ -58,7 +58,7 @@ class MigrateFileBlocks:
     def __init__(self, config):
 
         myThread = threading.currentThread()
-        
+
         self.config     = config
         self.dbsurl     = self.config.DBSUpload.dbsurl
         self.dbsversion = self.config.DBSUpload.dbsversion
@@ -122,8 +122,8 @@ if __name__ == '__main__':
     else:
         print "Error!  No config could be found"
         sys.exit(2)
-        
-        
+
+
     wmInit = WMInit()
     wmInit.setLogging()
     wmInit.setDatabaseConnection(config.CoreDatabase.connectUrl,
@@ -132,4 +132,3 @@ if __name__ == '__main__':
 
     migrateFileBlocks = MigrateFileBlocks(config = config)
     migrateFileBlocks.migrateDataset(datasetPath = datasetPath)
-

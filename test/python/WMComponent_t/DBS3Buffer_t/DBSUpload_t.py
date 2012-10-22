@@ -35,8 +35,8 @@ from WMComponent.DBS3Buffer.DBSBufferUtil   import DBSBufferUtil
 
 class DBSUploadTest(unittest.TestCase):
     """
-    TestCase for DBSUpload module 
-    
+    TestCase for DBSUpload module
+
     """
     _maxMessage = 10
 
@@ -44,7 +44,7 @@ class DBSUploadTest(unittest.TestCase):
     def setUp(self):
         """
         _setUp_
-        
+
         setUp function for unittest
 
         """
@@ -54,7 +54,7 @@ class DBSUploadTest(unittest.TestCase):
         self.testInit.setDatabaseConnection(destroyAllDatabase = True)
         self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer"],
                                 useDefault = False)
-      
+
         myThread = threading.currentThread()
         self.bufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                         logger = myThread.logger,
@@ -63,7 +63,7 @@ class DBSUploadTest(unittest.TestCase):
         locationAction = self.bufferFactory(classname = "DBSBufferFiles.AddLocation")
         locationAction.execute(siteName = "se1.cern.ch")
         locationAction.execute(siteName = "se1.fnal.gov")
-        locationAction.execute(siteName = "malpaquet") 
+        locationAction.execute(siteName = "malpaquet")
 
 
 
@@ -74,10 +74,10 @@ class DBSUploadTest(unittest.TestCase):
     def tearDown(self):
         """
         _tearDown_
-        
+
         tearDown function for unittest
         """
-        
+
         self.testInit.clearDatabase()
 
 
@@ -249,7 +249,7 @@ class DBSUploadTest(unittest.TestCase):
         result = dbsApi.listFiles(dataset=datasetPath)
         self.assertEqual(len(result), 12)
 
-        
+
         # The last block should now be closed
         self.assertEqual(len(dbsUtil.findOpenBlocks()), 0)
 

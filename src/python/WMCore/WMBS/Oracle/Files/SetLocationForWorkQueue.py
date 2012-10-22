@@ -16,7 +16,7 @@ class SetLocationForWorkQueue(MySQLSetLocationForWorkQueue):
 
     """
 
-    insertSQL = """INSERT INTO wmbs_file_location (fileid, location) 
+    insertSQL = """INSERT INTO wmbs_file_location (fileid, location)
                      SELECT wfd.id, wls.location
                        FROM wmbs_location_senames wls, wmbs_file_details wfd
                        WHERE wls.se_name = :location

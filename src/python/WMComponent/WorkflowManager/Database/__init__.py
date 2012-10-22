@@ -4,5 +4,3 @@ Database tables and queries for WorkflowManager component
 """
 
 __all__ = []
-
-

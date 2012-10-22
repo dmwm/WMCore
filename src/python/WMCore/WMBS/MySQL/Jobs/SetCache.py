@@ -41,7 +41,7 @@ class SetCache(DBFormatter):
         else:
             logging.error("Jobs.SetCache not sent values to set!")
             return
-        
+
         result = self.dbi.processData(self.sql, binds, conn = conn, transaction = transaction)
-        
+
         return

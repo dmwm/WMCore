@@ -14,12 +14,12 @@ import time
 import threading
 import os
 
-from WMCore.WMBSFeeder.FeederImpl import FeederImpl 
+from WMCore.WMBSFeeder.FeederImpl import FeederImpl
 from WMCore.WMBS.File import File
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMInit import WMInit
 
-from DBSAPI.dbsApiException import DbsConnectionError 
+from DBSAPI.dbsApiException import DbsConnectionError
 from DBSAPI.dbsApi import DbsApi
 from WMCore.DataStructs.Run import Run
 
@@ -41,13 +41,13 @@ class Feeder(FeederImpl):
         # DBS parameter
         self.args = { "url" : dbsUrl, "level" : 'ERROR'}
         self.dbs = DbsApi(self.args)
-        self.purgeTime = 96 
+        self.purgeTime = 96
         self.reopenTime = 120
 
         self.dbsReader = DBSReader(dbsUrl)
-        self.connectionAttempts = 5 
+        self.connectionAttempts = 5
 
-    
+
     def __call__(self, filesetToProcess):
         """
         The algorithm itself
@@ -71,7 +71,7 @@ class Feeder(FeederImpl):
 
 
         logging.debug("DBSFeeder is processing %s" % \
-                 filesetToProcess.name) 
+                 filesetToProcess.name)
         logging.debug("the filesetBase name  %s" \
        % (filesetToProcess.name).split(":")[0])
 
@@ -84,12 +84,12 @@ class Feeder(FeederImpl):
         tries = 1
 
         while True:
- 
+
             try:
 
                 blocks = self.dbsReader.getFiles(\
               (filesetToProcess.name).split(":")[0])
-                now = time.time()  
+                now = time.time()
                 logging.debug("DBS queries done ...")
 
                 break
@@ -99,21 +99,21 @@ class Feeder(FeederImpl):
                       (str(ex), filesetToProcess.name))
                 # Close fileset
                 filesetToProcess.markOpen(False)
-                return 
+                return
 
             # connection error, retry
             except DbsConnectionError, ex:
                 logging.error("Unable to connect to DBS, retrying: " + \
                       str(ex))
                 if tries > self.connectionAttempts: #too many errors - bail out
-                    return  
+                    return
                 tries = tries + 1
 
         # check for empty datasets
         if blocks == {}:
-            logging.debug("DBS: Empty blocks - %s" %filesetToProcess.name)  
-            return filesetToProcess 
-  
+            logging.debug("DBS: Empty blocks - %s" %filesetToProcess.name)
+            return filesetToProcess
+
         # get all file blocks
         blockList = blocks.keys()
 
@@ -134,7 +134,7 @@ class Feeder(FeederImpl):
                     locationNew.execute(siteName = loc, seName = loc)
 
             for files in blocks[fileBlock]['Files']:
- 
+
                 if startRun != 'None':
 
                     if len(files['LumiList']):
@@ -143,7 +143,7 @@ class Feeder(FeederImpl):
 
                             if int(startRun) <= int(lumi['RunNumber' ]):
 
-                              
+
                                 newfile = File(files['LogicalFileName'], \
                                 size=files['FileSize'], events=files\
                                 ['NumberOfEvents'])
@@ -169,7 +169,7 @@ class Feeder(FeederImpl):
 
                                     listFile = fileInFileset.execute\
                                            (filesetToProcess.id)
- 
+
                                     if {'fileid': newfile[\
                                       'id']} not in listFile:
 
@@ -183,17 +183,17 @@ class Feeder(FeederImpl):
                                         if lumi['RunNumber' ] == run.run:
                                             val = 1
                                             break
-   
+
                                     if not val:
 
                                         runSet = set()
                                         runSet.add(Run(\
                      lumi['RunNumber' ], *[lumi['LumiSectionNumber']]))
                                         newfile.addRunSet(runSet)
-   
+
                                 fileLoc = getFileLoc.execute(\
                                     file = files['LogicalFileName'])
-    
+
                                 if fileLoc:
                                     for loc in seList:
                                         if loc not in fileLoc:
@@ -206,11 +206,11 @@ class Feeder(FeederImpl):
 
                 else:
 
-                    # Assume parents and LumiSection aren't asked 
+                    # Assume parents and LumiSection aren't asked
                     newfile = File(files['LogicalFileName'], \
                   size=files['FileSize'], events=files['NumberOfEvents'])
 
-                    LOCK.acquire()            
+                    LOCK.acquire()
                     if newfile.exists() == False :
                         newfile.create()
 
@@ -229,7 +229,7 @@ class Feeder(FeederImpl):
                         if {'fileid': newfile['id']} not in listFile:
 
                             filesetToProcess.addFile(newfile)
-                            logging.debug("new file loaded and added by DBS") 
+                            logging.debug("new file loaded and added by DBS")
                             filesetToProcess.setLastUpdate(int(time.time()))
                             filesetToProcess.commit()
 
@@ -267,8 +267,5 @@ class Feeder(FeederImpl):
     def persist(self):
         """
         To overwrite
-        """ 
+        """
         pass
-
-
-

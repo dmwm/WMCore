@@ -28,7 +28,7 @@ class WMStatSevice():
         for doc in docs:
             self.couchDB.queue(doc)
         return self.couchDB.commit(returndocs = True)
-    
+
 
 # move these ones under Services/WorkQueue/WorkQueue.py
 import time
@@ -56,11 +56,11 @@ def reqmgrDataFormat(data):
         doc['type'] = 'reqmgr_request'
         doc['requestor'] = item['Requestor']
         doc['group'] = item['Group']
-        
+
         #TODO: Not yet supported
         #doc['team'] = item['Team']
         # user is requestor : double check
-        #doc['user'] = item['Requestor'] 
+        #doc['user'] = item['Requestor']
         # Not yet supported
         #doc['campaign'] = item['Campaign']
         #doc['request_date'] = item['RequestDate']
@@ -72,19 +72,19 @@ def reqmgrDataFormat(data):
         doc['priority'] = item['RequestPriority']
         docs.append(doc)
     return docs
-        
+
 if __name__ == '__main__':
     import sys
     from optparse import OptionParser
     from WMCore.Configuration import loadConfigurationFile
-    
+
     parser = OptionParser()
     parser.add_option("-i", "--ini", dest="inifile", default=False,
                       help="write the configuration to FILE", metavar="FILE")
-    
+
     (opts, args) = parser.parse_args()
 
-    
+
     if not opts.inifile:
         sys.exit('No configuration specified')
     cfg = loadConfigurationFile(opts.inifile)
@@ -95,27 +95,26 @@ if __name__ == '__main__':
     from WMCore.CherryPyThread.PeriodicWorker import PeriodicWorker
     from WMCore.WMStats.DataCollectTask import DataCollectTask
     import logging
-    
-    
+
+
     cherrypy.log.error_log.setLevel(logging.DEBUG)
     cherrypy.log.access_log.setLevel(logging.DEBUG)
     cherrypy.config["server.socket_port"] = cfg.port
     #def sayHello(test):
     #    print "Hello"
     #PeriodicWorker(sayHello, 5)
-    
+
     # get reqmgr url from config
     reqmgrSvc = RequestManager({'endpoint': cfg.reqmgrURL})
     wqSvc = WorkQueue(cfg.globalQueueURL)
     wmstatSvc = WMStatSevice(cfg.couchURL)
-    
+
     reqmgrTask = DataCollectTask(reqmgrSvc.getRequest,  reqmgrDataFormat, wmstatSvc.uploadData)
     #reqmgrTask = DataCollectTask(reqmgrSvc.getRequestNames,  lambda x: x, wmstatSvc.uploadData)
-    
+
     #wqTask = DataCollectTask(wqSvc.getTopLevelJobsByRequest, wqDataFormat, wmstatSvc.uploadData)
-    
+
     reqmgrWorker = PeriodicWorker(reqmgrTask, cfg.pollInterval)
     #wqWorker = PeriodicWorker(wqTask, 200)
-    
-    cherrypy.quickstart()        
-        
+
+    cherrypy.quickstart()

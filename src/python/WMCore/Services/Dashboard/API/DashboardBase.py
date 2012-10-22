@@ -19,7 +19,7 @@ from ApmonTransPort import *
 def generateCMSJobID():
     """
     _generateCMSJobID_
-    
+
     Generate a global job ID at the UI
     """
     return `uuid.uuid4()`
@@ -27,10 +27,10 @@ def generateCMSJobID():
 class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
     """
     _DashboardBase_
-    
+
     Base Class for Dashboard inhert from MSGTransPortAgent & ApmonTransPort
     """
-    
+
     def __init__(self, publisher=[]):
         """
         constructor class
@@ -55,7 +55,7 @@ class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
         Publish information in this object to the Dashboard using either or both
         MSG or ML as the transport layer.
 
-        Need to have atleast one destinations  
+        Need to have atleast one destinations
 
         Redunancy is the number of times to publish the dictionary
 
@@ -85,7 +85,7 @@ class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
         Publish information in this object to the Dashboard using either or both
         MSG or ML as the transport layer.
 
-        Need to have atleast one destinations  
+        Need to have atleast one destinations
 
         Redunancy is the number of times to publish the dictionary
 
@@ -101,9 +101,9 @@ class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
             members.connect()
             members.send(params)
             members.disconnect()
-        return                
+        return
 
-    
+
 
     def addDestination(self, host, port):
         """
@@ -111,20 +111,20 @@ class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
         """
 
         self.destinations[host] = port
-        
+
         if len(self.publisher) == 0:
             self._InitPublisher()
 
         for members in self.publisher:
             members.newDestination(host, port)
-            
+
         return
 
 
     def removeProcessToMonitor(self, pid = None):
         """
         _removeProcessToMonitor_
-        
+
         Remove a process from being monitored - default is self
         """
 
@@ -133,12 +133,12 @@ class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
 
         if len(self.publisher) == 0:
             self._InitPublisher()
-                            
-        for members in self.publisher:    
+
+        for members in self.publisher:
             members.removeProcessToMonitor(pid)
 
         return
-    
+
 
     def addProcessToMonitor(self, pid = None, workDir = None):
         """
@@ -154,16 +154,16 @@ class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
         if len(self.publisher) == 0:
             self._InitPublisher()
 
-        for members in self.publisher:    
+        for members in self.publisher:
             members.addProcessToMonitor(pid, workDir)
-            
+
         return
-                                        
-                
-    def getFileAccess(self, lfn, SE, exitStatus = 0):    
+
+
+    def getFileAccess(self, lfn, SE, exitStatus = 0):
         """
         _getFileAccess_
-        
+
         This information will be sent from the WN for each file that was accessed by the job
         """
 
@@ -171,7 +171,7 @@ class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
             SE = SE + "_failed"
         else:
             SE = SE + "_success"
-        
+
 
         if self.FILES.has_key(SE):
             self.FILES[SE].append(lfn)
@@ -181,10 +181,10 @@ class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
         return
 
 
-    def reportFileAccess(self):    
+    def reportFileAccess(self):
         """
         _reportFileAccess_
-        
+
         This information will be sent from the WN as the file access report
         """
 
@@ -192,7 +192,7 @@ class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
             self._InitPublisher()
 
         params = {}
-        if len(self.FILES) != 0:        
+        if len(self.FILES) != 0:
             for key, value in self.FILES.items():
                 params[key] = str(value[1:]).strip('[]').replace(',', '')
 
@@ -201,13 +201,13 @@ class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
                 members.send(params)
                 members.disconnect()
 
-        return                
+        return
 
 
     def emptyClone(self):
         """
         _emptyClone_
-        
+
         Return a copy of self including only the task, job and destination
         information
 
@@ -215,7 +215,7 @@ class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
         result = DashboardBase()
         result.clear()
         result.taskid = self.taskid
-        result.jobid = self.jobid 
+        result.jobid = self.jobid
         result.destinations = self.destinations
 
         return result
@@ -256,7 +256,5 @@ class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
                     print "DashboardBase: Using transport agent as ML server"
                 elif isinstance(inst, MSGTransPortAgent):
                     print "DashboardBase: Using transport agent as MSG server"
-                
-        return
-        
 
+        return

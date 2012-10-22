@@ -30,7 +30,7 @@ class New(NewMasksMySQL):
                           'lastlumi':   job['mask']['LastLumi'],})
 
         return binds
-    
+
     def execute(self, jobid = None, inclusivemask = None, conn = None,
                 transaction = False, jobList = None):
 
@@ -38,13 +38,13 @@ class New(NewMasksMySQL):
             binds = self.getDictBinds(jobList, inclusivemask)
             result = self.dbi.processData(self.sql, binds, conn = conn, transaction = transaction)
             return self.format(result)
-            
+
         elif jobid:
             if inclusivemask == None:
                 binds = self.getBinds(jobid = jobid, inclusivemask='Y')
             else:
                 binds = self.getBinds(jobid = jobid, inclusivemask = 'N')
-            
+
             result = self.dbi.processData(self.plainsql, binds, conn = conn,
                                           transaction = transaction)
             return self.format(result)
@@ -52,4 +52,3 @@ class New(NewMasksMySQL):
         else:
             logging.error('Masks.New asked to create Mask with no Job ID')
             return
-    

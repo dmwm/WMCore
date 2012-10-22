@@ -21,7 +21,7 @@ class AddWorkflowToManageSlave(DefaultSlave):
         args = self.messageArgs
         logging.debug("Handling AddWorkflowToManage message: %s" % str(args))
         myThread = threading.currentThread()
-        
+
         # Validate arguments
         if args.has_key("FilesetMatch") and args.has_key("WorkflowId") \
         and args.has_key("SplitAlgo") and args.has_key("Type"):

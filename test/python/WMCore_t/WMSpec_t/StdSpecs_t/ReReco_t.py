@@ -24,7 +24,7 @@ class ReRecoTest(unittest.TestCase):
     def setUp(self):
         """
         _setUp_
-        
+
         Initialize the database and couch.
         """
         self.testInit = TestInitCouchApp(__file__)
@@ -103,7 +103,7 @@ class ReRecoTest(unittest.TestCase):
         recoConfig = self.injectReRecoConfig()
         dataProcArguments = getTestArguments()
         dataProcArguments['ProcessingString']  = 'ProcString'
-        dataProcArguments['ProcConfigCacheID'] = recoConfig
+        dataProcArguments['ConfigCacheID'] = recoConfig
         dataProcArguments["SkimConfigs"] = [{"SkimName": "SomeSkim",
                                              "SkimInput": "RECOoutput",
                                              "SkimSplitAlgo": "FileBased",
@@ -122,7 +122,7 @@ class ReRecoTest(unittest.TestCase):
                          tree.children.SomeSkim.tree.children.SomeSkimMergeSkimB.steps.cmsRun1.output.modules.\
                          Merged.mergedLFNBase,
                          '/store/data/WMAgentCommissioning10/MinimumBias/USER/SkimBFilter-ProcString-v2')
-        
+
         testWMBSHelper = WMBSHelper(testWorkload, "DataProcessing", "SomeBlock")
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
@@ -184,7 +184,7 @@ class ReRecoTest(unittest.TestCase):
             self.assertEqual(logArchOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMerge%s/merged-logArchive" % goldenOutputMod,
                              "Error: LogArchive output fileset is wrong: %s" % logArchOutput.name)
             self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMerge%s/merged-logArchive" % goldenOutputMod,
-                             "Error: LogArchive output fileset is wrong.")            
+                             "Error: LogArchive output fileset is wrong.")
 
         topLevelFileset = Fileset(name = "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/merged-Merged")
         topLevelFileset.loadData()
@@ -233,7 +233,7 @@ class ReRecoTest(unittest.TestCase):
             skimMergeLogCollectWorkflow.load()
             logCollectSub = Subscription(fileset = skimMergeLogCollect, workflow = skimMergeLogCollectWorkflow)
             logCollectSub.loadData()
-            
+
             self.assertEqual(logCollectSub["type"], "LogCollect",
                              "Error: Wrong subscription type.")
             self.assertEqual(logCollectSub["split_algo"], "MinFileBased",

@@ -4,7 +4,7 @@ import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
 import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
 import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-from WMCore.Cache.WMConfigCache import ConfigCache 
+from WMCore.Cache.WMConfigCache import ConfigCache
 from WMCore.Wrappers import JsonWrapper
 import WMCore.Lexicon
 import logging
@@ -49,13 +49,13 @@ class ReqMgrBrowser(WebAPI):
         self.calculatedFields = {'Written': 'percentWritten', 'Merged':'percentMerged',
                                  'Complete':'percentComplete', 'Success' : 'percentSuccess'}
         # entries in the table that show up as HTML links for that entry
-        self.linkedFields = {'Group': '../admin/group', 
-                             'Requestor': '../admin/user', 
+        self.linkedFields = {'Group': '../admin/group',
+                             'Requestor': '../admin/user',
                              'RequestName': 'details'}
         self.detailsFields = ['RequestName', 'RequestType', 'Requestor', 'CMSSWVersion',
             'ScramArch', 'GlobalTag', 'RequestNumEvents',
-            'InputDataset', 'PrimaryDataset', 'AcquisitionEra', 'ProcessingVersion', 
-            'RunWhitelist', 'RunBlacklist', 'BlockWhitelist', 'BlockBlacklist', 
+            'InputDataset', 'PrimaryDataset', 'AcquisitionEra', 'ProcessingVersion',
+            'RunWhitelist', 'RunBlacklist', 'BlockWhitelist', 'BlockBlacklist',
             'RequestWorkflow', 'Scenario', 'Campaign', 'PrimaryDataset',
             'Acquisition Era', 'Processing Version', 'Merged LFN Base', 'Unmerged LFN Base',
             'Site Whitelist', 'Site Blacklist']
@@ -96,9 +96,9 @@ class ReqMgrBrowser(WebAPI):
                 filteredRequests.append(request)
         requests = filteredRequests
         tableBody = self.drawRequests(requests)
-        return self.templatepage("ReqMgrBrowser", yuiroot=self.yuiroot, 
+        return self.templatepage("ReqMgrBrowser", yuiroot=self.yuiroot,
                                  fields=self.fields, tableBody=tableBody)
-        
+
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
     def splitting(self, requestName):
@@ -126,7 +126,7 @@ class ReqMgrBrowser(WebAPI):
 
         return self.templatepage("Splitting", requestName = requestName,
                                  taskInfo = splitInfo, taskNames = taskNames)
-            
+
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
     def handleSplittingPage(self, requestName, splittingTask, splittingAlgo,
@@ -156,6 +156,7 @@ class ReqMgrBrowser(WebAPI):
                 splitParams["halt_job_on_file_boundaries"] = True
             else:
                 splitParams["halt_job_on_file_boundaries"] = False
+
         elif splittingAlgo == "EventBased":
             splitParams["events_per_job"] = int(submittedParams["events_per_job"])
             if submittedParams.has_key("events_per_lumi"):
@@ -170,7 +171,7 @@ class ReqMgrBrowser(WebAPI):
                 splitParams["include_parents"] = True
             else:
                 splitParams["include_parents"] = False
-        
+
         self.validate(requestName)
         request = GetRequest.getRequestByName(requestName)
         helper = Utilities.loadWorkload(request)
@@ -192,9 +193,9 @@ class ReqMgrBrowser(WebAPI):
         adminHtml = statusMenu(requestName, request['RequestStatus']) \
                   + ' Priority ' + Utilities.priorityMenu(request)
         return self.templatepage("Request", requestName=requestName,
-                                detailsFields=self.detailsFields, 
+                                detailsFields=self.detailsFields,
                                 requestSchema=request,
-                                docId=request.get('ProcConfigCacheID', None),
+                                docId=request.get('ConfigCacheID', None),
                                 assignments=request['Assignments'],
                                 adminHtml=adminHtml,
                                 messages=request['RequestMessages'],
@@ -229,12 +230,12 @@ class ReqMgrBrowser(WebAPI):
             request = GetRequest.getRequestByName(requestName)
         except (Exception, RuntimeError) as ex:
             raise cherrypy.HTTPError(400, "Invalid request.")
-        
+
         request = Utilities.prepareForTable(request)
         helper = Utilities.loadWorkload(request)
         workloadText = str(helper.data)
         return cgi.escape(workloadText).replace("\n", "<br/>\n")
- 
+
     def drawRequests(self, requests):
         """ Display all requests """
         result = ""
@@ -304,7 +305,7 @@ class ReqMgrBrowser(WebAPI):
         """  format of kwargs is {'requestname:status' : 'approved', 'requestname:priority' : '2'} """
         message = ""
         for k, v in kwargs.iteritems():
-            if k.endswith(':status'): 
+            if k.endswith(':status'):
                 requestName = k.split(':')[0]
                 self.validate(requestName)
                 status = v
@@ -324,13 +325,13 @@ class ReqMgrBrowser(WebAPI):
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
     # FIXME needs to check if authorized, or original user
-    def modifyWorkload(self, requestName, workload, 
+    def modifyWorkload(self, requestName, workload,
                        CMSSWVersion=None, GlobalTag=None,
-                       runWhitelist=None, runBlacklist=None, 
+                       runWhitelist=None, runBlacklist=None,
                        blockWhitelist=None, blockBlacklist=None,
                        ScramArch=None):
         """ handles the "Modify" button of the details page """
-        self.validate(requestName) 
+        self.validate(requestName)
         helper = WMWorkloadHelper()
         helper.load(workload)
         schema = helper.data.request.schema
@@ -367,4 +368,3 @@ class ReqMgrBrowser(WebAPI):
             helper.setCMSSWParams(cmsswVersion=schema.CMSSWVersion, scramArch=ScramArch)
         Utilities.saveWorkload(helper, workload)
         return message + detailsBackLink(requestName)
-

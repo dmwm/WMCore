@@ -5,7 +5,7 @@ _RFCP2Impl_
 Implementation of StageOutImpl interface for RFIO in Castor-2
 """
 
-import os 
+import os
 import re
 
 from WMCore.Storage.Registry import registerStageOutImpl
@@ -19,7 +19,7 @@ class RFCPRALImpl(StageOutImpl):
     _RFCPRALImpl_
 
     Implement interface for rfcp command
-    
+
     """
 
     run = staticmethod(runCommand)
@@ -39,35 +39,35 @@ class RFCPRALImpl(StageOutImpl):
 
         create dir with group permission
         """
-        
+
         targetdir= os.path.dirname(self.parseCastorPath(targetPFN))
 
         checkdircmd="rfstat %s > /dev/null " % targetdir
-        print "Check dir existence : %s" %checkdircmd 
+        print "Check dir existence : %s" %checkdircmd
         try:
-          checkdirexitCode = self.run(checkdircmd)
+            checkdirexitCode = self.run(checkdircmd)
         except Exception, ex:
-             msg = "Warning: Exception while invoking command:\n"
-             msg += "%s\n" % checkdircmd
-             msg += "Exception: %s\n" % str(ex)
-             msg += "Go on anyway..."
-             print msg
-             pass
+            msg = "Warning: Exception while invoking command:\n"
+            msg += "%s\n" % checkdircmd
+            msg += "Exception: %s\n" % str(ex)
+            msg += "Go on anyway..."
+            print msg
+            pass
 
         if checkdirexitCode:
-           mkdircmd = "rfmkdir -m 775 -p %s" % targetdir
-           print "=> creating the dir : %s" %mkdircmd
-           try:
-             self.run(mkdircmd)
-           except Exception, ex:
-             msg = "Warning: Exception while invoking command:\n"
-             msg += "%s\n" % mkdircmd
-             msg += "Exception: %s\n" % str(ex)
-             msg += "Go on anyway..."
-             print msg
-             pass
+            mkdircmd = "rfmkdir -m 775 -p %s" % targetdir
+            print "=> creating the dir : %s" %mkdircmd
+            try:
+                self.run(mkdircmd)
+            except Exception, ex:
+                msg = "Warning: Exception while invoking command:\n"
+                msg += "%s\n" % mkdircmd
+                msg += "Exception: %s\n" % str(ex)
+                msg += "Go on anyway..."
+                print msg
+                pass
         else:
-           print "=> dir already exists... do nothing."
+            print "=> dir already exists... do nothing."
 
 
     def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
@@ -87,7 +87,7 @@ class RFCPRALImpl(StageOutImpl):
             remotePFN, localPFN = sourcePFN, targetPFN
         else:
             remotePFN, localPFN = targetPFN, sourcePFN
-        
+
         result += "\nFILE_SIZE=`stat -c %s"
         result += " %s `;\n" % localPFN
         result += " echo \"Local File Size is: $FILE_SIZE\"; DEST_SIZE=`rfstat %s | grep Size | cut -f2 -d:` ; if [ $DEST_SIZE ] && [ $FILE_SIZE == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (remotePFN)
@@ -123,7 +123,7 @@ class RFCPRALImpl(StageOutImpl):
             simpleCastorPath = simpleCastorPath.replace('//','/')
 
         return simpleCastorPath
-    
+
     def removeFile(self, pfnToRemove):
         """
         _removeFile_

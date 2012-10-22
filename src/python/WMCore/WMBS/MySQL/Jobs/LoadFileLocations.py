@@ -36,17 +36,17 @@ class LoadFileLocations(DBFormatter):
         tmpList = []
         for entry in formattedResults:
             tmpList.append(entry['site_name'])
-        
+
         return tmpList
-    
+
     def execute(self, id, conn = None, transaction = False):
         """
         _execute_
 
         Execute the SQL for the given job ID and then format and return
         the result.
-        """        
+        """
         result = self.dbi.processData(self.sql, {"jobid": id}, conn = conn,
                                       transaction = transaction)
-        
+
         return self.formatList(result)

@@ -8,8 +8,8 @@ The error handler pools for error conditions
 By looking at wmbs_job table's status filed.
 All the jobs are handled respectively.
 
-the different failure handlers are configurable in the config file and 
-relate to the three stages of a job: create, submit, run 
+the different failure handlers are configurable in the config file and
+relate to the three stages of a job: create, submit, run
 
 The component runs in Poll mode, basically submits itself
 'Poll' message at the end of each cycle, so that it keeps polling
@@ -35,8 +35,8 @@ class ErrorHandler(Harness):
 
     The error handler pools for error conditions (CreateFailed, SubmitFailed, and JobFailed)
     By looking at wmbs_job table's status filed.
-    All the errors are handled respectively by handlers related to 
-    the three stages of a job: create, submit, run 
+    All the errors are handled respectively by handlers related to
+    the three stages of a job: create, submit, run
     """
 
     def __init__(self, config):
@@ -54,4 +54,3 @@ class ErrorHandler(Harness):
         pollInterval = self.config.ErrorHandler.pollInterval
         logging.info("Setting poll interval to %s seconds" % pollInterval)
         myThread.workerThreadManager.addWorker(ErrorHandlerPoller(self.config), pollInterval)
-

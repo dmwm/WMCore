@@ -30,20 +30,20 @@ class CompleteInput(DBFormatter):
                         wmbs_job_assoc.job = wmbs_job.id
                       INNER JOIN wmbs_jobgroup ON
                         wmbs_job.jobgroup = wmbs_jobgroup.id
-                    WHERE wmbs_jobgroup.subscription = job_files.subscriptionid    
+                    WHERE wmbs_jobgroup.subscription = job_files.subscriptionid
                     GROUP BY job_files.subscriptionid, job_files.fileid
-                    HAVING total = numsuccess"""    
+                    HAVING total = numsuccess"""
 
     acquiredDelete = """DELETE FROM wmbs_sub_files_acquired
                         WHERE subscription = :subid AND fileid = :fileid"""
 
     failedDelete = """DELETE FROM wmbs_sub_files_failed
-                      WHERE subscription = :subid AND fileid = :fileid"""    
+                      WHERE subscription = :subid AND fileid = :fileid"""
 
     sql = """INSERT IGNORE INTO wmbs_sub_files_complete (fileid, subscription)
                VALUES (:fileid, :subid)
                """
-    
+
     def execute(self, id, conn = None, transaction = False):
         if type(id) == list:
             binds = []
@@ -63,11 +63,11 @@ class CompleteInput(DBFormatter):
 
         if len(binds) == 0:
             return
-        
+
         self.dbi.processData(self.acquiredDelete, binds, conn = conn,
                              transaction = transaction)
         self.dbi.processData(self.failedDelete, binds, conn = conn,
                              transaction = transaction)
         self.dbi.processData(self.sql, binds, conn = conn,
-                             transaction = transaction)        
+                             transaction = transaction)
         return

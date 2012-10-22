@@ -11,7 +11,7 @@ class FigureMixin(Mixin):
     def __init__(self,*args,**kwargs):
         self.validators += [IntBase('height',min=1,max=5000,default=600,doc_user="Canvas height in pixels."),
                            IntBase('width',min=1,max=5000,default=800,doc_user="Canvas width in pixels."),
-                           FloatBase('dpi',min=1,max=300,default=100.,doc_user="Canvas DPI.")] 
+                           FloatBase('dpi',min=1,max=300,default=100.,doc_user="Canvas DPI.")]
         super(FigureMixin,self).__init__(*args,**kwargs)
     def construct(self,*args,**kwargs):
         self.figure = matplotlib.pyplot.figure(figsize=(self.props.width/self.props.dpi,self.props.height/self.props.dpi),
@@ -34,13 +34,13 @@ class TitleMixin(Mixin):
                   IntBase('padding_left',min=0,default=kwargs.get('Padding_Left',70),doc_user="Padding in pixels at plot left."),
                   IntBase('padding_right',min=0,default=kwargs.get('Padding_Right',30),doc_user="Padding in pixels at plot right."),
                   IntBase('padding_bottom',min=0,default=kwargs.get('Padding_Bottom',50),doc_user="Padding in pixels at plot bottom."),
-                  IntBase('linepadding',min=0,default=10,doc_user="Padding in pixels between lines in the title.")]    
+                  IntBase('linepadding',min=0,default=10,doc_user="Padding in pixels between lines in the title.")]
         super(TitleMixin,self).__init__(*args,**kwargs)
     def construct(self,*args,**kwargs):
         self.props.topbound = self.props.height-self.props.padding_top
         if (not self.props.notitle) and len(self.props.title)>0:
             title = self.props.title.split('\n')
-            
+
             tx,ty = text_size(title[0],self.props.title_size,self.props.dpi)
             h = self.props.height
             ch = h-self.props.linepadding
@@ -53,7 +53,7 @@ class TitleMixin(Mixin):
                         va='center')
             ch -= ty
             ch -= self.props.linepadding
-            
+
             for subtitle in title[1:]:
                 tx,ty = text_size(subtitle,self.props.subtitle_size,self.props.dpi)
                 self.figure.text(0.5,(ch-(ty*0.5))/h,
@@ -65,10 +65,10 @@ class TitleMixin(Mixin):
                             va='center')
                 ch -= ty
                 ch -= self.props.linepadding
-                
+
             self.props.topbound = ch
         #super(TitleMixin,self).construct(*args,**kwargs)
-    
+
 
 class FigAxesMixin(Mixin):
     def __init__(self,*args,**kwargs):
@@ -77,7 +77,7 @@ class FigAxesMixin(Mixin):
                   #IntBase('padding_top',min=0,default=kwargs.get('Padding_Top',50)),
                   #IntBase('padding_left',min=0,default=kwargs.get('Padding_Left',70)),
                   #IntBase('padding_right',min=0,default=kwargs.get('Padding_Right',30)),
-                  #IntBase('padding_bottom',min=0,default=kwargs.get('Padding_Bottom',50))]    
+                  #IntBase('padding_bottom',min=0,default=kwargs.get('Padding_Bottom',50))]
         super(FigAxesMixin,self).__init__(*args,**kwargs)
     def construct(self,*args,**kwargs):
         w,h = self.props.width,self.props.height
@@ -87,13 +87,13 @@ class FigAxesMixin(Mixin):
         projection = self.props.projection
         if h-topbound<p_top:
             topbound = h-p_top
-        
+
         avail_width = w - p_left - p_right
         avail_height = topbound - p_bottom
-        
+
         self.props.avail_width = avail_width
         self.props.avail_height = avail_height
-        
+
         if square:
             max_dim = min(avail_width,avail_height)
             left = p_left + (0.5*avail_width - 0.5*max_dim)
@@ -108,13 +108,13 @@ class FigAxesMixin(Mixin):
             self.props.axes_left = left
             self.props.axes_bottom = bottom
         #super(FigAxesMixin,self).construct(*args,**kwargs)
-        
+
 class StyleMixin(Mixin):
     def __init__(self,*args,**kwargs):
         self.validators += [ColourBase('background',default=None,doc_user="Background colour for the canvas."),
                   ColourMap('colourmap',default=None,doc_user="Colourmap to use for items without preset colours."),
                   ElementBase('gridlines',bool,default=True,doc_user="Whether to show gridlines.")]
-        super(StyleMixin,self).__init__(*args,**kwargs)    
+        super(StyleMixin,self).__init__(*args,**kwargs)
     def construct(self,*args,**kwargs):
         if not self.props.background==None:
             self.figure.set_facecolor(self.props.background)
@@ -194,11 +194,11 @@ def axis_format(axis,data):
     if format=='si':
         axis.set_major_formatter(SIFormatter())
     elif format=='time':
-         if not data.get('timeformat',None)==None:
-             axis.set_major_formatter(TimeFormatter(data.get('timeformat','hour')))
-         else:
-             axis.set_major_formatter(TimeFormatter())
-             #axis.set_major_locator(TimeLocator()) not yet written...
+        if not data.get('timeformat',None)==None:
+            axis.set_major_formatter(TimeFormatter(data.get('timeformat','hour')))
+        else:
+            axis.set_major_formatter(TimeFormatter())
+            #axis.set_major_locator(TimeLocator()) not yet written...
     elif format=='binary':
         axis.set_major_formatter(BinFormatter())
         axis.set_major_locator(BinaryMaxNLocator())
@@ -217,7 +217,7 @@ def numeric_bins(data):
     bins = data.get('bins',None)
     log = data.get('log',False)
     logbase = float(data.get('logbase',10))
-    
+
     if width!=None and width<=0:
         raise ValueError, "axis 'width' defined and <=0"
     if bins!=None and bins<=0:
@@ -228,7 +228,7 @@ def numeric_bins(data):
         raise ValueError, "log axis has 'max'<=0"
     if min!=None and max!=None and min>max:
         raise ValueError, "axis 'min'>'max'"
-    
+
     if min!=None and max!=None and width!=None:
         if log:
             bins = int(abs(math.log(min,logbase)-math.log(max,logbase))/width)
@@ -248,31 +248,31 @@ def numeric_bins(data):
             min = max - bins*width
     else:
         raise ValueError, "axis requires at least 3 of 'min','max','width','bins'"
-    
+
     if log:
         return bins, [logbase**(math.log(min,logbase)+i*width) for i in range(bins+1)]
     else:
         return bins, [min+width*i for i in range(bins+1)]
-    
-    
-                
-def fix_y_axis_labels(axes,props,text,labels):    
+
+
+
+def fix_y_axis_labels(axes,props,text,labels):
     ylabel_width = text_size('',axes.get_yaxis().get_label().get_size())[1]
     space = props.axes_left*props.width - ylabel_width - props.linepadding
-            
+
     sizes = [font_size(t,space) for t in text]
     minsize = min(sizes)
     if minsize<6:
         space = text_size(text[sizes.index(minsize)],6)[0]
         req_space = space + ylabel_width + props.linepadding
-                
+
         props.avail_width = (props.avail_width - (req_space-props.axes_left*props.width))
         props.axes_left = req_space/props.width
         axes.set_position([props.axes_left,props.axes_bottom,float(props.avail_width)/props.width,float(props.avail_height)/props.height])
         sizes = [font_size(t,space) for t in text]
     for s,l in zip(sizes,labels):
         l.set_size(s)
-class NumericAxisMixin(Mixin):  
+class NumericAxisMixin(Mixin):
     def __init__(self,*args,**kwargs):
         self.validators += [DictElementBase(self.__axis,True,[StringBase('label',None,default='',doc_user="Axis label."),
                                                      FloatBase('min',default=None,doc_user="Minimum view-limit for axis."),
@@ -286,14 +286,14 @@ class NumericAxisMixin(Mixin):
         axes = self.figure.gca()
         axis = getattr(axes,self.__axis)
         data = self.props.get(self.__axis)
-        
+
         axis_format(axis,data)
-        
+
         if self.__axis=='xaxis':
             axes.set_xlabel(data['label'])
         elif self.__axis=='yaxis':
             axes.set_ylabel(data['label'])
-        
+
         if data['log']:
             if self.__axis=='xaxis':
                 axes.set_xscale('log',basex=data['logbase'])
@@ -302,26 +302,26 @@ class NumericAxisMixin(Mixin):
             setattr(self.props,'log_%s'%self.__axis[0].lower(),True)
         else:
             setattr(self.props,'log_%s'%self.__axis[0].lower(),False)
-        
+
     def postdata(self,*args,**kwargs):
         axes = self.figure.gca()
         axis = getattr(axes,self.__axis)
         data = self.props.get(self.__axis)
-        
+
         if data['min'] or data['max']:
             axis.set_view_interval(data['min'],data['max'])
-        
+
         if self.__axis=='yaxis' and self.props.yaxis['format']=='time':
             formatter = axes.get_yaxis().get_major_formatter()
             text = [str(formatter(i)) for i in axes.get_yticks()]
             labels = axes.get_yticklabels()
-            
+
             fix_y_axis_labels(axes,self.props,text,labels)
-            
+
 XNumericAxisMixin = UniqueAxis(NumericAxisMixin,'xaxis')
 YNumericAxisMixin = UniqueAxis(NumericAxisMixin,'yaxis')
-        
-        
+
+
 class BinnedNumericAxisMixin(Mixin):
     def __init__(self,*args,**kwargs):
         self.__binsrc = kwargs.get('BinnedNumericAxis_defaultbinsrc','series')
@@ -349,36 +349,36 @@ class BinnedNumericAxisMixin(Mixin):
                 if count < 3:
                     return "%s requires at least 3 of (min, max, width, bins)"%self.__axis
         return True
-    
+
     def predata(self,*args,**kwargs):
         data = self.props.get(self.__axis)
         bins = 0
         edges = []
-        if self.__allowdefault:  
+        if self.__allowdefault:
             try:
                 bins,edges = numeric_bins(data)
             except:
                 binsrc = self.props.get(self.__binsrc,[])
                 bins = max([len(s['values']) for s in binsrc])
                 edges = range(bins+1)
-                
+
         else:
             bins,edges = numeric_bins(data)
         data['bins']=bins
         data['edges']=edges
-        
+
         axes = self.figure.gca()
         axis = getattr(axes,self.__axis)
         data = self.props.get(self.__axis)
-        
+
         axis_format(axis,data)
         axis.set_major_locator(matplotlib.ticker.FixedLocator(edges,data['ticks']))
-        
+
         if self.__axis=='xaxis':
             axes.set_xlabel(data['label'])
         elif self.__axis=='yaxis':
             axes.set_ylabel(data['label'])
-        
+
         if data['log']:
             if self.__axis=='xaxis':
                 axes.set_xscale('log',basex=data['logbase'])
@@ -387,21 +387,21 @@ class BinnedNumericAxisMixin(Mixin):
             setattr(self.props,'log_%s'%self.__axis[0].lower(),True)
         else:
             setattr(self.props,'log_%s'%self.__axis[0].lower(),False)
-        
+
     def postdata(self,*args,**kwargs):
         axes = self.figure.gca()
         axis = getattr(axes,self.__axis)
         data = self.props.get(self.__axis)
-        
+
         if data['min'] or data['max']:
             axis.set_view_interval(data['min'],data['max'])
-            
+
         if self.__axis=='yaxis' and data['format']=='time':
             formatter = axes.get_yaxis().get_major_formatter()
             text = [str(formatter(i)) for i in axes.get_yticks()]
             labels = axes.get_yticklabels()
             fix_y_axis_labels(axes,self.props,text,labels)
-                    
+
 XBinnedNumericAxisMixin = UniqueAxis(BinnedNumericAxisMixin,'xaxis')
 YBinnedNumericAxisMixin = UniqueAxis(BinnedNumericAxisMixin,'yaxis')
 
@@ -417,12 +417,12 @@ class AnyBinnedAxisMixin(Mixin):
                                                                IntBase('ticks',min=0,default=6,doc_user="How many labels to place on the axis (approximately)."),
                                                                ListElementBase('labels',basestring,default=None,doc_user="List of labels for this axis.")],doc_user="Must either specify a list of labels or at least 3 of 'min', 'max', 'width', 'bins'.")]
         super(AnyBinnedAxisMixin,self).__init__(*args,**kwargs)
-    def predata(self,*args,**kwargs):       
+    def predata(self,*args,**kwargs):
         axes = self.figure.gca()
         axis = getattr(axes,self.__axis)
         data = self.props.get(self.__axis)
         axis_format(axis,data)
-        
+
         if not data['labels']==None:
             data['bins'] = len(data['labels'])
             data['edges'] = range(len(data['labels'])+1)
@@ -438,14 +438,14 @@ class AnyBinnedAxisMixin(Mixin):
         elif self.__axis=='yaxis':
             axes.set_ylabel(data['label'])
         #super(AnyBinnedAxisMixin,self).predata(*args,**kwargs)
-        
+
     def postdata(self,*args,**kwargs):
         axes = self.figure.gca()
         axis = getattr(axes,self.__axis)
         data = self.props.get(self.__axis)
         if data['min'] or data['max']:
             axis.set_view_interval(data['min'],data['max'])
-            
+
         if self.__axis=='yaxis':
             if data['format']=='time':
                 formatter = axes.get_yaxis().get_major_formatter()
@@ -456,36 +456,36 @@ class AnyBinnedAxisMixin(Mixin):
                 labels = axes.get_yticklabels()
             else:
                 return
-            fix_y_axis_labels(axes,self.props,text,labels)    
+            fix_y_axis_labels(axes,self.props,text,labels)
 
 XAnyBinnedAxisMixin = UniqueAxis(AnyBinnedAxisMixin,'xaxis')
 YAnyBinnedAxisMixin = UniqueAxis(AnyBinnedAxisMixin,'yaxis')
-        
+
 class LabelledAxisMixin(Mixin):
     def __init__(self,*args,**kwargs):
         self.validators += [DictElementBase(self.__axis,False,[StringBase('label',None,default='',doc_user="Axis label."),
                                                      ListElementBase('labels',basestring,min_elements=1,default=('default',),doc_user="List of labels for this axis.")])]
-        super(LabelledAxisMixin,self).__init__(*args,**kwargs)   
+        super(LabelledAxisMixin,self).__init__(*args,**kwargs)
     def predata(self,*args,**kwargs):
         axes = self.figure.gca()
         axis = getattr(axes,self.__axis)
         data = self.props.get(self.__axis)
-        
+
         if self.__axis=='xaxis':
             axes.set_xlabel(data['label'])
         elif self.__axis=='yaxis':
             axes.set_ylabel(data['label'])
         axis.set_ticklabels(data['labels'])
         axis.set_ticks([i+0.5 for i in range(len(data['labels']))])
-        
+
         data['bins'] = len(data['labels'])
         data['edges'] = range(len(data['labels'])+1)
-        
+
     def postdata(self):
         axes = self.figure.gca()
         axis = getattr(axes,self.__axis)
         data = self.props.get(self.__axis)
-        
+
         if self.__axis=='yaxis':
             text = [str(formatter(i)) for i in axes.get_yticks()]
             labels = data['labels']
@@ -493,7 +493,7 @@ class LabelledAxisMixin(Mixin):
 
 XLabelledAxisMixin = UniqueAxis(LabelledAxisMixin,'xaxis')
 YLabelledAxisMixin = UniqueAxis(LabelledAxisMixin,'yaxis')
-    
+
 class AutoLabelledAxisMixin(Mixin):
     def __init__(self,*args,**kwargs):
         self.validators += [DictElementBase(self.__axis,True,
@@ -501,7 +501,7 @@ class AutoLabelledAxisMixin(Mixin):
                                              ElementBase('log',bool,default=False,doc_user="Use logarithmic scale."),
                                              FloatBase('logbase',min=0,default=10,doc_user="Exponent of log scale, if enabled."),
                                              StringBase('timeformat',default=None,doc_user="Time format to use, if format=time. Can either be a strftime() format string or a preset from ('second','minute','hour','day','week','month','year','decade')."),
-                                             StringBase('format',('num','time','binary','si','hex'),default='num',doc_user="Formatting to use for numbers on this axis."),   
+                                             StringBase('format',('num','time','binary','si','hex'),default='num',doc_user="Formatting to use for numbers on this axis."),
                                              ])
                             ]
         #print 'AutoLabelledAxisMixin::__init__',self.__class__,self.__dict__.keys()
@@ -517,9 +517,9 @@ class AutoLabelledAxisMixin(Mixin):
             axes.set_ylabel(data['label'])
         data['bins']=0
         data['edges']=[]
-        
+
         axis_format(axis,data)
-        
+
         if data['log']:
             if self.__axis=='xaxis':
                 axes.set_xscale('log',basex=data['logbase'])
@@ -544,7 +544,7 @@ class BinnedNumericSeriesMixin(Mixin):
         self.__logmode = kwargs.get('BinnedNumericSeries_LogMode','clean')
         self.__logsrc = kwargs.get('BinnedNumericSeries_LogSrc','log_y')
         self.__binsrc = kwargs.get('BinnedNumericSeries_BinSrc','xaxis')
-        
+
         super(BinnedNumericSeriesMixin,self).__init__(*args,**kwargs)
     def data(self,*args,**kwargs):
         cmap = self.props.colourmap
@@ -556,9 +556,9 @@ class BinnedNumericSeriesMixin(Mixin):
             xbins = None
         if self.__datamode == 'edge':
             xbins += 1
-            
+
         log_enabled = self.props.get(self.__logsrc,False)
-        
+
         if self.props.sort=='label':
             self.props.series = sorted(self.props.series,key=lambda x:x['label'])
         elif self.props.sort=='label_reverse':
@@ -567,7 +567,7 @@ class BinnedNumericSeriesMixin(Mixin):
             self.props.series = sorted(self.props.series,key=lambda x:sum(x['values']))
         elif self.props.sort=='value_reverse':
             self.props.series = sorted(self.props.series,key=lambda x:sum(x['values']),reverse=True)
-        
+
         for i,series in enumerate(self.props.series):
             if series['colour']==None:
                 series['colour']=cmap(float(i)/len(self.props.series))
@@ -595,7 +595,7 @@ class BinnedNumericSeriesMixin(Mixin):
             series['min'] = min(series['values'])
             series['max'] = max(series['values'])
             series['integral'] = sum(series['values'])
-            
+
 class LabelledSeriesMixin(Mixin):
     def __init__(self,*args,**kwargs):
         self.validators += [ListElementBase('series',dict,DictElementBase('listitem',False,[
@@ -642,7 +642,7 @@ class LabelledSeries2DMixin(Mixin):
                 if len(series['x'])>len(series['y']):
                     series['y'] += [0.]*(len(series['x'])-len(series['y']))
                 else:
-                    series['x'] += [0.]*(len(series['y'])-len(series['x']))    
+                    series['x'] += [0.]*(len(series['y'])-len(series['x']))
             series['integral'] = sum([x*y for x,y in zip(series['x'],series['y'])])
         if self.props.sort=='label':
             self.props.series = sorted(self.props.series,key=lambda x:x['label'])
@@ -652,8 +652,8 @@ class LabelledSeries2DMixin(Mixin):
             self.props.series = sorted(self.props.series,key=lambda x:x['integral'])
         elif self.props.sort=='value_reverse':
             self.props.series = sorted(self.props.series,key=lambda x:x['integral'],reverse=True)
-            
-        
+
+
 class ArrayMixin(Mixin):
     def __init__(self,*args,**kwargs):
         self.validators += [ListElementBase('data',(list,tuple),ListElementBase('listitem',(int,float),FloatBase('listitem',min=0.,max=1.),allow_missing=False),allow_missing=False)]
@@ -677,7 +677,7 @@ class ArrayMixin(Mixin):
                         row[i]=self.__min
                     if self.__max!=None and item>self.__max:
                         row[i]=self.__max
-        
+
 class WatermarkMixin(Mixin):
     def __init__(self,*args,**kwargs):
         self.__watermarks = {'cms':'cmslogo.png'}
@@ -686,7 +686,7 @@ class WatermarkMixin(Mixin):
                             StringBase('watermark_location',options=('top','bottom','left','right','topleft','topright','bottomleft','bottomright'),default='topright',doc_user="Where to place the watermark."),
                             FloatBase('watermark_scale',min=0,default=1,doc_user="How much to scale the watermark relative to original size.")]
         super(WatermarkMixin,self).__init__(*args,**kwargs)
-        
+
     def finalise(self,*args,**kwargs):
         if self.props.watermark:
             try:
@@ -696,7 +696,7 @@ class WatermarkMixin(Mixin):
                 l,b,w,h = self.props.get('axes_left',0),self.props.get('axes_bottom',0),self.props.get('avail_width',width)/float(width),self.props.get('avail_height',height)/float(height)
                 iw = image.shape[0]*self.props.watermark_scale/float(width)
                 ih = image.shape[1]*self.props.watermark_scale/float(height)
-                
+
                 origin = {
                     'top':[l+w*0.5-iw*0.5,b+h-ih,iw,ih],
                     'left':[l,b+h*0.5-ih*0.5,iw,ih],
@@ -707,18 +707,18 @@ class WatermarkMixin(Mixin):
                     'bottomleft':[l,b,iw,ih],
                     'bottomright':[l+w-iw,b,iw,ih]
                 }[self.props.watermark_location]
-                
+
                 imaxes = self.figure.add_axes(origin)
                 imaxes.set_axis_off()
                 imaxes.imshow(image)
             except:
                 pass
-                
+
 class LegendMixin(Mixin):
     def __init__(self,*args,**kwargs):
         self.validators += [StringBase('legend',options=('top','bottom','left','right','topleft','topright','bottomleft','bottomright'),default=None,doc_user="Location of legend to display."),
                             IntBase('legend_maxitems',min=0,default=-1,doc_user="Maximum items to show in legend, or -1."),
-                            ElementBase('legend_value',bool,default=False,doc_user="Whether to append items with their integral."), 
+                            ElementBase('legend_value',bool,default=False,doc_user="Whether to append items with their integral."),
                             ]
         super(LegendMixin,self).__init__(*args,**kwargs)
     def postdata(self):
@@ -756,4 +756,3 @@ class LegendMixin(Mixin):
                 axes.legend([item['artist'] for item in items],[item['label'] for item in items],loc=loc)
             else:
                 axes.legend(loc=loc)
-            

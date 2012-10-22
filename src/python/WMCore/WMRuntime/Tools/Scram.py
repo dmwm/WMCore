@@ -38,10 +38,10 @@ import logging
 def testWriter(func, *args):
     """
     _testWriter_
-    
+
     If running Scram object in unittests, this mode will neuter the shell commands to make them
     echo the commands written to the subprocess.
-    
+
     """
     def newWriter(*args):
         newWriter.__name__ = func.__name__
@@ -54,11 +54,11 @@ def testWriter(func, *args):
     return newWriter
 
 
-#  // 
-# // Interceptable function to push commands to the subshell, used to 
-#//  enable test mode. 
+#  //
+# // Interceptable function to push commands to the subshell, used to
+#//  enable test mode.
 procWriter = lambda s, l: s.stdin.write(l)
-    
+
 
 
 class Scram:
@@ -73,7 +73,7 @@ class Scram:
     exception/error conditions
 
     """
-    
+
     def __init__(self, **options):
         self.command = options.get("command", "scramv1")
         self.initialise = options.get("initialise", None)
@@ -150,7 +150,7 @@ class Scram:
             self.command, self.version)
         if self.test_mode:
             # in test mode, the scram command would create the project area
-            # have to emulate this by hand here. 
+            # have to emulate this by hand here.
             if not os.path.exists(self.projectArea):
                 os.makedirs(self.projectArea)
         return proc.returncode
@@ -201,11 +201,11 @@ class Scram:
                     continue
                 l = l.replace("export ", "")
                 var, val = l.split("=", 1)
-                self.runtimeEnv[var] = val  
+                self.runtimeEnv[var] = val
         if self.test_mode:
             # ensure that runtime env isnt empty in test mode
-            # as that will cause an exception in __call__ 
-            self.runtimeEnv['TEST_MODE'] = 1                
+            # as that will cause an exception in __call__
+            self.runtimeEnv['TEST_MODE'] = 1
         self.code = proc.returncode
         self.lastExecuted = "eval `%s ru -sh`" % self.command
         return proc.returncode
@@ -247,7 +247,7 @@ class Scram:
             self.procWriter(proc, 'export %s=%s\n' % (varName, self.runtimeEnv[varName]))
 
         if os.environ.get('VO_CMS_SW_DIR', None ) != None:
-            self.procWriter(proc, 'export VO_CMS_SW_DIR=%s\n'%os.environ['VO_CMS_SW_DIR']) 
+            self.procWriter(proc, 'export VO_CMS_SW_DIR=%s\n'%os.environ['VO_CMS_SW_DIR'])
         if os.environ.get('OSG_APP', None) != None:
             self.procWriter(proc, 'export VO_CMS_SW_DIR=%s/cmssoft/cms\n'%os.environ['OSG_APP'])
         if os.environ.get('CMS_PATH', None) != None:
@@ -256,7 +256,7 @@ class Scram:
         if hackLdLibPath:
             self.procWriter(proc, "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
         self.procWriter(proc, "%s\n" % self.preCommand())
-            
+
         # scram fucks up the python environment from the parent shell
         if hackLdLibPath:
             self.procWriter(proc,
@@ -300,14 +300,3 @@ class Scram:
             self.stdout,
             self.stderr)
         return result
-
-        
-
-
-
-    
-
-    
-    
-    
-    

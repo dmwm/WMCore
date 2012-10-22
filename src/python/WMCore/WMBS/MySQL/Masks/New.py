@@ -16,10 +16,10 @@ from WMCore.Database.DBFormatter import DBFormatter
 class New(DBFormatter):
 
     plainsql = """INSERT INTO wmbs_job_mask (job, inclusivemask) VALUES (:jobid, :inclusivemask)"""
-    
+
     sql = """INSERT INTO wmbs_job_mask (job, firstevent, lastevent, firstrun, lastrun, firstlumi, lastlumi, inclusivemask) VALUES
                (:jobid, :firstevent, :lastevent, :firstrun, :lastrun, :firstlumi, :lastlumi, :inclusivemask)"""
-    
+
     def format(self,result):
         return True
 
@@ -35,7 +35,7 @@ class New(DBFormatter):
                           'lastlumi':   job['mask']['LastLumi'],})
 
         return binds
-    
+
     def execute(self, jobid = None, inclusivemask = None, conn = None,
                 transaction = False, jobList = None):
 
@@ -43,13 +43,13 @@ class New(DBFormatter):
             binds = self.getDictBinds(jobList, inclusivemask)
             result = self.dbi.processData(self.sql, binds, conn = conn, transaction = transaction)
             return self.format(result)
-            
+
         elif jobid:
             if inclusivemask == None:
                 binds = self.getBinds(jobid = jobid, inclusivemask=True)
             else:
                 binds = self.getBinds(jobid = jobid, inclusivemask = inclusivemask)
-            
+
             result = self.dbi.processData(self.plainsql, binds, conn = conn,
                                           transaction = transaction)
             return self.format(result)
@@ -57,5 +57,3 @@ class New(DBFormatter):
         else:
             logging.error('Masks.New asked to create Mask with no Job ID')
             return
-
-

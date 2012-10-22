@@ -17,10 +17,6 @@ from WMCore.JobSplitting.Generators.GeneratorInterface import GeneratorInterface
 class AutomaticSeeding(GeneratorInterface):
     def __init__(self, **options):
         GeneratorInterface.__init__(self, **options)
-    
+
     def __call__(self, wmbsJob):
         wmbsJob.addBaggageParameter("seeding", self.__class__.__name__)
-        
-
-
-

@@ -15,7 +15,7 @@ from WMCore.WMBS.Oracle.Subscriptions.GetAcquiredFiles import \
      GetAcquiredFiles
 
 class GetAcquiredFilesByLimit(GetAcquiredFiles):
-    
+
     sql = "SELECT * FROM (" + GetAcquiredFiles.sql + ") WHERE rownum <= :maxLimit"
 
     def execute(self, subscription, limit, conn = None, transaction = False):

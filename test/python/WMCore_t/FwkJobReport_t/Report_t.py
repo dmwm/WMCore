@@ -88,7 +88,7 @@ class ReportTest(unittest.TestCase):
                "Error: Catalog on input file is wrong."
         assert inputFiles[0]["guid"] == "142F3F42-C5D6-DE11-945D-000423D94494", \
                "Error: GUID of input file is wrong."
-        
+
         return
 
     def verifyRecoOutput(self, report):
@@ -185,7 +185,7 @@ class ReportTest(unittest.TestCase):
         assert outputFiles[0]["branch_hash"] == "cf37adeb60b427f4ccd0e21b5771146b", \
                "Error: Branch has on output file is wrong."
 
-        return    
+        return
 
     def testXMLParsing(self):
         """
@@ -216,7 +216,7 @@ class ReportTest(unittest.TestCase):
         self.assertRaises(FwkJobReportException, myReport.parse, self.badxmlPath)
         self.assertEqual(myReport.getStepErrors("cmsRun1")['error0'].type, 'BadFWJRXML')
         self.assertEqual(myReport.getStepErrors("cmsRun1")['error0'].exitCode, 50115)
-        return    
+        return
 
     def testErrorReporting(self):
         """
@@ -264,7 +264,7 @@ cms::Exception caught in EventProcessor and rethrown
 
         # Test getStepErrors
         self.assertEqual(myReport.getStepErrors("cmsRun1")['error0'].type, "CMSException")
-        
+
         return
 
     def testMultipleInputs(self):
@@ -274,7 +274,7 @@ cms::Exception caught in EventProcessor and rethrown
         Verify that parsing XML reports with multiple inputs works correctly.
         """
         xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
-                               "WMCore_t/FwkJobReport_t/CMSSWMultipleInput.xml")        
+                               "WMCore_t/FwkJobReport_t/CMSSWMultipleInput.xml")
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
 
@@ -345,7 +345,7 @@ cms::Exception caught in EventProcessor and rethrown
                "Error: Wrong number of steps in report."
         assert "cmsRun1" in jsonReport["steps"].keys(), \
                "Error: Step missing from json report."
-        
+
         cmsRunStep = jsonReport["steps"]["cmsRun1"]
 
         jsonReportSections = ["status", "errors", "logs", "parameters", "site",
@@ -353,7 +353,7 @@ cms::Exception caught in EventProcessor and rethrown
         for jsonReportSection in jsonReportSections:
             assert jsonReportSection in cmsRunStep.keys(), \
                 "Error: missing section: %s" % jsonReportSection
-                
+
         return
 
     def testTimeSetting(self):
@@ -373,7 +373,7 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertTrue(repTime["startTime"] - localTime < timeDiff)
         self.assertTrue(repTime["stopTime"] - localTime < timeDiff)
 
-        
+
         myReport = Report("cmsRun1")
         myReport.addStep("cmsRun2")
         myReport.addStep("cmsRun3")
@@ -437,17 +437,17 @@ cms::Exception caught in EventProcessor and rethrown
     def testPerformanceSummary(self):
         """
         _testPerformanceSummary_
-        
+
         Test whether or not we can pull performance information
         out of a Timing/SimpleMemoryCheck jobReport
         """
-        
+
         xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
                                "WMCore_t/FwkJobReport_t/PerformanceReport.xml")
-        
+
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
-        
+
         # Do a brief check of the three sections
         perf = myReport.data.cmsRun1.performance
 
@@ -456,7 +456,7 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertEqual(perf.storage.writeTotalMB, 5.22226)
         self.assertEqual(perf.storage.writeTotalSecs, 60317.4)
         self.assertEqual(perf.storage.readPercentageOps, 0.98585512216030857)
-        
+
         return
 
     def testPerformanceJSON(self):
@@ -468,7 +468,7 @@ cms::Exception caught in EventProcessor and rethrown
         """
         xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
                                "WMCore_t/FwkJobReport_t/PerformanceReport.xml")
-        
+
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
 
@@ -517,21 +517,21 @@ cms::Exception caught in EventProcessor and rethrown
     def testProperties(self):
         """
         _testProperties_
-        
+
         Test data fields for the properties information for DBS
         """
-        
+
         myReport = Report("cmsRun1")
         myReport.parse(self.xmlPath)
-        
+
         name = "ThisIsASillyString"
-        
+
         myReport.setValidStatus(name)
         myReport.setGlobalTag(name)
         myReport.setAcquisitionProcessing(acquisitionEra = 'NULL', processingVer = name)
         myReport.setInputDataset(inputPath = '/lame/path')
         myReport.setCustodialSite(custodialSite = 'testCustody')
-        
+
         for f in myReport.getAllFilesFromStep("cmsRun1"):
             self.assertEqual(f['globalTag'], name)
             self.assertEqual(f['validStatus'], name)
@@ -539,30 +539,30 @@ cms::Exception caught in EventProcessor and rethrown
             self.assertEqual(f['acquisitionEra'], 'NULL')
             self.assertEqual(f['inputPath'], '/lame/path')
             self.assertEqual(f['custodialSite'], 'testCustody')
-            
+
         return
-    
+
     def testOutputFiles(self):
         """
         _testOutputFiles_
-        
+
         Test some basic manipulation of output files
         """
-        
+
         myReport = Report("cmsRun1")
         myReport.parse(self.xmlPath)
-        
+
         files = myReport.getAllFilesFromStep(step = "cmsRun1")
-        
+
         f1 = files[0]
         f2 = files[1]
-        
+
         self.assertEqual(f1['outputModule'], 'outputRECORECO')
         self.assertEqual(f1['pfn'], 'outputRECORECO.root')
-        
+
         self.assertEqual(f2['outputModule'], 'outputALCARECORECO')
         self.assertEqual(f2['pfn'], 'outputALCARECORECO.root')
-        
+
         for f in files:
             self.assertEqual(f['events'], 2)
             self.assertEqual(f['configURL'], None)
@@ -629,7 +629,7 @@ cms::Exception caught in EventProcessor and rethrown
         # should succeed
         self.assertTrue(myReport.taskSuccessful(ignoreString = 'cmsRun'))
         return
-                         
+
     def testMultiCoreReport(self):
         """
         _testMultiCoreReport_
@@ -638,9 +638,9 @@ cms::Exception caught in EventProcessor and rethrown
         """
         couchdb = CouchServer(os.environ["COUCHURL"])
         fwjrdatabase = couchdb.connectDatabase("report_t/fwjrs")
-        
+
         self.mcPath = os.path.join(WMCore.WMBase.getTestBase(),
-                                   "WMCore_t/FwkJobReport_t/MulticoreReport.pkl")        
+                                   "WMCore_t/FwkJobReport_t/MulticoreReport.pkl")
         myReport = Report()
         myReport.unpersist(self.mcPath)
 
@@ -704,7 +704,7 @@ cms::Exception caught in EventProcessor and rethrown
 
         self.assertEqual(report.listSteps(), ['cmsRun1'])
         self.assertEqual(report.data.cmsRun1.testVar, 'test01')
-        
+
         return
 
     def testDeleteOutputModule(self):

@@ -12,8 +12,8 @@ __all__ = []
 from WMCore.WMBS.MySQL.Jobs.New import New as NewJobMySQL
 
 class New(NewJobMySQL):
-    sql = """INSERT INTO wmbs_job (id, jobgroup, name, state, state_time, 
-                                   couch_record, cache_dir, location, outcome, fwjr_path) VALUES 
+    sql = """INSERT INTO wmbs_job (id, jobgroup, name, state, state_time,
+                                   couch_record, cache_dir, location, outcome, fwjr_path) VALUES
               (wmbs_job_SEQ.nextval, :jobgroup, :name,
                (SELECT id FROM wmbs_job_state WHERE name = 'new'),
                :state_time, :couch_record, :cache_dir,

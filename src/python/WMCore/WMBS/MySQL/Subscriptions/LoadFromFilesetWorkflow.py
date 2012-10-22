@@ -29,11 +29,11 @@ class LoadFromFilesetWorkflow(DBFormatter):
         formattedResult["id"] = int(formattedResult["id"])
         formattedResult["fileset"] = int(formattedResult["fileset"])
         formattedResult["workflow"] = int(formattedResult["workflow"])
-        formattedResult["last_update"] = int(formattedResult["last_update"])        
+        formattedResult["last_update"] = int(formattedResult["last_update"])
         formattedResult["type"] = formattedResult["name"]
         del formattedResult["name"]
         return formattedResult
-    
+
     def execute(self, fileset = None, workflow = None, conn = None,
                 transaction = False):
         result = self.dbi.processData(self.sql, {"fileset": fileset,

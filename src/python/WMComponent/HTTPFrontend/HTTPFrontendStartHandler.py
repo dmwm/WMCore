@@ -19,5 +19,3 @@ class HTTPFrontendStartHandler(BaseHandler):
     def __call__(self, event, payload):
         print "STARTCALL"
         self.component.start()
-
-

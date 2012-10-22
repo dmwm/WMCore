@@ -70,5 +70,3 @@ def getRequest(requestId):
 
 
     return request
-
-

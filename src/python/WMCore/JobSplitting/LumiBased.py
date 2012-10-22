@@ -249,12 +249,3 @@ class LumiBased(JobFactory):
                         lastLumi  = None
 
         return
-
-
-
-
-
-
-
-
-

@@ -54,7 +54,3 @@ class CMSSWFetcher(FetcherInterface):
                 if tweak:
                     tweakFile = "%s/%s" % (stepPath, tweakTarget)
                     tweak.persist(tweakFile, "json")
-
-
-
-

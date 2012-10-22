@@ -1,6 +1,6 @@
 '''
-A bunch of functions that check the permissions on a file are what they should 
-be, or more restrictive. 
+A bunch of functions that check the permissions on a file are what they should
+be, or more restrictive.
 '''
 
 
@@ -15,10 +15,10 @@ def check_permissions(filehandle, permission, pass_stronger = False):
         assert filepermission <= permission, "file's permissions are too weak"
     else:
         assert filepermission == permission, "file does not have the correct permissions"
-            
+
 def owner_readonly(file):
     check_permissions(file, oct(0400))
-    
+
 def owner_readwrite(file):
     check_permissions(file, oct(0600))
 

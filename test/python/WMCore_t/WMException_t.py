@@ -18,7 +18,7 @@ from WMCore.WMException import WMException
 class WMExceptionTest(unittest.TestCase):
     """
     A test of a generic exception class
-    """    
+    """
     def setUp(self):
         """
         setup log file output.
@@ -28,22 +28,22 @@ class WMExceptionTest(unittest.TestCase):
             datefmt='%m-%d %H:%M',
             filename='%s.log' % __file__,
             filemode='w')
-        
+
         self.logger = logging.getLogger('WMExceptionTest')
-        
-            
+
+
     def tearDown(self):
         """
         nothing to tear down
         """
-        
+
         pass
-    
+
     def testException(self):
         """
         create an exception and do some tests.
         """
-        
+
         exception = WMException("an exception message with nr. 100", 100)
         self.logger.debug("String version of exception: " + str(exception))
         self.logger.debug("XML version of exception: " + exception.xml())
@@ -54,6 +54,6 @@ class WMExceptionTest(unittest.TestCase):
         exception.addInfo(**data)
         self.logger.debug("String version of exception: "+ str(exception))
 
-            
+
 if __name__ == "__main__":
-    unittest.main()     
+    unittest.main()

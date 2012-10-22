@@ -20,7 +20,7 @@ def isGlobalDBS(dbs):
     """Is this the global dbs"""
     try:
         # try to determine from name - save a trip to server
-        # fragile but if this url changes many other things will break also...    
+        # fragile but if this url changes many other things will break also...
         from urlparse import urlparse
         url = urlparse(dbs.dbs.getServerUrl()) #DBSApi has url not DBSReader
         if url.hostname.startswith('cmsdbsprod.cern.ch') and url.path.startswith('/cms_dbs_prod_global'):

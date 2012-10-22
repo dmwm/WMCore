@@ -1,5 +1,5 @@
 """
-provide the map between configuration of web tool and 
+provide the map between configuration of web tool and
 DBFactory parameters
 """
 from WMCore.Database.ConfigDBMap import ConfigDBMapInterface
@@ -15,9 +15,9 @@ class ConfigDBMap(ConfigDBMapInterface):
             self.option["unix_socket"] = config.CoreDatabase.socket
         if hasattr(config.CoreDatabase, "engineParameters"):
             self.option['engine_parameters'] = config.CoreDatabase.engineParameters
-            
+
     def getDBUrl(self):
         return self.dbUrl
-    
+
     def getOption(self):
         return self.option

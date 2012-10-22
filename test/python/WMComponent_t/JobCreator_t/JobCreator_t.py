@@ -55,7 +55,7 @@ class JobCreatorTest(unittest.TestCase):
     """
 
     sites = ['T2_US_Florida', 'T2_US_UCSD', 'T2_TW_Taiwan', 'T1_CH_CERN']
-		
+
     def setUp(self):
         """
         _setUp_
@@ -63,26 +63,26 @@ class JobCreatorTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.  Also, create some dummy locations.
         """
-        
+
         myThread = threading.currentThread()
-        
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         #self.tearDown()
-        self.testInit.setSchema(customModules = ['WMCore.WMBS', 
+        self.testInit.setSchema(customModules = ['WMCore.WMBS',
                                                  'WMCore.ResourceControl',
                                                  'WMCore.Agent.Database'], useDefault = False)
         self.couchdbname = "jobcreator_t"
         self.testInit.setupCouch("%s/jobs" % self.couchdbname, "JobDump")
         self.testInit.setupCouch("%s/fwjrs" % self.couchdbname, "FWJRDump")
-                                                 
+
 
         myThread = threading.currentThread()
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
-        
+
         locationAction = self.daoFactory(classname = "Locations.New")
         for site in self.sites:
             locationAction.execute(siteName = site, seName = site)
@@ -121,22 +121,22 @@ class JobCreatorTest(unittest.TestCase):
     def tearDown(self):
         """
         _tearDown_
-        
+
         Drop all the WMBS tables.
         """
-        
+
         myThread = threading.currentThread()
 
         self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.ResourceControl',
                                                'WMCore.Agent.Database'])
-        
+
         self.testInit.delWorkDir()
-        
+
         self._teardown = True
 
         self.testInit.tearDownCouch()
-        
-        
+
+
         return
 
 
@@ -198,7 +198,7 @@ class JobCreatorTest(unittest.TestCase):
         seederDict = {"generator.initialSeed": 1001, "evtgenproducer.initialSeed": 1001}
         rereco.addGenerator("PresetSeeder", **seederDict)
 
-        
+
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
@@ -235,7 +235,7 @@ class JobCreatorTest(unittest.TestCase):
 
         config.component_("JobCreator")
         config.JobCreator.namespace = 'WMComponent.JobCreator.JobCreator'
-        #The log level of the component. 
+        #The log level of the component.
         #config.JobCreator.logLevel = 'SQLDEBUG'
         config.JobCreator.logLevel = 'INFO'
 
@@ -250,14 +250,14 @@ class JobCreatorTest(unittest.TestCase):
         config.JobCreator.componentDir              = self.testDir
         config.JobCreator.useWorkQueue              = True
         config.JobCreator.WorkQueueParams           = {'emulateDBSReader': True}
-        
+
         # We now call the JobMaker from here
         config.component_('JobMaker')
         config.JobMaker.logLevel        = 'INFO'
         config.JobMaker.namespace       = 'WMCore.WMSpec.Makers.JobMaker'
         config.JobMaker.maxThreads      = 1
         config.JobMaker.makeJobsHandler = 'WMCore.WMSpec.Makers.Handlers.MakeJobs'
-        
+
         #JobStateMachine
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'cmssrv52.fnal.gov:5984')
@@ -269,7 +269,7 @@ class JobCreatorTest(unittest.TestCase):
     def testA_VerySimpleTest(self):
         """
         _VerySimpleTest_
-        
+
         Just test that everything works...more or less
         """
 
@@ -290,7 +290,7 @@ class JobCreatorTest(unittest.TestCase):
         self.createJobCollection(name = name, nSubs = nSubs, nFiles = nFiles, workflowURL = workloadPath)
 
 
-        
+
 
         testJobCreator = JobCreatorPoller(config = config)
 
@@ -343,7 +343,7 @@ class JobCreatorTest(unittest.TestCase):
 
         return
 
-        
+
 
 
     @attr('performance')
@@ -379,7 +379,7 @@ class JobCreatorTest(unittest.TestCase):
         result = getJobsAction.execute(state = 'Created', jobType = "Processing")
 
         time.sleep(10)
-        
+
         self.assertEqual(len(result), nSubs*nFiles)
 
         p = pstats.Stats('testStats.stat')
@@ -403,22 +403,22 @@ class JobCreatorTest(unittest.TestCase):
         nSubs        = 5
         nFiles       = 500
         workloadName = 'TestWorkload'
-        
-        
+
+
         workload = self.createWorkload(workloadName = workloadName)
         workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload', 'WMSandbox', 'WMWorkload.pkl')
-        
+
         self.createJobCollection(name = name, nSubs = nSubs, nFiles = nFiles, workflowURL = workloadPath)
-        
+
         config = self.getConfig()
-        
+
         configDict = {"couchURL": config.JobStateMachine.couchurl,
                       "couchDBName": config.JobStateMachine.couchDBName,
                       'jobCacheDir': config.JobCreator.jobCacheDir,
                       'defaultJobType': config.JobCreator.defaultJobType}
-        
+
         input = [{"subscription": 1}, {"subscription": 2}, {"subscription": 3}, {"subscription": 4}, {"subscription": 5}]
-        
+
         testJobCreator = JobCreatorPoller(**configDict)
         cProfile.runctx("testJobCreator.algorithm(parameters = input)", globals(), locals(), filename = "workStats.stat")
 
@@ -454,7 +454,7 @@ class JobCreatorTest(unittest.TestCase):
         self.createJobCollection(name = name, nSubs = nSubs, nFiles = nFiles, workflowURL = workloadPath)
 
 
-        
+
 
         testJobCreator = JobCreatorPoller(config = config)
 
@@ -498,12 +498,12 @@ class JobCreatorTest(unittest.TestCase):
         mergeFileset = Fileset(name = "mergeFileset")
         mergeFileset.create()
         bogusFileset = Fileset(name = "bogusFileset")
-        bogusFileset.create()        
+        bogusFileset.create()
 
         mergeWorkflow = Workflow(spec = workflowURL, owner = "mnorman",
                                  name = name, task="/TestWorkload/ReReco")
         mergeWorkflow.create()
-        
+
         mergeSubscription = Subscription(fileset = mergeFileset,
                                          workflow = mergeWorkflow,
                                          split_algo = "ParentlessMergeBySize")
@@ -541,7 +541,7 @@ class JobCreatorTest(unittest.TestCase):
                      first_event = 2048, locations = set(["somese.cern.ch"]))
         fileC.addRun(Run(1, *[46]))
         fileC.create()
-        
+
         fileI = File(lfn = "fileI", size = 1024, events = 1024,
                      first_event = 0, locations = set(["somese.cern.ch"]))
         fileI.addRun(Run(2, *[46]))
@@ -596,7 +596,7 @@ class JobCreatorTest(unittest.TestCase):
         procTask = workload.getTask("ReReco")
         procTask.setSplittingAlgorithm("ParentlessMergeBySize", min_merge_size = 1, max_merge_size = 100000,
                             max_merge_events = 200000)
-        
+
         workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload', 'WMSandbox', 'WMWorkload.pkl')
 
 
@@ -609,7 +609,7 @@ class JobCreatorTest(unittest.TestCase):
 
         getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
         result = getJobsAction.execute(state = 'Created', jobType = "Processing")
-        self.assertEqual(len(result), 1)       
+        self.assertEqual(len(result), 1)
 
         result = getJobsAction.execute(state = 'Created', jobType = "Merge")
         self.assertEqual(len(result), 0)
@@ -619,5 +619,5 @@ class JobCreatorTest(unittest.TestCase):
 
 if __name__ == "__main__":
 
-    unittest.main() 
+    unittest.main()
     deleteConfig(ConfigFile)

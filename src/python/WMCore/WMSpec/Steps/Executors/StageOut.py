@@ -346,6 +346,3 @@ class StageOut(Executor):
 
         # Return the file
         return mergefile
-
-
-

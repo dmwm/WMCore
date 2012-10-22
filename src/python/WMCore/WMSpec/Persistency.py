@@ -32,7 +32,7 @@ class PersistencyHelper:
     - json mode: read/write using json
 
     """
-        
+
     def save(self, filename):
         """
         _save_
@@ -43,7 +43,7 @@ class PersistencyHelper:
         handle = open(filename, 'w')
         #TODO: use different encoding scheme for different extension
         #extension = filename.split(".")[-1].lower()
-        cPickle.dump(self.data, handle)     
+        cPickle.dump(self.data, handle)
         handle.close()
         return
 
@@ -54,7 +54,7 @@ class PersistencyHelper:
         UncPickle data from file
 
         """
-        
+
         #TODO: currently support both loading from file path or url
         #if there are more things to filter may be separate the load function
 
@@ -91,14 +91,14 @@ class PersistencyHelper:
         name = self.name()
         if not database.documentExists(self.name()):
             self.setSpecUrl(couchUrl + specuri)
-            doc = database.put(uri, data=metadata, contentType='application/json') 
+            doc = database.put(uri, data=metadata, contentType='application/json')
             #doc = database.commitOne(self.name(), metadata)
             rev = doc['rev']
         else:
             #doc = database.get(uri+'?revs=true')
             doc = database.document(self.name())
             rev = doc['_rev']
-        
+
         #specuriwrev = specuri + '?rev=%s' % rev
         workloadString = cPickle.dumps(self.data)
         #result = database.put(specuriwrev, workloadString, contentType='application/text')
@@ -131,4 +131,3 @@ class PersistencyHelper:
             return
         doc = database.delete_doc(id)
         return
-        

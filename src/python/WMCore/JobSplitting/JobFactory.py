@@ -47,17 +47,17 @@ class JobFactory(WMObject):
         self.timing = {'jobInstance': 0, 'sortByLocation': 0, 'acquireFiles': 0, 'jobGroup': 0}
 
         if package == 'WMCore.WMBS':
-            myThread = threading.currentThread() 
-            self.daoFactory = DAOFactory(package = "WMCore.WMBS", 
-                                         logger = myThread.logger, 
-                                         dbinterface = myThread.dbi) 
-            self.getParentInfoAction  = self.daoFactory(classname = "Files.GetParentInfo") 
+            myThread = threading.currentThread()
+            self.daoFactory = DAOFactory(package = "WMCore.WMBS",
+                                         logger = myThread.logger,
+                                         dbinterface = myThread.dbi)
+            self.getParentInfoAction  = self.daoFactory(classname = "Files.GetParentInfo")
 
     def __call__(self, jobtype = "Job", grouptype = "JobGroup", *args, **kwargs):
         """
         __call__
 
-        
+
         """
 
         #Need to reset the internal data for multiple calls to the factory
@@ -113,7 +113,7 @@ class JobFactory(WMObject):
         map(lambda x: x.startGroup(self.currentGroup), self.generators)
 
 
-    def newJob(self, name=None, files=None, failedJob=False):
+    def newJob(self, name=None, files=None, failedJob=False, failedReason=None):
         """
         Instantiate a new Job onject, apply all the generators to it
         """
@@ -133,6 +133,7 @@ class JobFactory(WMObject):
         # Some jobs are not meant to be submitted, ever
         if failedJob:
             self.currentJob["failedOnCreation"] = True
+            self.currentJob["failedReason"] = failedReason
 
         self.nJobs += 1
         for gen in self.generators:
@@ -286,7 +287,7 @@ class JobFactory(WMObject):
             # This is what happens when you ran out of files last time
             logging.info("No additional files found; Ending.")
             return set()
-        
+
 
         resultProxy = self.proxies[0]
         rawResults  = []
@@ -313,7 +314,7 @@ class JobFactory(WMObject):
             # Nothing to do
             return set()
 
-        fileList = self.formatDict(results = rawResults, keys = keys)        
+        fileList = self.formatDict(results = rawResults, keys = keys)
         fileIDs = list(set([x['fileid'] for x in fileList]))
 
         myThread = threading.currentThread()
@@ -336,7 +337,7 @@ class JobFactory(WMObject):
             files.add(fl)
 
         return files
-            
+
     def formatDict(self, results, keys):
         """
         _formatDict_
@@ -359,38 +360,38 @@ class JobFactory(WMObject):
         return formattedResults
 
 
-    def findParent(self, lfn): 
-        """ 
-        _findParent_ 
-        
-        Find the parents for a file based on its lfn 
-        """ 
-        
-        parentsInfo = self.getParentInfoAction.execute([lfn]) 
-        newParents  = set() 
-        for parentInfo in parentsInfo: 
-            
-            # This will catch straight to merge files that do not have redneck 
-            # parents.  We will mark the straight to merge file from the job 
-            # as a child of the merged parent. 
-            if int(parentInfo["merged"]) == 1: 
-                newParents.add(parentInfo["lfn"]) 
-                
-            elif parentInfo['gpmerged'] == None: 
-                continue 
-            
-            # Handle the files that result from merge jobs that aren't redneck 
-            # children.  We have to setup parentage and then check on whether or 
-            # not this file has any redneck children and update their parentage 
-            # information. 
-            elif int(parentInfo["gpmerged"]) == 1: 
-                newParents.add(parentInfo["gplfn"]) 
- 		 
-            # If that didn't work, we've reached the great-grandparents 
-            # And we have to work via recursion 
-            else: 
-                parentSet = self.findParent(lfn = parentInfo['gplfn']) 
-                for parent in parentSet: 
-                    newParents.add(parent) 
-                    
-        return newParents 
+    def findParent(self, lfn):
+        """
+        _findParent_
+
+        Find the parents for a file based on its lfn
+        """
+
+        parentsInfo = self.getParentInfoAction.execute([lfn])
+        newParents  = set()
+        for parentInfo in parentsInfo:
+
+            # This will catch straight to merge files that do not have redneck
+            # parents.  We will mark the straight to merge file from the job
+            # as a child of the merged parent.
+            if int(parentInfo["merged"]) == 1:
+                newParents.add(parentInfo["lfn"])
+
+            elif parentInfo['gpmerged'] == None:
+                continue
+
+            # Handle the files that result from merge jobs that aren't redneck
+            # children.  We have to setup parentage and then check on whether or
+            # not this file has any redneck children and update their parentage
+            # information.
+            elif int(parentInfo["gpmerged"]) == 1:
+                newParents.add(parentInfo["gplfn"])
+
+            # If that didn't work, we've reached the great-grandparents
+            # And we have to work via recursion
+            else:
+                parentSet = self.findParent(lfn = parentInfo['gplfn'])
+                for parent in parentSet:
+                    newParents.add(parent)
+
+        return newParents

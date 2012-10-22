@@ -24,14 +24,14 @@ class BulkOperations(WebAPI):
         myThread = threading.currentThread()
         # Get it from the DBFormatter superclass
         myThread.dbi = self.dbi
- 
+
     def requestNamesFromCheckboxes(self, kwargs):
         """ For use with tables that send hidden parameters "checkbox<requestName>" """
         requests = []
         for key, value in kwargs.iteritems():
-           if isinstance(value, types.StringTypes):
+            if isinstance(value, types.StringTypes):
                 kwargs[key] = value.strip()
-           if key.startswith("checkbox"):
+            if key.startswith("checkbox"):
                 requestName = key[8:]
                 WMCore.Lexicon.identifier(requestName)
                 requests.append(key[8:])

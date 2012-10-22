@@ -88,9 +88,9 @@ class scaleTestFiller:
             self.dbsUploader.close()
             raise
 
-        
+
         return
-    
+
 
 
     def getConfig(self):
@@ -175,7 +175,7 @@ class scaleTestFiller:
             testFileChild.setLocation(site)
 
             testFileChild.addParents([f['lfn']])
-            
+
 
         return files
 
@@ -194,5 +194,3 @@ if __name__ == "__main__":
         scaleTester()
         print "Done running for now, sleeping temporarily"
         time.sleep(random.randint(10, 60))
-
-

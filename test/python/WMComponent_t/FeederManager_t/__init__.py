@@ -7,7 +7,3 @@ FeederManager test methods
 
 """
 __all__ = []
-
-
-
-

@@ -31,14 +31,14 @@ class MySQLTest(unittest.TestCase):
         self.testDir = self.testInit.generateWorkDir()
         self.config = getConfig(self.testDir)
         # mock generator instance to communicate some configuration values
-        self.generator = utils.AlertGeneratorMock(self.config)        
+        self.generator = utils.AlertGeneratorMock(self.config)
         self.testName = self.id().split('.')[-1]
-         
-        
-    def tearDown(self):       
+
+
+    def tearDown(self):
         self.testInit.delWorkDir()
         self.generator = None
-        
+
 
     def testMySQLPollerBasic(self):
         config = getConfig("/tmp")
@@ -48,27 +48,27 @@ class MySQLTest(unittest.TestCase):
         try:
             poller = MySQLPoller(config.AlertGenerator.mysqlCPUPoller, generator)
         except Exception, ex:
-            self.fail("%s: exception: %s" % (self.testName, ex))                                
+            self.fail("%s: exception: %s" % (self.testName, ex))
         # this class would not have defined polling sample function, give it one
         poller.sample = lambda proc: float(12)
         self.assertEqual(len(poller._measurements), 0)
         poller.check()
         self.assertEqual(len(poller._measurements), 1)
         self.assertEqual(poller._measurements[0], 12)
-        
+
         # test handling of a non-existing process
         MySQLPoller._getProcessPID = lambda inst: 1212121212
         self.assertRaises(Exception, MySQLPoller,
                           config.AlertGenerator.mysqlCPUPoller, generator)
-        
+
 
     def testMySQLCPUPollerBasic(self):
         config = getConfig("/tmp")
         generator = utils.AlertGeneratorMock(config)
         try:
-            poller = MySQLCPUPoller(config.AlertGenerator.mysqlCPUPoller, generator)    
+            poller = MySQLCPUPoller(config.AlertGenerator.mysqlCPUPoller, generator)
         except Exception, ex:
-            self.fail("%s: exception: %s" % (self.testName, ex))                    
+            self.fail("%s: exception: %s" % (self.testName, ex))
         self.assertEqual(len(poller._measurements), 0)
         poller.check()
         # assuming MySQL server is running, check that 1 sensible measurement value was collected
@@ -82,14 +82,14 @@ class MySQLTest(unittest.TestCase):
         self.config.AlertGenerator.mysqlCPUPoller.pollInterval = 0.2
         self.config.AlertGenerator.mysqlCPUPoller.period = 1
         ti = utils.TestInput() # see attributes comments at the class
-        ti.pollerClass = MySQLCPUPoller       
+        ti.pollerClass = MySQLCPUPoller
         ti.config = self.config.AlertGenerator.mysqlCPUPoller
         ti.thresholdToTest = self.config.AlertGenerator.mysqlCPUPoller.soft
         ti.level = self.config.AlertProcessor.soft.level
         ti.expected = 1
         ti.thresholdDiff = 10
         ti.testCase = self
-        utils.doGenericPeriodAndProcessPolling(ti)        
+        utils.doGenericPeriodAndProcessPolling(ti)
 
 
     def testMySQLCPUPollerCriticalThreshold(self):
@@ -98,23 +98,23 @@ class MySQLTest(unittest.TestCase):
         self.config.AlertGenerator.mysqlCPUPoller.pollInterval = 0.2
         self.config.AlertGenerator.mysqlCPUPoller.period = 1
         ti = utils.TestInput() # see attributes comments at the class
-        ti.pollerClass = MySQLCPUPoller       
+        ti.pollerClass = MySQLCPUPoller
         ti.config = self.config.AlertGenerator.mysqlCPUPoller
-        ti.thresholdToTest = self.config.AlertGenerator.mysqlCPUPoller.critical 
+        ti.thresholdToTest = self.config.AlertGenerator.mysqlCPUPoller.critical
         ti.level = self.config.AlertProcessor.critical.level
         ti.expected = 1
         ti.thresholdDiff = 10
         ti.testCase = self
-        utils.doGenericPeriodAndProcessPolling(ti)        
+        utils.doGenericPeriodAndProcessPolling(ti)
 
-            
+
     def testMySQLCPUPollerNoAlert(self):
         self.config.AlertGenerator.mysqlCPUPoller.soft = 70
         self.config.AlertGenerator.mysqlCPUPoller.critical = 80
         self.config.AlertGenerator.mysqlCPUPoller.pollInterval = 0.2
         self.config.AlertGenerator.mysqlCPUPoller.period = 1
         ti = utils.TestInput() # see attributes comments at the class
-        ti.pollerClass = MySQLCPUPoller       
+        ti.pollerClass = MySQLCPUPoller
         ti.config = self.config.AlertGenerator.mysqlCPUPoller
         # lower the threshold so that the alert is never generated
         ti.thresholdToTest = self.config.AlertGenerator.mysqlCPUPoller.soft - 20
@@ -122,8 +122,8 @@ class MySQLTest(unittest.TestCase):
         ti.expected = 0
         ti.thresholdDiff = 10
         ti.testCase = self
-        utils.doGenericPeriodAndProcessPolling(ti)        
-        
+        utils.doGenericPeriodAndProcessPolling(ti)
+
 
     def testMySQLMemoryPollerSoftThreshold(self):
         self.config.AlertGenerator.mysqlMemPoller.soft = 70
@@ -139,7 +139,7 @@ class MySQLTest(unittest.TestCase):
         ti.thresholdDiff = 10
         ti.testCase = self
         utils.doGenericPeriodAndProcessPolling(ti)
-                                    
+
 
     def testMySQLMemoryPollerCriticalThreshold(self):
         self.config.AlertGenerator.mysqlMemPoller.soft = 70
@@ -155,7 +155,7 @@ class MySQLTest(unittest.TestCase):
         ti.thresholdDiff = 10
         ti.testCase = self
         utils.doGenericPeriodAndProcessPolling(ti)
-        
+
 
     def testMySQLMemoryPollerNoAlert(self):
         self.config.AlertGenerator.mysqlMemPoller.soft = 70
@@ -172,7 +172,7 @@ class MySQLTest(unittest.TestCase):
         ti.thresholdDiff = 10
         ti.testCase = self
         utils.doGenericPeriodAndProcessPolling(ti)
-        
+
 
     def testMySQLDbSizePollerBasic(self):
         config = getConfig("/tmp")
@@ -180,17 +180,17 @@ class MySQLTest(unittest.TestCase):
         try:
             poller = MySQLDbSizePoller(config.AlertGenerator.mysqlCPUPoller, generator)
         except Exception, ex:
-            self.fail("%s: exception: %s" % (self.testName, ex))                                
+            self.fail("%s: exception: %s" % (self.testName, ex))
         poller.check()
-        
+
         # test failing during set up
         poller = MySQLDbSizePoller(config.AlertGenerator.mysqlCPUPoller, generator)
         poller._query = "nonsense query"
         # this will fail on the above query
         self.assertRaises(Exception, poller._getDbDir)
         poller.check()
-        
-        
+
+
     def testAlertGeneratorMySQLDbSizePollerSoftThreshold(self):
         self.config.AlertGenerator.mysqlDbSizePoller.soft = 5
         self.config.AlertGenerator.mysqlDbSizePoller.critical = 10
@@ -204,7 +204,7 @@ class MySQLTest(unittest.TestCase):
         ti.thresholdDiff = 1
         ti.testCase = self
         utils.doGenericValueBasedPolling(ti)
-        
+
 
     def testAlertGeneratorMySQLDbSizePollerCriticalThreshold(self):
         self.config.AlertGenerator.mysqlDbSizePoller.soft = 5
@@ -219,8 +219,8 @@ class MySQLTest(unittest.TestCase):
         ti.thresholdDiff = 1
         ti.testCase = self
         utils.doGenericValueBasedPolling(ti)
-        
-        
+
+
     def testAlertGeneratorMySQLDbSizePollerNoAlert(self):
         self.config.AlertGenerator.mysqlDbSizePoller.soft = 5
         self.config.AlertGenerator.mysqlDbSizePoller.critical = 10
@@ -235,7 +235,7 @@ class MySQLTest(unittest.TestCase):
         ti.thresholdDiff = 2
         ti.testCase = self
         utils.doGenericValueBasedPolling(ti)
-        
+
 
 
 if __name__ == "__main__":

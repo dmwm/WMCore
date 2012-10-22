@@ -16,13 +16,13 @@ class Service_t(unittest.TestCase):
 
     def testA(self):
         """test base class that pretty much does bugger all..."""
-    
+
         try:
             s = Service()
         except Exception, ex:
             msg = "Failed to instantiate Service: %s" % str(ex)
             self.fail(msg)
-            
-    
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -28,5 +28,3 @@ class DQMUpload(Builder):
         stepWorkingArea = "%s/%s" % (workingDir, stepName)
         self.installWorkingArea(step, stepWorkingArea)
         print "Builders.DQMUpload.build called on %s" % stepName
-
-

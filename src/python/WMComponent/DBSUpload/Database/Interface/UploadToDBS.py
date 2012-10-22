@@ -29,7 +29,7 @@ class UploadToDBS (WMConnectionBase):
         self.factory = DAOFactory(package = "WMComponent.DBSUpload.Database",
                                   logger = myThread.logger,
                                   dbinterface = myThread.dbi)
-    
+
 
     def findAlgos(self, dataset):
         """
@@ -38,16 +38,16 @@ class UploadToDBS (WMConnectionBase):
         """
         myThread = threading.currentThread()
         existingTransaction = self.beginTransaction()
-        
+
         factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database."+ \
                         myThread.dialect)
         findAlgos = factory.loadObject("FindAlgos")
         # Add the file to the buffer (API Call)
-        
+
         #results = findFiles.execute(conn = self.getDBConn(), transaction=self.existingTransaction())
         results = findAlgos.execute(datasetInfo=dataset, conn = self.getDBConn(), transaction=self.existingTransaction())
         self.commitTransaction(existingTransaction)
-        return results  
+        return results
 
     def updateFilesStatus(self, files, status):
         """
@@ -59,10 +59,10 @@ class UploadToDBS (WMConnectionBase):
 
         if len(files) == 0:
             return
-        
+
         myThread = threading.currentThread()
         existingTransaction = self.beginTransaction()
-        
+
         factory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                              logger = myThread.logger,
                              dbinterface = myThread.dbi)
@@ -72,7 +72,7 @@ class UploadToDBS (WMConnectionBase):
                              transaction=self.existingTransaction())
         self.commitTransaction(existingTransaction)
         return
-    
+
     def setBlockStatus(self, block, locations, openStatus = 0, time = 0):
         """
         _setBlockStatus_
@@ -81,7 +81,7 @@ class UploadToDBS (WMConnectionBase):
         """
         myThread = threading.currentThread()
         existingTransaction = self.beginTransaction()
-        
+
         factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database."+ \
                         myThread.dialect)
         newDS = factory.loadObject("SetBlockStatus")
@@ -93,13 +93,13 @@ class UploadToDBS (WMConnectionBase):
     def findOpenBlocks(self):
         """
         _findOpenBlocks_
-        
+
         This should find all blocks.
         """
 
         myThread = threading.currentThread()
         existingTransaction = self.beginTransaction()
-        
+
         factory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                              logger = myThread.logger,
                              dbinterface = myThread.dbi)
@@ -210,7 +210,7 @@ class UploadToDBS (WMConnectionBase):
         """
         _loadBlocksByDAS_
 
-        Given a DAS, find all the 
+        Given a DAS, find all the
         blocks associated with it in the
         Open status
         """
@@ -237,7 +237,7 @@ class UploadToDBS (WMConnectionBase):
 
         Given a blockname, close all the files associate with it.
         """
-        
+
         closeBlocks = self.factory(classname = "CloseBlockFiles")
 
         myThread = threading.currentThread()
@@ -252,11 +252,11 @@ class UploadToDBS (WMConnectionBase):
     def loadFilesFromBlocks(self, blockID):
         """
         _loadFilesFromBlocks_
-        
+
         Load the files from all active blocks
         """
         findFiles = self.factory(classname = "LoadFilesFromBlocks")
-        
+
         myThread = threading.currentThread()
         existingTransaction = self.beginTransaction()
 
@@ -299,7 +299,7 @@ class UploadToDBS (WMConnectionBase):
         Load a set of blocks that are ready for upload
         """
         existingTransaction = self.beginTransaction()
-        
+
         openBlocks = self.factory(classname = "LoadBlocks")
 
         result = openBlocks.execute(conn = self.getDBConn(),
@@ -318,9 +318,9 @@ class UploadToDBS (WMConnectionBase):
         if len(ids) < 1:
             # Nothing to do
             return []
-        
+
         existingTransaction = self.beginTransaction()
-        
+
         dasInfo = self.factory(classname = "LoadInfoFromDAS")
 
         result = dasInfo.execute(ids = ids, conn = self.getDBConn(),

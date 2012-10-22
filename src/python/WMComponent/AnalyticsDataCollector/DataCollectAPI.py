@@ -30,11 +30,11 @@ class LocalCouchDBData():
         self.jobCouchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/jobs", False)
         self.fwjrsCouchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/fwjrs", False)
         self.summaryLevel = summaryLevel
-        
+
     def getJobSummaryByWorkflowAndSite(self):
         """
         gets the job status information by workflow
-    
+
         example
         {"rows":[
 
@@ -43,7 +43,7 @@ class LocalCouchDBData():
             {"key":['request_name1", 'task_name2', "running", "siteA"],"value":100},
             {"key":['request_name1", 'task_name2', "success", "siteB"],"value":100}\
          ]}
-         and convert to 
+         and convert to
          {'request_name1': {'queue_first': { 'siteA': 100}}
           'request_name1': {'queue_first': { 'siteB': 100}}
          }
@@ -56,7 +56,7 @@ class LocalCouchDBData():
          }
         """
         options = {"group": True, "stale": "ok"}
-        # site of data should be relatively small (~1M) for put in the memory 
+        # site of data should be relatively small (~1M) for put in the memory
         # If not, find a way to stream
         results = self.jobCouchDB.loadView("JobDump", "jobStatusByWorkflowAndSite",
                                         options)
@@ -67,47 +67,47 @@ class LocalCouchDBData():
             for x in results.get('rows', []):
                 data.setdefault(x['key'][0], {})
                 data[x['key'][0]].setdefault('tasks', {})
-                data[x['key'][0]]['tasks'].setdefault(x['key'][1], {}) 
+                data[x['key'][0]]['tasks'].setdefault(x['key'][1], {})
                 data[x['key'][0]]['tasks'][x['key'][1]].setdefault(x['key'][2], {})
-                data[x['key'][0]]['tasks'][x['key'][1]][x['key'][2]][x['key'][3]] = x['value'] 
+                data[x['key'][0]]['tasks'][x['key'][1]][x['key'][2]][x['key'][3]] = x['value']
         else:
             for x in results.get('rows', []):
                 data.setdefault(x['key'][0], {})
-                data[x['key'][0]].setdefault(x['key'][2], {}) 
+                data[x['key'][0]].setdefault(x['key'][2], {})
                 #data[x['key'][0]][x['key'][1]].setdefault(x['key'][2], {})
-                data[x['key'][0]][x['key'][2]][x['key'][3]] = x['value'] 
+                data[x['key'][0]][x['key'][2]][x['key'][3]] = x['value']
         logging.info("Found %i requests" % len(data))
         return data
 
     def getEventSummaryByWorkflow(self):
         """
         gets the job status information by workflow
-    
+
         example
         {"rows":[
             {"key":['request_name1", "/test/output_dataset1"],
-             "value": {size: 20286644784714, events: 38938099, count: 6319, 
+             "value": {size: 20286644784714, events: 38938099, count: 6319,
                        dataset: "/test/output_dataset1"}},
             {"key":['request_name1", "/test/output_dataset2"],
-             "value": {size: 20286644784714, events: 38938099, count: 6319, 
+             "value": {size: 20286644784714, events: 38938099, count: 6319,
                        dataset: "/test/output_dataset2"}},
             {"key":['request_name1", "/test/output_dataset3"],
-             "value": {size: 20286644784714, events: 38938099, count: 6319, 
+             "value": {size: 20286644784714, events: 38938099, count: 6319,
                        dataset: "/test/output_dataset3"}},
             {"key":['request_name1", "/test/output_dataset4"],
-             "value": {size: 20286644784714, events: 38938099, count: 6319, 
+             "value": {size: 20286644784714, events: 38938099, count: 6319,
                        dataset: "/test/output_dataset4"}},
          ]}
-         and convert to 
-         {'request_name1': {'size_event': [{size: 20286644784714, events: 38938099, count: 6319, 
+         and convert to
+         {'request_name1': {'size_event': [{size: 20286644784714, events: 38938099, count: 6319,
                              dataset: "/test/output_dataset1"},
-                             {size: 20286644784714, events: 38938099, count: 6319, 
+                             {size: 20286644784714, events: 38938099, count: 6319,
                              dataset: "/test/output_dataset2"}]}
-                       
+
           'request_name2': ...
         """
         options = {"group": True, "stale": "ok", "reduce":True}
-        # site of data should be relatively small (~1M) for put in the memory 
+        # site of data should be relatively small (~1M) for put in the memory
         # If not, find a way to stream
         results = self.fwjrsCouchDB.loadView("FWJRDump", "outputByWorkflowName",
                                         options)
@@ -116,10 +116,10 @@ class LocalCouchDBData():
         data = {}
         for x in results.get('rows', []):
             data.setdefault(x['key'][0], [])
-            data[x['key'][0]].append(x['value']) 
+            data[x['key'][0]].append(x['value'])
         logging.info("Found %i requests" % len(data))
         return data
-    
+
 @emulatorHook
 class WMAgentDBData():
 
@@ -129,7 +129,7 @@ class WMAgentDBData():
                                        logger = logger, dbinterface = dbi)
         wmbsDAOFactory = DAOFactory(package = "WMCore.WMBS",
                                     logger = logger, dbinterface = dbi)
-        wmAgentDAOFactory = DAOFactory(package = "WMCore.Agent.Database", 
+        wmAgentDAOFactory = DAOFactory(package = "WMCore.Agent.Database",
                                      logger = logger, dbinterface = dbi)
 
         self.summaryLevel = summaryLevel
@@ -141,7 +141,7 @@ class WMAgentDBData():
         self.componentStatusAction = wmAgentDAOFactory(classname = "CheckComponentStatus")
 
     def getHeartBeatWarning(self):
-        
+
         results = self.componentStatusAction.execute(detail = True)
         agentInfo = {}
         agentInfo['down_components'] = []
@@ -149,15 +149,15 @@ class WMAgentDBData():
             agentInfo['status'] = 'ok'
         else:
             agentInfo['status'] = 'down'
-            agentInfo['down_components'] = results    
+            agentInfo['down_components'] = results
         return agentInfo
-    
+
     def getBatchJobInfo(self):
         return self.batchJobAction.execute()
 
     def getJobSlotInfo(self):
         return self.jobSlotAction.execute()
-    
+
 def combineAnalyticsData(a, b, combineFunc = None):
     """
         combining 2 data which is the format of dict of dict of ...
@@ -165,10 +165,10 @@ def combineAnalyticsData(a, b, combineFunc = None):
         b = {'a' : {'b': {'d': 1}}}
         should return
         result = {'a' : {'b': {'c': 1, 'd': 1}}, 'b' : {'b': {'c': 1}}}
-        
+
         result is not deep copy
         when combineFunc is specified, if one to the values are not dict type,
-        it will try to combine two values. 
+        it will try to combine two values.
         i.e. combineFunc = lambda x, y: x + y
     """
     result = {}
@@ -182,7 +182,7 @@ def combineAnalyticsData(a, b, combineFunc = None):
                 result[key] = combineFunc(value, result[key])
             else:
                 result[key] = combineAnalyticsData(value, result[key])
-    return result 
+    return result
 
 def convertToRequestCouchDoc(combinedRequests, fwjrInfo, agentInfo, uploadTime, summaryLevel):
     requestDocs = []
@@ -209,14 +209,14 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, agentInfo, uploadTime, 
             tempData = _convertToStatusSiteFormat(status, summaryLevel)
             doc['status'] = tempData['status']
             doc['sites'] = tempData['sites']
-        
+
         doc['timestamp'] = uploadTime
         doc['output_progress'] = fwjrInfo.get(request, [])
         requestDocs.append(doc)
     return requestDocs
 
 def convertToAgentCouchDoc(agentInfo, acdcConfig, uploadTime):
-    
+
     #sets the _id using agent url, need to be unique
     aInfo = {}
     aInfo.update(agentInfo)
@@ -226,10 +226,10 @@ def convertToAgentCouchDoc(agentInfo, acdcConfig, uploadTime):
     aInfo['timestamp'] = uploadTime
     aInfo['type'] = "agent_info"
     return aInfo
-           
+
 def _setMultiLevelStatus(statusData, status, value):
     """
-    handle the sub status structure 
+    handle the sub status structure
     (i.e. submitted_pending, submitted_running -> {submitted: {pending: , running:}})
     prerequisite: status structure is seperated by '_'
     Currently handle only upto 2 level stucture but can be extended
@@ -275,22 +275,22 @@ def _convertToStatusSiteFormat(requestData, summaryLevel = None):
     data = {}
     data['status'] = {}
     data['sites'] = {}
-    
+
     if summaryLevel != None and summaryLevel == 'task':
         data['tasks'] = {}
         for task, taskData in requestData.items():
-             data['tasks'][task] = _convertToStatusSiteFormat(taskData)
-             _combineJobsForStatusAndSite(taskData, data)
+            data['tasks'][task] = _convertToStatusSiteFormat(taskData)
+            _combineJobsForStatusAndSite(taskData, data)
     else:
-       _combineJobsForStatusAndSite(requestData, data)
+        _combineJobsForStatusAndSite(requestData, data)
     return data
 
 def _getCouchACDCHtmlBase(acdcCouchURL):
     """
     TODO: currently it is hard code to the front page of ACDC
     When there is more information is available, it can be added
-    through 
+    through
     """
-    
+
 
     return '%s/_design/ACDC/collections.html' % sanitizeURL(acdcCouchURL)['url']

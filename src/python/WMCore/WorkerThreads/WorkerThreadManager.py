@@ -38,7 +38,7 @@ class WorkerThreadManager:
         self.lock.release()
         logging.info("Started")
         return
-    
+
     def slaveTerminateCallback(self, slaveid):
         """
         Callback function invoked by terminated slave threads
@@ -47,11 +47,11 @@ class WorkerThreadManager:
         try:
             self.slavelist.remove("threadmanager-slave%s" % slaveid)
         except:
-            pass  
+            pass
         else:
             self.activeThreadCount -= 1
         self.lock.release()
-    
+
     def prepareWorker(self, worker, idleTime):
         """
         Prepares a worker thread before running
@@ -63,8 +63,8 @@ class WorkerThreadManager:
         self.slavecounter += 1
         worker.slaveid = "%s-%s" % (self.wtmnumber, self.slavecounter)
         self.lock.release()
-        
-        
+
+
         # Thread synchronisation
         worker.notifyTerminate = self.terminateSlaves
         worker.terminateCallback = self.slaveTerminateCallback
@@ -73,7 +73,7 @@ class WorkerThreadManager:
         if hasattr(self.component.config, "Agent"):
             if getattr(self.component.config.Agent, "useHeartbeat", True):
                 worker.heartbeatAPI = HeartbeatAPI(self.component.config.Agent.componentName)
-        
+
 
     def addWorker(self, worker, idleTime = 60, parameters = None):
         """
@@ -87,13 +87,13 @@ class WorkerThreadManager:
             msg += "BaseWorkerThread"
             logging.critical(msg)
             return
-        
+
         # Prepare the new worker thread
         self.prepareWorker(worker, idleTime)
         workerThread = threading.Thread(target = worker, args = (parameters,))
         msg = "Created worker thread %s" % str(worker)
         logging.info(msg)
-        
+
         # Increase the active thread count - note this must be done before
         # starting the thread so the callback can decrease back in case of
         # startup failure
@@ -102,7 +102,7 @@ class WorkerThreadManager:
         workerThread.name = "threadmanager-slave%s" % worker.slaveid
         self.slavelist.append(workerThread.name)
         self.lock.release()
-        
+
         # Actually start the thread
         workerThread.start()
 
@@ -115,7 +115,7 @@ class WorkerThreadManager:
         self.terminateSlaves.set()
         self.pauseSlaves.clear()
         self.resumeSlaves.set()
-        
+
         # Wait for all threads to finished
         finished = False
         while not finished:
@@ -124,7 +124,7 @@ class WorkerThreadManager:
             logging.info(msg % self.activeThreadCount)
             logging.debug("\n slavelist is %s" % self.slavelist)
             logging.debug("\n threadlist is %s" % threading.enumerate())
-            
+
             if self.activeThreadCount == 0:
                 finished = True
             else:
@@ -134,7 +134,7 @@ class WorkerThreadManager:
                 #  that correspond to nonexistant or dead threads
                 # also, I realize this is O(N^2), but my brain hurts too hard
                 #  to do it nicer
-                
+
                 # this (should be) race-proof. my thoughts:
                 #  this is in a lock, the only other places that modify
                 #  activeThreadCount are within locks
@@ -149,7 +149,7 @@ class WorkerThreadManager:
                             found = True
                     if found == False:
                         # the slave we wanted wasn't running
-                        try: 
+                        try:
                             self.slavelist.remove(slavename)
                         except Exception, ex:
                             print "couldn't remove thread.. %s " % ex
@@ -159,7 +159,7 @@ class WorkerThreadManager:
             self.lock.release()
             time.sleep(5)
         logging.info("All worker threads terminated")
-    
+
     def pauseWorkers(self):
         """
         Pauses all running threads
@@ -168,7 +168,7 @@ class WorkerThreadManager:
         self.resumeSlaves.clear()
         self.pauseSlaves.set()
         logging.info("All worker threads paused")
-    
+
     def resumeWorkers(self):
         """
         Resumes all running threads

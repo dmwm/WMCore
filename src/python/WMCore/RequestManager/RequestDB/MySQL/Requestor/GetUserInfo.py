@@ -31,7 +31,7 @@ class GetUserInfo(DBFormatter):
 
         """
         self.sql = "SELECT requestor_hn_name, contact_email FROM reqmgr_requestor "
-        self.sql += "WHERE requestor_hn_name=:user_name" 
+        self.sql += "WHERE requestor_hn_name=:user_name"
         binds = {"user_name": userName}
         result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = trans)
@@ -39,8 +39,3 @@ class GetUserInfo(DBFormatter):
         if len(output) == 0:
             return None
         return {'contact_email': output[0][1]}
-
-
-
-
-

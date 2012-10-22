@@ -23,14 +23,14 @@ from WMQuality.TestInit import TestInit
 class DBFormatterTest(unittest.TestCase):
     """
     _DBFormatterTest_
-    
+
     Unit tests for the DBFormatter class
-    
+
     """
 
     def setUp(self):
         "make a logger instance and create tables"
-     
+
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
@@ -44,7 +44,7 @@ create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB """
         if myThread.dialect == 'SQLite':
             myThread.create = """
                 create table test (bind1 varchar(20), bind2 varchar(20))"""
-            
+
         myThread.insert = """
 insert into test (bind1, bind2) values (:bind1, :bind2) """
         myThread.insert_binds = \
@@ -60,7 +60,7 @@ insert into test (bind1, bind2) values (:bind1, :bind2) """
         myThread.transaction.commit()
 
         return
-            
+
     def tearDown(self):
         """
         Delete the databases
@@ -68,7 +68,7 @@ insert into test (bind1, bind2) values (:bind1, :bind2) """
         myThread = threading.currentThread()
         myThread.transaction = Transaction(myThread.dbi)
         myThread.transaction.processData("drop table test")
-        myThread.transaction.commit()        
+        myThread.transaction.commit()
         self.testInit.clearDatabase()
 
     def testBFormatting(self):
@@ -97,7 +97,6 @@ insert into test (bind1, bind2) values (:bind1, :bind2) """
         output = dbformatter.formatOneDict(result)
         self.assertEqual( output,  {'bind2': 'value2a', 'bind1': 'value1a'} )
 
-            
+
 if __name__ == "__main__":
-    unittest.main()     
-             
+    unittest.main()

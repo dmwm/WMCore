@@ -54,7 +54,7 @@ class MarkerBase(ElementBase):
         else:
             return self.default
     def doc_extra(self):
-        return "Must be a valid matplotlib marker definition (eg so^>v<dph8+x,.*)" 
+        return "Must be a valid matplotlib marker definition (eg so^>v<dph8+x,.*)"
 
 class ColourBase(ElementBase):
     def __init__(self,element_name,default='black',doc_user=''): #any colour you want, providing it's...
@@ -65,7 +65,7 @@ class ColourBase(ElementBase):
             if c in matplotlib.colors.cnames:
                 return matplotlib.colors.colorConverter.to_rgb(c)
             else:
-                match = re.match('^#?([0-9A-Fa-f]{6})$',c) 
+                match = re.match('^#?([0-9A-Fa-f]{6})$',c)
                 if match:
                     return matplotlib.colors.colorConverter.to_rgb('#%s'%match.group(1))
         elif self.default==None:
@@ -74,7 +74,7 @@ class ColourBase(ElementBase):
             return matplotlib.colors.colorConverter.to_rgb(self.default)
     def doc_extra(self):
         return "Must be a valid matplotlib colour; either a CSS colour name or an RGB specification #xxxxxx"
-       
+
 class IntBase(ElementBase):
     def __init__(self,element_name,min=None,max=None,allow_missing=True,default=None,doc_user=''):
         ElementBase.__init__(self,element_name,(int,float),allow_missing,default,doc_user)
@@ -97,7 +97,7 @@ class IntBase(ElementBase):
         if self.max!=None:
             result += ['value <= %s'%self.max]
         return ' '.join(result)
-        
+
 class FloatBase(ElementBase):
     def __init__(self,element_name,min=None,max=None,allow_missing=True,default=None,doc_user=''):
         ElementBase.__init__(self,element_name,(int,float),allow_missing,default,doc_user)
@@ -120,7 +120,7 @@ class FloatBase(ElementBase):
         if self.max!=None:
             result += ['value <= %s'%self.max]
         return ' '.join(result)
-            
+
 class StringBase(ElementBase):
     def __init__(self,element_name,options=None,default=None,doc_user=''):
         ElementBase.__init__(self,element_name,basestring,True,default,doc_user)
@@ -138,11 +138,11 @@ class StringBase(ElementBase):
             return 'Valid options: %s'%', '.join(self.options)
         else:
             return ''
-        
+
 class FontFamily(StringBase):
     def __init__(self,element_name,default='serif',doc_user=''):
         StringBase.__init__(self,element_name,('serif','sans-serif','monospace'),default,doc_user)
-        
+
 class FontWeight(StringBase):
     def __init__(self,element_name,default='normal',doc_user=''):
         StringBase.__init__(self,element_name,('light','normal','bold'),default,doc_user)
@@ -158,7 +158,7 @@ class ColourMap(StringBase):
         return matplotlib.cm.get_cmap(self.default)
     def doc_extra(self):
         return 'Must be a matplotlib colourmap name'
-               
+
 class FontSize(ElementBase):
     def __init__(self,element_name,default=None,doc_user=''):
         ElementBase.__init__(self,element_name,(basestring,int),True,default,doc_user)
@@ -175,8 +175,8 @@ class FontSize(ElementBase):
         else:
             return self.default
     def doc_extra(self):
-        return 'Must be a number or a size description [[x]x-]small|medium|large'        
-        
+        return 'Must be a number or a size description [[x]x-]small|medium|large'
+
 class ListElementBase(ElementBase):
     def __init__(self,element_name,list_element_type=None,item_validator=None,min_elements=None,max_elements=None,allow_missing=True,default=None,doc_user=''):
         ElementBase.__init__(self,element_name,(list,tuple),allow_missing,copy.deepcopy(default),doc_user)
@@ -221,7 +221,7 @@ class ListElementBase(ElementBase):
         if self.item_validator!=None:
             result += [elem('ul',self.item_validator.doc())]
         return ''.join([elem('div',r) for r in result])
-        
+
 class DictElementBase(ElementBase):
     def __init__(self,element_name,allow_missing=True,validate_elements=None,doc_user=''):
         ElementBase.__init__(self,element_name,dict,allow_missing,None,doc_user)

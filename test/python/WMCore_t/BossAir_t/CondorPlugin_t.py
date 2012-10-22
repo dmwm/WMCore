@@ -220,7 +220,7 @@ class CondorPluginTest(BossAirTest):
         getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
         result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
         self.assertEqual(len(result), nSubs * nJobs)
-        
+
         statusPoller.algorithm()
 
         nRunning = getCondorRunningJobs(self.user)
@@ -231,7 +231,7 @@ class CondorPluginTest(BossAirTest):
 
         newJobs = baAPI._loadByStatus(status = 'Idle')
         self.assertEqual(len(newJobs), nSubs * nJobs)
-        
+
 
         # Tracker should do nothing
         jobTracker.algorithm()
@@ -274,7 +274,7 @@ class CondorPluginTest(BossAirTest):
         return
 
 
-    
+
     @attr('integration')
     def testE_FullChain(self):
         """

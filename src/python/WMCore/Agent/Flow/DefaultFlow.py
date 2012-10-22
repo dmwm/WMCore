@@ -34,24 +34,24 @@ synchronizer = {'ID' : 'JobPostProcess', \
                 'action' : 'PA.Core.Trigger.PrepareCleanup'}
 config.General.synchronizers.append(cPickle.dumps(synchronizer))
 
-# A handler is a piece of code that takes as input a message (and its payload) 
-# and performs certain actions. For example: a submit job handler takes as 
-# input messages of type SubmitJob with payload a job specification, and 
-# submits the #job to a particular site. Handlers are grouped into components. 
-# For example a submit failure handler and process failure handler can be 
-# grouped into an autonomous 
+# A handler is a piece of code that takes as input a message (and its payload)
+# and performs certain actions. For example: a submit job handler takes as
+# input messages of type SubmitJob with payload a job specification, and
+# submits the #job to a particular site. Handlers are grouped into components.
+# For example a submit failure handler and process failure handler can be
+# grouped into an autonomous
 
 # a handler spec has (at most) 5 attributes:
 # -messageIn. (what message the component subscribes to should this handler
 # handle.
-# -messageOut (optional). What messages should this message publish. 
+# -messageOut (optional). What messages should this message publish.
 # Messages separated
-# by a comma mean that all these messages need to be published. Messages 
+# by a comma mean that all these messages need to be published. Messages
 # separated by a | means either or.
 # -component. To which cmponent is this handler associated.
 # -threading (optional). Are the messages for this handler dispatched to threads
 # or handled sequential.
-# createSynchronizer (optional). When this handler is finished handling a 
+# createSynchronizer (optional). When this handler is finished handling a
 # message should it create a trigger (so other components can set a flag).
 # -synchronize. After handling the message this handler needs to set a flag
 # in a particular synchronizer (aka trigger).
@@ -144,4 +144,3 @@ plugin = {'component'  : 'JobSubmitter', \
           'plugins'    : 'Condor,GLite', \
           'handler'    : 'SubmitJob'}
 config.General.plugins.append(cPickle.dumps(plugin))
-

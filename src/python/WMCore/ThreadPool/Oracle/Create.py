@@ -18,7 +18,7 @@ from WMCore.Database.DBCreator import DBCreator
 class Create(DBCreator):
     """
     _Create_
-    
+
     Class for creating Oracle specific schema for persistent messages.
     """
 
@@ -31,7 +31,7 @@ class Create(DBCreator):
     trigger_tables.append('tp_threadpool_trg')
     trigger_tables.append('tp_buffer_in_trg')
     trigger_tables.append('tp_buffer_out_trg')
-    
+
     def __init__(self, logger = None, dbi = None, params = None):
         myThread = threading.currentThread()
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
@@ -46,7 +46,7 @@ class Create(DBCreator):
                 tablespaceTable = "TABLESPACE %s" % params["tablespace_table"]
             if params.has_key("tablespace_index"):
                 tablespaceIndex = "USING INDEX TABLESPACE %s" % params["tablespace_index"]
-                                                            
+
         self.create["tp_threadpool"] = \
           """CREATE TABLE tp_threadpool (
                id             NUMBER(11)    NOT NULL ENABLE,

@@ -31,9 +31,3 @@ class CMSSW(Builder):
         stepWorkingArea = "%s/%s" % (workingDir, stepName)
         self.installWorkingArea(step, stepWorkingArea)
         print "Builders.CMSSW.build called on %s" % stepName
-
-
-
-
-
-

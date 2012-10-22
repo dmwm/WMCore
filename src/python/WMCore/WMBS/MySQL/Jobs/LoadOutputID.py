@@ -12,7 +12,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class LoadOutputID(DBFormatter):
     """
-    
+
     Load the ID of the output fileset for a job
 
     """

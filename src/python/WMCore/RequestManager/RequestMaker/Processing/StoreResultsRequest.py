@@ -18,7 +18,7 @@ class StoreResultsRequest(RequestMakerInterface):
     def __init__(self):
         RequestMakerInterface.__init__(self)
 
-        
+
 class StoreResultsSchema(RequestSchema):
     """
     _StoreResults_
@@ -39,4 +39,3 @@ class StoreResultsSchema(RequestSchema):
 
 
 registerRequestType("StoreResults", StoreResultsRequest, StoreResultsSchema)
-

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-JobTracker test 
+JobTracker test
 """
 
 
@@ -56,7 +56,7 @@ def createJDL(id, directory, jobCE):
     jdl.append("universe = globus\n")
     jdl.append("should_transfer_executable = TRUE\n")
     jdl.append("notification = NEVER\n")
-    jdl.append("Executable = %s/submit.sh\n" % (directory)) 
+    jdl.append("Executable = %s/submit.sh\n" % (directory))
     jdl.append("Output = condor.$(Cluster).$(Process).out\n")
     jdl.append("Error = condor.$(Cluster).$(Process).err\n")
     jdl.append("Log = condor.$(Cluster).$(Process).log\n")
@@ -96,7 +96,7 @@ def createSubmitScript(directory):
              stat.S_IXGRP | stat.S_IXOTH | stat.S_IXUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH | stat.S_IWUSR | stat.S_IWGRP)
 
     return
-    
+
 
 def getCondorRunningJobs(user):
     """
@@ -121,7 +121,7 @@ def getCondorRunningJobs(user):
 
 class JobTrackerTest(unittest.TestCase):
     """
-    TestCase for TestJobTracker module 
+    TestCase for TestJobTracker module
     """
 
     _maxMessage = 10
@@ -132,7 +132,7 @@ class JobTrackerTest(unittest.TestCase):
         """
 
         myThread = threading.currentThread()
-        
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -176,7 +176,7 @@ class JobTrackerTest(unittest.TestCase):
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
         return
-        
+
 
     def getConfig(self):
         """
@@ -184,7 +184,7 @@ class JobTrackerTest(unittest.TestCase):
 
         Build a basic JobTracker config
         """
-                       
+
         config = Configuration()
 
         config.section_("Agent")
@@ -236,9 +236,9 @@ class JobTrackerTest(unittest.TestCase):
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'cmssrv52.fnal.gov:5984')
         config.JobStateMachine.couchDBName     = "jobtracker_t"
-        
+
         return config
-    
+
 
 
 
@@ -253,10 +253,10 @@ class JobTrackerTest(unittest.TestCase):
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001", task="Test")
         testWorkflow.create()
-        
+
         testWMBSFileset = Fileset(name = "TestFileset")
         testWMBSFileset.create()
-        
+
         testSubscription = Subscription(fileset = testWMBSFileset,
                                         workflow = testWorkflow,
                                         type = "Processing",
@@ -293,13 +293,13 @@ class JobTrackerTest(unittest.TestCase):
 
         return testJobGroup
 
-        
+
 
     @attr('integration')
     def testA_CondorTest(self):
         """
         _CondorTest_
-        
+
         Because I don't want this test to be submitter dependent:
         Create a dummy condor job.
         Submit a dummy condor job.
@@ -541,19 +541,19 @@ class JobTrackerTest(unittest.TestCase):
                                                                   nJobs/2))
         p = pstats.Stats('testStats.stat')
         p.sort_stats('cumulative')
-        p.print_stats()        
-        
-    
+        p.print_stats()
+
+
     def testAlerts(self):
         """
         Tests only alerts triggered from JobTrackerPoller.
-        
+
         """
         config = self.getConfig()
         jobTracker = JobTrackerPoller(config)
         jobTracker.sendAlert(6, msg = "test message")
-        
-        
+
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -17,10 +17,8 @@ from WMCore.WMSpec.Steps.Diagnostics.CMSSW import CMSSW
 class MulticoreCMSSW(CMSSW):
     """
     _MulticoreCMSSW_
-    
+
     Diagnostic for Multicore CMSSW jobs
     """
     def __init__(self):
         CMSSW.__init__(self)
-        
-

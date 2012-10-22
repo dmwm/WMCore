@@ -26,4 +26,3 @@ class InsertWorkflow(MySQLInsertWorkflow):
                WHERE name = :name
                AND task = :task
              )"""
-

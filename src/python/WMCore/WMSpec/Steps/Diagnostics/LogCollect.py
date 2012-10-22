@@ -50,8 +50,8 @@ class LCExceptionHandler(DiagnosticHandler):
         #
         ## job report XML exists, load the exception information from it
         #executor.report.parse(jobRepXml)
-        
-        
+
+
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
         if errSection == None:

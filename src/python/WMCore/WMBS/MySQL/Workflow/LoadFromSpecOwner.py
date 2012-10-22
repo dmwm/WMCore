@@ -6,7 +6,7 @@ MySQL implementation of Workflow.LoadFromSpecOwner
 """
 
 from WMCore.Database.DBFormatter import DBFormatter
-    
+
 class LoadFromSpecOwner(DBFormatter):
     sql = """SELECT wmbs_workflow.id, wmbs_workflow.spec, wmbs_workflow.name,
                     wmbs_users.cert_dn as dn, wmbs_users.owner as owner,

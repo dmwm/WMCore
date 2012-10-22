@@ -28,9 +28,9 @@ class GetOpenBlocks(DBFormatter):
                              AND (df2.status = 'NOTUPLOADED' OR (db2.status != 'Closed'
                                                                  AND db2.status != 'InGlobalDBS'
                                                                  AND db2.status IS NOT NULL)))
-             """    
-    
+             """
+
     def execute(self, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, {}, 
+        result = self.dbi.processData(self.sql, {},
                          conn = conn, transaction = transaction)
         return self.formatDict(result)

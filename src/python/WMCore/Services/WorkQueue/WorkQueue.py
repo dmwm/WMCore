@@ -8,7 +8,7 @@ class WorkQueue(object):
     """
     API for dealing with retrieving information from WorkQueue DataService
     """
-    
+
     def __init__(self, couchURL, dbName = None):
         # if dbName not given assume we have to split
         if not dbName:
@@ -75,9 +75,9 @@ class WorkQueue(object):
                                 {'reduce' : True, 'group' : True})
         statusByRequest = {}
         for x in results.get('rows', []):
-            statusByRequest.setdefault(x['key'][0], {}) 
+            statusByRequest.setdefault(x['key'][0], {})
             statusByRequest[x['key'][0]][x['key'][1]] = x['value']
-            
+
         return statusByRequest
 
     def getSiteWhitelistByRequest(self):
@@ -86,7 +86,7 @@ class WorkQueue(object):
         """
         data = self.db.loadView('WorkQueue', 'siteWhitelistByRequest',
                                 {'reduce' : True, 'group' : True})
-        return [{'request_name' : x['key'][0], 'site_whitelist': x['key'][1]} 
+        return [{'request_name' : x['key'][0], 'site_whitelist': x['key'][1]}
                 for x in data.get('rows', [])]
 
     def updateElements(self, *elementIds, **updatedParams):

@@ -89,6 +89,7 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
 
         # initialize the alert framework (if available - config.Alert present)
         #    self.sendAlert will be then be available    
+
         self.initAlerts(compName = "PhEDExInjector")
 
 
@@ -272,6 +273,7 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
                                                            newSubscription.getDatasetPaths())
                 logging.debug(str(xmlData))
                 self.phedex.subscribe(newSubscription, xmlData)
+
 
         myThread.transaction.commit()
         return

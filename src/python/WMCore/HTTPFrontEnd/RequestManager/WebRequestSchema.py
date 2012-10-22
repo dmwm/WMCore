@@ -31,7 +31,7 @@ class WebRequestSchema(WebAPI):
         self.configDBName = config.configDBName
         self.workloadDBName = config.workloadDBName
         self.wmstatWriteURL = "%s/%s" % (self.couchUrl.rstrip('/'), config.wmstatDBName)
-        self.defaultSkimConfig = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"    
+        self.defaultSkimConfig = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"
         self.yuiroot = config.yuiroot
         cherrypy.engine.subscribe('start_thread', self.initThread)
         self.scramArchs = []
@@ -54,10 +54,10 @@ class WebRequestSchema(WebAPI):
         docs = database.allDocs()
         result = []
         for row in docs["rows"]:
-           if row["id"].startswith('user') or row["id"].startswith('group'):
-               pass
-           else:
-               result.append(row["id"]) 
+            if row["id"].startswith('user') or row["id"].startswith('group'):
+                pass
+            else:
+                result.append(row["id"])
         return result
 
     @cherrypy.expose
@@ -83,7 +83,7 @@ class WebRequestSchema(WebAPI):
                 if not v in self.versions:
                     self.versions.append(v)
         self.versions.sort()
-        # see if this was configured with a hardcoded user.  If not, take from the request header 
+        # see if this was configured with a hardcoded user.  If not, take from the request header
         requestor = self.requestor
         if not requestor:
             requestor = cherrypy.request.user["login"]
@@ -97,11 +97,11 @@ class WebRequestSchema(WebAPI):
         campaigns = Campaign.listCampaigns()
         return self.templatepage("WebRequestSchema", yuiroot=self.yuiroot,
                                  requestor=requestor,
-                                 groups=groups, 
+                                 groups=groups,
                                  versions=self.versions,
                                  archs = self.scramArchs,
                                  alldocs = Utilities.unidecode(self.allDocs()),
-                                 allcampaigns = campaigns,                     
+                                 allcampaigns = campaigns,
                                  defaultVersion=self.cmsswVersion,
                                  defaultArch = self.defaultArch,
                                  defaultSkimConfig=self.defaultSkimConfig)
@@ -121,22 +121,21 @@ class WebRequestSchema(WebAPI):
                 # If it does except, it probably wasn't in JSON to begin with.
                 # Anything else should be caught by the parsers and the validation
                 decodedSchema[key] = schema[key]
-
         try:
             self.info("Creating a request for: '%s'\n\tworkloadDB: '%s'\n\twmstatUrl: "
                       "'%s' ..." % (decodedSchema, self.workloadDBName,
                                     Utilities.removePasswordFromUrl(self.wmstatWriteURL)))
             request = Utilities.makeRequest(self, decodedSchema, self.couchUrl, self.workloadDBName, self.wmstatWriteURL)
-        except RuntimeError, e:
-            msg = "Create request failed, reason: %s" % e
-            self.error(msg)
-            raise cherrypy.HTTPError(400, msg)
-        except KeyError, e:
-            msg = "Create request failed, reason: %s" % e
-            self.error(msg)
-            raise cherrypy.HTTPError(400, msg)
-        except Exception as ex:
+            # catching here KeyError is just terrible
+        except (RuntimeError, KeyError, Exception) as ex:
+            # TODO problem not to expose logs to the client
+            # e.g. on ConfigCacheID not found, the entire CouchDB traceback is sent in ex_message
             self.error("Create request failed, reason: %s" % ex)
-            raise cherrypy.HTTPError(400, "Create request failed, check logs.")
+            if hasattr(ex, "name"):
+                detail = ex.name
+            else:
+                detail = "check logs." 
+            msg = "Create request failed, %s" % detail
+            raise cherrypy.HTTPError(400, msg)            
         baseURL = cherrypy.request.base
         raise cherrypy.HTTPRedirect('%s/reqmgr/view/details/%s' % (baseURL, request['RequestName']))

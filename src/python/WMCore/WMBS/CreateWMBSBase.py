@@ -46,8 +46,8 @@ class CreateWMBSBase(DBCreator):
                                "07wmbs_file_location",
                                "07wmbs_users",
                                "07wmbs_workflow",
-                               "08wmbs_sub_types",                               
-                               "08wmbs_workflow_output",                               
+                               "08wmbs_sub_types",
+                               "08wmbs_workflow_output",
                                "09wmbs_subscription",
                                "10wmbs_subscription_validation",
                                "10wmbs_sub_files_acquired",
@@ -153,6 +153,7 @@ class CreateWMBSBase(DBCreator):
              task         VARCHAR(550) NOT NULL,
              type         VARCHAR(255),
              owner        INTEGER      NOT NULL,
+             alt_fs_close INT(1)       NOT NULL,
              injected     INT(1)       DEFAULT 0,
              UNIQUE(name, task),
              FOREIGN KEY(owner)    REFERENCES wmbs_users(id)
@@ -169,9 +170,9 @@ class CreateWMBSBase(DBCreator):
              FOREIGN KEY(output_fileset)  REFERENCES wmbs_fileset(id)
                ON DELETE CASCADE,
              FOREIGN KEY(merged_output_fileset)  REFERENCES wmbs_fileset(id)
-               ON DELETE CASCADE)               
+               ON DELETE CASCADE)
              """
-        
+
         self.create["08wmbs_sub_types"] = \
           """CREATE TABLE wmbs_sub_types (
                id   INTEGER      PRIMARY KEY AUTO_INCREMENT,
@@ -225,7 +226,7 @@ class CreateWMBSBase(DBCreator):
                ON DELETE CASCADE,
              FOREIGN KEY (fileid)       REFERENCES wmbs_file_details(id)
                ON DELETE CASCADE)
-             """        
+             """
 
         self.create["11wmbs_sub_files_failed"] = \
           """CREATE TABLE wmbs_sub_files_failed (
@@ -362,7 +363,7 @@ class CreateWMBSBase(DBCreator):
           """CREATE INDEX idx_wmbs_workf_out_fileset ON wmbs_workflow_output(output_fileset) %s""" % tablespaceIndex
 
         self.constraints["03_idx_wmbs_workflow_output"] = \
-          """CREATE INDEX idx_wmbs_workf_mout_fileset ON wmbs_workflow_output(merged_output_fileset) %s""" % tablespaceIndex        
+          """CREATE INDEX idx_wmbs_workf_mout_fileset ON wmbs_workflow_output(merged_output_fileset) %s""" % tablespaceIndex
 
         self.constraints["01_idx_wmbs_subscription"] = \
           """CREATE INDEX idx_wmbs_subscription_fileset ON wmbs_subscription(fileset) %s""" % tablespaceIndex
@@ -383,7 +384,7 @@ class CreateWMBSBase(DBCreator):
           """CREATE INDEX idx_wmbs_sub_files_ava_sub ON wmbs_sub_files_available(subscription) %s""" % tablespaceIndex
 
         self.constraints["02_idx_wmbs_sub_files_available"] = \
-          """CREATE INDEX idx_wmbs_sub_files_ava_file ON wmbs_sub_files_available(fileid) %s""" % tablespaceIndex        
+          """CREATE INDEX idx_wmbs_sub_files_ava_file ON wmbs_sub_files_available(fileid) %s""" % tablespaceIndex
 
         self.constraints["01_idx_wmbs_sub_files_failed"] = \
           """CREATE INDEX idx_wmbs_sub_files_fail_sub ON wmbs_sub_files_failed(subscription) %s""" % tablespaceIndex
@@ -405,7 +406,7 @@ class CreateWMBSBase(DBCreator):
 
         self.constraints["01_idx_wmbs_job"] = \
           """CREATE INDEX idx_wmbs_job_jobgroup ON wmbs_job(jobgroup) %s""" % tablespaceIndex
-        
+
         self.constraints["02_idx_wmbs_job"] = \
           """CREATE INDEX idx_wmbs_job_loc ON wmbs_job(location) %s""" % tablespaceIndex
 
@@ -437,7 +438,7 @@ class CreateWMBSBase(DBCreator):
         self.subTypes = ["Processing", "Merge", "Harvesting", "Cleanup",
                          "LogCollect", "Skim", "Analysis", "Production",
                          "MultiProcessing", "MultiProduction"]
-        for i in range(len(self.subTypes)): 
+        for i in range(len(self.subTypes)):
             subTypeQuery = """INSERT INTO wmbs_sub_types (name)
                                 VALUES ('%s')""" % (self.subTypes[i])
             self.inserts["wmbs_sub_types_%s" % self.subTypes[i]] = subTypeQuery

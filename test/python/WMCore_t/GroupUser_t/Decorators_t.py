@@ -11,12 +11,12 @@ import unittest
 import WMCore.GroupUser.Decorators as Decs
 
 class CrashTestDummy:
-    
+
     def __init__(self):
         self._connected = False
         self.group = None
         self.owner = None
-    
+
     connected = property(lambda x: x._connected)
 
     def connect(self):
@@ -37,7 +37,7 @@ class Decorators_t(unittest.TestCase):
 
     def testA(self):
         """test requireConnection"""
-    
+
         testDummy = CrashTestDummy()
         self.assertFalse(testDummy.connected)
         testDummy(99)
@@ -45,26 +45,26 @@ class Decorators_t(unittest.TestCase):
 
     def testB(self):
         """test requireGroup"""
-        
+
         testDummy = CrashTestDummy()
-    
+
         self.assertRaises(Exception, testDummy.getGroup)
-    
+
         testDummy.group = "DMWM"
-        
+
         self.assertEqual(testDummy.getGroup(), "DMWM")
-        
+
     def testC(self):
         """test requireUser"""
-        
+
         testDummy = CrashTestDummy()
-        
+
         self.assertRaises(Exception, testDummy.getOwner)
-        
+
         testDummy.owner = "TheRookie"
-        
+
         self.assertEqual(testDummy.getOwner(), "TheRookie")
-    
-    
+
+
 if __name__ == '__main__':
     unittest.main()

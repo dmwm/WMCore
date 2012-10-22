@@ -27,7 +27,7 @@ class Create(DBCreator):
         """
 
 
-        
+
         myThread = threading.currentThread()
 
         if logger == None:
@@ -67,7 +67,7 @@ class Create(DBCreator):
             name          VARCHAR(255)
             ) %s  """ % (tablespaceTable)
 
-        
+
         self.create['02bl_runjob'] = \
         """CREATE TABLE bl_runjob
            (
@@ -116,7 +116,7 @@ class Create(DBCreator):
                (CONSTRAINT bl_runjob_fk4 FOREIGN KEY(location)
                REFERENCES wmbs_location(id) ON DELETE CASCADE)"""
 
-        
+
 
         j = 50
         for i in self.sequence_tables:

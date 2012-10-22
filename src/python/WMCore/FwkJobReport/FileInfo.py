@@ -102,7 +102,7 @@ class FileInfo:
             return
         if not os.path.isabs(pfn):
             # Get an absolute path
-            pfn = os.path.abspath(pfn) 
+            pfn = os.path.abspath(pfn)
 
 
         # Now we know it, we better set it
@@ -164,7 +164,7 @@ class FileInfo:
             mergedLFNBase.rstrip('/')
             newLFN = os.path.join(mergedLFNBase, os.path.basename(lfn))
             setattr(fileReport, 'lfn', newLFN)
-        
+
 
 
 
@@ -190,4 +190,3 @@ class FileInfo:
 
 
         self.siteCfg = loadSiteLocalConfig()
-

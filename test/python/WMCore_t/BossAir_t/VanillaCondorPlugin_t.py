@@ -246,7 +246,7 @@ class VanillaCondorPluginTest(BossAirTest):
         command = ['condor_rm', self.user]
         SubprocessAlgos.runCommand(cmd = command, shell = False)
 
-        return       
+        return
 
 
 

@@ -27,7 +27,7 @@ class ID(DBFormatter):
 
         """
         self.sql = "SELECT software_id FROM reqmgr_software WHERE "
-        self.sql += "software_name=:software_name" 
+        self.sql += "software_name=:software_name"
         binds = {"software_name": softwareName}
         result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)

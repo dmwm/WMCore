@@ -38,7 +38,7 @@ class PhEDEx(dict):
         """
 
         return None
-    
+
     def getNodeSE(self, value):
         return 'dummy.se.from.emulator'
 
@@ -178,7 +178,7 @@ class PhEDEx(dict):
         Where is data subscribed - for now just replicate blockreplicas
         """
         def _blockInfoGenerator(blockList):
-            
+
             for block in blockList:
                 if type(block) == dict:
                     block = block['Name']
@@ -214,7 +214,7 @@ class PhEDEx(dict):
 
                 blocks = datasetSelected['block']
                 locations= self.dataBlocks.getLocation(block)
-                        
+
                 blocks.append({"bytes":"10438786614",
                                "files":filesInBlock,
                                "is_open":"n",
@@ -226,7 +226,7 @@ class PhEDEx(dict):
                                                         #   "time_update":"1228905272", "group":None, "level":"block",
                                                         #   "node_id":"641", "custodial":"n", "suspended":"n"}]
                                                     })
-        
+
         data = {'phedex' : {"request_timestamp" : 1254850198.15418,
                             'dataset' : []}}
         # different structure depending on whether we ask for dataset or blocks
@@ -274,7 +274,7 @@ class PhEDEx(dict):
             # iterate over response as can't jump to specific datasets
             for dset in response['dataset']:
                 if dset['name'] != item.split('#')[0]:
-                        continue
+                    continue
                 if dset.has_key('subscription'):
                     # dataset level subscription
                     nodes = [x['node'] for x in dset['subscription']

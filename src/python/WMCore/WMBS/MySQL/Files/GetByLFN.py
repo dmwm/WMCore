@@ -34,7 +34,7 @@ class GetByLFN(DBFormatter):
 
         if formattedResult["size"] != None:
             formattedResult["size"] = int(formattedResult["size"])
-            
+
         return formattedResult
 
     def execute(self, lfn = None, conn = None, transaction = False):

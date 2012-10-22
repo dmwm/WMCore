@@ -13,7 +13,7 @@ import string
 from WMCore.Database.DBCreator import DBCreator
 from WMCore.RequestManager.RequestDB.MySQL.Create import Create
 
-class Destroy(DBCreator):    
+class Destroy(DBCreator):
     def __init__(self, logger = None, dbi = None):
         """
         _init_
@@ -26,7 +26,7 @@ class Destroy(DBCreator):
             logger = myThread.logger
         if dbi == None:
             dbi = myThread.dbi
-            
+
         DBCreator.__init__(self, logger, dbi)
         orderedTables = Create.requiredTables[:]
         orderedTables.reverse()

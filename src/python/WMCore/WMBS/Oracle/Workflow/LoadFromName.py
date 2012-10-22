@@ -14,4 +14,3 @@ from WMCore.WMBS.MySQL.Workflow.LoadFromName import LoadFromName \
 
 class LoadFromName(LoadWorkflowMySQL):
     sql = LoadWorkflowMySQL.sql
-    

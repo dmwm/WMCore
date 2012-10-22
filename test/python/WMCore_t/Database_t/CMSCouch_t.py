@@ -336,10 +336,10 @@ class CMSCouchTest(unittest.TestCase):
         self.db.queue(Document(id = "1", inputDict = {'foo':123, 'bar':456}))
         self.db.queue(Document(id = "2", inputDict = {'foo':123, 'bar':456}))
         self.db.queue(Document(id = "3", inputDict = {'foo':123, 'bar':456}))
-        
+
         self.db.commit()
         self.assertEquals(3, len(self.db.allDocs()['rows']))
-        self.assertEquals(2, len(self.db.allDocs({'startkey': "2"})['rows'])) 
+        self.assertEquals(2, len(self.db.allDocs({'startkey': "2"})['rows']))
         self.assertEquals(2, len(self.db.allDocs(keys = ["1", "3"])['rows']))
         self.assertEquals(1, len(self.db.allDocs({'limit':1}, ["1", "3"])['rows']))
         self.assertEquals(True, self.db.allDocs(keys = ["1", "4"])['rows'][1].has_key('error'))

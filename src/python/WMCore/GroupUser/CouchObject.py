@@ -27,10 +27,10 @@ class CouchObject(dict):
     """
     Base class for dictionary derived couch documents for this package.
     (May even be generally useful...)
-    
+
     Essentially a specialised dict class that has attributes needed to talk to Couch
     via the CMSCouch API.
-    
+
     This class is expected to be overridden and the derived class must override the document_id
     property to generate the document id from the data within the dictionary.
     This class assumes some simple mapping is used to generate the document ID as a property, rather
@@ -44,7 +44,7 @@ class CouchObject(dict):
         self.cdb_url = None
         self.cdb_document_id = None
         self.cdb_document_data = "CouchObject"
-        
+
 
     connected = property(lambda x: x.couch != None)
     json = property(lambda x: json.dumps(dict(x)))
@@ -54,17 +54,17 @@ class CouchObject(dict):
     def setCouch(self, url, database):
         """
         _setCouch_
-        
+
         Set the contant info for the couch database
         """
         self.cdb_url = url
         self.cdb_database = database
-        
+
 
     def connect(self):
         """
         _connect_
-        
+
         Initialise the couch database connection for this object.
         This gets called automagically by the requireConnected decorator
         """
@@ -85,41 +85,41 @@ class CouchObject(dict):
             msg += " Exception: %s" % str(ex)
             print msg
             raise CouchConnectionError(msg)
-       
-    @Decorators.requireConnection       
+
+    @Decorators.requireConnection
     def create(self):
         """
         _create_
-        
+
         Create the couch document for this object.
         """
         if not self.couch.documentExists(self.document_id):
             couchDoc =  CMSCouch.Document(self.document_id, { self.cdb_document_data : dict(self)})
             self.couch.commitOne(couchDoc)
-        
-        
+
+
     @Decorators.requireConnection
     def get(self):
         """
         _get_
-        
+
         given the doc_id generated from the derived class, get the document and update
         the data in the dictionary from it
-        
+
         """
         if not self.couch.documentExists(self.document_id):
             raise RuntimeError, "Document: %s not found" % self.document_id
-        
+
         doc = self.couch.document(self.document_id)
         data = doc.get(self.cdb_document_data, {})
         dict.update(self, data)
         return
-    
+
     @Decorators.requireConnection
     def drop(self):
         """
         _drop_
-        
+
         remove the doc representing this object, possibly with a chained wipeout
         of all other docs referencing it by owner or group or whatever, if thats
         needed, override in the classes derived from this
@@ -127,5 +127,3 @@ class CouchObject(dict):
         if not self.couch.documentExists(self.document_id):
             raise RuntimeError, "Document: %s not found" % self.document_id
         self.couch.delete_doc(self.document_id)
-        
-            

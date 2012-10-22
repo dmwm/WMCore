@@ -58,7 +58,7 @@ def parseRunList(l):
     """ Changes a string into a list of integers """
     result = None
     if isinstance(l, list):
-       result = l
+        result = l
     elif isinstance(l, basestring):
         toks = l.lstrip(' [').rstrip(' ]').split(',')
         if toks == ['']:
@@ -84,7 +84,7 @@ def parseBlockList(l):
     """ Changes a string into a list of strings """
     result = None
     if isinstance(l, list):
-       result = l
+        result = l
     elif isinstance(l, basestring):
         toks = l.lstrip(' [').rstrip(' ]').split(',')
         if toks == ['']:
@@ -210,7 +210,7 @@ def loadWorkload(request):
     except Exception:
         raise cherrypy.HTTPError(404, "Cannot find workload "+removePasswordFromUrl(url))
     return helper
- 
+
 def saveWorkload(helper, workload, wmstatUrl = None):
     """ Saves the changes to this workload """
     if workload.startswith('http'):
@@ -288,7 +288,7 @@ def privileged():
     if len(groups) < 1:
         return False
 
-    
+
     #FIXME doesn't check role in this specific site
     secure_roles = [role for role in cherrypy.request.user['roles'].keys() if role in security_roles()]
     # and maybe we're running without securitya, in which case dn = 'None'
@@ -392,7 +392,7 @@ def unidecode(data):
 def validate(schema):
     schema.validate()
     for field in ['RequestName', 'Requestor', 'RequestString',
-        'Campaign', 'ProcScenario', 'ProcConfigCacheID', 'inputMode',
+        'Campaign', 'ProcScenario', 'ConfigCacheID', 'inputMode',
         'CouchDBName', 'Group']:
         value = schema.get(field, '')
         if value and value != '':
@@ -421,6 +421,7 @@ def makeRequest(webApi, reqInputArgs, couchUrl, couchDB, wmstatUrl):
     Handles the submission of requests.
     
     """
+
     # make sure no extra spaces snuck in
     for k, v in reqInputArgs.iteritems():
         if isinstance(v, str):
@@ -447,11 +448,11 @@ def makeRequest(webApi, reqInputArgs, couchUrl, couchDB, wmstatUrl):
     # values in the schema definition
     
     reqSchema["Campaign"] = reqInputArgs.get("Campaign", "")
-    if 'ProcScenario' in reqInputArgs and 'ProcConfigCacheID' in reqInputArgs:
+    if 'ProcScenario' in reqInputArgs and 'ConfigCacheID' in reqInputArgs:
         # Use input mode to delete the unused one
         inputMode = reqInputArgs.get('inputMode', None)
         if inputMode == 'scenario':
-            del reqSchema['ProcConfigCacheID']
+            del reqSchema['ConfigCacheID']
 
     if 'EnableDQMHarvest' not in reqInputArgs:
         reqSchema["EnableHarvesting"] = False
@@ -497,12 +498,13 @@ def makeRequest(webApi, reqInputArgs, couchUrl, couchDB, wmstatUrl):
 
     # Get the DN
     reqSchema['RequestorDN'] = cherrypy.request.user.get('dn', 'unknown')
-    
+
     try:
         request = buildWorkloadForRequest(typename = reqInputArgs["RequestType"],
                                           schema = reqSchema)
     except WMSpecFactoryException, ex:
         raise HTTPError(400, "Error in Workload Validation: %s" % ex._message)
+    
     helper = WMWorkloadHelper(request['WorkloadSpec'])
     helper.setCampaign(reqSchema["Campaign"])
     if "CustodialSite" in reqSchema.keys():

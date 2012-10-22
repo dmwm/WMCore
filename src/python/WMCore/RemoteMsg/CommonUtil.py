@@ -27,10 +27,10 @@ def getlogger(name):
     """
     __startlogging__
     this will add logging handle for incoming name
-    
+
     Argument:
              name -> name of logging
-             
+
     Return:
            nothing
     """
@@ -54,9 +54,9 @@ def getlogger(name):
 def dojson(obj):
     """
     __dojson__
-    
-    converts an object to its json form 
-    
+
+    converts an object to its json form
+
     Argument: any object that can be jsoned
     Return:   json string representing obj
     """
@@ -69,9 +69,9 @@ def dojson(obj):
 def undojson(jsonobj):
     """
     __undojson__
-    
+
     converts a json string to an object
-    
+
     Argument: json string
     Return:  object
     """
@@ -84,9 +84,9 @@ def undojson(jsonobj):
 def dopickle(obj):
     """
     __dopickle__
-    
-    converts an ojbect to its pickle form 
-    
+
+    converts an ojbect to its pickle form
+
     Argument:
              obj -> any object that can be pickles
     Return:
@@ -95,16 +95,16 @@ def dopickle(obj):
     pickleobj = cPickle.dumps( obj )
     #return pickledObj
     return pickleobj
-    
+
 ###########################################
 # it converts pickled string to its object#
 ###########################################
 def undopickle(pickleobj):
     """
     __dopickle__
-    
-    converts an ojbect to its pickle form 
-    
+
+    converts an ojbect to its pickle form
+
     Argument:
              obj -> any object that can be pickles
     Return:
@@ -119,9 +119,9 @@ def undopickle(pickleobj):
 def doencode(data):
     """
     __doencode__
-    
+
     converts an ojbect to an appropriate form for HTTP arguments (GET or POST)
-    
+
     Argument:
              obj -> any object that can be pickles
     Return:

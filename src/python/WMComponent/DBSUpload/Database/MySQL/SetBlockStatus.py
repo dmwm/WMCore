@@ -25,11 +25,11 @@ class SetBlockStatus(DBFormatter):
                """
 
     updateSQL = """UPDATE dbsbuffer_block SET status = :status
-                     WHERE blockname = :block 
+                     WHERE blockname = :block
     """
 
     timedSQL  = """UPDATE dbsbuffer_block SET status = :status, create_time = :time
-                     WHERE blockname = :block 
+                     WHERE blockname = :block
     """
 
 
@@ -47,7 +47,7 @@ class SetBlockStatus(DBFormatter):
         """
         bindVars = []
 
-        
+
         #It gets a bit weird here.
         #Basically, the DBSAPI has preset the OpenForWriting status in a block to be a string 1 or 0
         #I don't want to mess with DBSAPI, so I have to interpret this here.
@@ -70,7 +70,7 @@ class SetBlockStatus(DBFormatter):
 
         if res1 == []:
             sql = self.sql
-            locations = list(set(locations))            
+            locations = list(set(locations))
             for location in locations:
                 bindVars.append({"block": block, "location": location, "status": status, "time": time})
         else:
@@ -82,12 +82,10 @@ class SetBlockStatus(DBFormatter):
                 bindVars = {"block": block, "status": status}
                 sql = self.updateSQL
 
-                
+
 
         self.dbi.processData(sql, bindVars, conn = conn,
                                      transaction = transaction)
-            
+
 
         return
-                                             
-

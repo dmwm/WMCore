@@ -18,15 +18,15 @@ def findThisModule():
 
 class MultiReport_t(unittest.TestCase):
     def setUp(self):
-        
+
         self.directory = os.path.dirname(inspect.getsourcefile(findThisModule))
         self.multiReport = os.path.join(self.directory, "CMSSWMulticoreTopReport.xml")
         self.report = Report("MultiReport_t")
-        
-        
+
+
     def tearDown(self):
         del self.report
-        
+
     def testA(self):
         """
         test reading the multi report file, which should in turn read the processing report
@@ -42,16 +42,16 @@ class MultiReport_t(unittest.TestCase):
 
         self.failUnless(hasattr(self.report.report, "input"))
         self.failUnless(hasattr(self.report.report.input, "source"))
-        self.failUnless(hasattr(self.report.report.input.source, "files"))        
-        self.failUnless(hasattr(self.report.report.input.source.files, "fileCount"))        
-        self.failUnless(hasattr(self.report.report, "output"))        
-        
+        self.failUnless(hasattr(self.report.report.input.source, "files"))
+        self.failUnless(hasattr(self.report.report.input.source.files, "fileCount"))
+        self.failUnless(hasattr(self.report.report, "output"))
+
         self.assertEqual(self.report.report.input.source.files.fileCount, 1)
         self.failUnless("outputRECORECO" in self.report.report.output.listSections_())
-        self.failUnless("outputALCARECORECO" in self.report.report.output.listSections_())        
+        self.failUnless("outputALCARECORECO" in self.report.report.output.listSections_())
 
-        
 
-    
+
+
 if __name__ == '__main__':
     unittest.main()

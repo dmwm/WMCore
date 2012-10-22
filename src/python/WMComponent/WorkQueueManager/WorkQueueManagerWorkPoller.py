@@ -36,7 +36,7 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
     def algorithm(self, parameters):
         """
         Pull in work
-	    """
+            """
         try:
             self.pullWork()
         except Exception, ex:
@@ -53,7 +53,7 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         """
         _retrieveCondition_
         set true or false for given retrieve condion
-        i.e. thredshod on workqueue 
+        i.e. thredshod on workqueue
         """
         return True
 
@@ -68,7 +68,7 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
             self.queue.logger.error("Error %s opening connection to work queue: %s" % (value, message))
         except StandardError, ex:
             import traceback
-            self.queue.logger.error("Unable to pull work from parent Error: %s\n%s" 
+            self.queue.logger.error("Unable to pull work from parent Error: %s\n%s"
                                     % (str(ex), traceback.format_exc()))
         self.queue.logger.info("Obtained %s unit(s) of work" % work)
         return work

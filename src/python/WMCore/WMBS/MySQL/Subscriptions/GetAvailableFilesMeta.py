@@ -20,7 +20,7 @@ class GetAvailableFilesMeta(DBFormatter):
                WHERE wmbs_sub_files_available.subscription = :subscription
                GROUP BY wmbs_file_details.id, wmbs_file_details.lfn, wmbs_file_details.filesize,
                         wmbs_file_details.events"""
-        
+
     def formatDict(self, results):
         """
         _formatDict_
@@ -39,7 +39,7 @@ class GetAvailableFilesMeta(DBFormatter):
                 del formattedResult["filesize"]
 
         return formattedResults
-           
+
     def execute(self, subscription = None, conn = None, transaction = False):
         results = self.dbi.processData(self.sql, {"subscription": subscription}, conn = conn,
                                       transaction = transaction)

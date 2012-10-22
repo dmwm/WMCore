@@ -34,6 +34,7 @@ from WMCore.WMBS.Subscription               import Subscription
 from WMCore.WMBS.Workflow                   import Workflow
 from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
 from WMCore.Database.CMSCouch               import CouchServer
+from WMCore.FwkJobReport.Report             import Report
 
 
 def retrieveWMSpec(workflow = None, wmWorkloadURL = None):
@@ -104,36 +105,36 @@ def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
             wmTaskPrio = None, owner = None, ownerDN = None,
             ownerGroup = '', ownerRole = '',
             scramArch = None, swVersion = None, agentNumber = 0 ):
-        """
-        _saveJob_
+    """
+    _saveJob_
 
-        Actually do the mechanics of saving the job to a pickle file
-        """
-        if wmTask:
+    Actually do the mechanics of saving the job to a pickle file
+    """
+    if wmTask:
             # If we managed to load the task,
             # so the url should be valid
-            job['spec']     = workflow.spec
-            job['task']     = wmTask
-            if job.get('sandbox', None) == None:
-                job['sandbox'] = sandbox
+        job['spec']     = workflow.spec
+        job['task']     = wmTask
+        if job.get('sandbox', None) == None:
+            job['sandbox'] = sandbox
 
-        job['counter']   = jobNumber
-        job['agentNumber'] = agentNumber
-        cacheDir         = job.getCache()
-        job['cache_dir'] = cacheDir
-        job['priority']  = wmTaskPrio
-        job['owner']     = owner
-        job['ownerDN']   = ownerDN
-        job['ownerGroup']   = ownerGroup
-        job['ownerRole']   = ownerRole
-        job['scramArch'] = scramArch
-        job['swVersion'] = swVersion
-        output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
-        cPickle.dump(job, output, cPickle.HIGHEST_PROTOCOL)
-        output.close()
+    job['counter']   = jobNumber
+    job['agentNumber'] = agentNumber
+    cacheDir         = job.getCache()
+    job['cache_dir'] = cacheDir
+    job['priority']  = wmTaskPrio
+    job['owner']     = owner
+    job['ownerDN']   = ownerDN
+    job['ownerGroup']   = ownerGroup
+    job['ownerRole']   = ownerRole
+    job['scramArch'] = scramArch
+    job['swVersion'] = swVersion
+    output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
+    cPickle.dump(job, output, cPickle.HIGHEST_PROTOCOL)
+    output.close()
 
 
-        return
+    return
 
 
 def creatorProcess(work, jobCacheDir):
@@ -341,6 +342,7 @@ class JobCreatorPoller(BaseWorkerThread):
         self.setBulkCache     = self.daoFactory(classname = "Jobs.SetCache")
         self.countJobs        = self.daoFactory(classname = "Jobs.GetNumberOfJobsPerWorkflow")
         self.subscriptionList = self.daoFactory(classname = "Subscriptions.ListIncomplete")
+        self.setFWJRPath      = self.daoFactory(classname = "Jobs.SetFWJRPath")
 
         #information
         self.config = config
@@ -697,8 +699,10 @@ class JobCreatorPoller(BaseWorkerThread):
         Mark jobGroup as ready in changeState
         """
         try:
-            createFailedJobs = filter(lambda x : x.get('failedOnCreation', False), wmbsJobGroup.jobs)
             self.changeState.propagate(wmbsJobGroup.jobs, 'created', 'new')
+
+            createFailedJobs = filter(lambda x : x.get('failedOnCreation', False), wmbsJobGroup.jobs)
+            self.generateCreateFailedReports(createFailedJobs)
             self.changeState.propagate(createFailedJobs, 'createfailed', 'created')
         except WMException:
             raise
@@ -711,4 +715,33 @@ class JobCreatorPoller(BaseWorkerThread):
 
         logging.info("JobCreator has finished creating jobGroup %i.\n" \
                      % (wmbsJobGroup.id))
+        return
+
+    def generateCreateFailedReports(self, createFailedJobs):
+        """
+        _generateCreateFailedReports_
+
+        Create and store FWJR for the  jobs that failed on creation
+        leaving meaningful information about what happened with them
+        """
+        if not createFailedJobs:
+            return
+
+        fjrsToSave = []
+        for failedJob in createFailedJobs:
+            report = Report()
+            defaultMsg = "There is a condition which assures that this job will fail if it's submitted"
+            report.addError("CreationFailure", 99305, "CreationFailure", failedJob.get("failedReason", defaultMsg))
+            jobCache = failedJob.getCache()
+            try:
+                fjrPath = os.path.join(jobCache, "Report.0.pkl")
+                report.save(fjrPath)
+                fjrsToSave.append({"jobid": failedJob["id"], "fwjrpath": fjrPath})
+                failedJob["fwjr"] = report
+            except Exception:
+                logging.error("Something went wrong while saving the report for  job %s" % failedJob["id"])
+
+        myThread = threading.currentThread()
+        self.setFWJRPath.execute(binds = fjrsToSave, conn = myThread.transaction.conn, transaction = True)
+
         return

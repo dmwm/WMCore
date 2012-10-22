@@ -55,7 +55,7 @@ class ReportIntegrationTest(unittest.TestCase):
         inputFile = File(lfn = "/path/to/some/lfn", size = 10, events = 10,
                          locations = "cmssrm.fnal.gov")
         inputFile.create()
-                             
+
         inputFileset = Fileset(name = "InputFileset")
         inputFileset.create()
         inputFileset.addFile(inputFile)
@@ -66,7 +66,7 @@ class ReportIntegrationTest(unittest.TestCase):
 
         mergedFileset = Fileset(name = "MergedFileset")
         mergedFileset.create()
-        
+
         procWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
                                 name = "TestWF", task = "None")
         procWorkflow.create()
@@ -76,7 +76,7 @@ class ReportIntegrationTest(unittest.TestCase):
                                  name = "MergeWF", task = "None")
         mergeWorkflow.create()
         mergeWorkflow.addOutput("Merged", mergedFileset)
-        
+
         self.procSubscription = Subscription(fileset = inputFileset,
                                              workflow = procWorkflow,
                                              split_algo = "FileBased",
@@ -93,7 +93,7 @@ class ReportIntegrationTest(unittest.TestCase):
         self.procJobGroup = JobGroup(subscription = self.procSubscription)
         self.procJobGroup.create()
         self.mergeJobGroup = JobGroup(subscription = self.mergeSubscription)
-        self.mergeJobGroup.create()        
+        self.mergeJobGroup.create()
 
         self.testJob = Job(name = "testJob", files = [inputFile])
         self.testJob.create(group = self.procJobGroup)
@@ -124,7 +124,7 @@ class ReportIntegrationTest(unittest.TestCase):
 
         try:
             os.remove(os.path.join(self.tempDir, "ProcReport.pkl"))
-            os.remove(os.path.join(self.tempDir, "MergeReport.pkl"))            
+            os.remove(os.path.join(self.tempDir, "MergeReport.pkl"))
         except Exception, ex:
             pass
 
@@ -132,7 +132,7 @@ class ReportIntegrationTest(unittest.TestCase):
             os.rmdir(self.tempDir)
         except Exception, ex:
             pass
-        
+
         return
 
     def createConfig(self, workerThreads):
@@ -211,7 +211,7 @@ class ReportIntegrationTest(unittest.TestCase):
                        "Error: Output file is missing checksums: %s" % ckType
                 assert outputFile["checksums"][ckType] == fwkJobReportFile["checksums"][ckType], \
                        "Error: Checksums don't match."
-                       
+
             assert len(fwkJobReportFile["checksums"].keys()) == \
                    len(outputFile["checksums"].keys()), \
                    "Error: Wrong number of checksums."
@@ -223,7 +223,7 @@ class ReportIntegrationTest(unittest.TestCase):
             else:
                 assert outputFile["merged"] == fwkJobReportFile["merged"], \
                        "Error: Output file merged output is wrong: %s, %s" % \
-                       (outputFile["merged"], fwkJobReportFile["merged"])            
+                       (outputFile["merged"], fwkJobReportFile["merged"])
 
             assert len(outputFile["locations"]) == 1, \
                    "Error: outputfile should have one location: %s" % outputFile["locations"]
@@ -247,12 +247,12 @@ class ReportIntegrationTest(unittest.TestCase):
                 for lumi in run:
                     assert lumi in fwjrRuns[run.run], \
                            "Error: Extra lumi: %s" % lumi
-                    
+
                     fwjrRuns[run.run].remove(lumi)
 
                 if len(fwjrRuns[run.run]) == 0:
-                        del fwjrRuns[run.run]
-                        
+                    del fwjrRuns[run.run]
+
             assert len(fwjrRuns.keys()) == 0, \
                    "Error: Missing runs, lumis: %s" % fwjrRuns
 
@@ -271,7 +271,7 @@ class ReportIntegrationTest(unittest.TestCase):
             else:
                 assert testJob["mask"]["FirstEvent"] == outputFile["first_event"], \
                        "Error: last event not set correctly: %s, %s" % \
-                       (testJob["mask"]["FirstEvent"], outputFile["first_event"])               
+                       (testJob["mask"]["FirstEvent"], outputFile["first_event"])
 
         return
 
@@ -284,7 +284,7 @@ class ReportIntegrationTest(unittest.TestCase):
         """
         self.procPath = os.path.join(WMCore.WMBase.getTestBase(),
                                     "WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
-        
+
         myReport = Report("cmsRun1")
         myReport.parse(self.procPath)
 
@@ -325,7 +325,7 @@ class ReportIntegrationTest(unittest.TestCase):
 
         self.mergePath = os.path.join(WMCore.WMBase.getTestBase(),
                                          "WMCore_t/FwkJobReport_t/CMSSWMergeReport.xml")
-        
+
         myReport = Report("mergeReco")
         myReport.parse(self.mergePath)
 
@@ -339,7 +339,7 @@ class ReportIntegrationTest(unittest.TestCase):
 
         fwjrPath = os.path.join(self.tempDir, "MergeReport.pkl")
         cmsRunStep = myReport.retrieveStep("mergeReco")
-        cmsRunStep.status = 0        
+        cmsRunStep.status = 0
         myReport.persist(fwjrPath)
 
         self.setFWJRAction.execute(jobID = self.testMergeJob["id"], fwjrPath = fwjrPath)
@@ -349,6 +349,6 @@ class ReportIntegrationTest(unittest.TestCase):
         self.verifyFileMetaData(self.testMergeJob["id"], myReport.getAllFilesFromStep("mergeReco"))
 
         return
-        
+
 if __name__ == "__main__":
     unittest.main()

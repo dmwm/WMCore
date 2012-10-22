@@ -14,15 +14,15 @@ class PlotFormatter(RESTFormatter):
     def __init__(self, config):
         matplotlib.use('Agg')
         RESTFormatter.__init__(self, config)
- 
+
         self.supporttypes = {'image/png': self.png,
                              '*/*': self.png,
                              'application/pdf': self.pdf,
                              'image/svg+xml':self.svg}
-    
+
     def svg(self, data, *args, **kwargs):
         return self.plot(data, 'svg')
-    
+
     def pdf(self, data, *args, **kwargs):
         return self.plot(data, 'pdf')
 
@@ -33,7 +33,7 @@ class PlotFormatter(RESTFormatter):
             return data['doc']
         else:
             return None
-            
+
 
     def plot(self, data, format):
         if hasattr(self.config, "cache"):
@@ -46,4 +46,3 @@ class PlotFormatter(RESTFormatter):
                 data['figure'].savefig(buffer, format=format)
                 return buffer.getvalue()
             return None
-    

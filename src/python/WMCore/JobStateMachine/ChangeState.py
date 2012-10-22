@@ -41,7 +41,7 @@ class ChangeState(WMObject, WMConnectionBase):
         except Exception, ex:
             logging.error("Error connecting to couch: %s" % str(ex))
             self.jobsdatabase = None
-            self.fwjrdatabase = None            
+            self.fwjrdatabase = None
             self.jsumdatabase = None
 
         try:
@@ -245,17 +245,17 @@ class ChangeState(WMObject, WMConnectionBase):
 
                 outputs = []
                 outputDataset = None
-                for singlestep in job["fwjr"].listSteps(): 
-                    for singlefile in job["fwjr"].getAllFilesFromStep(step=singlestep): 
-                        if singlefile: 
-                            outputs.append({'type': 'output' if CMSSTEP.match(singlestep) else singlefile.get('module_label', None), 
-                                            'lfn': singlefile.get('lfn', None), 
-                                            'location': list(singlefile.get('locations', set([]))) if len(singlefile.get('locations', set([]))) > 1 
-                                                                                                   else singlefile['locations'].pop(), 
-                                            'checksums': singlefile.get('checksums', {}), 
-                                            'size': singlefile.get('size', None) }) 
+                for singlestep in job["fwjr"].listSteps():
+                    for singlefile in job["fwjr"].getAllFilesFromStep(step=singlestep):
+                        if singlefile:
+                            outputs.append({'type': 'output' if CMSSTEP.match(singlestep) else singlefile.get('module_label', None),
+                                            'lfn': singlefile.get('lfn', None),
+                                            'location': list(singlefile.get('locations', set([]))) if len(singlefile.get('locations', set([]))) > 1
+                                                                                                   else singlefile['locations'].pop(),
+                                            'checksums': singlefile.get('checksums', {}),
+                                            'size': singlefile.get('size', None) })
                             #it should have one output dataset for all the files
-                            outputDataset = singlefile.get('dataset', None) if not outputDataset else outputDataset 
+                            outputDataset = singlefile.get('dataset', None) if not outputDataset else outputDataset
 
                 jobSummary = {"_id": jobSummaryId,
                               "wmbsid": job["id"],
@@ -404,7 +404,7 @@ class ChangeState(WMObject, WMConnectionBase):
             #If the mask is event based, then we have info to report
             if job["mask"]["LastEvent"] != None and \
                job["mask"]["FirstEvent"] != None and job["mask"]['inclusivemask']:
-                job["nEventsToProc"] = int(job["mask"]["LastEvent"] - 
+                job["nEventsToProc"] = int(job["mask"]["LastEvent"] -
                                             job["mask"]["FirstEvent"])
             #Increment retry when commanded
             if incrementRetry:

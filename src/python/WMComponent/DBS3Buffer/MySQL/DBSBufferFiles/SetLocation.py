@@ -13,7 +13,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 class SetLocation(DBFormatter):
     sql = """INSERT INTO dbsbuffer_file_location (filename, location)
                VALUES (:fileid, :locationid)"""
-    
+
     def execute(self, binds, conn = None, transaction = None):
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)

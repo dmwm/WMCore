@@ -13,7 +13,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 class RetriedJobs(DBFormatter):
     sql = """SELECT wmbs_users.cert_dn as owner, wmbs_workflow.task, wmbs_job.id
                     FROM wmbs_workflow
-               INNER JOIN wmbs_users ON 
+               INNER JOIN wmbs_users ON
                  wmbs_workflow.owner = wmbs_users.id
                INNER JOIN wmbs_subscription ON
                  wmbs_workflow.id = wmbs_subscription.workflow
@@ -26,7 +26,7 @@ class RetriedJobs(DBFormatter):
              WHERE wmbs_job.outcome = 0 AND wmbs_job.retry_count > 0 AND
                    (wmbs_job_state.name != 'exhausted' AND
                     wmbs_job_state.name != 'cleanout')"""
-        
+
     def execute(self, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, conn = conn, transaction = transaction)
         return self.formatDict(result)

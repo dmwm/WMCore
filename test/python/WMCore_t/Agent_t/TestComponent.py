@@ -3,7 +3,7 @@
 """
 _TestComponent_
 
-Compnent to test the skeleton and serve as an example to build 
+Compnent to test the skeleton and serve as an example to build
 components.
 
 
@@ -25,9 +25,9 @@ class TestComponent(Harness):
     """
     _TestComponent_
 
-    Compnent to test the skeleton and serve as an example to build 
+    Compnent to test the skeleton and serve as an example to build
     components.
-    
+
     """
 
     def __init__(self, config):
@@ -64,7 +64,3 @@ class TestComponent(Harness):
         """
 
         logging.debug("TestComponent post initialization")
-
-
-
-

@@ -54,11 +54,9 @@ class Save(SaveMasksMySQL):
                     fail = False
             if fail:
                 return
-            
+
         # Actually run the code
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
 
         return
-    
-    

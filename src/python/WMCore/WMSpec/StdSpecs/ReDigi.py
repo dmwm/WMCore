@@ -15,7 +15,7 @@ def getTestArguments():
     _getTestArguments_
 
     This should be where the default REQUIRED arguments go
-    This serves as documentation for what is currently required 
+    This serves as documentation for what is currently required
     by the standard DataProcessing workload in importable format.
 
     NOTE: These are test values.  If used in real workflows they
@@ -38,7 +38,7 @@ def getTestArguments():
         "StepThreeConfigCacheID": "3a4548750b61f485d42b4aa850ba4ab7",
         "KeepStepOneOutput": True,
         "KeepStepTwoOutput": True,
-        
+
         "CouchURL": os.environ.get("COUCHURL", None),
         "CouchDBName": "wmagent_configcachescf",
         "PileupConfig": {"mc": "/some/cosmics/dataset"},
@@ -91,7 +91,7 @@ class ReDigiWorkloadFactory(StdBase):
         self.addLogCollectTask(newTask, taskName = taskName + "LogCollect")
         mergeTasks = self.addMergeTasks(newTask, "cmsRun1", outputMods)
         return mergeTasks
-    
+
     def setupThreeStepChainedProcessing(self, stepOneTask):
         """
         _setupThreeStepChainedProcessing_
@@ -163,7 +163,7 @@ class ReDigiWorkloadFactory(StdBase):
 
         if self.stepTwoConfigCacheID == None or self.stepTwoConfigCacheID == "":
             return
-        
+
         stepOneMergeTask = stepOneMergeTasks[self.stepOneOutputModuleName]
         stepTwoMergeTasks = self.addDependentProcTask("StepTwoProc",
                                                       stepOneMergeTask,
@@ -219,9 +219,9 @@ class ReDigiWorkloadFactory(StdBase):
 
         mergeTask = mergeTasks[self.stepTwoOutputModuleName]
         self.addDependentProcTask("StepThreeProc", mergeTask,
-                                  self.stepThreeConfigCacheID)        
+                                  self.stepThreeConfigCacheID)
         return
-        
+
     def buildWorkload(self):
         """
         _buildWorkload_
@@ -233,7 +233,7 @@ class ReDigiWorkloadFactory(StdBase):
         """
         (self.inputPrimaryDataset, self.inputProcessedDataset,
          self.inputDataTier) = self.inputDataset[1:].split("/")
-        
+
         workload = self.createWorkload()
         workload.setDashboardActivity("redigi")
         self.reportWorkflowToDashboard(workload.getDashboardActivity())
@@ -281,7 +281,7 @@ class ReDigiWorkloadFactory(StdBase):
         # The CouchURL and name of the ConfigCache database must be passed in
         # by the ReqMgr or whatever is creating this workflow.
         self.couchURL = arguments["CouchURL"]
-        self.couchDBName = arguments["CouchDBName"]        
+        self.couchDBName = arguments["CouchDBName"]
 
         # Pull down the configs and the names of the output modules so that
         # we can chain things together properly.
@@ -291,7 +291,7 @@ class ReDigiWorkloadFactory(StdBase):
         self.stepTwoConfigCacheID = arguments.get("StepTwoConfigCacheID", None)
         self.stepThreeConfigCacheID = arguments.get("StepThreeConfigCacheID")
         self.keepStepOneOutput = arguments.get("KeepStepOneOutput", True)
-        self.keepStepTwoOutput = arguments.get("KeepStepTwoOutput", True)        
+        self.keepStepTwoOutput = arguments.get("KeepStepTwoOutput", True)
 
         # Pileup configuration for the first generation task
         self.pileupConfig = arguments.get("PileupConfig", None)
@@ -314,7 +314,7 @@ class ReDigiWorkloadFactory(StdBase):
     def validateSchema(self, schema):
         """
         _validateSchema_
-        
+
         Check for required fields, and some skim facts
         """
         requiredFields = ["CMSSWVersion", "ScramArch",
@@ -338,6 +338,3 @@ def reDigiWorkload(workloadName, arguments):
     """
     myReDigiFactory = ReDigiWorkloadFactory()
     return myReDigiFactory(workloadName, arguments)
-
-
-

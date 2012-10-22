@@ -12,4 +12,3 @@ from WMCore.WMBS.MySQL.Workflow.FailedJobs import FailedJobs as MySQLFailedJobs
 
 class FailedJobs(MySQLFailedJobs):
     pass
-    

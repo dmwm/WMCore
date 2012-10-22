@@ -49,7 +49,7 @@ class LumiBasedTest(unittest.TestCase):
     def createSubscription(self, nFiles, lumisPerFile, twoSites = False):
         """
         _createSubscription_
-        
+
         Create a subscription for testing
         """
 
@@ -196,7 +196,7 @@ class LumiBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 10)
-        
+
         # In this case it should slice things up so that each job only has one run
         # in it.
         self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})

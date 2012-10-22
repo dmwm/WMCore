@@ -56,26 +56,26 @@ class ReqMgrRESTModel(RESTModel):
         self.reqPriorityMax = getattr(config, 'maxReqPriority', 100)
 
 
-        self._addMethod('GET', 'request', self.getRequest, 
+        self._addMethod('GET', 'request', self.getRequest,
                        args = ['requestName'],
                        secured=True, validation=[self.isalnum], expires = 0)
         self._addMethod('GET', 'assignment', self.getAssignment,
                        args = ['teamName', 'request'],
                        secured=True, validation = [self.isalnum], expires = 0)
         self._addMethod('GET', 'user', self.getUser,
-                       args = ['userName'], 
+                       args = ['userName'],
                        secured=True, validation = [self.isalnum], expires = 0)
         self._addMethod('GET', 'group', self.getGroup,
                        args = ['group', 'user'], secured=True, expires = 0)
-        self._addMethod('GET', 'version', self.getVersion, args = [], 
+        self._addMethod('GET', 'version', self.getVersion, args = [],
                         secured=True, expires = 0)
-        self._addMethod('GET', 'team', self.getTeam, args = [], 
+        self._addMethod('GET', 'team', self.getTeam, args = [],
                         secured=True, expires = 0)
         self._addMethod('GET', 'workQueue', self.getWorkQueue,
-                       args = ['request', 'workQueue'], 
+                       args = ['request', 'workQueue'],
                        secured=True, validation = [self.isalnum], expires = 0)
         self._addMethod('GET', 'message', self.getMessage,
-                       args = ['request'], 
+                       args = ['request'],
                        secured=True, validation = [self.isalnum], expires = 0)
         self._addMethod('GET', 'inputdataset', self.getInputDataset,
                        args = ['prim', 'proc', 'tier'],
@@ -109,7 +109,7 @@ class ReqMgrRESTModel(RESTModel):
                        args = ['team'],
                        secured=True, security_params=self.security_params,
                        validation = [self.isalnum])
-        self._addMethod('PUT', 'workQueue', self.putWorkQueue, 
+        self._addMethod('PUT', 'workQueue', self.putWorkQueue,
                        args = ['request', 'url'],
                        secured=True, security_params=self.security_params,
                        validation = [self.validatePutWorkQueue])
@@ -119,12 +119,12 @@ class ReqMgrRESTModel(RESTModel):
                        validation = [self.isalnum])
         self._addMethod('PUT', 'campaign', self.putCampaign,
                        args = ['campaign', 'request'],
-                       secured=True, 
+                       secured=True,
                        validation = [self.isalnum])
         self._addMethod('POST', 'request', self.postRequest,
-                        args = ['requestName', 'events_written', 
+                        args = ['requestName', 'events_written',
                                 'events_merged', 'files_written',
-                                'files_merged', 'percent_written', 
+                                'files_merged', 'percent_written',
                                 'percent_success', 'dataset'],
                         secured=True, validation = [self.validateUpdates])
         self._addMethod('POST', 'user', self.postUser,
@@ -164,17 +164,17 @@ class ReqMgrRESTModel(RESTModel):
                        args = ['requestName'], secured=True,
                        validation=[self.isalnum], expires = 0)
         self._addMethod('GET', 'outputDatasetsByPrepID', self.getOutputForPrepID,
-                       args = ['prepID'], secured=True, 
-                       validation=[self.isalnum], expires = 0)        
-        self._addMethod('GET', 'mostRecentOutputDatasetsByPrepID', self.getMostRecentOutputForPrepID,
-                       args = ['prepID'], secured=True, 
+                       args = ['prepID'], secured=True,
                        validation=[self.isalnum], expires = 0)
-        self._addMethod('GET', 'configIDs', self.getConfigIDs, 
+        self._addMethod('GET', 'mostRecentOutputDatasetsByPrepID', self.getMostRecentOutputForPrepID,
+                       args = ['prepID'], secured=True,
+                       validation=[self.isalnum], expires = 0)
+        self._addMethod('GET', 'configIDs', self.getConfigIDs,
                         args = ['prim', 'proc', 'tier'],
                         secured=True, validation=[self.isalnum], expires = 0)
 
         cherrypy.engine.subscribe('start_thread', self.initThread)
-    
+
     def initThread(self, thread_index):
         """ The ReqMgr expects the DBI to be contained in the Thread  """
         myThread = threading.currentThread()
@@ -183,7 +183,7 @@ class ReqMgrRESTModel(RESTModel):
         myThread.dbi = self.dbi
 
     def isalnum(self, index):
-        """ Validates that all input is alphanumeric, 
+        """ Validates that all input is alphanumeric,
             with spaces and underscores tolerated"""
         for v in index.values():
             WMCore.Lexicon.identifier(v)
@@ -191,13 +191,13 @@ class ReqMgrRESTModel(RESTModel):
 
     def getDataset(self, prim, proc, tier):
         """ If only prim exists, assume it's urlquoted.
-            If all three exists, assue it's /prim/proc/tier 
+            If all three exists, assue it's /prim/proc/tier
         """
         if not proc and not tier:
             dataset = urllib.unquote(prim)
         elif prim and proc and tier:
             dataset = "/%s/%s/%s" % (prim, proc, tier)
-        WMCore.Lexicon.dataset(dataset) 
+        WMCore.Lexicon.dataset(dataset)
         return dataset
 
     def intpriority(self, index):
@@ -205,7 +205,7 @@ class ReqMgrRESTModel(RESTModel):
         if index.has_key('priority'):
             value = int(index['priority'])
             if math.fabs(value) >= sys.maxint:
-                msg = "Invalid priority!  Priority must have abs() less then MAXINT!" 
+                msg = "Invalid priority!  Priority must have abs() less then MAXINT!"
                 raise cherrypy.HTTPError(400, msg)
             index['priority'] = value
         return index
@@ -219,15 +219,15 @@ class ReqMgrRESTModel(RESTModel):
         """
         if not index.has_key('priority'):
             return index
-        
+
         index = self.intpriority(index = index)
         value = index['priority']
         if math.fabs(value) > self.reqPriorityMax and not Utilities.privileged():
             msg = "Invalid requestPriority!  Request priority must have abs() less then %i!" % self.reqPriorityMax
             raise cherrypy.HTTPError(400, msg)
-            
+
         return index
-    
+
     def validateUser(self, index):
         assert index['userName'].isalnum()
         assert '@' in index['email']
@@ -250,7 +250,7 @@ class ReqMgrRESTModel(RESTModel):
         return None
 
     def getRequest(self, requestName=None):
-        """ If a request name is specified, return the details of the request. 
+        """ If a request name is specified, return the details of the request.
         Otherwise, return an overview of all requests """
         if requestName == None:
             return GetRequest.getRequests()
@@ -306,11 +306,11 @@ class ReqMgrRESTModel(RESTModel):
             return helper.listOutputDatasets()
         else:
             return []
- 
+
     def getAssignment(self, teamName=None, request=None):
         """ If a team name is passed in, get all assignments for that team.
-        If a request is passed in, return a list of teams the request is 
-        assigned to 
+        If a request is passed in, return a list of teams the request is
+        assigned to
         """
         # better to use ReqMgr/RequestDB/Interface/ProdSystem/ProdMgrRetrieve?
         #requestIDs = ProdMgrRetrieve.findAssignedRequests(teamName)
@@ -341,11 +341,11 @@ class ReqMgrRESTModel(RESTModel):
             result.update(Registration.userInfo(userName))
             return result
         elif group != None:
-            GroupInfo.usersInGroup(group)    
+            GroupInfo.usersInGroup(group)
         else:
             return Registration.listUsers()
 
-        
+
 
     def getGroup(self, group=None, user=None):
         """ No args lists all groups, one args returns JSON with users and priority """
@@ -357,7 +357,7 @@ class ReqMgrRESTModel(RESTModel):
             except IndexError:
                 raise cherrypy.HTTPError(404, "Cannot find group/group priority")
             return result
-        elif user != None:   
+        elif user != None:
             return GroupInfo.groupsForUser(user).keys()
         else:
             return GroupInfo.listGroups()
@@ -371,7 +371,7 @@ class ReqMgrRESTModel(RESTModel):
                 if not version in result:
                     result.append(version)
         return result
-      
+
     def getTeam(self):
         """ Returns a list of all teams registered with ReqMgr """
         return ProdManagement.listTeams()
@@ -391,14 +391,14 @@ class ReqMgrRESTModel(RESTModel):
         return ChangeState.getMessages(request)
 
     def getInputDataset(self, prim, proc=None, tier=None):
-        """ returns a list of requests with this input dataset 
-         Input can either be a single urlquoted dataset, or a 
+        """ returns a list of requests with this input dataset
+        Input can either be a single urlquoted dataset, or a
          /prim/proc/tier"""
         dataset = self.getDataset(prim, proc, tier)
-        return GetRequest.getRequestsByCriteria("Datasets.GetRequestByInput", dataset)  
+        return GetRequest.getRequestsByCriteria("Datasets.GetRequestByInput", dataset)
 
     def getOutputDataset(self, prim, proc=None, tier=None):
-        """ returns a list of requests with this output dataset 
+        """ returns a list of requests with this output dataset
          Input can either be a single urlquoted dataset, or a
          /prim/proc/tier"""
         dataset = self.getDataset(prim, proc, tier)
@@ -443,12 +443,16 @@ class ReqMgrRESTModel(RESTModel):
                 self.error("Create request failed, reason: %s" % ex)
                 # Assume that this is a valid HTTPError
                 raise
-            except WMException as ex:
+            except (WMException, Exception) as ex:
+                # TODO problem not to expose logs to the client
+                # e.g. on ConfigCacheID not found, the entire CouchDB traceback is sent in ex_message
                 self.error("Create request failed, reason: %s" % ex)
-                raise cherrypy.HTTPError(400, ex._message)
-            except Exception as ex:
-                self.error("Create request failed, reason: %s" % ex)
-                raise cherrypy.HTTPError(400, ex.message)
+                if hasattr(ex, "name"):
+                    detail = ex.name
+                else:
+                    detail = "check logs." 
+                msg = "Create request failed, %s" % detail
+                raise cherrypy.HTTPError(400, msg)
         # see if status & priority need to be upgraded
         if status != None:
             # forbid assignment here
@@ -464,6 +468,7 @@ class ReqMgrRESTModel(RESTModel):
         if priority != None:
             Utilities.changePriority(requestName, priority, self.wmstatWriteURL)
         self.info("Request '%s' created." % request['RequestName']) 
+
         return request
 
 
@@ -524,8 +529,8 @@ class ReqMgrRESTModel(RESTModel):
         else:
             Campaign.addCampaign(campaign)
 
-        
-#    def postRequest(self, requestName, events_written=None, events_merged=None, 
+
+#    def postRequest(self, requestName, events_written=None, events_merged=None,
 #                    files_written=None, files_merged = None, dataset=None):
     def postRequest(self, requestName, **kwargs):
         """
@@ -543,7 +548,7 @@ class ReqMgrRESTModel(RESTModel):
 
     def validateUpdates(self, index):
         """ Check the values for the updates """
-        for k in ['events_written', 'events_merged', 
+        for k in ['events_written', 'events_merged',
                   'files_written', 'files_merged']:
             if k in index:
                 index[k] = int(index[k])
@@ -583,7 +588,7 @@ class ReqMgrRESTModel(RESTModel):
         if user == None:
             return GroupManagement.deleteGroup(group)
         else:
-            return GroupManagement.removeUserFromGroup(user, group) 
+            return GroupManagement.removeUserFromGroup(user, group)
 
     def deleteVersion(self, version, scramArch):
         """ Un-register this software version with ReqMgr """
@@ -611,5 +616,3 @@ class ReqMgrRESTModel(RESTModel):
             result[requestName] = helper.listAllCMSSWConfigCacheIDs()
 
         return result
-
-

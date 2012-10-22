@@ -136,8 +136,8 @@ class UUID(object):
         if bytes_le is not None:
             if len(bytes_le) != 16:
                 raise ValueError('bytes_le is not a 16-char string')
-            bytes = (bytes_le[3] + bytes_le[2] + bytes_le[1] + bytes_le[0] +
-                     bytes_le[5] + bytes_le[4] + bytes_le[7] + bytes_le[6] +
+            bytes = (bytes_le[3] + bytes_le[2] + bytes_le[1] + bytes_le[0] + \
+                     bytes_le[5] + bytes_le[4] + bytes_le[7] + bytes_le[6] + \
                      bytes_le[8:])
         if bytes is not None:
             if len(bytes) != 16:
@@ -161,7 +161,7 @@ class UUID(object):
             if not 0 <= node < 1<<48L:
                 raise ValueError('field 6 out of range (need a 48-bit value)')
             clock_seq = (clock_seq_hi_variant << 8L) | clock_seq_low
-            int = ((time_low << 96L) | (time_mid << 80L) |
+            int = ((time_low << 96L) | (time_mid << 80L) | \
                    (time_hi_version << 64L) | (clock_seq << 48L) | node)
         if int is not None:
             if not 0 <= int < 1<<128L:
@@ -209,7 +209,7 @@ class UUID(object):
 
     def get_bytes_le(self):
         bytes = self.bytes
-        return (bytes[3] + bytes[2] + bytes[1] + bytes[0] +
+        return (bytes[3] + bytes[2] + bytes[1] + bytes[0] + \
                 bytes[5] + bytes[4] + bytes[7] + bytes[6] + bytes[8:])
 
     bytes_le = property(get_bytes_le)

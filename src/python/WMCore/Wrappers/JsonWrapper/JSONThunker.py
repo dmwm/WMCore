@@ -8,17 +8,17 @@ class JSONThunker:
     """
     _JSONThunker_
     Converts an arbitrary object to <-> from a jsonable object.
-    
+
     Will, for the most part "do the right thing" about various instance objects
     by storing their class information along with their data in a dict. Handles
     a recursion limit to prevent infinite recursion.
-    
+
     self.passThroughTypes - stores a list of types that should be passed
       through unchanged to the JSON parser
-      
+
     self.blackListedModules - a list of modules that should not be stored in
       the JSON.
-    
+
     """
     def __init__(self):
         self.passThroughTypes = (types.NoneType,
@@ -40,7 +40,7 @@ class JSONThunker:
         # ditto above, but for lists
         self.listSortOfObjects = ( ('WMCore.DataStructs.JobPackage', 'JobPackage' ),
                                    ('WMCore.WMBS.JobPackage', 'JobPackage' ),)
-        
+
         self.foundIDs = {}
         # modules we don't want JSONed
         self.blackListedModules = ('sqlalchemy.engine.threadlocal',
@@ -53,7 +53,7 @@ class JSONThunker:
                                    'WMCore.Database.Transaction',
                                    'threading',
                                    'datetime')
-        
+
     def checkRecursion(self, data):
         """
         handles checking for infinite recursion
@@ -68,13 +68,13 @@ class JSONThunker:
         else:
             self.foundIDs[id(data)] = 1
             return data
-           
+
     def unrecurse(self, data):
         """
         backs off the recursion counter if we're returning from _thunk
         """
         self.foundIDs[id(data)] = self.foundIDs[id(data)] -1
-         
+
     def checkBlackListed(self, data):
         """
         checks to see if a given object is from a blacklisted module
@@ -93,7 +93,7 @@ class JSONThunker:
         except:
             return data
 
-    
+
     def thunk(self, toThunk):
         """
         Thunk - turns an arbitrary object into a JSONable object
@@ -101,36 +101,36 @@ class JSONThunker:
         self.foundIDs = {}
         data = self._thunk(toThunk)
         return data
-    
+
     def unthunk(self, data):
         """
         unthunk - turns a previously 'thunked' object back into a python object
         """
         return self._unthunk(data)
-    
+
     def handleSetThunk(self, toThunk):
         toThunk = self.checkRecursion( toThunk )
         tempDict = {'thunker_encoded_json':True, 'type': 'set'}
         tempDict['set'] = self._thunk(list(toThunk))
         self.unrecurse(toThunk)
         return tempDict
-    
+
     def handleListThunk(self, toThunk):
         toThunk = self.checkRecursion( toThunk )
         for k,v in enumerate(toThunk):
-                toThunk[k] = self._thunk(v)
+            toThunk[k] = self._thunk(v)
         self.unrecurse(toThunk)
         return toThunk
-    
+
     def handleDictThunk(self, toThunk):
         toThunk = self.checkRecursion( toThunk )
         special = False
         tmpdict = {}
         for k,v in toThunk.iteritems():
-            if type(k) == type(int): 
+            if type(k) == type(int):
                 special = True
                 tmpdict['_i:%s' % k] = self._thunk(v)
-            elif type(k) == type(float): 
+            elif type(k) == type(float):
                 special = True
                 tmpdict['_f:%s' % k] = self._thunk(v)
             else:
@@ -143,11 +143,11 @@ class JSONThunker:
             toThunk.update(tmpdict)
         self.unrecurse(toThunk)
         return toThunk
-    
+
     def handleObjectThunk(self, toThunk):
         toThunk = self.checkRecursion( toThunk )
         toThunk = self.checkBlackListed(toThunk)
-        
+
         if (type(toThunk) == type("")):
             # things that got blacklisted
             return toThunk
@@ -177,27 +177,27 @@ class JSONThunker:
                 tempDict = {'json_thunk_exception_' : "%s" % e }
                 self.unrecurse(toThunk)
                 return tempDict
-            
+
     def handleDictObjectThunk(self, data):
         thunktype = '%s.%s' % (data.__class__.__module__,
                                data.__class__.__name__)
-        tempDict = {'thunker_encoded_json':True, 
+        tempDict = {'thunker_encoded_json':True,
                     'is_dict': True,
-                    'type': thunktype, 
+                    'type': thunktype,
                     thunktype: {}}
-        
+
         for k,v in data.__dict__.iteritems():
             tempDict[k] = self._thunk(v)
         for k,v in data.iteritems():
             tempDict[thunktype][k] = self._thunk(v)
-            
+
         return tempDict
-    
+
     def handleDictObjectUnThunk(self, value, data):
         data.pop('thunker_encoded_json', False)
         data.pop('is_dict', False)
         thunktype = data.pop('type', False)
-        
+
         for k,v in data.iteritems():
             if (k == thunktype):
                 for k2,v2 in data[thunktype].iteritems():
@@ -205,20 +205,20 @@ class JSONThunker:
             else:
                 value.__dict__[k] = self._unthunk(v)
         return value
-    
+
     def handleListObjectThunk(self, data):
         thunktype = '%s.%s' % (data.__class__.__module__,
                                data.__class__.__name__)
-        tempDict = {'thunker_encoded_json':True, 
+        tempDict = {'thunker_encoded_json':True,
                     'is_list': True,
-                    'type': thunktype, 
+                    'type': thunktype,
                     thunktype: []}
         for k,v in enumerate(data):
-            tempDict['thunktype'].append(self._thunk(v)) 
+            tempDict['thunktype'].append(self._thunk(v))
         for k,v in data.__dict__.iteritems():
-            tempDict[k] = self._thunk(v)           
+            tempDict[k] = self._thunk(v)
         return tempDict
-    
+
     def handleListObjectUnThunk(self, value, data):
         data.pop('thunker_encoded_json', False)
         data.pop('is_list', False)
@@ -226,29 +226,29 @@ class JSONThunker:
         tmpdict = {}
         for k,v in data[thunktype].iteritems():
             setattr(value, k, self._unthunk(v))
-            
+
         for k,v in data.iteritems():
             if (k == thunktype):
                 continue
             value.__dict__ = self._unthunk(v)
         return value
-    
+
     def _thunk(self, toThunk):
         """
         helper function for thunk, does the actual work
         """
-        
+
         if (type(toThunk) in self.passThroughTypes):
             return toThunk
         elif (type(toThunk) == type([])):
             return self.handleListThunk(toThunk)
-        
+
         elif (type(toThunk) == type({})):
             return self.handleDictThunk(toThunk)
-        
+
         elif ((type(toThunk) == type(set()))):
             return self.handleSetThunk(toThunk)
-        
+
         elif (type(toThunk) == types.FunctionType):
             self.unrecurse(toThunk)
             return "function reference"
@@ -257,7 +257,7 @@ class JSONThunker:
         else:
             self.unrecurse(toThunk)
             raise RuntimeError, type(toThunk)
-        
+
     def _unthunk(self, jsondata):
         """
         _unthunk - does the actual work for unthunk
@@ -289,7 +289,7 @@ class JSONThunker:
                     #   here be monsters
                     #   inspired from python's pickle code
                     ourClass = self.getThunkedClass(jsondata)
-                    
+
                     value = _EmptyClass()
                     if (hasattr(ourClass, '__from_json__')):
                         # Use classes own json loader
@@ -306,7 +306,7 @@ class JSONThunker:
                             value = ourClass()
                         value = self.handleDictObjectUnThunk( value, jsondata )
                     elif ( 'thunker_encoded_json' in jsondata ):
-                        #print "list obj unthunk"  
+                        #print "list obj unthunk"
                         try:
                             value.__class__ = ourClass
                         except:
@@ -330,7 +330,7 @@ class JSONThunker:
                                 except:
                                     #print 'megafail'
                                     pass
-                        
+
                         #print "name %s module %s" % (name, module)
                         value.__dict__ = data
                 #print "our value is %s "% value
@@ -341,10 +341,10 @@ class JSONThunker:
                 for k,v in jsondata.iteritems():
                     data[k] = self._unthunk(v)
                 return data
- 
+
         else:
             return jsondata
-        
+
     def getThunkedClass(self, jsondata):
         """
         Work out the class from it's thunked json representation
@@ -353,7 +353,7 @@ class JSONThunker:
         name = jsondata['type'].rsplit('.',1)[1]
         if (module == 'WMCore.Services.Requests') and (name == JSONThunker):
             raise RuntimeError, "Attempted to unthunk a JSONThunker.."
-        
+
         __import__(module)
         mod = sys.modules[module]
         ourClass = getattr(mod, name)

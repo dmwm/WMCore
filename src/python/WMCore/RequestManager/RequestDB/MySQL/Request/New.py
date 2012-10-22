@@ -57,7 +57,7 @@ class New(DBFormatter):
         if workflow == None:
             msg = "workflow not provided to Request.New.execute"
             raise RuntimeError, msg
-        
+
         priority = request.get("request_priority", 0)
         prep_id = request.get("prep_id", None)
 

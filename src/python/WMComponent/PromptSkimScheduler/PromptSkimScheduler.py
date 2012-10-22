@@ -18,5 +18,5 @@ class PromptSkimScheduler(Harness):
 
     def preInitialization(self):
         pollInterval = self.config.PromptSkimScheduler.pollInterval
-        myThread = threading.currentThread()        
+        myThread = threading.currentThread()
         myThread.workerThreadManager.addWorker(PromptSkimPoller(self.config), pollInterval)

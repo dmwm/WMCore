@@ -13,8 +13,8 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class ListFilesetByTask(DBFormatter):
     sql = """SELECT id, name, open, last_update FROM wmbs_fileset
-             WHERE id IN (SELECT fileset FROM wmbs_subscription 
-             WHERE workflow IN (SELECT id FROM wmbs_workflow 
+             WHERE id IN (SELECT fileset FROM wmbs_subscription
+             WHERE workflow IN (SELECT id FROM wmbs_workflow
              WHERE task = :task))"""
 
 
@@ -38,4 +38,3 @@ class ListFilesetByTask(DBFormatter):
         result = self.dbi.processData(self.sql, {"task": task},
                          conn = conn, transaction = transaction)
         return self.formatDict(result)
-

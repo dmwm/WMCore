@@ -34,7 +34,7 @@ def getRequestInfoFromReqMgr(serviceURL):
         ### use request manager funtion directly
         ### TODO: remove this when GlobalMonitor spins out as a separate application
         if serviceURL.lower() == "local":
-            
+
             baseResults = getOverview()
             urls = getGlobalQueues()
         else:
@@ -68,7 +68,7 @@ def getRequestInfoFromGlobalQueue(serviceURL):
     else:
         tempResults = combineListOfDict('request_name', jobInfo, qInfo,
                                     local_queue = DFormatter.addToList)
-        baseResults = combineListOfDict('request_name', tempResults, 
+        baseResults = combineListOfDict('request_name', tempResults,
                                         siteWhitelists)
         localResults = []
         for url in childQueueURLs:

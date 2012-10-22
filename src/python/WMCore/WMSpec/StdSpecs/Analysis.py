@@ -242,7 +242,7 @@ class AnalysisWorkloadFactory(StdBase):
             self.raiseValidationException(msg = msg)
 
         return
-    
+
 
 
 def analysisWorkload(workloadName, arguments):

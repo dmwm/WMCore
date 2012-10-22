@@ -14,4 +14,3 @@ class DeleteJobs(MySQLDeleteJobs):
 
     Delete jobs from bl_runjob
     """
-

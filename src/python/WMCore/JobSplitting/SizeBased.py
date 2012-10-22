@@ -20,12 +20,12 @@ class SizeBased(JobFactory):
     def algorithm(self, *args, **kwargs):
         """
         _algorithm_
-        
+
         Implement size splitting algorithm.
 
-        
+
         kwargs can take:
-        size_per_job 
+        size_per_job
         """
         sizePerJob = int(kwargs.get("size_per_job", 1000))
         locationDict = self.sortByLocation()
@@ -35,7 +35,7 @@ class SizeBased(JobFactory):
             fileList     = locationDict[location]
             self.newJob(name = makeUUID())
             currentSize = 0
-            
+
             for f in fileList:
                 sizeOfFile = f['size']
                 if sizeOfFile > sizePerJob:
@@ -51,10 +51,9 @@ class SizeBased(JobFactory):
                         currentSize = 0
 
                     if currentSize + sizeOfFile <= sizePerJob:
-                    
+
                         if not self.currentJob:
                             self.newJob(name = makeUUID())
                         #Add if it will be smaller
                         self.currentJob.addFile(f)
                         currentSize += sizeOfFile
-

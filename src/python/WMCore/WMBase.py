@@ -17,7 +17,7 @@ def getWMBASE():
     if __file__.find("src/python") != -1:
         return os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
     else:
-        return os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))        
+        return os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
 
 def getTestBase(importFlag = True):
     """
@@ -36,7 +36,7 @@ def getTestBase(importFlag = True):
                 return envPath
         except:
             pass
-        
+
     if importFlag:
         # Then try importing things from WMCore_t and see if we can
         # find the directory
@@ -46,5 +46,5 @@ def getTestBase(importFlag = True):
             return os.path.normpath(os.path.join(testPath, '../'))
         except ImportError:
             pass
-        
+
     return basePath

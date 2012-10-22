@@ -49,7 +49,7 @@ class MathAlgoTest(unittest.TestCase):
 
         numList = [1, 2, 3, 4, 5, 6, 7, 8]
         result = MathAlgos.getAverageStdDev(numList = numList)
-        self.assertEqual(result[0], 4.5)  
+        self.assertEqual(result[0], 4.5)
         self.assertEqual(result[1], 2.2912878474779199) # I think this is right
 
         return
@@ -103,7 +103,7 @@ class MathAlgoTest(unittest.TestCase):
     def testSortListByKeys(self):
         """
         _testSortListByKeys_
-        
+
         Test our ability to sort a list of dictionaries in the order of a single
         numerical key
         """
@@ -136,14 +136,14 @@ class MathAlgoTest(unittest.TestCase):
         # This shouldn't fail, it just should return a flat list
         result = MathAlgos.sortDictionaryListByKey(dictList = l, key = 'c',
                                                    reverse = True)
-        
+
 
         return
 
     def testGetLargestValue(self):
         """
         _testGetLargestValue_
-        
+
         See if we can get the largest value from a list of histograms
         for a specific key
         """
@@ -164,4 +164,4 @@ class MathAlgoTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

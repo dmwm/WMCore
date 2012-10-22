@@ -30,7 +30,7 @@ class CouchService_t(unittest.TestCase):
         self.testInit.setupCouch("wmcore-acdc-couchservice", "GroupUser",
                                  "ACDC")
         return
-        
+
     def tearDown(self):
         """
         _tearDown_
@@ -51,24 +51,24 @@ class CouchService_t(unittest.TestCase):
 
         ownerA = svc.newOwner("somegroup", "someuserA")
         ownerB = svc.newOwner("somegroup", "someuserB")
-        
+
         testCollectionA = CouchCollection(database = self.testInit.couchDbName,
-                                          url = self.testInit.couchUrl, 
+                                          url = self.testInit.couchUrl,
                                           name = "Thunderstruck")
         testCollectionA.setOwner(ownerA)
         testCollectionB = CouchCollection(database = self.testInit.couchDbName,
-                                          url = self.testInit.couchUrl, 
+                                          url = self.testInit.couchUrl,
                                           name = "Struckthunder")
         testCollectionB.setOwner(ownerA)
         testCollectionC = CouchCollection(database = self.testInit.couchDbName,
-                                          url = self.testInit.couchUrl, 
+                                          url = self.testInit.couchUrl,
                                           name = "Thunderstruck")
         testCollectionC.setOwner(ownerB)
         testCollectionD = CouchCollection(database = self.testInit.couchDbName,
-                                          url = self.testInit.couchUrl, 
+                                          url = self.testInit.couchUrl,
                                           name = "Thunderstruck")
-        testCollectionD.setOwner(ownerB)        
-        
+        testCollectionD.setOwner(ownerB)
+
         testFilesetA = CouchFileset(database = self.testInit.couchDbName,
                                     url = self.testInit.couchUrl,
                                     name = "TestFilesetA")
@@ -84,14 +84,14 @@ class CouchService_t(unittest.TestCase):
         testFilesetD = CouchFileset(database = self.testInit.couchDbName,
                                     url = self.testInit.couchUrl,
                                     name = "TestFilesetD")
-        testCollectionC.addFileset(testFilesetD)        
+        testCollectionC.addFileset(testFilesetD)
 
         testFiles = []
         for i in range(5):
             testFile = File(lfn = makeUUID(), size = random.randint(1024, 4096),
                             events = random.randint(1024, 4096))
             testFiles.append(testFile)
-            
+
         testFilesetA.add(testFiles)
         testFilesetB.add(testFiles)
         testFilesetC.add(testFiles)
@@ -124,11 +124,11 @@ class CouchService_t(unittest.TestCase):
         svc = CouchService(url = self.testInit.couchUrl,
                            database = self.testInit.couchDbName)
         self.assertEqual(svc.listOwners(), [])
-        
+
         owner = svc.newOwner("somegroup", "someuser")
-        
+
         self.failUnless(len(svc.listOwners()) == 1 )
-        
+
         owner2 = svc.listOwners()[0]
         self.assertEqual(str(owner2['group']), owner['group'])
         self.assertEqual(str(owner2['name']), owner['name'])
@@ -136,6 +136,6 @@ class CouchService_t(unittest.TestCase):
         svc.removeOwner(owner2)
         self.failUnless(len(svc.listOwners()) == 0)
         return
-        
+
 if __name__ == '__main__':
     unittest.main()

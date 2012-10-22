@@ -8,7 +8,7 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
 from WMCore.GroupUser.CouchObject import CouchObject
-import WMCore.GroupUser.Decorators as Decorators 
+import WMCore.GroupUser.Decorators as Decorators
 from WMCore.GroupUser.Group import Group
 
 
@@ -16,8 +16,8 @@ from WMCore.GroupUser.Group import Group
 class User(CouchObject):
     """
     _User_
-    
-    
+
+
     """
     def __init__(self, **options):
         CouchObject.__init__(self)
@@ -31,11 +31,11 @@ class User(CouchObject):
 
     document_id = property(lambda x : "user-%s" % x['name'] )
     name = property(lambda x: x['name'])
-    
+
     def setGroup(self, groupInstance):
         """
         _setGroup_
-        
+
         Set the group attribute of this object
         """
         self.group = groupInstance
@@ -43,13 +43,13 @@ class User(CouchObject):
         if groupInstance.connected:
             # if the group already has the couch instance in it, borrow those settings
             self.setCouch(groupInstance.cdb_url, groupInstance.cdb_database)
-        
+
     @Decorators.requireConnection
     @Decorators.requireGroup
     def ownThis(self, document):
         """
         _ownThis_
-        
+
         Given a Couch Document, insert the details of this owner in a standard
         way so that the document can be found using the standard group/user views
         Note: if doc doesnt have both _id and _rev keys this change wont stick
@@ -57,18 +57,18 @@ class User(CouchObject):
         document['owner'] = {}
         document['owner']['user'] = self['name']
         document['owner']['group'] = self.group['name']
-        
+
         retval = self.couch.commitOne(document)
         document["_id"] = retval[0]["id"]
         document["_rev"] = retval[0]["rev"]
         return
-        
+
     @Decorators.requireConnection
     @Decorators.requireGroup
     def create(self):
         """
         _create_
-        
+
         Overide the base class create to make sure the group exists when adding the user
         (Note: Overriding wipes out decorators...)
         """
@@ -79,13 +79,13 @@ class User(CouchObject):
         CouchObject.create(self)
 
 #ToDo: Override drop to drop all documents owned by the owner...
-    
+
 def makeUser(groupname, username, couchUrl = None, couchDatabase = None):
     """
     _makeUser_
-    
+
     factory like util that creates a user and group object
-    
+
     """
     group = Group(name = groupname)
     if couchUrl != None:

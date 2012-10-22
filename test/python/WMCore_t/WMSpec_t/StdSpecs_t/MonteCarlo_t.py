@@ -27,7 +27,7 @@ class MonteCarloTest(unittest.TestCase):
         _setUp_
 
         Initialize the database and couch.
-        
+
         """
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
@@ -63,7 +63,7 @@ class MonteCarloTest(unittest.TestCase):
 
         Create a bogus config cache document for the montecarlo generation and
         inject it into couch.  Return the ID of the document.
-        
+
         """
         newConfig = Document()
         newConfig["info"] = None
@@ -78,12 +78,12 @@ class MonteCarloTest(unittest.TestCase):
                                                                               "dataTier": "USER"}}}}
         result = self.configDatabase.commitOne(newConfig)
         return result[0]["id"]
-    
-    
+
+
     def _commonMonteCarloTest(self):
         """
         Retrieve the workload from WMBS and test all its properties.
-        
+
         """
         prodWorkflow = Workflow(name = "TestWorkload",
                                 task = "/TestWorkload/Production")
@@ -204,23 +204,23 @@ class MonteCarloTest(unittest.TestCase):
             mergeLogCollectWorkflow.load()
             logCollectSub = Subscription(fileset = mergeLogCollect, workflow = mergeLogCollectWorkflow)
             logCollectSub.loadData()
-            
+
             self.assertEqual(logCollectSub["type"], "LogCollect",
                              "Error: Wrong subscription type.")
             self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
                              "Error: Wrong split algo.")
-        
+
 
     def testMonteCarlo(self):
         """
         Create a Monte Carlo workflow and verify that it is injected correctly
-        into WMBS and invoke its detailed test.        
-        
+        into WMBS and invoke its detailed test.
+
         """
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
-        defaultArguments["CouchDBName"] = "rereco_t"        
-        defaultArguments["ProcConfigCacheID"] = self.injectMonteCarloConfig()
+        defaultArguments["CouchDBName"] = "rereco_t"
+        defaultArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
 
         testWorkload = monteCarloWorkload("TestWorkload", defaultArguments)
         testWorkload.setSpecUrl("somespec")
@@ -245,7 +245,7 @@ class MonteCarloTest(unittest.TestCase):
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "rereco_t"
-        defaultArguments["ProcConfigCacheID"] = self.injectMonteCarloConfig()
+        defaultArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
         defaultArguments["FirstEvent"] = 3571428573
         defaultArguments["FirstLumi"] = 26042
         defaultArguments["TimePerEvent"] = 15
@@ -281,13 +281,13 @@ class MonteCarloTest(unittest.TestCase):
         """
         Create a Monte Carlo workflow and verify that it is injected correctly
         into WMBS and invoke its detailed test.
-        The input configuration includes pileup input files.        
-        
+        The input configuration includes pileup input files.
+
         """
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "rereco_t"
-        defaultArguments["ProcConfigCacheID"] = self.injectMonteCarloConfig()
+        defaultArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
 
         # add pile up configuration
         defaultArguments["PileupConfig"] = {"mc": ["/some/cosmics/dataset1", "/some/cosmics/dataset2"],
@@ -304,6 +304,7 @@ class MonteCarloTest(unittest.TestCase):
         self._commonMonteCarloTest()
 
         return
+
 
 if __name__ == '__main__':
     unittest.main()

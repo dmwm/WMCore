@@ -39,13 +39,13 @@ class PhEDExInjectorPoller(BaseWorkerThread):
     def __init__(self, config):
         """
         ___init___
-        
+
         Initialise class members
         """
         BaseWorkerThread.__init__(self)
         self.config = config
         self.phedex = PhEDEx({"endpoint": config.PhEDExInjector.phedexurl}, "json")
-        self.dbsUrl = config.DBSInterface.globalDBSUrl 
+        self.dbsUrl = config.DBSInterface.globalDBSUrl
         self.group = getattr(config.PhEDExInjector, "group", "DataOps")
 
         # This will be used to map SE names which are stored in the DBSBuffer to
@@ -54,16 +54,16 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         # SE name.
         self.seMap = {}
         self.nodeNames = []
-        
+
         # initialize the alert framework (if available - config.Alert present)
-        #    self.sendAlert will be then be available    
-        self.initAlerts(compName = "PhEDExInjector")        
-        
-    
+        #    self.sendAlert will be then be available
+        self.initAlerts(compName = "PhEDExInjector")
+
+
     def setup(self, parameters):
         """
         _setup_
-        
+
         Create a DAO Factory for the PhEDExInjector.  Also load the SE names to
         PhEDEx node name mappings from the data service.
         """
@@ -77,13 +77,13 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         daofactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                 logger = self.logger,
-                                dbinterface = myThread.dbi)   
+                                dbinterface = myThread.dbi)
         self.setStatus = daofactory(classname = "DBSBufferFiles.SetPhEDExStatus")
 
         daofactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
                                 logger = self.logger,
-                                dbinterface = myThread.dbi)   
-        self.setBlockStatus = daofactory(classname = "SetBlockStatus")        
+                                dbinterface = myThread.dbi)
+        self.setBlockStatus = daofactory(classname = "SetBlockStatus")
 
         nodeMappings = self.phedex.getNodeMap()
         for node in nodeMappings["phedex"]["node"]:
@@ -95,7 +95,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             self.nodeNames.append(node["name"])
 
         return
-    
+
     def createInjectionSpec(self, injectionData):
         """
         _createInjectionSpec_
@@ -127,7 +127,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                                       file["size"])
 
         return injectionSpec.save()
-    
+
     def injectFiles(self):
         """
         _injectFiles_
@@ -141,7 +141,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         for siteName in uninjectedFiles.keys():
             # SE names can be stored in DBSBuffer as that is what is returned in
             # the framework job report.  We'll try to map the SE name to a
-            # PhEDEx node name here. 
+            # PhEDEx node name here.
             location = None
 
             if siteName in self.nodeNames:
@@ -149,7 +149,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             else:
                 if self.seMap.has_key("Buffer") and \
                        self.seMap["Buffer"].has_key(siteName):
-                    location = self.seMap["Buffer"][siteName]                    
+                    location = self.seMap["Buffer"][siteName]
                 elif self.seMap.has_key("MSS") and \
                          self.seMap["MSS"].has_key(siteName):
                     location = self.seMap["MSS"][siteName]
@@ -188,7 +188,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 logging.error(msg)
                 self.sendAlert(6, msg = msg)
 
-            self.setStatus.execute(injectedFiles, 1, 
+            self.setStatus.execute(injectedFiles, 1,
                                    conn = myThread.transaction.conn,
                                    transaction = myThread.transaction)
             injectedFiles = []
@@ -208,7 +208,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         for siteName in migratedBlocks.keys():
             # SE names can be stored in DBSBuffer as that is what is returned in
             # the framework job report.  We'll try to map the SE name to a
-            # PhEDEx node name here. 
+            # PhEDEx node name here.
             location = None
 
             if siteName in self.nodeNames:
@@ -216,7 +216,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             else:
                 if self.seMap.has_key("Buffer") and \
                        self.seMap["Buffer"].has_key(siteName):
-                    location = self.seMap["Buffer"][siteName]                    
+                    location = self.seMap["Buffer"][siteName]
                 elif self.seMap.has_key("MSS") and \
                          self.seMap["MSS"].has_key(siteName):
                     location = self.seMap["MSS"][siteName]
@@ -257,14 +257,14 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 msg += str(ex)
                 logging.error(msg)
                 logging.debug("Traceback: %s" % str(traceback.format_exc()))
-                raise PhEDExInjectorPassableError(msg)                
+                raise PhEDExInjectorPassableError(msg)
 
             if not injectRes.has_key("error"):
                 for datasetName in migratedBlocks[siteName]:
                     for blockName in migratedBlocks[siteName][datasetName]:
                         logging.debug("Closing block %s" % blockName)
                         self.setBlockStatus.execute(blockName, locations = None,
-                                                    open_status = "Closed", 
+                                                    open_status = "Closed",
                                                     conn = myThread.transaction.conn,
                                                     transaction = myThread.transaction)
             else:
@@ -272,7 +272,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                        (migratedBlocks[siteName], injectRes["error"]))
                 logging.error(msg)
                 self.sendAlert(6, msg = msg)
-            myThread.transaction.commit()            
+            myThread.transaction.commit()
         return
 
     def algorithm(self, parameters):
@@ -296,6 +296,6 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             # Guess we should roll back if we actually have an exception
             if getattr(myThread, 'transaction', None):
                 myThread.transaction.rollbackForError()
-            raise 
-                
+            raise
+
         return

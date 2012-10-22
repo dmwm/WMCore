@@ -26,11 +26,12 @@ class TaskArchiver(Harness):
         self.pollTime = 1
 
         self.config = config
-        
-	print "TaskArchiver.__init__"
+
+        print "TaskArchiver.__init__"
 
     def preInitialization(self):
-	print "TaskArchiver.preInitialization"
+        print "TaskArchiver.preInitialization"
+
         # Add event loop to worker manager
         myThread = threading.currentThread()
 

@@ -12,22 +12,22 @@ __all__ = []
 from WMCore.Database.DBFormatter import DBFormatter
 
 class Save(DBFormatter):
-    sql = """UPDATE wmbs_job SET jobgroup = :jobgroup, name = :name, 
+    sql = """UPDATE wmbs_job SET jobgroup = :jobgroup, name = :name,
                couch_record = :couch_record, outcome = :outcome, cache_dir = :cache_dir,
-               location = 
+               location =
                  (SELECT id FROM wmbs_location WHERE site_name = :location),
                fwjr_path = :fwjr, retry_count = :retry_count
              WHERE id = :jobid"""
-    
-    def execute(self, jobid, jobgroup, name, couch_record, location, outcome, cache_dir, fwjr, 
+
+    def execute(self, jobid, jobgroup, name, couch_record, location, outcome, cache_dir, fwjr,
                 retry_count = 0, conn = None, transaction = False):
         if outcome == 'success':
             boolOutcome = 1
         else:
             boolOutcome = 0
-        
-        binds = {"jobid": jobid, "jobgroup": jobgroup, "name": name, 
-                 "couch_record": couch_record, "location": location, 
+
+        binds = {"jobid": jobid, "jobgroup": jobgroup, "name": name,
+                 "couch_record": couch_record, "location": location,
                  "outcome": boolOutcome, "cache_dir": cache_dir, "fwjr": fwjr,
                  'retry_count': retry_count}
 

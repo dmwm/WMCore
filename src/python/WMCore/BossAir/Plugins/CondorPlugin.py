@@ -974,4 +974,3 @@ class CondorPlugin(BasePlugin):
 
 
         return jobInfo
-

@@ -26,7 +26,7 @@ class RemoveFromWorkflowManagementLocationListSlave(DefaultSlave):
                                                                     str(args)
         logging.debug(msg)
         myThread = threading.currentThread()
-        
+
         # Validate arguments
         if args.has_key("FilesetMatch") and args.has_key("WorkflowId") \
         and args.has_key("Locations"):

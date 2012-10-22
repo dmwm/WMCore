@@ -27,7 +27,7 @@ class ReRecoRequest(RequestMakerInterface):
     def makeWorkload(self, schema):
         return rerecoWorkload(schema['RequestName'], schema).data
 
-        
+
 class ReRecoSchema(RequestSchema):
     """
     _ReReco_
@@ -70,4 +70,3 @@ class ReRecoSchema(RequestSchema):
             raise RuntimeError, "Need three slashes in InputDataset "+self['InputDataset']
 
 registerRequestType("ReReco", ReRecoRequest, ReRecoSchema)
-

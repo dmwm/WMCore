@@ -241,8 +241,8 @@ class RESTModel(WebAPI):
             else:
                 if len(input_args):
                     input_data[a] = input_args.pop(0)
-        if input_kwargs: 
-            raise HTTPError(400, 'Invalid input: Input arguments failed sanitation.') 
+        if input_kwargs:
+            raise HTTPError(400, 'Invalid input: Input arguments failed sanitation.')
         self.debug('%s raw data: %s' % (method, {'args': input_args, 'kwargs': input_kwargs}))
         self.debug('%s sanitised input_data: %s' % (method, input_data))
         return self._validate_input(input_data, verb, method)

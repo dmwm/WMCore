@@ -2,7 +2,7 @@
 """
 _FilesTestCase_
 
-Unit tests for File creation, location and exists, including checks to see that calls 
+Unit tests for File creation, location and exists, including checks to see that calls
 are database dialect neutral.
 
 """
@@ -18,10 +18,10 @@ from WMCore.DataStructs.Fileset import Fileset
 class BaseFakeFeederTestCase(unittest.TestCase):
     def setUp(self):
         self.feeder = FakeFeeder(10)
-    
+
     def tearDown(self):
         pass
-    
+
     def testCall(self):
         fileset = Fileset(name="FakeFeederTest")
         for i in range(1, 21):
@@ -30,11 +30,11 @@ class BaseFakeFeederTestCase(unittest.TestCase):
             if len(set) > 0:
                 file = set.pop()
             fileset.commit()
-            
+
 class BaseUpdatingFakeFeederTestCase(BaseFakeFeederTestCase):
     def setUp(self):
         self.feeder = UpdatingFakeFeeder(10, 10)
-    
-            
+
+
 if __name__ == '__main__':
     unittest.main()

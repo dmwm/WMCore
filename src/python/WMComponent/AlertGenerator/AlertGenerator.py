@@ -11,7 +11,7 @@ soft, resp. below critical.
 
 Checked metrics:
     as defined in the configuration sections (see this class test file for complete list)
-            
+
 """
 
 
@@ -38,7 +38,7 @@ from WMComponent.AlertGenerator.Pollers.Couch import CouchMemoryPoller
 from WMComponent.AlertGenerator.Pollers.Couch import CouchErrorsPoller
 
 
-        
+
 configSectionsToPollersMap = {"cpuPoller": CPUPoller,
                               "memPoller": MemoryPoller,
                               "diskSpacePoller": DiskSpacePoller,
@@ -59,15 +59,15 @@ class AlertGenerator(Harness):
     Agent's component to manage running of various configurable pollers.
     Each poller runs on background as separate process, pollers poll()
     method is entry point.
-    
+
     Due to the logging mess in Harness, nothing, be it logging
     or print from here appears in the log files. Important stuff to
     move into preInitialization (from where logging works normally).
-    
+
     """
     def __init__(self, config):
         Harness.__init__(self, config)
-        self.config = config                
+        self.config = config
         # poller instances (threads)
         self._pollers = []
         #3602 related:
@@ -75,17 +75,17 @@ class AlertGenerator(Harness):
         # is used by wmcoreD --shutdown, hence shutdown sequence is not called
         # this shall later be moved into (hopefully largely improved) Harness
         signal.signal(signal.SIGTERM, self._signalHandler)
-        
-        
+
+
     def _signalHandler(self, signalNumber, frame):
         logging.info("Signal number %s caught." % signalNumber)
         self.prepareToStop()
-        
-        
+
+
     def _createPollers(self):
         """
         Iterate over sections and instantiate corresponding Poller instances.
-        
+
         """
         configuredPollers = []
         for poller in self.config.AlertGenerator.listSections_():
@@ -101,32 +101,32 @@ class AlertGenerator(Harness):
                 except Exception, ex:
                     trace = traceback.format_exception(*sys.exc_info())
                     traceString = '\n '.join(trace)
-                    logging.error("%s failed to initialize, reason: %s\n%s" % 
+                    logging.error("%s failed to initialize, reason: %s\n%s" %
                                   (pollerClass, ex, traceString))
-                                        
+
         l = [configSectionsToPollersMap.values(), configuredPollers, self._pollers]
         logging.info("Known pollers implementations:\n%s (%s)\n"
                      "Configured pollers:\n%s (%s)\n"
                      "Instantiated pollers:\n%s (%s)" %
                      (l[0], len(l[0]), l[1], len(l[1]), l[2], len(l[2])))
-                     
-        
+
+
     def preInitialization(self):
         """
         Create poller instances running in threads.
-        
+
         """
         logging.info("preInitialization - instantiating pollers ...")
         self._createPollers()
         logging.info("preInitialization - starting pollers ...")
         [poller.start() for poller in self._pollers]
         logging.info("preInitialization - finished.")
-        
-        
+
+
     def stopAlertGenerator(self):
         """
         Method to shutdown the AlertGenerator - stop all poller threads.
-        
+
         """
         logging.info("stopAlertGenerator - stopping %s pollers ..." % len(self._pollers))
         [poller.stop() for poller in self._pollers]
@@ -139,13 +139,13 @@ class AlertGenerator(Harness):
             logging.info("Terminated: %s" % poller)
             counter += 1
         logging.info("stopAlertGenerator - finished, %s poller threads terminated." % counter)
-        
-        
+
+
     def prepareToStop(self, wait = False, stopPayload = ""):
         """
         Override prepareToStop to include call to stopAlertGenerator.
         Ugly, but seems no other way to do this...
-        
+
         """
         logging.info("Shutting down the component - prepareToStop ...")
         self.stopAlertGenerator()

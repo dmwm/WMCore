@@ -53,11 +53,11 @@ class CouchWorkQueueElementTest(unittest.TestCase):
         values = [
                   # status conflict
                   [[{'RequestName' : 'arequest', 'Status' : 'Available'}, {'RequestName' : 'arequest', 'Status' : 'CancelRequested'}],
-                  [{'RequestName' : 'arequest', 'Status' : 'CancelRequested'}, {'RequestName' : 'arequest', 'Status' : 'CancelRequested'}]              
+                  [{'RequestName' : 'arequest', 'Status' : 'CancelRequested'}, {'RequestName' : 'arequest', 'Status' : 'CancelRequested'}]
                  ],
                   # location conflict - local uses location and global subscriptions
                   [[{'RequestName' : 'brequest', 'Status' : 'CancelRequested', 'Inputs' : {'a' : [1]}}, {'RequestName' : 'brequest', 'Status' : 'Available', 'Inputs' : {'a' : [1,2]}}],
-                  [{'RequestName' : 'brequest', 'Status' : 'CancelRequested', 'Inputs' : {'a' : [1,2]}}, {'RequestName' : 'brequest', 'Status' : 'Available', 'Inputs' : {'a' : [1,2]}}]              
+                  [{'RequestName' : 'brequest', 'Status' : 'CancelRequested', 'Inputs' : {'a' : [1,2]}}, {'RequestName' : 'brequest', 'Status' : 'Available', 'Inputs' : {'a' : [1,2]}}]
                  ],
                   # status and progress conflict
                   [[{'RequestName' : 'crequest', 'Status' : 'Available', 'PercentComplete' : 69}, {'RequestName' : 'crequest', 'Status' : 'CancelRequested'}],

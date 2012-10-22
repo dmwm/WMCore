@@ -44,7 +44,7 @@ class Subscription(Pickleable, dict):
     def workflowType(self):
         if self["workflow"] == None:
             return "Unknown"
-        return self["workflow"].wfType    
+        return self["workflow"].wfType
 
     def taskName(self):
         if self['workflow'] == None:

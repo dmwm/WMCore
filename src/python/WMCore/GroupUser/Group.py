@@ -17,9 +17,9 @@ from WMCore.GroupUser.CouchObject import CouchObject
 class Group(CouchObject):
     """
     _Group_
-    
+
     Dictionary object containing attributes of a group
-    
+
     """
     def __init__(self, **options):
         CouchObject.__init__(self)
@@ -31,6 +31,3 @@ class Group(CouchObject):
 
     document_id = property(lambda x : "group-%s" % x['name'] )
     name = property(lambda x: x['name'])
-                
-                
-                

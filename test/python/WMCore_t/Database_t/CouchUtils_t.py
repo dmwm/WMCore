@@ -19,39 +19,39 @@ class CouchUtils_t(unittest.TestCase):
     def setUp(self):
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setupCouch("wmcore-acdc-couchutils", "GroupUser", "ACDC")
-        
+
     def tearDown(self):
         self.testInit.tearDownCouch()
-        
-        
+
+
     def testA(self):
         """object driven connection via initialiseCouch method"""
-        
+
         class Thingy(object):
             """misc object with couch access attrs"""
             def __init__(self):
                 self.couchdb = None
                 self.database = None
                 self.url = None
-        
+
             @CouchUtils.connectToCouch
             def __call__(self):
                 return True
-            
+
         couchThingy = Thingy()
-        
+
         # test throws with everything None
         self.assertRaises(CouchUtils.CouchConnectionError, CouchUtils.initialiseCouch, couchThingy)
         couchThingy.url = self.testInit.couchUrl
         self.assertRaises(CouchUtils.CouchConnectionError, CouchUtils.initialiseCouch, couchThingy)
         couchThingy.database = self.testInit.couchDbName
-        
+
         try:
             CouchUtils.initialiseCouch(couchThingy)
         except Exception, ex:
             msg = "Error initialising couch client for test object:\n %s " % str(ex)
             self.fail(msg)
-            
+
         self.failUnless(couchThingy.couchdb != None)
         # test decorator on already connected object
         try:
@@ -59,7 +59,7 @@ class CouchUtils_t(unittest.TestCase):
         except Exception, ex:
             msg = "Error invoking connectToCouch decorator:\n %s" % str(msg)
             self.fail(msg)
-            
+
         newCouchThingy = Thingy()
         newCouchThingy.database = self.testInit.couchDbName
         newCouchThingy.url = self.testInit.couchUrl
@@ -70,11 +70,11 @@ class CouchUtils_t(unittest.TestCase):
             msg = "Error invoking connectToCouch decorator:\n %s" % str(msg)
             self.fail(msg)
         self.failUnless(newCouchThingy != None)
-        
-        
+
+
     def testB(self):
         """check requirement tests"""
-        
+
         class Thingy(dict):
             """test object with required attrs"""
             def __init__(self):
@@ -82,19 +82,19 @@ class CouchUtils_t(unittest.TestCase):
                 self.owner = "NotNone"
                 self['fileset_id'] = "NotNone"
                 self['owner_id'] = "NotNone"
-                
+
             @CouchUtils.requireCollection
             def call1(self):
                 return True
-                
+
             @CouchUtils.requireOwner
             def call4(self):
                 return True
-            
-            
-        
+
+
+
         thingy = Thingy()
-        
+
         try:
             thingy.call1()
         except Exception, ex:
@@ -105,15 +105,15 @@ class CouchUtils_t(unittest.TestCase):
         except Execption, ex:
             msg = "Failure in requireOwner decorator: %s" % str(ex)
             self.fail(msg)
-        
-        
+
+
         # now screw it up
         thingy.collection = None
         thingy.owner = None
-        
+
         self.assertRaises(RuntimeError, thingy.call1)
         self.assertRaises(RuntimeError, thingy.call4)
-        
-        
+
+
 if __name__ == '__main__':
     unittest.main()

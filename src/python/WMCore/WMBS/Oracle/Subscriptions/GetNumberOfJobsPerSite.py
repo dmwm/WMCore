@@ -18,6 +18,3 @@ class GetNumberOfJobsPerSite(MySQLGNOJPS):
     Right now the same as the MySQL implementation
 
     """
-    
-
-    

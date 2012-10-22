@@ -9,7 +9,7 @@ _Feeder_
 import logging
 import threading
 
-from WMCore.WMBSFeeder.FeederImpl import FeederImpl 
+from WMCore.WMBSFeeder.FeederImpl import FeederImpl
 from WMCore.WMBS.File import File
 #from WMCore.WMBS.Fileset import Fileset
 from WMCore.DataStructs.Run import Run
@@ -30,7 +30,7 @@ class Feeder(FeederImpl):
     """
 
     def __init__(self, \
-                 urlT0 = "/tier0/listbulkfilesoverinterval/"): 
+                 urlT0 = "/tier0/listbulkfilesoverinterval/"):
         """
         Configure the feeder
         """
@@ -38,8 +38,8 @@ class Feeder(FeederImpl):
         FeederImpl.__init__(self)
 
         self.maxRetries = 3
-        self.purgeTime = 96 
-        self.reopenTime = 120 
+        self.purgeTime = 96
+        self.reopenTime = 120
 
     def __call__(self, filesetToProcess):
         """
@@ -65,7 +65,7 @@ class Feeder(FeederImpl):
 
 
         logging.debug("the T0Feeder is processing %s" % \
-                 filesetToProcess.name) 
+                 filesetToProcess.name)
         logging.debug("the fileset name %s" % \
          (filesetToProcess.name).split(":")[0])
 
@@ -73,9 +73,9 @@ class Feeder(FeederImpl):
         startRun = (filesetToProcess.name).split(":")[3]
         fileType = (filesetToProcess.name).split(":")[2]
 
-        
+
         LASTIME = filesetToProcess.lastUpdate
- 
+
         # url builder
         primaryDataset = ((filesetToProcess.name).split(":")[0]).split('/')[1]
         processedDataset = ((filesetToProcess.name).split(":")[0]).split('/')[2]
@@ -98,9 +98,9 @@ class Feeder(FeederImpl):
 
                 logging.debug("T0Reader call error...")
                 if tries == self.maxRetries:
-                    return  
+                    return
                 else:
-                    tries += 1 
+                    tries += 1
                     continue
 
             logging.debug("T0 queries done ...")
@@ -110,8 +110,8 @@ class Feeder(FeederImpl):
             break
 
         # process all files
-        if len(newFilesList['files']):  
-     
+        if len(newFilesList['files']):
+
             try:
                 locationNew.execute(siteName = "caf.cern.ch", seName = "caf.cern.ch")
             except Exception,e:
@@ -121,14 +121,14 @@ class Feeder(FeederImpl):
 
             for files in newFilesList['files']:
 
-                # Assume parents aren't asked 
+                # Assume parents aren't asked
                 newfile = File(str(files['lfn']), \
            size = files['file_size'], events = files['events'])
 
 
                 try:
 
-                    LOCK.acquire() 
+                    LOCK.acquire()
 
                     if newfile.exists() == False :
                         newfile.create()
@@ -159,8 +159,8 @@ class Feeder(FeederImpl):
                         for run in newfile['runs']:
 
                             if run.run < int(startRun):
-                                val = 1 
-                                break 
+                                val = 1
+                                break
 
                         if not val:
 
@@ -186,8 +186,8 @@ class Feeder(FeederImpl):
         else:
 
             logging.debug("nothing to do in T0AST...")
-            # For reopned fileset or empty 
-            # try until the purge time is reached            
+            # For reopned fileset or empty
+            # try until the purge time is reached
             if (int(now)/3600 - LASTIME/3600) > self.reopenTime:
 
                 filesetToProcess.setLastUpdate(time.time())
@@ -209,8 +209,5 @@ class Feeder(FeederImpl):
     def persist(self):
         """
         To overwrite
-        """ 
+        """
         pass
-
-
-

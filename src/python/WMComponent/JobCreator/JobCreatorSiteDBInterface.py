@@ -23,7 +23,7 @@ class JobCreatorSiteDBInterface(SiteDBJSON):
         I wrote this because the SEtoCMSname doesn't work the way I want, and I want
         the whole dictionary back.
         """
-        
+
 
         result = ''
         if clearCache:
@@ -52,7 +52,7 @@ class JobCreatorSiteDBInterface(SiteDBJSON):
             slots = siteInfo['job_slots - #']
 
         return slots
-        
+
 
 
     def getSiteID(self, name):
@@ -68,7 +68,7 @@ class JobCreatorSiteDBInterface(SiteDBJSON):
             return 0
 
         return siteDict[name]
-            
+
 
 
 

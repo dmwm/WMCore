@@ -18,7 +18,7 @@ class JobStatusByLocation(DBFormatter):
 
 
     sql = """SELECT wl.cms_name AS site_name, wl.pending_slots as pending_slots,
-                    count(rj.wmbs_id) AS num_jobs, 
+                    count(rj.wmbs_id) AS num_jobs,
                     st.name AS status, wl.plugin AS plugin
                FROM bl_runjob rj
                INNER JOIN bl_status st ON rj.sched_status = st.id
@@ -33,28 +33,28 @@ class JobStatusByLocation(DBFormatter):
         convert each individual batch system plugin status to a common status.
         Warning: This assumes all the plugin are under WMCore/BossAir/Plugins/
         and its module name and class name should be the same.
-        
-        __import__ doesn't reload if the module exist. 
-        (so doesn't need to keep track what is already imported. 
-        The performance difference should be small. If desired, maintain 
+
+        __import__ doesn't reload if the module exist.
+        (so doesn't need to keep track what is already imported.
+        The performance difference should be small. If desired, maintain
         the cache to keep track imported plugIns
         """
         commonStates = {}
         for data in results:
             if not commonStates.has_key(data['site_name']):
                 commonStates[data['site_name']] = {}
-                
-            module = __import__("WMCore.BossAir.Plugins.%s" % data['plugin'], 
+
+            module = __import__("WMCore.BossAir.Plugins.%s" % data['plugin'],
                                 globals(), locals(), [data['plugin']])
             plugIn = getattr(module, data['plugin'])
-            
+
             for status in plugIn.stateMap().values():
                 commonStates[data['site_name']].setdefault(status, 0)
-                
+
             state = plugIn.stateMap().get(data['status'])
             commonStates[data['site_name']][state] += data['num_jobs']
             commonStates[data['site_name']]['pending_slots'] = data['pending_slots']
-            
+
         results = []
         for key, value in commonStates.items():
             reformedData = {'site_name': key}
@@ -62,7 +62,7 @@ class JobStatusByLocation(DBFormatter):
             results.append(reformedData)
 
         return results
-        
+
 
     def execute(self, commonFormat = True, conn = None, transaction = False):
         """
@@ -80,4 +80,3 @@ class JobStatusByLocation(DBFormatter):
             return self.mappedStatusFormat(self.formatDict(result))
         else:
             return self.formatDict(result)
-

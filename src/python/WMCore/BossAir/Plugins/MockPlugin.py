@@ -31,7 +31,7 @@ def processWorker(myinput, tmp):
 
             taskName = targetDir.split('/')[5]
             if jj['cache_dir'].count("Analysis/LogCollect") > 0:
-                if lcreport is not None: 
+                if lcreport is not None:
                     lcreport.task = "/" + taskName + "/Analysis/LogCollect"
                     f = open(outfile, 'w')
                     logging.debug('Process worker is dumping the LogCollect report to ' + f.name)

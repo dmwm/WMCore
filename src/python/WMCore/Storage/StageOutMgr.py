@@ -219,7 +219,7 @@ class StageOutMgr:
                     del self.failed[lfn]
 
                 print "===> Stage Out Successful: %s" % fileToStage
-                return fileToStage                        
+                return fileToStage
             except Exception, ex:
                 lastException = ex
                 continue
@@ -369,8 +369,3 @@ class StageOutMgr:
         msg += "LFN: %s\nPFN: %s\n" % (lfn, pfn)
         print msg
         return pfn
-
-
-
-
-

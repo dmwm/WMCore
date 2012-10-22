@@ -23,7 +23,7 @@ class Create(DBCreator):
         """
         myThread = threading.currentThread()
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
-        
+
         self.create["01dbsbuffer_dataset"] = \
           """CREATE TABLE dbsbuffer_dataset
                (
@@ -34,14 +34,14 @@ class Create(DBCreator):
         self.create["02dbsbuffer_algo"] = \
           """CREATE TABLE dbsbuffer_algo
                (
-                  id             INTEGER PRIMARY KEY AUTOINCREMENT,   
+                  id             INTEGER PRIMARY KEY AUTOINCREMENT,
                   app_name       VARCHAR(100),
                   app_ver        VARCHAR(100),
                   app_fam        VARCHAR(100),
                   pset_hash      VARCHAR(700),
                   config_content LONGTEXT,
                   in_dbs         INTEGER DEFAULT 0,
-                  UNIQUE(app_name, app_ver, app_fam, pset_hash) 
+                  UNIQUE(app_name, app_ver, app_fam, pset_hash)
                )"""
 
         self.create["03dbsbuffer_algo_dataset_assoc"] = \
@@ -57,7 +57,7 @@ class Create(DBCreator):
                   FOREIGN KEY (dataset_id) REFERENCES dbsbuffer_dataset(id)
                     ON DELETE CASCADE
                )"""
-                
+
         self.create["04dbsbuffer_file"] = \
           """CREATE TABLE dbsbuffer_file (
              id           INTEGER      PRIMARY KEY AUTOINCREMENT,
@@ -67,9 +67,9 @@ class Create(DBCreator):
              cksum        BIGINT UNSIGNED,
              dataset_algo INTEGER NOT NULL,
              block_id     INTEGER,
-	     status       varchar(20),
+             status       varchar(20),
              LastModificationDate  BIGINT)"""
-        
+
         self.create["05dbsbuffer_file_parent"] = \
           """CREATE TABLE dbsbuffer_file_parent (
              child  INTEGER NOT NULL,

@@ -12,4 +12,3 @@ from WMCore.WMBS.MySQL.Workflow.Status import Status as MySQLStatus
 
 class Status(MySQLStatus):
     pass
-    

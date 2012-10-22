@@ -30,14 +30,14 @@ class testBasicAlgos(unittest.TestCase):
         """
         self.testInit = TestInitCouchApp(__file__)
         self.testDir = self.testInit.generateWorkDir()
-        
+
         return
 
 
     def tearDown(self):
         """
         Do nothing
-        
+
         """
         self.testInit.delWorkDir()
 
@@ -107,7 +107,7 @@ class testBasicAlgos(unittest.TestCase):
         f = open(filename, 'w')
         f.write(silly)
         f.close()
-        
+
         info = BasicAlgos.getFileInfo(filename = filename)
         self.assertEqual(info['Name'], filename)
         self.assertEqual(info['Size'], 34)
@@ -115,8 +115,4 @@ class testBasicAlgos(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main() 
-
-
-
-        
+    unittest.main()

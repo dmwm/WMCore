@@ -11,24 +11,24 @@ class GetParents(DBFormatter):
                 select id from dbsbuffer_file where lfn = :lfn
             )
         )"""
-        
+
     def getBinds(self, files=None):
         binds = []
         files = self.dbi.makelist(files)
         for f in files:
             binds.append({'lfn': f})
         return binds
-    
-    def format(self, result):        
-        out = [] 
+
+    def format(self, result):
+        out = []
         for r in result:
             for f in r.fetchall():
                 out.append(f[0])
-        return out 
-        
+        return out
+
     def execute(self, files=None, conn = None, transaction = False):
         binds = self.getBinds(files)
-        
-        result = self.dbi.processData(self.sql, binds, 
+
+        result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = transaction)
         return self.format(result)

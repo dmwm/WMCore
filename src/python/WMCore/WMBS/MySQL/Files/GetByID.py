@@ -28,7 +28,7 @@ class GetByID(DBFormatter):
             # easier in the Oracle version of this object.
             formattedResult["size"] = int(formattedResult["filesize"])
             del formattedResult["filesize"]
-            
+
         return formattedResult
 
     def formatBulkDict(self, result):
@@ -55,7 +55,7 @@ class GetByID(DBFormatter):
             formattedResult[tmpDict['id']] = tmpDict
 
         return formattedResult
-    
+
     def execute(self, file = None, conn = None, transaction = False):
 
         #Making some modifications to allow it to load a whole list of files
@@ -68,13 +68,13 @@ class GetByID(DBFormatter):
             binds = []
             for id in file:
                 binds.append({'fileid': id})
-                
-            result = self.dbi.processData(self.sql, binds, 
+
+            result = self.dbi.processData(self.sql, binds,
                                           conn = conn, transaction = transaction)
             return self.formatBulkDict(result)
         else:
             #We only have one file ID
             binds = {"fileid": file}
-            result = self.dbi.processData(self.sql, binds, 
+            result = self.dbi.processData(self.sql, binds,
                                           conn = conn, transaction = transaction)
             return self.formatOneDict(result)

@@ -126,7 +126,7 @@ class AlcaHarvest(Executor):
             logging.info("Copy out conditions files to %s" % self.step.condition.dir)
             for file2copy in files2copy:
 
-                logging.info("==> copy %s" % file2copy) 
+                logging.info("==> copy %s" % file2copy)
 
                 targetFile = os.path.join(self.step.condition.dir, file2copy)
 
@@ -162,7 +162,7 @@ class AlcaHarvest(Executor):
             stepReport.persist(reportLocation)
 
         return
-    
+
     def post(self, emulator = None):
         """
         _post_
@@ -173,6 +173,6 @@ class AlcaHarvest(Executor):
         # Another emulator check
         if emulator is not None:
             return emulator.emulatePost(self.step)
-        
+
         print "Steps.Executors.AlcaHarvest.post called"
         return None

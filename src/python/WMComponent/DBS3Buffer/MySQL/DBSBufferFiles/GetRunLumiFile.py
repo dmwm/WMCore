@@ -12,8 +12,8 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class GetRunLumiFile(DBFormatter):
     sql = """select flr.run as run, flr.lumi as lumi
-		from dbsbuffer_file_runlumi_map flr 
-			where flr.filename in (select id from dbsbuffer_file where lfn=:lfn)"""
+                from dbsbuffer_file_runlumi_map flr
+                        where flr.filename in (select id from dbsbuffer_file where lfn=:lfn)"""
 
     def getBinds(self, file=None):
         binds = []
@@ -25,13 +25,13 @@ class GetRunLumiFile(DBFormatter):
     def format(self, result):
         "Return a list of Run/Lumi Set"
 
-	run_lumis={}
+        run_lumis={}
         for r in result:
             for i in r.fetchall():
-		if i[0] not in run_lumis.keys():
-			run_lumis[i[0]]=[]
-		run_lumis[i[0]].append(i[1])
-                
+                if i[0] not in run_lumis.keys():
+                    run_lumis[i[0]]=[]
+                run_lumis[i[0]].append(i[1])
+
         return run_lumis
 
     def execute(self, file=None, conn = None, transaction = False):

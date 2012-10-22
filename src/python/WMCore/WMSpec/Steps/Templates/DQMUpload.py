@@ -57,6 +57,3 @@ class DQMUpload(Template):
 
         """
         return DQMUploadStepHelper(step)
-
-
-

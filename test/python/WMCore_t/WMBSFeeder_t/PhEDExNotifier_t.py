@@ -2,7 +2,7 @@
 """
 _FilesTestCase_
 
-Unit tests for File creation, location and exists, including checks to see that calls 
+Unit tests for File creation, location and exists, including checks to see that calls
 are database dialect neutral.
 
 """
@@ -16,10 +16,10 @@ class PhEDExNotifierTest(unittest.TestCase):
     def setUp(self):
         nodeList = [ "T0_CH_CERN_MSS", "T2_CH_CAF" ]
         self.feeder = PhEDExNotifierComponent( nodeList )
-    
+
     def tearDown(self):
         pass
-    
+
     def testCall(self):
         raise nose.SkipTest
         block = Fileset(name="/HCALNZS/CSA08_STARTUP_V2_v2/RECO#2d041209-fff6-4a71-81fa-2e4b155ed92b")
@@ -29,15 +29,15 @@ class PhEDExNotifierTest(unittest.TestCase):
 
     def callPhEDExNotifier( self, fileset ):
         fileset.commit()
-        print "iteration 0: %s new files (%s total)" % (len(fileset.listNewFiles()), len(fileset.listFiles())) 
+        print "iteration 0: %s new files (%s total)" % (len(fileset.listNewFiles()), len(fileset.listFiles()))
         for i in range(1, 4):
             self.feeder([fileset])
-            print "iteration %s: %s new files (%s total)" % (i, len(fileset.listNewFiles()), len(fileset.listFiles())) 
+            print "iteration %s: %s new files (%s total)" % (i, len(fileset.listNewFiles()), len(fileset.listFiles()))
             set = fileset.listFiles()
             if len(set) > 0:
                 file = set.pop()
-                print file["locations"], file["lfn"]        
+                print file["locations"], file["lfn"]
             fileset.commit()
-    
+
 if __name__ == '__main__':
     unittest.main()

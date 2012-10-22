@@ -56,7 +56,7 @@ def reqMgrConfig(
         config.reqmgr.Webtools.port = port
         config.reqmgr.Webtools.environment = 'devel'
         config.reqmgr.database.connectUrl = connectURL
-        
+
     config.reqmgr.componentDir = componentDir
     config.reqmgr.templates = reqMgrTemplates
     config.reqmgr.html = reqMgrHtml
@@ -96,7 +96,7 @@ def reqMgrConfig(
 
     active.section_('reqMgr')
     active.reqMgr.section_('model')
-    active.reqMgr.section_('formatter') 
+    active.reqMgr.section_('formatter')
     active.reqMgr.object = 'WMCore.WebTools.RESTApi'
     active.reqMgr.model.object = 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel'
     active.reqMgr.default_expires = 0 # no caching
@@ -124,7 +124,7 @@ def reqMgrConfig(
         active.GlobalMonitor.javascript = globalOverviewJavascript
         active.GlobalMonitor.html = globalOverviewHtml
         active.GlobalMonitor.serviceLevel = 'RequestManager'
-    
+
         active.section_('monitorSvc')
         active.monitorSvc.serviceURL = "%s/reqmgr/reqMgr" % reqMgrHost
         active.monitorSvc.serviceLevel = active.GlobalMonitor.serviceLevel
@@ -136,7 +136,7 @@ def reqMgrConfig(
         active.monitorSvc.default_expires = 0 # no caching
         active.monitorSvc.formatter.object = 'WMCore.WebTools.RESTFormatter'
         active.monitorSvc.template = os.path.join(installation, 'data/templates/WMCore/WebTools')
-    
+
     active.section_('yuiserver')
     active.yuiserver.object = 'WMCore.WebTools.YUIServer'
     active.yuiserver.yuidir = os.getenv("YUI_ROOT")

@@ -19,5 +19,3 @@ class CreateBlocks(MySQLCreateBlocks):
     Oracle implementation
 
     """
-
-    

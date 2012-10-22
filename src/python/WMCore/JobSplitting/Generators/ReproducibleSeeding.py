@@ -33,9 +33,9 @@ class ReproducibleSeeding(GeneratorInterface):
     def __init__(self, **options):
         GeneratorInterface.__init__(self, **options)
         self.couchUrl = options.get("CouchUrl")
-        self.couchDBName = options.get("CouchDBName")   
-        self.couchConfigDoc = options.get("ConfigCacheDoc")   
-        
+        self.couchDBName = options.get("CouchDBName")
+        self.couchConfigDoc = options.get("ConfigCacheDoc")
+
         confCache = ConfigCache(dbURL = self.couchUrl, couchDBName = self.couchDBName, id = self.couchConfigDoc)
         confCache.load()
         seeds = confCache.document[u'pset_tweak_details'][u'process'][u'RandomNumberGeneratorService']
@@ -43,11 +43,10 @@ class ReproducibleSeeding(GeneratorInterface):
         for k in seeds.keys():
             if k == u"parameters_" : continue
             self.seedTable.append("process.RandomNumberGeneratorService.%s.initialSeed" % k)
-                
-            
+
+
     def __call__(self, wmbsJob):
         wmbsJob.addBaggageParameter("seeding", self.__class__.__name__)
 
         for seed in self.seedTable:
             wmbsJob.addBaggageParameter(seed, newSeed())
-

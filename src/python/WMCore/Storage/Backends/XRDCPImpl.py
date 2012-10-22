@@ -5,7 +5,7 @@ _XRDCPImpl_
 Implementation of StageOutImpl interface for RFIO in Castor-2
 
 """
-import os 
+import os
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
 
@@ -17,7 +17,7 @@ class XRDCPImpl(StageOutImpl):
     _XRDCPImpl_
 
     Implement interface for rfcp command
-    
+
     """
 
     run = staticmethod(runCommand)
@@ -48,7 +48,7 @@ class XRDCPImpl(StageOutImpl):
         result += "; DEST_SIZE=`rfstat %s | grep Size | cut -f2 -d:` ; if [ $DEST_SIZE ] && [ '%s' == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (targetPFN,original_size)
         return result
 
-    
+
     def removeFile(self, pfnToRemove):
         """
         _removeFile_

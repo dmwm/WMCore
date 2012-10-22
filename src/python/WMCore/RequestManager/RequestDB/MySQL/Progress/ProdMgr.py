@@ -23,9 +23,7 @@ class ProdMgr(DBFormatter):
 
         """
         self.sql = "INSERT INTO reqmgr_assigned_prodmgr "
-        self.sql += "(request_id, prodmgr_id) VALUES (:request_id, :prodmgr_name)" 
+        self.sql += "(request_id, prodmgr_id) VALUES (:request_id, :prodmgr_name)"
         binds = {"request_id": requestId, "prodmgr_name": prodMgrName}
         result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
-
-

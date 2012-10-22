@@ -14,6 +14,6 @@ from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.GetParents import GetPa
 class GetParents(MySQLGetParents):
     """
     Oracle implementation of File.GetParents
-    
+
     Return a list of lfn's which are parents for a file.
     """

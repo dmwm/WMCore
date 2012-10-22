@@ -40,9 +40,9 @@ USER_AGENT = \
 def addTextNode(document, parent, name, value):
     """
     _addTextNode_
-    
+
     Add a text node with name and value to the parent node within the document
-    
+
     """
     node = document.createElement(name)
     parent.appendChild(node)
@@ -54,25 +54,25 @@ def addTextNode(document, parent, name, value):
 def HTTPpost(params, url, onFailureFile = None):
     """
     Do a http post with params to url
-    
+
     params is a list of tuples of key,value pairs
 
     Taken directly from ProdAgent ProdMon DashboardInterface
     """
-    
+
     try:
-        logging.debug("contacting %s" % url)    
-    
+        logging.debug("contacting %s" % url)
+
         data = urllib.urlencode(params)
         #put who we are in headers
         headers = { 'User-Agent' : USER_AGENT }
         req = urllib2.Request(url, data, headers)
-    
+
         response = urllib2.urlopen(req, data)
-        
+
         logging.debug("received http code: %s, message: %s, response: %s" \
                       % (response.code, response.msg, str(response.read())))
-        
+
     except IOError, ex:
         #record the report that failed then rethrow
 
@@ -82,7 +82,7 @@ def HTTPpost(params, url, onFailureFile = None):
             file.close()
             msg = str(ex)
             msg += "\nA copy of the failed report is in %s" % onFailureFile
-        
+
         raise IOError, msg
 
     return
@@ -103,7 +103,7 @@ class DashboardInterface(object):
         Put the job somewhere convenient
 
         """
-        
+
         self.job       = None
         self.task      = None
         self.report    = None
@@ -122,7 +122,7 @@ class DashboardInterface(object):
     def __call__(self, job, task, report, export = True, startTime = 'None', endTime = 'None'):
         """
         __call__
-        
+
         Does everything.  Basically it runs all the other functions.
 
         Accepts three arguments, a DS Job object, a WMTaskHelper,
@@ -145,7 +145,7 @@ class DashboardInterface(object):
 
         self.createDocument()
 
-        
+
         if export:
             self.exportDocument()
 
@@ -251,7 +251,7 @@ class DashboardInterface(object):
     def createInstanceDocument(self, instance):
         """
         _createInstanceDocument_
-        
+
         Put job info in an instance
 
         Which is not a job because it's super special
@@ -322,7 +322,7 @@ class DashboardInterface(object):
 
         return
 
-    
+
 
     def exportDocument(self):
         """
@@ -372,4 +372,3 @@ class DashboardInterface(object):
             error = getattr(stepSection.errors, 'error%i' % (errorNum), None)
             if error:
                 value += '%s:' % (str(getattr(error, 'exitCode', 0)))
-        

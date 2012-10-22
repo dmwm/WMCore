@@ -211,4 +211,3 @@ def getDiagnostic(stepType):
 #        msg = "Error creating object %s in DiagnosticFactory:\n" % stepType
 #        msg += str(ex)
 #        raise StepFactoryException(msg)
-

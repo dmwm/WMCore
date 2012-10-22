@@ -24,15 +24,15 @@ class ListJobsBySub(DefaultFormatter):
                INNER JOIN wmbs_job_state ON
                  wmbs_job.state = wmbs_job_state.id
               WHERE wmbs_jobgroup.subscription = :subscriptionId"""
-              
+
     def execute(self, subscriptionId, conn = None, transaction = False):
         """
         _execute_
 
         Execute the SQL for the given job ID and then format and return
         the result.
-        """        
+        """
         result = self.dbi.processData(self.sql, {"subscriptionId": subscriptionId},
                                       conn = conn, transaction = transaction)
-        
+
         return self.formatDict(result)

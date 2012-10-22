@@ -11,7 +11,7 @@ MySQL implementation of Jobs.GetOutputParentLFNs
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetOutputParentLFNs(DBFormatter):
-    inputSQL = """SELECT DISTINCT wmbs_file_details.lfn, wmbs_file_details.merged 
+    inputSQL = """SELECT DISTINCT wmbs_file_details.lfn, wmbs_file_details.merged
                   FROM wmbs_file_details
                     INNER JOIN wmbs_job_assoc ON
                       wmbs_file_details.id = wmbs_job_assoc.fileid
@@ -21,9 +21,9 @@ class GetOutputParentLFNs(DBFormatter):
                      INNER JOIN wmbs_file_parent ON
                        wmbs_file_details.id = wmbs_file_parent.parent
                      INNER JOIN wmbs_job_assoc ON
-                       wmbs_file_parent.child = wmbs_job_assoc.fileid 
-                   WHERE wmbs_job_assoc.job = :job""" 
-                       
+                       wmbs_file_parent.child = wmbs_job_assoc.fileid
+                   WHERE wmbs_job_assoc.job = :job"""
+
     def format(self, results):
         """
         _format_
@@ -31,7 +31,7 @@ class GetOutputParentLFNs(DBFormatter):
         Format the result of the query so that it is just a single list of LFNs.
         """
         results = DBFormatter.format(self, results)
-        
+
         lfns = []
         for result in results:
             lfns.append(result[0])

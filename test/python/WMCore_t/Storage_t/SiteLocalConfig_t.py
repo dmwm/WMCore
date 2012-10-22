@@ -102,7 +102,7 @@ class SiteLocalConfigTest(unittest.TestCase):
                          "http://cmsfrontier1.cern.ch:8000/FrontierInt",
                          "http://cmsfrontier2.cern.ch:8000/FrontierInt",
                          "http://cmsfrontier3.cern.ch:8000/FrontierInt"]
-                         
+
         for frontierServer in mySiteConfig.frontierServers:
             assert frontierServer in goldenServers, \
                    "Error: Unknown server: %s" % frontierServer
@@ -112,7 +112,7 @@ class SiteLocalConfigTest(unittest.TestCase):
                "Error: Missing frontier servers."
 
         goldenProxies = ["http://se1.accre.vanderbilt.edu:3128"]
-        
+
         for frontierProxy in mySiteConfig.frontierProxies:
             assert frontierProxy in goldenProxies, \
                    "Error: Unknown proxy: %s" % frontierProxy
@@ -144,15 +144,15 @@ class SiteLocalConfigTest(unittest.TestCase):
         test SiteLocalConfig module method loadSiteLocalConfig when loading
         site config from location defined by WMAGENT_SITE_CONFIG_OVERRIDE
         env. variable
-        
-        """        
+
+        """
         vandyConfigFileName = os.path.join(getTestBase(),
                                            "WMCore_t/Storage_t",
                                            "T3_US_Vanderbilt_SiteLocalConfig.xml")
         os.environ["WMAGENT_SITE_CONFIG_OVERRIDE"] = vandyConfigFileName
-        
+
         mySiteConfig = loadSiteLocalConfig()
-        self.assertEqual(mySiteConfig.siteName, "T3_US_Vanderbilt", 
+        self.assertEqual(mySiteConfig.siteName, "T3_US_Vanderbilt",
                          "Error: Wrong site name.")
 
 

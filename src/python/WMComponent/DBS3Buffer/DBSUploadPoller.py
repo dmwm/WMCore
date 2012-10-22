@@ -135,7 +135,7 @@ def uploadWorker(input, results, dbsUrl):
         try:
             logging.debug("About to call insert block with block: %s" % block)
             dbsApi.insertBulkBlock(blockDump = block)
-            results.put({'name': name, 'success': True})        
+            results.put({'name': name, 'success': True})
         except Exception, ex:
             exString = str(ex)
             if 'Duplicate entry' in exString:
@@ -164,7 +164,7 @@ class DBSUploadException(WMException):
 
     """
 
-        
+
 
 
 class DBSUploadPoller(BaseWorkerThread):
@@ -180,7 +180,7 @@ class DBSUploadPoller(BaseWorkerThread):
         """
         logging.info("Running __init__ for DBS3 Uploader")
         #myThread = threading.currentThread()
-        
+
         BaseWorkerThread.__init__(self)
         self.config     = config
 
@@ -247,7 +247,7 @@ class DBSUploadPoller(BaseWorkerThread):
     def __del__(self):
         """
         __del__
-        
+
         Trigger a close of connections if necessary
         """
         self.close()
@@ -357,7 +357,7 @@ class DBSUploadPoller(BaseWorkerThread):
             logging.error(msg)
             logging.debug("Blocks to load: %s\n" % blocksToLoad)
             raise DBSUploadException(msg)
-        
+
         for blockInfo in loadedBlocks:
             das  = blockInfo['DatasetAlgo']
             loc  = blockInfo['origin_site_name']
@@ -390,7 +390,7 @@ class DBSUploadPoller(BaseWorkerThread):
         # All blocks should now be loaded and present
         # in both the block cache (which has all the info)
         # and the dasCache (which is a list of name pointers
-        # to the keys in the block cache).           
+        # to the keys in the block cache).
 
         return
 
@@ -417,7 +417,7 @@ class DBSUploadPoller(BaseWorkerThread):
         for dasInfo in dasList:
 
             dasID = dasInfo['DAS_ID']
-            
+
             # Get the files
             try:
                 loadedFiles = self.dbsUtil.findUploadableFilesByDAS(das = dasID)
@@ -443,7 +443,7 @@ class DBSUploadPoller(BaseWorkerThread):
             # Now we have both files and blocks
             # We need a sorting algorithm of sorts...
 
-            
+
 
             # Now add each file
             for location in fileDict.keys():
@@ -452,7 +452,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 if len(files) < 1:
                     # Nothing to do here
                     continue
-                
+
                 dasBlocks = self.dasCache[dasID].get(location, [])
                 if len(dasBlocks) > 0:
                     # Load from cache
@@ -473,7 +473,7 @@ class DBSUploadPoller(BaseWorkerThread):
                         # It should be accounted for somewhere
                         # Or loaded with the block
                         continue
-                    
+
                     # Check if we can put files in this block
                     if not self.isBlockOpen(newFile = newFile,
                                             block = currentBlock):
@@ -500,7 +500,7 @@ class DBSUploadPoller(BaseWorkerThread):
         # Update the blockCache with what is now ready.
         for block in readyBlocks:
             self.blockCache[block.getName()] = block
-                
+
         return
 
 
@@ -558,14 +558,14 @@ class DBSUploadPoller(BaseWorkerThread):
             return False
 
         return True
-        
+
 
     def getBlock(self, newFile, dasBlocks, location, das):
         """
         _getBlock_
 
         This gets a new block by checking whether there is a
-        pre-existant block. 
+        pre-existant block.
         """
 
         for blockName in dasBlocks:
@@ -590,7 +590,7 @@ class DBSUploadPoller(BaseWorkerThread):
         dasBlocks.append(blockname)
         return newBlock
 
-        
+
 
     def inputBlocks(self):
         """
@@ -601,7 +601,7 @@ class DBSUploadPoller(BaseWorkerThread):
         2) Upload them to DBS
         """
 
-        
+
         myThread = threading.currentThread()
 
         # We want to run this over all pending blocks
@@ -626,7 +626,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 # but not process
                 blockForDBSBuffer.append(block)
 
-                
+
         if len(blocks) < 1:
             # Nothing to do
             return
@@ -695,7 +695,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 if oldKey in block.data.keys():
                     block.data[newKey] = block.data[oldKey]
                     del block.data[oldKey]
-                return    
+                return
             replaceKeys(block, 'BlockSize', 'block_size')
             replaceKeys(block, 'CreationDate', 'creation_date')
             replaceKeys(block, 'NumberOfFiles', 'file_count')
@@ -736,7 +736,7 @@ class DBSUploadPoller(BaseWorkerThread):
         To do this, the result queue needs to pass back the blockname
         """
         myThread = threading.currentThread()
-        
+
         blocksToClose = []
         emptyCount    = 0
         while self.blockCount > 0:
@@ -803,16 +803,3 @@ class DBSUploadPoller(BaseWorkerThread):
 
         # And we're done
         return
-
-
-    
-
-
-
-
-
-
-
-
-        
-

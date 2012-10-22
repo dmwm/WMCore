@@ -5,23 +5,23 @@ _RemoteMsg_
 
 This module offers a way for remote message exchange. This is not the same
 as the standard WMCore message service, in which a shared database is used
-for communication. Current implementation is based on a HTTP server that 
+for communication. Current implementation is based on a HTTP server that
 interprets requests as messages.
 
-All messages will be composed of a message type and a payload. This class can 
-be used as a library and is capable of acting both as server and client. It 
-must be configured with a WMCore.Configuration object. Have a look at the 
+All messages will be composed of a message type and a payload. This class can
+be used as a library and is capable of acting both as server and client. It
+must be configured with a WMCore.Configuration object. Have a look at the
 SampleConfiguration class for an example.
 
 A single object of the RemoteMsg class offers the whole interface. By calling
 the 'publish' method, messages are sent to pre-configured adresses (of remote
 objects of RemoteMsg class). User/password authentication will be used if
-indicated in the configuration (in both client and server). 
+indicated in the configuration (in both client and server).
 
-When the 'startListener' method is invoked, a server that listens for incoming 
-messages of remote ends is started. If in queue mode, the received messages 
-will be stored  in a queue for later retrieval (via the 'get' method). 
-If not in queue mode,  the messages will be handled by callable objects, as 
+When the 'startListener' method is invoked, a server that listens for incoming
+messages of remote ends is started. If in queue mode, the received messages
+will be stored  in a queue for later retrieval (via the 'get' method).
+If not in queue mode,  the messages will be handled by callable objects, as
 mapped previously by use of the 'setHandler' method (as an example look at
 the SimpleHandler class). The handlers may give some result back to the caller.
 This will be retrieved as return value of the 'publish' method if the caller
@@ -86,7 +86,7 @@ class MyComponent(Harness):
     def __init__(self, config):
       Harness.__init__(self, config)
       print (config)
-      
+
     def preInitialization(self):
       # Add message system handlers
       #  ...
@@ -95,7 +95,7 @@ class MyComponent(Harness):
       #   self.component.remoteMsg.publish(...)
 
     def postInitialization(self):
-	   # Start RemoteMsg and add some handlers for remote messages		    
+           # Start RemoteMsg and add some handlers for remote messages
       # Those handlers will also have access to component DB
       self.remoteMsg = RemoteMsg(self.config)
       self.remoteMsg.setQueue(False)
@@ -129,51 +129,51 @@ import logging
 
 
 class RemoteMsg(object):
-    """ 
-    _RemoteMsg_ 
- 
-    Main interface of the RemoteMsg module. Clients wishing to use the 
-    RemoteMsg should instantiate an object of this class and interface 
+    """
+    _RemoteMsg_
+
+    Main interface of the RemoteMsg module. Clients wishing to use the
+    RemoteMsg should instantiate an object of this class and interface
     it using the public methods declared by it.
-    
+
     """
     def __init__(self, config, addresses = [], queue = True):
         """
         Constructor.
-        
-        Requires a WMCore.Configuration object with configuration 
-        information. The addresses of recipients and the flag for 
-        queue/handling mode can be set with setAdress or setQueue methods 
-        also (have a look at their docstring for further help). The 
-        listener for messages needs to be started with the startListener 
+
+        Requires a WMCore.Configuration object with configuration
+        information. The addresses of recipients and the flag for
+        queue/handling mode can be set with setAdress or setQueue methods
+        also (have a look at their docstring for further help). The
+        listener for messages needs to be started with the startListener
         method, meanwhile only publication capabilities are available.
         """
         self.myconfig = config
-        
+
         sections = self.myconfig.listSections_()
         if not "RemoteMsg" in sections:
             msg = "Cannot create RemoteMsg object without "
             msg += "RemoteMsg section in config file"
             raise Exception(msg)
-       
+
         self.mylogger = None
         self.logMsg = None
         self.__setLogging__()
         self.mylogger.info("\n\n>>>>>RemoteMsg object being created <<<<<<\n")
-        
+
         self.myComp = None
         if hasattr(self.myconfig.RemoteMsg, "inComponent"):
             self.myComp = self.myconfig.RemoteMsg.inComponent
-        
+
         self.queueMode = queue
         self.addresses = addresses
         self.user = None
         self.passwd = None
-        
+
         self.msgLock = threading.Lock()
         self.handlerLock = threading.Lock()
         self.factory = WMFactory('RemoteMsg')
-        
+
         # If this is instantiated by a WMCore component, get its DB interface
         if self.myComp:
             # Get a reference to our invoking component's DB factory
@@ -191,32 +191,32 @@ class RemoteMsg(object):
 
         self.msgQueue = []
         self.handlerMap = {}
-       
-       
+
+
         # Formatter for responses (change only if in synchronous mode)
         formatter = "RemoteMsgComp.DefaultFormatter"
         if hasattr(self.myconfig.RemoteMsg, "formatter"):
             formatter = self.myconfig.RemoteMsg.formatter
         formatterObj = self.factory.loadObject(formatter)
-       
-        params = { "msgQueue": self.msgQueue,   
+
+        params = { "msgQueue": self.msgQueue,
                    "handlerMap": self.handlerMap,
-                   "msgLock": self.msgLock,     
-                   "formatter": formatterObj, 
-                   "queueMode": self.queueMode 
+                   "msgLock": self.msgLock,
+                   "formatter": formatterObj,
+                   "queueMode": self.queueMode
                  }
-       
+
         if self.myComp:
             params["component"] = self.myComp
             params["dbFactory"] = self.dbFactory
             params["dialect"] = self.dialect
-            
+
         self.httpTree = HttpTree(params)
-       
+
         self.sender = None
         self.__createSender__()
         self.listener = None
-          
+
 
 
     def __del__(self):
@@ -233,18 +233,18 @@ class RemoteMsg(object):
         Initializes logging. Use by the constructor.
         """
         compSect = self.myconfig.RemoteMsg
- 
+
         # Logging
         if not hasattr(compSect, "logFile"):
             compSect.logFile = os.path.join(compSect.RemoteMsgDir, \
                 "remoteMsg.log")
         print('Log file is: '+compSect.logFile)
- 
+
         if not hasattr(compSect, "listenerLogFile"):
             compSect.listenerLogFile = os.path.join(compSect.RemoteMsgDir, \
                 "listener.log")
         print('Listener log file is: '+compSect.listenerLogFile)
- 
+
         logHandler = RotatingFileHandler(compSect.logFile,
             "a", 1000000, 3)
         logFormatter = \
@@ -270,7 +270,7 @@ class RemoteMsg(object):
         """
         Initializes the sender object. Used by the constructor.
         """
-   
+
         # Sender is not a new thread, so it does not need a lock
         params = {}
         params['addresses'] = self.addresses
@@ -289,11 +289,11 @@ class RemoteMsg(object):
         params['realm'] = 'RemoteMsg'
         if hasattr(self.myconfig.RemoteMsg, "realm"):
             params['realm'] = self.myconfig.RemoteMsg.senderRealm
- 
-        self.sender = Sender(self.msgQueue, params) 
- 
- 
- 
+
+        self.sender = Sender(self.msgQueue, params)
+
+
+
     def startListener(self):
         """
         Starts a listener for incoming remote messages. The method will refuse
@@ -302,15 +302,15 @@ class RemoteMsg(object):
         if not self.listener:
             self.mylogger.info("Starting listener")
             self.listener = Listener(self.httpTree, self.myconfig)
-            self.listener.start()         
+            self.listener.start()
         else:
             msg = "Refusing to start listener (there is already one)."
             self.mylogger.info(msg)
-    
+
 
     def setAddress(self, addresses):
         """
-        Sets the addresses of the remote ends. Argument should be a list of 
+        Sets the addresses of the remote ends. Argument should be a list of
         IPs or hostnames. The publish method will send messages to all members
         of this list.
         """
@@ -339,7 +339,7 @@ class RemoteMsg(object):
 
     def get(self):
         """
-        Gets messages from the local buffer (those not handled as explained 
+        Gets messages from the local buffer (those not handled as explained
         in the setQueue method).
         The first message of the queue is retrieved and returned. This method
         is only used when the queue is set to True. If queue is set to False
@@ -359,18 +359,18 @@ class RemoteMsg(object):
 
     def publish(self, msgType, payload, sync = False):
         """
-        Sends a message to the remote end. 
-     
+        Sends a message to the remote end.
+
         If sync is set to True, the remote server will complete the message
-        handling before replying with some generated data. Otherwise, the 
+        handling before replying with some generated data. Otherwise, the
         remote end will immediately reply with some "Message received"
         indication and execute the handler asynchronously (if the remote end
-        is in queue mode, there is no handler execution, so this flag is 
+        is in queue mode, there is no handler execution, so this flag is
         meaningless).
-        
-        In any case, the response of the message (e.g. a json string product 
-        of the handling of the HTTP request) is returned. 
-     
+
+        In any case, the response of the message (e.g. a json string product
+        of the handling of the HTTP request) is returned.
+
         Can throw an HTTP exception in case of error connecting with the remote
         end.
         """
@@ -394,4 +394,3 @@ class RemoteMsg(object):
         self.handlerLock.acquire()
         self.handlerMap[msgType] = newHandler
         self.handlerLock.release()
-

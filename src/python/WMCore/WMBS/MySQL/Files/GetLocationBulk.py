@@ -16,8 +16,8 @@ class GetLocationBulk(DBFormatter):
                 INNER JOIN wmbs_location_senames wls ON wls.location = wl.id
                 WHERE wfl.fileid = :id
                 """
-                    
-    
+
+
     def format(self, rawResults):
         """
         _format_
@@ -34,8 +34,8 @@ class GetLocationBulk(DBFormatter):
 
         return results
 
-        
-    
+
+
     def execute(self, files = [], conn = None, transaction = False):
 
         if len(files) == 0:
@@ -45,8 +45,8 @@ class GetLocationBulk(DBFormatter):
         binds = []
         for fid in files:
             binds.append({'id': fid})
-        
-        result = self.dbi.processData(self.sql, binds, 
+
+        result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = transaction)
-        
+
         return self.format(self.formatDict(result))

@@ -13,7 +13,7 @@ from WMCore.WMBS.MySQL.Fileset.List import List as ListFilesetMySQL
 
 class List(ListFilesetMySQL):
     sql = ListFilesetMySQL.sql
-    
+
     def format(self, result):
         """
         Some standardised formatting

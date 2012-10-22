@@ -8,7 +8,7 @@ from cherrypy import Application
 import os
 
 def dummy():
-  return ""
+    return ""
 
 import os
 

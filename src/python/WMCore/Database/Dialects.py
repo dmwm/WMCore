@@ -6,11 +6,11 @@
 
 try:
     from sqlalchemy.databases.mysql import MySQLDialect
-    from sqlalchemy.databases.sqlite import SQLiteDialect 
+    from sqlalchemy.databases.sqlite import SQLiteDialect
     from sqlalchemy.databases.oracle import OracleDialect
 except:
     from sqlalchemy.dialects.mysql.base import MySQLDialect
-    from sqlalchemy.dialects.sqlite.base import SQLiteDialect 
+    from sqlalchemy.dialects.sqlite.base import SQLiteDialect
     from sqlalchemy.dialects.oracle.base import OracleDialect
 
 

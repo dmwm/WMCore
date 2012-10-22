@@ -49,8 +49,8 @@ def pnfsPfn2(pfn):
     # handle lustre location
     for i in range(checkPathsCount):
         if pfn.find(checkPaths[i]) != -1:
-          pfnSplit = pfn.split(checkPaths[i], 1)[1]
-	  filePath = "%s%s" % (checkPathsReplace[i],pfnSplit)
+            pfnSplit = pfn.split(checkPaths[i], 1)[1]
+            filePath = "%s%s" % (checkPathsReplace[i],pfnSplit)
     return filePath
 
 
@@ -111,7 +111,7 @@ class FNALImpl(StageOutImplV2):
         pfnSplit = pfn.split("WAX/11/store/", 1)[1]
         filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
         return filePath
-       
+
     def createOutputDirectoryDCAP(self, targetPFN):
         """
         _createOutputDirectory_
@@ -136,13 +136,13 @@ class FNALImpl(StageOutImplV2):
         # only create dir on remote storage
         if targetPFN.find('/pnfs/') == -1:
             return
-        
+
         filePath = self.dcapToPNFS( targetPFN )
         directory = os.path.dirname(filePath)
         logging.info("Creating path: %s" % directory)
         if not os.path.exists( directory ):
             os.makedirs( directory )
-        
+
     def createSourceName(self, protocol, pfn):
         """
         createTargetName
@@ -171,7 +171,7 @@ class FNALImpl(StageOutImplV2):
             logging.info("  Translated PFN: %s" % pfn)
         else:
             raise RuntimeError, "Unknown method found in createSourceName: %s" % method
-    	
+
         return pfn
 
     def doDelete(self, pfnToRemove, seName, command, options, protocol ):
@@ -204,14 +204,14 @@ class FNALImpl(StageOutImplV2):
             raises on failure. StageOutError (and inherited exceptions) are for expected errors
             such as temporary connection failures. Anything else will be handled as an unexpected
             error and skip retrying with this plugin
-            
+
             if stageOut is true:
                 The fromPfn is the LOCAL FILE NAME on the node, without file://
                 the toPfn is the target PFN, mapped from the LFN using the TFC or overrrides
             if stageOut is false:
                 The toPfn is the LOCAL FILE NAME on the node, without file://
                 the fromPfn is the source PFN, mapped from the LFN using the TFC or overrrides
-            
+
             this behavior is because most transfer commands will switch their direction
             simply by swapping the order of the arguments. the stageOut flag is provided
             however, because sometimes you want to pass different command line args
@@ -222,7 +222,7 @@ class FNALImpl(StageOutImplV2):
         else:
             localPFN = targetPFN
             remotePFN = sourcePFN
-        
+
         method = self.storageMethod( remotePFN )
         sourceMethod = self.storageMethod( localPFN )
 
@@ -271,12 +271,11 @@ class FNALImpl(StageOutImplV2):
                     self.runCommandFailOnNonZero( "/opt/d-cache/dcap/bin/check_dCachefilecksum.sh %s %s" \
                                         % (pnfsPfn2(targetPFN), sourcePFN))
                 else:
-                     self.runCommandFailOnNonZero( "/opt/d-cache/dcap/bin/check_dCachefilecksum.sh %s %s" \
-                                        % (pnfsPfn2(sourcePFN), targetPFN))
+                    self.runCommandFailOnNonZero( "/opt/d-cache/dcap/bin/check_dCachefilecksum.sh %s %s" \
+                                       % (pnfsPfn2(sourcePFN), targetPFN))
 
             except:
                 logging.info("DCCP CRC Check failed, removing failed file")
                 self.doDelete( targetPFN, seName, command, options, protocol )
                 raise
             return
-

@@ -6,11 +6,11 @@ from WMCore.WMBS.MySQL.Files.AddRunLumi import AddRunLumi as AddRunLumiMySQL
 class AddRunLumi(AddRunLumiMySQL):
     """
     _AddRunLumi_
-    
+
     overwirtes MySQL Files.AddRunLumi.sql to use in oracle.
-    
+
     To Check: might not need to overwrite if modifiy MySQL.Files.AddRunLumi.sql
-    a bit to work with both  
+    a bit to work with both
     """
     sql = """INSERT INTO wmbs_file_runlumi_map (fileid, run, lumi)
                 SELECT wfd.id, :run, :lumi FROM wmbs_file_details wfd WHERE lfn = :lfn
@@ -18,4 +18,3 @@ class AddRunLumi(AddRunLumiMySQL):
                                    WHERE wfrm2.fileid = wfd.id
                                    AND wfrm2.run = :run
                                    AND wfrm2.lumi = :lumi)"""
-

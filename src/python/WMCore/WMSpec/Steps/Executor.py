@@ -19,13 +19,13 @@ getStepErrorDestination = lambda step: WMStepHelper(step).getErrorDestinationSte
 def getStepSpace(stepName):
     """
     _getStepSpace_
-    
+
     Util to get the runtime step space.
     This imports dynamic runtime libraries so be careful how
     you use it
-    
+
     """
-    
+
     modName = "WMTaskSpace"
     if modName in sys.modules.keys():
         taskspace = sys.modules[modName]
@@ -33,13 +33,13 @@ def getStepSpace(stepName):
         try:
             #taskspace = __import__(modName, globals(), locals(), ['taskSpace'], -1)
             taskspace = __import__(modName, globals(), locals(), ['taskSpace'])
-            
+
         except ImportError, ex:
             msg = "Unable to load WMTaskSpace module:\n"
             msg += str(ex)
             #TODO: Generic ExecutionException...
             raise RuntimeError, msg
-        
+
     try:
         stepSpace = taskspace.taskSpace.stepSpace(stepName)
     except Exception, ex:
@@ -64,7 +64,7 @@ class Executor:
         self.diagnostic = None
         self.emulator = None
         self.emulationMode = False
-        
+
     def initialise(self, step, job):
         """
         _initialise_
@@ -97,17 +97,17 @@ class Executor:
         #  //
         # //  Does the step contain settings for an emulator?
         #//   If so, load it up
-        
+
         emulatorName = getattr(self.step.emulator, "emulatorName", None)
         if emulatorName != None:
             self.emulator = getStepEmulator(emulatorName)
             self.emulator.initialise(self)
             self.emulationMode = True
-            
-            
-            
-            
-            
+
+
+
+
+
 
         return
 
@@ -163,8 +163,3 @@ class Executor:
 
         """
         return None
-
-
-
-
-

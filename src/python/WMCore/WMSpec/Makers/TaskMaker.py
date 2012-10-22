@@ -133,9 +133,9 @@ class TaskMaker:
 
                 if not self.skipSubscription:
                     subscribeInfo = self.subscribeWMBS(task)
-        
+
         sandboxCreator = SandboxCreator()
-        sandboxCreator.makeSandbox(self.workdir, self.workload)        
+        sandboxCreator.makeSandbox(self.workdir, self.workload)
         logging.info('Done processing workload %s' %(self.workload.name()))
 
         return True
@@ -153,7 +153,7 @@ class TaskMaker:
         fileSet = Fileset(name = self.getFilesetName(task), is_open = True)
         fileSet.create()
 
-        taskFlow = Workflow(spec = specURL, owner = self.owner, owner_dn = self.owner_dn, 
+        taskFlow = Workflow(spec = specURL, owner = self.owner, owner_dn = self.owner_dn,
                                                 name = self.getWorkflowName(task), task = task.name())
         taskFlow.create()
 
@@ -208,7 +208,7 @@ class TaskMaker:
         setattr(task.data.input.WMBS, 'Subscription', newSub['id'])
 
         if not newSub.exists() >= 0:
-               raise Exception("ERROR: Subscription does not exist after it was created")
+            raise Exception("ERROR: Subscription does not exist after it was created")
 
         logging.info('Created subscription for task %s' %(task.name()))
 

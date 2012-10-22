@@ -2,7 +2,7 @@
 #pylint: disable-msg=E1101, W6501
 # W6501: It doesn't like string formatting in logging messages
 """
-Harness class that wraps standard functionality used in all daemon 
+Harness class that wraps standard functionality used in all daemon
 components including:
 
 (1) Instantiating message service, trigger and other database classes
@@ -46,21 +46,21 @@ from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
 class HarnessException(WMException):
     """
     _HarnessException_
-    
+
     Well, it has the harness errors in it.
     Otherwise, it's just part of WMException.
     """
 
 class Harness:
     """
-    Harness class that wraps standard functionality used in all daemon 
+    Harness class that wraps standard functionality used in all daemon
     components
     """
 
     def __init__(self, config, compName = None):
         """
         init
-   
+
         The constructor is empty as we have an initalization method
         that can be called inside new threads (we use thread local attributes
         at startup.
@@ -69,17 +69,17 @@ class Harness:
         messages
         """
         self.config = config
-        
+
         # component name is always the class name of child class
         if not compName:
             compName = self.__class__.__name__
-        
+
         if not compName in (self.config.listComponents_() + self.config.listWebapps_()):
             raise WMException(WMEXCEPTION['WMCORE-8']+compName, 'WMCORE-8')
         if not hasattr(self.config, "Agent"):
             self.config.section_("Agent")
-        
-        self.config.Agent.componentName = compName 
+
+        self.config.Agent.componentName = compName
         compSect = getattr(self.config, compName, None)
         if compSect == None:
             # Then we have a major problem - there's no section with this name
@@ -94,7 +94,7 @@ class Harness:
                 logging.error("Missing componentDir and General section in config")
                 logging.error("Going to trust you to know what you're doing.")
                 return
-            
+
             compSect.componentDir =  os.path.join(self.config.General.workDir,
                                                   'Components',
                                                   self.config.Agent.componentName)
@@ -111,7 +111,7 @@ class Harness:
         self.heartbeatAPI      = None
         self.messages          = {}
         self.logMsg            = {}
-        
+
         return
 
     def initInThread(self):
@@ -121,15 +121,15 @@ class Harness:
         """
         try:
             self.messages = {}
-            
+
             compName = self.config.Agent.componentName
-            compSect = getattr(self.config, compName, None) 
+            compSect = getattr(self.config, compName, None)
             if not hasattr(compSect, "logFile"):
                 if not getattr(compSect, 'componentDir', None):
                     errorMessage =  "No componentDir for log entries found!\n"
                     errorMessage += "Harness cannot run without componentDir.\n"
                     logging.error(errorMessage)
-                    raise HarnessException(errorMessage)                    
+                    raise HarnessException(errorMessage)
                 compSect.logFile = os.path.join(compSect.componentDir, \
                     "ComponentLog")
             print('Log file is: '+compSect.logFile)
@@ -151,7 +151,7 @@ class Harness:
                            'SQLDEBUG' : logging.SQLDEBUG}
             if hasattr(compSect, "logLevel") and \
                 compSect.logLevel in self.logMsg.keys():
-                    logging.getLogger().setLevel(self.logMsg[compSect.logLevel])   
+                logging.getLogger().setLevel(self.logMsg[compSect.logLevel])
             WMLogging.sqldebug("wmcore level debug:")
 
             # If not previously set, force wmcore cache to current path
@@ -159,7 +159,7 @@ class Harness:
                 os.environ['WMCORE_CACHE_DIR'] = os.path.join(compSect.componentDir, '.wmcore_cache')
 
             logging.info(">>>Starting: "+compName+'<<<')
-            # check which backend to use: MySQL, Oracle, etc... for core 
+            # check which backend to use: MySQL, Oracle, etc... for core
             # services.
             # we recognize there can be more than one database.
             # be we offer a default database that is used for core services.
@@ -169,13 +169,13 @@ class Harness:
             myThread.logger = logging.getLogger()
             logging.info(">>>Setting config for thread: ")
             myThread.config = self.config
-        
+
             logging.info(">>>Building database connection string")
             # check if there is a premade string if not build it yourself.
             dbConfig = ConfigDBMap(self.config)
             dbStr = dbConfig.getDBUrl()
             options = dbConfig.getOption()
-            # we only want one DBFactory per database so we will need to 
+            # we only want one DBFactory per database so we will need to
             # to pass this on in case we are using threads.
             myThread.dbFactory = DBFactory(myThread.logger, dbStr, options)
 
@@ -217,11 +217,11 @@ class Harness:
     def preInitialization(self):
         """
         _preInitialization_
- 
+
         returns: nothing
-        
-        method that can be overloaded and will be called before the 
-        start component is called. (enables you to set message->handler 
+
+        method that can be overloaded and will be called before the
+        start component is called. (enables you to set message->handler
         mappings). You use the self.message dictionary of the base class
         to define the mappings.
 
@@ -231,11 +231,11 @@ class Harness:
     def postInitialization(self):
         """
         _postInitialization_
- 
+
         returns: nothing
-        
-        method that can be overloaded and will be called after the start 
-        component does the standard initialization, but before the wait 
+
+        method that can be overloaded and will be called after the start
+        component does the standard initialization, but before the wait
         (enables you to publish events when starting up)
 
         Define actions you want to execute before the actual message
@@ -248,10 +248,10 @@ class Harness:
     def logState(self):
         """
         _logState_
- 
+
         returns: string
-        
-        method that can be overloaded to log additional state information 
+
+        method that can be overloaded to log additional state information
         (should return atring)
         """
         msg = 'No additional state information for ' + \
@@ -263,7 +263,7 @@ class Harness:
         _publishItem_
 
         returns: nothing
-  
+
         A method that publishes a (dictionary) set or 1 item
         to a monitoring service.
         """
@@ -306,19 +306,19 @@ class Harness:
         """
         self.state = 'initialize'
         self.initInThread()
-        # note: every component gets a (unique) name: 
+        # note: every component gets a (unique) name:
         # self.config.Agent.componentName
         logging.info(">>>Registering Component - %s" % self.config.Agent.componentName)
-        
+
         if getattr(self.config.Agent, "useHeartbeat", True):
             self.heartbeatAPI = HeartbeatAPI(self.config.Agent.componentName)
             self.heartbeatAPI.registerComponent()
-        
+
         logging.info('>>>Starting initialization')
 
         logging.info('>>>Setting default transaction')
         myThread = threading.currentThread()
-        
+
         self.preInitialization()
 
         if myThread.sql_transaction:
@@ -336,7 +336,7 @@ class Harness:
         myThread.workerThreadManager.resumeWorkers()
 
 
-        logging.info(">>>Initialization finished!\n")    
+        logging.info(">>>Initialization finished!\n")
         # wait for messages
         self.state = 'active'
 
@@ -379,15 +379,15 @@ class Harness:
 
         Formerly used to handle messages - now non-functional
         Left here in case someone else is using it (i.e. PilotManager)
-        """ 
+        """
         return
-        
+
     def startDaemon(self, keepParent = False, compName = None):
         """
         Same result as start component, except that the comopnent
         is started as a daemon, after which you can close your xterm
         and the process will still run.
- 
+
         The keepParent option enables us to keep the parent process
         which is used during testing,
         """
@@ -395,7 +395,7 @@ class Harness:
         print(msg)
         if not compName:
             compName = self.__class__.__name__
-        compSect = getattr(self.config, compName, None) 
+        compSect = getattr(self.config, compName, None)
         msg = "Log will be in %s " % (compSect.componentDir)
         print(msg)
         # put the daemon config file in the work dir of this component.
@@ -403,7 +403,7 @@ class Harness:
         compSect = getattr(self.config, self.config.Agent.componentName , None)
         pid = createDaemon(compSect.componentDir, keepParent)
         # if this is not the parent start the component
-        if pid == 0: 
+        if pid == 0:
             self.startComponent()
         # if this is the parent return control to the testing environment.
 
@@ -418,7 +418,7 @@ class Harness:
         Start up the component, performs initialization and waits indefinitely
         Calling this method results in the application
         running in the xterm (not in daemon mode)
- 
+
         """
         myThread = threading.currentThread()
         try:
@@ -432,7 +432,7 @@ class Harness:
                 errormsg = """PostMortem: choked when initializing with error: %s\n""" % (str(ex))
                 stackTrace = traceback.format_tb(sys.exc_info()[2], None)
                 for stackFrame in stackTrace:
-                    errormsg += stackFrame         
+                    errormsg += stackFrame
             else:
                 errormsg = ""
                 stackTrace = traceback.format_tb(sys.exc_info()[2], None)
@@ -443,7 +443,7 @@ class Harness:
                 if getattr(myThread, 'transaction', None) != None:
                     myThread.transaction.rollback()
                 self.prepareToStop(False)
-                errormsg = """ 
+                errormsg = """
 PostMortem: choked while handling messages  with error: %s
 while trying to handle msg: %s
                 """ % (str(ex), str(msg))
@@ -451,20 +451,20 @@ while trying to handle msg: %s
             logging.critical(errormsg)
             raise
         logging.info("System shutdown complete!")
-        # this is to ensure exiting when in daemon mode. 
+        # this is to ensure exiting when in daemon mode.
         sys.exit()
 
     def __str__(self):
         """
 
         return: string
- 
+
         String representation of the status of this component.
         """
-        
+
         msg = 'Status of this component : \n'
         msg += '\n'
-        msg += '>>Event Subscriptions --> Handlers<<\n' 
+        msg += '>>Event Subscriptions --> Handlers<<\n'
         msg += '------------------------------------\n'
         for message in self.messages.keys():
             msg += message+'-->'+ str(self.messages[message])+'\n'

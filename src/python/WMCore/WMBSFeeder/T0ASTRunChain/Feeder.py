@@ -14,7 +14,7 @@ from traceback import format_exc
 
 from ProdCommon.FwkJobRep.ReportParser import readJobReport
 
-from WMCore.WMBSFeeder.FeederImpl import FeederImpl 
+from WMCore.WMBSFeeder.FeederImpl import FeederImpl
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.DAOFactory import DAOFactory
@@ -38,7 +38,7 @@ class Feeder(FeederImpl):
         FeederImpl.__init__(self)
 
         self.maxRetries = 3
-        self.purgeTime = 480 
+        self.purgeTime = 480
         self.reopenTime = 120
 
     def __call__(self, filesetToProcess):
@@ -70,7 +70,7 @@ classname = "Subscriptions.LoadFromFilesetWorkflow")
         # Get the start Run if asked
         startRun = (filesetToProcess.name).split(":")[3]
         logging.debug("the T0Feeder is processing %s" % \
-                 filesetToProcess.name) 
+                 filesetToProcess.name)
         logging.debug("the fileset name %s" % \
          (filesetToProcess.name).split(":")[0])
 
@@ -104,58 +104,58 @@ classname = "Subscriptions.LoadFromFilesetWorkflow")
 
         for listRun in requestResult[0]:
 
-            
-            if startRun != 'None' and int(listRun['run']) >= int(startRun):             
+
+            if startRun != 'None' and int(listRun['run']) >= int(startRun):
                 if listRun['status'] =='CloseOutExport' or listRun\
         ['status']=='Complete' or listRun['status']=='CloseOutT1Skimming':
 
                     crabWorkflow = lastWorkflow.execute(task=crabTask)
- 
+
                     crabFileset = lastFileset.execute\
-                                (task=crabTask)                  
+                                (task=crabTask)
 
                     crabrunFileset = Fileset(\
     name = crabFileset[0]["name"].split(':')[0].split\
    ('-Run')[0]+ '-Run' + str(listRun['run']) + ":" + \
      ":".join(crabFileset[0]['name'].split(':')[1:]) )
 
-                    if crabrunFileset.exists() > 0: 
+                    if crabrunFileset.exists() > 0:
 
                         crabrunFileset.load()
                         currSubs = subsRun.execute\
-           (crabrunFileset.id, crabWorkflow[0]['id'])         
+           (crabrunFileset.id, crabWorkflow[0]['id'])
 
-                        if currSubs:                         
+                        if currSubs:
 
                             listsuccessJob = successJob.execute(\
                                  subscription=currSubs['id'])
                             listallJob = allJob.execute(\
-                                subscription=currSubs['id'])  
+                                subscription=currSubs['id'])
 
-                            if len(listsuccessJob) == len(listallJob): 
+                            if len(listsuccessJob) == len(listallJob):
 
                                 for currid in listsuccessJob:
                                     currjob = Job( id = currid )
                                     currjob.load()
 
                                     logging.debug("Reading FJR %s" %currjob['fwjr_path'])
-        
+
                                     jobReport = readJobReport(currjob['fwjr_path'])
 
                                     if len(jobReport) > 0:
 
-                                        
+
                                         if jobReport[0].files:
 
                                             for newFile in jobReport[0].files:
-                         
+
                                                 logging.debug(\
                                "Output path %s" %newFile['LFN'])
                                                 newFileToAdd = File(\
                              lfn=newFile['LFN'], locations ='caf.cern.ch')
 
                                                 LOCK.acquire()
- 
+
                                                 if newFileToAdd.exists\
                                                       () == False :
 
@@ -164,7 +164,7 @@ classname = "Subscriptions.LoadFromFilesetWorkflow")
                                                     newFileToAdd.loadData()
 
                                                 LOCK.release()
- 
+
                                                 listFile = \
                              fileInFileset.execute(filesetToProcess.id)
                                                 if {'fileid': \
@@ -177,7 +177,7 @@ classname = "Subscriptions.LoadFromFilesetWorkflow")
                                                     filesetToProcess.commit()
                                                     logging.debug(\
                                                      "new file created/loaded and added by T0ASTRunChain...")
-                                    
+
                                         elif jobReport[0].analysisFiles:
 
                                             for newFile in jobReport\
@@ -198,7 +198,7 @@ classname = "Subscriptions.LoadFromFilesetWorkflow")
                                                     newFileToAdd.loadData()
 
                                                 LOCK.release()
-  
+
                                                 listFile = \
                               fileInFileset.execute(filesetToProcess.id)
                                                 if {'fileid': newFileToAdd\
@@ -213,9 +213,9 @@ classname = "Subscriptions.LoadFromFilesetWorkflow")
                                                     filesetToProcess.commit()
                                                     logging.debug(\
                                                       "new file created/loaded added by T0ASTRunChain...")
-                             
-                                        else: break #Missed fjr - Try next time 
-                                        
+
+                                        else: break #Missed fjr - Try next time
+
 
         # Commit the fileset
         logging.debug("Test purge in T0ASTRunChain ...")
@@ -233,11 +233,10 @@ classname = "Subscriptions.LoadFromFilesetWorkflow")
 
             filesetToProcess.markOpen(False)
             logging.debug("Purge Done...")
-                    	         
+
 
     def persist(self):
         """
         To overwrite
-        """ 
+        """
         pass
-

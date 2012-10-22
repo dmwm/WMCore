@@ -22,7 +22,7 @@ class ListDataset(DBFormatter):
 
     sqlID = """SELECT id, path, acquisition_era, processing_ver FROM dbsbuffer_dataset
                  WHERE id = :id"""
-                       
+
     def execute(self, datasetID = None, datasetPath = None, conn = None,
                 transaction = False):
         """

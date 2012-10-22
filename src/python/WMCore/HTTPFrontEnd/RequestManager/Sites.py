@@ -11,5 +11,3 @@ def sites():
     sitelist = list(siteset)
     sitelist.sort()
     return sitelist
-
-

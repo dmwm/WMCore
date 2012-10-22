@@ -42,11 +42,11 @@ def setUpReceiver(address, controlAddr):
     """
     Return set up handler, receiver pair.
     Receiver starts two channels on the address and controlAddr addresses.
-    
+
     """
     handler = ReceiverHandler()
     receiver = Receiver(address, handler, controlAddr)
-    receiver.startReceiver() # non blocking call        
+    receiver.startReceiver() # non blocking call
     return handler, receiver
 
 
@@ -56,20 +56,20 @@ def doGenericPeriodAndProcessPolling(ti):
     ti - Test Input instance (all variables on input to this test)
     The function is easier to reuse from here that from other test class.
     This helper function is also used for generic period polling.
-    
-    """    
+
+    """
     try:
         poller = ti.pollerClass(ti.config, ti.testCase.generator)
     except Exception, ex:
         ti.testCase.fail("%s: exception: %s" % (ti.testCase.testName, ex))
-    
+
     handler, receiver = setUpReceiver(ti.testCase.generator.config.Alert.address,
                                       ti.testCase.generator.config.Alert.controlAddr)
-    
+
     pid = os.getpid()
-    
+
     numMeasurements = ti.config.period / ti.config.pollInterval
-        
+
     # inject own input sample data provider
     # there is in fact input argument in this case which needs be ignored
     poller.sample = lambda proc_: random.randint(ti.thresholdToTest,
@@ -96,11 +96,11 @@ def doGenericPeriodAndProcessPolling(ti):
                 break
     else:
         time.sleep(ti.config.period * 2)
-                
+
     poller.terminate()
     receiver.shutdown()
     ti.testCase.assertFalse(poller.is_alive())
-    
+
     if ti.expected != 0:
         # #2238 AlertGenerator test can take 1 hour+ (and fail)
         # temporary measure from above loop:
@@ -113,7 +113,7 @@ def doGenericPeriodAndProcessPolling(ti):
         # soft threshold - alert should have soft level
         ti.testCase.assertEqual(a["Level"], ti.level)
         ti.testCase.assertEqual(a["Component"], ti.testCase.generator.__class__.__name__)
-        ti.testCase.assertEqual(a["Source"], poller.__class__.__name__)            
+        ti.testCase.assertEqual(a["Source"], poller.__class__.__name__)
     else:
         ti.testCase.assertEqual(len(handler.queue), 0)
 
@@ -124,18 +124,18 @@ def doGenericValueBasedPolling(ti):
     The function is easier to reuse from here that from other test class.
     Used for directory size polling.
     Generic value based polling (e.g. CouchDB HTTP status codes polling).
-    
-    """    
+
+    """
     try:
         poller = ti.pollerClass(ti.config, ti.testCase.generator)
     except Exception, ex:
-        ti.testCase.fail("%s: exception: %s" % (ti.testCase.testName, ex))        
+        ti.testCase.fail("%s: exception: %s" % (ti.testCase.testName, ex))
     # inject own input sample data provider, don't care about the directory
     poller.sample = lambda dir: random.randint(ti.thresholdToTest,
                                                ti.thresholdToTest + ti.thresholdDiff)
-    
+
     handler, receiver = setUpReceiver(ti.testCase.generator.config.Alert.address,
-                                      ti.testCase.generator.config.Alert.controlAddr)    
+                                      ti.testCase.generator.config.Alert.controlAddr)
     poller.start()
     ti.testCase.assertTrue(poller.is_alive())
 
@@ -153,7 +153,7 @@ def doGenericValueBasedPolling(ti):
                 break
     else:
         time.sleep(ti.config.pollInterval * 2)
-        
+
     poller.terminate()
     receiver.shutdown()
     ti.testCase.assertFalse(poller.is_alive())
@@ -175,14 +175,14 @@ def doGenericValueBasedPolling(ti):
         ti.testCase.assertEqual(d["threshold"], ti.thresholdToTest)
     else:
         ti.testCase.assertEqual(len(handler.queue), 0)
-        
 
-        
+
+
 class TestInput(object):
     """
     Helper class used for passing necessary configuration attributes into the
     helper test runners which are common for MySQL, CouchDb, etc.
-    
+
     """
     def __init__(self):
         # actual poller class to instantiate and test
@@ -198,46 +198,46 @@ class TestInput(object):
         # feeding random numbers to the poller, what should be the deviation
         self.thresholdDiff = None
         # reference to the calling testcase instance - because of assertions ...
-        self.testCase = None 
+        self.testCase = None
 
-        
+
 
 class AlertGeneratorMock(object):
     """
     This class simulates config instance forwarding as real AlertGenerator
     does and that is the only purpose.
-    
+
     """
     def __init__(self, config):
         self.config = config
-        
-        
+
+
 
 class SenderMock(object):
     """
     Emulates Alerts Sender class. It has to provide callable and
     in this case it just catches outgoing Alert messages for final
     test inspection.
-    
+
     """
     def __init__(self):
         self.queue = []
-       
-        
+
+
     def __call__(self, alert):
         self.queue.append(alert)
-        
-        
+
+
 
 class ReceiverHandler(object):
     """
     Handler class for Alert Receiver.
     Incoming alerts are stored into a list.
-    
+
     """
     def __init__(self):
         self.queue = []
-        
-        
+
+
     def __call__(self, alert):
         self.queue.append(alert)

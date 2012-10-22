@@ -1,3 +1,9 @@
+0.9.24 to 0.9.25
+  - Change acdc integration test to look at all previous requests for one
+    to resubmit
+  - Test inject script fixed, unittests fixed, some improved logging and
+    exception handling  
+
 0.9.23 to 0.9.24:
   - Add the ability to ignore select output modules in ACDC requests.  Pull request #4099.
   - Ensure canceled workflows get cleaned up.  Pull request #4160.

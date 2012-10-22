@@ -22,9 +22,9 @@ class Destroy(DBCreator):
         """
         myThread = threading.currentThread()
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
-        
 
-        self.delete["10dbsbuffer_dataset"]            = "DROP TABLE dbsbuffer_dataset" 
+
+        self.delete["10dbsbuffer_dataset"]            = "DROP TABLE dbsbuffer_dataset"
         self.delete["09dbsbuffer_algo"]               = "DROP TABLE dbsbuffer_algo"
         self.delete["08dbsbuffer_algo_dataset_assoc"] = "DROP TABLE dbsbuffer_algo_dataset_assoc"
         self.delete["07dbsbuffer_file"]               = "DROP TABLE dbsbuffer_file"

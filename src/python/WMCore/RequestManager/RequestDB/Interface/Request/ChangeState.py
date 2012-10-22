@@ -28,7 +28,7 @@ def changeRequestIDStatus(requestId, newState, priority = None):
 
     - *requestId* : id of the request to be modified
     - *newState*    : name of the new status for the request
-    - *priority* : optional integer priority 
+    - *priority* : optional integer priority
 
     """
     factory = DBConnect.getConnection()
@@ -167,4 +167,3 @@ def putMessage(requestName, message):
     message = message[:999]
     factory(classname = "Progress.Message").execute(reqId, message)
     return
-

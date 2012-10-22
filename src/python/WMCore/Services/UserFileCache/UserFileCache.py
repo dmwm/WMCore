@@ -25,7 +25,7 @@ class UserFileCache(Service):
 
         if dict.has_key('proxyfilename'):
             #in case there is some code I have not updated in ticket #3780. Should not be required... but...
-            self['logger'].warning('The UserFileCache proxyfilename parameter has been replace with the more' +
+            self['logger'].warning('The UserFileCache proxyfilename parameter has been replace with the more'
                                    ' general (ckey/cert) pair.')
 
     def download(self, hashkey=None, name=None, output=None):

@@ -29,5 +29,5 @@ class PhEDExInjector(Harness):
         myThread.workerThreadManager.addWorker(PhEDExInjectorPoller(self.config), pollInterval)
 
         if getattr(self.config.PhEDExInjector, "subscribeDatasets", False):
-            logging.info("Setting poll interval to %s seconds for subscribe" % subInterval)            
+            logging.info("Setting poll interval to %s seconds for subscribe" % subInterval)
             myThread.workerThreadManager.addWorker(PhEDExInjectorSubscriber(self.config), subInterval)

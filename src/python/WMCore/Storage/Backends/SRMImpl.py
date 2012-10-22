@@ -19,9 +19,9 @@ class SRMImpl(StageOutImpl):
     _SRMImpl_
 
     Implement interface for srmcp command
-    
+
     """
-    
+
     def createSourceName(self, protocol, pfn):
         """
         _createSourceName_
@@ -44,7 +44,7 @@ class SRMImpl(StageOutImpl):
             return "/bin/rm -f %s" % pfn.replace("file://", "", 1)
         else:
             return StageOutImpl.createRemoveFileCommand(self, pfn)
-        
+
 
     def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
         """
@@ -56,13 +56,13 @@ class SRMImpl(StageOutImpl):
         result = "#!/bin/sh\n"
         result += "REPORT_FILE=`pwd`/srm.report.$$\n"
         result += "srmcp -report=$REPORT_FILE -retry_num=0 "
-        
+
         if options != None:
             result += " %s " % options
         result += " %s " % sourcePFN
         result += " %s \n" % targetPFN
-            
-        
+
+
         if _CheckExitCodeOption:
             result += """
             EXIT_STATUS=`cat $REPORT_FILE | cut -f3 -d" "`
@@ -73,7 +73,7 @@ class SRMImpl(StageOutImpl):
                %s
                exit 60311
             fi
-        
+
             """ % self.createRemoveFileCommand(targetPFN)
 
         if self.stageIn:
@@ -96,23 +96,23 @@ class SRMImpl(StageOutImpl):
               else
                  echo "Error: Size Mismatch between local and SE"
                  echo "Cleaning up failed file:"
-                 %s 
+                 %s
                  exit 60311
-              fi 
+              fi
            else
               sleep 2
            fi
         done
         echo "Cleaning up failed file:"
-        %s 
+        %s
         exit 60311
 
         """ % (remotePFN, self.createRemoveFileCommand(targetPFN), self.createRemoveFileCommand(targetPFN))
         result += metadataCheck
-        
+
         return result
 
-    
+
     def removeFile(self, pfnToRemove):
         """
         _removeFile_

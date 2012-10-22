@@ -16,7 +16,7 @@ from WMQuality.TestInit import TestInit
 
 class DBSBufferDatasetTest(unittest.TestCase):
 
-    
+
     def setUp(self):
         """
         _setUp_
@@ -37,11 +37,11 @@ class DBSBufferDatasetTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
 
 
-          
-    def tearDown(self):        
+
+    def tearDown(self):
         """
         _tearDown_
-        
+
         Drop all the DBSBuffer tables.
         """
         self.testInit.clearDatabase()
@@ -55,7 +55,7 @@ class DBSBufferDatasetTest(unittest.TestCase):
         """
         newDatasetAction = self.daoFactory(classname = "NewDataset")
         listDatasetAction = self.daoFactory(classname = "ListDataset")
-        
+
         newDatasetAction.execute(datasetPath = "/Cosmics/CRUZET-v1/RECO", validStatus = "PRODUCTION")
         resultA = listDatasetAction.execute(datasetPath = "/Cosmics/CRUZET-v1/RECO")
 
@@ -85,7 +85,7 @@ class DBSBufferDatasetTest(unittest.TestCase):
 
         newDatasetAction = self.daoFactory(classname = "NewDataset")
         listDatasetAction = self.daoFactory(classname = "ListDataset")
-        
+
         newDatasetAction.execute(datasetPath = "/Cosmics/CRUZET-v1/RECO",
                                  validStatus = "PRODUCTION",
                                  conn = myThread.transaction.conn,
@@ -104,11 +104,11 @@ class DBSBufferDatasetTest(unittest.TestCase):
         resultB = listDatasetAction.execute(datasetID = resultA[0]["id"],
                                             conn = myThread.transaction.conn,
                                             transaction = True)
-                                
+
         assert len(resultB) == 0, \
                "ERROR: Wrong number of datasets returned: %s" % len(resultB)
 
         return
 
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

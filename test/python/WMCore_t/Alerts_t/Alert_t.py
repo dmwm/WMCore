@@ -10,7 +10,7 @@ class AlertTest(unittest.TestCase):
     def setUp(self):
         pass
 
-        
+
     def tearDown(self):
         pass
 
@@ -25,7 +25,7 @@ class AlertTest(unittest.TestCase):
         self.assertEqual(a["Details"], {})
         self.assertEqual(a["Timestamp"], None)
         self.assertEqual(a["TimestampDecoded"], None)
-        
+
         details = dict(detail = "detail")
         a = Alert(Level = 5, Source = "src", Type = "type", Workload = "work",
                   Component = "comp", Details = details, Timestamp = "time")
@@ -37,37 +37,37 @@ class AlertTest(unittest.TestCase):
         self.assertEqual(a["Details"], details)
         self.assertEqual(a["Timestamp"], "time")
         a.toMsg()
-        
-        
+
+
     def testSetTimestamp(self):
         a = Alert()
         self.assertEqual(a["Timestamp"], None)
-        self.assertEqual(a["TimestampDecoded"], None)        
+        self.assertEqual(a["TimestampDecoded"], None)
         a.setTimestamp()
         self.assertTrue(isinstance(a["Timestamp"], float))
         tsd = a["TimestampDecoded"]
         tsdTested = time.strftime(a.TIMESTAMP_FORMAT, time.gmtime(a["Timestamp"]))
         self.assertEqual(tsd, tsdTested)
-                
-        
+
+
     def testRegisterMsg(self):
         msg = RegisterMsg("mylabel")
         self.assertEqual(msg.key, "Register")
         self.assertEqual(msg[msg.key], "mylabel")
-        
-    
+
+
     def testUnregisterMsg(self):
         msg = UnregisterMsg("anotherlabel")
         self.assertEqual(msg.key, "Unregister")
         self.assertEqual(msg[msg.key], "anotherlabel")
-        
-        
+
+
     def testShutdownMsg(self):
         msg = ShutdownMsg()
         self.assertEqual(msg.key, "Shutdown")
         self.assertEqual(msg[msg.key], True)
-                
-                         
-        
+
+
+
 if __name__ == "__main__":
     unittest.main()

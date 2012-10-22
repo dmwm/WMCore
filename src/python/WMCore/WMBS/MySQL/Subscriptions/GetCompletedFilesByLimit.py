@@ -15,7 +15,7 @@ from WMCore.WMBS.MySQL.Subscriptions.GetCompletedFiles import \
      GetCompletedFiles
 
 class GetCompletedFilesByLimit(GetCompletedFiles):
-    
+
     sql = GetCompletedFiles.sql + " LIMIT :maxLimit"
 
     def execute(self, subscription, limit, conn = None, transaction = False):

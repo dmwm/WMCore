@@ -47,7 +47,7 @@ class Create(DBCreator):
             ENGINE = InnoDB DEFAULT CHARSET=latin1;
         """
 
-        
+
         self.create['02bl_runjob'] = \
         """CREATE TABLE bl_runjob
            (
@@ -69,7 +69,7 @@ class Create(DBCreator):
            UNIQUE (retry_count, wmbs_id)
            )
            ENGINE = InnoDB DEFAULT CHARSET=latin1;
-           
+
         """
 
 

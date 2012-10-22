@@ -60,5 +60,3 @@ class URLFetcher(FetcherInterface):
                 fileInfo.injob = fileTarget
 
         return
-
-

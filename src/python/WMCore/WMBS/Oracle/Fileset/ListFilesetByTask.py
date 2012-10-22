@@ -13,6 +13,3 @@ from WMCore.WMBS.MySQL.Fileset.ListFilesetByTask import ListFilesetByTask as Lis
 
 class ListFilesetByTask(ListFilesetByTaskMySQL):
     pass
-
-
-

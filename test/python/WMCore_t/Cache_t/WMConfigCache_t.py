@@ -12,7 +12,7 @@ import subprocess
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
-from WMCore.WMBase import getTestBase 
+from WMCore.WMBase import getTestBase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 class testWMConfigCache(unittest.TestCase):
@@ -40,7 +40,7 @@ class testWMConfigCache(unittest.TestCase):
         Clear out the database.
         """
         self.testInit.delWorkDir()
-        self.testInit.tearDownCouch()        
+        self.testInit.tearDownCouch()
         return
 
     def testA_basicConfig(self):
@@ -83,7 +83,7 @@ class testWMConfigCache(unittest.TestCase):
     def testB_addingConfigsAndTweaks(self):
         """
         _addingConfigsAndTweaks_
-        
+
         Test adding config files and tweak files
         """
         PSetTweak = "Hello, I am a PSetTweak.  It's nice to meet you."
@@ -106,7 +106,7 @@ class testWMConfigCache(unittest.TestCase):
                                    rev = configCache.getCouchRev())
         configCache2.loadByID(configCache.getCouchID())
         configString2 = configCache2.getConfig()
-        
+
         self.assertEqual(configString1, configString2)
         self.assertEqual(configCache2.attachments.get('attach1', None), attach)
 
@@ -128,14 +128,14 @@ class testWMConfigCache(unittest.TestCase):
         configCache.setPSetTweaks(PSetTweak = PSetTweak)
         configCache.attachments['attach1'] = attach
         configCache.document['md5_hash'] = "somemd5"
-        psetPath = os.path.join(getTestBase(), "WMCore_t/Cache_t/PSet.txt")        
-        configCache.addConfig(newConfig = psetPath, psetHash = None)        
+        psetPath = os.path.join(getTestBase(), "WMCore_t/Cache_t/PSet.txt")
+        configCache.addConfig(newConfig = psetPath, psetHash = None)
         configCache.save()
-        
+
         configCache2 = ConfigCache(os.environ["COUCHURL"], couchDBName = 'config_test')
         configCache2.document['md5_hash'] = configCache.document['md5_hash']
         configCache2.load()
-        
+
         self.assertEqual(configCache2.attachments.get('attach1', None), attach)
         configCache2.delete()
         return
@@ -206,8 +206,8 @@ class testWMConfigCache(unittest.TestCase):
         self.assertEqual(configs["labelA"], configCacheA.getCouchID(),
                          "Error: Label A is wrong.")
         self.assertEqual(configs["labelB"], configCacheB.getCouchID(),
-                         "Error: Label B is wrong.")        
+                         "Error: Label B is wrong.")
         return
 
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

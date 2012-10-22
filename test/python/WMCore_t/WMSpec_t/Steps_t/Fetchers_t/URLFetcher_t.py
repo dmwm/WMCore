@@ -56,7 +56,7 @@ class URLFetcherTest(unittest.TestCase):
         task = WMTask.makeWMTask("testTask")
         task.makeStep("step1")
         task.makeStep("step2")
-        
+
         for t in task.steps().nodeIterator():
             t = WMStep.WMStepHelper(t)
             os.mkdir('%s/%s' % (self.testDir, t.name()))

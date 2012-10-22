@@ -38,9 +38,9 @@ class WMLoggingTest(unittest.TestCase):
         my_logger.addHandler(handler)
 
         for i in range(10):
-        	my_logger.debug('This is probably all noise.')
-        	my_logger.info('Jackdaws love my big sphinx of quartz.')
-        	my_logger.error('HOLLY CRAP!')
+            my_logger.debug('This is probably all noise.')
+            my_logger.info('Jackdaws love my big sphinx of quartz.')
+            my_logger.error('HOLLY CRAP!')
         logs = self.db.allDocs()['rows']
         self.assertEqual(30, len(logs))
 

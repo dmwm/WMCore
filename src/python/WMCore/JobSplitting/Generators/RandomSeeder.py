@@ -23,9 +23,3 @@ class RandomSeeder(GeneratorInterface):
         baggage = wmbsJob.getBaggage()
         for x in self.options.keys():
             wmbsJob.addBaggageParameter("RandomSeeder.%s" %(x), random.randint(1, self._MAXINT))
-
-
-
-
-
-

@@ -33,7 +33,7 @@ class NewState(DBFormatter):
         for state in states:
             binds.append({'name': state})
 
-        
+
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
 

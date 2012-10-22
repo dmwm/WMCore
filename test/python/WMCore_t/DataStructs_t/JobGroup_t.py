@@ -3,12 +3,12 @@
 _JobGroup_t_
 
 Testcase for the JobGroup class.
-""" 
+"""
 
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Job import Job
 from WMCore.DataStructs.JobGroup import JobGroup
-from WMCore.DataStructs.Subscription import Subscription 
+from WMCore.DataStructs.Subscription import Subscription
 
 from WMQuality.TestInit import TestInit
 
@@ -17,7 +17,7 @@ import unittest
 class JobGroupTest(unittest.TestCase):
     def setUp(self):
         pass
-         
+
     def testCreate(self):
         """
         _testCreate_
@@ -48,7 +48,7 @@ class JobGroupTest(unittest.TestCase):
                 "ERROR: Extra job in job group"
 
             goldenJobs.remove(job)
-        
+
         assert len(goldenJobs) == 0, \
             "ERROR: Job missing from job group"
 
@@ -113,14 +113,14 @@ class JobGroupTest(unittest.TestCase):
             "ERROR: Unknown number of files in JobGroup output fileset."
         assert testFile in testJobGroup.getOutput(), \
             "ERROR: Unknown file in the JobGroup output fileset."
-        
+
         return
-    
+
     def testGetJobs(self):
         """
         _testGetJobs_
 
-        Verify that the getJobs() method of the JobGroup class returns the 
+        Verify that the getJobs() method of the JobGroup class returns the
         correct output for each output container type it supports.
         """
         testJobA = Job()
@@ -185,7 +185,7 @@ class JobGroupTest(unittest.TestCase):
         self.assertEqual(len(testJobGroup), 4)
 
         return
-        
+
 
 if __name__ == '__main__':
     unittest.main()

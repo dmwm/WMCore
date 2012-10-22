@@ -10,11 +10,11 @@ class New(DBFormatter):
     tableSql = "SELECT table_name FROM user_tables"
     seqSql = "SELECT sequence_name FROM user_sequences"
     trgSql = "SELECT trigger_name FROM user_triggers"
-    
+
     def execute(self, conn = None, transaction = False):
         tbl = self.dbi.processData(self.tableSql, conn = conn, transaction = transaction)
         seq = self.dbi.processData(self.seqSql, conn = conn, transaction = transaction)
-        trg = self.dbi.processData(self.trgSql, conn = conn, transaction = transaction)        
+        trg = self.dbi.processData(self.trgSql, conn = conn, transaction = transaction)
 
         for table in self.formatDict(tbl):
             self.dbi.processData("DROP TABLE %s CASCASE CONSTRAINTS" % table["table_name"],

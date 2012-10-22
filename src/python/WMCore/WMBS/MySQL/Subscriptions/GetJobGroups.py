@@ -25,7 +25,7 @@ class GetJobGroups(DBFormatter):
 
         Format the results into a single list of job group IDs.
         """
-        results = DBFormatter.format(self, results)        
+        results = DBFormatter.format(self, results)
 
         jobGroupIDs = []
         for result in results:
@@ -33,7 +33,7 @@ class GetJobGroups(DBFormatter):
                 jobGroupIDs.append(int(row))
 
         return jobGroupIDs
-        
+
     def execute(self, subscription = None, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, {"subscription": subscription},
                                       conn = conn, transaction = transaction)

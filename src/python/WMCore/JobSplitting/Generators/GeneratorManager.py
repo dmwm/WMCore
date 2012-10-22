@@ -22,7 +22,7 @@ class GeneratorManager:
     def __init__(self, task = None):
         self.generators = {}
         self.generatorFactory = GeneratorFactory()
-        
+
         if not hasattr(task, 'data'):
             #We don't have a WMTask
             return
@@ -32,7 +32,7 @@ class GeneratorManager:
         #Otherwise we have a fully formed task of some type
 
         configList = task.listGenerators()
-        
+
         for generator in configList:
             self.addGenerator(generator, **task.getGeneratorSettings(generator))
 
@@ -83,5 +83,3 @@ class GeneratorManager:
             generatorList.append(self.generators[name])
 
         return generatorList
-
-

@@ -24,14 +24,14 @@ class SiblingProcessingBased(JobFactory):
         """
         # This doesn't use a proxy
         self.grabByProxy = False
-        
+
         filesPerJob = int(kwargs.get("files_per_job", 10))
 
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
-        
+
         fileAvail = daoFactory(classname = "Subscriptions.SiblingSubscriptionsComplete")
         completeFiles = fileAvail.execute(self.subscription["id"],
                                           conn = myThread.transaction.conn,
@@ -55,7 +55,7 @@ class SiblingProcessingBased(JobFactory):
                 foundFiles.append(completeFile["lfn"])
             else:
                 continue
-            
+
             if not fileSites.has_key(completeFile["se_name"]):
                 fileSites[completeFile["se_name"]] = []
 
@@ -71,9 +71,9 @@ class SiblingProcessingBased(JobFactory):
                 for jobFile in fileSites[siteName][0:filesPerJob]:
                     newFile = File(id = jobFile["id"], lfn = jobFile["lfn"],
                                    events = jobFile["events"])
-                    newFile["locations"] = set([jobFile["se_name"]])                
+                    newFile["locations"] = set([jobFile["se_name"]])
                     self.currentJob.addFile(newFile)
-                
+
                 fileSites[siteName] = fileSites[siteName][filesPerJob:]
 
             if filesetClosed and len(fileSites[siteName]) > 0:
@@ -82,6 +82,6 @@ class SiblingProcessingBased(JobFactory):
                     newFile = File(id = jobFile["id"], lfn = jobFile["lfn"],
                                    events = jobFile["events"])
                     newFile["locations"] = set([jobFile["se_name"]])
-                    self.currentJob.addFile(newFile)            
+                    self.currentJob.addFile(newFile)
 
         return

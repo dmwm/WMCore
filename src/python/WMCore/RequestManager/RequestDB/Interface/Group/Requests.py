@@ -33,7 +33,3 @@ def listRequests(groupName):
 
     result = listReqs.execute(groupId)
     return result
-
-
-
-

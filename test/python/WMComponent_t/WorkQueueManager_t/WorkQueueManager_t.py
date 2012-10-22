@@ -45,15 +45,15 @@ class WorkQueueManagerTest(WorkQueueTestCase):
     def setSchema(self):
         self.schema = []
         self.couchApps = ["WorkQueue"]
-    
+
     def setUp(self):
         WorkQueueTestCase.setUp(self)
-        EmulatorHelper.setEmulators(phedex = True, dbs = True, 
+        EmulatorHelper.setEmulators(phedex = True, dbs = True,
                                     siteDB = True, requestMgr = False)
     def tearDown(self):
         WorkQueueTestCase.tearDown(self)
         EmulatorHelper.resetEmulators()
-        
+
     def getConfig(self):
         """
         _createConfig_
@@ -73,13 +73,13 @@ class WorkQueueManagerTest(WorkQueueTestCase):
         config.WorkQueueManager.team = 'team_usa'
         config.WorkQueueManager.requestMgrHost = 'cmssrv49.fnal.gov:8585'
         config.WorkQueueManager.serviceUrl = "http://cmssrv18.fnal.gov:6660"
-        
+
         config.WorkQueueManager.logLevel = 'INFO'
         config.WorkQueueManager.pollInterval = 10
         config.WorkQueueManager.level = "GlobalQueue"
 
-        return config        
-        
+        return config
+
     def setupGlobalWorkqueue(self):
         """Return a workqueue instance"""
 
@@ -101,7 +101,7 @@ class WorkQueueManagerTest(WorkQueueTestCase):
 
         testWorkQueueManager = WorkQueueManager(config)
         testWorkQueueManager.prepareToStart()
-        
+
         time.sleep(30)
         print "Killing"
         myThread.workerThreadManager.terminateWorkers()

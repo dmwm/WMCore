@@ -20,9 +20,9 @@ class PYDCCPImpl(StageOutImpl):
     _PYDCCPImpl_
 
     Implement interface for python API around dccp command
-    
-    """        
-        
+
+    """
+
     def createSourceName(self, protocol, pfn):
         """
         _createSourceName_
@@ -44,7 +44,7 @@ class PYDCCPImpl(StageOutImpl):
             import dcap
         except ImportError, ie:
             raise StageOutError("Python dCap wrappers not found on this host.")
-        
+
         optionsStr = ""
         if options != None:
             optionsStr = str(options)
@@ -52,7 +52,7 @@ class PYDCCPImpl(StageOutImpl):
         result += "dc_stageout %s %s %s" % ( optionsStr, sourcePFN, targetPFN)
         return result
 
-    
+
     def removeFile(self, pfnToRemove):
         """
         _removeFile_

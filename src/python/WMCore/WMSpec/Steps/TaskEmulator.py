@@ -72,6 +72,3 @@ class TaskEmulator:
         Invoke the emulator for the given step
 
         """
-
-
-

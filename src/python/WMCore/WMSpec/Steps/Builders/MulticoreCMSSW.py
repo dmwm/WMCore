@@ -31,9 +31,3 @@ class MulticoreCMSSW(Builder):
         stepWorkingArea = "%s/%s" % (workingDir, stepName)
         self.installWorkingArea(step, stepWorkingArea)
         print "Builders.MulticoreCMSSW.build called on %s" % stepName
-
-
-
-
-
-

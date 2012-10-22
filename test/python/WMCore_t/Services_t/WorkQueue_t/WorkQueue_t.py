@@ -20,7 +20,7 @@ class WorkQueueTest(unittest.TestCase):
     Test WorkQueue Service client
     It will start WorkQueue RESTService
     Server DB sets from environment variable.
-    Client DB sets from environment variable. 
+    Client DB sets from environment variable.
 
     This checks whether DS call makes without error and return the results.
     Not the correctness of functions. That will be tested in different module.
@@ -29,7 +29,7 @@ class WorkQueueTest(unittest.TestCase):
         """
         _setUp_
         """
-        EmulatorHelper.setEmulators(phedex = True, dbs = True, 
+        EmulatorHelper.setEmulators(phedex = True, dbs = True,
                                     siteDB = True, requestMgr = True)
 
         self.specGenerator = WMSpecGenerator("WMSpecs")
@@ -55,7 +55,7 @@ class WorkQueueTest(unittest.TestCase):
         #EmulatorSetup.deleteConfig(self.configFile)
         EmulatorHelper.resetEmulators()
         self.specGenerator.removeSpecs()
-        
+
 
     def testWorkQueueService(self):
         # test getWork
@@ -81,4 +81,3 @@ class WorkQueueTest(unittest.TestCase):
 if __name__ == '__main__':
 
     unittest.main()
-    

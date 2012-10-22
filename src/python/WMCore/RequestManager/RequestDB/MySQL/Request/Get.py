@@ -38,4 +38,3 @@ class Get(DBFormatter):
         for field, val in value.items():
             requestData[str(field).lower()] = val
         return requestData
-

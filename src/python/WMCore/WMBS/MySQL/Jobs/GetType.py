@@ -24,8 +24,8 @@ class GetType(DBFormatter):
                  wmbs_subscription.id = wmbs_jobgroup.subscription
                INNER JOIN wmbs_job ON
                  wmbs_jobgroup.id = wmbs_job.jobgroup
-             WHERE wmbs_job.id = :jobid"""    
-        
+             WHERE wmbs_job.id = :jobid"""
+
     def execute(self, jobID, conn = None, transaction = False):
         isList = type(jobID) == type([])
         if isList:

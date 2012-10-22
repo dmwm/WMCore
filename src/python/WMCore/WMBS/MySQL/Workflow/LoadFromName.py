@@ -20,6 +20,6 @@ class LoadFromName(DBFormatter):
 
     def execute(self, workflow, task, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, {"workflow": workflow,
-                                                 "task": task}, 
+                                                 "task": task},
                          conn = conn, transaction = transaction)
         return self.formatDict(result)[0]

@@ -22,6 +22,3 @@ class BasicNaming(GeneratorInterface):
     def __call__(self, wmbsJob):
         wmbsJob['id'] = "%s/%s" % (self.task.getPathName(), makeUUID())
         wmbsJob['name'] = "%s/%s" % (self.task.getPathName(), makeUUID())
-
-
-

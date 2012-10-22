@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-_TreeSort_ 
+_TreeSort_
 
 Sort objects with parent/child relationships
 
@@ -112,7 +112,7 @@ class TreeSort:
         """
         def __safeParentGetter(item):
             """
-            Parentage may or may not be in list form - if not 
+            Parentage may or may not be in list form - if not
               convert to tuple for uniformity
             """
             parents = parentGetter(item)
@@ -122,8 +122,8 @@ class TreeSort:
 
         self.roots = {}
         self.init(nameGetter, __safeParentGetter, objects)
-        
-        
+
+
     def init(self, nameGetter, parentGetter, inputs):
         """
         Really do the init here
@@ -133,7 +133,7 @@ class TreeSort:
         allParents = []
         [ allParents.extend(parentGetter(x)) for x in inputs ]
         externalParents = set(allParents).difference(set(allNames))
-    
+
         #  //
         # // firstly we build the tree roots from all the files that
         #//  dont have parents within the list of files we are dealing with
@@ -142,7 +142,7 @@ class TreeSort:
             parents = set(parentGetter(f))
             # strip out external parents and self
             parents = list(parents - externalParents - set((name,)))
-            
+
             if len(parents) == 0:
                 # No parents, top of tree
                 self.addRoot(nameGetter(f), f)
@@ -158,7 +158,7 @@ class TreeSort:
                 # Multiple parents ==> PANIC!
                 msg = "Object %s has too many parents for tree sort"
                 raise RuntimeError, msg % name
-    
+
         #  //
         # // Now we have pruned out the roots, we process the
         #//  dependencies for each _Node, we do this recursively
@@ -172,7 +172,7 @@ class TreeSort:
             if len(remainders) == remainderLen:
                 recursionCheck += 1
             remainderLen = len(remainders)
-    
+
             if recursionCheck > 10:
                 #  //
                 # // further reduction may not be possible
@@ -233,12 +233,12 @@ class TreeSort:
     def process(self, *input):
         """
         _process_
-    
+
         Reduces the input list for each _Node that it
         can add to the tree.
         Any _Nodes that cannot be added in this pass are returned as
         a list of remainders.
-    
+
         """
         remainders = set()
         for r in input:
@@ -250,6 +250,3 @@ class TreeSort:
                 else:
                     remainders.add(r)
         return list(remainders)
-
-
-

@@ -24,13 +24,13 @@ class GetParentInfo(DBFormatter):
              WHERE wfd.lfn = :child_lfn
     """
 
-    
-    
+
+
     def execute(self, childLFNs, conn = None, transaction = False):
         bindVars = []
         for childLFN in childLFNs:
             bindVars.append({"child_lfn": childLFN})
-            
-        result = self.dbi.processData(self.sql, bindVars, 
+
+        result = self.dbi.processData(self.sql, bindVars,
                          conn = conn, transaction = transaction)
         return self.formatDict(result)

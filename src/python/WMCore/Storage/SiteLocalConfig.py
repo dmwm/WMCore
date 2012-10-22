@@ -37,14 +37,14 @@ def loadSiteLocalConfig():
         else:
             logging.log(logging.ERROR, "%s env. var. provided but not pointing "
                         "to an existing file, ignoring." % overVarName)
-            
+
     defaultPath = "$CMS_PATH/SITECONF/local/JobConfig/site-local-config.xml"
     actualPath = os.path.expandvars(defaultPath)
     if os.environ.get("CMS_PATH", None) == None:
         msg = "Unable to find site local config file:\n"
         msg += "CMS_PATH variable is not defined."
         raise SiteConfigError, msg
-    
+
     if not os.path.exists(actualPath):
         msg = "Unable to find site local config file:\n"
         msg += actualPath
@@ -57,10 +57,10 @@ def loadSiteLocalConfig():
 class SiteConfigError(StandardError):
     """
     Exception class placeholder
-    
+
     """
     pass
-    
+
 
 class SiteLocalConfig:
     """
@@ -76,10 +76,10 @@ class SiteLocalConfig:
 
         self.frontierProxies = []
         self.frontierServers = []
-        
+
         self.localStageOut = {}
         self.fallbackStageOut = []
-        
+
         self.read()
         return
 
@@ -103,7 +103,7 @@ class SiteLocalConfig:
             msg += "URL = %s\n" % tfcUrl
             raise SiteConfigError, msg
         return tfcInstance
-            
+
 
     def localStageOutCommand(self):
         """
@@ -130,7 +130,7 @@ class SiteLocalConfig:
 
         """
         return self.localStageOut['se-name']
-    
+
 
     def read(self):
         """
@@ -188,7 +188,7 @@ def coroutine(func):
 def nodeReader(node):
     """
     _nodeReader_
-    
+
     Given a node, see if we can find what we're looking for
     """
     processSiteInfo = {
@@ -246,7 +246,7 @@ def processSite(targets):
 def processEventData():
     """
     Process eventData in a site
-    
+
     """
 
     while True:
@@ -314,7 +314,7 @@ def processCalibData():
             if subnode.name == "frontier-connect":
                 for frontierSubnode in subnode.children:
                     subNodeUrl = frontierSubnode.attrs.get("url", None)
-                    
+
                     if frontierSubnode.name == "proxy":
                         frontierProxies.append(subNodeUrl)
                     elif frontierSubnode.name == "server":

@@ -18,9 +18,9 @@ class Emulator:
     def initialise(self, executorInstance):
         """
         _initialise_
-        
+
         Post ctor initialisation, shortcut to some of the standard variables provided by the executor
-        
+
         """
         self.executor = executorInstance
         self.job = self.executor.job
@@ -29,17 +29,17 @@ class Emulator:
         self.step = self.executor.step
         self.stepSpace = self.executor.stepSpace
         self.stepName = self.executor.stepName
-        
-    
+
+
     def pre(self):
         """
         _pre_
-        
+
         Override pre step to emulate
         """
-        return None  
-        
-        
+        return None
+
+
     def execute(self):
         """
         _emulate_
@@ -54,15 +54,8 @@ class Emulator:
     def post(self):
         """
         _post_
-        
+
         Override to emulate post execution step
-        
+
         """
         return None
-    
-
-
-
-
-
-

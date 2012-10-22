@@ -210,7 +210,7 @@ class LexiconTest(unittest.TestCase):
 
     def testBadDataset(self):
         for notok in ['/Sugar/Sugar', '/Oh/honey/honey!', '/You/are/my/candy/GIIIRRL']:
-           self.assertRaises(AssertionError, dataset, notok)
+            self.assertRaises(AssertionError, dataset, notok)
 
     def testVersion(self):
         for ok in ['CMSSW_3_8_0_pre1', 'CMSSW_1_2_0', 'CMSSW_4_0_0_patch11', 'CMSSW_3_10_0_pre9G493']:
@@ -625,7 +625,7 @@ class LexiconTest(unittest.TestCase):
         globalTag(gTag)
         gTag = 'START_V2;;ALL'
         self.assertRaises(AssertionError, globalTag, gTag)
-        
+
         return
 
 if __name__ == "__main__":

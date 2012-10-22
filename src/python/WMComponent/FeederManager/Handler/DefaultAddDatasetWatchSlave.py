@@ -16,7 +16,7 @@ class DefaultAddDatasetWatchSlave(DefaultSlave):
     """
     The default slave for a run failure message
     """
-    
+
     def __init__(self):
         """
         Initialise the slave
@@ -35,19 +35,19 @@ class DefaultAddDatasetWatchSlave(DefaultSlave):
         # Lock on the running feeders list
         myThread = threading.currentThread()
         myThread.runningFeedersLock.acquire()
-        
+
         # Create empty fileset if fileset.name doesn't exist
-        filesetName = message["dataset"] 
+        filesetName = message["dataset"]
         feederType = message["FeederType"]
         fileType = message["FileType"]
         startRun = message["StartRun"]
 
         logging.debug("Dataset " + filesetName + " arrived")
- 
+
         fileset = Fileset(name = filesetName+':'\
           +feederType+':'+fileType+':'+startRun)
 
-        # Check if the fileset is already there 
+        # Check if the fileset is already there
         if fileset.exists() == False:
 
             # Empty fileset creation
@@ -56,10 +56,10 @@ class DefaultAddDatasetWatchSlave(DefaultSlave):
 
             logging.info("Fileset %s whith id %s is added" \
                                %(fileset.name, str(fileset.id)))
- 
+
             # Get feeder type
             feederType = message["FeederType"]
-        
+
             # Check if there is a running feeder
             if myThread.runningFeeders.has_key(feederType):
                 logging.info("HAVE FEEDER " + feederType + " RUNNING")
@@ -67,7 +67,7 @@ class DefaultAddDatasetWatchSlave(DefaultSlave):
 
             else:
                 logging.info("NO FEEDER " + feederType + " RUNNING")
-            
+
                 # Check if we have a feeder in DB
                 if self.queries.checkFeeder(feederType):
                     # Have feeder, get info
@@ -83,15 +83,15 @@ class DefaultAddDatasetWatchSlave(DefaultSlave):
                     logging.info(feederId)
                     myThread.runningFeeders[feederType] = feederId
 
-            # Fileset/Feeder association 
+            # Fileset/Feeder association
             self.queries.addFilesetToManage(fileset.id, \
                           myThread.runningFeeders[feederType])
             logging.info("Fileset %s is added to feeder %s" %(fileset.id, \
                           myThread.runningFeeders[feederType]))
         else:
 
-            # If fileset already exist a new subscription 
-            # will be created for its workflow       
+            # If fileset already exist a new subscription
+            # will be created for its workflow
             logging.info("Fileset exists: Subscription will be created for it")
 
             # Open it if close
@@ -109,6 +109,6 @@ class DefaultAddDatasetWatchSlave(DefaultSlave):
                                   myThread.runningFeeders[feederType])
                 logging.info("Fileset %s is added to feeder %s" %(fileset.id, \
                                   myThread.runningFeeders[feederType]))
- 
+
         myThread.runningFeedersLock.release()
         myThread.msgService.finish()

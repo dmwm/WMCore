@@ -12,4 +12,3 @@ from WMCore.WMBS.MySQL.Workflow.RetriedJobs import RetriedJobs as MySQLRetriedJo
 
 class RetriedJobs(MySQLRetriedJobs):
     pass
-    

@@ -6,6 +6,3 @@ Module containing common components for creating
 components.
 
 """
-
-
-

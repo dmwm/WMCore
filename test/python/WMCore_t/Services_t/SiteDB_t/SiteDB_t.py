@@ -85,7 +85,7 @@ class SiteDBTest(unittest.TestCase):
         testUserName = "metson"
         userName = self.mySiteDB.dnUserName(dn=testDn)
         self.failUnless(testUserName == userName)
-        
+
     @attr("integration")
     def testDNWithApostrophe(self):
         """
@@ -99,16 +99,16 @@ class SiteDBTest(unittest.TestCase):
     def testSEFinder(self):
         """
         _testSEFinder_
-        
+
         See if we can retrieve seNames from all sites
         """
-        
+
         ceNames = self.mySiteDB.getAllSENames()
         self.assertTrue(len(ceNames) > 1)
         self.assertTrue('cmssrm.fnal.gov' in ceNames)
         return
-    
-        
+
+
     @attr("integration")
     def testParsingJsonWithApostrophe(self):
         """

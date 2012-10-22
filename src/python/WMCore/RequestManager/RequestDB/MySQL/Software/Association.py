@@ -34,4 +34,3 @@ class Association(DBFormatter):
                                       conn = conn, transaction = trans)
 
         return
-

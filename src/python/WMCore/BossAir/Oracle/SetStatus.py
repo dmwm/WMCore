@@ -14,4 +14,3 @@ class SetStatus(MySQLSetStatus):
 
     Set the status of a list of jobs
     """
-

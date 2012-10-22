@@ -14,4 +14,3 @@ class YUIServer:
             logging.error("Bad YUI location "+path)
             raise cherrypy.HTTPError(403, "Bad YUI location")
         return cherrypy.lib.static.serve_file(self.yuidir + '/' + path)
-

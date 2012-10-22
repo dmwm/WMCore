@@ -88,11 +88,11 @@ class ErrorHandlerPoller(BaseWorkerThread):
                                                     database = config.ACDC.database)
 
         # initialize the alert framework (if available - config.Alert present)
-        #    self.sendAlert will be then be available    
-        self.initAlerts(compName = "ErrorHandler")        
-        
+        #    self.sendAlert will be then be available
+        self.initAlerts(compName = "ErrorHandler")
+
         return
-    
+
     def setup(self, parameters = None):
         """
         Load DB objects required for queries
@@ -102,12 +102,12 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         return
 
-        
+
 
     def terminate(self, params):
         """
         _terminate_
-        
+
         Do one pass, then commit suicide
         """
         logging.debug("terminating. doing one more pass before we die")
@@ -160,7 +160,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
                         # Rerun, and hope the times get written the next time around.
                         logging.error("No start, stop times for steps for job %i" % job['id'])
                         continue
-                    
+
                     elif stopTime - startTime > self.maxFailTime:
                         msg = "Job %i exhausted after running on node for %i seconds" % (job['id'], stopTime - startTime)
                         logging.error(msg)
@@ -175,7 +175,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
                         passJobs.append(job)
                     else:
                         cooloffJobs.append(job)
-                        
+
                 except Exception, ex:
                     logging.error("Exception while trying to check jobs for failures!")
                     logging.error(str(ex))
@@ -183,7 +183,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
                     continue
         else:
             cooloffJobs = cooloffPre
-            
+
 
         #Now to actually do something.
         logging.debug("About to propagate jobs")
@@ -238,9 +238,9 @@ class ErrorHandlerPoller(BaseWorkerThread):
         myThread.transaction.commit()
 
         return
-            
 
-            
+
+
 
     def handleErrors(self):
         """

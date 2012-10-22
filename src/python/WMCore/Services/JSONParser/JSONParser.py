@@ -100,4 +100,3 @@ class JSONParser:
             src = tokenize.generate_tokens(src)
             parsed_dict, final_src = self.parse(src.next(), src)
             return parsed_dict
-

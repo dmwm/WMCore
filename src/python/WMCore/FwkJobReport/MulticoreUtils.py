@@ -52,10 +52,10 @@ AggrFunctions = {
 class Aggregator(object):
     """
     _Aggregator_
-    
+
     Util to aggregate performance reports for multicore jobs into a single
     performance report, including a multicore section to allow profiling of internal performance
-    
+
     """
     def __init__(self):
         self.numCores = 0
@@ -68,20 +68,20 @@ class Aggregator(object):
         # create a combined performance report with the appropriate sections
         for red in AggrFunctions.keys():
             self.values[red] = []
-            sect, param = red.split(".")    
+            sect, param = red.split(".")
             if not self.sections.has_key(sect):
                 self.sections[sect] = []
                 self.report.section_(sect)
             if param not in self.sections[sect]:
                 self.sections[sect].append(param)
-                
-                
-                
-        
+
+
+
+
     def add(self, perfRep):
         """
         _add_
-        
+
         Add the contents of the given performance rep to this
         aggregator
         """
@@ -98,30 +98,30 @@ class Aggregator(object):
                 except ValueError:
                     continue
                 self.values[key].append(value)
-    
-            
+
+
     def aggregate(self):
         """
         _aggregate_
-        
-        For each key in the map, run the appropriate aggregation function on it 
-        """ 
+
+        For each key in the map, run the appropriate aggregation function on it
+        """
         for key, vals in self.values.items():
             # avoid divide by zero averages etc
             if len(vals) == 0: continue
             aggFunc = AggrFunctions[key]
             sect, param = key.split(".")
             section = getattr(self.report, sect)
-            setattr(section, param, aggFunc(vals)) 
+            setattr(section, param, aggFunc(vals))
         self.createMulticoreSection()
         return self.report
-            
-            
-        
+
+
+
     def createMulticoreSection(self):
         """
         _createMulticoreSection_
-        
+
         create the multicore report section
         """
         self.report.section_("multicore")
@@ -133,13 +133,13 @@ class Aggregator(object):
             self.report.multicore.maxProcessTime = max(vals)
             self.report.multicore.minProcessTime = min(vals)
             self.report.multicore.processWaitingTime = max(vals) - min(vals)
-            
+
             stepEffNom = float(sum(vals)) / float((max(vals) * self.numCores))
             stepEffDenom = float(average(vals))   / float(max(vals))
             stepEff = stepEffNom/stepEffDenom
             self.report.multicore.stepEfficiency = stepEff
-            
-            
+
+
         # frame in the merge report values
         # need to be set from the MulticoreCMSSW Executor
         self.report.multicore.mergeStartTime = None
@@ -149,17 +149,17 @@ class Aggregator(object):
         self.report.multicore.averageMergeTime = None
         self.report.multicore.maxMergeTime = None
         self.report.multicore.minMergeTime = None
-        
 
 
-        
+
+
 def updateMulticoreReport(reportInstance, numMerges, mergeStart, mergeEnd, totalStepTime, *mergeData):
     """
     _updateMulticoreReport_
-    
+
     Function to add in multicore performance numbers
     Args should be pretty self explanatory, the mergeData is the list of times taken for each merge job
-    
+
     """
     sect = reportInstance.report.performance.multicore
     sect.mergeStartTime = mergeStart
@@ -170,5 +170,3 @@ def updateMulticoreReport(reportInstance, numMerges, mergeStart, mergeEnd, total
     sect.maxMergeTime = max(mergeData)
     sect.minMergeTime = min(mergeData)
     sect.averageMergeTime = average(mergeData)
-    
-    

@@ -19,6 +19,3 @@ class WMExecutionFailure(WMException):
         self.code = code
         self.name = name
         self.detail = detail
-
-
-

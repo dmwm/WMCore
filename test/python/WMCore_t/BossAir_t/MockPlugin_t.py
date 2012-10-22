@@ -26,10 +26,10 @@ class MockPluginTest(unittest.TestCase):
         self.testinit = TestInit(__file__)
         self.workdir = self.testinit.generateWorkDir()
         jobList[0]['cache_dir'] = self.workdir
-    
+
     def tearDown(self):
         self.testinit.delWorkDir()
-        
+
     def testInit(self):
         wrongconfig = Configuration()
         wrongconfig.section_('BossAir')
@@ -49,7 +49,7 @@ class MockPluginTest(unittest.TestCase):
 
         #Check that the job has been scheduled
         self.assertEquals({}, mp.jobsScheduledEnd)
-        
+
         # Don't be racy
         currentTime = datetime.now()
         #id is the only required parameter in the job dictionary
@@ -75,11 +75,10 @@ class MockPluginTest(unittest.TestCase):
         self.assertEquals( [], res[0])
         self.assertEquals( 'Done', res[1][0]['status'])
         self.assertEquals( 'Done', res[2][0]['status'])
-        
+
         del mp
 
 
 
 if __name__ == '__main__':
     unittest.main()
-   

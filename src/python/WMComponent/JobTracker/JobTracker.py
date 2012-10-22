@@ -32,7 +32,7 @@ class JobTracker(Harness):
         self.pollTime = 1
 
         self.config = config
-        
+
         print "JobTracker.__init__"
 
     def preInitialization(self):

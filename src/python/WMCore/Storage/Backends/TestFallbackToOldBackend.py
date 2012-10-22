@@ -6,7 +6,7 @@ A copy of the CP implementation that's not implemented with the V2 plugins
 this will let us test that the fallback works properly
 
 """
-import os 
+import os
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
 
@@ -18,7 +18,7 @@ class TestFallbackToOldBackendImpl(StageOutImpl):
     _CPImpl_
 
     Implement interface for plain cp command
-    
+
     """
 
     run = staticmethod(runCommand)
@@ -41,7 +41,7 @@ class TestFallbackToOldBackendImpl(StageOutImpl):
         targetdir= os.path.dirname(targetPFN)
 
         checkdircmd="/bin/ls %s > /dev/null " % targetdir
-        print "Check dir existence : %s" %checkdircmd 
+        print "Check dir existence : %s" %checkdircmd
         try:
             checkdirexitCode = self.run(checkdircmd)
         except Exception, ex:
@@ -51,7 +51,7 @@ class TestFallbackToOldBackendImpl(StageOutImpl):
             msg += "Go on anyway..."
             print msg
             pass
-    
+
         if checkdirexitCode:
             mkdircmd = "/bin/mkdir -m 775 -p %s" % targetdir
             print "=> creating the dir : %s" %mkdircmd
@@ -86,7 +86,7 @@ class TestFallbackToOldBackendImpl(StageOutImpl):
         print result
         return result
 
-    
+
     def removeFile(self, pfnToRemove):
         """
         _removeFile_

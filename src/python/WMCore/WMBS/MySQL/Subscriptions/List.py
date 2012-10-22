@@ -13,7 +13,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class List(DBFormatter):
     sql = "SELECT id FROM wmbs_subscription"
-    
+
     def format(self, result):
         results = DBFormatter.format(self, result)
 
@@ -22,7 +22,7 @@ class List(DBFormatter):
             subIDs.append(row[0])
 
         return subIDs
-        
+
     def execute(self, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, conn = conn,
                                       transaction = transaction)

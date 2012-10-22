@@ -5,7 +5,7 @@ _JobGroup_
 Definition of JobGroup:
     Set of jobs running on same input file for same Workflow
     Set of jobs for a single subscription
-    Required for certain job splitting Algo's (.g. event split to make complete 
+    Required for certain job splitting Algo's (.g. event split to make complete
     lumi)
     Subscription:JobGroup == 1:N
     JobGroup:Jobs = 1:N
@@ -17,14 +17,14 @@ A JobGroup is a set of jobs and a Fileset that contains their output.
 
 JobGroup knows the Subscription and passes the Workflow to Jobs in the group.
 
-Jobs know their status (active, failed, complete) and know the files they run 
-on but don't know the group. They do know their subscription and corresponding 
-workflow. This means Jobs can update their state in the database without 
+Jobs know their status (active, failed, complete) and know the files they run
+on but don't know the group. They do know their subscription and corresponding
+workflow. This means Jobs can update their state in the database without
 talking to the group, and WMBS JobGroups can calculate status from the database
-instead of the in memory objects. 
+instead of the in memory objects.
 
-The group has a status call which goes through the jobs and updates the db for 
-state changes and then returns the status of the group (active, failed, 
+The group has a status call which goes through the jobs and updates the db for
+state changes and then returns the status of the group (active, failed,
 complete).
 
 WMAgent deals with groups and calls group.status periodically
@@ -47,16 +47,16 @@ class JobGroup(WMObject):
         self.jobs = []
         self.newjobs = []
         self.id = 0
-        
+
         if type(jobs) == list:
             self.newjobs = jobs
         elif jobs != None:
             self.newjobs = [jobs]
-            
+
         self.subscription = subscription
         self.output = Fileset()
         self.last_update = datetime.datetime.now()
-        
+
     def add(self, job):
         """
         _add_
@@ -76,13 +76,13 @@ class JobGroup(WMObject):
         """
         self.jobs.extend(self.newjobs)
         self.newjobs = []
-    
+
     def commitBulk(self):
         """
         Dummy method for consistency with WMBS implementation
         """
         self.commit()
-        
+
     def addOutput(self, file):
         """
         _addOutput_

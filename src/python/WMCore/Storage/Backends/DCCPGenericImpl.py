@@ -24,7 +24,7 @@ class DCCPGenericImpl(StageOutImpl):
     _DCCPGenericImpl_
 
     Implement interface for dccp command
-    
+
     """
     def createOutputDirectory(self, targetPFN):
         """
@@ -32,11 +32,11 @@ class DCCPGenericImpl(StageOutImpl):
 
         Create a dir for the target pfn
 
-        ASSUMPTION: Directory already exists 
-        
+        ASSUMPTION: Directory already exists
+
         """
         pass
-        
+
     def createSourceName(self, protocol, pfn):
         """
         _createSourceName_
@@ -51,7 +51,7 @@ class DCCPGenericImpl(StageOutImpl):
         """
         _createStageOutCommand_
 
-        Build a dccp command 
+        Build a dccp command
 
         """
         optionsStr = ""
@@ -62,7 +62,7 @@ class DCCPGenericImpl(StageOutImpl):
         result += "dccp %s %s %s" % ( optionsStr, sourcePFN, targetPFN)
         return result
 
-    
+
     def removeFile(self, pfnToRemove):
         """
         _removeFile_
@@ -70,9 +70,9 @@ class DCCPGenericImpl(StageOutImpl):
         CleanUp pfn provided:
 
         Cannot implement this, since there isnt a dcrm command
-        
+
         """
         pass
-    
+
 
 registerStageOutImpl("dccp-generic", DCCPGenericImpl)

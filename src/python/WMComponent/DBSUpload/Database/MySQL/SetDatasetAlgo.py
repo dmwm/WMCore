@@ -23,4 +23,4 @@ class SetDatasetAlgo(DBFormatter):
 
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
-        return 
+        return

@@ -24,11 +24,11 @@ class WMAgentTasks(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         self.resources = resources
         self.wq = localQueue()
-        
+
     def algorithm(self, parameters):
         """
         """
-        
+
         data = self.wq.getWork(self.resources)
         print "Data back from workqueue"
         print "%s: %s" % (self.resources, data)
@@ -40,4 +40,3 @@ class WMAgentTasks(BaseWorkerThread):
             self.wq.doneWork(elementIDs)
             #self.wq.failWork(elementIDs)
             #self.wq.cancelWork(elementIDs)
-        

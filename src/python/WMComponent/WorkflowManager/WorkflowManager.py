@@ -18,7 +18,7 @@ from WMComponent.WorkflowManager.WorkflowManagerPoller import WorkflowManagerPol
 class WorkflowManager(Harness):
     """
     _WorkflowManager_
-    
+
     Watches for filesets matching a given Regex, and creates subscriptions
     using an existing workflow when filesets become available
     """
@@ -26,7 +26,7 @@ class WorkflowManager(Harness):
     def __init__(self, config):
         # call the base class
         Harness.__init__(self, config)
-    
+
     def preInitialization(self):
         """
         Add required worker modules to work threads
@@ -45,7 +45,7 @@ class WorkflowManager(Harness):
         self.messages['RemoveFromWorkflowManagementLocationList'] = \
             factory.loadObject(\
                 "WMComponent.WorkflowManager.Handler.RemoveFromWorkflowManagementLocationList", self)
-        
+
         # Add event loop to worker manager
         myThread = threading.currentThread()
         pollInterval = self.config.WorkflowManager.pollInterval

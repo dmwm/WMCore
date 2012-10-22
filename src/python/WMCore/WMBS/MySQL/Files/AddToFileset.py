@@ -21,9 +21,9 @@ class AddToFileset(DBFormatter):
                            wmbs_file_details.id AS fileid FROM wmbs_subscription
                       INNER JOIN wmbs_file_details ON
                         wmbs_file_details.lfn = :lfn
-                    WHERE wmbs_subscription.fileset = :fileset 
+                    WHERE wmbs_subscription.fileset = :fileset
                     """
-        
+
     def execute(self, file = None, fileset = None, conn = None,
                 transaction = False):
         binds = []
@@ -33,9 +33,9 @@ class AddToFileset(DBFormatter):
             binds.append({"lfn": fileLFN, "fileset": fileset,
                           "insert_time": timestamp})
             availBinds.append({"lfn": fileLFN, "fileset": fileset})
-            
+
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
         self.dbi.processData(self.sqlAvail, availBinds, conn = conn,
-                             transaction = transaction)        
+                             transaction = transaction)
         return

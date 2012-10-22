@@ -30,7 +30,7 @@ class SquaredAlgo(RetryAlgoBase):
         baseTimeoutDict = self.getAlgoParam(job['jobType'])
         baseTimeout = baseTimeoutDict.get(cooloffType.lower(), 10)
         cooloffTime = baseTimeout * pow(job['retry_count'], 2)
-        
+
         currentTime = self.timestamp()
         if currentTime - job['state_time'] > cooloffTime:
             return True

@@ -13,4 +13,3 @@ class LoadComplete(MySQLLoadComplete):
     _LoadComplete_
 
     """
-

@@ -14,12 +14,12 @@ class WMBS(Service):
         """
         responseType will be either xml or json
         """
-        
+
         dict.setdefault("accept_type", "application/json")
         dict.setdefault("content_type", "application/json")
         self.encoder = JsonWrapper.dumps
         self.decoder = JsonWrapper.loads
-        
+
         Service.__init__(self, dict)
 
     def _getResult(self, callname, clearCache = True,
@@ -46,7 +46,7 @@ class WMBS(Service):
         result = self.decoder(result)
 
         return result
-    
+
     def getJobSummaryFromCouchDB(self):
         """
         get the job status summary by request (workflow) from couchDB

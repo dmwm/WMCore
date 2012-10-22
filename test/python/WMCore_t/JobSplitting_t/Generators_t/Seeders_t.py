@@ -63,10 +63,10 @@ class SeederTest(unittest.TestCase):
     def oneHundredFiles(self, splittingAlgo = "EventBased", jobType = "Processing"):
         """
         _oneHundredFiles_
-        
+
         Generate a WMBS data stack representing 100 files for job splitter
         testing
-        
+
         """
         fileset1 = Fileset(name='EventBasedFiles1')
         for i in range(0, 100):
@@ -106,7 +106,7 @@ class SeederTest(unittest.TestCase):
         """
         _testSimpleFiles_
 
-        
+
         test using one hundred files that we can save the attributes in a job
         """
         jobs = self.oneHundredFiles()
@@ -131,7 +131,7 @@ class SeederTest(unittest.TestCase):
     def testWMTask(self):
         """
         _testWMTask_
-        
+
         Test whether or not we can read the seeder parameters out of a WMTask.
         Also tests RandomSeeder and RunAndLumiSeeder
         """
@@ -172,7 +172,7 @@ class SeederTest(unittest.TestCase):
     def testPresetSeeder(self):
         """
         _testPresetSeeder_
-        
+
         Test whether the PresetSeeder works
         """
 
@@ -180,7 +180,7 @@ class SeederTest(unittest.TestCase):
 
         seederDict = {"generator.initialSeed": 1001, "evtgenproducer.initialSeed": 1001}
         task1.addGenerator("PresetSeeder", **seederDict)
-        
+
         manager = GeneratorManager(task = task1)
 
 
@@ -199,12 +199,7 @@ class SeederTest(unittest.TestCase):
 
         return
 
-        
+
 
 if __name__ == '__main__':
     unittest.main()
-
-
-
-
-

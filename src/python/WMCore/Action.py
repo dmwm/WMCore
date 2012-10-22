@@ -1,11 +1,11 @@
 """
 A basic action is a thing that will run a SQL statement
 
-A more complex one would be something that ran multiple SQL 
+A more complex one would be something that ran multiple SQL
 objects to produce a single output.
 
-This class should generally not be used unless you know what 
-you are doing. DAOFactory is the preferred method for 
+This class should generally not be used unless you know what
+you are doing. DAOFactory is the preferred method for
 accessing WM DAO classes.
 
 """
@@ -20,7 +20,7 @@ class BaseAction(object):
         self.package = package
         self.logger = logger
         self.logger.debug("Instantiating %s Action object" % self.name)
-       
+
     def execute(self, dbinterface = None):
         daofactory = DAOFactory(package=self.package, logger=self.logger, dbinterface=dbinterface)
         action = daofactory(classname=self.name)
@@ -34,7 +34,7 @@ class BoundAction(BaseAction):
     """
     Subclass of BaseAction that takes kwargs to the execute method
     """
-    
+
     def execute(self, **kwargs):
         if not 'dbinterface' in kwargs.keys():
             raise ValueError, "You must pass a dbinterface to a BoundAction's execute method"

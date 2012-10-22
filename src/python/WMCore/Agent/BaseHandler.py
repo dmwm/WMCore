@@ -35,6 +35,4 @@ Overload this method to handel event: %s and payload %s
 
         String representation of the status of this class.
         """
-        return str(self.__class__.__name__) 
-
-
+        return str(self.__class__.__name__)

@@ -44,7 +44,3 @@ class Find(DBFormatter):
              'RequestStatus' : x[2]})
             for x in output ]
         return requests
-
-
-
-

@@ -44,7 +44,7 @@ class BulkNewReturn(DBFormatter):
                                 'guid': entry['uid'],
                                 'output': entry['output']})
 
-                                
+
         self.dbi.processData(self.sql, insertBinds, conn = conn,
                              transaction = transaction)
         result = self.dbi.processData(self.returnSQL, returnBinds,

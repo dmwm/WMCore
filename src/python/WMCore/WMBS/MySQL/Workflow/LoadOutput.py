@@ -15,7 +15,7 @@ class LoadOutput(DBFormatter):
              WHERE workflow_id = :workflow"""
 
     def execute(self, workflow, conn = None, transaction = False):
-        results = self.dbi.processData(self.sql, {"workflow": workflow}, 
+        results = self.dbi.processData(self.sql, {"workflow": workflow},
                                        conn = conn, transaction = transaction)
 
         outputMap = {}

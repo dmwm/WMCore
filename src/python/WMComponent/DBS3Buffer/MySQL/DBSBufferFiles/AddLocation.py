@@ -10,7 +10,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 class AddLocation(DBFormatter):
     sql = """INSERT IGNORE INTO dbsbuffer_location (se_name)
                VALUES (:location)"""
-    
+
     def execute(self, siteName, conn = None, transaction = False):
         binds = []
         binds.append({"location": siteName})

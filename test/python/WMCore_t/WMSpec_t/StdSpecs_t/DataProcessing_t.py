@@ -51,7 +51,7 @@ class DataProcessingTest(unittest.TestCase):
         testWorkload = dataProcessingWorkload("TestWorkload", getTestArguments())
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DMWM")
-        
+
         testWMBSHelper = WMBSHelper(testWorkload, "DataProcessing", "SomeBlock")
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
@@ -113,7 +113,7 @@ class DataProcessingTest(unittest.TestCase):
             self.assertEqual(logArchOutput.name, "/TestWorkload/DataProcessing/DataProcessingMerge%s/merged-logArchive" % goldenOutputMod,
                              "Error: LogArchive output fileset is wrong: %s" % logArchOutput.name)
             self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/DataProcessing/DataProcessingMerge%s/merged-logArchive" % goldenOutputMod,
-                             "Error: LogArchive output fileset is wrong.")            
+                             "Error: LogArchive output fileset is wrong.")
 
         topLevelFileset = Fileset(name = "TestWorkload-DataProcessing-SomeBlock")
         topLevelFileset.loadData()
@@ -150,7 +150,7 @@ class DataProcessingTest(unittest.TestCase):
         self.assertEqual(mergeSubscription["type"], "Merge",
                          "Error: Wrong subscription type.")
         self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
-                         "Error: Wrong split algo.")        
+                         "Error: Wrong split algo.")
 
         for procOutput in ["RECOoutput", "ALCARECOoutput"]:
             unmerged = Fileset(name = "/TestWorkload/DataProcessing/unmerged-%s" % procOutput)
@@ -203,7 +203,7 @@ class DataProcessingTest(unittest.TestCase):
         self.assertEqual(logCollectSub["type"], "LogCollect",
                          "Error: Wrong subscription type.")
         self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
-                         "Error: Wrong split algo.")                
+                         "Error: Wrong split algo.")
 
         return
 

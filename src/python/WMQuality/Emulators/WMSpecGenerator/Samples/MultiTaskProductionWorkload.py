@@ -20,7 +20,7 @@ def createWorkload(name="MultiTaskProduction"):
     workload.setOwner("DMWMTest")
     workload.setStartPolicy('MonteCarlo')
     workload.setEndPolicy('SingleShot')
-    
+
     #  //
     # // set up the production task
     #//
@@ -32,7 +32,7 @@ def createWorkload(name="MultiTaskProduction"):
     prodStageOut.setStepType("StageOut")
     production.applyTemplates()
     production.setSiteWhitelist(["T2_XX_SiteA"])
-    
+
     #  //
     # // set up the merge task
     #//
@@ -42,8 +42,8 @@ def createWorkload(name="MultiTaskProduction"):
     mergeStageOut = mergeCmssw.addStep("stageOut1")
     mergeStageOut.setStepType("StageOut")
     merge.applyTemplates()
-    
-    
+
+
     #  //
     # // populate the details of the production tasks
     #//
@@ -54,40 +54,40 @@ def createWorkload(name="MultiTaskProduction"):
     # TODO: Anywhere helper.data is accessed means we need a method added to the
     # type based helper class to provide a clear API.
     prodCmsswHelper = prodCmssw.getTypeHelper()
-    
+
     prodCmsswHelper.data.application.setup.cmsswVersion = "CMSSW_X_Y_Z"
     prodCmsswHelper.data.application.setup.softwareEnvironment = " . /uscmst1/prod/sw/cms/bashrc prod"
-    
+
     prodCmsswHelper.data.application.configuration.configCacheUrl = "http://whatever"
-    
+
     prodCmsswHelper.addOutputModule("writeData", primaryDataset = "Primary",
                                     processedDataset = "Processed",
                                     dataTier = "TIER")
     #print prodCmsswHelper.data
-    
-    
-    
+
+
+
     #  //
     # // production stage out step
     #//
     prodStageOutHelper = prodStageOut.getTypeHelper()
-    
-    
+
+
     #  //
     # // merge cmssw step
     #//
     # point it at the input step from the previous task
     merge.setInputReference(prodCmssw, outputModule = "writeData")
-    
-    
+
+
     #  //
     # // populate the details of the merge tasks
     #//
-    
-    
-    
+
+
+
     # print workload.data
-    
+
     production = workload.newTask("Production2")
     production.addProduction(totalevents = 2000)
     prodCmssw = production.makeStep("cmsRun1")
@@ -96,7 +96,7 @@ def createWorkload(name="MultiTaskProduction"):
     prodStageOut.setStepType("StageOut")
     production.applyTemplates()
     production.setSiteWhitelist(["T2_XX_SiteA"])
-    
+
     #  //
     # // set up the merge task
     #//
@@ -106,8 +106,8 @@ def createWorkload(name="MultiTaskProduction"):
     mergeStageOut = mergeCmssw.addStep("stageOut1")
     mergeStageOut.setStepType("StageOut")
     merge.applyTemplates()
-    
-    
+
+
     #  //
     # // populate the details of the production tasks
     #//
@@ -118,29 +118,29 @@ def createWorkload(name="MultiTaskProduction"):
     # TODO: Anywhere helper.data is accessed means we need a method added to the
     # type based helper class to provide a clear API.
     prodCmsswHelper = prodCmssw.getTypeHelper()
-    
+
     prodCmsswHelper.data.application.setup.cmsswVersion = "CMSSW_X_Y_Z"
     prodCmsswHelper.data.application.setup.softwareEnvironment = " . /uscmst1/prod/sw/cms/bashrc prod"
-    
+
     prodCmsswHelper.data.application.configuration.configCacheUrl = "http://whatever"
-    
+
     prodCmsswHelper.addOutputModule("writeData", primaryDataset = "Primary",
                                     processedDataset = "Processed",
                                     dataTier = "TIER")
     #print prodCmsswHelper.data
-    
-    
-    
+
+
+
     #  //
     # // production stage out step
     #//
     prodStageOutHelper = prodStageOut.getTypeHelper()
-    
-    
+
+
     #  //
     # // merge cmssw step
     #//
     # point it at the input step from the previous task
     merge.setInputReference(prodCmssw, outputModule = "writeData")
-    
+
     return workload

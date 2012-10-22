@@ -24,11 +24,11 @@ class ListRunningJobs(DBFormatter):
                INNER JOIN wmbs_job_state ON
                  wmbs_job.state = wmbs_job_state.id
              WHERE wmbs_job_state.name = 'none' OR
-                   wmbs_job_state.name = 'new' OR             
+                   wmbs_job_state.name = 'new' OR
                    wmbs_job_state.name = 'created' OR
                    wmbs_job_state.name = 'submitted' OR
                    wmbs_job_state.name = 'executing'"""
-    
+
     def execute(self, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, conn = conn,
                                       transaction = transaction)

@@ -142,5 +142,3 @@ class TaskSpace:
         setattr(stepSpace, "taskSpace", self)
 
         return stepSpace
-
-

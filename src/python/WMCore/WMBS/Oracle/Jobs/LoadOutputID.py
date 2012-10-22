@@ -12,7 +12,7 @@ from WMCore.WMBS.MySQL.Jobs.LoadOutputID import LoadOutputID as MySQLLoadOutputI
 
 class LoadOutputID(MySQLLoadOutputID):
     """
-    
+
     Load the ID of the output fileset for a job
 
     """

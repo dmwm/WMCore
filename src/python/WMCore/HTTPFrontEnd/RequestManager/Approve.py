@@ -45,6 +45,5 @@ class Approve(BulkOperations):
             priority = kwargs.get(requestName+':priority', '')
             if priority != '':
                 Utilities.changePriority(requestName, priority, self.wmstatWriteURL)
-        return self.templatepage("Acknowledge", participle=participle, 
+        return self.templatepage("Acknowledge", participle=participle,
                                  requests=requests)
-

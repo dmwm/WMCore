@@ -26,7 +26,7 @@ class SiteDBJSON(object):
         name = node.replace('_MSS',
                             '').replace('_Buffer',
                                         '').replace('_Export', '')
-        return name                                
+        return name
 
     def cmsNametoSE(self, name):
         return self.mapping[name]

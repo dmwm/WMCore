@@ -127,11 +127,11 @@ class Root(Harness):
             self.coreDatabase = config.section_("CoreDatabase")
 
         return
-    
+
     def getLastTest(self):
         global lastTest
         return lastTest
-    
+
     def setLastTest(self):
         global lastTest
         lastTest = self.testName
@@ -301,7 +301,7 @@ class Root(Harness):
                 security_cfg = view.security.section_('instances')
                 view_config.section_('security')
                 view_config.security = security_cfg.section_(instance)
-                
+
         if view_config.dictionary_().has_key('database'):
             if not type(view_config.database) == str:
                 if len(view_config.database.listSections_()) == 0:

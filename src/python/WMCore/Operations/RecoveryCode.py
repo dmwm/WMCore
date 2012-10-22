@@ -106,7 +106,7 @@ def cleanJobs(jobList, config):
         if os.listdir(os.path.join(config.JobCreator.jobCacheDir, workflowDir)) == []:
             #If the workflowDir is empty, remove it
             shutil.rmtree(os.path.join(config.JobCreator.jobCacheDir, workflowDir))
-                    
+
 
     return jobList
 
@@ -130,7 +130,7 @@ def cleanSubmitDir(jobList, config):
 class PurgeJobs:
     """
     PurgeJobs
-    
+
     Destroy all jobs and their accompanying files and directories
     """
 
@@ -157,9 +157,3 @@ class PurgeJobs:
 
 
         return
-
-
-
-
-    
-        

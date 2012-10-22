@@ -2,7 +2,7 @@
 """
 _WorkflowManager_
 
-The WorkflowManager automatically creates subscriptions associated with a 
+The WorkflowManager automatically creates subscriptions associated with a
 given Workflow when Filesets matching a regular expression (applied to the
 Fileset name) become available.
 
@@ -22,14 +22,14 @@ RemoveWorkflowFromManagement - Used to add a Fileset name : Subscription
                                creation mapping
    FilesetMatch : string (regex of fileset names to match)
    WorkflowId : string (ID from WMBS database of workflow to apply to new subs)
-   
+
 AddToWorkflowManagementLocationList - Adds locations to the white / black list
                                       of created subscriptions
     FilesetMatch : string (as passed to AddWorkflowToManage)
     WorkflowId : string (as passed to AddWorkflowToManage)
     Locations : string (comma separated list of locations to add to whitelist)
     Valid : bool (are these locations for whitelist (True) or blacklist (False))
-    
+
 RemoveFromWorkflowManagementLocationList - Removes locations from the white /
                                            blacklist of created subscriptions
     FilesetMatch : string (as passed to AddWorkflowToManage)
@@ -44,5 +44,3 @@ complete.
 """
 
 __all__ = []
-
-

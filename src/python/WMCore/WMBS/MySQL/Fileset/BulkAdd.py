@@ -24,7 +24,7 @@ class BulkAdd(DBFormatter):
                     SELECT wmbs_subscription.id AS subscription, :fileid
                            FROM wmbs_subscription
                     WHERE wmbs_subscription.fileset = :fileset"""
-            
+
     def execute(self, binds, conn = None, transaction = False):
         timestamp = int(time.time())
         newBinds = []
@@ -36,5 +36,5 @@ class BulkAdd(DBFormatter):
         self.dbi.processData(self.sql, newBinds, conn = conn,
                              transaction = transaction)
         self.dbi.processData(self.sqlAvail, binds, conn = conn,
-                             transaction = transaction)        
+                             transaction = transaction)
         return

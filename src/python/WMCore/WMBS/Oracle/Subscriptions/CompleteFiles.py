@@ -12,6 +12,4 @@ class CompleteFiles(CompleteFilesMySQL):
     sql = """INSERT INTO wmbs_sub_files_complete (subscription, fileid)
                SELECT :subscription, :fileid FROM dual WHERE NOT EXISTS
                  (SELECT fileid FROM wmbs_sub_files_complete
-                    WHERE fileid = :fileid AND subscription = :subscription)"""    
-
-
+                    WHERE fileid = :fileid AND subscription = :subscription)"""

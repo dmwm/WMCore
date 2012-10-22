@@ -32,9 +32,9 @@ class GetFWJRByState(DBFormatter):
             jobs.append({"id": result[0], "fwjr_path": result[1]})
 
         return jobs
-        
+
     def execute(self, state, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, {"state": state}, conn = conn,
                                       transaction = transaction)
-        
+
         return self.format(result)

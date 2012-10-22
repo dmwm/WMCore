@@ -19,5 +19,3 @@ class Destroy(BaseDAO):
         BaseDAO.__init__(self)
 
         self.delete["04tp_queued_process"] = "DROP TABLE tp_queued_process_enum"
-
-

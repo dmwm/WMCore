@@ -110,4 +110,3 @@ class DefaultConfig(Configuration):
 
     def getModelConfig(self):
         return self.UnitTests.views.active.rest
-

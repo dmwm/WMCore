@@ -49,7 +49,7 @@ class ParentlessMergeBySize(JobFactory):
                 foundFiles.append(mergeableFile["file_lfn"])
             else:
                 continue
-            
+
             if not fileGroups.has_key(mergeableFile["se_name"]):
                 if self.mergeAcrossRuns:
                     fileGroups[mergeableFile["se_name"]] = []
@@ -74,7 +74,7 @@ class ParentlessMergeBySize(JobFactory):
         """
         if self.currentGroup == None:
             self.newGroup()
-            
+
         self.newJob(name = self.getJobName())
         mergeableFiles.sort(fileCompare)
 
@@ -87,9 +87,9 @@ class ParentlessMergeBySize(JobFactory):
             # be in the "locations" attribute so that they get picked up by the
             # job submitter.
             newFile["locations"] = set([file["se_name"]])
-            newFile.addRun(Run(file["file_run"], file["file_lumi"]))                                                                                    
+            newFile.addRun(Run(file["file_run"], file["file_lumi"]))
             self.currentJob.addFile(newFile)
-    
+
     def defineMergeJobs(self, mergeableFiles):
         """
         _defineMergeJobs_
@@ -119,20 +119,20 @@ class ParentlessMergeBySize(JobFactory):
                     mergeJobFiles = []
                 else:
                     continue
-                    
+
             mergeJobFiles.append(mergeableFile)
             mergeJobFileSize += mergeableFile["file_size"]
             mergeJobEvents += mergeableFile["file_events"]
             if mergeableFile['insert_time'] < earliestInsert:
                 earliestInsert = mergeableFile['insert_time']
-                        
+
         if mergeJobFileSize > self.minMergeSize or self.forceMerge == True or \
                time.time() - earliestInsert > self.maxWaitTime:
             if len(mergeJobFiles) > 0:
                 self.createMergeJob(mergeJobFiles)
-                                
+
         return
-    
+
     def algorithm(self, *args, **kwargs):
         """
         _algorithm_
@@ -146,7 +146,7 @@ class ParentlessMergeBySize(JobFactory):
         """
         # This doesn't use a proxy
         self.grabByProxy = False
-        
+
         self.maxMergeSize    = int(kwargs.get("max_merge_size", 1000000000))
         self.minMergeSize    = int(kwargs.get("min_merge_size", 1048576))
         self.maxMergeEvents  = int(kwargs.get("max_merge_events", 50000))
@@ -172,7 +172,7 @@ class ParentlessMergeBySize(JobFactory):
             injected  = getAction.execute(name = self.subscription["workflow"].name,
                                           conn = myThread.transaction.conn,
                                           transaction = True)
-            
+
             if not injected:
                 self.forceMerge = False
 
@@ -191,5 +191,3 @@ class ParentlessMergeBySize(JobFactory):
                     self.defineMergeJobs(groupedFiles[seName][runNumber])
 
         return
-
-

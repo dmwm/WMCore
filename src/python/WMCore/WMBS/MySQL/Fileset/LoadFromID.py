@@ -30,11 +30,11 @@ class LoadFromID(DBFormatter):
         if int(formattedResult["open"]) == 1:
             formattedResult["open"] = True
         else:
-            formattedResult["open"] = False            
+            formattedResult["open"] = False
 
         return formattedResult
-            
+
     def execute(self, fileset = None, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, {"fileset": fileset}, 
+        result = self.dbi.processData(self.sql, {"fileset": fileset},
                          conn = conn, transaction = transaction)
         return self.formatDict(result)

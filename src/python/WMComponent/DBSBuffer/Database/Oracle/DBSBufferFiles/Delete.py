@@ -13,7 +13,7 @@ from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.Delete import Delete as
 class Delete(MySQLDelete):
     """
     _Delete_
-    
+
     Oracle implementation of Delete
     """
     pass

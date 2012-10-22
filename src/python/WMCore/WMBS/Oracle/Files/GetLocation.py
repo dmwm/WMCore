@@ -7,7 +7,7 @@ from WMCore.WMBS.MySQL.Files.GetLocation import GetLocation \
 class GetLocation(GetLocationFileMySQL):
     """
     _GetLocation_
-    
+
     Oracle specific: file is reserved word
 
     """

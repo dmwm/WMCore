@@ -12,9 +12,9 @@ import time
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetHeartbeatInfo(DBFormatter):
-    
-    sql = """SELECT comp.name as name, comp.pid, worker.name as worker_name, 
-                    worker.state, worker.last_updated, 
+
+    sql = """SELECT comp.name as name, comp.pid, worker.name as worker_name,
+                    worker.state, worker.last_updated,
                     comp.update_threshold, worker.last_error, worker.error_message
              FROM wm_workers worker
              INNER JOIN wm_components comp ON comp.id = worker.component_id
@@ -25,10 +25,9 @@ class GetHeartbeatInfo(DBFormatter):
              ORDER BY worker.last_updated ASC
              """
     #sql = """select max(last_updated) from wm_workers"""
-    
+
     def execute(self, conn = None, transaction = False):
-        
+
         result = self.dbi.processData(self.sql, conn = conn,
                              transaction = transaction)
         return self.formatDict(result)
-    

@@ -15,4 +15,3 @@ class SiblingSubscriptionsFailed(SiblingFailedMySQL):
                   WHERE NOT EXISTS (SELECT wsfc.fileid FROM wmbs_sub_files_complete wsfc
                                     WHERE subscription = :subscription
                                     AND fileid = :fileid)"""
-

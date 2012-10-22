@@ -20,7 +20,7 @@ class Dataset(StartPolicyInterface):
         self.args.setdefault('SliceType', 'NumberOfFiles')
         self.args.setdefault('SliceSize', 1)
         self.lumiType = "NumberOfLumis"
-        
+
     def split(self):
         """Apply policy to spec"""
         dbs = self.dbs()
@@ -45,7 +45,7 @@ class Dataset(StartPolicyInterface):
             numLumis +=  int(block[self.lumiType])
             numFiles += int(block['NumberOfFiles'])
             numEvents += int(block['NumberOfEvents'])
-            
+
         dataset = dbs.getDBSSummaryInfo(dataset = datasetPath)
 
         # If the dataset which is not in dbs is passed, just return.
@@ -105,7 +105,7 @@ class Dataset(StartPolicyInterface):
                 # listRuns returns a run number per lumi section
                 full_lumi_list = dbs.listRuns(block = block['block'])
                 runs = set(full_lumi_list)
-                
+
                 # apply blacklist
                 runs = runs.difference(runBlackList)
                 # if whitelist only accept listed runs

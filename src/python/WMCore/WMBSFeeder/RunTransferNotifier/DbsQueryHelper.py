@@ -14,7 +14,7 @@ class DbsQueryHelper:
         self.dbsHost = dbsHost
         self.dbsPort = dbsPort
         self.dbsInstance = dbsInstance
-    
+
     def getText(self, nodelist):
         """
         Returns the inner text from a list of XML nodes
@@ -46,7 +46,7 @@ class DbsQueryHelper:
                         primary[key][valKey].update(secondary[key][valKey])
                 else:
                     primary[key] = secondary[key]
-            
+
         if len(nodelist) == 1:
             # Handle top search level and extract required info
             if isinstance(nodelist[0], str):
@@ -85,7 +85,7 @@ class DbsQueryHelper:
                 # Recursion ahoy!
                 retFunc(self.getXmlNodeValues(node, nodelist[1:]))
             return ret
-    
+
     def query(self, query):
         """
         Queries DBS and returns XML
@@ -100,7 +100,7 @@ class DbsQueryHelper:
         """
         result = self.query("find dataset.parent where dataset = %s" % dataset)
         return self.getXmlNodeValues(result, ["ddresponse","output","column"])
-    
+
     def getFileInfo(self, run, dataset):
         """
         Gets all files, parent files, and primary blocks for a run and dataset
@@ -110,14 +110,14 @@ class DbsQueryHelper:
         blockList = self.getXmlNodeValues(ret, ["output","row","block"])
         fileInfoMap = self.getXmlNodeValues(ret, ["ddresponse","output","row",["file","file.parent","file.numevents","file.size","lumi"]])
         return (set(fileList), set(blockList), fileInfoMap)
-    
+
     def queryBlockInfo(self, query):
         """
         Queries DBS and extracts block info from the result
         """
         result = self.query(query)
         return self.getXmlNodeValues(result, ["ddresponse","output","column"])
-    
+
     def queryFileInfo(self, query):
         """
         Queries DBS and extracts file info from the result
@@ -131,7 +131,7 @@ class DbsQueryHelper:
         """
         result = self.query(query)
         return self.getXmlNodeValues(result, ["ddresponse","output","column"])
-    
+
     def getParentFiles(self, files):
         """
         Returns all parent files for the given primary files
@@ -141,7 +141,7 @@ class DbsQueryHelper:
             pars = self.queryFileInfo("find file.parent where file = %s" % f)
             parentFiles.update(pars)
         return parentFiles
-    
+
     def getFileBlocks(self, files):
         """
         Queries DBS to get the blocks containing all the passed files
@@ -151,7 +151,7 @@ class DbsQueryHelper:
             blocks = self.queryBlockInfo("find block where file = %s" % f)
             allBlocks.update(blocks)
         return allBlocks
-        
+
     def getBlockFiles(self, blocks):
         """
         Queries DBS to get all files in the listed blocks

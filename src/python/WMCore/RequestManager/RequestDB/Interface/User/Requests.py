@@ -33,7 +33,3 @@ def listRequests(userName):
 
     result = listReqs.execute(userId)
     return result
-
-
-
-

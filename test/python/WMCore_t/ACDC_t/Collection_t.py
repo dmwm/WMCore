@@ -27,6 +27,6 @@ class Collection_t(unittest.TestCase):
         coll.setOwner(user)
         self.assertEqual(coll.owner, user)
 
-    
+
 if __name__ == '__main__':
     unittest.main()

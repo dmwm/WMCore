@@ -25,4 +25,3 @@ class NewJobs(MySQLNewJobs):
                FROM dual
                WHERE NOT EXISTS (SELECT id FROM bl_runjob WHERE wmbs_id = :jobid
                                    AND retry_count = :retry_count)"""
-

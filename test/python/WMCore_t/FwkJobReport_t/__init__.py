@@ -2,11 +2,7 @@
 """
 _FwkJobReport_
 
-FwkJobReport unit test 
+FwkJobReport unit test
 
 """
 __all__ = []
-
-
-
-

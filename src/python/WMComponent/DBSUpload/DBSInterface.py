@@ -44,14 +44,14 @@ from DBSAPI.dbsLumiSection           import DbsLumiSection
 def createPrimaryDataset(primaryName, primaryDatasetType = 'mc', apiRef = None):
     """
     _createPrimaryDataset_
-    
-    
+
+
     """
     logging.debug("Inserting PrimaryDataset %s with Type %s" \
                   % (primaryName, primaryDatasetType))
     primary = DbsPrimaryDataset(Name = primaryName,
                                 Type = primaryDatasetType)
-    
+
     if apiRef:
         try:
             apiRef.insertPrimaryDataset(primary)
@@ -219,7 +219,7 @@ def createFileBlock(apiRef, datasetPath, seName):
             msg += formatEx(ex)
             logging.error(msg)
             raise DBSInterfaceError(msg)
-        
+
 
     # Add a files field, because we need it
     blockRef['newFiles']      = []
@@ -263,7 +263,7 @@ def closeBlock(apiRef, block):
     """
     _closeBlock_
 
-    Close a block 
+    Close a block
     """
     logging.info("In closeBlock()")
 
@@ -310,12 +310,12 @@ def listPrimaryDatasets(apiRef, match = "*"):
 def listProcessedDatasets(apiRef, primary, dataTier = "*"):
     """
     _listProcessedDatasets_
-    
+
     return a list of Processed datasets for the primary and optional
     data tier value
-    
+
     """
-    
+
     try:
         result = apiRef.listProcessedDatasets(primary, dataTier)
     except DbsException, ex:
@@ -330,9 +330,9 @@ def listProcessedDatasets(apiRef, primary, dataTier = "*"):
 def listDatasetFiles(apiRef, datasetPath):
     """
     _listDatasetFiles_
-    
+
     Get list of files for dataset
-    
+
     """
     return [ x['LogicalFileName'] for x in apiRef.listFiles(datasetPath)]
 
@@ -381,12 +381,12 @@ def listBlocks(apiRef, datasetPath = None, blockName = "*", seName = "*"):
 def createDBSFileFromBufferFile(bufferFile, procDataset):
     """
     Take a DBSBufferFile and turn it into a DBSFile object
-    
+
     """
-    
+
     lumiList = []
-    
-    
+
+
     for run in bufferFile.getRuns():
         for l in run:
             lumi = DbsLumiSection(LumiSectionNumber = long(l),
@@ -426,9 +426,9 @@ def createDBSFileFromBufferFile(bufferFile, procDataset):
 def insertDBSRunsFromRun(apiRef, dSRun):
     """
     Take a DataStructs run and create a DBSRun out of it
-    
+
     """
-    
+
     run = DbsRun(RunNumber = long(dSRun.run),
                  NumberOfEvents = 0,
                  NumberOfLumiSections = 0,
@@ -436,10 +436,10 @@ def insertDBSRunsFromRun(apiRef, dSRun):
                  StoreNumber = 0,
                  StartOfRun = 0,
                  EndOfRun = 0)
-    
+
     if apiRef:
         apiRef.insertRun(run)
-        
+
     return run
 
 
@@ -532,14 +532,14 @@ class DBSInterface:
                                                procDataset = processed,
                                                blocks = blocks)
 
-        
+
         return affBlocks
 
 
     def createAndInsertBlocks(self, dataset, procDataset, blocks):
         """
         _createBlocks_
-        
+
         Create all the blocks we use, and insert the
         files into them.
         """
@@ -583,10 +583,10 @@ class DBSInterface:
 
         return affBlocks
 
-        
 
 
-        
+
+
 
     def insertDatasetAlgo(self, algo, dataset, override = False):
         """
@@ -596,7 +596,7 @@ class DBSInterface:
         The override re-inserts it if DBSBuffer thinks it's already there
         """
 
-        
+
 
         dbsRef = None
         if override or not algo['InDBS']:
@@ -624,7 +624,7 @@ class DBSInterface:
                                        primaryName = dataset['PrimaryDataset'])
 
         processed = createProcessedDataset(apiRef = dbsRef,
-                                           algorithm = dbsAlgo, 
+                                           algorithm = dbsAlgo,
                                            primary = primary,
                                            processedName = dataset['ProcessedDataset'],
                                            dataTier = dataset['DataTier'],
@@ -635,7 +635,7 @@ class DBSInterface:
 
         return processed
 
-        
+
 
 
 
@@ -702,10 +702,10 @@ class DBSInterface:
 
         if self.doGlobalMigration:
             self.migrateClosedBlocks(blocks = blocksToClose)
-        
+
         return blocksToClose
-                
-        
+
+
 
 
     def migrateClosedBlocks(self, blocks):
@@ -733,7 +733,7 @@ class DBSInterface:
             try:
                 # Migrate each block
                 logging.info("About to migrate block %s" % (block['Name']))
-                self.dbs.dbsMigrateBlock(srcURL = self.config.DBSUrl, 
+                self.dbs.dbsMigrateBlock(srcURL = self.config.DBSUrl,
                                          dstURL = self.globalDBSUrl,
                                          block_name = block['Name'],
                                          srcVersion = self.version,
@@ -746,7 +746,7 @@ class DBSInterface:
                 raise DBSInterfaceError(msg)
 
         return blocks
-        
+
 
 
 
@@ -760,5 +760,3 @@ class DBSInterface:
             return self.globalDBS
 
         return self.dbs
-
-

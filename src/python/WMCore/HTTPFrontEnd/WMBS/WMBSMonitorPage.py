@@ -3,7 +3,7 @@
 """
 The documentation for the framework
 """
-    
+
 
 import cherrypy
 from cherrypy import expose
@@ -91,11 +91,11 @@ class WMBSMonitorPage(TemplatedPage):
         The template itself will take the subscription type and the WMBS
         instance name from the config.
         """
-        
+
         return self.templatepage("WMBS", subType = subscriptionType,
                                            instance = "WMBS")
-    
-    @expose  
+
+    @expose
     @cherrypy.tools.secmodv2()
     def subscriptionStatus(self, subscriptionId):
         """
@@ -103,12 +103,12 @@ class WMBSMonitorPage(TemplatedPage):
 
         Render the subscription status page.  The page itself takes a single
         mandatory parameter from the webserver:
-          subscriptionId - The id of the subscription to display. 
+          subscriptionId - The id of the subscription to display.
         """
-        
+
         return self.templatepage("WMBSSubscription",
                                            subscriptionId = int(subscriptionId))
-    
+
     @expose
     @cherrypy.tools.secmodv2()
     def jobStatus(self, jobState = "success", interval = 7200):
@@ -128,4 +128,4 @@ class WMBSMonitorPage(TemplatedPage):
         return self.templatepage("WMBSJobStatus", jobState = jobState,
                                   interval = int(interval),
                                   instance = self.config.instance,
-                                  couchURL = self.config.couchURL) 
+                                  couchURL = self.config.couchURL)

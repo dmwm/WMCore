@@ -10,7 +10,7 @@ from WMComponent.DBSUpload.Database.MySQL.FindDASToUpload import FindDASToUpload
 class LoadInfoFromDAS(FindDASToUpload):
     """
     _LoadInfoFromDAS_
-    
+
     Given a DAS ID load the dataset and algo information
     """
 
@@ -20,9 +20,9 @@ class LoadInfoFromDAS(FindDASToUpload):
                     das.algo_id as Algo,
                     das.in_dbs as in_dbs,
                     das.id AS das_id,
-                    da.app_name AS ApplicationName, 
-                    da.app_ver AS ApplicationVersion, 
-                    da.app_fam AS ApplicationFamily, 
+                    da.app_name AS ApplicationName,
+                    da.app_ver AS ApplicationVersion,
+                    da.app_fam AS ApplicationFamily,
                     da.PSet_Hash as PSetHash,
                     da.Config_Content as PSetContent,
                     da.in_dbs AS algo_in_dbs,
@@ -90,8 +90,8 @@ class LoadInfoFromDAS(FindDASToUpload):
             ids = list(ids)
         for id in ids:
             binds.append({'id': id})
-            
-        result = self.dbi.processData(self.sql, binds, 
+
+        result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = transaction)
-        
+
         return self.makeDAS(self.formatDict(result))

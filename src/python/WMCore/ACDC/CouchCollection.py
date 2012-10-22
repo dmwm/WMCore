@@ -13,7 +13,7 @@ from WMCore.Database.CouchUtils import connectToCouch, requireOwner
 class CouchCollection(Collection):
     """
     Collection that can be stored in CouchDB.
-    
+
     Required Args:
       database - CouchDB database instance name
       url - CouchDB Server URL
@@ -26,18 +26,18 @@ class CouchCollection(Collection):
         self.name     = options.get("name")
         self.server   = None
         self.couchdb  = None
-    
+
     @connectToCouch
     @requireOwner
     def drop(self):
         """
         _drop_
-        
+
         Drop this collection and all files and filesets within it.
         """
         params = {"startkey": [self.owner.group.name, self.owner.name,
                                self.name],
-                  "endkey": [self.owner.group.name, self.owner.name, 
+                  "endkey": [self.owner.group.name, self.owner.name,
                              self.name, {}],
                   "reduce": False}
         result = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs",
@@ -57,7 +57,7 @@ class CouchCollection(Collection):
         """
         params = {"startkey": [self.owner.group.name, self.owner.name,
                                self.name],
-                  "endkey": [self.owner.group.name, self.owner.name, 
+                  "endkey": [self.owner.group.name, self.owner.name,
                              self.name, {}],
                   "reduce": True, "group_level": 4}
         result = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs",

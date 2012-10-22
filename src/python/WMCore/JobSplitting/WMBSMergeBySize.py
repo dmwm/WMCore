@@ -105,7 +105,7 @@ class WMBSMergeBySize(JobFactory):
 
             if not mergeUnits[newMergeFile["se_name"]].has_key(newMergeFile["file_run"]):
                 mergeUnits[newMergeFile["se_name"]][newMergeFile["file_run"]] = []
-                
+
             for mergeUnit in mergeUnits[newMergeFile["se_name"]][newMergeFile["file_run"]]:
                 if mergeUnit["file_parent"] == mergeableFile["file_parent"]:
                     mergeUnit["files"].append(newMergeFile)
@@ -117,7 +117,7 @@ class WMBSMergeBySize(JobFactory):
                             mergeableFile["file_lumi"] < mergeUnit["lumi"]):
                         newMergeUnit["run"] = newMergeFile["file_run"]
                         newMergeUnit["lumi"] = newMergeFile["file_lumi"]
-                            
+
                     break
             else:
                 newMergeUnit = {}
@@ -141,20 +141,20 @@ class WMBSMergeBySize(JobFactory):
         """
         if self.currentGroup == None:
             self.newGroup()
-            
+
         self.newJob(name = self.getJobName())
         sortedFiles = sortedFilesFromMergeUnits(mergeUnits)
 
         for file in sortedFiles:
             self.currentJob.addFile(file)
-    
+
     def defineMergeJobs(self, mergeUnits):
         """
         _defineMergeJobs_
 
         Go through the list of merge units and try to combine them together into
         merge jobs that fit within the min/max filesizes and under the maximum
-        number of events.  
+        number of events.
         """
         mergeJobFileSize = 0
         mergeJobEvents = 0
@@ -175,17 +175,17 @@ class WMBSMergeBySize(JobFactory):
                     mergeJobFiles = []
                 else:
                     continue
-                    
+
             mergeJobFiles.append(mergeUnit)
             mergeJobFileSize += mergeUnit["total_size"]
             mergeJobEvents += mergeUnit["total_events"]
-                        
+
         if mergeJobFileSize > self.minMergeSize or self.forceMerge == True:
             if len(mergeJobFiles) > 0:
                 self.createMergeJob(mergeJobFiles)
 
         return
-    
+
     def algorithm(self, *args, **kwargs):
         """
         _algorithm_
@@ -198,7 +198,7 @@ class WMBSMergeBySize(JobFactory):
         """
         # This doesn't use a proxy
         self.grabByProxy = False
-        
+
         self.maxMergeSize = int(kwargs.get("max_merge_size", 1000000000))
         self.minMergeSize = int(kwargs.get("min_merge_size", 1048576))
         self.maxMergeEvents = int(kwargs.get("max_merge_events", 50000))
@@ -228,7 +228,7 @@ class WMBSMergeBySize(JobFactory):
                 self.forceMerge = True
             else:
                 self.forceMerge = False
-        
+
         mergeDAO = daoFactory(classname = "Subscriptions.GetFilesForMerge")
         mergeableFiles = mergeDAO.execute(self.subscription["id"],
                                           conn = myThread.transaction.conn,

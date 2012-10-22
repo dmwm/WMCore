@@ -13,10 +13,9 @@ from WMCore.WMBS.MySQL.Files.GetLocationBulk import GetLocationBulk \
 class GetLocationBulk(GetLocationBulkMySQL):
     """
     _GetLocationBulk_
-    
+
     Oracle specific: file is reserved word
 
     """
 
     pass
-    

@@ -23,7 +23,7 @@ class ReDigiRequest(RequestMakerInterface):
     def makeWorkload(self, schema):
         return reDigiWorkload(schema['RequestName'], schema).data
 
-        
+
 class ReDigiSchema(RequestSchema):
     """
     _ReDigi_

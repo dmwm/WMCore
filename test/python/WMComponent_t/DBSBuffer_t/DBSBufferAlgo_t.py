@@ -17,7 +17,7 @@ from WMQuality.TestInit import TestInit
 
 class DBSBufferDatasetTest(unittest.TestCase):
 
-    
+
     def setUp(self):
         """
         _setUp_
@@ -38,16 +38,16 @@ class DBSBufferDatasetTest(unittest.TestCase):
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
 
-          
-    def tearDown(self):        
+
+    def tearDown(self):
         """
         _tearDown_
-        
+
         Drop all the DBSBuffer tables.
         """
         self.testInit.clearDatabase()
 
-            
+
     def testCreate(self):
         """
         _testCreate_
@@ -57,11 +57,11 @@ class DBSBufferDatasetTest(unittest.TestCase):
         """
         newAlgoAction = self.daoFactory(classname = "NewAlgo")
         listAlgoAction = self.daoFactory(classname = "ListAlgo")
-        
+
         newAlgoAction.execute(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                               appFam = "FEVT", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
-        
+
         resultA = listAlgoAction.execute(appName = "cmsRun",
                                             appVer = "CMSSW_2_1_8",
                                             appFam = "FEVT",
@@ -120,7 +120,7 @@ class DBSBufferDatasetTest(unittest.TestCase):
         newAlgoAction.execute(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                               appFam = "FEVT", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
-        
+
         resultA = listAlgoAction.execute(appName = "cmsRun",
                                             appVer = "CMSSW_2_1_8",
                                             appFam = "FEVT",
@@ -141,7 +141,7 @@ class DBSBufferDatasetTest(unittest.TestCase):
                "ERROR: ConfigContent is wrong."
         assert resultA[0]["in_dbs"] == 0, \
                "ERROR: Algo should not be marked as in DBS"
-        
+
         myThread.transaction.rollback()
 
         resultB = listAlgoAction.execute(algoID = resultA[0]["id"])
@@ -159,12 +159,12 @@ class DBSBufferDatasetTest(unittest.TestCase):
         """
         newAlgoAction = self.daoFactory(classname = "NewAlgo")
         listAlgoAction = self.daoFactory(classname = "ListAlgo")
-        updateAlgoAction = self.daoFactory(classname = "UpdateAlgo")        
-        
+        updateAlgoAction = self.daoFactory(classname = "UpdateAlgo")
+
         newAlgoAction.execute(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                               appFam = "FEVT", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
-        
+
         resultA = listAlgoAction.execute(appName = "cmsRun",
                                             appVer = "CMSSW_2_1_8",
                                             appFam = "FEVT",
@@ -175,7 +175,7 @@ class DBSBufferDatasetTest(unittest.TestCase):
                "ERROR: Wrong number of algos returned: %s" % len(resultA)
         assert resultA[0]["in_dbs"] == 0, \
                "ERROR: Algo should not be marked as in DBS"
-        
+
         updateAlgoAction.execute(inDBS = 1, algoID = resultA[0]["id"])
 
         resultB = listAlgoAction.execute(appName = "cmsRun",
@@ -199,12 +199,12 @@ class DBSBufferDatasetTest(unittest.TestCase):
         """
         newAlgoAction = self.daoFactory(classname = "NewAlgo")
         listAlgoAction = self.daoFactory(classname = "ListAlgo")
-        updateAlgoAction = self.daoFactory(classname = "UpdateAlgo")        
-        
+        updateAlgoAction = self.daoFactory(classname = "UpdateAlgo")
+
         newAlgoAction.execute(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                               appFam = "FEVT", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
-        
+
         resultA = listAlgoAction.execute(appName = "cmsRun",
                                             appVer = "CMSSW_2_1_8",
                                             appFam = "FEVT",
@@ -218,7 +218,7 @@ class DBSBufferDatasetTest(unittest.TestCase):
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        
+
         updateAlgoAction.execute(inDBS = 1, algoID = resultA[0]["id"],
                                  conn = myThread.transaction.conn,
                                  transaction = True)
@@ -229,7 +229,7 @@ class DBSBufferDatasetTest(unittest.TestCase):
                                          psetHash = "GIBBERISH",
                                          configContent = "MOREGIBBERISH",
                                          conn = myThread.transaction.conn,
-                                         transaction = True)                             
+                                         transaction = True)
 
         assert len(resultB) == 1, \
                "ERROR: Wrong number of algos returned: %s" % len(resultA)
@@ -246,9 +246,9 @@ class DBSBufferDatasetTest(unittest.TestCase):
         assert len(resultC) == 1, \
                "ERROR: Wrong number of algos returned: %s" % len(resultA)
         assert resultC[0]["in_dbs"] == 0, \
-               "ERROR: Algo should not be marked as in DBS"        
+               "ERROR: Algo should not be marked as in DBS"
 
-        return    
+        return
 
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

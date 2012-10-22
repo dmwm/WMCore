@@ -24,4 +24,3 @@ class WMBSBase(WMConnectionBase):
         create one but leave the transaction closed.
         """
         WMConnectionBase.__init__(self, daoPackage = "WMCore.WMBS")
-        

@@ -606,7 +606,7 @@ class AccountantWorker(WMConnectionBase):
                                                              specPath    = specPath)
                     self.workflowPaths.append(workflowPath)
                     self.workflowIDs.append({'workflowPath': workflowPath, 'workflowID': workflowID})
-                    
+
             lfn           = dbsFile['lfn']
             selfChecksums = dbsFile['checksums']
             jobLocation   = dbsFile.getLocations()[0]

@@ -32,7 +32,7 @@ def pnfsPfn(pfn):
 
     pfnSplit = pfn.split("WAX/11/store/", 1)[1]
     filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
-    
+
     # handle lustre location
     if pfn.find('/store/unmerged/lustre/') == -1:
         return filePath
@@ -50,7 +50,7 @@ class DCCPFNALImpl(StageOutImplV2):
     Implement interface for dcache door based dccp command
 
     """
-    
+
     def doWrapped(self, commandArgs):
         wrapperPath = os.path.join(getWMBASE(),'src','python','WMCore','Storage','Plugins','DCCPFNAL','wrapenv.sh')
         commandArgs.insert(0, wrapperPath)
@@ -59,7 +59,7 @@ class DCCPFNALImpl(StageOutImplV2):
             logging.info("Non zero exit code: %s" % repr(exitCode))
 
         return (exitCode, output)
-    
+
     def doTransfer(self, sourcePFN, targetPFN, stageOut, seName, command, options, protocol, checksum ):
         """
             performs a transfer. stageOut tells you which way to go. returns the new pfn or
@@ -70,14 +70,14 @@ class DCCPFNALImpl(StageOutImplV2):
         targetPFN = self.createSourceName(protocol, targetPFN)
         sourcePFN = self.createSourceName(protocol, sourcePFN)
 
-        
+
         # make directories
         self.createOutputDirectory(os.path.dirname(targetPFN))
-        
+
         if targetPFN.find('lustre') == -1:
             if not options:
                 options = ""
-            
+
             if stageOut:
                 copyCommand =   \
                     self.generateCommandFromPreAndPostParts(\
@@ -90,7 +90,7 @@ class DCCPFNALImpl(StageOutImplV2):
                                                             ["dccp"],
                                                             [pnfsPfn(sourcePFN), targetPFN],
                                                             options)
-   
+
 
             logging.info("Staging out with DCCPFNAL")
             logging.info("  commandline: %s" % copyCommand)
@@ -104,7 +104,7 @@ class DCCPFNALImpl(StageOutImplV2):
             #FIXME
             logging.info("  output from dccp: %s" % output)
             logging.info("  complete. #" )#exit code" is %s" % exitCode)
-        
+
             logging.info("Verifying file")
             (exitCode, output) = self.doWrapped(['/opt/d-cache/dcap/bin/check_dCachefilecksum.sh',
                                                     pnfsPfn(targetPFN),
@@ -116,14 +116,14 @@ class DCCPFNALImpl(StageOutImplV2):
                 except:
                     pass
                 raise StageOutFailure, "DCCP failed - No good"
-            
+
             return targetPFN
         else:
             # looks like lustre -- do a regular CP
             copyGuy = retrieveStageOutImpl('cp',useNewVersion = True)
             return copyGuy.doTransfer(sourcePFN,targetPFN,stageOut, seName, command, options, protocol)
-        
-    
+
+
     def doDelete(self, pfnToRemove, seName, command, options, protocol  ):
         """
             deletes a file, raises on error
@@ -137,7 +137,7 @@ class DCCPFNALImpl(StageOutImplV2):
             filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
             command = ["rm","-fv",filePath]
             runCommand(command)
-        else: 
+        else:
             pfnSplit = pfnToRemove.split("/store/unmerged/lustre/", 1)[1]
             pfnToRemove = "/lustre/unmerged/%s" % pfnSplit
             command = ["/bin/rm", pfnToRemove]
@@ -163,16 +163,16 @@ class DCCPFNALImpl(StageOutImplV2):
         # only create dir on remote storage
         if targetPFN.find('/pnfs/') == -1 and targetPFN.find('lustre') == -1:
             return
-        
+
         targetdir = ""
         # handle dcache or lustre location
         if targetPFN.find('lustre') == -1:
             pfnSplit = targetPFN.split("WAX/11/store/", 1)[1]
             filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
             targetdir = os.path.dirname(filePath)
-        else: 
+        else:
             targetdir= os.path.dirname(targetPFN)
-            
+
         if not os.path.exists(targetdir):
             self.doWrapped(['mkdir','-m','755','-p',targetdir])
 
@@ -195,12 +195,8 @@ class DCCPFNALImpl(StageOutImplV2):
             pfn = pfn.split("/store/")[1]
             pfn = "%s%s" % (dcacheDoor, pfn)
             print "Created Target PFN with dCache Door: ", pfn
-        else: 
+        else:
             pfnSplit = pfn.split("/store/unmerged/lustre/", 1)[1]
             pfn = "/lustre/unmerged/%s" % pfnSplit
 
         return pfn
-
-
-
-

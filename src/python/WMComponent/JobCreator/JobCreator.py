@@ -25,7 +25,7 @@ class JobCreator(Harness):
     """
     Creates jobs for new subscriptions
     Handler implementation for polling
-    
+
     """
 
     def __init__(self, config):
@@ -35,7 +35,7 @@ class JobCreator(Harness):
 
         #myThread = threading.currentThread()
         #myThread.database = os.getenv("DATABASE")
-        
+
         print "JobCreator.__init__"
 
     def preInitialization(self):
@@ -48,7 +48,7 @@ class JobCreator(Harness):
 
         # Add event loop to worker manager
         myThread = threading.currentThread()
-        
+
         pollInterval = self.config.JobCreator.pollInterval
         logging.info("Setting poll interval to %s seconds" % pollInterval)
         myThread.workerThreadManager.addWorker(JobCreatorPoller(self.config), \

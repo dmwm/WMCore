@@ -6,9 +6,3 @@ Tests for creating
 daemons.
 
 """
-
-
-
-
-
-

@@ -21,7 +21,7 @@ class SetLocation(DBFormatter):
     sql = """UPDATE wmbs_job SET location = (SELECT id FROM wmbs_location WHERE site_name = :location)
               WHERE id = :jobid"""
 
-        
+
     def execute(self, jobid = None, location = None, bulkList = None, conn = None, transaction = False):
         """
         _execute_
@@ -37,4 +37,3 @@ class SetLocation(DBFormatter):
 
         self.dbi.processData(self.sql, binds, conn = conn, transaction = transaction)
         return
-

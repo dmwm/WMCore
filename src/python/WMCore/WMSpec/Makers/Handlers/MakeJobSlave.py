@@ -66,5 +66,3 @@ class MakeJobSlave(ThreadSlave):
         #myThread.transaction.commit()
 
         return
-
-        

@@ -12,7 +12,7 @@ import logging
 
 # harness class that encapsulates the basic component logic.
 from WMCore.Agent.Harness import Harness
-# we do not import failure handlers as they are dynamicly 
+# we do not import failure handlers as they are dynamicly
 # loaded from the config file.
 from WMCore.WMFactory import WMFactory
 
@@ -24,15 +24,12 @@ class DBSBuffer(Harness):
     def __init__(self, config):
         # call the base class
         Harness.__init__(self, config)
-	print "DBSBuffer.__init__"
+        print "DBSBuffer.__init__"
 
     def preInitialization(self):
-	print "DBSBuffer.preInitialization"
+        print "DBSBuffer.preInitialization"
 
         # use a factory to dynamically load handlers.
         factory = WMFactory('generic')
         self.messages['JobSuccess'] = \
             factory.loadObject(self.config.DBSBuffer.jobSuccessHandler, self)
-
-
-

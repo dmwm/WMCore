@@ -38,4 +38,3 @@ class LoadFromTask(DBFormatter):
         result = self.dbi.processData(self.sql, {"task": task},
                          conn = conn, transaction = transaction)
         return self.formatDict(result)
-

@@ -51,7 +51,7 @@ class ResubmitBlock(StartPolicyInterface):
         validBlocks = []
         # TODO take the chunk size from parameter
         chunkSize = 200
-        
+
         acdcInfo = task.getInputACDC()
         if not acdcInfo:
             raise WorkQueueWMSpecError(self.wmspec, 'No acdc section for %s' % task.getPathName())
@@ -95,5 +95,5 @@ class ResubmitBlock(StartPolicyInterface):
                 dbsBlock["Sites"] = sitesFromStorageEelements(block["locations"])
                 dbsBlock['ACDC'] = acdcInfo
                 validBlocks.append(dbsBlock)
-            
+
         return validBlocks

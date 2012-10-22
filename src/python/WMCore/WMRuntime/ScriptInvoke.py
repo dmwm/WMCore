@@ -48,23 +48,23 @@ class ScriptInvoke:
         """
         self.job = Bootstrap.loadJobDefinition()
         self.task = Bootstrap.loadTask(self.job)
-        
-        
+
+
         stepSpaceMod = __import__(self.stepModule,
                                   globals(), locals(), ['stepSpace'], -1)
 
         self.stepSpace = stepSpaceMod.stepSpace
 
         self.step = self.task.getStep(self.stepSpace.stepName)
-        
-        
-        
+
+
+
         self.script = getScript(scriptModule)
         self.script.task = self.task
         self.script.step = self.step
         self.script.job = self.job
         self.script.stepSpace = self.stepSpace
-        
+
 
 
     def invoke(self):
@@ -117,6 +117,3 @@ if __name__ == '__main__':
         raise RuntimeError, msg
 
     sys.exit(invoker.exit())
-
-
-

@@ -44,7 +44,7 @@ config.WebtoolsDocs.admin = 'your@email.com'
 config.WebtoolsDocs.title = 'CMS WMCore/WebTools Documentation'
 config.WebtoolsDocs.description = 'Documentation on the WMCORE/WebTools'
 
-# If we want an application to run on multiple for multiple instances confiure 
+# If we want an application to run on multiple for multiple instances confiure
 # it as follows
 config.WebtoolsDocs.instances = ['foo', 'bar']
 # We could define the class that is the applications index

@@ -7,7 +7,3 @@ Test collections for testing WMFactory
 
 """
 __all__ = []
-
-
-
-

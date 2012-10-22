@@ -15,8 +15,8 @@ class DeleteParentCheck(DBFormatter):
     sql = """DELETE FROM wmbs_file_parent WHERE (parent = :id OR child = :id) AND
            NOT EXISTS (SELECT fileset FROM wmbs_fileset_files WHERE fileid = :id
            AND fileset != :fileset)"""
-    
-        
+
+
     def execute(self, file, fileset, conn = None, transaction = False):
         if type(file) == list:
             if len(file) < 1:
@@ -28,6 +28,6 @@ class DeleteParentCheck(DBFormatter):
         else:
             binds = {'id': file, 'fileset': fileset}
 
-        self.dbi.processData(self.sql, binds, 
+        self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = transaction)
         return True #or raise

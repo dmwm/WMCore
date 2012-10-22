@@ -3,7 +3,7 @@
 """
 _Listener_
 
-This module contains a class that is responsible for starting (and 
+This module contains a class that is responsible for starting (and
 terminating) a cherrypy server that listens to incoming remote
 messages. Behaviour of this server is managed by a HttpTree object.
 """
@@ -21,9 +21,9 @@ import logging
 import cherrypy
 
 class Listener(Thread):
-    """ 
-    _Listener_ 
-    
+    """
+    _Listener_
+
     """
     def __init__(self, httpTree, config):
 
@@ -101,9 +101,9 @@ class Listener(Thread):
                 msg = "Could not load any HttpTree object"
                 self.mylogger.error(msg)
                 raise Exception(msg)
-         
-      
-    
+
+
+
     def run(self):
         """
         Main method of the thread. It will be called when started.
@@ -119,11 +119,11 @@ class Listener(Thread):
         # Override explicitly passed config options
         cherrypy.config.update(self.configDict)
         cherrypy.log._set_screen = False
-        
+
         cherrypy.tree.mount(self.httpTree)
         cherrypy.server.quickstart()
         cherrypy.engine.start(blocking=False)
-        
+
         cherrypy.log._set_screen = False
 
         # Loop till done
@@ -131,7 +131,7 @@ class Listener(Thread):
         while not finished:
             time.sleep(5)
             finished = self.exitFlag
-      
+
         # When done, exit gracefully
         self.__suicide__()
 
@@ -153,4 +153,3 @@ class Listener(Thread):
         cherrypy.engine.stop()
         cherrypy.server.stop()
         self.mylogger.info("All done. Goodbye")
-

@@ -33,7 +33,7 @@ class FailOrphanFiles(DBFormatter):
     sqlAvail = """DELETE FROM wmbs_sub_files_available
                   WHERE subscription = :subscription AND
                         fileid = :fileid"""
-    
+
     def execute(self, subscriptionID, filesetID, conn = None, transaction = False):
         binds = {"subscription": subscriptionID, "fileset": filesetID}
         results = self.dbi.processData(self.sql, binds, conn = conn,
@@ -48,5 +48,5 @@ class FailOrphanFiles(DBFormatter):
             self.dbi.processData(self.sqlAvail, binds, conn = conn,
                                  transaction = transaction)
             self.dbi.processData(self.sqlFail, binds, conn = conn,
-                                 transaction = transaction)            
+                                 transaction = transaction)
         return

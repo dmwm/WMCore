@@ -12,6 +12,6 @@ from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.AddIgnore import AddIgn
      MySQLAddIgnore
 
 class AddIgnore(MySQLAddIgnore):
-    sql = """INSERT INTO dbsbuffer_file (lfn, dataset_algo, status) 
+    sql = """INSERT INTO dbsbuffer_file (lfn, dataset_algo, status)
                 SELECT :lfn, :dataset_algo, :status FROM DUAL WHERE NOT EXISTS
                   (SELECT id FROM dbsbuffer_file WHERE lfn = :lfn)"""

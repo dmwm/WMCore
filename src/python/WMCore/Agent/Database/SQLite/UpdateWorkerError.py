@@ -13,4 +13,3 @@ from WMCore.Agent.Database.MySQL.UpdateWorkerError import UpdateWorkerError \
 
 class UpdateWorkerError(UpdateWorkerErrorMySQL):
     pass
-

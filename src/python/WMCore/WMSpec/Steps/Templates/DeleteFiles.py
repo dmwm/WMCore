@@ -27,7 +27,7 @@ class DeleteFilesStepHelper(CoreHelper):
     This is very similar to StageOut since they have essentially the same function
 
     """
-    
+
     def disableRetries(self):
         """
             handy for testing, without the 10 minute retry loop

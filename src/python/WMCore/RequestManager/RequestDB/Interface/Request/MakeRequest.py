@@ -194,5 +194,3 @@ def updateRequestSize(requestName, reqEventsSize, reqFilesSize = None, reqSizeOf
     updateSize.execute(reqId, reqEventsSize, reqFilesSize, reqSizeOfEvent)
 
     return
-
-

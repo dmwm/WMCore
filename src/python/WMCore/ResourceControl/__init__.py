@@ -9,9 +9,3 @@ Classes used in the threadpool overwrite the call method
 of the ThreadSlave.
 
 """
-
-
-
-
-
-

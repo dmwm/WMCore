@@ -24,9 +24,9 @@ class FindDASToUpload(MySQLFindDASToUpload):
                das.id AS das_id,
                ds.acquisition_era AS AcquisitionEra,
                ds.processing_era AS ProcessingEra,
-               da.app_name AS ApplicationName, 
-               da.app_ver AS ApplicationVersion, 
-               da.app_fam AS ApplicationFamily, 
+               da.app_name AS ApplicationName,
+               da.app_ver AS ApplicationVersion,
+               da.app_fam AS ApplicationFamily,
                da.PSet_Hash as PSetHash,
                da.config_content as PSetContent,
                da.in_dbs AS algo_in_dbs
@@ -40,5 +40,3 @@ class FindDASToUpload(MySQLFindDASToUpload):
                                               INNER JOIN dbsbuffer_file_parent dbfp ON dbf2.id = dbfp.parent
                                               WHERE dbf2.status = 'NOTUPLOADED'
                                               AND dbfp.child = dbsfile.id))"""
-
-    

@@ -43,21 +43,21 @@ class RelValMCWorkloadFactory(StdBase):
         """
         Build a workflow for a RelValMC request.
         This means a production config and merge tasks for each output module.
-        
+
         All tasknames hierarchy do automatically derive from each other
         and output -> input files names are sorted out automatically by this
         dependent running.
-        
+
         (The chaining implemented in WMCore/WMSpec/Steps/Templates/CMSSW.py
         setupChainedProcessingby is not used here.)
-                
+
         """
         workload = self.createWorkload()
         workload.setDashboardActivity("relval")
         self.reportWorkflowToDashboard(workload.getDashboardActivity())
         workload.setWorkQueueSplitPolicy("MonteCarlo", self.genJobSplitAlgo,
                                          self.genJobSplitArgs)
-        
+
         genTask = workload.newTask("Generation")
         genOutputMods = self.setupProcessingTask(genTask, "Production",
                                                  inputDataset = None,
@@ -79,7 +79,7 @@ class RelValMCWorkloadFactory(StdBase):
                                      outputModuleName)
             if outputModuleName == self.genOutputModuleName:
                 genMergeTask = task
-                
+
         stepOneTask = genMergeTask.addTask("StepOne")
         parentCmsswStep = genMergeTask.getStep("cmsRun1")
         stepOneOutputMods = self.setupProcessingTask(stepOneTask, "Processing",
@@ -91,15 +91,15 @@ class RelValMCWorkloadFactory(StdBase):
                                                      splitAlgo = self.procJobSplitAlgo,
                                                      splitArgs = self.procJobSplitArgs)
         self.addLogCollectTask(stepOneTask, "ProcLogCollect")
-        
-        stepOneMergeTask = None        
+
+        stepOneMergeTask = None
         for outputModuleName in stepOneOutputMods.keys():
             outputModuleInfo = stepOneOutputMods[outputModuleName]
             task = self.addMergeTask(stepOneTask, self.procJobSplitAlgo,
                                      outputModuleName)
             if outputModuleName == self.stepOneOutputModuleName:
                 stepOneMergeTask = task
-                
+
         stepTwoTask = stepOneMergeTask.addTask("StepTwo")
         parentCmsswStep = stepOneMergeTask.getStep("cmsRun1")
         stepTwoOutputMods = self.setupProcessingTask(stepTwoTask, "Processing",
@@ -111,14 +111,14 @@ class RelValMCWorkloadFactory(StdBase):
                                                      splitAlgo = self.procJobSplitAlgo,
                                                      splitArgs = self.procJobSplitArgs)
         self.addLogCollectTask(stepTwoTask, "StepTwoLogCollect")
-                
+
         for outputModuleName in stepTwoOutputMods.keys():
             outputModuleInfo = stepTwoOutputMods[outputModuleName]
             self.addMergeTask(stepTwoTask, self.procJobSplitAlgo,
                               outputModuleName)
         return workload
-        
-    
+
+
     def __call__(self, workloadName, arguments):
         """
         __call__
@@ -131,12 +131,12 @@ class RelValMCWorkloadFactory(StdBase):
         self.globalTag = arguments["GlobalTag"]
 
         # Required parameters relevant to the MC generation.
-        self.genConfigCacheID = arguments["GenConfigCacheID"]        
+        self.genConfigCacheID = arguments["GenConfigCacheID"]
         self.inputPrimaryDataset = arguments["PrimaryDataset"]
         self.totalEvents = arguments["RequestNumEvents"]
         self.seeding = arguments.get("Seeding", "AutomaticSeeding")
         self.pileupConfig = arguments.get("PileupConfig", None)
-        
+
         # The CouchURL and name of the ConfigCache database must be passed in
         # by the ReqMgr or whatever is creating this workflow.
         self.couchURL = arguments["CouchURL"]
@@ -151,17 +151,17 @@ class RelValMCWorkloadFactory(StdBase):
         self.procJobSplitAlgo = arguments.get("ProcJobSplitAlgo", "FileBased")
         self.procJobSplitArgs = arguments.get("ProcJobSplitArgs",
                                               {"files_per_job": 1})
-        
+
         self.genOutputModuleName = arguments.get("GenOutputModuleName", None)
         self.stepOneOutputModuleName = arguments.get("StepOneOutputModuleName", None)
         self.stepOneConfigCacheID = arguments["StepOneConfigCacheID"]
-        self.stepTwoConfigCacheID = arguments["StepTwoConfigCacheID"]        
+        self.stepTwoConfigCacheID = arguments["StepTwoConfigCacheID"]
         return self.buildWorkload()
 
     def validateSchema(self, schema):
         """
         _validateSchema_
-        
+
         Check for required fields, and some skim facts
         """
         requiredFields = ["CMSSWVersion", "Requestor", "ScramArch",
@@ -188,12 +188,12 @@ class RelValMCWorkloadFactory(StdBase):
                                                 getOutputModules = True)
         return
 
-            
-    
+
+
 def relValMCWorkload(workloadName, arguments):
     """
     Instantiate the RelValMCWorkloadFactory and have it generate
-    a workload for the given parameters.    
+    a workload for the given parameters.
     """
     myRelValMCFactory = RelValMCWorkloadFactory()
     instance = myRelValMCFactory(workloadName, arguments)

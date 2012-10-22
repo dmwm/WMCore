@@ -35,8 +35,8 @@ class LogArchiveStepHelper(CoreHelper):
         """
         target = self.data.logs.section_("log%i" % self.data.filecount)
         target.input  = infile
-        self.data.filecount += 1 
-    
+        self.data.filecount += 1
+
     def disableRetries(self):
         """
             handy for testing, without the 10 minute retry loop

@@ -30,7 +30,7 @@ from WMQuality.TestInit import TestInit
 import nose
 class HarnessTest(unittest.TestCase):
     """
-    TestCase for TestComponent module 
+    TestCase for TestComponent module
     """
     tempDir = None
     def setUp(self):
@@ -40,11 +40,11 @@ class HarnessTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema() 
+        self.testInit.setSchema()
 
     def tearDown(self):
         """
-        Delete database 
+        Delete database
         """
         self.testInit.clearDatabase()
 
@@ -58,7 +58,7 @@ class HarnessTest(unittest.TestCase):
         config.TestComponent.componentDir = os.path.join( \
                                 self.tempDir, "Components/TestComponent1")
         config.General.workDir = config.TestComponent.componentDir
-        
+
         os.makedirs( config.TestComponent.componentDir )
         # as this is a test we build the string from our global environment
         # parameters normally you put this straight into the DefaultConfig.py file:
@@ -160,4 +160,3 @@ class HarnessTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

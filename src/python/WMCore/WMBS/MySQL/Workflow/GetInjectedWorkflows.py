@@ -39,5 +39,3 @@ class GetInjectedWorkflows(DBFormatter):
             finalResult.append(entry['name'])
 
         return finalResult
-
-            

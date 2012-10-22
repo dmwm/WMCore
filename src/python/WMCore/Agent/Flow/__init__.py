@@ -8,9 +8,3 @@ worrying to much about the structure and framework.
 
 
 """
-
-
-
-
-
-

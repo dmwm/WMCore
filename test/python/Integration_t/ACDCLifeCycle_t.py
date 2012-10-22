@@ -28,7 +28,7 @@ class ACDCLifeCycle_t(RequestLifeCycleBase_t, unittest.TestCase):
     @attr("lifecycle")
     def test06UploadACDC(self):
         # get previous request we can piggyback on
-        for request in reversed(self.__class__.reqmgr.getRequest()[-10:]):
+        for request in reversed(self.__class__.reqmgr.getRequest()):
             request = request['WMCore.RequestManager.DataStructs.Request.Request']['RequestName']
             if 'RequestCancellation_t' in request:
                 self.__class__.requestParams['OriginalRequestName'] = request

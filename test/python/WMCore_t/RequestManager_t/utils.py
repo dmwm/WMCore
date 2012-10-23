@@ -1,47 +1,40 @@
 """
 Common module for helper methods, Classes for RequestManager related unittests.
 
-"""
+""" 
 
 import os
+import urllib
 
+import WMCore.WMSpec.StdSpecs.ReReco as ReReco
 
-
-def getFakeRequest(requestType):
+    
+def getAndSetupSchema(testInstance, groupName = 'PeopleLikeMe',
+                      userName = 'me', teamName = 'White Sox'):
     """
-    Return testing request dictionary.
-    Leave now for reference, but it doens't seem to be used from anywhere ...
-
+    Set up a test schema so that we can run a test request.
+    The function is shared among RequestManager unittests.
+    testInstance is a caller - instances of the current unittest class.
+    
     """
-    requestName = 'Test' + requestType
-    couchUrl = os.environ.get("COUCHURL", None)
-    return {
-        'ProdConfigCacheID' : 'f821abc0fd7ee5c5a7c34f3b96c995dc',
-         # MC
-        'ProdConfigCacheID' : 'f700c7fff9bac224f2d89ef9e419d363' ,
-        'CouchURL' : couchUrl,
-        'CouchUrl' : couchUrl,
-        'CouchDBName' : "wmagent_config_cache",
-        'RequestName' : requestName,
-        'RequestType' : requestType,
-        "Requestor" : "me",
-        "Group" : "PeopleLikeMe",
-        "RequestSizeEvents" : 100,
-        "InputDatasets" : '/PRIM/PROC/TIER',
-        "InputDataset" : '/PRIM/PROC/TIER',
-        "PrimaryDataset" : '/PRIM/PROC/TIER',
-        "PileupDatasets" : [],
-        "CMSSWVersion" : 'CMSSW_3_5_8',
-        "ProcessingVersion" : 'CMSSW_3_5_8',
-        'FinalDestination' : 'somewhere',
-        'GlobalTag' : 'V1::All',
-        'LFNCategory' : '/store/data',
-        'AcquisitionEra' : 'Now',
-        'OutputTiers' : ['RECO', 'AOD'],
-        'DBSURL' : 'www.theonion.com',
-        'ScramArch' : 'slc5_ia32_gcc434',
-        "SkimInput" : "output",
-        "SkimConfig1"  : '36f2fd377a5ac1c4149f5dd535271a10',
-        "CmsPath" : "/uscmst1/prod/sw/cms",
-        "Emulator" : False
-    }
+    schema = getSchema(groupName = groupName, userName = userName)
+    testInstance.jsonSender.put('user/%s?email=me@my.com' % userName)
+    testInstance.jsonSender.put('group/%s' % groupName)
+    testInstance.jsonSender.put('group/%s/%s' % (groupName, userName))
+    testInstance.jsonSender.put(urllib.quote('team/%s' % teamName))
+    testInstance.jsonSender.put('version/%s/%s' % (schema["CMSSWVersion"], schema["ScramArch"]))
+    return schema
+
+
+def getSchema(groupName = 'PeopleLikeMe', userName = 'me'):
+    schema = ReReco.getTestArguments()
+    schema['RequestName'] = 'TestReReco'
+    schema['RequestType'] = 'ReReco'
+    schema['CmsPath'] = "/uscmst1/prod/sw/cms"
+    schema['Requestor'] = '%s' % userName
+    schema['Group'] = '%s' % groupName
+    schema['CustodialSite'] = 'US_T1_FNAL'
+    schema['TimePerEvent'] = '12'
+    schema['Memory'] = 3000
+    schema['SizePerEvent'] = 512
+    return schema

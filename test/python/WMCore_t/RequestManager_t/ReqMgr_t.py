@@ -4,7 +4,10 @@
 RequestManager unittest
 
 Tests the functions of the REST API
+
 """
+
+
 import os
 import json
 import shutil
@@ -12,16 +15,14 @@ import urllib
 import tempfile
 import unittest
 import threading
+from httplib import HTTPException
 
 from nose.plugins.attrib import attr
-
-import WMCore.RequestManager.RequestMaker.Processing.ReRecoRequest as ReRecoRequest
-import WMCore.WMSpec.StdSpecs.ReReco                               as ReReco
 
 from WMCore.Services.Requests   import JSONRequests
 from WMCore.Wrappers            import JsonWrapper as json
 from WMCore.WMSpec.WMWorkload   import WMWorkloadHelper
-from httplib                    import HTTPException
+
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 
 # RequestDB Interfaces
@@ -31,37 +32,27 @@ from WMCore.RequestManager.RequestDB.Interface.Admin   import SoftwareManagement
 #decorator import for RESTServer setup
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup  import DefaultConfig
-from WMCore.WMSpec.StdSpecs.ReReco       import getTestArguments
 
-def getRequestSchema():
-    schema = getTestArguments()
-    schema.update(RequestName = "TestReReco",
-                  RequestType = "ReReco",
-                  CmsPath = "/uscmst1/prod/sw/cms",
-                  CouchURL = None,
-                  CouchDBName = None,
-                  Group = "PeopleLikeMe",
-                  InputDataset = '/PRIM/PROC/TIER',
-                  Requestor = "me"
-                  )
-    return schema
+from WMCore_t.RequestManager_t import utils
+
+
 
 class RequestManagerConfig(DefaultConfig):
-
+        
     def _setReqMgrHost(self):
         self.UnitTests.views.active.rest.model.reqMgrHost = \
               self.getServerUrl().strip('rest/')
-
+    
     def _setWorkloadCache(self):
         self.UnitTests.views.active.rest.model.workloadCache = \
               tempfile.mkdtemp()
-
+    
     def _setupCouchUrl(self):
         self.UnitTests.views.active.rest.couchUrl = os.environ.get("COUCHURL",None)
 
     def deleteWorkloadCache(self):
         shutil.rmtree(self.UnitTests.views.active.rest.model.workloadCache)
-
+    
     def setupRequestConfig(self):
         import WMCore.RequestManager.RequestMaker.Processing.RecoRequest
         self.UnitTests.views.active.rest.workloadDBName = "test"
@@ -80,7 +71,9 @@ class RequestManagerConfig(DefaultConfig):
     def _setupAssign(self):
         self.UnitTests.views.active.rest.opshold    = False
         self.UnitTests.views.active.rest.sitedb  = "https://cmsweb.cern.ch/sitedb/json/index/"
-
+        
+        
+        
 class ReqMgrTest(RESTBaseUnitTest):
     """
     _ReqMgrTest_
@@ -88,6 +81,7 @@ class ReqMgrTest(RESTBaseUnitTest):
     Basic test for the ReqMgr services.
     Setup is done off-screen in RESTBaseUnitTest - this makes
     things confusing
+    
     """
 
     def setUp(self):
@@ -101,10 +95,9 @@ class ReqMgrTest(RESTBaseUnitTest):
                                  "GroupUser", "ConfigCache")
         self.testInit.setupCouch("%s_wmstats" % self.couchDBName,
                                  "WMStats")
-
-        reqMgrHost      = self.config.getServerUrl()
+        reqMgrHost = self.config.getServerUrl()
         self.jsonSender = JSONRequests(reqMgrHost)
-        return
+
 
     def initialize(self):
         self.config = RequestManagerConfig(
@@ -114,48 +107,18 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.config.setupCouchDatabase(dbName = self.couchDBName)
         self.config.setPort(12888)
         self.schemaModules = ["WMCore.RequestManager.RequestDB"]
-        return
+
 
     def tearDown(self):
         """
-        tearDown
+        tearDown 
 
         Tear down everything
+        
         """
         RESTBaseUnitTest.tearDown(self)
         self.testInit.tearDownCouch()
-        return
 
-
-    def setupSchema(self, groupName = 'PeopleLikeMe',
-                    userName = 'me', teamName = 'White Sox',
-                    CMSSWVersion = 'CMSSW_3_5_8',
-                    scramArch = 'slc5_ia32_gcc434'):
-        """
-        _setupSchema_
-
-        Set up a test schema so that we can run a test request.
-        Standardization!
-        """
-
-        self.jsonSender.put('user/%s?email=me@my.com' % userName)
-        self.jsonSender.put('group/%s' % groupName)
-        self.jsonSender.put('group/%s/%s' % (groupName, userName))
-        self.jsonSender.put(urllib.quote('team/%s' % teamName))
-        self.jsonSender.put('version/%s/%s' % (CMSSWVersion, scramArch))
-
-        schema = ReReco.getTestArguments()
-        schema['RequestName'] = 'TestReReco'
-        schema['RequestType'] = 'ReReco'
-        schema['CmsPath'] = "/uscmst1/prod/sw/cms"
-        schema['Requestor'] = '%s' % userName
-        schema['Group'] = '%s' % groupName
-        schema['CustodialSite'] = 'US_T1_FNAL'
-        schema['TimePerEvent'] = '12'
-        schema['Memory'] = 3000
-        schema['SizePerEvent'] = 512
-
-        return schema
 
     def createConfig(self, bad = False):
         """
@@ -163,7 +126,7 @@ class ReqMgrTest(RESTBaseUnitTest):
 
         Create a config of some sort that we can load out of ConfigCache
         """
-
+        
         PSetTweak = {'process': {'outputModules_': ['ThisIsAName'],
                                  'ThisIsAName': {'dataset': {'dataTier': 'RECO',
                                                              'filterName': 'Filter'}}}}
@@ -183,18 +146,20 @@ class ReqMgrTest(RESTBaseUnitTest):
         configCache.save()
 
         return configCache.getCouchID()
+    
 
     @attr("integration")
     def testA_testBasicSetUp(self):
         """
         _testBasicSetUp_
-
+        
         Moving the tests that were in the setUp category out of it,
         mostly because I want to make sure that they don't fail inside
         the setUp statement.
+        
         """
         if 'me' in self.jsonSender.get('user')[0]:
-            self.jsonSender.delete('user/me')
+            self.jsonSender.delete('user/me')    
         self.assertFalse('me' in self.jsonSender.get('user')[0])
         self.assertEqual(self.jsonSender.put('user/me?email=me@my.com')[1], 200)
         self.assertTrue('me' in self.jsonSender.get('user')[0])
@@ -220,10 +185,11 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.assertTrue('White Sox' in self.jsonSender.get('team')[0])
 
         # some foreign key stuff to dealwith
-        self.assertTrue(self.jsonSender.put('version/CMSSW_3_5_8')[1] == 200)
-        self.assertTrue('CMSSW_3_5_8' in self.jsonSender.get('version')[0])
-        return
-
+        schema = utils.getSchema()
+        version = "version/" + schema["CMSSWVersion"]
+        self.assertTrue(self.jsonSender.put(version)[1] == 200)
+        self.assertTrue(schema["CMSSWVersion"] in self.jsonSender.get('version')[0])
+        
 
     @attr("integration")
     def testB_ReReco(self):
@@ -231,18 +197,20 @@ class ReqMgrTest(RESTBaseUnitTest):
         _ReReco_
 
         Try a basic ReReco workflow
+        
         """
-        schema = self.setupSchema()
+        schema = utils.getAndSetupSchema(self)
         schema['RequestNumEvents'] = 100
         schema['RequestEventSize'] = 101
         self.doRequest(schema)
-        return
+
 
     def doRequest(self, schema):
         """
         _doRequest_
 
         Run all tests on a basic ReReco workflow
+        
         """
         requestName = schema['RequestName']
         self.assertRaises(HTTPException, self.jsonSender.delete, 'request/%s' % requestName)
@@ -277,7 +245,6 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.assertEqual(request['RequestNumEvents'], 100)
         self.assertEqual(request['RequestEventSize'], 101)
 
-
         # only certain transitions allowed
         #self.assertEqual(self.jsonSender.put('request/%s?status=running' % requestName)[1], 400)
         self.assertRaises(HTTPException, self.jsonSender.put,'request/%s?status=running' % requestName)
@@ -288,7 +255,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         requestsAndSpecs = self.jsonSender.get(urllib.quote('assignment/White Sox'))[0]
         self.assertTrue(requestName in requestsAndSpecs[0])
         workloadHelper = WMWorkloadHelper()
-        workloadHelper.load(requestsAndSpecs[0][1])
+        workloadHelper.load(requestsAndSpecs[0][1]) 
         self.assertEqual(workloadHelper.getOwner()['Requestor'], "me")
         self.assertEqual(self.jsonSender.get('assignment?request=%s'% requestName)[0], ['White Sox'])
         self.assertEqual(self.jsonSender.get('request/%s' % requestName)[0]['teams'], ['White Sox'])
@@ -326,7 +293,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         req = self.jsonSender.get('request/%s' % requestName)[0]
         self.assertEqual(req['Campaign'], 'TestCampaign')
         self.jsonSender.delete('request/%s' % requestName)
-        return
+        
 
     @attr("integration")
     def testC_404Errors(self):
@@ -367,7 +334,6 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.checkForError(cls = 'assignment', badName = badName, exitCode = 404,
                            message = 'Cannot find team')
 
-        return
 
     @attr("integration")
     def testD_400Errors(self):
@@ -377,9 +343,10 @@ class ReqMgrTest(RESTBaseUnitTest):
         These are failures created by invalid input, such as sending
         args to a request when it doesn't accept any.  They should
         generatore 400 Errors
+        
         """
         badName = 'ThereIsNoWayThisNameShouldExist'
-
+        
         # Attempt to send arguments to a function that doesn't accept them.
         self.checkForError(cls = 'team', badName = badName, exitCode = 400,
                            message = "Invalid input: Arguments added where none allowed")
@@ -391,7 +358,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         # Break the validation
         self.checkForError(cls = 'user', badName = '!', exitCode = 400,
                            message = 'Invalid input: Input data failed validation')
-        return
+        
 
     def checkForError(self, cls, badName, exitCode, message, testEmpty = True):
         """
@@ -409,15 +376,13 @@ class ReqMgrTest(RESTBaseUnitTest):
 
         testEmpty for those that don't handle calls to the main (i.e., who require
         an argument)
+        
         """
-
         raises = False
-
         # First assert that the test to be tested is empty
         if testEmpty:
             result = self.jsonSender.get(cls)
             self.assertTrue(type(result[0]) in [type([]), type({})])
-
         # Next, test
         try:
             result = self.jsonSender.get('%s/%s' % (cls, badName))
@@ -428,32 +393,29 @@ class ReqMgrTest(RESTBaseUnitTest):
             self.assertFalse(badName in ex.result)
         self.assertTrue(raises)
 
-        return
 
     @attr("integration")
     def testE_CheckStatusChanges(self):
         """
         _CheckStatusChanges_
-
+        
         Check status changes for a single request.  See whether
         we can move the request through the proper chain.  Figure
         out what happens when we fail.
+        
         """
         myThread = threading.currentThread()
 
         userName     = 'Taizong'
         groupName    = 'Li'
         teamName     = 'Tang'
-        CMSSWVersion = 'CMSSW_3_5_8'
-        schema       = self.setupSchema(userName = userName,
-                                        groupName = groupName,
-                                        teamName = teamName,
-                                        CMSSWVersion = CMSSWVersion)
-
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
         result = self.jsonSender.put('request/testRequest', schema)
         self.assertEqual(result[1], 200)
         requestName = result[0]['RequestName']
-
 
         # There should only be one request in the DB
         result = GetRequest.requestID(requestName = requestName)
@@ -512,7 +474,6 @@ class ReqMgrTest(RESTBaseUnitTest):
             self.assertTrue('Cannot change status without a team' in ex.result)
         self.assertTrue(raises)
 
-
         self.jsonSender.put(urllib.quote('assignment/%s/%s' % (teamName, requestName)))
         self.changeStatusAndCheck(requestName = requestName,
                                   statusName  = 'ops-hold')
@@ -529,7 +490,6 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.changeStatusAndCheck(requestName = requestName,
                                   statusName  = 'closed-out')
 
-        return
 
     def changeStatusAndCheck(self, requestName, statusName):
         """
@@ -537,19 +497,20 @@ class ReqMgrTest(RESTBaseUnitTest):
 
         Change the status of a request and make sure that
         the request actually did it.
+        
         """
         self.jsonSender.put('request/%s?status=%s' % (requestName, statusName))
         result = self.jsonSender.get('request/%s' % requestName)
         self.assertEqual(result[0]['RequestStatus'], statusName)
-        return
+        
 
     def loadWorkload(self, requestName):
         """
         _loadWorkload_
 
         Load the workload from couch after we've saved it there.
+        
         """
-
         workload = WMWorkloadHelper()
         url      = '%s/%s/%s/spec' % (os.environ['COUCHURL'], self.couchDBName,
                                       requestName)
@@ -562,17 +523,15 @@ class ReqMgrTest(RESTBaseUnitTest):
         _TestWhitelistBlacklist_
 
         Test whether or not we can assign the block/run blacklist/whitelist
+        
         """
-
         userName     = 'Taizong'
         groupName    = 'Li'
         teamName     = 'Tang'
-        CMSSWVersion = 'CMSSW_3_5_8'
-        schema       = self.setupSchema(userName = userName,
-                                        groupName = groupName,
-                                        teamName = teamName,
-                                        CMSSWVersion = CMSSWVersion)
-
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
         schema['RunWhitelist'] = [1, 2, 3]
         schema['RunBlacklist'] = [4, 5, 6]
         schema['BlockWhitelist'] = ['/dataset/dataset/dataset#alpha']
@@ -581,7 +540,6 @@ class ReqMgrTest(RESTBaseUnitTest):
         result = self.jsonSender.put('request/testRequest', schema)
         self.assertEqual(result[1], 200)
         requestName = result[0]['RequestName']
-
 
         workload = self.loadWorkload(requestName = requestName)
         self.assertEqual(workload.data.tasks.DataProcessing.input.dataset.runs.whitelist, schema['RunWhitelist'])
@@ -629,24 +587,21 @@ class ReqMgrTest(RESTBaseUnitTest):
             pass
         self.assertTrue(raises)
 
-        return
 
     def testG_AddDuplicateUser(self):
         """
         _AddDuplicateUser_
 
         Test and see if we get a sensible error when adding a duplicate user.
+        
         """
-
         userName     = 'Taizong'
         groupName    = 'Li'
         teamName     = 'Tang'
-        CMSSWVersion = 'CMSSW_3_5_8'
-        schema       = self.setupSchema(userName = userName,
-                                        groupName = groupName,
-                                        teamName = teamName,
-                                        CMSSWVersion = CMSSWVersion)
-
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
         raises = False
         try:
             self.jsonSender.put('group/%s/%s' % (groupName, userName))
@@ -656,62 +611,55 @@ class ReqMgrTest(RESTBaseUnitTest):
             raises = True
         self.assertTrue(raises)
 
-        return
 
     def testH_RemoveSoftwareVersion(self):
         """
         _RemoveSoftwareVersion_
 
         Remove the software version after submitting the request.  See what that does.
+        
         """
         myThread = threading.currentThread()
-
         userName     = 'Taizong'
         groupName    = 'Li'
         teamName     = 'Tang'
-        CMSSWVersion = 'CMSSW_3_5_8'
-        scramArch    = 'slc5_ia32_gcc434'
-        schema       = self.setupSchema(userName = userName,
-                                        groupName = groupName,
-                                        teamName = teamName,
-                                        CMSSWVersion = CMSSWVersion,
-                                        scramArch = scramArch)
-
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
         result = self.jsonSender.put('request/testRequest', schema)
         self.assertEqual(result[1], 200)
         requestName = result[0]['RequestName']
 
         req = self.jsonSender.get('request/%s' % requestName)[0]
-        self.assertEqual(req['SoftwareVersions'], [CMSSWVersion])
+        self.assertEqual(req['SoftwareVersions'], [schema["CMSSWVersion"]])
 
         # Delete software versions and make sure they're gone from the DB
-        SoftwareManagement.removeSoftware(softwareName = CMSSWVersion,
-                                          scramArch = scramArch)
+        SoftwareManagement.removeSoftware(softwareName = schema["CMSSWVersion"],
+                                          scramArch = schema["ScramArch"])
         versions = myThread.dbi.processData("SELECT * FROM reqmgr_software")[0].fetchall()
         self.assertEqual(versions, [])
         assocs = myThread.dbi.processData("SELECT * FROM reqmgr_software_dependency")[0].fetchall()
         self.assertEqual(assocs, [])
-
+        
         req = self.jsonSender.get('request/%s' % requestName)[0]
-        self.assertEqual(req['SoftwareVersions'], [CMSSWVersion])
-        return
+        self.assertEqual(req['SoftwareVersions'], [schema["CMSSWVersion"]])
+        
 
     def testI_CheckConfigIDs(self):
         """
         _CheckConfigIDs_
 
         Check to see if we can pull out the ConfigIDs by request
+        
         """
-
         userName     = 'Taizong'
         groupName    = 'Li'
         teamName     = 'Tang'
-        CMSSWVersion = 'CMSSW_3_5_8'
-        schema       = self.setupSchema(userName = userName,
-                                        groupName = groupName,
-                                        teamName = teamName,
-                                        CMSSWVersion = CMSSWVersion)
-
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
         # Set some versions
         schema['ProcessingVersion'] = '2012'
         schema['AcquisitionEra']    = 'ae2012'
@@ -724,15 +672,14 @@ class ReqMgrTest(RESTBaseUnitTest):
         schema["ProcConfigCacheID"] = configID
         schema["InputDatasets"]     = ['/MinimumBias/Run2010B-RelValRawSkim-v1/RAW']
 
-
         result = self.jsonSender.put('request/testRequest', schema)
         self.assertEqual(result[1], 200)
         requestName = result[0]['RequestName']
 
         result = self.jsonSender.get('configIDs?prim=MinimumBias&proc=Commissioning10-v4&tier=RAW')[0]
         self.assertTrue(requestName in result.keys())
-        self.assertTrue(configID in result[requestName][0])
-        return
+        self.assertTrue(configID in result[requestName][0])        
+
 
 
 if __name__=='__main__':

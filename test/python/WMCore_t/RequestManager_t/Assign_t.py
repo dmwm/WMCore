@@ -4,6 +4,7 @@
 RequestManager unittest
 
 Tests the functions of the REST API
+
 """
 
 import os
@@ -13,19 +14,16 @@ import shutil
 import urllib
 import unittest
 import cherrypy
+from httplib import HTTPException
 
-from httplib                  import HTTPException
 from WMCore.Services.Requests import JSONRequests
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, WMWorkload
+import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
 
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
-from WMCore.WMSpec.StdSpecs.ReReco       import getTestArguments
-from WMCore.WMSpec.WMWorkload            import WMWorkloadHelper, WMWorkload
-
-import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
-import WMCore.WMSpec.StdSpecs.ReReco as ReReco
 from WMCore.WebTools.FrontEndAuth import FrontEndAuth, NullAuth
 
-from WMCore_t.RequestManager_t.ReqMgr_t import RequestManagerConfig, getRequestSchema
+from WMCore_t.RequestManager_t.ReqMgr_t import RequestManagerConfig
 
 
 
@@ -39,15 +37,15 @@ class AssignTest(RESTBaseUnitTest):
         """
         setUP global values
         Database setUp is done in base class
+        
         """
         self.couchDBName = "reqmgr_t_0"
         RESTBaseUnitTest.setUp(self, initRoot = False)
         self.testInit.setupCouch("%s" % self.couchDBName,
                                  "GroupUser", "ConfigCache")
-
-        reqMgrHost      = self.config.getServerUrl()
+        reqMgrHost = self.config.getServerUrl()
         self.jsonSender = JSONRequests(reqMgrHost)
-        return
+        
 
     def initialize(self):
         self.config = RequestManagerConfig(
@@ -57,53 +55,28 @@ class AssignTest(RESTBaseUnitTest):
         self.config.setupCouchDatabase(dbName = self.couchDBName)
         self.config.setPort(12888)
         self.schemaModules = ["WMCore.RequestManager.RequestDB"]
-        return
+
 
     def tearDown(self):
         """
         _tearDown_
 
         Basic tear down of database
+        
         """
-
         RESTBaseUnitTest.tearDown(self)
         self.testInit.tearDownCouch()
-        return
 
-    def setupSchema(self, groupName = 'PeopleLikeMe',
-                    userName = 'me', teamName = 'White Sox',
-                    CMSSWVersion = 'CMSSW_3_5_8'):
-        """
-        _setupSchema_
-
-        Set up a test schema so that we can run a test request.
-        Standardization!
-        """
-
-        self.jsonSender.put('user/%s?email=me@my.com' % userName)
-        self.jsonSender.put('group/%s' % groupName)
-        self.jsonSender.put('group/%s/%s' % (groupName, userName))
-        self.jsonSender.put(urllib.quote('team/%s' % teamName))
-        self.jsonSender.put('version/%s' % CMSSWVersion)
-
-        schema = ReReco.getTestArguments()
-        schema['RequestName'] = 'TestReReco'
-        schema['RequestType'] = 'ReReco'
-        schema['CmsPath'] = "/uscmst1/prod/sw/cms"
-        schema['Requestor'] = '%s' % userName
-        schema['Group'] = '%s' % groupName
-
-        return schema
 
     def loadWorkload(self, requestName):
         """
         _loadWorkload_
 
         Load the workload from couch after we've saved it there.
+        
         """
-
         workload = WMWorkloadHelper()
-        url      = '%s/%s/%s/spec' % (os.environ['COUCHURL'], self.couchDBName,
+        url = '%s/%s/%s/spec' % (os.environ['COUCHURL'], self.couchDBName,
                                       requestName)
         workload.load(url)
         return workload
@@ -114,13 +87,12 @@ class AssignTest(RESTBaseUnitTest):
         _SiteWhitelist_
 
         Test to see if we can get the siteWhitelist to work properly.
+        
         """
-
         secconfig = getattr(self.config, "SecurityModule")
         cherrypy.server.environment = 'test'
         cherrypy.tools.secmodv2 = NullAuth(secconfig)
-
-
+        
         self.config.UnitTests.views.active.rest.templates    = 'templateDir'
         self.config.UnitTests.views.active.rest.yuiroot      = 'yuiroot'
         self.config.UnitTests.views.active.rest.wildcardKeys = {'T1*': 'T1_*',
@@ -145,11 +117,6 @@ class AssignTest(RESTBaseUnitTest):
         self.assertEqual(assign.wildcardSites['T1*'], ['T1_US_FNAL', 'T1_CH_CERN', 'T1_UK_RAL'])
         self.assertEqual(assign.wildcardSites['T2*'], ['T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT'])
         self.assertEqual(assign.wildcardSites['US*'], ['T1_US_FNAL', 'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT'])
-
-
-        return
-
-
 
 
 if __name__=='__main__':

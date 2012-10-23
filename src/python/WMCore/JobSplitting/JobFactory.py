@@ -113,7 +113,7 @@ class JobFactory(WMObject):
         map(lambda x: x.startGroup(self.currentGroup), self.generators)
 
 
-    def newJob(self, name=None, files=None, failedJob=False):
+    def newJob(self, name=None, files=None, failedJob=False, failedReason=None):
         """
         Instantiate a new Job onject, apply all the generators to it
         """
@@ -133,6 +133,7 @@ class JobFactory(WMObject):
         # Some jobs are not meant to be submitted, ever
         if failedJob:
             self.currentJob["failedOnCreation"] = True
+            self.currentJob["failedReason"] = failedReason
 
         self.nJobs += 1
         for gen in self.generators:

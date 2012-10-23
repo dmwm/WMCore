@@ -36,7 +36,7 @@ class Workflow(WMBSBase, WMWorkflow):
     def __init__(self, spec = None, owner = "unknown", dn = "unknown",
                  group = "unknown", owner_vogroup = "DEFAULT",
                  owner_vorole = "DEFAULT", name = None, task = None,
-                 wfType = None, id = -1):
+                 wfType = None, id = -1, alternativeFilesetClose = False):
         WMBSBase.__init__(self)
         WMWorkflow.__init__(self, spec = spec, owner = owner, dn = dn,
                             group = group, owner_vogroup = owner_vogroup,
@@ -47,6 +47,7 @@ class Workflow(WMBSBase, WMWorkflow):
             self.dn = owner
 
         self.id = id
+        self.alternativeFilesetClose = alternativeFilesetClose
         return
 
     def exists(self):
@@ -116,6 +117,7 @@ class Workflow(WMBSBase, WMWorkflow):
         action = self.daofactory(classname = "Workflow.New")
         action.execute(spec = self.spec, owner = userid, name = self.name,
                        task = self.task, wfType = self.wfType,
+                       alt_fs_close = self.alternativeFilesetClose,
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction())
 

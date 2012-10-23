@@ -19,7 +19,7 @@ class ListClosable(DBFormatter):
                     wmbs_workflow_output.workflow_id = wmbs_parent_subscription.workflow
                   INNER JOIN wmbs_workflow ON
                     wmbs_parent_subscription.workflow = wmbs_workflow.id AND
-                    wmbs_workflow.injected = 1
+                    ( wmbs_workflow.injected = 1 OR wmbs_workflow.alt_fs_close = 1 )
                   LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT fileid) AS total_files
                               FROM wmbs_sub_files_acquired GROUP BY subscription) files_acquired ON
                     wmbs_parent_subscription.id = files_acquired.subscription

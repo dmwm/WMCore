@@ -1119,7 +1119,7 @@ class WorkQueueTest(WorkQueueTestCase):
                          True)
 
         #test not existing workflow
-        self.assertRaises(ValueError,
+        self.assertRaises(WorkQueueNoMatchingElements,
                           self.localQueue.getWMBSInjectionStatus,
                           "NotExistWorkflow"
                          )

@@ -45,9 +45,9 @@ class StageOutFailure(StageOutError):
         StageOutError.__init__(self, message, **data)
         self.data.setdefault("ErrorCode", 60311)
         self.data.setdefault("ErrorType", ErrorDefinitions[60311])
-        
+
         return
-          
+
 class StageOutInitError(StageOutError):
     """
     _StageOutInitError_

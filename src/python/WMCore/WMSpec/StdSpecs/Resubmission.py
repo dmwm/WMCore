@@ -33,11 +33,10 @@ class ResubmissionWorkloadFactory(StdBase):
     def validateSchema(self, schema):
         """
         _validateSchema_
-        
+
         It's an ACDC workflow, it needs ACDC data
         """
         requiredFields = ["OriginalRequestName", "InitialTaskPath",
                           "ACDCServer", "ACDCDatabase"]
         self.requireValidateFields(fields = requiredFields, schema = schema,
                                    validate = False)
-        

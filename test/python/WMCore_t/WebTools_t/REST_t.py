@@ -107,7 +107,7 @@ class RESTTest(RESTBaseUnitTest):
         output={'code':501, 'type':'text/json'}
 
         for verb in ['DELETE']:
-          methodTest(verb, url, input, output=output)
+            methodTest(verb, url, input, output=output)
 
     def testPing(self):
         verb ='GET'
@@ -178,8 +178,8 @@ class RESTTest(RESTBaseUnitTest):
         drm = DummyRESTModel(self.config.getModelConfig())
 
         def func(*args, **kwargs):
-           sanitised_input = drm._sanitise_input(args, kwargs, "list")
-           return drm.list(**sanitised_input)
+            sanitised_input = drm._sanitise_input(args, kwargs, "list")
+            return drm.list(**sanitised_input)
 
         # 2 positional args (e.g. url/arg1/arg2)
         result = func(123, 'abc')
@@ -357,7 +357,7 @@ class RESTTest(RESTBaseUnitTest):
                  '. Returned data: %s' % response[0]
 
     @cherrypySetup(secureConfig)
-    @attr("integration")    
+    @attr("integration")
     def testAuthentication(self):
         verb ='PUT'
         url = self.urlbase + 'list1'

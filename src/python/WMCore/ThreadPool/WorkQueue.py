@@ -94,7 +94,7 @@ class SerializedThreadPool( object ):
 class ThreadPool( object ):
     """
     _ThreadPool_
-    
+
     Distributes work over a set of slaves. Each slave is a
     callable object that will be called from a seperate thread.
     """
@@ -113,12 +113,12 @@ class ThreadPool( object ):
     def enqueue( self, key, *parameters ):
         """
         _enqueue_
-        
+
         Add a new work item to the queue.
         This may result in threads being spawned.
 
         """
-        
+
         work = (key, parameters)
 
         self.lock.acquire()
@@ -153,7 +153,7 @@ class ThreadPool( object ):
     def dequeue( self ):
         """
         _dequeue_
-        
+
         Returns a completed work item from the queue,
         or None if there are no more items. If there
         are worker threads still working, this will
@@ -171,7 +171,7 @@ class ThreadPool( object ):
                 del self.resultsQueue[0]
                 break
             elif self.activeCount == 0:
-                # If there are no active threads, then there 
+                # If there are no active threads, then there
                 # are no results pending: quit
                 result = None
                 break
@@ -187,7 +187,7 @@ class ThreadPool( object ):
     def slaveThread( self, slaveServer ):
         """
         _slaveThread_
-        
+
         This thread executes the method for each work item.
 
         """
@@ -216,7 +216,3 @@ class ThreadPool( object ):
         assert( self.activeCount >= 0 )
         self.slaveQueue.append( slaveServer )
         self.lock.release()
-
-
-
-

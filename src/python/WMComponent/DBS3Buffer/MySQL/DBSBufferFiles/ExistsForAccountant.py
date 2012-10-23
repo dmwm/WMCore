@@ -19,13 +19,13 @@ class ExistsForAccountant(DBFormatter):
 
     """
     sql = "SELECT lfn FROM dbsbuffer_file WHERE lfn = :lfn"
-    
 
-    
+
+
     def getBinds(self, lfn=None):
         return self.dbi.buildbinds(self.dbi.makelist(lfn), "lfn")
-        
+
     def execute(self, lfn=None, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, self.getBinds(lfn), 
+        result = self.dbi.processData(self.sql, self.getBinds(lfn),
                          conn = conn, transaction = transaction)
         return self.format(result)

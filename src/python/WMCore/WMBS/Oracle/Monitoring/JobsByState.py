@@ -12,6 +12,6 @@ from WMCore.WMBS.MySQL.Monitoring.JobsByState import JobsByState \
     as JobsByStateMySQL
 
 class JobsByState(JobsByStateMySQL):
-    
+
     #TO check what else is needed for return item
     sql = JobsByStateMySQL.sql

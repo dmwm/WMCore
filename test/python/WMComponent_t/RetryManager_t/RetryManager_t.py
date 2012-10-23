@@ -789,8 +789,8 @@ class RetryManagerTest(unittest.TestCase):
             changer.propagate(mergeJobGroup.jobs, 'jobcooloff', 'jobfailed')
 
             for job in mergeJobGroup.jobs:
-                    self.setJobTime.execute(jobID = job["id"],
-                                        stateTime = int(time.time()) - 30*pow(count,2) - 5)
+                self.setJobTime.execute(jobID = job["id"],
+                                    stateTime = int(time.time()) - 30*pow(count,2) - 5)
             testRetryManager.algorithm(None)
             idList = self.getJobs.execute(state = 'JobCoolOff')
             self.assertEqual(len(idList), len(mergeJobGroup.jobs),

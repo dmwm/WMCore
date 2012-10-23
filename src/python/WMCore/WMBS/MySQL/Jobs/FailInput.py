@@ -33,7 +33,7 @@ class FailInput(DBFormatter):
                         WHERE subscription = :subid AND fileid = :fileid"""
 
     completeDelete = """DELETE FROM wmbs_sub_files_complete
-                      WHERE subscription = :subid AND fileid = :fileid"""    
+                      WHERE subscription = :subid AND fileid = :fileid"""
 
     sql = """INSERT IGNORE INTO wmbs_sub_files_failed (fileid, subscription)
                VALUES (:fileid, :subid)"""
@@ -45,9 +45,9 @@ class FailInput(DBFormatter):
 
         if len(delBinds) > 0:
             self.dbi.processData(self.acquiredDelete, delBinds, conn = conn,
-                                 transaction = transaction)        
+                                 transaction = transaction)
             self.dbi.processData(self.completeDelete, delBinds, conn = conn,
                                  transaction = transaction)
             self.dbi.processData(self.sql, delBinds, conn = conn,
-                                 transaction = transaction)        
+                                 transaction = transaction)
         return

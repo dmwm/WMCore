@@ -18,7 +18,7 @@ from WMComponent.FeederManager.FeederManagerPoller import FeederManagerPoller
 class FeederManager(Harness):
     """
     _FeederManager_
-    
+
     Manages the creation, running and destruction of Feeders and associated
     Filesets
     """
@@ -26,7 +26,7 @@ class FeederManager(Harness):
     def __init__(self, config):
         # call the base class
         Harness.__init__(self, config)
-    
+
     def preInitialization(self):
         """
         Add required worker modules to work threads
@@ -42,7 +42,7 @@ class FeederManager(Harness):
         self.messages['AddDatasetWatch'] = \
             factory.loadObject(\
                 self.config.FeederManager.addDatasetWatchHandler, self)
-        
+
         myThread = threading.currentThread()
         myThread.runningFeedersLock = threading.Lock()
         myThread.runningFeeders = {}
@@ -51,4 +51,3 @@ class FeederManager(Harness):
         logging.info("Setting poll interval to %s seconds" % pollInterval)
         myThread.workerThreadManager.addWorker(FeederManagerPoller(), \
                                                pollInterval)
-

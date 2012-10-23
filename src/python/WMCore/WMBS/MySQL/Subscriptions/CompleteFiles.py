@@ -18,7 +18,7 @@ class CompleteFiles(DBFormatter):
     delAva = """DELETE FROM wmbs_sub_files_available
                 WHERE subscription = :subscription AND
                       fileid = :fileid"""
-    
+
     delFai = """DELETE FROM wmbs_sub_files_failed
                 WHERE subscription = :subscription AND
                       fileid = :fileid"""
@@ -33,6 +33,6 @@ class CompleteFiles(DBFormatter):
         self.dbi.processData(self.delAva, binds, conn = conn,
                              transaction = transaction)
         self.dbi.processData(self.delFai, binds, conn = conn,
-                             transaction = transaction)        
-        
+                             transaction = transaction)
+
         return

@@ -32,7 +32,7 @@ class MockLocalQService():
         for i in range(NUM_REQUESTS + 1):
             status['%s%s' % (REQUEST_NAME_PREFIX, i+1)] = {'inQueue': 1, 'inWMBS': 1}
             inputDataset['%s%s' % (REQUEST_NAME_PREFIX, i+1)] = 'inputdataset-%s' % (i+1)
-        
+
         return {'status': status, 'input_dataset': inputDataset}
 
 class AnalyticsDataCollector_t(unittest.TestCase):
@@ -87,7 +87,7 @@ class AnalyticsDataCollector_t(unittest.TestCase):
         config.Agent.agentName = "testAgentName"
         config.Agent.useMsgService = False
         config.Agent.useTrigger = False
-        config.Agent.useHeartbeat = False 
+        config.Agent.useHeartbeat = False
 
         config.component_("AnalyticsDataCollector")
         config.AnalyticsDataCollector.namespace = "WMComponent.AnalyticsDataCollector.AnalyticsDataCollector"
@@ -108,7 +108,7 @@ class AnalyticsDataCollector_t(unittest.TestCase):
         myThread = threading.currentThread()
         config = self.getConfig()
         analytics = AnalyticsPoller(config)
-        
+
         analytics.setup(None)
         analytics.localQueue = MockLocalQService()
         analytics.algorithm(None)

@@ -65,6 +65,6 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(None, testWorkflow.outputMap["out2"][0]["merged_output_fileset"],
                          "Error: The merged output should be None.")
         return
-    
+
 if __name__ == '__main__':
     unittest.main()

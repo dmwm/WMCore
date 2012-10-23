@@ -9,4 +9,3 @@ from WMCore.WMBS.MySQL.Subscriptions.IsCompleteOnRun import IsCompleteOnRun as I
 
 class IsCompleteOnRun(IsCompleteOnRunMySQL):
     pass
-

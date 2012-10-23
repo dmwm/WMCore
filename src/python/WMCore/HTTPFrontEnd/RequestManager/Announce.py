@@ -29,7 +29,7 @@ class Announce(BulkOperations):
     def requests(self):
         """ Base list of the requests """
         return Utilities.requestsWhichCouldLeadTo('announced')
- 
+
     def draw(self, requests):
         return self.templatepage("BulkOperations", operation="Announce",
                                   searchFields = ["RequestName", "RequestType"],
@@ -50,14 +50,13 @@ class Announce(BulkOperations):
         for dataset in datasets:
             try:
                 toks = dataset.split('/')
-                data = {'primary_ds_name': toks[0], 'processed_ds_name': toks[1], 
+                data = {'primary_ds_name': toks[0], 'processed_ds_name': toks[1],
                         'data_tier_name': toks[2], 'is_dataset_valid': 1}
                 dbsSender.post('/DBSWriter/datasets', data=data)
                 goodDatasets.append(dataset)
             except:
                 logging.warning("Could not update dataset into DBS:" +dataset)
                 badDatasets.append(dataset)
-        return self.templatepage("Announce", requests=requests, 
+        return self.templatepage("Announce", requests=requests,
                                  goodDatasets=goodDatasets,
                                  badDatasets=badDatasets)
-

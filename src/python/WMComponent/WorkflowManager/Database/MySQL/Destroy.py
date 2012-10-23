@@ -2,7 +2,7 @@
 """
 _Destroy_
 
-Implementation of WorkflowManager.Destroy for MySQL 
+Implementation of WorkflowManager.Destroy for MySQL
 """
 
 
@@ -13,8 +13,8 @@ from WMCore.Database.DBCreator import DBCreator
 
 class Destroy(DBCreator):
     """
-    Class for destroying MySQL specific tables for the WorkflowManager 
-    """ 
+    Class for destroying MySQL specific tables for the WorkflowManager
+    """
     def __init__(self):
         """
         _init_

@@ -80,7 +80,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
 
         Create a config of some sort that we can load out of ConfigCache
         """
-        
+
         PSetTweak = {'process': {'outputModules_': ['ThisIsAName'],
                                  'ThisIsAName': {'dataset': {'dataTier': 'RECO',
                                                              'filterName': 'Filter'}}}}
@@ -157,7 +157,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         groupName    = 'Li'
         teamName     = 'Tang'
         CMSSWVersion = 'CMSSW_3_5_8'
-        
+
 
         # Okay, we can make one.  Shouldn't surprise us.  Let's try
         # and make a bad one.
@@ -176,7 +176,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
             self.assertTrue("Missing required field GlobalTag in workload validation" in ex.result)
         self.assertTrue(raises)
 
-        
+
         schema       = self.setupSchema(userName = userName,
                                         groupName = groupName,
                                         teamName = teamName,
@@ -207,7 +207,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
             self.assertTrue("No Scenario or Config in Processing Request!" in ex.result)
         self.assertTrue(raises)
 
-        
+
         schema       = self.setupSchema(userName = userName,
                                         groupName = groupName,
                                         teamName = teamName,
@@ -246,7 +246,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], CMSSWVersion)
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
-        
+
         return
 
     @attr('integration')
@@ -380,7 +380,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         schema["StepOneConfigCacheID"] = configID
         result = self.jsonSender.put('request/testRequest', schema)
         requestName = result[0]['RequestName']
-        
+
         result = self.jsonSender.get('request/%s' % requestName)
         request = result[0]
         self.assertEqual(request['CMSSWVersion'], CMSSWVersion)
@@ -445,7 +445,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
 
         from WMCore_t.WMSpec_t.StdSpecs_t.TaskChain_t import makeGeneratorConfig, makeProcessingConfigs
         couchServer = CouchServer(os.environ["COUCHURL"])
-        configDatabase = couchServer.connectDatabase(self.couchDBName)  
+        configDatabase = couchServer.connectDatabase(self.couchDBName)
         generatorDoc = makeGeneratorConfig(configDatabase)
         processorDocs = makeProcessingConfigs(configDatabase)
 
@@ -462,7 +462,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
             "TaskChain" : 5,
             "Task1" :{
                 "TaskName" : "GenSim",
-                "ConfigCacheID" : generatorDoc, 
+                "ConfigCacheID" : generatorDoc,
                 "SplittingAlgorithm"  : "EventBased",
                 "SplittingArguments" : {"events_per_job" : 250},
                 "RequestNumEvents" : 10000,
@@ -492,7 +492,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                 "ConfigCacheID" : processorDocs['ALCAReco'],
                 "SplittingAlgorithm" : "FileBased",
                 "SplittingArguments" : {"files_per_job" : 1 },
-            
+
             },
             "Task5" : {
                 "TaskName" : "Skims",
@@ -500,9 +500,9 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                 "InputFromOutputModule" : "writeRECO",
                 "ConfigCacheID" : processorDocs['Skims'],
                 "SplittingAlgorithm" : "FileBased",
-                "SplittingArguments" : {"files_per_job" : 10 },            
+                "SplittingArguments" : {"files_per_job" : 10 },
             }
-            
+
         }
 
         userName     = 'Taizong'
@@ -580,7 +580,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         schema["ProcConfigCacheID"] = configID
         result = self.jsonSender.put('request/testRequest', schema)
         requestName = result[0]['RequestName']
-        
+
         result = self.jsonSender.get('request/%s' % requestName)
         request = result[0]
         self.assertEqual(request['CMSSWVersion'], CMSSWVersion)
@@ -654,7 +654,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         schema["FilterEfficiency"] = 1.0
         result = self.jsonSender.put('request/testRequest', schema)
         requestName = result[0]['RequestName']
-        
+
         result = self.jsonSender.get('request/%s' % requestName)
         request = result[0]
         self.assertEqual(request['CMSSWVersion'], CMSSWVersion)
@@ -752,7 +752,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                                         teamName = teamName,
                                         CMSSWVersion = 'CMSSW_1_0_0',
                                         typename = "Resubmission")
-        
+
 
         try:
             raises = False
@@ -774,7 +774,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         resubmitName = result[0]['RequestName']
         result = self.jsonSender.get('request/%s' % resubmitName)
         request = result[0]
-        
+
         return
 
     def testK_LHEStepZero(self):

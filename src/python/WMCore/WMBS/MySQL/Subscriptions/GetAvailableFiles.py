@@ -53,13 +53,13 @@ class GetAvailableFiles(DBFormatter):
             finalResults.append(tmpDict)
 
         return finalResults
-           
+
     def execute(self, subscription, conn = None, transaction = False, returnCursor = False):
         if returnCursor:
             return self.dbi.processData(self.sql, {"subscription": subscription},
                                         conn = conn, transaction = transaction,
                                         returnCursor = returnCursor)
-        
+
         results = self.dbi.processData(self.sql, {"subscription": subscription},
                                        conn = conn, transaction = transaction)
         return self.formatDict(results)

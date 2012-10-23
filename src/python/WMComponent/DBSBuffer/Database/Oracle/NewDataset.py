@@ -19,4 +19,4 @@ class NewDataset(DBFormatter):
         binds = {"path": datasetPath, 'valid_status': validStatus}
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
-        return 
+        return

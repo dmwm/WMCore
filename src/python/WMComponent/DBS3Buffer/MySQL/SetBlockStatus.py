@@ -26,7 +26,7 @@ class SetBlockStatus(DBFormatter):
 
     updateSQL  = """UPDATE dbsbuffer_block SET status = :status, create_time = :time, location =
                       (SELECT id FROM dbsbuffer_location WHERE se_name = :location)
-                      WHERE blockname = :block 
+                      WHERE blockname = :block
     """
 
 
@@ -46,24 +46,22 @@ class SetBlockStatus(DBFormatter):
         for block in blocks:
             bindVars.append({"block": block.getName(), "location": block.getLocation(),
                              "status": block.status, "time": block.getStartTime()})
-        
+
 
 
         testResult = self.dbi.processData(self.existsSQL, {'block': block}, conn = conn, transaction = transaction)
 
         res1 = self.formatDict(testResult)
-        
+
         if res1 == []:
             sql = self.sql
         else:
             sql = self.updateSQL
 
-                
+
 
         self.dbi.processData(sql, bindVars, conn = conn,
                                      transaction = transaction)
-            
+
 
         return
-                                             
-

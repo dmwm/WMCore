@@ -32,7 +32,7 @@ class FailInput(MySQLFailInput):
                         WHERE subscription = :subid AND fileid = :fileid"""
 
     completeDelete = """DELETE FROM wmbs_sub_files_complete
-                      WHERE subscription = :subid AND fileid = :fileid"""    
+                      WHERE subscription = :subid AND fileid = :fileid"""
 
     sql = """INSERT INTO wmbs_sub_files_failed (fileid, subscription)
                SELECT :fileid, :subid FROM dual

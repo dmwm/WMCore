@@ -17,11 +17,11 @@ from WMCore.WMExceptions import WMEXCEPTION
 
 from WMCore.BossAir.Oracle.Create import Create
 
-class Destroy(DBCreator):    
+class Destroy(DBCreator):
     """
     BossAir.Destroy
     """
-    
+
     def __init__(self, logger = None, dbi = None):
         """
         _init_
@@ -34,7 +34,7 @@ class Destroy(DBCreator):
             logger = myThread.logger
         if dbi == None:
             dbi = myThread.dbi
-            
+
         DBCreator.__init__(self, logger, dbi)
 
         self.delete['01bl_runjob']    = "DROP TABLE bl_runjob"
@@ -45,7 +45,6 @@ class Destroy(DBCreator):
         for i in Create.sequence_tables:
             seqname = '%s_SEQ' % i
             self.create["%s%s" % (j, seqname)] = \
-                           "DROP SEQUENCE %s"  % seqname 
+                           "DROP SEQUENCE %s"  % seqname
 
         return
-    

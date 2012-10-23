@@ -42,8 +42,8 @@ class GetLocationsForJobs(DBFormatter):
                 newResult.append(tmp)
 
         return newResult
-            
-        
+
+
     def execute(self, id, conn = None, transaction = False):
         """
         _execute_

@@ -26,7 +26,3 @@ class TestWinImpl(StageOutImplV2):
 
     def doDelete(self, lfn, pfn, seName, command, options, protocol  ):
         pass
-
-
-
-

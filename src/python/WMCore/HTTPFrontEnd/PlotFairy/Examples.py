@@ -20,7 +20,7 @@ def random_sort():
 
 def random_colour():
     return '#%02x%02x%02x'%(random.randint(0,255),random.randint(0,255),random.randint(0,255))
-    
+
 def random_baobab():
     def random_recurse(total,depth_left):
         if depth_left==0:
@@ -28,12 +28,12 @@ def random_baobab():
         else:
             children = []
             use = (0.5+random.random()*0.5)*total
-    	    for i in range(random.randint(1,8)):
+            for i in range(random.randint(1,8)):
                 use_here = use*random.random()
                 use -= use_here
                 children.append(random_recurse(use_here,depth_left-1))
             return {'label':random.choice(WORDS), 'value':total, 'children':children}
-	
+
     rand_dict = random_recurse(10**random.randint(1,6),random.randint(1,5))
     return {
             'data':rand_dict,
@@ -84,7 +84,7 @@ def random_quality_map():
             'yaxis':{'label':random.choice(WORDS),'labels':[random.choice(WORDS) for i in range(y)]},
             'data':[[random.random() for i in range(x)] for j in range(y)],
             }
-    
+
 def random_scatter():
     x = random.randint(4,32)
     return {
@@ -96,7 +96,7 @@ def random_scatter():
             'legend':random_legend(),
             'sort':random_sort()
     }
-    
+
 def random_bar():
     x = random.randint(4,32)
     return {
@@ -106,7 +106,7 @@ def random_bar():
             'series':random_series(length=x,count=random.randint(1,5)),
             'legend':random_legend(),'sort':random_sort()
             }
-    
+
 def random_pie():
     return {
             'title':random.choice(WORDS),
@@ -129,7 +129,7 @@ def random_sparkline():
             'sort':random_sort(),
             'height':200,
             'width':400
-            }    
+            }
 def random_wave():
     x = random.randint(4,32)
     return {
@@ -177,4 +177,4 @@ for t,f in plots.items():
         print "<img src='http://localhost:8010/plotfairy/plot/?type=%s&data=%s'>"%(t,urllib.quote(json.dumps(d,ensure_ascii=True)))
         print "</td></tr>"
 print "</table>"
-print "</body>\n</html>"	
+print "</body>\n</html>"

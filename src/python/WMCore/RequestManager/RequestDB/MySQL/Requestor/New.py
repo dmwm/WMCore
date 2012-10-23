@@ -32,5 +32,3 @@ class New(DBFormatter):
         result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = trans)
         return self.format(result)
-
-

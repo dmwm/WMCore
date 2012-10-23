@@ -33,7 +33,7 @@ class TaskChainRequest(RequestMakerInterface):
 def validateSubTask(task, firstTask = False):
     """
     _validateSubTask_
-    
+
     Check required fields for a sub task
     """
     reqKeys = ["TaskName", "SplittingAlgorithm", "SplittingArguments"]
@@ -42,7 +42,7 @@ def validateSubTask(task, firstTask = False):
             msg = "Sub Task missing Required Key: %s\n" % rK
             msg += str(task)
             raise RuntimeError(msg)
-    # 
+    #
     # input definition checks
     #
     if not firstTask:
@@ -52,7 +52,7 @@ def validateSubTask(task, firstTask = False):
         if not task.has_key("InputFromOutputModule"):
             msg = "Task %s has no InputFromOutputModule setting" % task['TaskName']
             raise RuntimeError(msg)
-        
+
     # configuration checks
     check = task.has_key("Scenario") or task.has_key("ConfigCacheID")
     if not check:
@@ -66,15 +66,15 @@ def validateSubTask(task, firstTask = False):
         if not scenArgs.has_key("writeTiers"):
             msg = "task %s ScenarioArgs does not contain writeTiers argument" % task['TaskName']
             raise RuntimeError, msg
-        
-            
 
 
-    
+
+
+
 def validateGenFirstTask(task):
     """
     _validateGenFirstTask_
-    
+
     Validate first task contains all stuff required for generation
     """
     if not task.has_key("RequestSizeEvents"):
@@ -88,7 +88,7 @@ def validateGenFirstTask(task):
 def validateProcFirstTask(task):
     """
     _validateProcFirstTask_
-    
+
     Validate that Processing First task contains required params
     """
     if task['InputDataset'].count('/') != 3:
@@ -98,11 +98,11 @@ def validateProcFirstTask(task):
 class TaskChainSchema(RequestSchema):
     """
     _TaskChainSchema_
-    
+
     Spec out required data for TaskChain style requests.
     See WMSpec/StdSpecs/TaskChain.py for details of the spec & nested dictionary
-    structure. 
-    
+    structure.
+
     """
     def __init__(self):
         RequestSchema.__init__(self)
@@ -134,18 +134,18 @@ class TaskChainSchema(RequestSchema):
     def validate(self):
         """
         _validate_
-        
+
         Check that basic required parameters are provided and do some more
         detailed checks on each of the parameters for the chain sub steps
         """
         RequestSchema.validate(self)
-        
+
         try:
             numTasks = int(self['TaskChain'])
         except ValueError:
             msg = "TaskChain parameter is not an Integer"
             raise RuntimeError(msg)
-            
+
         for i in range (1, numTasks+1):
             if not self.has_key("Task%s" % i):
                 msg = "No Task%s entry present in request" % i
@@ -159,7 +159,7 @@ class TaskChainSchema(RequestSchema):
                 validateSubTask(self['Task1'], firstTask = True)
             else:
                 validateSubTask(self['Task%s' % i])
-                
+
 
 
 registerRequestType("TaskChain", TaskChainRequest, TaskChainSchema)

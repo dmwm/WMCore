@@ -238,7 +238,7 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
         # This test no longer works because the system is in insecure mode.  I think we
         # need to figure out how to make it work in insecure mode, but I don't have
         # any ideas.
-        
+
         #raises = False
         #try:
         #    priority = 9999

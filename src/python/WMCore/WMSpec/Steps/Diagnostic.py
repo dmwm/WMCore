@@ -73,9 +73,3 @@ class Diagnostic(object):
         handler = self.handlers.get(errCode, self.defaultHandler)
         handler(errCode, executor, **args)
         executor.saveReport()
-
-
-
-
-
-

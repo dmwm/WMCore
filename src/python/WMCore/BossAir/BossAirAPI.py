@@ -91,7 +91,7 @@ class BossAirAPI(WMConnectionBase):
         self.loadJobsDAO    = self.daoFactory(classname = "LoadByStatus")
         self.completeDAO    = self.daoFactory(classname = "CompleteJob")
         self.monitorDAO     = self.daoFactory(classname = "JobStatusForMonitoring")
-                                
+
 
         self.loadPlugin(noSetup)
 
@@ -123,7 +123,7 @@ class BossAirAPI(WMConnectionBase):
             # Add states only if we're not
             # doing a secondary instantiation
             self.addStates(states = states)
-            
+
         self.states = states
 
         return
@@ -132,7 +132,7 @@ class BossAirAPI(WMConnectionBase):
     def addStates(self, states):
         """
         _addStates_
-        
+
         Add States to bl_status table
         """
         existingTransaction = self.beginTransaction()
@@ -169,7 +169,7 @@ class BossAirAPI(WMConnectionBase):
 
         # Next insert them into the database
         self.newJobDAO.execute(jobs = jobsToCreate, conn = self.getDBConn(),
-                               transaction = self.existingTransaction())  
+                               transaction = self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
 
@@ -261,7 +261,7 @@ class BossAirAPI(WMConnectionBase):
     def _completeJobs(self, jobs):
         """
         _completeJobs_
-        
+
         Complete jobs in the database
         Expects runJob input
         """
@@ -276,7 +276,7 @@ class BossAirAPI(WMConnectionBase):
 
         completeDAO = self.daoFactory(classname = "CompleteJob")
         completeDAO.execute(jobs = idList, conn = self.getDBConn(),
-                            transaction = self.existingTransaction())  
+                            transaction = self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
 
@@ -298,7 +298,7 @@ class BossAirAPI(WMConnectionBase):
 
 
         self.updateDAO.execute(jobs = jobs, conn = self.getDBConn(),
-                               transaction = self.existingTransaction())  
+                               transaction = self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
 
@@ -320,7 +320,7 @@ class BossAirAPI(WMConnectionBase):
         existingTransaction = self.beginTransaction()
 
         self.deleteDAO.execute(jobs = idList, conn = self.getDBConn(),
-                               transaction = self.existingTransaction())  
+                               transaction = self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
 
@@ -347,7 +347,7 @@ class BossAirAPI(WMConnectionBase):
             rj = RunJob()
             rj.update(job)
             loadedJobs.append(rj)
-        
+
         self.commitTransaction(existingTransaction)
 
         if not len(loadedJobs) == len(wmbsJobs):
@@ -356,9 +356,9 @@ class BossAirAPI(WMConnectionBase):
             for job in wmbsJobs:
                 if not job['id'] in idList:
                     logging.error("Could not retrieve job with WMBS ID %i from BossAir database" % (job['id']))
-                    
-        
-        
+
+
+
 
         return loadedJobs
 
@@ -381,7 +381,7 @@ class BossAirAPI(WMConnectionBase):
                 output = output.split("timeleft  :")[1].strip()
             except IndexError:
                 raise BossAirException("Missing Proxy", output.strip())
-            
+
             if output == "0:00:00":
                 raise BossAirException("Proxy Expired", output.strip())
 
@@ -481,7 +481,7 @@ class BossAirAPI(WMConnectionBase):
     def track(self, runJobIDs = None, wmbsIDs = None):
         """
         _track_
-        
+
         Track all running jobs
         Load job info from the cache (it should be there since we submitted the job)
 
@@ -507,7 +507,7 @@ class BossAirAPI(WMConnectionBase):
             for job in runningJobs:
                 if not job['jobid'] in wmbsIDs:
                     runningJobs.remove(job)
-                
+
         if len(runningJobs) < 1:
             # Then we have no running jobs
             return returnList
@@ -573,7 +573,7 @@ class BossAirAPI(WMConnectionBase):
     def _complete(self, jobs):
         """
         _complete_
-        
+
         Complete jobs using plugin functions
         Requires jobs in RunJob format
         """
@@ -609,7 +609,7 @@ class BossAirAPI(WMConnectionBase):
             # If they don't have a FWJR, the Accountant will catch it.
             existingTransaction = self.beginTransaction()
             self.completeDAO.execute(jobs = idsToComplete, conn = self.getDBConn(),
-                                     transaction = self.existingTransaction())    
+                                     transaction = self.existingTransaction())
             self.commitTransaction(existingTransaction)
 
         return
@@ -618,7 +618,7 @@ class BossAirAPI(WMConnectionBase):
     def getComplete(self):
         """
         _getComplete_
-        
+
         The tracker should call this: It's only
         interested in the jobs that are completed.
         """
@@ -655,7 +655,7 @@ class BossAirAPI(WMConnectionBase):
     def kill(self, jobs, killMsg = None):
         """
         _kill_
-        
+
         Kill jobs using plugin functions:
 
         Only running jobs (status = 1) will be killed
@@ -704,7 +704,7 @@ class BossAirAPI(WMConnectionBase):
                 finally:
                     # Even if kill fails, complete the jobs
                     self._complete(jobs = jobsToKill[plugin])
-                    
+
 
         # If there is a killMsg, pass it on to the accountant via a FWJR
         # NOTE: If a job brings back a FWJR before it gets killed, that FWJR is preserved.
@@ -764,7 +764,7 @@ class BossAirAPI(WMConnectionBase):
 
 
         results = self.monitorDAO.execute(commonState, conn = self.getDBConn(),
-                                          transaction = self.existingTransaction())  
+                                          transaction = self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
 
@@ -772,11 +772,11 @@ class BossAirAPI(WMConnectionBase):
         return results
 
 
-    def _buildRunningJobsFromRunJobs(self, runJobs): 
-        """ 
-        _buildRunningJobsFromRunJobs_ 
+    def _buildRunningJobsFromRunJobs(self, runJobs):
+        """
+        _buildRunningJobsFromRunJobs_
 
-        Same as _buildRunningJobs_, but taking runJobs as input 
+        Same as _buildRunningJobs_, but taking runJobs as input
         """
         finalJobs = []
 
@@ -834,24 +834,3 @@ class BossAirAPI(WMConnectionBase):
 
 
         return finalJobs
-
-
-        
-
-
-        
-
-
-
-
-
-
-
-
-
-        
-
-        
-
-        
-        

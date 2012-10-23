@@ -40,7 +40,7 @@ class JobSubmitter(Harness):
 
         # Add event loop to worker manager
         myThread = threading.currentThread()
-        
+
         pollInterval = self.config.JobSubmitter.pollInterval
         logging.info("Setting poll interval to %s seconds" % pollInterval)
         myThread.workerThreadManager.addWorker(JobSubmitterPoller(self.config),

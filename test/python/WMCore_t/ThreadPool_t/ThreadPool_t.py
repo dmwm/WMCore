@@ -26,16 +26,16 @@ import nose
 class ThreadPoolTest(unittest.TestCase):
     """
     _ThreadPool_t_
-    
+
     Unit tests for threadpool
-    
+
     """
     _nrOfThreads = 10
     _nrOfPools = 5
 
     def setUp(self):
         "make a logger instance and create tables"
-       
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -50,7 +50,7 @@ class ThreadPoolTest(unittest.TestCase):
         # FIXME: this might not work if your not using socket.
 
         self.testInit.clearDatabase()
-        
+
     def testA(self):
         """
         __testSubscribe__
@@ -83,9 +83,9 @@ class ThreadPoolTest(unittest.TestCase):
         for i in xrange(0, ThreadPoolTest._nrOfThreads*10):
             event = 'eventNr_'+str(i)
             payload = 'payloadNr_'+str(i)
-            # normally you would have different events per threadpool and 
-            # even different objects per pool. the payload part will be 
-            # pickled into the database enabling flexibility in passing 
+            # normally you would have different events per threadpool and
+            # even different objects per pool. the payload part will be
+            # pickled into the database enabling flexibility in passing
             # information.
             for j in xrange(0, ThreadPoolTest._nrOfPools):
                 threadPools[j].enqueue(event, \
@@ -98,7 +98,7 @@ class ThreadPoolTest(unittest.TestCase):
         finished = False
         timeout = 60 # secs
         currenttime = 0
-        while not finished: 
+        while not finished:
             print('waiting for threads to finishs. Work left:')
             for j in xrange(0, ThreadPoolTest._nrOfPools):
                 print('pool_'+str(j)+ ':' + str(threadPools[j].callQueue))
@@ -111,7 +111,7 @@ class ThreadPoolTest(unittest.TestCase):
                 if (len(threadPools[j].resultsQueue) < ThreadPoolTest._nrOfThreads*10):
                     finished = False
                     break
-        # check if the tables are really empty and all messages 
+        # check if the tables are really empty and all messages
         # have been processed.
         for j in xrange(0, ThreadPoolTest._nrOfPools):
             assert len(threadPools[j].resultsQueue) == \
@@ -120,7 +120,7 @@ class ThreadPoolTest(unittest.TestCase):
         for j in xrange(0, ThreadPoolTest._nrOfPools):
             self.assertEqual( threadPools[j].countMessages() ,  0 )
         myThread.transaction.commit()
-  
+
 
 if __name__ == "__main__":
     unittest.main()

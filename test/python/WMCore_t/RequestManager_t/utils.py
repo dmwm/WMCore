@@ -1,7 +1,7 @@
 """
 Common module for helper methods, Classes for RequestManager related unittests.
 
-""" 
+"""
 
 import os
 
@@ -11,7 +11,7 @@ def getFakeRequest(requestType):
     """
     Return testing request dictionary.
     Leave now for reference, but it doens't seem to be used from anywhere ...
-    
+
     """
     requestName = 'Test' + requestType
     couchUrl = os.environ.get("COUCHURL", None)

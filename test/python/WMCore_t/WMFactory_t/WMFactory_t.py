@@ -18,13 +18,13 @@ from WMQuality.TestInit import TestInit
 
 class WMFactoryTest(unittest.TestCase):
     """
-    TestCase for Registry module 
+    TestCase for Registry module
     """
 
     _log_level = 'debug'
     # for now set the relative path
     _repository = 'WMCore_t.WMFactory_t'
-    
+
 
     def setUp(self):
         self.testInit = TestInit(__file__)
@@ -76,17 +76,17 @@ class WMFactoryTest(unittest.TestCase):
         testRegisteredFileInst3 = \
         registry.loadObject('TestCollection_2.TestRegistryFile2', \
         storeInCache = False)
-            
+
         parameters = {'par9':'val9', 'par10':'val10'}
         result = testRegisteredFileInst1.doSomething(parameters)
         self.assertEqual(parameters, result)
-        parameters = {'par11':'val11', 'par12':'val12'}    
+        parameters = {'par11':'val11', 'par12':'val12'}
         result = testRegisteredFileInst2.doSomething(parameters)
         self.assertEqual(parameters, result)
         parameters = {'par13':'val13', 'par14':'val14'}
         result = testRegisteredFileInst3.doSomething(parameters)
         self.assertEqual(parameters, result)
-        
+
         logging.debug("Retrieving registry from thread attribute and load objects")
         logging.debug("this way all objects in this thread can use the registry")
         myThread = threading.currentThread()
@@ -97,6 +97,6 @@ class WMFactoryTest(unittest.TestCase):
         args = parameters)
         result = testRegisteredFile.doSomething(parameters)
         self.assertEqual(parameters, result)
-  
+
 if __name__ == '__main__':
     unittest.main()

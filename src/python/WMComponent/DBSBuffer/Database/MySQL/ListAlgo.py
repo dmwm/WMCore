@@ -25,7 +25,7 @@ class ListAlgo(DBFormatter):
     sqlID = """SELECT id, app_name, app_ver, app_fam, pset_hash, config_content,
                       in_dbs FROM dbsbuffer_algo
                  WHERE id = :id"""
-                       
+
     def execute(self, algoID = None, appName = None, appVer = None, appFam = None,
                 psetHash = None, configContent = None, conn = None,
                 transaction = False):

@@ -88,5 +88,3 @@ class LoadFilesByBlock(MySQLLoadDBSFilesByDAS):
 
 
         return fullResults
-
-

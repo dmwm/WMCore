@@ -23,12 +23,12 @@ class Destroy(DBCreator):
             logger = myThread.logger
         if dbi == None:
             dbi = myThread.dbi
-            
+
         DBCreator.__init__(self, logger, dbi)
-        
+
         self.delete["01test_tablea"] = "DROP TABLE test_tablea"
         self.delete["02test_tableb"] = "DROP TABLE test_tableb"
-        self.delete["03test_tablec"] = "DROP TABLE test_tablec" 
-        self.delete["04test_bigcol"] = "DROP TABLE test_bigcol"       
+        self.delete["03test_tablec"] = "DROP TABLE test_tablec"
+        self.delete["04test_bigcol"] = "DROP TABLE test_bigcol"
 
         return

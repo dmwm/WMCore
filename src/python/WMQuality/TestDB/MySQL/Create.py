@@ -23,9 +23,9 @@ class Create(DBCreator):
             logger = myThread.logger
         if dbi == None:
             dbi = myThread.dbi
-            
+
         DBCreator.__init__(self, logger, dbi)
-        
+
         self.create["01test_tablea"] = \
           """CREATE TABLE test_tablea (
                column1 INTEGER,

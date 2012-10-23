@@ -47,7 +47,7 @@ class Assign(WebAPI):
         else:
             self.sites = []
         self.allMergedLFNBases =  [
-            "/store/backfill/1", "/store/backfill/2", 
+            "/store/backfill/1", "/store/backfill/2",
             "/store/data",  "/store/mc", "/store/generator", "/store/relval"]
         self.allUnmergedLFNBases = ["/store/unmerged", "/store/temp"]
 
@@ -111,17 +111,17 @@ class Assign(WebAPI):
         dashboardActivity = helper.getDashboardActivity()
 
         (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
-        return self.templatepage("Assign", requests=[request], teams=teams, 
+        return self.templatepage("Assign", requests=[request], teams=teams,
                                  assignments=assignments, sites=self.sites,
                                  mergedLFNBases=self.mergedLFNBases[requestType],
                                  reqMergedBase=reqMergedBase,
                                  unmergedLFNBases=self.allUnmergedLFNBases,
                                  reqUnmergedBase=reqUnmergedBase,
-                                 acqEra = acqEra, procVer = procVer, 
+                                 acqEra = acqEra, procVer = procVer,
                                  dashboardActivity=dashboardActivity,
                                  badRequests=[])
 
-    @cherrypy.expose    
+    @cherrypy.expose
     @cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles)
     def index(self, all=0):
         """ Main page """
@@ -166,7 +166,7 @@ class Assign(WebAPI):
                                  reqMergedBase=reqMergedBase,
                                  unmergedLFNBases=self.allUnmergedLFNBases,
                                  reqUnmergedBase=reqUnmergedBase,
-                                 acqEra = acqEra, procVer = procVer, 
+                                 acqEra = acqEra, procVer = procVer,
                                  dashboardActivity=dashboardActivity,
                                  badRequests=badRequestNames)
 
@@ -195,10 +195,10 @@ class Assign(WebAPI):
                 requestName = key[8:]
                 self.validate(requestName)
                 requestNames.append(key[8:])
-        
+
         for requestName in requestNames:
             if kwargs['action'] == 'Reject':
-                ChangeState.changeRequestStatus(requestName, 'rejected', wmstatUrl = self.wmstatWriteURL) 
+                ChangeState.changeRequestStatus(requestName, 'rejected', wmstatUrl = self.wmstatWriteURL)
             else:
                 assignments = GetRequest.getAssignmentsByName(requestName)
                 if teams == [] and assignments == []:
@@ -214,7 +214,7 @@ class Assign(WebAPI):
         if self.opshold and kwargs['action'] == 'Assign':
             participle='put into "ops-hold" state (see <a href="%s">OpsClipboard</a>)' % self.clipboardUrl
             # this, previously used, call made all requests injected into OpsClipboard to
-            # have campaign_id null since the call doesn't propagate request's 
+            # have campaign_id null since the call doesn't propagate request's
             # CampaignName at all, AcquisitionEra remains default null and probably
             # a bunch of other things is wrong too
             #requests = [GetRequest.getRequestByName(requestName) for requestName in requestNames]
@@ -271,4 +271,3 @@ class Assign(WebAPI):
                                                    priority = priority)
         helper.setDashboardActivity(kwargs.get("dashboard", ""))
         Utilities.saveWorkload(helper, request['RequestWorkflow'], self.wmstatWriteURL)
-

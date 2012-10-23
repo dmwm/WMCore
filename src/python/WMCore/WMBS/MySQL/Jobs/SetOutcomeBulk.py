@@ -14,7 +14,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 class SetOutcomeBulk(DBFormatter):
     sql = """UPDATE wmbs_job SET outcome = :outcome
                WHERE id = :jobid"""
-    
+
     def execute(self, binds, conn = None, transaction = False):
         """
         _execute_

@@ -2,7 +2,7 @@
 """
 _AnalyticsDataCollector_
 
-Collects request/jobs summary data from local couchdb 
+Collects request/jobs summary data from local couchdb
 and put in local summary couch db.
 Then summary data will be replicated to central wmstats couchdb
 """
@@ -21,5 +21,5 @@ class AnalyticsDataCollector(Harness):
     def preInitialization(self):
         pollInterval = self.config.AnalyticsDataCollector.pollInterval
         myThread = threading.currentThread()
-        myThread.workerThreadManager.addWorker(AnalyticsPoller(self.config), 
+        myThread.workerThreadManager.addWorker(AnalyticsPoller(self.config),
                                                pollInterval)

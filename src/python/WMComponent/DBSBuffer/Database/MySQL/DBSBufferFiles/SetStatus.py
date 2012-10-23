@@ -12,7 +12,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class SetStatus(DBFormatter):
     sql = "UPDATE dbsbuffer_file SET status = :status WHERE lfn = :lfn"
-    
+
     def execute(self, lfns, status, conn = None, transaction = None):
         if type(lfns) != list:
             lfns = [lfns]
@@ -20,7 +20,7 @@ class SetStatus(DBFormatter):
         bindVars = []
         for lfn in lfns:
             bindVars.append({"lfn": lfn, "status": status})
-            
+
         result = self.dbi.processData(self.sql, bindVars, conn = conn,
                                       transaction = transaction)
         return

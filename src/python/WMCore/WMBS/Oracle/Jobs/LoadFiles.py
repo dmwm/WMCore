@@ -35,5 +35,5 @@ class LoadFiles(LoadFilesMySQL):
             if "fileid" in formattedResult.keys():
                 dictResult["id"] = int(formattedResult["fileid"])
                 dictResults.append(dictResult)
-    
+
         return dictResults

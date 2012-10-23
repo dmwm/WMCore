@@ -40,13 +40,13 @@ class ProcessPoolTest(unittest.TestCase):
         config = self.testInit.getConfiguration()
         config.Agent.useHeartbeat = False
         self.testInit.generateWorkDir(config)
-                
+
         processPool = ProcessPool("ProcessPool_t.ProcessPoolTestWorker",
                                   totalSlaves = 1,
                                   componentDir = config.General.workDir,
                                   config = config,
                                   namespace = "WMCore_t")
-                                 
+
         processPool.enqueue(["One", "Two", "Three"])
         result =  processPool.dequeue(3)
 
@@ -54,7 +54,7 @@ class ProcessPoolTest(unittest.TestCase):
         self.assertTrue( "One" in result)
         self.assertTrue( "Two" in result)
         self.assertTrue( "Three" in result)
-               
+
         return
 
     def testB_ProcessPoolStress(self):
@@ -64,9 +64,9 @@ class ProcessPoolTest(unittest.TestCase):
         """
         raise nose.SkipTest
         config = self.testInit.getConfiguration()
-        config.Agent.useHeartbeat = False        
+        config.Agent.useHeartbeat = False
         self.testInit.generateWorkDir(config)
-                
+
         processPool = ProcessPool("ProcessPool_t.ProcessPoolTestWorker",
                                   totalSlaves = 1,
                                   componentDir = config.General.workDir,
@@ -83,7 +83,7 @@ class ProcessPoolTest(unittest.TestCase):
 
             processPool.enqueue(input)
             result =  processPool.dequeue(len(input))
-        
+
             self.assertEqual(len(result), len(input),
                              "Error: Wrong number of results returned.")
 
@@ -101,9 +101,9 @@ class ProcessPoolTest(unittest.TestCase):
         """
         raise nose.SkipTest
         config = self.testInit.getConfiguration()
-        config.Agent.useHeartbeat = False        
+        config.Agent.useHeartbeat = False
         self.testInit.generateWorkDir(config)
-                
+
         processPool = ProcessPool("ProcessPool_t.ProcessPoolTestWorker",
                                   totalSlaves = 3,
                                   componentDir = config.General.workDir,
@@ -118,14 +118,13 @@ class ProcessPoolTest(unittest.TestCase):
 
             processPool.enqueue(input)
             result =  processPool.dequeue(len(input))
-        
+
             self.assertEqual(len(result), len(input),
                              "Error: Wrong number of results returned.")
 
 
 
-        
+
 
 if __name__ == "__main__":
     unittest.main()
-            

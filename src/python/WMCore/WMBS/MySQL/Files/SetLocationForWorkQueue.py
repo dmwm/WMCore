@@ -17,10 +17,10 @@ class SetLocationForWorkQueue(DBFormatter):
     and attaching the current references
     """
 
-    deleteSQL = """DELETE FROM wmbs_file_location 
+    deleteSQL = """DELETE FROM wmbs_file_location
                      WHERE fileid = (SELECT wfd.id FROM wmbs_file_details wfd WHERE wfd.lfn = :lfn)"""
 
-    insertSQL = """INSERT IGNORE INTO wmbs_file_location (fileid, location) 
+    insertSQL = """INSERT IGNORE INTO wmbs_file_location (fileid, location)
                      SELECT wmbs_file_details.id, wls.location
                        FROM wmbs_location_senames wls, wmbs_file_details
                        WHERE wls.se_name = :location
@@ -47,5 +47,3 @@ class SetLocationForWorkQueue(DBFormatter):
         self.dbi.processData(self.insertSQL, locations, conn = conn,
                              transaction = transaction)
         return
-
-

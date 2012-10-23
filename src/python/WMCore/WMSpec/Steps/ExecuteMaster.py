@@ -31,7 +31,7 @@ class ExecuteMaster:
 
     """
     def __init__(self):
-        pass    
+        pass
 
     def __call__(self, task, wmbsJob):
         """
@@ -57,7 +57,7 @@ class ExecuteMaster:
             logging.error(msg)
             self.toTaskDirectory()
             raise WMExecutionFailure(msg)
-            
+
         skipToStep = None
         for step in task.steps().nodeIterator():
             try:
@@ -94,7 +94,7 @@ class ExecuteMaster:
             msg += str(traceback.format_exc()) + '\n'
             logging.error(msg)
             self.toTaskDirectory()
-            
+
         return
 
     def doExecution(self, executor, step, job):
@@ -114,15 +114,15 @@ class ExecuteMaster:
         # Tell the watchdog that we're starting the step
         myThread.watchdogMonitor.notifyStepStart(step)
 
-        
+
         self.toStepDirectory(step)
         executor.initialise(step, job)
         executionObject = executor
         error = False
         if executor.emulationMode:
             executionObject = executor.emulator
-        
-        
+
+
         preOutcome = executionObject.pre()
         if preOutcome != None:
             logging.info("Pre Executor Task Change: %s" % preOutcome)
@@ -160,7 +160,7 @@ class ExecuteMaster:
             return postOutcome
 
 
-        
+
         self.toTaskDirectory()
 
         # Okay, we're done, set the job to successful
@@ -203,7 +203,3 @@ class ExecuteMaster:
         from WMTaskSpace import taskSpace
         os.chdir(taskSpace.location)
         return
-
-
-
-

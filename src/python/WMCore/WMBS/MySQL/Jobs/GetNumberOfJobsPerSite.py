@@ -27,8 +27,8 @@ class GetNumberOfJobsPerSite(DBFormatter):
 
         builds the sql statements; necessary for lists
         """
-        
-        
+
+
         baseSQL = """SELECT count(*) FROM wmbs_job
               WHERE location = (SELECT ID FROM wmbs_location WHERE site_name = :location)
               AND state IN (SELECT ID FROM wmbs_job_state js WHERE js.name IN (
@@ -50,7 +50,7 @@ class GetNumberOfJobsPerSite(DBFormatter):
             sql = baseSQL
 
         states = list(states)
-        
+
         count = 0
         for state in states:
             if not count == 0:
@@ -60,7 +60,7 @@ class GetNumberOfJobsPerSite(DBFormatter):
         sql += ")"
 
         return sql
-            
+
 
     def format(self, results):
         """
@@ -78,7 +78,7 @@ class GetNumberOfJobsPerSite(DBFormatter):
         """
 
         _buildBinds_
-        
+
         Build a list of binds
 
         """
@@ -97,7 +97,7 @@ class GetNumberOfJobsPerSite(DBFormatter):
 
         return binds
 
-        
+
     def execute(self, location, states, type = None, conn = None, transaction = False):
         """
         _execute_

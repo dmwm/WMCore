@@ -119,7 +119,7 @@ class AssignTest(RESTBaseUnitTest):
         secconfig = getattr(self.config, "SecurityModule")
         cherrypy.server.environment = 'test'
         cherrypy.tools.secmodv2 = NullAuth(secconfig)
-        
+
 
         self.config.UnitTests.views.active.rest.templates    = 'templateDir'
         self.config.UnitTests.views.active.rest.yuiroot      = 'yuiroot'

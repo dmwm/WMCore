@@ -11,7 +11,7 @@ def deleteConfig(configFile):
         os.remove(configFile)
     else:
         pass
-                   
+
 def setupWMAgentConfig():
     fd,configFile = tempfile.mkstemp(".py", "TESTAGENTConfig",)
     os.environ["WMAGENT_CONFIG"] = configFile
@@ -44,5 +44,5 @@ def _wmAgentConfig(configFile):
     config.section_("BossAir")
     config.BossAir.pluginNames = ['TestPlugin', 'CondorPlugin']
     config.BossAir.pluginDir   = 'WMCore.BossAir.Plugins'
-    
+
     saveConfigurationFile(config, configFile)

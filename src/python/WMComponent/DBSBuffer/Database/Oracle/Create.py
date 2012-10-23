@@ -31,12 +31,12 @@ class Create(DBCreator):
                 tablespaceTable = "TABLESPACE %s" % params["tablespace_table"]
             if params.has_key("tablespace_index"):
                 tablespaceIndex = "USING INDEX TABLESPACE %s" % params["tablespace_index"]
-            
+
         self.create["01dbsbuffer_dataset"] = \
           """CREATE TABLE dbsbuffer_dataset
                (
-	         id           NUMBER(11)      NOT NULL ENABLE,
-	         path         VARCHAR2(500)   NOT NULL ENABLE,
+                 id           NUMBER(11)      NOT NULL ENABLE,
+                 path         VARCHAR2(500)   NOT NULL ENABLE,
                  valid_status VARCHAR2(20),
                  global_tag   VARCHAR2(255),
              subscribed int DEFAULT 0
@@ -58,7 +58,7 @@ class Create(DBCreator):
         self.create["02dbsbuffer_algo"] = \
           """CREATE TABLE dbsbuffer_algo
                (
-                 id        NUMBER(11)     NOT NULL ENABLE,   
+                 id        NUMBER(11)     NOT NULL ENABLE,
                  app_name  varchar2(100),
                  app_ver   varchar2(100),
                  app_fam   varchar2(100),
@@ -201,7 +201,7 @@ class Create(DBCreator):
         self.create["11dbsbuffer_checksum_type"] = \
           """CREATE TABLE dbsbuffer_checksum_type (
               id            INTEGER,
-              type          VARCHAR(255) 
+              type          VARCHAR(255)
               ) %s""" % tablespaceTable
 
         self.create["10dbsbuffer_checksum_type_seq"] = \
@@ -227,12 +227,12 @@ class Create(DBCreator):
                (CONSTRAINT dbsbuffer_file_checksums_uk UNIQUE (fileid, typeid) %s)""" % tablespaceIndex
 
         self.constraints["02_fk_dbsbuffer_file_checksums"] = \
-          """ALTER TABLE dbsbuffer_file_checksums ADD                   
+          """ALTER TABLE dbsbuffer_file_checksums ADD
                (CONSTRAINT fk_dbsfilechecksums_cktype FOREIGN KEY (typeid)
                   REFERENCES dbsbuffer_checksum_type(id) ON DELETE CASCADE)"""
 
         self.constraints["03_fk_dbsbuffer_file_checksums"] = \
-          """ALTER TABLE dbsbuffer_file_checksums ADD                   
+          """ALTER TABLE dbsbuffer_file_checksums ADD
                (CONSTRAINT fk_dbsfilechecksums_file FOREIGN KEY (fileid)
                   REFERENCES dbsbuffer_file(id) ON DELETE CASCADE)"""
 
@@ -241,18 +241,18 @@ class Create(DBCreator):
                (CONSTRAINT dbsbuffer_dataset_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
 
         self.indexes["02_pk_dbsbuffer_dataset"] = \
-          """ALTER TABLE dbsbuffer_dataset ADD                                     
+          """ALTER TABLE dbsbuffer_dataset ADD
                (CONSTRAINT dbsbuffer_dataset_unique UNIQUE (Path) %s)""" % tablespaceIndex
-        
+
         self.indexes["01_pk_dbsbuffer_algo"] = \
           """ALTER TABLE dbsbuffer_algo ADD
                (CONSTRAINT dbsbuffer_algo_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
 
         self.indexes["02_pk_dbsbuffer_algo"] = \
-          """ALTER TABLE dbsbuffer_algo ADD                                  
+          """ALTER TABLE dbsbuffer_algo ADD
                (CONSTRAINT dbsbuffer_algo_unique UNIQUE (app_name, app_ver,
-                                                         app_fam, pset_hash) %s)""" % tablespaceIndex 
-        
+                                                         app_fam, pset_hash) %s)""" % tablespaceIndex
+
         self.indexes["01_pk_dbsbuffer_file"] = \
           """ALTER TABLE dbsbuffer_file ADD
                (CONSTRAINT dbsbuffer_file_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
@@ -260,23 +260,23 @@ class Create(DBCreator):
         self.indexes["01_pk_dbsbuffer_file_parent"] = \
           """ALTER TABLE dbsbuffer_file_parent ADD
                (CONSTRAINT dbsbuffer_file_parent_pk PRIMARY KEY (child, parent) %s)""" % tablespaceIndex
-        
+
         self.constraints["01_fk_dbsbuffer_file_parent"] = \
           """ALTER TABLE dbsbuffer_file_parent ADD
                (CONSTRAINT dbsbuffer_file_parent_child  FOREIGN KEY (child)  REFERENCES dbsbuffer_file(id)
                  ON DELETE CASCADE)"""
 
         self.constraints["02_fk_dbsbuffer_file_parent"] = \
-          """ALTER TABLE dbsbuffer_file_parent ADD                                              
+          """ALTER TABLE dbsbuffer_file_parent ADD
                (CONSTRAINT dbsbuffer_file_parent_parent FOREIGN KEY (parent) REFERENCES dbsbuffer_file(id)
                  ON DELETE CASCADE)"""
-        
+
         self.indexes["01_pk_dbsbuffer_location"] = \
           """ALTER TABLE dbsbuffer_location ADD
                (CONSTRAINT pk_dbsbuffer_location_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
 
         self.indexes["02_pk_dbsbuffer_location"] = \
-          """ALTER TABLE dbsbuffer_location ADD                                       
+          """ALTER TABLE dbsbuffer_location ADD
                (CONSTRAINT pk_dbsbuffer_location_unique UNIQUE (se_name) %s)""" % tablespaceIndex
 
         self.indexes["01_pk_dbsbuffer_block"] = \
@@ -284,11 +284,11 @@ class Create(DBCreator):
                (CONSTRAINT dbsbuffer_block_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
 
         self.indexes["02_pk_dbsbuffer_block"] = \
-          """ALTER TABLE dbsbuffer_block ADD                                    
+          """ALTER TABLE dbsbuffer_block ADD
                (CONSTRAINT dbsbuffer_block_unique UNIQUE (blockname, location) %s)""" % tablespaceIndex
 
         self.constraints["01_fk_dbsbuffer_block"] = \
-          """ALTER TABLE dbsbuffer_block ADD                                              
+          """ALTER TABLE dbsbuffer_block ADD
                (CONSTRAINT dbsbuffer_block_location FOREIGN KEY (location) REFERENCES dbsbuffer_location(id)
                  ON DELETE CASCADE)"""
 
@@ -302,24 +302,24 @@ class Create(DBCreator):
                  ON DELETE CASCADE)"""
 
         self.constraints["02_fk_dbsbuffer_algodset_assoc"] = \
-          """ALTER TABLE dbsbuffer_algo_dataset_assoc ADD                                                           
+          """ALTER TABLE dbsbuffer_algo_dataset_assoc ADD
                (CONSTRAINT dbsbuffer_algodset_assoc_al FOREIGN KEY (algo_id)    REFERENCES dbsbuffer_algo(id)
                  ON DELETE CASCADE)"""
 
         self.constraints["01_fk_dbsbuffer_file_runlumi"] = \
           """ALTER TABLE dbsbuffer_file_runlumi_map ADD
                (CONSTRAINT dbsbuffer_file_runlumi_pk FOREIGN KEY (filename) REFERENCES dbsbuffer_file(id)
-                 ON DELETE CASCADE)""" 
-        
+                 ON DELETE CASCADE)"""
+
         self.constraints["01_fk_dbsbuffer_file_location"] = \
           """ALTER TABLE dbsbuffer_file_location ADD
                (CONSTRAINT dbsbuffer_file_location_loc  FOREIGN KEY (location) REFERENCES dbsbuffer_location(id)
                  ON DELETE CASCADE)"""
-        
+
         self.constraints["02_fk_dbsbuffer_file_location"] = \
-          """ALTER TABLE dbsbuffer_file_location ADD        
+          """ALTER TABLE dbsbuffer_file_location ADD
                (CONSTRAINT dbsbuffer_file_location_file FOREIGN KEY (filename) REFERENCES dbsbuffer_file(id)
-                 ON DELETE CASCADE)""" 
+                 ON DELETE CASCADE)"""
 
         checksumTypes = ['cksum', 'adler32', 'md5']
         for i in checksumTypes:

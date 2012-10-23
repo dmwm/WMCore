@@ -15,7 +15,7 @@ from WMCore.WMBS.Oracle.Subscriptions.GetFailedFiles import \
      GetFailedFiles
 
 class GetFailedFilesByLimit(GetFailedFiles):
-    
+
     sql = "SELECT * FROM (" + GetFailedFiles.sql + ") WHERE rownum <= :maxLimit"
 
     def execute(self, subscription, limit, conn = None, transaction = False):

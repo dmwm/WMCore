@@ -6,6 +6,3 @@ JSONParser interface package
 
 """
 __all__ = []
-
-
-

@@ -15,11 +15,11 @@ from WMCore.Database.DBCreator import DBCreator
 from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
 
-class Destroy(DBCreator):    
+class Destroy(DBCreator):
     """
     BossAir.Destroy
     """
-    
+
     def __init__(self, logger = None, dbi = None):
         """
         _init_
@@ -35,7 +35,7 @@ class Destroy(DBCreator):
 
 
         DBCreator.__init__(self, logger, dbi)
-            
+
 
         self.create['01bl_runjob']    = "DROP TABLE bl_runjob"
         self.create['02bl_status']    = "DROP TABLE bl_status"
@@ -43,4 +43,3 @@ class Destroy(DBCreator):
         self.requiredTables = []
 
         return
-    

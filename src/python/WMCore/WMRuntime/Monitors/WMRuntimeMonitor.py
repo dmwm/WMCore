@@ -68,14 +68,14 @@ class WMRuntimeMonitor:
 
     def stepStart(self, step):
         """
-        Tasked started notifier. 
+        Tasked started notifier.
         """
         self.currentStep      = step
         self.currentStepName  = getStepName(step)
         self.currentStepSpace = getStepSpace(self.currentStepName)
         return
 
-    
+
     def stepEnd(self, step, stepReport):
         """
         Tasked ended notifier.

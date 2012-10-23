@@ -53,7 +53,7 @@ class StatusPoller(BaseWorkerThread):
         # init alert system
         self.initAlerts(compName = "StatusPoller")
         return
-    
+
     def algorithm(self, parameters = None):
         """
         _algorithm_
@@ -101,7 +101,7 @@ class StatusPoller(BaseWorkerThread):
 
         # Look for jobs that need to be killed
         jobsToKill = []
-        
+
         # Now check for timeouts
         for job in runningJobs:
             globalState = job.get('globalState', 'Error')
@@ -131,10 +131,8 @@ class StatusPoller(BaseWorkerThread):
     def terminate(self, params):
         """
         _terminate_
-        
+
         Kill the code after one final pass when called by the master thread.
         """
         logging.debug("terminating. doing one more pass before we die")
         self.algorithm(params)
-                
-            

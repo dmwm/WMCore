@@ -25,7 +25,7 @@ def text_size(string,fontsize,dpi=100):
 def font_size(string,space,dpi=100):
     return space/(0.6*(len(string)+2)*(dpi/72.))
 
-        
+
 def ThousandWrap(f,char=','):
     re_thousands = re.compile(r'(\d)(\d{3}($|\D))')
     replace = r'\1'+char+r'\2'
@@ -72,12 +72,12 @@ class TimeFormatter(matplotlib.ticker.ScalarFormatter):
         matplotlib.ticker.ScalarFormatter.__init__(self,useOffset=False)
     def __call__(self,val,pos=None):
         return time.strftime(self.time_format,time.localtime(val))
-                
+
 class HexFormatter(matplotlib.ticker.ScalarFormatter):
     def __init__(self):
         matplotlib.ticker.ScalarFormatter.__init__(self,useOffset=False)
     def __call__(self,val,pos=None):
-        return '%x'%val           
+        return '%x'%val
 
 class SuffixFormatter(matplotlib.ticker.ScalarFormatter):
     suffix = [(1,'')]
@@ -97,8 +97,8 @@ class LongSIFormatter(SuffixFormatter):
     suffix = [(1e18,'exa'),(1e15,'peta'),(1e12,'tera'),(1e9,'giga'),(1e6,'mega'),(1e3,'kilo'),(1,''),(1e-3,'mili'),(1e-6,'micro'),(1e-9,'nano'),(1e-12,'pico'),(1e-15,'femto'),(1e-18,'atto')]
 
 class SIFormatter(SuffixFormatter):
-    suffix = [(1e18,'E'),(1e15,'P'),(1e12,'T'),(1e9,'G'),(1e6,'M'),(1e3,'k'),(1,''),(1e-3,'m'),(1e-6,'u'),(1e-9,'n'),(1e-12,'p'),(1e-15,'f'),(1e-18,'a')] 
-        
+    suffix = [(1e18,'E'),(1e15,'P'),(1e12,'T'),(1e9,'G'),(1e6,'M'),(1e3,'k'),(1,''),(1e-3,'m'),(1e-6,'u'),(1e-9,'n'),(1e-12,'p'),(1e-15,'f'),(1e-18,'a')]
+
 class LongBinFormatter(SuffixFormatter):
     suffix = [(2.**60,'exa'),(2.**50,'peta'),(2.**40,'tera'),(2.**30,'giga'),(2.**20,'mega'),(2.**10,'kilo'),(1,'')]
 
@@ -108,23 +108,23 @@ class BinFormatter(SuffixFormatter):
 class BinaryMaxNLocator(matplotlib.ticker.MaxNLocator):
     def bin_boundaries(self,vmin,vmax):
         scales = (1.,1.5,2.,2.5,3.,4.,5.,6.,8.,10.)
-        
+
         delta = abs(vmax-vmin)
         mean = vmin + 0.5*(vmax-vmin)
-        
+
         bar_width = float(delta)/self._nbins
         bar_magnitude = int(math.log(bar_width,2))
-        
+
         possible = [s*2.**bar_magnitude for s in scales]
-        
+
         best_delta = max(scales)*2.**bar_magnitude
-        
+
         bin_width = 0
         for p in possible:
             if abs(p-bar_width)<best_delta:
                 best_delta = abs(p-bar_width)
                 bin_width = p
-        
+
         offset = int(vmin/bin_width)
         if vmin<0:
             offset -= 1
@@ -134,14 +134,14 @@ class BinaryMaxNLocator(matplotlib.ticker.MaxNLocator):
             result += [val]
             val += bin_width
         return result
-        
+
 
 class Props:
     def get(self,name,default=None):
         if not hasattr(self,name):
             return default
-        return getattr(self,name)          
-    
+        return getattr(self,name)
+
 class CleanLogSeries:
     def __init__(self,series):
         self.series = series

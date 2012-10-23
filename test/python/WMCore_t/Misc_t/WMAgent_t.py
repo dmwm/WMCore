@@ -165,7 +165,7 @@ class WMAgentTest(unittest.TestCase):
         return
 
 
-    
+
 
     def createTestWorkload(self, workloadName = 'Test', emulator = True):
         """
@@ -178,7 +178,7 @@ class WMAgentTest(unittest.TestCase):
         workload = testWorkload("TestWorkload")
         rereco = workload.getTask("ReReco")
 
-        
+
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
@@ -189,31 +189,31 @@ class WMAgentTest(unittest.TestCase):
 
 
 
-    
+
     def getConfig(self):
         """
         _getConfig_
-        
+
         This is the global test configuration object
         """
-        
-        
-        
+
+
+
         config = Configuration()
-        
+
         config.component_("Agent")
         config.Agent.WMSpecDirectory = self.testDir
         config.Agent.agentName       = 'testAgent'
         config.Agent.componentName   = 'test'
-        
-        
+
+
         # First the general stuff
         config.section_("General")
         config.General.workDir = os.getenv("TESTDIR", self.testDir)
-    
+
         # Now the CoreDatabase information
         # This should be the dialect, dburl, etc
-        
+
         config.section_("CoreDatabase")
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
         config.CoreDatabase.socket     = os.getenv("DBSOCK")
@@ -294,19 +294,19 @@ class WMAgentTest(unittest.TestCase):
         config.TaskArchiver.logLevel        = 'INFO'
         config.TaskArchiver.timeOut         = 0
 
-    
-    
+
+
         # JobStateMachine
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL',
                                                            'mnorman:theworst@cmssrv52.fnal.gov:5984')
         config.JobStateMachine.couchDBName     = "mnorman_test"
-        
-        
+
+
         # Needed, because this is a test
         os.makedirs(config.JobSubmitter.submitDir)
-        
-        
+
+
         return config
 
 
@@ -455,7 +455,7 @@ class WMAgentTest(unittest.TestCase):
 
 
 
-        
+
 
 
 
@@ -515,13 +515,13 @@ class WMAgentTest(unittest.TestCase):
 
         testJobTracker.algorithm()
         time.sleep(5)
-        
+
         # Running the algo without removing the jobs should do nothing
         result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
         self.assertEqual(len(result), 0)
         result = getJobsAction.execute(state = 'Complete', jobType = "Processing")
         self.assertEqual(len(result), nSubs * nFiles)
-        
+
 
 
 
@@ -540,7 +540,7 @@ class WMAgentTest(unittest.TestCase):
 
 
 
-        
+
 
 
         config.Agent.componentName = 'JobAccountant'
@@ -617,7 +617,7 @@ class WMAgentTest(unittest.TestCase):
             shutil.rmtree('testDir')
         shutil.copytree('%s' %self.testDir, os.path.join(os.getcwd(), 'testDir'))
 
-        
+
 
 
         return
@@ -629,4 +629,4 @@ class WMAgentTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

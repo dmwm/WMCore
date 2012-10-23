@@ -48,9 +48,9 @@ class TrivialFileCatalog(dict):
         self['lfn-to-pfn'] = []
         self['pfn-to-lfn'] = []
         self.preferredProtocol = None # attribute for preferred protocol
-        
 
-    def addMapping(self, protocol, match, result, 
+
+    def addMapping(self, protocol, match, result,
               chain = None, mapping_type = 'lfn-to-pfn'):
         """
         _addMapping_
@@ -65,16 +65,16 @@ class TrivialFileCatalog(dict):
         entry.setdefault("result", result)
         entry.setdefault("chain", chain)
         self[mapping_type].append(entry)
-        
-        
+
+
     def _doMatch(self, protocol, path, style, caller):
         """
         Generalised way of building up the mappings.
         caller is the method from there this method was called, it's used
         for resolving chained rules
-        
+
         Return None if no match
-        
+
         """
         for mapping in self[style]:
             if mapping['protocol'] != protocol:
@@ -83,7 +83,7 @@ class TrivialFileCatalog(dict):
                 if mapping["chain"] != None:
                     path = caller(mapping["chain"], path)
                     if not path:
-                        continue                        
+                        continue
                 try:
                     splitPath = mapping['path-match-expr'].split(path, 1)[1]
                 except IndexError:
@@ -102,12 +102,12 @@ class TrivialFileCatalog(dict):
         matches the path-match for that protocol
 
         Return None if no match
-        
+
         """
         result = self._doMatch(protocol, lfn, "lfn-to-pfn", self.matchLFN)
         return result
-        
-        
+
+
     def matchPFN(self, protocol, pfn):
         """
         _matchLFN_
@@ -116,21 +116,21 @@ class TrivialFileCatalog(dict):
         matches the path-match for that protocol
 
         Return None if no match
-        
+
         """
         result = self._doMatch(protocol, pfn, "pfn-to-lfn", self.matchPFN)
         return result
-            
-            
+
+
     def getXML(self):
         """
         Converts TFC implementation (dict) into a XML string representation.
         The method reflects this class implementation - dictionary containing
         list of mappings while each mapping (i.e. entry, see addMapping
-        method) is a dictionary of key, value pairs. 
-        
+        method) is a dictionary of key, value pairs.
+
         """
-        
+
         def _getElementForMappingEntry(entry, mappingStyle):
             e = Element(mappingStyle)
             for k, v in entry.items():
@@ -147,10 +147,10 @@ class TrivialFileCatalog(dict):
                 root.appendChild(mapElem)
         return root.toprettyxml()
 
-    
+
     def __str__(self):
         result = ""
-        for mapping in ['lfn-to-pfn', 'pfn-to-lfn']: 
+        for mapping in ['lfn-to-pfn', 'pfn-to-lfn']:
             for item in self[mapping]:
                 result += "%s: %s %s %s" % (
                     mapping,
@@ -159,7 +159,7 @@ class TrivialFileCatalog(dict):
                     item['result'])
                 if item['chain'] != None:
                     result += " chain=%s" % item['chain']
-                result += "\n"            
+                result += "\n"
         return result
 
 
@@ -187,8 +187,8 @@ def tfcFilename(contactString):
     value = _TFCArgSplit.split(value)[0]
     path = os.path.normpath(value)
     return path
-    
-            
+
+
 def readTFC(filename):
     """
     _readTFC_
@@ -255,7 +255,7 @@ def coroutine(func):
 def nodeReader(node):
     """
     _nodeReader_
-    
+
     Given a node, see if we can find what we're looking for
     """
 
@@ -277,7 +277,7 @@ def nodeReader(node):
 def expandPhEDExNode(target):
     """
     _expandPhEDExNode_
-    
+
     If pulling a TFC from the PhEDEx DS, its wrapped in a top level <phedex> node,
     this routine handles that extra node if it exists
     """
@@ -288,7 +288,7 @@ def expandPhEDExNode(target):
             if subnode.name == "phedex":
                 target.send( (report, subnode) )
                 sentPhedex = True
-        if not sentPhedex:    
+        if not sentPhedex:
             target.send( (report, node) )
 
 
@@ -321,35 +321,35 @@ def processSMType(targets):
                 targets['result'].send((tmpReport, subnode.attrs.get('result', None)))
                 targets['chain'].send((tmpReport, subnode.attrs.get('chain', None)))
                 report[subnode.name].append(tmpReport)
-        
-                
+
+
 @coroutine
 def processPathMatch():
     """
     Process path-match
-    
+
     """
     while True:
         report, value = (yield)
         report['path-match'] = value
-        
+
 
 @coroutine
 def processProtocol():
     """
     Process protocol
-    
+
     """
     while True:
         report, value = (yield)
         report['protocol'] = value
-        
+
 
 @coroutine
 def processResult():
     """
     Process result
-    
+
     """
     while True:
         report, value = (yield)
@@ -360,7 +360,7 @@ def processResult():
 def processChain():
     """
     Process chain
-    
+
     """
     while True:
         report, value = (yield)

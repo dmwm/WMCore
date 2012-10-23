@@ -28,14 +28,14 @@ class TestLocalCopyImpl(StageOutImplV2):
         I guess this masks a directory?
 
         """
-        
+
         dirName = os.path.dirname(targetPFN)
 
         if not os.path.isdir(dirName):
             os.makedirs(dirName)
 
         return
-    
+
     def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum  ):
         self.createOutputDirectory( toPfn )
         shutil.copy(fromPfn, toPfn)
@@ -46,7 +46,3 @@ class TestLocalCopyImpl(StageOutImplV2):
 
     def doDelete(self, pfn, seName, command, options, protocol  ):
         os.unlink(pfn)
-
-
-
-

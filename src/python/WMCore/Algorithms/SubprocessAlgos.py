@@ -45,7 +45,7 @@ def findPIDs(name, user = os.getpid()):
             pids.append(line.split()[0])
 
     return pids
-        
+
 
 def killProcessByName(name, user = os.getpid(), sig = None):
     """
@@ -66,7 +66,7 @@ def killProcessByName(name, user = os.getpid(), sig = None):
         command.append(pid)
 
     subprocess.Popen(command, stdout=subprocess.PIPE).communicate()[0]
-        
+
 
     return pids
 
@@ -91,7 +91,7 @@ def tailNLinesFromFile(file, n):
 def runCommand(cmd, shell = True, timeout = None):
     """
     Run generic command
-    
+
     This is NOT secure and hence NOT recommended
     It does however have the timeout functions built into it
     timeout must be an int
@@ -118,6 +118,6 @@ def runCommand(cmd, shell = True, timeout = None):
         raise SubprocessAlgoException(msg)
 
     if timeout:
-        signal.alarm(0)        
-        
+        signal.alarm(0)
+
     return stdout, stderr, returnCode

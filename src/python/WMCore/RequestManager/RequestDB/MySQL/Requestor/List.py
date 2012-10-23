@@ -22,4 +22,3 @@ class List(DBFormatter):
                                       conn = conn, transaction = trans)
         output = [ x[0] for x in self.format(result)]
         return output
-

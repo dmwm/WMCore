@@ -81,7 +81,7 @@ class RequestSchema(dict):
     def lexicon(self, field, validator):
         if self.get(field, None) != None:
             try:
-                validator(self[field]) 
+                validator(self[field])
             except AssertionError:
                 raise RuntimeError, "Bad value for %s" % field
 
@@ -96,4 +96,3 @@ class RequestSchema(dict):
         for key in self.keys():
             jsonDict[key] = self[key]
         return jsonDict
-

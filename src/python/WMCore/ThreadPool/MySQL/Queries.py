@@ -14,21 +14,21 @@ from WMCore.Database.DBFormatter import DBFormatter
 class Queries(DBFormatter):
     """
     _Queries_
-    
+
     This module implements the mysql backend for the persistent threadpool.
-    
+
     """
-    
+
     def __init__(self):
         myThread = threading.currentThread()
         DBFormatter.__init__(self, myThread.logger, myThread.dbi)
-        
-       
+
+
     def selectWork(self, args, pooltable = 'tp_threadpool'):
         """
         Select work that is not yet being processed.
         """
-        # this query takes place in a locked section so 
+        # this query takes place in a locked section so
         # we do not have to worry about multiple slaves
         # getting the same work.
         result = ''
@@ -36,12 +36,12 @@ class Queries(DBFormatter):
             'tp_threadpool_buffer_out']:
             sqlStr = """
 SELECT min(id) FROM %s WHERE component = :component AND
-thread_pool_id = :thread_pool_id AND state='queued' 
+thread_pool_id = :thread_pool_id AND state='queued'
         """ % (pooltable)
             result = self.execute(sqlStr, args)
         else:
             sqlStr = """
-SELECT min(id) FROM %s WHERE state='queued' 
+SELECT min(id) FROM %s WHERE state='queued'
         """ % (pooltable)
             result = self.execute(sqlStr, {})
         return self.formatOne(result)
@@ -52,7 +52,7 @@ SELECT min(id) FROM %s WHERE state='queued'
         """
 
         sqlStr = """
-SELECT id, event,payload FROM %s WHERE id = :id 
+SELECT id, event,payload FROM %s WHERE id = :id
         """ % (pooltable)
         result = self.execute(sqlStr, args)
         return self.formatOne(result)
@@ -66,7 +66,7 @@ SELECT id, event,payload FROM %s WHERE id = :id
 UPDATE %s SET state='process' WHERE id = :id
         """  % (pooltable)
         self.execute(sqlStr, args)
- 
+
     def removeWork(self, args, pooltable = 'tp_threadpool'):
         """
         Remove work from the queue.
@@ -110,7 +110,7 @@ AND thread_pool_id = :thread_pool_id
             result = self.execute(sqlStr, args)
         else:
             sqlStr = """
-SELECT COUNT(*) FROM  %s 
+SELECT COUNT(*) FROM  %s
         """ % (pooltable)
             result = self.execute(sqlStr, {})
         return self.formatOne(result)[0]
@@ -137,7 +137,7 @@ INSERT INTO %s(event,payload) SELECT event,payload FROM %s
 
     def moveWorkToBufferOut(self, args, source, target, limit):
         """
-        Moves work from buffer in or main queue to the buffer out 
+        Moves work from buffer in or main queue to the buffer out
         table.
         """
 
@@ -148,14 +148,14 @@ INSERT INTO %s(event,payload) SELECT event,payload FROM %s
             # we need a for update in the select to prevent (harmless) deadlock
             # situations with innodb
             sqlStr1 = """
-INSERT INTO %s(event,component,payload,thread_pool_id) 
-SELECT event,component,payload,thread_pool_id FROM %s 
-WHERE component= :component AND thread_pool_id = :thread_pool_id 
+INSERT INTO %s(event,component,payload,thread_pool_id)
+SELECT event,component,payload,thread_pool_id FROM %s
+WHERE component= :component AND thread_pool_id = :thread_pool_id
 ORDER BY id LIMIT %s FOR UPDATE
             """ % (target, source, limit)
-            sqlStr2 = """ 
-DELETE FROM %s 
-WHERE component= :component AND thread_pool_id = :thread_pool_id 
+            sqlStr2 = """
+DELETE FROM %s
+WHERE component= :component AND thread_pool_id = :thread_pool_id
 ORDER BY id LIMIT %s""" % (source, limit)
             self.execute(sqlStr1, args)
             self.execute(sqlStr2, args)
@@ -163,7 +163,7 @@ ORDER BY id LIMIT %s""" % (source, limit)
             sqlStr1 = """
 INSERT INTO %s(event,payload) SELECT event,payload FROM %s ORDER BY id LIMIT %s
             """ % (target, source, limit)
-            sqlStr2 = """ 
+            sqlStr2 = """
 DELETE FROM %s ORDER BY id LIMIT %s
             """ % (source, limit)
             self.execute(sqlStr1, {})
@@ -221,4 +221,4 @@ CREATE TABLE %s(
         #FIXME: this method?
         myThread = threading.currentThread()
         currentTransaction = myThread.transaction
-        return currentTransaction.processData(sqlStr, args) 
+        return currentTransaction.processData(sqlStr, args)

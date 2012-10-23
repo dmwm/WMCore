@@ -3,11 +3,11 @@
 _TestInit__
 
 A set of initialization steps used in many tests.
-Test can call the methods from this class to 
-initialize their default environment so to 
+Test can call the methods from this class to
+initialize their default environment so to
 minimize code duplication.
 
-This class is not a test but an auxilary class and 
+This class is not a test but an auxilary class and
 is based on the WMCore.WMInit class.
 
 """
@@ -36,13 +36,13 @@ except ImportError:
 # Sorry for the global, but I think this should go here
 trashDatabases = False  # delete databases after every test?
 
-class TestInitException(WMException): 
-    """ 
-    _TestInitException_ 
-    
-    You should see this only if something is wrong setting up the database connection 
-    Still, just in case... 
-    """ 
+class TestInitException(WMException):
+    """
+    _TestInitException_
+
+    You should see this only if something is wrong setting up the database connection
+    Still, just in case...
+    """
 
 def deleteDatabaseAfterEveryTest( areYouSerious ):
     """
@@ -68,7 +68,7 @@ def requiresPython26(testMethod, *args, **kwargs):
     def skipTest(*args, **kwargs):
         print "SKIPPING"
         raise nose.SkipTest
-        
+
     import sys
 
     majorVersion = sys.version_info[0]
@@ -78,14 +78,14 @@ def requiresPython26(testMethod, *args, **kwargs):
         return testMethod
 
     return skipTest
-        
+
 class TestInit:
     """
     A set of initialization steps used in many tests.
-    Test can call the methods from this class to 
-    initialize their default environment so to 
+    Test can call the methods from this class to
+    initialize their default environment so to
     minimize code duplication.
-    """ 
+    """
 
     def __init__(self, testClassName = "Unknown Class"):
         self.testClassName = testClassName
@@ -96,13 +96,13 @@ class TestInit:
         if self.hasDatabase:
             self.init = WMInit()
         self.deleteTmp = True
-    
+
     def __del__(self):
         if self.deleteTmp:
             self.delWorkDir()
         self.attemptToCloseDBConnections()
 
-    
+
     def delWorkDir(self):
         if (self.testDir != None):
             try:
@@ -126,7 +126,7 @@ class TestInit:
 
         self.init.setLogging(self.testClassName, self.testClassName,
                              logExists = False, logLevel = logLevel)
-    
+
     def generateWorkDir(self, config = None, deleteOnDestruction = True, setTmpDir = False):
         self.testDir = tempfile.mkdtemp()
         if config:
@@ -141,7 +141,7 @@ class TestInit:
 
         self.deleteTmp = deleteOnDestruction
         return self.testDir
-        
+
     def getBackendFromDbURL(self, dburl):
         dialectPart = dburl.split(":")[0]
         if dialectPart == 'mysql':
@@ -154,7 +154,7 @@ class TestInit:
             return 'CouchDB'
         else:
             raise RuntimeError, "Unrecognized dialect %s" % dialectPart
-        
+
     def setDatabaseConnection(self, connectUrl=None, socket=None, destroyAllDatabase = False):
         """
         Set up the database connection by retrieving the environment
@@ -164,7 +164,7 @@ class TestInit:
         on in any other instance where you don't know what you're doing.
         """
         if not self.hasDatabase:
-            return        
+            return
         config = self.getConfiguration(connectUrl=connectUrl, socket=socket)
         self.coreConfig = config
         self.init.setDatabaseConnection(config.CoreDatabase.connectUrl,
@@ -174,22 +174,22 @@ class TestInit:
         if trashDatabases or destroyAllDatabase:
             self.clearDatabase()
 
-        # Have to check whether or not database is empty 
-        # If the database is not empty when we go to set the schema, abort! 
-        result = self.init.checkDatabaseContents() 
-        if len(result) > 0: 
-            msg =  "Database not empty, cannot set schema !\n" 
-            msg += str(result) 
-            logging.error(msg) 
-            raise TestInitException(msg) 
+        # Have to check whether or not database is empty
+        # If the database is not empty when we go to set the schema, abort!
+        result = self.init.checkDatabaseContents()
+        if len(result) > 0:
+            msg =  "Database not empty, cannot set schema !\n"
+            msg += str(result)
+            logging.error(msg)
+            raise TestInitException(msg)
 
         return
 
     def setSchema(self, customModules = [], useDefault = True, params = None):
         """
-        Creates the schema in the database for the default 
+        Creates the schema in the database for the default
         tables/services: trigger, message service, threadpool.
-       
+
         Developers can add their own modules to it using the array
         customModules which should follow the proper naming convention.
 
@@ -197,7 +197,7 @@ class TestInit:
         schemas in the defaultModules array.
         """
         if not self.hasDatabase:
-            return 
+            return
         defaultModules = ["WMCore.WMBS"]
         if not useDefault:
             defaultModules = []
@@ -212,7 +212,7 @@ class TestInit:
         except Exception, ex:
             print traceback.format_exc()
             raise ex
-            
+
         # store the list of modules we've added to the DB
         modules = {}
         for module in (defaultModules + customModules + self.currModules):
@@ -225,13 +225,13 @@ class TestInit:
     def getDBInterface(self):
         "shouldbe called after connection is made"
         if not self.hasDatabase:
-            return 
+            return
         myThread = threading.currentThread()
 
         return myThread.dbi
 
     def getConfiguration(self, configurationFile = None, connectUrl = None, socket=None):
-        """ 
+        """
         Loads (if available) your configuration file and augments
         it with the standard settings used in multiple tests.
         """
@@ -254,7 +254,7 @@ class TestInit:
         if connectUrl:
             config.CoreDatabase.connectUrl = connectUrl
             config.CoreDatabase.dialect = self.getBackendFromDbURL(connectUrl)
-            config.CoreDatabase.socket = socket or os.getenv("DBSOCK") 
+            config.CoreDatabase.socket = socket or os.getenv("DBSOCK")
         else:
             if (os.getenv('DATABASE') == None):
                 raise RuntimeError, \
@@ -273,7 +273,7 @@ class TestInit:
         Database deletion. Global, ignore modules.
         """
         if not self.hasDatabase:
-            return 
+            return
 
         self.init.clearDatabase()
 
@@ -283,23 +283,21 @@ class TestInit:
         return
         myThread = threading.currentThread()
         print "Closing DB"
-        
+
         try:
             if not myThread.transaction \
                  and not myThread.transaction.conn \
                  and not myThread.transaction.conn.closed:
-                
+
                 myThread.transaction.conn.close()
                 myThread.transaction.conn = None
                 print "Connection Closed"
         except Exception, e:
             print "tried to close DBI but failed: %s" % e
-        
+
         try:
             if hasattr(myThread, "dbFactory"):
                 del myThread.dbFactory
                 print "dbFactory removed"
         except Exception, e:
             print "tried to delete factory but failed %s" % e
-        
-        

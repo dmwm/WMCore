@@ -35,15 +35,15 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
-        
+
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
-        
+
         locationAction = daofactory(classname = "Locations.New")
         locationAction.execute("site1", seName = "somese.cern.ch")
-        locationAction.execute("site1", seName = "somese3.cern.ch")        
+        locationAction.execute("site1", seName = "somese3.cern.ch")
         locationAction.execute("site2", seName = "somese2.cern.ch")
 
         self.testFilesetA = Fileset(name = "FilesetA")
@@ -59,11 +59,11 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         self.testFileB.create()
         self.testFileC = File("testFileC", size = 1000, events = 100,
                               locations = set(["somese.cern.ch"]))
-        self.testFileC.create()        
+        self.testFileC.create()
 
         self.testFilesetA.addFile(self.testFileA)
         self.testFilesetA.addFile(self.testFileB)
-        self.testFilesetA.addFile(self.testFileC)        
+        self.testFilesetA.addFile(self.testFileC)
         self.testFilesetA.commit()
 
         self.testFileD = File("testFileD", size = 1000, events = 100,
@@ -74,7 +74,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         self.testFileE.create()
         self.testFileF = File("testFileF", size = 1000, events = 100,
                               locations = set(["somese.cern.ch"]))
-        self.testFileF.create()        
+        self.testFileF.create()
 
         self.testFilesetB.addFile(self.testFileD)
         self.testFilesetB.addFile(self.testFileE)
@@ -113,12 +113,12 @@ class SiblingProcessingBasedTest(unittest.TestCase):
                                               workflow = testWorkflowD,
                                               split_algo = "FileBased",
                                               type = "Processing")
-        self.testSubscriptionD.create()        
+        self.testSubscriptionD.create()
 
         deleteWorkflow = Workflow(spec = "specE.xml", owner = "Steve",
                                   name = "wfE", task = "Test")
         deleteWorkflow.create()
-        
+
         self.deleteSubscriptionA = Subscription(fileset = self.testFilesetA,
                                                 workflow = deleteWorkflow,
                                                 split_algo = "SiblingProcessingBased",
@@ -130,7 +130,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
                                                 type = "Cleanup")
         self.deleteSubscriptionB.create()
         return
-    
+
     def tearDown(self):
         """
         _tearDown_
@@ -177,7 +177,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
                "Error: Input file for job is wrong."
         assert list(result[0].jobs[0]["input_files"][0]["locations"]) == ["somese.cern.ch"], \
                "Error: File location is wrong."
-        
+
         result = deleteFactoryB(files_per_job = 1)
 
         assert len(result) == 0, \
@@ -215,7 +215,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
 
         self.testSubscriptionB.completeFiles([self.testFileE, self.testFileF])
         self.testSubscriptionC.completeFiles([self.testFileE, self.testFileF])
-        self.testSubscriptionD.completeFiles([self.testFileE, self.testFileF])        
+        self.testSubscriptionD.completeFiles([self.testFileE, self.testFileF])
 
         result = deleteFactoryB(files_per_job = 10)
 
@@ -266,7 +266,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         testFile2.create()
         testFile3 = File("testFile3", size = 1000, events = 100,
                          locations = set(["somese2.cern.ch"]))
-        testFile3.create()        
+        testFile3.create()
 
         self.testFilesetA.addFile(testFile1)
         self.testFilesetA.addFile(testFile2)
@@ -276,7 +276,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
 
         self.testSubscriptionA.completeFiles([testFile1, testFile2, testFile3])
         self.testSubscriptionA.completeFiles([self.testFileA, self.testFileB, self.testFileC])
-        
+
         splitter = SplitterFactory()
         deleteFactoryA = splitter(package = "WMCore.WMBS",
                                   subscription = self.deleteSubscriptionA)
@@ -292,7 +292,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         locations = {"testFileA": "somese.cern.ch", "testFileB": "somese.cern.ch",
                      "testFileC": "somese.cern.ch", "testFile1": "somese2.cern.ch",
                      "testFile2": "somese2.cern.ch", "testFile3": "somese2.cern.ch"}
-        
+
         for jobGroup in result:
             assert len(jobGroup.jobs) == 1, \
                    "Error: Wrong number of jobs in jobgroup."
@@ -305,7 +305,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
                 goldenFiles = goldenFilesA
             else:
                 goldenFiles = goldenFilesB
-                
+
             for jobFile in jobGroup.jobs[0]["input_files"]:
                 assert list(jobFile["locations"])[0] == locations[jobFile["lfn"]], \
                        "Error: Wrong site for file."
@@ -313,7 +313,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
 
             assert len(goldenFiles) == 0,  \
                    "Error: Files are missing."
-        
+
         return
 
     def testLargeNumberOfFiles(self):
@@ -328,7 +328,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         testWorkflowA.create()
         testWorkflowB = Workflow(spec = "specB.xml", owner = "Steve",
                                  name = "wfB", task = "Test")
-        testWorkflowB.create()        
+        testWorkflowB.create()
 
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()

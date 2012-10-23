@@ -26,10 +26,10 @@ class SetDatasetAlgo(DBFormatter):
         """
         _execute_
 
-        Set the datasetAlgo 
+        Set the datasetAlgo
         """
         binds = {"datasetAlgo": datasetAlgo, 'in_dbs': inDBS}
 
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
-        return 
+        return

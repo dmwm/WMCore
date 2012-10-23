@@ -3,7 +3,7 @@
 _Subscription_t_
 
 Testcase for the Subscription class
-""" 
+"""
 
 import unittest, os, logging, commands, random
 
@@ -28,17 +28,17 @@ class SubscriptionTest(unittest.TestCase):
         Set a dummy Subscription with a fileset composed of one file inside it
         and a dummy workflow using the default constructor of the Workflow class
 
-        """        
+        """
         self.dummyFile = File('/tmp/dummyfile',9999,0,0,0)
-        self.dummySet = set() 
+        self.dummySet = set()
         self.dummySet.add(self.dummyFile)
-        self.dummyFileSet = Fileset(name = 'SubscriptionTestFileset', 
+        self.dummyFileSet = Fileset(name = 'SubscriptionTestFileset',
                                     files = self.dummySet)
         self.dummyWorkFlow = Workflow()
-        self.dummySubscription = Subscription(fileset = self.dummyFileSet, 
+        self.dummySubscription = Subscription(fileset = self.dummyFileSet,
                                               workflow = self.dummyWorkFlow)
         return
-    
+
     def tearDown(self):
         pass
 
@@ -56,15 +56,15 @@ class SubscriptionTest(unittest.TestCase):
 
         """
         assert self.dummyFileSet.name == self.dummySubscription['fileset'].name, \
-        'Couldn\'t add Fileset to Subscription - name does not match' 
-        
-        for x in self.dummyFileSet.listNewFiles():        
+        'Couldn\'t add Fileset to Subscription - name does not match'
+
+        for x in self.dummyFileSet.listNewFiles():
             assert x in self.dummySubscription['fileset'].newfiles, \
-            'Couldn\'t add Fileset to Subscription - newFiles Set does not match' 
-        
+            'Couldn\'t add Fileset to Subscription - newFiles Set does not match'
+
         assert self.dummyFileSet.getFiles(type='set') == \
             self.dummySubscription['fileset'].getFiles(type='set'), \
-            'Couldn\'t add Fileset to Subscription - %s Set does not match' % x 
+            'Couldn\'t add Fileset to Subscription - %s Set does not match' % x
 
     def testAcquireFiles(self):
         """
@@ -73,8 +73,8 @@ class SubscriptionTest(unittest.TestCase):
         """
         #Cleaning possible files already occupying the available set
         self.dummySubscription.acquireFiles()
-        
-        # First test - Test if initial file (on available set) is inserted in the 
+
+        # First test - Test if initial file (on available set) is inserted in the
         # acquired set - no arguments
 
         dummyFile2 = File('/tmp/dummyfile2,8888',1,1,1)
@@ -82,13 +82,13 @@ class SubscriptionTest(unittest.TestCase):
         self.dummySubscription.available.addFile(dummyFile2)
 
         S = self.dummySubscription.available.listNewFiles()
-        #Check if Set returned by method is the same that was at the previous 
+        #Check if Set returned by method is the same that was at the previous
         #available FileSet
         assert S == self.dummySubscription.acquireFiles(), \
         'Couldn\'t acquire file using method acquireFiles - (no arguments test)'
-        
 
-        #Second test - Test if target files are inserted at the acquired set        
+
+        #Second test - Test if target files are inserted at the acquired set
 
         dummyFileList = set()
         #Populating the dummy List with a random number of files
@@ -110,17 +110,17 @@ class SubscriptionTest(unittest.TestCase):
         assert acqFiles == dummyFileList,\
                 'Return value for acquireFiles method not the acquired files'
         #Check if all files were inserted at subscription acquired files Set
-        for x in dummyFileList:        
+        for x in dummyFileList:
             assert x in self.dummySubscription.acquired.getFiles(type='set'), \
             'Couldn\'t acquire File %s' % x.dict['lfn']
-        
-        #Third test - Test if a replicate file is erased from the other Sets, 
+
+        #Third test - Test if a replicate file is erased from the other Sets,
         #when a file is acquired
 
         dummyFile3 = File('/tmp/dummyfile3,5555',1,1,1)
         dummyFileList = []
         dummyFileList.append(dummyFile3)
-        
+
         #Inserting dummyFile3 to be used as an argument, into each of the other file sets
         self.dummySubscription.available.addFile(dummyFile3)
         self.dummySubscription.failed.addFile(dummyFile3)
@@ -140,18 +140,18 @@ class SubscriptionTest(unittest.TestCase):
         'Acquired file still present at failed Set'
         assert dummyFile3 not in self.dummySubscription.completed.getFiles(type='set'), \
         'Acquired file still present at completed Set'
-        
 
-        #Fourth test - Test if the method works properly if a wrong size number 
+
+        #Fourth test - Test if the method works properly if a wrong size number
         #is given as an argument
-        
+
         #Case 1: size < number of files given as an argument
 
         dummyFileList = []
         for i in range(90,100):
             dummyFileSize = File('/tmp/dummyfile'+str(i),7656,1,1,1)
-            dummyFileList.append(dummyFileSize)         
-        
+            dummyFileList.append(dummyFileSize)
+
         #Run the method:
         self.dummySubscription.acquireFiles(files=dummyFileList, size=1)
         #Check each file of the List
@@ -159,8 +159,8 @@ class SubscriptionTest(unittest.TestCase):
             assert x in self.dummySubscription.acquired.getFiles(type='set'), \
             'File wasn\'t acquired (lower Size argument test)'
 
-        #Case 2: size = 0      
-        
+        #Case 2: size = 0
+
         #Run the method:
         self.dummySubscription.acquireFiles(files=dummyFileList, size=0)
         #Check each file of the List
@@ -176,8 +176,8 @@ class SubscriptionTest(unittest.TestCase):
         """
         #Cleaning possible files already occupying the available set
         self.dummySubscription.completeFiles([])
-        
-        #First test - Test if initial file (on available set) is inserted in the 
+
+        #First test - Test if initial file (on available set) is inserted in the
         #completed set - no arguments
 
         dummyFile2 = File('/tmp/dummyfile2,8888',1,1,1)
@@ -187,12 +187,12 @@ class SubscriptionTest(unittest.TestCase):
         S = self.dummySubscription.availableFiles()
         #complete all files
         self.dummySubscription.completeFiles(S)
-        
+
         assert len(self.dummySubscription.availableFiles()) == 0, \
         "completed subscription still has %s files, what's up with that?" %\
           len(self.dummySubscription.availableFiles())
 
-        #Second test - Test if target files are inserted at the completed files set        
+        #Second test - Test if target files are inserted at the completed files set
 
         dummyFileList = []
         #Populating the dummy List with a random number of files
@@ -212,23 +212,23 @@ class SubscriptionTest(unittest.TestCase):
         self.dummySubscription.available.addFile(dummyFileList)
         #and complete them
         self.dummySubscription.completeFiles(files = dummyFileList)
-        #Check if return value is correct - with parameters        
+        #Check if return value is correct - with parameters
         assert len(self.dummySubscription.availableFiles()) == 0, \
         "completed subscription still has %s files, what's up with that?" %\
           len(self.dummySubscription.availableFiles())
-          
+
         #Check if all files were inserted at subscription's completed files Set
-        for x in dummyFileList:        
+        for x in dummyFileList:
             assert x in self.dummySubscription.completed.getFiles(type='set'), \
             'Couldn\'t make file completed %s' % x.dict['lfn']
-        
-        #Third test - Test if a replicate file is erased from the other Sets, 
+
+        #Third test - Test if a replicate file is erased from the other Sets,
         #when a file is made completed
 
         dummyFile3 = File('/tmp/dummyfile3,5555',1,1,1)
         dummyFileList = []
         dummyFileList.append(dummyFile3)
-        
+
         #Inserting dummyFile3 to be used as an argument, into each of the other
         #file sets
         self.dummySubscription.acquired.addFile(dummyFile3)
@@ -248,7 +248,7 @@ class SubscriptionTest(unittest.TestCase):
         assert dummyFile3 not in self.dummySubscription.failed.getFiles(type='set'), \
         'Completed file still present at failed Set'
         assert dummyFile3 not in self.dummySubscription.available.getFiles(type='set'), \
-        'Completed file still present at available Set'        
+        'Completed file still present at available Set'
 
     def testFailFiles(self):
         """
@@ -257,7 +257,7 @@ class SubscriptionTest(unittest.TestCase):
         """
         #Cleaning possible files already occupying the available set
         self.dummySubscription.failFiles([])
-        
+
         #First test - Test if initial file (on available set) is inserted in the
         # failed set - no arguments
 
@@ -268,12 +268,12 @@ class SubscriptionTest(unittest.TestCase):
         S = self.dummySubscription.availableFiles()
         # Fail all files
         self.dummySubscription.failFiles(S)
-        
+
         assert len(self.dummySubscription.availableFiles()) == 0, \
         "failed subscription still has %s files, what's up with that?" %\
           len(self.dummySubscription.availableFiles())
 
-        #Second test - Test if target files are inserted at the failed set        
+        #Second test - Test if target files are inserted at the failed set
 
         dummyFileList = []
         #Populating the dummy List with a random number of files
@@ -293,23 +293,23 @@ class SubscriptionTest(unittest.TestCase):
         self.dummySubscription.available.addFile(dummyFileList)
         #and fail them
         self.dummySubscription.failFiles(files = dummyFileList)
-        #Check there are no files available - everything should be failed        
+        #Check there are no files available - everything should be failed
         assert len(self.dummySubscription.availableFiles()) == 0, \
         "failed subscription still has %s files, what's up with that?" %\
           len(self.dummySubscription.availableFiles())
-          
+
         #Check if all files were inserted at subscription's failed files Set
-        for x in dummyFileList:        
+        for x in dummyFileList:
             assert x in self.dummySubscription.failed.getFiles(type='set'),\
                  'Couldn\'t make file failed %s' % x.dict['lfn']
-        
+
         #Third test - Test if a replicate file is erased from the other Sets,
         # when a file is considered failed
 
         dummyFile3 = File('/tmp/dummyfile3,5555',1,1,1)
         dummyFileList = []
         dummyFileList.append(dummyFile3)
-        
+
         #Inserting dummyFile3 to be used as an argument, into each of the other
         # file sets
         self.dummySubscription.acquired.addFile(dummyFile3)
@@ -330,7 +330,7 @@ class SubscriptionTest(unittest.TestCase):
         'Failed file still present at completed Set'
         assert dummyFile3 not in self.dummySubscription.available.getFiles(type='set'), \
         'Failed file still present at available Set'
- 
+
     def testFilesOfStatus(self):
         """
         Testcase for the filesOfStatus method of the Subscription Class
@@ -356,7 +356,7 @@ class SubscriptionTest(unittest.TestCase):
         self.dummySubscription.available.getFiles(type='set'), \
         'Method availableFiles does not return available files Set'
 
-    def testAcquiredFiles(self):            
+    def testAcquiredFiles(self):
         """
         Testcase for the acquiredFiles method of the Subscription Class
         """

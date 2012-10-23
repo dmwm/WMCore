@@ -12,4 +12,3 @@ from WMCore.WMBS.MySQL.Locations.List import List as ListLocationsMySQL
 
 class List(ListLocationsMySQL):
     sql = ListLocationsMySQL.sql
-    

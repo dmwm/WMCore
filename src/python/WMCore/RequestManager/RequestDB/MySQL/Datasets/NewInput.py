@@ -31,9 +31,8 @@ class NewInput(DBFormatter):
         """
         self.sql = "INSERT INTO reqmgr_input_dataset ("
         self.sql += "request_id, dataset_name, dataset_type) VALUES "
-        self.sql += "(:request_id, :dataset_name, :dataset_type) " 
+        self.sql += "(:request_id, :dataset_name, :dataset_type) "
         binds = {"request_id": requestId, 'dataset_name': datasetName, "dataset_type": datasetType}
         result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return
-

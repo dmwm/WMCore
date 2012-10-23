@@ -25,7 +25,7 @@ config.CoreDatabase.socket = os.getenv("DBSOCK")
 
 
 config.component_("DBSUpload")
-#The log level of the component. 
+#The log level of the component.
 config.DBSUpload.logLevel = 'DEBUG'
 
 # maximum number of threads we want to deal
@@ -36,7 +36,7 @@ config.DBSUpload.maxThreads = 1
 #
 config.DBSUpload.bufferSuccessHandler = \
     'WMComponent.DBSUpload.Handler.BufferSuccess'
-    
+
 config.DBSUpload.newWorkflowHandler = \
     'WMComponent.DBSUpload.Handler.NewWorkflowHandler'
 
@@ -63,4 +63,3 @@ config.DBSUpload.globalDBSVer = 'DBS_2_0_9'
 config.DBSUpload.DBSMaxSize      = 999999999
 config.DBSUpload.DBSMaxFiles     = 2
 config.DBSUpload.DBSBlockTimeout = 10000000
-

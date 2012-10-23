@@ -32,7 +32,7 @@ class Load(DBFormatter):
             out.append(tmpDict)
 
         return out
-    
+
     def execute(self, jobid, conn = None, transaction = False):
         binds = self.getBinds(jobid = jobid)
         result = self.dbi.processData(self.sql, binds, conn = conn,

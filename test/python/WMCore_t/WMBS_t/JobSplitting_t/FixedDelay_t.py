@@ -30,13 +30,13 @@ class FixedDelayTest(unittest.TestCase):
 
         Create two subscriptions: One that contains a single file and one that
         contains multiple files.
-        """        
+        """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
-        
+
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
@@ -79,7 +79,7 @@ class FixedDelayTest(unittest.TestCase):
             newFile.create()
             self.singleLumiFileset.addFile(newFile)
         self.singleLumiFileset.commit()
-            
+
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "mnorman", name = "wf001", task="Test")
         testWorkflow.create()
@@ -114,7 +114,7 @@ class FixedDelayTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
         return
-    
+
     def testNone(self):
         """
         _testNone_
@@ -125,11 +125,11 @@ class FixedDelayTest(unittest.TestCase):
         jobFactory = splitter(self.singleFileSubscription)
         jobGroups = jobFactory(trigger_time = int(time.time())*2)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
-        
+
         jobFactory = splitter(self.multipleFileSubscription)
         jobGroups = jobFactory(trigger_time = int(time.time())*2)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
-        
+
         jobFactory = splitter(self.multipleLumiSubscription)
         jobGroups = jobFactory(trigger_time = int(time.time())*2)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
@@ -137,9 +137,9 @@ class FixedDelayTest(unittest.TestCase):
         jobFactory = splitter(self.singleLumiSubscription)
         jobGroups = jobFactory(trigger_time = int(time.time())*2)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
-        
+
         return
-    
+
     def testClosed(self):
         """
         _testClosed_
@@ -161,7 +161,7 @@ class FixedDelayTest(unittest.TestCase):
 
         assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                "ERROR: Job contains unknown files."
-        
+
         self.multipleFileSubscription.getFileset().markOpen(False)
         jobFactory = splitter(self.multipleFileSubscription)
         jobGroups = jobFactory(trigger_time = 1)
@@ -170,7 +170,7 @@ class FixedDelayTest(unittest.TestCase):
         self.assertEquals(len(jobGroups[0].jobs),1)
         myfiles = jobGroups[0].jobs[0].getFiles()
         self.assertEquals(len(myfiles), 10)
-        
+
         self.multipleLumiSubscription.getFileset().markOpen(False)
         jobFactory = splitter(self.multipleLumiSubscription)
         jobGroups = jobFactory(trigger_time = 1)
@@ -190,8 +190,8 @@ class FixedDelayTest(unittest.TestCase):
                "ERROR: JobFactory didn't create a single job."
         myfiles = jobGroups[0].jobs[0].getFiles()
         self.assertEquals(len(myfiles), 10)
-        
-        
+
+
     def testAllAcquired(self):
         """
         _testAllAcquired_
@@ -203,13 +203,13 @@ class FixedDelayTest(unittest.TestCase):
         jobFactory = splitter(self.singleFileSubscription)
         jobGroups = jobFactory(trigger_time = 1)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
-        
+
         self.multipleFileSubscription.acquireFiles(
                            self.multipleFileSubscription.availableFiles())
         jobFactory = splitter(self.multipleFileSubscription)
         jobGroups = jobFactory(trigger_time = 1)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
-        
+
         self.multipleLumiSubscription.acquireFiles(
                            self.multipleLumiSubscription.availableFiles())
         jobFactory = splitter(self.multipleLumiSubscription)
@@ -221,7 +221,7 @@ class FixedDelayTest(unittest.TestCase):
         jobFactory = splitter(self.singleLumiSubscription)
         jobGroups = jobFactory(trigger_time = 1)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
-        
+
     def testClosedSomeAcquired(self):
         """
         _testClosedSomeAcquired_
@@ -236,9 +236,9 @@ class FixedDelayTest(unittest.TestCase):
         jobFactory = splitter(self.singleFileSubscription)
         jobGroups = jobFactory(trigger_time = 1)
         self.assertEquals(jobGroups, [], "Should have returned a null set")
-        
-        
-        
+
+
+
         self.multipleFileSubscription.getFileset().markOpen(False)
         self.multipleFileSubscription.acquireFiles(
                            [self.multipleFileSubscription.availableFiles().pop()])
@@ -250,7 +250,7 @@ class FixedDelayTest(unittest.TestCase):
         myfiles = jobGroups[0].jobs[0].getFiles()
         self.assertEquals(len(myfiles), 9, \
                 "JobFactory should have provides us with 9 files")
-        
+
         self.multipleLumiSubscription.getFileset().markOpen(False)
         self.multipleLumiSubscription.acquireFiles(
                            [self.multipleLumiSubscription.availableFiles().pop()])
@@ -262,7 +262,7 @@ class FixedDelayTest(unittest.TestCase):
         myfiles = jobGroups[0].jobs[0].getFiles()
         self.assertEquals(len(myfiles), 9, \
                 "JobFactory should have provides us with 9 files")
-        
+
         self.singleLumiSubscription.getFileset().markOpen(False)
         self.singleLumiSubscription.acquireFiles(
                            [self.singleLumiSubscription.availableFiles().pop()])
@@ -274,7 +274,7 @@ class FixedDelayTest(unittest.TestCase):
         myfiles = jobGroups[0].jobs[0].getFiles()
         self.assertEquals(len(myfiles), 9, \
                 "JobFactory should have provides us with 9 files")
-        
+
         self.assertEquals(len(myfiles), 9)
 
 

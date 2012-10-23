@@ -34,12 +34,12 @@ class JobTrackerException(WMException):
 class JobTrackerPoller(BaseWorkerThread):
     """
     _JobTrackerPoller_
-    
+
     Polls the BossAir database for complete jobs
     Handles completed jobs
     """
 
-    
+
     def __init__(self, config):
         """
         Initialise class members
@@ -50,7 +50,7 @@ class JobTrackerPoller(BaseWorkerThread):
 
         myThread = threading.currentThread()
 
-        
+
         self.changeState   = ChangeState(self.config)
         self.bossAir       = BossAirAPI(config = config)
         self.daoFactory    = DAOFactory(package = "WMCore.WMBS",
@@ -62,7 +62,7 @@ class JobTrackerPoller(BaseWorkerThread):
         # initialize the alert framework (if available)
         self.initAlerts(compName = "JobTracker")
 
-    
+
     def setup(self, parameters = None):
         """
         Load DB objects required for queries
@@ -84,12 +84,12 @@ class JobTrackerPoller(BaseWorkerThread):
         return
 
 
-    
+
 
     def algorithm(self, parameters = None):
         """
-	Performs the archiveJobs method, looking for each type of failure
-	And deal with it as desired.
+        Performs the archiveJobs method, looking for each type of failure
+        And deal with it as desired.
         """
         logging.info("Running Tracker algorithm")
         myThread = threading.currentThread()
@@ -121,7 +121,7 @@ class JobTrackerPoller(BaseWorkerThread):
 
         passedJobs = []
         failedJobs = []
-        
+
 
         # Get all jobs WMBS thinks are running
         jobList = self.jobListAction.execute(state = "Executing")
@@ -193,7 +193,7 @@ class JobTrackerPoller(BaseWorkerThread):
                 fwjr.addError("NoJobReport", 99303, "NoJobReport", msg)
                 fwjr.save(jrPath)
             job["fwjr"] = fwjr
-        
+
         # Set all paths at once
         myThread.transaction.begin()
         setFWJRAction.execute(binds = jrBinds)
@@ -208,7 +208,7 @@ class JobTrackerPoller(BaseWorkerThread):
     def passJobs(self, passedJobs):
         """
         _passJobs_
-        
+
         Pass jobs and move their stuff?
         """
 
@@ -235,7 +235,3 @@ class JobTrackerPoller(BaseWorkerThread):
         logging.debug("Propagating jobs in jobTracker")
         logging.info("Passed %i jobs" % len(passedJobs))
         return
-                
-
-
-        

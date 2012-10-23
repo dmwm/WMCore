@@ -70,7 +70,7 @@ class RunBasedTest(unittest.TestCase):
                                                      split_algo = "RunBased",
                                                      type = "Processing")
 
-        
+
         return
 
     def tearDown(self):
@@ -99,7 +99,7 @@ class RunBasedTest(unittest.TestCase):
 
         assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                "ERROR: Job contains unknown files."
-        
+
         return
 
 
@@ -113,9 +113,9 @@ class RunBasedTest(unittest.TestCase):
 
         splitter = SplitterFactory()
         jobFactory = splitter(self.singleFileSubscription)
-        
+
         jobGroups = jobFactory(files_per_job = 2)
-        
+
         assert len(jobGroups) == 1, \
                "ERROR: JobFactory didn't return one JobGroup."
 
@@ -126,7 +126,7 @@ class RunBasedTest(unittest.TestCase):
 
         assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                "ERROR: Job contains unknown files."
-        
+
         return
 
     def testMultipleRuns(self):
@@ -140,18 +140,18 @@ class RunBasedTest(unittest.TestCase):
 
         splitter = SplitterFactory()
         jobFactory = splitter(self.multipleFileSubscription)
-        
+
         jobGroups = jobFactory(files_per_job = 1)
-        
+
         assert len(jobGroups) == 10, \
                "ERROR: JobFactory didn't return one JobGroup per run."
-        
+
         assert len(jobGroups[0].jobs) == 1, \
                "ERROR: JobFactory didn't put each run in a file."
 
         self.assertEqual(len(jobGroups[0].jobs.pop().getFiles(type = "lfn")), 1)
 
-        
+
         return
 
     def testMultipleRunsCombine(self):
@@ -165,11 +165,11 @@ class RunBasedTest(unittest.TestCase):
 
         splitter = SplitterFactory()
         jobFactory = splitter(self.multipleRunSubscription)
-        
+
         jobGroups = jobFactory(files_per_job = 2)
 
 
-        
+
         assert len(jobGroups) == 4, \
                "ERROR: JobFactory didn't return one JobGroup per run."
 
@@ -180,7 +180,7 @@ class RunBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups[1].jobs.pop().getFiles(type = "lfn")), 1)
         self.assertEqual(len(jobGroups[1].jobs.pop().getFiles(type = "lfn")), 2)
 
-        
+
         return
 
     def testSingleRunsCombineUneven(self):
@@ -196,19 +196,19 @@ class RunBasedTest(unittest.TestCase):
 
         splitter = SplitterFactory()
         jobFactory = splitter(self.singleRunSubscription)
-        
+
         jobGroups = jobFactory(files_per_job = 8)
-        
+
         self.assertEqual(len(jobGroups),         1)
         self.assertEqual(len(jobGroups[0].jobs), 2)
         self.assertEqual(len(jobGroups[0].jobs.pop().getFiles(type = "lfn")), 2)
         self.assertEqual(len(jobGroups[0].jobs.pop().getFiles(type = "lfn")), 8)
 
-        
+
         return
 
 
-    
+
 
 if __name__ == '__main__':
     unittest.main()

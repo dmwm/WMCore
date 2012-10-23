@@ -24,9 +24,9 @@ class FindDASToUpload(DBFormatter):
                ds.acquisition_era AS AcquisitionEra,
                ds.processing_ver AS ProcessingVer,
                ds.global_tag AS global_tag,
-               da.app_name AS ApplicationName, 
-               da.app_ver AS ApplicationVersion, 
-               da.app_fam AS ApplicationFamily, 
+               da.app_name AS ApplicationName,
+               da.app_ver AS ApplicationVersion,
+               da.app_fam AS ApplicationFamily,
                da.PSet_Hash as PSetHash,
                da.config_content as PSetContent,
                da.in_dbs AS algo_in_dbs
@@ -85,6 +85,6 @@ class FindDASToUpload(DBFormatter):
 
     def execute(self, conn=None, transaction = False):
         binds = self.getBinds()
-        result = self.dbi.processData(self.sql, binds, 
+        result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = transaction)
         return self.makeDAS(self.formatDict(result))

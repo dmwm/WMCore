@@ -16,4 +16,3 @@ class ExistsForAccountant(MySQLExistsForAccountant):
     This is highly specialized.  You shouldn't confuse it with
     a normal Exists DAO
     """
-

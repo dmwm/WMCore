@@ -44,8 +44,8 @@ class GetChecksum(DBFormatter):
                 return None
 
         return formattedResult
-                
-                
+
+
     def execute(self, fileid = None, bulkList = None, conn = None, transaction = False):
 
         if bulkList:
@@ -54,8 +54,7 @@ class GetChecksum(DBFormatter):
         else:
             binds = {'fileid': fileid}
 
-        result = self.dbi.processData(self.sql, binds, 
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = transaction)
 
         return self.formatResult(result)
-    

@@ -48,4 +48,4 @@ class ThresholdBySite(DBFormatter):
     def execute(self, site, conn = None, transaction = False, tableFormat = False):
         results = self.dbi.processData(self.sql, {'site': site},
                                        conn = conn, transaction = transaction)
-        return self.formatDict(results) 
+        return self.formatDict(results)

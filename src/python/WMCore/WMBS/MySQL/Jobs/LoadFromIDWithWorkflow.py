@@ -5,7 +5,7 @@ _LoadFromIDWithWorkflow_
 MySQL implementation of Jobs.LoadFromIDWithWorkflow.
 """
 
-from WMCore.WMBS.MySQL.Jobs.LoadFromID import LoadFromID 
+from WMCore.WMBS.MySQL.Jobs.LoadFromID import LoadFromID
 
 class LoadFromIDWithWorkflow(LoadFromID):
     """
@@ -13,9 +13,9 @@ class LoadFromIDWithWorkflow(LoadFromID):
 
     """
 
-    sql = """SELECT wmbs_job.id, jobgroup, wmbs_job.name AS name, 
-                    wmbs_job_state.name AS state, state_time, retry_count, 
-                    couch_record,  cache_dir, wmbs_location.site_name AS location, 
+    sql = """SELECT wmbs_job.id, jobgroup, wmbs_job.name AS name,
+                    wmbs_job_state.name AS state, state_time, retry_count,
+                    couch_record,  cache_dir, wmbs_location.site_name AS location,
                     outcome AS bool_outcome, fwjr_path AS fwjr_path,
                     ww.name AS workflow, ww.task AS task
              FROM wmbs_job
@@ -27,4 +27,3 @@ class LoadFromIDWithWorkflow(LoadFromID):
              INNER JOIN wmbs_subscription ON wmbs_subscription.id = wmbs_jobgroup.subscription
              INNER JOIN wmbs_workflow ww ON ww.id = wmbs_subscription.workflow
              WHERE wmbs_job.id = :jobid"""
-    

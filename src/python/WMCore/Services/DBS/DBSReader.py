@@ -19,7 +19,7 @@ DBS3HOST = 'cmsweb.cern.ch'
 def DBSReader(endpoint, **kwargs):
     """Function to find and instantiate desired DBSReader object"""
     endpoint_components = urlparse.urlparse(endpoint)
-    
+
     if endpoint_components.hostname == DBS3HOST:
         return _getDBS3Reader(endpoint, **kwargs)
     elif endpoint_components.hostname == DBS2HOST:

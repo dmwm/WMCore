@@ -22,7 +22,7 @@ class Create(CreateAgentBase):
         constraints and inserts.
         """
         CreateAgentBase.__init__(self, logger, dbi, params)
-             
+
         self.create["02wm_workers"] = \
           """CREATE TABLE wm_workers (
              component_id  INTEGER NOT NULL REFERENCES wm_components(id),
@@ -33,12 +33,12 @@ class Create(CreateAgentBase):
              last_error    INTEGER,
              error_message VARCHAR(1000),
              UNIQUE (component_id, name))"""
-         
+
         # constraints added in table definition
-        self.constraints.clear() 
-    
+        self.constraints.clear()
+
     def execute(self, conn = None, transaction = None):
         for i in self.create.keys():
             self.create[i] = self.create[i].replace('AUTO_INCREMENT', 'AUTOINCREMENT')
-            
-        return CreateAgentBase.execute(self, conn, transaction)   
+
+        return CreateAgentBase.execute(self, conn, transaction)

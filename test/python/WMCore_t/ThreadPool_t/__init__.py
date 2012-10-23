@@ -7,6 +7,3 @@ ThreadPool test methods
 
 """
 __all__ = []
-
-
-

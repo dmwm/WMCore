@@ -18,7 +18,7 @@ class LoadBlocks(DBFormatter):
                 FROM dbsbuffer_block dbb
                 INNER JOIN dbsbuffer_file dbf3 ON dbf3.block_id = dbb.id
                 INNER JOIN dbsbuffer_location dbl ON dbl.id = dbb.location
-                WHERE dbb.blockname = :blockname"""    
+                WHERE dbb.blockname = :blockname"""
 
 
     def format(self, result):
@@ -37,13 +37,13 @@ class LoadBlocks(DBFormatter):
 
         return blockList
 
-    
+
     def execute(self, blocknames, conn = None, transaction = False):
         """
         Take a list of blocknames and use them to load
         the blocks.
         """
-        
+
         binds = []
         for name in blocknames:
             binds.append({'blockname': name})

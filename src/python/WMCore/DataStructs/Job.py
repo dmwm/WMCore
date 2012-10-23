@@ -156,5 +156,3 @@ class Job(WMObject, dict):
                 currentPSet = getattr(currentPSet, param)
             else:
                 setattr(currentPSet, param, value)
-
-

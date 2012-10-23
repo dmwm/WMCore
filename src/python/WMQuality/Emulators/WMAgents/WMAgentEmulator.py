@@ -16,7 +16,7 @@ class WMAgentEmulator(Harness):
     def __init__(self, config):
         # call the base class
         Harness.__init__(self, config)
-        
+
 
     def preInitialization(self):
         resources = self.populateResources()
@@ -25,9 +25,9 @@ class WMAgentEmulator(Harness):
         pollInterval = 1
         logging.info("Setting poll interval to %s seconds" % pollInterval)
         myThread.workerThreadManager.addWorker(WMAgentTasks(resources), pollInterval)
-        
+
         return
-                                           
+
     def populateResources(self):
         """
         emulating resource db which can represent
@@ -37,4 +37,3 @@ class WMAgentEmulator(Harness):
         for site in Globals.SITES:
             jobSites[site] = 100
         return jobSites
-    

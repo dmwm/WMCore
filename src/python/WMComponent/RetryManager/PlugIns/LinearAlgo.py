@@ -28,7 +28,7 @@ class LinearAlgo(RetryAlgoBase):
         baseTimeoutDict = self.getAlgoParam(job['jobType'])
         baseTimeout = baseTimeoutDict.get(cooloffType.lower(), 10)
         cooloffTime = baseTimeout * job['retry_count']
-        
+
         currentTime = self.timestamp()
         if currentTime - job['state_time'] > cooloffTime:
             return True

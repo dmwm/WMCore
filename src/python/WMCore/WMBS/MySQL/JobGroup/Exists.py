@@ -13,7 +13,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class Exists(DBFormatter):
     sql = "SELECT id FROM wmbs_jobgroup WHERE guid = :guid"
-    
+
     def format(self, result):
         result = DBFormatter.format(self, result)
 
@@ -21,11 +21,11 @@ class Exists(DBFormatter):
             return False
         else:
             return result[0][0]
-    
+
     def getBinds(self, uid=None):
         return self.dbi.buildbinds(self.dbi.makelist(uid), "guid")
-        
+
     def execute(self, uid, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, self.getBinds(uid), 
+        result = self.dbi.processData(self.sql, self.getBinds(uid),
                          conn = conn, transaction = transaction)
         return self.format(result)

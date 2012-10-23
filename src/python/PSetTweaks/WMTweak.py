@@ -512,10 +512,3 @@ def makeOutputTweak(outMod, job):
     #      output module based on the settings in the section
 
     return result
-
-
-
-
-
-
-

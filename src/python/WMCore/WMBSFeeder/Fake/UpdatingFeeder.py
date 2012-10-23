@@ -24,14 +24,14 @@ def uuid( *args ):
     t = long( time.time() * 1000 )
     r = long( random.random()*100000000000000000L )
     try:
-      a = socket.gethostbyname( socket.gethostname() )
+        a = socket.gethostbyname( socket.gethostname() )
     except:
-      # if we can't get a network address, just imagine one
-      a = random.random()*100000000000000000L
+        # if we can't get a network address, just imagine one
+        a = random.random()*100000000000000000L
     data = str(t)+' '+str(r)+' '+str(a)+' '+str(args)
     data = md5.md5(data).hexdigest()
     return data
-  
+
 
 class Feeder(FeederImpl):
     def __init__(self, max = 10, num_files=1000):
@@ -39,14 +39,14 @@ class Feeder(FeederImpl):
         self.locations = ['fakese01.cern.ch','fakese02.cern.ch','fakese01.fnal.gov','fakese02.fnal.gov','fakese01.rl.ac.uk','fakese02.rl.ac.uk']
         self.files = []
         for i in range(0, num_files):
-            lfn='/store/data/fake-feeder-files/notreal/%s.root' % uuid(i) 
-            size=2000 + ((i-5) * 50) 
-            events=1000 + ((i-3) * 150) 
-            run = random.randint(0 , int(3.14159265 * i * self.max)) 
+            lfn='/store/data/fake-feeder-files/notreal/%s.root' % uuid(i)
+            size=2000 + ((i-5) * 50)
+            events=1000 + ((i-3) * 150)
+            run = random.randint(0 , int(3.14159265 * i * self.max))
             lumi = random.randint(0 ,10)
             file = File(lfn, size, events, run, lumi)
             self.files.append(file)
-        
+
     def __call__(self, fileset):
         """
         return a randomly sized list of files (DataStructs.File) at locations
@@ -66,5 +66,3 @@ class Feeder(FeederImpl):
                 file.setLocation(locs)
                 list.append(file)
             f.addFile(list)
-                
-            

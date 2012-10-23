@@ -15,15 +15,15 @@ to other RemoteMsg instances.
 #import inspect
 
 import logging
-import urllib2 
+import urllib2
 #from urllib import urlencode
 #from CommonUtil import dopickle, doencode
 from CommonUtil import dojson, doencode
 
 class Sender(object):
-    """ 
+    """
     _Sender_
-    
+
     """
     def __init__(self, msgQueue, parameters):
         self.msgQueue = msgQueue
@@ -42,7 +42,7 @@ class Sender(object):
         self.pwd = None
         if 'pwd' in parameters:
             self.pwd = parameters['pwd']
-          
+
         self.addr = None
         self.setAddress(parameters['addresses'])
 
@@ -54,8 +54,8 @@ class Sender(object):
         """
         self.addr = addresses
         for i in xrange(len(self.addr)):
-            if not ':' in self.addr[i]: 
-                self.addr[i] += ':' + self.port 
+            if not ':' in self.addr[i]:
+                self.addr[i] += ':' + self.port
             self.addr[i] += '/' + self.service
 
 
@@ -65,7 +65,7 @@ class Sender(object):
         'payload' to the recipients indicated previously (setAddress).
         """
         payload = dojson(payload)
-        if sync: 
+        if sync:
             sync = 'True'
         args = doencode( [ ('msgType', msgType), ('payload', payload), \
                            ('sync',sync) ] )
@@ -95,11 +95,10 @@ class Sender(object):
                 # Read reply
                 out = f.read()
                 f.close()
-             
+
                 return out
 
             except Exception, inst:
                 # TODO: catch auth exception and show proper message
                 raise Exception("Error when trying to connect to %s: %s %s" % \
                     (addr, str(inst.__class__), str(inst)))
-

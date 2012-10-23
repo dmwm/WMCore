@@ -3,15 +3,15 @@ from WMCore.Services.Service import Service
 
 from WMCore.Services.EmulatorSwitch import emulatorHook
 
-# emulator hook is used to swap the class instance 
-# when emulator values are set. 
+# emulator hook is used to swap the class instance
+# when emulator values are set.
 # Look WMCore.Services.EmulatorSwitch module for the values
 @emulatorHook
 class RequestManager(Service):
 
     """
-    API for dealing with retrieving information from RequestManager dataservice   
-    
+    API for dealing with retrieving information from RequestManager dataservice
+
     """
 
     def __init__(self, dict = {}, secure = False):
@@ -52,7 +52,7 @@ class RequestManager(Service):
         if clearCache:
             self.clearCache(file, args, verb)
 
-        f = self.refreshCache(file, callname, args, encoder = encoder, 
+        f = self.refreshCache(file, callname, args, encoder = encoder,
                               verb = verb, contentType = contentType)
         result = f.read()
         f.close()
@@ -129,7 +129,7 @@ class RequestManager(Service):
 
     def reportRequestStatus(self, requestName, status):
         """Update reqMgr about request"""
-        callname = 'request' 
+        callname = 'request'
         args = {}
         args["requestName"] = requestName
         args["status"] = status
@@ -138,8 +138,8 @@ class RequestManager(Service):
     def sendMessage(self, request, msg):
         """Attach a message to the request"""
         callname = "message/%s" %  request
-        return self._getResult(callname, args = msg, verb = "PUT", 
-                               encoder = JsonWrapper.dumps, 
+        return self._getResult(callname, args = msg, verb = "PUT",
+                               encoder = JsonWrapper.dumps,
                                contentType = 'application/json')
 
     def makeRequest(self, ScramArch = 'slc5_amd64_gcc434',

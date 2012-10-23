@@ -18,4 +18,3 @@ class HeritageLFNParent(MySQLHeritageLFNParent):
                  (SELECT dfc.id FROM dbsbuffer_file dfc WHERE dfc.lfn = :child),
                  (SELECT dfp.id FROM dbsbuffer_file dfp WHERE dfp.lfn = :lfn)
                )"""
-

@@ -32,7 +32,7 @@ class ComponentsPoller(PeriodPoller):
     from AlertGenerator constructor. Then the attributes are accessed
     from different process context which runs the periodic background
     polling.
-    
+
     """
     def __init__(self, config, generator):
         PeriodPoller.__init__(self, config, generator)
@@ -40,20 +40,20 @@ class ComponentsPoller(PeriodPoller):
         self.agentCompleteConfig = generator.config
         # number of measurements (polling) before the values are evaluated
         # for possible alert sending (is set up in the _setUp method)
-        self.numOfMeasurements = -1 
+        self.numOfMeasurements = -1
         # list of instances of ProcessDetail class (processes (plus subprocesses)
         # that represent all (as read from the configuration) components of the agent
         self._components = []
         # list of instance of the Measurements class - measurements for 1 particular component
         self._compMeasurements = []
         self._setUp()
-        
-        
+
+
     def _getComponentsInfo(self):
         """
         Method returns dictionary[componentName] = componentPID
         from reading components' working directory.
-            
+
         """
         result = {}
         et = ElementTree()
@@ -74,12 +74,12 @@ class ComponentsPoller(PeriodPoller):
             if pid:
                 result[comp] = pid # componentName, componentPID
         return result
-    
-    
+
+
     def _setUpProcessDetailAndMeasurements(self, compPID, compName):
         """
         Based on input, create instances of ProcessDetail and Measurements.
-        
+
         """
         myName = self.__class__.__name__
         try:
@@ -90,23 +90,23 @@ class ComponentsPoller(PeriodPoller):
             logging.info(m)
         except (psutil.error.NoSuchProcess, psutil.error.AccessDenied), ex:
             logging.error("%s: component %s ignored, reason: %s" % (myName, compName, ex))
- 
-    
+
+
     def _setUp(self):
         """
         First get the list of all components that constitute the agent.
         Check their work directories to load their Daemon.xml file and read
         their base process PID. Create corresponding instance of ProcessDetail
         and Measurements classes.
-        
+
         """
         self.numOfMeasurements = round(self.config.period / self.config.pollInterval, 0)
         # list of pairs (componentPID, componentName)
         componentsInfo = self._getComponentsInfo()
         for compName, compPID in componentsInfo.items():
-            self._setUpProcessDetailAndMeasurements(compPID, compName)         
-            
-            
+            self._setUpProcessDetailAndMeasurements(compPID, compName)
+
+
     def _updateComponentsInfo(self):
         """
         The method is called at each individual polling cycle.
@@ -114,12 +114,12 @@ class ComponentsPoller(PeriodPoller):
             1) a particular component may have been restarted.
             2) some components were started after starting / initializing AlertGenerator
                 itself so further running components (processes) may only be known later.
-        
+
         """
         def removeItems(processDetail, measurements):
             self._components.remove(processDetail)
             self._compMeasurements.remove(measurements)
-  
+
         myName = self.__class__.__name__
         # dictionary[componentName] = componentPID
         componentsInfo = self._getComponentsInfo()
@@ -153,13 +153,13 @@ class ComponentsPoller(PeriodPoller):
                 m = "Component %s seems not running anymore, removed from polling." % processDetail.name
                 logging.warning(m)
                 removeItems(processDetail, measurements)
-                
+
         if len(componentsInfo) > 0:
             logging.info("Some new components appeared since last check ...")
             for compName, compPID in componentsInfo.items():
-                self._setUpProcessDetailAndMeasurements(compPID, compName)         
-                        
-                    
+                self._setUpProcessDetailAndMeasurements(compPID, compName)
+
+
     def check(self):
         self._updateComponentsInfo()
         for processDetail, measurements in zip(self._components, self._compMeasurements):
@@ -168,46 +168,46 @@ class ComponentsPoller(PeriodPoller):
             except psutil.error.NoSuchProcess as ex:
                 logging.warn("Observed process or its child process(es) disappeared, "
                              "update at the next polling attempt, reason: %s." % ex)
-                
 
-            
+
+
 class ComponentsCPUPoller(ComponentsPoller):
     """
     Poller of CPU usage by the components of the agent (as found in the
     configuration).
-    
+
     """
-    
+
     def __init__(self, config, generator):
         ComponentsPoller.__init__(self, config, generator)
-        
-        
+
+
     @staticmethod
     def sample(processDetail):
         """
         Return a single float representing CPU usage of the main process
         and its subprocesses.
-        
+
         """
         return ProcessCPUPoller.sample(processDetail)
-                
-        
-        
+
+
+
 class ComponentsMemoryPoller(ComponentsPoller):
     """
     Poller of the memory usage by the components of the agent (as found
     in the configuration).
-    
+
     """
     def __init__(self, config, generator):
         ComponentsPoller.__init__(self, config, generator)
-        
-        
+
+
     @staticmethod
     def sample(processDetail):
         """
         Return a single float representing percentage usage of the main
         memory by the process.
-        
-        """        
+
+        """
         return ProcessMemoryPoller.sample(processDetail)

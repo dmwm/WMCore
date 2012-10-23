@@ -9,7 +9,7 @@ class NoDatasetError(StandardError):
         self.error = error
 
 class DataBlockGenerator(object):
-    
+
     def _blockGenerator(self, dataset):
         if dataset.startswith('/' + Globals.NOT_EXIST_DATASET):
             raise NoDatasetError, "no dataset"
@@ -18,7 +18,7 @@ class DataBlockGenerator(object):
         for i in range(GlobalParams.numOfBlocksPerDataset()):
             blockName = "%s#%s" % (dataset, i+1)
             size = GlobalParams.numOfFilesPerBlock() * GlobalParams.sizeOfFile()
-            
+
             blocks.append(
                                     {'Name' : blockName,
                                      'NumberOfEvents' : numOfEvents,
@@ -31,10 +31,10 @@ class DataBlockGenerator(object):
         return blocks
 
     def _openForWriting(self):
-      """Is block open or closed?
-      Should do this on a block by block basis but so far not needed,
-      just make a global state"""
-      return GlobalParams.blocksOpenForWriting()
+        """Is block open or closed?
+        Should do this on a block by block basis but so far not needed,
+        just make a global state"""
+        return GlobalParams.blocksOpenForWriting()
 
     def getParentBlock(self, block, numberOfParents = 1):
         blocks = []
@@ -43,7 +43,7 @@ class DataBlockGenerator(object):
             dataset, blockname = block.split('#') # append parent block id to tier
             blockName = "%s_parent_%s#%s" % (dataset, i+1, blockname)
             size = GlobalParams.numOfFilesPerBlock() * GlobalParams.sizeOfFile()
-            
+
             blocks.append({'Name' : blockName,
                            'NumberOfEvents' : numOfEvents,
                            'NumberOfFiles' : GlobalParams.numOfFilesPerBlock(),
@@ -55,11 +55,11 @@ class DataBlockGenerator(object):
         return blocks
 
     def _fileGenerator(self, blockName, parentFlag):
-        
+
         files = []
-        
+
         for fileID in range(GlobalParams.numOfFilesPerBlock()):
-           
+
             fileName =  "/store/data%s/file%s" % (blockName, fileID)
             #Not sure why fileName is unit code - change to str
             fileName = str(fileName)
@@ -71,7 +71,7 @@ class DataBlockGenerator(object):
                 parentList = [self._createDBSFile(blockName, {'LogicalFileName':parentFileName})]
             else:
                 parentList = []
-            dbsFile = {'LogicalFileName': fileName, 
+            dbsFile = {'LogicalFileName': fileName,
                        'ParentList' : parentList,
                       }
             files.append(self._createDBSFile(blockName, dbsFile))
@@ -91,19 +91,18 @@ class DataBlockGenerator(object):
                           }
         defaultDBSFile.update(dbsFile)
         return defaultDBSFile
-        
+
     def getBlocks(self, dataset):
-       try:
-           return self._blockGenerator(dataset)
-       except NoDatasetError:
-           return []
-        
+        try:
+            return self._blockGenerator(dataset)
+        except NoDatasetError:
+            return []
+
     def getFiles(self, block, parentFlag = False):
         return self._fileGenerator(block, parentFlag)
-    
+
     def getLocation(self, block):
         return Globals.getSites(block)
-    
+
     def getDatasetName(self, block):
         return block.split('#')[0]
-                

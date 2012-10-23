@@ -13,7 +13,7 @@ class GetValidation(DBFormatter):
                INNER JOIN wmbs_subscription_validation ON
                  wmbs_location.id = wmbs_subscription_validation.location_id AND
                  wmbs_subscription_validation.subscription_id = :id"""
-                 
+
     def execute(self, id, conn = None, transaction = False):
         results = self.dbi.processData(self.sql, {"id": id},
                                        transaction = transaction)

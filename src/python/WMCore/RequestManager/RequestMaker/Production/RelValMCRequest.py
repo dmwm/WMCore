@@ -25,8 +25,8 @@ class RelValMCRequest(RequestMakerInterface):
         RequestMakerInterface.__init__(self)
 
     def makeWorkload(self, schema):
-       factory = RelValMCWorkloadFactory()
-       return factory(schema['RequestName'], schema).data
+        factory = RelValMCWorkloadFactory()
+        return factory(schema['RequestName'], schema).data
 
 
 class RelValMCSchema(RequestSchema):
@@ -45,4 +45,3 @@ class RelValMCSchema(RequestSchema):
             "GenOutputModuleName", "StepOneOutputModuleName"]
 
 registerRequestType("RelValMC", RelValMCRequest, RelValMCSchema)
-

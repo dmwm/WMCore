@@ -14,9 +14,9 @@ class LoadFromID(DBFormatter):
     Retrieve meta data for a job given it's ID.  This includes the name,
     job group and last update time.
     """
-    sql = """SELECT wmbs_job.id, jobgroup, wmbs_job.name AS name, 
-                    wmbs_job_state.name AS state, state_time, retry_count, 
-                    couch_record,  cache_dir, wmbs_location.site_name AS location, 
+    sql = """SELECT wmbs_job.id, jobgroup, wmbs_job.name AS name,
+                    wmbs_job_state.name AS state, state_time, retry_count,
+                    couch_record,  cache_dir, wmbs_location.site_name AS location,
                     outcome AS bool_outcome, fwjr_path AS fwjr_path
              FROM wmbs_job
                LEFT OUTER JOIN wmbs_location ON
@@ -32,7 +32,7 @@ class LoadFromID(DBFormatter):
         Cast the id, jobgroup and last_update columns to integers because
         formatDict() turns everything into strings.
         """
-        
+
         formattedResult = DBFormatter.formatDict(self, result)
 
         for entry in formattedResult:
@@ -47,7 +47,7 @@ class LoadFromID(DBFormatter):
             return formattedResult[0]
         else:
             return formattedResult
-    
+
     def execute(self, jobID, conn = None, transaction = False):
         """
         _execute_
@@ -60,7 +60,7 @@ class LoadFromID(DBFormatter):
             binds = jobID
         else:
             binds = {"jobid": jobID}
-            
+
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
         return self.formatDict(result)

@@ -224,5 +224,3 @@ class ResourceControl(WMConnectionBase):
 
 
         return
-
-

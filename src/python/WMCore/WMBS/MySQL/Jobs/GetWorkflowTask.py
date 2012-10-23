@@ -20,11 +20,12 @@ class GetWorkflowTask(DBFormatter):
                  wmbs_subscription.subtype = wmbs_sub_types.id
              WHERE wmbs_job.id = :jobid"""    
 
+
     def execute(self, jobIDs, conn = None, transaction = False):
         binds = []
         for jobID in jobIDs:
             binds.append({"jobid": jobID})
-            
+
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
         return self.formatDict(result)

@@ -35,4 +35,3 @@ class UpdateHyperNewsName(DBFormatter):
                                       transaction = transaction)
 
         return
-

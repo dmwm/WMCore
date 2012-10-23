@@ -24,31 +24,31 @@ class Create(DBCreator):
         """
         myThread = threading.currentThread()
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
-        
+
         self.create["01dbsbuffer_dataset"] = \
               """CREATE TABLE dbsbuffer_dataset
-			(
-			   id           BIGINT UNSIGNED not null auto_increment,
-			   path         varchar(500)    unique not null,
+                        (
+                           id           BIGINT UNSIGNED not null auto_increment,
+                           path         varchar(500)    unique not null,
                            valid_status VARCHAR(20),
                            global_tag   VARCHAR(255),
                            subscribed int default 0,
-			   primary key(id)	
-			) ENGINE=InnoDB"""
+                           primary key(id)
+                        ) ENGINE=InnoDB"""
 
         self.create["02dbsbuffer_algo"] = \
               """CREATE TABLE dbsbuffer_algo
-                	(
-               		   id     BIGINT UNSIGNED not null auto_increment,   
-               		   app_name varchar(100),
-               		   app_ver  varchar(100),
-               		   app_fam  varchar(100),
-               		   pset_hash varchar(700),
-               		   config_content LONGTEXT,
+                        (
+                           id     BIGINT UNSIGNED not null auto_increment,
+                           app_name varchar(100),
+                           app_ver  varchar(100),
+                           app_fam  varchar(100),
+                           pset_hash varchar(700),
+                           config_content LONGTEXT,
                            in_dbs int,
-               		   primary key(ID),
-               		   unique (app_name, app_ver, app_fam, pset_hash) 
-            		) ENGINE=InnoDB"""
+                           primary key(ID),
+                           unique (app_name, app_ver, app_fam, pset_hash)
+                        ) ENGINE=InnoDB"""
 
         self.create["03dbsbuffer_algo_dataset_assoc"] = \
               """CREATE TABLE dbsbuffer_algo_dataset_assoc
@@ -63,20 +63,20 @@ class Create(DBCreator):
                            FOREIGN KEY (dataset_id) REFERENCES dbsbuffer_dataset(id)
                              ON DELETE CASCADE
                         ) ENGINE = InnoDB"""
-        
+
         self.create["04dbsbuffer_file"] = \
           """CREATE TABLE dbsbuffer_file (
              id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
              lfn          VARCHAR(255) NOT NULL,
              filesize     BIGINT,
              events       INTEGER,
-	     dataset_algo BIGINT UNSIGNED   not null,
+             dataset_algo BIGINT UNSIGNED   not null,
              block_id     BIGINT UNSIGNED,
-	     status       varchar(20),
+             status       varchar(20),
              in_phedex    INTEGER DEFAULT 0,
              LastModificationDate  BIGINT,
              UNIQUE(lfn)) ENGINE=InnoDB"""
-        
+
         self.create["06dbsbuffer_file_parent"] = \
           """CREATE TABLE dbsbuffer_file_parent (
              child  INTEGER NOT NULL,
@@ -126,7 +126,7 @@ class Create(DBCreator):
               fileid        INTEGER,
               typeid        INTEGER,
               cksum         VARCHAR(100),
-              UNIQUE (fileid, typeid), 
+              UNIQUE (fileid, typeid),
               FOREIGN KEY (typeid) REFERENCES dbsbuffer_checksum_type(id)
                 ON DELETE CASCADE,
               FOREIGN KEY (fileid) REFERENCES dbsbuffer_file(id)
@@ -138,5 +138,3 @@ class Create(DBCreator):
             checksumTypeQuery = """INSERT INTO dbsbuffer_checksum_type (type) VALUES ('%s')
             """ % (i)
             self.inserts["wmbs_checksum_type_%s" % (i)] = checksumTypeQuery
-             
-             

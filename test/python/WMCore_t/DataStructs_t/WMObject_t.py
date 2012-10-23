@@ -4,7 +4,7 @@ _WMObject_t_
 
 Testcase for the WMObject class
 
-""" 
+"""
 
 import unittest
 from WMCore.DataStructs.WMObject import WMObject
@@ -16,18 +16,18 @@ class WMObjectTest(unittest.TestCase):
 
     Testcase for the WMObject class
 
-    """ 
+    """
 
     def setup(self):
         """
         Initial Setup for the Job Testcase
-     
-        P.S: For some weird reason, i couldnt instantiate a 
-        WMObject as an attribute of WMObject_t. 
-        So, I used it as a local variable on each method.    
-        Not the best programming technique I guess, but it works 
+
+        P.S: For some weird reason, i couldnt instantiate a
+        WMObject as an attribute of WMObject_t.
+        So, I used it as a local variable on each method.
+        Not the best programming technique I guess, but it works
         until i figure out what i am doing wrong.
-        """        
+        """
         #self.dummyWMObject = WMObject(self)
         pass
     def tearDown(self):
@@ -39,8 +39,8 @@ class WMObjectTest(unittest.TestCase):
     def testMakeList(self):
         """
         Testcase for the makelist method of the WMObject Class
-        """      
-        dummyWMObject = WMObject()        
+        """
+        dummyWMObject = WMObject()
         #First case: Argument is already a list
         l = [1,2,3]
         assert dummyWMObject.makelist(l) == l, \
@@ -56,7 +56,7 @@ class WMObjectTest(unittest.TestCase):
         """
         Testcase for the makeset method of the WMObject Class
         """
-        dummyWMObject = WMObject()                
+        dummyWMObject = WMObject()
         #First case: Argument is already a Set
         s = set('1,2,3')
         assert dummyWMObject.makeset(s) == s, \

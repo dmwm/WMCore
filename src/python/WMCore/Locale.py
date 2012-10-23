@@ -29,7 +29,7 @@ config.locale.section_("agent")
 config.locale.section_("crabserver")
 config.locale.section_("couch")
 config.locale.section_("mysql")
-config.locale.section_("certificates") 
+config.locale.section_("certificates")
 
 # canned settings for each section
 # request manager
@@ -68,4 +68,3 @@ config.locale.agent.database = "wmagentdb"
 
 # make it easy to import the Locale config as Locale:
 Locale = config
-

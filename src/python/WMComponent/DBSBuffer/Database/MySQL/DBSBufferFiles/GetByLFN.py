@@ -16,7 +16,7 @@ class GetByLFN(DBFormatter):
                     files.status AS status,
                     dbsbuffer_algo.app_name AS app_name, dbsbuffer_algo.app_ver AS app_ver,
                     dbsbuffer_algo.app_fam AS app_fam, dbsbuffer_algo.pset_hash AS pset_hash,
-                    dbsbuffer_algo.config_content, dbsbuffer_dataset.path AS dataset_path 
+                    dbsbuffer_algo.config_content, dbsbuffer_dataset.path AS dataset_path
              FROM dbsbuffer_file files
              INNER JOIN dbsbuffer_algo_dataset_assoc ON
                files.dataset_algo = dbsbuffer_algo_dataset_assoc.id
@@ -62,7 +62,7 @@ class GetByLFN(DBFormatter):
         binds = []
         files = self.dbi.makelist(files)
         for f in files:
-        	binds.append({"lfn": f})
+            binds.append({"lfn": f})
         return binds
 
     def execute(self, files, conn = None, transaction = False):

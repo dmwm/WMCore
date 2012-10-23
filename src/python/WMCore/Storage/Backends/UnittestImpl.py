@@ -79,7 +79,7 @@ class LocalCopyImpl(StageOutImpl):
         I guess this masks a directory?
 
         """
-        
+
         dirName = os.path.dirname(targetPFN)
 
         if not os.path.isdir(dirName):
@@ -87,7 +87,7 @@ class LocalCopyImpl(StageOutImpl):
 
         return
 
-        
+
     def createSourceName(self, protocol, pfn):
         """
         This should return the same PFN

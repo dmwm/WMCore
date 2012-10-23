@@ -10,4 +10,3 @@ from WMCore.WMBS.MySQL.Workflow.New import New as NewWorkflowMySQL
 class New(NewWorkflowMySQL):
     sql = """insert into wmbs_workflow (id, spec, owner, name, task, type)
              values (wmbs_workflow_SEQ.nextval, :spec, :owner, :name, :task, :type)"""
-    

@@ -24,16 +24,16 @@ class SRMV2Impl(StageOutImplV2):
     _SRMV2Impl_
 
     Implement interface for srmcp v2 command
-    
+
     """
-    
+
     run = staticmethod(runCommand)
-    
+
     def __init__(self):
         StageOutImplV2.__init__(self)
         self.directoryErrorCodes = (1,)
-    
-    
+
+
     def createSourceName(self, protocol, pfn):
         """
         _createSourceName_
@@ -45,24 +45,24 @@ class SRMV2Impl(StageOutImplV2):
             return "file:///%s" % pfn
         else:
             return pfn
-        
+
 
     def createOutputDirectory(self, targetPFN, stageOut):
         """
         _createOutputDirectory_
-        
-        SRMV2 does not create directories, 
+
+        SRMV2 does not create directories,
             see http://sdm.lbl.gov/srm-wg/doc/SRM.v2.2.html#_Toc199734394
 
         """
         targetdir = os.path.dirname(targetPFN)
-        
+
         if not stageOut:
             # stage in to local directory - should exist but you never know
             if not os.path.exists(targetdir):
                 os.makedirs(targetdir)
             return
-        
+
         #  // Loop from top level checking existence stop when directory exists
         # // assume first 4 slashes are from srm://host:8443/srm/managerv2?SFN=
         dirs = ["/".join(targetdir.split("/")[0:6+i]) \
@@ -101,7 +101,7 @@ class SRMV2Impl(StageOutImplV2):
         else:
             logging.info("Tried to delete, but nothing knew how")
             logging.info("pfn: %s" % pfn)
-                 
+
     def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum  ):
         toPfn   = self.createSourceName(protocol, toPfn)
         fromPfn = self.createSourceName(protocol, fromPfn)
@@ -116,14 +116,14 @@ class SRMV2Impl(StageOutImplV2):
                             [fromPfn, toPfn],
                             options)
             self.runCommandWarnOnNonZero(ourCommand)
-    
+
             if not stageOut:
                 remotePFN, localPFN = fromPfn, toPfn.replace("file://", "", 1)
             else:
                 remotePFN, localPFN = toPfn, fromPfn.replace("file://", "", 1)
-    
-    
-            if _CheckExitCodeOption:        
+
+
+            if _CheckExitCodeOption:
                 p1 = Popen(["cat", reportFile], stdout=PIPE)
                 p3 = Popen(['cut','-f3','-d',' '], stdin=p1.stdout, stdout=PIPE)
                 exitCode = p3.communicate()[0].rstrip()
@@ -142,10 +142,10 @@ class SRMV2Impl(StageOutImplV2):
                 else:
                     logging.info("Tentatively succeeded transfer, will check metadata")
                     break
-                
+
         localSize = os.path.getsize( localPFN )
         logging.info("Local Size %s" % localSize)
-        
+
         remotePath = None
         SFN = '?SFN='
         sfn_idx = remotePFN.find(SFN)
@@ -175,10 +175,8 @@ class SRMV2Impl(StageOutImplV2):
             except:
                 pass
             raise StageOutFailure, "File sizes don't match"
-        
+
         return toPfn
 
     def runCommandWarnOnError(self,command):
         return SRMV2Impl.runCommandWarnOnError(self, command)
-
-

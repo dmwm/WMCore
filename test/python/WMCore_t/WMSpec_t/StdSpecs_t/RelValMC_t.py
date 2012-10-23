@@ -20,22 +20,22 @@ class RelValMCTest(unittest.TestCase):
     def setUp(self):
         """
         Initialize the database and couch.
-        
+
         """
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setupCouch("relvalmc_t", "ConfigCache")        
+        self.testInit.setupCouch("relvalmc_t", "ConfigCache")
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         couchServer = CouchServer(os.environ["COUCHURL"])
-        self.configDatabase = couchServer.connectDatabase("relvalmc_t")        
+        self.configDatabase = couchServer.connectDatabase("relvalmc_t")
 
 
     def tearDown(self):
         """
         Clear out the database.
-        
+
         """
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
@@ -48,12 +48,12 @@ class RelValMCTest(unittest.TestCase):
         plus three additional config values:
             - GenConfig - ConfigCacheID of the config for the generation task (MonteCarlo)
             - RecoConfig - ConfigCacheID of the config for the reco step (ReReco)
-            - AlcaRecoConfig - ConfigCacheID of the config for the skim/alcareco step (PromptSkim) 
+            - AlcaRecoConfig - ConfigCacheID of the config for the skim/alcareco step (PromptSkim)
         this base config values are taken from MonteCarlo_t, ReReco_t, no test for PromptSkim_t
-        
-        configurations will be similar, they'll only differ in the output modules they define.        
-        
-        """        
+
+        configurations will be similar, they'll only differ in the output modules they define.
+
+        """
         config = Document()
         config["info"] = None
         config["config"] = None
@@ -63,13 +63,13 @@ class RelValMCTest(unittest.TestCase):
         config["pset_tweak_details"] = None
         return config
 
-    
+
     def injectGenerationConfig(self):
-        """        
+        """
         Gen step - Will have one output module, data tier is configurable
         in the workflow.
-        
-        """        
+
+        """
         config = self._getConfigBase()
         config["pset_tweak_details"] = \
             {"process": {"outputModules_": ["OutputA"],
@@ -81,7 +81,7 @@ class RelValMCTest(unittest.TestCase):
     def injectStepOneConfig(self):
         """
         _injectStepOneConfig_
-        
+
         Will output RAW data.
         """
         config = self._getConfigBase()
@@ -91,7 +91,7 @@ class RelValMCTest(unittest.TestCase):
                                                  "dataTier": "GEN-SIM-RAW"}}}}
         result = self.configDatabase.commitOne(config)
         return result[0]["id"]
-    
+
     def injectStepTwoConfig(self):
         """
         _injectStepTwoConfig_
@@ -114,10 +114,10 @@ class RelValMCTest(unittest.TestCase):
         genTask = Workflow(name = "TestWorkload", task = "/TestWorkload/Generation")
         genTask.load()
         self.assertEqual(len(genTask.outputMap.keys()), 2, "Error: Wrong number of WF outputs.")
-        
+
         # output modules
         goldenOutputMods = ["OutputA"]
-        
+
         for o in goldenOutputMods:
             mergedOutput = genTask.outputMap[o][0]["merged_output_fileset"]
             unmergedOutput = genTask.outputMap[o][0]["output_fileset"]
@@ -127,7 +127,7 @@ class RelValMCTest(unittest.TestCase):
                              "Error: Merged output fileset is wrong: %s" % mergedOutput.name)
             self.assertEqual(unmergedOutput.name, "/TestWorkload/Generation/unmerged-%s" % o,
                              "Error: Unmerged output fileset is wrong.")
-            
+
         logArchOutput = genTask.outputMap["logArchive"][0]["merged_output_fileset"]
         unmergedLogArchOutput = genTask.outputMap["logArchive"][0]["output_fileset"]
         logArchOutput.loadData()
@@ -158,7 +158,7 @@ class RelValMCTest(unittest.TestCase):
                              "Error: LogArchive output fileset is wrong: %s" % logArchOutput.name)
             self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/Generation/GenerationMerge%s/merged-logArchive" % o,
                              "Error: LogArchive output fileset is wrong.")
-            
+
         topLevelFileset = Fileset(name = "TestWorkload-Generation-SomeBlock")
         topLevelFileset.loadData()
         prodSubscription = Subscription(fileset = topLevelFileset, workflow = genTask)
@@ -177,7 +177,7 @@ class RelValMCTest(unittest.TestCase):
             self.assertEqual(mergeSubscription["type"], "Merge", "Error: Wrong subscription type.")
             self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
                              "Error: Wrong split algo: %s" % mergeSubscription["split_algo"])
-            
+
         for o in goldenOutputMods:
             unmerged = Fileset(name = "/TestWorkload/Generation/unmerged-%s" % o)
             unmerged.loadData()
@@ -189,7 +189,7 @@ class RelValMCTest(unittest.TestCase):
             self.assertEqual(cleanupSubscription["type"], "Cleanup", "Error: Wrong subscription type.")
             self.assertEqual(cleanupSubscription["split_algo"], "SiblingProcessingBased",
                              "Error: Wrong split algo.")
-            
+
         genLogCollect = Fileset(name = "/TestWorkload/Generation/unmerged-logArchive")
         genLogCollect.loadData()
         genLogCollectTask = Workflow(name = "TestWorkload",
@@ -216,10 +216,10 @@ class RelValMCTest(unittest.TestCase):
                             task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne")
         recoTask.load()
         self.assertEqual(len(recoTask.outputMap.keys()), 2, "Error: Wrong number of WF outputs.")
-        
+
         # output modules
         goldenOutputMods = ["OutputB"]
-        
+
         for o in goldenOutputMods:
             mergedOutput = recoTask.outputMap[o][0]["merged_output_fileset"]
             unmergedOutput = recoTask.outputMap[o][0]["output_fileset"]
@@ -231,7 +231,7 @@ class RelValMCTest(unittest.TestCase):
             self.assertEqual(unmergedOutput.name,
                              "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/unmerged-%s" % o,
                              ("Error: Unmerged output fileset is wrong: %s" % unmergedOutput.name))
-            
+
         logArchOutput = recoTask.outputMap["logArchive"][0]["merged_output_fileset"]
         unmergedLogArchOutput = recoTask.outputMap["logArchive"][0]["output_fileset"]
         logArchOutput.loadData()
@@ -272,7 +272,7 @@ class RelValMCTest(unittest.TestCase):
         for o in goldenOutputMods:
             unmerged = Fileset(name = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/unmerged-%s" % o)
             unmerged.loadData()
-            
+
             mergeTask = Workflow(name = "TestWorkload",
                                       task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMerge%s" % o)
             mergeTask.load()
@@ -291,7 +291,7 @@ class RelValMCTest(unittest.TestCase):
             cleanupSubscription.loadData()
             self.assertEqual(cleanupSubscription["type"], "Cleanup", "Error: Wrong subscription type.")
             self.assertEqual(cleanupSubscription["split_algo"], "SiblingProcessingBased", "Error: Wrong split algo.")
-            
+
         for o in goldenOutputMods:
             recoMergeLogCollect = Fileset(name =
                                           "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMerge%s/merged-logArchive" % o)
@@ -308,17 +308,17 @@ class RelValMCTest(unittest.TestCase):
     def _stepTwoTaskTest(self):
         """
         _stepTwoTaskTest_
-        
+
         """
         alcaRecoTask = Workflow(name = "TestWorkload",
-                                task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo")        
+                                task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo")
         alcaRecoTask.load()
         self.assertEqual(len(alcaRecoTask.outputMap.keys()), 3,
                          "Error: Wrong number of WF outputs.")
-        
+
         # output modules
         goldenOutputMods = ["OutputC", "OutputD"]
-        
+
         for o in goldenOutputMods:
             mergedOutput = alcaRecoTask.outputMap[o][0]["merged_output_fileset"]
             unmergedOutput = alcaRecoTask.outputMap[o][0]["output_fileset"]
@@ -330,7 +330,7 @@ class RelValMCTest(unittest.TestCase):
             self.assertEqual(unmergedOutput.name,
                              "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/unmerged-%s" % o,
                              ("Error: Unmerged output fileset is wrong: %s" % unmergedOutput.name))
-            
+
         logArchOutput = alcaRecoTask.outputMap["logArchive"][0]["merged_output_fileset"]
         unmergedLogArchOutput = alcaRecoTask.outputMap["logArchive"][0]["output_fileset"]
         logArchOutput.loadData()
@@ -352,61 +352,61 @@ class RelValMCTest(unittest.TestCase):
             mergedMergeOutput.loadData()
             unmergedMergeOutput.loadData()
             self.assertEqual(mergedMergeOutput.name,
-                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s/merged-Merged" % o,                             
+                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s/merged-Merged" % o,
                              ("Error: Merged output fileset is wrong: %s" % mergedMergeOutput.name))
             self.assertEqual(unmergedMergeOutput.name,
-                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s/merged-Merged" % o,                             
+                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s/merged-Merged" % o,
                              ("Error: Unmerged output fileset is wrong: %s" % unmergedMergeOutput.name))
             logArchOutput = mergeTask.outputMap["logArchive"][0]["merged_output_fileset"]
             unmergedLogArchOutput = mergeTask.outputMap["logArchive"][0]["output_fileset"]
             logArchOutput.loadData()
             unmergedLogArchOutput.loadData()
             self.assertEqual(logArchOutput.name,
-                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s/merged-logArchive" % o,                             
+                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s/merged-logArchive" % o,
                              ("Error: LogArchive output fileset is wrong: %s" % logArchOutput.name))
             self.assertEqual(unmergedLogArchOutput.name,
-                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s/merged-logArchive" % o,                             
+                             "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s/merged-logArchive" % o,
                              ("Error: LogArchive output fileset is wrong: %s" % unmergedLogArchOutput.name))
 
         for o in goldenOutputMods:
             unmerged = Fileset(name = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/unmerged-%s" % o)
-            unmerged.loadData()            
+            unmerged.loadData()
             mergeTask = Workflow(name = "TestWorkload",
                                  task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s" % o)
             mergeTask.load()
             mergeSubscription = Subscription(fileset = unmerged, workflow = mergeTask)
-            mergeSubscription.loadData()            
+            mergeSubscription.loadData()
             self.assertEqual(mergeSubscription["type"], "Merge", "Error: Wrong subscription type.")
             self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize", "Error: Wrong split algo.")
-        
+
         for o in goldenOutputMods:
             unmerged = Fileset(name = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/unmerged-%s" % o)
             unmerged.loadData()
             cleanupTask = Workflow(name = "TestWorkload",
-                                   task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoCleanupUnmerged%s" % o)                                    
+                                   task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoCleanupUnmerged%s" % o)
             cleanupTask.load()
             cleanupSubscription = Subscription(fileset = unmerged, workflow = cleanupTask)
             cleanupSubscription.loadData()
             self.assertEqual(cleanupSubscription["type"], "Cleanup", "Error: Wrong subscription type.")
             self.assertEqual(cleanupSubscription["split_algo"], "SiblingProcessingBased", "Error: Wrong split algo.")
-        
+
         for o in goldenOutputMods:
             alcaRecoMergeLogCollect = Fileset(name = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s/merged-logArchive" % o)
             alcaRecoMergeLogCollect.loadData()
             alcaRecoMergeLogCollectTask = Workflow(name = "TestWorkload",
-                                                   task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s/StepTwo%sMergeLogCollect" % (o, o))                                               
+                                                   task = "/TestWorkload/Generation/GenerationMergeOutputA/StepOne/StepOneMergeOutputB/StepTwo/StepTwoMerge%s/StepTwo%sMergeLogCollect" % (o, o))
             alcaRecoMergeLogCollectTask.load()
             logCollectSub = Subscription(fileset = alcaRecoMergeLogCollect, workflow = alcaRecoMergeLogCollectTask)
             logCollectSub.loadData()
             self.assertEqual(logCollectSub["type"], "LogCollect", "Error: Wrong subscription type.")
             self.assertEqual(logCollectSub["split_algo"], "MinFileBased", "Error: Wrong split algo.")
 
-    
+
     def testRelValMC(self):
         """
         Configure, instantiate, install into WMBS and check that the
         subscriptions in WMBS are setup correctly.
-        
+
         """
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
@@ -415,16 +415,16 @@ class RelValMCTest(unittest.TestCase):
         defaultArguments["StepOneOutputModuleName"] = "OutputB"
         defaultArguments["GenConfigCacheID"] = self.injectGenerationConfig()
         defaultArguments["StepOneConfigCacheID"] = self.injectStepOneConfig()
-        defaultArguments["StepTwoConfigCacheID"] = self.injectStepTwoConfig() 
-        
+        defaultArguments["StepTwoConfigCacheID"] = self.injectStepTwoConfig()
+
         testWorkload = relValMCWorkload("TestWorkload", defaultArguments)
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
-        
+
         testWMBSHelper = WMBSHelper(testWorkload, "Generation", "SomeBlock")
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
-        
+
         # now run the tests on single workload instance installed into WMBS
         # each of the subtests is dealing with specific tasks
         self._generationTaskTest()
@@ -436,7 +436,7 @@ class RelValMCTest(unittest.TestCase):
         """
         Configure, instantiate, install into WMBS and check that the
         subscriptions in WMBS are setup correctly.
-        
+
         """
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
@@ -447,24 +447,24 @@ class RelValMCTest(unittest.TestCase):
         defaultArguments["GenConfigCacheID"] = self.injectGenerationConfig()
         defaultArguments["StepOneConfigCacheID"] = self.injectStepOneConfig()
         defaultArguments["StepTwoConfigCacheID"] = self.injectStepTwoConfig()
-        
+
         # add pile up information - for the generation task
         defaultArguments["PileupConfig"] = {"cosmics": ["/some/cosmics/dataset1","/some/cosmics/dataset2"],
                                             "minbias": ["/some/minbias/dataset3"]}
-        
+
         testWorkload = relValMCWorkload("TestWorkload", defaultArguments)
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
-        
+
         testWMBSHelper = WMBSHelper(testWorkload, "Generation", "SomeBlock")
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
-        
+
         # now run the tests on single workload instance installed into WMBS
         # each of the subtests is dealing with specific tasks
         self._generationTaskTest()
         self._stepOneTaskTest()
         self._stepTwoTaskTest()
-        
+
 if __name__ == "__main__":
     unittest.main()

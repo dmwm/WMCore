@@ -8,4 +8,3 @@ from WMCore.RequestManager.RequestDB.MySQL.Request.FindByPrepID import FindByPre
 
 class FindByPrepID(FindByPrepIDMySQL):
     pass
-

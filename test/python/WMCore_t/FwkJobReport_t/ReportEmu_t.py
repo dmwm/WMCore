@@ -145,7 +145,7 @@ class ReportEmuTest(unittest.TestCase):
                "Error: RECO file has wrong output module."
         assert alcaOutputFiles[0]["module_label"] == "ALCARECOoutput", \
                "Error: ALCA file has wrong output module."
-        
+
         self.verifyOutputMetaData(recoOutputFiles[0], processingJob)
         self.verifyOutputMetaData(alcaOutputFiles[0], processingJob)
 
@@ -168,8 +168,8 @@ class ReportEmuTest(unittest.TestCase):
         emulator is reasonable.
         """
         #emu = ReportEmu(WMStep = self.cmssw, Job = self.job)
-        #report = emu()        
+        #report = emu()
         return
-        
+
 if __name__ == "__main__":
     unittest.main()

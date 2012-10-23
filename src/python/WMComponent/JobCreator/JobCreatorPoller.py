@@ -104,36 +104,36 @@ def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
             wmTaskPrio = None, owner = None, ownerDN = None,
             ownerGroup = '', ownerRole = '',
             scramArch = None, swVersion = None, agentNumber = 0 ):
-        """
-        _saveJob_
+    """
+    _saveJob_
 
-        Actually do the mechanics of saving the job to a pickle file
-        """
-        if wmTask:
+    Actually do the mechanics of saving the job to a pickle file
+    """
+    if wmTask:
             # If we managed to load the task,
             # so the url should be valid
-            job['spec']     = workflow.spec
-            job['task']     = wmTask
-            if job.get('sandbox', None) == None:
-                job['sandbox'] = sandbox
+        job['spec']     = workflow.spec
+        job['task']     = wmTask
+        if job.get('sandbox', None) == None:
+            job['sandbox'] = sandbox
 
-        job['counter']   = jobNumber
-        job['agentNumber'] = agentNumber
-        cacheDir         = job.getCache()
-        job['cache_dir'] = cacheDir
-        job['priority']  = wmTaskPrio
-        job['owner']     = owner
-        job['ownerDN']   = ownerDN
-        job['ownerGroup']   = ownerGroup
-        job['ownerRole']   = ownerRole
-        job['scramArch'] = scramArch
-        job['swVersion'] = swVersion
-        output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
-        cPickle.dump(job, output, cPickle.HIGHEST_PROTOCOL)
-        output.close()
+    job['counter']   = jobNumber
+    job['agentNumber'] = agentNumber
+    cacheDir         = job.getCache()
+    job['cache_dir'] = cacheDir
+    job['priority']  = wmTaskPrio
+    job['owner']     = owner
+    job['ownerDN']   = ownerDN
+    job['ownerGroup']   = ownerGroup
+    job['ownerRole']   = ownerRole
+    job['scramArch'] = scramArch
+    job['swVersion'] = swVersion
+    output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
+    cPickle.dump(job, output, cPickle.HIGHEST_PROTOCOL)
+    output.close()
 
 
-        return
+    return
 
 
 def creatorProcess(work, jobCacheDir):

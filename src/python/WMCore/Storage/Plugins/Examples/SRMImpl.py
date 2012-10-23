@@ -23,9 +23,9 @@ class SRMImpl(StageOutImplV2):
     _SRMImpl_
 
     Implement interface for srmcp command
-    
+
     """
-    
+
     def createSourceName(self, protocol, pfn):
         """
         _createSourceName_
@@ -42,7 +42,7 @@ class SRMImpl(StageOutImplV2):
 
     def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum  ):
         toPfn   = self.createSourceName(protocol, toPfn)
-        fromPfn = self.createSourceName(protocol, fromPfn)       
+        fromPfn = self.createSourceName(protocol, fromPfn)
         (_,reportFile) = tempfile.mkstemp()
         ourCommand = \
             self.generateCommandFromPreAndPostParts(\
@@ -56,16 +56,16 @@ class SRMImpl(StageOutImplV2):
             remotePFN, localPFN = fromPfn, toPfn.replace("file://", "", 1)
         else:
             remotePFN, localPFN = toPfn, fromPfn.replace("file://", "", 1)
-            
+
         targetPnfsPath = self.createPnfsPath(remotePFN)
 
-        if _CheckExitCodeOption:        
+        if _CheckExitCodeOption:
             p1 = Popen(["rfstat", remotePFN], stdout=PIPE)
             p3 = Popen(['cut','-f3','-d" "'], stdin=p1.stdout, stdout=PIPE)
             exitCode = p3.communicate()[0]
             if exitCode:
                 raise StageOutError, "srmcp failed! Error code: %s" % exitCode
-            
+
         localSize = os.path.getsize( localPFN )
         logging.info("Local Size %s" % localSize)
         #         filesize() { `srm-get-metadata -retry_num=0 %s 2>/dev/null | grep 'size :[0-9]' | cut -f2 -d":"`}
@@ -81,10 +81,10 @@ class SRMImpl(StageOutImplV2):
             except:
                 pass
             raise StageOutFailure, "File sizes don't match"
-        
+
         return toPfn
 
-    
+
     def doDelete(self, pfn, seName, command, options, protocol  ):
         """
         handle both srm and file pfn types
@@ -98,8 +98,3 @@ class SRMImpl(StageOutImplV2):
         else:
             logging.info("Tried to delete, but nothing knew how")
             logging.info("pfn: %s" % pfn)
-    
-
-
-
-

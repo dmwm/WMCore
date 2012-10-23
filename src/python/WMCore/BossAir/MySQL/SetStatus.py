@@ -16,11 +16,11 @@ class SetStatus(DBFormatter):
     """
 
 
-    sql = """UPDATE bl_runjob SET sched_status = 
+    sql = """UPDATE bl_runjob SET sched_status =
                (SELECT id FROM bl_status WHERE name = :status)
                WHERE bl_runjob.id = :id"""
 
-    
+
     def execute(self, jobs, status, conn = None, transaction = False):
         """
         _execute_

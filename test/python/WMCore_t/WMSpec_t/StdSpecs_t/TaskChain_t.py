@@ -39,19 +39,19 @@ def makeGeneratorConfig(couchDatabase):
                                                                           "dataTier": "GEN-SIM"}}}}
     result = couchDatabase.commitOne(newConfig)
     return result[0]["id"]
-    
 
-    
+
+
 def makeProcessingConfigs(couchDatabase):
     """
     _makeProcessingConfigs_
-    
+
     Make a bunch of processing configs in couch for a processing chain consisting of
-    
+
     DigiHLT - Reco - ALCAReco - Skims
-    
+
     returns a map of config names to IDs
-    
+
     """
     rawConfig = Document()
     rawConfig["info"] = None
@@ -72,9 +72,9 @@ def makeProcessingConfigs(couchDatabase):
        "process": {"outputModules_": ["writeRECO", "writeAOD", "writeALCA"],
                    "writeRECO": {"dataset": {"dataTier": "RECO", "filterName" : "reco"}},
                    "writeAOD":  {"dataset": {"dataTier": "AOD", "filterName" : "AOD"}},
-                   "writeALCA":  {"dataset": {"dataTier": "ALCARECO", "filterName" : "alca"}},                                                  
+                   "writeALCA":  {"dataset": {"dataTier": "ALCARECO", "filterName" : "alca"}},
                 }
-        }                        
+        }
     alcaConfig = Document()
     alcaConfig["info"] = None
     alcaConfig["config"] = None
@@ -88,8 +88,8 @@ def makeProcessingConfigs(couchDatabase):
                    "writeALCA3":  {"dataset": {"dataTier": "ALCARECO", "filterName": "alca3"}},
                    "writeALCA4":  {"dataset": {"dataTier": "ALCARECO", "filterName": "alca4"}},
                 }
-        }                        
-        
+        }
+
     skimsConfig = Document()
     skimsConfig["info"] = None
     skimsConfig["config"] = None
@@ -102,21 +102,21 @@ def makeProcessingConfigs(couchDatabase):
                    "writeSkim2":  {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim2"}},
                    "writeSkim3":  {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim3"}},
                    "writeSkim4":  {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim4"}},
-                   "writeSkim5":  {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim5"}},                   
+                   "writeSkim5":  {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim5"}},
                 }
         }
-    couchDatabase.queue(rawConfig)          
-    couchDatabase.queue(recoConfig)   
-    couchDatabase.queue(alcaConfig)   
-    couchDatabase.queue(skimsConfig)   
+    couchDatabase.queue(rawConfig)
+    couchDatabase.queue(recoConfig)
+    couchDatabase.queue(alcaConfig)
+    couchDatabase.queue(skimsConfig)
     result = couchDatabase.commit()
-    
+
     docMap = {
         "DigiHLT" : result[0][u'id'],
         "Reco"    : result[1][u'id'],
         "ALCAReco": result[2][u'id'],
         "Skims"   : result[3][u'id'],
-    }                               
+    }
     return docMap
 
 
@@ -136,22 +136,22 @@ def makePromptSkimConfigs(couchDatabase):
                    "writeSkim2":  {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim2"}},
                    "writeSkim3":  {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim3"}},
                    "writeSkim4":  {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim4"}},
-                   "writeSkim5":  {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim5"}},                   
+                   "writeSkim5":  {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim5"}},
                 }
         }
-    couchDatabase.queue(skimsConfig)   
+    couchDatabase.queue(skimsConfig)
     result = couchDatabase.commit()
     docMap = {
-        "Skims" :result[0][u'id'] 
+        "Skims" :result[0][u'id']
     }
     return docMap
 
 def outputModuleList(task):
     """
     _outputModuleList_
-    
+
     util to return list of output module names
-    
+
     """
     result = []
     for om in task.getOutputModulesForTask():
@@ -165,12 +165,12 @@ class TaskChainTests(unittest.TestCase):
         _setUp_
 
         Initialize the database and couch.
-        
+
         """
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setupCouch("taskchain_t", "ConfigCache")        
+        self.testInit.setupCouch("taskchain_t", "ConfigCache")
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
 
@@ -186,7 +186,7 @@ class TaskChainTests(unittest.TestCase):
         _tearDown_
 
         Clear out the database.
-        
+
         """
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
@@ -203,6 +203,7 @@ class TaskChainTests(unittest.TestCase):
         """
         generatorDoc = makeGeneratorConfig(self.configDatabase)
         processorDocs = makeProcessingConfigs(self.configDatabase)
+
 
         arguments = {
             "AcquisitionEra": "ReleaseValidation",
@@ -268,6 +269,7 @@ class TaskChainTests(unittest.TestCase):
                 "SplittingAlgorithm" : "LumiBased",
                 "SplittingArguments" : {"lumis_per_job" : 8 },
 
+
             },
             "Task6" : {
                 "TaskName" : "Skims",
@@ -276,6 +278,7 @@ class TaskChainTests(unittest.TestCase):
                 "ConfigCacheID" : processorDocs['Skims'],
                 "SplittingAlgorithm" : "LumiBased",
                 "SplittingArguments" : {"lumis_per_job" : 10 },
+
             }
 
         }
@@ -310,11 +313,13 @@ class TaskChainTests(unittest.TestCase):
 
         return
 
+
     def _checkTask(self, task, taskConf):
         """
         _checkTask_
 
         Verify the correctness of the task
+
         """
         if "InputTask" in taskConf:
             inpTaskPath = task.getPathName()
@@ -455,7 +460,7 @@ class TaskChainTests(unittest.TestCase):
             "Task1" :{
                 "TaskName" : "DigiHLT",
                 "ConfigCacheID" : processorDocs['DigiHLT'],
-                "InputDataset" : "/MinimumBias/Commissioning10-v4/GEN-SIM", 
+                "InputDataset" : "/MinimumBias/Commissioning10-v4/GEN-SIM",
                 "SplittingAlgorithm"  : "FileBased",
                 "SplittingArguments" : {"files_per_job" : 1}
             },
@@ -480,6 +485,7 @@ class TaskChainTests(unittest.TestCase):
                 "GlobalTag" : "GlobalTagForALCAReco",
                 "CMSSWVersion" : "CMSSW_ALCA_1",
                 "ScramArch" : "CompatibleALCAArch",
+
             },
             "Task4" : {
                 "TaskName" : "Skims",
@@ -490,8 +496,8 @@ class TaskChainTests(unittest.TestCase):
                 "SplittingArguments" : {"files_per_job" : 10 }, 
             }
         }
-    
-        factory = TaskChainWorkloadFactory()        
+
+        factory = TaskChainWorkloadFactory()
         try:
             self.workload = factory("YankingTheChain", arguments)
         except Exception, ex:
@@ -514,7 +520,7 @@ class TaskChainTests(unittest.TestCase):
                         arguments['Task3'])
         self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims"),
                         arguments['Task4'])
- 
+
         digi = self.workload.getTaskByPath("/YankingTheChain/DigiHLT")
         digiStep = digi.getStepHelper("cmsRun1")
         self.assertEqual(digiStep.getGlobalTag(), arguments['GlobalTag'])
@@ -565,7 +571,7 @@ class TaskChainTests(unittest.TestCase):
             "Task1" :{
                 "TaskName" : "DigiHLT",
                 "ConfigCacheID" : processorDocs['DigiHLT'],
-                "InputDataset" : "/MinimumBias/Commissioning10-v4/GEN-SIM", 
+                "InputDataset" : "/MinimumBias/Commissioning10-v4/GEN-SIM",
                 "SplittingAlgorithm"  : "FileBased",
                 "SplittingArguments" : {"files_per_job" : 1},
             },
@@ -602,7 +608,7 @@ class TaskChainTests(unittest.TestCase):
                 "InputFromOutputModule" : "RECOoutput",
                 "ConfigCacheID" : processorDocs['Skims'],
                 "SplittingAlgorithm" : "FileBased",
-                "SplittingArguments" : {"files_per_job" : 10 },            
+                "SplittingArguments" : {"files_per_job" : 10 },
             }
         }
 
@@ -629,15 +635,15 @@ class TaskChainTests(unittest.TestCase):
                         arguments['Task3'])
         self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergeRECOoutput/Skims"),
                         arguments['Task4'])
-        
-        
-        
+
+
+
         reco = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco")
         recoStep = reco.getStepHelper("cmsRun1")
         recoAppConf = recoStep.data.application.configuration
         self.assertEqual(recoAppConf.scenario, arguments['Task2']['ProcScenario'])
         self.assertEqual(recoAppConf.function, arguments['Task2']['ScenarioMethod'])
-        
+
         alca = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergeALCARECOoutput/ALCAReco")
         alcaStep = alca.getStepHelper("cmsRun1")
         alcaAppConf = alcaStep.data.application.configuration
@@ -646,5 +652,6 @@ class TaskChainTests(unittest.TestCase):
         
         return
         
+
 if __name__ == '__main__':
     unittest.main()

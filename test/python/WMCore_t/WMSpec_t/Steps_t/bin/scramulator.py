@@ -15,9 +15,9 @@ import os
 def dispatcher(*args):
     """
     _dispatcher_
-    
+
     Examine argument list and route to the appropriate call
-    
+
     """
     if args[0] == 'project':
         scramProject(*args)
@@ -35,19 +35,19 @@ def scramProject(*args):
     projectVersion = args[2]
     newDir = os.path.join(os.getcwd(), projectVersion)
     if not os.path.exists(newDir):
-        os.makedirs(newDir) 
-    
+        os.makedirs(newDir)
+
     sys.exit(0)
-    
-    
+
+
 def scramRuntime(*args):
     print "export GREETING=\"Hello World\";"
-    
+
 
 
 if __name__ == '__main__':
-    
+
     dispatcher(*sys.argv[1:])
-    
-    
+
+
     #dispatcher(*args)

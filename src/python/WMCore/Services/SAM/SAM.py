@@ -14,7 +14,7 @@ class SAM(Service):
     def getCMSSWInstalls(self, ce = None):
         """
         Contact the SAM test page and get the tested, installed software on a CE.
-        
+
         Can't use an XML parser because it's not compliant XML...
         """
         inputdata = {"funct":"TestResultLatest",
@@ -22,11 +22,11 @@ class SAM(Service):
                     "vo":"cms",
                     "testname":"CE-cms-swinst"}
         file = 'sam_cmssw_inst_%s.html' % ce
-        
+
         f = self.refreshCache(file, url = '/sam/sam.py', inputdata = inputdata, verb = 'GET')
         lines = f.readlines()
         f.close()
-        
+
         start = []
         end = []
         for i in lines:
@@ -38,8 +38,8 @@ class SAM(Service):
                 end.append(idx)
                 # Change lines[idx] so we don't find it next time...
                 lines[idx] = '----'
-        
-        # Here I overwrite the cached file with an abridged version, to speed 
+
+        # Here I overwrite the cached file with an abridged version, to speed
         # things up next access, so long as the file hasn't expired.
         f = open(file, 'w')
         releases = {}
@@ -61,4 +61,3 @@ class SAM(Service):
         f.close()
 
         return releases
-

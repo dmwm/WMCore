@@ -20,9 +20,9 @@ class LCGImpl(StageOutImplV2):
     _LCGImpl_
 
     Implement interface for srmcp v2 command with lcg-* commands
-    
+
     """
-        
+
     def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksums, checksum ):
         """
             performs a transfer. stageOut tells you which way to go. returns the new pfn or
@@ -45,13 +45,13 @@ class LCGImpl(StageOutImplV2):
             if not os.path.exists( localDir ):
                 logging.info("Making local directory %s" % localDir)
                 os.makedirs( localDir )
-        
+
         if not options:
             options = ""
 
         transferCommand = "lcg-cp -b -D srmv2 --vo cms --srm-timeout 2400 --sendreceive-timeout 2400 --connect-timeout 300 --verbose %s %s %s " %\
                             ( options, fromPfn2, toPfn2 )
-        
+
         logging.info("Staging out with lcg-cp")
         logging.info("  commandline: %s" % transferCommand)
         self.runCommandFailOnNonZero( transferCommand )
@@ -70,11 +70,11 @@ class LCGImpl(StageOutImplV2):
             except:
                 pass
             raise StageOutFailure, "File sizes don't match"
-    
-            
+
+
         return toPfn
-        
-    
+
+
     def doDelete(self, pfn, seName, command, options, protocol  ):
         """
             deletes a file, raises on error
@@ -88,4 +88,3 @@ class LCGImpl(StageOutImplV2):
             runCommand( "/bin/rm -f %s" % pfn.replace("file:", "", 1) )
         else:
             runCommand( StageOutImpl.createRemoveFileCommand(self, pfn) )
-

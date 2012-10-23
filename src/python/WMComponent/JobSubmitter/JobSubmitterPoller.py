@@ -138,7 +138,7 @@ class JobSubmitterPoller(BaseWorkerThread):
     def getPackageCollection(self, sandboxDir):
         """
         _getPackageCollection_
-        
+
         Given a jobID figure out which packageCollection
         it should belong in.
         """
@@ -361,7 +361,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                        loadedJob["name"],
                        loadedJob.get("proxyPath", None),
                        newJob['request_name'])
-            
+
             self.jobDataCache[workflowName][jobID] = jobInfo
 
         if len(badJobs) > 0:

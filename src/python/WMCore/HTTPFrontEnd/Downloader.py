@@ -31,4 +31,3 @@ class Downloader:
         return serve_file(name, "application/x-download", "attachment")
 
     index.exposed = True
-

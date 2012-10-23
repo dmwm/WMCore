@@ -13,7 +13,7 @@ class AddFiles(DBFormatter):
 
     sql = """INSERT INTO wmbs_job_assoc (job, fileid)
                VALUES (:jobid, :fileid) """
-    
+
     def getBinds(self, jobDict):
         binds = []
         for jid in jobDict.keys():
@@ -23,7 +23,7 @@ class AddFiles(DBFormatter):
                 binds.append({'jobid': jid, 'fileid': fileID})
 
         return binds
-    
+
     def execute(self, id = None, file = None, conn = None, transaction = False, jobDict = None):
 
         #Adding jobDict activates bulk mode
@@ -36,7 +36,7 @@ class AddFiles(DBFormatter):
         else:
             logging.error('Jobs.AddFiles called with insufficient arguments')
             return
-        
+
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
         return

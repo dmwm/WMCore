@@ -23,9 +23,9 @@ class CreateWMBS(OracleCreate):
         constraints and inserts.
         """
         OracleCreate.__init__(self, logger, dbInterface)
-        
+
         self.create["02wmbs_file_details"] = None # This would be a view
-        
+
         self.create["05wmbs_file_runlumi_map"] = None # This would be a view
 
         for subType in ("Processing", "Merge", "Job"):

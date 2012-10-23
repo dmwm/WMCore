@@ -16,7 +16,7 @@ class AddLocation(DBFormatter):
 
     sql = """INSERT IGNORE INTO dbsbuffer_location (se_name)
                VALUES (:location)"""
-    
+
     def execute(self, siteName, conn = None, transaction = False):
         """
         _execute_
@@ -36,7 +36,7 @@ class AddLocation(DBFormatter):
         """
         mySites = copy.deepcopy(siteName)
         nameMap = {}
-        
+
         if type(mySites) == str:
             mySites = [mySites]
 
@@ -46,9 +46,9 @@ class AddLocation(DBFormatter):
         binds = []
         for location in mySites:
             binds.append({"location": location})
-            
+
         results = self.dbi.processData(self.existsSQL, binds,
-                                       conn = myTransaction.conn, 
+                                       conn = myTransaction.conn,
                                        transaction = True)
         results = self.format(results)
         for result in results:
@@ -60,7 +60,7 @@ class AddLocation(DBFormatter):
             binds.append({"location": location})
 
         if len(binds) > 0:
-            self.dbi.processData(self.sql, binds, conn = myTransaction.conn, 
+            self.dbi.processData(self.sql, binds, conn = myTransaction.conn,
                                  transaction = True)
             results = self.dbi.processData(self.existsSQL, binds,
                                            conn = myTransaction.conn,
@@ -69,6 +69,6 @@ class AddLocation(DBFormatter):
             results = self.format(results)
             for result in results:
                 nameMap[result[0]] = int(result[1])
-                
+
         myTransaction.commit()
         return nameMap

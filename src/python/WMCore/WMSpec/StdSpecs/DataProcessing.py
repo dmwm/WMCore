@@ -14,7 +14,7 @@ def getTestArguments():
     _getTestArguments_
 
     This should be where the default REQUIRED arguments go
-    This serves as documentation for what is currently required 
+    This serves as documentation for what is currently required
     by the standard DataProcessing workload in importable format.
 
     NOTE: These are test values.  If used in real workflows they
@@ -30,10 +30,10 @@ def getTestArguments():
         "ProcessingVersion": 2,
         "SkimInput": "output",
         "GlobalTag": "GR10_P_v4::All",
-        
+
         "CouchURL": os.environ.get("COUCHURL", None),
         "CouchDBName": "scf_wmagent_configcache",
-        
+
         "ProcScenario": "cosmics",
         #"ProcConfigCacheID": "03da10e20c7b98c79f9d6a5c8900f83b",
         "Multicore" : None,
@@ -77,7 +77,7 @@ class DataProcessingWorkloadFactory(StdBase):
         taskType = "Processing"
         if self.multicore:
             taskType = "MultiProcessing"
-            
+
         outputMods = self.setupProcessingTask(procTask, taskType, self.inputDataset,
                                               scenarioName = self.procScenario, scenarioFunc = "promptReco",
                                               scenarioArgs = { 'globalTag' : self.globalTag,
@@ -87,9 +87,9 @@ class DataProcessingWorkloadFactory(StdBase):
                                                                                'moduleLabel' : "ALCARECOoutput" } ] },
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
                                               configDoc = self.procConfigCacheID, splitAlgo = self.procJobSplitAlgo,
-                                              splitArgs = self.procJobSplitArgs, stepType = cmsswStepType) 
+                                              splitArgs = self.procJobSplitArgs, stepType = cmsswStepType)
         self.addLogCollectTask(procTask)
-        
+
 
         procMergeTasks = {}
         for outputModuleName in outputMods.keys():
@@ -116,7 +116,7 @@ class DataProcessingWorkloadFactory(StdBase):
         # The CouchURL and name of the ConfigCache database must be passed in
         # by the ReqMgr or whatever is creating this workflow.
         self.couchURL = arguments["CouchURL"]
-        self.couchDBName = arguments["CouchDBName"]        
+        self.couchDBName = arguments["CouchDBName"]
 
         # Get the ProcConfigCacheID
         self.procConfigCacheID = arguments.get("ProcConfigCacheID", None)
@@ -140,7 +140,7 @@ class DataProcessingWorkloadFactory(StdBase):
     def validateSchema(self, schema):
         """
         _validateSchema_
-        
+
         Check for required fields, and some skim facts
         """
         requiredFields = ["CMSSWVersion", "GlobalTag",
@@ -154,7 +154,7 @@ class DataProcessingWorkloadFactory(StdBase):
                                                     getOutputModules = True)
         elif not schema.has_key('ProcScenario'):
             self.raiseValidationException(msg = "No Scenario or Config in Processing Request!")
-            
+
         return
 
 def dataProcessingWorkload(workloadName, arguments):
@@ -166,5 +166,3 @@ def dataProcessingWorkload(workloadName, arguments):
     """
     myDataProcessingFactory = DataProcessingWorkloadFactory()
     return myDataProcessingFactory(workloadName, arguments)
-
-

@@ -2,7 +2,7 @@ from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMCore.RequestManager.RequestDB.Settings.RequestStatus import NextStatus
 
 class RequestManager(dict):
-    
+
     def __init__(self, *args, **kwargs):
         """
         all the private valuable is defined for test values
@@ -22,7 +22,7 @@ class RequestManager(dict):
         self.names = []
         import logging
         self['logger'] = logging
-    
+
     def getAssignment(self, teamName=None, request=None):
         if self.count < self.maxWmSpec:
             if self.type == 'ReReco':
@@ -41,7 +41,7 @@ class RequestManager(dict):
             #specUrl =self.specGenerator.createProductionSpec(specName, "file")
             #specName = "FakeProcessingSpec_%s" % self.count
             #specUrl =self.specGenerator.createProcessingSpec(specName, "file")
-        
+
             self.count += 1
             # returns list of list(rquest name, spec url)
             return [[specName, specUrl],]
@@ -75,7 +75,7 @@ class RequestManager(dict):
 
     def sendMessage(self, request, msg):
         self.msg[request] = msg
-        
+
     def _removeSpecs(self):
         """
         This is just for clean up not part of emulated function

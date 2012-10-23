@@ -20,7 +20,7 @@ from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 from WMCore.WMRuntime.Tools.Scram import Scram
 from WMCore.WMSpec.WMStep import WMStepHelper
 
-from WMCore.FwkJobReport.MulticoreReader import readMultiJobReports 
+from WMCore.FwkJobReport.MulticoreReader import readMultiJobReports
 import WMCore.FwkJobReport.MulticoreUtils as ReportUtils
 from WMCore.WMRuntime.MergeBucket import MergeBucket
 
@@ -75,7 +75,7 @@ class CMSSW(Executor):
         typeHelper = stepHelper.getTypeHelper()
         if typeHelper.multicoreEnabled():
             self.step.runtime.scramPreScripts.append("SetupCMSSWMulticore")
-            
+
         # add in ths scram env PSet manip script whatever happens
         self.step.runtime.scramPreScripts.append("SetupCMSSWPset")
         return None
@@ -90,7 +90,7 @@ class CMSSW(Executor):
         if (emulator != None):
             return emulator.emulate( self.step, self.job )
 
-        
+
 
         # write the wrapper script to a temporary location
         # I don't pass it directly through os.system because I don't
@@ -113,7 +113,7 @@ class CMSSW(Executor):
 
 
         multicoreSettings = self.step.application.multicore
-        multicoreEnabled  = multicoreSettings.enabled 
+        multicoreEnabled  = multicoreSettings.enabled
         if multicoreEnabled:
             numberOfCores = multicoreSettings.numberOfCores
             logging.info("***Multicore CMSSW Enabled***")
@@ -288,7 +288,7 @@ class CMSSW(Executor):
             # Catch it if something goes wrong
             raise WMExecutionFailure(50115, "BadJobReportXML", str(ex))
 
-        
+
         #
         # If multicore is enabled, merged the output files and reports
         #
@@ -362,12 +362,12 @@ class CMSSW(Executor):
             return self.errorDestination
 
         return None
-        
+
     def multicoreMerge(self, scramRef, applicationStart):
         """
         If this step is a multicore configured step, the output from the subprocesses needs to be merged
         together and the job report updated.
-        
+
         """
         logging.info("***Multicore Post processing started***")
         #  //
@@ -416,7 +416,7 @@ class CMSSW(Executor):
         #//
         for f in inputFiles.values():
             self.report.addInputFile(f['module_label'], **f)
-        
+
         #  //
         # // Now roll through the merges, run the merge and edit the master job report with the outcome
         #//
@@ -448,12 +448,12 @@ class CMSSW(Executor):
         self.report.report.performance = aggregator.aggregate()
         ReportUtils.updateMulticoreReport(self.report, len(mergeBuckets), mergesStart , mergesComplete,
                                           totalJobTime , *mergeTiming)
-        
+
         logging.info("***Multicore Post processing complete***")
         return
-        
-        
-        
+
+
+
 
 configBlob = """#!/bin/bash
 
@@ -518,4 +518,3 @@ echo "process id is $PROCID status is $EXIT_STATUS"
 exit $EXIT_STATUS
 
 """
-

@@ -36,7 +36,7 @@ class CompleteJob(DBFormatter):
         for job in jobs:
             binds.append({'id': job})
 
-        
+
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
 

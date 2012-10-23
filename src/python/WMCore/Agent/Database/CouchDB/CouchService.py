@@ -77,4 +77,3 @@ class CouchService(object):
             msg += str(ex)
             msg += str(traceback.format_exc())
             logging.error(msg)
-

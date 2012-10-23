@@ -14,7 +14,7 @@ class SetParentage(DBFormatter):
              WHERE wfd1.lfn = :child
              AND wfd2.lfn = :parent
     """
-    
+
     def execute(self, binds, conn = None, transaction = False):
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)

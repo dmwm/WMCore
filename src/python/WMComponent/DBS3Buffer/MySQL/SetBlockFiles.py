@@ -13,8 +13,8 @@ class SetBlockFiles(DBFormatter):
     """
     sql = """UPDATE dbsbuffer_file SET block_id =
                (SELECT id FROM dbsbuffer_block WHERE blockname = :block)
-             WHERE dbsbuffer_file.lfn = :filelfn"""  
-    
+             WHERE dbsbuffer_file.lfn = :filelfn"""
+
     def execute(self, binds, conn = None, transaction = None):
         """
         Insert block name into files
@@ -25,4 +25,3 @@ class SetBlockFiles(DBFormatter):
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
         return
-    

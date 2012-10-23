@@ -12,9 +12,9 @@ import WMCore.RequestManager.RequestDB.Connection as DBConnect
 def addSoftware(softwareName, scramArch = None):
     """
     _addSoftware_
-    
+
     Add a software version to the database
-    
+
     """
     factory = DBConnect.getConnection()
     checkDict = listSoftware()
@@ -56,7 +56,7 @@ def updateSoftware(softwareNames, scramArch = None):
 def listSoftware():
     """
     _listSoftware_
-    
+
     lists all software versions in the database
     """
     factory = DBConnect.getConnection()
@@ -75,4 +75,3 @@ def removeSoftware(softwareName, scramArch = None):
     removeSw = factory(classname = "Software.Delete")
     removeSw.execute(softwareName, scramArch = scramArch)
     return
-

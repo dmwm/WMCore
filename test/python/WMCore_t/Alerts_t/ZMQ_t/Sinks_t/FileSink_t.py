@@ -14,15 +14,15 @@ class FileSinkTest(unittest.TestCase):
     def setUp(self):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging(logLevel = logging.DEBUG)
-        self.testDir = self.testInit.generateWorkDir()        
+        self.testDir = self.testInit.generateWorkDir()
         self.config = ConfigSection("file")
         self.config.outputfile = os.path.join(self.testDir, "FileSinkTestNew.json")
-    
-    
+
+
     def tearDown(self):
         self.testInit.delWorkDir()
-    
-    
+
+
     def testFileSinkBasic(self):
         sink = FileSink(self.config)
         alerts = []
@@ -35,7 +35,7 @@ class FileSinkTest(unittest.TestCase):
         # test by reading back
         loadAlerts = sink.load()
         self.assertEqual(len(loadAlerts), nAlerts)
-        
+
         # Since FileSink implementation depends on line-separated JSONs of
         # Alert instance, test handling new lines in the payload
         alerts = []
@@ -44,7 +44,7 @@ class FileSinkTest(unittest.TestCase):
             a = Alert(Source = __file__, Level = i, Timestamp = time.time(),
                       Type = "Test", Details = {"message": testMsg})
             alerts.append(a)
-        self.failUnless(os.path.exists(self.config.outputfile))            
+        self.failUnless(os.path.exists(self.config.outputfile))
         sink.send(alerts)
         # test by reading back
         loadAlerts = sink.load()

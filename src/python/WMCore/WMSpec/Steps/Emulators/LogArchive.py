@@ -68,8 +68,8 @@ class LogArchive(Emulator):
             shutil.copy(listOfReports[0], taskLocation)
 
 
-        return 
-                
+        return
+
 
 
     def post(self):

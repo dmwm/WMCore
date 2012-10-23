@@ -32,23 +32,23 @@ class StageOutImpl:
         self.stageIn = stagein
         # tuple of exit codes of copy when dest directory does not exist
         self.directoryErrorCodes = tuple()
-    
+
 
     def deferDirectoryCreation(self):
         """
-        Can we defer directory creation, hoping it exists, 
+        Can we defer directory creation, hoping it exists,
         only to create on a given error condition
         """
         return len(self.directoryErrorCodes) != 0
-    
+
 
     def executeCommand(self, command):
         """
         _execute_
-    
+
         Execute the command provided, throw a StageOutError if it exits
         non zero
-    
+
         """
         try:
             exitCode = runCommand(command)
@@ -112,7 +112,7 @@ class StageOutImpl:
 
         Build a shell command that will transfer the sourcePFN to the
         targetPFN using the options provided if necessary
-        
+
         """
         raise NotImplementedError, "StageOutImpl.createStageOutCommand"
 
@@ -191,7 +191,7 @@ class StageOutImpl:
         #//
         for retryCount in range(1, self.numRetries + 1):
             try:
-                
+
                 try:
                     self.executeCommand(command)
                 except StageOutInvalidPath, ex:

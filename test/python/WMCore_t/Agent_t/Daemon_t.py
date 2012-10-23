@@ -24,10 +24,10 @@ from nose.plugins.skip import Skip, SkipTest
 class DaemonTest(unittest.TestCase):
     """
     _Daemon_t_
-    
+
     Unit tests for message services: subscription, priority subscription, buffers,
     etc..
-    
+
     """
 
     # minimum number of messages that need to be in queue
@@ -44,15 +44,15 @@ class DaemonTest(unittest.TestCase):
 
     def tearDown(self):
         """
-        Deletion of the databases 
+        Deletion of the databases
         """
         self.testInit.clearDatabase()
         shutil.rmtree( self.tempDir, True )
-               
+
     def testA(self):
         """
         __testSubscribe__
-        
+
         Test daemon creation
         """
         # keep the parent alive
@@ -77,5 +77,3 @@ class DaemonTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-

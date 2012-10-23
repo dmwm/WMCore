@@ -16,4 +16,3 @@ class Generic(Diagnostic):
 
     def __init__(self):
         Diagnostic.__init__(self)
-

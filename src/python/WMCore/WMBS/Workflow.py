@@ -240,4 +240,3 @@ class Workflow(WMBSBase, WMWorkflow):
         self.commitTransaction(existingTransaction)
 
         return result
-

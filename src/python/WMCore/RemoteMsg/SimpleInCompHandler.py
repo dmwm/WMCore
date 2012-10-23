@@ -18,12 +18,12 @@ It could be mapped to a msgType using the 'RemoteMsg.setHandler' method.
 #import os
 #import inspect
 
-import threading 
+import threading
 import time
 from WMCore.WMFactory import WMFactory
 
 class SimpleInCompHandler(object):
-    """ 
+    """
     _SimpleInCompHandler_
 
     Handles the msg with payload, and has access to WMCore comp DB
@@ -40,15 +40,15 @@ class SimpleInCompHandler(object):
                 self.factory = WMFactory("default", self.myComp + \
                                        ".Database."+ self.dialect)
                 self.queries = self.factory.loadObject("Queries")
-       
+
 
     def __call__(self, msgType, payload):
         """
         Handles the msg with payload, and has access to WMCore comp DB
         by using self.query and myThread.transaction.
-       
+
         You could do things like:
-       
+
           myThread = threading.currentThread()
           myThread.transaction.begin()
           self.queries.updateTask(taskId, vars)
@@ -62,6 +62,6 @@ class SimpleInCompHandler(object):
         self.mylogger("\nSimpleHandler received: msgType: %s" %(msgType))
         self.mylogger("                payload: "+payload)
         self.mylogger("Ended: SimpleHandler at %s" % (time.ctime()))
-        
+
         result = ['This is an example of what can be returned', 0, {'dict': 'also'}]
         return result

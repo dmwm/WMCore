@@ -141,4 +141,8 @@ dependencies = {
                 {
                         'statics': ['src/couchapps/AlertsCollector+'],
                 },
+                't0wmstats':{
+                        'statics': ['src/couchapps/WMStats+',
+                                    'src/couchapps/WorkloadSummary+'],
+                        }
                }

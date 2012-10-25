@@ -27,7 +27,8 @@ class GetAndMarkNewFinishedSubscriptions(DBFormatter):
              WHERE wmbs_subscription.id IN (
                SELECT id FROM (
                  SELECT complete_subscription.id
-                 FROM ( SELECT wmbs_subscription.id, wmbs_subscription.fileset,
+                 FROM ( SELECT wmbs_subscription.id,
+                               wmbs_subscription.fileset,
                                wmbs_workflow.name
                         FROM wmbs_subscription
                             INNER JOIN wmbs_fileset ON
@@ -47,7 +48,9 @@ class GetAndMarkNewFinishedSubscriptions(DBFormatter):
                                 wmbs_job.state_time > :maxTime AND
                                 wmbs_job.state != %d
                         WHERE wmbs_subscription.finished = 0
-                        GROUP BY wmbs_subscription.id, wmbs_subscription.fileset
+                        GROUP BY wmbs_subscription.id,
+                                 wmbs_subscription.fileset,
+                                 wmbs_workflow.name
                         HAVING COUNT(wmbs_sub_files_available.subscription) = 0
                         AND COUNT(wmbs_sub_files_acquired.subscription) = 0
                         AND COUNT(wmbs_job.id) = 0 ) complete_subscription

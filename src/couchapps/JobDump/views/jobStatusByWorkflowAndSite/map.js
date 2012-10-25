@@ -39,7 +39,7 @@ function(doc) {
           case 'executing':
               if (doc['states'][lastStateIndex - 1].oldstate == 'new') {
                   status = 'submitted_first';
-              } else if (doc['states'][lastStateInde - 1].oldstate == 'submitpaused') {
+              } else if (doc['states'][lastStateIndex - 1].oldstate == 'submitpaused') {
                   status = 'submitted_first';
               } else if (doc['states'][lastStateIndex - 1].oldstate == 'submitcooloff') {
                   status = 'submitted_first';

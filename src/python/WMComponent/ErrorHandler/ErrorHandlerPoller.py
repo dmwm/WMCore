@@ -34,7 +34,6 @@ import os.path
 import threading
 import logging
 import traceback
-import collections
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -43,7 +42,6 @@ from WMCore.DAOFactory        import DAOFactory
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.ACDC.DataCollectionService  import DataCollectionService
-from WMCore.WMSpec.WMWorkload           import WMWorkload, WMWorkloadHelper
 from WMCore.WMException                 import WMException
 from WMCore.FwkJobReport.Report         import Report
 
@@ -74,6 +72,11 @@ class ErrorHandlerPoller(BaseWorkerThread):
         self.changeState = ChangeState(self.config)
 
         self.maxRetries     = self.config.ErrorHandler.maxRetries
+        if type(self.maxRetries) != dict:
+            self.maxRetries = {'default' : self.maxRetries}
+        if 'default' not in self.maxRetries:
+            raise ErrorHandlerException('Max retries for the default job type must be specified')
+
         self.maxProcessSize = getattr(self.config.ErrorHandler, 'maxProcessSize', 250)
         self.exitCodes      = getattr(self.config.ErrorHandler, 'failureExitCodes', [])
         self.maxFailTime    = getattr(self.config.ErrorHandler, 'maxFailTime', 24 * 3600)
@@ -81,7 +84,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         self.passCodes      = getattr(self.config.ErrorHandler, 'passExitCodes', [])
 
         self.getJobs    = self.daoFactory(classname = "Jobs.GetAllJobs")
-        self.idLoad     = self.daoFactory(classname = "Jobs.LoadFromID")
+        self.idLoad     = self.daoFactory(classname = "Jobs.LoadFromIDWithType")
         self.loadAction = self.daoFactory(classname = "Jobs.LoadForErrorHandler")
 
         self.dataCollection = DataCollectionService(url = config.ACDC.couchurl,
@@ -127,11 +130,12 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         # Retries < max retry count
         for ajob in jobs:
-            # Retries < max retry count
-            if ajob['retry_count'] < self.maxRetries and jobType != 'create':
+            allowedRetries = self.maxRetries.get(ajob['type'], self.maxRetries['default'])
+            # Retries < allowed max retry count
+            if ajob['retry_count'] < allowedRetries and jobType != 'create':
                 cooloffPre.append(ajob)
-            # Check if Retries >= max retry count or it is a createfailed job
-            elif ajob['retry_count'] >= self.maxRetries or jobType == 'create':
+            # Check if Retries >= allowed max retry count
+            elif ajob['retry_count'] >= allowedRetries or jobType == 'create':
                 exhaustJobs.append(ajob)
                 msg = "Exhausting job %i" % ajob['id']
                 logging.error(msg)

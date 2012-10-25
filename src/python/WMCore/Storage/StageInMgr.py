@@ -252,38 +252,11 @@ class StageInMgr:
         except Exception, ex:
             msg = "Failure for local stage in:\n"
             msg += str(ex)
-            try:
-                import traceback
-                msg += traceback.format_exc()
-            except AttributeError, ex:
-                msg += "Traceback unavailable\n"
             raise StageOutFailure(msg, Command = command, Protocol = protocol,
                                   LFN = lfn, InputPFN = localPfn,
                                   TargetPFN = pfn)
 
         return localPfn
-
-
-
-#    def reportStageOutFailure(self, stageOutExcep):
-#        """
-#        _reportStageOutFailure_
-#
-#        When a stage out failure occurs, report it to the input
-#        framework job report.
-#
-#        - *stageOutExcep* : Instance of on of the StageOutError derived classes
-#
-#        """
-#        errStatus = stageOutExcep.data["ErrorCode"]
-#        errType = stageOutExcep.data["ErrorType"]
-#        desc = stageOutExcep.message
-#
-#        errReport = self.inputReport.addError(errStatus, errType)
-#        errReport['Description'] = desc
-#        return
-
-
 
 
     def searchTFC(self, lfn):

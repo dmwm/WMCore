@@ -6,15 +6,12 @@ General Exception class for WM modules
 
 """
 
-
-
-
-
-
 import exceptions
 import inspect
 import logging
 import traceback
+import sys
+
 
 class WMException(exceptions.Exception):
     """
@@ -50,34 +47,44 @@ class WMException(exceptions.Exception):
         #  //
         # // Automatically determine the module name
         #//  if not set
-        if self['ModuleName'] == None:
-            frame = inspect.currentframe()
-            lastframe = inspect.getouterframes(frame)[1][0]
-            excepModule = inspect.getmodule(lastframe)
-            if excepModule != None:
-                modName = excepModule.__name__
-                self['ModuleName'] = modName
-
+        if self.data['ModuleName'] == None:
+            try:
+                frame = inspect.currentframe()
+                lastframe = inspect.getouterframes(frame)[1][0]
+                excepModule = inspect.getmodule(lastframe)
+                if excepModule != None:
+                    modName = excepModule.__name__
+                    self.data['ModuleName'] = modName
+            finally:
+                frame = None
 
         #  //
         # // Find out where the exception came from
         #//
-        stack = inspect.stack(1)[1]
-        self['FileName'] = stack[1]
-        self['LineNumber'] = stack[2]
-        self['MethodName'] = stack[3]
+        try:
+            stack = inspect.stack(1)[1]
+            self.data['FileName'] = stack[1]
+            self.data['LineNumber'] = stack[2]
+            self.data['MethodName'] = stack[3]
+        finally:
+            stack = None
 
         #  //
         # // ClassName if ClassInstance is passed
         #//
-        if self['ClassInstance'] != None:
-            self['ClassName'] = \
-              self['ClassInstance'].__class__.__name__
+        try:
+            if self.data['ClassInstance'] != None:
+                self.data['ClassName'] = \
+                      self.data['ClassInstance'].__class__.__name__
+        except:
+            pass
 
 
         # Determine the traceback at time of __init__
-        self.traceback = str(traceback.format_exc())
-
+        try:
+            self.traceback = "\n".join(traceback.format_tb(sys.exc_info()[2]))
+        except:
+            self.traceback = "WMException error: Couldn't get traceback\n"
 
     def __getitem__(self, key):
         """

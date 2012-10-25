@@ -183,8 +183,7 @@ class StageOutImpl:
         #  //
         # // Create the command to be used.
         #//
-        command = self.createStageOutCommand(
-            sourcePFN, targetPFN, options)
+        command = self.createStageOutCommand(sourcePFN, targetPFN, options)
 
         #  //
         # // Run the command

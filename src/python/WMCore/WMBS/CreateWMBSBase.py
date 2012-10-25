@@ -153,6 +153,7 @@ class CreateWMBSBase(DBCreator):
              task         VARCHAR(550) NOT NULL,
              type         VARCHAR(255),
              owner        INTEGER      NOT NULL,
+             alt_fs_close INT(1)       NOT NULL,
              injected     INT(1)       DEFAULT 0,
              UNIQUE(name, task),
              FOREIGN KEY(owner)    REFERENCES wmbs_users(id)

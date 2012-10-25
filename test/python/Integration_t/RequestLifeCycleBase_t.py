@@ -11,6 +11,19 @@ from nose.plugins.attrib import attr
 import time
 import os
 import imp
+from functools import wraps
+
+# decorator around tests - record errors
+def recordException(fn):
+    @wraps(fn)
+    def wrapped(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except:
+            args[0].__class__._failure_detected = True
+            raise
+    return wrapped
+
 
 class RequestLifeCycleBase_t():
 
@@ -20,9 +33,24 @@ class RequestLifeCycleBase_t():
     endpoint = os.environ.get('REQMGRBASEURL', 'https://localhost:8443')
     reqmgr = RequestManager({'endpoint' : endpoint + '/reqmgr/reqMgr'})
     team = 'TestTeam'
+    _failure_detected = False
 
+    @recordException
     def setUp(self):
-        pass
+        if self.__class__._failure_detected:
+            raise nose.SkipTest
+        # simple ping check - check reqmgr up
+        tries = 0
+        while True:
+            try:
+                if not self.__class__.request:
+                    self.__class__.reqmgr.getTeam()
+                break
+            except:
+                tries += 1
+                if tries >= 3:
+                    raise nose.SkipTest("Unable to contact reqmgr")
+                time.sleep(15)
 
     def _configCacheId(self, label):
         """Return config cache id for given config label"""
@@ -59,11 +87,13 @@ class RequestLifeCycleBase_t():
         return config
 
     @attr("lifecycle")
+    @recordException
     def test05InjectConfigs(self):
         """Inject configs to cache"""
         self.__class__.requestParams = self._convertLabelsToId(self.__class__.requestParams)
 
     @attr("lifecycle")
+    @recordException
     def test10InjectRequest(self):
         """Can inject a request"""
         self.__class__.requestParams.setdefault('RequestString', self.__class__.__name__)
@@ -84,25 +114,24 @@ class RequestLifeCycleBase_t():
         self.assertEqual(self.__class__.request['RequestStatus'], 'new')
 
     @attr("lifecycle")
+    @recordException
     def test20ApproveRequest(self):
         """Approve request"""
-        if not self.__class__.request_name:
-            raise nose.SkipTest
         self.__class__.reqmgr.reportRequestStatus(self.__class__.request_name, 'assignment-approved')
         self.__class__.request = self.__class__.reqmgr.getRequest(self.__class__.request_name)
         self.assertEqual(self.__class__.request['RequestStatus'], 'assignment-approved')#
 
     @attr("lifecycle")
+    @recordException
     def test30AssignRequest(self):
         """Assign request"""
-        if not self.__class__.request_name:
-            raise nose.SkipTest
         self.__class__.reqmgr.assign(self.__class__.request_name, self.__class__.team, "Testing", "v1",
                            MergedLFNBase='/store/temp', UnmergedLFNBase='/store/temp')
         self.__class__.request = self.reqmgr.getRequest(self.__class__.request_name)
         self.assertEqual(self.__class__.request['RequestStatus'], 'assigned')
 
     @attr("lifecycle")
+    @recordException
     def test40WorkQueueAcquires(self):
         """WorkQueue picks up request"""
         if not self.__class__.request_name:
@@ -123,11 +152,12 @@ class RequestLifeCycleBase_t():
             time.sleep(15)
 
     @attr("lifecycle")
+    @recordException
     def test50AgentAcquires(self):
         """Elements acquired by agent"""
         # skip if request already running
         self.__class__.request = self.__class__.reqmgr.getRequest(self.__class__.request_name)
-        if not self.__class__.request_name or self.__class__.request['RequestStatus'] == 'running':
+        if self.__class__.request['RequestStatus'] == 'running':
             raise nose.SkipTest
         start = time.time()
         while True:
@@ -141,10 +171,9 @@ class RequestLifeCycleBase_t():
         self.assertTrue([x for x in request if x['status'] in ('Acquired', 'Running')])
 
     @attr("lifecycle")
+    @recordException
     def test60RequestRunning(self):
         """Request running"""
-        if not self.__class__.request_name:
-            raise nose.SkipTest
         start = time.time()
         while True:
             request = [x for x in self.__class__.workqueue.getJobStatusByRequest() if \
@@ -159,10 +188,9 @@ class RequestLifeCycleBase_t():
             time.sleep(15)
 
     @attr("lifecycle")
+    @recordException
     def test70WorkQueueFinished(self):
         """Request completed in workqueue"""
-        if not self.__class__.request_name:
-            raise nose.SkipTest
         start = time.time()
         while True:
             request = [x for x in self.__class__.workqueue.getJobStatusByRequest() if \
@@ -175,10 +203,9 @@ class RequestLifeCycleBase_t():
             time.sleep(15)
 
     @attr("lifecycle")
+    @recordException
     def test80RequestFinished(self):
         """Request completed"""
-        if not self.__class__.request_name:
-            raise nose.SkipTest
         start = time.time()
         while True:
             self.__class__.request = self.__class__.reqmgr.getRequest(self.__class__.request_name)
@@ -190,10 +217,9 @@ class RequestLifeCycleBase_t():
             time.sleep(15)
 
     @attr("lifecycle")
+    @recordException
     def test90RequestCloseOut(self):
         """Closeout request"""
-        if not self.__class__.request_name:
-            raise nose.SkipTest
         self.reqmgr.reportRequestStatus(self.__class__.request_name, "closed-out")
         self.__class__.request = self.__class__.reqmgr.getRequest(self.__class__.request_name)
         self.assertEqual('closed-out', self.__class__.request['RequestStatus'])

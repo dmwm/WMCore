@@ -1,4 +1,4 @@
-from Integration_t.RequestLifeCycleBase_t import RequestLifeCycleBase_t
+from Integration_t.RequestLifeCycleBase_t import RequestLifeCycleBase_t, recordException
 
 from WMCore.ACDC.AnalysisCollectionService import AnalysisCollectionService
 from WMCore.Wrappers.JsonWrapper import loads
@@ -26,6 +26,7 @@ class ACDCLifeCycle_t(RequestLifeCycleBase_t, unittest.TestCase):
                     }
 
     @attr("lifecycle")
+    @recordException
     def test06UploadACDC(self):
         # get previous request we can piggyback on
         for request in reversed(self.__class__.reqmgr.getRequest()):
@@ -34,7 +35,7 @@ class ACDCLifeCycle_t(RequestLifeCycleBase_t, unittest.TestCase):
                 self.__class__.requestParams['OriginalRequestName'] = request
                 break
         else:
-            raise nose.SkipTest
+            raise nose.SkipTest("no suitable request in reqmgr to resubmit")
 
         self.__class__.requestParams['InitialTaskPath'] = self.__class__.requestParams['InitialTaskPath'] % self.__class__.requestParams['OriginalRequestName']
         self.__class__.requestParams['ACDCServer'] = self.__class__.endpoint + '/couchdb'

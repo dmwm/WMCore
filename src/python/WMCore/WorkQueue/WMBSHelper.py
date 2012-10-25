@@ -257,7 +257,7 @@ class WMBSHelper(WMConnectionBase):
 
         return outputFilesetName
 
-    def createSubscription(self, task, fileset):
+    def createSubscription(self, task, fileset, alternativeFilesetClose = False):
         """
         _createSubscription_
 
@@ -274,7 +274,8 @@ class WMBSHelper(WMConnectionBase):
                             owner_vogroup = self.wmSpec.getOwner().get("vogroup", "DEFAULT"),
                             owner_vorole = self.wmSpec.getOwner().get("vorole", "DEFAULT"),
                             name = self.wmSpec.name(), task = task.getPathName(),
-                            wfType = self.wmSpec.getDashboardActivity())
+                            wfType = self.wmSpec.getDashboardActivity(),
+                            alternativeFilesetClose = alternativeFilesetClose)
         workflow.create()
         subscription = Subscription(fileset = fileset, workflow = workflow,
                                     split_algo = task.jobSplittingAlgorithm(),
@@ -316,7 +317,7 @@ class WMBSHelper(WMConnectionBase):
                             if primaryDataset != None:
                                 self.mergeOutputMapping[mergedOutputFileset.id] = primaryDataset
 
-                        self.createSubscription(childTask, outputFileset)
+                        self.createSubscription(childTask, outputFileset, alternativeFilesetClose)
 
                 if mergedOutputFileset == None:
                     workflow.addOutput(outputModuleName, outputFileset,

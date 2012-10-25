@@ -86,10 +86,15 @@ def _executeCommand(command, timeout):
     thread.start()
     thread.join(timeout)
     if thread.is_alive():
-        process['process'].terminate()
-        thread.join()
-        logging.error('Command: %s timed out, return code: %i'
-                        % (' '.join(command), process['process'].returncode))
+        if process['process']:
+            process['process'].terminate()
+            thread.join()
+            logging.error('Command: %s timed out, return code: %i'
+                          % (' '.join(command), process['process'].returncode))
+        else:
+            # Process was never initiated, there was an error
+            # bail out
+            logging.error('Command : %s could not be executed' % ' '.join(command))
         return None
     else:
         return process['stdout']

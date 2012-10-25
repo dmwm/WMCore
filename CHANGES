@@ -1,3 +1,15 @@
+0.9.25 to 0.9.26:
+  - Improve error handling in Dashboard runtime.  Pull request #4208.
+  - Fix a bug in GetAndMarkNewFinishedSubscriptions.  Pull request #4208.
+  - Create error report for createFailed jobs.  Pull request #4206.
+  - Make maxRetries flexible between job types.  Pull request #4137.
+  - Implement alternative fileset closing policy.  Pull request #4209.
+  - Add t0wmstats dependency.  Pul request #4203.
+  - ReqMgr unittests fixes, removing hardcoded CMSSW version in tests, 
+    tests cleanup.  Pull request #4202.
+  - Fixing giant log files/memory leaks.  Pull request #4196.
+  - A large amount of whitespace fixes.  Pull request #4150.
+
 0.9.24 to 0.9.25
   - Change acdc integration test to look at all previous requests for one
     to resubmit

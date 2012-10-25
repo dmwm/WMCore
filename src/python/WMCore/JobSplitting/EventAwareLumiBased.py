@@ -214,7 +214,13 @@ class EventAwareLumiBased(JobFactory):
                             if firstLumi != None and lastLumi != None and lastRun != None:
                                 self.currentJob['mask'].addRunAndLumis(run = lastRun,
                                                                        lumis = [firstLumi, lastLumi])
-                            self.newJob(name = self.getJobName(length = totalJobs), failedJob = failNextJob)
+                            msg = None
+                            if failNextJob:
+                                msg = "File %s has too many events (%d) in %d lumi(s)" % (f['lfn'],
+                                                                                          f['events'],
+                                                                                          f['lumiCount'])
+                            self.newJob(name = self.getJobName(length = totalJobs), failedJob = failNextJob,
+                                        failedReason = msg)
                             failNextJob = False
                             firstLumi = lumi
                             lumisInJob = 0

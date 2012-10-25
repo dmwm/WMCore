@@ -410,7 +410,10 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 6, "Six jobs must be in the jobgroup")
         self.assertTrue(jobs[3]['failedOnCreation'], "The job processing the second file should me marked for failure")
+        self.assertEqual(jobs[3]['failedReason'], "File /this/is/file2 has too many events (1000) in 1 lumi(s)",
+                          "The reason for the failure is not accurate")
 
+        return
 
 if __name__ == '__main__':
     unittest.main()

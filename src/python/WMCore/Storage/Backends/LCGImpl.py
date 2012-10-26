@@ -117,15 +117,42 @@ class LCGImpl(StageOutImpl):
         result += " %s `\n" % localPFN
         result += "echo \"Local File Size is: $FILE_SIZE\"\n"
 
+        removeCommand = self.createRemoveFileCommand(targetPFN)
+
+        useChecksum = (checksums != None and 'adler32' in checksums and not self.stageIn)
+
+        if useChecksum:
+            localAdler32 = str(checksums['adler32']).zfill(8)
+            checksumCommand = \
+            """
+                if [[ "X$SRM_CHECKSUM" != "X" ]]; then
+                    if [[ "$SRM_CHECKSUM" == "%s" ]]; then
+                        exit 0
+                    else
+                        echo "Error: Checksum Mismatch between local and SE"
+                        echo "Cleaning up failed file"
+                        %s
+                        exit 60311
+                    fi
+                else
+                    exit 0
+                fi
+            """ % (localAdler32, removeCommand)
+        else:
+            checksumCommand = "exit 0"
+
         metadataCheck = \
         """
         for ((a=1; a <= 10 ; a++))
         do
-           SRM_SIZE=`lcg-ls -l -b -D srmv2 %s 2>/dev/null | awk '{print $5}'`
+           LCG_OUTPUT=`lcg-ls -l -b -D srmv2 %s 2>/dev/null`
+           SRM_SIZE=`echo "$LCG_OUTPUT" | awk 'NR==1{print $5}'`
+           SRM_CHECKSUM=`echo "$LCG_OUTPUT" | sed -nr 's/^.*\s([a-f0-9]{8})\s*\([aA][dD][lL][eE][rR]32\)\s*$/\\1/p'`
            echo "Remote Size is $SRM_SIZE"
+           echo "Remote Checksum is $SRM_CHECKSUM"
            if [[ $SRM_SIZE > 0 ]]; then
               if [[ $SRM_SIZE == $FILE_SIZE ]]; then
-                 exit 0
+                 %s
               else
                  echo "Error: Size Mismatch between local and SE"
                  echo "Cleaning up failed file:"
@@ -140,7 +167,7 @@ class LCGImpl(StageOutImpl):
         %s
         exit 60311
 
-        """ % (remotePFN, self.createRemoveFileCommand(targetPFN), self.createRemoveFileCommand(targetPFN))
+        """ % (remotePFN, checksumCommand, removeCommand, removeCommand)
         result += metadataCheck
 
         return result

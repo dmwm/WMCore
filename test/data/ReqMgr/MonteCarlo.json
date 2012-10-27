@@ -1,0 +1,49 @@
+{ 
+"request":
+	{		 
+		"CMSSWVersion": "CMSSW_4_1_8",
+		"GlobalTag": "START311_V2::All",
+		"Campaign": "HG1210_Validation",
+		"RequestString": "RequestString-OVERRIDE-ME",
+		"RequestPriority": 100,
+		"TimePerEvent": 40,
+		"FilterEfficiency": 0.0361,
+		"ScramArch": "slc5_amd64_gcc434",
+		"RequestType": "MonteCarlo",
+		"RequestNumEvents": 2000,
+		"ConfigCacheID": "4029c9cd130f25d65bdced2311536c52",
+		"ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
+		"PrimaryDataset": "BdToMuMu_2MuPtFilter_7TeV-pythia6-evtgen",
+		"DataPileup": "",
+		"MCPileup": "",
+		"PrepID": "MCTEST-GEN-0001",
+		"Requestor": "Requestor-OVERRIDE-ME",
+		"Group": "DATAOPS",
+		"TotalTime": 14400, 
+		"RunWhitelist": [],
+		"Memory": 2394967,
+		"SizePerEvent": 5000,
+		"FirstEvent": 1,
+		"FirstLumi": 1
+	}, 
+
+"requestAssign":
+	{
+		"action": "Assign",
+		"SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
+		"SiteBlacklist": [],
+		"MergedLFNBase": "/store/backfill/1",
+		"UnmergedLFNBase": "/store/unmerged",
+		"MinMergeSize": 2147483648,
+		"MaxMergeSize": 4294967296,
+		"MaxMergeEvents": 50000,
+		"AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
+		"ProcessingVersion": "ProcessingVersion-OVERRIDE-ME",
+		"maxRSS": 4294967296,
+		"maxVSize": 4294967296,
+		"SoftTimeout": 171600,
+		"GracePeriod": 300,
+		"dashboard": "dashboard-OVERRIDE-ME",
+		"Team": "Team--OVERRIDE-ME"
+	}
+}

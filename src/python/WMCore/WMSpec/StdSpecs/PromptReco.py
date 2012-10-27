@@ -181,8 +181,8 @@ class PromptRecoWorkloadFactory(StdBase):
                                        self.envPath, self.binPath)
             try:
                 configCache = ConfigCache(self.couchURL, self.couchDBName)
-                procConfigCacheID = configCache.getIDFromLabel(configLabel)
-                if procConfigCacheID:
+                configCacheID = configCache.getIDFromLabel(configLabel)
+                if configCacheID:
                     logging.error("The configuration was not uploaded to couch")
                     raise Exception
             except Exception:
@@ -194,7 +194,7 @@ class PromptRecoWorkloadFactory(StdBase):
 
             outputMods = self.setupProcessingTask(skimTask, "Skim", inputStep = parentCmsswStep, inputModule = "Merged",
                                                   couchURL = self.couchURL, couchDBName = self.couchDBName,
-                                                  configDoc = procConfigCacheID, splitAlgo = self.skimJobSplitAlgo,
+                                                  configDoc = configCacheID, splitAlgo = self.skimJobSplitAlgo,
                                                   splitArgs = self.skimJobSplitArgs)
             if self.doLogCollect:
                 self.addLogCollectTask(skimTask, taskName = "%sLogCollect" % promptSkim.SkimName)

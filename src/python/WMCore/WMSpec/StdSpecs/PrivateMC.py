@@ -29,7 +29,7 @@ def getTestArguments():
 
     args["PrimaryDataset"] = "MonteCarloData"
     args["RequestNumEvents"] = 10
-    args["ProcConfigCacheID"] = "f90fc973b731a37c531f6e60e6c57955"
+    args["ConfigCacheID"] = "f90fc973b731a37c531f6e60e6c57955"
 
     args["FirstEvent"] = 1
     args["FirstLumi"] = 1

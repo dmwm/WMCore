@@ -263,6 +263,14 @@ class LexiconTest(unittest.TestCase):
         lfn(lfnA)
         lfnA = '/store/user/cinquilli.nocern/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
         lfn(lfnA)
+        lfnA = '/store/group/lpctlbsm/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
+        lfn(lfnA)
+        lfnA = '/store/user/lpctlbsm/cinquilli.nocern/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
+        lfn(lfnA)
+        lfnA = '/store/temp/user/lpctlbsm/cinquilli.nocern/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
+        lfn(lfnA)
+        lfnA = '/store/temp/group/lpctlbsm/cinquilli.nocern/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
+        lfn(lfnA)
         lfnA = '/store/temp/group/Exotica/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
         lfn(lfnA)
         lfnA = '/store/group/Exotica/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
@@ -366,6 +374,14 @@ class LexiconTest(unittest.TestCase):
         lfnBase(lfnA)
         lfnA = '/store/user/group/Exotica/PrivateSample/v1'
         lfnBase(lfnA)
+        lfnA = '/store/user/lpctlbsm/group/Exotica/PrivateSample/v1'
+        lfnBase(lfnA)
+        lfnA = '/store/group/lpctlbsm/group/Exotica/PrivateSample/v1'
+        lfnBase(lfnA)
+        lfnA = '/store/temp/user/lpctlbsm/group/Exotica/PrivateSample/v1'
+        lfnBase(lfnA)
+        lfnA = '/store/temp/group/lpctlbcm/group/Exotica/PrivateSample/v1'
+        lfnBase(lfnA)
         lfnA = '/store/temp1/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'
         lfnBase(lfnA)
         lfnA = '/store/temp/lustre1/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'
@@ -414,6 +430,20 @@ class LexiconTest(unittest.TestCase):
         userLfn(lfnA)
         lfnA = '/store/user/ewv/CRAB-Out/ewv_crab_EwvAnalysis_46_111109_143552/output/total_0001.json'
         userLfn(lfnA)
+
+        lfnA = '/store/temp/user/lpctlbsm/ewv/CRAB-Out/ewv_crab_EwvAnalysis_46_111109_143552/output/total_0001.json'
+        userLfn(lfnA)
+        lfnA = '/store/user/lpctlbsm/ewv/CRAB-Out/ewv_crab_EwvAnalysis_46_111109_143552/output/total_0001.json'
+        userLfn(lfnA)
+
+
+        lfnA = '/store/temp/group/lpctlbsm/ewv/CRAB-Out/ewv_crab_EwvAnalysis_46_111109_143552/output/total_0001.json'
+        userLfn(lfnA)
+        lfnA = '/store/group/lpctlbsm/ewv/CRAB-Out/ewv_crab_EwvAnalysis_46_111109_143552/output/total_0001.json'
+        userLfn(lfnA)
+
+
+
         lfnA = "/store/temp/user/ewv/CRAB-Out/ewv_crab_EwvAnalysis_45_111109_130928/output/histo_0002.root"
         userLfn(lfnA)
 

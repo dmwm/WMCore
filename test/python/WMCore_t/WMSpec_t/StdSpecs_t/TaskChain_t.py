@@ -311,6 +311,28 @@ class TaskChainTests(unittest.TestCase):
         self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/GenSimMergewriteGENSIM/DigiHLT_new/Reco/RecoMergewriteRECO/Skims"),
                         arguments['Task6'])
 
+        # Verify the output datasets
+        outputDatasets = self.workload.listOutputDatasets()
+        self.assertEqual(len(outputDatasets), 15, "Number of output datasets doesn't match")
+        self.assertTrue("/RelValTTBar/ReleaseValidation-GenSimFilter-v1/GEN-SIM" in outputDatasets,
+                        "/RelValTTBar/ReleaseValidation-GenSimFilter-v1/GEN-SIM not in output datasets")
+        self.assertTrue("/PURelValTTBar/ReleaseValidation-RawDigiFilter-v1/RAW-DIGI" in outputDatasets,
+                        "/PURelValTTBar/ReleaseValidation-RawDigiFilter-v1/RAW-DIGI not in output datasets")
+        self.assertTrue("/RelValTTBar/ReleaseValidationNewConditions-RawDigiFilter-Test-v3/RAW-DIGI" in outputDatasets,
+                        "/RelValTTBar/ReleaseValidationNewConditions-RawDigiFilter-Test-v3/RAW-DIGI not in output datasets")
+        self.assertTrue("/RelValTTBar/ReleaseValidation-reco-v1/RECO" in outputDatasets,
+                        "/RelValTTBar/ReleaseValidation-reco-v1/RECO not in output datasets")
+        self.assertTrue("/RelValTTBar/ReleaseValidation-AOD-v1/AOD" in outputDatasets,
+                        "/RelValTTBar/ReleaseValidation-AOD-v1/AOD not in output datasets")
+        self.assertTrue("/RelValTTBar/ReleaseValidation-alca-v1/ALCARECO" in outputDatasets,
+                        "/RelValTTBar/ReleaseValidation-alca-v1/ALCARECO not in output datasets")
+        for i in range(1, 5):
+            self.assertTrue("/RelValTTBar/ReleaseValidation-alca%d-v1/ALCARECO" % i in outputDatasets,
+                            "/RelValTTBar/ReleaseValidation-alca%d-v1/ALCARECO not in output datasets" % i)
+        for i in range(1, 6):
+            self.assertTrue("/RelValTTBar/ReleaseValidation-skim%d-v1/RECO-AOD" % i in outputDatasets,
+                            "/RelValTTBar/ReleaseValidation-skim%d-v1/RECO-AOD not in output datasets" % i)
+
         return
 
 
@@ -474,6 +496,7 @@ class TaskChainTests(unittest.TestCase):
                 "GlobalTag" : "GlobalTagForReco",
                 "CMSSWVersion" : "CMSSW_RECO_1",
                 "ScramArch" : "CompatibleRECOArch",
+                "PrimaryDataset" : "ZeroBias",
             },
             "Task3" : {
                 "TaskName" : "ALCAReco",
@@ -507,7 +530,6 @@ class TaskChainTests(unittest.TestCase):
 
         self.workload.setSpecUrl("somespec")
         self.workload.setOwnerDetails("evansde@fnal.gov", "DMWM")
-
 
         testWMBSHelper = WMBSHelper(self.workload, "DigiHLT", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
@@ -544,7 +566,25 @@ class TaskChainTests(unittest.TestCase):
         self.assertEqual(skimStep.getGlobalTag(), arguments['GlobalTag'])
         self.assertEqual(skimStep.getCMSSWVersion(), arguments['CMSSWVersion'])
         self.assertEqual(skimStep.getScramArch(), arguments['ScramArch'])
-        
+
+        # Verify the output datasets
+        outputDatasets = self.workload.listOutputDatasets()
+        self.assertEqual(len(outputDatasets), 13, "Number of output datasets doesn't match")
+        self.assertTrue("/MinimumBias/ReleaseValidation-RawDigiFilter-v1/RAW-DIGI" in outputDatasets,
+                        "/MinimumBias/ReleaseValidation-RawDigiFilter-v1/RAW-DIGI not in output datasets")
+        self.assertTrue("/ZeroBias/ReleaseValidation-reco-v1/RECO" in outputDatasets,
+                        "/ZeroBias/ReleaseValidation-reco-v1/RECO not in output datasets")
+        self.assertTrue("/ZeroBias/ReleaseValidation-AOD-v1/AOD" in outputDatasets,
+                        "/ZeroBias/ReleaseValidation-AOD-v1/AOD not in output datasets")
+        self.assertTrue("/ZeroBias/ReleaseValidation-alca-v1/ALCARECO" in outputDatasets,
+                        "/ZeroBias/ReleaseValidation-alca-v1/ALCARECO not in output datasets")
+        for i in range(1, 5):
+            self.assertTrue("/MinimumBias/ReleaseValidation-alca%d-v1/ALCARECO" % i in outputDatasets,
+                            "/MinimumBias/ReleaseValidation-alca%d-v1/ALCARECO not in output datasets" % i)
+        for i in range(1, 6):
+            self.assertTrue("/MinimumBias/ReleaseValidation-skim%d-v1/RECO-AOD" % i in outputDatasets,
+                            "/MinimumBias/ReleaseValidation-skim%d-v1/RECO-AOD not in output datasets" % i)
+
         return
  
     def testProcessingWithScenarios(self):

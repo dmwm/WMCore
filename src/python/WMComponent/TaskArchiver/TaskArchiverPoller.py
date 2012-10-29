@@ -54,7 +54,7 @@ from WMCore.WMSpec.WMWorkload   import WMWorkloadHelper
 
 from WMComponent.JobCreator.CreateWorkArea   import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
-
+from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 
 class TaskArchiverPollerException(WMException):
     """
@@ -181,7 +181,8 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.histogramKeys  = getattr(self.config.TaskArchiver, "histogramKeys", [])
         self.histogramBins  = getattr(self.config.TaskArchiver, "histogramBins", 10)
         self.histogramLimit = getattr(self.config.TaskArchiver, "histogramLimit", 5.0)
-
+        self.centralCouchDBWriter = WMStatsWriter(self.config.TaskArchiver.centralWMStatsURL);
+        
         # Start a couch server for getting job info
         # from the FWJRs for committal to archive
         try:
@@ -336,6 +337,7 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         Actually dump the subscriptions
         """
+        abortedWorkflows = self.centralCouchDBWriter.workflowsByStatus(["aborted"], format = "dict");
         for sub in doneList:
             logging.info("Deleting subscription %i" % sub['id'])
             try:
@@ -396,7 +398,11 @@ class TaskArchiverPoller(BaseWorkerThread):
 
                 # Then pull its info from couch and archive it
                 self.archiveCouchSummary(workflow = workflow, spec = spec)
-                self.deleteWorkflowFromCouch(workflowName = workflow.task.split('/')[1])
+                workflowName = workflow.task.split('/')[1]
+                self.deleteWorkflowFromCouch(workflowName = workflowName)
+                if workflowName in abortedWorkflows:
+                    self.centralCouchDBWriter.updateRequestStatus(workflowName, "aborted-completed")
+                    logging.info("status updated to aborted-completed %s" % workflowName)
 
                 # Now take care of the sandbox
                 sandbox  = getattr(wmTask.data.input, 'sandbox', None)

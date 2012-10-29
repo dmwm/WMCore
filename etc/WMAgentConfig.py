@@ -240,6 +240,7 @@ config.TaskArchiver.uploadPublishDir  = None
 config.TaskArchiver.userFileCacheURL = 'http://USERFILECACHEHOST:UFCPORT/userfilecache/'
 # set to False couch data will be deleted from CleanUpManager
 config.TaskArchiver.deleteCouchData = False
+config.TaskArchiver.centralWMStatsURL = "https://cmsweb.cern.ch/couchdb/wmstats/"
 
 config.webapp_('WMBSService')
 config.WMBSService.default_expires = 0

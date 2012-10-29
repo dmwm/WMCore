@@ -3,6 +3,7 @@ import logging
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 from WMCore.Wrappers.JsonWrapper import JSONEncoder
+from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 
 def monitorDocFromRequestSchema(schema):
     """
@@ -33,7 +34,7 @@ def monitorDocFromRequestSchema(schema):
     return doc
     
 
-class WMStatsWriter():
+class WMStatsWriter(WMStatsReader):
 
     def __init__(self, couchURL, dbName = None):
         # set the connection for local couchDB call
@@ -142,5 +143,9 @@ class WMStatsWriter():
             return "nothing"
 
     def replicate(self, target):
-        self.couchServer.replicate(self.dbName, target, continuous = True,
+        return self.couchServer.replicate(self.dbName, target, continuous = True,
                                    filter = 'WMStats/repfilter', useReplicator = True)
+    
+    def getDBInstance(self):
+        return self.couchDB
+

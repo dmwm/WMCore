@@ -161,7 +161,7 @@ def lfn(candidate):
     """
     regexp1 = '/([a-z]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}/([0-9]+)/([a-zA-Z0-9\-_]+).root'
     regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}/([0-9]+)/([a-zA-Z0-9\-_]+).root'
-    regexp3 = '/store/(temp/)*(user|group)/%(hnName)s/%(primDS)s/%(secondary)s/%(version)s/%(counter)s/%(root)s' % lfnParts
+    regexp3 = '/store/(temp/)*(user|group)/(%(hnName)s/)*%(hnName)s/%(primDS)s/%(secondary)s/%(version)s/%(counter)s/%(root)s' % lfnParts
 
     oldStyleTier0LFN = '/store/data/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s/%(root)s' % lfnParts
     tier0LFN = '/store/(backfill/[0-9]/){0,1}(t0temp/){0,1}(data|express|hidata)/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s/%(counter)s/%(root)s' % lfnParts
@@ -200,7 +200,7 @@ def lfnBase(candidate):
     """
     regexp1 = '/([a-z]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)'
     regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}'
-    regexp3 = '/(store)/(temp/)*(user|group)/%(hnName)s/%(primDS)s/%(secondary)s/%(version)s' % lfnParts
+    regexp3 = '/(store)/(temp/)*(user|group)/%(hnName)s/(%(hnName)s/)*%(primDS)s/%(secondary)s/%(version)s' % lfnParts
 
     tier0LFN = '/store/(backfill/[0-9]/){0,1}(t0temp/){0,1}(data|express|hidata)/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s' % lfnParts
 
@@ -223,14 +223,14 @@ def userLfn(candidate):
     """
     Check LFNs in /store/{temp}/user that are not EDM data
     """
-    regexp = '/store/(temp/)*(user|group)/%(hnName)s/%(subdir)s/%(workflow)s/%(subdir)s/%(file)s' % lfnParts
+    regexp = '/store/(temp/)*(user|group)/(%(hnName)s/)*%(hnName)s/%(subdir)s/%(workflow)s/%(subdir)s/%(file)s' % lfnParts
     return check(regexp, candidate)
 
 def userLfnBase(candidate):
     """
     As above but for the base part of the file
     """
-    regexp = '/store/(temp/)*(user|group)/%(hnName)s/%(subdir)s/%(workflow)s/%(subdir)s' % lfnParts
+    regexp = '/store/(temp/)*(user|group)/%(hnName)s/(%(hnName)s/)*%(subdir)s/%(workflow)s/%(subdir)s' % lfnParts
     return check(regexp, candidate)
 
 def cmsswversion(candidate):
@@ -271,6 +271,23 @@ def parseLFN(candidate):
             final['baseLocation'] = '/%s' % string.join(parts[:3], '/')
             parts = parts[3:]
 
+        """ Now we have everything we need, btu the wrinkle is that there can
+            be sub-group storage (i.e. /store/user/lpctlbsm/meloam/blah
+
+            The sub-group storage is nice because a lot of analysis looks for files
+            in subdrectories and it makes it easy to see how is responsibe
+            for cleaning out the group storage.
+
+            Now, I'm not sure if this is optimal for the hnName stuff, but we'll see
+        """
+        
+        if len( parts ) == 7:
+            """
+            snip out the top-level storage, leaving the hnname of the user that
+            submitted
+            """
+            parts = parts[1:]
+    
         final['hnName']            = parts[0]
         final['primaryDataset']    = parts[1]
         final['secondaryDataset']  = parts[2]
@@ -332,6 +349,10 @@ def parseLFNBase(candidate):
         else:
             final['baseLocation'] = '/%s' % string.join(parts[:3], '/')
             parts = parts[3:]
+
+        """ see previous parseLFN funciton for an explanation"""
+        if len( parts ) == 5:
+            parts = parts[1:]
 
         final['hnName']            = parts[0]
         final['primaryDataset']    = parts[1]

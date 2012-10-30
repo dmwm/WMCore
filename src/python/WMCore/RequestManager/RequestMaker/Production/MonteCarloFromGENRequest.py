@@ -38,7 +38,7 @@ class MonteCarloFromGENSchema(RequestSchema):
         self.setdefault("DBSURL", None)
         self.validateFields = [
             "CMSSWVersion",
-            "ProcConfigCacheID",
+            "ConfigCacheID",
             "GlobalTag",
             "InputDataset"
             ]

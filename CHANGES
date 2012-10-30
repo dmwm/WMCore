@@ -1,3 +1,9 @@
+0.9.26 to 0.9.27:
+  - Bugfix for wmagent-mod-config from fancy PhEDEx transfers commit.
+    Pull request #4231.
+  - Bugfix for PrimaryDataset handling in RelVal.  Pull request #4228.
+  - Add per-request switch for stageout.  Pull request #4194.
+
 0.9.25 to 0.9.26:
   - Improve error handling in Dashboard runtime.  Pull request #4208.
   - Fix a bug in GetAndMarkNewFinishedSubscriptions.  Pull request #4208.

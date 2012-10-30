@@ -165,6 +165,21 @@ class WMStepHelper(TreeHelper):
 
         self.data.output.ignoredModules = moduleList
         return
+    
+    def setNewStageoutOverride(self, newValue):
+        """
+        A toggle for steps to use old or new stageout code
+        """
+        self.data.newStageout = newValue
+    
+    def getNewStageoutOverride(self):
+        """
+        A toggle for steps to use old or new stageout code
+        """
+        if hasattr(self.data, 'newStageout'):
+            return self.data.newStageout
+        else:
+            return False
 
     def getIgnoredOutputModules(self):
         """

@@ -89,6 +89,7 @@ class StdBase(object):
         self.dqmSequences = None
         self.procScenario = None
         self.enableHarvesting = True
+        self.enableNewStageout = False
         return
 
     def __call__(self, workloadName, arguments):
@@ -134,6 +135,7 @@ class StdBase(object):
         self.dqmSequences = arguments.get("DqmSequences", [])
         self.procScenario = arguments.get("ProcScenario", None)
         self.enableHarvesting = arguments.get("EnableHarvesting", True)
+        self.enableNewStageout = arguments.get("EnableNewStageout", False)
 
         if arguments.get("IncludeParents", False) == "True":
             self.includeParents = True
@@ -314,8 +316,11 @@ class StdBase(object):
         procTaskStageOut.setUserDN(userDN)
         procTaskStageOut.setAsyncDest(asyncDest)
         procTaskStageOut.setUserRoleAndGroup(owner_vogroup, owner_vorole)
+        procTaskStageOut.setNewStageoutOverride(self.enableNewStageout)
         procTaskLogArch = procTaskCmssw.addStep("logArch1")
         procTaskLogArch.setStepType("LogArchive")
+        procTaskLogArch.setNewStageoutOverride(self.enableNewStageout)
+        
         procTask.applyTemplates()
         procTask.setTaskPriority(self.priority)
 
@@ -512,6 +517,7 @@ class StdBase(object):
         self.addDashboardMonitoring(logCollectTask)
         logCollectStep = logCollectTask.makeStep("logCollect1")
         logCollectStep.setStepType("LogCollect")
+        logCollectStep.setNewStageoutOverride(self.enableNewStageout)
         logCollectTask.applyTemplates()
         logCollectTask.setSplittingAlgorithm("MinFileBased", files_per_job = filesPerJob)
         logCollectTask.setTaskType("LogCollect")
@@ -535,8 +541,12 @@ class StdBase(object):
 
         mergeTaskStageOut = mergeTaskCmssw.addStep("stageOut1")
         mergeTaskStageOut.setStepType("StageOut")
+        mergeTaskStageOut.setNewStageoutOverride(self.enableNewStageout)
+
         mergeTaskLogArch = mergeTaskCmssw.addStep("logArch1")
         mergeTaskLogArch.setStepType("LogArchive")
+        mergeTaskLogArch.setNewStageoutOverride(self.enableNewStageout)
+
 
         mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)
         if doLogCollect:

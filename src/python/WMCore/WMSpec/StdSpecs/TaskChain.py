@@ -202,7 +202,6 @@ class ParameterStorage(object):
         self.validParameters = {'globalTag' : 'GlobalTag',
                                 'frameworkVersion' : 'CMSSWVersion',
                                 'scramArch' : 'ScramArch',
-                                'inputPrimaryDataset' : 'PrimaryDataset',
                                 'processingVersion' : 'ProcessingVersion',
                                 'processingString' : 'ProcessingString',
                                 'acquisitionEra' : 'AcquisitionEra'
@@ -377,6 +376,7 @@ class TaskChainWorkloadFactory(StdBase):
         splitArguments = taskConf.get('SplittingArguments', {'events_per_job': int((24*3600)/float(self.timePerEvent))})
         keepOutput = taskConf.get('KeepOutput', True)
 
+        self.inputPrimaryDataset = taskConf['PrimaryDataset']
         outputMods = self.setupProcessingTask(task, "Production",
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
                                               configDoc = configCacheID, splitAlgo = splitAlgorithm,
@@ -424,12 +424,8 @@ class TaskChainWorkloadFactory(StdBase):
         inputDataset = taskConf.get("InputDataset", None)
         if inputDataset != None:
             self.inputDataset = inputDataset
-            if self.inputPrimaryDataset:
-                (_, self.inputProcessedDataset,
-                 self.inputDataTier) = self.inputDataset[1:].split("/")
-            else:
-                (self.inputPrimaryDataset, self.inputProcessedDataset,
-                 self.inputDataTier) = self.inputDataset[1:].split("/")
+            (self.inputPrimaryDataset, self.inputProcessedDataset,
+             self.inputDataTier) = self.inputDataset[1:].split("/")
             inpStep = None
             inpMod = None
         else:
@@ -450,6 +446,10 @@ class TaskChainWorkloadFactory(StdBase):
                                       'max_wait_time'    : self.maxWaitTime}
             else:
                 inpMod = "Merged"
+
+        currentPrimaryDataset = self.inputPrimaryDataset
+        if taskConf.get("PrimaryDataset") is not None:
+            self.inputPrimaryDataset = taskConf.get("PrimaryDataset")
 
         scenarioFunc = None
         scenarioArgs = {}
@@ -487,6 +487,9 @@ class TaskChainWorkloadFactory(StdBase):
                 self.addCleanupTask(task, outputModuleName)
                 procTasks[outputModuleName] = task
             self.mergeMapping[task.name()] = procTasks
+
+        self.inputPrimaryDataset = currentPrimaryDataset
+
         return
 
     def validateSchema(self, schema):

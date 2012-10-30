@@ -48,7 +48,7 @@ class DataProcessingSchema(RequestSchema):
         self.setdefault("Multicore", None)
         self.validateFields = [
             "CMSSWVersion",
-            "ProcConfigCacheID",
+            "ConfigCacheID",
             "GlobalTag",
             "InputDataset"
             ]

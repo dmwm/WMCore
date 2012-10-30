@@ -89,8 +89,6 @@ def buildWorkloadForRequest(typename, schema):
     else:
         factoryInstance = _Registry._Factories[typename]
 
-
-
     # So now we have a factory
     # Time to run it
     # Any exception here will be caught at a higher level (ReqMgrWebTools)

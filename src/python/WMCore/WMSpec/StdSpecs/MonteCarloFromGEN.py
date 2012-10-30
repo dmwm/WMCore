@@ -34,7 +34,7 @@ def getTestArguments():
         "CouchURL": os.environ.get("COUCHURL", None),
         "CouchDBName": "scf_wmagent_configcache",
 
-        "ConfigCacheID": "03da10e20c7b98c79f9d6a5c8900f83b",
+        "ProcConfigCacheID": "03da10e20c7b98c79f9d6a5c8900f83b",
         "DashboardHost" : "127.0.0.1",
         "DashboardPort" : 8884,
         }
@@ -73,7 +73,7 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
 
         outputMods = self.setupProcessingTask(procTask, "Processing", self.inputDataset,
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
-                                              configDoc = self.configCacheID, splitAlgo = self.procJobSplitAlgo,
+                                              configDoc = self.procConfigCacheID, splitAlgo = self.procJobSplitAlgo,
                                               splitArgs = self.procJobSplitArgs, stepType = "CMSSW",
                                               primarySubType = "Production")
         self.addLogCollectTask(procTask)
@@ -113,7 +113,7 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
         self.runWhitelist = arguments.get("RunWhitelist", [])
         self.emulation = arguments.get("Emulation", False)
 
-        self.configCacheID = arguments.get("ConfigCacheID")
+        self.procConfigCacheID = arguments.get("ProcConfigCacheID")
 
         # These are mostly place holders because the job splitting algo and
         # parameters will be updated after the workflow has been created.
@@ -128,12 +128,12 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
         Check for required fields, and some skim facts
         """
         arguments = getTestArguments()
-        requiredFields = ["CMSSWVersion", "ConfigCacheID",
+        requiredFields = ["CMSSWVersion", "ProcConfigCacheID",
                           "GlobalTag", "InputDataset", "CouchURL",
                           "CouchDBName", "ScramArch"]
         self.requireValidateFields(fields = requiredFields, schema = schema,
                                    validate = False)
-        outMod = self.validateConfigCacheExists(configID = schema["ConfigCacheID"],
+        outMod = self.validateConfigCacheExists(configID = schema["ProcConfigCacheID"],
                                                 couchURL = schema["CouchURL"],
                                                 couchDBName = schema["CouchDBName"],
                                                 getOutputModules = True)

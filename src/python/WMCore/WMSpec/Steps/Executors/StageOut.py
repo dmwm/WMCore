@@ -78,7 +78,8 @@ class StageOut(Executor):
 
         # switch between old stageOut behavior and new, fancy stage out behavior
         useNewStageOutCode = False
-        if overrides.has_key('newStageOut') and overrides.get('newStageOut'):
+        if self.step.getNewStageoutOverride() or \
+            (overrides.has_key('newStageOut') and overrides.get('newStageOut')):
             useNewStageOutCode = True
 
 

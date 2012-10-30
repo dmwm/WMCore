@@ -16,6 +16,7 @@ from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 from WMCore.WMSpec.Steps.Executor           import Executor
 from WMCore.FwkJobReport.Report             import Report
 
+import WMCore.Storage.FileManager
 import WMCore.Storage.StageOutMgr as StageOutMgr
 import WMCore.Storage.StageInMgr  as StageInMgr
 import WMCore.Storage.DeleteMgr   as DeleteMgr
@@ -68,11 +69,35 @@ class LogCollect(Executor):
 
         stageOutParams = {"command": "srmv2-lcg",
                           "se-name": seName,  "lfn-prefix": lfnPrefix}
-
+        
+        #Okay, we need a stageOut Manager
+        useNewStageOutCode = False
+        if self.step.getNewStageoutOverride() or \
+            (overrides.has_key('newStageOut') and overrides.get('newStageOut')):
+            useNewStageOutCode = True
         try:
-            deleteMgr   = DeleteMgr.DeleteMgr()
-            stageInMgr  = StageInMgr.StageInMgr()
-            stageOutMgr = StageOutMgr.StageOutMgr(**stageOutParams)
+            if not useNewStageOutCode:
+                # old style
+                deleteMgr   = DeleteMgr.DeleteMgr()
+                stageInMgr  = StageInMgr.StageInMgr()
+                stageOutMgr = StageOutMgr.StageOutMgr(**stageOutParams)
+            else:
+                # new style
+                logging.info("LOGCOLLECT IS USING NEW STAGEOUT CODE")
+                stageOutMgr = WMCore.Storage.FileManager.StageOutMgr(
+                                    retryPauseTime  = self.step.retryDelay,
+                                    numberOfRetries = self.step.retryCount,
+                                    **overrides)
+                stageInMgr = WMCore.Storage.FileManager.StageInMgr(
+                                    retryPauseTime  = self.step.retryDelay,
+                                    numberOfRetries = self.step.retryCount )
+                deleteMgr = WMCore.Storage.FileManager.DeleteMgr(
+                                    retryPauseTime  = self.step.retryDelay,
+                                    numberOfRetries = self.step.retryCount )
+    
+                deleteMgr   = DeleteMgr.DeleteMgr()
+                stageInMgr  = StageInMgr.StageInMgr()
+                stageOutMgr = StageOutMgr.StageOutMgr(**stageOutParams)
         except StandardError, ex:
             msg = "Unable to load StageIn/Out/Delete Impl: %s" % str(ex)
             logging.error(msg)

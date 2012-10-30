@@ -31,20 +31,14 @@ def getTestArguments():
     args["GlobalTag"] = None
     args["RequestNumEvents"] = 10
 
-    # CouchURL + CouchDBName + ConfigCacheID define full configuration document URL
     args["CouchURL"] = os.environ.get("COUCHURL", None)
-    # ConfigCache database name
     args["CouchDBName"] = "scf_wmagent_configcache"
-    args["ConfigCacheID"] = "f90fc973b731a37c531f6e60e6c57955"
-    # or alternatively CouchURL part can be replaced by ConfigCacheUrl,
-    # then ConfigCacheUrl + CouchDBName + ConfigCacheID
-    args["ConfigCacheUrl"] = None
 
     args["FirstLumi"] = 1
     args["FirstEvent"] = 1
 
     args["CMSSWVersion"] = "CMSSW_3_8_1"
-          
+    args["ProcConfigCacheID"] = "f90fc973b731a37c531f6e60e6c57955"
     args["TimePerEvent"] = 60
     args["FilterEfficiency"] = 1.0
     args["TotalTime"] = 9 * 3600
@@ -82,8 +76,8 @@ class MonteCarloWorkloadFactory(StdBase):
 
         outputMods = self.setupProcessingTask(prodTask, "Production", None,
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
-                                              configDoc = self.configCacheID, splitAlgo = self.prodJobSplitAlgo,
-                                              splitArgs = self.prodJobSplitArgs, configCacheUrl = self.configCacheUrl,
+                                              configDoc = self.prodConfigCacheID, splitAlgo = self.prodJobSplitAlgo,
+                                              splitArgs = self.prodJobSplitArgs,
                                               seeding = self.seeding, totalEvents = self.totalEvents,
                                               eventsPerLumi = self.eventsPerLumi)
         self.addLogCollectTask(prodTask)
@@ -113,7 +107,7 @@ class MonteCarloWorkloadFactory(StdBase):
         self.frameworkVersion    = arguments["CMSSWVersion"]
         self.globalTag           = arguments["GlobalTag"]
         self.seeding             = arguments.get("Seeding", "AutomaticSeeding")
-        self.configCacheID   = arguments["ConfigCacheID"]
+        self.prodConfigCacheID   = arguments["ProcConfigCacheID"]
 
         # Splitting arguments
         timePerEvent     = int(arguments.get("TimePerEvent", 60))
@@ -135,8 +129,6 @@ class MonteCarloWorkloadFactory(StdBase):
         # by the ReqMgr or whatever is creating this workflow.
         self.couchURL = arguments["CouchURL"]
         self.couchDBName = arguments["CouchDBName"]
-        self.configCacheUrl = arguments.get("ConfigCacheUrl", None)
-        
 
         # Optional arguments that default to something reasonable.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
@@ -160,23 +152,24 @@ class MonteCarloWorkloadFactory(StdBase):
         _validateSchema_
 
         Check for required fields, and some skim facts
-        
         """
-        requiredFields = ["CMSSWVersion", "ConfigCacheID",
+        arguments = getTestArguments()
+        requiredFields = ["CMSSWVersion", "ProcConfigCacheID",
                           "PrimaryDataset", "CouchURL",
                           "CouchDBName", "RequestNumEvents",
                           "GlobalTag", "ScramArch",
                           "FirstEvent", "FirstLumi"]
         self.requireValidateFields(fields = requiredFields, schema = schema,
                                    validate = False)
-        couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
-        outMod = self.validateConfigCacheExists(configID = schema["ConfigCacheID"],
-                                                couchURL = couchUrl,
+        outMod = self.validateConfigCacheExists(configID = schema["ProcConfigCacheID"],
+                                                couchURL = schema["CouchURL"],
                                                 couchDBName = schema["CouchDBName"],
                                                 getOutputModules = True)
+
         if schema.get("ProdJobSplitAlgo", "EventBased") == "EventBased":
             self.validateEventBasedParameters(schema = schema)
 
+        return
 
     def validateEventBasedParameters(self, schema):
         """

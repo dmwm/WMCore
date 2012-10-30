@@ -46,7 +46,7 @@ class LHEStepZeroTest(MonteCarloTest):
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "rereco_t"
-        defaultArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
+        defaultArguments["ProcConfigCacheID"] = self.injectMonteCarloConfig()
 
         testWorkload = lheStepZeroWorkload("TestWorkload", defaultArguments)
         testWorkload.setSpecUrl("somespec")

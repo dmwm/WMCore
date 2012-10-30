@@ -134,8 +134,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Error in Workload Validation: Missing required "
-                            "field 'GlobalTag' in workload validation!" in ex.result)
+            self.assertTrue("Missing required field GlobalTag in workload validation" in ex.result)
         self.assertTrue(raises)
 
         schema = utils.getSchema(groupName = groupName,  userName = userName)
@@ -146,7 +145,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            print ex.result
+            self.assertTrue("Bad value for InputDataset" in ex.result)
         self.assertTrue(raises)
 
         schema = utils.getSchema(groupName = groupName,  userName = userName)
@@ -162,7 +161,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
 
         configID = self.createConfig(bad = True)
         schema = utils.getSchema(groupName = groupName,  userName = userName)
-        schema["ConfigCacheID"] = configID
+        schema["ProcConfigCacheID"] = configID
         schema["CouchDBName"] = self.couchDBName
         schema["CouchURL"]    = os.environ.get("COUCHURL")
 
@@ -207,6 +206,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                                          groupName = groupName,
                                          teamName = teamName)
         schema['RequestType'] = "Analysis"
+        
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
@@ -258,7 +258,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
 
         # Now we have to make ourselves a configCache
         configID = self.createConfig()
-        schema["ConfigCacheID"] = configID
+        schema["ProcConfigCacheID"] = configID
         schema["CouchDBName"] = self.couchDBName
         schema["CouchURL"]    = os.environ.get("COUCHURL")
         result = self.jsonSender.put('request/testRequest', schema)
@@ -287,14 +287,14 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                                                groupName = groupName,
                                                teamName = teamName)
         schema['RequestType'] = "ReDigi"
+
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Error in Workload Validation: Missing required "
-                            "field 'StepOneConfigCacheID' in workload validation!" in ex.result)
+            self.assertTrue("Missing required field StepOneConfigCacheID in workload validation" in ex.result)
         self.assertTrue(raises)
 
         schema["StepOneConfigCacheID"] = "fakeID"
@@ -337,14 +337,14 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                                                groupName = groupName,
                                                teamName = teamName)
         schema['RequestType'] = "StoreResults"
+        
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Error in Workload Validation: Missing required "
-                            "field 'DbsUrl' in workload validation!" in ex.result)
+            self.assertTrue("Missing required field DbsUrl in workload validation" in ex.result)
         self.assertTrue(raises)
 
         schema['DbsUrl']            = 'http://fake.dbs.url/dbs'
@@ -460,17 +460,17 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                                                groupName = groupName,
                                                teamName = teamName)
         schema['RequestType'] = "MonteCarloFromGEN"
+        
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Error in Workload Validation: Missing required "
-                            "field 'ConfigCacheID' in workload validation!" in ex.result)
+            self.assertTrue("Missing required field ProcConfigCacheID in workload validation" in ex.result)
         self.assertTrue(raises)
 
-        schema["ConfigCacheID"] = "fakeID"
+        schema["ProcConfigCacheID"] = "fakeID"
         schema["CouchDBName"] = self.couchDBName
         schema["CouchURL"]    = os.environ.get("COUCHURL")
         try:
@@ -483,7 +483,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertTrue(raises)
 
         configID = self.createConfig()
-        schema["ConfigCacheID"] = configID
+        schema["ProcConfigCacheID"] = configID
         result = self.jsonSender.put('request/testRequest', schema)
         requestName = result[0]['RequestName']
         
@@ -523,11 +523,10 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Error in Workload Validation: Missing required "
-                            "field 'ConfigCacheID' in workload validation!" in ex.result)
+            self.assertTrue("Missing required field ProcConfigCacheID in workload validation" in ex.result)
         self.assertTrue(raises)
 
-        schema["ConfigCacheID"] = "fakeID"
+        schema["ProcConfigCacheID"] = "fakeID"
         schema["CouchDBName"] = self.couchDBName
         schema["CouchURL"]    = os.environ.get("COUCHURL")
         schema["PrimaryDataset"] = "ReallyFake"
@@ -538,10 +537,11 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
+            self.assertTrue("Failure to load ConfigCache while validating workload" in ex.result)
         self.assertTrue(raises)
 
         configID = self.createConfig()
-        schema["ConfigCacheID"] = configID
+        schema["ProcConfigCacheID"] = configID
         schema["FilterEfficiency"] = -0.5
 
         try:
@@ -550,8 +550,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            # until exception handling is redone (New REST API)
-            #self.assertTrue("Negative filter efficiency for MC workflow" in ex.result)
+            self.assertTrue("Negative filter efficiency for MC workflow" in ex.result)
         self.assertTrue(raises)
 
         schema["FilterEfficiency"] = 1.0
@@ -586,8 +585,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Error in Workload Validation: Missing required field "
-                            "'PrimaryDataset' in workload validation!" in ex.result)
+            self.assertTrue("Missing required field PrimaryDataset in workload validation" in ex.result)
         self.assertTrue(raises)
 
         schema["GenConfigCacheID"]        = "fakeID"
@@ -651,8 +649,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Error in Workload Validation: Missing required "
-                            "field 'OriginalRequestName' in workload validation!" in ex.result)
+            self.assertTrue("Missing required field OriginalRequestName" in ex.result)
         self.assertTrue(raises)
 
         schema["OriginalRequestName"] = requestName
@@ -694,11 +691,10 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Error in Workload Validation: Missing required "
-                            "field 'ConfigCacheID' in workload validation!" in ex.result)
+            self.assertTrue("Missing required field ProcConfigCacheID in workload validation" in ex.result)
         self.assertTrue(raises)
 
-        schema["ConfigCacheID"] = "fakeID"
+        schema["ProcConfigCacheID"] = "fakeID"
         schema["CouchDBName"] = self.couchDBName
         schema["CouchURL"]    = os.environ.get("COUCHURL")
         schema["PrimaryDataset"] = "ReallyFake"
@@ -709,10 +705,11 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
+            self.assertTrue("Failure to load ConfigCache while validating workload" in ex.result)
         self.assertTrue(raises)
 
         configID = self.createConfig()
-        schema["ConfigCacheID"] = configID
+        schema["ProcConfigCacheID"] = configID
         schema["FilterEfficiency"] = -0.5
 
         try:
@@ -721,8 +718,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            # until exception handling is redone (New REST API)
-            #self.assertTrue("Negative filter efficiency for MC workflow" in ex.result)
+            self.assertTrue("Negative filter efficiency for MC workflow" in ex.result)
         self.assertTrue(raises)
 
         schema["FilterEfficiency"] = 1.0
@@ -733,8 +729,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            # until exception handling is redone (New REST API)
-            #self.assertTrue("No events per lumi information was entered" in ex.result)
+            self.assertTrue("No events per lumi information was entered" in ex.result)
         self.assertTrue(raises)
 
         schema["EventsPerLumi"] = "-10"
@@ -745,8 +740,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            # until exception handling is redone (New REST API)
-            #self.assertTrue("The events per lumi input from the user is invalid, only positive numbers allowed" in ex.result)
+            self.assertTrue("The events per lumi input from the user is invalid, only positive numbers allowed" in ex.result)
         self.assertTrue(raises)
 
         schema["EventsPerLumi"] = "101"
@@ -757,8 +751,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            # until exception handling is redone (New REST API)
-            #self.assertTrue("More events per lumi than total events requested" in ex.result)
+            self.assertTrue("More events per lumi than total events requested" in ex.result)
         self.assertTrue(raises)
 
         schema["EventsPerLumi"] = "20"

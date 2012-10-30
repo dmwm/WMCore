@@ -42,6 +42,13 @@ def getTestArguments():
         "TimePerEvent" : 1,
         "Memory"       : 1,
         "SizePerEvent" : 1,
+        #"ProcConfigCacheID": "03da10e20c7b98c79f9d6a5c8900f83b",
+
+        #"SkimConfigs": [{"SkimName": "Prescaler", "SkimInput": "output",
+        #                "SkimSplitAlgo": "FileBased",
+        #                "SkimSplitArgs": {"files_per_job": 1, "include_parents": True},
+        #                "ConfigCacheID": "3adb4bad8f05cabede27969face2e59d",
+        #                "Scenario": None}]
         }
 
     return arguments
@@ -141,8 +148,8 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
         self.requireValidateFields(fields = requiredFields, schema = schema,
                                    validate = False)
 
-        if schema.get('ConfigCacheID', None) and schema.get('CouchURL', None) and schema.get('CouchDBName', None):
-            outMod = self.validateConfigCacheExists(configID = schema['ConfigCacheID'],
+        if schema.get('ProcConfigCacheID', None) and schema.get('CouchURL', None) and schema.get('CouchDBName', None):
+            outMod = self.validateConfigCacheExists(configID = schema['ProcConfigCacheID'],
                                                     couchURL = schema["CouchURL"],
                                                     couchDBName = schema["CouchDBName"],
                                                     getOutputModules = True)

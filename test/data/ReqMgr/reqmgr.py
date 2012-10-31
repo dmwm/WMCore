@@ -41,6 +41,7 @@ import urllib
 import logging
 from optparse import OptionParser, TitledHelpFormatter
 import json
+import copy
 
 
 class ReqMgrSubmitter(object):
@@ -53,6 +54,8 @@ class ReqMgrSubmitter(object):
     def __init__(self, reqMgrUrl, certFile, keyFile):
         logging.info("Identity files:\n\tcert file: '%s'\n\tkey file:  '%s' " %
                      (certFile, keyFile))
+        self.textHeaders  =  {"Content-type": "application/x-www-form-urlencoded",
+                              "Accept": "text/plain"}
         if reqMgrUrl.startswith("https://"):
             reqMgrUrl = reqMgrUrl.replace("https://", '')
         self.conn = httplib.HTTPSConnection(reqMgrUrl, key_file = keyFile,
@@ -77,7 +80,7 @@ class ReqMgrSubmitter(object):
         Talks to the REST ReqMgr API.
         
         """
-        logging.debug("Injecting a request for arguments:\n%s ..." % requestArgs["request"])
+        logging.debug("Injecting a request for arguments (REST API):\n%s ..." % requestArgs["request"])
         jsonArgs = json.dumps(requestArgs["request"])
         status, data = self._httpRequest("PUT", "/reqmgr/reqMgr/request", data = jsonArgs)        
         if status > 216:
@@ -96,19 +99,17 @@ class ReqMgrSubmitter(object):
         Talks to the ReqMgr webpage, as if the request came from the web browser.
         
         """
-        headers  =  {"Content-type": "application/x-www-form-urlencoded",
-                     "Accept": "text/plain"}
         encodedParams = urllib.urlencode(requestArgs["request"])
-        logging.debug("Injecting a request for arguments:\n%s ..." % requestArgs["request"])
+        logging.debug("Injecting a request for arguments (webpage):\n%s ..." % requestArgs["request"])
         # the response is now be an HTML webpage
         status, data = self._httpRequest("POST", "/reqmgr/create/makeSchema",
-                                         data = encodedParams, headers = headers)        
+                                         data = encodedParams, headers = self.textHeaders)        
         if status > 216 and not 303:
             logging.error("Error occurred, exit.")
             sys.exit(1)
-        print data        
-        # this was how to get RequestName from the webpage in the original
-        # implementation
+        print data
+        # this is a call to a webpage/webform and the response here is HTML page
+        # retrieve the request name from the returned HTML page       
         requestName = data.split("'")[1].split('/')[-1]
         logging.info("Create request '%s' succeeded." % requestName)
         return requestName        
@@ -118,11 +119,9 @@ class ReqMgrSubmitter(object):
         params = {"requestName": requestName,
                   "status": "assignment-approved"}
         encodedParams = urllib.urlencode(params)
-        headers  =  {"Content-type": "application/x-www-form-urlencoded",
-                     "Accept": "text/plain"}
         logging.info("Approving request '%s' ..." % requestName)
         status, data = self._httpRequest("PUT", "/reqmgr/reqMgr/request",
-                                         data = encodedParams, headers = headers)
+                                         data = encodedParams, headers = self.textHeaders)
         if status != 200:
             logging.error("Approve did not succeed.")
             print data
@@ -138,10 +137,18 @@ class ReqMgrSubmitter(object):
         This is why the items
             "Team"+team: "checked"
             "checkbox"+workflow: "checked"
-            have to be hacked here, as if they were ticked on a web form.        
+            have to be hacked here, as if they were ticked on a web form.
+            This hack is the reason why the requestArgs have to get
+            to this method deep-copied if subsequent request injection happens
+            
+        TODO:
+        if arguments for assigning will be similar/same for other workflows,
+        they should be factored out into a dedicated JSON file.
         
         """
         assignArgs = requestArgs["requestAssign"]
+        print "assignArgs in the method"
+        print assignArgs
         team = assignArgs["Team"]
         assignArgs["Team" + team] = "checked"
         assignArgs["checkbox" + requestName] = "checked"
@@ -149,11 +156,9 @@ class ReqMgrSubmitter(object):
         # TODO this needs to be put right with proper REST interface
         del assignArgs["Team"]
         encodedParams = urllib.urlencode(assignArgs, True)
-        headers  =  {"Content-type": "application/x-www-form-urlencoded",
-                     "Accept": "text/plain"}
         logging.info("Assigning request '%s' ..." % requestName)
         status, data = self._httpRequest("POST", "/reqmgr/assign/handleAssignmentPage",
-                                         data = encodedParams, headers = headers)
+                                         data = encodedParams, headers = self.textHeaders)
         if status != 200:
             logging.error("Assign did not succeed.")
             print data
@@ -161,18 +166,20 @@ class ReqMgrSubmitter(object):
         logging.info("Assign succeeded.")
         
                 
-    def createRequest(self, requestArgs):
+    def createRequest(self, requestArgs, restApi = True):
         """
         requestArgs - arguments for both creation and assignment
+        restApi - call REST API at ReqMgr or request creating webpage
         
         """
-        requestName = self._createRequestViaRest(requestArgs)
-        # TODO
-        # if necessary to test both ways, call here the other method too
-        #requestName = self._createRequestViaWebPage(requestArgs)
+        if restApi:
+            requestName = self._createRequestViaRest(requestArgs)
+        else:
+            requestName = self._createRequestViaWebPage(requestArgs)
         
         self.approveRequest(requestName)
         self.assignRequest(requestArgs, requestName)
+        return requestName
         
                 
     def userGroup(self, _):
@@ -207,6 +214,8 @@ class ReqMgrSubmitter(object):
             requests = json.loads(data)
             for request in requests:
                 print request
+            logging.info("%s requests in the system." % len(requests))
+            return requests
         else:
             logging.info("Querying '%s' request ...")
             status, data = self._httpRequest("GET", "/reqmgr/reqMgr/request/%s" % requestName)            
@@ -220,10 +229,55 @@ class ReqMgrSubmitter(object):
         requestName is already a list
         
         """
+        assert isinstance(requestNames, list), "Wrong input, list expected (%s)." % requestNames 
         for request in requestNames:
             logging.info("Deleting '%s' request ..." % request)
             status, data = self._httpRequest("DELETE", "/reqmgr/reqMgr/request/%s" % request)
-      
+            
+    
+    def cloneRequest(self, requestName):
+        logging.debug("Cloning request '%s' ..." % requestName)
+        headers = {"Content-Length": 0}
+        status, data = self._httpRequest("PUT", "/reqmgr/reqMgr/clone/%s" % requestName, 
+                                         headers=headers)
+        if status > 216:
+            logging.error("Error occurred, exit.")  
+            sys.exit(1)
+        data = json.loads(data)
+        # ReqMgr returns dictionary with key: 'WMCore.RequestManager.DataStructs.Request.Request'
+        # print data
+        newRequestName = data.values()[0]["RequestName"] 
+        logging.info("Clone request succeeded: original request name: '%s' "
+                     "new request name: '%s'" % (requestName, newRequestName))
+        return newRequestName
+        
+    
+    def allTests(self, requestArgs):
+        """
+        Call all methods above. Tests everything.
+        Checks that the ReqMgr instance has the same state before 
+        and after this script.
+                
+        """
+        self.userGroup(None) # argument has no meaning
+        self.team(None) # argument has no meaning
+        currentRequests = self.queryRequest()
+        requests = []
+        # see in the assignRequest comment the reason for deepcopy here
+        requestArgs1 = copy.deepcopy(requestArgs)
+        requestArgs2 = copy.deepcopy(requestArgs)
+        requests.append(self.createRequest(requestArgs1, restApi = True))
+        requests.append(self.createRequest(requestArgs2, restApi = False))
+        for requestName in requests:
+            self.queryRequest(requestName)
+        requests.append(self.cloneRequest(requests[0])) # clone the first request in the list
+        self.deleteRequests(requests)
+        logging.info("%s requests in the system before this test." % len(currentRequests))
+        afterRequests = self.queryRequest()
+        logging.info("%s requests in the system before this test." % len(afterRequests))
+        assert currentRequests == afterRequests, "Request list not matching!"
+        logging.info("Running --allTests succeeded.")
+                
     
     def __del__(self):
         self.conn.close()
@@ -252,8 +306,12 @@ def processCmdLine(args):
         errExit("Missing mandatory --reqMgrUrl, see --help.", parser)
     if opts.createRequest and not opts.configFile:
         errExit("When --createRequest, --configFile is necessary, see --help.", parser)
-    if opts.json and not opts.createRequest:
-        errExit("Command line --json only with --createRequest, see --help.", parser)
+    if opts.allTests and not opts.configFile:
+        errExit("When --allTests, --configFile is necessary, see --help.", parser)
+    if (opts.json and not opts.createRequest) and (opts.json and not opts.allTests):
+        errExit("Command line --json only with --createRequest or --allTests, see --help.", parser)
+    if opts.allTests and opts.createRequest:
+        errExit("Arguments --allTests and --createRequest are mutually exclusive.") 
     # deleteRequests will be a list
     if opts.deleteRequests:
         opts.deleteRequests = opts.deleteRequests.split(",") 
@@ -272,11 +330,10 @@ def defineCmdLineOptions(parser):
             "If not defined, tries X509_USER_KEY then X509_USER_PROXY env. "
             "variables. And lastly /tmp/x509up_uUID.")
     parser.add_option("-k", "--key", help=help)
-    help = ("Request Manager REST API URL (no other options - query all requests) "
-            "e.g.: https://maxareqmgr01.cern.ch/reqmgr/reqMgr/")
+    help = ("Request Manager service address (no other options - query all requests) "
+            "e.g.: https://maxareqmgr01.cern.ch")
     parser.add_option("-u", "--reqMgrUrl", help=help)
-    help = ("Action: Query a request specified by the request name. "
-            "Prints all requests if no argument is specified.")
+    help = "Action: Query a request specified by the request name."
     action = "queryRequest"
     actions.append(action)
     parser.add_option("-q", "--" + action, help=help)
@@ -297,6 +354,15 @@ def defineCmdLineOptions(parser):
             "These values are only parsed on --createRequest. "
             "e.g. {\"request\": {\"Requestor\": \"efajardo\"}, \"requestAssign\": {\"FirstLumi: 1}}")
     parser.add_option("-j", "--json", help=help)
+    action = "cloneRequest"
+    actions.append(action)
+    help = "Action: Clone request, the request name is mandatory argument."
+    parser.add_option("-l", "--" + action, help=help)
+    action = "allTests"
+    actions.append(action)
+    help = ("Action: Perform all operations this script allows. "
+            "--configFile and possibly --json must be present for initial request injection.")
+    parser.add_option("-a", "--" + action, action="store_true", help=help)
     # TODO
     # this will be removed once ReqMgr takes this internal user management
     # information from SiteDB, only teams will remain
@@ -360,6 +426,9 @@ def initialization(commandLineArgs):
     if opts.createRequest:
         # process request arguments and store them into opts values
         opts.createRequest = processRequestArgs(opts.configFile, opts.json)
+    if opts.allTests:
+        # the same as above
+        opts.allTests = processRequestArgs(opts.configFile, opts.json)
     return reqMgrSubmitter, opts, actions
     
 

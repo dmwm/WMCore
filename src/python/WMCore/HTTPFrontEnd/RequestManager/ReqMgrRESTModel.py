@@ -4,7 +4,7 @@
 ReqMgrRESTModel
 
 This holds the methods for the REST model, all methods which
-will be available via HTTP PUT/GET/POST commands from the interface,
+will be available via HTTP PUT/GET/POST commands from the iconterface,
 the validation, the security for each, and the function calls for the
 DB interfaces they execute.
 
@@ -89,6 +89,9 @@ class ReqMgrRESTModel(RESTModel):
         self._addMethod('PUT', 'request', self.putRequest,
                        args = ['requestName', 'status', 'priority'],
                        secured=True, validation = [self.isalnum, self.reqPriority])
+        self._addMethod('PUT', 'clone', self.cloneRequest,
+                       args = ['requestName'],
+                       secured=True, validation = [self.isalnum])
         self._addMethod('PUT', 'assignment', self.putAssignment,
                        args = ['team', 'requestName'],
                        secured=True, security_params=self.security_params,
@@ -242,7 +245,13 @@ class ReqMgrRESTModel(RESTModel):
         return index
 
     def findRequest(self, requestName):
-        """ Either returns the request object, or None """
+        """
+        Either returns the request object, or None.
+        TODO:
+        interesting how such a query is implemented here when there is
+        database behind ...
+        
+        """
         requests = ListRequests.listRequests()
         for request in requests:
             if request['RequestName'] == requestName:
@@ -422,6 +431,7 @@ class ReqMgrRESTModel(RESTModel):
         assert index['url'].startswith('http')
         return index
 
+
     def putRequest(self, requestName=None, status=None, priority=None):
         request = None
         if requestName:
@@ -453,11 +463,12 @@ class ReqMgrRESTModel(RESTModel):
                     detail = "check logs." 
                 msg = "Create request failed, %s" % detail
                 raise cherrypy.HTTPError(400, msg)
+            self.info("Request '%s' created." % request['RequestName'])
         # see if status & priority need to be upgraded
         if status != None:
             # forbid assignment here
             if status == 'assigned' and request['RequestStatus'] != 'ops-hold':
-                raise cherrypy.HTTPError(403, "Cannot change status without a team.  Please use PUT /reqmgr/rest/assignment/<team>/<requestName>")
+                raise cherrypy.HTTPError(403, "Cannot change status without a team.  Please use PUT /reqmgr/reqMgr/assignment/<team>/<requestName>")
             try:
                 Utilities.changeStatus(requestName, status, self.wmstatWriteURL)
             except RuntimeError as ex:
@@ -466,11 +477,48 @@ class ReqMgrRESTModel(RESTModel):
                     self.error("RuntimeError while changeStatus: reason: %s" % ex)
                     raise cherrypy.HTTPError(403, "Failed to change status: %s" % str(ex))
         if priority != None:
-            Utilities.changePriority(requestName, priority, self.wmstatWriteURL)
-        self.info("Request '%s' created." % request['RequestName']) 
-
+            Utilities.changePriority(requestName, priority, self.wmstatWriteURL) 
         return request
-
+    
+    
+    def cloneRequest(self, requestName):
+        """
+        Input assumes an existing request, checks that.
+        The original existing request is not touched.
+        A new request is generated (and is in the 'new' state), it has
+        newly generate RequestName, new timestamp, RequestDate, however
+        -everything- else is copied from the original request.
+        
+        """
+        request = None
+        if requestName:
+            self.info("Cloning request: request name: '%s'" % requestName)
+            #request = self.findRequest(requestName) # request is a dictionary here, incomplete
+            requestOrigDict = self.getRequest(requestName)
+            if requestOrigDict:
+                self.info("Request found, cloning ...")
+                newReqSchema = Utilities.getNewRequestSchema(requestOrigDict)
+                # since we cloned the request, all the attributes
+                # manipulation in Utilities.makeRequest() should not be necessary
+                # the cloned request shall be identical but following arguments
+                toRemove = ("RequestName", "RequestDate", "timeStamp", "ReqMgrRequestID",
+                            "RequestWorkflow")
+                for remove in toRemove:
+                    del requestOrigDict[remove]                
+                newReqSchema.update(requestOrigDict) # clone
+                request = Utilities.buildWorkloadAndCheckIn(self, newReqSchema,
+                                                            self.couchUrl, self.workloadDBName,
+                                                            self.wmstatWriteURL, clone=True)
+                return request
+            else:
+                msg = "Request '%s' not found." % requestName
+                self.warning(msg)
+                raise cherrypy.HTTPError(404, msg)
+        else:
+            msg = "Received empty request name: '%s', exit." % requestName
+            self.warn(msg)
+            raise cherrypy.HTTPError(400, msg)
+        
 
     def putAssignment(self, team, requestName):
         """ Assigns this request to this team """

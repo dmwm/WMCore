@@ -12,6 +12,28 @@ import unittest
 from WMCore.Lexicon import *
 
 class LexiconTest(unittest.TestCase):
+    def testDBSUser(self):
+
+        u1 = '/DC=org/DC=doegrids/OU=People/CN=Ajit Kumar Mohapatra 867118'
+        u2 = '/C=IT/O=INFN/OU=Personal Certificate/L=Bari/CN=antonio pierro'
+        u3 = '/DC=ch/DC=cern/OU=computers/CN=vocms39.cern.ch'
+        u4 = '/C=BE/O=BEGRID/OU=IIHE(VUB)/OU=DNTK/CN=Maes Joris'
+        u5 = 'cmsprod@vocms19.cern.ch'
+        u6 = 'sfoulkes'
+        u7 = '/DC=org/DC=doegrids/OU=People/CN=Si Xie 523253'
+        u8 = '/C=IT/O=INFN/OU=Personal Certificate/L=Sns/CN=Federico Calzolari'
+        u9 = '/O=GermanGrid/OU=RWTH/CN=Maarten Thomas'
+        u10 = 'cmsdataops@cmssrv44.fnal.gov'
+        u11 = '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=ceballos/CN=488892/CN=Guillelmo Gomez Ceballos'
+        for test_u in [u1, u2, u3, u4, u5, u6, u7,u8,u9, u10,u11]:
+            assert DBSUser(test_u), 'valid search not validated'
+
+        u10 = 'Fred Bloggs'
+        u11 = 'cmsprod@vocms19#'
+        u12 = 'cms-xen@drop/'
+        u13 = 'C=IT/O=INFN/OU=Personal Certificate/L=Sns/CN=Federico Calzolari'
+        for test_u in [u10, u11]:
+            self.assertRaises(AssertionError, DBSUser, test_u)
 
     def testSearchDataset(self):
         ds1 = '/Higgs/blah-v2/RECO'

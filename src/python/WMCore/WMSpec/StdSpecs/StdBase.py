@@ -739,7 +739,7 @@ class StdBase(object):
                         step = task.getStep(stepName)
                         if step.stepType() != "CMSSW":
                             continue
-                        cmsswHelper = task.getTypeHelper(stepName)
+                        cmsswHelper = step.getTypeHelper()
                         if not cmsswHelper.getScenario():
                             self.raiseValidationException(msg = "A DQM harvesting task was found, you must specify a scenario")
 

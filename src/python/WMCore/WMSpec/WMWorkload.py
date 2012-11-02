@@ -1188,22 +1188,27 @@ class WMWorkloadHelper(PersistencyHelper):
         pass
 
     def truncate(self, newWorkloadName, initialTaskPath, serverUrl,
-                 databaseName):
+                 databaseName, collectionName = None):
         """
         _truncate_
 
         Truncate a workflow so that it can be used for resubmission.  This will
         rename the workflow and set the task in the intitialTaskPath parameter
         to be the top level task.  This modifies the workflow in place.
+        The input collection name can be specified otherwise it will default to
+        the old workload name.
         """
+        if not collectionName:
+            collectionName = self.name()
+
         allTaskPaths = self.listAllTaskPathNames()
         newTopLevelTask = self.getTaskByPath(initialTaskPath)
-        newTopLevelTask.addInputACDC(serverUrl, databaseName, self.name(),
+        newTopLevelTask.addInputACDC(serverUrl, databaseName, collectionName,
                                      initialTaskPath)
         newTopLevelTask.setInputStep(None)
         workloadOwner = self.getOwner()
         self.setInitialJobCount(self.getInitialJobCount() + 10000000)
-        newTopLevelTask.setSplittingParameters(collectionName = self.name(),
+        newTopLevelTask.setSplittingParameters(collectionName = collectionName,
                                                filesetName = initialTaskPath,
                                                couchURL = serverUrl,
                                                couchDB = databaseName,

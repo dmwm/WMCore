@@ -45,6 +45,9 @@ class BaseWorkerThread:
 
         # Termination callback function
         self.terminateCallback = None
+        
+        # Init the timing
+        self.lastTime = time.time()
 
         # Init alert system
         self.sender = None
@@ -188,7 +191,7 @@ class BaseWorkerThread:
                                         myThread.getName(), msg)
                             raise ex
                         # Put the thread to sleep
-                        time.sleep(self.idleTime)
+                        self.sleepThread()
 
             # Call specific thread termination method
             self.terminate(parameters)
@@ -208,7 +211,20 @@ class BaseWorkerThread:
         msg = "Worker thread %s terminated" % str(self)
         logging.info(msg)
 
+    def sleepThread(self):
+        """
+        _sleepThread_
+        
+        A subclassable method to make the thread sleep.
+        
+        The default (naiive) time.sleep(self.idleTime) isn't always
+        the best idea, let different workers do it differently.
 
+        returns control when it's time to wake back up
+        doesn't return any values
+        """
+        time.sleep( self.idleTime )
+        
     def initAlerts(self, compName = None):
         """
         _initAlerts_

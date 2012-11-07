@@ -195,7 +195,7 @@ class ReqMgrBrowser(WebAPI):
         return self.templatepage("Request", requestName=requestName,
                                 detailsFields=self.detailsFields,
                                 requestSchema=request,
-                                docId=request.get('ConfigCacheID', None),
+                                docId=request.get('ProcConfigCacheID', None),
                                 assignments=request['Assignments'],
                                 adminHtml=adminHtml,
                                 messages=request['RequestMessages'],

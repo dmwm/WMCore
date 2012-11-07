@@ -443,16 +443,12 @@ class ReqMgrRESTModel(RESTModel):
                 self.error("Create request failed, reason: %s" % ex)
                 # Assume that this is a valid HTTPError
                 raise
-            except (WMException, Exception) as ex:
-                # TODO problem not to expose logs to the client
-                # e.g. on ConfigCacheID not found, the entire CouchDB traceback is sent in ex_message
+            except WMException as ex:
                 self.error("Create request failed, reason: %s" % ex)
-                if hasattr(ex, "name"):
-                    detail = ex.name
-                else:
-                    detail = "check logs." 
-                msg = "Create request failed, %s" % detail
-                raise cherrypy.HTTPError(400, msg)
+                raise cherrypy.HTTPError(400, ex._message)
+            except Exception as ex:
+                self.error("Create request failed, reason: %s" % ex)
+                raise cherrypy.HTTPError(400, ex.message)
         # see if status & priority need to be upgraded
         if status != None:
             # forbid assignment here

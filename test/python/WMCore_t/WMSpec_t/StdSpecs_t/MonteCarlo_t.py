@@ -220,7 +220,7 @@ class MonteCarloTest(unittest.TestCase):
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "rereco_t"
-        defaultArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
+        defaultArguments["ProcConfigCacheID"] = self.injectMonteCarloConfig()
 
         testWorkload = monteCarloWorkload("TestWorkload", defaultArguments)
         testWorkload.setSpecUrl("somespec")
@@ -245,7 +245,7 @@ class MonteCarloTest(unittest.TestCase):
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "rereco_t"
-        defaultArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
+        defaultArguments["ProcConfigCacheID"] = self.injectMonteCarloConfig()
         defaultArguments["FirstEvent"] = 3571428573
         defaultArguments["FirstLumi"] = 26042
         defaultArguments["TimePerEvent"] = 15
@@ -287,7 +287,7 @@ class MonteCarloTest(unittest.TestCase):
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "rereco_t"
-        defaultArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
+        defaultArguments["ProcConfigCacheID"] = self.injectMonteCarloConfig()
 
         # add pile up configuration
         defaultArguments["PileupConfig"] = {"mc": ["/some/cosmics/dataset1", "/some/cosmics/dataset2"],

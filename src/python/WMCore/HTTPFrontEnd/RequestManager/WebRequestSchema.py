@@ -121,21 +121,22 @@ class WebRequestSchema(WebAPI):
                 # If it does except, it probably wasn't in JSON to begin with.
                 # Anything else should be caught by the parsers and the validation
                 decodedSchema[key] = schema[key]
+
         try:
             self.info("Creating a request for: '%s'\n\tworkloadDB: '%s'\n\twmstatUrl: "
                       "'%s' ..." % (decodedSchema, self.workloadDBName,
                                     Utilities.removePasswordFromUrl(self.wmstatWriteURL)))
             request = Utilities.makeRequest(self, decodedSchema, self.couchUrl, self.workloadDBName, self.wmstatWriteURL)
-            # catching here KeyError is just terrible
-        except (RuntimeError, KeyError, Exception) as ex:
-            # TODO problem not to expose logs to the client
-            # e.g. on ConfigCacheID not found, the entire CouchDB traceback is sent in ex_message
+        except RuntimeError, e:
+            msg = "Create request failed, reason: %s" % e
+            self.error(msg)
+            raise cherrypy.HTTPError(400, msg)
+        except KeyError, e:
+            msg = "Create request failed, reason: %s" % e
+            self.error(msg)
+            raise cherrypy.HTTPError(400, msg)
+        except Exception as ex:
             self.error("Create request failed, reason: %s" % ex)
-            if hasattr(ex, "name"):
-                detail = ex.name
-            else:
-                detail = "check logs." 
-            msg = "Create request failed, %s" % detail
-            raise cherrypy.HTTPError(400, msg)            
+            raise cherrypy.HTTPError(400, "Create request failed, check logs.")
         baseURL = cherrypy.request.base
         raise cherrypy.HTTPRedirect('%s/reqmgr/view/details/%s' % (baseURL, request['RequestName']))

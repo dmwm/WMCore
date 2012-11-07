@@ -669,7 +669,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         configID = self.createConfig()
         schema["CouchDBName"] = self.couchDBName
         schema["CouchURL"]    = os.environ.get("COUCHURL")
-        schema["ConfigCacheID"] = configID
+        schema["ProcConfigCacheID"] = configID
         schema["InputDatasets"]     = ['/MinimumBias/Run2010B-RelValRawSkim-v1/RAW']
 
         result = self.jsonSender.put('request/testRequest', schema)

@@ -35,6 +35,7 @@ def getTestArguments():
         "CouchDBName": "scf_wmagent_configcache",
 
         "ProcScenario": "cosmics",
+        #"ProcConfigCacheID": "03da10e20c7b98c79f9d6a5c8900f83b",
         "Multicore" : None,
         "DashboardHost" : "127.0.0.1",
         "DashboardPort" : 8884,
@@ -85,7 +86,7 @@ class DataProcessingWorkloadFactory(StdBase):
                                                                              { 'dataTier' : "ALCARECO",
                                                                                'moduleLabel' : "ALCARECOoutput" } ] },
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
-                                              configDoc = self.configCacheID, splitAlgo = self.procJobSplitAlgo,
+                                              configDoc = self.procConfigCacheID, splitAlgo = self.procJobSplitAlgo,
                                               splitArgs = self.procJobSplitArgs, stepType = cmsswStepType)
         self.addLogCollectTask(procTask)
 
@@ -117,8 +118,8 @@ class DataProcessingWorkloadFactory(StdBase):
         self.couchURL = arguments["CouchURL"]
         self.couchDBName = arguments["CouchDBName"]
 
-        # Get the ConfigCacheID
-        self.configCacheID = arguments.get("ConfigCacheID", None)
+        # Get the ProcConfigCacheID
+        self.procConfigCacheID = arguments.get("ProcConfigCacheID", None)
 
         # Optional arguments that default to something reasonable.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
@@ -146,8 +147,8 @@ class DataProcessingWorkloadFactory(StdBase):
                           "InputDataset", "ScramArch"]
         self.requireValidateFields(fields = requiredFields, schema = schema,
                                    validate = False)
-        if schema.has_key('ConfigCacheID') and schema.has_key('CouchURL') and schema.has_key('CouchDBName'):
-            outMod = self.validateConfigCacheExists(configID = schema['ConfigCacheID'],
+        if schema.has_key('ProcConfigCacheID') and schema.has_key('CouchURL') and schema.has_key('CouchDBName'):
+            outMod = self.validateConfigCacheExists(configID = schema['ProcConfigCacheID'],
                                                     couchURL = schema["CouchURL"],
                                                     couchDBName = schema["CouchDBName"],
                                                     getOutputModules = True)

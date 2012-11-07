@@ -22,6 +22,8 @@ from WMCore.WMException import WMException
 from WMCore.WMSpec.Steps.Executor           import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 from WMCore.FwkJobReport.FileInfo           import readAdler32, readCksum
+from WMCore.WMSpec.WMStep            import WMStepHelper
+
 import WMCore.Storage.StageOutMgr as StageOutMgr
 import WMCore.Storage.FileManager
 import WMCore.Algorithms.BasicAlgos as BasicAlgos
@@ -85,7 +87,8 @@ class LogArchive(Executor):
 
         #Okay, we need a stageOut Manager
         useNewStageOutCode = False
-        if self.step.getNewStageoutOverride() or \
+        helper = WMStepHelper( self.step )
+        if helper.getNewStageoutOverride() or \
             (overrides.has_key('newStageOut') and overrides.get('newStageOut')):
             useNewStageOutCode = True
         if not useNewStageOutCode:

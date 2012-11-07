@@ -23,6 +23,8 @@ import WMCore.Storage.StageOutMgr as StageOutMgr
 import WMCore.Storage.FileManager
 import WMCore.Storage.DeleteMgr   as DeleteMgr
 
+from WMCore.WMSpec.WMStep            import WMStepHelper
+
 from WMCore.Lexicon                  import lfn     as lfnRegEx
 from WMCore.Lexicon                  import userLfn as userLfnRegEx
 
@@ -77,8 +79,9 @@ class StageOut(Executor):
         # Pull out StageOutMgr Overrides
 
         # switch between old stageOut behavior and new, fancy stage out behavior
+        helper = WMStepHelper( self.step )
         useNewStageOutCode = False
-        if self.step.getNewStageoutOverride() or \
+        if helper.getNewStageoutOverride() or \
             (overrides.has_key('newStageOut') and overrides.get('newStageOut')):
             useNewStageOutCode = True
 

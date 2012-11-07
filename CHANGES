@@ -1,3 +1,9 @@
+0.9.27 to 0.9.28:
+  - ONEOFF build for Zdenek to revert his previous patch
+  - Bugfix StdBase DQMHarvest validation
+  - Remove updates in cancellation - stop conflicts
+  - Revert "Revert "Ops ReqMgr interaction script, ProcConfigCacheID renaming""
+
 0.9.26 to 0.9.27:
   - Bugfix for wmagent-mod-config from fancy PhEDEx transfers commit.
     Pull request #4231.

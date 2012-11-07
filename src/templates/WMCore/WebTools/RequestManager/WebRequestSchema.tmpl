@@ -210,7 +210,7 @@ First lumi: <input type="text" name="FirstLumi" size=10 value=1 /><br/>
             $softwareBlock
 Include Parents: <select name="IncludeParents"><option>True</option><option selected>False</option></select><br/>
             $campaignBlock
-            $configBlock("inputMode", "Scenario", "ConfigCacheID", "Reco")
+            $configBlock("inputMode", "Scenario", "ProcConfigCacheID", "Reco")
             $dqmOptions
             $ioBlock
             $skimBlock
@@ -226,7 +226,7 @@ Filter efficiency: <input type="text" name="FilterEfficiency" size=10 value=1.0 
 Total job time: <input type="text" name="TotalTime", value=32400 /><br/>
             $performanceBlock
             $initialLumiEventBlock
-            $configBlock("inputMode", "Scenario", "ConfigCacheID", "MC")
+            $configBlock("inputMode", "Scenario", "ProcConfigCacheID", "MC")
 Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
 Data Pileup: <input type="text" name="DataPileup" size=80 /><br/>
 MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
@@ -267,7 +267,7 @@ CMS Path: <input type="text" name="CmsPath" size=50/><br/>
 Include Parents: <select name="IncludeParents"><option>True</option><option selected>False</option></select><br/>
             $campaignBlock
 Multicore: <input type="text" name="Multicore" size=2 value="" /> <br/>
-            $configBlock("inputMode", "Scenario", "ConfigCacheID", "Processing")
+            $configBlock("inputMode", "Scenario", "ProcConfigCacheID", "Processing")
             $dqmOptions
             $ioBlock
             $runBlockBlock
@@ -311,7 +311,7 @@ MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
             $headerBlock
             $softwareBlock
             $campaignBlock
-ConfigCache ID: <input type="text" name="ConfigCacheID" size=80 /><br/>
+ConfigCache ID: <input type="text" name="ProcConfigCacheID" size=80 /><br/>
 Global Tag: <input type="text" name="GlobalTag" size=20 value=""/><br/>
             $ioBlock
             $runBlockBlock
@@ -326,7 +326,7 @@ Filter efficiency: <input type="text" name="FilterEfficiency" size=10 value=1.0 
 Total job time: <input type="text" name="TotalTime", value=32400 />
 # of Events per luminosity block: <input type="text" name="EventsPerLumi" size=10 value=100 /><br/>
 	    $initialLumiEventBlock
-ConfigCache ID: <input type="text" name="ConfigCacheID" size=80 /><br/>
+ConfigCache ID: <input type="text" name="ProcConfigCacheID" size=80 /><br/>
 Global Tag: <input type="text" name="GlobalTag" size=20 value=""/><br/>
 Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
 Data Pileup: <input type="text" name="DataPileup" size=80 /><br/>

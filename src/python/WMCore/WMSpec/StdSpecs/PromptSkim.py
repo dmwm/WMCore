@@ -143,8 +143,8 @@ class PromptSkimWorkloadFactory(DataProcessingWorkloadFactory):
 
         try:
             configCache = ConfigCache(arguments["CouchURL"], arguments["CouchDBName"])
-            arguments["ConfigCacheID"] = configCache.getIDFromLabel(workloadName)
-            if not arguments["ConfigCacheID"]:
+            arguments["ProcConfigCacheID"] = configCache.getIDFromLabel(workloadName)
+            if not arguments["ProcConfigCacheID"]:
                 logging.error("The configuration was not uploaded to couch")
                 raise Exception
         except Exception:

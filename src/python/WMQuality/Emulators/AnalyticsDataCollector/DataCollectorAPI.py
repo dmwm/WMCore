@@ -27,11 +27,12 @@ BATCH_JOB_STATUS = ['submitted_pending', 'submitted_running']
 
 class LocalCouchDBData():
 
-    def __init__(self, couchURL):
+    def __init__(self, couchURL, summaryLevel):
         # set the connection for local couchDB call
         print "Using LocalCouchDBData Emulator"
         self.couchURL = couchURL
         self.couchURLBase, self.dbName = splitCouchServiceURL(couchURL)
+        self.summaryLevel = summaryLevel
         logging.info("connect couch %s:  %s" % (self.couchURLBase, self.dbName))
 
     def getJobSummaryByWorkflowAndSite(self):
@@ -61,6 +62,15 @@ class LocalCouchDBData():
 
         return doc
 
+    def getEventSummaryByWorkflow(self):
+        """
+        _getEventSummaryByWorkflow_
+
+        Gets the event progress by workflow.
+        Returns an empty dict in the emulator
+        """
+        return {}
+
 class ReqMonDBData():
 
     def __init__(self, couchURL):
@@ -75,17 +85,15 @@ class ReqMonDBData():
 
 class WMAgentDBData():
 
-    def __init__(self, dbi, logger):
+    def __init__(self, summaryLevel, dbi, logger):
 
         # interface to WMBS/BossAir db
         print "Using %s Emulator" % self.__class__
 
-    def getHeartBeatWarning(self, agentURL, acdcLink):
+    def getHeartBeatWarning(self):
 
         agentInfo = {}
         agentInfo['status'] = 'ok'
-        agentInfo['url'] = agentURL
-        agentInfo['acdc'] = acdcLink
         return agentInfo
 
     def getBatchJobInfo(self):

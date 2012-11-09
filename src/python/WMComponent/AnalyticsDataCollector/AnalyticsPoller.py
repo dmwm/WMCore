@@ -8,6 +8,7 @@ __all__ = []
 import threading
 import logging
 import time
+import traceback
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
@@ -36,8 +37,8 @@ class AnalyticsPoller(BaseWorkerThread):
         # need to get campaign, user, owner info
         self.agentDocID = "agent+hostname"
         self.summaryLevel = (config.AnalyticsDataCollector.summaryLevel).lower()
-        self.pluginName = getattr(config.AnalyticsDataCollector.pluginName, None)
-        self.plugIn = None
+        self.pluginName = getattr(config.AnalyticsDataCollector, "pluginName", None)
+        self.plugin = None
         
             
     def setup(self, parameters):
@@ -63,7 +64,7 @@ class AnalyticsPoller(BaseWorkerThread):
         self.centralWMStatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.centralWMStatsURL)
         
         if self.pluginName != None:
-            pluginFactory = WMFactory("plugins", "WMComponent.AnalyticsDataCollector.PlugIns")
+            pluginFactory = WMFactory("plugins", "WMComponent.AnalyticsDataCollector.Plugins")
             self.plugin = pluginFactory.loadObject(classname = self.pluginName)
 
     def algorithm(self, parameters):
@@ -105,8 +106,8 @@ class AnalyticsPoller(BaseWorkerThread):
                                                    self.agentInfo, uploadTime, self.summaryLevel)
 
 
-            if self.plugIn != None:
-                self.plugIn(requestDocs, self.localSummaryCouchDB, self.centralWMStatsCouchDB)
+            if self.plugin != None:
+                self.plugin(requestDocs, self.localSummaryCouchDB, self.centralWMStatsCouchDB)
 
             self.localSummaryCouchDB.uploadData(requestDocs)
             logging.info("Request data upload success\n %s request \n uploading agent data" % len(requestDocs))
@@ -120,5 +121,6 @@ class AnalyticsPoller(BaseWorkerThread):
             logging.info("Agent data upload success\n %s request" % len(agentDocs))
 
         except Exception, ex:
-            logging.error("Error occured: will retry later")
+            logging.error("Error occured, will retry later:")
             logging.error(str(ex))
+            logging.error("Traceback: \n%s" % traceback.format_exc())

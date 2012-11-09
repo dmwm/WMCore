@@ -1,10 +1,17 @@
+#!/usr/bin/env python
+"""
+_PluginInterface_
 
-class PlugInInterface(object):
+Base class for AnalyticsDataCollector plug-ins
+
+"""
+
+class PluginInterface(object):
     """Interface for policies"""
     def __init__(self, **args):
         """ initialize args if needed"""
         pass
-    
+
     def __call__(self, requestDocs, localSummaryCouchDB, centralWMStatsCouchDB):
         """
         this needs to be overwritten

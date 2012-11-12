@@ -1051,11 +1051,11 @@ class WMWorkloadHelper(PersistencyHelper):
         See WMWorkload.WMWorkloadHelper.setSiteWildcardsLists for details on the wildcardDict
         """
 
-        if type(custodialSites) != type([]):
+        if custodialSites and type(custodialSites) != type([]):
             custodialSites = [custodialSites]
-        if type(nonCustodialSites) != type([]):
+        if nonCustodialSites and type(nonCustodialSites) != type([]):
             nonCustodialSites = [nonCustodialSites]
-        if type(autoApproveSites) != type([]):
+        if autoApproveSites and type(autoApproveSites) != type([]):
             autoApproveSites = [autoApproveSites]
 
         newCustodialList = self.removeWildcardsFromList(siteList = custodialSites, wildcardDict = wildcardDict)
@@ -1093,11 +1093,11 @@ class WMWorkloadHelper(PersistencyHelper):
         in the workload that match the given primaryDataset (if any)
         """
 
-        if type(custodialSites) != type([]):
+        if custodialSites and type(custodialSites) != type([]):
             custodialSites = [custodialSites]
-        if type(nonCustodialSites) != type([]):
+        if nonCustodialSites and type(nonCustodialSites) != type([]):
             nonCustodialSites = [nonCustodialSites]
-        if type(autoApproveSites) != type([]):
+        if autoApproveSites and type(autoApproveSites) != type([]):
             autoApproveSites = [autoApproveSites]
 
         if initialTask:
@@ -1152,6 +1152,37 @@ class WMWorkloadHelper(PersistencyHelper):
                     subInfo[dataset] = taskSubInfo[dataset]
 
         return subInfo
+
+    def getWorkloadOverrides(self):
+        """
+        _getWorkloadOverrides_
+
+        Get the overrides config section
+        of this workload, creates it if it doesn't exist
+        """
+        return self.data.section_('overrides')
+
+    def getPhEDExInjectionOverride(self):
+        """
+        _getPhEDExInjectionOverride_
+
+        Get the site to where the files from
+        this workload should be registered to (if any)
+        """
+        if hasattr(self.data, 'overrides'):
+            return getattr(self.data.overrides, 'injectionSite', None)
+        return None
+
+    def setPhEDExInjectionOverride(self, site):
+        """
+        _setPhEDExInjectionOverride_
+
+        Set a site where the files from this workload
+        should be registered to in PhEDEx
+        """
+        overrideSection = self.data.section_('overrides')
+        overrideSection.injectionSite = site
+        return
 
     def getUnmergedLFNBase(self):
         """
@@ -1460,6 +1491,9 @@ class WMWorkload(ConfigSection):
         self.properties.unmergedLFNBase = "/store/unmerged"
         self.properties.mergedLFNBase = "/store/data"
         self.properties.dashboardActivity = None
+
+        # Overrides for this workload
+        self.section_("overrides")
 
         #  //
         # // tasks

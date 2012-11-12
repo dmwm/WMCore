@@ -4,13 +4,12 @@ Created on Jun 18, 2009
 @author: meloam
 '''
 import WMCore_t.WMSpec_t.samples.BasicProductionWorkload as testWorkloads
-import WMCore.WMSpec.Steps.Templates.StageOut as StageOutTemplate
-import WMCore.WMSpec.Steps.Executors.StageOut as StageOutExecutor
-import WMCore.WMSpec.Steps.Builders.StageOut  as StageOutBuilder
+import WMCore.WMSpec.Steps.Templates.LogArchive as LogArchiveTemplate
+import WMCore.WMSpec.Steps.Executors.LogArchive as LogArchiveExecutor
+import WMCore.WMSpec.Steps.Builders.LogArchive  as LogArchiveBuilder
 import WMCore.WMSpec.Steps.Builders.CMSSW  as CMSSWBuilder
 import WMCore.WMSpec.Steps.Templates.CMSSW  as CMSSWTemplate
 import logging
-import WMCore.Storage.StageOutError as StageOutError
 import unittest
 import os
 import tempfile
@@ -41,7 +40,7 @@ from WMCore.FwkJobReport.ReportEmu          import ReportEmu
 from nose.plugins.attrib import attr
 
 #
-class StageOutTest(unittest.TestCase):
+class LogArchiveTest(unittest.TestCase):
 
     def setUp(self):
         self.testInit = TestInit(__file__)
@@ -61,12 +60,12 @@ class StageOutTest(unittest.TestCase):
 
         cmsbuilder = CMSSWBuilder.CMSSW()
         cmsbuilder( cmsstep.data, 'Production', self.cmsstepdir )
-        realstep = StageOutTemplate.StageOutStepHelper(step.data)
+        realstep = LogArchiveTemplate.LogArchiveStepHelper(step.data)
         realstep.disableRetries()
         self.realstep = realstep
         self.stepDir = os.path.join( self.testDir, 'stepdir')
         os.mkdir( self.stepDir )
-        builder = StageOutBuilder.StageOut()
+        builder = LogArchiveBuilder.LogArchive()
         builder( step.data, 'Production', self.stepDir)
         
         # stolen from CMSSWExecutor_t. thanks, dave
@@ -108,14 +107,14 @@ class StageOutTest(unittest.TestCase):
         cmsswHelper = self.task.makeStep("cmsRun1")
         cmsswHelper.setStepType('CMSSW')
         stepHelper = cmsswHelper.addStep("DeleteTest")
-        stepHelper.setStepType('StageOut')
+        stepHelper.setStepType('LogArchive')
 
         self.cmsswstep = cmsswHelper.data
         self.cmsswHelper = cmsswHelper
 
 
         self.stepdata = stepHelper.data
-        self.stephelp = StageOutTemplate.StageOutStepHelper(stepHelper.data)
+        self.stephelp = LogArchiveTemplate.LogArchiveStepHelper(stepHelper.data)
         self.task.applyTemplates()
 
         self.executor = StepFactory.getStepExecutor(self.stephelp.stepType())
@@ -182,7 +181,7 @@ class StageOutTest(unittest.TestCase):
         myReport.data.cmsRun1.status = 1
         myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
 
-        executor = StageOutExecutor.StageOut()
+        executor = LogArchiveExecutor.LogArchive()
         
         executor.initialise( self.stepdata, self.job)
         self.setLocalOverride(self.stepdata)
@@ -199,8 +198,8 @@ class StageOutTest(unittest.TestCase):
         myReport.data.cmsRun1.status = 1
         myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
 
-        executor = StageOutExecutor.StageOut()
-        helper = StageOutTemplate.StageOutStepHelper(self.stepdata)
+        executor = LogArchiveExecutor.LogArchive()
+        helper = LogArchiveTemplate.LogArchiveStepHelper(self.stepdata)
         helper.addOverride(override = 'command', overrideValue='test-win')
         helper.addOverride(override = 'option', overrideValue='')
         helper.addOverride(override = 'se-name', overrideValue='charlie.sheen.biz')
@@ -219,8 +218,8 @@ class StageOutTest(unittest.TestCase):
         myReport.data.cmsRun1.status = 1
         myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
 
-        executor = StageOutExecutor.StageOut()
-        helper = StageOutTemplate.StageOutStepHelper(self.stepdata)
+        executor = LogArchiveExecutor.LogArchive()
+        helper = LogArchiveTemplate.LogArchiveStepHelper(self.stepdata)
         helper.addOverride(override = 'command', overrideValue='test-win')
         helper.addOverride(override = 'option', overrideValue='')
         helper.addOverride(override = 'se-name', overrideValue='charlie.sheen.biz')
@@ -242,7 +241,7 @@ class StageOutTest(unittest.TestCase):
         step.override.__setattr__('se-name','DUMMYSE')
 
 
-class otherStageOutTexst:#(unittest.TestCase):
+class otherLogArchiveTexst:#(unittest.TestCase):
 
     def setUp(self):
         # stolen from CMSSWExecutor_t. thanks, dave
@@ -284,14 +283,14 @@ class otherStageOutTexst:#(unittest.TestCase):
         cmsswHelper = self.task.makeStep("cmsRun1")
         cmsswHelper.setStepType('CMSSW')
         stepHelper = cmsswHelper.addStep("DeleteTest")
-        stepHelper.setStepType('StageOut')
+        stepHelper.setStepType('LogArchive')
 
         self.cmsswstep = cmsswHelper.data
         self.cmsswHelper = cmsswHelper
 
 
         self.stepdata = stepHelper.data
-        self.stephelp = StageOutTemplate.StageOutStepHelper(stepHelper.data)
+        self.stephelp = LogArchiveTemplate.LogArchiveStepHelper(stepHelper.data)
         self.task.applyTemplates()
 
         self.executor = StepFactory.getStepExecutor(self.stephelp.stepType())
@@ -343,30 +342,30 @@ class otherStageOutTexst:#(unittest.TestCase):
             myThread.factory = {}
 
     @attr('integration')
-    def testCPBackendStageOutAgainstReportNew(self):
+    def testCPBackendLogArchiveAgainstReportNew(self):
         myReport = Report()
         myReport.unpersist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         myReport.data.cmsRun1.status = 0
         myReport.persist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
-        executor = StageOutExecutor.StageOut()
+        executor = LogArchiveExecutor.LogArchive()
         executor.initialise( self.stepdata, self.job)
         self.setLocalOverride(self.stepdata)
-        self.stepdata.override.newStageOut = True
+        self.stepdata.override.newLogArchive = True
         executor.step = self.stepdata
         executor.execute( )
         self.assertTrue( os.path.exists( os.path.join( self.testDir, 'hosts' )))
         self.assertTrue( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
 
     @attr('integration')
-    def testCPBackendStageOutAgainstReportFailedStepNew(self):
+    def testCPBackendLogArchiveAgainstReportFailedStepNew(self):
         myReport = Report()
         myReport.unpersist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         myReport.data.cmsRun1.status = 1
         myReport.persist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
-        executor = StageOutExecutor.StageOut()
+        executor = LogArchiveExecutor.LogArchive()
         executor.initialise( self.stepdata, self.job)
         self.setLocalOverride(self.stepdata)
-        self.stepdata.override.newStageOut = True
+        self.stepdata.override.newLogArchive = True
         executor.step = self.stepdata
         executor.execute( )
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'hosts' )))
@@ -374,13 +373,13 @@ class otherStageOutTexst:#(unittest.TestCase):
         return
 
     @attr('integration')
-    def testCPBackendStageOutAgainstReportOld(self):
+    def testCPBackendLogArchiveAgainstReportOld(self):
 
         myReport = Report()
         myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         myReport.data.cmsRun1.status = 0
         myReport.persist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
-        executor = StageOutExecutor.StageOut()
+        executor = LogArchiveExecutor.LogArchive()
         executor.initialise( self.stepdata, self.job)
         self.setLocalOverride(self.stepdata)
         executor.step = self.stepdata
@@ -390,13 +389,13 @@ class otherStageOutTexst:#(unittest.TestCase):
         return
 
     @attr('integration')
-    def testCPBackendStageOutAgainstReportFailedStepOld(self):
+    def testCPBackendLogArchiveAgainstReportFailedStepOld(self):
         myReport = Report()
         myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         myReport.data.cmsRun1.status = 1
         myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
 
-        executor = StageOutExecutor.StageOut()
+        executor = LogArchiveExecutor.LogArchive()
         executor.initialise( self.stepdata, self.job)
         self.setLocalOverride(self.stepdata)
         executor.step = self.stepdata
@@ -421,11 +420,11 @@ class otherStageOutTexst:#(unittest.TestCase):
                         '/store/unmerged/WMAgent/storetest-%s' % time.time()]
 
         for file in targetFiles:
-            print "Adding file for StageOut %s" % file
-            self.addStageOutFile(myReport, file )
+            print "Adding file for LogArchive %s" % file
+            self.addLogArchiveFile(myReport, file )
 
         myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
-        executor = StageOutExecutor.StageOut()
+        executor = LogArchiveExecutor.LogArchive()
 
         executor.initialise( self.stepdata, self.job)
         executor.step = self.stepdata
@@ -461,7 +460,7 @@ class otherStageOutTexst:#(unittest.TestCase):
         # try staging in again to make sure teh files are gone
         for file in targetFiles:
             print "Staging in (should fail) %s" % file
-            self.assertRaises( StageOutError, \
+            self.assertRaises( LogArchiveError, \
                                FileManagerModule.FileManager.stageOut, \
                                fileManager,fileToStage = { 'LFN' : file,
                                     'PFN' : '%s/%s' % (self.testDir, file) },
@@ -473,7 +472,7 @@ class otherStageOutTexst:#(unittest.TestCase):
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'hosts' )))
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
 
-    def addStageOutFile(self, myReport, lfn):
+    def addLogArchiveFile(self, myReport, lfn):
         myId = myReport.data.cmsRun1.output.stagingTestOutput.fileCount
         mySection = myReport.data.cmsRun1.output.stagingTestOutput.section_('file%s' % myId)
         mySection.section_('runs')

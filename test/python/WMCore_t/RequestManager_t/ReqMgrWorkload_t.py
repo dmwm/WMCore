@@ -656,6 +656,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         schema["InitialTaskPath"]     = '/%s/DataProcessing' % requestName
         schema["ACDCServer"]          = os.environ.get("COUCHURL")
         schema["ACDCDatabase"]        = self.couchDBName
+        schema["CollectionName"]      = "SomeOtherName"
 
         # Here we just make sure that real result goes through
         result = self.jsonSender.put('request/testRequest', schema)

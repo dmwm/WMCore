@@ -392,7 +392,7 @@ def unidecode(data):
 def validate(schema):
     schema.validate()
     for field in ['RequestName', 'Requestor', 'RequestString',
-        'Campaign', 'ProcScenario', 'ProcConfigCacheID', 'inputMode',
+        'Campaign', 'ProcScenario', 'ConfigCacheID', 'inputMode',
         'CouchDBName', 'Group']:
         value = schema.get(field, '')
         if value and value != '':
@@ -448,11 +448,11 @@ def makeRequest(webApi, reqInputArgs, couchUrl, couchDB, wmstatUrl):
     # values in the schema definition
     
     reqSchema["Campaign"] = reqInputArgs.get("Campaign", "")
-    if 'ProcScenario' in reqInputArgs and 'ProcConfigCacheID' in reqInputArgs:
+    if 'ProcScenario' in reqInputArgs and 'ConfigCacheID' in reqInputArgs:
         # Use input mode to delete the unused one
         inputMode = reqInputArgs.get('inputMode', None)
         if inputMode == 'scenario':
-            del reqSchema['ProcConfigCacheID']
+            del reqSchema['ConfigCacheID']
 
     if 'EnableDQMHarvest' not in reqInputArgs:
         reqSchema["EnableHarvesting"] = False
@@ -498,13 +498,13 @@ def makeRequest(webApi, reqInputArgs, couchUrl, couchDB, wmstatUrl):
 
     # Get the DN
     reqSchema['RequestorDN'] = cherrypy.request.user.get('dn', 'unknown')
-    
 
     try:
         request = buildWorkloadForRequest(typename = reqInputArgs["RequestType"],
                                           schema = reqSchema)
     except WMSpecFactoryException, ex:
         raise HTTPError(400, "Error in Workload Validation: %s" % ex._message)
+    
     helper = WMWorkloadHelper(request['WorkloadSpec'])
     helper.setCampaign(reqSchema["Campaign"])
     if "CustodialSite" in reqSchema.keys():

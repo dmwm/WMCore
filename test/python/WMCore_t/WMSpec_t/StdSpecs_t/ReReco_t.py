@@ -103,7 +103,7 @@ class ReRecoTest(unittest.TestCase):
         recoConfig = self.injectReRecoConfig()
         dataProcArguments = getTestArguments()
         dataProcArguments['ProcessingString']  = 'ProcString'
-        dataProcArguments['ProcConfigCacheID'] = recoConfig
+        dataProcArguments['ConfigCacheID'] = recoConfig
         dataProcArguments["SkimConfigs"] = [{"SkimName": "SomeSkim",
                                              "SkimInput": "RECOoutput",
                                              "SkimSplitAlgo": "FileBased",

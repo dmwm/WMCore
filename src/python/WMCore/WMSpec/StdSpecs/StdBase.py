@@ -157,7 +157,7 @@ class StdBase(object):
 
     def determineOutputModules(self, scenarioFunc = None, scenarioArgs = None,
                                configDoc = None, couchURL = None,
-                               couchDBName = None):
+                               couchDBName = None, configCacheUrl = None):
         """
         _determineOutputModules_
 
@@ -166,7 +166,8 @@ class StdBase(object):
         """
         outputModules = {}
         if configDoc != None and configDoc != "":
-            configCache = ConfigCache(couchURL, couchDBName)
+            url = configCacheUrl or couchURL
+            configCache = ConfigCache(url, couchDBName)
             configCache.loadByID(configDoc)
             outputModules = configCache.getOutputModuleInfo()
         else:
@@ -284,8 +285,8 @@ class StdBase(object):
                             userDN = None, asyncDest = None, owner_vogroup = "DEFAULT",
                             owner_vorole = "DEFAULT", stepType = "CMSSW",
                             userSandbox = None, userFiles = [], primarySubType = None,
-                            forceMerged = False, forceUnmerged = False):
-
+                            forceMerged = False, forceUnmerged = False,
+                            configCacheUrl = None):
         """
         _setupProcessingTask_
 
@@ -303,6 +304,7 @@ class StdBase(object):
           configDoc empty - Use a Configuration.DataProcessing config.  The
             scenarioName, scenarioFunc and scenarioArgs parameters must not be
             empty.
+          if configCacheUrl is not empty, use that plus couchDBName + configDoc if not empty  
 
         The seeding and totalEvents parameters are only used for production jobs.
         """
@@ -379,7 +381,8 @@ class StdBase(object):
         procTaskCmsswHelper.setEventsPerLumi(eventsPerLumi)
 
         configOutput = self.determineOutputModules(scenarioFunc, scenarioArgs,
-                                                   configDoc, couchURL, couchDBName)
+                                                   configDoc, couchURL, couchDBName,
+                                                   configCacheUrl=configCacheUrl)
         outputModules = {}
         for outputModuleName in configOutput.keys():
             outputModule = self.addOutputModule(procTask,
@@ -392,7 +395,10 @@ class StdBase(object):
             outputModules[outputModuleName] = outputModule
 
         if configDoc != None and configDoc != "":
-            procTaskCmsswHelper.setConfigCache(couchURL, configDoc, couchDBName)
+            if configCacheUrl:
+                procTaskCmsswHelper.setConfigCache(configCacheUrl, configDoc, couchDBName)
+            else:
+                procTaskCmsswHelper.setConfigCache(couchURL, configDoc, couchDBName)
         else:
             # delete dataset information from scenarioArgs
             if 'outputs' in scenarioArgs:
@@ -804,7 +810,7 @@ class StdBase(object):
 
         for field in fields:
             if not field in schema.keys():
-                msg = "Missing required field %s in workload validation!" % field
+                msg = "Missing required field '%s' in workload validation!" % field
                 self.raiseValidationException(msg = msg)
             if schema[field] == None:
                 msg = "NULL value for required field %s!" % field
@@ -813,7 +819,7 @@ class StdBase(object):
                 try:
                     identifier(candidate = schema[field])
                 except AssertionError, ex:
-                    msg = "Schema value for field %s failed Lexicon validation" % field
+                    msg = "Schema value for field '%s' failed Lexicon validation" % field
                     self.raiseValidationException(msg = msg)
         return
 
@@ -838,10 +844,8 @@ class StdBase(object):
 
         if configID == '' or configID == ' ':
             self.raiseValidationException(msg = "ConfigCacheID is invalid and cannot be loaded")
-
-        from WMCore.Cache.WMConfigCache import ConfigCache
-        configCache = ConfigCache(dbURL = couchURL,
-                                  couchDBName = couchDBName,
+            
+        configCache = ConfigCache(dbURL = couchURL, couchDBName = couchDBName,
                                   id = configID)
         try:
             configCache.loadByID(configID = configID)

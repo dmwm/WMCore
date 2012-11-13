@@ -28,6 +28,7 @@ errorSummary = function(errors) {
                 codeSummary.runLumis = getRunLumiRange(errors[task][step][code].runs)
                 codeSummary.input = errors[task][step][code].input;
                 summary[task][step][i] = codeSummary;
+                i++;
                 /*
                 summary[task].totalJobs += codeSummary.jobs;
                 summary[task].totalFiles += codeSummary.input.length;

@@ -75,7 +75,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
         correctly.
         """
         arguments = getTestArguments()
-        arguments["ProcConfigCacheID"] = self.injectConfig()
+        arguments["ConfigCacheID"] = self.injectConfig()
         arguments["CouchDBName"] = "mclhe_t"
         testWorkload = monteCarloFromGENWorkload("TestWorkload", arguments)
         testWorkload.setSpecUrl("somespec")

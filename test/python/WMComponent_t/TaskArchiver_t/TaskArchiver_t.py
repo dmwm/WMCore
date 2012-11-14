@@ -75,7 +75,8 @@ class TaskArchiverTest(unittest.TestCase):
         self.testInit.setupCouch("%s/workloadsummary" % self.databaseName, "WorkloadSummary")
         self.testInit.setupCouch("%s/jobs" % self.databaseName, "JobDump")
         self.testInit.setupCouch("%s/fwjrs" % self.databaseName, "FWJRDump")
-
+        self.testInit.setupCouch("wmagent_summary_t", "WMStats")
+        self.testInit.setupCouch("wmagent_summary_central_t", "WMStats")
 
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
@@ -125,7 +126,7 @@ class TaskArchiverTest(unittest.TestCase):
         config.section_("JobStateMachine")
         config.JobStateMachine.couchurl     = os.getenv("COUCHURL", "cmssrv52.fnal.gov:5984")
         config.JobStateMachine.couchDBName  = self.databaseName
-        config.JobStateMachine.jobSummaryDBName = 'wmagent_summary'
+        config.JobStateMachine.jobSummaryDBName = 'wmagent_summary_t'
 
         config.component_("JobCreator")
         config.JobCreator.jobCacheDir       = os.path.join(self.testDir, 'testDir')
@@ -141,6 +142,7 @@ class TaskArchiverTest(unittest.TestCase):
         config.TaskArchiver.histogramLimit  = 5
         config.TaskArchiver.workloadSummaryCouchDBName = "%s/workloadsummary" % self.databaseName
         config.TaskArchiver.workloadSummaryCouchURL    = config.JobStateMachine.couchurl
+        config.TaskArchiver.centralWMStatsURL          = '%s/wmagent_summary_central_t' % config.JobStateMachine.couchurl
         config.TaskArchiver.requireCouch               = True
         config.TaskArchiver.uploadPublishInfo = self.uploadPublishInfo
         config.TaskArchiver.uploadPublishDir  = self.uploadPublishDir
@@ -503,16 +505,6 @@ class TaskArchiverTest(unittest.TestCase):
                                         workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1'][x][y],
                                         places = 2)
 
-        # The TestWorkload should have no jobs left
-        workflowName = "TestWorkload"
-        jobs = jobdb.loadView("JobDump", "jobsByWorkflowName",
-                              options = {"startkey": [workflowName],
-                                         "endkey": [workflowName, {}]})['rows']
-        self.assertEqual(len(jobs), 0)
-        jobs = fwjrdb.loadView("FWJRDump", "fwjrsByWorkflowName",
-                               options = {"startkey": [workflowName],
-                                          "endkey": [workflowName, {}]})['rows']
-        self.assertEqual(len(jobs), 0)
         return
 
     def testB_testErrors(self):

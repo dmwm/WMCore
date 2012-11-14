@@ -17,9 +17,11 @@ class WMStatsReader():
         self.couchServer = CouchServer(self.couchURL)
         self.couchDB = CouchServer(self.couchURL).connectDatabase(self.dbName, False)
 
-    def workflowsByStatus(self, statusList, format = "list"):
+    def workflowsByStatus(self, statusList, format = "list", stale = "update_after"):
         keys = statusList
-        options = {"stale": "update_after"}
+        options = {}
+        if stale:
+            options = {"stale": stale}
         result = self.couchDB.loadView("WMStats", "requestByStatus", options, keys)
 
         if format == "dict":

@@ -1,3 +1,6 @@
+0.9.29 to 0.9.30:
+  - Fix unit tests broke by pull request #4270.  Pull request #4272.
+
 0.9.28 to 0.9.29:
   - Implement Pending jobs per task/site functionality.  Pull request #4270.
   - Add support for Tier0 run states to the AnalyticsDataCollector.

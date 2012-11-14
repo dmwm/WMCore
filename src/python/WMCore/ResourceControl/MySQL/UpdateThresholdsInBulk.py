@@ -14,7 +14,7 @@ class UpdateThresholdsInBulk(DBFormatter):
     """
     _UpdateThresholdsBulk_
     """
-    sql = """UPDATE rc_threshold SET max_slots = :maxslots
+    sql = """UPDATE rc_threshold SET max_slots = :maxslots, pending_slots = :pendslots
                 WHERE site_id = (SELECT id FROM wmbs_location WHERE site_name = :sitename) AND
                       sub_type_id = (SELECT id FROM wmbs_sub_types WHERE name  = :tasktype)"""
 

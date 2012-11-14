@@ -52,7 +52,7 @@ class RunJobTest(unittest.TestCase):
         resourceControl.insertSite(siteName = 'Xanadu', seName = 'se.Xanadu',
                                    ceName = 'Xanadu', plugin = "TestPlugin")
         resourceControl.insertThreshold(siteName = 'Xanadu', taskType = 'Processing', \
-                                        maxSlots = 10000)
+                                        maxSlots = 10000, pendingSlots = 10000)
 
         # Create user
         wmbsFactory = DAOFactory(package = "WMCore.WMBS",

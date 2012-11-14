@@ -46,7 +46,7 @@ class JobSubmitterCachingTest(unittest.TestCase):
             resourceControl.insertSite(siteName = siteName, seName = "se.%s" % (siteName),
                                        ceName = siteName, plugin = "CondorPlugin", cmsName = siteName)
             resourceControl.insertThreshold(siteName = siteName, taskType = "Processing",
-                                            maxSlots = 10000)
+                                            maxSlots = 10000, pendingSlots = 10000)
 
         self.testDir = self.testInit.generateWorkDir()
         #os.environ["COUCHDB"] = "jobsubmittercaching_t"

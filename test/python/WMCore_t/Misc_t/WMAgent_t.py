@@ -134,7 +134,7 @@ class WMAgentTest(unittest.TestCase):
         for site in self.sites:
             resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site), ceName = site)
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
-                                            maxSlots = 10000)
+                                            maxSlots = 10000, pendingSlots = 10000)
 
 
         self.testDir = self.testInit.generateWorkDir()

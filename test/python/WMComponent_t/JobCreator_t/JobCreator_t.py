@@ -95,7 +95,7 @@ class JobCreatorTest(unittest.TestCase):
         for site in self.sites:
             resourceControl.insertSite(siteName = site, seName = site, ceName = site)
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
-                                            maxSlots = 10000)
+                                            maxSlots = 10000, pendingSlots = 10000)
 
         self.resourceControl = resourceControl
 

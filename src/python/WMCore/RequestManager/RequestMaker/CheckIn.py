@@ -65,7 +65,7 @@ def checkIn(request, requestType = 'None'):
     # // First try and register the request in the DB
     #//
     requestName = request['RequestName']
-
+    
     # test if the software versions are registered first
     versions  = SoftwareManagement.listSoftware()
     scramArch = request.get('ScramArch')
@@ -120,7 +120,14 @@ def checkIn(request, requestType = 'None'):
         _raiseCheckInError(request, ex, "Unable to Associate input datasets to request")
     try:
         for ds in request['OutputDatasets']:
-            MakeRequest.associateOutputDataset(requestName, ds)
+            # request['OutputDatasets'] may contain a list of lists (each sublist for a task)
+            # which is actually not understood why but seems to be correct (Steve)
+            # dirty
+            if isinstance(ds, list):
+                for dss in ds:
+                    MakeRequest.associateOutputDataset(requestName, dss)
+            else:
+                MakeRequest.associateOutputDataset(requestName, ds)
     except Exception, ex:
         _raiseCheckInError(request, ex, "Unable to Associate output datasets to request")
 

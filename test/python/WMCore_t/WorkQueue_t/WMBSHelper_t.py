@@ -111,7 +111,7 @@ class WMBSHelperTest(unittest.TestCase):
         resourceControl.insertSite(siteName = 'site1', seName = 'goodse.cern.ch',
                                    ceName = 'site1', plugin = "TestPlugin")
         resourceControl.insertThreshold(siteName = 'site1', taskType = 'Processing', \
-                                        maxSlots = 10000)
+                                        maxSlots = 10000, pendingSlots = 10000)
 
         userDN     = 'someDN'
         userAction = daoFactory(classname = "Users.New")

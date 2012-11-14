@@ -1,3 +1,22 @@
+0.9.28 to 0.9.29:
+  - Implement Pending jobs per task/site functionality.  Pull request #4270.
+  - Add support for Tier0 run states to the AnalyticsDataCollector.
+    Pull request #4265.
+  - Fix the broken stageout override code.  Pull request #4261.
+  - Add a method to the lexicon to validate DBS users.  Pull request #4239.
+  - Add support for CVMFS based on HN conversation and identical CRAB boostrapping
+    code.  Pull request #4258.
+  - Fix a typo in the jobStatusByWorkflowAndSite view.  Pull request #4220.
+  - Implement request cloning in the ReqMgr.  Pull request #4237.
+  - Add support for creating ACDC requests that run over arbitrary
+    collection names.  Pull request #4242.
+  - Display all errors correctly in the workload summary.  Pull request #4244.
+  - Clean up ConfigCache parameter naming.  Pull request #4223.
+  - Delete job summary data for requests that are announced or 
+    aborted.  Pull request #4227.
+  - Add support for overriding the location for files injected into
+    PhEDEx.  Pull request #4260. 
+
 0.9.27 to 0.9.28:
   - ONEOFF build for Zdenek to revert his previous patch
   - Bugfix StdBase DQMHarvest validation

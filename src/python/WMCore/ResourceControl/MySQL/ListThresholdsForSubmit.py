@@ -14,6 +14,7 @@ class ListThresholdsForSubmit(DBFormatter):
                     wmbs_location.running_slots,
                     wmbs_location.cms_name AS cms_name,
                     rc_threshold.max_slots,
+                    rc_threshold.pending_slots AS task_pending_slots,
                     wmbs_sub_types.name AS task_type,
                     job_count.job_status,
                     job_count.jobs,
@@ -109,13 +110,16 @@ class ListThresholdsForSubmit(DBFormatter):
             for threshold in formattedResults[siteName]['thresholds']:
                 if threshold['task_type'] == taskType:
                     threshold['task_running_jobs'] += task_running_jobs
+                    threshold['task_pending_jobs'] += task_pending_jobs
                     break
             else:
                 threshold = {}
                 threshold['task_type']               = taskType
                 threshold['max_slots']               = result['max_slots']
+                threshold['pending_slots']           = result['task_pending_slots']
                 threshold['priority']                = result['priority']
                 threshold['task_running_jobs']       = task_running_jobs
+                threshold['task_pending_jobs']       = task_pending_jobs
                 formattedResults[siteName]['thresholds'].append(threshold)
 
 

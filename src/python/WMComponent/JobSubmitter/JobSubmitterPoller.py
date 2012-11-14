@@ -486,7 +486,9 @@ class JobSubmitterPoller(BaseWorkerThread):
                     # Pull basic info for the threshold
                     taskType            = threshold["task_type"]
                     maxSlots            = threshold["max_slots"]
+                    taskPendingSlots    = threshold["pending_slots"]
                     taskRunning         = threshold["task_running_jobs"]
+                    taskPending         = threshold["task_pending_jobs"]
                 except KeyError, ex:
                     msg =  "Had invalid threshold %s\n" % threshold
                     msg += str(ex)
@@ -524,7 +526,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 taskCache = self.cachedJobs[siteName][taskType]
 
                 # Calculate number of jobs we need
-                nJobsRequired = totalPendingSlots - totalPending
+                nJobsRequired = min(totalPendingSlots - totalPending, taskPendingSlots - taskPending)
                 breakLoop = False
                 logging.debug("nJobsRequired for task %s: %i" % (taskType, nJobsRequired))
 
@@ -617,6 +619,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                     # Deal with accounting
                     nJobsRequired -= 1
                     totalPending  += 1
+                    taskPending   += 1
 
                     if breakLoop:
                         break

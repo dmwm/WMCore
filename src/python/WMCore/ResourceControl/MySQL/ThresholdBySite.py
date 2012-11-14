@@ -13,6 +13,7 @@ class ThresholdBySite(DBFormatter):
                     wmbs_location.pending_slots,
                     wmbs_location.running_slots,
                     rc_threshold.max_slots,
+                    rc_threshold.pending_slots AS task_pending_slots,
                     wmbs_sub_types.name AS task_type,
                     job_count.running_jobs AS task_running_jobs,
                     job_count.pending_jobs AS task_pending_jobs

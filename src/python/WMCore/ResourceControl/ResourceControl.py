@@ -78,12 +78,13 @@ class ResourceControl(WMConnectionBase):
         results[0]["se_name"] = seNames
         return results[0]
 
-    def insertThreshold(self, siteName, taskType, maxSlots, priority = None):
+    def insertThreshold(self, siteName, taskType, maxSlots, pendingSlots, priority = None):
         """
         _insertThreshold_
 
         Insert a threshold into the Resource Control database.  If the threshold
         already exists it will be updated.
+        taskType may be a list of tasks. Update each task individually.
         """
         existingTransaction = self.beginTransaction()
 
@@ -91,11 +92,23 @@ class ResourceControl(WMConnectionBase):
         subTypeAction.execute(subType = taskType, conn = self.getDBConn(),
                               transaction = self.existingTransaction())
         insertAction = self.daofactory(classname = "InsertThreshold")
-        insertAction.execute(siteName = siteName, taskType = taskType,
-                             maxSlots = maxSlots,
-                             priority = priority,
-                             conn = self.getDBConn(),
-                             transaction = self.existingTransaction())
+        if type(taskType) == type([]):
+            for singleTask in taskType:
+                insertAction.execute(siteName = siteName,
+                                     taskType = singleTask,
+                                     maxSlots = maxSlots,
+                                     pendingSlots = pendingSlots,
+                                     priority = priority,
+                                     conn = self.getDBConn(),
+                                     transaction = self.existingTransaction())
+        else:
+            insertAction.execute(siteName = siteName,
+                                     taskType = taskType,
+                                     maxSlots = maxSlots,
+                                     pendingSlots = pendingSlots,
+                                     priority = priority,
+                                     conn = self.getDBConn(),
+                                     transaction = self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
         return
@@ -119,7 +132,9 @@ class ResourceControl(WMConnectionBase):
         The threshold dictionaries have the following keys:
           task_type           - Type of the task associated with the thresholds
           max_slots           - Maximum running slots for the task type
+          pending_slots       - Maximum pending slots for the task type
           task_running_jobs   - Running jobs for the task type
+          task_pending_jobs   - Pending jobs for the task type
           priority            - Priority assigned to the task type
         """
         listAction = self.daofactory(classname = "ListThresholdsForSubmit")
@@ -196,7 +211,7 @@ class ResourceControl(WMConnectionBase):
 
         It expects a taskList of the following form:
 
-        [{'taskType': taskType, 'priority': priority, 'maxSlots': maxSlots}]
+        [{'taskType': taskType, 'priority': priority, 'maxSlots': maxSlots, 'pendingSlots' : pendingSlots}]
 
         for each entry in the taskList, a threshold is inserted into the database
         for EVERY SE
@@ -220,7 +235,7 @@ class ResourceControl(WMConnectionBase):
                         msg += task
                         raise ResourceControlException(msg)
                     self.insertThreshold(siteName = sName, taskType = task['taskType'],
-                                         maxSlots = task['maxSlots'], priority = task['priority'])
+                                         maxSlots = task['maxSlots'], pendingSlots = task['pendingSlots'], priority = task['priority'])
 
 
         return

@@ -37,6 +37,7 @@ class Create(DBCreator):
         CREATE TABLE rc_threshold(
             site_id INTEGER NOT NULL,
             sub_type_id INTEGER NOT NULL,
+            pending_slots INTEGER NOT NULL,
             max_slots INTEGER NOT NULL,
             priority  INTEGER DEFAULT 1) %s""" % tablespaceTable
 

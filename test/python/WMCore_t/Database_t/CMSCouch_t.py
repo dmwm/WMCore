@@ -284,6 +284,25 @@ class CMSCouchTest(unittest.TestCase):
         self.assertEqual(answer[0]['id'], '2')
         self.assertEqual(answer[1]['id'], '2')
 
+        # callbacks can do stuff when conflicts arise
+        # this particular one just overwrites the document
+        def callback(db, data, result):
+            for doc in data['docs']:
+                if doc['_id'] == result['id']:
+                    doc['_rev'] = db.document(doc['_id'])['_rev']
+                    retval = db.commitOne(doc)
+            return retval[0]
+
+        self.db.queue(Document(id = "2", inputDict = {'foo':5, 'bar':6}))
+        answer = self.db.commit(callback = callback)
+        self.assertEqual(1, len(answer))
+        self.assertEqual(answer[0].get('error'), None)
+        updatedDoc = self.db.document('2')
+        self.assertEqual(updatedDoc['foo'], 5)
+        self.assertEqual(updatedDoc['bar'], 6)
+
+        return
+
     def testUpdateHandler(self):
         """
         Test that update function support works

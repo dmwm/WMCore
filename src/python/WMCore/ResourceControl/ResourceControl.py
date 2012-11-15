@@ -89,11 +89,11 @@ class ResourceControl(WMConnectionBase):
         existingTransaction = self.beginTransaction()
 
         subTypeAction = self.wmbsDAOFactory(classname = "Subscriptions.InsertType")
-        subTypeAction.execute(subType = taskType, conn = self.getDBConn(),
-                              transaction = self.existingTransaction())
         insertAction = self.daofactory(classname = "InsertThreshold")
         if type(taskType) == type([]):
             for singleTask in taskType:
+                subTypeAction.execute(subType = singleTask, conn = self.getDBConn(),
+                                      transaction = self.existingTransaction())
                 insertAction.execute(siteName = siteName,
                                      taskType = singleTask,
                                      maxSlots = maxSlots,
@@ -102,6 +102,8 @@ class ResourceControl(WMConnectionBase):
                                      conn = self.getDBConn(),
                                      transaction = self.existingTransaction())
         else:
+            subTypeAction.execute(subType = taskType, conn = self.getDBConn(),
+                                  transaction = self.existingTransaction())
             insertAction.execute(siteName = siteName,
                                      taskType = taskType,
                                      maxSlots = maxSlots,

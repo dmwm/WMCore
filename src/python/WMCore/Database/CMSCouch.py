@@ -184,19 +184,21 @@ class Database(CouchDBRequests):
                     doc[label] = int(time.time())
         return data
 
-    def queue(self, doc, timestamp = False, viewlist=[]):
+    def queue(self, doc, timestamp = False, viewlist=[], callback = None):
         """
         Queue up a doc for bulk insert. If timestamp = True add a timestamp
         field if one doesn't exist. Use this over commit(timestamp=True) if you
         want to timestamp when a document was added to the queue instead of when
         it was committed
+        If a callback is specified then pass it to the commit function if a
+        commit is triggered
         """
         if timestamp:
             self.timestamp(doc, timestamp)
         #TODO: Thread this off so that it's non blocking...
         if len(self._queue) >= self._queue_size:
             print 'queue larger than %s records, committing' % self._queue_size
-            self.commit(viewlist=viewlist)
+            self.commit(viewlist=viewlist, callback = callback)
         self._queue.append(doc)
 
     def queueDelete(self, doc, viewlist=[]):
@@ -225,7 +227,7 @@ class Database(CouchDBRequests):
         return retval
 
     def commit(self, doc=None, returndocs = False, timestamp = False,
-               viewlist=[], **data):
+               viewlist=[], callback = None, **data):
         """
         Add doc and/or the contents of self._queue to the database. If
         returndocs is true, return document objects representing what has been
@@ -233,6 +235,12 @@ class Database(CouchDBRequests):
         timestamp - this will be the timestamp of when the commit was called, it
         will not override an existing timestamp field.  If timestamp is a string
         that string will be used as the label for the timestamp.
+
+        The callback function will be called with the documents that trigger a
+        conflict when doing the bulk post of the documents in the queue,
+        callback functions must accept the database object, the data posted and a row in the
+        result from the bulk commit. The callback updates the retval with
+        its internal retval
 
         key, value pairs can be used to pass extra parameters to the bulk doc api
         See http://wiki.apache.org/couchdb/HTTP_Bulk_Document_API
@@ -259,6 +267,11 @@ class Database(CouchDBRequests):
         for v in viewlist:
             design, view = v.split('/')
             self.loadView(design, view, {'limit': 0})
+        if callback:
+            for idx, result in enumerate(retval):
+                if result.get('error', None) == 'conflict':
+                    retval[idx] = callback(self, data, result)
+
         return retval
 
     def document(self, id, rev = None):

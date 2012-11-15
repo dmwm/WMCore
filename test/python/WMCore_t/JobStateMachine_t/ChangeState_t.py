@@ -779,5 +779,100 @@ class TestChangeState(unittest.TestCase):
         return
 
 
+    def testIndexConflict(self):
+        """
+        _testIndexConflict_
+
+        Verify that in case of conflict in the job index
+        we discard the old document and replace with a new
+        one
+        """
+        change = ChangeState(self.config, "changestate_t")
+
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute("site1", seName = "somese.cern.ch")
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task = "Test")
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+        testFile = File(lfn = "SomeLFNC", locations = set(["somese.cern.ch"]))
+        testFile.create()
+        testFileset.addFile(testFile)
+        testFileset.commit()
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = testSubscription)
+        jobGroup = jobFactory(files_per_job = 1)[0]
+
+        assert len(jobGroup.jobs) == 1, \
+               "Error: Splitting should have created one job."
+
+        testJobA = jobGroup.jobs[0]
+        testJobA["user"] = "dballest"
+        testJobA["group"] = "CompOps"
+        testJobA["taskType"] = "Processing"
+
+        myReport = Report()
+        reportPath = os.path.join(getTestBase(),
+                                  "WMCore_t/JobStateMachine_t/Report.pkl")
+        myReport.unpersist(reportPath)
+
+        testJobA["fwjr"] = myReport
+        change.propagate([testJobA], 'created', 'new')
+
+        jobdatabase = self.couchServer.connectDatabase('changestate_t/jobs', False)
+        fwjrdatabase = self.couchServer.connectDatabase('changestate_t/fwjrs', False)
+        jobDoc = jobdatabase.document("1")
+        fwjrDoc = fwjrdatabase.document("1-0")
+        self.assertEqual(jobDoc["workflow"], "wf001", "Wrong workflow in couch job document")
+        self.assertEqual(fwjrDoc["fwjr"]["task"], "Test", "Wrong task in fwjr couch document")
+
+        testJobA.delete()
+
+        myThread = threading.currentThread()
+        myThread.dbi.processData("ALTER TABLE wmbs_job AUTO_INCREMENT = 1")
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf002", task = "Test2")
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFilesetB")
+        testFileset.create()
+
+        testFile = File(lfn = "SomeLFNB", locations = set(["somese.cern.ch"]))
+        testFile.create()
+        testFileset.addFile(testFile)
+        testFileset.commit()
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = testSubscription)
+        jobGroup = jobFactory(files_per_job = 1)[0]
+
+        testJobB = jobGroup.jobs[0]
+        testJobB["user"] = "dballest"
+        testJobB["group"] = "CompOps"
+        testJobB["taskType"] = "Processing"
+        testJobB["fwjr"] = myReport
+
+        change.propagate([testJobB], 'created', 'new')
+        jobDoc = jobdatabase.document("1")
+        fwjrDoc = fwjrdatabase.document("1-0")
+        self.assertEqual(jobDoc["workflow"], "wf002", "Job document was not overwritten")
+        self.assertEqual(fwjrDoc["fwjr"]["task"], "Test2", "FWJR document was not overwritten")
+
+        return
+
 if __name__ == "__main__":
     unittest.main()

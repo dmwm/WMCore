@@ -16,6 +16,14 @@ class InsertType(DBFormatter):
                 (SELECT name FROM wmbs_sub_types WHERE name = :name)"""
 
     def execute(self, subType, conn = None, transaction = False):
-        self.dbi.processData(self.sql, {"name": subType}, conn = conn,
+
+        if type(subType) == type([]):
+            binds = []
+            for t in subType:
+                binds.append( { 'name' : t } )
+        else:
+            binds = { 'name' : subTypes }
+
+        self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
         return

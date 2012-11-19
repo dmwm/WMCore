@@ -85,6 +85,7 @@ class DataProcessingWorkloadFactory(StdBase):
                                                                              { 'dataTier' : "ALCARECO",
                                                                                'moduleLabel' : "ALCARECOoutput" } ] },
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
+                                              configCacheUrl = self.configCacheUrl,
                                               configDoc = self.configCacheID, splitAlgo = self.procJobSplitAlgo,
                                               splitArgs = self.procJobSplitArgs, stepType = cmsswStepType)
         self.addLogCollectTask(procTask)
@@ -116,9 +117,11 @@ class DataProcessingWorkloadFactory(StdBase):
         # by the ReqMgr or whatever is creating this workflow.
         self.couchURL = arguments["CouchURL"]
         self.couchDBName = arguments["CouchDBName"]
-
         # Get the ConfigCacheID
         self.configCacheID = arguments.get("ConfigCacheID", None)
+        # or alternatively CouchURL part can be replaced by ConfigCacheUrl,
+        # then ConfigCacheUrl + CouchDBName + ConfigCacheID
+        self.configCacheUrl = arguments.get("ConfigCacheUrl", None)
 
         # Optional arguments that default to something reasonable.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")

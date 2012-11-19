@@ -25,6 +25,7 @@ CouchDB parameters the main request parameters are:
     "Requestor": "sfoulkes@fnal.gov",                 Person responsible
     "GlobalTag": "GR10_P_v4::All",                    Global Tag
     "CouchURL": "http://couchserver.cern.ch",         URL of CouchDB containing ConfigCache (Used for all sub-tasks)
+    "ConfigCacheUrl": https://cmsweb-testbed.cern.ch/couchdb URL of an alternative CouchDB server containing Config documents     
     "CouchDBName": "config_cache",                    Name of Couch Database containing config cache (Used for all sub-tasks)
     "TaskChain" : 4,                                  Define number of tasks in chain.
 }
@@ -297,6 +298,7 @@ class TaskChainWorkloadFactory(StdBase):
         self.arguments = arguments
         self.couchURL = arguments['CouchURL']
         self.couchDBName = arguments['CouchDBName']
+        self.configCacheUrl = arguments.get("ConfigCacheUrl", None)
         self.frameworkVersion = arguments["CMSSWVersion"]
         self.globalTag = arguments.get("GlobalTag", None)
 
@@ -380,6 +382,7 @@ class TaskChainWorkloadFactory(StdBase):
         outputMods = self.setupProcessingTask(task, "Production",
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
                                               configDoc = configCacheID, splitAlgo = splitAlgorithm,
+                                              configCacheUrl = self.configCacheUrl,
                                               splitArgs = splitArguments, stepType = cmsswStepType,
                                               seeding = taskConf['Seeding'], totalEvents = taskConf['RequestNumEvents'],
                                               forceUnmerged = not keepOutput)
@@ -463,6 +466,7 @@ class TaskChainWorkloadFactory(StdBase):
         outputMods = self.setupProcessingTask(task, "Processing", inputDataset, inputStep = inpStep, inputModule = inpMod,
                                               scenarioName = self.procScenario, scenarioFunc = scenarioFunc, scenarioArgs = scenarioArgs,
                                               couchURL = couchUrl, couchDBName = couchDB,
+                                              configCacheUrl = self.configCacheUrl,
                                               configDoc = configCacheID, splitAlgo = splitAlgorithm,
                                               splitArgs = splitArguments, stepType = cmsswStepType,
                                               forceUnmerged = not keepOutput)
@@ -533,11 +537,12 @@ class TaskChainWorkloadFactory(StdBase):
 
             # Validate the existence of the configCache
             if task.has_key("ConfigCacheID"):
+                configCacheUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
                 self.validateConfigCacheExists(configID = task['ConfigCacheID'],
-                                               couchURL = schema["CouchURL"],
+                                               couchURL = configCacheUrl,
                                                couchDBName = schema["CouchDBName"],
                                                getOutputModules = True)
-        return
+
 
 
 def taskChainWorkload(workloadName, arguments):
@@ -549,5 +554,3 @@ def taskChainWorkload(workloadName, arguments):
     """
     f = TaskChainWorkloadFactory()
     return f(workloadName, arguments)
-
-

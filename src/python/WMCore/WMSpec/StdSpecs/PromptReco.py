@@ -47,6 +47,10 @@ def getTestArguments():
 
         "CouchURL": None,
         "CouchDBName": "promptreco_t",
+        # or alternatively CouchURL part can be replaced by ConfigCacheUrl,
+        # then ConfigCacheUrl + CouchDBName + ConfigCacheID
+        "ConfigCacheUrl": None,
+        
         "InitCommand": os.environ.get("INIT_COMMAND", None),
         "RunNumber": 195360,
 
@@ -175,12 +179,13 @@ class PromptRecoWorkloadFactory(StdBase):
                 self.skimJobSplitArgs['include_parents'] = False
 
             configLabel = '%s-%s' % (self.workloadName, promptSkim.SkimName)
+            configCacheUrl = self.configCacheUrl or self.couchURL
             injectIntoConfigCache(self.frameworkVersion, self.scramArch,
                                        self.initCommand, promptSkim.ConfigURL, configLabel,
-                                       self.couchURL, self.couchDBName,
+                                       configCacheUrl, self.couchDBName,
                                        self.envPath, self.binPath)
             try:
-                configCache = ConfigCache(self.couchURL, self.couchDBName)
+                configCache = ConfigCache(configCacheUrl, self.couchDBName)
                 configCacheID = configCache.getIDFromLabel(configLabel)
                 if configCacheID:
                     logging.error("The configuration was not uploaded to couch")
@@ -194,6 +199,7 @@ class PromptRecoWorkloadFactory(StdBase):
 
             outputMods = self.setupProcessingTask(skimTask, "Skim", inputStep = parentCmsswStep, inputModule = "Merged",
                                                   couchURL = self.couchURL, couchDBName = self.couchDBName,
+                                                  configCacheUrl = self.configCacheUrl,
                                                   configDoc = configCacheID, splitAlgo = self.skimJobSplitAlgo,
                                                   splitArgs = self.skimJobSplitArgs)
             if self.doLogCollect:
@@ -222,6 +228,7 @@ class PromptRecoWorkloadFactory(StdBase):
         self.promptSkims = arguments['PromptSkims']
         self.couchURL = arguments['CouchURL']
         self.couchDBName = arguments['CouchDBName']
+        self.configCacheUrl = arguments.get("ConfigCacheUrl", None)
         self.initCommand = arguments['InitCommand']
 
         #Optional parameters
@@ -279,7 +286,6 @@ class PromptRecoWorkloadFactory(StdBase):
         except AssertionError:
             self.raiseValidationException(msg = "Invalid input dataset!")
 
-        return
 
 
 def promptrecoWorkload(workloadName, arguments):

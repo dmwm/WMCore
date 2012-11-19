@@ -5,7 +5,6 @@ TaskArchiver test
 Tests both the archiving of tasks and the creation of the
 workloadSummary
 """
-
 import os
 import os.path
 import logging
@@ -283,7 +282,7 @@ class TaskArchiverTest(unittest.TestCase):
                                  'mergeReport1.pkl')
             path2 = os.path.join(WMCore.WMBase.getTestBase(),
                                  'WMComponent_t/TaskArchiver_t/fwjrs',
-                                 'mergeReport2.pkl')
+                                 'logCollectReport2.pkl')
         report1.load(filename = path1)
         report2.load(filename = path2)
 
@@ -421,7 +420,6 @@ class TaskArchiverTest(unittest.TestCase):
         os.makedirs(cachePath2)
         self.assertTrue(os.path.exists(cachePath2))
 
-
         result = myThread.dbi.processData("SELECT * FROM wmbs_subscription")[0].fetchall()
         self.assertEqual(len(result), 2)
 
@@ -470,20 +468,19 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertEqual(workloadSummary['ACDCServer'], sanitizeURL(config.ACDC.couchurl)['url'])
 
         # Check the output
-        self.assertEqual(workloadSummary['output'].keys(), ['/Electron/MorePenguins-v0/RECO',
-                                                            '/Electron/MorePenguins-v0/ALCARECO'])
+        self.assertEqual(workloadSummary['output'].keys(), ['/Electron/MorePenguins-v0/RECO'])
 
         # Check performance
         # Check histograms
         self.assertAlmostEquals(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['AvgEventTime']['histogram'][0]['average'],
-                                0.062651899999999996, places = 2)
+                                0.89405199999999996, places = 2)
         self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['AvgEventTime']['histogram'][0]['nEvents'],
                          5)
 
         # Check standard performance
-        self.assertAlmostEquals(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['TotalJobCPU']['average'], 9.4950600000000005,
+        self.assertAlmostEquals(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['TotalJobCPU']['average'], 17.786300000000001,
                                 places = 2)
-        self.assertAlmostEquals(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['TotalJobCPU']['stdDev'], 8.2912400000000002,
+        self.assertAlmostEquals(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['TotalJobCPU']['stdDev'], 0.0,
                                 places = 2)
 
         # Check worstOffenders

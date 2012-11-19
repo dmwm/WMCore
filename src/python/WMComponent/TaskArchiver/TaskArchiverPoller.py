@@ -50,11 +50,11 @@ from WMCore.WorkQueue.WorkQueue                  import localQueue
 from WMCore.WorkQueue.WorkQueueExceptions        import WorkQueueNoMatchingElements
 from WMCore.WorkerThreads.BaseWorkerThread       import BaseWorkerThread
 from WMCore.BossAir.Plugins.gLitePlugin          import getDefaultDelegation
-from WMCore.Credential.Proxy                    import Proxy
+from WMCore.Credential.Proxy                     import Proxy
 
-from WMComponent.JobCreator.CreateWorkArea   import getMasterName
-from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
-from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+from WMComponent.JobCreator.CreateWorkArea       import getMasterName
+from WMComponent.JobCreator.JobCreatorPoller     import retrieveWMSpec
+from WMCore.Services.WMStats.WMStatsWriter       import WMStatsWriter
 
 class TaskArchiverPollerException(WMException):
     """
@@ -525,7 +525,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                                                        "startkey": [workflowName],
                                                        "endkey": [workflowName, {}],
                                                        "group": True})['rows']
-
+        
         perf = self.handleCouchPerformance(workflowName = workflowName)
         workflowData['performance'] = {}
         for key in perf:
@@ -628,6 +628,9 @@ class TaskArchiverPoller(BaseWorkerThread):
                         for log in logs:
                             if not log in stepFailures[exitCode]["logs"]:
                                 stepFailures[exitCode]["logs"].append(log)
+        # Adding logArchives per task
+        logArchives = self.getLogArchives(spec)
+        workflowData['logArchives'] = logArchives
 
         # Now we have the workflowData in the right format
         # Time to send them on
@@ -637,7 +640,25 @@ class TaskArchiverPoller(BaseWorkerThread):
         logging.debug("Finished committing workflow summary to couch")
 
         return
+    def getLogArchives(self, spec):
+        """
+        _getLogArchives_
 
+        Gets per Workflow/Task what are the log archives, sends it to the summary to be displayed on the page
+        """        
+        logArchives = {}
+        for task in spec.listAllTaskPathNames():
+            #TODO : We can only ask for tasks with "LogCollect" in the name, as only they will contain useful information
+            logArchivesTask = self.fwjrdatabase.loadView("FWJRDump", "logArchivePerWorkflowTask",
+                                                          options = {"reduce"  : True,
+                                                                     "group_level" : 1,
+                                                                     "key": task})['rows'] 
+            for row in logArchivesTask:
+                workflowTask = row['key']
+                logs = row['value']
+                logArchives[task] = logs
+                                                                        
+        return logArchives
 
     def handleCouchPerformance(self, workflowName):
         """

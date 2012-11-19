@@ -48,7 +48,8 @@ class Assign(WebAPI):
             self.sites = []
         self.allMergedLFNBases =  [
             "/store/backfill/1", "/store/backfill/2",
-            "/store/data",  "/store/mc", "/store/generator", "/store/relval"]
+            "/store/data",  "/store/mc", "/store/generator", "/store/relval",
+            "/store/hidata"]
         self.allUnmergedLFNBases = ["/store/unmerged", "/store/temp"]
 
         self.mergedLFNBases = {

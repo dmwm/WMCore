@@ -469,6 +469,7 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
     # Add the output datasets if necessary
     # for some bizarre reason OutpuDatasets is list of lists, when cloning
     # [['/MinimumBias/WMAgentCommissioning10-v2/RECO'], ['/MinimumBias/WMAgentCommissioning10-v2/ALCARECO']]
+    # #3743
     if not clone:
         for ds in helper.listOutputDatasets():
             if ds not in request['OutputDatasets']:

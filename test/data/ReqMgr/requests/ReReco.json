@@ -1,0 +1,52 @@
+{ 
+"createRequest":
+	{		 
+		"CMSSWVersion": "CMSSW_4_4_2_patch2",
+		"GlobalTag": "FT_R_44_V11::All",
+		"Campaign": "HG1211_Validation",		
+		"RequestString": "RequestString-OVERRIDE-ME",
+		"RequestPriority": 100,
+		"TimePerEvent": 60,
+		"ScramArch": "slc5_amd64_gcc434",
+		"RequestType": "ReReco",
+		"Requestor": "Requestor-OVERRIDE-ME",
+		"RunWhitelist": [],
+        "RunBlacklist": [],
+        "BlockWhitelist": [],
+        "BlockBlacklist": [],		
+		"ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
+		"ConfigCacheID": "7559cf7a427be20436483f82fd108936",
+		"PrepID": "RERECOTEST-0001",
+		"Group": "DATAOPS",
+		"Memory": 2394967,
+        "SizePerEvent":5000,
+		"InputDataset": "/BTag/Run2011B-v1/RAW",
+        "DbsUrl": "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet",
+        "inputMode": "couchDB",
+        "Scenario": "pp",          
+        "nskims": 1,
+        "SkimName1": "2011B_442p2_DataReprocessingBTagSkim",
+        "SkimInput1": "RECOoutput",
+        "Skim1ConfigCacheID": "7559cf7a427be20436483f82fd109301"
+	},
+		
+"assignRequest":
+	{
+		"action": "Assign",
+		"SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
+		"SiteBlacklist": [],
+		"MergedLFNBase": "/store/backfill/1",
+		"UnmergedLFNBase": "/store/unmerged",
+		"MinMergeSize": 2147483648,
+		"MaxMergeSize": 4294967296,
+		"MaxMergeEvents": 50000,
+		"AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
+		"ProcessingVersion": "ProcessingVersion-OVERRIDE-ME",
+		"maxRSS": 4294967296,
+		"maxVSize": 4294967296,
+		"SoftTimeout": 171600,
+		"GracePeriod": 300,
+		"dashboard": "dashboard-OVERRIDE-ME",
+		"Team": "Team--OVERRIDE-ME"
+	}
+}

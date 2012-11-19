@@ -24,6 +24,10 @@ def getTestArguments():
     args["RequestNumEvents"] = 10
     args["CouchURL"] = os.environ.get("COUCHURL", None)
     args["CouchDBName"] = "scf_wmagent_configcache"
+    # or alternatively CouchURL part can be replaced by ConfigCacheUrl,
+    # then ConfigCacheUrl + CouchDBName + ConfigCacheID
+    args["ConfigCacheUrl"] = None
+    
     args["CMSSWVersion"] = "CMSSW_3_8_1"
 
     args["GenConfigCacheID"] = "nonsense_id_gen"
@@ -64,6 +68,7 @@ class RelValMCWorkloadFactory(StdBase):
                                                  couchURL = self.couchURL,
                                                  couchDBName = self.couchDBName,
                                                  configDoc = self.genConfigCacheID,
+                                                 configCacheUrl = self.configCacheUrl,
                                                  splitAlgo = self.genJobSplitAlgo,
                                                  splitArgs = self.genJobSplitArgs,
                                                  seeding = self.seeding,
@@ -86,6 +91,7 @@ class RelValMCWorkloadFactory(StdBase):
                                                      inputStep = parentCmsswStep,
                                                      inputModule = "Merged",
                                                      couchURL = self.couchURL,
+                                                     configCacheUrl = self.configCacheUrl,
                                                      couchDBName = self.couchDBName,
                                                      configDoc = self.stepOneConfigCacheID,
                                                      splitAlgo = self.procJobSplitAlgo,
@@ -108,6 +114,7 @@ class RelValMCWorkloadFactory(StdBase):
                                                      couchURL = self.couchURL,
                                                      couchDBName = self.couchDBName,
                                                      configDoc = self.stepTwoConfigCacheID,
+                                                     configCacheUrl = self.configCacheUrl,
                                                      splitAlgo = self.procJobSplitAlgo,
                                                      splitArgs = self.procJobSplitArgs)
         self.addLogCollectTask(stepTwoTask, "StepTwoLogCollect")
@@ -141,6 +148,7 @@ class RelValMCWorkloadFactory(StdBase):
         # by the ReqMgr or whatever is creating this workflow.
         self.couchURL = arguments["CouchURL"]
         self.couchDBName = arguments["CouchDBName"]
+        self.configCacheUrl = arguments.get("ConfigCacheUrl", None)
 
         # Generation step parameters
         self.genJobSplitAlgo = arguments.get("GenJobSplitAlgo", "EventBased")
@@ -170,23 +178,23 @@ class RelValMCWorkloadFactory(StdBase):
                           "GenOutputModuleName", "StepOneOutputModuleName", "CouchURL", "CouchDBName"]
         self.requireValidateFields(fields = requiredFields, schema = schema,
                                    validate = False)
+        couchCacheUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
         outMod = self.validateConfigCacheExists(configID = schema["GenConfigCacheID"],
-                                                couchURL = schema["CouchURL"],
+                                                couchURL = couchCacheUrl,
                                                 couchDBName = schema["CouchDBName"],
                                                 getOutputModules = True)
         if not schema["GenOutputModuleName"] in outMod.keys():
             self.raiseValidationException(msg = "GenOutputMod Name not found in configCache")
         outMod = self.validateConfigCacheExists(configID = schema["StepOneConfigCacheID"],
-                                                couchURL = schema["CouchURL"],
+                                                couchURL = couchCacheUrl,
                                                 couchDBName = schema["CouchDBName"],
                                                 getOutputModules = True)
         if not schema["StepOneOutputModuleName"] in outMod.keys():
             self.raiseValidationException(msg = "StepOneOutputMod Name not found in configCache")
         outMod = self.validateConfigCacheExists(configID = schema["StepTwoConfigCacheID"],
-                                                couchURL = schema["CouchURL"],
+                                                couchURL = couchCacheUrl,
                                                 couchDBName = schema["CouchDBName"],
-                                                getOutputModules = True)
-        return
+                                                getOutputModules = True)        
 
 
 

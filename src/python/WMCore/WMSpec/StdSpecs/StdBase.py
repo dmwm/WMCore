@@ -395,10 +395,8 @@ class StdBase(object):
             outputModules[outputModuleName] = outputModule
 
         if configDoc != None and configDoc != "":
-            if configCacheUrl:
-                procTaskCmsswHelper.setConfigCache(configCacheUrl, configDoc, couchDBName)
-            else:
-                procTaskCmsswHelper.setConfigCache(couchURL, configDoc, couchDBName)
+            url = configCacheUrl or couchURL
+            procTaskCmsswHelper.setConfigCache(url, configDoc, couchDBName)
         else:
             # delete dataset information from scenarioArgs
             if 'outputs' in scenarioArgs:

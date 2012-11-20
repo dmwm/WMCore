@@ -35,7 +35,6 @@ def getAverageStdDev(numList):
 
     total   = 0.0
     average = 0.0
-    stdDev  = 0.0
     stdBase = 0.0
 
     # Assemble the average
@@ -217,3 +216,67 @@ def getLargestValues(dictList, key, n = 1):
                                          reverse = True)
 
     return sortedList[:n]
+
+def validateNumericInput(value):
+    """
+    _validateNumericInput_
+
+    Check that the value is actually an usable number
+    """
+    value = float(value)
+    try:
+        if math.isnan(value) or math.isinf(value):
+            return False
+    except TypeError:
+        return False
+
+    return True
+
+def calculateRunningAverageAndQValue(newPoint, n, oldM, oldQ):
+    """
+    _calculateRunningAverageAndQValue_
+
+    Use the algorithm described in:
+    Donald E. Knuth (1998). The Art of Computer Programming, volume 2: Seminumerical Algorithms, 3rd ed.., p. 232. Boston: Addison-Wesley.
+
+    To calculate an average and standard deviation while getting data, the standard deviation
+    can be obtained from the so-called Q value with the following equation:
+
+    sigma = sqrt(Q/n)
+
+    This is also contained in the function calculateStdDevFromQ in this module. The average is equal to M.
+    """
+
+    if not validateNumericInput(newPoint): raise MathAlgoException("Provided a non-valid newPoint")
+    if not validateNumericInput(n): raise MathAlgoException("Provided a non-valid n")
+
+    if n == 1:
+        M = newPoint
+        Q = 0.0
+    else:
+        if not validateNumericInput(oldM): raise MathAlgoException("Provided a non-valid oldM")
+        if not validateNumericInput(oldQ): raise MathAlgoException("Provided a non-valid oldQ")
+        M = oldM + (newPoint - oldM) / n
+        Q = oldQ + ((n - 1) * (newPoint - oldM) * (newPoint - oldM) / n)
+
+    return M, Q
+
+def calculateStdDevFromQ(Q, n):
+    """
+    _calculateStdDevFromQ_
+
+    If Q is the sum of the squared differences of some points to their average,
+    then the standard deviation is given by:
+
+    sigma = sqrt(Q/n)
+
+    This function calculates that formula
+    """
+    if not validateNumericInput(Q): raise MathAlgoException("Provided a non-valid Q")
+    if not validateNumericInput(n): raise MathAlgoException("Provided a non-valid n")
+
+    sigma = math.sqrt(Q / n)
+
+    if not validateNumericInput(sigma): return 0.0
+
+    return sigma

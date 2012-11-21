@@ -472,6 +472,10 @@ class TaskArchiverTest(unittest.TestCase):
         # Check the output
         self.assertEqual(workloadSummary['output'].keys(), ['/Electron/MorePenguins-v0/RECO',
                                                             '/Electron/MorePenguins-v0/ALCARECO'])
+        self.assertEqual(workloadSummary['output']['/Electron/MorePenguins-v0/RECO']['tasks'],
+                        ['/TestWorkload/ReReco', '/TestWorkload/ReReco/LogCollect'])
+        self.assertEqual(workloadSummary['output']['/Electron/MorePenguins-v0/ALCARECO']['tasks'],
+                        ['/TestWorkload/ReReco', '/TestWorkload/ReReco/LogCollect'])
 
         # Check performance
         # Check histograms
@@ -542,6 +546,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertTrue(workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1'].has_key('99999'))
         self.assertEquals(workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1']['99999']['runs'], {'10' : [12312]},
                           "Wrong lumi information in the summary for failed jobs")
+
         return
 
     def atestC_Profile(self):

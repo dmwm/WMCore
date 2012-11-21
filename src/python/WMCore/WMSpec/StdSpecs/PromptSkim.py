@@ -47,7 +47,10 @@ def getTestArguments():
 
         "CouchURL": os.environ.get("COUCHURL", None),
         "CouchDBName": "scf_wmagent_configcache",
-
+        # or alternatively CouchURL part can be replaced by ConfigCacheUrl,
+        # then ConfigCacheUrl + CouchDBName + ConfigCacheID
+        "ConfigCacheUrl": None,
+        
         "DashboardHost": "127.0.0.1",
         "DashboardPort": 8884,
 
@@ -136,13 +139,14 @@ class PromptSkimWorkloadFactory(DataProcessingWorkloadFactory):
 
         Create a PromptSkimming workload with the given parameters.
         """
+        configCouchUrl = arguments.get("ConfigCacheUrl", None) or arguments["CouchURL"]
         injectIntoConfigCache(arguments["CMSSWVersion"], arguments["ScramArch"],
                               arguments["InitCommand"], arguments["SkimConfig"], workloadName,
-                              arguments["CouchURL"], arguments["CouchDBName"],
+                              configCouchUrl, arguments["CouchDBName"],
                               arguments.get("EnvPath", None), arguments.get("BinPath", None))
 
         try:
-            configCache = ConfigCache(arguments["CouchURL"], arguments["CouchDBName"])
+            configCache = ConfigCache(configCouchUrl, arguments["CouchDBName"])
             arguments["ConfigCacheID"] = configCache.getIDFromLabel(workloadName)
             if not arguments["ConfigCacheID"]:
                 logging.error("The configuration was not uploaded to couch")

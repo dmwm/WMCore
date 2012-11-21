@@ -137,7 +137,6 @@ class MonteCarloWorkloadFactory(StdBase):
         self.couchDBName = arguments["CouchDBName"]
         self.configCacheUrl = arguments.get("ConfigCacheUrl", None)
         
-
         # Optional arguments that default to something reasonable.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
         self.emulation = arguments.get("Emulation", False)

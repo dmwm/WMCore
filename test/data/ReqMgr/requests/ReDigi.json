@@ -1,0 +1,55 @@
+{ 
+"createRequest":
+	{		 
+		"CMSSWVersion": "CMSSW_5_3_2_patch5",
+		"GlobalTag": "START53_V7A::All",
+		"Campaign": "Campaign-OVERRIDE-ME",		
+		"RequestString": "RequestString-OVERRIDE-ME",
+		"RequestPriority": 100,
+		"TimePerEvent": 17.5,
+		"ScramArch": "slc5_amd64_gcc462",
+		"RequestType": "ReDigi",
+		"Requestor": "Requestor-OVERRIDE-ME",
+		"RunWhitelist": [],
+        "RunBlacklist": [],
+        "BlockWhitelist": [],
+        "BlockBlacklist": [],
+        "InputDataset": "InputDataset-OVERRIDE-ME",
+		"ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
+		"StepOneConfigCacheID": "45514ac07d8c0eeb6a17ecc289d308d9",
+		"KeepStepOneOutput": false,
+		"StepOneOutputModuleName": "RAWSIMoutput",
+		"StepTwoConfigCacheID": "45514ac07d8c0eeb6a17ecc289d31721",
+		"KeepStepTwoOutput": true,		
+		"StepTwoOutputModuleName": "RECOSIMoutput",
+		"PrepID": "REDIGITEST-0001",			
+		"Group": "DATAOPS",
+        "Memory": 2300,		
+        "SizePerEvent": 342000,
+        "DbsUrl": "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet",
+        "inputMode": "couchDB",
+        "Scenario": "pp",
+        "DataPileup": "",
+        "MCPileup": "/MinBias_TuneZ2star_8TeV-pythia6/Summer12-START50_V13-v3/GEN-SIM"
+	},
+
+	
+"assignRequest":
+	{
+		"SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
+		"SiteBlacklist": [],
+		"MergedLFNBase": "/store/backfill/1",
+		"UnmergedLFNBase": "/store/unmerged",
+		"MinMergeSize": 2147483648,
+		"MaxMergeSize": 4294967296,
+		"MaxMergeEvents": 50000,
+		"AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
+		"ProcessingVersion": "ProcessingVersion-OVERRIDE-ME",
+		"maxRSS": 4294967296,
+		"maxVSize": 4294967296,
+		"SoftTimeout": 171600,
+		"GracePeriod": 300,
+		"dashboard": "dashboard-OVERRIDE-ME",
+		"Team": "Team--OVERRIDE-ME"
+	}
+}

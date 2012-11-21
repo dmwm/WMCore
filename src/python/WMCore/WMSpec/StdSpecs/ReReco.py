@@ -35,6 +35,9 @@ def getTestArguments():
 
         "CouchURL": os.environ.get("COUCHURL", None),
         "CouchDBName": "scf_wmagent_configcache",
+        # or alternatively CouchURL part can be replaced by ConfigCacheUrl,
+        # then ConfigCacheUrl + CouchDBName + ConfigCacheID
+        "ConfigCacheUrl": None,
 
         "ProcScenario": "cosmics",
         "DashboardHost": "127.0.0.1",
@@ -86,6 +89,7 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
             parentCmsswStep = mergeTask.getStep("cmsRun1")
             outputMods = self.setupProcessingTask(skimTask, "Skim", inputStep = parentCmsswStep, inputModule = "Merged",
                                                   couchURL = self.couchURL, couchDBName = self.couchDBName,
+                                                  configCacheUrl = self.configCacheUrl,
                                                   configDoc = skimConfig["ConfigCacheID"], splitAlgo = self.skimJobSplitAlgo,
                                                   splitArgs = self.skimJobSplitArgs)
             self.addLogCollectTask(skimTask, taskName = "%sLogCollect" % skimConfig["SkimName"])
@@ -136,16 +140,22 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
 
         Check for required fields, and some skim facts
         """
+        # TODO
+        # this list of required arguments is most likely incomplete, obsolete ...
         requiredFields = ["CMSSWVersion", "ScramArch",
                           "GlobalTag", "InputDataset"]
         self.requireValidateFields(fields = requiredFields, schema = schema,
                                    validate = False)
 
         if schema.get('ConfigCacheID', None) and schema.get('CouchURL', None) and schema.get('CouchDBName', None):
+            couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
             outMod = self.validateConfigCacheExists(configID = schema['ConfigCacheID'],
-                                                    couchURL = schema["CouchURL"],
+                                                    couchURL = couchUrl,
                                                     couchDBName = schema["CouchDBName"],
                                                     getOutputModules = True)
+        # TODO
+        # ProcScenario is now in request arguments Scenario, however this change
+        # didn't quite make it in the workflows implementation (#4280) 
         elif not schema.get('ProcScenario', None):
             self.raiseValidationException(msg = "No Scenario or Config in Processing Request!")
 
@@ -154,7 +164,6 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
         except AssertionError:
             self.raiseValidationException(msg = "Invalid input dataset!")
 
-        return
 
 
 def rerecoWorkload(workloadName, arguments):

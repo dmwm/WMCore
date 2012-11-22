@@ -166,6 +166,8 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
             for data, locations in dataMapping.items():
                 elements = self.backend.getElementsForData(dbs, data)
                 for element in elements:
+                    if element.get('NoLocationUpdate', False):
+                        continue
                     if sorted(locations) != sorted(element['Inputs'][data]):
                         if fullResync:
                             self.logger.info(data + ': Setting locations to: ' + ', '.join(locations))
@@ -192,6 +194,8 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
             for data, locations in dataMapping.items():
                 elements = self.backend.getElementsForParentData(data)
                 for element in elements:
+                    if element.get('NoLocationUpdate', False):
+                        continue
                     for pData in element['ParentData']:
                         if pData == data:
                             if sorted(locations) != sorted(element['ParentData'][pData]):

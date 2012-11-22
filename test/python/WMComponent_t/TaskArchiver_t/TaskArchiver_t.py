@@ -296,6 +296,11 @@ class TaskArchiverTest(unittest.TestCase):
             else:
                 testJobGroup.jobs[i]['fwjr'] = report2
         changer.propagate(testJobGroup.jobs, 'jobfailed', 'complete')
+        changer.propagate(testJobGroup.jobs, 'jobcooloff', 'jobfailed')
+        changer.propagate(testJobGroup.jobs, 'created', 'jobcooloff')
+        changer.propagate(testJobGroup.jobs, 'executing', 'created')
+        changer.propagate(testJobGroup.jobs, 'complete', 'executing')
+        changer.propagate(testJobGroup.jobs, 'jobfailed', 'complete')
         changer.propagate(testJobGroup.jobs, 'exhausted', 'jobfailed')
         changer.propagate(testJobGroup.jobs, 'cleanout', 'exhausted')
 
@@ -478,7 +483,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertAlmostEquals(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['AvgEventTime']['histogram'][0]['average'],
                                 0.062651899999999996, places = 2)
         self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['AvgEventTime']['histogram'][0]['nEvents'],
-                         5)
+                         10)
 
         # Check standard performance
         self.assertAlmostEquals(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['TotalJobCPU']['average'], 9.4950600000000005,
@@ -489,11 +494,11 @@ class TaskArchiverTest(unittest.TestCase):
         # Check worstOffenders
         self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['AvgEventTime']['worstOffenders'],
                          [{'logCollect': None, 'log': None, 'value': '0.894052', 'jobID': 1},
-                          {'logCollect': None, 'log': None, 'value': '0.894052', 'jobID': 2},
-                          {'logCollect': None, 'log': None, 'value': '0.894052', 'jobID': 3}])
+                          {'logCollect': None, 'log': None, 'value': '0.894052', 'jobID': 1},
+                          {'logCollect': None, 'log': None, 'value': '0.894052', 'jobID': 2}])
 
         # Check retryData
-        self.assertEqual(workloadSummary['retryData']['/TestWorkload/ReReco'], {'0': 10})
+        self.assertEqual(workloadSummary['retryData']['/TestWorkload/ReReco'], {'1': 10})
 
         # LogCollect task is made out of identical FWJRs
         # assert that it is identical
@@ -538,10 +543,21 @@ class TaskArchiverTest(unittest.TestCase):
 
         workloadSummary = workdatabase.document(id = workload.name())
 
-        self.assertEqual(workloadSummary['errors']['/TestWorkload/ReReco']['failureTime'], 500)
+        self.assertEqual(workloadSummary['errors']['/TestWorkload/ReReco']['failureTime'], 1000)
         self.assertTrue(workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1'].has_key('99999'))
         self.assertEquals(workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1']['99999']['runs'], {'10' : [12312]},
                           "Wrong lumi information in the summary for failed jobs")
+
+        # Check the failures by site histograms
+        self.assertEqual(workloadSummary['histograms']['workflowLevel']['failuresBySite']['data']['T1_IT_CNAF']['Failed Jobs'], 20)
+        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['data']['T1_IT_CNAF']['99999'], 20)
+        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['data']['T1_IT_CNAF']['8020'], 20)
+        self.assertEqual(workloadSummary['histograms']['workflowLevel']['failuresBySite']['average']['Failed Jobs'], 20)
+        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['average']['99999'], 20)
+        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['average']['8020'], 20)
+        self.assertEqual(workloadSummary['histograms']['workflowLevel']['failuresBySite']['stdDev']['Failed Jobs'], 0)
+        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['stdDev']['99999'], 0)
+        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['stdDev']['8020'], 0)
         return
 
     def atestC_Profile(self):

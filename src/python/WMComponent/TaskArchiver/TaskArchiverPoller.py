@@ -55,6 +55,8 @@ from WMCore.Credential.Proxy                    import Proxy
 from WMComponent.JobCreator.CreateWorkArea   import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+from WMCore.DataStructs.MathStructs.DiscreteSummaryHistogram import DiscreteSummaryHistogram
+from WMCore.DataStructs.MathStructs.ContinuousSummaryHistogram import ContinuousSummaryHistogram
 
 class TaskArchiverPollerException(WMException):
     """
@@ -363,6 +365,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                 msg = "Couldn't upload summary for workflow %s, will try again next time\n" % workflow[0]
                 msg += "Nothing will be deleted until the summary is in couch\n"
                 msg += "Exception message: %s" % str(ex)
+                print traceback.format_exc()
                 logging.error(msg)
                 self.sendAlert(3, msg = msg)
                 continue
@@ -500,6 +503,12 @@ class TaskArchiverPoller(BaseWorkerThread):
         # Set campaign
         workflowData['campaign'] = spec.getCampaign()
 
+        # Set histograms
+        histograms = {'workflowLevel' : {'failuresBySite' :
+                                         DiscreteSummaryHistogram('Failed jobs by site', 'Site')},
+                      'taskLevel' : {},
+                      'stepLevel' : {}}
+
         # Get a list of failed job IDs
         # Make sure you get it for ALL tasks in the spec
         for taskName in spec.listAllTaskPathNames():
@@ -573,6 +582,7 @@ class TaskArchiverPoller(BaseWorkerThread):
             loadJobs = self.daoFactory(classname = "Jobs.LoadForTaskArchiver")
             jobList = loadJobs.execute(chunkList)
             for job in jobList:
+                lastRegisteredRetry = None
                 errorCouch = self.fwjrdatabase.loadView("FWJRDump", "errorsByJobID",
                                                         options = {"startkey": [job['id'], 0],
                                                                    "endkey": [job['id'], {}]})['rows']
@@ -594,6 +604,17 @@ class TaskArchiverPoller(BaseWorkerThread):
                     logs   = err['value']['logs']
                     start  = err['value']['start']
                     stop   = err['value']['stop']
+                    errorSite = err['value']['site']
+                    retry = err['value']['retry']
+                    if lastRegisteredRetry is None or lastRegisteredRetry != retry:
+                        histograms['workflowLevel']['failuresBySite'].addPoint(errorSite, 'Failed Jobs')
+                        lastRegisteredRetry = retry
+                    if task not in histograms['stepLevel']:
+                        histograms['stepLevel'][task] = {}
+                    if step not in histograms['stepLevel'][task]:
+                        histograms['stepLevel'][task][step] = {'errorsBySite' : DiscreteSummaryHistogram('Errors by site',
+                                                                                                         'Site')}
+                    errorsBySiteData = histograms['stepLevel'][task][step]['errorsBySite']
                     if not task in workflowData['errors'].keys():
                         workflowData['errors'][task] = {'failureTime': 0}
                     if not step in workflowData['errors'][task].keys():
@@ -609,6 +630,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                                                       "runs":   {},
                                                       "logs":   []}
                         stepFailures[exitCode]['jobs'] += 1 # Increment job counter
+                        errorsBySiteData.addPoint(errorSite, str(exitCode))
                         if len(stepFailures[exitCode]['errors']) == 0 or \
                                exitCode == '99999':
                             # Only record the first error for an exit code
@@ -628,6 +650,24 @@ class TaskArchiverPoller(BaseWorkerThread):
                         for log in logs:
                             if not log in stepFailures[exitCode]["logs"]:
                                 stepFailures[exitCode]["logs"].append(log)
+
+        jsonHistograms = {'workflowLevel' : {},
+                          'taskLevel' : {},
+                          'stepLevel' : {}}
+        for histogram in histograms['workflowLevel']:
+            jsonHistograms['workflowLevel'][histogram] = histograms['workflowLevel'][histogram].toJSON()
+        for task in histograms['taskLevel']:
+            jsonHistograms['taskLevel'][task] = {}
+            for histogram in histograms['taskLevel'][task]:
+                jsonHistograms['taskLevel'][task][histogram] = histograms['taskLevel'][task][histogram].toJSON()
+        for task in histograms['stepLevel']:
+            jsonHistograms['stepLevel'][task] = {}
+            for step in histograms['stepLevel'][task]:
+                jsonHistograms['stepLevel'][task][step] = {}
+                for histogram in histograms['stepLevel'][task][step]:
+                    jsonHistograms['stepLevel'][task][step][histogram] = histograms['stepLevel'][task][step][histogram].toJSON()
+
+        workflowData['histograms'] = jsonHistograms
 
         # Now we have the workflowData in the right format
         # Time to send them on

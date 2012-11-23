@@ -710,6 +710,8 @@ class TaskArchiverPoller(BaseWorkerThread):
         perf = self.fwjrdatabase.loadView("FWJRDump", "performanceByWorkflowName",
                                           options = {"startkey": [workflowName],
                                                      "endkey": [workflowName]})['rows']
+                                                     
+        failedJobs = self.getFailedJobs(workflowName)
 
         taskList   = {}
         finalTask  = {}
@@ -728,6 +730,7 @@ class TaskArchiverPoller(BaseWorkerThread):
             final = {}
             for stepName in taskList[taskName].keys():
                 output = {'jobTime': []}
+                outputFailed = {'jobTime': []} # This will be same, but only for failed jobs
                 final[stepName] = {}
                 masterList = []
 
@@ -740,8 +743,13 @@ class TaskArchiverPoller(BaseWorkerThread):
                             continue
                         if not key in output.keys():
                             output[key] = []
+                            if len(failedJobs) > 0 :
+                                outputFailed[key] = []
                         try:
                             output[key].append(float(row[key]))
+                            if (row['jobID'] in failedJobs):
+                                outputFailed[key].append(float(row[key]))
+                                
                         except TypeError:
                             # Why do we get None values here?
                             # We may want to look into it
@@ -754,6 +762,9 @@ class TaskArchiverPoller(BaseWorkerThread):
                         jobTime = row.get('stopTime', None) - row.get('startTime', None)
                         output['jobTime'].append(jobTime)
                         row['jobTime'] = jobTime
+                        # Account job running time here only if the job has failed
+                        if (row['jobID'] in failedJobs):
+                            outputFailed['jobTime'].append(jobTime)
                     except TypeError:
                         # One of those didn't have a real value
                         pass
@@ -789,10 +800,19 @@ class TaskArchiverPoller(BaseWorkerThread):
 
 
                     if key in self.histogramKeys:
+                        # Usual histogram that was always done
                         histogram = MathAlgos.createHistogram(numList = output[key],
                                                               nBins = self.histogramBins,
                                                               limit = self.histogramLimit)
                         final[stepName][key]['histogram'] = histogram
+                        # Histogram only picking values from failed jobs
+                        # Operators  can use it to find out quicker why a workflow/task/step is failing :
+                        if len(failedJobs) > 0 :
+                            failedJobsHistogram = MathAlgos.createHistogram(numList = outputFailed[key],
+                                                                  nBins = self.histogramBins,
+                                                                  limit = self.histogramLimit)
+                                                        
+                            final[stepName][key]['errorsHistogram'] = failedJobsHistogram
                     else:
                         average, stdDev = MathAlgos.getAverageStdDev(numList = output[key])
                         final[stepName][key]['average'] = average
@@ -806,6 +826,18 @@ class TaskArchiverPoller(BaseWorkerThread):
             finalTask[taskName] = final
         return finalTask
 
+    def getFailedJobs(self, workflowName):
+        # We want ALL the jobs, and I'm sorry, CouchDB doesn't support wildcards, above-than-absurd values will do:
+        errorView = self.fwjrdatabase.loadView("FWJRDump", "errorsByWorkflowName",
+                                          options = {"startkey": [workflowName, 0, 0],
+                                                     "endkey": [workflowName, 999999999, 999999]})['rows']
+        failedJobs = []
+        for row in errorView:
+            jobId = row['value']['jobid']
+            if jobId not in failedJobs:
+                failedJobs.append(jobId)
+                
+        return failedJobs
 
     def createAndUploadPublish(self, workflow):
         """

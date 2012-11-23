@@ -136,7 +136,7 @@ class TaskArchiverTest(unittest.TestCase):
         config.TaskArchiver.pollInterval    = 60
         config.TaskArchiver.logLevel        = 'INFO'
         config.TaskArchiver.timeOut         = 0
-        config.TaskArchiver.histogramKeys   = ['AvgEventTime', 'writeTotalMB']
+        config.TaskArchiver.histogramKeys   = ['AvgEventTime', 'writeTotalMB', 'jobTime']
         config.TaskArchiver.histogramBins   = 5
         config.TaskArchiver.histogramLimit  = 5
         config.TaskArchiver.workloadSummaryCouchDBName = "%s/workloadsummary" % self.databaseName
@@ -271,7 +271,9 @@ class TaskArchiverTest(unittest.TestCase):
         if error:
             path1 = os.path.join(WMCore.WMBase.getTestBase(),
                                  "WMComponent_t/JobAccountant_t/fwjrs", "badBackfillJobReport.pkl")
-            path2 = path1
+            path2 = os.path.join(WMCore.WMBase.getTestBase(),
+                                 'WMComponent_t/TaskArchiver_t/fwjrs',
+                                 'logCollectReport2.pkl')
         elif multicore:
             path1 = os.path.join(WMCore.WMBase.getTestBase(),
                                  "WMCore_t/FwkJobReport_t/MulticoreReport.pkl")
@@ -541,18 +543,18 @@ class TaskArchiverTest(unittest.TestCase):
 
         workloadSummary = workdatabase.document(id = workload.name())
 
-        self.assertEqual(workloadSummary['errors']['/TestWorkload/ReReco']['failureTime'], 1000)
+        self.assertEqual(workloadSummary['errors']['/TestWorkload/ReReco']['failureTime'], 500)
         self.assertTrue(workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1'].has_key('99999'))
         self.assertEquals(workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1']['99999']['runs'], {'10' : [12312]},
                           "Wrong lumi information in the summary for failed jobs")
 
         # Check the failures by site histograms
-        self.assertEqual(workloadSummary['histograms']['workflowLevel']['failuresBySite']['data']['T1_IT_CNAF']['Failed Jobs'], 20)
-        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['data']['T1_IT_CNAF']['99999'], 20)
-        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['data']['T1_IT_CNAF']['8020'], 20)
-        self.assertEqual(workloadSummary['histograms']['workflowLevel']['failuresBySite']['average']['Failed Jobs'], 20)
-        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['average']['99999'], 20)
-        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['average']['8020'], 20)
+        self.assertEqual(workloadSummary['histograms']['workflowLevel']['failuresBySite']['data']['T1_IT_CNAF']['Failed Jobs'], 10)
+        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['data']['T1_IT_CNAF']['99999'], 10)
+        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['data']['T1_IT_CNAF']['8020'], 10)
+        self.assertEqual(workloadSummary['histograms']['workflowLevel']['failuresBySite']['average']['Failed Jobs'], 10)
+        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['average']['99999'], 10)
+        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['average']['8020'], 10)
         self.assertEqual(workloadSummary['histograms']['workflowLevel']['failuresBySite']['stdDev']['Failed Jobs'], 0)
         self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['stdDev']['99999'], 0)
         self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['stdDev']['8020'], 0)

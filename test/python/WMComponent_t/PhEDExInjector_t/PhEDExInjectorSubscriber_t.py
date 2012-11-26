@@ -25,6 +25,7 @@ from WMCore.WMBS.Workflow import Workflow
 from WMQuality.TestInit import TestInit
 
 from nose.plugins.attrib import attr
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 class PhEDExInjectorSubscriberTest(unittest.TestCase):
     """
@@ -288,7 +289,7 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         # Let's check /BogusPrimary/Run2012Z-PromptReco-v1/RECO
         # According to the spec, this should be custodial at T1_US_FNAL
         # Non-custodial at T1_UK_RAL and T3_CO_Uniandes
-        # Autoapproved in all non-custodial sites
+        # Autoapproved in all sites
         # Priority is normal
         self.assertTrue(self.testDatasetA in subscriptions, "Dataset A was not subscribed")
         subInfoA = subscriptions[self.testDatasetA]
@@ -302,7 +303,7 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
                 self.assertEqual(subInfo["move"], "n", "Wrong subscription type for dataset A at %s" % subInfo["node"])
             elif site == "T1_US_FNAL_MSS":
                 self.assertEqual(subInfo["custodial"], "y", "Wrong custodiality for dataset A at %s" % subInfo["node"])
-                self.assertEqual(subInfo["request_only"], "y", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["request_only"], "n", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
                 self.assertEqual(subInfo["move"], "y", "Wrong subscription type for dataset A at %s" % subInfo["node"])
             else:
                 self.fail("Dataset A was subscribed  to a wrong site %s" % site)
@@ -358,7 +359,7 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         # Let's check /BogusPrimary/Run2012Z-PromptReco-v1/RECO
         # According to the spec, this should be custodial at T1_US_FNAL
         # Non-custodial at T1_UK_RAL and T3_CO_Uniandes
-        # Autoapproved in all non-custodial sites
+        # Autoapproved in all sites
         # Priority is normal
         self.assertTrue(self.testDatasetA in subscriptions, "Dataset A was not subscribed")
         subInfoA = subscriptions[self.testDatasetA]
@@ -372,7 +373,7 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
                 self.assertEqual(subInfo["move"], "n", "Wrong subscription type for dataset A at %s" % subInfo["node"])
             elif site == "T1_US_FNAL_MSS":
                 self.assertEqual(subInfo["custodial"], "y", "Wrong custodiality for dataset A at %s" % subInfo["node"])
-                self.assertEqual(subInfo["request_only"], "y", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["request_only"], "n", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
                 self.assertEqual(subInfo["move"], "n", "Wrong subscription type for dataset A at %s" % subInfo["node"])
             else:
                 self.fail("Dataset A was subscribed  to a wrong site %s" % site)
@@ -415,7 +416,7 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
                 self.assertEqual(subInfo["move"], "n", "Wrong subscription type for dataset A at %s" % subInfo["node"])
             elif site == "T1_US_FNAL_MSS":
                 self.assertEqual(subInfo["custodial"], "y", "Wrong custodiality for dataset A at %s" % subInfo["node"])
-                self.assertEqual(subInfo["request_only"], "y", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["request_only"], "n", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
                 if subInfo["move"] == "y":
                     moveCount += 1
             else:

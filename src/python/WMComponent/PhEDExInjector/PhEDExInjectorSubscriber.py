@@ -209,10 +209,13 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
             for site in subInfo["CustodialSites"]:
                 if site not in siteMap:
                     siteMap[site] = {}
+                autoApprove = False
+                if site in subInfo["AutoApproveSites"]:
+                    autoApprove = True
                 if self.safeMode and dataset not in partiallySubscribedSet:
-                    tupleKey = (subInfo["Priority"], True, False, False)
+                    tupleKey = (subInfo["Priority"], True, autoApprove, False)
                 else:
-                    tupleKey = (subInfo["Priority"], True, False, True)
+                    tupleKey = (subInfo["Priority"], True, autoApprove, True)
                 if tupleKey not in siteMap[site]:
                     siteMap[site][tupleKey] = []
                 siteMap[site][tupleKey].append(dataset)

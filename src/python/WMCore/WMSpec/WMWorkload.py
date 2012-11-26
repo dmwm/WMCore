@@ -1451,9 +1451,29 @@ class WMWorkloadHelper(PersistencyHelper):
             result.extend(t.getConfigCacheIDs())
         return result
 
+    def setLocationDataSourceFlag(self):
+        """
+        _setLocationDataSourceFlag_
 
+        Set the flag in the top level tasks
+        indicating that site lists should be
+        used as location data
+        """
+        for task in self.getTopLevelTask():
+            task.setInputLocationFlag()
+        return
 
+    def locationDataSourceFlag(self):
+        """
+        _locationDataSourceFlag_
 
+        Get the flag in the top level tasks
+        that indicates whether the site lists
+        should be trusted as the location for data
+        """
+        for task in self.getTopLevelTask():
+            return task.inputLocationFlag()
+        return False
 
 class WMWorkload(ConfigSection):
     """

@@ -63,6 +63,8 @@ class WorkQueueElement(dict):
         self.setdefault('Mask', None)
         # is new data being added to the inputs i.e. open block with new files?
         self.setdefault('OpenForNewData', False)
+        # Should we check the location of the inputs, or trust the initial values?
+        self.setdefault('NoLocationUpdate', False)
 
         # set to true when updated from a WorkQueueElementResult
         self.modified = False

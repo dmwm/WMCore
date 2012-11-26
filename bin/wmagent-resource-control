@@ -314,6 +314,6 @@ else:
     else:
         taskType = options.taskType.strip().split(',')
         updateThresholdInfo(myResourceControl, options.siteName,
-                            taskType, options.pendingSlots,
-                            options.runningSlots, priority = options.priority)
+                            taskType, options.runningSlots,
+                            options.pendingSlots, priority = options.priority)
         sys.exit(0)

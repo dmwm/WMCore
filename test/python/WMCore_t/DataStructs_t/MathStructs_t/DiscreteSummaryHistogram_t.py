@@ -77,10 +77,10 @@ class DiscreteSummaryHistogramTest(unittest.TestCase):
         # Average/stdDev per feature:
         # FeatureA: avg = 2.7 stdev = 2.05
         # FeatureB: avg = 13 stdev = 5.66
-        self.assertAlmostEqual(jsonHistogram["average"]["FeatureA"], 2.7, delta = 0.1)
-        self.assertAlmostEqual(jsonHistogram["average"]["FeatureB"], 13, delta = 0.1)
-        self.assertAlmostEqual(jsonHistogram["stdDev"]["FeatureA"], 2.05, delta = 0.1)
-        self.assertAlmostEqual(jsonHistogram["stdDev"]["FeatureB"], 5.66, delta = 0.1)
+        self.assertAlmostEqual(jsonHistogram["average"]["FeatureA"], 2.7, places = 1)
+        self.assertAlmostEqual(jsonHistogram["average"]["FeatureB"], 13, places = 1)
+        self.assertAlmostEqual(jsonHistogram["stdDev"]["FeatureA"], 2.05, places = 1)
+        self.assertAlmostEqual(jsonHistogram["stdDev"]["FeatureB"], 5.66, places = 1)
         self.assertEqual(jsonHistogram["data"]["CategoryA"]["FeatureA"], 5)
         self.assertEqual(jsonHistogram["data"]["CategoryA"]["FeatureB"], 17)
         self.assertEqual(jsonHistogram["data"]["CategoryB"]["FeatureA"], 0)

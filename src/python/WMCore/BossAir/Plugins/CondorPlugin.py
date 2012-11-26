@@ -607,14 +607,14 @@ class CondorPlugin(BasePlugin):
                     job['status']      = statName
                     job['status_time'] = 0
 
-               #Check if we have a valid status time
+                #Check if we have a valid status time
                 if not job['status_time']:
                     if job['status'] == 'Running':
-                        job['status_time'] = jobAd.get('runningTime', 0)
+                        job['status_time'] = int(jobAd.get('runningTime', 0))
                     elif job['status'] == 'Idle':
-                        job['status_time'] = jobAd.get('submitTime', 0)
+                        job['status_time'] = int(jobAd.get('submitTime', 0))
                     else:
-                        job['status_time'] = jobAd.get('stateTime', 0)
+                        job['status_time'] = int(jobAd.get('stateTime', 0))
                     changeList.append(job)
 
                 runningList.append(job)

@@ -301,6 +301,10 @@ class LexiconTest(unittest.TestCase):
         lfn(lfnA)
         lfnA = '/store/data/Run2010A/Cosmics/RECO/v4/000/143/316/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
         lfn(lfnA)
+        lfnA = '/store/hidata/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
+        lfn(lfnA)
+        lfnA = '/store/hidata/Run2010A/Cosmics/RECO/v4/000/143/316/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
+        lfn(lfnA)
         lfnA = '/store/t0temp/data/Run2010A/Cosmics/RECO/v4/000/143/316/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
         lfn(lfnA)
         lfnA = '/store/backfill/1/data/Run2010A/Cosmics/RECO/v4/000/143/316/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
@@ -391,6 +395,11 @@ class LexiconTest(unittest.TestCase):
         lfnA = '/store/temp1/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'
         lfnBase(lfnA)
         lfnA = '/store/temp/lustre1/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'
+        lfnBase(lfnA)
+
+        lfnA = '/store/hidata/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'
+        lfnBase(lfnA)
+        lfnA = '/store/hidata/Run2010A/Cosmics/RECO/v4'
         lfnBase(lfnA)
 
         lfnA = '/Store/temp/lustre/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'

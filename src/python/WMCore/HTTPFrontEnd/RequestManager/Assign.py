@@ -53,12 +53,12 @@ class Assign(WebAPI):
         self.allUnmergedLFNBases = ["/store/unmerged", "/store/temp"]
 
         self.mergedLFNBases = {
-             "ReReco" : ["/store/backfill/1", "/store/backfill/2", "/store/data"],
-             "DataProcessing" : ["/store/backfill/1", "/store/backfill/2", "/store/data"],
+             "ReReco" : ["/store/backfill/1", "/store/backfill/2", "/store/data", "/store/hidata"],
+             "DataProcessing" : ["/store/backfill/1", "/store/backfill/2", "/store/data", "/store/hidata"],
              "ReDigi" : ["/store/backfill/1", "/store/backfill/2", "/store/data", "/store/mc"],
              "MonteCarlo" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
              "RelValMC" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
-             "Resubmission" : ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data"],
+             "Resubmission" : ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data", "/store/hidata"],
              "MonteCarloFromGEN" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
              "TaskChain": ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data", "/store/relval"],
              "LHEStepZero": ["/store/backfill/1", "/store/backfill/2", "/store/generator"]}

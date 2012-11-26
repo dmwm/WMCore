@@ -200,7 +200,8 @@ class StageOut(Executor):
                 fileForTransfer = {'LFN': lfn,
                                    'PFN': getattr(file, 'pfn'),
                                    'SEName' : None,
-                                   'StageOutCommand': None}
+                                   'StageOutCommand': None,
+                                   'Checksums' : getattr(file, 'checksums', None)}
                 signal.signal(signal.SIGALRM, alarmHandler)
                 signal.alarm(waitTime)
                 try:

@@ -49,17 +49,17 @@ class Assign(WebAPI):
         self.allMergedLFNBases =  [
             "/store/backfill/1", "/store/backfill/2",
             "/store/data",  "/store/mc", "/store/generator", "/store/relval",
-            "/store/hidata"]
+            "/store/hidata", "/store/himc"]
         self.allUnmergedLFNBases = ["/store/unmerged", "/store/temp"]
 
         self.mergedLFNBases = {
              "ReReco" : ["/store/backfill/1", "/store/backfill/2", "/store/data", "/store/hidata"],
              "DataProcessing" : ["/store/backfill/1", "/store/backfill/2", "/store/data", "/store/hidata"],
-             "ReDigi" : ["/store/backfill/1", "/store/backfill/2", "/store/data", "/store/mc"],
-             "MonteCarlo" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
-             "RelValMC" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
+             "ReDigi" : ["/store/backfill/1", "/store/backfill/2", "/store/data", "/store/mc", "/store/himc"],
+             "MonteCarlo" : ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/himc"],
+             "RelValMC" : ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/himc"],
              "Resubmission" : ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data", "/store/hidata"],
-             "MonteCarloFromGEN" : ["/store/backfill/1", "/store/backfill/2", "/store/mc"],
+             "MonteCarloFromGEN" : ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/himc"],
              "TaskChain": ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data", "/store/relval"],
              "LHEStepZero": ["/store/backfill/1", "/store/backfill/2", "/store/generator"]}
 

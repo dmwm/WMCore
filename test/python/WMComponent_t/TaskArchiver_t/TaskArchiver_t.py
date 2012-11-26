@@ -136,7 +136,7 @@ class TaskArchiverTest(unittest.TestCase):
         config.TaskArchiver.pollInterval    = 60
         config.TaskArchiver.logLevel        = 'INFO'
         config.TaskArchiver.timeOut         = 0
-        config.TaskArchiver.histogramKeys   = ['AvgEventTime', 'writeTotalMB']
+        config.TaskArchiver.histogramKeys   = ['AvgEventTime', 'writeTotalMB', 'jobTime']
         config.TaskArchiver.histogramBins   = 5
         config.TaskArchiver.histogramLimit  = 5
         config.TaskArchiver.workloadSummaryCouchDBName = "%s/workloadsummary" % self.databaseName
@@ -271,7 +271,9 @@ class TaskArchiverTest(unittest.TestCase):
         if error:
             path1 = os.path.join(WMCore.WMBase.getTestBase(),
                                  "WMComponent_t/JobAccountant_t/fwjrs", "badBackfillJobReport.pkl")
-            path2 = path1
+            path2 = os.path.join(WMCore.WMBase.getTestBase(),
+                                 'WMComponent_t/TaskArchiver_t/fwjrs',
+                                 'logCollectReport2.pkl')
         elif multicore:
             path1 = os.path.join(WMCore.WMBase.getTestBase(),
                                  "WMCore_t/FwkJobReport_t/MulticoreReport.pkl")
@@ -294,6 +296,11 @@ class TaskArchiverTest(unittest.TestCase):
                 testJobGroup.jobs[i]['fwjr'] = report1
             else:
                 testJobGroup.jobs[i]['fwjr'] = report2
+        changer.propagate(testJobGroup.jobs, 'jobfailed', 'complete')
+        changer.propagate(testJobGroup.jobs, 'jobcooloff', 'jobfailed')
+        changer.propagate(testJobGroup.jobs, 'created', 'jobcooloff')
+        changer.propagate(testJobGroup.jobs, 'executing', 'created')
+        changer.propagate(testJobGroup.jobs, 'complete', 'executing')
         changer.propagate(testJobGroup.jobs, 'jobfailed', 'complete')
         changer.propagate(testJobGroup.jobs, 'exhausted', 'jobfailed')
         changer.propagate(testJobGroup.jobs, 'cleanout', 'exhausted')
@@ -469,13 +476,14 @@ class TaskArchiverTest(unittest.TestCase):
 
         # Check the output
         self.assertEqual(workloadSummary['output'].keys(), ['/Electron/MorePenguins-v0/RECO'])
-
+        self.assertEqual(workloadSummary['output']['/Electron/MorePenguins-v0/RECO']['tasks'],
+                        ['/TestWorkload/ReReco', '/TestWorkload/ReReco/LogCollect'])
         # Check performance
         # Check histograms
         self.assertAlmostEquals(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['AvgEventTime']['histogram'][0]['average'],
                                 0.89405199999999996, places = 2)
         self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['AvgEventTime']['histogram'][0]['nEvents'],
-                         5)
+                         10)
 
         # Check standard performance
         self.assertAlmostEquals(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['TotalJobCPU']['average'], 17.786300000000001,
@@ -486,11 +494,11 @@ class TaskArchiverTest(unittest.TestCase):
         # Check worstOffenders
         self.assertEqual(workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['AvgEventTime']['worstOffenders'],
                          [{'logCollect': None, 'log': None, 'value': '0.894052', 'jobID': 1},
-                          {'logCollect': None, 'log': None, 'value': '0.894052', 'jobID': 2},
-                          {'logCollect': None, 'log': None, 'value': '0.894052', 'jobID': 3}])
+                          {'logCollect': None, 'log': None, 'value': '0.894052', 'jobID': 1},
+                          {'logCollect': None, 'log': None, 'value': '0.894052', 'jobID': 2}])
 
         # Check retryData
-        self.assertEqual(workloadSummary['retryData']['/TestWorkload/ReReco'], {'0': 10})
+        self.assertEqual(workloadSummary['retryData']['/TestWorkload/ReReco'], {'1': 10})
 
         # LogCollect task is made out of identical FWJRs
         # assert that it is identical
@@ -539,6 +547,17 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertTrue(workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1'].has_key('99999'))
         self.assertEquals(workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1']['99999']['runs'], {'10' : [12312]},
                           "Wrong lumi information in the summary for failed jobs")
+
+        # Check the failures by site histograms
+        self.assertEqual(workloadSummary['histograms']['workflowLevel']['failuresBySite']['data']['T1_IT_CNAF']['Failed Jobs'], 10)
+        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['data']['T1_IT_CNAF']['99999'], 10)
+        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['data']['T1_IT_CNAF']['8020'], 10)
+        self.assertEqual(workloadSummary['histograms']['workflowLevel']['failuresBySite']['average']['Failed Jobs'], 10)
+        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['average']['99999'], 10)
+        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['average']['8020'], 10)
+        self.assertEqual(workloadSummary['histograms']['workflowLevel']['failuresBySite']['stdDev']['Failed Jobs'], 0)
+        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['stdDev']['99999'], 0)
+        self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['stdDev']['8020'], 0)
         return
 
     def atestC_Profile(self):

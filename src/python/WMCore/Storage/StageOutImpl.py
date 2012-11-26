@@ -140,7 +140,7 @@ class StageOutImpl:
             return ""
 
 
-    def __call__(self, protocol, inputPFN, targetPFN, options = None):
+    def __call__(self, protocol, inputPFN, targetPFN, options = None, checksums = None):
         """
         _Operator()_
 
@@ -183,8 +183,7 @@ class StageOutImpl:
         #  //
         # // Create the command to be used.
         #//
-        command = self.createStageOutCommand(sourcePFN, targetPFN, options)
-
+        command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums)
         #  //
         # // Run the command
         #//

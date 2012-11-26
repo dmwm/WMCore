@@ -9,6 +9,7 @@ function(doc) {
     var stopTime = 0;
 
     for (var stepName in doc['fwjr'].steps) {
+      var site = doc['fwjr'].steps[stepName].site
       startTime = Math.min(startTime, doc['fwjr']['steps'][stepName].start)
       stopTime = Math.max(stopTime, doc['fwjr']['steps'][stepName].stop)
       if (doc['fwjr']['steps'][stepName].errors.length > 0) {
@@ -73,7 +74,8 @@ function(doc) {
               'runs': inputRuns,
 	      'logs': logLFNs,
 	      'start': startTime,
-	      'stop': stopTime});
+	      'stop': stopTime,
+	      'site': site});
       }
     } //END for loop over steps
   }

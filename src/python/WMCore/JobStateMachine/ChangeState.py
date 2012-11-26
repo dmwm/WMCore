@@ -244,6 +244,14 @@ class ChangeState(WMObject, WMConnectionBase):
                 updateUri += "?newstate=%s&timestamp=%s" % (newstate, timestamp)
                 self.jsumdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
                 logging.debug("Updated job summary status for job %s" % jobSummaryId)
+                
+                updateUri = "/" + self.jsumdatabase.name + "/_design/WMStats/_update/jobStateTransition/" + jobSummaryId
+                updateUri += "?oldstate=%s&newstate=%s&location=%s&timestamp=%s" % (oldstate,
+                                                                                    newstate,
+                                                                                    job["location"],
+                                                                                    timestamp)
+                self.jsumdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
+                logging.debug("Updated job summary state history for job %s" % jobSummaryId)
 
             if job.get("fwjr", None):
 
@@ -292,7 +300,14 @@ class ChangeState(WMObject, WMConnectionBase):
                                             'size': singlefile.get('size', None) })
                             #it should have one output dataset for all the files
                             outputDataset = singlefile.get('dataset', None) if not outputDataset else outputDataset
-
+                inputFiles = []
+                for inputFileStruct in job["fwjr"].getAllInputFiles():
+                    # check if inputFileSummary needs to be extended
+                    inputFileSummary = {}
+                    inputFileSummary["lfn"] = inputFileStruct["lfn"]
+                    inputFileSummary["input_type"] = inputFileStruct["input_type"]
+                    inputFiles.append(inputFileSummary)
+                    
                 jobSummary = {"_id": jobSummaryId,
                               "wmbsid": job["id"],
                               "type": "jobsummary",
@@ -301,15 +316,19 @@ class ChangeState(WMObject, WMConnectionBase):
                               "task": job["task"],
                               "jobtype": job["jobType"],
                               "state": newstate,
-                              "site": job["fwjr"].getSiteName(),
+                              "site": job.get("location", None),
+                              "cms_location": job["fwjr"].getSiteName(),
                               "exitcode": job["fwjr"].getExitCode(),
                               "errors": errmsgs,
                               "lumis": inputs,
                               "outputdataset": outputDataset,
+                              "inputfiles": inputFiles,
                               "output": outputs }
                 if couchDocID is not None:
                     try:
-                        jobSummary['_rev'] = self.jsumdatabase.document(id = jobSummaryId)['_rev']
+                        currentJobDoc = self.jsumdatabase.document(id = jobSummaryId)
+                        jobSummary['_rev'] = currentJobDoc['_rev']
+                        jobSummary['state_history'] = currentJobDoc.get('state_history', [])
                     except CouchNotFoundError:
                         pass
                 self.jsumdatabase.queue(jobSummary, timestamp = True)

@@ -82,8 +82,8 @@ class ContinuousSummaryHistogramTest(unittest.TestCase):
         # Check the histogram core data
         self.assertEqual(jsonHistogram["title"], "TestHisto")
         self.assertEqual(jsonHistogram["xLabel"], "MyLabel")
-        self.assertAlmostEqual(jsonHistogram["average"], 0.0, delta = 0.5)
-        self.assertAlmostEqual(jsonHistogram["stdDev"], 1.0, delta = 0.5)
+        self.assertAlmostEqual(jsonHistogram["average"], 0.0, places = 0)
+        self.assertAlmostEqual(jsonHistogram["stdDev"], 1.0, places = 0)
         self.assertEqual(len(jsonHistogram["data"]), 16)
         self.assertTrue(jsonHistogram["continuous"])
 
@@ -125,8 +125,8 @@ class ContinuousSummaryHistogramTest(unittest.TestCase):
         for point in inputData:
             histogram.addPoint(point)
         jsonHistogram = histogram.toJSON()
-        self.assertAlmostEqual(jsonHistogram["average"], 0.0, delta = 0.5)
-        self.assertAlmostEqual(jsonHistogram["stdDev"], 1.0, delta = 0.5)
+        self.assertAlmostEqual(jsonHistogram["average"], 0.0, places = 0)
+        self.assertAlmostEqual(jsonHistogram["stdDev"], 1.0, places = 0)
         self.assertEqual(len(jsonHistogram["data"]), 7)
         self.assertEqual(jsonHistogram["internalData"]["nPoints"], 100)
 
@@ -148,8 +148,8 @@ class ContinuousSummaryHistogramTest(unittest.TestCase):
         jsonHistogram = histogram.toJSON()
         oldData = jsonHistogram["data"]
         jsonHistogram = histogram.toJSON()
-        self.assertAlmostEqual(jsonHistogram["average"], 0.0, delta = 0.5)
-        self.assertAlmostEqual(jsonHistogram["stdDev"], 1.0, delta = 0.5)
+        self.assertAlmostEqual(jsonHistogram["average"], 0.0, places = 0)
+        self.assertAlmostEqual(jsonHistogram["stdDev"], 1.0, places = 0)
         self.assertEqual(len(jsonHistogram["data"]), 7)
         self.assertEqual(jsonHistogram["data"], oldData)
         self.assertEqual(jsonHistogram["internalData"]["nPoints"], 100)
@@ -171,15 +171,15 @@ class ContinuousSummaryHistogramTest(unittest.TestCase):
         for point in inputData:
             histogram.addPoint(point)
         jsonHistogram = histogram.toJSON()
-        self.assertAlmostEqual(jsonHistogram["average"], 0.0, delta = 0.5)
-        self.assertAlmostEqual(jsonHistogram["stdDev"], 1.0, delta = 0.5)
+        self.assertAlmostEqual(jsonHistogram["average"], 0.0, places = 0)
+        self.assertAlmostEqual(jsonHistogram["stdDev"], 1.0, places = 0)
         self.assertEqual(len(jsonHistogram["data"]), 16)
         self.assertEqual(jsonHistogram["internalData"]["nPoints"], 1000)
         pointsInHistogram = sum([x for x in jsonHistogram["data"].values()])
 
         # With high probability we must have chopped at least one point
         self.assertTrue(pointsInHistogram < 1000)
-        self.assertAlmostEqual(pointsInHistogram / 1000.0, 0.68, delta = 0.1)
+        self.assertAlmostEqual(pointsInHistogram / 1000.0, 0.68, places = 1)
 
         # Create a histogram without histogram data
         histogram = ContinuousSummaryHistogram('TestHisto', 'MyLabel', 'SomeoneElsesLabel',
@@ -188,8 +188,8 @@ class ContinuousSummaryHistogramTest(unittest.TestCase):
         for point in inputData:
             histogram.addPoint(point)
         jsonHistogram = histogram.toJSON()
-        self.assertAlmostEqual(jsonHistogram["average"], 0.0, delta = 0.5)
-        self.assertAlmostEqual(jsonHistogram["stdDev"], 1.0, delta = 0.5)
+        self.assertAlmostEqual(jsonHistogram["average"], 0.0, places = 0)
+        self.assertAlmostEqual(jsonHistogram["stdDev"], 1.0, places = 0)
         self.assertEqual(len(jsonHistogram["data"]), 0)
         self.assertEqual(jsonHistogram["internalData"]["nPoints"], 1000)
 

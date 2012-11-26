@@ -1,3 +1,34 @@
+0.9.30 to 0.9.31:
+  - Improve the WorkloadSummary.  Add histograms for failing jobs per site and per 
+    step.  Add a routine the determine missing lumis in a request.  Finally, improve
+    the unit test in the TaskArchiver for the WorkloadSummary.  Pull request #4298.
+  - Fix the WorkloadSummary unit tests.  Pull request #4304.
+  - Make sure that the status change time is an INT so that it doesn't cause problems
+    on Oracle.  Pull request #4301.
+  - Allow /store/hidata and /store/himc to be used as base LFNs when assigning
+    requests.  Pull requests #4300 and #4302.
+  - Add support for requests that read data via xrootd.  Pull request #4299.
+  - Allow the use of configs from the ConfigCache for DQM harvesting.  Pull request #4295.
+  - Allow the user to determine the config cache database to use when making request.
+    Add a handful of improvements to the ReqMgr Ops script.  Pull request #4293.
+  - Adds a real LogCollect fwjr to the TaskArchiver test and changes to support it better. 
+    Changes in the summary document.  Pull request #4291.
+  - Remove restriction of autoapprove on custodial subscriptions.  Pull request #4288.
+  - Fix the resource control script which had the pending and running slots swapped.
+    Pull request #4283.
+  - Check for null auth in the Workload Summary cuchapp and all it.  Pull request #4284.
+  - Propagate output dataset information to WMStats.  Pull request #4279. 
+  - Fix the resource control class to correctly insert job types.  Pull request #4277. 
+  - Check that files contains at least one good lumi before adding them to WMBS. Pull
+    request #4285.
+  - Make component sleeping more configurable.  Pull request #4246. 
+  - Add support for veryinf an adler32 checksum in the LCG module.  Pull request #4222. 
+  - Remove the auto increment check in the JobCreator as it caused more problems than it
+    solved.  Improve the ChangeState code to handle update conflicts as a more reasonable
+    work around.  Pull request #4147.
+  - Catch any exceptions that occur when attempting to overwrite a FWJR file.  This solves a 
+    problems where permissions may be set incorrectly on FWJR files.  Pull request #4164.
+
 0.9.29 to 0.9.30:
   - Fix unit tests broke by pull request #4270.  Pull request #4272.
 

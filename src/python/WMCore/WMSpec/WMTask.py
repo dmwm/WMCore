@@ -1183,7 +1183,28 @@ class WMTaskHelper(TreeHelper):
             return buildLumiMask(runs, lumis)
 
         return {}
-    
+
+    def setInputLocationFlag(self, flag = True):
+        """
+        _setInputLocationFlag_
+
+        Store a flag that indicates that the site
+        whitelist/blacklist should be used
+        as the location for the input data.
+        Trust it blindly and don't check PhEDEx.
+        """
+        self.data.input.trustSiteLists = True
+
+    def inputLocationFlag(self):
+        """
+        _getInputLocationFlag
+
+        Get the flag which tells
+        whether to use the site lists
+        as data location or not
+        """
+        return getattr(self.data.input, "trustSiteLists", False)
+
     def deleteChild(self, childName):
         """
         _deleteChild_
@@ -1216,6 +1237,7 @@ class WMTask(ConfigSectionTree):
         self.section_("subscriptions")
         self.notifications.targets = []
         self.input.sandbox = None
+        self.input.trustSiteLists = False
         self.input.section_("splitting")
         self.input.splitting.algorithm = None
         self.constraints.section_("sites")

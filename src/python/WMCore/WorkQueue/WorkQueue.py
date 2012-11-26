@@ -353,6 +353,15 @@ class WorkQueue(WorkQueueBase):
                 dbsBlockDict = dbs.getFileBlockWithParents(blockName)
             else:
                 dbsBlockDict = dbs.getFileBlock(blockName)
+
+            if wmspec.locationDataSourceFlag():
+                blockInfo = dbsBlockDict[blockName]
+                seElements = []
+                for cmsSite in match['Inputs'].values()[0]: #TODO: Allow more than one
+                    ses = self.SiteDB.cmsNametoSE(cmsSite)
+                    seElements.extend(ses)
+                seElements = list(set(seElements))
+                blockInfo['StorageElements'] = seElements
         return blockName, dbsBlockDict[blockName]
 
     def _wmbsPreparation(self, match, wmspec, blockName, dbsBlock):

@@ -254,6 +254,11 @@ class Assign(WebAPI):
                                           int(kwargs.get("maxVSize", 2411724)),
                                           int(kwargs.get("SoftTimeout", 171600)),
                                           int(kwargs.get("GracePeriod", 300)))
+
+        # Check whether we should check location for the data
+        if "useSiteListAsLocation" in kwargs:
+            helper.setLocationDataSourceFlag()
+
         # Set phedex subscription information
         custodialList = kwargs.get("CustodialSites", [])
         nonCustodialList = kwargs.get("NonCustodialSites", [])

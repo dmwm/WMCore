@@ -32,6 +32,7 @@ from WMCore.JobStateMachine.ChangeState import ChangeState
 
 from WMCore.BossAir.BossAirAPI    import BossAirAPI, BossAirException
 
+from WMCore.JobSplitting.LumiBased import isGoodLumi
 
 def wmbsSubscriptionStatus(logger, dbi, conn, transaction):
     """Function to return status of wmbs subscriptions
@@ -667,8 +668,8 @@ class WMBSHelper(WMConnectionBase):
             if type(f) == type("") or not f.has_key("LumiList"):
                 results.append(f)
                 continue
+            runs = set([x['RunNumber'] for x in f['LumiList']])
             if runWhiteList or runBlackList:
-                runs = set([x['RunNumber'] for x in f['LumiList']])
                 # apply blacklist
                 runs = runs.difference(runBlackList)
                 # if whitelist only accept listed runs
@@ -677,5 +678,16 @@ class WMBSHelper(WMConnectionBase):
                 # any runs left are ones we will run on, if none ignore file
                 if not runs:
                     continue
+            #if we have a lumi mask we have to check that at least one lumi in the file is valid
+            hasGoodLumi = False
+            for lumi in f['LumiList']:
+                #consider the runs after applying the run white/black lists
+                if lumi['RunNumber'] in runs and \
+                    isGoodLumi(self.topLevelTask.getLumiMask(), lumi['RunNumber'], lumi['LumiSectionNumber']):
+                        hasGoodLumi = True
+                        break
+            #if no good lumi is found continue
+            if not hasGoodLumi:
+                continue
             results.append(f)
         return results

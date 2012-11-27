@@ -266,6 +266,22 @@ def couchurl(candidate):
 def requestName(candidate):
     return check(r'[a-zA-Z0-9\.\-_]{1,150}$', candidate)
 
+def validateUrl(candidate):
+    """
+    Basic input validation for http(s) urls
+    """
+    #regex taken from django https://github.com/django/django/blob/master/django/core/validators.py#L47
+    #Copyright (c) Django Software Foundation and individual contributors
+    protocol = r"^https?://"  # http:// or https://
+    domain = r'?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}\.?'
+    localhost = r'localhost'
+    ipv4 = r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'
+    ipv6 = r'\[?[a-fA-F0-9]*:[a-fA-F0-9:]+\]?'
+    port = r'(?::\d+)?'  # optional port
+    path = r'(?:/?|[/?]\S+)$'
+    regex_url = r'%s(%s|%s|%s|%s)%s%s' % (protocol, domain, localhost, ipv4, ipv6, port, path)
+    return check(regex_url, candidate)
+
 def check(regexp, candidate):
     assert re.compile(regexp).match(candidate) != None , \
               "'%s' does not match regular expression %s" % (candidate, regexp)

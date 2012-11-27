@@ -260,6 +260,7 @@ class LexiconTest(unittest.TestCase):
     def testBadCouchUrl(self):
         for notok in ['agent86@control.fnal.gov:5984', 'http:/localhost:443', 'http://www.myspace.com']:
             self.assertRaises(AssertionError, couchurl, notok)
+
     def testHNName(self):
         """
         _testHNName_
@@ -660,6 +661,31 @@ class LexiconTest(unittest.TestCase):
         self.assertRaises(AssertionError, globalTag, gTag)
 
         return
+
+    def testUrlValidation(self):
+        """
+        Test the validateUrl function for some use case of DBS 3
+        """
+        #Good http(s) urls
+        for url in ['https://cmsweb.cern.ch/dbs/prod/global/DBSReader',
+                    'https://mydbs.mydomain.de:8443',
+                    'http://localhost',
+                    'http://192.168.1.1',
+                    'https://192.168.1.1:443',
+                    'http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]/',
+                    'http://2001:0db8:85a3:08d3:1319:8a2e:0370:7344/',
+                    'http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]:8443/']:
+            validateUrl(url)
+
+        #Bad http(s) urls
+        for url in ['ftp://dangerous.download.this',
+                    'https:/notvalid.url',
+                    'http://-NiceTry',
+                    'https://NiceTry; DROP Table;--',
+                    'http://123123104122',
+                    'http://.www.google.com',
+                    'http://[2001:0db8:85a3:08d3:1319:8a2z:0370:7344]/',]:
+            self.assertRaises(AssertionError, validateUrl, url)
 
 if __name__ == "__main__":
     unittest.main()

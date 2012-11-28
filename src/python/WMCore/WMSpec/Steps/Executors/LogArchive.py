@@ -80,7 +80,8 @@ class LogArchive(Executor):
             "FrameworkJobReport",
             "Report.pkl",
             "Report.pcl",
-            "^PSet.py$"
+            "^PSet.py$",
+            "^PSet.pkl$"
             ]
 
         #Okay, we need a stageOut Manager

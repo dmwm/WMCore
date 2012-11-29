@@ -476,7 +476,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         # Check the output
         self.assertEqual(workloadSummary['output'].keys(), ['/Electron/MorePenguins-v0/RECO'])
-        self.assertEqual(workloadSummary['output']['/Electron/MorePenguins-v0/RECO']['tasks'],
+        self.assertEqual(sorted(workloadSummary['output']['/Electron/MorePenguins-v0/RECO']['tasks']),
                         ['/TestWorkload/ReReco', '/TestWorkload/ReReco/LogCollect'])
         # Check performance
         # Check histograms

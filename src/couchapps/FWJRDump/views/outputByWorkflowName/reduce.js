@@ -1,6 +1,7 @@
 function (key, values, rereduce) {
-  var output = {'size': 0, 'events': 0, 'count': 0, 'dataset': null, 'tasks': {}};
+  var output = {'size': 0, 'events': 0, 'count': 0, 'dataset': null, 'tasks': []};
 
+  var storedTasks = {}
   for (var someValue in values) {
     output['dataset'] = values[someValue]['dataset'];
     output['size'] += values[someValue]['size'];
@@ -14,12 +15,19 @@ function (key, values, rereduce) {
     }
 
     if (rereduce) {
-      for (var task in values[someValue]['tasks']) {
-          output['tasks'][task] = true
+      for (var i = 0; i < values[someValue]['tasks'].length; i++) {
+        var task = values[someValue]['tasks'][i]
+        if (!(task in storedTasks)){
+          output['tasks'].push(task)
+          storedTasks[task] = true
+        }
       }
     }
     else {
-      output['tasks'][values[someValue]['task']] = true
+      if (!(values[someValue]['task'] in storedTasks)){
+        storedTasks[values[someValue]['task']] = true
+        output['tasks'].push(values[someValue]['task'])
+      }
     }
   }
 

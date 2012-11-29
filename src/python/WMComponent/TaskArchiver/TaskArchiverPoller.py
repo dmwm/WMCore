@@ -563,7 +563,7 @@ class TaskArchiverPoller(BaseWorkerThread):
             workflowData['output'][dataset]['nFiles'] = entry['count']
             workflowData['output'][dataset]['size']   = entry['size']
             workflowData['output'][dataset]['events'] = entry['events']
-            workflowData['output'][dataset]['tasks']  = entry['tasks'].keys()
+            workflowData['output'][dataset]['tasks']  = entry['tasks']
 
 
         # Loop over all failed jobs

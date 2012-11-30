@@ -499,6 +499,8 @@ class TaskArchiverTest(unittest.TestCase):
 
         # Check retryData
         self.assertEqual(workloadSummary['retryData']['/TestWorkload/ReReco'], {'1': 10})
+        logCollectPFN = 'srm://srm-cms.cern.ch:8443/srm/managerv2?SFN=/castor/cern.ch/cms/store/logs/prod/2012/11/WMAgent/Run206446-MinimumBias-Run2012D-v1-Tier1PromptReco-4af7e658-23a4-11e2-96c7-842b2b4671d8/Run206446-MinimumBias-Run2012D-v1-Tier1PromptReco-4af7e658-23a4-11e2-96c7-842b2b4671d8-AlcaSkimLogCollect-1-logs.tar'
+        self.assertEqual(workloadSummary['logArchives'], {'/TestWorkload/ReReco/LogCollect' : [logCollectPFN for _ in range(10)]})
 
         # LogCollect task is made out of identical FWJRs
         # assert that it is identical

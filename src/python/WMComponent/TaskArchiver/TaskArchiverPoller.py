@@ -691,19 +691,12 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         Gets per Workflow/Task what are the log archives, sends it to the summary to be displayed on the page
         """        
-        logArchives = {}
-        for task in spec.listAllTaskPathNames():
-            #TODO : We can only ask for tasks with "LogCollect" in the name, as only they will contain useful information
-            logArchivesTask = self.fwjrdatabase.loadView("FWJRDump", "logArchivePerWorkflowTask",
-                                                          options = {"reduce"  : True,
-                                                                     "group_level" : 1,
-                                                                     "key": task})['rows'] 
-            for row in logArchivesTask:
-                workflowTask = row['key']
-                logs = row['value']
-                logArchives[task] = logs
+        logArchivesTaskStr = self.fwjrdatabase.loadList("FWJRDump", "logCollectsByTask",
+                                                        "logArchivePerWorkflowTask", options = {"reduce" : False},
+                                                        keys = spec.listAllTaskPathNames())
+        logArchivesTask = json.loads(logArchivesTaskStr)
                                                                         
-        return logArchives
+        return logArchivesTask
 
     def handleCouchPerformance(self, workflowName):
         """

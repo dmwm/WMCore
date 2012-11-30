@@ -1,3 +1,8 @@
+0.9.31 to 0.9.32:
+  - Fix Reduce function for outputByWorkflowName.  Pull request #4310.
+  - Include the new PSet pickle in the logArchs.  Pull request 4307.
+  - Added basic http(s) url validation for DBS3.  Pull request #4306.
+
 0.9.30 to 0.9.31:
   - Improve the WorkloadSummary.  Add histograms for failing jobs per site and per 
     step.  Add a routine the determine missing lumis in a request.  Finally, improve

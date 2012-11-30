@@ -1,4 +1,9 @@
 function (doc) {
+  if (doc['type'] == 'fwjr') {
+    if (doc['fwjr'].task == null) {
+      return;
+    }
+
     task = doc.fwjr.task.split('/');
     taskType = task.slice(-1)[0];
     isLogCollect = taskType.indexOf('LogCollect');
@@ -9,4 +14,5 @@ function (doc) {
             emit(doc.fwjr.task, logArchivePFN);
         }
     }
+  }
 }

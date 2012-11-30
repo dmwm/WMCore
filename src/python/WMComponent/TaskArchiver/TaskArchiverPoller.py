@@ -534,7 +534,11 @@ class TaskArchiverPoller(BaseWorkerThread):
                                                        "startkey": [workflowName],
                                                        "endkey": [workflowName, {}],
                                                        "group": True})['rows']
-        
+        outputListStr = self.fwjrdatabase.loadList("FWJRDump", "workflowOutputTaskMapping",
+                                                "outputByWorkflowName", options = {"startkey": [workflowName],
+                                                                                   "endkey": [workflowName, {}],
+                                                                                   "reduce": False})
+        outputList = json.loads(outputListStr)
         perf = self.handleCouchPerformance(workflowName = workflowName)
         workflowData['performance'] = {}
         for key in perf:
@@ -563,7 +567,7 @@ class TaskArchiverPoller(BaseWorkerThread):
             workflowData['output'][dataset]['nFiles'] = entry['count']
             workflowData['output'][dataset]['size']   = entry['size']
             workflowData['output'][dataset]['events'] = entry['events']
-            workflowData['output'][dataset]['tasks']  = entry['tasks']
+            workflowData['output'][dataset]['tasks']  = outputList.get(dataset, {}).keys()
 
 
         # Loop over all failed jobs

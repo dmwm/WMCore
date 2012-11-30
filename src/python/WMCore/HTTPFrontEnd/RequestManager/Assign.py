@@ -172,7 +172,8 @@ class Assign(WebAPI):
                                  badRequests=badRequestNames)
 
     @cherrypy.expose
-    @cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles)
+    #@cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles) security issue fix
+    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
     def handleAssignmentPage(self, **kwargs):
         """ handler for the main page """
         #Accept Json encoded strings

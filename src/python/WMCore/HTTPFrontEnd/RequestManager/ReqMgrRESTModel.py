@@ -432,6 +432,8 @@ class ReqMgrRESTModel(RESTModel):
         return index
 
 
+    # had now permission control before, security issue fix
+    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
     def putRequest(self, requestName=None, status=None, priority=None):
         request = None
         if requestName:

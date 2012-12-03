@@ -62,7 +62,7 @@ class ReqMgrClient(object):
                                             cert_file = certFile)
         
         
-    def _httpRequest(self, verb, uri, data = None, headers = None):
+    def _httpRequest(self, verb, uri, data=None, headers=None):
         logging.info("Request: %s %s ..." % (verb, uri))
         if headers:
             self.conn.request(verb, uri, data, headers)
@@ -82,7 +82,7 @@ class ReqMgrClient(object):
         """
         logging.info("Injecting a request for arguments (REST API):\n%s ..." % requestArgs["createRequest"])
         jsonArgs = json.dumps(requestArgs["createRequest"])
-        status, data = self._httpRequest("PUT", "/reqmgr/reqMgr/request", data = jsonArgs)        
+        status, data = self._httpRequest("PUT", "/reqmgr/reqMgr/request", data=jsonArgs)        
         if status > 216:
             logging.error("Error occurred, exit.")
             print data
@@ -104,7 +104,7 @@ class ReqMgrClient(object):
         logging.info("Injecting a request for arguments (webpage):\n%s ..." % requestArgs["createRequest"])
         # the response is now be an HTML webpage
         status, data = self._httpRequest("POST", "/reqmgr/create/makeSchema",
-                                         data = encodedParams, headers = self.textHeaders)        
+                                         data=encodedParams, headers=self.textHeaders)        
         if status > 216 and status != 303:
             logging.error("Error occurred, exit.")
             print data
@@ -145,7 +145,7 @@ class ReqMgrClient(object):
         encodedParams = urllib.urlencode(params)
         logging.info("Approving request '%s' ..." % requestName)
         status, data = self._httpRequest("PUT", "/reqmgr/reqMgr/request",
-                                         data = encodedParams, headers = self.textHeaders)
+                                         data=encodedParams, headers=self.textHeaders)
         if status != 200:
             logging.error("Approve did not succeed.")
             print data
@@ -177,7 +177,7 @@ class ReqMgrClient(object):
             encodedParams = urllib.urlencode(assignArgs, True)
             logging.info("Assigning request '%s' ..." % requestName)
             status, data = self._httpRequest("POST", "/reqmgr/assign/handleAssignmentPage",
-                                             data = encodedParams, headers = self.textHeaders)
+                                             data=encodedParams, headers=self.textHeaders)
             if status != 200:
                 logging.error("Assign did not succeed.")
                 print data
@@ -225,6 +225,7 @@ class ReqMgrClient(object):
                 request = json.loads(data)
                 for k, v in sorted(request.items()):
                     print "\t%s: %s" % (k, v)
+                return request
         else:
             logging.info("Querying all requests ...")
             status, data = self._httpRequest("GET", "/reqmgr/reqMgr/requestnames")
@@ -265,6 +266,24 @@ class ReqMgrClient(object):
         logging.info("Clone request succeeded: original request name: '%s' "
                      "new request name: '%s'" % (requestName, newRequestName))
         return newRequestName
+    
+    
+    def changePriority(self, requestName, priority):
+        """
+        Test changing request priority.
+        It's not exposed to the command line usage, it's used only in allTests()
+        
+        """
+        logging.info("Changing request priority: %s for %s ..." % (priority, requestName))
+        # "requestName": requestName can probably be specified here as well
+        params = {"priority": "%s" % priority}
+        encodedParams = urllib.urlencode(params)
+        status, data = self._httpRequest("PUT", "/reqmgr/reqMgr/request/%s" % requestName,
+                                         data=encodedParams, headers=self.textHeaders)        
+        if status > 200:
+            logging.error("Error occurred, exit.")
+            print data
+            sys.exit(1)
         
     
     def allTests(self, config):
@@ -273,7 +292,7 @@ class ReqMgrClient(object):
         Checks that the ReqMgr instance has the same state before 
         and after this script.
                 
-        """  
+        """
         self.userGroup(None) # argument has no meaning
         self.team(None) # argument has no meaning
         currentRequests = self.queryRequests(config)
@@ -281,11 +300,22 @@ class ReqMgrClient(object):
         config.assignRequests = True # createRequest will subsequently also assignRequests
         requestNames.append(self.createRequest(config, restApi = True))
         requestNames.append(self.createRequest(config, restApi = False))
-        config.requestNames = requestNames
+        config.requestNames = requestNames        
         self.queryRequests(config)
         config.cloneRequest = requestNames[0] # clone the first request in the list
         requestNames.append(self.cloneRequest(config))
         config.requestNames = requestNames
+        # test priority changing (final priority will be sum of the current
+        # and new, so have to first find out the current)
+        # config.requestNames must be set
+        request = self.queryRequests(config)
+        currPriority = request["RequestPriority"]
+        newPriority = 10
+        totalPriority = currPriority + newPriority
+        self.changePriority(requestNames[0], newPriority)
+        request = self.queryRequests(config)
+        assert request["RequestPriority"] == totalPriority, "New RequestPriority does not match!"
+        
         self.deleteRequests(config)
         logging.info("%s requests in the system before this test." % len(currentRequests))
         config.requestNames = None # this means queryRequests will check all requests

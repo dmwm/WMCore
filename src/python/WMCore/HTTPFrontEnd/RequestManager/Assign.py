@@ -17,7 +17,6 @@ import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeSt
 import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
 import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
 from WMCore.HTTPFrontEnd.RequestManager.ReqMgrAuth import ReqMgrAuth
-import WMCore.RequestManager.OpsClipboard.Inject as OpsClipboard
 import WMCore.Lexicon
 from WMCore.Wrappers import JsonWrapper
 
@@ -36,10 +35,7 @@ class Assign(WebAPI):
         # Take a guess
         self.templatedir = config.templates
         self.couchUrl = config.couchUrl
-        self.clipboardDB = config.clipboardDB
         cleanUrl = Utilities.removePasswordFromUrl(self.couchUrl)
-        self.clipboardUrl = "%s/%s/_design/OpsClipboard/index.html" % (cleanUrl, self.clipboardDB)
-        self.opshold = config.opshold
         self.configDBName = config.configDBName
         self.wmstatWriteURL = "%s/%s" % (self.couchUrl.rstrip('/'), config.wmstatDBName)
         if not noSiteDB:
@@ -213,18 +209,6 @@ class Assign(WebAPI):
                 if priority != '':
                     Utilities.changePriority(requestName, priority, self.wmstatWriteURL)
         participle=kwargs['action']+'ed'
-        if self.opshold and kwargs['action'] == 'Assign':
-            participle='put into "ops-hold" state (see <a href="%s">OpsClipboard</a>)' % self.clipboardUrl
-            # this, previously used, call made all requests injected into OpsClipboard to
-            # have campaign_id null since the call doesn't propagate request's
-            # CampaignName at all, AcquisitionEra remains default null and probably
-            # a bunch of other things is wrong too
-            #requests = [GetRequest.getRequestByName(requestName) for requestName in requestNames]
-            requests = [Utilities.requestDetails(requestName) for requestName in requestNames]
-            OpsClipboard.inject(self.couchUrl, self.clipboardDB, *requests)
-            for request in requestNames:
-                ChangeState.changeRequestStatus(requestName, 'ops-hold', wmstatUrl = self.wmstatWriteURL)
-
         return self.templatepage("Acknowledge", participle=participle, requests=requestNames)
 
 

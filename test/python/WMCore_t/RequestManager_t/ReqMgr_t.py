@@ -65,11 +65,9 @@ class RequestManagerConfig(DefaultConfig):
     def setupCouchDatabase(self, dbName):
         self.UnitTests.views.active.rest.configDBName   = dbName
         self.UnitTests.views.active.rest.workloadDBName = dbName
-        self.UnitTests.views.active.rest.clipboardDB    = dbName
         self.UnitTests.views.active.rest.wmstatDBName   = "%s_wmstats" % dbName
 
     def _setupAssign(self):
-        self.UnitTests.views.active.rest.opshold    = False
         self.UnitTests.views.active.rest.sitedb  = "https://cmsweb.cern.ch/sitedb/json/index/"
         
         
@@ -475,10 +473,6 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.assertTrue(raises)
 
         self.jsonSender.put(urllib.quote('assignment/%s/%s' % (teamName, requestName)))
-        self.changeStatusAndCheck(requestName = requestName,
-                                  statusName  = 'ops-hold')
-        self.changeStatusAndCheck(requestName = requestName,
-                                  statusName  = 'assigned')
         self.changeStatusAndCheck(requestName = requestName,
                                   statusName  = 'negotiating')
         self.changeStatusAndCheck(requestName = requestName,

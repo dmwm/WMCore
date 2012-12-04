@@ -140,8 +140,7 @@ class ReqMgrTester(object):
                          # create an assignment now
                          # need quote because of space in the team name
                          # (previous name - White Sox)
-                         urllib.quote("assignment/%s/%s" % (TEAM_NAME, reqName)),
-                         "request/%s?status=%s" % (reqName, "ops-hold")]                 
+                         urllib.quote("assignment/%s/%s" % (TEAM_NAME, reqName))]
         for query in statesQueries:
             changeState(reqName, query)
             

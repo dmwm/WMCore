@@ -1,6 +1,17 @@
+0.9.32 to 0.9.33:
+  - Publish job state transition information to WMStats.  Pull request #4311.
+  - Fix timeout kills in the LSF plugin.  Pull request #4322.
+  - Remve the unused RemoteMsg component and OpsClipboard.  Pull request #4316
+    and #4319.
+  - Make permissions stricter in the ReqMgr when changing request parameters.
+    Pull request #4313.
+  - Change LogCollect reporting from a reduce to list to avoid reduce overflows.  Pull
+    request #4312.
+  - Do the SE name => Site name conversion also for failed jobs.  Pull request #4308.
+
 0.9.31 to 0.9.32:
   - Fix Reduce function for outputByWorkflowName.  Pull request #4310.
-  - Include the new PSet pickle in the logArchs.  Pull request 4307.
+  - Include the new PSet pickle in the logArchs.  Pull request #4307.
   - Added basic http(s) url validation for DBS3.  Pull request #4306.
 
 0.9.30 to 0.9.31:

@@ -490,6 +490,7 @@ class AccountantWorker(WMConnectionBase):
             for outputFileset in outputFilesets:
                 self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputFileset})
 
+        self._mapLocation(wmbsJob['fwjr'])
         self.listOfJobsToFail.append(wmbsJob)
 
         return

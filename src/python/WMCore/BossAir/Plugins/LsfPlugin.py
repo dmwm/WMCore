@@ -46,7 +46,8 @@ class LsfPlugin(BasePlugin):
                      'DONE': 'Complete',
                      'EXIT': 'Error',
                      'UNKWN': 'Error',
-                     'ZOMBI': 'Error'}
+                     'ZOMBI': 'Error',
+                     'Timeout' : 'Error'}
 
         return stateDict
 

@@ -35,5 +35,25 @@ class WMStatsReader():
                 workflowList.append(item["id"])
             return workflowList
 
+    def workflowStatus(self, stale = "update_after"):
+        """
+        _workflowStatus_
+
+        Return a dictionary with all available workflows,
+        grouped by status and with the timestamp of the status
+        """
+        options = {}
+        if stale:
+            options = {"stale" : stale}
+        result = self.couchDB.loadView("WMStats", "requestByStatus", options)
+
+        stateDict = {}
+        for item in result['rows']:
+            if item["key"] not in stateDict:
+                stateDict[item["key"]] = {}
+            stateDict[item["key"]][item["id"]] = item["value"]
+
+        return stateDict
+
     def getDBInstance(self):
         return self.couchDB

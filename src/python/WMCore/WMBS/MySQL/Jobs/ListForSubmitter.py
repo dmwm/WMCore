@@ -15,6 +15,7 @@ class ListForSubmitter(DBFormatter):
                     wmbs_job.cache_dir AS cache_dir,
                     wmbs_sub_types.name AS type, wmbs_job.retry_count AS retry_count,
                     wmbs_subscription.workflow as workflow,
+                    wmbs_subscription.last_update as timestamp,
                     wmbs_workflow.name as request_name
                     FROM wmbs_job
                INNER JOIN wmbs_jobgroup ON

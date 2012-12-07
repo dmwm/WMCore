@@ -117,8 +117,14 @@ class CleanCouchPoller(BaseWorkerThread):
             couchDB = self.wmstatsCouchDB.getDBInstance()
             view = "jobsByStatusWorkflow"
             
-        options = {"startkey": [workflowName], "endkey": [workflowName, {}], "stale": "ok", "reduce": False}
-        jobs = couchDB.loadView(db, view, options = options)['rows']
+        options = {"startkey": [workflowName], "endkey": [workflowName, {}], "reduce": False}
+        try:
+            jobs = couchDB.loadView(db, view, options = options)['rows']
+        except Exception, ex:
+            errorMsg = "Error on loading jobs for %s" % workflowName
+            logging.warning("%s/n%s" % (str(ex) % errorMsg))
+            return {'status': 'error', 'message': errorMsg}
+        
         for j in jobs:
             doc = {}
             doc["_id"]  = j['value']['id']
@@ -158,12 +164,6 @@ class CleanCouchPoller(BaseWorkerThread):
         # if one of the procedure fails return False
         if (jobReport["status"] == "error" or fwjrReport["status"] == "error" or 
             wmstatsReport["status"] == "error"):
-            return False
-        
-        # if the data doesn't exist on all the db return False
-        if (jobReport["status"] == "warning" and 
-            fwjrReport["status"] == "warning" and 
-            wmstatsReport["status"] == "warning"):
             return False
         # other wise return True.
         return True

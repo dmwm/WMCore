@@ -138,18 +138,23 @@ class WMAgentDBData():
         else:
             self.batchJobAction = bossAirDAOFactory(classname = "JobStatusByWorkflowAndSite")
         self.jobSlotAction = wmbsDAOFactory(classname = "Locations.GetJobSlotsByCMSName")
-        self.componentStatusAction = wmAgentDAOFactory(classname = "CheckComponentStatus")
+        self.componentStatusAction = wmAgentDAOFactory(classname = "GetAllHeartbeatInfo")
 
     def getHeartBeatWarning(self):
 
-        results = self.componentStatusAction.execute(detail = True)
+        results = self.componentStatusAction.execute()
+        currentTime = time.time()
+        agentStatus = "ok";
         agentInfo = {}
         agentInfo['down_components'] = []
-        if len(results) == 0:
-            agentInfo['status'] = 'ok'
-        else:
-            agentInfo['status'] = 'down'
-            agentInfo['down_components'] = results
+        agentInfo['down_component_detail'] = []
+        agentInfo['status'] = 'ok'
+        for componentInfo in results:
+            hearbeatFlag = (currentTime - componentInfo["last_updated"]) > componentInfo["update_threshold"]
+            if (componentInfo["last_error"] != None) or hearbeatFlag:
+                agentInfo['down_components'].append(componentInfo['name'])
+                agentInfo['status'] = 'down'
+                agentInfo['down_component_detail'].append(componentInfo)
         return agentInfo
 
     def getBatchJobInfo(self):

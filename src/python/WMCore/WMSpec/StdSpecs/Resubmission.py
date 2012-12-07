@@ -26,7 +26,8 @@ class ResubmissionWorkloadFactory(StdBase):
         originalRequest = GetRequest.getRequestByName(requestName)
         helper = loadWorkload(originalRequest)
         helper.truncate(arguments["RequestName"], arguments["InitialTaskPath"],
-                        arguments["ACDCServer"], arguments["ACDCDatabase"])
+                        arguments["ACDCServer"], arguments["ACDCDatabase"],
+                        arguments.get("CollectionName"))
         helper.ignoreOutputModules(arguments.get("IgnoredOutputModules", []))
         return helper
 

@@ -63,7 +63,6 @@ dependencies = {
                                     'src/html/RequestManager',
                                     'src/couchapps/ReqMgr+',
                                     'src/couchapps/ConfigCache+',
-                                    'src/couchapps/OpsClipboard+',
                                     'src/couchapps/WMStats+'],
                         },
                 'workqueue':{

@@ -5,7 +5,7 @@ function(doc) {
     }
 
     var specName = doc['fwjr'].task.split('/')[1]
-
+    var task = doc['fwjr'].task
     var cmsRunFound = false;
     for (var stepName in doc['fwjr']['steps']) {
       if (doc['fwjr']['steps'][stepName].status != 0) {
@@ -25,7 +25,8 @@ function(doc) {
                               '/' + outputFile['dataset']['dataTier'];
             emit([specName, datasetPath], {'size': outputFile['size'],
                                            'events': outputFile['events'],
-                                           'dataset': datasetPath});
+                                           'dataset': datasetPath,
+                                           'task': task});
           }
         }
       }

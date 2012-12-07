@@ -1,5 +1,7 @@
-function(doc) {
-  if (doc.type){
-     emit(doc._id, doc.type);
-  }
+function(doc)
+{
+	if (doc.type)
+	{
+		emit(doc._id, doc.type);
+	}
 }

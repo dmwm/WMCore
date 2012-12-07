@@ -20,6 +20,9 @@ def getCommonTestArgs():
     args['Requestor'] = "mmascher"
     args["CouchURL"] = os.environ.get("COUCHURL", None)
     args["CouchDBName"] = "test_wmagent_configcache"
+    # or alternatively CouchURL part can be replaced by ConfigCacheUrl,
+    # then ConfigCacheUrl + CouchDBName + ConfigCacheID
+    args["ConfigCacheUrl"] = None    
     args["ScramArch"] =  "slc5_ia32_gcc434"
     args['CMSSWVersion'] = "CMSSW_4_2_0"
     args["ProcessingVersion"] = 2
@@ -143,6 +146,7 @@ class AnalysisWorkloadFactory(StdBase):
         outputMods = self.setupProcessingTask(analysisTask, "Analysis", inputDataset=self.inputDataset,
                                               inputStep=self.inputStep,
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
+                                              configCacheUrl = self.configCacheUrl,
                                               configDoc = self.configCacheID, splitAlgo = self.analysisJobSplitAlgo,
                                               splitArgs = self.analysisJobSplitArgs, \
                                               userDN = self.owner_dn, asyncDest = self.asyncDest,
@@ -173,9 +177,11 @@ class AnalysisWorkloadFactory(StdBase):
         # Workflow creation
         self.couchURL = arguments.get("CouchURL")
         self.couchDBName = arguments.get("CouchDBName", "wmagent_configcache")
-        self.minMergeSize = 1
-
         self.configCacheID = arguments.get("AnalysisConfigCacheDoc", None)
+        self.configCacheUrl = arguments.get("ConfigCacheUrl", None)
+        
+        self.minMergeSize = 1
+        
         self.frameworkVersion = arguments["CMSSWVersion"]
         self.acquisitionEra = arguments.get("PublishDataName", str(int(time.time())))
         self.globalTag = arguments.get("GlobalTag", None)

@@ -78,7 +78,7 @@ class StageOut(Executor):
 
         # switch between old stageOut behavior and new, fancy stage out behavior
         useNewStageOutCode = False
-        if self.step.getNewStageoutOverride() or \
+        if getattr(self.step, 'newStageout', False) or \
             (overrides.has_key('newStageOut') and overrides.get('newStageOut')):
             useNewStageOutCode = True
 
@@ -200,7 +200,8 @@ class StageOut(Executor):
                 fileForTransfer = {'LFN': lfn,
                                    'PFN': getattr(file, 'pfn'),
                                    'SEName' : None,
-                                   'StageOutCommand': None}
+                                   'StageOutCommand': None,
+                                   'Checksums' : getattr(file, 'checksums', None)}
                 signal.signal(signal.SIGALRM, alarmHandler)
                 signal.alarm(waitTime)
                 try:

@@ -300,7 +300,8 @@ class ReqMgrBrowser(WebAPI):
         return "%i%%" % pct
 
     @cherrypy.expose
-    @cherrypy.tools.secmodv2()
+    #@cherrypy.tools.secmodv2() security issue fix
+    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())    
     def doAdmin(self, **kwargs):
         """  format of kwargs is {'requestname:status' : 'approved', 'requestname:priority' : '2'} """
         message = ""
@@ -323,7 +324,8 @@ class ReqMgrBrowser(WebAPI):
 
 
     @cherrypy.expose
-    @cherrypy.tools.secmodv2()
+    #@cherrypy.tools.secmodv2() security issue fix
+    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
     # FIXME needs to check if authorized, or original user
     def modifyWorkload(self, requestName, workload,
                        CMSSWVersion=None, GlobalTag=None,

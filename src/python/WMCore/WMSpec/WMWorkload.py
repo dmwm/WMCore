@@ -1051,11 +1051,11 @@ class WMWorkloadHelper(PersistencyHelper):
         See WMWorkload.WMWorkloadHelper.setSiteWildcardsLists for details on the wildcardDict
         """
 
-        if type(custodialSites) != type([]):
+        if custodialSites and type(custodialSites) != type([]):
             custodialSites = [custodialSites]
-        if type(nonCustodialSites) != type([]):
+        if nonCustodialSites and type(nonCustodialSites) != type([]):
             nonCustodialSites = [nonCustodialSites]
-        if type(autoApproveSites) != type([]):
+        if autoApproveSites and type(autoApproveSites) != type([]):
             autoApproveSites = [autoApproveSites]
 
         newCustodialList = self.removeWildcardsFromList(siteList = custodialSites, wildcardDict = wildcardDict)
@@ -1093,11 +1093,11 @@ class WMWorkloadHelper(PersistencyHelper):
         in the workload that match the given primaryDataset (if any)
         """
 
-        if type(custodialSites) != type([]):
+        if custodialSites and type(custodialSites) != type([]):
             custodialSites = [custodialSites]
-        if type(nonCustodialSites) != type([]):
+        if nonCustodialSites and type(nonCustodialSites) != type([]):
             nonCustodialSites = [nonCustodialSites]
-        if type(autoApproveSites) != type([]):
+        if autoApproveSites and type(autoApproveSites) != type([]):
             autoApproveSites = [autoApproveSites]
 
         if initialTask:
@@ -1153,6 +1153,37 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return subInfo
 
+    def getWorkloadOverrides(self):
+        """
+        _getWorkloadOverrides_
+
+        Get the overrides config section
+        of this workload, creates it if it doesn't exist
+        """
+        return self.data.section_('overrides')
+
+    def getPhEDExInjectionOverride(self):
+        """
+        _getPhEDExInjectionOverride_
+
+        Get the site to where the files from
+        this workload should be registered to (if any)
+        """
+        if hasattr(self.data, 'overrides'):
+            return getattr(self.data.overrides, 'injectionSite', None)
+        return None
+
+    def setPhEDExInjectionOverride(self, site):
+        """
+        _setPhEDExInjectionOverride_
+
+        Set a site where the files from this workload
+        should be registered to in PhEDEx
+        """
+        overrideSection = self.data.section_('overrides')
+        overrideSection.injectionSite = site
+        return
+
     def getUnmergedLFNBase(self):
         """
         _getUnmergedLFNBase_
@@ -1188,22 +1219,27 @@ class WMWorkloadHelper(PersistencyHelper):
         pass
 
     def truncate(self, newWorkloadName, initialTaskPath, serverUrl,
-                 databaseName):
+                 databaseName, collectionName = None):
         """
         _truncate_
 
         Truncate a workflow so that it can be used for resubmission.  This will
         rename the workflow and set the task in the intitialTaskPath parameter
         to be the top level task.  This modifies the workflow in place.
+        The input collection name can be specified otherwise it will default to
+        the old workload name.
         """
+        if not collectionName:
+            collectionName = self.name()
+
         allTaskPaths = self.listAllTaskPathNames()
         newTopLevelTask = self.getTaskByPath(initialTaskPath)
-        newTopLevelTask.addInputACDC(serverUrl, databaseName, self.name(),
+        newTopLevelTask.addInputACDC(serverUrl, databaseName, collectionName,
                                      initialTaskPath)
         newTopLevelTask.setInputStep(None)
         workloadOwner = self.getOwner()
         self.setInitialJobCount(self.getInitialJobCount() + 10000000)
-        newTopLevelTask.setSplittingParameters(collectionName = self.name(),
+        newTopLevelTask.setSplittingParameters(collectionName = collectionName,
                                                filesetName = initialTaskPath,
                                                couchURL = serverUrl,
                                                couchDB = databaseName,
@@ -1415,9 +1451,29 @@ class WMWorkloadHelper(PersistencyHelper):
             result.extend(t.getConfigCacheIDs())
         return result
 
+    def setLocationDataSourceFlag(self):
+        """
+        _setLocationDataSourceFlag_
 
+        Set the flag in the top level tasks
+        indicating that site lists should be
+        used as location data
+        """
+        for task in self.getTopLevelTask():
+            task.setInputLocationFlag()
+        return
 
+    def locationDataSourceFlag(self):
+        """
+        _locationDataSourceFlag_
 
+        Get the flag in the top level tasks
+        that indicates whether the site lists
+        should be trusted as the location for data
+        """
+        for task in self.getTopLevelTask():
+            return task.inputLocationFlag()
+        return False
 
 class WMWorkload(ConfigSection):
     """
@@ -1460,6 +1516,9 @@ class WMWorkload(ConfigSection):
         self.properties.unmergedLFNBase = "/store/unmerged"
         self.properties.mergedLFNBase = "/store/data"
         self.properties.dashboardActivity = None
+
+        # Overrides for this workload
+        self.section_("overrides")
 
         #  //
         # // tasks

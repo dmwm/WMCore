@@ -30,6 +30,9 @@ def getTestArguments():
     args["PrimaryDataset"] = "MonteCarloData"
     args["RequestNumEvents"] = 10
     args["ConfigCacheID"] = "f90fc973b731a37c531f6e60e6c57955"
+    # or alternatively CouchURL part can be replaced by ConfigCacheUrl,
+    # then ConfigCacheUrl + CouchDBName + ConfigCacheID
+    args["ConfigCacheUrl"] = None    
 
     args["FirstEvent"] = 1
     args["FirstLumi"] = 1
@@ -65,6 +68,7 @@ class PrivateMCWorkloadFactory(AnalysisWorkloadFactory):
 
         outputMods = self.setupProcessingTask(prodTask, "PrivateMC", None,
                                               couchURL=self.couchURL, couchDBName=self.couchDBName,
+                                              configCacheUrl = self.configCacheUrl,
                                               configDoc=self.configCacheID, splitAlgo=self.prodJobSplitAlgo,
                                               splitArgs=self.prodJobSplitArgs,
                                               seeding=self.seeding, totalEvents=self.totalEvents,
@@ -92,6 +96,7 @@ class PrivateMCWorkloadFactory(AnalysisWorkloadFactory):
 
         # Pileup configuration for the first generation task
         self.pileupConfig = arguments.get("PileupConfig", None)
+        self.configCacheUrl = arguments.get("ConfigCacheUrl", None)
 
         # Splitting arguments
         self.totalEvents = int(arguments.get("TotalUnits", 1))

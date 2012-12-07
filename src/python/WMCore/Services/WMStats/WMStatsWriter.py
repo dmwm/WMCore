@@ -3,6 +3,7 @@ import logging
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 from WMCore.Wrappers.JsonWrapper import JSONEncoder
+from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 
 def monitorDocFromRequestSchema(schema):
     """
@@ -28,12 +29,13 @@ def monitorDocFromRequestSchema(schema):
     doc["async_dest"] = schema.get('asyncDest', "")
     doc["dbs_url"] = schema.get("DbsUrl", "")
     doc["publish_dbs_url"] = schema.get("PublishDbsUrl", "")
+    doc["outputdatasets"] = schema.get('OutputDatasets', "")
     # team name is not yet available need to be updated in assign status
     #doc['team'] = schema['team']
     return doc
 
 
-class WMStatsWriter():
+class WMStatsWriter(WMStatsReader):
 
     def __init__(self, couchURL, dbName = None):
         # set the connection for local couchDB call
@@ -142,5 +144,9 @@ class WMStatsWriter():
             return "nothing"
 
     def replicate(self, target):
-        self.couchServer.replicate(self.dbName, target, continuous = True,
+        return self.couchServer.replicate(self.dbName, target, continuous = True,
                                    filter = 'WMStats/repfilter', useReplicator = True)
+    
+    def getDBInstance(self):
+        return self.couchDB
+

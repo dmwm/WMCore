@@ -28,6 +28,30 @@ lfnParts = {
     'physics_group' : '([a-zA-Z\-_]+)',
 }
 
+def DBSUser(candidate):
+    """
+    create_by and last_modified_by in DBS are in several formats. The major ones are: 
+    1. DN that is mostly used in DBS2: example /DC=org/DC=doegrids/OU=People/CN=Lothar A.T. Bauerdick 301799; 
+    2. CERN HN account name that used in DBS3/CMSWEB if the HN is assocated with DN: example giffels ;
+    3. username with host name: example cmsprod@vocms39.cern.ch;
+    """
+    if candidate =='' or not candidate :
+        return candidate
+    r1 = r'^/[a-zA-Z][a-zA-Z0-9/\=\s()]*\=[a-zA-Z0-9/\.\-_/#:\s]*$'
+    r2 = r'^[a-zA-Z0-9/][a-zA-Z0-9/\.\-_]*$'
+    r3 = r'^[a-zA-Z0-9/][a-zA-Z0-9/\.\-_]*@[a-zA-Z0-9/][a-zA-Z0-9/\.\-_]*$'
+
+    try:
+        return check(r1, candidate)
+    except AssertionError:
+        pass
+
+    try:
+        return check(r2, candidate)
+    except AssertionError:
+        return check(r3, candidate)
+
+
 def searchblock(candidate):
     """
     A block name with a * wildcard one or more times in it.
@@ -40,7 +64,7 @@ def searchdataset(candidate):
     """
     A dataset name with a * wildcard one or more times in it. Only the first '/' is mandatory to use.
     """
-    regexp = r"^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,100})){0,1}(/(\*|[A-Z\-\*]{1,50})){0,1}$"
+    regexp = r"^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*\-]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,100})){0,1}(/(\*|[A-Z\-\*]{1,50})){0,1}$"
     return check(regexp, candidate)
 
 def searchstr(candidate):
@@ -241,6 +265,22 @@ def couchurl(candidate):
 
 def requestName(candidate):
     return check(r'[a-zA-Z0-9\.\-_]{1,150}$', candidate)
+
+def validateUrl(candidate):
+    """
+    Basic input validation for http(s) urls
+    """
+    #regex taken from django https://github.com/django/django/blob/master/django/core/validators.py#L47
+    #Copyright (c) Django Software Foundation and individual contributors
+    protocol = r"^https?://"  # http:// or https://
+    domain = r'?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}\.?'
+    localhost = r'localhost'
+    ipv4 = r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'
+    ipv6 = r'\[?[a-fA-F0-9]*:[a-fA-F0-9:]+\]?'
+    port = r'(?::\d+)?'  # optional port
+    path = r'(?:/?|[/?]\S+)$'
+    regex_url = r'%s(%s|%s|%s|%s)%s%s' % (protocol, domain, localhost, ipv4, ipv6, port, path)
+    return check(regex_url, candidate)
 
 def check(regexp, candidate):
     assert re.compile(regexp).match(candidate) != None , \

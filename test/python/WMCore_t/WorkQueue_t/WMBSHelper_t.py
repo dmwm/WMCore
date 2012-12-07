@@ -111,7 +111,7 @@ class WMBSHelperTest(unittest.TestCase):
         resourceControl.insertSite(siteName = 'site1', seName = 'goodse.cern.ch',
                                    ceName = 'site1', plugin = "TestPlugin")
         resourceControl.insertThreshold(siteName = 'site1', taskType = 'Processing', \
-                                        maxSlots = 10000)
+                                        maxSlots = 10000, pendingSlots = 10000)
 
         userDN     = 'someDN'
         userAction = daoFactory(classname = "Users.New")
@@ -837,6 +837,22 @@ class WMBSHelperTest(unittest.TestCase):
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
         files = wmbs.validFiles(self.dbs.getFileBlock(block)[block]['Files'])
         self.assertEqual(len(files), GlobalParams.numOfFilesPerBlock())
+
+    def testLumiMaskRestrictionsOK(self):
+        block = self.dataset + "#1"
+        self.wmspec.getTopLevelTask()[0].data.input.splitting.runs = ['1']
+        self.wmspec.getTopLevelTask()[0].data.input.splitting.lumis = ['1,1']
+        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
+        files = wmbs.validFiles(self.dbs.getFileBlock(block)[block]['Files'])
+        self.assertEqual(len(files), GlobalParams.numOfFilesPerBlock())
+
+    def testLumiMaskRestrictionsKO(self):
+        block = self.dataset + "#1"
+        self.wmspec.getTopLevelTask()[0].data.input.splitting.runs = ['123454321']
+        self.wmspec.getTopLevelTask()[0].data.input.splitting.lumis = ['123,123']
+        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
+        files = wmbs.validFiles(self.dbs.getFileBlock(block)[block]['Files'])
+        self.assertEqual(len(files), 0)
 
     def testDuplicateFileInsert(self):
         # using default wmspec

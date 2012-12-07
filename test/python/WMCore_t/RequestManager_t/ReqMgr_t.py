@@ -65,11 +65,9 @@ class RequestManagerConfig(DefaultConfig):
     def setupCouchDatabase(self, dbName):
         self.UnitTests.views.active.rest.configDBName   = dbName
         self.UnitTests.views.active.rest.workloadDBName = dbName
-        self.UnitTests.views.active.rest.clipboardDB    = dbName
         self.UnitTests.views.active.rest.wmstatDBName   = "%s_wmstats" % dbName
 
     def _setupAssign(self):
-        self.UnitTests.views.active.rest.opshold    = False
         self.UnitTests.views.active.rest.sitedb  = "https://cmsweb.cern.ch/sitedb/json/index/"
         
         
@@ -476,10 +474,6 @@ class ReqMgrTest(RESTBaseUnitTest):
 
         self.jsonSender.put(urllib.quote('assignment/%s/%s' % (teamName, requestName)))
         self.changeStatusAndCheck(requestName = requestName,
-                                  statusName  = 'ops-hold')
-        self.changeStatusAndCheck(requestName = requestName,
-                                  statusName  = 'assigned')
-        self.changeStatusAndCheck(requestName = requestName,
                                   statusName  = 'negotiating')
         self.changeStatusAndCheck(requestName = requestName,
                                   statusName  = 'acquired')
@@ -678,9 +672,52 @@ class ReqMgrTest(RESTBaseUnitTest):
 
         result = self.jsonSender.get('configIDs?prim=MinimumBias&proc=Commissioning10-v4&tier=RAW')[0]
         self.assertTrue(requestName in result.keys())
-        self.assertTrue(configID in result[requestName][0])        
-
-
+        self.assertTrue(configID in result[requestName][0])
+        
+        
+    def testJ_CheckRequestCloning(self):
+        myThread = threading.currentThread()
+        userName     = 'Taizong'
+        groupName    = 'Li'
+        teamName     = 'Tang'
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
+        result = self.jsonSender.put('request', schema)
+        self.assertEqual(result[1], 200)
+        requestName = result[0]['RequestName']
+        # AcquisitionEra is returned here, but in fact on server is not stored until assign
+        self.assertTrue(schema["AcquisitionEra"], result[0]["AcquisitionEra"])
+        # get the original request (although the variable result shall have the same stuff in)
+        origRequest = self.jsonSender.get("request/%s" % requestName)
+        origRequest = origRequest[0]
+        self.assertEquals(origRequest["AcquisitionEra"], "None") # was not stored
+        
+        # test cloning not existing request
+        self.assertRaises(HTTPException, self.jsonSender.put, "clone/%s" % "NotExistingRequestName")
+        # this is the new request, it'll have different name
+        result = self.jsonSender.put("clone/%s" % requestName)
+        cloned = self.jsonSender.get("request/%s" % result[0]["RequestName"])
+        clonedRequest = cloned[0]
+        # these request arguments shall differ in the cloned request:
+        #    RequestName, ReqMgrRequestID
+        # "RequestDate" and "timeStamp" will be the same in the test
+        toDiffer = ["RequestName", "ReqMgrRequestID", "RequestWorkflow"]
+        for differ in toDiffer:
+            self.assertNotEqual(origRequest[differ], clonedRequest[differ])
+        toDiffer.extend(["RequestDate", "timeStamp"])
+        for differ in toDiffer:
+            del origRequest[differ]
+            del clonedRequest[differ]
+        # check the request dictionaries
+        self.assertEquals(len(origRequest), len(clonedRequest))
+        for k1, k2 in zip(sorted(origRequest.keys()), sorted(clonedRequest.keys())):
+            msg = ("Request values: original: %s: %s cloned: %s: %s differ" %
+                   (k1, origRequest[k1], k2, clonedRequest[k2]))
+            self.assertEqual(origRequest[k1], clonedRequest[k2], msg)
+        
+        
 
 if __name__=='__main__':
     unittest.main()

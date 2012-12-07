@@ -10,11 +10,13 @@ back down and verify that everything is complete.
 import threading
 import time
 import unittest
+import os
 import logging
 
 from WMComponent.PhEDExInjector.PhEDExInjectorPoller import PhEDExInjectorPoller
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 
+from WMCore.WMBase import getTestBase
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.UUID import makeUUID
 
@@ -74,7 +76,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
 
-    def stuffDatabase(self, custodialSite = "srm-cms.cern.ch"):
+    def stuffDatabase(self, custodialSite = "srm-cms.cern.ch", spec = "TestWorkload.pkl"):
         """
         _stuffDatabase_
 
@@ -85,6 +87,15 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         We'll inject files with the location set as an SE name as well as a
         PhEDEx node name as well.
         """
+
+        myThread = threading.currentThread()
+        buffer3Factory = DAOFactory(package = "WMComponent.DBS3Buffer",
+                                   logger = myThread.logger,
+                                   dbinterface = myThread.dbi)
+        insertWorkflow = buffer3Factory(classname = "InsertWorkflow")
+        insertWorkflow.execute("BogusRequest", "BogusTask", os.path.join(getTestBase(),
+                                                                         "WMComponent_t/PhEDExInjector_t/specs/%s" % spec))
+
         checksums = {"adler32": "1234", "cksum": "5678"}
         testFileA = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
                                   checksums = checksums,
@@ -176,6 +187,14 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         fileStatus.execute(testFileC["lfn"], "LOCAL")
         fileStatus.execute(testFileD["lfn"], "LOCAL")
         fileStatus.execute(testFileE["lfn"], "LOCAL")
+
+        associateWorkflow = buffer3Factory(classname = "DBSBufferFiles.AssociateWorkflowToFile")
+        associateWorkflow.execute(testFileA["lfn"], "BogusRequest", "BogusTask")
+        associateWorkflow.execute(testFileB["lfn"], "BogusRequest", "BogusTask")
+        associateWorkflow.execute(testFileC["lfn"], "BogusRequest", "BogusTask")
+        associateWorkflow.execute(testFileD["lfn"], "BogusRequest", "BogusTask")
+        associateWorkflow.execute(testFileE["lfn"], "BogusRequest", "BogusTask")
+
         return
 
     def createConfig(self):
@@ -314,9 +333,6 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         """
 
         self.stuffDatabase(custodialSite = 'se.fnal.gov')
-
-        poller = PhEDExInjectorPoller(self.createConfig())
-
         myThread        = threading.currentThread()
         daofactory      = DAOFactory(package = "WMComponent.PhEDExInjector.Database",
                                      logger = myThread.logger,
@@ -324,6 +340,23 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         getUninjected   = daofactory(classname = "GetUninjectedFiles")
         uninjectedFiles = getUninjected.execute()
         self.assertEqual(uninjectedFiles.keys(), ['se.fnal.gov'])
+        return
+
+    def test_OverrideSiteC(self):
+        """
+        _test_OverrideSiteC_
+
+        Test that we can set a spec with an override site and the files
+        will be associated with that site, even if there is a custodial override
+        """
+        self.stuffDatabase(custodialSite = 'se.fnal.gov', spec = 'TestOverrideWorkload.pkl')
+        myThread        = threading.currentThread()
+        daofactory      = DAOFactory(package = "WMComponent.PhEDExInjector.Database",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
+        getUninjected   = daofactory(classname = "GetUninjectedFiles")
+        uninjectedFiles = getUninjected.execute()
+        self.assertEqual(uninjectedFiles.keys(), ['se.cern.ch'])
         return
 
 

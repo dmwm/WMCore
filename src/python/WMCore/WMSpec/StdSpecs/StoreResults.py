@@ -49,6 +49,7 @@ def getTestArguments():
         # These may not be needed
         "GlobalTag": "GR10_P_v4::All",
         "CouchURL":         os.environ.get("COUCHURL", None),
+        "ConfigCacheUrl": None,
         "DashboardHost": "127.0.0.1",
         "DashboardPort": 8884,
         }
@@ -101,6 +102,7 @@ class StoreResultsWorkloadFactory(StdBase):
         self.stdJobSplitAlgo  = arguments.get("StdJobSplitAlgo", 'FileBased')
         self.stdJobSplitArgs  = arguments.get("StdJobSplitArgs", {'files_per_job': 1})
         self.dataTier         = arguments.get("DataTier", 'USER')
+        self.configCacheUrl = arguments.get("ConfigCacheUrl", None)
         dataTier = self.dataTier
 
         (self.inputPrimaryDataset, self.inputProcessedDataset, self.inputDataTier) = \

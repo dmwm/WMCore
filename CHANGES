@@ -1,3 +1,84 @@
+0.9.32 to 0.9.33:
+  - Publish job state transition information to WMStats.  Pull request #4311.
+  - Fix timeout kills in the LSF plugin.  Pull request #4322.
+  - Remve the unused RemoteMsg component and OpsClipboard.  Pull request #4316
+    and #4319.
+  - Make permissions stricter in the ReqMgr when changing request parameters.
+    Pull request #4313.
+  - Change LogCollect reporting from a reduce to list to avoid reduce overflows.  Pull
+    request #4312.
+  - Do the SE name => Site name conversion also for failed jobs.  Pull request #4308.
+
+0.9.31 to 0.9.32:
+  - Fix Reduce function for outputByWorkflowName.  Pull request #4310.
+  - Include the new PSet pickle in the logArchs.  Pull request #4307.
+  - Added basic http(s) url validation for DBS3.  Pull request #4306.
+
+0.9.30 to 0.9.31:
+  - Improve the WorkloadSummary.  Add histograms for failing jobs per site and per 
+    step.  Add a routine the determine missing lumis in a request.  Finally, improve
+    the unit test in the TaskArchiver for the WorkloadSummary.  Pull request #4298.
+  - Fix the WorkloadSummary unit tests.  Pull request #4304.
+  - Make sure that the status change time is an INT so that it doesn't cause problems
+    on Oracle.  Pull request #4301.
+  - Allow /store/hidata and /store/himc to be used as base LFNs when assigning
+    requests.  Pull requests #4300 and #4302.
+  - Add support for requests that read data via xrootd.  Pull request #4299.
+  - Allow the use of configs from the ConfigCache for DQM harvesting.  Pull request #4295.
+  - Allow the user to determine the config cache database to use when making request.
+    Add a handful of improvements to the ReqMgr Ops script.  Pull request #4293.
+  - Adds a real LogCollect fwjr to the TaskArchiver test and changes to support it better. 
+    Changes in the summary document.  Pull request #4291.
+  - Remove restriction of autoapprove on custodial subscriptions.  Pull request #4288.
+  - Fix the resource control script which had the pending and running slots swapped.
+    Pull request #4283.
+  - Check for null auth in the Workload Summary cuchapp and all it.  Pull request #4284.
+  - Propagate output dataset information to WMStats.  Pull request #4279. 
+  - Fix the resource control class to correctly insert job types.  Pull request #4277. 
+  - Check that files contains at least one good lumi before adding them to WMBS. Pull
+    request #4285.
+  - Make component sleeping more configurable.  Pull request #4246. 
+  - Add support for veryinf an adler32 checksum in the LCG module.  Pull request #4222. 
+  - Remove the auto increment check in the JobCreator as it caused more problems than it
+    solved.  Improve the ChangeState code to handle update conflicts as a more reasonable
+    work around.  Pull request #4147.
+  - Catch any exceptions that occur when attempting to overwrite a FWJR file.  This solves a 
+    problems where permissions may be set incorrectly on FWJR files.  Pull request #4164.
+
+0.9.29 to 0.9.30:
+  - Fix unit tests broke by pull request #4270.  Pull request #4272.
+
+0.9.28 to 0.9.29:
+  - Implement Pending jobs per task/site functionality.  Pull request #4270.
+  - Add support for Tier0 run states to the AnalyticsDataCollector.
+    Pull request #4265.
+  - Fix the broken stageout override code.  Pull request #4261.
+  - Add a method to the lexicon to validate DBS users.  Pull request #4239.
+  - Add support for CVMFS based on HN conversation and identical CRAB boostrapping
+    code.  Pull request #4258.
+  - Fix a typo in the jobStatusByWorkflowAndSite view.  Pull request #4220.
+  - Implement request cloning in the ReqMgr.  Pull request #4237.
+  - Add support for creating ACDC requests that run over arbitrary
+    collection names.  Pull request #4242.
+  - Display all errors correctly in the workload summary.  Pull request #4244.
+  - Clean up ConfigCache parameter naming.  Pull request #4223.
+  - Delete job summary data for requests that are announced or 
+    aborted.  Pull request #4227.
+  - Add support for overriding the location for files injected into
+    PhEDEx.  Pull request #4260. 
+
+0.9.27 to 0.9.28:
+  - ONEOFF build for Zdenek to revert his previous patch
+  - Bugfix StdBase DQMHarvest validation
+  - Remove updates in cancellation - stop conflicts
+  - Revert "Revert "Ops ReqMgr interaction script, ProcConfigCacheID renaming""
+
+0.9.26 to 0.9.27:
+  - Bugfix for wmagent-mod-config from fancy PhEDEx transfers commit.
+    Pull request #4231.
+  - Bugfix for PrimaryDataset handling in RelVal.  Pull request #4228.
+  - Add per-request switch for stageout.  Pull request #4194.
+
 0.9.25 to 0.9.26:
   - Improve error handling in Dashboard runtime.  Pull request #4208.
   - Fix a bug in GetAndMarkNewFinishedSubscriptions.  Pull request #4208.

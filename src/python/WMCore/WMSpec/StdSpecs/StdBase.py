@@ -87,6 +87,7 @@ class StdBase(object):
         self.dqmUploadProxy = None
         self.dqmUploadUrl = None
         self.dqmSequences = None
+        self.dqmConfigCacheID = None
         self.procScenario = None
         self.enableHarvesting = True
         self.enableNewStageout = False
@@ -133,6 +134,7 @@ class StdBase(object):
         self.dqmUploadProxy = arguments.get("DQMUploadProxy", None)
         self.dqmUploadUrl = arguments.get("DQMUploadUrl", "https://cmsweb.cern.ch/dqm/dev")
         self.dqmSequences = arguments.get("DqmSequences", [])
+        self.dqmConfigCacheID = arguments.get("DQMConfigCacheID", None)
         self.procScenario = arguments.get("ProcScenario", None)
         self.enableHarvesting = arguments.get("EnableHarvesting", True)
         self.enableNewStageout = arguments.get("EnableNewStageout", False)
@@ -395,10 +397,8 @@ class StdBase(object):
             outputModules[outputModuleName] = outputModule
 
         if configDoc != None and configDoc != "":
-            if configCacheUrl:
-                procTaskCmsswHelper.setConfigCache(configCacheUrl, configDoc, couchDBName)
-            else:
-                procTaskCmsswHelper.setConfigCache(couchURL, configDoc, couchDBName)
+            url = configCacheUrl or couchURL
+            procTaskCmsswHelper.setConfigCache(url, configDoc, couchDBName)
         else:
             # delete dataset information from scenarioArgs
             if 'outputs' in scenarioArgs:
@@ -667,23 +667,30 @@ class StdBase(object):
         harvestTask.setSplittingAlgorithm("Harvest",
                                           periodic_harvest_interval = periodic_harvest_interval)
 
-        if getattr(parentOutputModule, "dataTier") == "DQMROOT":
-            harvestTaskCmsswHelper.setDataProcessingConfig(self.procScenario, "dqmHarvesting",
-                                                           globalTag = self.globalTag,
-                                                           datasetName = "/%s/%s/%s" % (getattr(parentOutputModule, "primaryDataset"),
-                                                                                        getattr(parentOutputModule, "processedDataset"),
-                                                                                        getattr(parentOutputModule, "dataTier")),
-                                                           runNumber = self.runNumber,
-                                                           dqmSeq = self.dqmSequences,
-                                                           newDQMIO = True)
+        datasetName = "/%s/%s/%s" % (getattr(parentOutputModule, "primaryDataset"),
+                                     getattr(parentOutputModule, "processedDataset"),
+                                     getattr(parentOutputModule, "dataTier"))
+
+        if self.dqmConfigCacheID is not None:
+            if getattr(self, "configCacheUrl", None) is not None:
+                harvestTaskCmsswHelper.setConfigCache(self.configCacheUrl, self.dqmConfigCacheID, self.couchDBName)
+            else:
+                harvestTaskCmsswHelper.setConfigCache(self.couchURL, self.dqmConfigCacheID, self.couchDBName)
+            harvestTaskCmsswHelper.setDatasetName(datasetName)
         else:
-            harvestTaskCmsswHelper.setDataProcessingConfig(self.procScenario, "dqmHarvesting",
-                                                           globalTag = self.globalTag,
-                                                           datasetName = "/%s/%s/%s" % (getattr(parentOutputModule, "primaryDataset"),
-                                                                                        getattr(parentOutputModule, "processedDataset"),
-                                                                                        getattr(parentOutputModule, "dataTier")),
-                                                           runNumber = self.runNumber,
-                                                           dqmSeq = self.dqmSequences)
+            if getattr(parentOutputModule, "dataTier") == "DQMROOT":
+                harvestTaskCmsswHelper.setDataProcessingConfig(self.procScenario, "dqmHarvesting",
+                                                               globalTag = self.globalTag,
+                                                               datasetName = datasetName,
+                                                               runNumber = self.runNumber,
+                                                               dqmSeq = self.dqmSequences,
+                                                               newDQMIO = True)
+            else:
+                harvestTaskCmsswHelper.setDataProcessingConfig(self.procScenario, "dqmHarvesting",
+                                                               globalTag = self.globalTag,
+                                                               datasetName = datasetName,
+                                                               runNumber = self.runNumber,
+                                                               dqmSeq = self.dqmSequences)
 
         harvestTaskUploadHelper = harvestTaskUpload.getTypeHelper()
         harvestTaskUploadHelper.setProxyFile(uploadProxy)
@@ -728,22 +735,7 @@ class StdBase(object):
         If something breaks, raise a WMSpecFactoryException.  A message
         in that exception will be transferred to an HTTP Error later on.
         """
-
-        #Check the workload for harvesting task, if there is a
-        #harvesting task then a self.procScenario must be defined
-        #Only if the harvesting is enable for this request
-        if self.enableHarvesting:
-            for task in workload.getAllTasks():
-                if task.taskType() == "Harvesting":
-                    for stepName in task.listAllStepNames():
-                        step = task.getStep(stepName)
-                        if step.stepType() != "CMSSW":
-                            continue
-                        cmsswHelper = task.getTypeHelper(stepName)
-                        if not cmsswHelper.getScenario():
-                            self.raiseValidationException(msg = "A DQM harvesting task was found, you must specify a scenario")
-
-        return
+        pass
 
     def factoryWorkloadConstruction(self, workloadName, arguments):
         """
@@ -783,6 +775,22 @@ class StdBase(object):
 
         for field in performanceFields:
             self._validatePerformanceField(field, schema)
+
+        if schema.get("EnableHarvesting", True):
+            # If enableHarvesting requested, then a few conditions must be met
+            if "DQMConfigCacheID" not in schema and "ProcScenario" not in schema:
+                self.raiseValidationException("Harvesting was requested, but no scenario or config cache ID was given")
+            if "DQMConfigCacheID" in schema:
+                if "ConfigCacheUrl" not in schema and "CouchURL" not in schema:
+                    self.raiseValidationException("Harvesting was requested, but no couch url was given")
+                if "CouchDBName" not in schema:
+                    self.raiseValidationException("Harvesting was requested, but no couchdb name was given")
+                couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
+                self.validateConfigCacheExists(configID = schema["DQMConfigCacheID"],
+                                                    couchURL = couchUrl,
+                                                    couchDBName = schema["CouchDBName"])
+
+        return
 
     def _validatePerformanceField(self, field, schema):
         """

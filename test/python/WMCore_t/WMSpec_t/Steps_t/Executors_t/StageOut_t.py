@@ -41,7 +41,7 @@ from WMCore.FwkJobReport.ReportEmu          import ReportEmu
 from nose.plugins.attrib import attr
 
 #
-class StageOutTest:
+class StageOutTest(unittest.TestCase):
 
     def setUp(self):
         self.testInit = TestInit(__file__)
@@ -68,7 +68,103 @@ class StageOutTest:
         os.mkdir( self.stepDir )
         builder = StageOutBuilder.StageOut()
         builder( step.data, 'Production', self.stepDir)
+        
+        # stolen from CMSSWExecutor_t. thanks, dave
 
+        # first, delete all the sandboxen and taskspaces
+        #    because of caching, this leaks from other tests in other files
+        #    this sucks because the other tests are using sandboxen that
+        #    are deleted after the test is over, which causes theses tests
+        #    to break
+        modsToDelete = []
+        # not sure what happens if you delete from
+        # an arrey you're iterating over. doing it in
+        # two steps
+        for modname in sys.modules.keys():
+            # need to blow away things in sys.modules, otherwise
+            # they are cached and we look at old taskspaces
+            if modname.startswith('WMTaskSpace'):
+                modsToDelete.append(modname)
+            if modname.startswith('WMSandbox'):
+                modsToDelete.append(modname)
+        for modname in modsToDelete:
+            try:
+                reload(sys.modules[modname])
+            except:
+                pass
+            del sys.modules[modname]
+
+        self.oldpath = sys.path[:]
+        self.testInit = TestInit(__file__)
+
+
+        self.testDir = self.testInit.generateWorkDir()
+        self.job = Job(name = "/UnitTests/DeleterTask/DeleteTest-test-job")
+        shutil.copyfile('/etc/hosts', os.path.join(self.testDir, 'testfile'))
+
+        self.workload = newWorkload("UnitTests")
+        self.task = self.workload.newTask("DeleterTask")
+
+        cmsswHelper = self.task.makeStep("cmsRun1")
+        cmsswHelper.setStepType('CMSSW')
+        stepHelper = cmsswHelper.addStep("DeleteTest")
+        stepHelper.setStepType('StageOut')
+
+        self.cmsswstep = cmsswHelper.data
+        self.cmsswHelper = cmsswHelper
+
+
+        self.stepdata = stepHelper.data
+        self.stephelp = StageOutTemplate.StageOutStepHelper(stepHelper.data)
+        self.task.applyTemplates()
+
+        self.executor = StepFactory.getStepExecutor(self.stephelp.stepType())
+        taskMaker = TaskMaker(self.workload, os.path.join(self.testDir))
+        taskMaker.skipSubscription = True
+        taskMaker.processWorkload()
+
+
+        self.task.build(os.path.join(self.testDir, 'UnitTests'))
+
+        sys.path.insert(0, self.testDir)
+        sys.path.insert(0, os.path.join(self.testDir, 'UnitTests'))
+
+
+#        binDir = inspect.getsourcefile(ModuleLocator)
+#        binDir = binDir.replace("__init__.py", "bin")
+#
+#        if not binDir in os.environ['PATH']:
+#            os.environ['PATH'] = "%s:%s" % (os.environ['PATH'], binDir)
+        open( os.path.join( self.testDir, 'UnitTests', '__init__.py'),'w').close()
+        shutil.copyfile( os.path.join( os.path.dirname( __file__ ), 'MergeSuccess.pkl'),
+                         os.path.join( self.testDir, 'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+
+    def tearDown(self):
+        sys.path = self.oldpath[:]
+        self.testInit.delWorkDir()
+
+
+        # making double sure WMTaskSpace and WMSandbox are gone
+        modsToDelete = []
+        # not sure what happens if you delete from
+        # an arrey you're iterating over. doing it in
+        # two steps
+        for modname in sys.modules.keys():
+            # need to blow away things in sys.modules, otherwise
+            # they are cached and we look at old taskspaces
+            if modname.startswith('WMTaskSpace'):
+                modsToDelete.append(modname)
+            if modname.startswith('WMSandbox'):
+                modsToDelete.append(modname)
+        for modname in modsToDelete:
+            try:
+                reload(sys.modules[modname])
+            except:
+                pass
+            del sys.modules[modname]
+        myThread = threading.currentThread()
+        if hasattr(myThread, "factory"):
+            myThread.factory = {}
 
     def makeReport(self, fileName):
         myReport = Report('oneitem')
@@ -80,31 +176,64 @@ class StageOutTest:
         file3 = myReport.addOutputFile('module2', {'lfn': 'FILE3', 'size' : 1, 'events' : 1})
         myReport.persist( fileName )
 
-    def tearDown(self):
-        self.testInit.delWorkDir()
+    def testExecutorDoesntDetonate(self):
+        myReport = Report()
+        myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        myReport.data.cmsRun1.status = 1
+        myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
 
-    def testUnitTestBackend(self):
         executor = StageOutExecutor.StageOut()
-        self.realstep.addFile("testin1", "testout1")
-        # let's ride the win-train
-        testOverrides = { "command" : "test-win",
-            "option"  : "",
-            "se-name" : "se-name",
-            "lfn-prefix" : "I don't need a stinking prefix"}
-        self.realstep.addOverride(override = 'command', overrideValue='test-win')
-        self.realstep.addOverride(override = 'option', overrideValue='test-win')
-        self.realstep.addOverride(override = 'se-name', overrideValue='test-win')
-        self.realstep.addOverride(override = 'lfn-prefix', overrideValue='test-win')
-        executor.step = self.realstep.data
-        #executor.initialise( self.realstep.data, {'id': 1})
+        
+        executor.initialise( self.stepdata, self.job)
+        self.setLocalOverride(self.stepdata)
+        executor.step = self.stepdata
         executor.execute( )
-#        # ride the fail whale, hope we get a fail wail.
-#        testOverrides["command"] = "test-fail"
-#        self.realstep.data.override = testOverrides
-#        executor.step = self.realstep.data
-#        self.assertRaises(StageOutError.StageOutFailure,
-#                          executor.execute)
+        self.assertFalse( os.path.exists( os.path.join( self.testDir, 'hosts' )))
+        self.assertFalse( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
+        return
+    
+    
+    def testUnitTestBackend(self):
+        myReport = Report()
+        myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        myReport.data.cmsRun1.status = 1
+        myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
 
+        executor = StageOutExecutor.StageOut()
+        helper = StageOutTemplate.StageOutStepHelper(self.stepdata)
+        helper.addOverride(override = 'command', overrideValue='test-win')
+        helper.addOverride(override = 'option', overrideValue='')
+        helper.addOverride(override = 'se-name', overrideValue='charlie.sheen.biz')
+        helper.addOverride(override = 'lfn-prefix', overrideValue='test-win')
+        
+        executor.initialise( self.stepdata, self.job)
+        self.setLocalOverride(self.stepdata)
+        executor.step = self.stepdata
+        executor.execute( )
+        self.assertFalse( os.path.exists( os.path.join( self.testDir, 'hosts' )))
+        self.assertFalse( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
+
+    def testUnitTestBackendNew(self):
+        myReport = Report()
+        myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        myReport.data.cmsRun1.status = 1
+        myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+
+        executor = StageOutExecutor.StageOut()
+        helper = StageOutTemplate.StageOutStepHelper(self.stepdata)
+        helper.addOverride(override = 'command', overrideValue='test-win')
+        helper.addOverride(override = 'option', overrideValue='')
+        helper.addOverride(override = 'se-name', overrideValue='charlie.sheen.biz')
+        helper.addOverride(override = 'lfn-prefix', overrideValue='test-win')
+        helper.setNewStageoutOverride( True )
+        
+        executor.initialise( self.stepdata, self.job)
+        self.setLocalOverride(self.stepdata)
+        executor.step = self.stepdata
+        executor.execute( )
+        self.assertFalse( os.path.exists( os.path.join( self.testDir, 'hosts' )))
+        self.assertFalse( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
+        
     def setLocalOverride(self, step):
         step.section_('override')
         step.override.command    = 'cp'
@@ -113,7 +242,7 @@ class StageOutTest:
         step.override.__setattr__('se-name','DUMMYSE')
 
 
-class otherStageOutTest(unittest.TestCase):
+class otherStageOutTexst:#(unittest.TestCase):
 
     def setUp(self):
         # stolen from CMSSWExecutor_t. thanks, dave

@@ -140,7 +140,7 @@ def associateSoftware(requestName, softwareName):
     Software must be registered in the DB
 
     """
-
+    
     factory = DBConnect.getConnection()
     requestId = factory(classname = "Request.ID")
 

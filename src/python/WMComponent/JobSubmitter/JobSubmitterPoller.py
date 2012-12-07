@@ -83,19 +83,20 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.bossAir = BossAirAPI(config = self.config)
 
         # Additions for caching-based JobSubmitter
-        self.cachedJobIDs   = set()
-        self.cachedJobs     = {}
-        self.jobDataCache   = {}
-        self.jobsToPackage  = {}
-        self.sandboxPackage = {}
-        self.siteKeys       = {}
-        self.locationDict   = {}
-        self.cmsNames       = {}
-        self.drainSites     = []
-        self.sortedSites    = []
-        self.packageSize    = getattr(self.config.JobSubmitter, 'packageSize', 500)
-        self.collSize       = getattr(self.config.JobSubmitter, 'collectionSize',
-                                      self.packageSize * 1000)
+        self.workflowTimestamps = {}
+        self.cachedJobIDs       = set()
+        self.cachedJobs         = {}
+        self.jobDataCache       = {}
+        self.jobsToPackage      = {}
+        self.sandboxPackage     = {}
+        self.siteKeys           = {}
+        self.locationDict       = {}
+        self.cmsNames           = {}
+        self.drainSites         = []
+        self.sortedSites        = []
+        self.packageSize        = getattr(self.config.JobSubmitter, 'packageSize', 500)
+        self.collSize           = getattr(self.config.JobSubmitter, 'collectionSize',
+                                          self.packageSize * 1000)
 
         # initialize the alert framework (if available)
         self.initAlerts(compName = "JobSubmitter")
@@ -338,10 +339,13 @@ class JobSubmitterPoller(BaseWorkerThread):
 
                 locTypeCache = self.cachedJobs[possibleLocation][newJob["type"]]
                 workflowName = newJob['workflow']
+                timestamp    = newJob['timestamp']
                 if not locTypeCache.has_key(workflowName):
                     locTypeCache[workflowName] = set()
                 if not self.jobDataCache.has_key(workflowName):
                     self.jobDataCache[workflowName] = {}
+                if not workflowName in self.workflowTimestamps:
+                    self.workflowTimestamps[workflowName] = timestamp
 
                 locTypeCache[workflowName].add(jobID)
 
@@ -460,6 +464,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         """
         jobsToSubmit = {}
         jobsToPrune = {}
+        workflowsToPrune = set()
 
         rcThresholds = self.getThresholds()
 
@@ -486,7 +491,9 @@ class JobSubmitterPoller(BaseWorkerThread):
                     # Pull basic info for the threshold
                     taskType            = threshold["task_type"]
                     maxSlots            = threshold["max_slots"]
+                    taskPendingSlots    = threshold["pending_slots"]
                     taskRunning         = threshold["task_running_jobs"]
+                    taskPending         = threshold["task_pending_jobs"]
                 except KeyError, ex:
                     msg =  "Had invalid threshold %s\n" % threshold
                     msg += str(ex)
@@ -524,7 +531,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 taskCache = self.cachedJobs[siteName][taskType]
 
                 # Calculate number of jobs we need
-                nJobsRequired = totalPendingSlots - totalPending
+                nJobsRequired = min(totalPendingSlots - totalPending, taskPendingSlots - taskPending)
                 breakLoop = False
                 logging.debug("nJobsRequired for task %s: %i" % (taskType, nJobsRequired))
 
@@ -537,7 +544,9 @@ class JobSubmitterPoller(BaseWorkerThread):
                     cachedJobWorkflow = None
 
                     workflows = taskCache.keys()
-                    workflows.sort()
+                    # Sorting by timestamp on the subscription
+                    sortingKey = lambda x : self.workflowTimestamps[x]
+                    workflows.sort(key = sortingKey)
 
                     for workflow in workflows:
                         # Run a while loop until you get a job
@@ -558,6 +567,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                         # Remove the entry in the cache for the workflow if it is empty.
                         if len(self.cachedJobs[siteName][taskType][workflow]) == 0:
                             del self.cachedJobs[siteName][taskType][workflow]
+                            workflowsToPrune.add(workflow)
                         if self.jobDataCache.has_key(workflow) and len(self.jobDataCache[workflow].keys()) == 0:
                             del self.jobDataCache[workflow]
 
@@ -617,6 +627,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                     # Deal with accounting
                     nJobsRequired -= 1
                     totalPending  += 1
+                    taskPending   += 1
 
                     if breakLoop:
                         break
@@ -627,6 +638,10 @@ class JobSubmitterPoller(BaseWorkerThread):
                 for workflow in self.cachedJobs[siteName][taskType].keys():
                     if workflow in jobsToPrune.keys():
                         self.cachedJobs[siteName][taskType][workflow] -= jobsToPrune[workflow]
+
+        # Remove workflows from the timestamp dictionary which are not anymore in the cache
+        for workflow in workflowsToPrune:
+            del self.workflowTimestamps[workflow]
 
         logging.info("Have %s packages to submit." % len(jobsToSubmit))
         logging.info("Done assigning site locations.")

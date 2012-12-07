@@ -11,7 +11,7 @@ from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterf
 from copy import deepcopy
 from math import ceil
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
-from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements
+from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements, cmsSiteNames
 from WMCore import Lexicon
 
 class Block(StartPolicyInterface):
@@ -21,6 +21,9 @@ class Block(StartPolicyInterface):
         self.args.setdefault('SliceType', 'NumberOfFiles')
         self.args.setdefault('SliceSize', 1)
         self.lumiType = "NumberOfLumis"
+
+        # Initialize a list of sites where the data is
+        self.sites = []
 
     def split(self):
         """Apply policy to spec"""
@@ -33,7 +36,10 @@ class Block(StartPolicyInterface):
             if self.initialTask.parentProcessingFlag():
                 parentFlag = True
                 for dbsBlock in dbs.listBlockParents(block["block"]):
-                    parentList[dbsBlock["Name"]] = sitesFromStorageEelements(dbsBlock['StorageElementList'])
+                    if self.initialTask.inputLocationFlag():
+                        parentList[dbsBlock["Name"]] = self.sites
+                    else:
+                        parentList[dbsBlock["Name"]] = sitesFromStorageEelements(dbsBlock['StorageElementList'])
 
             self.newQueueElement(Inputs = {block['block'] : self.data.get(block['block'], [])},
                                  ParentFlag = parentFlag,
@@ -43,7 +49,8 @@ class Block(StartPolicyInterface):
                                  NumberOfEvents = int(block['NumberOfEvents']),
                                  Jobs = ceil(float(block[self.args['SliceType']]) /
                                              float(self.args['SliceSize'])),
-                                 OpenForNewData = True if str(block.get('OpenForWriting')) == '1' else False
+                                 OpenForNewData = True if str(block.get('OpenForWriting')) == '1' else False,
+                                 NoLocationUpdate = self.initialTask.inputLocationFlag()
                                  )
 
 
@@ -65,6 +72,20 @@ class Block(StartPolicyInterface):
         runBlackList = task.inputRunBlacklist()
         if task.getLumiMask(): #if we have a lumi mask get only the relevant blocks
             maskedBlocks = self.getMaskedBlocks(task, dbs, datasetPath)
+        if task.inputLocationFlag():
+            # Then get the locations from the site whitelist/blacklist + SiteDB
+            siteWhitelist = task.siteWhitelist()
+            siteBlacklist = task.siteBlacklist()
+            if siteWhitelist:
+                # Just get the ses matching the whitelists
+                self.sites = siteWhitelist
+            elif siteBlacklist:
+                # Get all CMS sites less the blacklist
+                allSites = cmsSiteNames()
+                self.sites = list(set(allSites) - set (siteBlacklist))
+            else:
+                # Run at any CMS site
+                self.sites = cmsSiteNames()
 
         blocks = []
         # Take data inputs or from spec
@@ -135,7 +156,10 @@ class Block(StartPolicyInterface):
                 block['NumberOfEvents'] = float(block['NumberOfEvents']) * ratio_accepted
 
             # save locations
-            self.data[block['block']] = sitesFromStorageEelements(dbs.listFileBlockLocation(block['block']))
+            if task.inputLocationFlag():
+                self.data[block['block']] = self.sites
+            else:
+                self.data[block['block']] = sitesFromStorageEelements(dbs.listFileBlockLocation(block['block']))
 
             validBlocks.append(block)
         return validBlocks

@@ -105,7 +105,14 @@ def buildWorkloadForRequest(typename, schema):
     # use the CMSSWVersion from the input schema only if it's defined (like
     # for a new request). for example for a resubmission request, schema['CMSSWVersion']
     # is empty and will be worked out later ; do not use any defaults
-    if schema.get('CMSSWVersion'):
+    # TODO:
+    # all these fiddling along the route of creating the request should be concentrated
+    #    at single place! Otherwise implementation of things like request cloning is
+    #    unnecessary complicated for there is a lot hidden manipulations
+    #    for for cloning - do this only if it's not defined already!
+    #    seeing what is written above about resubmission, not sure if for resubmission
+    #    this is not now screwed up
+    if schema.get('CMSSWVersion') and schema.get('CMSSWVersion') not in request['SoftwareVersions']:
         request['SoftwareVersions'].append(schema.get('CMSSWVersion'))
     # assume only one dbs for all the task
     request['DbsUrl'] = (workload.getTopLevelTask()[0]).dbsUrl()

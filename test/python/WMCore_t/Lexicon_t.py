@@ -12,6 +12,28 @@ import unittest
 from WMCore.Lexicon import *
 
 class LexiconTest(unittest.TestCase):
+    def testDBSUser(self):
+
+        u1 = '/DC=org/DC=doegrids/OU=People/CN=Ajit Kumar Mohapatra 867118'
+        u2 = '/C=IT/O=INFN/OU=Personal Certificate/L=Bari/CN=antonio pierro'
+        u3 = '/DC=ch/DC=cern/OU=computers/CN=vocms39.cern.ch'
+        u4 = '/C=BE/O=BEGRID/OU=IIHE(VUB)/OU=DNTK/CN=Maes Joris'
+        u5 = 'cmsprod@vocms19.cern.ch'
+        u6 = 'sfoulkes'
+        u7 = '/DC=org/DC=doegrids/OU=People/CN=Si Xie 523253'
+        u8 = '/C=IT/O=INFN/OU=Personal Certificate/L=Sns/CN=Federico Calzolari'
+        u9 = '/O=GermanGrid/OU=RWTH/CN=Maarten Thomas'
+        u10 = 'cmsdataops@cmssrv44.fnal.gov'
+        u11 = '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=ceballos/CN=488892/CN=Guillelmo Gomez Ceballos'
+        for test_u in [u1, u2, u3, u4, u5, u6, u7,u8,u9, u10,u11]:
+            assert DBSUser(test_u), 'valid search not validated'
+
+        u10 = 'Fred Bloggs'
+        u11 = 'cmsprod@vocms19#'
+        u12 = 'cms-xen@drop/'
+        u13 = 'C=IT/O=INFN/OU=Personal Certificate/L=Sns/CN=Federico Calzolari'
+        for test_u in [u10, u11]:
+            self.assertRaises(AssertionError, DBSUser, test_u)
 
     def testSearchDataset(self):
         ds1 = '/Higgs/blah-v2/RECO'
@@ -238,6 +260,7 @@ class LexiconTest(unittest.TestCase):
     def testBadCouchUrl(self):
         for notok in ['agent86@control.fnal.gov:5984', 'http:/localhost:443', 'http://www.myspace.com']:
             self.assertRaises(AssertionError, couchurl, notok)
+
     def testHNName(self):
         """
         _testHNName_
@@ -279,8 +302,14 @@ class LexiconTest(unittest.TestCase):
         lfn(lfnA)
         lfnA = '/store/data/Run2010A/Cosmics/RECO/v4/000/143/316/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
         lfn(lfnA)
+        lfnA = '/store/hidata/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
+        lfn(lfnA)
+        lfnA = '/store/hidata/Run2010A/Cosmics/RECO/v4/000/143/316/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
+        lfn(lfnA)
         lfnA = '/store/t0temp/data/Run2010A/Cosmics/RECO/v4/000/143/316/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
         lfn(lfnA)
+        lfnA = '/store/himc/Run2010A/Cosmics/RECO/v4/000/143/316/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
+        lfn(lfnA)        
         lfnA = '/store/backfill/1/data/Run2010A/Cosmics/RECO/v4/000/143/316/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
         lfn(lfnA)
         lfnA = '/store/backfill/1/t0temp/data/Run2010A/Cosmics/RECO/v4/000/143/316/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
@@ -369,6 +398,11 @@ class LexiconTest(unittest.TestCase):
         lfnA = '/store/temp1/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'
         lfnBase(lfnA)
         lfnA = '/store/temp/lustre1/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'
+        lfnBase(lfnA)
+
+        lfnA = '/store/hidata/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'
+        lfnBase(lfnA)
+        lfnA = '/store/hidata/Run2010A/Cosmics/RECO/v4'
         lfnBase(lfnA)
 
         lfnA = '/Store/temp/lustre/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'
@@ -627,6 +661,31 @@ class LexiconTest(unittest.TestCase):
         self.assertRaises(AssertionError, globalTag, gTag)
 
         return
+
+    def testUrlValidation(self):
+        """
+        Test the validateUrl function for some use case of DBS 3
+        """
+        #Good http(s) urls
+        for url in ['https://cmsweb.cern.ch/dbs/prod/global/DBSReader',
+                    'https://mydbs.mydomain.de:8443',
+                    'http://localhost',
+                    'http://192.168.1.1',
+                    'https://192.168.1.1:443',
+                    'http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]/',
+                    'http://2001:0db8:85a3:08d3:1319:8a2e:0370:7344/',
+                    'http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]:8443/']:
+            validateUrl(url)
+
+        #Bad http(s) urls
+        for url in ['ftp://dangerous.download.this',
+                    'https:/notvalid.url',
+                    'http://-NiceTry',
+                    'https://NiceTry; DROP Table;--',
+                    'http://123123104122',
+                    'http://.www.google.com',
+                    'http://[2001:0db8:85a3:08d3:1319:8a2z:0370:7344]/',]:
+            self.assertRaises(AssertionError, validateUrl, url)
 
 if __name__ == "__main__":
     unittest.main()

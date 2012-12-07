@@ -37,8 +37,14 @@ then
 elif [ "x" != "x$OSG_APP" ]
 then
 	. $OSG_APP/cmssoft/cms/cmsset_default.sh CMSSW_3_3_2
+elif [ "x" != "x$CVMFS" ]
+then
+    . $CVMFS/cms.cern.ch/cmsset_default.sh
+elif [ -f /cvmfs/cms.cern.ch/cmsset_default.sh ]
+then
+    . /cvmfs/cms.cern.ch/cmsset_default.sh
 else
-	echo "WMAgent bootstrap : `date -u` : Error: neither OSG_APP nor VO_CMS_SW_DIR environment variables were set" >&2
+	echo "WMAgent bootstrap : `date -u` : Error: OSG_APP, VO_CMS_SW_DIR, CVMFS environment variables were set and /cvmfs is not present" >&2
 	echo "WMAgent bootstrap : `date -u` : Error: Because of this, we can't load CMSSW. Not good." >&2
 	exit 2
 fi

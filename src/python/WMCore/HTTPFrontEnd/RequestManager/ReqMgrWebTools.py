@@ -414,7 +414,86 @@ def validate(schema):
         value = schema.get(field, '')
         if value and value != '':
             WMCore.Lexicon.cmsswversion(schema[field])
+            
+            
+def getNewRequestSchema(reqInputArgs):
+    """
+    Create a new schema
+    
+    """
+    reqSchema = RequestSchema()
+    reqSchema.update(reqInputArgs)
+    
+    currentTime = time.strftime('%y%m%d_%H%M%S',
+                             time.localtime(time.time()))
+    secondFraction = int(10000 * (time.time()%1.0))
+    requestString = reqSchema.get('RequestString', "")
+    if requestString != "":
+        reqSchema['RequestName'] = "%s_%s_%s_%s" % (
+        reqSchema['Requestor'], requestString, currentTime, secondFraction)
+    else:
+        reqSchema['RequestName'] = "%s_%s_%s" % (reqSchema['Requestor'], currentTime, secondFraction)
+    return reqSchema
+
+
+def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clone=False):
+    """
+    If clone is True, the function is called on a cloned request in which
+    case no modification of the reqSchema shall happen and should be checked in
+    as is.
+    
+    """
+    try:
+        request = buildWorkloadForRequest(typename = reqSchema["RequestType"], 
+                                          schema = reqSchema)
+    except WMSpecFactoryException, ex:
+        raise HTTPError(400, "Error in Workload Validation: %s" % ex._message)
+    
+    helper = WMWorkloadHelper(request['WorkloadSpec'])
         
+    helper.setCampaign(reqSchema["Campaign"])
+    if "CustodialSite" in reqSchema.keys():
+        helper.setCustodialSite(siteName = reqSchema['CustodialSite'])
+    elif len(reqSchema.get("SiteWhitelist", [])) == 1:
+        # If there is only one site in the site whitelist we should
+        # set it as the custodial site.
+        # Oli says so.
+        helper.setCustodialSite(siteName = reqSchema['SiteWhitelist'][0])
+    if "RunWhitelist" in reqSchema:
+        helper.setRunWhitelist(reqSchema["RunWhitelist"])
+        
+    # can't save Request object directly, because it makes it hard to retrieve the _rev
+    metadata = {}
+    metadata.update(request)
+    
+    # Add the output datasets if necessary
+    # for some bizarre reason OutpuDatasets is list of lists, when cloning
+    # [['/MinimumBias/WMAgentCommissioning10-v2/RECO'], ['/MinimumBias/WMAgentCommissioning10-v2/ALCARECO']]
+    # #3743
+    if not clone:
+        for ds in helper.listOutputDatasets():
+            if ds not in request['OutputDatasets']:
+                request['OutputDatasets'].append(ds)
+                
+    # don't want to JSONify the whole workflow
+    del metadata['WorkloadSpec']
+    workloadUrl = helper.saveCouch(couchUrl, couchDB, metadata=metadata)
+    request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
+    try:
+        CheckIn.checkIn(request, reqSchema['RequestType'])
+    except CheckIn.RequestCheckInError, ex:
+        msg = ex._message
+        raise HTTPError(400, "Error in Request check-in: %s" % msg)
+    
+    try:
+        wmstatSvc = WMStatsWriter(wmstatUrl)
+        wmstatSvc.insertRequest(request)
+    except Exception as ex:
+        webApi.error("Could not update WMStats, reason: %s" % ex)
+        raise HTTPError(400, "Creating request failed, could not update WMStats.")
+
+    return request
+    
         
 def makeRequest(webApi, reqInputArgs, couchUrl, couchDB, wmstatUrl):
     """
@@ -428,20 +507,8 @@ def makeRequest(webApi, reqInputArgs, couchUrl, couchDB, wmstatUrl):
             reqInputArgs[k] = v.strip()
             
     webApi.info("makeRequest(): reqInputArgs: '%s'" %  reqInputArgs)
-    # Create a new schema
-    reqSchema = RequestSchema()
-    reqSchema.update(reqInputArgs)
-    
-    currentTime = time.strftime('%y%m%d_%H%M%S',
-                             time.localtime(time.time()))
-    secondFraction = int(10000 * (time.time()%1.0))
-    requestString = reqSchema.get('RequestString', "")
-    if requestString != "":
-        reqSchema['RequestName'] = "%s_%s_%s_%s" % (
-        reqSchema['Requestor'], requestString, currentTime, secondFraction)
-    else:
-        reqSchema['RequestName'] = "%s_%s_%s" % (reqSchema['Requestor'], currentTime, secondFraction)
-        
+    reqSchema = getNewRequestSchema(reqInputArgs)
+            
     # TODO
     # the request arguments below shall be handled automatically by either
     # being specified in the input or already have correct default
@@ -498,50 +565,10 @@ def makeRequest(webApi, reqInputArgs, couchUrl, couchDB, wmstatUrl):
 
     # Get the DN
     reqSchema['RequestorDN'] = cherrypy.request.user.get('dn', 'unknown')
-
-    try:
-        request = buildWorkloadForRequest(typename = reqInputArgs["RequestType"],
-                                          schema = reqSchema)
-    except WMSpecFactoryException, ex:
-        raise HTTPError(400, "Error in Workload Validation: %s" % ex._message)
     
-    helper = WMWorkloadHelper(request['WorkloadSpec'])
-    helper.setCampaign(reqSchema["Campaign"])
-    if "CustodialSite" in reqSchema.keys():
-        helper.setCustodialSite(siteName = reqSchema['CustodialSite'])
-    elif len(reqSchema.get("SiteWhitelist", [])) == 1:
-        # If there is only one site in the site whitelist we should
-        # set it as the custodial site.
-        # Oli says so.
-        helper.setCustodialSite(siteName = reqSchema['SiteWhitelist'][0])
-    if "RunWhitelist" in reqSchema:
-        helper.setRunWhitelist(reqSchema["RunWhitelist"])
-    # can't save Request object directly, because it makes it hard to retrieve the _rev
-    metadata = {}
-    metadata.update(request)
-    # Add the output datasets if necessary
-    for ds in helper.listOutputDatasets():
-        if not ds in request['OutputDatasets']:
-            request['OutputDatasets'].append(ds)
-    # don't want to JSONify the whole workflow
-    del metadata['WorkloadSpec']
-    workloadUrl = helper.saveCouch(couchUrl, couchDB, metadata=metadata)
-    request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
-    try:
-        CheckIn.checkIn(request, reqInputArgs['RequestType'])
-    except CheckIn.RequestCheckInError, ex:
-        msg = ex._message
-        raise HTTPError(400, "Error in Request check-in: %s" % msg)
-    
-    try:
-        wmstatSvc = WMStatsWriter(wmstatUrl)
-        wmstatSvc.insertRequest(request)
-    except Exception as ex:
-        webApi.error("Could not update WMStats, reason: %s" % ex)
-        raise HTTPError(400, "Creating request failed, could not update WMStats.")
-        
+    request = buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl)
     return request
-
+    
 
 def requestDetails(requestName):
     """ Adds details from the Couch document as well as the database """
@@ -556,7 +583,7 @@ def requestDetails(requestName):
     schema['Site Blacklist']  = task.siteBlacklist()
     schema['MergedLFNBase']   = str(helper.getMergedLFNBase())
     schema['UnmergedLFNBase'] = str(helper.getUnmergedLFNBase())
-    schema['Campaign']        = str(helper.getCampaign())
+    schema['Campaign']        = str(helper.getCampaign()) 
     schema['AcquisitionEra']  = str(helper.getAcquisitionEra())
     schema['CustodialSite']   = str(helper.getCustodialSite())
     if schema['SoftwareVersions'] == ['DEPRECATED']:

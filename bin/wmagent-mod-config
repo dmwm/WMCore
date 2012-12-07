@@ -82,6 +82,9 @@ def modifyConfiguration(config, **args):
         if component == "JobCreator":
             compCfg.jobCacheDir = "%s/%s/JobCache" % (args['working_dir'], component)
 
+        if component == "JobAccountant":
+            compCfg.specDir = "%s/%s/SpecCache" % (args['working_dir'], component)
+
     localhost = socket.gethostname()
     for webapp in config.listWebapps_():
         compCfg = getattr(config, webapp)

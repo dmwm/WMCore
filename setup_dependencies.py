@@ -63,7 +63,6 @@ dependencies = {
                                     'src/html/RequestManager',
                                     'src/couchapps/ReqMgr+',
                                     'src/couchapps/ConfigCache+',
-                                    'src/couchapps/WorkloadSummary+',
                                     'src/couchapps/WMStats+'],
                         },
                 'workqueue':{
@@ -134,7 +133,8 @@ dependencies = {
                 #        },
                 
                 'reqmon':{
-                        'statics': ['src/couchapps/WMStats+'],
+                        'statics': ['src/couchapps/WMStats+', 
+                                    'src/couchapps/WorkloadSummary+'],
                         },
                 'alertscollector': 
                 {

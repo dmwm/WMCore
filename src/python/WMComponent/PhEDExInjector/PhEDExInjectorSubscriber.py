@@ -254,7 +254,9 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
             for subscriptionFlavor in siteMap[site]:
                 datasets = siteMap[site][subscriptionFlavor]
                 # Check that the site is valid
+                isMSS = False
                 if "MSS" in self.cmsToPhedexMap[site]:
+                    isMSS = True
                     phedexNode = self.cmsToPhedexMap[site]["MSS"]
                 else:
                     phedexNode = self.cmsToPhedexMap[site]["Disk"]
@@ -262,13 +264,17 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
                 options = {"custodial" : "n", "requestOnly" : "y",
                            "priority" : subscriptionFlavor[0].lower(),
                            "move" : "n"}
-                if subscriptionFlavor[1]:
+                if subscriptionFlavor[1] and isMSS:
+                    # Custodial subscriptions are only allowed in MSS nodes
+                    # If custodial is requested on Non-MSS it fallsback to a non-custodial subscription
                     options["custodial"] = "y"
                     if subscriptionFlavor[3]:
                         options["move"] = "y"
                 if subscriptionFlavor[2]:
                     options["requestOnly"] = "n"
-
+                logging.info("Request options: Custodial - %s, Move - %s, Request Only - %s" % (options["custodial"].upper(),
+                                                                                                options["move"].upper(),
+                                                                                                options["requestOnly"].upper()))
                 newSubscription = PhEDExSubscription(datasets, phedexNode, self.group,
                                                      **options)
 

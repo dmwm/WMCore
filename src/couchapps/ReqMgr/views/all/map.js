@@ -1,3 +1,4 @@
-function(doc) {
-  emit(null, doc);
+function(doc) 
+{
+	emit(doc.RequestName, doc);
 }

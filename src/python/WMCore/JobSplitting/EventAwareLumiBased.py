@@ -147,6 +147,7 @@ class EventAwareLumiBased(JobFactory):
                 if f['avgEvtsPerLumi'] > eventLimit and f['lumiCount'] == 1:
                     failNextJob = True
                     stopJob = True
+                    lumisPerJob = 1
                 elif splitOnFile:
                     # Then we have to split on every boundary
                     stopJob = True

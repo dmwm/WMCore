@@ -335,6 +335,48 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         self.assertEqual(jobs[3]['failedReason'], "File /this/is/file2 has too many events (1000) in 1 lumi(s)",
                           "The reason for the failure is not accurate")
 
+    def testD_HardLimitSplittingOnly(self):
+        """
+        _testD_HardLimitSplittingOnly_
+
+        Checks that we can split a set of files where every file has a single
+        lumi too big to fit in a runnable job
+        """
+        splitter = SplitterFactory()
+
+        #Create 3 single-big-lumi files
+        testFileset = Fileset(name = "FilesetA")
+        testFileset.create()
+        testFileA = self.createFile("/this/is/file1", 1000, 0, 1, "somese.cern.ch")
+        testFileB = self.createFile("/this/is/file2", 1000, 1, 1, "somese.cern.ch")
+        testFileC = self.createFile("/this/is/file3", 1000, 2, 1, "somese.cern.ch")
+        testFileset.addFile(testFileA)
+        testFileset.addFile(testFileB)
+        testFileset.addFile(testFileC)
+        testFileset.commit()
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = self.testWorkflow,
+                                        split_algo = "EventAwareLumiBased",
+                                        type = "Processing")
+        testSubscription.create()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = testSubscription)
+        #Settings are to split on job boundaries, to fail sing lumis with more than 800 events
+        #and to put 550 events per job
+        jobGroups = jobFactory(halt_job_on_file_boundaries = True,
+                               splitOnRun = True,
+                               events_per_job = 550,
+                               max_events_per_lumi = 800)
+
+        self.assertEqual(len(jobGroups), 1, "There should be only one job group")
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 3, "Three jobs must be in the jobgroup")
+        for i in range(1,4):
+            self.assertTrue(jobs[i - 1]['failedOnCreation'], "The job processing the second file should me marked for failure")
+            self.assertEqual(jobs[i - 1]['failedReason'], "File /this/is/file%d has too many events (1000) in 1 lumi(s)" % i,
+                          "The reason for the failure is not accurate")
+
         return
 
 if __name__ == '__main__':

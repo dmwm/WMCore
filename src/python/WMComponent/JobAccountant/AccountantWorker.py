@@ -386,6 +386,7 @@ class AccountantWorker(WMConnectionBase):
             fwjrFile["first_event"] = 0
 
         if jobType == "Merge" and fwjrFile["module_label"] != "logArchive":
+            setattr(fwjrFile["fileRef"], 'merged', True)
             fwjrFile["merged"] = True
 
         wmbsFile = self.createFileFromDataStructsFile(file = fwjrFile, jobID = jobID)

@@ -707,7 +707,7 @@ class Report:
         newFile['inputPath']      = getattr(fileRef, 'inputPath', None)
         newFile['custodialSite']  = getattr(fileRef, 'custodialSite', None)
         newFile["outputModule"]   = outputModule
-
+        newFile["fileRef"] = fileRef
 
         return newFile
 

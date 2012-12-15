@@ -19,7 +19,7 @@ import zipfile
 import WMCore
 import PSetTweaks
 from WMCore.WMSpec.Steps.StepFactory import getFetcher
-
+from WMCore.WMBase import getWMBASE
 
 def tarballExclusion(path):
     """
@@ -144,7 +144,8 @@ class SandboxCreator:
         if (self.packageWMCore):
             # package up the WMCore distribution in a zip file
             # fixes #2943
-            wmcorePath = WMCore.__path__[0]
+            
+            wmcorePath = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 
             (zipHandle, zipPath)  = tempfile.mkstemp()
             os.close(zipHandle)

@@ -362,7 +362,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                 continue
             except Exception, ex:
                 #Something didn't go well on couch, abort!!!
-                msg = "Couldn't upload summary for workflow %s, will try again next time\n" % workflow[0]
+                msg = "Couldn't upload summary for workflow %s, will try again next time\n" % workflow
                 msg += "Nothing will be deleted until the summary is in couch\n"
                 msg += "Exception message: %s" % str(ex)
                 print traceback.format_exc()
@@ -609,7 +609,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                     logs   = err['value']['logs']
                     start  = err['value']['start']
                     stop   = err['value']['stop']
-                    errorSite = err['value']['site']
+                    errorSite = str(err['value']['site'])
                     retry = err['value']['retry']
                     if lastRegisteredRetry is None or lastRegisteredRetry != retry:
                         histograms['workflowLevel']['failuresBySite'].addPoint(errorSite, 'Failed Jobs')

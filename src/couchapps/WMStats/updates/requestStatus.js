@@ -19,6 +19,8 @@ function (doc, req) {
                 }
             } else if ((lastState == "aborted-completed") && (statusObj.status != "abort-archived")) {
                 legalTransition = false;
+            } else if ((lastState == "normal-archived") || (lastState == "abort-archived")) {
+                legalTransition = false;
             }
             if (legalTransition) {
                 doc.request_status.push(statusObj);

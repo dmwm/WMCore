@@ -115,10 +115,11 @@ class AnalyticsPoller(BaseWorkerThread):
             #TODO: agent info (need to include job Slots for the sites)
             agentInfo = self.wmagentDB.getHeartBeatWarning()
             agentInfo.update(self.agentInfo)
-
+            
+            #direct data upload to the remote to prevent data conflict when agent is cleaned up and redeployed
             agentDocs = convertToAgentCouchDoc(agentInfo, self.config.ACDC, uploadTime)
-            self.localSummaryCouchDB.updateAgentInfo(agentDocs)
-            logging.info("Agent data upload success\n %s request" % len(agentDocs))
+            self.centralWMStatsCouchDB.updateAgentInfo(agentDocs)
+            logging.info("Agent data direct upload success\n %s request" % len(agentDocs))
 
         except Exception, ex:
             logging.error("Error occured, will retry later:")

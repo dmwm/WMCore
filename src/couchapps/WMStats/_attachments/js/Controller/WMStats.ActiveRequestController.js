@@ -1,81 +1,94 @@
 WMStats.namespace("ActiveRequestController");
-WMStats.ActiveRequestController.CategoryData = null;
 
 function getActiveFilteredData(cacheFlag){
     var requestData = WMStats.ActiveRequestModel.getRequests();
     if (cacheFlag) {
         return requestData.getFilteredRequests();
     } else {
-        var filter = WMStats.Controls.getFilter();
-        requestData.setFilter(filter);
-        var filteredData = requestData.filterRequests();
-        return filteredData
+        return filterRequests(requestData)
     }
+}
+
+function filterRequests(requestData) {
+    var filter = WMStats.Controls.getFilter();
+    requestData.setFilter(filter);
+    var filteredData = requestData.filterRequests();
+    return filteredData;
 }
 
 function getCategorizedData(category) {
     
-    var filteredData = getActiveFilteredData(true);
-    var categoryData = filteredData;
+    var categoryData;
     
     if (category != WMStats.Controls.requests) {
-        
+        var filteredData = getActiveFilteredData(true);
         var summaryStruct = WMStats.CategorySummaryMap.get(category);
         categoryData = WMStats.RequestsByKey(category, summaryStruct);
         categoryData.categorize(filteredData);
+        WMStats.Env.CategoryData = categoryData;
+    } else {
+        categoryData = filterRequests(WMStats.Env.CurrentRequestData);
     }
-    WMStats.ActiveRequestController.CategoryData = categoryData;
     return categoryData;
 }
 
 (function($){
     
     var E = WMStats.CustomEvents;
-    // Rewqest view filter event handler
+    // Request view filter event handler
     function drawTotalRequestSummary() {
         var requestData = WMStats.ActiveRequestModel.getRequests();
-        WMStats.RequestDataList(requestData.getSummary(), "#summary_board");
+        WMStats.RequestSummaryList(requestData.getSummary(), "#summary_board");
     };
     
     function drawFilteredRequestSummary() {
         var filteredData = getActiveFilteredData(true);
-        WMStats.RequestDataList(filteredData.getSummary(), "#filter_summary");
+        WMStats.RequestSummaryList(filteredData.getSummary(), "#filter_summary");
     };
-    
-    function drawDataBoard(cachedView) {
-        
-        var category = WMStats.Controls.getCategoryButtonValue();
-        
-        if (category == WMStats.Controls.requests) {
-            var viewSelector = "#request_view";
-            
-        } else {
-            var viewSelector = "#category_view";
+
+    function drawDataBoard(viewSelector) {
+        if (!viewSelector) {
+            viewSelector = WMStats.Env.View;
         }
-        
+        //find which view needs to draw.
+        WMStats.GenericController.switchView(viewSelector);
         var divSelector = viewSelector + " div.summary_data";
-        $(viewSelector + " div.detail_data").empty();
-        $(divSelector).empty();
-        var categoryData = getCategorizedData(category);
-        // extend to other view type 
-        var view = WMStats.CategoryTableMap.get(category);
-        view(categoryData, divSelector);
-        if (cachedView){
-            WMStats.GenericController.switchView();
-        } else {
-            WMStats.GenericController.switchView(viewSelector);
-        }
+        var category = null;
+        if (viewSelector === "#category_view") {
+            // get category
+            category = WMStats.Env.CategorySelection
+        } else if (viewSelector === "#request_view") {
+            category = WMStats.Controls.requests;
+        } // maybe needs job view as well
         
+        if (category) {
+            /*
+            // clean databoard
+            $(viewSelector + " div.detail_data").empty();
+            $(divSelector).empty();
+            */
+            var data = getCategorizedData(category);
+            var view = WMStats.CategoryTableMap.get(category);
+            view(data, divSelector);
+        }
     }
     
     $(WMStats.Globals.Event).on(E.REQUESTS_LOADED, 
         function(event, requestData) {
+            var requestData = WMStats.ActiveRequestModel.getRequests();
+            // draw alert
+            WMStats.RequestAlertGUI(requestData, "#request_alert");
             drawTotalRequestSummary()
             //refresh filter cache.
             getActiveFilteredData();
-            drawDataBoard(true);
             drawFilteredRequestSummary();
-            WMStats.RequestAlertGUI(requestData, "#request_alert");
+            
+            // update CurrentRequestData only for the all_requests or initialize
+            if (WMStats.Env.CurrentRequestData === null || 
+                WMStats.Env.RequestSelection === "all_requests") {
+                WMStats.Env.CurrentRequestData = requestData.getFilteredRequests();
+            }
+            drawDataBoard();
         })
 
     $(WMStats.Globals.Event).on(E.AGENTS_LOADED, 
@@ -86,22 +99,15 @@ function getCategorizedData(category) {
     
     $(WMStats.Globals.Event).on(E.CATEGORY_SUMMARY_READY, 
         function(event, data) {
-            var category = WMStats.Controls.getCategoryButtonValue();
-            var categoryData = getCategorizedData(category);
-            // extend to other view type 
-            var view = WMStats.CategoryTableMap.get(category);
             $("#category_view div.detail_data").empty();
-            view(categoryData, "#category_view div.summary_data");
-            WMStats.GenericController.switchView("#category_view");
-            WMStats.ActiveRequestController.CategoryData = categoryData;
+            drawDataBoard("#category_view");
         })
     
     $(WMStats.Globals.Event).on(E.REQUEST_SUMMARY_READY, 
         function(event, data) {
-            //refresh filter cache.
             $("#request_view div.detail_data").empty();
-            WMStats.ActiveRequestTable(data, "#request_view div.summary_data");
-            WMStats.GenericController.switchView("#request_view");
+            WMStats.Env.CurrentRequestData = data;
+            drawDataBoard("#request_view");
         })
 
     $(WMStats.Globals.Event).on(E.JOB_SUMMARY_READY, 
@@ -113,9 +119,9 @@ function getCategorizedData(category) {
 
     $(WMStats.Globals.Event).on(E.CATEGORY_DETAIL_READY, 
         function(event, categoryKey) {
-            var allData = WMStats.ActiveRequestController.CategoryData;
+            var allData = WMStats.Env.CategoryData;
             var data = allData.getData(categoryKey);
-            WMStats.RequestDetailList(data, "#category_view div.detail_data");
+            WMStats.CategoryDetailList(data, "#category_view div.detail_data");
         })
         
     $(WMStats.Globals.Event).on(E.REQUEST_DETAIL_READY, 
@@ -126,8 +132,10 @@ function getCategorizedData(category) {
             var requests = {};
             requests[workflow] = reqDoc;
             var data = {key: workflow, requests: requests, summary: reqSummary};
-        
+            //$("#request_view div.detail_data").show("slide", {direction: "down"}, 500);
             WMStats.RequestDetailList(data, "#request_view div.detail_data");
+            $("#request_view div.detail_data").show("slide", {}, 500);
+            WMStats.Env.RequestDetailOpen = true;
         })
 
     $(WMStats.Globals.Event).on(E.JOB_DETAIL_READY, 
@@ -135,27 +143,73 @@ function getCategorizedData(category) {
             WMStats.JobDetailList(data, "#job_view div.detail_data");
         })
         
+    // filter control
     $(document).on('keyup', "#filter_board input", 
         function() {
             //refresh filter cache.
             getActiveFilteredData();
-            drawDataBoard(true);
             drawFilteredRequestSummary();
+            drawDataBoard();
         })
-
+/*
     $(document).on('change', 'input[name="category-select"][type="radio"]', function() {
         drawDataBoard();
+        })
+*/
+    $(document).on('click', "#category_button li a", function(event){
+        WMStats.Env.CategorySelection = this.hash.substring(1);
+        $(WMStats.Globals.Event).triggerHandler(E.CATEGORY_SUMMARY_READY);
+        $("#category_button li a").removeClass("nav-button-selected").addClass("button-unselected");
+        $(this).removeClass("button-unselected").addClass("nav-button-selected");
+        event.preventDefault();
+        })
+     
+    $(document).on('click', "#all_requests li a", function(event){
+        WMStats.Env.RequestSelection = "all_requests";
+        var data = WMStats.ActiveRequestModel.getRequests();
+        $(WMStats.Globals.Event).triggerHandler(E.REQUEST_SUMMARY_READY, data);
+        $(this).removeClass("button-unselected").addClass("nav-button-selected");
+        event.preventDefault();
         })
 
     $(document).on('click', 'a.requestAlert', function() {
         var workflow = $(this).text();
         WMStats.JobSummaryModel.setRequest(workflow);
+        $(WMStats.Globals.Event).triggerHandler(E.AJAX_LOADING_START)
         WMStats.JobSummaryModel.retrieveData();
         $(this).addClass('reviewed');
        })
 
     $(document).on('click', "#tab_board li a", function(event){
-        WMStats.GenericController.switchView(this.hash);
+        drawDataBoard(this.hash);
         event.preventDefault();
     });
+    
+    $(document).on('click', "#jobDetailNav li a", function(event){
+        $('div.jobDetailBox').hide();
+        $(this.hash).show();
+        $("#jobDetailNav li a").removeClass("button-selected").addClass("button-unselected");
+        $(this).removeClass("button-unselected").addClass("button-selected");
+        event.preventDefault();
+        })
+
+    $(WMStats.Globals.Event).on(E.LOADING_DIV_START, 
+        function(event, data) {
+            // TODO: need to update when partial_request happens)
+            if (WMStats.Env.View === '#category_view' || 
+                (WMStats.Env.View === '#request_view' && 
+                 WMStats.Env.RequestSelection === "all_requests")) {
+                     $('#loading_page').show();
+                }
+        });
+
+    $(WMStats.Globals.Event).on(E.LOADING_DIV_END, 
+        function(event, data) {
+            $('#loading_page').hide();
+        })
+        
+    $(WMStats.Globals.Event).on(E.AJAX_LOADING_START, 
+        function(event, data) {
+            $('#loading_page').show();
+        });
 })(jQuery);

@@ -20,4 +20,4 @@ if (WMStats.Globals.VARIANT == "tier1") {
                                    "js/Views/Tables/T1/WMStats.CampaignSummaryTable.js",
                                    "js/Views/Tables/Analysis/WMStats.UserSummaryTable.js",
                                     "js/Views/Tables/WMStats.SiteSummaryTable.js"])
-} 
+};

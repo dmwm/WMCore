@@ -1,4 +1,6 @@
 function (doc, req) {
+    
+    //TODO may need to added update flag to distinguish update and insert
     if (doc === null) {
         log("Error: missing doc id - " + req.id);
         return [null, "ERROR: request not found - " + req.id];
@@ -7,23 +9,31 @@ function (doc, req) {
     var updateFlag = false; 
     if (!doc.total_jobs) {
         doc.total_jobs = req.query.total_jobs;
+    } else {
+        doc.total_jobs += req.query.total_jobs;
         updateFlag = true;
     }
     if (!doc.input_events) {
         doc.input_events = req.query.input_events;
+    } else {
+        doc.input_events += req.query.input_events;
         updateFlag = true;
     }
     if (!doc.input_lumis) {
+        doc.input_lumis = req.query.input_lumis;
+    } else {
         doc.input_lumis = req.query.input_lumis;
         updateFlag = true;
     }
     if (!doc.input_num_files) {
         doc.input_num_files = req.query.input_num_files;
+    } else {
+        doc.input_num_files = req.query.input_num_files;
         updateFlag = true;
     }
     if (updateFlag) {
-        return [doc, 'OK'];
+        return [doc, 'UPDATED'];
     } else {
-        return [null, 'EXIST'];
+        return [doc, 'INSERTED'];
     }
 }

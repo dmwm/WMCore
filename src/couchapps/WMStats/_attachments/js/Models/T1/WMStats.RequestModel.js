@@ -5,4 +5,4 @@ WMStats.RequestModel = function() {
     var reqModel = new WMStats._RequestModelBase(initView, options);;
     reqModel.setTrigger('NeedtoDoSomething');
     return reqModel;
-}()
+}();

@@ -1,0 +1,43 @@
+<html>
+<head>
+<title>My Page</title>
+<script src="js/loader.js" type='text/javascript'> </script>
+
+    <!-- Globals is needed to be loaded before other library -->
+    <script src="js/WMStats.Globals.js" type='text/javascript'> </script>
+    <script src="js/WMStats.Utils.js" type='text/javascript'> </script>
+    <script src="js/WMStats.Couch.js" type='text/javascript'> </script>
+    
+    <!-- importing order is critical -->
+    <!-- data structure -->
+    <script src="js/DataStruct/import.js" type='text/javascript'> </script>
+    
+    <!-- table gui -->
+    <script src="js/Views/Controls/import.js" type='text/javascript'> </script>
+    <script src="js/Views/Tables/import.js" type='text/javascript'> </script>
+    <script src="js/Views/HTMLList/import.js" type='text/javascript'> </script>
+    <script src="js/Views/Graphs/import.js" type='text/javascript'> </script>
+    <!-- Overview.js will load javascripts corresponding to variant dynamically  -->
+    <script src="js/Models/import.js" type='text/javascript'> </script>
+    <script src="js/Controller/import.js" type='text/javascript'> </script>
+</head>
+<body>
+<div align="center">
+<br><br>
+<input type="text" size="25" name="outputdataset" value=""></input> <button type="submit" name='output' value="Submit">submit</button><br>
+<input type="text" size="25" name="request" value=""></input> <button type="submit" name='request' value="Submit">submit</button><br>
+</div>
+</body>
+<script>
+    $('button[name="output"]').click(function(event) {
+        WMStats.WorkloadSummaryOutputdataModel.setKey($('input[name="outputdataset"]').val())
+        WMStats.WorkloadSummaryOutputdataModel.retrieveData();
+        event.stopPropagation();
+    })
+    $('button[name="request"]').click(function(event) {
+        WMStats.WorkloadSummaryRequestModel.setKey($('input[name="request"]').val())
+        WMStats.WorkloadSummaryRequestModel.retrieveAllDocs();
+        event.stopPropagation();
+    })
+</script>
+</html>

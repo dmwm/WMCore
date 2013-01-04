@@ -3,19 +3,30 @@ WMStats.namespace("SiteSummaryTable");
 WMStats.SiteSummaryTable = function (data, containerDiv) {
     
     var tableConfig = {
+        "sDom": 'lfrtip',
         "sScrollX": "",
         "aoColumns": [
+            {"sTitle": "D", 
+             "sDefaultContent": 0,
+             "fnRender": function ( o, val ) {
+                            return WMStats.Utils.formatDetailButton("detail");
+                        }},
+            {"sTitle": "L", 
+             "sDefaultContent": 0,
+             "fnRender": function ( o, val ) {
+                            return WMStats.Utils.formatDetailButton("drill");
+                        }},
             { "mDataProp": "key", "sTitle": "site"},               
             { "mDataProp": function (source, type, val) { 
                               return source.summary.summaryStruct.numRequests;
                            }, "sTitle": "requests", "sDefaultContent": 0, 
             },
             { "mDataProp": function (source, type, val) { 
-                              return source.summary.getJobStatus("pending");
+                              return source.summary.getJobStatus("submitted.pending");
                            }, "sTitle": "pending", "sDefaultContent": 0, 
             },
             { "mDataProp": function (source, type, val) { 
-                              return source.summary.getJobStatus("running");
+                              return source.summary.getJobStatus("submitted.running");
                            }, "sTitle": "running", "sDefaultContent": 0, 
             },
             { "mDataProp": function (source, type, val) { 
@@ -38,6 +49,7 @@ WMStats.SiteSummaryTable = function (data, containerDiv) {
                             var successJobs = source.summary.getJobStatus("success");
                             var totalCompleteJobs = (successJobs + failJobs) || 1;
                             var result = failJobs / totalCompleteJobs * 100;
+                            return (result.toFixed(1)  + "%");
                           }
             }
         ]
@@ -47,4 +59,4 @@ WMStats.SiteSummaryTable = function (data, containerDiv) {
     var filterConfig = {};
     
     return WMStats.Table(tableConfig).create(containerDiv,filterConfig);
-}
+};

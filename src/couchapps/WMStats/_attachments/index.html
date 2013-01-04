@@ -7,8 +7,50 @@
         @import "css/jquery-ui-1.8.18.custom.css";
         @import "css/main_layout.css";
     </style>
-    </style>
-    <!-- Brings in all the dependencies needed for this couchapp -->
+  </head>
+<body>
+    <!-- content to be placed inside <body>…</body> -->
+    <div id="monitor_title">
+        <div id="link_tabs"></div>
+        <div id="clock"></div>
+    </div>
+    <div id="summary_board"></div>
+    <div id="message_board">
+        <div id="agent_alert"></div>
+        <div id="request_alert"></div>
+    </div>
+    <div id="main_board">
+        <div id="filter_board"></div>
+        <div id="filter_summary"></div>
+        <div id="status_board"></div>
+        <div id="tab_board"></div>
+        <div id="data_board">
+            <div id="category_view">
+                <div id="category_bar"></div>
+                <div class="detail_data"></div>
+                <div class="summary_data"></div>
+            </div>
+            <div id="request_view" class="viewPane">
+            </div>
+            <div class="summary_data"></div>
+            </div>
+            <div id="job_view">
+                <div class="summary_data"></div>
+                <div class="detail_data"></div>
+            </div>
+        </div>
+    </div>
+    <div id="loading_page">
+    </div>
+    <!--- templates this should be invisible -->
+    <div id="templates">
+        <div class="viewTemplate">
+            <div class="detail_data hideDiv draggable"></div>
+            <div class="summary_data"></div>
+        </div>
+    </div>
+</body>
+<!-- Brings in all the dependencies needed for this couchapp -->
     <script src="js/loader.js" type='text/javascript'> </script>
 
     <!-- Globals is needed to be loaded before other library -->
@@ -24,6 +66,7 @@
     <script src="js/Views/Controls/import.js" type='text/javascript'> </script>
     <script src="js/Views/Tables/import.js" type='text/javascript'> </script>
     <script src="js/Views/HTMLList/import.js" type='text/javascript'> </script>
+    <script src="js/Views/Graphs/import.js" type='text/javascript'> </script>
     <!-- Overview.js will load javascripts corresponding to variant dynamically  -->
     <script src="js/Models/import.js" type='text/javascript'> </script>
     <script src="js/Controller/import.js" type='text/javascript'> </script>
@@ -37,55 +80,22 @@
     function retrieveData() {
         WMStats.ActiveRequestModel.retrieveData();
         WMStats.AgentModel.retrieveData();
+        //WMStats.HistoryModel.setOptions();
+        //WMStats.HistoryModel.retrieveData();
     }
-    
+
     $(document).ready(function() {
+        $('#loading_page').addClass("front").show();
         applyTemplate();
+        WMStats.CommonControls.setUTCClock("#clock");
         WMStats.Controls.setFilter("#filter_board");
+        WMStats.Controls.setAllRequestButton("#status_board");
         WMStats.Controls.setTabs("#tab_board");
-        WMStats.Controls.setCategoryButton("#category_button");
+        WMStats.Controls.setCategoryButton("#category_bar");
         retrieveData();
+        $("div.draggable").draggable();
         // 5 min update
-        setInterval(retrieveData, 300000)
+        setInterval(retrieveData, 300000);
      } );
     </script>
-  </head>
-<body>
-    <!-- content to be placed inside <body>…</body> -->
-    <div id="monitor_title"></div>
-    <div id="summary_board"></div>
-    <div id="message_board">
-        <div id="agent_alert"></div>
-        <div id="request_alert"></div>
-    </div>
-    <div id="main_board">
-        <div id="filter_board"></div>
-        <div id="filter_summary"></div>
-        <div id="status_board"></div>
-        <div id="tab_board"></div>
-        <div id="data_board">
-            <div id="category_view">
-                <div id="category_button"></div>
-                <div class="detail_data"></div>
-                <div class="summary_data"></div>
-            </div>
-            <div id="request_view" class="viewPane"></div>
-            <div id="job_view">
-                <div class="summary_data"></div>
-                <div class="detail_data"></div>
-            </div>
-        </div>
-    </div>
-    <div id="loading_page">
-        Loading ...
-    </div>
-    
-    <!--- templates this should be invisible -->
-    <div id="templates">
-        <div class="viewTemplate">
-            <div class="detail_data"></div>
-            <div class="summary_data"></div>
-        </div>
-    </div>
-</body>
 </html>

@@ -13,8 +13,8 @@ WMStats.namespace('RequestDataList');
         htmlstr += "<li> success: " + summary.getJobStatus('success') + "</li>";
         htmlstr += "<li> failure: " + summary.getTotalFailure() + "</li>";
         htmlstr += "<li> queued: " + summary.getTotalQueued() + "</li>";
-        htmlstr += "<li> running: " + summary.getJobStatus('submit.running') + "</li>";
-        htmlstr += "<li> pending: " + summary.getJobStatus('submit.pending') + "</li>";
+        htmlstr += "<li> running: " + summary.getJobStatus('submitted.running') + "</li>";
+        htmlstr += "<li> pending: " + summary.getJobStatus('submitted.pending') + "</li>";
         htmlstr += "</ul>";
         htmlstr += "</div>";
         return htmlstr;
@@ -23,4 +23,4 @@ WMStats.namespace('RequestDataList');
     WMStats.RequestDataList = function (data, containerDiv) {
          $(containerDiv).html(format(data));
     }
-})()
+})();

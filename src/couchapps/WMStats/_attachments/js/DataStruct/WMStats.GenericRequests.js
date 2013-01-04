@@ -5,9 +5,7 @@ WMStats.namespace("RequestsByKey");
 WMStats.GenericRequestsSummary = function (summaryStruct) {
     
     this._get = WMStats.Utils.get;
-    // number of requests in the data
-    this._addJobs = WMStats.Utils.updateObj;
-    
+       
     this.summaryStruct = {length: 0};
     //default job status structure
     this.jobStatus = {
@@ -21,12 +19,10 @@ WMStats.GenericRequestsSummary = function (summaryStruct) {
              cooloff: {create: 0, submit: 0, job: 0},
              paused: {create: 0, submit: 0, job: 0},
          };
+    
 
     if (summaryStruct) {
-        for (var prop in summaryStruct) {
-            // only works with one level deep summary
-            this.summaryStruct[prop] = summaryStruct[prop];
-        };
+        this.summaryStruct = WMStats.Utils.cloneObj(summaryStruct);
     };
 };
 
@@ -35,13 +31,56 @@ WMStats.GenericRequestsSummary.prototype = {
     getJobStatus: function(statusStr) {
         return WMStats.Utils.get(this.jobStatus, statusStr, 0);
     },
-
+    
+    getAvgProgressSummary: function (doc) {
+        
+        var progressStat = {};
+        var datasets = {}
+        var numDataset = 0;
+        for (var task in doc.tasks) {
+            for(var site in doc.tasks[task].sites) {
+                for (var outputDS in doc.tasks[task].sites[site].dataset) {
+                    if (datasets[outputDS] === undefined) {
+                         numDataset += 1;
+                         datasets[outputDS] = true;
+                    }
+                    WMStats.Utils.updateObj(progressStat, doc.tasks[task].sites[site].dataset[outputDS]);
+                }
+             }
+        }
+        for (var prop in progressStat) {
+            progressStat[prop] = progressStat[prop] / numDataset;
+        }
+        progressStat.numDataset = numDataset;
+        return progressStat;
+    },
+    getAvgEvents: function() {
+        // handle legacy event calculation
+        if (this.summaryStruct.progress === undefined || this.summaryStruct.progress.events === undefined) {
+            return this.summaryStruct.processedEvents;
+        } else {
+            return this.summaryStruct.progress.events;
+        }
+    },
+    
+    getAvgLumis: function() {
+        // handle legacy event calculation
+        if (this.summaryStruct.progress.totalLumis === undefined) {
+            return 0;
+        } else {
+            return this.summaryStruct.progress.totalLumis;
+        }
+    },
+    
     getSummary: function(){
         return this.summaryStruct;
     },
     
+    summaryStructUpdateFuction: null,
+    
     update: function(summary) {
-        WMStats.Utils.updateObj(this.summaryStruct, summary.summaryStruct);
+        WMStats.Utils.updateObj(this.summaryStruct, summary.summaryStruct, true, 
+                                this.summaryStructUpdateFuction);
         WMStats.Utils.updateObj(this.jobStatus, summary.jobStatus)
     },
     
@@ -98,6 +137,57 @@ WMStats.GenericRequestsSummary.prototype = {
     }
 };
 
+WMStats.RequestStruct = function(requestName) {
+    this._workflow = requestName;
+    this._summary = WMStats.RequestsSummary();
+    // number of requests in the data
+    this._addJobs = WMStats.Utils.updateObj;
+};
+
+WMStats.RequestStruct.prototype = {
+    
+    getProgressStat: function () {
+        var progressStat = {}
+        for (var task in this.tasks) {
+            for(var site in this.tasks[task].sites) {
+                WMStats.Utils.updateObj(progressStat, this.tasks[task].sites[site].dataset);
+            }
+        }
+        return progressStat;
+    },
+
+    getName: function() {
+        return this._workflow;
+    },
+    
+    getSummary: function() {
+        return this._summary.createSummaryFromRequestDoc(this);
+    },
+    
+    updateFromCouchDoc: function (doc) {
+        for (var field in doc) {
+            //handles when request is splited in more than one agents
+            if (this[field] && 
+                (field == 'sites' || field == 'status')){
+                this._addJobs(this[field], doc[field])
+            } else if (this[field] && field == 'output_progress') {
+                var outProgress = this.output_progress;
+                for (var index in outProgress){
+                    for (var prop in doc[field][index]) {
+                        outProgress[index][prop] += doc[field][index][prop];
+                        //TODO: need combine dataset separtely
+                    }
+                }
+            } else if (this[field] && field == 'tasks'){
+                //TODO need to handle the 
+                //this._dataByWorkflow[doc.workflow][field] = doc[field];
+            } else {
+                this[field] = doc[field];
+            }
+        }
+    }
+};
+
 WMStats.GenericRequests = function (noFilterFlag) {
     /*
      * Data structure for holding the request
@@ -110,10 +200,8 @@ WMStats.GenericRequests = function (noFilterFlag) {
     this._dataByWorkflow = {};
     this._dataByWorkflowAgent = {}
     this._get = WMStats.Utils.get;
-    // number of requests in the data
-    this._addJobs = WMStats.Utils.updateObj;
     this._filter = {};
-    this._filteredRequests = noFilterFlag || WMStats.Requests(true);
+    this._filteredRequests = null;
 }
 
 WMStats.GenericRequests.prototype = {
@@ -121,7 +209,7 @@ WMStats.GenericRequests.prototype = {
     _mapProperty: function (workflowData, property) {
         if (property == 'request_status') {
             return workflowData[property][workflowData[property].length - 1].status;
-        } 
+        }
         return workflowData[property];
     },
     
@@ -157,7 +245,9 @@ WMStats.GenericRequests.prototype = {
    _andFilter: function(base, filter) {
         var includeFlag = true;
         for (var property in filter) {
-            if (this._mapProperty(base, property) !== undefined &&
+            if (!filter[property]) {
+                continue;
+            }else if (this._mapProperty(base, property) !== undefined &&
                this._contains(this._mapProperty(base, property), filter[property])) {
                 continue;
             } else {
@@ -169,8 +259,22 @@ WMStats.GenericRequests.prototype = {
     },
     
     _contains: function(a, b) {
-        //TODO change to regular expression
-        return (!b || a.toLowerCase().indexOf(b.toLowerCase()) !== -1);
+        //TODO change to regular expression or handle numbers
+        if ((typeof a) === "string") return (a.toLowerCase().indexOf(b.toLowerCase()) !== -1);
+        else if ((typeof a) == "number") return (Number(b) == a);
+        else if (a instanceof Array) {
+            for (var i in a) {
+                if (this._contains(a[i], b)) return true;
+            }
+            return false;
+        } else {
+            alert("value need to be either number or string");
+        }
+    },
+        
+    getProgressStat: function (request) {
+        var requestObj = this._getRequestObj(request)
+        return requestObj.getProgressStat();
     },
     
     getFilter: function() {
@@ -185,35 +289,22 @@ WMStats.GenericRequests.prototype = {
 
         var request = this.getDataByWorkflow(doc.workflow);
         if (!request) {
-            this._dataByWorkflow[doc.workflow] = {};
+            this._dataByWorkflow[doc.workflow] = new WMStats.RequestStruct(doc.workflow);
         }
+        this._dataByWorkflow[doc.workflow].updateFromCouchDoc(doc)
         
-        var requestWithAgent = this.getRequestByNameAndAgent(doc.workflow, doc.agent_url);
-         
-        for (var field in doc) {
-            //handles when request is splited in more than one agents
-            if (this._dataByWorkflow[doc.workflow][field] && 
-                (field == 'sites' || field == 'status')){
-                this._addJobs(this._dataByWorkflow[doc.workflow][field], doc[field])
-            } else if (this._dataByWorkflow[doc.workflow][field] && field == 'output_progress') {
-                var outProgress = this._dataByWorkflow[doc.workflow].output_progress;
-                for (var index in outProgress){
-                    for (var prop in doc[field][index]) {
-                        outProgress[index][prop] += doc[field][index][prop];
-                        //TODO: need combine dataset separtely
-                    }
-                }
-            } else {
-                this._dataByWorkflow[doc.workflow][field] = doc[field];
-            }
-            //for request, agenturl structure
-            requestWithAgent[field] = doc[field];
+        if (doc.agent_url) {
+            var requestWithAgent = this.getRequestByNameAndAgent(doc.workflow, doc.agent_url);
+            requestWithAgent.updateFromCouchDoc(doc);
         }
     },
     
     updateBulkRequests: function(docList) {
         for (var row in docList) {
-            this.updateRequest(docList[row].doc);
+            //not sure why there is null case
+            if (docList[row].doc) {
+                this.updateRequest(docList[row].doc);
+            }
         }
     },
 
@@ -225,24 +316,26 @@ WMStats.GenericRequests.prototype = {
                 filteredData[workflowName] =  requestData[workflowName];
             }
         }
+        this._filteredRequests = WMStats.Requests();
         this._filteredRequests.setDataByWorkflow(filteredData);
         return this._filteredRequests;
     },
     
 
     getRequestByNameAndAgent: function(workflow, agentUrl) {
-        if (!this._dataByWorkflowAgent[workflow]) {
-                this._dataByWorkflowAgent[workflow] = {}
-        }
-        
+        // if ther in no agentUrl get all agent for given workflow
         if (!agentUrl){
             return this._dataByWorkflowAgent[workflow];
-        } else {
-            if (!this._dataByWorkflowAgent[workflow][agentUrl]){
-                this._dataByWorkflowAgent[workflow][agentUrl] = {};
-            }
-            return this._dataByWorkflowAgent[workflow][agentUrl];
         }
+        // if is new workflow, create one.
+        if (!this._dataByWorkflowAgent[workflow]) {
+            this._dataByWorkflowAgent[workflow] = {};
+        }
+        //if it is new agent create one.
+        if (!this._dataByWorkflowAgent[workflow][agentUrl]){
+            this._dataByWorkflowAgent[workflow][agentUrl] = new WMStats.RequestStruct(workflow);
+        }
+        return this._dataByWorkflowAgent[workflow][agentUrl];
     },
     
     getDataByWorkflow: function(request, keyString, defaultVal) {
@@ -348,7 +441,7 @@ WMStats.RequestsByKey = function (category, summaryFunc) {
             } else {
                 if (key == "NA" && _category == "sites" || _category == "tasks") {
                     // summary base shouldn't be higher level. since sites and tasks
-                    // has sub hierierky
+                    // has sub hierarchy
                     _updateData(key, {});
                 } else {
                     _updateData(key, dataByWorkflow[workflow]);
@@ -366,6 +459,12 @@ WMStats.RequestsByKey = function (category, summaryFunc) {
         }
     };
     
+    function getRequestData(key){
+        var requestData = WMStats.Requests();
+        requestData.setDataByWorkflow(_data[key].requests);
+        return requestData;
+    };
+    
     function getList(sortFunc) {
         var list = [];
         for (var key in _data) {
@@ -381,6 +480,7 @@ WMStats.RequestsByKey = function (category, summaryFunc) {
     return {
         categorize: categorize,
         getData: getData,
+        getRequestData: getRequestData,
         category: _category,
         getList: getList
     }

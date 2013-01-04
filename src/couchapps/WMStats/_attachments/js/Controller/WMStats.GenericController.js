@@ -2,18 +2,56 @@ WMStats.namespace("GenericController");
 
 (function($) {
  // collapsible bar
+    function closeRequestDetail() {
+        $("#request_view div.detail_data").hide('puff', {}, 500);
+        WMStats.Env.RequestDetailOpen = false;
+    };
+    
     $(document).on('click', 'div.caption img', function(event){
         $(this).parent('div.caption').siblings('div.body').toggle('nomal');
     });
 
+    $(document).on('click', 'div.closingButton', function(event){
+        //$(this).parent('div').hide('puff', {}, 500);
+        //TODO: generalize to all the button not just for request detail
+        closeRequestDetail();
+        event.preventDefault();
+    });
     
+    /* live event can't handle the stopEventPropagation
+     * http://api.jquery.com/event.stopImmediatePropagation/
+    $(document).click(function(event) {
+        if ($("#request_view div.detail_data").is(":visible") && ($(event.target).parents().index($("#request_view div.detail_data")) == -1)){
+            closeRequestDetail();
+        }
+    });
+
+    
+     
+    $('html').click(function(event) {
+        if (WMStats.Env.RequestDetailOpen) {
+            closeRequestDetail();
+        }
+    });
+    
+    $("#request_view div.detail_data").click(function(event) {
+        event.stopPropagation();
+    });
+    */
+   
+    $(document).keyup(function(event) {
+        if (WMStats.Env.RequestDetailOpen && event.keyCode == 27) {
+            closeRequestDetail();
+            event.preventDefault();
+        }
+    })
+    /*
     $('div').ajaxSend(function(){
-            alert("test");
             $(this).show();
         }).live("ajaxComplete", function(){
             $(this).hide();
     });
-    
+    */
     WMStats.GenericController.switchView = function (showSelector, hideSelectors) {
         if (!showSelector) {
             showSelector = WMStats.Env.View;
@@ -36,4 +74,4 @@ WMStats.namespace("GenericController");
         $('#tab_board li').removeClass("tabs-selected");
         $('#tab_board a[href="' + showSelector +'"]').parent().addClass("tabs-selected")
     };
-})(jQuery)
+})(jQuery);

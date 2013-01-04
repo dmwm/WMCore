@@ -17,4 +17,5 @@ if (WMStats.Globals.VARIANT == "tier1") {
 } else if (WMStats.Globals.VARIANT == "analysis") {
     //import analysis specific table
     WMStats.Globals.importScripts(["js/Controller/Analysis/addCategoryMap.js"])
-} 
+};
+

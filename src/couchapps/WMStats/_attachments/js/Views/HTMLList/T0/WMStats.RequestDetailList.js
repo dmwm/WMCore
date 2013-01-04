@@ -1,7 +1,7 @@
 WMStats.namespace('RequestDetailList');
 (function() { 
     var format = function (requestStruct) {
-        var htmlstr = "";
+        var htmlstr = '<div class="closingButton">X</div>';
         var reqDoc = requestStruct.requests;
         var reqSummary = requestStruct.summary;
         
@@ -9,17 +9,18 @@ WMStats.namespace('RequestDetailList');
         htmlstr += "<div class='requestDetailBox'>"
         htmlstr += "<ul>";
         if (reqDoc) {
-            htmlstr += "<li> category: " + requestStruct.key + "</li>";
-            htmlstr += "<li> queued (first): " + reqSummary.getJobStatus("queued.first", 0) + "</li>";
-            htmlstr += "<li> queued (retried): " + reqSummary.getJobStatus("queued.retry", 0) + "</li>";
-            htmlstr += "<li> created: " + reqSummary.getWMBSTotalJobs() + "</li>";
-            htmlstr += "<li> paused jobs: " + reqSummary.getTotalPaused() + "</li>";
-            htmlstr += "<li> cooloff jobs: " + reqSummary.getTotalCooloff() + "</li>";
-            htmlstr += "<li> submitted: " + reqSummary.getTotalSubmitted() + "</li>"
-            htmlstr += "<li> pending: " + reqSummary.getJobStatus("submitted.pending", 0) + "</li>";
-            htmlstr += "<li> running: " + reqSummary.getJobStatus("submitted.running", 0) + "</li>";
-            htmlstr += "<li> failure: " + reqSummary.getTotalFailure()  + "</li>";
-            htmlstr += "<li> success: " + reqSummary.getJobStatus("success", 0) + "</li>";
+            
+            htmlstr += "<li><b>category:</b> " + requestStruct.key + "</li>";
+            htmlstr += "<li><b>queued (first):</b> " + reqSummary.getJobStatus("queued.first", 0) + "</li>";
+            htmlstr += "<li><b>queued (retried):</b> " + reqSummary.getJobStatus("queued.retry", 0) + "</li>";
+            htmlstr += "<li><b>created:</b> " + reqSummary.getWMBSTotalJobs() + "</li>";
+            htmlstr += "<li><b>paused jobs:</b> " + reqSummary.getTotalPaused() + "</li>";
+            htmlstr += "<li><b>cooloff jobs:</b> " + reqSummary.getTotalCooloff() + "</li>";
+            htmlstr += "<li><b>submitted:</b> " + reqSummary.getTotalSubmitted() + "</li>"
+            htmlstr += "<li><b>pending:</b> " + reqSummary.getJobStatus("submitted.pending", 0) + "</li>";
+            htmlstr += "<li><b>running:</b> " + reqSummary.getJobStatus("submitted.running", 0) + "</li>";
+            htmlstr += "<li><b>failure:</b> " + reqSummary.getTotalFailure()  + "</li>";
+            htmlstr += "<li><b>success:</b> " + reqSummary.getJobStatus("success", 0) + "</li>";
         }
         htmlstr += "</ul>";
         htmlstr += "</div>";
@@ -29,4 +30,4 @@ WMStats.namespace('RequestDetailList');
     WMStats.RequestDetailList = function (data, containerDiv) {
          $(containerDiv).html(format(data));
     }
-})()
+})();

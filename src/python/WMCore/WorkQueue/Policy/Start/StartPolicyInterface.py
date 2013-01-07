@@ -29,6 +29,7 @@ class StartPolicyInterface(PolicyInterface):
         self.data = {}
         self.lumi = None
         self.couchdb = None
+        self.rejectedWork = [] # List of inputs that were rejected
 
     def split(self):
         """Apply policy to spec"""
@@ -140,10 +141,29 @@ class StartPolicyInterface(PolicyInterface):
             msg = """data: %s, mask: %s.""" % (str(data), str(mask))
             error = WorkQueueNoWorkError(self.wmspec, msg)
             raise error
-        return self.workQueueElements
+        return self.workQueueElements, self.rejectedWork
 
     def dbs(self):
         """Get DBSReader"""
         from WMCore.WorkQueue.WorkQueueUtils import get_dbs
         dbs_url = self.initialTask.dbsUrl()
         return get_dbs(dbs_url)
+
+    @staticmethod
+    def supportsWorkAddition():
+        """Indicates if a given policy supports addition of new work"""
+        return False
+
+    def modifyPolicyForWorkAddition(self, inboxElement):
+        """Set modifiers to the policy based on the inboxElement information so that after a splitting pass
+        with this policy strictly new work is returned, the inbox element must have information
+        about already existing work"""
+        raise NotImplementedError("This can't be called on a base StartPolicyInterface object")
+
+    def newDataAvailable(self, task, inbound):
+        """
+            Returns True if there is data in the future could be included as an element
+            for the inbound parent. However it doesn't guarantee that the new data
+            will be included if the inbound element is split (i.e. the new data could be open blocks for the Block policy).
+        """
+        raise NotImplementedError("This can't be called on a base StartPolicyInterface object")

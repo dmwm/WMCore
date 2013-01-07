@@ -22,7 +22,6 @@ from Samples.BasicProcessingWorkload \
 
 #from Samples.MultiTaskProcessingWorkload import createWorkload as MultiTaskProcessingWorkload
 #from Samples.MultiTaskProductionWorkload import createWorkload as MultiTaskProductionWorkload
-rerecoArgs = getTestArguments()
 mcArgs = getMCArgs()
 
 class WMSpecGenerator(object):
@@ -65,8 +64,11 @@ class WMSpecGenerator(object):
         return self._selectReturnType(spec, returnType, splitter)
 
     def createReRecoSpec(self, specName, returnType="spec", splitter = None,
-                         inputDataset = None, dbsUrl = None):
-        spec =  TestReRecoWorkload(specName, rerecoArgs)
+                         inputDataset = None, dbsUrl = None, **additionalArgs):
+        # update args, then reset them
+        args = getTestArguments()
+        args.update(additionalArgs)
+        spec =  TestReRecoWorkload(specName, args)
         if inputDataset != None:
             spec.taskIterator().next().data.input.dataset.primary = inputDataset
         if dbsUrl != None:

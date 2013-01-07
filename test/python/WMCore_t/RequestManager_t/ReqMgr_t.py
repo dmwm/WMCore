@@ -277,7 +277,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.jsonSender.put('message/%s' % requestName, message)
         messages = self.jsonSender.get('message/%s' % requestName)
         #self.assertEqual(messages[0][0][0], message)
-        for status in ['running', 'completed']:
+        for status in ['running-open', 'running-closed', 'completed']:
             self.jsonSender.put('request/%s?status=%s' % (requestName, status))
 
         # campaign
@@ -478,7 +478,9 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.changeStatusAndCheck(requestName = requestName,
                                   statusName  = 'acquired')
         self.changeStatusAndCheck(requestName = requestName,
-                                  statusName  = 'running')
+                                  statusName  = 'running-open')
+        self.changeStatusAndCheck(requestName = requestName,
+                                  statusName  = 'running-closed')
         self.changeStatusAndCheck(requestName = requestName,
                                   statusName  = 'completed')
         self.changeStatusAndCheck(requestName = requestName,

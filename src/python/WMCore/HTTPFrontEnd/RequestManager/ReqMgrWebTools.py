@@ -313,7 +313,7 @@ def changeStatus(requestName, status, wmstatUrl):
         elif not privileged():
             raise cherrypy.HTTPError(403, "You are not allowed to change the state for this request")
         # delete from the workqueue if it's been assigned to one
-        if oldStatus in ["acquired", "running"]:
+        if oldStatus in ["acquired", "running", "running-closed", "running-open"]:
             abortRequest(requestName)
         else:
             raise cherrypy.HTTPError(400, "You cannot abort a request in state %s" % oldStatus)

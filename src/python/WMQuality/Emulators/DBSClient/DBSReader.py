@@ -84,6 +84,16 @@ class DBSReader:
                                                           blockName = blockName,
                                                           locations = False)]
 
+    def listOpenFileBlocks(self, dataset):
+        """
+        _listOpenFileBlocks_
+
+        Retrieve a list of open fileblock names for a dataset
+
+        """
+        return [x['Name'] for x in self.getFileBlocksInfo(dataset, onlyClosedBlocks = False,
+                                                          locations = False) if str(x['OpenForWriting' ]) == '1']
+
     def listFileBlockLocation(self, block):
         """Fake locations"""
         return self.dataBlocks.getLocation(block)

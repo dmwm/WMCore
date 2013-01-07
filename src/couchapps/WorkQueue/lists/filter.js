@@ -40,7 +40,7 @@ function(head, req) {
 			}
 
             // if element doesnt have the key it cant match
-			if (!ele[key]) {
+			if (!ele.hasOwnProperty(key)) {
 				matched = false;
 				break;
 			}
@@ -53,7 +53,7 @@ function(head, req) {
 			    }
 
 			// for any other key just do a straight comparison
-			} else if (ele[key] && query[key] !== ele[key]) {
+			} else if (query[key] !== ele[key]) {
 				matched = false;
 				break;
 			}

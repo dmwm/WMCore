@@ -27,6 +27,8 @@ class WorkQueueElement(dict):
         # XXX workflow or data run over, the id function must be updated
 
         self.setdefault('Inputs', {})
+        self.setdefault('ProcessedInputs', [])
+        self.setdefault('RejectedInputs', [])
         #both ParentData and ParentFlag is needed in case there Dataset split,
         # even though ParentFlag is True it will have empty ParentData
         self.setdefault('ParentData', [])
@@ -49,6 +51,7 @@ class WorkQueueElement(dict):
         self.setdefault('RequestName', None)
         self.setdefault('TaskName', None)
         self.setdefault('TeamName', None)
+        self.setdefault('StartPolicy', {})
         self.setdefault('EndPolicy', {})
         self.setdefault('ACDC', {})
         self.setdefault('ChildQueueUrl', None)
@@ -61,11 +64,12 @@ class WorkQueueElement(dict):
         self.setdefault('NumOfFilesAdded', 0)
         # Mask used to constrain MC run/lumi ranges
         self.setdefault('Mask', None)
-        # is new data being added to the inputs i.e. open block with new files?
+        # is new data being added to the inputs i.e. open block with new files or dataset with new closed blocks?
         self.setdefault('OpenForNewData', False)
+        # When was the last time we found new data (not the same as when new data was split), e.g. An open block was found
+        self.setdefault('TimestampFoundNewData', 0)
         # Should we check the location of the inputs, or trust the initial values?
         self.setdefault('NoLocationUpdate', False)
-
         # set to true when updated from a WorkQueueElementResult
         self.modified = False
 
@@ -143,8 +147,7 @@ class WorkQueueElement(dict):
 
     def inEndState(self):
         """Have we finished processing"""
-        # elements only finished once they are no longer open for new data
-        return not self['OpenForNewData'] and (self.isComplete() or self.isFailed() or self.isCanceled())
+        return (self.isComplete() or self.isFailed() or self.isCanceled())
 
     def isComplete(self):
         return self['Status'] == 'Done'

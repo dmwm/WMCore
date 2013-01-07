@@ -50,6 +50,10 @@ class DataProcessingWorkloadFactory(StdBase):
     """
     def __init__(self):
         StdBase.__init__(self)
+
+        # Define attributes used by this spec
+        self.openRunningTimeout = None
+
         return
 
     def buildWorkload(self):
@@ -69,7 +73,7 @@ class DataProcessingWorkloadFactory(StdBase):
         workload = self.createWorkload()
         workload.setDashboardActivity("reprocessing")
         self.reportWorkflowToDashboard(workload.getDashboardActivity())
-        workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
+        workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs, OpenRunningTimeout = self.openRunningTimeout)
         procTask = workload.newTask("DataProcessing")
 
         cmsswStepType = "CMSSW"
@@ -117,6 +121,10 @@ class DataProcessingWorkloadFactory(StdBase):
         # by the ReqMgr or whatever is creating this workflow.
         self.couchURL = arguments["CouchURL"]
         self.couchDBName = arguments["CouchDBName"]
+
+        # DataProcessing is split by block and can receive more blocks after first split for certain delay
+        self.openRunningTimeout = int(arguments.get("OpenRunningTimeout", 0))
+
         # Get the ConfigCacheID
         self.configCacheID = arguments.get("ConfigCacheID", None)
         # or alternatively CouchURL part can be replaced by ConfigCacheUrl,

@@ -14,33 +14,38 @@
         <div id="link_tabs"></div>
         <div id="clock"></div>
     </div>
-    <div id="summary_board"></div>
-    <div id="message_board">
-        <div id="agent_alert"></div>
-        <div id="request_alert"></div>
-    </div>
-    <div id="main_board">
-        <div id="filter_board"></div>
-        <div id="filter_summary"></div>
-        <div id="status_board"></div>
-        <div id="tab_board"></div>
-        <div id="data_board">
-            <div id="category_view">
-                <div id="category_bar"></div>
-                <div class="detail_data"></div>
+    <div id="activeRequestPage">
+        <div id="summary_board"></div>
+        <div id="message_board">
+            <div id="agent_alert"></div>
+            <div id="request_alert"></div>
+        </div>
+        <div id="main_board">
+            <div id="filter_board"></div>
+            <div id="filter_summary"></div>
+            <div id="status_board"></div>
+            <div id="tab_board"></div>
+            <div id="data_board">
+                <div id="category_view">
+                    <div id="category_bar"></div>
+                    <div class="detail_data"></div>
+                    <div class="summary_data"></div>
+                </div>
+                <div id="request_view" class="viewPane">
+                </div>
                 <div class="summary_data"></div>
-            </div>
-            <div id="request_view" class="viewPane">
-            </div>
-            <div class="summary_data"></div>
-            </div>
-            <div id="job_view">
-                <div class="summary_data"></div>
-                <div class="detail_data"></div>
+                </div>
+                <div id="job_view">
+                    <div class="summary_data"></div>
+                    <div class="detail_data"></div>
+                </div>
             </div>
         </div>
+        <div id="loading_page" ></div>
     </div>
-    <div id="loading_page">
+    <div id="workloadSummaryPage">
+        <div id="search_option_board"></div>
+        <div id="search_result_board"></div>
     </div>
     <!--- templates this should be invisible -->
     <div id="templates">
@@ -86,8 +91,11 @@
 
     $(document).ready(function() {
         $('#loading_page').addClass("front").show();
+        $('#workloadSummaryPage').hide();
         applyTemplate();
+        WMStats.CommonControls.setLinkTabs("#link_tabs");
         WMStats.CommonControls.setUTCClock("#clock");
+        WMStats.CommonControls.setWorkloadSummarySearch("#search_option_board")
         WMStats.Controls.setFilter("#filter_board");
         WMStats.Controls.setAllRequestButton("#status_board");
         WMStats.Controls.setTabs("#tab_board");

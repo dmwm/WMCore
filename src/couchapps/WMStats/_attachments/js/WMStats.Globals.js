@@ -76,3 +76,6 @@ WMStats.CustomEvents.LOADING_DIV_END = "C_10";
 
 WMStats.CustomEvents.HISTORY_LOADED = "C_11";
 WMStats.CustomEvents.AJAX_LOADING_START = "C_12";
+
+//workload summary page event
+WMStats.CustomEvents.WORKLOAD_SUMMARY_READY = "W_1";

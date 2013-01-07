@@ -74,4 +74,33 @@ WMStats.namespace("GenericController");
         $('#tab_board li').removeClass("tabs-selected");
         $('#tab_board a[href="' + showSelector +'"]').parent().addClass("tabs-selected")
     };
+    
+    WMStats.GenericController.switchPage = function (showSelector, hideSelectors) {
+        if (!showSelector) {
+            showSelector = WMStats.Env.Page;
+        } else if (!hideSelectors) {
+            var pageList = ["#activeRequestPage", "#workloadSummaryPage"];
+            for (var i in pageList) {
+                if (showSelector != pageList[i]){
+                    $(pageList[i]).hide();
+                }
+                
+            }
+        } else {
+            for (var i in hideSelectors) {
+                $(hideSelectors[i]).hide();
+            }
+        }
+        $(showSelector).show();
+        WMStats.Env.Page = showSelector;
+        // select the tab
+        $('#linkTabs li').removeClass("tabs-selected");
+        $('#linkTabs a[href="' + showSelector +'"]').parent().addClass("tabs-selected")
+    };
+    
+    $(document).on('click', "#linkTabs li a", function(event){
+        WMStats.GenericController.switchPage(this.hash);
+        event.preventDefault();
+    });
+    
 })(jQuery);

@@ -2,7 +2,8 @@
 
 WMStats.Globals.importScripts([
         "js/Views/Tables/WMStats.Table.js",
-        "js/Views/Tables/WMStats.JobSummaryTable.js"
+        "js/Views/Tables/WMStats.JobSummaryTable.js",
+        "js/Views/Tables/WMStats.WorkloadSummaryTable.js"
     ])
 
 if (WMStats.Globals.VARIANT == "tier1") {

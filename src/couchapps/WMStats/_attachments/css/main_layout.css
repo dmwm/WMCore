@@ -284,6 +284,8 @@ a.requestAlert:hover {
 .tabs .tabs-nav li.tabs-selected a, .tabs .tabs-nav li.tabs-disabled a { cursor: text; }
 .tabs .tabs-nav li a, .tabs .tabs-nav li.tabs-active a { cursor: pointer; } /* first selector in group seems obsolete, but required to overcome bug in Opera applying cursor: text overall if defined elsewhere... */
 
+.linkTabs li {list-style: none; position: relative; top: 1px; margin: 0 .2em 1px 0; border-bottom: 0 !important; padding: 0; white-space: nowrap; display: inline}
+
 .button-group { position: relative;  zoom: 1; margin: 0; padding: 0; } /* position: relative prevents IE scroll bug (element with position: relative inside container with overflow: auto appear as "fixed") */
 .button-group li {list-style: none; padding-right: .2em; top: 1px; margin: 0 .2em 1px 0; border-bottom: 0 !important;  white-space: nowrap; display: inline}
 .button-selected {

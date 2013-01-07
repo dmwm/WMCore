@@ -38,6 +38,7 @@ views = ["Views/Controls/WMStats.CommonControls.js",
          "Views/Tables/WMStats.Table.js",
          "Views/Tables/WMStats.JobSummaryTable.js",
          "Views/Tables/WMStats.SiteSummaryTable.js",
+         "Views/Tables/WMStats.WorkloadSummaryTable.js",
          "Views/HTMLList/WMStats.JobDetailList.js",
          "Views/HTMLList/WMStats.AgentStatusGUI.js",
          "Views/Graphs/WMStats.SiteHistoryGraph.js"]
@@ -78,7 +79,7 @@ models =["Models/WMStats._ModelBase.js",
          "Models/WMStats.JobSummaryModel.js",
          "Models/WMStats.JobDetailModel.js",
          "Models/WMStats.AgentModel.js",
-         "Models/WMStats.WorkloadSummaryOutputdataModel.js",
+         "Models/WMStats.WorkloadSummaryModel.js",
          "Models/WMStats.HistoryModel.js"]
 
 t1_models =["Models/T1/WMStats.ActiveRequestModel.js"]
@@ -91,7 +92,8 @@ controller = ["Controller/WMStats.Env.js",
              "Controller/WMStats.GenericController.js",
              "Controller/WMStats.ActiveRequestController.js",
              "Controller/WMStats.CategoryMap.js",
-             "Controller/WMStats.TableController.js"]
+             "Controller/WMStats.TableController.js",
+             "Controller/WMStats.WorkloadSummaryController.js"]
 
 t1_controller = ["Controller/T1/addCategoryMap.js"]
 t0_controller = ["Controller/T0/addCategoryMap.js"]

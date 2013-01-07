@@ -1,5 +1,7 @@
 /** abstract environment of the web page */
 WMStats.namespace("Env");
+// page view ("#activeRequestPage", "#workloadSummaryPage")
+WMStats.Env.Page = "#activeRequestPage";
 // summary view ( contains #category_view, #request_view, #job_view)
 WMStats.Env.View = "#category_view";
 // category view selection (different variation has different values, i.e. site, campaing)

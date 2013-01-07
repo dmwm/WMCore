@@ -32,14 +32,27 @@ WMStats._ModelBase.prototype = {
         
     },
 
-    retrieveData: function () {
-        return this._dbSource.view(this._initialView, this._options, 
-                               jQuery.proxy(this.callback, this))
+    retrieveData: function (view, options) {
+        if (options === undefined){
+            var options = this._options;
+        }
+        if (view === undefined) {
+            var view = this._initialView;
+        }
+        
+        if (view === "allDocs") {
+            return this.retrieveAllDocs(options);
+        } else {
+            return this._dbSource.view(view, options, 
+                               jQuery.proxy(this.callback, this));
+        }
     },
     
-    retrieveAllDocs: function () {
-        return this._dbSource.allDocs(this._options, 
-                               jQuery.proxy(this.callback, this))
+    retrieveAllDocs: function (options) {
+        if (options === undefined){
+            var options = this._options;
+        }
+        return this._dbSource.allDocs(options, jQuery.proxy(this.callback, this))
     },
     
     setDBSource: function(dbSource) {

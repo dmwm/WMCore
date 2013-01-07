@@ -25,6 +25,9 @@ class Block(StartPolicyInterface):
         # Initialize a list of sites where the data is
         self.sites = []
 
+        # Initialize modifiers of the policy
+        self.blockBlackListModifier = []
+
     def split(self):
         """Apply policy to spec"""
         dbs = self.dbs()
@@ -102,23 +105,29 @@ class Block(StartPolicyInterface):
                 blocks.append(str(data))
             else:
                 Lexicon.dataset(data) # check dataset name
-                for block in dbs.listFileBlocks(data):
+                for block in dbs.listFileBlocks(data, onlyClosedBlocks = True):
                     blocks.append(str(block))
-
 
         for blockName in blocks:
             # check block restrictions
             if blockWhiteList and blockName not in blockWhiteList:
+                self.rejectedWork.append(blockName)
                 continue
             if blockName in blockBlackList:
+                self.rejectedWork.append(blockName)
+                continue
+            if blockName in self.blockBlackListModifier:
+                # Don't duplicate blocks rejected before or blocks that were included and therefore are now in the blacklist
                 continue
             if task.getLumiMask() and blockName not in maskedBlocks:
+                self.rejectedWork.append(blockName)
                 continue
 
             block = dbs.getDBSSummaryInfo(datasetPath, block = blockName)
             # blocks with 0 valid files should be ignored
             # - ideally they would be deleted but dbs can't delete blocks
             if not block['NumberOfFiles'] or block['NumberOfFiles'] == '0':
+                self.rejectedWork.append(blockName)
                 continue
 
             #check lumi restrictions
@@ -149,6 +158,7 @@ class Block(StartPolicyInterface):
                     runs = runs.intersection(runWhiteList)
                 # any runs left are ones we will run on, if none ignore block
                 if not runs:
+                    self.rejectedWork.append(blockName)
                     continue
 
                 if len(runs) == len(runLumis):
@@ -185,6 +195,11 @@ class Block(StartPolicyInterface):
                 self.data[block['block']] = self.sites
             else:
                 self.data[block['block']] = sitesFromStorageEelements(dbs.listFileBlockLocation(block['block']))
+
+            if not self.data[block['block']]:
+                # No sites for this block, move it to rejected
+                self.rejectedWork.append(blockName)
+                continue
 
             validBlocks.append(block)
         return validBlocks
@@ -228,3 +243,34 @@ class Block(StartPolicyInterface):
                 if int(section[0]) <= int(lumi) <= int(section[1]):
                     return True
         return False
+
+    def modifyPolicyForWorkAddition(self, inboxElement):
+        """
+            A block blacklist modifier will be created,
+            this policy object will split excluding the blocks in both the spec
+            blacklist and the blacklist modified
+        """
+        # Get the already processed input blocks from the inbox element
+        existingBlocks = inboxElement.get('ProcessedInputs', [])
+        self.blockBlackListModifier = existingBlocks
+        self.blockBlackListModifier.extend(inboxElement.get('RejectedInputs', []))
+        return
+
+    def newDataAvailable(self, task, inbound):
+        """
+            In the case of the block policy, the new data available
+            returns True if it finds at least one open block.
+        """
+        self.initialTask = task
+        dbs = self.dbs()
+        openBlocks = dbs.listOpenFileBlocks(task.getInputDatasetPath())
+        if openBlocks:
+            return True
+        return False
+
+    @staticmethod
+    def supportsWorkAddition():
+        """
+            Block start policy supports continuous addition of work
+        """
+        return True

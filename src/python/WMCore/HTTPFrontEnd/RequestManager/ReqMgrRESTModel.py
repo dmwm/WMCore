@@ -175,6 +175,9 @@ class ReqMgrRESTModel(RESTModel):
         self._addMethod('GET', 'configIDs', self.getConfigIDs,
                         args = ['prim', 'proc', 'tier'],
                         secured=True, validation=[self.isalnum], expires = 0)
+        self._addMethod('GET', 'requestsByStatusAndTeam', self.getRequestsByStatusAndTeam,
+                        args = ['teamName', 'status'], secured=True,
+                        validation=[self.isalnum], expires = 0)
 
         cherrypy.engine.subscribe('start_thread', self.initThread)
 
@@ -330,8 +333,13 @@ class ReqMgrRESTModel(RESTModel):
             result = GetRequest.getAssignmentsByName(request)
         return result
 
+    def getRequestsByStatusAndTeam(self, teamName, status):
+        """ Get a list of request names with the given team and status.
+        """
+        requestNames = ListRequests.listRequestsByTeam(teamName, status).keys()
+        return requestNames
 
-    def getUser(self, userName=None, group=None):
+    def getUser(self, userName = None, group = None):
         """ No args returns a list of all users.  Group returns groups this user is in.  Username
             returs a JSON with information about the user """
         if userName != None:

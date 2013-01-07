@@ -22,7 +22,8 @@
         "InputDataset": "InputDataset-OVERRIDE-ME",
         "RunBlacklist": [],
         "BlockWhitelist": [],
-        "BlockBlacklist": []
+        "BlockBlacklist": [],
+        "OpenRunningTimeout" : 0
 	}, 
 	
 

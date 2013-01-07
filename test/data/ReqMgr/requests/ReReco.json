@@ -27,7 +27,8 @@
         "nskims": 1,
         "SkimName1": "2011B_442p2_DataReprocessingBTagSkim",
         "SkimInput1": "RECOoutput",
-        "Skim1ConfigCacheID": "7559cf7a427be20436483f82fd109301"
+        "Skim1ConfigCacheID": "7559cf7a427be20436483f82fd109301",
+        "OpenRunningTimeout" : 0
 	},
 		
 "assignRequest":

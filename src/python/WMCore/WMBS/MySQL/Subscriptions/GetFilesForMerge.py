@@ -78,4 +78,15 @@ class GetFilesForMerge(DBFormatter):
     def execute(self, subscription = None, conn = None, transaction = False):
         results = self.dbi.processData(self.sql, {"p_1": subscription}, conn = conn,
                                       transaction = transaction)
-        return self.formatDict(results)
+
+        ungroupedResult = self.formatDict(results)
+        result = {}
+        for entry in ungroupedResult:
+            if entry['file_lfn'] not in result:
+                entry['se_name'] = set([entry['se_name']])
+                result[entry['file_lfn']] = entry
+            else:
+                result[entry['file_lfn']]['se_name'].add(entry['se_name'])
+        for entry in result:
+            result[entry]['se_name'] = frozenset(result[entry]['se_name'])
+        return result.values()

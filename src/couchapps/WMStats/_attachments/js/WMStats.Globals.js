@@ -19,15 +19,22 @@ WMStats.Globals = function($){
         
     };
     
+    function getAlertCollectorLink() {
+        return "/alertscollector/_design/AlertsCollector/index.html"
+    };
+    
     function getWorkloadSummaryPrefix () {
+        return "/couchdb/" + getWorkloadSummaryDB() + "/_design/WorkloadSummary/_show/histogramByWorkflow/";
+    };
+    
+    function getWorkloadSummaryDB() {
         if (_dbVariants[dbname] == "tier1") {
-            return "/couchdb/workloadsummary/_design/WorkloadSummary/_show/histogramByWorkflow/";
+            return "workloadsummary";
         } else if (_dbVariants[dbname] == "analysis") {
-            return "/couchdb/analysis_workloadsummary/_design/WorkloadSummary/_show/histogramByWorkflow/";
-        } else {
-            return null;
+            return "analysis_workloadsummary";
+        } else if (_dbVariants[dbname] == "tier0") {
+            return "t0_workloadsummary";
         }
-        
     };
     
     return {
@@ -36,8 +43,11 @@ WMStats.Globals = function($){
         AJAX_LOADING_STATUS: {beforeSend: function(){$('#loading_page').addClass('front').show()}, 
                               complete: function(){$('#loading_page').hide()}},
         COUCHDB_NAME: dbname,
+        WORKLOAD_SUMMARY_COUCHDB_NAME:  getWorkloadSummaryDB(), 
         VARIANT: _dbVariants[dbname],
         COUCHAPP_DESIGN: "WMStats",
+        WORKLOAD_SUMMARY_COUCHAPP_DESIGN: "WorkloadSummary",
+        ALERT_COLLECTOR_LINK: getAlertCollectorLink(),
         CONFIG: null, //this will be set when WMStats.Couch.loadConfig is called. just place holder or have default config
         loadScript: function (url, success) {
                         $.ajax({async: false, url: url, dataType: 'script', success: success})
@@ -65,3 +75,12 @@ WMStats.CustomEvents.CATEGORY_DETAIL_READY = "C_6";
 
 WMStats.CustomEvents.JOB_SUMMARY_READY = "C_7";
 WMStats.CustomEvents.JOB_DETAIL_READY = "C_8";
+
+WMStats.CustomEvents.LOADING_DIV_START = "C_9";
+WMStats.CustomEvents.LOADING_DIV_END = "C_10";
+
+WMStats.CustomEvents.HISTORY_LOADED = "C_11";
+WMStats.CustomEvents.AJAX_LOADING_START = "C_12";
+
+//workload summary page event
+WMStats.CustomEvents.WORKLOAD_SUMMARY_READY = "W_1";

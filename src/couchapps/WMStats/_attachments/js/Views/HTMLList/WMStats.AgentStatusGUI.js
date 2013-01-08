@@ -35,4 +35,4 @@ WMStats.AgentStatusGUI = function (data, containerDiv) {
     } else if (collectiveStatus == "error") {
         $(containerDiv).removeClass("stable warning").addClass("error").html(htmlList);
     }
-}
+};

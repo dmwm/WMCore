@@ -5,6 +5,16 @@ WMStats.CampaignSummaryTable = function (data, containerDiv) {
     var tableConfig = {
         "sScrollX": "",
         "aoColumns": [
+            {"sTitle": "D", 
+             "sDefaultContent": 0,
+             "fnRender": function ( o, val ) {
+                            return WMStats.Utils.formatDetailButton("detail");
+                        }},
+            {"sTitle": "L", 
+             "sDefaultContent": 0,
+             "fnRender": function ( o, val ) {
+                            return WMStats.Utils.formatDetailButton("drill");
+                        }},
             { "mDataProp": "key", "sTitle": "campaign"},               
             { "mDataProp": function (source, type, val) { 
                               return source.summary.summaryStruct.numRequests;
@@ -23,9 +33,18 @@ WMStats.CampaignSummaryTable = function (data, containerDiv) {
             { "sDefaultContent": 0,
               "sTitle": "event progress", 
               "mDataProp": function (source, type, val) { 
-                           //TODO this might not needed since input_events should be number not string. (for the regacy record)
-                           var totalEvents = source.summary.summaryStruct.totalEvents || 1;
-                           var result = source.summary.summaryStruct.processedEvents / totalEvents * 100
+                           //TODO this might not needed since input_events should be number not string. (for the legacy record)
+                            var totalEvents = source.summary.summaryStruct.totalEvents || 1;
+                            var result = source.summary.getAvgEvents() / totalEvents * 100
+                            return (result.toFixed(1) + "%");
+                          }
+            },
+            { "sDefaultContent": 0,
+              "sTitle": "lumi progress", 
+              "mDataProp": function (source, type, val) { 
+                           //TODO this might not needed since input_events should be number not string. (for the legacy record)
+                            var totalLumis = source.summary.summaryStruct.totalLumis || 1;
+                            var result = source.summary.getAvgLumis() / totalLumis * 100
                             return (result.toFixed(1) + "%");
                           }
             },
@@ -53,4 +72,4 @@ WMStats.CampaignSummaryTable = function (data, containerDiv) {
     var filterConfig = {};
     
     return WMStats.Table(tableConfig).create(containerDiv,filterConfig);
-}
+};

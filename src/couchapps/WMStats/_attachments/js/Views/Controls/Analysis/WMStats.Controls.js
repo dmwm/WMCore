@@ -17,24 +17,28 @@ WMStats.Controls = function($){
     
     function setCategoryButton(selector) {
         var categoryBottons = 
-        '<nav class="category-button">\
-            <input type="radio" name="category-select" value="requests" id="request-category"></input>\
-            <label for="request-category">All Requests</label>\
-            <input type="radio" name="category-select" value="user_dn"" id="user-category" checked="checked"></input>\
-            <label for="user-category">User DN</label>\
-            <input type="radio" name="category-select" value="campaign" id="campaign-category"></input>\
-            <label for="campaign-category">Campaign</label>\
-            <input type="radio" name="category-select" value="sites" id="site-category"></input>\
-            <label for="site-category">Site</label>\
+        '<nav id="category_button" class="button-group">\
+            <ul><li><a href="#user_dn" class="nav-button nav-button-selected"> User DN </a></li>\
+                <li><a href="#campaign" class="nav-button button-unselected"> Campaign </a></li>
+                <li><a href="#sites" class="nav-button button-unselected"> Site </a></li></ul>\
          </nav>';
         
         $(selector).append(categoryBottons);
-        _categorySelector = selector + ' input[name="category-select"][type="radio"]:checked';
+        WMStats.Env.CategorySelection = "user_dn";
+    };
+    
+    function setAllRequestButton(selector) {
+        var requestBottons = 
+        '<nav id="all_requests" class="button-droup">\
+            <ul><li><a href="#" class="nav-button"> all requests </a></li></ul>\
+        </nav>';
         
+        $(selector).append(requestBottons).addClass("button-group");
+        WMStats.Env.RequestSelection = "all_requests";
     };
     
     function getCategoryButtonValue() {
-         return $(_categorySelector).val();
+         return WMStats.Env.CategorySelection;
     };
     
     function getFilter() {
@@ -53,6 +57,7 @@ WMStats.Controls = function($){
         setFilter: setFilter,
         setTabs: setTabs,
         setCategoryButton: setCategoryButton,
+        setAllRequestButton: setAllRequestButton,
         getCategoryButtonValue: getCategoryButtonValue,
         getFilter: getFilter,
         requests: "requests",

@@ -11,4 +11,4 @@ WMStats.RequestsSummary = function() {
 WMStats.Requests = function(noFilterFlag) {
     var tier0Requests = new WMStats.GenericRequests(noFilterFlag);
     return tier0Requests;
-}
+};

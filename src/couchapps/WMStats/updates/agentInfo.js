@@ -8,10 +8,9 @@ function (doc, req) {
             return [null, "Error"];
         }
     } else {
-        doc["status"] = reqDoc["status"];
-        doc["down_components"] = reqDoc["down_components"];
-        doc["acdc"] = reqDoc["acdc"];
-        doc["timestamp"] = reqDoc["timestamp"];
+        for (var prop in reqDoc) {
+            doc[prop] = reqDoc[prop];
+        }
     }
     return [doc, 'OK']; 
 } 

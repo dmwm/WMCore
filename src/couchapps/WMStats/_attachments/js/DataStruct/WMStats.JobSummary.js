@@ -27,4 +27,4 @@ WMStats.JobSummary = function (couchData) {
     if (couchData) jobSummaryData.setData(couchData);
     
     return jobSummaryData;
-}
+};

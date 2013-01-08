@@ -6,27 +6,37 @@ WMStats.Controls = function($){
     function setFilter(selector) {
         var inputFilter = '<div name="filter">\
                            workflow: <input name="workflow" value=""></input>\
+                           status: <input name="request_status" value=""></input>\
+                           run: <input name="run" value=""></input>\
                            </div>';
         $(selector).append(inputFilter);
         _filterSelector = selector + ' div[name="filter"] input';
     }
     
     function setCategoryButton(selector) {
+        /*
         var categoryBottons = 
-        '<nav class="category-button">\
-            <input type="radio" name="category-select" value="requests" id="request-category">\
-            <label for="request-category">All Requests</label>\
-            <input type="radio" name="category-select" value="run" id="run-category"  checked="checked">\
-            <label for="run-category">Run</label>\
+        '<nav id="category_button">\
+            <ul><li class="nav-button button-selected"><a href="#run"> Run </a></li>\
          </nav>';
         
         $(selector).append(categoryBottons);
-        _categorySelector = selector + ' input[name="category-select"][type="radio"]:checked';
+        */
+        WMStats.Env.CategorySelection = "run";
+    };
+    
+    function setAllRequestButton(selector) {
+        var requestBottons = 
+        '<nav id="all_requests" class="button_group">\
+            <ul><li><a href="#" class="nav-button"> all requests </a></li></ul>\
+        </nav>';
         
+        $(selector).append(requestBottons).addClass("button-group");
+        WMStats.Env.RequestSelection = "all_requests";
     };
     
     function getCategoryButtonValue() {
-         return $(_categorySelector).val();
+         return WMStats.Env.CategorySelection;
     };
     
     function getFilter() {
@@ -35,7 +45,7 @@ WMStats.Controls = function($){
     
     
     function setTabs(selector) {
-        var tabs = '<ul><li class="first"><a href="#category_view">Category</a></li>\
+        var tabs = '<ul><li class="first"><a href="#category_view">Run</a></li>\
                     <li><a href="#request_view">&#187 Requests</a></li>\
                     <li><a href="#job_view">&#187 Jobs</a></li></ul>'
         $(selector).append(tabs).addClass("tabs");
@@ -46,6 +56,7 @@ WMStats.Controls = function($){
         setFilter: setFilter,
         setTabs: setTabs,
         setCategoryButton: setCategoryButton,
+        setAllRequestButton: setAllRequestButton,
         getCategoryButtonValue: getCategoryButtonValue,
         getFilter: getFilter,
         requests: "requests",

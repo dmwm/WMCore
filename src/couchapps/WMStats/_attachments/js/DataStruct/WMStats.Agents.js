@@ -41,4 +41,4 @@ WMStats.Agents = function (couchData) {
     }
 
     return agentData
-}
+};

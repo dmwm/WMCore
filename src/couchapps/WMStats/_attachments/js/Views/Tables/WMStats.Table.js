@@ -2,7 +2,7 @@ WMStats.namespace("Table")
 
 WMStats.Table = function(config, tableSetting) {
 
-    var tableSetting = tableSetting || '<table cellpadding="0" cellspacing="0" border="0" class="display"></table>';
+    var tableSetting = tableSetting || '<table cellpadding="0" cellspacing="0" border="0.5" class="display" width="100%"></table>';
     var tableConfig = {
         //"sPaginationType": "full_numbers",
         //"sScrollX": "100%",
@@ -10,9 +10,11 @@ WMStats.Table = function(config, tableSetting) {
         "bStateSave": true,
         "bProcessing": true,
         "iDisplayLength": 10,
-        "sDom": 'C<"clear">lfrtip',
+        "sDom": 'lrtip',
+        //"sDom": 'C<"clear">lfrtip',
         "aaSorting": [],
-        "bAutoWidth": false
+        "bAutoWidth": true,
+        "bJQueryUI": true
         };
     
     function updateConfig(config) {
@@ -42,6 +44,9 @@ WMStats.Table = function(config, tableSetting) {
         if ( oTable.length > 0 ) {
             oTable.fnAdjustColumnSizing();
         }
+        
+        jQuery(WMStats.Globals.Event).triggerHandler(WMStats.CustomEvents.LOADING_DIV_END);
+        
         if (filterConfig) {
             //oTable.append(_footer());
             return oTable.columnFilter(filterConfig);
@@ -56,4 +61,4 @@ WMStats.Table = function(config, tableSetting) {
             'updateConfig': updateConfig,
             'create': create
             }
-}
+};

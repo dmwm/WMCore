@@ -57,3 +57,9 @@ class WMStatsReader():
 
     def getDBInstance(self):
         return self.couchDB
+    
+    def getHeartbeat(self):
+        try:
+            return self.couchDB.info();
+        except Exception, ex:
+            return {'error_message': str(ex)}

@@ -3,7 +3,8 @@ WMStats.Globals.importScripts([
     "js/Controller/WMStats.GenericController.js",
     "js/Controller/WMStats.ActiveRequestController.js",
     "js/Controller/WMStats.CategoryMap.js",
-    "js/Controller/WMStats.TableController.js"
+    "js/Controller/WMStats.TableController.js",
+    "js/Controller/WMStats.WorkloadSummaryController.js"
 ])
 
 if (WMStats.Globals.VARIANT == "tier1") {
@@ -17,4 +18,5 @@ if (WMStats.Globals.VARIANT == "tier1") {
 } else if (WMStats.Globals.VARIANT == "analysis") {
     //import analysis specific table
     WMStats.Globals.importScripts(["js/Controller/Analysis/addCategoryMap.js"])
-} 
+};
+

@@ -9,4 +9,4 @@ WMStats.HTMLList.prototype = {
     create: function (data, containerDiv) {
          $(containerDiv).html(this._format(data));
     }
-}
+};

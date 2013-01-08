@@ -502,7 +502,8 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         # Set campaign
         workflowData['campaign'] = spec.getCampaign()
-
+        # Set inputdataset
+        workflowData['inputdatasets'] = spec.listInputDatasets()
         # Set histograms
         histograms = {'workflowLevel' : {'failuresBySite' :
                                          DiscreteSummaryHistogram('Failed jobs by site', 'Site')},

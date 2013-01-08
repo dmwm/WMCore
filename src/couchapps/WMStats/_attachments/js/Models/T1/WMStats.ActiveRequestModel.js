@@ -9,6 +9,8 @@ WMStats.ActiveRequestModel = function() {
                             "negotiating",
                             "acquired",
                             "running",
+                            "running-open",
+                            "running-closed",
                             "failed",
                             "epic-FAILED",
                             "completed",

@@ -19,6 +19,10 @@ WMStats.Globals = function($){
         
     };
     
+    function getAlertCollectorLink() {
+        return "/alertscollector/_design/AlertsCollector/index.html"
+    };
+    
     function getWorkloadSummaryPrefix () {
         return "/couchdb/" + getWorkloadSummaryDB() + "/_design/WorkloadSummary/_show/histogramByWorkflow/";
     };
@@ -43,6 +47,7 @@ WMStats.Globals = function($){
         VARIANT: _dbVariants[dbname],
         COUCHAPP_DESIGN: "WMStats",
         WORKLOAD_SUMMARY_COUCHAPP_DESIGN: "WorkloadSummary",
+        ALERT_COLLECTOR_LINK: getAlertCollectorLink(),
         CONFIG: null, //this will be set when WMStats.Couch.loadConfig is called. just place holder or have default config
         loadScript: function (url, success) {
                         $.ajax({async: false, url: url, dataType: 'script', success: success})

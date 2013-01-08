@@ -39,12 +39,42 @@ height: 30px;
 background: #7878FF;
 }
 
+#link_tabs {
+    position: absolute;
+    bottom: 1px;
+    left: 100px;
+    width:300px;
+    font: bold 0.9em verdana;
+}
+
 #clock {
     position: absolute;
     bottom: 1px;
     right: 10px;
     font: bold 10px verdana;
 }
+.linkTabs ul {
+    margin-left: 3px;
+    padding-left: 0;
+    display: inline;
+    } 
+
+.linkTabs ul li {
+    margin-left: 0;
+    margin-bottom: 5px;
+    padding: 5px 15px 5px;
+    list-style: none;
+    display: inline;
+    }
+    
+        
+.linkTabs ul li.here {
+    border-bottom: 1px solid #ffc;
+    list-style: none;
+    display: inline;
+    }
+
+.linkTabs li a {text-decoration: none;}  
 
 #summary_board { 
     position: relative;
@@ -283,8 +313,6 @@ a.requestAlert:hover {
 .tabs .tabs-nav li.tabs-selected { margin-bottom: 0; padding-bottom: 1px; font-weight: bold; color: #E6B517;}
 .tabs .tabs-nav li.tabs-selected a, .tabs .tabs-nav li.tabs-disabled a { cursor: text; }
 .tabs .tabs-nav li a, .tabs .tabs-nav li.tabs-active a { cursor: pointer; } /* first selector in group seems obsolete, but required to overcome bug in Opera applying cursor: text overall if defined elsewhere... */
-
-.linkTabs li {list-style: none; position: relative; top: 1px; margin: 0 .2em 1px 0; border-bottom: 0 !important; padding: 0; white-space: nowrap; display: inline}
 
 .button-group { position: relative;  zoom: 1; margin: 0; padding: 0; } /* position: relative prevents IE scroll bug (element with position: relative inside container with overflow: auto appear as "fixed") */
 .button-group li {list-style: none; padding-right: .2em; top: 1px; margin: 0 .2em 1px 0; border-bottom: 0 !important;  white-space: nowrap; display: inline}

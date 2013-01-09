@@ -5,7 +5,7 @@
 """
 Rest Model abstract implementation
 """
-
+from functools import wraps
 from WMCore.Lexicon import check
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import request, HTTPError
@@ -169,6 +169,7 @@ class RESTModel(WebAPI):
 
         if not self.methods.has_key(verb):
             self.methods[verb] = {}
+        @wraps(function)
         def wrapper(*input_args, **input_kwargs):
             if secured:
                 # set up security

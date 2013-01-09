@@ -1,3 +1,31 @@
+0.9.33 to 0.9.34:
+  - Fix sandbox creation so that is works with patch releases.  Pull request #4339.
+  - Display docstrings in RESTAPI documentation.  Pull request #4340.
+  - Fix the handling of the site parameter in the error summary when the site
+    is an empty dictionary.  Pull request #4342.
+  - Fix smart lumi splitting when running over a too big single lumi file.
+    Pull request #4334.
+  - Fix the cleanup of the workflow timestamp cache in the JobSubmitter.  Pull
+    request #4335.
+  - Remove dead code and view from the ReqMgr couchapp.  Pull request #4332.
+  - Avoid crashes on custodial PhEDEx subscriptions to non-MSS sites.  Pull
+    request #4325.
+  - Ensure that the JobSubmitter submits jobs from the oldest workflow first.
+    Pull request #4327.
+  - Add a method to WMStatsReader that reports requests sorted by state that also
+    includes a timestamp of the last state transition.  Pull request #4328.
+  - Remove dead code from the ConfigCache and clean up views.  Pull request
+    #4324.
+  - Fix WMStats so that it functions correctly when there are no jobs in a 
+    request.  Pull request #4326.
+  - Deploy WorkloadSummary with reqmon instead of ReqMgr.  Pull request #4232.
+  - Add a merged flag to the FWJR so that it's possible to calculat lumi information
+    for monitoring.  Pull request #4336.
+  - WMStats feature development, pull request #4345:
+     * Change the layout of the warning and summary box.
+     * Add more filters.
+     * Propagate more information (lumi, performance, job type)
+
 0.9.32 to 0.9.33:
   - Publish job state transition information to WMStats.  Pull request #4311.
   - Fix timeout kills in the LSF plugin.  Pull request #4322.

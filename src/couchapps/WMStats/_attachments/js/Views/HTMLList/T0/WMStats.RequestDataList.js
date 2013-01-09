@@ -22,4 +22,4 @@ WMStats.namespace('RequestDataList');
     WMStats.RequestDataList = function (data, containerDiv) {
          $(containerDiv).html(format(data));
     }
-})()
+})();

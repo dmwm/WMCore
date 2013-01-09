@@ -13,4 +13,4 @@ WMStats._StructBase.prototype = {
     setData: function(couchData) {
         this._data = this.convertCouchData(couchData)
     }
-}
+};

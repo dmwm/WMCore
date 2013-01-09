@@ -22,4 +22,4 @@ WMStats.Campaigns = function (couchData) {
     if (couchData) campaignData.setData(couchData);
     
     return campaignData
-}
+};

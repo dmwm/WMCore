@@ -1,10 +1,9 @@
 WMStats.namespace("_RequestModelBase");
 
-WMStats._RequestModelBase = function(initView, options, visFunc) {
+WMStats._RequestModelBase = function(initView, options) {
 
     this._initialView = initView || 'requestByCampaignAndDate';
     this._options = options || {'include_docs': true};
-    this._visFunc = visFunc || null;
     this._data = null;
     this._trigger = "requestReady";
 }
@@ -18,7 +17,7 @@ WMStats._RequestModelBase.keysFromIDs = function(data) {
                 keys.push(data.rows[i].id);
             }
         }
-        return keys;      
+        return keys;
     }
 
 WMStats._RequestModelBase.requestAgentUrlKeys = function(requestList, requestAgentData) {
@@ -60,18 +59,18 @@ WMStats._RequestModelBase.prototype = {
                        'include_docs': true};
         WMStats.Couch.allDocs(options,
               function(agentData) {
+                  //start loading sign disable the filter
+                  jQuery(WMStats.Globals.Event).triggerHandler(WMStats.CustomEvents.LOADING_DIV_START);
                   // combine reqmgrData(reqmgr_request) and 
                   // agent_request(agentData) data 
-                  var requestCache = WMStats.Requests()
-                  requestCache.updateBulkRequests(reqmgrData.rows)
-                  requestCache.updateBulkRequests(agentData.rows)
+                  var requestCache = WMStats.Requests();
+                  requestCache.updateBulkRequests(reqmgrData.rows);
+                  requestCache.updateBulkRequests(agentData.rows);
                   
                   // set the data cache
                   objPtr._data = requestCache;
                   // trigger custom events
                   jQuery(WMStats.Globals.Event).triggerHandler(objPtr._trigger, objPtr._data)
-                  // create gui
-                  //return objPtr._visFunc(objPtr._data, objPtr._containerDiv);
               })
     },
 
@@ -91,7 +90,7 @@ WMStats._RequestModelBase.prototype = {
          */
         var options = {"reduce": true, "group": true, "descending": true};
         var requestList =  WMStats._RequestModelBase.keysFromIDs(overviewData);
-        WMStats.Couch.view('latestRequest', options,
+        WMStats.Couch.view('requestAgentUrl', options,
               function(requestAgentUrlData) {
                   var keys = WMStats._RequestModelBase.requestAgentUrlKeys(requestList, requestAgentUrlData)
                   objPtr._getLatestRequestAgentUrlAndCreateTable(overviewData, keys, objPtr)
@@ -101,7 +100,7 @@ WMStats._RequestModelBase.prototype = {
     retrieveData: function (viewName, options) {
         
         if (!viewName) {viewName = this._initialView;}
-        if (!options) {options = this._options;}
+        if (!options) {options = WMStats.Utils.cloneObj(this._options);}
         var objPtr = this;
         if (viewName == "allDocs") {
             WMStats.Couch.allDocs(options, function (overviewData) {

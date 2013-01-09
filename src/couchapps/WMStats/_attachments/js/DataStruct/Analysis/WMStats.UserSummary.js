@@ -13,4 +13,4 @@ WMStats.UserSummary = function() {
     };
     
     return userSummary;
-}
+};

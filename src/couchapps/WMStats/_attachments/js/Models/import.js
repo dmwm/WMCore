@@ -4,6 +4,8 @@ WMStats.Globals.importScripts([
     "js/Models/WMStats.JobSummaryModel.js",
     "js/Models/WMStats.JobDetailModel.js",
     "js/Models/WMStats.AgentModel.js",
+    "js/Models/WMStats.WorkloadSummaryModel.js",
+    "js/Models/WMStats.HistoryModel.js"
 ])
 
 if (WMStats.Globals.VARIANT == "tier1") {
@@ -12,4 +14,4 @@ if (WMStats.Globals.VARIANT == "tier1") {
     WMStats.Globals.importScripts(["js/Models/T0/WMStats.ActiveRequestModel.js"]);
 } else if (WMStats.Globals.VARIANT == "analysis") {
     WMStats.Globals.importScripts(["js/Models/T1/WMStats.ActiveRequestModel.js"]);
-} 
+};

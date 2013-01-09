@@ -1,5 +1,5 @@
 //import common scripts
-WMStats.Globals.importScripts([])
+WMStats.Globals.importScripts(["js/Views/Controls/WMStats.CommonControls.js"])
 
 if (WMStats.Globals.VARIANT == "tier1") {
     //import tier1 specific table
@@ -10,4 +10,4 @@ if (WMStats.Globals.VARIANT == "tier1") {
 } else if (WMStats.Globals.VARIANT == "analysis") {
     //import analysis specific table
     WMStats.Globals.importScripts([ "js/Views/Controls/Analysis/WMStats.Controls.js"])
-} 
+};

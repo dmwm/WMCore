@@ -5,6 +5,8 @@ exports.init = function(newDoc, oldDoc, userCtx) {
 
     // Is this an admin
     v.isAdmin = function() {
+        //allow local replication
+        if (userCtx.name === null) return true;
         return userCtx.roles.indexOf('_admin') !== -1;
     };
 

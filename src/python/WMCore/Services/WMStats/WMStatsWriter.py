@@ -29,7 +29,9 @@ def monitorDocFromRequestSchema(schema):
     doc["async_dest"] = schema.get('asyncDest', "")
     doc["dbs_url"] = schema.get("DbsUrl", "")
     doc["publish_dbs_url"] = schema.get("PublishDbsUrl", "")
-    doc["outputdatasets"] = schema.get('OutputDatasets', "")
+    doc["outputdatasets"] = schema.get('OutputDatasets', [])
+    doc["cmssw"] = schema.get('SoftwareVersions', [])
+
     # team name is not yet available need to be updated in assign status
     #doc['team'] = schema['team']
     return doc
@@ -87,12 +89,13 @@ class WMStatsWriter(WMStatsReader):
                                          fields=totalStats)
 
     def updateFromWMSpec(self, spec):
-        # currently only update priority and siteWhitelist
+        # currently only update priority and siteWhitelist and output dataset
         # complex field needs to be JSON encoded
         # assuming all the toplevel tasks has the same site white lists
         #priority is priority + user priority + group priority
         fields = {'priority': spec.priority(),
-                  'site_white_list': spec.getTopLevelTask()[0].siteWhitelist()}
+                  'site_white_list': spec.getTopLevelTask()[0].siteWhitelist(),
+                  'outputdatasets': spec.listOutputDatasets()}
         return self.couchDB.updateDocument(spec.name(), 'WMStats',
                     'generalFields',
                     fields={'general_fields': JSONEncoder().encode(fields)})

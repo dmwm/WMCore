@@ -22,4 +22,4 @@ WMStats.Sites = function (couchData) {
     if (couchData) siteData.setData(couchData);
     
     return siteData;
-}
+};

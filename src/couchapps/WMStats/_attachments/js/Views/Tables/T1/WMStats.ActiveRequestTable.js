@@ -9,12 +9,25 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
         "iDisplayLength": 25,
         "sScrollX": "",
         "sDom": 'lrtip',
+        "bAutoWidth": false,
         "aoColumns": [
+            {"sTitle": "D", 
+             "sDefaultContent": 0,
+             "sWidth": "15px",
+             "fnRender": function ( o, val ) {
+                            return WMStats.Utils.formatDetailButton("detail");
+                        }},
+            {"sTitle": "L", 
+             "sDefaultContent": 0,
+             "sWidth": "15px",
+             "fnRender": function ( o, val ) {
+                            return WMStats.Utils.formatDetailButton("drill");
+                        }},
             { "mDataProp": "workflow", "sTitle": "workflow",
               "fnRender": function ( o, val ) {
                             return formatReqDetailUrl(o.aData.workflow);
                       },
-              "bUseRendered": false
+              "bUseRendered": false, "sWidth": "150px"
             },
             { "mDataProp": function (source, type, val) { 
                               return source.request_status[source.request_status.length -1].status
@@ -25,6 +38,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
                           },
               "bUseRendered": false
             },
+            { "mDataProp": "request_type", "sTitle": "type", "sDefaultContent": ""},
             { "mDataProp": "priority", "sTitle": "priority", "sDefaultContent": 0},
             { "sDefaultContent": 0,
               "sTitle": "queue injection",  
@@ -47,11 +61,20 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
             { "sDefaultContent": 0,
               "sTitle": "event progress", 
               "fnRender": function ( o, val ) {
-                           //TODO this might not needed since input_events should be number not string. (for the regacy record)
+                           //TODO this might not needed since input_events should be number not string. (for the legacy record)
                            var inputEvents =Number(requestData.getDataByWorkflow(o.aData.workflow, "input_events", 1)) || 1;
-                           var result = Number(requestData.getDataByWorkflow(o.aData.workflow, "output_progress.0.events", 0)) /
-                                      (inputEvents) * 100
-                            return (result.toFixed(1) + "%");
+                           var outputEvents = requestData.getSummary(o.aData.workflow).getAvgEvents();
+                           var result = (outputEvents / inputEvents) * 100
+                           return (result.toFixed(1) + "%");
+                          }
+            },
+            { "sDefaultContent": 0,
+              "sTitle": "lumi progress", 
+              "fnRender": function ( o, val ) {
+                           var inputLumis =Number(requestData.getDataByWorkflow(o.aData.workflow, "input_lumis", 1)) || 1;
+                           var outputLumis = requestData.getSummary(o.aData.workflow).getAvgLumis();
+                           var result = (outputLumis / inputLumis) * 100
+                           return (result.toFixed(1) + "%");
                           }
             },
             { "sDefaultContent": 0,
@@ -94,4 +117,4 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
     tableConfig.aaData = requestData.getList();
     
     return WMStats.Table(tableConfig).create(containerDiv, filterConfig);
-}
+};

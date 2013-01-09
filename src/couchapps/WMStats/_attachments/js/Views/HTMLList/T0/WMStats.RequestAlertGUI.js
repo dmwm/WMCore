@@ -52,5 +52,4 @@ WMStats.RequestAlertGUI = function (requestData, containerDiv) {
     } else {
         $(containerDiv).removeClass("warning error").addClass("stable").html("request alarm");
     }
-
-}
+};

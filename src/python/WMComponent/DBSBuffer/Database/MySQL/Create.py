@@ -67,7 +67,7 @@ class Create(DBCreator):
         self.create["04dbsbuffer_file"] = \
           """CREATE TABLE dbsbuffer_file (
              id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
-             lfn          VARCHAR(255) NOT NULL,
+             lfn          VARCHAR(500) NOT NULL,
              filesize     BIGINT,
              events       INTEGER,
              dataset_algo BIGINT UNSIGNED   not null,

@@ -67,7 +67,7 @@ def sortedFilesFromMergeUnits(mergeUnits):
             # the constructor in the "newlocations" attribute.  We want these to
             # be in the "locations" attribute so that they get picked up by the
             # job submitter.
-            newFile["locations"] = set([file["se_name"]])
+            newFile["locations"] = set(file["se_name"])
             newFile.addRun(Run(file["file_run"], file["file_lumi"]))
             sortedFiles.append(newFile)
 
@@ -97,6 +97,7 @@ class WMBSMergeBySize(JobFactory):
 
         for mergeableFile in mergeableFiles:
             newMergeFile = {}
+
             for key in mergeableFile.keys():
                 newMergeFile[key] = mergeableFile[key]
 

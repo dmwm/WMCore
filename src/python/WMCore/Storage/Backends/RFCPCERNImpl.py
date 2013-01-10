@@ -49,6 +49,10 @@ class RFCPCERNImpl(StageOutImpl):
         if self.isEOS(targetPFN):
             return
 
+        # Only create dir on remote storage
+        if self.stageIn:
+            return
+
         targetDir = os.path.dirname(self.parseCastorPath(targetPFN))
 
         # targetDir does not exist => create it
@@ -95,7 +99,6 @@ class RFCPCERNImpl(StageOutImpl):
         If adler32 checksum is provided, use it for the transfer
 
         """
-        isTargetEOS = self.isEOS(targetPFN)
 
         result = ""
 
@@ -106,9 +109,12 @@ class RFCPCERNImpl(StageOutImpl):
             result += "LOCAL_SIZE=`stat -c%%s \"%s\"`\n" % localPFN
             result += "echo \"Local File Size is: $LOCAL_SIZE\"\n"
 
-        useChecksum = ( checksums != None and checksums.has_key('adler32') and not self.stageIn )
+        isRemoteEOS = self.isEOS(remotePFN)
 
-        if isTargetEOS:
+        useChecksum = ( checksums != None and checksums.has_key('adler32') and not self.stageIn )
+        removeCommand = self.createRemoveFileCommand(targetPFN)
+
+        if isRemoteEOS:
 
             result += "source /afs/cern.ch/project/eos/installation/pro/etc/setup.sh\n"
             result += "xrdcp -f -s "
@@ -139,7 +145,7 @@ class RFCPCERNImpl(StageOutImpl):
             result += "LOCAL_SIZE=`stat -c%%s \"%s\"`\n" % localPFN
             result += "echo \"Local File Size is: $LOCAL_SIZE\"\n"
 
-        if isTargetEOS:
+        if isRemoteEOS:
 
             remotePFN = remotePFN.replace("root://eoscms//eos/cms/", "/eos/cms/", 1)
 
@@ -154,22 +160,39 @@ class RFCPCERNImpl(StageOutImpl):
                 result += "echo \"Remote File Checksum is: $REMOTE_XS\"\n"
 
                 result += "if [ $REMOTE_SIZE ] && [ $REMOTE_XS ] && [ $LOCAL_SIZE == $REMOTE_SIZE ] && [ '%s' == $REMOTE_XS ]; then exit 0; " % checksums['adler32']
-                result += "else echo \"Error: Size or Checksum Mismatch between local and SE\"; eos rm '%s'; exit 60311 ; fi" % remotePFN
+                result += "else echo \"Error: Size or Checksum Mismatch between local and SE\"; %s ; exit 60311 ; fi" % removeCommand
 
             else:
 
                 result += "if [ $REMOTE_SIZE ] && [ $LOCAL_SIZE == $REMOTE_SIZE ]; then exit 0; "
-                result += "else echo \"Error: Size Mismatch between local and SE\"; eos rm '%s'; exit 60311 ; fi" % remotePFN
+                result += "else echo \"Error: Size Mismatch between local and SE\"; %s ; exit 60311 ; fi" % removeCommand
 
         else:
 
             result += "REMOTE_SIZE=`rfstat '%s' | grep Size | cut -f2 -d: | tr -d ' '`\n" % remotePFN
             result += "echo \"Remote File Size is: $REMOTE_SIZE\"\n"
 
-            result += "if [ $REMOTE_SIZE ] && [ $LOCAL_SIZE == $REMOTE_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi"
+            result += "if [ $REMOTE_SIZE ] && [ $LOCAL_SIZE == $REMOTE_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; %s ; exit 60311 ; fi" % removeCommand
 
         return result
 
+
+    def createRemoveFileCommand(self, pfn):
+        """
+        _createRemoveFileCommand_
+
+        Alternate between EOS, CASTOR and local.
+        """
+        if self.isEOS(pfn):
+            return "xrd eoscms rm %s" % pfn.replace("root://eoscms//eos/cms/", "/eos/cms/", 1)
+        try:
+            simplePFN = self.parseCastorPath(pfn)
+            return  "stager_rm -a -M %s ; nsrm %s" % (simplePFN, simplePFN)
+        except StageOutError:
+            # Not castor
+            pass
+
+        return StageOutImpl.createRemoveFileCommand(self, pfn)
 
     def removeFile(self, pfnToRemove):
         """

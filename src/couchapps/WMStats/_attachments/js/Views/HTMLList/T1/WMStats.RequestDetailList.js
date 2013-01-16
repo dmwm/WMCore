@@ -12,7 +12,24 @@ WMStats.namespace('RequestDetailList');
         }
         formatStr += "</ul>";
         return formatStr;
+    };
+    
+    var expandFormat = function(dataArray, maxLength, summaryStr) {
+        var htmlstr = "";
+        if (dataArray == undefined || dataArray.length == undefined ||
+            dataArray.length <= maxLength) {
+         
+            htmlstr +=  dataArray;
+         } else {
+            htmlstr += "<details> <summary>" + summaryStr +"</summary><ul>"  
+            for (var i in dataArray) {
+                htmlstr += "<li>" + dataArray[i] + "</li>";
+            }
+            htmlstr += "</ul></details>";
+        }
+        return htmlstr;
     }
+    
     var format = function (requestStruct) {
         var htmlstr = '<div class="closingButton">X</div>';
         var reqDoc = requestStruct.requests[requestStruct.key];
@@ -28,6 +45,7 @@ WMStats.namespace('RequestDetailList');
             htmlstr += "<li><b>requetor:</b> " + reqDoc.requestor + "</li>";
             htmlstr += "<li><b>request date:</b> " + reqDoc.request_date + "</li>";
             htmlstr += "<li><b>request type:</b> " + reqDoc.request_type + "</li>";
+            htmlstr += "<li><b>CMSSW:</b> " + reqDoc.cmssw + "</li>";
             htmlstr += "<li><b>user dn:</b> " + reqDoc.user_dn + "</li>";
             htmlstr += "<li><b>vo role:</b> " + reqDoc.vo_role + "</li>";
             htmlstr += "<li><b>vo group:</b> " + reqDoc.vo_group + "</li>";
@@ -35,8 +53,8 @@ WMStats.namespace('RequestDetailList');
                                                  reqDoc.request_status[reqDoc.request_status.length - 1].status) + "</li>";
             htmlstr += "<li><b>input dataset:</b> " + reqDoc.inputdataset + "</li>";
             htmlstr += "<li><b>input events:</b> " + reqDoc.input_events + "</li>";
-            htmlstr += "<li><b>site white list:</b> " + reqDoc.site_white_list + "</li>";
-            htmlstr += "<li><b>output datasets:</b> " + reqDoc.outputdatasets + "</li>";
+            htmlstr += "<li><b>site white list:</b> " + expandFormat(reqDoc.site_white_list, 4, "Multiple Sites") + "</li>";
+            htmlstr += "<li><b>output datasets:</b> " + expandFormat(reqDoc.outputdatasets, 1, "Multiple Datasets") + "</li>";
             htmlstr += "<li><b>progress:</b> " + progressFormat(reqDoc.getProgressStat(), Number(reqDoc.input_events), Number(reqDoc.input_lumis))  + "</li>";
         }
         if (reqSummary) {

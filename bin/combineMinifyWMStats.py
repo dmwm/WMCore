@@ -46,6 +46,7 @@ views = ["Views/Controls/WMStats.CommonControls.js",
 # tier1 specific library
 t1_views = ["Views/Controls/T1/WMStats.Controls.js",
             "Views/Tables/T1/WMStats.ActiveRequestTable.js",
+            "Views/Tables/T1/WMStats.ActiveRequestTableWithJob.js",
             "Views/Tables/T1/WMStats.CampaignSummaryTable.js",
             "Views/HTMLList/T1/WMStats.RequestDetailList.js",
             "Views/HTMLList/T1/WMStats.RequestAlertGUI.js",
@@ -80,6 +81,7 @@ models =["Models/WMStats._ModelBase.js",
          "Models/WMStats.JobDetailModel.js",
          "Models/WMStats.AgentModel.js",
          "Models/WMStats.WorkloadSummaryModel.js",
+         "Models/WMStats.RequestSearchModel.js",
          "Models/WMStats.HistoryModel.js"]
 
 t1_models =["Models/T1/WMStats.ActiveRequestModel.js"]

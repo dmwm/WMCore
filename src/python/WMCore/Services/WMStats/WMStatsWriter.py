@@ -154,3 +154,9 @@ class WMStatsWriter(WMStatsReader):
     def getDBInstance(self):
         return self.couchDB
 
+    def getServerInstance(self):
+        return self.couchServer
+    
+    def getActiveTasks(self):
+        couchStatus = self.couchServer.status()
+        return couchStatus['active_tasks']

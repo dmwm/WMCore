@@ -60,7 +60,7 @@ class AnalyticsPoller(BaseWorkerThread):
         self.localSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL)
         logging.info("Setting the replication to central monitor ...")
         self.localSummaryCouchDB.replicate(self.config.AnalyticsDataCollector.centralWMStatsURL)
-        
+       
         self.centralWMStatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.centralWMStatsURL)
         
         if self.pluginName != None:
@@ -122,10 +122,10 @@ class AnalyticsPoller(BaseWorkerThread):
             agentInfo = self.wmagentDB.getHeartbeatWarning()
             agentInfo.update(self.agentInfo)
 
-            couchInfo = self.localCouchDB.getHeartbeat()
-            if (couchInfo.has_key("error_message")):
+            couchInfo = self.checkLocalCouchServerStatus()
+            if (couchInfo['status'] != 'ok'):
                 agentInfo['down_components'].append("CouchServer")
-                agentInfo['status'] = 'down'
+                agentInfo['status'] = couchInfo['status']
                 couchInfo['name'] = "CouchServer"
                 agentInfo['down_component_detail'].append(couchInfo)
 
@@ -138,3 +138,22 @@ class AnalyticsPoller(BaseWorkerThread):
             logging.error("Error occurred, will retry later:")
             logging.error(str(ex))
             logging.error("Trace back: \n%s" % traceback.format_exc())
+    
+    
+    def checkLocalCouchServerStatus(self):
+        localCouchServer = self.localSummaryCouchDB.getServerInstance()
+        try:
+            status = localCouchServer.status()
+            replicationError = True
+            for activeStatus in status['active_tasks']:
+                if activeStatus["type"] == "Replication":
+                    if "wmagent_summary" in activeStatus["task"]:
+                        replicationError = False
+                        break
+            if replicationError:
+                return {'status':'error', 'error_message': "replication stopped"}
+            else:
+                return {'status': 'ok'}
+        except Exception, ex:
+            return {'status':'down', 'error_message': str(ex)}
+

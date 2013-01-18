@@ -77,6 +77,7 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
         self.dbsUrl = config.DBSInterface.globalDBSUrl
         self.group = getattr(config.PhEDExInjector, "group", "DataOps")
         self.safeMode = getattr(config.PhEDExInjector, "safeOperationMode", False)
+        self.replicaOnly = getattr(config.PhEDExInjector, "replicaOnly", False)
 
         # Subscribed state in the DBSBuffer table for datasets
         self.terminalSubscriptionState = 1
@@ -218,6 +219,9 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
                     tupleKey = (subInfo["Priority"], True, autoApprove, True)
                 if tupleKey not in siteMap[site]:
                     siteMap[site][tupleKey] = []
+                # Subscriptions are sorted by options, defined by tupleKey
+                # The tuple key has 3 or 4 entries in this order
+                # Priority, Custodial, Auto approve, Move (True) or Replica (False)
                 siteMap[site][tupleKey].append(dataset)
 
             # If we are in safe mode and this is a partially subscribed dataset,
@@ -234,6 +238,8 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
                 autoApprove = False
                 if site in subInfo["AutoApproveSites"]:
                     autoApprove = True
+                # Non-custodial is never move, so this tuple has only 3 entries
+                # TODO: Change tuples to frozensets for clarity
                 tupleKey = (subInfo["Priority"], False, autoApprove)
                 if tupleKey not in siteMap[site]:
                     siteMap[site][tupleKey] = []
@@ -268,7 +274,7 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
                     # Custodial subscriptions are only allowed in MSS nodes
                     # If custodial is requested on Non-MSS it fallsback to a non-custodial subscription
                     options["custodial"] = "y"
-                    if subscriptionFlavor[3]:
+                    if subscriptionFlavor[3] and not self.replicaOnly:
                         options["move"] = "y"
                 if subscriptionFlavor[2]:
                     options["requestOnly"] = "n"

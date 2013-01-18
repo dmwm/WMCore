@@ -68,35 +68,54 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
         Note that there will be LogCollect tasks created for each processing
         task and Cleanup tasks created for each merge task.
         """
-        procMergeTasks = {}
+        skimmableTasks = {}
         procTask = workload.getTopLevelTask()[0]
-        for mergeTask in procTask.childTaskIterator():
-            if mergeTask.taskType() == "Merge":
-                procMergeTasks[mergeTask.data.input.outputModule] = mergeTask
+        for skimmableTask in procTask.childTaskIterator():
+            if skimmableTask.taskType() == "Merge":
+                skimmableTasks[skimmableTask.data.input.outputModule] = skimmableTask
+        # Now add the output modules that are not merged but may be skimmed
+        for outputModule in self.transientModules:
+            skimmableTasks[outputModule] = procTask
+
 
         for skimConfig in self.skimConfigs:
-            if not procMergeTasks.has_key(skimConfig["SkimInput"]):
+            if skimConfig["SkimInput"] not in skimmableTasks:
                 # This is an extremely rare case - we have to wait until the entire system is built to get to this point
                 # But if we do get here we need to raise a Validation exception, which is normally only raised in the validate
                 # steps.  This is a once in a lifetime thing - don't go raising validationExceptions in the rest of the code.
                 error = "Processing config does not have the following output module: %s.  " % skimConfig["SkimInput"]
-                error += "Please change your skim input to be one of the following: %s" % procMergeTasks.keys()
+                error += "Please change your skim input to be one of the following: %s" % skimmableTasks.keys()
                 self.raiseValidationException(msg = error)
 
 
-            mergeTask = procMergeTasks[skimConfig["SkimInput"]]
-            skimTask = mergeTask.addTask(skimConfig["SkimName"])
-            parentCmsswStep = mergeTask.getStep("cmsRun1")
-            outputMods = self.setupProcessingTask(skimTask, "Skim", inputStep = parentCmsswStep, inputModule = "Merged",
+            skimmableTask = skimmableTasks[skimConfig["SkimInput"]]
+            skimTask = skimmableTask.addTask(skimConfig["SkimName"])
+            parentCmsswStep = skimmableTask.getStep("cmsRun1")
+
+            # Check that the splitting agrees, if the parent is event based then we must do WMBSMergeBySize
+            # With reasonable defaults
+            skimJobSplitAlgo = self.skimJobSplitAlgo
+            skimJobSplitArgs = self.skimJobSplitArgs
+            if skimmableTask.jobSplittingAlgorithm == "EventBased":
+                skimJobSplitAlgo = "WMBSMergeBySize"
+                skimJobSplitArgs = {"max_merge_size"   : self.maxMergeSize,
+                                    "min_merge_size"   : self.minMergeSize,
+                                    "max_merge_events" : self.maxMergeEvents,
+                                    "max_wait_time"    : self.maxWaitTime}
+            # Define the input module
+            inputModule = "Merged"
+            if skimConfig["SkimInput"] in self.transientModules:
+                inputModule = skimConfig["SkimInput"]
+
+            outputMods = self.setupProcessingTask(skimTask, "Skim", inputStep = parentCmsswStep, inputModule = inputModule,
                                                   couchURL = self.couchURL, couchDBName = self.couchDBName,
                                                   configCacheUrl = self.configCacheUrl,
-                                                  configDoc = skimConfig["ConfigCacheID"], splitAlgo = self.skimJobSplitAlgo,
-                                                  splitArgs = self.skimJobSplitArgs)
+                                                  configDoc = skimConfig["ConfigCacheID"], splitAlgo = skimJobSplitAlgo,
+                                                  splitArgs = skimJobSplitArgs)
             self.addLogCollectTask(skimTask, taskName = "%sLogCollect" % skimConfig["SkimName"])
 
             for outputModuleName in outputMods.keys():
-                outputModuleInfo = outputMods[outputModuleName]
-                self.addMergeTask(skimTask, self.skimJobSplitAlgo,
+                self.addMergeTask(skimTask, skimJobSplitAlgo,
                                   outputModuleName)
 
         return workload
@@ -164,7 +183,14 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
         except AssertionError:
             self.raiseValidationException(msg = "Invalid input dataset!")
 
-
+        # Validate that the transient output modules are used in a skim task
+        if 'TransientOutputModules' in schema:
+            for outMod in schema['TransientOutputModules']:
+                for skimConfig in schema.get('SkimConfigs', []):
+                    if outMod == skimConfig['SkimInput']:
+                        break
+                else:
+                    self.raiseValidationException(msg = 'A transient output module was specified but no skim was defined for it')
 
 def rerecoWorkload(workloadName, arguments):
     """

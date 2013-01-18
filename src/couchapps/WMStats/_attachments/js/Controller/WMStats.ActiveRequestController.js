@@ -86,7 +86,8 @@ function getCategorizedData(category) {
             // update CurrentRequestData only for the all_requests or initialize
             if (WMStats.Env.CurrentRequestData === null || 
                 WMStats.Env.RequestSelection === "all_requests") {
-                WMStats.Env.CurrentRequestData = requestData.getFilteredRequests();
+                //WMStats.Env.CurrentRequestData = requestData.getFilteredRequests();
+                WMStats.Env.CurrentRequestData = requestData;
             }
             drawDataBoard();
         })
@@ -106,7 +107,9 @@ function getCategorizedData(category) {
     $(WMStats.Globals.Event).on(E.REQUEST_SUMMARY_READY, 
         function(event, data) {
             $("#request_view div.detail_data").empty();
-            WMStats.Env.CurrentRequestData = data;
+            if (data) {
+                WMStats.Env.CurrentRequestData = data;
+            }
             drawDataBoard("#request_view");
         })
 
@@ -172,6 +175,14 @@ function getCategorizedData(category) {
         event.preventDefault();
         })
 
+     $(document).on('click', "#view_switch_button li a", function(event){
+        WMStats.Env.ViewSwitchSelection = this.hash.substring(1);
+        //TODO need to get the data
+        $(WMStats.Globals.Event).triggerHandler(E.REQUEST_SUMMARY_READY);
+        $(this).removeClass("button-unselected").addClass("nav-button-selected");
+        event.preventDefault();
+        })
+        
     $(document).on('click', 'a.requestAlert', function() {
         var workflow = $(this).text();
         WMStats.JobSummaryModel.setRequest(workflow);

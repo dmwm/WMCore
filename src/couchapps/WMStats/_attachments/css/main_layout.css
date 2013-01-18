@@ -457,3 +457,7 @@ a.requestAlert:hover {
     background-color:#FA5882;
 }
 
+.OptionBox {
+    float: left;
+}
+

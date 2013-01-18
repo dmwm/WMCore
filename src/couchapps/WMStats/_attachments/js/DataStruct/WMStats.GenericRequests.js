@@ -111,6 +111,13 @@ WMStats.GenericRequestsSummary.prototype = {
                 this.getJobStatus("submitted.retry"));
     },
 
+    getRunning: function() {
+        return this.getJobStatus("submitted.running");
+    },
+    
+    getPending: function() {
+        return this.getJobStatus("submitted.pending");
+    },
     getTotalCooloff:function() {
         return (this.getJobStatus("cooloff.create") + 
                 this.getJobStatus("cooloff.submit") + 

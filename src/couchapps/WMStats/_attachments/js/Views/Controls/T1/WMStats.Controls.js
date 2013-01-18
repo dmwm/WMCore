@@ -29,6 +29,17 @@ WMStats.Controls = function($){
         WMStats.Env.CategorySelection = "campaign";
     };
     
+    function setViewSwitchButton(selector) {
+        var viewSwitchBottons = 
+        '<nav id="view_switch_button" class="button-group">\
+            <ul><li><a href="#progress" class="nav-button nav-button-selected"> progress </a></li>\
+                <li><a href="#numJobs" class="nav-button button-unselected"> number of jobs </a></li></ul>\
+         </nav>';
+        
+        $(selector).append(viewSwitchBottons);
+        WMStats.Env.ViewSwitchSelection = "progress";
+    };
+    
     function setAllRequestButton(selector) {
         var requestBottons = 
         '<nav id="all_requests" class="button-group">\
@@ -61,6 +72,7 @@ WMStats.Controls = function($){
         setCategoryButton: setCategoryButton,
         setAllRequestButton: setAllRequestButton,
         getCategoryButtonValue: getCategoryButtonValue,
+        setViewSwitchButton: setViewSwitchButton,
         getFilter: getFilter,
         requests: "requests",
         sites: "sites",

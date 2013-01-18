@@ -9,7 +9,7 @@ WMStats.Table = function(config, tableSetting) {
         //"bScrollCollapse": true,
         "bStateSave": true,
         "bProcessing": true,
-        "iDisplayLength": 10,
+        //"iDisplayLength": 10,
         "sDom": 'lrtip',
         //"sDom": 'C<"clear">lfrtip',
         "aaSorting": [],

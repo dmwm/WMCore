@@ -10,21 +10,30 @@ WMStats.namespace("WorkloadSummaryController");
         if (selectedSearch === 'request') {
             view = "allDocs";
             options.key = searchStr;
-        }else if (selectedSearch === 'outputdataset') {
-            view = "summaryByOutputdataset";
+        } else if (selectedSearch === 'outputdataset') {
+            view = "requestByOutputDataset";
             options.key = searchStr;
-        }else if (selectedSearch === 'inputdataset') {
-            view = "summaryByInputdataset";
+        } else if (selectedSearch === 'inputdataset') {
+            view = "requestByInputDataset";
             options.key = searchStr;
+        } else if (selectedSearch === 'prep_id') {
+            view = "requestByPrepID";
+            options.key = searchStr;
+        } else if (selectedSearch === 'request_date') {
+            view = "requestByDate";
+            var beginDate = $('input[name="dateRange1"]').val().split("/");
+            var endDate = $('input[name="dateRange2"]').val().split("/");
+            options.startkey = [Number(beginDate[0]), Number(beginDate[1]), Number(beginDate[2])];
+            options.endkey = [Number(endDate[0]), Number(endDate[1]), Number(endDate[2]), {}];
         }
-        WMStats.WorkloadSummaryModel.retrieveData(view, options);
+        WMStats.RequestSearchModel.retrieveData(view, options);
         event.stopPropagation();
     })
     
     var E = WMStats.CustomEvents;
     $(WMStats.Globals.Event).on(E.WORKLOAD_SUMMARY_READY, 
         function(event, data) {
-            var data = WMStats.WorkloadSummaryModel.getData();
+            var data = WMStats.RequestSearchModel.getData();
             // draw alert
             WMStats.WorkloadSummaryTable(data, "#search_result_board");
         })

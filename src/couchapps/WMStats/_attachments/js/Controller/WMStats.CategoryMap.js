@@ -18,7 +18,12 @@ WMStats.CategoryTableMap = function(){
         tableMap[category] = view;
     }
     function get(category, view) {
-        return tableMap[category];
+        if (category === WMStats.Controls.requests) {
+            return tableMap[category][WMStats.Env.ViewSwitchSelection]
+        }else {
+            return tableMap[category];
+        }
+        
     }
     return {add: add, get: get}
 }()
@@ -27,4 +32,7 @@ WMStats.CategoryTableMap = function(){
 WMStats.CategorySummaryMap.add(WMStats.Controls.sites, WMStats.SiteSummary);
 WMStats.CategoryTableMap.add(WMStats.Controls.sites, WMStats.SiteSummaryTable);
 
-WMStats.CategoryTableMap.add(WMStats.Controls.requests, WMStats.ActiveRequestTable);
+WMStats.CategoryTableMap.add(WMStats.Controls.requests, 
+                            {'progress': WMStats.ActiveRequestTable,
+                             'numJobs':WMStats.ActiveRequestTableWithJob});
+//WMStats.CategoryTableMap.add(WMStats.Controls.requests, WMStats.ActiveRequestTableWithJob);

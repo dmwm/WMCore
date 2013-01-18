@@ -80,30 +80,21 @@ class AlcaHarvest(Executor):
 
             # Working on analysis files
             for analysisFile in analysisFiles:
+
                 # only deal with sqlite files
                 if analysisFile.FileClass == "ALCA":
 
                     sqlitefile = analysisFile.fileName.replace('sqlite_file:', '', 1)
 
                     filenamePrefix = "Run%d@%s@%s" % (self.step.condition.runNumber,
-                                                      analysisFile.tag, uuid)
+                                                      analysisFile.inputtag, uuid)
                     filenameDB = filenamePrefix + ".db"
                     filenameTXT = filenamePrefix + ".txt"
 
                     shutil.copy2(os.path.join(stepLocation, sqlitefile), filenameDB)
 
-                    textoutput = "destDB %s\n" % analysisFile.destDB
-                    textoutput += "destDBValidation %s\n" % analysisFile.destDBValidation
-                    textoutput += "tag %s\n" % analysisFile.tag
-                    textoutput += "inputtag %s\n" % analysisFile.inputtag
-                    textoutput += "since\n"
-                    textoutput += "Timetype %s\n" % analysisFile.Timetype
-                    textoutput += "IOVCheck %s\n" % getattr(analysisFile, 'IOVCheck', "offline")
-                    textoutput += "DuplicateTagHLT %s\n" % getattr(analysisFile, 'DuplicateTagHLT', "")
-                    textoutput += "DuplicateTagEXPRESS %s\n"  % getattr(analysisFile, 'DuplicateTagEXPRESS', "")
-                    textoutput += "DuplicateTagPROMPT %s\n" % analysisFile.DuplicateTagPROMPT
-                    textoutput += "Source %s\n" % getattr(analysisFile, 'Source', "")
-                    textoutput += "Fileclass ALCA\n"
+                    textoutput = "prepMetaData %s\n" % analysisFile.prepMetaData
+                    textoutput += "prodMetaData %s\n" % analysisFile.prodMetaData
 
                     fout = open(filenameTXT, "w")
                     fout.write(textoutput)

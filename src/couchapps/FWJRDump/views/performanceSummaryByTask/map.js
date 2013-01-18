@@ -22,6 +22,7 @@ function(doc) {
     }
     var datasetData = {};
     var inputEvents = 0;
+    var datasetFlag = false;
     for (var stepName in doc['fwjr']['steps']) {
       var stepObj = doc['fwjr']['steps'][stepName];
       var site = stepObj.site;
@@ -46,6 +47,7 @@ function(doc) {
                   datasetData[datasetPath] = {'size': outputFile['size'], 
                                               'events': outputFile['events'],
                                               'totalLumis': totalLumis}
+                  datasetFlag = true;
               }
             }
           }
@@ -60,9 +62,18 @@ function(doc) {
           }
       }
     }
-    emit([specName, taskName, site], {'wrappedTotalJobTime': wrappedTotalJobTime,
+    if (datasetFlag) {
+        for (var dPath in datasetData) {
+            emit([specName, taskName, site, dPath], {'wrappedTotalJobTime': wrappedTotalJobTime,
                                       'cmsRunCPUPerformance': cmsRunCPUPerformance,
                                       'inputEvents': inputEvents,
-                                      'dataset': datasetData});
+                                      'datasetStat': datasetData[dPath]});
+        }
+    } else {
+        emit([specName, taskName, site, null], {'wrappedTotalJobTime': wrappedTotalJobTime,
+                                      'cmsRunCPUPerformance': cmsRunCPUPerformance,
+                                      'inputEvents': inputEvents})
+    }
+    
   }
 }

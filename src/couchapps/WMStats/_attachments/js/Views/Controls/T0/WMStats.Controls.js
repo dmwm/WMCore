@@ -25,6 +25,10 @@ WMStats.Controls = function($){
         WMStats.Env.CategorySelection = "run";
     };
     
+    function setViewSwitchButton(selector) {
+       WMStats.Env.ViewSwitchSelection = "progress";
+    };
+    
     function setAllRequestButton(selector) {
         var requestBottons = 
         '<nav id="all_requests" class="button_group">\
@@ -58,6 +62,7 @@ WMStats.Controls = function($){
         setCategoryButton: setCategoryButton,
         setAllRequestButton: setAllRequestButton,
         getCategoryButtonValue: getCategoryButtonValue,
+        setViewSwitchButton: setViewSwitchButton,
         getFilter: getFilter,
         requests: "requests",
         sites: "sites",

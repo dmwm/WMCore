@@ -8,6 +8,8 @@ WMStats.Env.View = "#category_view";
 WMStats.Env.CategorySelection = null;
 // Request selection: all request or categorize request
 WMStats.Env.RequestSelection = "all_requests";
+// s
+WMStats.Env.ViewSwitchSelection = null;
 
 // place holder for current data in category_view
 WMStats.Env.CategoryData = null;

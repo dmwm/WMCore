@@ -32,7 +32,10 @@
                     <div class="detail_data"></div>
                     <div class="summary_data"></div>
                 </div>
-                <div id="request_view" class="viewPane">
+                <div id="request_view">
+                    <div id="view_switch_bar"></div>
+                    <div class="detail_data hideDiv draggable"></div>
+                    <div class="summary_data"></div>
                 </div>
                 <div class="summary_data"></div>
                 </div>
@@ -54,28 +57,21 @@
             <div class="detail_data hideDiv draggable"></div>
             <div class="summary_data"></div>
         </div>
+        <div class="template stringMatch">\
+            <input type="text" size="100" name="workloadSummarySearch" value=""></input>
+        </div>
+        <div class="template dateRange">
+            <input type="text" name="dateRange1" class="dateValue"/> <span>through</span>
+            <input type="text" name="dateRange2" class="dateValue"/>
+        </div>
     </div>
 </body>
 <!-- Brings in all the dependencies needed for this couchapp -->
     <script src="js/loader.js" type='text/javascript'> </script>
 
     <!-- Globals is needed to be loaded before other library -->
-    <script src="js/WMStats.Globals.js" type='text/javascript'> </script>
-    <script src="js/WMStats.Utils.js" type='text/javascript'> </script>
-    <script src="js/WMStats.Couch.js" type='text/javascript'> </script>
-    
-    <!-- importing order is critical -->
-    <!-- data structure -->
-    <script src="js/DataStruct/import.js" type='text/javascript'> </script>
-    
-    <!-- table gui -->
-    <script src="js/Views/Controls/import.js" type='text/javascript'> </script>
-    <script src="js/Views/Tables/import.js" type='text/javascript'> </script>
-    <script src="js/Views/HTMLList/import.js" type='text/javascript'> </script>
-    <script src="js/Views/Graphs/import.js" type='text/javascript'> </script>
-    <!-- Overview.js will load javascripts corresponding to variant dynamically  -->
-    <script src="js/Models/import.js" type='text/javascript'> </script>
-    <script src="js/Controller/import.js" type='text/javascript'> </script>
+    <script src="js/minified/global.min.js" type='text/javascript'> </script>
+    <script src="js/import-all.min.js" type='text/javascript'> </script>
     <script>
     
     function applyTemplate(){
@@ -93,7 +89,7 @@
     $(document).ready(function() {
         $('#loading_page').addClass("front").show();
         $('#workloadSummaryPage').hide();
-        applyTemplate();
+        //applyTemplate();
         WMStats.CommonControls.setLinkTabs("#link_tabs");
         WMStats.CommonControls.setUTCClock("#clock");
         WMStats.CommonControls.setWorkloadSummarySearch("#search_option_board")
@@ -101,6 +97,7 @@
         WMStats.Controls.setAllRequestButton("#status_board");
         WMStats.Controls.setTabs("#tab_board");
         WMStats.Controls.setCategoryButton("#category_bar");
+        WMStats.Controls.setViewSwitchButton("#view_switch_bar");
         retrieveData();
         $("div.draggable").draggable();
         // 5 min update

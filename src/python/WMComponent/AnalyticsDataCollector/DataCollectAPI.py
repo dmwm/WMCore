@@ -93,7 +93,8 @@ class LocalCouchDBData():
                                               totalEventCPU: 4.064402}, 
                        inputEvents: 0, 
                        dataset: {/TestLHE/TEST_Subscriptions_WMA-Test-v1/GEN: 
-                                             {size: 5093504, events: 10000}}}},
+                                             {size: 5093504, events: 10000,
+                                              totalLumis: 100}}}},
             {"key":['request_name1", 'task_name2', "siteA"],
              "value":{wrappedTotalJobTime: 1612, 
                        cmsRunCPUPerformance: {totalJobCPU: 20.132924000000003, 
@@ -101,7 +102,8 @@ class LocalCouchDBData():
                                               totalEventCPU: 4.064402}, 
                        inputEvents: 0, 
                        dataset: {/TestLHE/TEST_Subscriptions_WMA-Test-v1/GEN: 
-                                             {size: 5093504, events: 10000}}}}}
+                                             {size: 5093504, events: 10000,
+                                              totalLumis: 100}}}}}
          ]}
          and convert to
          {'request_name1': {'tasks': 
@@ -112,16 +114,19 @@ class LocalCouchDBData():
                                               totalEventCPU: 4.064402}, 
                         inputEvents: 0, 
                         dataset: {/TestLHE/TEST_Subscriptions_WMA-Test-v1/GEN: 
-                                             {size: 5093504, events: 10000}}},
+                                             {size: 5093504, events: 10000,
+                                              totalLumis: 100}}},
                                              
                     {'task_name2' : { 'siteA': 
                         {wrappedTotalJobTime: 1612, 
                          cmsRunCPUPerformance: {totalJobCPU: 20.132924000000003, 
                                               totalJobTime: 421.0489, 
-                                              totalEventCPU: 4.064402}, 
+                                              totalEventCPU: 4.064402,
+                                              totalLumis: 100}, 
                         inputEvents: 0, 
                         dataset: {/TestLHE/TEST_Subscriptions_WMA-Test-v1/GEN: 
-                                             {size: 5093504, events: 10000}}}
+                                             {size: 5093504, events: 10000,
+                                              totalLumis: 100}}}
                                              }}
           
          }
@@ -137,7 +142,12 @@ class LocalCouchDBData():
             data[x['key'][0]].setdefault('tasks', {})
             data[x['key'][0]]['tasks'].setdefault(x['key'][1], {}) 
             data[x['key'][0]]['tasks'][x['key'][1]].setdefault('sites', {})
-            data[x['key'][0]]['tasks'][x['key'][1]]['sites'][x['key'][2]] = x['value'] 
+            data[x['key'][0]]['tasks'][x['key'][1]]['sites'][x['key'][2]] = x['value']
+            data[x['key'][0]]['tasks'][x['key'][1]]['sites'][x['key'][2]].setdefault('dataset', {})
+            if x['key'][3]:
+                data[x['key'][0]]['tasks'][x['key'][1]]['sites'][x['key'][2]]['dataset'][x['key'][3]] = x['value']['datasetStat'] 
+                #there is duplicate datasets in data[x['key'][0]]['tasks'][x['key'][1]]['sites'][x['key'][2]], just ignore
+                
         return data
     
     

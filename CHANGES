@@ -1,3 +1,20 @@
+0.9.34 to 0.9.35:
+  - Add an option to the PhEDExInjector to make only replica subscriptions.  Pull
+    request #4354.
+  - Fix a bug with the handling of requests with the running-open and running-closed
+    status in WMStats.  Pull request #4353.
+  - WMStats updates - Add the ability to search by date and Prep ID,
+    improve the request detail view, add a couch status monitor, fix a 
+    bug when filtering and data is being refreshed.  Pull request #4352. 
+  - ReqMgr2 - Oracle, CouchDB database cleanup.  Pull request #4351.
+  - Update the ALCAHarvest runtime code to support the new dropbox 
+    format.  Pull request #4950.
+  - Fix EOS StageIn at CERN.  Pull request #4349.
+  - Fix the DQM Harvesting job splitter so that it properly handles sites
+    with multiple SEs.  Pull request #4348.
+  - Fix WMBSMergeBySize for sites that have multiple SEs.  Pull request
+    #4347.
+
 0.9.33 to 0.9.34:
   - Fix sandbox creation so that is works with patch releases.  Pull request #4339.
   - Display docstrings in RESTAPI documentation.  Pull request #4340.

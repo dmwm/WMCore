@@ -6,12 +6,12 @@ If a package ends with a + include all subpackages.
 """
 dependencies = {
                 'wmc-rest':{
-			'bin': ['wmc-dist-patch', 'wmc-dist-unpatch','wmc-httpd'],
+                        'bin': ['wmc-dist-patch', 'wmc-dist-unpatch','wmc-httpd'],
                         'packages' : ['WMCore.REST'],
                         'modules': ['WMCore.Configuration'],
-			},
+                        },
                 'wmc-base':{
-			'bin': ['wmc-dist-patch', 'wmc-dist-unpatch'],
+                        'bin': ['wmc-dist-patch', 'wmc-dist-unpatch'],
                         'packages' : ['WMCore.DataStructs'],
                         'modules': ['WMCore.WMFactory', 'WMCore.WMException', 'WMCore.Configuration',
                                     'WMCore.WMExceptions', 'WMCore.WMFactory', 'WMCore.Lexicon',
@@ -139,9 +139,5 @@ dependencies = {
                 'alertscollector': 
                 {
                         'statics': ['src/couchapps/AlertsCollector+'],
-                },
-                't0wmstats':{
-                        'statics': ['src/couchapps/WMStats+',
-                                    'src/couchapps/WorkloadSummary+'],
-                        }
+                }
                }

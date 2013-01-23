@@ -1,3 +1,12 @@
+0.9.35 to 0.9.36:
+  - Minor ReqMgr fixes.  Pull request #4357: 
+    * Cloned requests will beging in the assignment-approved state instead
+      of new.
+    * PhEDEx subscriptions arguments have been added into the JSON request
+      template.
+  - Add the ability to not stage the output of a particular output module
+    to merged storage.  Pull request #4355.
+
 0.9.34 to 0.9.35:
   - Add an option to the PhEDExInjector to make only replica subscriptions.  Pull
     request #4354.

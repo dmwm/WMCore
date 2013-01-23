@@ -556,10 +556,9 @@ def makeRequest(webApi, reqInputArgs, couchUrl, couchDB, wmstatUrl):
     for blocklist in ["BlockWhitelist", "BlockBlacklist"]:
         if blocklist in reqInputArgs:
             reqSchema[blocklist] = parseBlockList(reqInputArgs[blocklist])
-    if "DqmSequences" in reqInputArgs:
-        reqSchema["DqmSequences"] = parseStringListWithoutValidation(reqInputArgs["DqmSequences"])
-    if "IgnoredOutputModules" in reqInputArgs:
-        reqSchema["IgnoredOutputModules"] = parseStringListWithoutValidation(reqInputArgs["IgnoredOutputModules"])
+    for stringList in ["DqmSequences", "IgnoredOutputModules", "TransientOutputModules"]:
+        if stringList in reqInputArgs:
+            reqSchema[stringList] = parseStringListWithoutValidation(reqInputArgs[stringList])
 
     validate(reqSchema)
 

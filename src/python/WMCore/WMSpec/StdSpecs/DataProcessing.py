@@ -77,6 +77,12 @@ class DataProcessingWorkloadFactory(StdBase):
         if self.multicore:
             taskType = "MultiProcessing"
 
+        forceUnmerged = False
+        if self.transientModules:
+            # If we have at least one output module not being merged,
+            # we must force all the processing task to be unmerged
+            forceUnmerged = True
+
         outputMods = self.setupProcessingTask(procTask, taskType, self.inputDataset,
                                               scenarioName = self.procScenario, scenarioFunc = "promptReco",
                                               scenarioArgs = { 'globalTag' : self.globalTag,
@@ -85,18 +91,19 @@ class DataProcessingWorkloadFactory(StdBase):
                                                                              { 'dataTier' : "ALCARECO",
                                                                                'moduleLabel' : "ALCARECOoutput" } ] },
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
-                                              configCacheUrl = self.configCacheUrl,
+                                              configCacheUrl = self.configCacheUrl, forceUnmerged = forceUnmerged,
                                               configDoc = self.configCacheID, splitAlgo = self.procJobSplitAlgo,
                                               splitArgs = self.procJobSplitArgs, stepType = cmsswStepType)
         self.addLogCollectTask(procTask)
 
 
-        procMergeTasks = {}
         for outputModuleName in outputMods.keys():
-            outputModuleInfo = outputMods[outputModuleName]
-            mergeTask = self.addMergeTask(procTask, self.procJobSplitAlgo,
-                                          outputModuleName)
-            procMergeTasks[outputModuleName] = mergeTask
+            # Only merge the desired outputs
+            if outputModuleName not in self.transientModules:
+                self.addMergeTask(procTask, self.procJobSplitAlgo,
+                                  outputModuleName)
+            else:
+                self.addCleanupTask(procTask, outputModuleName)
 
         return workload
 
@@ -122,6 +129,9 @@ class DataProcessingWorkloadFactory(StdBase):
         # or alternatively CouchURL part can be replaced by ConfigCacheUrl,
         # then ConfigCacheUrl + CouchDBName + ConfigCacheID
         self.configCacheUrl = arguments.get("ConfigCacheUrl", None)
+
+        # Optional output modules that will not be merged but may be used by subsequent steps
+        self.transientModules = arguments.get("TransientOutputModules", [])
 
         # Optional arguments that default to something reasonable.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")

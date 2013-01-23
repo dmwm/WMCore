@@ -2,16 +2,12 @@
 """
 _DBSBufferUtil_
 
-APIs related to using the DBSBuffer
-
+APIs related to using the DBSBuffer.
 """
 
-
-
-
 import logging
-import os
 import threading
+
 from WMCore.WMFactory import WMFactory
 from WMCore.DAOFactory import DAOFactory
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
@@ -208,18 +204,17 @@ class DBSBufferUtil(WMConnectionBase):
 
 
 
-    def findOpenBlocks(self):
+    def findOpenBlocks(self, dbs3OnlyUpload = False):
         """
         _findOpenBlocks_
 
         This should find all blocks.
         """
-
         myThread = threading.currentThread()
         existingTransaction = self.beginTransaction()
 
         openBlocks = self.daoFactory(classname = "GetOpenBlocks")
-        result = openBlocks.execute(conn = self.getDBConn(),
+        result = openBlocks.execute(dbs3OnlyUpload, conn = self.getDBConn(),
                                     transaction=self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
@@ -250,7 +245,7 @@ class DBSBufferUtil(WMConnectionBase):
 
 
 
-    def loadBlocks(self, blocknames):
+    def loadBlocks(self, blocknames, dbs3UploadOnly):
         """
         _loadBlocksByDAS_
 
@@ -266,12 +261,11 @@ class DBSBufferUtil(WMConnectionBase):
         existingTransaction = self.beginTransaction()
 
         findBlocks = self.daoFactory(classname = "LoadBlocks")
-        result     = findBlocks.execute(blocknames = blocknames,
+        result     = findBlocks.execute(blocknames, dbs3UploadOnly,
                                         conn = self.getDBConn(),
                                         transaction=self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
-
         return result
 
 
@@ -321,13 +315,12 @@ class DBSBufferUtil(WMConnectionBase):
         return dbsFiles
 
 
-    def updateBlocks(self, blocks):
+    def updateBlocks(self, blocks, dbs3UploadOnly = False):
         """
         _updateBlocks_
 
         Update the blocks in DBSBuffer
         """
-
         if len(blocks) < 1:
             # Nothing to do
             return
@@ -336,7 +329,7 @@ class DBSBufferUtil(WMConnectionBase):
         existingTransaction = self.beginTransaction()
 
         updateBlock = self.daoFactory(classname = "UpdateBlocks")
-        updateBlock.execute(blocks = blocks, conn = self.getDBConn(),
+        updateBlock.execute(blocks, dbs3UploadOnly, conn = self.getDBConn(),
                             transaction=self.existingTransaction())
         self.commitTransaction(existingTransaction)
         return

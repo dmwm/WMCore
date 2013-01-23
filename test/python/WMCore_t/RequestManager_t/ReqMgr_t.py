@@ -703,7 +703,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         # these request arguments shall differ in the cloned request:
         #    RequestName, ReqMgrRequestID
         # "RequestDate" and "timeStamp" will be the same in the test
-        toDiffer = ["RequestName", "ReqMgrRequestID", "RequestWorkflow"]
+        toDiffer = ["RequestName", "ReqMgrRequestID", "RequestWorkflow", "RequestStatus"]
         for differ in toDiffer:
             self.assertNotEqual(origRequest[differ], clonedRequest[differ])
         toDiffer.extend(["RequestDate", "timeStamp"])

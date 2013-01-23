@@ -46,6 +46,10 @@
 		"SoftTimeout": 171600,
 		"GracePeriod": 300,
 		"dashboard": "dashboard-OVERRIDE-ME",
-		"Team": "Team--OVERRIDE-ME"
+		"Team": "Team--OVERRIDE-ME",
+		"CustodialSites": [],
+		"NonCustodialSites": [],
+		"AutoApprove": 1,
+		"Priority": "Low"
 	}
 }

@@ -487,9 +487,11 @@ class ReqMgrRESTModel(RESTModel):
         """
         Input assumes an existing request, checks that.
         The original existing request is not touched.
-        A new request is generated (and is in the 'new' state), it has
-        newly generate RequestName, new timestamp, RequestDate, however
-        -everything- else is copied from the original request.
+        A new request is generated.
+        The cloned request has a newly generated RequestName, new timestamp,
+        RequestDate, however -everything- else is copied from the original request.
+        Since Edgar changed his mind, he no longer
+        wants this cloned request be in the 'new' state but in 'assignment-approved'.
         
         """
         request = None
@@ -511,6 +513,10 @@ class ReqMgrRESTModel(RESTModel):
                 request = Utilities.buildWorkloadAndCheckIn(self, newReqSchema,
                                                             self.couchUrl, self.workloadDBName,
                                                             self.wmstatWriteURL, clone=True)
+                # change the clone request state as desired
+                Utilities.changeStatus(newReqSchema["RequestName"],
+                                       "assignment-approved",
+                                        self.wmstatWriteURL)
                 return request
             else:
                 msg = "Request '%s' not found." % requestName

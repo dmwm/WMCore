@@ -122,7 +122,7 @@ class CleanCouchPoller(BaseWorkerThread):
             jobs = couchDB.loadView(db, view, options = options)['rows']
         except Exception, ex:
             errorMsg = "Error on loading jobs for %s" % workflowName
-            logging.warning("%s/n%s" % (str(ex) % errorMsg))
+            logging.warning("%s/n%s" % (str(ex), errorMsg))
             return {'status': 'error', 'message': errorMsg}
         
         for j in jobs:

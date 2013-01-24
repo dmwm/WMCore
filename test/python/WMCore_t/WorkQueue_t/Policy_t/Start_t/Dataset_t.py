@@ -239,8 +239,10 @@ class DatasetTestCase(unittest.TestCase):
             wq_jobs = 0
             for unit in units:
                 wq_jobs += unit['Jobs']
-                runs = dbs[inputDataset.dbsurl].listRuns(unit['Inputs'].keys()[0])
-                jobs += len([x for x in runs if x in getFirstTask(Tier1ReRecoWorkload).inputRunWhitelist()])
+                runLumis = dbs[inputDataset.dbsurl].listRunLumis(dataset = unit['Inputs'].keys()[0])
+                for run in runLumis:
+                    if run in getFirstTask(Tier1ReRecoWorkload).inputRunWhitelist():
+                        jobs += runLumis[run]
             self.assertEqual(int(jobs / splitArgs['SliceSize'] ) , int(wq_jobs))
 
     def testInvalidSpecs(self):

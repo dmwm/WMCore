@@ -61,6 +61,7 @@ class GlobalParams(object):
 
     @staticmethod
     def numOfLumisPerBlock():
+        #It's really the number of lumis per file
         return GlobalParams._num_of_lumis_per_block
 
     @staticmethod

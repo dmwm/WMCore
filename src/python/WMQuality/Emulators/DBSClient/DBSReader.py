@@ -88,9 +88,9 @@ class DBSReader:
         """Fake locations"""
         return self.dataBlocks.getLocation(block)
 
-    def listFilesInBlock(self, block):
+    def listFilesInBlock(self, fileBlockName):
         """Fake files"""
-        return self.dataBlocks.getFiles(block)
+        return self.dataBlocks.getFiles(fileBlockName)
 
     def listFilesInBlockWithParents(self, block):
         return self.dataBlocks.getFiles(block, True)
@@ -131,19 +131,43 @@ class DBSReader:
 
     def listRuns(self, dataset = None, block = None):
         def getRunsFromBlock(b):
-            results = []
+            results = set()
             for x in self.dataBlocks.getFiles(b):
-                results.extend([y['RunNumber'] for y in x['LumiList']])
+                results = results.union([y['RunNumber'] for y in x['LumiList']])
+            return list(results)
+
+        if block:
+            return getRunsFromBlock(block)
+        if dataset:
+            runs = set()
+            for block in self.dataBlocks.getBlocks(dataset):
+                runs = runs.union(getRunsFromBlock(block['Name']))
+            return list(runs)
+        return None
+
+    def listRunLumis(self, dataset = None, block = None):
+        def getRunsFromBlock(b):
+            results = {}
+            for x in self.dataBlocks.getFiles(b):
+                for y in x['LumiList']:
+                    if y['RunNumber'] not in results:
+                        results[y['RunNumber']] = 0
+                    results[y['RunNumber']] += 1
             return results
 
         if block:
             return getRunsFromBlock(block)
         if dataset:
-            runs = []
+            runs = {}
             for block in self.dataBlocks.getBlocks(dataset):
-                runs.extend(getRunsFromBlock(block['Name']))
+                updateRuns = getRunsFromBlock(block['Name'])
+                for run in updateRuns:
+                    if run not in runs:
+                        runs[run] = 0
+                    runs[run] += updateRuns[run]
             return runs
         return None
+
 
 
     def getDBSSummaryInfo(self, dataset=None, block=None):

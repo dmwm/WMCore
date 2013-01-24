@@ -121,6 +121,35 @@ class DBS2Reader:
 
         return [x["RunNumber"] for x in results]
 
+    def listRunLumis(self, dataset = None, block = None):
+        """
+        It gets a list of DBSRun objects and returns the number of lumisections per run
+        DbsRun (RunNumber,
+                NumberOfEvents,
+                NumberOfLumiSections,
+                TotalLuminosity,
+                StoreNumber,
+                StartOfRungetLong,
+                EndOfRun,
+                CreationDate,
+                CreatedBy,
+                LastModificationDate,
+                LastModifiedBy
+                )
+        """
+        try:
+            if block:
+                results = self.dbs.listRuns(block = block)
+            else:
+                results = self.dbs.listRuns(dataset = dataset)
+        except DbsException, ex:
+            msg = "Error in DBSReader.listRuns(%s, %s)\n" % (dataset, block)
+            msg += "%s\n" % formatEx(ex)
+            raise DBSReaderError(msg)
+
+        return dict((x["RunNumber"], x["NumberOfLumiSections"])
+                    for x in results)
+
     def listProcessedDatasets(self, primary, dataTier = None):
         """
         _listProcessedDatasets_

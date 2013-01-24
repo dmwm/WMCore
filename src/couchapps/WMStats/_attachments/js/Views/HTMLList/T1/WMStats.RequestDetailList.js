@@ -41,6 +41,7 @@ WMStats.namespace('RequestDetailList');
             htmlstr += "<li><b>campaign:</b> " + reqDoc.campaign + "</li>";
             htmlstr += "<li><b>workflow:</b> " + WMStats.Utils.formatReqDetailUrl(reqDoc.workflow) + "</li>";
             htmlstr += "<li><b>agent url:</b> " + reqDoc.agent_url + "</li>";
+            htmlstr += "<li><b>prep id:</b> " + reqDoc.prep_id + "</li>";
             htmlstr += "<li><b>teams:</b> " + reqDoc.teams + "</li>";
             htmlstr += "<li><b>requetor:</b> " + reqDoc.requestor + "</li>";
             htmlstr += "<li><b>request date:</b> " + reqDoc.request_date + "</li>";

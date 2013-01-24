@@ -39,6 +39,7 @@ function(newDoc, oldDoc, userCtx) {
    // The following rule aplies for all operation types
    var allowed = isGlobalAdm || matchesRole("production-operator","group:dataops")
                              || matchesRole("production-manager","group:dataops")
+                             || matchesRole("t0-operator","group:dataops")
                              || matchesRole("web-service","group:facops");
 
    // Throw if user not validated

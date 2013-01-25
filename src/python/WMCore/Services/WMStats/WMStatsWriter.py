@@ -31,7 +31,7 @@ def monitorDocFromRequestSchema(schema):
     doc["publish_dbs_url"] = schema.get("PublishDbsUrl", "")
     doc["outputdatasets"] = schema.get('OutputDatasets', [])
     doc["cmssw"] = schema.get('SoftwareVersions', [])
-    doc['prep_id'] = schema.get('SoftwareVersions', None)
+    doc['prep_id'] = schema.get('PrepID', None)
 
     # team name is not yet available need to be updated in assign status
     #doc['team'] = schema['team']

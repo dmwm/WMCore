@@ -5,7 +5,7 @@ _UpdateBlocks_
 Oracle implementation of DBS3Buffer.UpdateBlocks
 """
 
-from WMComponent.DBSBuffer.Database.MySQL.UpdateBlocks import UpdateBlocks as MySQLUpdateBlocks
+from WMComponent.DBS3Buffer.MySQL.UpdateBlocks import UpdateBlocks as MySQLUpdateBlocks
 
 class UpdateBlocks(MySQLUpdateBlocks):
     """

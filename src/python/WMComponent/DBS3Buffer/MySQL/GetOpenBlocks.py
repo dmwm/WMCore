@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
-_GetBlock_
+_GetOpenBlocks_
 
-MySQL implementation of DBSBufferFiles.GetBlock
+MySQL implementation of DBSBufferFiles.GetOpenBlocks
 """
 
 from WMCore.Database.DBFormatter import DBFormatter

@@ -135,7 +135,7 @@ class EventBasedTest(unittest.TestCase):
         assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                "ERROR: Job contains unknown files."
 
-        assert job["mask"].getMaxEvents() == 100, \
+        assert job["mask"].getMaxEvents() is None, \
                "ERROR: Job's max events is incorrect."
 
         assert job["mask"]["FirstEvent"] == 0, \
@@ -166,10 +166,10 @@ class EventBasedTest(unittest.TestCase):
         assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                "ERROR: Job contains unknown files."
 
-        assert job["mask"].getMaxEvents() == 100, \
+        assert job["mask"].getMaxEvents() is None, \
                "ERROR: Job's max events is incorrect."
 
-        assert job["mask"]["FirstEvent"] == 0, \
+        assert job["mask"]["FirstEvent"] is None, \
                "ERROR: Job's first event is incorrect."
 
         return
@@ -198,7 +198,7 @@ class EventBasedTest(unittest.TestCase):
             assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                    "ERROR: Job contains unknown files."
 
-            assert job["mask"].getMaxEvents() == 50, \
+            assert job["mask"].getMaxEvents() == 50 or job["mask"].getMaxEvents() is None, \
                    "ERROR: Job's max events is incorrect."
 
             assert job["mask"]["FirstEvent"] in [0, 50], \
@@ -233,7 +233,7 @@ class EventBasedTest(unittest.TestCase):
             assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                    "ERROR: Job contains unknown files."
 
-            self.assertTrue(job["mask"].getMaxEvents() == 99 or job['mask'].getMaxEvents() == 1,
+            self.assertTrue(job["mask"].getMaxEvents() == 99 or job['mask'].getMaxEvents() is None,
                             "ERROR: Job's max events is incorrect.")
 
             assert job["mask"]["FirstEvent"] in [0, 99], \
@@ -267,7 +267,7 @@ class EventBasedTest(unittest.TestCase):
             assert len(job.getFiles(type = "lfn")) == 1, \
                    "ERROR: Job contains too many files."
 
-            assert job["mask"].getMaxEvents() == 100, \
+            assert job["mask"].getMaxEvents() is None, \
                    "ERROR: Job's max events is incorrect."
 
             assert job["mask"]["FirstEvent"] == 0, \
@@ -298,7 +298,7 @@ class EventBasedTest(unittest.TestCase):
             assert len(job.getFiles(type = "lfn")) == 1, \
                    "ERROR: Job contains too many files."
 
-            assert job["mask"].getMaxEvents() == 50, \
+            assert job["mask"].getMaxEvents() == 50 or job["mask"].getMaxEvents() is None, \
                    "ERROR: Job's max events is incorrect."
 
             assert job["mask"]["FirstEvent"] in [0, 50], \
@@ -329,10 +329,10 @@ class EventBasedTest(unittest.TestCase):
             assert len(job.getFiles(type = "lfn")) == 1, \
                    "ERROR: Job contains too many files."
 
-            assert job["mask"].getMaxEvents() == 100, \
+            assert job["mask"].getMaxEvents() is None, \
                    "ERROR: Job's max events is incorrect."
 
-            assert job["mask"]["FirstEvent"] == 0, \
+            assert job["mask"]["FirstEvent"] is None, \
                    "ERROR: Job's first event is incorrect."
     def testMCExactEvents(self):
         """

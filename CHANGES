@@ -1,3 +1,9 @@
+0.9.37 to 0.9.38:
+  - Fix accounting of lumis when a run black/white list is specified for a 
+    request.  Pull request #4369.
+  - Add a column to the job table in WMStats to display the number of queued
+    jobs.  Pull request #4370.
+
 0.9.36 to 0.9.37:
   - Give the t0-operator role writer permissions in WMStats.  Pull request
     #4365.

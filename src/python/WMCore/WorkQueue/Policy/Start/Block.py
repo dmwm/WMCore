@@ -127,34 +127,59 @@ class Block(StartPolicyInterface):
                 #use the information given from getMaskedBlocks to compute che size of the block
                 block['NumberOfFiles'] = len(maskedBlocks[blockName])
                 #ratio =  lumis which are ok in the block / total num lumis
-                ratio_accepted = 1. * accepted_lumis / float(block['NumberOfLumis'])
-                block['NumberOfEvents'] = float(block['NumberOfEvents']) * ratio_accepted
+                ratioAccepted = 1. * accepted_lumis / float(block['NumberOfLumis'])
+                block['NumberOfEvents'] = float(block['NumberOfEvents']) * ratioAccepted
                 block[self.lumiType] = accepted_lumis
             # check run restrictions
             elif runWhiteList or runBlackList:
-                # listRuns returns a run number per lumi section
-                full_lumi_list = dbs.listRuns(block = block['block'])
-                runs = set(full_lumi_list)
+                # listRunLumis returns a dictionary with the lumi sections per run
+                runLumis = dbs.listRunLumis(block = block['block'])
+                runs = set(runLumis.keys())
+                recalculateLumiCounts = False
+                if len(runs) > 1:
+                    # If more than one run in the block
+                    # Then we must calculate the lumi counts after filtering the run list
+                    # This has to be done rarely and requires calling DBS file information
+                    recalculateLumiCounts = True
 
                 # apply blacklist
                 runs = runs.difference(runBlackList)
                 # if whitelist only accept listed runs
                 if runWhiteList:
                     runs = runs.intersection(runWhiteList)
-
                 # any runs left are ones we will run on, if none ignore block
                 if not runs:
                     continue
 
-                # recalculate effective size of block
-                # make a guess for new event/file numbers from ratio
-                # of accepted lumi sections (otherwise have to pull file info)
-                accepted_lumis = [x for x in full_lumi_list if x in runs]
-                ratio_accepted = 1. * len(accepted_lumis) / len(full_lumi_list)
-                block[self.lumiType] = len(accepted_lumis)
-                block['NumberOfFiles'] = float(block['NumberOfFiles']) * ratio_accepted
-                block['NumberOfEvents'] = float(block['NumberOfEvents']) * ratio_accepted
+                if len(runs) == len(runLumis):
+                    # If there is no change in the runs, then we can skip recalculating lumi counts
+                    recalculateLumiCounts = False
 
+                if recalculateLumiCounts:
+                    # Recalculate effective size of block
+                    # We pull out file info, since we don't do this often
+                    acceptedLumiCount = 0
+                    acceptedEventCount = 0
+                    acceptedFileCount = 0
+                    fileInfo = dbs.listFilesInBlock(fileBlockName = block['block'])
+                    for fileEntry in fileInfo:
+                        acceptedFile = False
+                        acceptedFileLumiCount = 0
+                        for lumiInfo in fileEntry['LumiList']:
+                            runNumber = lumiInfo['RunNumber']
+                            if runNumber in runs:
+                                acceptedFile = True
+                                acceptedFileLumiCount += 1
+                        if acceptedFile:
+                            acceptedFileCount += 1
+                            acceptedLumiCount += acceptedFileLumiCount
+                            if len(fileEntry['LumiList']) != acceptedFileLumiCount:
+                                acceptedEventCount += float(acceptedFileLumiCount) * fileEntry['NumberOfEvents']/len(fileEntry['LumiList'])
+                            else:
+                                acceptedEventCount += fileEntry['NumberOfEvents']
+                    block[self.lumiType] = acceptedLumiCount
+                    block['NumberOfFiles'] = acceptedFileCount
+                    block['NumberOfEvents'] = acceptedEventCount
             # save locations
             if task.inputLocationFlag():
                 self.data[block['block']] = self.sites

@@ -67,6 +67,17 @@ class DBSReaderTest(unittest.TestCase):
         self.assertEqual([173657], runs)
 
     @attr("integration")
+    def testlistRunLumis(self):
+        """listRunLumis returns known runs and lumicounts"""
+        self.dbs = DBSReader(self.endpoint)
+        runs = self.dbs.listRunLumis(dataset = DATASET)
+        self.assertEqual(46, len(runs))
+        self.assertTrue(173692 in runs)
+        self.assertEqual(runs[173692], 2782)
+        runs = self.dbs.listRuns(dataset = DATASET, block = BLOCK)
+        self.assertEqual({173657 : 94}, runs)
+
+    @attr("integration")
     def testListProcessedDatasets(self):
         """listProcessedDatasets returns known processed datasets"""
         self.dbs = DBSReader(self.endpoint)

@@ -1077,7 +1077,7 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(results["/TestWorkload/ProcessingTask"], {"files_per_job": 2,
                                                                    "algorithm": "FileBased",
                                                                    "type": "Processing"},
-                         "Error: Wrong splitting parameters: %s")
+                         "Error: Wrong splitting parameters: %s" % results["/TestWorkload/ProcessingTask"])
         self.assertEqual(results["/TestWorkload/ProcessingTask/MergeTask/SkimTask"],
                          {"max_files": 21, "algorithm": "RunBased", "some_other_param": "value", "type": "Skim"},
                          "Error: Wrong splitting parameters.")

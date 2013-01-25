@@ -477,6 +477,12 @@ class WMTaskHelper(TreeHelper):
         splittingParams = datadict.dictionary_()
         splittingParams["siteWhitelist"] = self.siteWhitelist()
         splittingParams["siteBlacklist"] = self.siteBlacklist()
+
+        if "runWhitelist" not in splittingParams.keys() and self.inputRunWhitelist() != None:
+            splittingParams["runWhitelist"] = self.inputRunWhitelist()
+        if "runBlacklist" not in splittingParams.keys() and self.inputRunBlacklist() != None:
+            splittingParams["runBlacklist"] = self.inputRunBlacklist()
+            
         return splittingParams
 
     def addGenerator(self, generatorName, **settings):

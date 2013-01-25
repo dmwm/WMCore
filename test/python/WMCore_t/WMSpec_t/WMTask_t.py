@@ -156,12 +156,21 @@ class WMTaskTest(unittest.TestCase):
         testTask.setSiteWhitelist(["T1_US_FNAL", "T1_CH_CERN"])
         testTask.setSiteBlacklist(["T2_US_PERDUE", "T2_US_UCSD", "T1_TW_ASGC"])
 
+        testTask.addInputDataset(primary = "PrimaryDataset",
+                                 processed = "ProcessedDataset",
+                                 tier = "DataTier",
+                                 dbsurl = "DBSURL",
+                                 block_whitelist = ["Block1", "Block2"],
+                                 block_blacklist = ["Block3", "Block4", "Block5"],
+                                 run_whitelist = [1, 2, 3],
+                                 run_blacklist = [4, 5])
+
         assert testTask.jobSplittingAlgorithm() == "MadeUpAlgo", \
                "Error: Wrong job splitting algorithm name."
 
         algoParams = testTask.jobSplittingParameters()
 
-        assert len(algoParams.keys()) == 6, \
+        assert len(algoParams.keys()) == 8, \
                "Error: Wrong number of algo parameters."
 
         assert "algorithm" in algoParams.keys(), \
@@ -180,6 +189,8 @@ class WMTaskTest(unittest.TestCase):
                "Error: Missing algo parameter."
         assert algoParams["one_more_param"] == "Hello", \
                "Error: Parameter has wrong value."
+        assert len(algoParams["runWhitelist"]) == 3, \
+               "Error: Wrong number of runs in whitelist."
 
         return
 

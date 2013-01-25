@@ -102,9 +102,9 @@ class Dataset(StartPolicyInterface):
 
             # check run restrictions
             if runWhiteList or runBlackList:
-                # listRuns returns a run number per lumi section
-                full_lumi_list = dbs.listRuns(block = block['block'])
-                runs = set(full_lumi_list)
+                # listRunLumis returns a dictionary with the lumi sections per run
+                runLumis = dbs.listRunLumis(block = block['block'])
+                runs = set(runLumis.keys())
 
                 # apply blacklist
                 runs = runs.difference(runBlackList)
@@ -118,11 +118,18 @@ class Dataset(StartPolicyInterface):
                 # recalculate effective size of block
                 # make a guess for new event/file numbers from ratio
                 # of accepted lumi sections (otherwise have to pull file info)
-                accepted_lumis = [x for x in full_lumi_list if x in runs]
-                ratio_accepted = 1. * len(accepted_lumis) / len(full_lumi_list)
-                block[self.lumiType] = len(accepted_lumis)
-                block['NumberOfFiles'] = float(block['NumberOfFiles']) * ratio_accepted
-                block['NumberOfEvents'] = float(block['NumberOfEvents']) * ratio_accepted
+                acceptedLumiCount = 0
+                fullLumiCount = 0
+                acceptedLumiCount = 0
+                fullLumiCount = 0
+                for run in runLumis:
+                    if run in runs:
+                        acceptedLumiCount += runLumis[run]
+                    fullLumiCount += runLumis[run]
+                ratioAccepted = float(acceptedLumiCount) / fullLumiCount
+                block[self.lumiType] = acceptedLumiCount
+                block['NumberOfFiles'] = int(float(block['NumberOfFiles']) * ratioAccepted)
+                block['NumberOfEvents'] = int(float(block['NumberOfEvents']) * ratioAccepted)
 
             validBlocks.append(block)
             if locations is None:

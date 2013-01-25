@@ -49,6 +49,7 @@ class WMStatsWriter(WMStatsReader):
             self.couchURL, self.dbName = splitCouchServiceURL(couchURL)
         self.couchServer = CouchServer(self.couchURL)
         self.couchDB = self.couchServer.connectDatabase(self.dbName, False)
+        self.replicatorDB = self.couchServer.connectDatabase('_replicator', False)
 
     def uploadData(self, docs):
         """
@@ -160,3 +161,13 @@ class WMStatsWriter(WMStatsReader):
     def getActiveTasks(self):
         couchStatus = self.couchServer.status()
         return couchStatus['active_tasks']
+
+    def deleteReplicatorDocs(self):
+        repDocs = self.replicatorDB.allDocs()['rows']
+        for j in repDocs:
+            if not j['id'].startswith('_'):
+                doc = {}
+                doc["_id"]  = j['id']
+                doc["_rev"] = j['value']['rev']
+                self.replicatorDB.queueDelete(doc)
+        committed = self.replicatorDB.commit()

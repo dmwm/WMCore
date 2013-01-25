@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 """
-_GetByID_
+_LoadBulkFilesByID_
 
-Oracle implementation of DBSBufferFiles.GetByID
+Oracle implementation of DBSBufferFiles.LoadBulkFilesByID
 """
 
-
-
-
-import logging
-
-from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles import LoadBulkFilesByID as MySQLLoadBulkFilesByID
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.LoadBulkFilesByID import LoadBulkFilesByID as MySQLLoadBulkFilesByID
 
 class LoadBulkFilesByID(MySQLLoadBulkFilesByID):
     """
     Same as MySQL
 
     """
+    pass

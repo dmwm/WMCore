@@ -2,13 +2,10 @@
 """
 _GetOpenBlocks_
 
-Oracle implementation of DBSBuffer.GetOpenBlocks
+Oracle implementation of DBS3Buffer.GetOpenBlocks
 """
 
-
-
-
-from WMComponent.DBSBuffer.Database.MySQL.GetOpenBlocks import GetOpenBlocks as MySQLGetOpenBlocks
+from WMComponent.DBS3Buffer.MySQL.GetOpenBlocks import GetOpenBlocks as MySQLGetOpenBlocks
 
 class GetOpenBlocks(MySQLGetOpenBlocks):
     """

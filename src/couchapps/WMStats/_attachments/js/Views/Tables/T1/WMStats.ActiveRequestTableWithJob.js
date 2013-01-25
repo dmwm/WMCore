@@ -46,14 +46,21 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
                           }
             },
             { "sDefaultContent": 0,
-              "sTitle": "pending ", 
+              "sTitle": "queued", 
+              "fnRender": function ( o, val ) {
+                            var reqSummary = requestData.getSummary(o.aData.workflow);
+                            return reqSummary.getTotalQueued();
+                          }
+            },
+            { "sDefaultContent": 0,
+              "sTitle": "pending", 
               "fnRender": function ( o, val ) {
                             var reqSummary = requestData.getSummary(o.aData.workflow);
                             return reqSummary.getPending();
                           }
             },
             { "sDefaultContent": 0,
-              "sTitle": "running ", 
+              "sTitle": "running", 
               "fnRender": function ( o, val ) {
                             var reqSummary = requestData.getSummary(o.aData.workflow);
                             return reqSummary.getRunning();

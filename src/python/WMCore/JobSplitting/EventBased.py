@@ -72,15 +72,13 @@ class EventBased(JobFactory):
                             if eventsPerJob + currentEvent < eventsInFile:
                                 self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, currentEvent)
                             else:
-                                self.currentJob["mask"].setMaxAndSkipEvents(eventsInFile - currentEvent,
+                                self.currentJob["mask"].setMaxAndSkipEvents(None,
                                                                             currentEvent)
                             currentEvent += eventsPerJob
                             totalJobs    += 1
                     else:
                         self.newJob(name = self.getJobName(length=totalJobs))
                         self.currentJob.addFile(f)
-                        if f["events"]:
-                            self.currentJob["mask"].setMaxAndSkipEvents(f["events"], 0)
                         totalJobs += 1
                 else:
                     #This assumes there's only one run which is the case for MC

@@ -41,8 +41,11 @@ class Mask(dict):
         Set FirstEvent & LastEvent fields as max & skip events
 
         """
+
         self['FirstEvent'] = skipEvents
-        self['LastEvent']  = skipEvents + maxEvents
+        if maxEvents is not None:
+            self['LastEvent']  = skipEvents + maxEvents
+
         return
 
     def setMaxAndSkipLumis(self, maxLumis, skipLumi):

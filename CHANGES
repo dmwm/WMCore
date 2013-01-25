@@ -1,3 +1,18 @@
+0.9.36 to 0.9.37:
+  - Give the t0-operator role writer permissions in WMStats.  Pull request
+    #4365.
+  - Fix PREP ID search in WMStats.  Pull request #4367.
+  - Retry WMStats replication when it fails.  Pull request #4362.
+  - Remove the t0wmstats dependencies.  Pull request #4359.
+  - The aborted-archived and normal-archived are final states and transitions out
+    of them should not be allowed.  Pull request #4360.
+  - Fix the EventBased splitting algorithm to work around issues with zero event
+    lumis.  Pull request #4361.
+  - Make sure that the run white and black lists gets passed to the job splitting
+    algorithms so that they can use them.  Pull request #4368.
+  - Fix the DBS3Uploader and modify it to support an upload only mode.  Kill off the
+    SQLite code in DBSBuffer and DBS3Buffer.  Pull request #4358.
+
 0.9.35 to 0.9.36:
   - Minor ReqMgr fixes.  Pull request #4357: 
     * Cloned requests will beging in the assignment-approved state instead

@@ -184,7 +184,8 @@ class Create(DBCreator):
           blockname   VARCHAR(250) NOT NULL,
           location    INTEGER      NOT NULL,
           create_time INTEGER,
-          status      VARCHAR(20)) %s""" % tablespaceTable
+          status      VARCHAR(20),
+          status3     VARCHAR(20) DEFAULT 'Pending') %s""" % tablespaceTable
 
         self.create["10dbsbuffer_block_seq"] = \
           """CREATE SEQUENCE dbsbuffer_block_seq

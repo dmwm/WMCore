@@ -1,10 +1,9 @@
 """
-_Create_DBSBuffer_
+_Create_DBS3Buffer_
 
 Implementation of Create_DBSBuffer for MySQL.
 """
 
-import logging
 import threading
 
 from WMCore.Database.DBCreator import DBCreator
@@ -45,7 +44,7 @@ class Create(DBCreator):
                            app_fam  varchar(100),
                            pset_hash varchar(700),
                            config_content LONGTEXT,
-                           in_dbs int,
+                           in_dbs int, 
                            primary key(ID),
                            unique (app_name, app_ver, app_fam, pset_hash)
                         ) ENGINE=InnoDB"""
@@ -56,7 +55,7 @@ class Create(DBCreator):
                            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                            algo_id BIGINT UNSIGNED,
                            dataset_id BIGINT UNSIGNED,
-                           in_dbs INTEGER DEFAULT 0,
+                           in_dbs INTEGER DEFAULT 0, 
                            primary key(id),
                            FOREIGN KEY (algo_id) REFERENCES dbsbuffer_algo(id)
                              ON DELETE CASCADE,
@@ -80,7 +79,7 @@ class Create(DBCreator):
              events       INTEGER,
              dataset_algo BIGINT UNSIGNED   not null,
              block_id     BIGINT UNSIGNED,
-             status       varchar(20),
+             status       VARCHAR(20),
              in_phedex    INTEGER DEFAULT 0,
              workflow     INTEGER,
              LastModificationDate  BIGINT,
@@ -124,6 +123,7 @@ class Create(DBCreator):
              location     INTEGER      NOT NULL,
              create_time  INTEGER,
              status       VARCHAR(20),
+             status3      VARCHAR(20) DEFAULT 'Pending',
              UNIQUE(blockname, location))ENGINE=InnoDB"""
 
         self.create["11dbsbuffer_checksum_type"] = \
@@ -142,9 +142,6 @@ class Create(DBCreator):
                 ON DELETE CASCADE,
               FOREIGN KEY (fileid) REFERENCES dbsbuffer_file(id)
                 ON DELETE CASCADE) ENGINE=InnoDB"""
-
-
-
 
         checksumTypes = ['cksum', 'adler32', 'md5']
         for i in checksumTypes:

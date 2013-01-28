@@ -674,7 +674,6 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.assertTrue(requestName in result.keys())
         self.assertTrue(configID in result[requestName][0])
         
-        
     def testJ_CheckRequestCloning(self):
         myThread = threading.currentThread()
         userName     = 'Taizong'
@@ -684,22 +683,33 @@ class ReqMgrTest(RESTBaseUnitTest):
                                                userName = userName,
                                                groupName = groupName,
                                                teamName = teamName)
-        result = self.jsonSender.put('request', schema)
+        result = self.jsonSender.put("request", schema)
         self.assertEqual(result[1], 200)
-        requestName = result[0]['RequestName']
+        requestName = result[0]["RequestName"]
         # AcquisitionEra is returned here, but in fact on server is not stored until assign
-        self.assertTrue(schema["AcquisitionEra"], result[0]["AcquisitionEra"])
+        # see below - when retrieving the request it's None ...
+        # [just to mark ReqMgr1 peculiarities]
+        self.assertTrue(schema["AcquisitionEra"], result[0]["AcquisitionEra"])        
+        # set some non-default priority: Since Edgar wanted to change priority
+        # automatically in clone, and priority wasn't explicitly passed, it used a default
+        # value. Change it here to specifically catch this case.
+        priority = 300
+        result = self.jsonSender.put("request/%s?priority=%s" % (requestName, priority))        
+        self.assertEqual(result[1], 200)
         # get the original request (although the variable result shall have the same stuff in)
         origRequest = self.jsonSender.get("request/%s" % requestName)
         origRequest = origRequest[0]
         self.assertEquals(origRequest["AcquisitionEra"], "None") # was not stored
+        self.assertEquals(origRequest["ReqMgrRequestBasePriority"], priority)
         
         # test cloning not existing request
         self.assertRaises(HTTPException, self.jsonSender.put, "clone/%s" % "NotExistingRequestName")
         # this is the new request, it'll have different name
         result = self.jsonSender.put("clone/%s" % requestName)
         cloned = self.jsonSender.get("request/%s" % result[0]["RequestName"])
+        
         clonedRequest = cloned[0]
+
         # these request arguments shall differ in the cloned request:
         #    RequestName, ReqMgrRequestID
         # "RequestDate" and "timeStamp" will be the same in the test
@@ -716,8 +726,7 @@ class ReqMgrTest(RESTBaseUnitTest):
             msg = ("Request values: original: %s: %s cloned: %s: %s differ" %
                    (k1, origRequest[k1], k2, clonedRequest[k2]))
             self.assertEqual(origRequest[k1], clonedRequest[k2], msg)
-        
-        
+            
 
 if __name__=='__main__':
     unittest.main()

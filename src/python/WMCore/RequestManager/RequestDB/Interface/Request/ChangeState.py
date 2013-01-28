@@ -66,6 +66,9 @@ def changeRequestStatus(requestName, newState, priority = None, wmstatUrl = None
     - *requestName* : name of the request to be modified
     - *newState*    : name of the new status for the request
     - *priority* : optional integer priority
+    
+    Apparently when changing request state (on assignment page),
+    it's possible to change priority at one go. Hence the argument is here.
 
     """
     #TODO: should we make this mendatory?

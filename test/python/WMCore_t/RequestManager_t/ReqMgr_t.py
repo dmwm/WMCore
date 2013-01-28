@@ -684,28 +684,47 @@ class ReqMgrTest(RESTBaseUnitTest):
                                                userName = userName,
                                                groupName = groupName,
                                                teamName = teamName)
-        result = self.jsonSender.put('request', schema)
+        result = self.jsonSender.put("request", schema)
         self.assertEqual(result[1], 200)
-        requestName = result[0]['RequestName']
+        requestName = result[0]["RequestName"]
         # AcquisitionEra is returned here, but in fact on server is not stored until assign
-        self.assertTrue(schema["AcquisitionEra"], result[0]["AcquisitionEra"])
-        # get the original request (although the variable result shall have the same stuff in)
-        origRequest = self.jsonSender.get("request/%s" % requestName)
-        origRequest = origRequest[0]
-        self.assertEquals(origRequest["AcquisitionEra"], "None") # was not stored
+        # see below - when retrieving the request it's None ...
+        # [just to mark ReqMgr1 peculiarities]
+        self.assertTrue(schema["AcquisitionEra"], result[0]["AcquisitionEra"])        
+        # set some non-default priority
+        # when cloning a request which had some non default priority,
+        # the priority values were lost when creating a cloned request, the
+        # default values were lost. Change it here to specifically catch this case.
+        priority = 300
+        result = self.jsonSender.put("request/%s?priority=%s" % (requestName, priority))        
+        self.assertEqual(result[1], 200)
+        # get the original request from the server, although the variable result
+        # shall have the same stuff in
+        response = self.jsonSender.get("request/%s" % requestName)
+        origRequest = response[0]
+        self.assertEquals(origRequest["AcquisitionEra"], "None") # was not stored, see above
+        # test that the priority was correctly set in the brand-new request
+        self.assertEquals(origRequest["ReqMgrRequestBasePriority"], priority)
         
         # test cloning not existing request
         self.assertRaises(HTTPException, self.jsonSender.put, "clone/%s" % "NotExistingRequestName")
+        # correct attempt to clone the request
         # this is the new request, it'll have different name
         result = self.jsonSender.put("clone/%s" % requestName)
-        cloned = self.jsonSender.get("request/%s" % result[0]["RequestName"])
-        clonedRequest = cloned[0]
+        # get the cloned request from the server
+        respose = self.jsonSender.get("request/%s" % result[0]["RequestName"])
+        clonedRequest = respose[0]
         # these request arguments shall differ in the cloned request:
-        #    RequestName, ReqMgrRequestID
-        # "RequestDate" and "timeStamp" will be the same in the test
         toDiffer = ["RequestName", "ReqMgrRequestID", "RequestWorkflow", "RequestStatus"]
         for differ in toDiffer:
             self.assertNotEqual(origRequest[differ], clonedRequest[differ])
+        # check the desired status of the cloned request
+        self.assertEquals(clonedRequest["RequestStatus"], "assignment-approved",
+                          "Cloned request status should be 'assignment-approved', not '%s'." %
+                          clonedRequest["RequestStatus"])
+        # don't care about these two (they will likely be the same in the unittest
+        # since the brand new request injection as well as the cloning probably
+        # happen at roughly the same time)
         toDiffer.extend(["RequestDate", "timeStamp"])
         for differ in toDiffer:
             del origRequest[differ]

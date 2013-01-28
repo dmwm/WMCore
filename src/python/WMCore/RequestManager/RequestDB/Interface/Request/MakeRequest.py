@@ -15,7 +15,8 @@ import WMCore.RequestManager.RequestDB.Connection as DBConnect
 
 
 
-def createRequest(hnUser, groupName, requestName, requestType, workflowName, prep_id):
+def createRequest(hnUser, groupName, requestName, requestType, workflowName,
+                  prep_id, reqBasePriority):
     """
     _createRequest_
 
@@ -80,7 +81,8 @@ def createRequest(hnUser, groupName, requestName, requestType, workflowName, pre
             request_status = statusMap['new'],
             association_id = groups[groupName],
             workflow = workflowName,
-            prep_id = prep_id
+            prep_id = prep_id,
+            reqBasePriority = reqBasePriority
             )
     except Exception, ex:
         msg = "Unable to create request named %s\n" % requestName

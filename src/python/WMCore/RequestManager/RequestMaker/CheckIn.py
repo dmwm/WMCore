@@ -90,7 +90,8 @@ def checkIn(request, requestType = 'None'):
         requestName,
         request['RequestType'],
         request['RequestWorkflow'],
-        request.get('PrepID', None)
+        request.get('PrepID', None),
+        request.get('ReqMgrRequestBasePriority', None)
     )
     except Exception, ex:
         msg = "Error creating new request:\n"

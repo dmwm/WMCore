@@ -87,6 +87,8 @@ class Harvest(JobFactory):
                 if 'X509_USER_PROXY' in os.environ:
                     self.currentJob['proxyPath'] = os.environ['X509_USER_PROXY']
 
+                self.currentJob.addBaggageParameter("runIsComplete", not fileset.open)
+
         return
 
     def algorithm(self, *args, **kwargs):

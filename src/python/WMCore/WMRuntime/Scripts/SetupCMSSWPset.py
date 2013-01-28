@@ -522,7 +522,10 @@ class SetupCMSSWPset(ScriptInterface):
         be tweaked with the dataset name in order to store it
         properly in the DQMGUI, others tweaks can be added as well
         """
+        baggage = self.job.getBaggage()
+        runIsComplete = getattr(baggage, "runIsComplete", False)
         if hasattr(self.process, "dqmSaver"):
+            self.process.dqmSaver.runIsComplete = cms.untracked.bool(runIsComplete)
             if hasattr(self.step.data.application.configuration, "pickledarguments"):
                 args = pickle.loads(self.step.data.application.configuration.pickledarguments)
                 datasetName = args.get('datasetName', None)

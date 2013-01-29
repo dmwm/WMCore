@@ -1,3 +1,9 @@
+0.9.38 to 0.9.39:
+  - Display the amount of time a request has been in a particular state in
+    WMStats.  Pull request #4374.
+  - Fix the priority setting of cloned requests.  Pull request #4377.
+  - Fix the cmsRun configuration for DQM harvesting jobs.  Pull request #4371.
+
 0.9.37 to 0.9.38:
   - Fix accounting of lumis when a run black/white list is specified for a 
     request.  Pull request #4369.

@@ -113,7 +113,7 @@ WMStats.Utils.formatDetailButton = function (name) {
 }
 
 
-WMStats.Utils.utcClock = function() {
+WMStats.Utils.utcClock = function(date) {
     
     function appendZero(num) {
         if (num < 10) {
@@ -122,7 +122,12 @@ WMStats.Utils.utcClock = function() {
         return num
     }
     var day = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    var now = new Date(); 
+    var now;
+    if (date === undefined) {
+        now = new Date(); 
+    }else {
+        now = date;
+    }
     var month =  now.getUTCMonth() + 1;
     var utcString = now.getUTCFullYear() + "/" + month + "/" + 
                     now.getUTCDate() + " (" + day[now.getUTCDay()] + ") " +

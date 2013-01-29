@@ -54,6 +54,16 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
                           },
               "bUseRendered": false
             },
+            { "mDataProp": function (source, type, val) { 
+                              return source.request_status[source.request_status.length -1].update_time
+                           }, "sTitle": "duration",
+              "fnRender": function ( o, val ) {
+                            var currentTime = Math.round(new Date().getTime() / 1000);
+                            var startTime = o.aData.request_status[o.aData.request_status.length -1].update_time
+                            return WMStats.Utils.foramtDuration(currentTime - startTime)
+                          },
+              "bUseRendered": false
+            },
             { "sDefaultContent": 0,
               "sTitle": "job progress", 
               "fnRender": function ( o, val ) {

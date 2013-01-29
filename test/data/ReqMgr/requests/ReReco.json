@@ -43,7 +43,7 @@
 		"ProcessingVersion": "ProcessingVersion-OVERRIDE-ME",
 		"maxRSS": 4294967296,
 		"maxVSize": 4294967296,
-		"SoftTimeout": 171600,
+		"SoftTimeout": 167000,
 		"GracePeriod": 300,
 		"dashboard": "dashboard-OVERRIDE-ME",
 		"Team": "Team--OVERRIDE-ME",

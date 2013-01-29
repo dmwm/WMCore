@@ -4,7 +4,7 @@
 ReqMgrRESTModel
 
 This holds the methods for the REST model, all methods which
-will be available via HTTP PUT/GET/POST commands from the iconterface,
+will be available via HTTP PUT/GET/POST commands from the interface,
 the validation, the security for each, and the function calls for the
 DB interfaces they execute.
 
@@ -490,8 +490,9 @@ class ReqMgrRESTModel(RESTModel):
         A new request is generated.
         The cloned request has a newly generated RequestName, new timestamp,
         RequestDate, however -everything- else is copied from the original request.
-        Since Edgar changed his mind, he no longer
-        wants this cloned request be in the 'new' state but in 'assignment-approved'.
+        Addition: since Edgar changed his mind, he no longer
+        wants this cloned request be in the 'new' state but put 
+        straight into 'assignment-approved' state.
         
         """
         request = None
@@ -508,8 +509,11 @@ class ReqMgrRESTModel(RESTModel):
                 toRemove = ("RequestName", "RequestDate", "timeStamp", "ReqMgrRequestID",
                             "RequestWorkflow")
                 for remove in toRemove:
-                    del requestOrigDict[remove]                
+                    del requestOrigDict[remove]
                 newReqSchema.update(requestOrigDict) # clone
+                
+                # problem that priority wasn't preserved went down from here:
+                # via CheckIn.checkIn() -> MakeRequest.createRequest() -> Request.New.py factory
                 request = Utilities.buildWorkloadAndCheckIn(self, newReqSchema,
                                                             self.couchUrl, self.workloadDBName,
                                                             self.wmstatWriteURL, clone=True)

@@ -215,6 +215,7 @@ class ReqMgrClient(object):
             
             
     def queryRequests(self, config):
+        requestsData = []
         if config.requestNames:
             for requestName in config.requestNames:
                 logging.info("Querying '%s' request ..." % requestName)
@@ -225,7 +226,9 @@ class ReqMgrClient(object):
                 request = json.loads(data)
                 for k, v in sorted(request.items()):
                     print "\t%s: %s" % (k, v)
-                return request
+                requestsData.append(request)
+            # returns data on requests in the same order as in the config.requestNames
+            return requestsData
         else:
             logging.info("Querying all requests ...")
             status, data = self._httpRequest("GET", "/reqmgr/reqMgr/requestnames")
@@ -275,6 +278,8 @@ class ReqMgrClient(object):
         
         """
         logging.info("Changing request priority: %s for %s ..." % (priority, requestName))
+        # this approach should also be possible:
+        # jsonSender.put("request/%s?priority=%s" % (requestName, priority))
         # "requestName": requestName can probably be specified here as well
         params = {"priority": "%s" % priority}
         encodedParams = urllib.urlencode(params)
@@ -302,20 +307,28 @@ class ReqMgrClient(object):
         requestNames.append(self.createRequest(config, restApi = False))
         config.requestNames = requestNames        
         self.queryRequests(config)
-        config.cloneRequest = requestNames[0] # clone the first request in the list
-        requestNames.append(self.cloneRequest(config))
-        config.requestNames = requestNames
         # test priority changing (final priority will be sum of the current
         # and new, so have to first find out the current)
         # config.requestNames must be set
-        request = self.queryRequests(config)
-        currPriority = request["RequestPriority"]
+        requests = self.queryRequests(config)
+        currPriority = requests[0]["RequestPriority"]
         newPriority = 10
         totalPriority = currPriority + newPriority
         self.changePriority(requestNames[0], newPriority)
-        request = self.queryRequests(config)
-        assert request["RequestPriority"] == totalPriority, "New RequestPriority does not match!"
-        
+        requests = self.queryRequests(config)
+        assert requests[0]["RequestPriority"] == totalPriority, "New RequestPriority does not match!"
+        # test clone
+        config.cloneRequest = requestNames[0] # clone the first request in the list
+        clonedRequestName = self.cloneRequest(config)
+        requestNames.append(clonedRequestName)
+        config.requestNames = requestNames
+        # now test that the cloned request has correct priority
+        requests = self.queryRequests(config)
+        # last from the returned result is the cloned request
+        clonedRequest = requests[-1]
+        msg = ("Priorities don't match: original request: %s cloned request: %s" %
+               (totalPriority, clonedRequest["RequestPriority"]))
+        assert totalPriority == clonedRequest["RequestPriority"], msg
         self.deleteRequests(config)
         logging.info("%s requests in the system before this test." % len(currentRequests))
         config.requestNames = None # this means queryRequests will check all requests

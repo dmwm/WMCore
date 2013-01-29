@@ -56,9 +56,9 @@ class New(DBFormatter):
             msg = "workflow not provided to Request.New.execute"
             raise RuntimeError, msg
 
-
         prep_id = request.get("prep_id", None)
-        priority = request.get("request_priority", 0)
+        priority = request.get("reqBasePriority", None)
+        priority = priority if priority else 0
 
         self.sql = """
         INSERT INTO reqmgr_request (request_name, request_type,

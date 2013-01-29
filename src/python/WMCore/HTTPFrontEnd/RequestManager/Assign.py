@@ -237,7 +237,7 @@ class Assign(WebAPI):
                                   int(kwargs.get("MaxMergeEvents", 50000)))
         helper.setupPerformanceMonitoring(int(kwargs.get("maxRSS", 2411724)),
                                           int(kwargs.get("maxVSize", 2411724)),
-                                          int(kwargs.get("SoftTimeout", 171600)),
+                                          int(kwargs.get("SoftTimeout", 167000)),
                                           int(kwargs.get("GracePeriod", 300)))
 
         # Check whether we should check location for the data

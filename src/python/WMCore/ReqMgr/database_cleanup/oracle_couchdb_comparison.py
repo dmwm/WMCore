@@ -16,18 +16,16 @@ import sys
 from WMCore.Database.CMSCouch import CouchServer, Database, Document
 
 
-def get_all_from_couch():
-    # couch_server = CouchServer(couch_url)
-    db = Database(couch_db_name, couch_url)
-    all_docs = db.allDocs()
-    return all_docs
-
 
 def main():
     if len(sys.argv) < 2:
         print ("Takes 1 input argument - dump of Oracle reqmgr_request "
                "table in a Python dictionary.")
         sys.exit(1)
+
+    print "Creating database connection ..."
+    # couch_server = CouchServer(couch_url)
+    db = Database(couch_db_name, couch_url)
     
     module = __import__(sys.argv[1].replace(".py", ''),
         fromlist=["reqmgr_request"])
@@ -35,9 +33,10 @@ def main():
     print "Oracle requests: %s" % len(oracle_requests)
 
     print "Retrieving data from CouchDB ..."
-    couch_requests = get_all_from_couch()
+    couch_requests = db.allDocs()
     couch_request_names = []
     for row in couch_requests["rows"]:
+        if row["id"].startswith("_design"): continue
         couch_request_names.append(row["id"])
     print "CouchDB requests: %s" % len(couch_request_names)
 
@@ -55,7 +54,11 @@ def main():
     print "CouchDB requests not present in Oracle:"
     print "%s requests" % len(couch_request_names)
     for name in couch_request_names:
-        print name
+        request = db.document(name)
+        assert name == request["RequestName"]
+        assert name == request["_id"]
+        print "%s  %s  %s" % (request["RequestName"], request["RequestType"],
+                request["RequestStatus"])
     print "\n\n"
     print "Oracle requests not present in CouchDB:"
     print "%s requests" % len(not_present_in_couch)

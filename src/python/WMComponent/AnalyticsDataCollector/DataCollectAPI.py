@@ -15,6 +15,7 @@ import time
 import re
 import urllib
 import logging
+from WMCore.Agent.Daemon.Details import Details
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
@@ -218,6 +219,7 @@ class WMAgentDBData():
         self.jobSlotAction = wmbsDAOFactory(classname = "Locations.GetJobSlotsByCMSName")
         self.finishedTaskAndJobType = wmbsDAOFactory(classname = "Subscriptions.CountFinishedSubscriptionsByTask")
         self.componentStatusAction = wmAgentDAOFactory(classname = "GetAllHeartbeatInfo")
+        self.components = None
 
     def getHeartbeatWarning(self):
 
@@ -231,12 +233,46 @@ class WMAgentDBData():
         agentInfo['status'] = 'ok'
         for componentInfo in results:
             hearbeatFlag = (currentTime - componentInfo["last_updated"]) > componentInfo["update_threshold"]
-            if (componentInfo["last_error"] != None) or hearbeatFlag:
+            if (componentInfo["state"] != "Error") or hearbeatFlag:
                 agentInfo['down_components'].append(componentInfo['name'])
                 agentInfo['status'] = 'down'
                 agentInfo['down_component_detail'].append(componentInfo)
         return agentInfo
 
+    def getComponentStatus(self, config):
+        components = config.listComponents_() + config.listWebapps_()
+        agentInfo = {}
+        agentInfo['down_components'] = set()
+        agentInfo['down_component_detail'] = []
+        agentInfo['status'] = 'ok'
+        # check the component status
+        for component in components:
+            compDir = config.section_(component).componentDir
+            compDir = config.section_(component).componentDir
+            compDir = os.path.expandvars(compDir)
+            daemonXml = os.path.join(compDir, "Daemon.xml")
+            downFlag = False;
+            if not os.path.exists(daemonXml):
+                downFlag = True
+            else:
+                daemon = Details(daemonXml)
+                if not daemon.isAlive():
+                    downFlag = True
+            if downFlag:
+                agentInfo['down_components'].add(component)
+                agentInfo['status'] = 'down'
+        
+        # check the thread status
+        results = self.componentStatusAction.execute()
+        for componentInfo in results:
+            if (componentInfo["state"] == "Error"):
+                agentInfo['down_components'].add(componentInfo['name'])
+                agentInfo['status'] = 'down'
+                agentInfo['down_component_detail'].append(componentInfo)
+        
+        agentInfo['down_components'] = list(agentInfo['down_components'])
+        return agentInfo
+        
     def getBatchJobInfo(self):
         return self.batchJobAction.execute()
 

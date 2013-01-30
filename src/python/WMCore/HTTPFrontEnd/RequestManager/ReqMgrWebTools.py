@@ -452,13 +452,7 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
     helper = WMWorkloadHelper(request['WorkloadSpec'])
         
     helper.setCampaign(reqSchema["Campaign"])
-    if "CustodialSite" in reqSchema.keys():
-        helper.setCustodialSite(siteName = reqSchema['CustodialSite'])
-    elif len(reqSchema.get("SiteWhitelist", [])) == 1:
-        # If there is only one site in the site whitelist we should
-        # set it as the custodial site.
-        # Oli says so.
-        helper.setCustodialSite(siteName = reqSchema['SiteWhitelist'][0])
+        
     if "RunWhitelist" in reqSchema:
         helper.setRunWhitelist(reqSchema["RunWhitelist"])
         
@@ -584,7 +578,6 @@ def requestDetails(requestName):
     schema['UnmergedLFNBase'] = str(helper.getUnmergedLFNBase())
     schema['Campaign']        = str(helper.getCampaign()) 
     schema['AcquisitionEra']  = str(helper.getAcquisitionEra())
-    schema['CustodialSite']   = str(helper.getCustodialSite())
     if schema['SoftwareVersions'] == ['DEPRECATED']:
         schema['SoftwareVersions'] = helper.getCMSSWVersions()
     return schema

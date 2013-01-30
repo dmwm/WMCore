@@ -31,6 +31,7 @@ def monitorDocFromRequestSchema(schema):
     doc["publish_dbs_url"] = schema.get("PublishDbsUrl", "")
     doc["outputdatasets"] = schema.get('OutputDatasets', [])
     doc["cmssw"] = schema.get('SoftwareVersions', [])
+    doc['prep_id'] = schema.get('PrepID', None)
 
     # team name is not yet available need to be updated in assign status
     #doc['team'] = schema['team']
@@ -48,6 +49,7 @@ class WMStatsWriter(WMStatsReader):
             self.couchURL, self.dbName = splitCouchServiceURL(couchURL)
         self.couchServer = CouchServer(self.couchURL)
         self.couchDB = self.couchServer.connectDatabase(self.dbName, False)
+        self.replicatorDB = self.couchServer.connectDatabase('_replicator', False)
 
     def uploadData(self, docs):
         """
@@ -153,3 +155,19 @@ class WMStatsWriter(WMStatsReader):
     def getDBInstance(self):
         return self.couchDB
 
+    def getServerInstance(self):
+        return self.couchServer
+    
+    def getActiveTasks(self):
+        couchStatus = self.couchServer.status()
+        return couchStatus['active_tasks']
+
+    def deleteReplicatorDocs(self):
+        repDocs = self.replicatorDB.allDocs()['rows']
+        for j in repDocs:
+            if not j['id'].startswith('_'):
+                doc = {}
+                doc["_id"]  = j['id']
+                doc["_rev"] = j['value']['rev']
+                self.replicatorDB.queueDelete(doc)
+        committed = self.replicatorDB.commit()

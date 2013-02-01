@@ -30,6 +30,7 @@ class StoreResultsTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
+        self.testDir = self.testInit.generateWorkDir()
         return
 
     def tearDown(self):
@@ -39,6 +40,7 @@ class StoreResultsTest(unittest.TestCase):
         Clear out the database.
         """
         self.testInit.clearDatabase()
+        self.testInit.delWorkDir()
         return
 
     def testStoreResults(self):
@@ -54,7 +56,7 @@ class StoreResultsTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("ewv@fnal.gov", "DMWM")
 
-        testWMBSHelper = WMBSHelper(testWorkload, "StoreResults", "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "StoreResults", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 

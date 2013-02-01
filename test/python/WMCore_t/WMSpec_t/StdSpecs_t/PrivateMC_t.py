@@ -33,6 +33,7 @@ class PrivateMCTest(unittest.TestCase):
 
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("privatemc_t")
+        self.testDir = self.testInit.generateWorkDir()
         return
 
     def injectAnalysisConfig(self):
@@ -63,6 +64,7 @@ class PrivateMCTest(unittest.TestCase):
         """
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
+        self.testInit.delWorkDir()
         return
 
     def testPrivateMC(self):
@@ -80,7 +82,7 @@ class PrivateMCTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("marco.mascheroni@cern.ch", "DMWM")
 
-        testWMBSHelper = WMBSHelper(testWorkload, "PrivateMC", "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "PrivateMC", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
         procWorkflow = Workflow(name = "TestWorkload",

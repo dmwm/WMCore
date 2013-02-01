@@ -35,6 +35,7 @@ class AnalysisTest(unittest.TestCase):
 
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("analysis_t")
+        self.testDir = self.testInit.generateWorkDir()
         return
 
     def injectAnalysisConfig(self):
@@ -70,6 +71,7 @@ class AnalysisTest(unittest.TestCase):
         """
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
+        self.testInit.delWorkDir()
         return
 
 
@@ -88,7 +90,7 @@ class AnalysisTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("marco.mascheroni@cern.ch", "DMWM")
 
-        testWMBSHelper = WMBSHelper(testWorkload, "Analysis", "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "Analysis", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
         procWorkflow = Workflow(name = "TestWorkload",

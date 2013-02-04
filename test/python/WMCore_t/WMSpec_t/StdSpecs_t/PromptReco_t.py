@@ -37,6 +37,7 @@ class PromptRecoTest(unittest.TestCase):
                                 useDefault = False)
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("promptreco_t")
+        self.testDir = self.testInit.generateWorkDir()
         return
 
     def tearDown(self):
@@ -47,6 +48,7 @@ class PromptRecoTest(unittest.TestCase):
         """
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
+        self.testInit.delWorkDir()
         return
 
     def setupPromptSkimConfigObject(self):
@@ -75,7 +77,7 @@ class PromptRecoTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("dballest@fnal.gov", "T0")
 
-        testWMBSHelper = WMBSHelper(testWorkload, "Reco", "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "Reco", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
@@ -405,7 +407,7 @@ class PromptRecoTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("dballest@fnal.gov", "T0")
 
-        testWMBSHelper = WMBSHelper(testWorkload, "Reco", "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "Reco", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 

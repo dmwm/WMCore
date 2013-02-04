@@ -35,6 +35,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
 
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("mclhe_t")
+        self.testDir = self.testInit.generateWorkDir()
         return
 
     def tearDown(self):
@@ -44,6 +45,8 @@ class MonteCarloFromGENTest(unittest.TestCase):
         Clear out the database.
         """
         self.testInit.clearDatabase()
+        self.testInit.tearDownCouch()
+        self.testInit.delWorkDir()
         return
 
     def injectConfig(self):
@@ -81,7 +84,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DMWM")
 
-        testWMBSHelper = WMBSHelper(testWorkload, "MonteCarloFromGEN", "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "MonteCarloFromGEN", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 

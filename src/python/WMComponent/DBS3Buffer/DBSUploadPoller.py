@@ -631,7 +631,8 @@ class DBSUploadPoller(BaseWorkerThread):
         try:
             myThread.transaction.begin()
             self.dbsUtil.createBlocks(blocks = createInDBSBuffer)
-            self.dbsUtil.updateBlocks(blocks = updateInDBSBuffer)
+            self.dbsUtil.updateBlocks(blocks = updateInDBSBuffer,
+                                      dbs3UploadOnly = self.dbs3UploadOnly)
             myThread.transaction.commit()
         except WMException:
             myThread.transaction.rollback()

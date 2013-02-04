@@ -397,4 +397,6 @@ class DBSBlock:
             del blockInfo['status']
             
         for key in blockInfo.keys():
+            if key == "DatasetAlgo":
+                continue
             self.data['block'][key] = blockInfo.get(key)

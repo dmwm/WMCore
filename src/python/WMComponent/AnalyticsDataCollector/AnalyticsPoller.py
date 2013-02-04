@@ -118,9 +118,7 @@ class AnalyticsPoller(BaseWorkerThread):
                 self.plugin(requestDocs, self.localSummaryCouchDB, self.centralWMStatsCouchDB)
 
             self.localSummaryCouchDB.uploadData(requestDocs)
-            logging.info("Request data upload success\n %s request \n uploading agent data" % len(requestDocs))
-
-            
+            logging.info("Request data upload success\n %s request, \nsleep for next cycle" % len(requestDocs))
 
         except Exception, ex:
             logging.error("Error occurred, will retry later:")
@@ -131,7 +129,7 @@ class AnalyticsPoller(BaseWorkerThread):
         #TODO: agent info (need to include job Slots for the sites)
         # always checks couch first
         couchInfo = self.recoverCouchErrors()
-        agentInfo = self.wmagentDB.getHeartbeatWarning()
+        agentInfo = self.wmagentDB.getComponentStatus(self.config)
         agentInfo.update(self.agentInfo)
         
         if (couchInfo['status'] != 'ok'):

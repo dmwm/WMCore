@@ -304,7 +304,11 @@ class ReqMgrClient(object):
         requestNames = []
         config.assignRequests = True # createRequest will subsequently also assignRequests
         requestNames.append(self.createRequest(config, restApi = True))
-        requestNames.append(self.createRequest(config, restApi = False))
+        # TODO - hack
+        # TaskChain request type doesn't have web GUI, can't then test
+        # web GUI call for that.
+        if config.requestArgs["createRequest"]["RequestType"] != "TaskChain":
+            requestNames.append(self.createRequest(config, restApi = False))
         config.requestNames = requestNames        
         self.queryRequests(config)
         # test priority changing (final priority will be sum of the current

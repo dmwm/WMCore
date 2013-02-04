@@ -14,6 +14,7 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
 
 
 class RelValMCTest(unittest.TestCase):
@@ -28,9 +29,10 @@ class RelValMCTest(unittest.TestCase):
         self.testInit.setupCouch("relvalmc_t", "ConfigCache")
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
+        self.testDir = self.testInit.generateWorkDir()
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("relvalmc_t")
-
+        EmulatorHelper.setEmulators(dbs = True)
 
     def tearDown(self):
         """
@@ -39,7 +41,9 @@ class RelValMCTest(unittest.TestCase):
         """
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
-
+        self.testInit.delWorkDir()
+        EmulatorHelper.resetEmulators()
+        return
 
     def _getConfigBase(self):
         """
@@ -421,7 +425,7 @@ class RelValMCTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
 
-        testWMBSHelper = WMBSHelper(testWorkload, "Generation", "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "Generation", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
@@ -456,7 +460,7 @@ class RelValMCTest(unittest.TestCase):
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
 
-        testWMBSHelper = WMBSHelper(testWorkload, "Generation", "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "Generation", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 

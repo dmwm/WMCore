@@ -1057,9 +1057,12 @@ class Report:
 
         for stepName in steps:
             timeStamps = self.getTimes(stepName = stepName)
-            if startTime > timeStamps['startTime']:
+            if timeStamps['startTime'] is None or timeStamps['stopTime'] is None:
+                # Unusable times
+                continue
+            if startTime is None or startTime > timeStamps['startTime']:
                 startTime = timeStamps['startTime']
-            if stopTime < timeStamps['stopTime']:
+            if stopTime is None or stopTime < timeStamps['stopTime']:
                 stopTime = timeStamps['stopTime']
 
         return {'startTime': startTime, 'stopTime': stopTime}

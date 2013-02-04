@@ -159,12 +159,10 @@ class ErrorHandlerPoller(BaseWorkerThread):
                     stopTime  = times['stopTime']
 
                     if startTime == None or stopTime == None:
-                        # Well, then we have a problem.
-                        # There is something very wrong with this job, nevertheless we don't know what it is.
-                        # Rerun, and hope the times get written the next time around.
+                        # We have no information to make a decision, send them to cooloff.
+                        # The RetryManager will take it from here.
                         logging.error("No start, stop times for steps for job %i" % job['id'])
-                        continue
-
+                        cooloffJobs.append(job)
                     elif stopTime - startTime > self.maxFailTime:
                         msg = "Job %i exhausted after running on node for %i seconds" % (job['id'], stopTime - startTime)
                         logging.error(msg)

@@ -1,3 +1,14 @@
+0.9.39 to 0.9.40:
+  - Fixes from the testing of DBS3 upload.  Pull request #4391.
+  - add script to unregister agent when agent is retired or inactive.
+    Pull request #4389. 
+  - check components are alive using pid and also thread status.  Pull
+     request #4381.
+  - Fix unit tests breakage due to Specs_t.  Pull request #4387.
+  - Get the correct times out of a report if any.  Pull request #4385.
+  - ReqMgr testing enhanced by TaskChain requests.  Pull request #4384.
+  - ReqMgr CustodialSite bug fix.  Pull request #4379.
+
 0.9.38 to 0.9.39:
   - Display the amount of time a request has been in a particular state in
     WMStats.  Pull request #4374.

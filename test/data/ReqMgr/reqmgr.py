@@ -51,17 +51,31 @@ class ReqMgrClient(object):
                
 
     """
-    def __init__(self, reqMgrUrl, certFile, keyFile):
-        logging.info("Identity files:\n\tcert file: '%s'\n\tkey file:  '%s' " %
-                     (certFile, keyFile))
+    def __init__(self, reqMgrUrl, config):
         self.textHeaders  =  {"Content-type": "application/x-www-form-urlencoded",
-                              "Accept": "text/plain"}
+                              "Accept": "text/plain"}        
+        logging.info("ReqMgr url: %s" % reqMgrUrl)
         if reqMgrUrl.startswith("https://"):
+            logging.info("Using HTTPS protocol, getting user identity files ...")
+            proxyFile = "/tmp/x509up_u%s" % os.getuid()
+            if not os.path.exists(proxyFile):
+                proxyFile = "UNDEFINED" 
+            certFile = config.cert or os.getenv("X509_USER_CERT",
+                                                os.getenv("X509_USER_PROXY", proxyFile)) 
+            keyFile = config.key or os.getenv("X509_USER_KEY",
+                                              os.getenv("X509_USER_PROXY", proxyFile)) 
+            logging.info("Identity files:\n\tcert file: '%s'\n\tkey file:  '%s' " %
+                         (certFile, keyFile))
             reqMgrUrl = reqMgrUrl.replace("https://", '')
-        self.conn = httplib.HTTPSConnection(reqMgrUrl, key_file = keyFile,
-                                            cert_file = certFile)
-        
-        
+            logging.info("Creating connection HTTPS ...")
+            self.conn = httplib.HTTPSConnection(reqMgrUrl, key_file = keyFile,
+                                                cert_file = certFile)
+        if reqMgrUrl.startswith("http://"):
+            logging.info("Using HTTP protocol, creating HTTP connection ...")
+            reqMgrUrl = reqMgrUrl.replace("http://", '')
+            self.conn = httplib.HTTPConnection(reqMgrUrl)
+
+                    
     def _httpRequest(self, verb, uri, data=None, headers=None):
         logging.info("Request: %s %s ..." % (verb, uri))
         if headers:
@@ -524,13 +538,7 @@ def initialization(commandLineArgs):
     config, actions = processCmdLine(commandLineArgs)
     logging.basicConfig(level=logging.DEBUG if config.verbose else logging.INFO)
     logging.debug("Set verbose console output.")
-    logging.info("Getting user identity files ...")
-    proxyFile = "/tmp/x509up_u%s" % os.getuid()
-    if not os.path.exists(proxyFile):
-        proxyFile = "UNDEFINED" 
-    certFile = config.cert or os.getenv("X509_USER_CERT", os.getenv("X509_USER_PROXY", proxyFile)) 
-    keyFile = config.key or os.getenv("X509_USER_KEY", os.getenv("X509_USER_PROXY", proxyFile)) 
-    reqMgrClient = ReqMgrClient(config.reqMgrUrl, certFile, keyFile)
+    reqMgrClient = ReqMgrClient(config.reqMgrUrl, config)
     if config.createRequest or config.assignRequests or config.allTests:
         # process request arguments and store them
         config.requestArgs = processRequestArgs(config.configFile, config.json)

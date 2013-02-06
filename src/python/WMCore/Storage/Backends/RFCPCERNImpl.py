@@ -116,7 +116,6 @@ class RFCPCERNImpl(StageOutImpl):
 
         if isRemoteEOS:
 
-            result += "source /afs/cern.ch/project/eos/installation/pro/etc/setup.sh\n"
             result += "xrdcp -f -s "
 
             if useChecksum:
@@ -147,16 +146,15 @@ class RFCPCERNImpl(StageOutImpl):
 
         if isRemoteEOS:
 
-            remotePFN = remotePFN.replace("root://eoscms//eos/cms/", "/eos/cms/", 1)
+            (_,host,path,_) = self.splitPFN( remotePFN )
 
-            result += "REMOTE_FILEINFO=`eos fileinfo '%s' -m`\n" % remotePFN
-            result += "REMOTE_SIZE=`echo \"$REMOTE_FILEINFO\" | sed -r 's/.* size=([0-9]+) .*/\\1/'`\n"
+            result += "REMOTE_SIZE=`xrd '%s' stat '%s' | sed -r 's/.* Size: ([0-9]+) .*/\\1/'`\n" % ( host , path )
             result += "echo \"Remote File Size is: $REMOTE_SIZE\"\n"
 
             if useChecksum:
 
                 result += "echo \"Local File Checksum is: %s\"\n" % checksums['adler32']
-                result += "REMOTE_XS=`echo \"$REMOTE_FILEINFO\" | sed -r 's/.* xstype=adler xs=([0-9a-fA-F]{8})[0]+ .*/\\1/'`\n"
+                result += "REMOTE_XS=`xrd '%s' getchecksum '%s' | sed -r 's/.* eos ([0-9a-fA-F]{8}).*/\\1/'`\n" % ( host , path )
                 result += "echo \"Remote File Checksum is: $REMOTE_XS\"\n"
 
                 result += "if [ $REMOTE_SIZE ] && [ $REMOTE_XS ] && [ $LOCAL_SIZE == $REMOTE_SIZE ] && [ '%s' == $REMOTE_XS ]; then exit 0; " % checksums['adler32']
@@ -184,7 +182,8 @@ class RFCPCERNImpl(StageOutImpl):
         Alternate between EOS, CASTOR and local.
         """
         if self.isEOS(pfn):
-            return "xrd eoscms rm %s" % pfn.replace("root://eoscms//eos/cms/", "/eos/cms/", 1)
+            (_,host,path,_) = self.splitPFN( pfn )
+            return "xrd %s rm %s" % ( host, path )
         try:
             simplePFN = self.parseCastorPath(pfn)
             return  "stager_rm -a -M %s ; nsrm %s" % (simplePFN, simplePFN)
@@ -201,7 +200,8 @@ class RFCPCERNImpl(StageOutImpl):
         """
         if self.isEOS(pfnToRemove):
 
-            command = "xrd eoscms rm %s" % pfnToRemove.replace("root://eoscms//eos/cms/", "/eos/cms/", 1)
+            (_,host,path,_) = self.splitPFN( pfn )
+            command = "xrd %s rm %s" % ( host, path )
 
         else:
 
@@ -325,7 +325,47 @@ class RFCPCERNImpl(StageOutImpl):
         Check if the PFN is for EOS
 
         """
-        return pfn.startswith("root://eoscms//")
+        ( protocol,host,_,_) = self.splitPFN( pfn )
+        if protocol == "root" and not host.startswith("castor"):
+            return True
+        else:
+            return False
 
+    def splitPFN( self, pfn ):
+        """
+        _splitPFN_
+
+        Split the PFN in to { <protocol>, <host>, <path>, <opaque> }
+        """
+
+        protocol = pfn.split(':')[0]
+        host = pfn.split('/')[2]
+        thisList = pfn.replace( '%s://%s/' % ( protocol, host ),'' ).split( '?' )
+        path = thisList[0]
+        opaque = ""
+        # If we have any opaque info keep it
+        if len( thisList ) == 2:
+            opaque = "?%s" % thisList[1]
+
+        # check for the path to actually be in the opaque information
+        if opaque.startswith( "?path=" ):
+            elements = opaque.split( '&' )
+            path = elements[0].replace('?path=','')
+            buildingOpaque = '?'
+            for element in elements[1:]:
+                buildingOpaque += element
+                buildingOpaque += '&'
+            opaque = buildingOpaque.rstrip( '&' )
+        elif opaque.find( "&path=" ) != -1:
+            elements = opaque.split( '&' )
+            buildingOpaque = elements[0]
+            for element in elements[1:]:
+                if element.startswith( 'path=' ):
+                    path = element.replace( 'path=','' )
+                else:
+                    buildOpaque += '&' + element
+            opaque = buildingOpaque
+
+        return protocol, host, path, opaque
 
 registerStageOutImpl("rfcp-CERN", RFCPCERNImpl)

@@ -36,6 +36,7 @@ def reqMgrConfig(
     globalOverviewHtml = os.path.join(installation, 'data/html')
 
     if startup == "Root.py":
+        # CMS web mode of ReqMgr running
         config.component_("Webtools")
         config.Webtools.host = '0.0.0.0'
         config.Webtools.port = port
@@ -51,11 +52,13 @@ def reqMgrConfig(
         config.reqmgr.section_('database')
         config.reqmgr.database.connectUrl = connectUrl
     else:
+        # localhost, via wmcoreD ReqMgr running
+        # startup = "wmcoreD"
         config.webapp_("reqmgr")
         config.reqmgr.Webtools.host = '0.0.0.0'
         config.reqmgr.Webtools.port = port
         config.reqmgr.Webtools.environment = 'devel'
-        config.reqmgr.database.connectUrl = connectURL
+        config.reqmgr.database.connectUrl = connectURL                
 
     config.reqmgr.componentDir = componentDir
     config.reqmgr.templates = reqMgrTemplates

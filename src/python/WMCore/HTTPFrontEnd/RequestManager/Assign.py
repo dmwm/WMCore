@@ -75,10 +75,25 @@ class Assign(WebAPI):
         # Get it from the DBFormatter superclass
         myThread.dbi = self.dbi
 
-    def validate(self, v, name=''):
-        """ Checks if alphanumeric, tolerating spaces """
+    def validate(self, v, name = ""):
+        """
+        _validate_
+
+        Checks different fields with different Lexicon methods,
+        if not the field name is not known then apply the identifier check
+        """
+
+        #Make sure the value is a string, otherwise the Lexicon complains
+        strValue = str(v)
         try:
-            WMCore.Lexicon.identifier(v)
+            if name == "ProcessingVersion":
+                WMCore.Lexicon.procversion(strValue)
+            elif name == "AcquisitionEra":
+                WMCore.Lexicon.acqname(strValue)
+            elif name == "ProcessingString":
+                WMCore.Lexicon.procstring(strValue)
+            else:
+                WMCore.Lexicon.identifier(strValue)
         except AssertionError:
             raise cherrypy.HTTPError(400, "Bad input %s" % name)
         return v
@@ -100,23 +115,28 @@ class Assign(WebAPI):
 
         procVer = ""
         acqEra = ""
+        procString = ""
         helper = Utilities.loadWorkload(request)
         if helper.getAcquisitionEra() != None:
             acqEra = helper.getAcquisitionEra()
-            if helper.getProcessingVersion() != None:
-                procVer = helper.getProcessingVersion()
+        if helper.getProcessingVersion() != None:
+            procVer = helper.getProcessingVersion()
+        if helper.getProcessingString():
+            procString = helper.getProcessingString()
         dashboardActivity = helper.getDashboardActivity()
 
         (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
-        return self.templatepage("Assign", requests=[request], teams=teams,
-                                 assignments=assignments, sites=self.sites,
-                                 mergedLFNBases=self.mergedLFNBases[requestType],
-                                 reqMergedBase=reqMergedBase,
-                                 unmergedLFNBases=self.allUnmergedLFNBases,
-                                 reqUnmergedBase=reqUnmergedBase,
+
+        return self.templatepage("Assign", requests = [request], teams = teams,
+                                 assignments = assignments, sites = self.sites,
+                                 mergedLFNBases = self.mergedLFNBases[requestType],
+                                 reqMergedBase = reqMergedBase,
+                                 unmergedLFNBases = self.allUnmergedLFNBases,
+                                 reqUnmergedBase = reqUnmergedBase,
                                  acqEra = acqEra, procVer = procVer,
-                                 dashboardActivity=dashboardActivity,
-                                 badRequests=[])
+                                 procString = procString,
+                                 dashboardActivity = dashboardActivity,
+                                 badRequests = [])
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles)
@@ -128,6 +148,7 @@ class Assign(WebAPI):
 
         procVer = ""
         acqEra = ""
+        procString = ""
         dashboardActivity = None
         badRequestNames = []
         goodRequests = []
@@ -149,23 +170,27 @@ class Assign(WebAPI):
                             acqEra = helper.getAcquisitionEra()
                         if helper.getProcessingVersion() != None:
                             procVer = helper.getProcessingVersion()
+                        if helper.getProcessingString() != None:
+                            procString = helper.getProcessingString()
                         (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
                         dashboardActivity = helper.getDashboardActivity()
                         goodRequests.append(request)
                     except Exception, ex:
                         logging.error("Assign error: %s " % str(ex))
-                        badRequests.append(request["RequestName"])
+                        badRequestNames.append(request["RequestName"])
                 else:
                     goodRequests.append(request)
-        return self.templatepage("Assign", all=all, requests=goodRequests, teams=teams,
-                                 assignments=[], sites=self.sites,
-                                 mergedLFNBases=self.allMergedLFNBases,
-                                 reqMergedBase=reqMergedBase,
-                                 unmergedLFNBases=self.allUnmergedLFNBases,
-                                 reqUnmergedBase=reqUnmergedBase,
+
+        return self.templatepage("Assign", all = all, requests = goodRequests, teams = teams,
+                                 assignments = [], sites = self.sites,
+                                 mergedLFNBases = self.allMergedLFNBases,
+                                 reqMergedBase = reqMergedBase,
+                                 unmergedLFNBases = self.allUnmergedLFNBases,
+                                 reqUnmergedBase = reqUnmergedBase,
                                  acqEra = acqEra, procVer = procVer,
-                                 dashboardActivity=dashboardActivity,
-                                 badRequests=badRequestNames)
+                                 procString = procString,
+                                 dashboardActivity = dashboardActivity,
+                                 badRequests = badRequestNames)
 
     @cherrypy.expose
     #@cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles) security issue fix
@@ -216,12 +241,18 @@ class Assign(WebAPI):
         """ Make all the necessary changes in the Workload to reflect the new assignment """
         request = GetRequest.getRequestByName(requestName)
         helper = Utilities.loadWorkload(request)
-        for field in ["AcquisitionEra", "ProcessingVersion"]:
+
+        #Validate the different parts of the processed dataset
+        processedDatasetParts = ["AcquisitionEra", "ProcessingVersion"]
+        if kwargs.get("ProcessingString", None):
+            processedDatasetParts.append("ProcessingString")
+        for field in processedDatasetParts:
             if type(kwargs[field]) == dict:
                 for value in kwargs[field].values():
                     self.validate(value, field)
             else:
                 self.validate(kwargs[field], field)
+
         # Set white list and black list
         whiteList = kwargs.get("SiteWhitelist", [])
         blackList = kwargs.get("SiteBlacklist", [])
@@ -230,6 +261,7 @@ class Assign(WebAPI):
         # Set ProcessingVersion and AcquisitionEra, which could be json encoded dicts
         helper.setProcessingVersion(kwargs["ProcessingVersion"])
         helper.setAcquisitionEra(kwargs["AcquisitionEra"])
+        helper.setProcessingString(kwargs.get("ProcessingString", None))
         #FIXME not validated
         helper.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
         helper.setMergeParameters(int(kwargs.get("MinMergeSize", 2147483648)),

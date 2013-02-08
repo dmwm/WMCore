@@ -300,6 +300,7 @@ class CMSSW(Executor):
 
         acquisitionEra = self.task.getAcquisitionEra()
         processingVer  = self.task.getProcessingVersion()
+        processingStr  = self.task.getProcessingString()
         validStatus    = self.workload.getValidStatus()
         inputPath      = self.task.getInputDatasetPath()
         globalTag      = typeHelper.getGlobalTag()
@@ -311,7 +312,8 @@ class CMSSW(Executor):
         self.report.setInputDataset(inputPath = inputPath)
         self.report.setCustodialSite(custodialSite = custodialSite)
         self.report.setAcquisitionProcessing(acquisitionEra = acquisitionEra,
-                                             processingVer = processingVer)
+                                             processingVer = processingVer,
+                                             processingStr = processingStr)
         self.report.setConfigURL(configURL = "%s;;%s;;%s" % (cacheUrl,
                                                              cacheDB,
                                                              configID))

@@ -178,7 +178,8 @@ class ReqMgrClient(object):
             have to be hacked here, as if they were ticked on a web form.
             This hack is the reason why the requestArgs have to get
             to this method deep-copied if subsequent request assignment happens.
-            
+        This must pass the arguments JSON encoded since some of them can be complex types
+        such as JSON objects/python dictionaries.
         """
         def doAssignRequest(assignArgs, requestName):
             assignArgs["action"] = "Assign"        
@@ -188,7 +189,10 @@ class ReqMgrClient(object):
             # have to remove this one, otherwise it will get confused with "Team+team"
             # TODO this needs to be put right with proper REST interface
             del assignArgs["Team"]
-            encodedParams = urllib.urlencode(assignArgs, True)
+            jsonEncodedParams = {}
+            for paramKey in assignArgs.keys():
+                jsonEncodedParams[paramKey] = json.dumps(assignArgs[paramKey])
+            encodedParams = urllib.urlencode(jsonEncodedParams, True)
             logging.info("Assigning request '%s' ..." % requestName)
             status, data = self._httpRequest("POST", "/reqmgr/assign/handleAssignmentPage",
                                              data=encodedParams, headers=self.textHeaders)
@@ -316,14 +320,19 @@ class ReqMgrClient(object):
         self.team(None) # argument has no meaning
         currentRequests = self.queryRequests(config)
         requestNames = []
-        config.assignRequests = True # createRequest will subsequently also assignRequests
         requestNames.append(self.createRequest(config, restApi = True))
+        # normally assignRequests() is called when config.assignRequests = True
+        # flag is set, here it's called explicitly
+        config.requestNames = requestNames
+        self.assignRequests(config)
         # TODO - hack
         # TaskChain request type doesn't have web GUI, can't then test
         # web GUI call for that.
         if config.requestArgs["createRequest"]["RequestType"] != "TaskChain":
             requestNames.append(self.createRequest(config, restApi = False))
-        config.requestNames = requestNames        
+            config.requestNames = requestNames
+            self.assignRequests(config)
+    
         self.queryRequests(config)
         # test priority changing (final priority will be sum of the current
         # and new, so have to first find out the current)
@@ -334,6 +343,9 @@ class ReqMgrClient(object):
         totalPriority = currPriority + newPriority
         self.changePriority(requestNames[0], newPriority)
         requests = self.queryRequests(config)
+        # test state (should be "assigned"
+        msg = "Status should be 'assigned', is '%s'" % requests[0]["RequestStatus"]
+        assert requests[0]["RequestStatus"] == "assigned", msg
         assert requests[0]["RequestPriority"] == totalPriority, "New RequestPriority does not match!"
         # test clone
         config.cloneRequest = requestNames[0] # clone the first request in the list

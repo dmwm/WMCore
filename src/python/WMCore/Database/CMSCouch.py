@@ -51,7 +51,7 @@ class Document(dict):
         Mark the document as deleted
         """
         # https://issues.apache.org/jira/browse/COUCHDB-1141
-        self = { '_id' : self['_id'], '_rev' : self['_rev'], '_deleted' : self['_deleted'] }
+        self = { '_id' : self['_id'], '_rev' : self['_rev'], '_deleted' : True }
 
     def __to_json__(self, thunker):
         """

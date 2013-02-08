@@ -147,17 +147,24 @@ class ErrorHandlerPoller(BaseWorkerThread):
             for job in cooloffPre:
                 report     = Report()
                 reportPath = job['fwjr_path']
+                if reportPath is None:
+                    logging.error("No FWJR in job %i, ErrorHandler can't process it.\n Passing it to cooloff." % job['id'])
+                    cooloffJobs.append(job)
+                    continue
                 if not os.path.isfile(reportPath):
-                    logging.error("Failed to find FWJR for job %i in location %s." % (job['id'], reportPath))
+                    logging.error("Failed to find FWJR for job %i in location %s.\n Passing it to cooloff." % (job['id'], reportPath))
+                    cooloffJobs.append(job)
                     continue
                 try:
                     report.load(reportPath)
 
                     # Retrieve information from report
                     times = report.getFirstStartLastStop()
-                    startTime = times['startTime']
-                    stopTime  = times['stopTime']
-
+                    startTime = None
+                    stopTime = None
+                    if times is not None:
+                        startTime = times['startTime']
+                        stopTime  = times['stopTime']
                     if startTime == None or stopTime == None:
                         # We have no information to make a decision, send them to cooloff.
                         # The RetryManager will take it from here.
@@ -182,6 +189,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
                     logging.error("Exception while trying to check jobs for failures!")
                     logging.error(str(ex))
                     logging.error("Ignoring and sending job to cooloff")
+                    cooloffJobs.append(job)
                     continue
         else:
             cooloffJobs = cooloffPre

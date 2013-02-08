@@ -334,6 +334,23 @@ class DBSBufferUtil(WMConnectionBase):
         self.commitTransaction(existingTransaction)
         return
 
+    def updateFileStatus(self, blocks, status):
+        """
+        _updateFileStatus_
+
+        Update the status of files that are associated with the given block.
+        """
+        if len(blocks) < 1:
+            return
+
+        myThread = threading.currentThread()
+        existingTransaction = self.beginTransaction()
+
+        updateBlock = self.daoFactory(classname = "UpdateFiles")
+        updateBlock.execute(blocks, status, conn = self.getDBConn(),
+                            transaction = self.existingTransaction())
+        self.commitTransaction(existingTransaction)
+        return
 
     def createBlocks(self, blocks):
         """

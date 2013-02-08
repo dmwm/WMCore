@@ -30,11 +30,10 @@ class LoadBlocks(DBFormatter):
             final = {}
             final['block_name']       = tmp['blockname']
             final['creation_date']    = tmp['create_time']
-            final['file_count']       = tmp['nfiles']
-            final['block_size']       = tmp['blocksize']
+            #final['file_count']       = tmp['nfiles']
+            #final['block_size']       = int(tmp['blocksize'])
             final['origin_site_name'] = tmp['location']
             final['DatasetAlgo']      = tmp['das']
-            final['open_for_writing'] = 1
 
             if dbs3UploadOnly:
                 final['status'] = tmp['status3']

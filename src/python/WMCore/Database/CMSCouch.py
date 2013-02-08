@@ -50,7 +50,8 @@ class Document(dict):
         """
         Mark the document as deleted
         """
-        self['_deleted'] = True
+        # https://issues.apache.org/jira/browse/COUCHDB-1141
+        self = { '_id' : self['_id'], '_rev' : self['_rev'], '_deleted' : self['_deleted'] }
 
     def __to_json__(self, thunker):
         """
@@ -206,7 +207,8 @@ class Database(CouchDBRequests):
         Queue up a document for deletion
         """
         assert isinstance(doc, type({})), "document not a dictionary"
-        doc['_deleted'] = True
+        # https://issues.apache.org/jira/browse/COUCHDB-1141
+        doc = { '_id' : doc['_id'], '_rev' : doc['_rev'], '_deleted' : True }
         self.queue(doc)
 
     def commitOne(self, doc, returndocs=False, timestamp = False, viewlist=[]):

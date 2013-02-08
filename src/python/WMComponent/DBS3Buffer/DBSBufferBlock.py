@@ -63,7 +63,7 @@ class DBSBlock:
 
         self.data['block']['block_name']       = name
         self.data['block']['origin_site_name'] = location
-        self.data['block']['open_for_writing'] = 0  # If we're sending a block, it better be open
+        self.data['block']['open_for_writing'] = 0
 
         self.data['block']['create_by'] = "WMAgent"
         self.data['block']['creation_date'] = int(time.time())
@@ -101,7 +101,7 @@ class DBSBlock:
             return
 
         self.files.append(dbsFile)
-        self.data['block']['block_size'] += dbsFile['size']
+        self.data['block']['block_size'] += int(dbsFile['size'])
         self.data['block']['file_count'] += 1
         
         # Assemble information for the file itself

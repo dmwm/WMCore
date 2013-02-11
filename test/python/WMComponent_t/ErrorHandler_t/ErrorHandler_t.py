@@ -145,7 +145,8 @@ class ErrorHandlerTest(unittest.TestCase):
 
     def createTestJobGroup(self, nJobs = 10, retry_count = 1,
                            workloadPath = 'test', fwjrPath = None,
-                           workloadName = makeUUID()):
+                           workloadName = makeUUID(),
+                           fileModifier = ''):
         """
         Creates a group of several jobs
         """
@@ -167,16 +168,16 @@ class ErrorHandlerTest(unittest.TestCase):
         testJobGroup = JobGroup(subscription = testSubscription)
         testJobGroup.create()
 
-        testFile0 = File(lfn = "/this/is/a/parent", size = 1024, events = 10)
+        testFile0 = File(lfn = "/this/is/a/parent%s" % fileModifier, size = 1024, events = 10)
         testFile0.addRun(Run(10, *[12312]))
         testFile0.setLocation('malpaquet')
 
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
+        testFileA = File(lfn = "/this/is/a/lfnA%s" % fileModifier, size = 1024, events = 10,
                          first_event = 88)
         testFileA.addRun(Run(10, *[12312, 12313]))
         testFileA.setLocation('malpaquet')
 
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
+        testFileB = File(lfn = "/this/is/a/lfnB%s" % fileModifier, size = 1024, events = 10,
                          first_event = 88)
         testFileB.addRun(Run(10, *[12314, 12315, 12316]))
         testFileB.setLocation('malpaquet')
@@ -185,8 +186,8 @@ class ErrorHandlerTest(unittest.TestCase):
         testFileA.create()
         testFileB.create()
 
-        testFileA.addParent(lfn = "/this/is/a/parent")
-        testFileB.addParent(lfn = "/this/is/a/parent")
+        testFileA.addParent(lfn = "/this/is/a/parent%s" % fileModifier)
+        testFileB.addParent(lfn = "/this/is/a/parent%s" % fileModifier)
 
         for i in range(0, nJobs):
             testJob = Job(name = makeUUID())
@@ -412,6 +413,11 @@ class ErrorHandlerTest(unittest.TestCase):
                                                workloadPath = workloadPath,
                                                fwjrPath = fwjrPath)
 
+        badJobGroup = self.createTestJobGroup(nJobs = self.nJobs,
+                                              workloadPath = workloadPath,
+                                              fwjrPath = None,
+                                              fileModifier = 'bad')
+
         config = self.getConfig()
         config.ErrorHandler.readFWJR         = True
         config.ErrorHandler.failureExitCodes = [8020]
@@ -420,16 +426,21 @@ class ErrorHandlerTest(unittest.TestCase):
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
         changer.propagate(testJobGroup.jobs, 'complete', 'executing')
         changer.propagate(testJobGroup.jobs, 'jobfailed', 'complete')
+        changer.propagate(badJobGroup.jobs, 'created', 'new')
+        changer.propagate(badJobGroup.jobs, 'executing', 'created')
+        changer.propagate(badJobGroup.jobs, 'complete', 'executing')
+        changer.propagate(badJobGroup.jobs, 'jobfailed', 'complete')
 
         testErrorHandler = ErrorHandlerPoller(config)
         testErrorHandler.setup(None)
         testErrorHandler.algorithm(None)
 
         # This should exhaust all jobs due to exit code
+        # Except those with no fwjr
         idList = self.getJobs.execute(state = 'JobFailed')
         self.assertEqual(len(idList), 0)
         idList = self.getJobs.execute(state = 'JobCooloff')
-        self.assertEqual(len(idList), 0)
+        self.assertEqual(len(idList), self.nJobs)
         idList = self.getJobs.execute(state = 'Exhausted')
         self.assertEqual(len(idList), self.nJobs)
 
@@ -448,7 +459,7 @@ class ErrorHandlerTest(unittest.TestCase):
         idList = self.getJobs.execute(state = 'JobFailed')
         self.assertEqual(len(idList), 0)
         idList = self.getJobs.execute(state = 'JobCooloff')
-        self.assertEqual(len(idList), 0)
+        self.assertEqual(len(idList), self.nJobs)
         idList = self.getJobs.execute(state = 'Exhausted')
         self.assertEqual(len(idList), self.nJobs)
 
@@ -463,6 +474,7 @@ class ErrorHandlerTest(unittest.TestCase):
 
         testErrorHandler3.algorithm(None)
 
+        # This should pass all jobs due to exit code
         idList = self.getJobs.execute(state = 'Created')
         self.assertEqual(len(idList), self.nJobs)
 

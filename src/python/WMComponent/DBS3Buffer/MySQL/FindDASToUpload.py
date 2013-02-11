@@ -17,35 +17,32 @@ class FindDASToUpload(DBFormatter):
     Find Uploadable DAS
 
     """
-
-
-    sql = """SELECT DISTINCT das.dataset_id AS dataset, ds.Path as Path, das.algo_id as Algo, das.in_dbs as in_dbs,
-               das.id AS das_id,
-               ds.acquisition_era AS AcquisitionEra,
-               ds.processing_ver AS ProcessingVer,
-               ds.global_tag AS global_tag,
-               da.app_name AS ApplicationName,
-               da.app_ver AS ApplicationVersion,
-               da.app_fam AS ApplicationFamily,
-               da.PSet_Hash as PSetHash,
-               da.config_content as PSetContent,
-               da.in_dbs AS algo_in_dbs
-             FROM dbsbuffer_algo_dataset_assoc das
-             INNER JOIN dbsbuffer_dataset ds ON ds.id = das.dataset_id
-             INNER JOIN dbsbuffer_algo da ON da.id = das.algo_id
+    sql = """SELECT DISTINCT dbsbuffer_algo_dataset_assoc.dataset_id AS dataset,
+                             dbsbuffer_dataset.Path as Path, dbsbuffer_algo_dataset_assoc.algo_id as Algo,
+                             dbsbuffer_algo_dataset_assoc.in_dbs as in_dbs,
+                             dbsbuffer_algo_dataset_assoc.id AS das_id,
+                             dbsbuffer_dataset.acquisition_era AS AcquisitionEra,
+                             dbsbuffer_dataset.processing_ver AS ProcessingVer,
+                             dbsbuffer_dataset.global_tag AS global_tag,
+                             dbsbuffer_algo.app_name AS ApplicationName,
+                             dbsbuffer_algo.app_ver AS ApplicationVersion,
+                             dbsbuffer_algo.app_fam AS ApplicationFamily,
+                             dbsbuffer_algo.PSet_Hash as PSetHash,
+                             dbsbuffer_algo.config_content as PSetContent,
+                             dbsbuffer_algo.in_dbs AS algo_in_dbs
+             FROM dbsbuffer_algo_dataset_assoc
+             INNER JOIN dbsbuffer_dataset ON
+               dbsbuffer_dataset.id = dbsbuffer_algo_dataset_assoc.dataset_id
+             INNER JOIN dbsbuffer_algo ON
+               dbsbuffer_algo.id = dbsbuffer_algo_dataset_assoc.algo_id
              WHERE EXISTS (SELECT id FROM dbsbuffer_file dbsfile
-                             WHERE dbsfile.dataset_algo = das.id
+                             WHERE dbsfile.dataset_algo = dbsbuffer_algo_dataset_assoc.id
                              AND dbsfile.status = :status
                              AND NOT EXISTS (SELECT id FROM dbsbuffer_file dbf2
                                               INNER JOIN dbsbuffer_file_parent dbfp ON dbf2.id = dbfp.parent
                                               WHERE dbf2.status = 'NOTUPLOADED'
                                               AND dbfp.child = dbsfile.id))
              """
-
-
-    def getBinds(self):
-        binds =  {'status':'NOTUPLOADED'}
-        return binds
 
     def makeDAS(self, results):
         ret=[]
@@ -82,9 +79,7 @@ class FindDASToUpload(DBFormatter):
 
         return ret
 
-
-    def execute(self, conn=None, transaction = False):
-        binds = self.getBinds()
-        result = self.dbi.processData(self.sql, binds,
-                         conn = conn, transaction = transaction)
+    def execute(self, conn = None, transaction = False):
+        result = self.dbi.processData(self.sql, {"status": "NOTUPLOADED"},
+                                      conn = conn, transaction = transaction)
         return self.makeDAS(self.formatDict(result))

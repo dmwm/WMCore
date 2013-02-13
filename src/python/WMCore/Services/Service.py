@@ -195,7 +195,7 @@ class Service(dict):
         return cachefile
 
     def refreshCache(self, cachefile, url='', inputdata = {}, openfile=True,
-                     encoder = True, decoder = True, verb = 'GET', contentType = None):
+                     encoder = True, decoder = True, verb = 'GET', contentType = None, incoming_headers={}):
         """
         See if the cache has expired. If it has make a new request to the
         service for the input data. Return the cachefile as an open file object.
@@ -207,7 +207,7 @@ class Service(dict):
         cachefile = self.cacheFileName(cachefile, verb, inputdata)
 
         if cache_expired(cachefile):
-            self.getData(cachefile, url, inputdata, {}, encoder, decoder, verb, contentType)
+            self.getData(cachefile, url, inputdata, incoming_headers, encoder, decoder, verb, contentType)
 
         # cachefile may be filename or file object
         if openfile and not isfile(cachefile):
@@ -216,7 +216,8 @@ class Service(dict):
             return cachefile
 
     def forceRefresh(self, cachefile, url='', inputdata = {}, openfile=True,
-                     encoder = True, decoder = True, verb = 'GET', contentType = None):
+                     encoder = True, decoder = True, verb = 'GET',
+                     contentType = None, incoming_headers={}):
         """
         Make a new request to the service for the input data, regardless of the
         cache state. Return the cachefile as an open file object.
@@ -227,8 +228,9 @@ class Service(dict):
         cachefile = self.cacheFileName(cachefile, verb, inputdata)
 
         self['logger'].debug("Forcing cache refresh of %s" % cachefile)
-        self.getData(cachefile, url, inputdata, {'cache-control':'no-cache'},
-                     encoder, decoder, verb, contentType, force_refresh = True)
+        incoming_headers.update({'cache-control':'no-cache'})
+        self.getData(cachefile, url, inputdata, incoming_headers,
+                     encoder, decoder, verb, contentType, force_refresh = True, )
         if openfile and not isfile(cachefile):
             return open(cachefile, 'r')
         else:

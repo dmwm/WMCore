@@ -629,17 +629,20 @@ class WMWorkloadHelper(PersistencyHelper):
                     for outputModuleName in stepHelper.listOutputModules():
                         outputModule = stepHelper.getOutputModule(outputModuleName)
                         filterName = getattr(outputModule, "filterName", None)
-
+                        if task.getProcessingString():
+                            processingEra = "%s-v%i" % (task.getProcessingString(), task.getProcessingVersion())
+                        else:
+                            processingEra = "v%i" % task.getProcessingVersion()
                         if filterName:
                             processedDataset = "%s-%s-%s" % (task.getAcquisitionEra(),
                                                              filterName,
-                                                             task.getProcessingVersion())
+                                                             processingEra)
                             processingString = "%s-%s" % (filterName,
-                                                          task.getProcessingVersion())
+                                                          processingEra)
                         else:
                             processedDataset = "%s-%s" % (task.getAcquisitionEra(),
-                                                          task.getProcessingVersion())
-                            processingString = task.getProcessingVersion()
+                                                          processingEra)
+                            processingString = processingEra
 
                         unmergedLFN = "%s/%s/%s/%s/%s" % (self.data.properties.unmergedLFNBase,
                                                           task.getAcquisitionEra(),
@@ -752,6 +755,34 @@ class WMWorkloadHelper(PersistencyHelper):
             self.updateLFNsAndDatasets()
         return
 
+    def setProcessingString(self, processingStrings, initialTask = None,
+                             parentProcessingString = None):
+        """
+        _setProcessingString_
+
+        Change the processing string for all tasks in the spec and then update
+        all of the output LFNs and datasets to use the new processing version.
+        """
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            if type(processingStrings) == dict:
+                task.setProcessingString(processingStrings.get(task.name(),
+                                          parentProcessingString))
+                self.setProcessingString(processingStrings, task,
+                                          processingStrings.get(task.name(),
+                                          parentProcessingString))
+            else:
+                task.setProcessingString(processingStrings)
+                self.setProcessingString(processingStrings, task)
+
+        if not initialTask:
+            self.updateLFNsAndDatasets()
+        return
+
     def getAcquisitionEra(self):
         """
         _getAcquisitionEra_
@@ -764,6 +795,8 @@ class WMWorkloadHelper(PersistencyHelper):
         if len(topTasks):
             return topTasks[0].getAcquisitionEra()
 
+        return None
+
     def getProcessingVersion(self):
         """
         _getProcessingVersion_
@@ -775,6 +808,20 @@ class WMWorkloadHelper(PersistencyHelper):
 
         if len(topTasks):
             return topTasks[0].getProcessingVersion()
+        return 0
+
+    def getProcessingString(self):
+        """
+        _getProcessingString_
+
+        Get the processingString
+        """
+
+        topTasks = self.getTopLevelTask()
+
+        if len(topTasks):
+            return topTasks[0].getProcessingString()
+        return None
 
     def setValidStatus(self, validStatus):
         """

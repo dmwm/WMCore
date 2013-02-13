@@ -7,7 +7,7 @@ Unit tests for the WMTask class.
 
 import unittest
 
-from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper, makeWMTask
+from WMCore.WMSpec.WMTask import WMTask, makeWMTask
 from WMCore.WMSpec.WMStep import makeWMStep
 
 class WMTaskTest(unittest.TestCase):
@@ -24,8 +24,9 @@ class WMTaskTest(unittest.TestCase):
         Verify that the WMTask and the WMTaskHelper classes can be
         instantiated.
         """
-        task1 = WMTask("task1")
-        task2 = makeWMTask("task2")
+        WMTask("task1")
+        makeWMTask("task2")
+
         return
 
     def testTreeBuilding(self):
@@ -35,9 +36,9 @@ class WMTaskTest(unittest.TestCase):
         Verify that tasks can be created and arranged in a hierarchy.
         """
         task1 = makeWMTask("task1")
-        task2a = task1.addTask("task2a")
-        task2b = task1.addTask("task2b")
-        task2c = task1.addTask("task2c")
+        task1.addTask("task2a")
+        task1.addTask("task2b")
+        task1.addTask("task2c")
 
         goldenTasks = ["task2a", "task2b", "task2c"]
         for childTask in task1.childTaskIterator():
@@ -61,7 +62,6 @@ class WMTaskTest(unittest.TestCase):
         task2a = task1.addTask("task2a")
         task2b = task1.addTask("task2b")
         task2c = task1.addTask("task2c")
-
         task3 = task2a.addTask("task3")
 
         step1 = makeWMStep("step1")
@@ -359,26 +359,32 @@ class WMTaskTest(unittest.TestCase):
                                        gracePeriod = 1)
 
         self.assertEqual(testTask.data.watchdog.monitors, ['PerformanceMonitor'])
-        self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxRSS,   100)
+        self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxRSS, 100)
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxVSize, 101)
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.softTimeout, 100)
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.hardTimeout, 101)
         return
 
-    def testProcessingVerAndAcquisitionEra(self):
+    def testProcessedDatasetElements(self):
         """
-        _testProcessingVerAndAcquisitionEra_
-        
+        _testProcessedDatasetElements_
+
         Test that we can add a processing version and acquisition era,
         and then get it back.
         """
-        
+
         testTask = makeWMTask("TestTask")
         testTask.setAcquisitionEra("StoneAge")
-        testTask.setProcessingVersion("vLast")
-        
-        self.assertEqual(testTask.getAcquisitionEra(), "StoneAge")
-        self.assertEqual(testTask.getProcessingVersion(), "vLast")
+        testTask.setProcessingVersion(2)
+        testTask.setProcessingString("Test")
+
+        self.assertEqual(testTask.getAcquisitionEra(), "StoneAge",
+                         "Wrong acquisition era in the task")
+        self.assertEqual(testTask.getProcessingVersion(), 2,
+                         "Wrong processing version in the task")
+        self.assertEqual(testTask.getProcessingString(), "Test",
+                         "Wrong processing string in the task")
+
         return
 
     def testParameters(self):
@@ -498,7 +504,6 @@ class WMTaskTest(unittest.TestCase):
         self.assertEqual(childrenNumber, 2, "Error: Wrong number of children tasks")
 
         return
-
 
 if __name__ == '__main__':
     unittest.main()

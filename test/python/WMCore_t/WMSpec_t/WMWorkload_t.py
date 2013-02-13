@@ -128,8 +128,8 @@ class WMWorkloadTest(unittest.TestCase):
         Verify that the WMWorkload class and the WMWorkloadHelper class can
         be instantiated.
         """
-        workload = WMWorkload("workload1")
-        helper = WMWorkloadHelper(WMWorkload("workload2"))
+        WMWorkload("workload1")
+        WMWorkloadHelper(WMWorkload("workload2"))
         return
 
     def testB(self):
@@ -147,9 +147,9 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(workload.listAllTaskNodes(), ["task1", "task2"])
 
         # using factory method to create new task when added
-        task3 = workload.newTask("task3")
+        workload.newTask("task3")
 
-        task4 = workload.newTask("task4")
+        workload.newTask("task4")
 
         workload.newTask("task5")
         workload.removeTask("task5")
@@ -201,8 +201,6 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(workload.data.owner.group, "Hoodoo")
         self.assertEqual(workload.data.owner.dn, 'DEFAULT')
 
-        result = workload.getOwner()
-
         ownerProps = {'capital': 'Kinshasa',
                       'adversary': 'Katanga',
                       'removedby': 'Kabila'}
@@ -229,7 +227,7 @@ class WMWorkloadTest(unittest.TestCase):
         workload.setCustodialSite(siteName = name)
 
         self.assertEqual(workload.getValidStatus(), name)
-        self.assertEqual(workload.getProcessingVersion(), None)
+        self.assertEqual(workload.getProcessingVersion(), 0)
         self.assertEqual(workload.getAcquisitionEra(), None)
         self.assertEqual(workload.getCustodialSite(), name)
 
@@ -476,16 +474,17 @@ class WMWorkloadTest(unittest.TestCase):
         """
         _testUpdatingLFNAndDataset_
 
-        Verify that after chaning the acquisition era, processing version and
-        merge/unmerged LFN bases that all the output datasets are named
-        correctly and that the metadata contained in each output module is
+        Verify that after changing the acquisition era, processing version,
+        processing string and merge/unmerged LFN bases that all the output
+        datasets are named correctly and that the metadata contained in each output module is
         correct.  Also verify that the listOutputDatasets() method works
         correctly.
         """
 
         primaryDataset = "bogusPrimary"
         acquisitionEra = "TestAcqEra"
-        procEra = "vTest"
+        procStr = "Test"
+        procVer = 2
 
         (testWorkload, procTaskCMSSWHelper,
          mergeTaskCMSSWHelper, skimTaskCMSSWHelper,
@@ -505,20 +504,20 @@ class WMWorkloadTest(unittest.TestCase):
             filterName = outputModule.filterName
 
             if filterName == None:
-                procDataset = "%s-None" % (acquisitionEra)
+                procDataset = "%s-v0" % (acquisitionEra)
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
             else:
-                procDataset = "%s-%s-None" % (acquisitionEra, filterName)
+                procDataset = "%s-%s-v0" % (acquisitionEra, filterName)
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
             if filterName != None:
-                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'None')
-                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'None')
+                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'v0')
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'v0')
             else:
-                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'None')
-                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'None')
+                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'v0')
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'v0')
 
             if outputModule._internal_name == "Merged":
                 self.assertEqual(outputModule.lfnBase, mergedLFN,
@@ -532,10 +531,10 @@ class WMWorkloadTest(unittest.TestCase):
                                  "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
 
         self.assertEqual(harvestTaskCMSSWHelper.getDatasetName(),
-                         "/bogusPrimary/%s-None/DQM" % acquisitionEra,
+                         "/bogusPrimary/%s-v0/DQM" % acquisitionEra,
                          "Error: Wrong pickled dataset name")
 
-        testWorkload.setProcessingVersion(procEra)
+        testWorkload.setProcessingVersion(procVer)
 
         for outputModule in outputModules:
             self.assertEqual(outputModule.primaryDataset, "bogusPrimary",
@@ -545,20 +544,56 @@ class WMWorkloadTest(unittest.TestCase):
             filterName = outputModule.filterName
 
             if filterName == None:
-                procDataset = "TestAcqEra-vTest"
+                procDataset = "TestAcqEra-v2"
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
             else:
-                procDataset = "TestAcqEra-%s-vTest" % filterName
+                procDataset = "TestAcqEra-%s-v2" % filterName
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
             if filterName != None:
-                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, "vTest")
-                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, "vTest")
+                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, "v2")
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, "v2")
             else:
-                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, "vTest")
-                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, "vTest")
+                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, "v2")
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, "v2")
+
+            if outputModule._internal_name == "Merged":
+                self.assertEqual(outputModule.lfnBase, mergedLFN,
+                                 "Error: Incorrect unmerged LFN.")
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN.")
+            else:
+                self.assertEqual(outputModule.lfnBase, unmergedLFN,
+                                 "Error: Incorrect unmerged LFN %s" % outputModule.lfnBase)
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
+
+        testWorkload.setProcessingString(procStr)
+
+        for outputModule in outputModules:
+            self.assertEqual(outputModule.primaryDataset, "bogusPrimary",
+                             "Error: Primary dataset was modified.")
+
+            dataTier = outputModule.dataTier
+            filterName = outputModule.filterName
+
+            if filterName == None:
+                procDataset = "TestAcqEra-Test-v2"
+                self.assertEqual(outputModule.processedDataset, procDataset,
+                                 "Error: Processed dataset is incorrect.")
+            else:
+                procDataset = "TestAcqEra-%s-Test-v2" % filterName
+                self.assertEqual(outputModule.processedDataset, procDataset,
+                                 "Error: Processed dataset is incorrect.")
+
+            if filterName != None:
+                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, "Test-v2")
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, "Test-v2")
+            else:
+                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, "Test-v2")
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, "Test-v2")
 
             if outputModule._internal_name == "Merged":
                 self.assertEqual(outputModule.lfnBase, mergedLFN,
@@ -572,10 +607,10 @@ class WMWorkloadTest(unittest.TestCase):
                                  "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
 
         self.assertEqual(harvestTaskCMSSWHelper.getDatasetName(),
-                         "/bogusPrimary/TestAcqEra-vTest/DQM",
+                         "/bogusPrimary/TestAcqEra-Test-v2/DQM",
                          "Error: Wrong pickled dataset name")
 
-        mergedLFNBase   = "/store/temp/merged"
+        mergedLFNBase = "/store/temp/merged"
         unmergedLFNBase = "/store/temp/unmerged"
         testWorkload.setLFNBase(mergedLFNBase, unmergedLFNBase)
 
@@ -591,20 +626,20 @@ class WMWorkloadTest(unittest.TestCase):
             filterName = outputModule.filterName
 
             if filterName == None:
-                procDataset = "TestAcqEra-vTest"
+                procDataset = "TestAcqEra-Test-v2"
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
             else:
-                procDataset = "TestAcqEra-%s-vTest" % filterName
+                procDataset = "TestAcqEra-%s-Test-v2" % filterName
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
             if filterName != None:
-                mergedLFN = "/store/temp/merged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'vTest')
-                unmergedLFN = "/store/temp/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'vTest')
+                mergedLFN = "/store/temp/merged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'Test-v2')
+                unmergedLFN = "/store/temp/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'Test-v2')
             else:
-                mergedLFN = "/store/temp/merged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'vTest')
-                unmergedLFN = "/store/temp/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'vTest')
+                mergedLFN = "/store/temp/merged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'Test-v2')
+                unmergedLFN = "/store/temp/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'Test-v2')
 
             if outputModule._internal_name == "Merged":
                 self.assertEqual(outputModule.lfnBase, mergedLFN,
@@ -620,11 +655,12 @@ class WMWorkloadTest(unittest.TestCase):
         outputDatasets = testWorkload.listOutputDatasets()
         self.assertEqual(len(outputDatasets), 3,
                          "Error: Wrong number of output datasets: %s" % testWorkload.listOutputDatasets())
-        self.assertTrue("/bogusPrimary/TestAcqEra-vTest/DQM" in outputDatasets,
+
+        self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DQM" in outputDatasets,
                         "Error: A dataset is missing")
-        self.assertTrue("/bogusPrimary/TestAcqEra-vTest/DATATIERB" in outputDatasets,
+        self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DATATIERB" in outputDatasets,
                         "Error: A dataset is missing")
-        self.assertTrue("/bogusPrimary/TestAcqEra-bogusFilter-vTest/DATATIERC" in outputDatasets,
+        self.assertTrue("/bogusPrimary/TestAcqEra-bogusFilter-Test-v2/DATATIERC" in outputDatasets,
                         "Error: A dataset is missing")
         return
 
@@ -632,7 +668,7 @@ class WMWorkloadTest(unittest.TestCase):
         """
         _testUpdatingLFNAndDatasetMultipleVer_
 
-        Tests that we can pass dictionaries for the processing versions
+        Tests that we can pass dictionaries for the processing versions, processing strings
         and acquisition eras in the workload so they are different for
         different tasks.
         """
@@ -660,20 +696,20 @@ class WMWorkloadTest(unittest.TestCase):
             filterName = outputModule.filterName
 
             if filterName == None:
-                procDataset = "%s-None" % (acquisitionEras["ProcessingTask"])
+                procDataset = "%s-v0" % (acquisitionEras["ProcessingTask"])
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
             else:
-                procDataset = "%s-%s-None" % (acquisitionEras["SkimTask"], filterName)
+                procDataset = "%s-%s-v0" % (acquisitionEras["SkimTask"], filterName)
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
             if filterName != None:
-                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, 'None')
-                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, 'None')
+                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, 'v0')
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, 'v0')
             else:
-                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, 'None')
-                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, 'None')
+                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, 'v0')
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, 'v0')
 
             if outputModule._internal_name == "Merged":
                 self.assertEqual(outputModule.lfnBase, mergedLFN,
@@ -686,9 +722,9 @@ class WMWorkloadTest(unittest.TestCase):
                 self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
                                  "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
 
-        procEras = {"ProcessingTask" : "vTest",
-                    "SkimTask" : "vTestSkim"}
-        testWorkload.setProcessingVersion(procEras)
+        procVers = {"ProcessingTask" : 2,
+                    "SkimTask" : 3}
+        testWorkload.setProcessingVersion(procVers)
 
         for outputModule in outputModules:
             self.assertEqual(outputModule.primaryDataset, "bogusPrimary",
@@ -698,20 +734,58 @@ class WMWorkloadTest(unittest.TestCase):
             filterName = outputModule.filterName
 
             if filterName == None:
-                procDataset = "TestAcqEra-vTest"
+                procDataset = "TestAcqEra-v2"
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
             else:
-                procDataset = "TestAcqEraSkim-%s-vTestSkim" % filterName
+                procDataset = "TestAcqEraSkim-%s-v3" % filterName
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
             if filterName != None:
-                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, "vTestSkim")
-                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, "vTestSkim")
+                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, "v3")
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, "v3")
             else:
-                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, "vTest")
-                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, "vTest")
+                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, "v2")
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, "v2")
+
+            if outputModule._internal_name == "Merged":
+                self.assertEqual(outputModule.lfnBase, mergedLFN,
+                                 "Error: Incorrect unmerged LFN.")
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN.")
+            else:
+                self.assertEqual(outputModule.lfnBase, unmergedLFN,
+                                 "Error: Incorrect unmerged LFN %s" % outputModule.lfnBase)
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
+
+        procStrings = {"ProcessingTask" : "Test",
+                       "SkimTask" : "SkimTest"}
+        testWorkload.setProcessingString(procStrings)
+
+        for outputModule in outputModules:
+            self.assertEqual(outputModule.primaryDataset, "bogusPrimary",
+                             "Error: Primary dataset was modified.")
+
+            dataTier = outputModule.dataTier
+            filterName = outputModule.filterName
+
+            if filterName == None:
+                procDataset = "TestAcqEra-Test-v2"
+                self.assertEqual(outputModule.processedDataset, procDataset,
+                                 "Error: Processed dataset is incorrect.")
+            else:
+                procDataset = "TestAcqEraSkim-%s-SkimTest-v3" % filterName
+                self.assertEqual(outputModule.processedDataset, procDataset,
+                                 "Error: Processed dataset is incorrect.")
+
+            if filterName != None:
+                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, "SkimTest-v3")
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, "SkimTest-v3")
+            else:
+                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, "Test-v2")
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, "Test-v2")
 
             if outputModule._internal_name == "Merged":
                 self.assertEqual(outputModule.lfnBase, mergedLFN,
@@ -740,20 +814,20 @@ class WMWorkloadTest(unittest.TestCase):
             filterName = outputModule.filterName
 
             if filterName == None:
-                procDataset = "TestAcqEra-vTest"
+                procDataset = "TestAcqEra-Test-v2"
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
             else:
-                procDataset = "TestAcqEraSkim-%s-vTestSkim" % filterName
+                procDataset = "TestAcqEraSkim-%s-SkimTest-v3" % filterName
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
             if filterName != None:
-                mergedLFN = "/store/temp/merged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, 'vTestSkim')
-                unmergedLFN = "/store/temp/unmerged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, 'vTestSkim')
+                mergedLFN = "/store/temp/merged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, 'SkimTest-v3')
+                unmergedLFN = "/store/temp/unmerged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, 'SkimTest-v3')
             else:
-                mergedLFN = "/store/temp/merged/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, 'vTest')
-                unmergedLFN = "/store/temp/unmerged/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, 'vTest')
+                mergedLFN = "/store/temp/merged/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, 'Test-v2')
+                unmergedLFN = "/store/temp/unmerged/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, 'Test-v2')
 
             if outputModule._internal_name == "Merged":
                 self.assertEqual(outputModule.lfnBase, mergedLFN,
@@ -769,20 +843,23 @@ class WMWorkloadTest(unittest.TestCase):
         outputDatasets = testWorkload.listOutputDatasets()
         self.assertEqual(len(outputDatasets), 3,
                          "Error: Wrong number of output datasets: %s" % testWorkload.listOutputDatasets())
-        self.assertTrue("/bogusPrimary/TestAcqEra-vTest/DQM" in outputDatasets,
+        self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DQM" in outputDatasets,
                         "Error: A dataset is missing")
-        self.assertTrue("/bogusPrimary/TestAcqEra-vTest/DATATIERB" in outputDatasets,
+        self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DATATIERB" in outputDatasets,
                         "Error: A dataset is missing")
-        self.assertTrue("/bogusPrimary/TestAcqEraSkim-bogusFilter-vTestSkim/DATATIERC" in outputDatasets,
+        self.assertTrue("/bogusPrimary/TestAcqEraSkim-bogusFilter-SkimTest-v3/DATATIERC" in outputDatasets,
                         "Error: A dataset is missing")
 
         processingVersion = testWorkload.getProcessingVersion()
         acquisitionEra = testWorkload.getAcquisitionEra()
+        processingString = testWorkload.getProcessingString()
 
-        self.assertEqual(processingVersion, "vTest",
+        self.assertEqual(processingVersion, 2,
                          "Error: Wrong top level processing version")
         self.assertEqual(acquisitionEra, "TestAcqEra",
                          "Error: Wrong top level acquisition era")
+        self.assertEqual(processingString, "Test",
+                         "Error: Wront top level processing string")
         return
 
     def testSetSubscriptionInformation(self):
@@ -1459,8 +1536,6 @@ class WMWorkloadTest(unittest.TestCase):
         procTask = testWorkload.newTask("ProcessingTask")
         procTask.setTaskType("Processing")
 
-        wildcardKeys = {'T1*': 'T1_*', 'T2*': 'T2_*',
-                        'T3*': 'T3_*', 'US*': '_US_'}
         siteList = ['T1_US_FNAL', 'T1_CH_CERN', 'T1_UK_RAL',
                     'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT']
         wildcardSites = {'T2*': ['T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT'],

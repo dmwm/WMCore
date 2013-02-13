@@ -733,7 +733,8 @@ class DBSUploadPoller(BaseWorkerThread):
         try:
             myThread.transaction.begin()
             self.dbsUtil.updateBlocks(loadedBlocks, self.dbs3UploadOnly)
-            self.dbsUtil.updateFileStatus(loadedBlocks, "InDBS")            
+            if not self.dbs3UploadOnly:
+                self.dbsUtil.updateFileStatus(loadedBlocks, "InDBS")            
             myThread.transaction.commit()
         except WMException:
             myThread.transaction.rollback()

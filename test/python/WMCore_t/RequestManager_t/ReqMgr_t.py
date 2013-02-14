@@ -54,7 +54,6 @@ class RequestManagerConfig(DefaultConfig):
         shutil.rmtree(self.UnitTests.views.active.rest.model.workloadCache)
     
     def setupRequestConfig(self):
-        import WMCore.RequestManager.RequestMaker.Processing.RecoRequest
         self.UnitTests.views.active.rest.workloadDBName = "test"
         self.UnitTests.views.active.rest.security_roles = []
         self._setReqMgrHost()

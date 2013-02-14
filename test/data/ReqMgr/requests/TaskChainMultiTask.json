@@ -69,7 +69,7 @@
                               "Skim2" : "ProcessingString-1-OVERRIDE-ME"},
         "maxRSS": 4294967296,
         "maxVSize": 4294967296,
-        "SoftTimeout": 171600,
+        "SoftTimeout": 129600,
         "GracePeriod": 300,
         "dashboard": "test",
         "Team": "Team--OVERRIDE-ME",

@@ -88,6 +88,7 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
     request['InputDatasetTypes'] = datasetsIn
     request['InputDatasets'] = datasetsIn.keys()
     request['OutputDatasets'] = datasetsOut
+    
     return request
 
 def requestID(requestName):

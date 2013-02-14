@@ -13,7 +13,6 @@ from cherrypy.lib.static import serve_file
 from httplib import HTTPException
 import WMCore.Lexicon
 import cgi
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 import WMCore.RequestManager.RequestDB.Settings.RequestStatus             as RequestStatus
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState      as ChangeState
 import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest       as GetRequest
@@ -450,8 +449,13 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
         raise HTTPError(400, "Error in Workload Validation: %s" % ex._message)
     
     helper = WMWorkloadHelper(request['WorkloadSpec'])
-        
-    helper.setCampaign(reqSchema["Campaign"])
+
+    #4378 - ACDC (Resubmission) requests should inherit the Campaign ...
+    # for Resubmission request, there already is previous Campaign set
+    # this call would override it with initial request arguments where
+    # it is not specified, so would become ''
+    if not helper.getCampaign():
+        helper.setCampaign(reqSchema["Campaign"])
         
     if "RunWhitelist" in reqSchema:
         helper.setRunWhitelist(reqSchema["RunWhitelist"])
@@ -509,6 +513,7 @@ def makeRequest(webApi, reqInputArgs, couchUrl, couchDB, wmstatUrl):
     # values in the schema definition
     
     reqSchema["Campaign"] = reqInputArgs.get("Campaign", "")
+    
     if 'ProcScenario' in reqInputArgs and 'ConfigCacheID' in reqInputArgs:
         # Use input mode to delete the unused one
         inputMode = reqInputArgs.get('inputMode', None)

@@ -1,12 +1,8 @@
 """ Pages for the creation of requests """
-import WMCore.RequestManager.RequestMaker.Production
 import WMCore.RequestManager.RequestDB.Interface.User.Registration as Registration
 import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
 import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
 import WMCore.RequestManager.RequestDB.Interface.Request.Campaign as Campaign
-from WMCore.RequestManager.RequestMaker.Registry import  retrieveRequestMaker
-import WMCore.RequestManager.RequestMaker.Processing
-import WMCore.RequestManager.RequestMaker.Production
 import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
 from WMCore.Wrappers import JsonWrapper
 import cherrypy

@@ -262,7 +262,11 @@ class ReqMgrRESTModel(RESTModel):
         """ If a request name is specified, return the details of the request.
         Otherwise, return an overview of all requests """
         if requestName == None:
-            return GetRequest.getRequests()
+            result = GetRequest.getRequests()
+            # is not returning e.g. Campaign which
+            # Utilities.requestDetails(requestName) does since it queries values
+            # from helper (spec) (getRequestNames does but is wrong) 
+            return result
         else:
             result = Utilities.requestDetails(requestName)
             try:
@@ -274,9 +278,12 @@ class ReqMgrRESTModel(RESTModel):
             return result
 
     def getRequestNames(self):
+        # 2013-02-13 is wrong anyway (e.g. Campaign is not working)
+        # should be removed
         """ return all the request names in RequestManager as list """
         #TODO this could me combined with getRequest
         return GetRequest.getOverview()
+                
 
     def getOutputForRequest(self, requestName):
         """Return the datasets produced by this request."""

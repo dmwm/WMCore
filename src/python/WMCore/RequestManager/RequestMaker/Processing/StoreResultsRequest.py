@@ -5,7 +5,7 @@ _StoreResultsRequest_
 
 from WMCore.RequestManager.RequestMaker.RequestMakerInterface import RequestMakerInterface
 from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
-from WMCore.RequestManager.RequestMaker.Registry import registerRequestType, retrieveRequestMaker
+from WMCore.RequestManager.RequestMaker.Registry import registerRequestType
 
 
 class StoreResultsRequest(RequestMakerInterface):

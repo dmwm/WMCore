@@ -432,7 +432,7 @@ class ReqMgrRESTModel(RESTModel):
         return index
 
 
-    # had now permission control before, security issue fix
+    # had no permission control before, security issue fix
     @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
     def putRequest(self, requestName=None, status=None, priority=None):
         request = None
@@ -625,6 +625,8 @@ class ReqMgrRESTModel(RESTModel):
         """ Change the group's priority """
         return GroupManagement.setPriority(group, priority)
 
+    # had no permission control before, security issue fix
+    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
     def deleteRequest(self, requestName):
         """ Deletes a request from the ReqMgr """
         request = self.findRequest(requestName)

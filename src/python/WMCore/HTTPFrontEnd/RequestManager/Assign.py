@@ -42,22 +42,19 @@ class Assign(WebAPI):
             self.sites = Utilities.sites(config.sitedb)
         else:
             self.sites = []
-        self.allMergedLFNBases =  [
-            "/store/backfill/1", "/store/backfill/2",
-            "/store/data",  "/store/mc", "/store/generator", "/store/relval",
-            "/store/hidata", "/store/himc"]
+        # yet 0.9.40 had also another self.mergedLFNBases which was differentiating
+        # list of mergedLFNBases based on type of request, removed and all bases
+        # will be displayed regardless of the request type (discussion with Edgar) 
+        self.allMergedLFNBases = [
+            "/store/backfill/1",
+            "/store/backfill/2",
+            "/store/data",
+            "/store/mc",
+            "/store/generator",
+            "/store/relval",
+            "/store/hidata",
+            "/store/himc"]
         self.allUnmergedLFNBases = ["/store/unmerged", "/store/temp"]
-
-        self.mergedLFNBases = {
-             "ReReco" : ["/store/backfill/1", "/store/backfill/2", "/store/data", "/store/hidata"],
-             "DataProcessing" : ["/store/backfill/1", "/store/backfill/2", "/store/data", "/store/hidata"],
-             "ReDigi" : ["/store/backfill/1", "/store/backfill/2", "/store/data", "/store/mc", "/store/himc"],
-             "MonteCarlo" : ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/himc"],
-             "RelValMC" : ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/himc"],
-             "Resubmission" : ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data", "/store/hidata"],
-             "MonteCarloFromGEN" : ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/himc"],
-             "TaskChain": ["/store/backfill/1", "/store/backfill/2", "/store/mc", "/store/data", "/store/relval"],
-             "LHEStepZero": ["/store/backfill/1", "/store/backfill/2", "/store/generator"]}
 
         self.yuiroot = config.yuiroot
         cherrypy.engine.subscribe('start_thread', self.initThread)
@@ -129,7 +126,7 @@ class Assign(WebAPI):
 
         return self.templatepage("Assign", requests = [request], teams = teams,
                                  assignments = assignments, sites = self.sites,
-                                 mergedLFNBases = self.mergedLFNBases[requestType],
+                                 mergedLFNBases = self.allMergedLFNBases,
                                  reqMergedBase = reqMergedBase,
                                  unmergedLFNBases = self.allUnmergedLFNBases,
                                  reqUnmergedBase = reqUnmergedBase,

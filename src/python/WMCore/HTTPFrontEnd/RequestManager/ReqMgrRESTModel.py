@@ -244,19 +244,6 @@ class ReqMgrRESTModel(RESTModel):
         WMCore.Lexicon.cmsswversion(index['version'])
         return index
 
-    def findRequest(self, requestName):
-        """
-        Either returns the request object, or None.
-        TODO:
-        interesting how such a query is implemented here when there is
-        database behind ...
-        
-        """
-        requests = ListRequests.listRequests()
-        for request in requests:
-            if request['RequestName'] == requestName:
-                return request
-        return None
 
     def getRequest(self, requestName=None):
         """ If a request name is specified, return the details of the request.
@@ -444,7 +431,12 @@ class ReqMgrRESTModel(RESTModel):
     def putRequest(self, requestName=None, status=None, priority=None):
         request = None
         if requestName:
-            request = self.findRequest(requestName)
+            try:
+                request = self.getRequest(requestName)
+            except Exception, ex:
+                # request presumably doesn't exist                
+                request = None
+    
         if request == None:
             # Create a new request, with a JSON-encoded schema that is
             # sent in the body of the HTTP request
@@ -505,7 +497,6 @@ class ReqMgrRESTModel(RESTModel):
         request = None
         if requestName:
             self.info("Cloning request: request name: '%s'" % requestName)
-            #request = self.findRequest(requestName) # request is a dictionary here, incomplete
             requestOrigDict = self.getRequest(requestName)
             if requestOrigDict:
                 self.info("Request found, cloning ...")
@@ -632,14 +623,32 @@ class ReqMgrRESTModel(RESTModel):
         """ Change the group's priority """
         return GroupManagement.setPriority(group, priority)
 
+
     # had no permission control before, security issue fix
     @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
     def deleteRequest(self, requestName):
-        """ Deletes a request from the ReqMgr """
-        request = self.findRequest(requestName)
-        if request == None:
-            raise cherrypy.HTTPError(404, "No such request")
-        return RequestAdmin.deleteRequest(request['RequestID'])
+        """
+        Deletes a request from the ReqMgr MySQL/Oracle database
+        and also from CoucDB.
+        
+        """        
+        # 404 will be thrown automatically on a non-existing request
+        request = self.getRequest(requestName)
+        helper = Utilities.loadWorkload(request)
+        couchDocId = requestName
+        helper.deleteCouch(self.couchUrl, self.workloadDBName, couchDocId)
+        
+        # request = GetRequest.getRequestDetails(requestName)
+        #helper = loadWorkload(request)
+        
+        # #4289 - Request delete operation deletes the request from
+        # MySQL/Oracle but not from CouchDB, fix here
+        # Seangchan shall also fix here deleting such requests from WMStats (#4398)
+        
+        # returns None ...
+        response = RequestAdmin.deleteRequest(request['ReqMgrRequestID'])
+        return response
+
 
     def deleteUser(self, user):
         """ Deletes a user, as well as deleting his requests and removing

@@ -34,7 +34,7 @@ by a user on the command line, whichever other argument can be overridden too.
 
 import os
 import sys
-import httplib
+from httplib import HTTPSConnection, HTTPConnection
 import urllib
 import logging
 from optparse import OptionParser, TitledHelpFormatter
@@ -42,41 +42,35 @@ import json
 import copy
 
 
-class ReqMgrClient(object):
+class RESTClient(object):
     """
-    Client REST interface to Request Manager service (ReqMgr).
+    HTTP client
+    HTTPS client based on the provided URL (http:// or https://)
     
-    Actions: queryRequests, deleteRequests, createRequest, assignRequests,
-             cloneRequest, allTest, userGroup', team,
-               
-
     """
-    def __init__(self, reqMgrUrl, config):
-        self.textHeaders  =  {"Content-type": "application/x-www-form-urlencoded",
-                              "Accept": "text/plain"}        
-        logging.info("ReqMgr url: %s" % reqMgrUrl)
-        if reqMgrUrl.startswith("https://"):
+    def __init__(self, url, cert=None, key=None):
+        logging.info("RESTClient URL: %s" % url)        
+        if url.startswith("https://"):
             logging.info("Using HTTPS protocol, getting user identity files ...")
             proxyFile = "/tmp/x509up_u%s" % os.getuid()
             if not os.path.exists(proxyFile):
                 proxyFile = "UNDEFINED" 
-            certFile = config.cert or os.getenv("X509_USER_CERT",
-                                                os.getenv("X509_USER_PROXY", proxyFile)) 
-            keyFile = config.key or os.getenv("X509_USER_KEY",
-                                              os.getenv("X509_USER_PROXY", proxyFile)) 
+            certFile = cert or os.getenv("X509_USER_CERT",
+                                         os.getenv("X509_USER_PROXY", proxyFile)) 
+            keyFile = key or os.getenv("X509_USER_KEY",
+                                       os.getenv("X509_USER_PROXY", proxyFile)) 
             logging.info("Identity files:\n\tcert file: '%s'\n\tkey file:  '%s' " %
                          (certFile, keyFile))
-            reqMgrUrl = reqMgrUrl.replace("https://", '')
+            url = url.replace("https://", '')
             logging.info("Creating connection HTTPS ...")
-            self.conn = httplib.HTTPSConnection(reqMgrUrl, key_file = keyFile,
-                                                cert_file = certFile)
-        if reqMgrUrl.startswith("http://"):
+            self.conn = HTTPSConnection(url, key_file=keyFile, cert_file=certFile)
+        if url.startswith("http://"):
             logging.info("Using HTTP protocol, creating HTTP connection ...")
-            reqMgrUrl = reqMgrUrl.replace("http://", '')
-            self.conn = httplib.HTTPConnection(reqMgrUrl)
-
-                    
-    def _httpRequest(self, verb, uri, data=None, headers=None):
+            url = url.replace("http://", '')
+            self.conn = HTTPConnection(url)
+            
+            
+    def httpRequest(self, verb, uri, data=None, headers=None):
         logging.info("Request: %s %s ..." % (verb, uri))
         if headers:
             self.conn.request(verb, uri, data, headers)
@@ -87,7 +81,23 @@ class ReqMgrClient(object):
         logging.debug("Status: %s" % resp.status)
         logging.debug("Reason: %s" % resp.reason)
         return resp.status, data
+            
         
+
+class ReqMgrClient(RESTClient):
+    """
+    Client REST interface to Request Manager service (ReqMgr).
+    
+    Actions: queryRequests, deleteRequests, createRequest, assignRequests,
+             cloneRequest, allTest, userGroup', team,
+               
+    """
+    def __init__(self, reqMgrUrl, config):
+        self.textHeaders  =  {"Content-type": "application/x-www-form-urlencoded",
+                              "Accept": "text/plain"}        
+        logging.info("ReqMgr url: %s" % reqMgrUrl)
+        RESTClient.__init__(self, reqMgrUrl, cert=config.cert, key=config.key)
+                
 
     def _createRequestViaRest(self, requestArgs):
         """
@@ -96,7 +106,7 @@ class ReqMgrClient(object):
         """
         logging.info("Injecting a request for arguments (REST API):\n%s ..." % requestArgs["createRequest"])
         jsonArgs = json.dumps(requestArgs["createRequest"])
-        status, data = self._httpRequest("PUT", "/reqmgr/reqMgr/request", data=jsonArgs)        
+        status, data = self.httpRequest("PUT", "/reqmgr/reqMgr/request", data=jsonArgs)        
         if status > 216:
             logging.error("Error occurred, exit.")
             print data
@@ -117,7 +127,7 @@ class ReqMgrClient(object):
         encodedParams = urllib.urlencode(requestArgs["createRequest"])
         logging.info("Injecting a request for arguments (webpage):\n%s ..." % requestArgs["createRequest"])
         # the response is now be an HTML webpage
-        status, data = self._httpRequest("POST", "/reqmgr/create/makeSchema",
+        status, data = self.httpRequest("POST", "/reqmgr/create/makeSchema",
                                          data=encodedParams, headers=self.textHeaders)        
         if status > 216 and status != 303:
             logging.error("Error occurred, exit.")
@@ -158,8 +168,8 @@ class ReqMgrClient(object):
                   "status": "assignment-approved"}
         encodedParams = urllib.urlencode(params)
         logging.info("Approving request '%s' ..." % requestName)
-        status, data = self._httpRequest("PUT", "/reqmgr/reqMgr/request",
-                                         data=encodedParams, headers=self.textHeaders)
+        status, data = self.httpRequest("PUT", "/reqmgr/reqMgr/request",
+                                        data=encodedParams, headers=self.textHeaders)
         if status != 200:
             logging.error("Approve did not succeed.")
             print data
@@ -194,8 +204,8 @@ class ReqMgrClient(object):
                 jsonEncodedParams[paramKey] = json.dumps(assignArgs[paramKey])
             encodedParams = urllib.urlencode(jsonEncodedParams, True)
             logging.info("Assigning request '%s' ..." % requestName)
-            status, data = self._httpRequest("POST", "/reqmgr/assign/handleAssignmentPage",
-                                             data=encodedParams, headers=self.textHeaders)
+            status, data = self.httpRequest("POST", "/reqmgr/assign/handleAssignmentPage",
+                                            data=encodedParams, headers=self.textHeaders)
             if status != 200:
                 logging.error("Assign did not succeed.")
                 print data
@@ -213,21 +223,21 @@ class ReqMgrClient(object):
         
         """
         logging.info("Querying registered groups ...")
-        status, data = self._httpRequest("GET", "/reqmgr/reqMgr/group")
+        status, data = self.httpRequest("GET", "/reqmgr/reqMgr/group")
         groups = json.loads(data)
         logging.info(data)
         logging.info("Querying registered users ...")
-        status, data = self._httpRequest("GET", "/reqmgr/reqMgr/user")
+        status, data = self.httpRequest("GET", "/reqmgr/reqMgr/user")
         logging.info(data)
         logging.info("Querying groups membership ...")
         for group in groups:
-            status, data = self._httpRequest("GET", "/reqmgr/reqMgr/group/%s" % group)
+            status, data = self.httpRequest("GET", "/reqmgr/reqMgr/group/%s" % group)
             logging.info("Group: '%s': %s" % (group, data))
             
     
     def team(self, _):
         logging.info("Querying registered teams ...")
-        status, data = self._httpRequest("GET", "/reqmgr/reqMgr/team")
+        status, data = self.httpRequest("GET", "/reqmgr/reqMgr/team")
         groups = json.loads(data)
         logging.info(data)
             
@@ -251,7 +261,7 @@ class ReqMgrClient(object):
         if requestsToQuery:
             for requestName in requestsToQuery:
                 logging.info("Querying '%s' request ..." % requestName)
-                status, data = self._httpRequest("GET", "/reqmgr/reqMgr/request/%s" % requestName)
+                status, data = self.httpRequest("GET", "/reqmgr/reqMgr/request/%s" % requestName)
                 if status != 200:
                     print data
                     sys.exit(1)           
@@ -263,7 +273,7 @@ class ReqMgrClient(object):
             return requestsData
         else:
             logging.info("Querying all requests ...")
-            status, data = self._httpRequest("GET", "/reqmgr/reqMgr/request")
+            status, data = self.httpRequest("GET", "/reqmgr/reqMgr/request")
             if status != 200:
                 print data
                 sys.exit(1)
@@ -281,7 +291,7 @@ class ReqMgrClient(object):
     def deleteRequests(self, config):
         for requestName in config.requestNames:
             logging.info("Deleting '%s' request ..." % requestName)
-            status, data = self._httpRequest("DELETE", "/reqmgr/reqMgr/request/%s" % requestName)
+            status, data = self.httpRequest("DELETE", "/reqmgr/reqMgr/request/%s" % requestName)
             if status != 200:
                 print data
                 sys.exit(1)
@@ -292,7 +302,7 @@ class ReqMgrClient(object):
         requestName = config.cloneRequest
         logging.info("Cloning request '%s' ..." % requestName)
         headers = {"Content-Length": 0}
-        status, data = self._httpRequest("PUT", "/reqmgr/reqMgr/clone/%s" % requestName, 
+        status, data = self.httpRequest("PUT", "/reqmgr/reqMgr/clone/%s" % requestName, 
                                          headers=headers)
         if status > 216:
             logging.error("Error occurred, exit.")
@@ -319,8 +329,8 @@ class ReqMgrClient(object):
         # "requestName": requestName can probably be specified here as well
         params = {"priority": "%s" % priority}
         encodedParams = urllib.urlencode(params)
-        status, data = self._httpRequest("PUT", "/reqmgr/reqMgr/request/%s" % requestName,
-                                         data=encodedParams, headers=self.textHeaders)        
+        status, data = self.httpRequest("PUT", "/reqmgr/reqMgr/request/%s" % requestName,
+                                        data=encodedParams, headers=self.textHeaders)        
         if status > 200:
             logging.error("Error occurred, exit.")
             print data
@@ -373,6 +383,53 @@ class ReqMgrClient(object):
         logging.info("Resubmission tests finished.")
         
     
+    def checkCouchDB(self, config):
+        """
+        Returns number of request documents in the ReqMgr CouchDB database.
+        Design documents are excluded from the result.
+        Number of request in MySQL/Oracle and CouchDB database should match.
+        Assumptions:
+            if config.reqMgrUrl starts with "https://", then running against
+                either CMS web instance of other VM deployment in which case
+                the ReqMgr CouchDB database is:
+                config.reqMgrUrl/couchdb/reqmgr_workload_cache/
+            if config.reqMgrUrl starts with "http://", then it's assumed
+                running against localhost in which case:
+                get $COUCHURL/reqmgr_workload_cache/
+                
+        This check is purely for the fact that ReqMgr on DELETE request call
+        deletes requests from MySQL/Oracle but not from CouchDB (#4289).
+        
+        This check will also be removed for ReqMgr2 having only CouchDB backend.
+                
+        """
+        if config.reqMgrUrl.startswith("https://"):
+            couchDbConn = RESTClient(config.reqMgrUrl,
+                                     cert=config.cert, key=config.key)
+            uri = "/couchdb/reqmgr_workload_cache"
+        if config.reqMgrUrl.startswith("http://"):
+            # take COUCHURL env. variable
+            # if it contains username:password@host, then remove)
+            couchUrl = os.getenv("COUCHURL", None)
+            url = couchUrl
+            if couchUrl.find('@') > -1:
+                indexAt = couchUrl.find('@')
+                indexSlash = couchUrl.find("//")
+                url = couchUrl[:(indexSlash+2)]
+                url += couchUrl[(indexAt+1):] 
+            couchDbConn = RESTClient(url)
+            uri = "/reqmgr_workload_cache"
+                                     
+        # get number of all documents
+        status, data = couchDbConn.httpRequest("GET", uri)
+        numAllDocs = json.loads(data)["doc_count"]
+        # get number of design documents (to exlude from the result)
+        uri += "/_all_docs?startkey=\"_design/\"&endkey=\"_design0\""
+        status, data = couchDbConn.httpRequest("GET", uri)
+        numDesignDocs = len(json.loads(data)["rows"])
+        return numAllDocs-numDesignDocs
+        
+    
     def allTests(self, config):
         """
         Call all methods above. Tests everything.
@@ -383,7 +440,14 @@ class ReqMgrClient(object):
         self.userGroup(None) # argument has no meaning
         self.team(None) # argument has no meaning
         
+        # save number of current requests in the system 
         currentRequests = self.queryRequests(config)
+        currentCouchRequests = self.checkCouchDB(config)
+        msg = ("Prior to allTests(): Number of requests in MySQL/Oracle "
+               "database (%s) and CouchDB (%s) do not agree." %
+               (len(currentRequests), currentCouchRequests))
+        assert len(currentRequests) == currentCouchRequests, msg
+        
         # save the first created request name (testRequestName) for some later tests
         testRequestName = self.createRequest(config, restApi = True)
         config.requestNames = []
@@ -434,7 +498,13 @@ class ReqMgrClient(object):
         config.requestNames = None # this means queryRequests will check all requests
         afterRequests = self.queryRequests(config)
         logging.info("%s requests in the system before this test." % len(afterRequests))
-        assert currentRequests == afterRequests, "Requests in ReqMgr before and after this test not matching!"
+        assert currentRequests == afterRequests, "Requests in ReqMgr before and after this test not matching!"        
+        afterCouchRequests = self.checkCouchDB(config)
+        msg = ("After allTests(): Number of requests in MySQL/Oracle "
+               "database (%s) and CouchDB (%s) do not agree." %
+               (len(afterRequests), afterCouchRequests))
+        assert len(afterRequests) == afterCouchRequests, msg
+        
         logging.info("Running --allTests succeeded.")
                 
     

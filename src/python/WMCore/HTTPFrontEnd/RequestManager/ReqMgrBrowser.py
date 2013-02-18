@@ -152,11 +152,10 @@ class ReqMgrBrowser(WebAPI):
         elif splittingAlgo == "EventAwareLumiBased":
             splitParams["events_per_job"] = int(submittedParams["avg_events_per_job"])
             splitParams["max_events_per_lumi"] = int(submittedParams["max_events_per_lumi"])
-            if str(submittedParams["halt_job_on_file_boundaries"]) == "True":
+            if str(submittedParams["halt_job_on_file_boundaries_event_aware"]) == "True":
                 splitParams["halt_job_on_file_boundaries"] = True
             else:
                 splitParams["halt_job_on_file_boundaries"] = False
-
         elif splittingAlgo == "EventBased":
             splitParams["events_per_job"] = int(submittedParams["events_per_job"])
             if submittedParams.has_key("events_per_lumi"):
@@ -164,7 +163,7 @@ class ReqMgrBrowser(WebAPI):
         elif splittingAlgo == "Harvest":
             splitParams["periodic_harvest_interval"] = int(submittedParams["periodic_harvest_interval"])
         elif 'Merg' in splittingTask:
-            for field in ['min_merge_size', 'max_merge_size', 'max_merge_events']:
+            for field in ['min_merge_size', 'max_merge_size', 'max_merge_events', 'max_wait_time']:
                 splitParams[field] = int(submittedParams[field])
         if "include_parents" in submittedParams.keys():
             if str(submittedParams["include_parents"]) == "True":

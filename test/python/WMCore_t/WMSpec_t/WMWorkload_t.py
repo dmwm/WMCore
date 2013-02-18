@@ -902,6 +902,8 @@ class WMWorkloadTest(unittest.TestCase):
             self.assertEquals(datasetSub["NonCustodialSites"], ["CMSSite_2"], "Wrong non-custodial sites for %s" % outputDataset)
             self.assertEquals(datasetSub["AutoApproveSites"], [], "Wrong auto-approve sites for %s" % outputDataset)
             self.assertEquals(datasetSub["Priority"], "Low", "Wrong priority for %s" % outputDataset)
+            self.assertEquals(datasetSub["CustodialSubType"], "Move", "Wrong custodial subscription type for %s" % outputDataset)
+
 
     def testUpdatingSplitParameters(self):
         """

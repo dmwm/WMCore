@@ -73,6 +73,22 @@ class WMWorkloadTest(unittest.TestCase):
                                             lfnBase = "bogusUnmerged",
                                             mergedLFNBase = "bogusMerged",
                                             filterName = None)
+        procTaskCMSSWHelper.addOutputModule("OutputD",
+                                            primaryDataset = primaryDataset,
+                                            processedDataset = "bogusProcessed",
+                                            dataTier = "DATATIERD",
+                                            lfnBase = "bogusUnmerged",
+                                            mergedLFNBase = "bogusMerged",
+                                            filterName = None,
+                                            transient = True)
+        procTaskCMSSWHelper.addOutputModule("OutputE",
+                                            primaryDataset = primaryDataset,
+                                            processedDataset = "bogusProcessed",
+                                            dataTier = "DATATIERE",
+                                            lfnBase = "bogusUnmerged",
+                                            mergedLFNBase = "bogusMerged",
+                                            filterName = None,
+                                            transient = False)
 
         mergeTask = procTask.addTask("MergeTask")
         mergeTask.setTaskType("Merge")
@@ -653,7 +669,7 @@ class WMWorkloadTest(unittest.TestCase):
                                  "Error: Incorrect merged LFN %s" % outputModule.mergedLFNBase)
 
         outputDatasets = testWorkload.listOutputDatasets()
-        self.assertEqual(len(outputDatasets), 3,
+        self.assertEqual(len(outputDatasets), 4,
                          "Error: Wrong number of output datasets: %s" % testWorkload.listOutputDatasets())
 
         self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DQM" in outputDatasets,
@@ -661,6 +677,8 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DATATIERB" in outputDatasets,
                         "Error: A dataset is missing")
         self.assertTrue("/bogusPrimary/TestAcqEra-bogusFilter-Test-v2/DATATIERC" in outputDatasets,
+                        "Error: A dataset is missing")
+        self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DATATIERE" in outputDatasets,
                         "Error: A dataset is missing")
         return
 
@@ -841,13 +859,15 @@ class WMWorkloadTest(unittest.TestCase):
                                  "Error: Incorrect merged LFN %s" % outputModule.mergedLFNBase)
 
         outputDatasets = testWorkload.listOutputDatasets()
-        self.assertEqual(len(outputDatasets), 3,
+        self.assertEqual(len(outputDatasets), 4,
                          "Error: Wrong number of output datasets: %s" % testWorkload.listOutputDatasets())
         self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DQM" in outputDatasets,
                         "Error: A dataset is missing")
         self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DATATIERB" in outputDatasets,
                         "Error: A dataset is missing")
         self.assertTrue("/bogusPrimary/TestAcqEraSkim-bogusFilter-SkimTest-v3/DATATIERC" in outputDatasets,
+                        "Error: A dataset is missing")
+        self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DATATIERE" in outputDatasets,
                         "Error: A dataset is missing")
 
         processingVersion = testWorkload.getProcessingVersion()

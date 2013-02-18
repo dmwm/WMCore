@@ -490,8 +490,11 @@ class StdBase(object):
             lfnBase(unmergedLFN)
             lfnBase(mergedLFN)
 
+        isTransient = True
+
         if forceMerged:
             unmergedLFN = mergedLFN
+            isTransient = False
         elif forceUnmerged:
             mergedLFN = unmergedLFN
 
@@ -503,7 +506,8 @@ class StdBase(object):
                                         dataTier = dataTier,
                                         filterName = filterName,
                                         lfnBase = unmergedLFN,
-                                        mergedLFNBase = mergedLFN)
+                                        mergedLFNBase = mergedLFN,
+                                        transient = isTransient)
 
         return {"primaryDataset": primaryDataset,
                 "dataTier": dataTier,

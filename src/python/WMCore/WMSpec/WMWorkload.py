@@ -1072,7 +1072,10 @@ class WMWorkloadHelper(PersistencyHelper):
                 if stepHelper.stepType() == "CMSSW" or \
                        stepHelper.stepType() == "MulticoreCMSSW":
                     for outputModuleName in stepHelper.listOutputModules():
+                        # Only consider non-transient output
                         outputModule = stepHelper.getOutputModule(outputModuleName)
+                        if getattr(outputModule, "transient", False):
+                            continue
                         outputDataset = "/%s/%s/%s" % (outputModule.primaryDataset,
                                                        outputModule.processedDataset,
                                                        outputModule.dataTier)

@@ -313,13 +313,9 @@ class TaskChainTests(unittest.TestCase):
 
         # Verify the output datasets
         outputDatasets = self.workload.listOutputDatasets()
-        self.assertEqual(len(outputDatasets), 15, "Number of output datasets doesn't match")
+        self.assertEqual(len(outputDatasets), 13, "Number of output datasets doesn't match")
         self.assertTrue("/RelValTTBar/ReleaseValidation-GenSimFilter-v1/GEN-SIM" in outputDatasets,
                         "/RelValTTBar/ReleaseValidation-GenSimFilter-v1/GEN-SIM not in output datasets")
-        self.assertTrue("/PURelValTTBar/ReleaseValidation-RawDigiFilter-v1/RAW-DIGI" in outputDatasets,
-                        "/PURelValTTBar/ReleaseValidation-RawDigiFilter-v1/RAW-DIGI not in output datasets")
-        self.assertTrue("/RelValTTBar/ReleaseValidationNewConditions-RawDigiFilter-Test-v3/RAW-DIGI" in outputDatasets,
-                        "/RelValTTBar/ReleaseValidationNewConditions-RawDigiFilter-Test-v3/RAW-DIGI not in output datasets")
         self.assertTrue("/RelValTTBar/ReleaseValidation-reco-v1/RECO" in outputDatasets,
                         "/RelValTTBar/ReleaseValidation-reco-v1/RECO not in output datasets")
         self.assertTrue("/RelValTTBar/ReleaseValidation-AOD-v1/AOD" in outputDatasets,

@@ -916,7 +916,8 @@ class WMTaskHelper(TreeHelper):
                                        "NonCustodialSites" : outputModuleSection.nonCustodialSites,
                                        "AutoApproveSites" : outputModuleSection.autoApproveSites,
                                        "Priority" : outputModuleSection.priority,
-                                       "CustodialSubType" : outputModuleSection.custodialSubType}
+                                       # Specs assigned before HG1303 don't have the CustodialSubtype
+                                       "CustodialSubType" : getattr(outputModuleSection, "custodialSubType", "Move")}
         return subInformation
 
     def parentProcessingFlag(self):

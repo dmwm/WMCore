@@ -29,6 +29,13 @@ class WorkQueueReqMgrInterface():
             msg += "New Work: %d\n" % work
         except Exception:
             self.logger.exception("Error caught during RequestManager pull")
+
+        try: # get additional open-running work
+            extraWork = self.addNewElementsToOpenRequests(queue)
+            msg += "Work added: %d\n" % extraWork
+        except Exception:
+            self.logger.exception("Error caught during RequestManager split")
+
         try:    # report back to ReqMgr
             uptodate_elements = self.report(queue)
             msg += "Updated ReqMgr status for: %s" % ", ".join([x['RequestName'] for x in uptodate_elements])
@@ -147,7 +154,13 @@ class WorkQueueReqMgrInterface():
                         pass # assume workqueue status will catch up later
                 elif request['RequestStatus'] == 'aborted':
                     queue.cancelWork(WorkflowName=request['RequestName'])
-                elif not ele['Status'] == self._reqMgrStatus(request['RequestStatus']):
+                # Check consistency of running-open/closed and the element closure status
+                elif request['RequestStatus'] == 'running-open' and not ele.get('OpenForNewData', False):
+                    self.reqMgr.reportRequestStatus(ele['RequestName'], 'running-closed')
+                elif request['RequestStatus'] == 'running-closed' and ele.get('OpenForNewData', False):
+                    queue.closeWork(ele['RequestName'])
+                # update request status if necessary
+                elif ele['Status'] not in self._reqMgrToWorkQueueStatus(request['RequestStatus']):
                     self.reportElement(ele)
                 # check if we need to update progress, only update if we have progress
                 elif ele['PercentComplete'] > request['percent_complete'] + 1 or \
@@ -165,7 +178,7 @@ class WorkQueueReqMgrInterface():
         """Delete work from queue that is finished in ReqMgr"""
         finished = []
         for element in elements:
-            if self._reqMgrStatus(element['Status']) in ('aborted', 'failed', 'completed', 'announced',
+            if self._workQueueToReqMgrStatus(element['Status']) in ('aborted', 'failed', 'completed', 'announced',
                                                          'epic-FAILED', 'closed-out', 'rejected') \
                                                          and element.inEndState():
                 finished.append(element['RequestName'])
@@ -184,14 +197,27 @@ class WorkQueueReqMgrInterface():
                 self.logger.error('Error getting work for team "%s": %s' % (team, str(ex)))
         return results
 
+    def getOpenRunningRequests(self, *teams):
+        """Get open running requests for the given teams"""
+        results = []
+        if not teams:
+            teams = self.reqMgr.getTeam()
+        for team in teams:
+            try:
+                reqs = self.reqMgr.getRunningOpen(team)
+                results.extend(reqs)
+            except Exception, ex:
+                self.logger.error('Error getting open running requests for team "%s": %s' % (team, str(ex)))
+        return results
+
     def reportRequestStatus(self, request, status, message = None):
         """Change state in RequestManager
            Optionally, take a message to append to the request
         """
         if message:
             self.sendMessage(request, str(message))
-        if self._reqMgrStatus(status): # only send known states
-            self.reqMgr.reportRequestStatus(request, self._reqMgrStatus(status))
+        if self._workQueueToReqMgrStatus(status): # only send known states
+            self.reqMgr.reportRequestStatus(request, self._workQueueToReqMgrStatus(status))
 
     def sendMessage(self, request, message):
         """Attach a message to the request"""
@@ -204,10 +230,10 @@ class WorkQueueReqMgrInterface():
         """Mark request acquired"""
         self.reqMgr.putWorkQueue(request, url)
 
-    def _reqMgrStatus(self, status):
+    def _workQueueToReqMgrStatus(self, status):
         """Map WorkQueue Status to that reported to ReqMgr"""
         statusMapping = {'Acquired' : 'acquired',
-                         'Running' : 'running',
+                         'Running' : 'running-open',
                          'Failed' : 'failed',
                          'Canceled' : 'aborted',
                          'CancelRequested' : 'aborted',
@@ -217,6 +243,20 @@ class WorkQueueReqMgrInterface():
             return statusMapping[status]
         else:
             return None
+
+    def _reqMgrToWorkQueueStatus(self, status):
+        """Map ReqMgr status to that in a WorkQueue element, it is not a 1-1 relation"""
+        statusMapping = {'acquired': ['Acquired'],
+                         'running' : ['Running'],
+                         'running-open': ['Running'],
+                         'running-closed': ['Running'],
+                         'failed': ['Failed'],
+                         'aborted': ['Canceled', 'CancelRequested'],
+                         'completed': ['Done']}
+        if status in statusMapping:
+            return statusMapping[status]
+        else:
+            return []
 
     def reportProgress(self, request, **args):
         """report progress for the request"""
@@ -233,3 +273,58 @@ class WorkQueueReqMgrInterface():
             args = {'percent_complete' : element['PercentComplete'],
                     'percent_success' : element['PercentSuccess']}
             self.reportProgress(element['RequestName'], **args)
+
+    def addNewElementsToOpenRequests(self, queue):
+        """Add new elements to open requests which are in running-open state, only works adding new blocks from the input dataset"""
+        self.logger.info("Checking Request Manager for open requests and closing old ones")
+
+        # First close any open inbox element which hasn't found anything new in a while
+        queue.closeWork()
+        self.report(queue)
+
+        work = 0
+        requests = []
+
+        # Drain mode, don't pull any work into open requests. They will be closed if the queue stays in drain long enough
+        if queue.params['DrainMode']:
+            self.logger.info('Draining queue: Skip requesting work from ReqMgr')
+            return 0
+
+        try:
+            requests = self.getOpenRunningRequests(*queue.params['Teams'])
+        except Exception, ex:
+            msg = "Error contacting RequestManager: %s" % str(ex)
+            self.logger.warning(msg)
+            return 0
+
+        for reqName in requests:
+            try:
+                self.logger.info("Processing request %s" % (reqName))
+                units = queue.addWork(requestName = reqName)
+            except (WorkQueueWMSpecError, WorkQueueNoWorkError), ex:
+                # fatal error - but at least it was split the first time. Log and skip.
+                msg = 'Error adding further work to request "%s". Will try again later' \
+                '\nError: "%s"' % (reqName, str(ex))
+                self.logger.info(msg)
+                self.sendMessage(reqName, msg)
+                continue
+            except (IOError, socket.error, CouchError, CouchConnectionError), ex:
+                # temporary problem - try again later
+                msg = 'Error processing request "%s": will try again later.' \
+                '\nError: "%s"' % (reqName, str(ex))
+                self.logger.info(msg)
+                self.sendMessage(reqName, msg)
+                continue
+            except Exception, ex:
+                # Log exception as it isnt a communication problem
+                msg = 'Error processing request "%s": will try again later.' \
+                '\nSee log for details.\nError: "%s"' % (reqName, str(ex))
+                self.logger.exception('Unknown error processing %s' % reqName)
+                self.sendMessage(reqName, msg)
+                continue
+
+            self.logger.info('%s units(s) queued for "%s"' % (units, reqName))
+            work += units
+
+        self.logger.info("%s element(s) added to open requests" % work)
+        return work

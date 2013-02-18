@@ -20,6 +20,7 @@ class RequestManager(dict):
         self.progress = {}
         self.msg = {}
         self.names = []
+        self.openRunningTimeout = kwargs.setdefault('openRunningTimeout', 0)
         import logging
         self['logger'] = logging
 
@@ -30,7 +31,8 @@ class RequestManager(dict):
                 specUrl =self.specGenerator.createReRecoSpec(specName, "file",
                                                              self.splitter,
                                                              self.inputDataset,
-                                                             self.dbsUrl)
+                                                             self.dbsUrl,
+                                                             OpenRunningTimeout = self.openRunningTimeout)
             elif self.type == 'MonteCarlo':
                 specName = "MCTest_v%sEmulator" % self.count
                 specUrl =self.specGenerator.createMCSpec(specName, "file",
@@ -47,6 +49,14 @@ class RequestManager(dict):
             return [[specName, specUrl],]
         else:
             return []
+
+    def getRunningOpen(self, teamName):
+        """Returns a list of request names of requests in running-open state"""
+        result = []
+        for request in self.status:
+            if self.status[request] == 'running-open':
+                result.append(request)
+        return result
 
     def getRequest(self, requestName):
         """Get request info"""

@@ -39,7 +39,7 @@ class DatasetTestCase(unittest.TestCase):
                                      inputDataset.tier)
         dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
-            units = Dataset(**self.splitArgs)(Tier1ReRecoWorkload, task)
+            units, _ = Dataset(**self.splitArgs)(Tier1ReRecoWorkload, task)
             self.assertEqual(1, len(units))
             for unit in units:
                 self.assertEqual(4, unit['Jobs'])
@@ -62,7 +62,7 @@ class DatasetTestCase(unittest.TestCase):
                                            inputDataset.tier))
         dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
         for task in MultiTaskProcessingWorkload.taskIterator():
-            units = Dataset(**self.splitArgs)(MultiTaskProcessingWorkload, task)
+            units, _ = Dataset(**self.splitArgs)(MultiTaskProcessingWorkload, task)
             self.assertEqual(1, len(units))
             for unit in units:
                 self.assertEqual(4, unit['Jobs'])
@@ -90,7 +90,7 @@ class DatasetTestCase(unittest.TestCase):
                                                      rerecoArgs2)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
-        units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
+        units, _ = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Jobs'], 2.0)
         self.assertEqual(20, units[0]['NumberOfLumis'])
@@ -104,7 +104,7 @@ class DatasetTestCase(unittest.TestCase):
                                                      rerecoArgs2)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
-        units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
+        units, _ = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Jobs'], 2.0)
         self.assertEqual(20, units[0]['NumberOfLumis'])
@@ -118,7 +118,7 @@ class DatasetTestCase(unittest.TestCase):
                                                      rerecoArgs2)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
-        units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
+        units, _ = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Jobs'], 2.0)
         self.assertEqual(20, units[0]['NumberOfLumis'])
@@ -132,7 +132,7 @@ class DatasetTestCase(unittest.TestCase):
                                                      rerecoArgs3)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
-        units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
+        units, _ = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset])
         self.assertEqual(units[0]['Jobs'], 1.0)
@@ -146,7 +146,7 @@ class DatasetTestCase(unittest.TestCase):
                                                      rerecoArgs3)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
-        units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
+        units, _ = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset])
         self.assertEqual(units[0]['Jobs'], 3.0)
@@ -161,7 +161,7 @@ class DatasetTestCase(unittest.TestCase):
                                                     rerecoArgs3)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
-        units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
+        units, _ = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset])
         self.assertEqual(units[0]['Jobs'], 2.0)
@@ -176,7 +176,7 @@ class DatasetTestCase(unittest.TestCase):
                                                      rerecoArgs3)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
-        units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
+        units, _ = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset])
         self.assertEqual(units[0]['Jobs'], 2.0)
@@ -210,7 +210,7 @@ class DatasetTestCase(unittest.TestCase):
                                      inputDataset.tier)
         dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
-            units = Dataset(**splitArgs)(Tier1ReRecoWorkload, task)
+            units, _ = Dataset(**splitArgs)(Tier1ReRecoWorkload, task)
             self.assertEqual(1, len(units))
             for unit in units:
                 self.assertEqual(4, unit['Jobs'])
@@ -231,7 +231,7 @@ class DatasetTestCase(unittest.TestCase):
                                      inputDataset.tier)
         dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
-            units = Dataset(**splitArgs)(Tier1ReRecoWorkload, task)
+            units, _ = Dataset(**splitArgs)(Tier1ReRecoWorkload, task)
             self.assertEqual(1, len(units))
             # Check number of jobs in element match number for
             # dataset in run whitelist
@@ -284,7 +284,7 @@ class DatasetTestCase(unittest.TestCase):
                                      inputDataset.tier)
         dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
         for task in parentProcSpec.taskIterator():
-            units = Dataset(**self.splitArgs)(parentProcSpec, task)
+            units, _ = Dataset(**self.splitArgs)(parentProcSpec, task)
             self.assertEqual(1, len(units))
             for unit in units:
                 self.assertEqual(4, unit['Jobs'])

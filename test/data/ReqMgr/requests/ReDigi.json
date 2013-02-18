@@ -30,7 +30,8 @@
         "inputMode": "couchDB",
         "Scenario": "pp",
         "DataPileup": "",
-        "MCPileup": "/MinBias_TuneZ2star_8TeV-pythia6/Summer12-START50_V13-v3/GEN-SIM"
+        "MCPileup": "/MinBias_TuneZ2star_8TeV-pythia6/Summer12-START50_V13-v3/GEN-SIM",
+        "OpenRunningTimeout" : 0
 	},
 
 	

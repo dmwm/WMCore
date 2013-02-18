@@ -60,6 +60,10 @@ class ReDigiWorkloadFactory(StdBase):
     """
     def __init__(self):
         StdBase.__init__(self)
+
+        # Define attributes used by this spec
+        self.openRunningTimeout = None
+
         return
 
     def addMergeTasks(self, parentTask, parentStepName, outputMods):
@@ -246,7 +250,8 @@ class ReDigiWorkloadFactory(StdBase):
         workload = self.createWorkload()
         workload.setDashboardActivity("redigi")
         self.reportWorkflowToDashboard(workload.getDashboardActivity())
-        workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
+        workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs,
+                                         OpenRunningTimeout = self.openRunningTimeout)
         stepOneTask = workload.newTask("StepOneProc")
 
         outputMods = self.setupProcessingTask(stepOneTask, "Processing", self.inputDataset,
@@ -293,6 +298,9 @@ class ReDigiWorkloadFactory(StdBase):
         self.couchURL = arguments["CouchURL"]
         self.couchDBName = arguments["CouchDBName"]
         self.configCacheUrl = arguments.get("ConfigCacheUrl", None)
+
+        # ReDigi is split by block and can receive more blocks after first split for certain delay
+        self.openRunningTimeout = int(arguments.get("OpenRunningTimeout", 0))
 
         # Pull down the configs and the names of the output modules so that
         # we can chain things together properly.

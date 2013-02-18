@@ -453,14 +453,15 @@ class WMTaskTest(unittest.TestCase):
         self.assertEqual(testTask.getSubscriptionInformation(), {}, "There should not be any subscription info")
 
         testTask.setSubscriptionInformation(["mercury"], ["mars", "earth"],
-                                            ["earth"], "High",
+                                            ["earth"], "High", "Replica",
                                             "OneParticle")
         subInfo = testTask.getSubscriptionInformation()
 
         outputRecoSubInfo = {"CustodialSites" : ["mercury"],
                              "NonCustodialSites" : ["mars", "earth"],
                              "AutoApproveSites" : ["earth"],
-                             "Priority" : "High"}
+                             "Priority" : "High",
+                             "CustodialSubType" : "Replica"}
         self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"],
                          outputRecoSubInfo, "The RECO subscription information is wrong")
         self.assertTrue("/OneParticle/DawnOfAnEra-v1/AOD" in subInfo, "The AOD subscription information is wrong")

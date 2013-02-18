@@ -1074,7 +1074,10 @@ class WMWorkloadHelper(PersistencyHelper):
                 if stepHelper.stepType() == "CMSSW" or \
                        stepHelper.stepType() == "MulticoreCMSSW":
                     for outputModuleName in stepHelper.listOutputModules():
+                        # Only consider non-transient output
                         outputModule = stepHelper.getOutputModule(outputModuleName)
+                        if getattr(outputModule, "transient", False):
+                            continue
                         outputDataset = "/%s/%s/%s" % (outputModule.primaryDataset,
                                                        outputModule.processedDataset,
                                                        outputModule.dataTier)
@@ -1090,8 +1093,8 @@ class WMWorkloadHelper(PersistencyHelper):
 
     def setSubscriptionInformationWildCards(self, wildcardDict, custodialSites = None,
                                             nonCustodialSites = None, autoApproveSites = None,
-                                            priority = "Low", primaryDataset = None,
-                                            dataTier = None):
+                                            priority = "Low", custodialSubType = "Move",
+                                            primaryDataset = None, dataTier = None):
         """
         _setSubscriptonInformationWildCards_
 
@@ -1128,13 +1131,14 @@ class WMWorkloadHelper(PersistencyHelper):
                                         nonCustodialSites = newNonCustodialList,
                                         autoApproveSites = newAutoApproveList,
                                         priority = priority,
+                                        custodialSubType = custodialSubType,
                                         primaryDataset = primaryDataset,
                                         dataTier = dataTier)
 
     def setSubscriptionInformation(self, initialTask = None, custodialSites = None,
                                          nonCustodialSites = None, autoApproveSites = None,
-                                         priority = "Low", primaryDataset = None,
-                                         dataTier = None):
+                                         priority = "Low", custodialSubType = "Move",
+                                         primaryDataset = None, dataTier = None):
         """
         _setSubscriptionInformation_
 
@@ -1157,9 +1161,11 @@ class WMWorkloadHelper(PersistencyHelper):
         for task in taskIterator:
             task.setSubscriptionInformation(custodialSites, nonCustodialSites,
                                             autoApproveSites, priority,
+                                            custodialSubType,
                                             primaryDataset, dataTier)
             self.setSubscriptionInformation(task, custodialSites, nonCustodialSites,
                                             autoApproveSites, priority,
+                                            custodialSubType,
                                             primaryDataset, dataTier)
 
         return
@@ -1174,10 +1180,12 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         subInfo = {}
 
-        #Add site lists without duplicates
+        # Add site lists without duplicates
         extendWithoutDups = lambda x, y : x + list(set(y) - set(x))
-        #Choose the lowest priority
+        # Choose the lowest priority
         solvePrioConflicts = lambda x, y : y if x == "High" or y == "Low" else x
+        # Choose replica over move
+        solveTypeConflicts = lambda x, y : y if x == "Move" else x
 
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
@@ -1196,7 +1204,9 @@ class WMWorkloadHelper(PersistencyHelper):
                     subInfo[dataset]["AutoApproveSites"]  = extendWithoutDups(taskSubInfo[dataset]["AutoApproveSites"],
                                                                               subInfo[dataset]["AutoApproveSites"])
                     subInfo[dataset]["Priority"]          = solvePrioConflicts(taskSubInfo[dataset]["Priority"],
-                                                                               taskSubInfo[dataset]["Priority"])
+                                                                               subInfo[dataset]["Priority"])
+                    subInfo[dataset]["CustodialSubType"] = solveTypeConflicts(taskSubInfo[dataset]["CustodialSubType"],
+                                                                               subInfo[dataset]["CustodialSubType"])
                 else:
                     subInfo[dataset] = taskSubInfo[dataset]
 

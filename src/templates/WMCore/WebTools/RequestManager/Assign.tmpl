@@ -90,14 +90,23 @@ Non-Custodial Sites:
    #for $site in $sites:
        <option>$site</option>
    #end for
-</select><br/>
-Auto Approve Non-Custodial:
-<input type="checkbox" name="AutoApprove"/>
-Priority:
-<select name="Priority">
+</select> &nbsp&nbsp&nbsp&nbsp
+Auto-Approve Sites:
+<select name="AutoApproveSubscriptionSites" multiple size=10>
+   #for $site in $sites:
+       <option>$site</option>
+   #end for
+</select><br/><br/>
+Subscription Priority:
+<select name="SubscriptionPriority">
 <option selected>Low</option>
 <option>Normal</option>
 <option>High</option>
+</select>
+Custodial Subscription Type:
+<select name="CustodialSubType">
+<option selected>Move</option>
+<option>Replica</option>
 </select>
 <h4>LFN Bases</h4>
 #def optionsMenu($allOptions, $default)

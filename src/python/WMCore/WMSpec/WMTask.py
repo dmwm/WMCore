@@ -816,6 +816,7 @@ class WMTaskHelper(TreeHelper):
 
     def setSubscriptionInformation(self, custodialSites = None, nonCustodialSites = None,
                                          autoApproveSites = None, priority = "Low",
+                                         custodialSubType = "Move",
                                          primaryDataset = None, dataTier = None):
         """
         _setSubscriptionsInformation_
@@ -828,6 +829,7 @@ class WMTaskHelper(TreeHelper):
         data.subscriptions.<outputModule>.nonCustodialSites
         data.subscriptions.<outputModule>.autoApproveSites
         data.subscriptions.<outputModule>.priority
+        data.subscriptions.<outputModule>.custodialSubType
 
         The filters arguments allow to define a dataTier and primaryDataset. Only datasets
         matching those values will be configured.
@@ -857,6 +859,7 @@ class WMTaskHelper(TreeHelper):
                 outputModuleSection.custodialSites = []
                 outputModuleSection.nonCustodialSites = []
                 outputModuleSection.autoApproveSites = []
+                outputModuleSection.custodialSubType = "Move"
                 outputModuleSection.priority = "Low"
 
             outputModuleSection = getattr(self.data.subscriptions, outputModule)
@@ -867,6 +870,7 @@ class WMTaskHelper(TreeHelper):
             if autoApproveSites:
                 outputModuleSection.autoApproveSites = autoApproveSites
             outputModuleSection.priority = priority
+            outputModuleSection.custodialSubType = custodialSubType
 
         return
 
@@ -896,7 +900,8 @@ class WMTaskHelper(TreeHelper):
         {<dataset> : {CustodialSites : [],
                       NonCustodialSites : [],
                       AutoApproveSites : [],
-                      Priority : Low
+                      Priority : "Low",
+                      CustodialSubType : "Move"
                      }
         }
         """
@@ -910,7 +915,8 @@ class WMTaskHelper(TreeHelper):
             subInformation[dataset] = {"CustodialSites" : outputModuleSection.custodialSites,
                                        "NonCustodialSites" : outputModuleSection.nonCustodialSites,
                                        "AutoApproveSites" : outputModuleSection.autoApproveSites,
-                                       "Priority" : outputModuleSection.priority}
+                                       "Priority" : outputModuleSection.priority,
+                                       "CustodialSubType" : outputModuleSection.custodialSubType}
         return subInformation
 
     def parentProcessingFlag(self):

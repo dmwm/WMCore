@@ -102,7 +102,7 @@ class RequestManagerTest(RESTBaseUnitTest):
         self.reqService.reportRequestProgress(requestName,
                         percent_complete = 100, percent_success = 90)
         
-        self.reqService.reportRequestStatus(requestName, "running")
+        self.reqService.reportRequestStatus(requestName, "running-open")
 
         
         

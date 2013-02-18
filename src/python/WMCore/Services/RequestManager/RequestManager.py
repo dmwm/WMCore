@@ -95,6 +95,11 @@ class RequestManager(Service):
         callname = 'assignment'
         return self._getResult(callname, args = args, verb = "GET")
 
+    def getRunningOpen(self, teamName):
+        args = {'teamName': teamName, 'status': 'running-open'}
+        callname = 'requestsByStatusAndTeam'
+        return self._getResult(callname, args = args, verb = "GET")
+
     def getWorkQueue(self, **args):
         "get list of workqueue urls from requestmanager"
         callname = 'workQueue'

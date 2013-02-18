@@ -155,7 +155,9 @@ class WorkQueueBackend(object):
         """
         kwargs.update({'WMSpec' : spec,
                        'RequestName' : spec.name(),
-                       'EndPolicy' : spec.endPolicyParameters()
+                       'StartPolicy' : spec.startPolicyParameters(),
+                       'EndPolicy' : spec.endPolicyParameters(),
+                       'OpenForNewData' : True
                       })
         unit = CouchWorkQueueElement(self.inbox, elementParams = kwargs)
         unit.id = spec.name()
@@ -444,8 +446,19 @@ class WorkQueueBackend(object):
                                 options)
         if request:
             if data['rows']:
-                return data['rows'][0]['value']
+                injectionStatus = data['rows'][0]['value']
+                inboxElement = self.getInboxElements(elementIDs = [data['rows'][0]['key']])
+                return injectionStatus and not inboxElement[0].get('OpenForNewData', False)
             else:
                 raise WorkQueueNoMatchingElements("%s not found" % request)
         else:
-            return [{x['key']: x['value']} for x in data.get('rows', [])]
+            injectionStatus = dict((x['key'], x['value']) for x in data.get('rows', []))
+            inboxElements = self.getInboxElements(elementIDs = injectionStatus.keys())
+            finalInjectionStatus = []
+            for element in inboxElements:
+                if not element.get('OpenForNewData', False) and injectionStatus[element._id]:
+                    finalInjectionStatus.append({element._id : True})
+                else:
+                    finalInjectionStatus.append({element._id : False})
+
+            return finalInjectionStatus

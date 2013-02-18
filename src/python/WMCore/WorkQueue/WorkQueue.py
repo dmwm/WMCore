@@ -36,7 +36,7 @@ from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
 from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper
 
-from WMCore.Database.CMSCouch import CouchNotFoundError
+from WMCore.Database.CMSCouch import CouchNotFoundError, CouchInternalServerError
 
 from WMCore import Lexicon
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
@@ -93,8 +93,13 @@ class WorkQueue(WorkQueueBase):
                                         logger = self.logger)
         if self.params.get('ParentQueueCouchUrl'):
             try:
-                self.parent_queue = WorkQueueBackend(self.params['ParentQueueCouchUrl'].rsplit('/', 1)[0],
-                                                     self.params['ParentQueueCouchUrl'].rsplit('/', 1)[1])
+                if self.params.get('ParentQueueInboxCouchDBName'):
+                    self.parent_queue = WorkQueueBackend(self.params['ParentQueueCouchUrl'].rsplit('/', 1)[0],
+                                                         self.params['ParentQueueCouchUrl'].rsplit('/', 1)[1],
+                                                         self.params['ParentQueueInboxCouchDBName'])
+                else:
+                    self.parent_queue = WorkQueueBackend(self.params['ParentQueueCouchUrl'].rsplit('/', 1)[0],
+                                                         self.params['ParentQueueCouchUrl'].rsplit('/', 1)[1])
             except IndexError, ex:
                 # Probable cause: Someone didn't put the global WorkQueue name in
                 # the ParentCouchUrl
@@ -551,6 +556,25 @@ class WorkQueue(WorkQueueBase):
         work = self.processInboundWork(inbound, throw = True)
         return len(work)
 
+    def addWork(self, requestName):
+        """
+        Check and add new elements to an existing running request,
+        if supported by the start policy.
+        """
+        self.logger.info('addWork() checking "%s"' % requestName)
+        inbound = None
+        try:
+            inbound = self.backend.getInboxElements(elementIDs = [requestName], loadSpec = True)
+        except CouchNotFoundError:
+            #This shouldn't happen, the request is in running-open therefore it must exist in the inbox
+            self.logger.error('Can not find request %s for work addition' % requestName)
+            return 0
+
+        work = []
+        if inbound:
+            work = self.processInboundWork(inbound, throw = True, continuous = True)
+        return len(work)
+
     def status(self, status = None, elementIDs = None,
                dictKey = None, syncWithWMBS = False, loadSpec = False,
                **filters):
@@ -677,6 +701,84 @@ class WorkQueue(WorkQueueBase):
         self.backend.pullFromParent(continuous = continuousReplication)
         return len(work)
 
+    def closeWork(self, *workflows):
+        """
+        Global queue service that looks for the inbox elements that are still running open
+        and checks whether they should be closed already. If a list of workflows
+        is specified then those workflows are closed regardless of their current status.
+        An element is closed automatically when one of the following conditions holds true:
+        - The StartPolicy doesn't define a OpenRunningTimeout or this delay is set to 0
+        - A period longer than OpenRunningTimeout has passed since the last child element was created or an open block was found
+          and the StartPolicy newDataAvailable function returns False.
+        It also checks if new data is available and updates the inbox element
+        """
+
+        if not self.backend.isAvailable():
+            self.logger.warning('Backend busy or down: Can not close work at this time')
+            return
+
+        if self.params['LocalQueueFlag']:
+            return # GlobalQueue-only service
+
+        if workflows:
+            workflowsToClose = workflows
+        else:
+            workflowsToCheck = self.backend.getInboxElements(OpenForNewData = True)
+            workflowsToClose = []
+            currentTime = time.time()
+            for element in workflowsToCheck:
+                # Easy check, close elements with no defined OpenRunningTimeout
+                policy = element.get('StartPolicy', {})
+                openRunningTimeout = policy.get('OpenRunningTimeout', 0)
+                if not openRunningTimeout:
+                    # Closing, no valid OpenRunningTimeout available
+                    workflowsToClose.append(element.id)
+                    continue
+
+                # Check if new data is currently available
+                skipElement = False
+                spec = self.backend.getWMSpec(element.id)
+                for topLevelTask in spec.taskIterator():
+                    policyName = spec.startPolicy()
+                    if not policyName:
+                        raise RuntimeError("WMSpec doesn't define policyName, current value: '%s'" % policyName)
+
+                    policyInstance = startPolicy(policyName, self.params['SplittingMapping'])
+                    if not policyInstance.supportsWorkAddition():
+                        continue
+                    if policyInstance.newDataAvailable(topLevelTask, element):
+                        skipElement = True
+                        self.backend.updateInboxElements(element.id, TimestampFoundNewData = currentTime)
+                        break
+                if skipElement:
+                    continue
+
+                # Check if the delay has passed
+                newDataFoundTime = element.get('TimestampFoundNewData', 0)
+                childrenElements = self.backend.getElementsForParent(element)
+                lastUpdate = float(max(childrenElements, key = lambda x: x.timestamp).timestamp)
+                if (currentTime - max(newDataFoundTime, lastUpdate)) > openRunningTimeout:
+                    workflowsToClose.append(element.id)
+
+        msg = 'No workflows to close.\n'
+        if workflowsToClose:
+            try:
+                self.backend.updateInboxElements(*workflowsToClose, OpenForNewData = False)
+                msg = 'Closed workflows : %s.\n' % ', '.join(workflows)
+            except CouchInternalServerError, ex:
+                msg = 'Failed to close workflows. Error was CouchInternalServerError.'
+                self.logger.error(msg)
+                self.logger.error('Error message: %s' % str(ex))
+                raise
+            except Exception, ex:
+                msg = 'Failed to close workflows. Generic exception caught.'
+                self.logger.error(msg)
+                self.logger.error('Error message: %s' % str(ex))
+
+        self.backend.recordTaskActivity('workclosing', msg)
+
+        return workflowsToClose
+
     def performQueueCleanupActions(self, skipWMBS = False):
         """
         Apply end policies to determine work status & cleanup finished work
@@ -758,9 +860,9 @@ class WorkQueue(WorkQueueBase):
         self.backend.recordTaskActivity('housekeeping', msg)
         self.backend.sendToParent() # update parent queue with new status's
 
-
     def _splitWork(self, wmspec, parentQueueId = None,
-                   data = None, mask = None, team = None):
+                   data = None, mask = None, team = None,
+                   inbound = None, continuous = False):
         """
         Split work from a parent into WorkQeueueElements.
 
@@ -769,6 +871,9 @@ class WorkQueue(WorkQueueBase):
         modify wmspec block whitelist - thus all appear as same wf in wmbs)
 
         mask can be used to specify i.e. event range.
+
+        The inbound and continous parameters are used to split
+        and already split inbox element.
         """
         totalUnits = []
         totalToplevelJobs = 0
@@ -784,9 +889,14 @@ class WorkQueue(WorkQueueBase):
                 raise RuntimeError("WMSpec doesn't define policyName, current value: '%s'" % policyName)
 
             policy = startPolicy(policyName, self.params['SplittingMapping'])
+            if not policy.supportsWorkAddition() and continuous:
+                # Can't split further with a policy that doesn't allow it
+                continue
+            if continuous:
+                policy.modifyPolicyForWorkAddition(inbound)
             self.logger.info('Splitting %s with policy %s params = %s' % (topLevelTask.getPathName(),
                                                 policyName, self.params['SplittingMapping']))
-            units = policy(spec, topLevelTask, data, mask)
+            units, rejectedWork = policy(spec, topLevelTask, data, mask)
             for unit in units:
                 msg = 'Queuing element %s for %s with %d job(s) split with %s' % (unit.id,
                                                 unit['Task'].getPathName(), unit['Jobs'], policyName)
@@ -801,9 +911,10 @@ class WorkQueue(WorkQueueBase):
                 totalFiles += unit['NumberOfFiles']
             totalUnits.extend(units)
 
-        return totalUnits, {'total_jobs': totalToplevelJobs, 'input_events': totalEvents, 'input_lumis': totalLumis, 'input_num_files': totalFiles}
+        return totalUnits, {'total_jobs': totalToplevelJobs, 'input_events': totalEvents, 'input_lumis': totalLumis, 'input_num_files': totalFiles}, \
+               rejectedWork
 
-    def processInboundWork(self, inbound_work = None, throw = False):
+    def processInboundWork(self, inbound_work = None, throw = False, continuous = False):
         """Retrieve work from inbox, split and store
         If request passed then only process that request
         """
@@ -811,36 +922,58 @@ class WorkQueue(WorkQueueBase):
             self.backend.fixConflicts() # db should be consistent
 
         result = []
+        if not inbound_work and continuous:
+            # This is not supported
+            return result
         if not inbound_work:
             inbound_work = self.backend.getElementsForSplitting()
         for inbound in inbound_work:
-            # Check we haven't already split the work
+            # Check we haven't already split the work, unless it's continuous processing
             work = self.backend.getElementsForParent(inbound)
             try:
-                if work:
+                if work and not continuous:
                     self.logger.info('Request "%s" already split - Resuming' % inbound['RequestName'])
                 else:
-                    work, totalStats = self._splitWork(inbound['WMSpec'], None, inbound['Inputs'], inbound['Mask'])
-                    self.backend.insertElements(work, parent = inbound) # if this fails, rerunning will pick up here
-                    # save inbound work to signal we have completed queueing
+                    work, totalStats, rejectedWork = self._splitWork(inbound['WMSpec'], None, data = inbound['Inputs'],
+                                                                     mask = inbound['Mask'], inbound = inbound, continuous = continuous)
 
-                    # add the total work on wmstat summary
-                    self.backend.updateInboxElements(inbound.id, Status = 'Acquired')
+                    # save inbound work to signal we have completed queueing
+                    self.backend.insertElements(work, parent = inbound) # if this fails, rerunning will pick up here
+
+                    if not continuous:
+                        # Update to Acquired when it's the first processing of inbound work
+                        self.backend.updateInboxElements(inbound.id, Status = 'Acquired')
+
+                    # store the inputs in the global queue inbox workflow element
+                    if not self.params.get('LocalQueueFlag'):
+                        processedInputs = inbound['ProcessedInputs']
+                        rejectedInputs = inbound['RejectedInputs']
+                        rejectedInputs.extend(rejectedWork)
+                        rejectedInputs = list(set(rejectedInputs))
+                        for unit in work:
+                            processedInputs.extend(unit['Inputs'].keys())
+                        if processedInputs:
+                            self.backend.updateInboxElements(inbound.id, ProcessedInputs = processedInputs, RejectedInputs = rejectedInputs)
 
                     if not self.params.get('LocalQueueFlag') and self.params.get('WMStatsCouchUrl'):
                         # only update global stats for global queue
                         try:
+                            # add the total work on wmstat summary or add the recently split work
                             wmstatSvc = WMStatsWriter(self.params.get('WMStatsCouchUrl'))
                             wmstatSvc.insertTotalStats(inbound['WMSpec'].name(), totalStats)
                         except Exception, ex:
                             self.logger.info('Error publishing %s to WMStats: %s' % (inbound['RequestName'], str(ex)))
 
             except TERMINAL_EXCEPTIONS, ex:
-                self.logger.info('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))
-                self.backend.updateInboxElements(inbound.id, Status = 'Failed')
-                if throw:
-                    raise
+                if not continuous:
+                    # Only fail on first splitting
+                    self.logger.info('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))
+                    self.backend.updateInboxElements(inbound.id, Status = 'Failed')
+                    if throw:
+                        raise
             except Exception, ex:
+                if continuous:
+                    continue
                 # if request has been failing for too long permanently fail it.
                 # last update time was when element was assigned to this queue
                 if (float(inbound.updatetime) + self.params['QueueRetryTime']) < time.time():

@@ -34,7 +34,7 @@ class MonteCarloTestCase(unittest.TestCase):
         getFirstTask(BasicProductionWorkload).addProduction(totalevents = totalevents)
         getFirstTask(BasicProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         for task in BasicProductionWorkload.taskIterator():
-            units = MonteCarlo(**splitArgs)(BasicProductionWorkload, task)
+            units, _ = MonteCarlo(**splitArgs)(BasicProductionWorkload, task)
 
             SliceSize = BasicProductionWorkload.startPolicyParameters()['SliceSize']
             self.assertEqual(math.ceil(float(totalevents) / (SliceSize * splitArgs['MaxJobsPerElement'])),
@@ -83,7 +83,7 @@ class MonteCarloTestCase(unittest.TestCase):
         getFirstTask(LHEProductionWorkload).addProduction(totalevents = totalevents)
         getFirstTask(LHEProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         for task in LHEProductionWorkload.taskIterator():
-            units = MonteCarlo(**splitArgs)(LHEProductionWorkload, task)
+            units, _ = MonteCarlo(**splitArgs)(LHEProductionWorkload, task)
 
             SliceSize = LHEProductionWorkload.startPolicyParameters()['SliceSize']
             self.assertEqual(math.ceil(float(totalevents) / (SliceSize * splitArgs['MaxJobsPerElement'])),
@@ -136,7 +136,7 @@ class MonteCarloTestCase(unittest.TestCase):
         getFirstTask(LHEProductionWorkload).addProduction(totalevents = totalevents)
         getFirstTask(LHEProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         for task in LHEProductionWorkload.taskIterator():
-            units = MonteCarlo(**splitArgs)(LHEProductionWorkload, task)
+            units, _ = MonteCarlo(**splitArgs)(LHEProductionWorkload, task)
 
             SliceSize = LHEProductionWorkload.startPolicyParameters()['SliceSize']
             self.assertEqual(math.ceil(float(totalevents) / (SliceSize * splitArgs['MaxJobsPerElement'])),
@@ -189,7 +189,7 @@ class MonteCarloTestCase(unittest.TestCase):
         getFirstTask(LHEProductionWorkload).setFirstEventAndLumi(50,100)
         getFirstTask(LHEProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         for task in LHEProductionWorkload.taskIterator():
-            units = MonteCarlo(**splitArgs)(LHEProductionWorkload, task)
+            units, _ = MonteCarlo(**splitArgs)(LHEProductionWorkload, task)
 
             SliceSize = LHEProductionWorkload.startPolicyParameters()['SliceSize']
             self.assertEqual(math.ceil(float(totalevents) / (SliceSize * splitArgs['MaxJobsPerElement'])),
@@ -227,7 +227,7 @@ class MonteCarloTestCase(unittest.TestCase):
         getFirstTask(MultiMergeProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         getFirstTask(MultiMergeProductionWorkload).setFirstEventAndLumi(1,1)
         for task in MultiMergeProductionWorkload.taskIterator():
-            units = MonteCarlo(**self.splitArgs)(MultiMergeProductionWorkload, task)
+            units, _ = MonteCarlo(**self.splitArgs)(MultiMergeProductionWorkload, task)
 
             self.assertEqual(10.0, len(units))
             for unit in units:
@@ -244,7 +244,7 @@ class MonteCarloTestCase(unittest.TestCase):
         for task in MultiTaskProductionWorkload.taskIterator():
             count += 1
             task.setFirstEventAndLumi(1,1)
-            units = MonteCarlo(**self.splitArgs)(MultiTaskProductionWorkload, task)
+            units, _ = MonteCarlo(**self.splitArgs)(MultiTaskProductionWorkload, task)
 
             self.assertEqual(10 * count, len(units))
             for unit in units:
@@ -266,7 +266,14 @@ class MonteCarloTestCase(unittest.TestCase):
         mcspec2.data.policies.start.SliceSize = -100
         for task in mcspec2.taskIterator():
             self.assertRaises(WorkQueueWMSpecError, MonteCarlo(), mcspec2, task)
-
+            
+    def testContinuousSplittingSupport(self):
+        """Doesn't support continuous splitting"""
+        policyInstance = MonteCarlo(**self.splitArgs)
+        self.assertFalse(policyInstance.supportsWorkAddition(), "MonteCarlo instance should not support continuous splitting")
+        self.assertRaises(NotImplementedError, policyInstance.newDataAvailable, *[None, None])
+        self.assertRaises(NotImplementedError, policyInstance.modifyPolicyForWorkAddition, *[None])
+        return
 
 if __name__ == '__main__':
     unittest.main()

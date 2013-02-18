@@ -55,6 +55,11 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
     def __init__(self):
         StdBase.__init__(self)
 
+        # Define attributes used by this spec
+        self.openRunningTimeout = None
+
+        return
+
 
     def buildWorkload(self):
         """
@@ -73,7 +78,8 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
         workload = self.createWorkload()
         workload.setDashboardActivity("lheproduction")
         self.reportWorkflowToDashboard(workload.getDashboardActivity())
-        workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
+        workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs,
+                                         OpenRunningTimeout = self.openRunningTimeout)
         procTask = workload.newTask("MonteCarloFromGEN")
 
         outputMods = self.setupProcessingTask(procTask, "Processing", self.inputDataset,
@@ -112,6 +118,9 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
         self.couchURL = arguments["CouchURL"]
         self.couchDBName = arguments["CouchDBName"]
         self.configCacheUrl = arguments.get("ConfigCacheUrl", None)
+
+        # MonteCarloFromGen is split by block and can receive more blocks after first split for certain delay
+        self.openRunningTimeout = int(arguments.get("OpenRunningTimeout", 0))
 
         # Optional arguments that default to something reasonable.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")

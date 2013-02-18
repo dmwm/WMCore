@@ -17,6 +17,7 @@ import types
 from WMCore.Agent.Configuration import loadConfigurationFile
 
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
+from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
 
 from WMQuality.Emulators.RequestManagerClient.RequestManager \
     import RequestManager as fakeReqMgr
@@ -43,6 +44,7 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         WorkQueueTestCase.setUp(self)
         EmulatorHelper.setEmulators(phedex = True, dbs = True,
                                     siteDB = True, requestMgr = False)
+        GlobalParams.resetParams()
         self.globalQCouchUrl = "%s/%s" % (self.testInit.couchUrl, self.globalQDB)
         self.localQCouchUrl =  "%s/%s" % (self.testInit.couchUrl,
                                           self.localQInboxDB)
@@ -50,6 +52,7 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
     def tearDown(self):
         WorkQueueTestCase.tearDown(self)
         EmulatorHelper.resetEmulators()
+        GlobalParams.resetParams()
 
     def getConfig(self):
         """
@@ -120,7 +123,7 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         globalQ.setStatus('Running', WorkflowName = reqMgr.names[0])
         globalQ.performQueueCleanupActions()
         reqMgrInt(globalQ) # report back to ReqMgr
-        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'running')
+        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'running-closed')
 
         # finish work
         work = globalQ.status()
@@ -158,14 +161,14 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         elements = globalQ.status()
         globalQ.performQueueCleanupActions()
         reqMgrInt(globalQ) # report back to ReqMgr
-        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'running')
+        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'running-closed')
         globalQ.performQueueCleanupActions()
         reqMgrInt(globalQ)
         self.assertEqual(reqMgr.progress[reqMgr.names[0]]['percent_complete'],
                          75)
         self.assertEqual(reqMgr.progress[reqMgr.names[0]]['percent_success'],
                          25)
-        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'running')
+        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'running-closed')
         globalQ.setStatus('Done', WorkflowName = reqMgr.names[0])
         reqMgrInt(globalQ) # report back to ReqMgr
         globalQ.performQueueCleanupActions()
@@ -249,6 +252,85 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         # workqueue should see an old done request and update status to match
         reqMgrInt(globalQ)
         self.assertEqual(globalQ.status(WorkflowName=reqMgr.names[0])[0]['Status'], 'Done')
+
+    def testReqMgrOpenRequests(self):
+        """Check the mechanics of open running requests"""
+        # don't actually talk to ReqMgr - mock it.
+        globalQ = self.setupGlobalWorkqueue()
+        localQ = self.setupLocalQueue()
+        reqMgr = fakeReqMgr(splitter = 'Block', openRunningTimeout = 3600)
+        reqMgrInt = WorkQueueReqMgrInterface()
+        reqMgrInt.reqMgr = reqMgr
+
+        # 1st run should pull a request
+        self.assertEqual(len(globalQ), 0)
+        reqMgrInt(globalQ)
+        self.assertEqual(len(globalQ), 2)
+        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'acquired')
+
+        # local queue acquires and runs
+        globalQ.updateLocationInfo()
+        localQ.pullWork({'T2_XX_SiteA' : 10000, 'T2_XX_SiteB' : 10000})
+        self.assertEqual(len(globalQ), 0)
+        reqMgrInt(globalQ)
+        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'acquired')
+
+        # start running work
+        globalQ.setStatus('Running', WorkflowName = reqMgr.names[0])
+        globalQ.performQueueCleanupActions()
+        reqMgrInt(globalQ) # report back to ReqMgr
+        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'running-open')
+
+        # Work should not be closed yet
+        reqMgrInt(globalQ)
+        globalQ.performQueueCleanupActions()
+        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'running-open')
+
+        # Now add 2 new blocks to dbs, the reqMgr should put more work in the queue for the request
+        GlobalParams.setNumOfBlocksPerDataset(GlobalParams.numOfBlocksPerDataset() + 2)
+        reqMgrInt(globalQ)
+        globalQ.performQueueCleanupActions()
+        self.assertEqual(len(globalQ), 2)
+
+        # Work that can be pulled normally and request stays in running-open
+        globalQ.updateLocationInfo()
+        localQ.pullWork({'T2_XX_SiteC' : 10000})
+        self.assertEqual(len(globalQ), 0)
+        reqMgrInt(globalQ)
+        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'running-open')
+
+        # Put the latest work to run
+        globalQ.setStatus('Running', WorkflowName = reqMgr.names[0])
+        globalQ.performQueueCleanupActions()
+        reqMgrInt(globalQ) # report back to ReqMgr
+        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'running-open')
+
+        # Change the request status manually to close it
+        reqMgr.status[reqMgr.names[0]] = 'running-closed'
+        globalQ.performQueueCleanupActions()
+        reqMgrInt(globalQ) # report back to WorkQueue
+        self.assertEqual(len(globalQ.backend.getInboxElements(OpenForNewData = False)), 1)
+
+        # Put 1 more block in DBS for the dataset, request is closed so no more data is added
+        GlobalParams.setNumOfBlocksPerDataset(GlobalParams.numOfBlocksPerDataset() + 1)
+        reqMgrInt(globalQ)
+        globalQ.performQueueCleanupActions()
+        self.assertEqual(len(globalQ), 0)
+
+        # finish work
+        work = globalQ.status()
+        globalQ.setStatus('Done', elementIDs = [x.id for x in work])
+        reqMgrInt(globalQ)
+        globalQ.performQueueCleanupActions()
+        reqMgrInt(globalQ)
+        self.assertEqual(reqMgr.status[reqMgr.names[0]], 'completed')
+        # and removed from WorkQueue
+        self.assertEqual(len(globalQ.status()), 0)
+
+        # reqMgr problems should not crash client
+        reqMgrInt.reqMgr = None
+        reqMgrInt(globalQ)
+        reqMgr._removeSpecs()
 
 if __name__ == '__main__':
     unittest.main()

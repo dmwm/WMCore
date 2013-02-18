@@ -920,13 +920,14 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def setWorkQueueSplitPolicy(self, policyName, splitAlgo, splitArgs):
+    def setWorkQueueSplitPolicy(self, policyName, splitAlgo, splitArgs, **kwargs):
         """
         _setWorkQueueSplitPolicy_
 
         Set the WorkQueue split policy.
         policyName should be either 'DatasetBlock', 'Dataset', 'MonteCarlo' 'Block'
         different policy could be added in the workqueue plug in.
+        Additionally general parameters can be specified, these are not mapped and passed directly to the startPolicyArgs
         """
         SplitAlgoToStartPolicy = {"FileBased": ["NumberOfFiles"],
                                   "EventBased": ["NumberOfEvents",
@@ -938,6 +939,7 @@ class WMWorkloadHelper(PersistencyHelper):
                              "NumberOfLumis": "lumis_per_job",
                              "NumberOfEventsPerLumi": "events_per_lumi"}
         startPolicyArgs = {}
+        startPolicyArgs.update(kwargs)
 
         sliceTypes = SplitAlgoToStartPolicy.get(splitAlgo, ["NumberOfFiles"])
         sliceType = sliceTypes[0]

@@ -93,8 +93,5 @@ function(doc, req) {
     }
   }
 
-  provides("json", function(){
-    send(JSON.stringify(jsonResult));
-  });
-
+  send(JSON.stringify(jsonResult));
 }

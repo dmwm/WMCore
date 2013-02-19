@@ -55,8 +55,9 @@ def main():
     print "%s requests" % len(couch_request_names)
     for name in couch_request_names:
         request = db.document(name)
-        assert name == request["RequestName"]
-        assert name == request["_id"]
+        if name != request["RequestName"] or name != request["_id"]:
+            print ("\t Mismatch: CouchDB id: '%s' RequestName: '%s' name: '%s'" %
+                   (request["_id"], request["RequestName"], name))
         print "%s  %s  %s" % (request["RequestName"], request["RequestType"],
                 request["RequestStatus"])
     print "\n\n"

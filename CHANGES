@@ -1,3 +1,39 @@
+0.9.40 to 0.9.41:
+  - Update the ReqMgr database consistency check logs and scripts.  Pull request
+    #4430.
+  - Fix unit tests that were broken by PhEDEx changes and output ignoring changes.
+    Pull request #4429.
+  - Fix a number of ReqMgr issues, pull request #4426:
+    * Fix issues on the job splitting page
+    * Fix display of output datasets for request that drop output modules
+    * Fix the lumiMissingByWorkflow view in the WorkloadSummary.
+    * Expose AutoApprove sites to ReqMgr.
+  - Add the ability to create open requests that will pickup new data as it
+    is added to DBS.  Pull request #4425. 
+  - Fix document deletion in CouchDB.  Pull request #4424, #4404, #4396. 
+  - When deleting a request in the ReqMgr delete it from CouchDB and Oracle.
+    Pull request #4423.  
+  - Delete the dead code in the Processing and Production directories for the 
+    ReqMgr.  Pull request #4421.
+  - Fix a number of ReqMgr issues, pull request #4419:
+    * Change the SoftTimeout default parameters value.
+    * Add access control when deleting requests.
+    * Add a state transition from completed to aborted.
+    * Display all possible LFNs for all requests.
+    * Fixes for ACDC resubmission. 
+  - Fixes for DBS3 upload only mode.  Pull request #4415.
+  - Archive rejected workflows and disable tracking in WMStats.  Pull request
+    #4414.
+  - Enforce integer processing versions.  Pull request #4402.
+  - Fix corner cases for smart error handling.  Pull request #4407.
+  - Fix problems with DBS3 upload uncovered during the DBS2/3 consistancy
+    check.  Pull request #4406.
+  - Prevent the TaskArchiver from crashing if central CouchDB is down.  Pull
+    request #4397.
+  - Fix a typo in the CouchCoucPoller.  Pull request #4393.
+  - Add suport for stageout from the HLT Cloud at CERN.  Pull request #4401.
+  - Support ReqMgr localhost testing/running.  Pull request #4395. 
+
 0.9.39 to 0.9.40:
   - Fixes from the testing of DBS3 upload.  Pull request #4391.
   - add script to unregister agent when agent is retired or inactive.

@@ -128,6 +128,40 @@ class DataCollectionService(CouchService):
         return chunks
 
     @CouchUtils.connectToCouch
+    def singleChunkFileset(self, collectionName, filesetName,
+                           user = "cmsdataops", group = "cmsdataops"):
+        """
+        _singleChunkFileset_
+
+        Put all of the fileset in a given collection/task into a single chunk.  This
+        will return a dictionary that contains the offset into the
+        fileset and a summary of files/events/lumis that are in the fileset
+        chunk.
+        """
+        results = self.couchdb.loadView("ACDC", "owner_coll_fileset_metadata",
+                                        {"startkey": [group, user,
+                                                      collectionName, filesetName],
+                                         "endkey": [group, user,
+                                                    collectionName, filesetName, {}]}, [])
+
+        locations = set()
+        numFilesInBlock = 0
+        numLumisInBlock = 0
+        numEventsInBlock = 0
+
+        for row in results["rows"]:
+            locationsInFile = row["key"][4]
+            locations |= set(locationsInFile)
+
+            numFilesInBlock += 1
+            numLumisInBlock += row["value"]["lumis"]
+            numEventsInBlock += row["value"]["events"]
+
+        return {"offset": 0, "files": numFilesInBlock,
+                "events": numEventsInBlock, "lumis": numLumisInBlock,
+                "locations": locations}
+
+    @CouchUtils.connectToCouch
     def getChunkInfo(self, collectionName, filesetName, chunkOffset, chunkSize,
                      user = "cmsdataops", group = "cmsdataops"):
         """

@@ -927,7 +927,8 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the WorkQueue split policy.
         policyName should be either 'DatasetBlock', 'Dataset', 'MonteCarlo' 'Block'
         different policy could be added in the workqueue plug in.
-        Additionally general parameters can be specified, these are not mapped and passed directly to the startPolicyArgs
+        Additionally general parameters can be specified, these are not mapped and passed directly to the startPolicyArgs,
+        also record the splitting algorithm in case the WorkQUeue policy needs it.
         """
         SplitAlgoToStartPolicy = {"FileBased": ["NumberOfFiles"],
                                   "EventBased": ["NumberOfEvents",
@@ -938,7 +939,7 @@ class WMWorkloadHelper(PersistencyHelper):
                              "NumberOfEvents": "events_per_job",
                              "NumberOfLumis": "lumis_per_job",
                              "NumberOfEventsPerLumi": "events_per_lumi"}
-        startPolicyArgs = {}
+        startPolicyArgs = {'SplittingAlgo' : splitAlgo}
         startPolicyArgs.update(kwargs)
 
         sliceTypes = SplitAlgoToStartPolicy.get(splitAlgo, ["NumberOfFiles"])
@@ -1306,16 +1307,6 @@ class WMWorkloadHelper(PersistencyHelper):
                                                group = workloadOwner["group"],
                                                initial_lfn_counter = self.getInitialJobCount())
 
-        cleanupTask = None
-        parentTaskPath = "/".join(initialTaskPath.split("/")[:-1])
-        if not newTopLevelTask.isTopOfTree():
-            parentTask = self.getTaskByPath(parentTaskPath)
-            for childTask in parentTask.childTaskIterator():
-                if childTask.taskType() == "Cleanup" and \
-                       childTask.data.input.outputModule == newTopLevelTask.data.input.outputModule:
-                    cleanupTask = childTask
-                    break
-
         for taskPath in allTaskPaths:
             if not taskPath.startswith(initialTaskPath) or taskPath == initialTaskPath:
                 taskName = taskPath.split("/")[-1]
@@ -1327,9 +1318,6 @@ class WMWorkloadHelper(PersistencyHelper):
         self.setName(newWorkloadName)
         self.addTask(newTopLevelTask)
         newTopLevelTask.setTopOfTree()
-        if cleanupTask:
-            self.addTask(cleanupTask)
-            cleanupTask.setTopOfTree()
 
         self.setWorkQueueSplitPolicy("ResubmitBlock",
                                      newTopLevelTask.jobSplittingAlgorithm(),
@@ -1346,7 +1334,7 @@ class WMWorkloadHelper(PersistencyHelper):
                 childTask.setPathName("%s/%s" % (parentPath, childTask.name()))
                 inputStep = childTask.getInputStep()
                 if inputStep != None:
-                    inputStep = inputStep.replace(parentTaskPath, "/" + newWorkloadName)
+                    inputStep = inputStep.replace(parentPath, "/" + newWorkloadName)
                     childTask.setInputStep(inputStep)
 
                 adjustPathsForTask(childTask, childTask.getPathName())

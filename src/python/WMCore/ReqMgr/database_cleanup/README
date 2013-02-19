@@ -6,14 +6,19 @@ Utilities for:
     - as of 2013-01-16, ReqMgr Oracle database dump (in Python dictionaries)
         is slightly under 900MB, approx. half is in the reqmgr_message table
 
+Dump the entire Oracle database:
+	python ./oracle_dump.py user/password@server > oracle_dump.py
 
-1) python ./oracle_dump.py user/password@server > oracle_dump.py
-    -dump the entire database into Python dictionaries
-    -this is run on VM after (makes WMCore libs available):
-        source /data/current/apps/reqmgr/etc/profile.d/init.sh
-1.1) python ./oracle_dump.py user/password@server reqmgr_request > \
-            oracle_dump_request_table.py
-    -dumps only reqmgr_request table
-2) python oracle_couchdb_comparison.py > comparison.log
-    -make comparison
-    -must have CMS web credentials available in env. vars, WMCore libs 
+
+Consistency check of the requests (reqmgr_request table):
+
+on VM:
+source /data/current/apps/reqmgr/etc/profile.d/init.sh
+cd /data
+# dump only reqmgr_request table
+python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/database_cleanup/oracle_dump.py user/pass@cms_reqmgr reqmgr_request > /data/oracle_dump_request_table.py
+
+# usually locally, copy oracle_dump_request_table.py over:
+# must have CMS web credentials available in env. vars, WMCore libs
+cd WMCore
+python src/python/WMCore/ReqMgr/database_cleanup/oracle_couchdb_comparison.py oracle_dump_request_table.py > comparison.log

@@ -1,3 +1,7 @@
+0.9.41 to 0.9.42:
+  - Merge pull request #4433 from dballesteros7/ACDC-Workqueue-Fixes
+  - Improve ACDC splitting in global queue
+
 0.9.40 to 0.9.41:
   - Update the ReqMgr database consistency check logs and scripts.  Pull request
     #4430.

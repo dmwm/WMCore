@@ -3,7 +3,8 @@ WMStats.namespace('RequestSummaryList');
     var format = function (summary) {
         var summaryStruct = summary.summaryStruct
         htmlstr = "";
-        htmlstr += "<div class='requestSummaryBox'>"
+        htmlstr += "<legend>filtered stats</legend>";
+        htmlstr += "<div class='requestSummaryBox'>";
         htmlstr += "<ul>";
         htmlstr += "<li><b>requests:</b> " + summary.summaryStruct.length + "</li>";
         htmlstr += "<li><b>total events:</b> " + summary.summaryStruct.totalEvents + "</li>";

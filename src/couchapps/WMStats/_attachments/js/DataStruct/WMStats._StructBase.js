@@ -12,5 +12,21 @@ WMStats._StructBase.prototype = {
     
     setData: function(couchData) {
         this._data = this.convertCouchData(couchData)
+    },
+    
+    getDataByKey: function(key, combineFunc) {
+        var data = {}
+        var dataList = this._data;
+        for (var i in dataList) {
+            if (data[dataList[i][key]] === undefined) {
+                data[dataList[i][key]] = dataList[i];
+            } else if (combineFuc === undefined) {
+                data[dataList[i][key]] = dataList[i];
+            } else {
+                data[dataList[i][key]] = combineFunc(data[dataList[i][key]], dataList[i])
+            }
+            
+        }
+        return data;
     }
 };

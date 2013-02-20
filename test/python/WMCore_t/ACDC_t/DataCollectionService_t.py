@@ -202,6 +202,14 @@ class DataCollectionService_t(unittest.TestCase):
 
             del goldenFiles[chunk["files"]]
 
+        singleChunk = dcs.singleChunkFileset("ACDCTest", "/ACDCTest/reco")
+        self.assertEqual(singleChunk, {"offset" : 0,
+                                       "files" : 11,
+                                       "events" : 11264,
+                                       "lumis" : 22,
+                                       "locations" : set(["castor.cern.ch", "cmssrm.fnal.gov", "srm.ral.uk"])},
+                         "Error: Single chunk metadata is wrong")
+
         return
 
     def testGetLumiWhitelist(self):

@@ -734,18 +734,6 @@ class WMBSHelperTest(unittest.TestCase):
         self.assertEqual(len(mergeWorkflow.outputMap.keys()), 1,
                          "Error: Wrong number of WF outputs.")
 
-        cleanupWorkflow = Workflow(name = "ResubmitTestWorkload",
-                                 task = "/ResubmitTestWorkload/CleanupTask")
-        cleanupWorkflow.load()
-
-        self.assertEqual(cleanupWorkflow.owner, "sfoulkes",
-                         "Error: Wrong owner.")
-        self.assertEqual(cleanupWorkflow.spec, os.path.join(self.workDir, cleanupWorkflow.name,
-                                                          "WMSandbox", "WMWorkload.pkl"),
-                         "Error: Wrong spec URL")
-        self.assertEqual(len(cleanupWorkflow.outputMap.keys()), 0,
-                         "Error: Wrong number of WF outputs.")
-
         unmergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["output_fileset"]
         unmergedMergeOutput.loadData()
 
@@ -806,10 +794,6 @@ class WMBSHelperTest(unittest.TestCase):
                          "Error: Wrong split algo.")
 
         return
-
-#    def testProduction(self):
-#        """Production workflow"""
-#        pass
 
     def testReReco(self):
         """ReReco workflow"""

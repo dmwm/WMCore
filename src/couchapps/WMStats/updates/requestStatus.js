@@ -17,9 +17,9 @@ function (doc, req) {
                 if ((statusObj.status != "closed-out") && (statusObj.status != "normal-archived")) {
                     legalTransition = false;
                 }
-            } else if ((lastState == "aborted-completed") && (statusObj.status != "abort-archived")) {
+            } else if ((lastState == "aborted-completed") && (statusObj.status != "aborted-archived")) {
                 legalTransition = false;
-            } else if ((lastState == "normal-archived") || (lastState == "abort-archived")) {
+            } else if ((lastState == "normal-archived") || (lastState == "aborted-archived")) {
                 legalTransition = false;
             }
             if (legalTransition) {

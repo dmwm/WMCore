@@ -3,6 +3,7 @@ WMStats.namespace("RunSummaryTable");
 WMStats.RunSummaryTable = function (data, containerDiv) {
     
     var tableConfig = {
+        "iDisplayLength": 25,
         "sScrollX": "",
         "aoColumns": [
             {"sTitle": "D", 

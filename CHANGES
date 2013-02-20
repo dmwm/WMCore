@@ -1,3 +1,8 @@
+0.9.43 to 0.9.44:
+  - Bugfix in WMStats update document.  Pull request #4437.
+  - Updates to WMStats for the March cmsweb release.  Pull request #4436.
+  - Fix bug in stageout exception handler.  Pull request #4435.
+
 0.9.42 to 0.9.43:
   - Improve ACDC splitting in the global queue.  Pull request #4433.
 

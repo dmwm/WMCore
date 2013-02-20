@@ -1264,31 +1264,25 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(mergeTask.jobSplittingParameters()["initial_lfn_counter"],
                          20000000, "Error: Initial LFN counter is incorrect.")
 
-        self.assertEqual(len(testWorkload.getTopLevelTask()), 2,
-                         "Error: There should be two top level tasks.")
-        goldenTasks = [mergeTask.getPathName(), cleanupTask.getPathName()]
-        for topLevelTask in testWorkload.getTopLevelTask():
-            self.assertTrue(topLevelTask.getPathName() in goldenTasks,
-                            "Error: Extra top level task.")
-            goldenTasks.remove(topLevelTask.getPathName())
+        self.assertEqual(len(testWorkload.getTopLevelTask()), 1,
+                         "Error: There should be one top level task.")
+        topLevelTask = testWorkload.getTopLevelTask()[0]
+        self.assertEqual(topLevelTask.getPathName(), mergeTask.getPathName(),
+                        "Error: Extra top level task.")
 
         self.assertEqual(testWorkload.name(), "TestWorkloadResubmit",
                          "Error: The workload name is wrong.")
 
-        self.assertEqual(len(testWorkload.listAllTaskPathNames()), 3,
-                         "Error: There should only be three tasks")
-        self.assertEqual(len(testWorkload.listAllTaskNames()), 3,
-                         "Error: There should only be three tasks")
+        self.assertEqual(len(testWorkload.listAllTaskPathNames()), 2,
+                         "Error: There should only be two tasks")
+        self.assertEqual(len(testWorkload.listAllTaskNames()), 2,
+                         "Error: There should only be two tasks")
         self.assertTrue("/TestWorkloadResubmit/MergeTask" in testWorkload.listAllTaskPathNames(),
                         "Error: Merge task is missing.")
-        self.assertTrue("/TestWorkloadResubmit/CleanupTask" in testWorkload.listAllTaskPathNames(),
-                        "Error: Cleanup task is missing.")
         self.assertTrue("/TestWorkloadResubmit/MergeTask/SkimTask" in testWorkload.listAllTaskPathNames(),
                         "Error: Skim task is missing.")
         self.assertTrue("MergeTask" in testWorkload.listAllTaskNames(),
                         "Error: Merge task is missing.")
-        self.assertTrue("CleanupTask" in testWorkload.listAllTaskNames(),
-                        "Error: Cleanup task is missing.")
         self.assertTrue("SkimTask" in testWorkload.listAllTaskNames(),
                         "Error: Skim task is missing.")
         self.assertEqual("ResubmitBlock", testWorkload.startPolicy(),
@@ -1296,7 +1290,6 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(mergeTask.getInputACDC(),
                          {"database": "somedatabase", "fileset": "/TestWorkload/ProcessingTask/MergeTask",
                           "collection": "TestWorkload", "server": "somecouchurl"})
-
         return
 
     def testIgnoreOutputModules(self):

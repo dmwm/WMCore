@@ -7,7 +7,6 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
     var tableConfig = {
         "iDisplayLength": 25,
         "sScrollX": "",
-        "sDom": 'lrtip',
         "aoColumns": [
             {"sTitle": "D", 
              "sDefaultContent": 0,

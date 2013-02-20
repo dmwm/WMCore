@@ -10,7 +10,7 @@ WMStats.Table = function(config, tableSetting) {
         "bStateSave": true,
         "bProcessing": true,
         //"iDisplayLength": 10,
-        "sDom": 'lrtip',
+        "sDom": '<"top"pl>rt<"bottom"ip>',
         //"sDom": 'C<"clear">lfrtip',
         "aaSorting": [],
         "bAutoWidth": true,

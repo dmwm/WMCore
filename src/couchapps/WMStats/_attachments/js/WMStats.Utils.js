@@ -75,8 +75,7 @@ WMStats.Utils.formatWorkloadSummarylUrl = function (request, status) {
         return '<a href="' + WMStats.Globals.WORKLOAD_SUMMARY_URL_PREFIX + 
                 encodeURIComponent(request) + '" target="workloadSummaryFrame">' + request + '</a>';
     } else if (status == "completed" || status == "announced" ||
-        status == "closed-out" || status == "normal-archived" ||
-        status == "abort-archived") {
+        status == "closed-out" || status.indexOf("archived") !== -1) {
         return '<a href="' + WMStats.Globals.WORKLOAD_SUMMARY_URL_PREFIX + 
                 encodeURIComponent(request) + '" target="workloadSummaryFrame">' + status + '</a>';
     } else {

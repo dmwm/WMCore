@@ -1,6 +1,7 @@
 WMStats.Globals.importScripts([
     //"js/Views/HTMLList/WMStats.HTMLList.js",
     "js/Views/HTMLList/WMStats.JobDetailList.js",
+    "js/Views/HTMLList/WMStats.AgentDetailList.js",
     "js/Views/HTMLList/WMStats.AgentStatusGUI.js"
 ])
 

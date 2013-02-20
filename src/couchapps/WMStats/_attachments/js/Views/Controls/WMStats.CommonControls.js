@@ -11,6 +11,7 @@ WMStats.CommonControls = function($){
        var linkTabs = 
         '<nav id="linkTabs" class="linkTabs">\
             <ul><li><a href="#activeRequestPage"> active request </a></li>\
+                <li><a href="#agentInfoPage"> agent info <strong></strong></a></li>\
                 <li><a href="#workloadSummaryPage"> search </a></li></ul>\
          </nav>';
         

@@ -41,6 +41,7 @@ views = ["Views/Controls/WMStats.CommonControls.js",
          "Views/Tables/WMStats.WorkloadSummaryTable.js",
          "Views/HTMLList/WMStats.JobDetailList.js",
          "Views/HTMLList/WMStats.AgentStatusGUI.js",
+         "Views/HTMLList/WMStats.AgentDetailList.js",
          "Views/Graphs/WMStats.SiteHistoryGraph.js"]
 
 # tier1 specific library

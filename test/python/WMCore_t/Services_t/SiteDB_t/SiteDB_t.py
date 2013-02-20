@@ -6,6 +6,7 @@ Test case for SiteDB
 import unittest
 
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
 
 from nose.plugins.attrib import attr
 
@@ -18,7 +19,11 @@ class SiteDBTest(unittest.TestCase):
         """
         Setup for unit tests
         """
+        EmulatorHelper.setEmulators(siteDB = True)
         self.mySiteDB = SiteDBJSON()
+
+    def tearDown(self):
+        EmulatorHelper.resetEmulators()
 
     def testCmsNametoPhEDExNode(self):
         """

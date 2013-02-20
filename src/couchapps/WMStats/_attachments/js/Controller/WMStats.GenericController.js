@@ -17,27 +17,6 @@ WMStats.namespace("GenericController");
         closeRequestDetail();
         event.preventDefault();
     });
-    
-    /* live event can't handle the stopEventPropagation
-     * http://api.jquery.com/event.stopImmediatePropagation/
-    $(document).click(function(event) {
-        if ($("#request_view div.detail_data").is(":visible") && ($(event.target).parents().index($("#request_view div.detail_data")) == -1)){
-            closeRequestDetail();
-        }
-    });
-
-    
-     
-    $('html').click(function(event) {
-        if (WMStats.Env.RequestDetailOpen) {
-            closeRequestDetail();
-        }
-    });
-    
-    $("#request_view div.detail_data").click(function(event) {
-        event.stopPropagation();
-    });
-    */
    
     $(document).keyup(function(event) {
         if (WMStats.Env.RequestDetailOpen && event.keyCode == 27) {
@@ -45,13 +24,7 @@ WMStats.namespace("GenericController");
             event.preventDefault();
         }
     })
-    /*
-    $('div').ajaxSend(function(){
-            $(this).show();
-        }).live("ajaxComplete", function(){
-            $(this).hide();
-    });
-    */
+
     WMStats.GenericController.switchView = function (showSelector, hideSelectors) {
         if (!showSelector) {
             showSelector = WMStats.Env.View;
@@ -79,12 +52,11 @@ WMStats.namespace("GenericController");
         if (!showSelector) {
             showSelector = WMStats.Env.Page;
         } else if (!hideSelectors) {
-            var pageList = ["#activeRequestPage", "#workloadSummaryPage"];
+            var pageList = ["#activeRequestPage", "#agentInfoPage", "#workloadSummaryPage"];
             for (var i in pageList) {
                 if (showSelector != pageList[i]){
                     $(pageList[i]).hide();
                 }
-                
             }
         } else {
             for (var i in hideSelectors) {
@@ -94,8 +66,8 @@ WMStats.namespace("GenericController");
         $(showSelector).show();
         WMStats.Env.Page = showSelector;
         // select the tab
-        $('#linkTabs li').removeClass("tabs-selected");
-        $('#linkTabs a[href="' + showSelector +'"]').parent().addClass("tabs-selected")
+        $('#linkTabs li').removeClass("title-tab-selected").addClass("title-tab-hide");
+        $('#linkTabs a[href="' + showSelector +'"]').parent().removeClass("title-tab-hide").addClass("title-tab-selected")
     };
     
     $(document).on('click', "#linkTabs li a", function(event){

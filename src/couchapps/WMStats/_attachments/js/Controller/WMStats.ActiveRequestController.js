@@ -95,7 +95,11 @@ function getCategorizedData(category) {
     $(WMStats.Globals.Event).on(E.AGENTS_LOADED, 
         function(event, agentData) {
             //refresh filter cache.
-            WMStats.AgentStatusGUI(agentData, "#agent_alert");
+            WMStats.AgentDetailList(agentData, '#agent_detail');
+            if (agentData.agentNumber.error > 0) {
+                $('#linkTabs a[href="#agentInfoPage"] strong').text("(" + agentData.agentNumber.error + ")");
+            }
+            //WMStats.AgentStatusGUI(agentData, "#agent_alert");
         })
     
     $(WMStats.Globals.Event).on(E.CATEGORY_SUMMARY_READY, 

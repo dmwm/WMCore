@@ -5,15 +5,15 @@ WMStats.Controls = function($){
     var _categorySelector;
     
     function setFilter(selector) {
-       $(selector).append('<div name="filter">\
-                            campaign: <input name="campaign" value=""></input>\
-                            workflow: <input name="workflow" value=""></input>\
-                            type: <input name="request_type" value=""></input>\
-                            status: <input name="request_status" value=""></input>\
-                            input dataset: <input name="inputdataset" value=""></input>\
-                            output dataset: <input name="outputdatasets" value=""></input>\
-                            site whitelist: <input name="site_white_list" value=""></input>\
-                            agent: <input name="agent_url" value=""></input>\
+       $(selector).append('<legend>filter</legend><div name="filter" class="filterFormat">\
+                            <div class="verticalFilter"> campaign: <br/><input name="campaign" value=""></input> </div> \
+                            <div class="verticalFilter"> workflow: <br/><input name="workflow" value=""></input> </div>\
+                            <div class="verticalFilter"> type: <br/><input name="request_type" value=""></input> </div>\
+                            <div class="verticalFilter"> status: <br/><input name="request_status" value=""></input> </div>\
+                            <div class="verticalFilter"> input dataset: <br/><input name="inputdataset" value=""></input> </div>\
+                            <div class="verticalFilter"> output dataset: <br/><input name="outputdatasets" value=""></input> </div>\
+                            <div class="verticalFilter"> site whitelist: <br/><input name="site_white_list" value=""></input> </div>\
+                            <div class="endFlter"> agent:<br/><input name="agent_url" value=""></input> </div>\
                            </div>');
        _filterSelector = selector + ' div[name="filter"] input';
     };

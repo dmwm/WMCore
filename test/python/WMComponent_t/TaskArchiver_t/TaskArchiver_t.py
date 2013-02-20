@@ -13,6 +13,8 @@ import unittest
 import time
 import shutil
 import inspect
+import re
+import json
 
 from nose.plugins.attrib import attr
 
@@ -40,6 +42,8 @@ from WMComponent.TaskArchiver.TaskArchiverPoller import TaskArchiverPoller
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.FwkJobReport.Report         import Report
 from WMCore.Database.CMSCouch           import CouchServer, CouchNotFoundError
+from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
+
 
 from WMCore_t.WMSpec_t.TestSpec     import testWorkload
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
@@ -80,6 +84,9 @@ class TaskArchiverTest(unittest.TestCase):
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
+        self.dbsDaoFactory = DAOFactory(package="WMComponent.DBS3Buffer",
+                                        logger=myThread.logger,
+                                        dbinterface=myThread.dbi)
         self.getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
         self.inject  = self.daofactory(classname = "Workflow.MarkInjectedWorkflows")
 
@@ -139,6 +146,11 @@ class TaskArchiverTest(unittest.TestCase):
         config.TaskArchiver.histogramKeys   = ['AvgEventTime', 'writeTotalMB', 'jobTime']
         config.TaskArchiver.histogramBins   = 5
         config.TaskArchiver.histogramLimit  = 5
+        config.TaskArchiver.perfPrimaryDatasets        = ['SingleMu', 'MuHad', 'MinimumBias']
+        config.TaskArchiver.perfDashBoardMinLumi = 50
+        config.TaskArchiver.perfDashBoardMaxLumi = 9000
+        config.TaskArchiver.dqmUrl = 'https://cmsweb.cern.ch/dqm/dev/'
+        config.TaskArchiver.dashBoardUrl = 'http://dashboard43.cern.ch/dashboard/request.py/putluminositydata'
         config.TaskArchiver.workloadSummaryCouchDBName = "%s/workloadsummary" % self.databaseName
         config.TaskArchiver.workloadSummaryCouchURL    = config.JobStateMachine.couchurl
         config.TaskArchiver.centralWMStatsURL          = '%s/wmagent_summary_central_t' % config.JobStateMachine.couchurl
@@ -392,6 +404,58 @@ class TaskArchiverTest(unittest.TestCase):
 
         return jobList
 
+    def getPerformanceFromDQM(self, dqmUrl, dataset, run):
+        # Make function to fetch this from DQM. Returning Null or False if it fails
+        getUrl = "%sjsonfairy/archive/%s%s/DQM/TimerService/event_byluminosity" % (dqmUrl, run, dataset)
+        # Assert if the URL is assembled as expected
+        if run == 207214:
+            self.assertEquals('https://cmsweb.cern.ch/dqm/dev/jsonfairy/archive/207214/MinimumBias/Commissioning10-v4/DQM/DQM/TimerService/event_byluminosity',
+                               getUrl)
+        # let's suppose it works..
+        testResponseFile = open('DQMGUIResponse.json', 'r')
+        response = testResponseFile.read()
+        testResponseFile.close()
+        responseJSON = json.loads(response)
+        return responseJSON 
+    
+    def filterInterestingPerfPoints(self, responseJSON, minLumi, maxLumi):
+        worthPoints = {}
+        points = responseJSON["hist"]["bins"]["content"]
+        for i in range(responseJSON["hist"]["xaxis"]["first"]["id"], responseJSON["hist"]["xaxis"]["last"]["id"]):
+                    # is the point worth it? if yes add to interesting points dictionary. 
+                    # 1 - non 0
+                    # 2 - between minimum and maximum expected luminosity
+                    # FIXME : 3 - population in dashboard for the bin interval < 100
+                    # Those should come from the config :
+                    if points[i] == 0:
+                        continue
+                    binSize = responseJSON["hist"]["xaxis"]["last"]["value"]/responseJSON["hist"]["xaxis"]["last"]["id"]
+                    # Fetching the important values
+                    instLuminosity = i*binSize 
+                    timePerEvent = points[i]
+                    
+                    if instLuminosity > minLumi and instLuminosity <  maxLumi :
+                        worthPoints[instLuminosity] = timePerEvent
+        return worthPoints
+                
+    def publishPerformanceDashBoard(self, dashBoardUrl, PD, release, worthPoints):
+        dashboardPayload = []
+        for instLuminosity in worthPoints :
+            timePerEvent = int(worthPoints[instLuminosity])
+            dashboardPayload.append({"primaryDataset" : PD, 
+                                     "release" : release, 
+                                     "integratedLuminosity" : instLuminosity,
+                                     "timePerEvent" : timePerEvent})
+            
+        data = "{\"data\":%s}" % str(dashboardPayload).replace("\'","\"")
+        headers={"Accept":"application/json"}
+        # Get payload from file and compare
+        payloadFile = open('DashBoardPayload.json', 'r')
+        payload = payloadFile.read()
+        payloadFile.close()    
+        self.assertEquals(payload, data)
+        
+        return True
 
     def testA_BasicFunctionTest(self):
         """
@@ -756,6 +820,102 @@ class TaskArchiverTest(unittest.TestCase):
         return
 
 
+    def testDQMRecoPerformanceToDashBoard(self):
+        
+        myThread = threading.currentThread()
+    
+        # Didn't like to have done that, but the test doesn't provide all info I need in the system, so faking it:
+        myThread.dbi.processData("""insert into dbsbuffer_workflow(id, name) values (1, 'TestWorkload')"""
+                                 , transaction = False)
+        myThread.dbi.processData("""insert into dbsbuffer_file (id, lfn, workflow) values (1, '/store/t/e/s/t.test', 1)"""
+                                 , transaction = False)
+        myThread.dbi.processData("""insert into dbsbuffer_file (id, lfn, workflow) values (2, '/store/t/e/s/t.test2', 1)"""
+                                 , transaction = False)
+        myThread.dbi.processData("""insert into dbsbuffer_file_runlumi_map (run, filename) values (207214, 1)"""
+                                 , transaction = False)
+        myThread.dbi.processData("""insert into dbsbuffer_file_runlumi_map (run, filename) values (207215, 2)"""
+                                 , transaction = False)
+        
+        config = self.getConfig()
+        
+        dqmUrl = getattr(config.TaskArchiver, "dqmUrl")
+        minLumi = getattr(config.TaskArchiver, "perfDashBoardMinLumi")
+        maxLumi = getattr(config.TaskArchiver, "perfDashBoardMaxLumi")
+        dashBoardUrl = getattr(config.TaskArchiver, "dashBoardUrl")
+
+        self.listRunsWorkflow = self.dbsDaoFactory(classname="ListRunsWorkflow")
+
+        workloadPath = os.path.join(self.testDir, 'specDir', 'spec.pkl')
+        workload     = self.createWorkload(workloadName = workloadPath)
+        testJobGroup = self.createTestJobGroup(config = config,
+                                               name = workload.name(),
+                                               specLocation = workloadPath,
+                                               error = True)
+
+        # Adding request type as ReReco, real ReqMgr requests have it
+        workload.data.request.section_("schema")
+        workload.data.request.schema.RequestType = "ReReco"
+        workload.data.request.schema.CMSSWVersion = 'test_compops_CMSSW_5_3_6_patch1'
+        workload.getTask('ReReco').addInputDataset(primary='a',processed='b',tier='c')
+        
+        interestingPDs = getattr(config.TaskArchiver, "perfPrimaryDatasets")
+        interestingDatasets = []
+        # Are the datasets from this request interesting? Do they have DQM output? One might ask afterwards if they have harvest
+        for dataset in workload.listOutputDatasets():
+            (nothing, PD, procDataSet, dataTier) = dataset.split('/')
+            if PD in interestingPDs and dataTier == "DQM":
+                interestingDatasets.append(dataset)
+        # We should have found 1 interesting dataset
+        self.assertAlmostEquals(len(interestingDatasets), 1)
+        if len(interestingDatasets) == 0 :
+            return
+        # Request will be only interesting for performance if it's a ReReco or PromptReco
+        (isReReco, isPromptReco) = (False, False)
+        if getattr(workload.data.request.schema, "RequestType") == 'ReReco':
+            isReReco=True
+        # Yes, few people like magic strings, but have a look at :
+        # https://github.com/dmwm/T0/blob/master/src/python/T0/RunConfig/RunConfigAPI.py#L718
+        # Might be safe enough
+        # FIXME: in TaskArchiver, add a test to make sure that the dataset makes sense (procDataset ~= /a/ERA-PromptReco-vVERSON/DQM)
+        if re.search('PromptReco', workload.name()):
+            isPromptReco = True 
+        if not (isReReco or isPromptReco):
+            return
+        
+        self.assertEquals(isReReco, True)
+        self.assertEquals(isPromptReco, False)
+        
+        # We are not interested if it's not a PromptReco or a ReReco
+        if (isReReco or isPromptReco) == False:
+            return
+        if isReReco :
+            release = getattr(workload.data.request.schema, "CMSSWVersion")
+            if not release :
+                logging.info("no release for %s, bailing out" % workload.name())
+        else :
+            release = getattr(workload.tasks.Reco.steps.cmsRun1.application.setup, "cmsswVersion")
+            if not release :
+                logging.info("no release for %s, bailing out" % workload.name())
+        
+        self.assertEquals(release, "test_compops_CMSSW_5_3_6_patch1")
+        # If all is true, get the run numbers processed by this worklfow        
+        runList = self.listRunsWorkflow.execute(workflow = workload.name())
+        self.assertEquals([207214, 207215], runList)
+        # GO to DQM GUI, get what you want 
+        # https://cmsweb.cern.ch/dqm/offline/jsonfairy/archive/211313/PAMuon/HIRun2013-PromptReco-v1/DQM/DQM/TimerService/event
+        for dataset in interestingDatasets :
+            (nothing, PD, procDataSet, dataTier) = dataset.split('/')
+            worthPoints = {}
+            for run in runList :
+                responseJSON = self.getPerformanceFromDQM(dqmUrl, dataset, run)
+                worthPoints.update(self.filterInterestingPerfPoints(responseJSON, minLumi, maxLumi))
+                            
+            # Publish dataset performance to DashBoard.
+            if self.publishPerformanceDashBoard(dashBoardUrl, PD, release, worthPoints) == False:
+                logging.info("something went wrong when publishing dataset %s to DashBoard" % dataset)
+                
+        return 
+    
     # Requires a running UserFileCache to succeed. https://cmsweb.cern.ch worked for me
     # The environment variable OWNERDN needs to be set. Used to retrieve an already delegated proxy and contact the ufc
     @attr('integration')
@@ -803,7 +963,6 @@ class TaskArchiverTest(unittest.TestCase):
         testFileChildC.addParents([testFile["lfn"]])
 
         myThread = threading.currentThread()
-        self.dbsDaoFactory = DAOFactory(package="WMComponent.DBS3Buffer", logger=myThread.logger, dbinterface=myThread.dbi)
         self.insertWorkflow = self.dbsDaoFactory(classname="InsertWorkflow")
         workflowID = self.insertWorkflow.execute(requestName='TestWorkload', taskPath='TestWorkload/Analysis')
         myThread.dbi.processData("update dbsbuffer_file set workflow=1 where id < 4")

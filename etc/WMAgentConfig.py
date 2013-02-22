@@ -205,6 +205,7 @@ config.ErrorHandler.componentDir  = config.General.workDir + "/ErrorHandler"
 config.ErrorHandler.logLevel = globalLogLevel
 config.ErrorHandler.maxRetries = maxJobRetries
 config.ErrorHandler.pollInterval = 240
+config.ErrorHandler.readFWJR = True
 
 config.component_("RetryManager")
 config.RetryManager.namespace = "WMComponent.RetryManager.RetryManager"

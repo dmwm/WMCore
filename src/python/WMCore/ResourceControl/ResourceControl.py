@@ -8,6 +8,7 @@ Library from manipulating and querying the resource control database.
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMConnectionBase import WMConnectionBase
 from WMCore.WMException import WMException
+from WMCore.BossAir.BossAirAPI import BossAirAPI
 
 class ResourceControlException(WMException):
     """
@@ -19,11 +20,12 @@ class ResourceControlException(WMException):
 
 
 class ResourceControl(WMConnectionBase):
-    def __init__(self):
+    def __init__(self, config = None):
         WMConnectionBase.__init__(self, daoPackage = "WMCore.ResourceControl")
         self.wmbsDAOFactory = DAOFactory(package = "WMCore.WMBS",
                                          logger = self.logger,
                                          dbinterface = self.dbi)
+        self.config = config
         return
 
     def insertSite(self, siteName, pendingSlots = 0, runningSlots = 0,
@@ -47,13 +49,20 @@ class ResourceControl(WMConnectionBase):
     def changeSiteState(self, siteName, state):
         """
         _changeSiteState_
-        Set a site to some of the possible states
-
+        Set a site to some of the possible states,
+        if the state is Aborted we must do extra actions.
         """
         setStateAction = self.wmbsDAOFactory(classname = "Locations.SetState")
         setStateAction.execute(siteName = siteName, state = state,
                                conn = self.getDBConn(),
                                transaction = self.existingTransaction())
+        if state == "Aborted" and self.config:
+            # Kill all jobs in the batch system assigned to this site
+            executingJobs = self.wmbsDAOFactory(classname = "Jobs.ListByStateAndLocation")
+            jobIds = executingJobs.execute(state = 'executing', location = siteName)
+            bossAir = BossAirAPI(self.config, noSetup = True)
+            bossAir.kill(jobIds, errorCode = 61301)
+        return
 
     def listSiteInfo(self, siteName):
         """

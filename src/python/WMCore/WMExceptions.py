@@ -2,15 +2,9 @@
 """
 _WMExceptions_
 
-List of standard exception ids and their
+- List of standard exception ids and their
 mappings to a human readable message.
-
 """
-
-
-
-
-
 
 WMEXCEPTION = {'WMCore-1' : 'Not allowed to instantiate ',
    'WMCore-2' : 'Problem creating database table ',
@@ -25,3 +19,27 @@ WMEXCEPTION = {'WMCore-1' : 'Not allowed to instantiate ',
    'WMCORE-11': 'Security exception. ',
    'WMCORE-12': 'Database connection problem ',
    'WMCORE-13': 'Number of retries exceeded'}
+
+"""
+WMJobErrorCodes
+List of job error codes present in WMCOre, some of them coming from CMSSW, and a description
+of the error it represents.
+"""
+WMJobErrorCodes = {61101 :
+                        "No sites are available to submit the job because the location of its input(s)"
+                        "do not pass the site whitelist/blacklist restrictions",
+                    61102 :
+                        "The job can only run at a site that is currently in Aborted state",
+                    61103 :
+                        "The JobSubmitter component could not load the job pickle",
+                    61300 :
+                        "The job was killed by the WMAgent, reason is unknown.",
+                    61301 :
+                        "The job was killed by the WMAgent because the site it was running at was set to Aborted"}
+
+"""
+WMJobPermanentSystemErrors
+List of job errors produced by WMCore that are internal to the framework and are used
+to indicate that a job should not be retried since the error is permanent
+"""
+WMJobPermanentSystemErrors = [61102]

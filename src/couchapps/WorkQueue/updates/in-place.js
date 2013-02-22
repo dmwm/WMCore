@@ -11,6 +11,12 @@ function(doc, req) {
 		return [doc, '"Error parsing JSON"'];
 	}
 
+    try {
+        var options = JSON.parse(req.query.options);
+    } catch (ex) {
+        return [doc, '"Error parsing JSON"'];
+    }
+
 	for (var field in updates) {
 		var value = updates[field];
 		var ele = doc['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'];
@@ -20,7 +26,21 @@ function(doc, req) {
 		if (type === "number") {
 			value = parseFloat(value);
 		}
-		ele[field] = value;
+		// Check if we are doing incremental updates
+		// Currently only supports arrays
+        if ("incremental" in options && options["incremental"]){
+            if ((Object.prototype.toString.call(ele[field]) === '[object Array]')){
+                for(var i = 0; i < value.length; i++){
+                    singleValue = value[i]
+                    ele[field].push(singleValue)
+                }
+            } else {
+                // Unsupported type
+                ele[field] = value;
+            }
+        } else {
+            ele[field] = value;
+        }
 	}
 
 	//record update time

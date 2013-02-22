@@ -256,11 +256,11 @@ class LocationsTest(unittest.TestCase):
         self.assertEqual(result[0]['site_name'], 'Satsuma')
         self.assertEqual(result[0]['state'], 'Down')
 
-        # Now let's set it to finalize mode
-        setState.execute(siteName = 'Satsuma', state = 'Finalizing')
+        # Now let's set it to aborted mode
+        setState.execute(siteName = 'Satsuma', state = 'Aborted')
         result = locationInfo.execute(siteName = "Satsuma")
         self.assertEqual(result[0]['site_name'], 'Satsuma')
-        self.assertEqual(result[0]['state'], 'Finalizing')
+        self.assertEqual(result[0]['state'], 'Aborted')
 
         # Now let's set it to drain mode
         setState.execute(siteName = 'Satsuma', state = 'Draining')

@@ -642,7 +642,7 @@ class WorkQueue(WorkQueueBase):
         self.backend.recordTaskActivity('location_refresh')
         return result
 
-    def pullWork(self, resources = None, draining_resources = None, continuousReplication = True):
+    def pullWork(self, resources = None, continuousReplication = True):
         """
         Pull work from another WorkQueue to be processed
 
@@ -660,18 +660,14 @@ class WorkQueue(WorkQueueBase):
             self.logger.info('Draining queue: skipping work pull')
             return 0
 
-        if not draining_resources:
-            draining_resources = {}
         if not resources:
             # find out available resources from wmbs
             from WMCore.WorkQueue.WMBSHelper import freeSlots
             sites = freeSlots(self.params['QueueDepth'], knownCmsSites = cmsSiteNames())
-            draining_sites = freeSlots(self.params['QueueDepth'], allowedStates = ['Draining'])
             # resources for new work are free wmbs resources minus what we already have queued
             _, resources = self.backend.availableWork(sites)
-            draining_resources = draining_sites # don't minus available as large run-anywhere could decimate
 
-        if not resources and not draining_resources:
+        if not resources:
             self.logger.info('Not pulling more work. No free slots.')
             return 0
 
@@ -689,8 +685,6 @@ class WorkQueue(WorkQueueBase):
         self.logger.info("Pull work for sites %s: " % str(resources))
 
         work, _ = self.parent_queue.availableWork(resources, self.params['Teams'])
-        # get work for draining sites (only get work for existing workflows)
-        work.extend(self.parent_queue.availableWork(draining_resources, self.params['Teams'], self.backend.getWorkflows())[0])
 
         if not work:
             self.logger.info('No available work in parent queue.')

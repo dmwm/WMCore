@@ -729,12 +729,10 @@ class JobSubmitterTest(unittest.TestCase):
         workload = self.createTestWorkload()
         config = self.getConfig()
         changeState = ChangeState(config)
-
         nSubs = 1
         nJobs = 20
 
         sites = ['T2_US_Florida', 'T2_TW_Taiwan', 'T3_CO_Uniandes', 'T1_US_FNAL']
-
         for site in sites:
             self.setResourceThresholds(site, pendingSlots = 10, runningSlots = -1, tasks = ['Processing', 'Merge'],
                                        Processing = {'pendingSlots' : 10, 'runningSlots' :-1},
@@ -742,7 +740,6 @@ class JobSubmitterTest(unittest.TestCase):
 
         myResourceControl = ResourceControl()
         myResourceControl.changeSiteState('T2_US_Florida', 'Draining')
-
         # First test that we prefer Normal over drain, and T1 over T2/T3
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
                                             site = ['se.%s' % x for x in sites],
@@ -750,12 +747,9 @@ class JobSubmitterTest(unittest.TestCase):
                                             workloadSpec = os.path.join(self.testDir,
                                                                         'workloadTest',
                                                                         workloadName))
-
         for group in jobGroupList:
             changeState.propagate(group.jobs, 'created', 'new')
-
         jobSubmitter = JobSubmitterPoller(config = config)
-
         # Actually run it
         jobSubmitter.algorithm()
 
@@ -775,32 +769,26 @@ class JobSubmitterTest(unittest.TestCase):
         # Now set everything to down, check we don't submit anything
         for site in sites:
             myResourceControl.changeSiteState(site, 'Down')
-
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
                                             site = ['se.%s' % x for x in sites],
                                             task = workload.getTask("ReReco"),
                                             workloadSpec = os.path.join(self.testDir,
                                                                         'workloadTest',
                                                                         workloadName))
-
         for group in jobGroupList:
             changeState.propagate(group.jobs, 'created', 'new')
-
         jobSubmitter.algorithm()
-
         # Nothing is submitted despite the empty slots at Uniandes and Florida
         result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
         self.assertEqual(len(result), nSubs * nJobs)
 
-        # Now set everything to Finalizing, and create Merge jobs. Those should the be the ones
-        # submitted
-
+        # Now set everything to Aborted, and create Merge jobs. Those should fail
+        # since the can only run at one place
         for site in sites:
-            myResourceControl.changeSiteState(site, 'Finalizing')
+            myResourceControl.changeSiteState(site, 'Aborted')
 
         nSubsMerge = 1
         nJobsMerge = 5
-
         jobGroupList = self.createJobGroups(nSubs = nSubsMerge, nJobs = nJobsMerge,
                                             site = ['se.%s' % x for x in sites],
                                             task = workload.getTask("ReReco"),
@@ -814,7 +802,7 @@ class JobSubmitterTest(unittest.TestCase):
 
         jobSubmitter.algorithm()
 
-        result = getJobsAction.execute(state = 'Executing', jobType = 'Merge')
+        result = getJobsAction.execute(state = 'SubmitFailed', jobType = 'Merge')
         self.assertEqual(len(result), nSubsMerge * nJobsMerge)
         result = getJobsAction.execute(state = 'Executing', jobType = 'Processing')
         self.assertEqual(len(result), nSubs * nJobs)

@@ -642,6 +642,18 @@ class WorkQueueTest(WorkQueueTestCase):
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.getWork(slots)), 3)
 
+    def testSplittingLargeInputs(self):
+        """
+        _testSplittingLargeInputs_
+
+        Check that we can split large inputs and store the processed inputs
+        in the inbox element correctly.
+        """
+        GlobalParams.setNumOfBlocksPerDataset(500)
+        self.globalQueue.queueWork(self.processingSpec.specUrl())
+        inboxElement = self.globalQueue.backend.getInboxElements(elementIDs = [self.processingSpec.name()])
+        self.assertEqual(len(inboxElement[0]['ProcessedInputs']), GlobalParams.numOfBlocksPerDataset())
+        return
 
     def testGlobalBlockSplitting(self):
         """Block splitting at global level"""

@@ -259,7 +259,11 @@ class WorkQueueBackend(object):
         if not elementIds:
             return
         uri = "/" + self.db.name + "/_design/WorkQueue/_update/in-place/"
-        data = {"updates" : json.dumps(updatedParams)}
+        optionsArg = {}
+        if "options" in updatedParams:
+            optionsArg.update(updatedParams.pop("options"))
+        data = {"updates" : json.dumps(updatedParams),
+                "options" : json.dumps(optionsArg)}
         for ele in elementIds:
             thisuri = uri + ele + "?" + urllib.urlencode(data)
             self.db.makeRequest(uri = thisuri, type = 'PUT')
@@ -269,7 +273,11 @@ class WorkQueueBackend(object):
     def updateInboxElements(self, *elementIds, **updatedParams):
         """Update given inbox element's (identified by id) with new parameters"""
         uri = "/" + self.inbox.name + "/_design/WorkQueue/_update/in-place/"
-        data = {"updates" : json.dumps(updatedParams)}
+        optionsArg = {}
+        if "options" in updatedParams:
+            optionsArg.update(updatedParams.pop("options"))
+        data = {"updates" : json.dumps(updatedParams),
+                "options" : json.dumps(optionsArg)}
         for ele in elementIds:
             thisuri = uri + ele + "?" + urllib.urlencode(data)
             self.inbox.makeRequest(uri = thisuri, type = 'PUT')

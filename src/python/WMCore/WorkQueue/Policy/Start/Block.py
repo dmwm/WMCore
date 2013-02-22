@@ -111,10 +111,8 @@ class Block(StartPolicyInterface):
         for blockName in blocks:
             # check block restrictions
             if blockWhiteList and blockName not in blockWhiteList:
-                self.rejectedWork.append(blockName)
                 continue
             if blockName in blockBlackList:
-                self.rejectedWork.append(blockName)
                 continue
             if blockName in self.blockBlackListModifier:
                 # Don't duplicate blocks rejected before or blocks that were included and therefore are now in the blacklist

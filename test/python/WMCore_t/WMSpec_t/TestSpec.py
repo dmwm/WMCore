@@ -58,7 +58,7 @@ class TestWorkloadFactory(object):
                                  run_whitelist = [])
         procTask.data.constraints.sites.whitelist = []
         procTask.data.constraints.sites.blacklist = []
-
+        
         procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
         procTaskCmsswHelper.setGlobalTag("TestGlobalTag::All")
         procTaskCmsswHelper.cmsswSetup("CMSSW_3_5_8_patch3", softwareEnvironment = "",
@@ -119,6 +119,18 @@ class TestWorkloadFactory(object):
                                         primaryDataset = "MinimumBias",
                                         processedDataset = "Commissioning10-v4",
                                         dataTier = "RAW",
+                                        lfnBase = "/store/temp/WMAgent/unmerged",
+                                        mergedLFNBase = "/store/temp/WMAgent/merged")
+        cmsswStepHelper.addOutputModule(outputModuleName,
+                                        primaryDataset = "MinimumBias",
+                                        processedDataset = "Commissioning10-v4",
+                                        dataTier = "RECO",
+                                        lfnBase = "/store/temp/WMAgent/unmerged",
+                                        mergedLFNBase = "/store/temp/WMAgent/merged")
+        cmsswStepHelper.addOutputModule(outputModuleName,
+                                        primaryDataset = "MinimumBias",
+                                        processedDataset = "Commissioning10-v4",
+                                        dataTier = "DQM",
                                         lfnBase = "/store/temp/WMAgent/unmerged",
                                         mergedLFNBase = "/store/temp/WMAgent/merged")
         return

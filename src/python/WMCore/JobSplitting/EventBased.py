@@ -6,11 +6,13 @@ Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 """
 
+import logging
+import traceback
+from math import ceil
 
 from WMCore.JobSplitting.JobFactory import JobFactory
-from WMCore.WMBS.File               import File
+from WMCore.WMBS.File import File
 from WMCore.DataStructs.Run import Run
-from math import ceil
 
 class EventBased(JobFactory):
     """
@@ -26,7 +28,30 @@ class EventBased(JobFactory):
         eventsPerJob = int(kwargs.get("events_per_job", 100))
         eventsPerLumi = int(kwargs.get("events_per_lumi", eventsPerJob))
         getParents   = kwargs.get("include_parents", False)
+        collectionName  = kwargs.get('collectionName', None)
 
+        acdcFileList = []
+
+        # If we have runLumi info, we need to load it from couch
+        if collectionName:
+            try:
+                from WMCore.ACDC.DataCollectionService import DataCollectionService
+                couchURL       = kwargs.get('couchURL')
+                couchDB        = kwargs.get('couchDB')
+                filesetName    = kwargs.get('filesetName')
+                collectionName = kwargs.get('collectionName')
+                owner          = kwargs.get('owner')
+                group          = kwargs.get('group')
+                logging.info('Creating jobs for ACDC fileset %s' % filesetName)
+                dcs = DataCollectionService(couchURL, couchDB)
+                acdcFileList = dcs.getProductionACDCInfo(collectionName, filesetName, owner, group)
+            except Exception, ex:
+                msg =  "Exception while trying to load goodRunList\n"
+                msg +=  "Refusing to create any jobs.\n"
+                msg += str(ex)
+                msg += str(traceback.format_exc())
+                logging.error(msg)
+                return
 
         totalJobs    = 0
 
@@ -81,6 +106,10 @@ class EventBased(JobFactory):
                         self.currentJob.addFile(f)
                         totalJobs += 1
                 else:
+                    if acdcFileList:
+                        if f['lfn'] in [x['lfn'] for x in acdcFileList]:
+                            self.createACDCJobs(f, acdcFileList)
+                        continue
                     #This assumes there's only one run which is the case for MC
                     lumis = runs[0].lumis
                     (firstLumi, lastLumi) = (min(lumis), max(lumis))
@@ -123,3 +152,22 @@ class EventBased(JobFactory):
                         self.currentJob["mask"].setMaxAndSkipLumis(lastLumi -
                                                         currentLumi + 1, currentLumi)
                         totalJobs += 1
+
+    def createACDCJobs(self, fakeFile, acdcFileInfo):
+        """
+        _createACDCJobs_
+
+        Create ACDC production jobs, this are treated differentely
+        since it is an exact copy of the failed jobs.
+        """
+        totalJobs = 0
+        for acdcFile in acdcFileInfo:
+            if fakeFile['lfn'] == acdcFile['lfn']:
+                self.newJob(name = self.getJobName(length = totalJobs))
+                self.currentJob.addFile(fakeFile)
+                self.currentJob["mask"].setMaxAndSkipEvents(acdcFile["events"],
+                                                            acdcFile["first_event"])
+                self.currentJob["mask"].setMaxAndSkipLumis(len(acdcFile["lumis"]) - 1,
+                                                           acdcFile["lumis"][0])
+                totalJobs += 1
+        return

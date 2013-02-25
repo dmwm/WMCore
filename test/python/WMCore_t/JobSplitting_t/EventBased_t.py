@@ -9,7 +9,6 @@ import unittest
 
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Fileset import Fileset
-from WMCore.DataStructs.Job import Job
 from WMCore.DataStructs.Subscription import Subscription
 from WMCore.DataStructs.Workflow import Workflow
 from WMCore.DataStructs.Run import Run

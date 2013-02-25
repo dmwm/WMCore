@@ -95,7 +95,11 @@ class WorkQueue(object):
             return
         import urllib
         uri = "/" + self.db.name + "/_design/WorkQueue/_update/in-place/"
-        data = {"updates" : json.dumps(updatedParams)}
+        optionsArg = {}
+        if "options" in updatedParams:
+            optionsArg.update(updatedParams.pop("options"))
+        data = {"updates" : json.dumps(updatedParams),
+                "options" : json.dumps(optionsArg)}
         for ele in elementIds:
             thisuri = uri + ele + "?" + urllib.urlencode(data)
             answer = self.db.makeRequest(uri = thisuri, type = 'PUT')

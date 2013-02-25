@@ -946,14 +946,21 @@ class WorkQueue(WorkQueueBase):
 
                     # store the inputs in the global queue inbox workflow element
                     if not self.params.get('LocalQueueFlag'):
-                        processedInputs = inbound['ProcessedInputs']
-                        rejectedInputs = inbound['RejectedInputs']
-                        rejectedInputs.extend(rejectedWork)
-                        rejectedInputs = list(set(rejectedInputs))
+                        processedInputs = []
                         for unit in work:
                             processedInputs.extend(unit['Inputs'].keys())
-                        if processedInputs:
-                            self.backend.updateInboxElements(inbound.id, ProcessedInputs = processedInputs, RejectedInputs = rejectedInputs)
+                        if processedInputs or rejectedWork:
+                            chunkSize = 20
+                            chunkProcessed = processedInputs[:chunkSize]
+                            chunkRejected = rejectedWork[:chunkSize]
+                            # TODO:Make this a POST update, instead of several PUT
+                            while processedInputs or rejectedWork:
+                                self.backend.updateInboxElements(inbound.id, ProcessedInputs = chunkProcessed,
+                                                                 RejectedInputs = chunkRejected, options = {'incremental' : True})
+                                processedInputs = processedInputs[chunkSize:]
+                                rejectedWork = rejectedWork[chunkSize:]
+                                chunkProcessed = processedInputs[:chunkSize]
+                                chunkRejected = rejectedWork[:chunkSize]
 
                     if not self.params.get('LocalQueueFlag') and self.params.get('WMStatsCouchUrl'):
                         # only update global stats for global queue

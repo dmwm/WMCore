@@ -7,13 +7,8 @@ Unit tests for the WMBS File class.
 
 import unittest
 import logging
-import os
-import commands
 import threading
-import random
 
-from WMCore.Database.DBCore    import DBInterface
-from WMCore.Database.DBFactory import DBFactory
 from WMCore.DAOFactory         import DAOFactory
 from WMCore.WMBS.File          import File, addFilesToWMBSInBulk
 from WMCore.WMBS.Fileset       import Fileset
@@ -21,7 +16,6 @@ from WMCore.WMBS.Workflow      import Workflow
 from WMCore.WMBS.Subscription  import Subscription
 from WMCore.WMBS.JobGroup      import JobGroup
 from WMCore.WMBS.Job           import Job
-from WMCore.WMFactory          import WMFactory
 from WMQuality.TestInit        import TestInit
 from WMCore.DataStructs.Run    import Run
 from WMCore.DataStructs.File   import File as WMFile
@@ -1221,10 +1215,6 @@ class FileTest(unittest.TestCase):
         self.assertEqual(locations, ['se1.fnal.gov'])
 
         return
-
-
-
-
 
 if __name__ == "__main__":
     unittest.main()

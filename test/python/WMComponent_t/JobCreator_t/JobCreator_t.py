@@ -13,14 +13,11 @@ import random
 import threading
 import time
 import os
-import logging
 import cProfile
 import pstats
 import cPickle
-import shutil
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
-#from WMQuality.TestInit import TestInit
 from WMCore.DAOFactory import DAOFactory
 
 
@@ -28,11 +25,9 @@ from WMCore.WMBS.File         import File
 from WMCore.WMBS.Fileset      import Fileset
 from WMCore.WMBS.Workflow     import Workflow
 from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.JobGroup     import JobGroup
 from WMCore.DataStructs.Run   import Run
 
-from WMCore.Agent.Configuration              import loadConfigurationFile, Configuration
-from WMComponent.JobCreator.JobCreator       import JobCreator
+from WMCore.Agent.Configuration              import Configuration
 from WMComponent.JobCreator.JobCreatorPoller import JobCreatorPoller
 
 from WMCore.Services.UUID import makeUUID
@@ -42,7 +37,6 @@ from WMCore.Agent.HeartbeatAPI               import HeartbeatAPI
 
 #Workload stuff
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
-from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, getTestArguments
 from WMCore_t.WMSpec_t.TestSpec     import testWorkload
 
 from nose.plugins.attrib import attr
@@ -87,8 +81,6 @@ class JobCreatorTest(unittest.TestCase):
         for site in self.sites:
             locationAction.execute(siteName = site, seName = site)
 
-
-
         #Create sites in resourceControl
 
         resourceControl = ResourceControl()
@@ -98,8 +90,6 @@ class JobCreatorTest(unittest.TestCase):
                                             maxSlots = 10000, pendingSlots = 10000)
 
         self.resourceControl = resourceControl
-
-
 
         self._setup = True
         self._teardown = False
@@ -113,10 +103,6 @@ class JobCreatorTest(unittest.TestCase):
         self.heartbeatAPI.registerComponent()
 
         return
-
-
-
-
 
     def tearDown(self):
         """
@@ -183,8 +169,6 @@ class JobCreatorTest(unittest.TestCase):
 
         return
 
-
-
     def createWorkload(self, workloadName = 'Test', emulator = True, priority = 1):
         """
         _createTestWorkload_
@@ -194,7 +178,6 @@ class JobCreatorTest(unittest.TestCase):
 
         workload = testWorkload("Tier1ReReco")
         rereco = workload.getTask("ReReco")
-        rereco.setTaskPriority(priority = 1)
         seederDict = {"generator.initialSeed": 1001, "evtgenproducer.initialSeed": 1001}
         rereco.addGenerator("PresetSeeder", **seederDict)
 
@@ -205,16 +188,12 @@ class JobCreatorTest(unittest.TestCase):
 
         return workload
 
-
-
-
     def getConfig(self):
         """
         _getConfig_
 
         Creates a common config.
         """
-
 
         myThread = threading.currentThread()
 
@@ -265,7 +244,6 @@ class JobCreatorTest(unittest.TestCase):
 
         return config
 
-
     def testA_VerySimpleTest(self):
         """
         _VerySimpleTest_
@@ -289,11 +267,7 @@ class JobCreatorTest(unittest.TestCase):
 
         self.createJobCollection(name = name, nSubs = nSubs, nFiles = nFiles, workflowURL = workloadPath)
 
-
-
-
         testJobCreator = JobCreatorPoller(config = config)
-
 
         # First, can we run once without everything crashing?
         testJobCreator.algorithm()
@@ -338,13 +312,8 @@ class JobCreatorTest(unittest.TestCase):
         self.assertEqual(job['workflow'], name)
         self.assertEqual(len(job['input_files']), 1)
         self.assertEqual(os.path.basename(job['sandbox']), 'TestWorkload-Sandbox.tar.bz2')
-        self.assertEqual(job['priority'], 1)
-
 
         return
-
-
-
 
     @attr('performance')
     def testB_ProfilePoller(self):

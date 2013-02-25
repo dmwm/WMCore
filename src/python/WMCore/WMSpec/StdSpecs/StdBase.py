@@ -7,13 +7,10 @@ Base class with helper functions for standard WMSpec files.
 import logging
 
 from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMStep import makeWMStep
-from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
-from WMCore.Lexicon import lfnBase, identifier, procversion, procstring
+from WMCore.Lexicon import lfnBase, identifier, procversion
 from WMCore.WMException import WMException
-from WMCore.Database.CMSCouch import CouchNotFoundError
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.Configuration import ConfigSection
 
@@ -325,8 +322,6 @@ class StdBase(object):
         procTaskLogArch.setNewStageoutOverride(self.enableNewStageout)
         
         procTask.applyTemplates()
-        procTask.setTaskPriority(self.priority)
-
 
         procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
         procTask.setSiteWhitelist(self.siteWhitelist)
@@ -562,7 +557,6 @@ class StdBase(object):
 
         mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
-        mergeTask.setTaskPriority(self.priority + 5)
 
         if parentTaskSplitting == "EventBased" and parentTask.taskType() != "Production":
             splitAlgo = "WMBSMergeBySize"
@@ -628,7 +622,6 @@ class StdBase(object):
         cleanupStep = cleanupTask.makeStep("cleanupUnmerged%s" % parentOutputModuleName)
         cleanupStep.setStepType("DeleteFiles")
         cleanupTask.applyTemplates()
-        cleanupTask.setTaskPriority(self.priority + 5)
         return
 
     def addDQMHarvestTask(self, parentTask, parentOutputModuleName,
@@ -655,7 +648,6 @@ class StdBase(object):
 
         harvestTask.setTaskType("Harvesting")
         harvestTask.applyTemplates()
-        harvestTask.setTaskPriority(self.priority + 5)
 
         harvestTaskCmsswHelper = harvestTaskCmssw.getTypeHelper()
         harvestTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",

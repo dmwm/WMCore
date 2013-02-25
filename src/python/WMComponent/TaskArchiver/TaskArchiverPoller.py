@@ -28,11 +28,14 @@ histogramLimit: Limit in terms of number of standard deviations from the
 """
 __all__ = []
 
+import re
 import json
 import logging
 import os.path
 import shutil
 import tarfile
+import httplib
+import urllib2
 import threading
 import traceback
 
@@ -127,9 +130,7 @@ def uploadPublishWorkflow(config, workflow, ufcEndpoint, workDir):
 
     myThread = threading.currentThread()
 
-    dbsDaoFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
-                                logger = myThread.logger, dbinterface = myThread.dbi)
-    findFiles = dbsDaoFactory(classname = "LoadFilesByWorkflow")
+    findFiles = self.dbsDaoFactory(classname = "LoadFilesByWorkflow")
 
     # Fetch and filter the files to the ones we actually need
     uploadDatasets = {}
@@ -183,6 +184,10 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
+        
+        self.dbsDaoFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
+                                     logger = myThread.logger, 
+                                     dbinterface = myThread.dbi)
 
         self.config      = config
         self.jobCacheDir = self.config.JobCreator.jobCacheDir
@@ -209,6 +214,13 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.histogramKeys  = getattr(self.config.TaskArchiver, "histogramKeys", [])
         self.histogramBins  = getattr(self.config.TaskArchiver, "histogramBins", 10)
         self.histogramLimit = getattr(self.config.TaskArchiver, "histogramLimit", 5.0)
+        
+        # Set defaults for reco performance reporting
+        self.interestingPDs = getattr(config.TaskArchiver, "perfPrimaryDatasets", ['SingleMu', 'MuHad'])
+        self.dqmUrl         = getattr(config.TaskArchiver, "dqmUrl", 'https://cmsweb.cern.ch/dqm/dev/')        
+        self.perfDashBoardMinLumi = getattr(config.TaskArchiver, "perfDashBoardMinLumi", 50)
+        self.perfDashBoardMaxLumi = getattr(config.TaskArchiver, "perfDashBoardMaxLumi", 9000)
+        self.dashBoardUrl = getattr(config.TaskArchiver, "dashBoardUrl", 'http://dashboard43.cern.ch/dashboard/request.py/putluminositydata')
         
         if not self.useReqMgrForCompletionCheck:
             #sets the local monitor summary couch db
@@ -318,8 +330,9 @@ class TaskArchiverPoller(BaseWorkerThread):
         This method will call several auxiliary methods to do the following:
         1. Get finished workflows (a finished workflow is defined in Workflow.GetFinishedWorkflows)
         2. Gather the summary information from each workflow/task and upload it to couch
-        3. Notify the WorkQueue about finished subscriptions
-        4. If all succeeds, delete all information about the workflow from couch and WMBS
+        3. Publish to DashBoard Reconstruction performance information
+        4. Notify the WorkQueue about finished subscriptions
+        5. If all succeeds, delete all information about the workflow from couch and WMBS
         """
         #Get the finished workflows, in descending order
         finishedWorkflowsDAO = self.daoFactory(classname = "Workflow.GetFinishedWorkflows")
@@ -343,6 +356,9 @@ class TaskArchiverPoller(BaseWorkerThread):
                     if not spec:
                         raise Exception(msg = "Couldn't load spec from %s" % workflow[1])
                     self.archiveWorkflowSummary(spec = spec)
+                    
+                    #Send Reconstruciton performance information to DashBoard
+                    self.publishRecoPerfToDashBoard(spec)
     
                     #Notify the WorkQueue, if there is one
                     if self.workQueue != None:
@@ -843,6 +859,135 @@ class TaskArchiverPoller(BaseWorkerThread):
                 failedJobs.append(jobId)
                 
         return failedJobs
+
+    def publishRecoPerfToDashBoard(self, workload):
+
+        listRunsWorkflow = self.dbsDaoFactory(classname = "ListRunsWorkflow")
+        
+        interestingPDs = self.interestingPDs 
+        interestingDatasets = []
+        # Are the datasets from this request interesting? Do they have DQM output? One might ask afterwards if they have harvest
+        for dataset in workload.listOutputDatasets():
+            (nothing, PD, procDataSet, dataTier) = dataset.split('/')
+            if PD in interestingPDs and dataTier == "DQM":
+                interestingDatasets.append(dataset)
+        # We should have found 1 interesting dataset at least
+        logging.debug("Those datasets are interesting %s" % str(interestingDatasets))
+        if len(interestingDatasets) == 0 :
+            return
+        # Request will be only interesting for performance if it's a ReReco or PromptReco
+        (isReReco, isPromptReco) = (False, False)
+        if workload.getRequestType() == 'ReReco':
+            isReReco=True
+        # Yes, few people like magic strings, but have a look at :
+        # https://github.com/dmwm/T0/blob/master/src/python/T0/RunConfig/RunConfigAPI.py#L718
+        # Might be safe enough
+        # FIXME: in TaskArchiver, add a test to make sure that the dataset makes sense (procDataset ~= /a/ERA-PromptReco-vVERSON/DQM)
+        if re.search('PromptReco_', workload.name()):
+            isPromptReco = True 
+        if not (isReReco or isPromptReco):
+            return        
+        # We are not interested if it's not a PromptReco or a ReReco
+        if (isReReco or isPromptReco) == False:
+            return
+        logging.info("%s has interesting performance information, trying to publish to DashBoard" % workload.name())
+        release = workload.getCMSSWVersions()[0]
+        if not release :
+            logging.info("no release for %s, bailing out" % workload.name())
+
+        
+        # If all is true, get the run numbers processed by this worklfow        
+        runList = listRunsWorkflow.execute(workflow = workload.name())
+        # GO to DQM GUI, get what you want 
+        for dataset in interestingDatasets :
+            (nothing, PD, procDataSet, dataTier) = dataset.split('/')
+            worthPoints = {}
+            for run in runList :
+                responseJSON = self.getPerformanceFromDQM(self.dqmUrl, dataset, run)
+                worthPoints.update(self.filterInterestingPerfPoints(responseJSON,
+                                                                     self.perfDashBoardMinLumi,
+                                                                     self.perfDashBoardMaxLumi))
+                            
+            # Publish dataset performance to DashBoard.
+            if self.publishPerformanceDashBoard(self.dashBoardUrl, PD, release, worthPoints) == False:
+                logging.info("something went wrong when publishing dataset %s to DashBoard" % dataset)
+                
+        return 
+
+    
+    def getPerformanceFromDQM(self, dqmUrl, dataset, run):
+        
+        # Get the proxy, as CMSWEB doesn't allow us to use plain HTTP
+        hostCert = os.getenv("X509_USER_PROXY")
+        hostKey  = hostCert
+        # it seems that curl -k works, but as we already have everything, I will just provide it
+        
+        # Make function to fetch this from DQM. Returning Null or False if it fails
+        getUrl = "%sjsonfairy/archive/%s%s/DQM/TimerService/event_byluminosity" % (dqmUrl, run, dataset)
+        logging.debug("Requesting performance information from %s" % getUrl)
+        
+        regExp=re.compile('https://(.*)(/dqm.+)')
+        regExpResult = regExp.match(getUrl)
+        dqmHost = regExpResult.group(1)
+        dqmPath = regExpResult.group(2)
+        
+        connection = httplib.HTTPSConnection(dqmHost, 443, hostKey, hostCert)
+        connection.request('GET', dqmPath)
+        response = connection.getresponse()
+        responseData = response.read()
+        responseJSON = json.loads(responseData)
+        if not responseJSON["hist"]["bins"].has_key("content") :
+            logging.info("Actually got a JSON from DQM perf in for %s run %d  , but content was bad, Bailing out"
+                         % (dataset, run))
+            return False
+        logging.debug("We have the performance curve")
+        return responseJSON
+    
+    def filterInterestingPerfPoints(self, responseJSON, minLumi, maxLumi):
+        worthPoints = {}
+        points = responseJSON["hist"]["bins"]["content"]
+        for i in range(responseJSON["hist"]["xaxis"]["first"]["id"], responseJSON["hist"]["xaxis"]["last"]["id"]):
+                    # is the point worth it? if yes add to interesting points dictionary. 
+                    # 1 - non 0
+                    # 2 - between minimum and maximum expected luminosity
+                    # FIXME : 3 - population in dashboard for the bin interval < 100
+                    # Those should come from the config :
+                    if points[i] == 0:
+                        continue
+                    binSize = responseJSON["hist"]["xaxis"]["last"]["value"]/responseJSON["hist"]["xaxis"]["last"]["id"]
+                    # Fetching the important values
+                    instLuminosity = i*binSize 
+                    timePerEvent = points[i]
+                    
+                    if instLuminosity > minLumi and instLuminosity <  maxLumi :
+                        worthPoints[instLuminosity] = timePerEvent
+        logging.debug("Got %d worthwhile performance points" % len(worthPoints.keys()))
+        
+        return worthPoints
+
+    def publishPerformanceDashBoard(self, dashBoardUrl, PD, release, worthPoints):
+        dashboardPayload = []
+        for instLuminosity in worthPoints :
+            timePerEvent = int(worthPoints[instLuminosity])
+            dashboardPayload.append({"primaryDataset" : PD, 
+                                     "release" : release, 
+                                     "integratedLuminosity" : instLuminosity,
+                                     "timePerEvent" : timePerEvent})
+            
+        data = "{\"data\":%s}" % str(dashboardPayload).replace("\'","\"")
+        headers={"Accept":"application/json"}
+        
+        logging.debug("Going to upload this payload %s" % data)
+        
+        request = urllib2.Request(dashBoardUrl, data, headers)
+        response = urllib2.urlopen(request)
+        
+        if response.code != 200 :
+            logging.info("Something went wrong while uploading to DashBoard, response code %d " % response.code)
+            return False
+        logging.debug("Uploaded it successfully, apparently")
+        
+        return True
 
     def createAndUploadPublish(self, workflow):
         """

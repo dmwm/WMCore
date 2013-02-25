@@ -796,6 +796,18 @@ class WMWorkloadHelper(PersistencyHelper):
             return topTasks[0].getAcquisitionEra()
 
         return None
+    def getRequestType(self):
+        """
+        _getRequestType_
+
+        Get the Request type (ReReco, ReDigi, etc)
+        """
+        if not getattr(self.data, "request", None):
+            return None
+        if not getattr(self.data.request, "schema", None):
+            return None
+        
+        return getattr(self.data.request.schema, "RequestType", None)
 
     def getProcessingVersion(self):
         """

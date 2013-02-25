@@ -1,3 +1,7 @@
+0.9.44 to 0.9.45:
+  - Fix issues with the handling of large requests in the WorkQueue.  Pull
+    request #4439.
+
 0.9.43 to 0.9.44:
   - Bugfix in WMStats update document.  Pull request #4437.
   - Updates to WMStats for the March cmsweb release.  Pull request #4436.

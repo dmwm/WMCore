@@ -360,7 +360,6 @@ class JobSubmitterPoller(BaseWorkerThread):
                        loadedJob.get("ownerDN", None),
                        loadedJob.get("ownerGroup", ''),
                        loadedJob.get("ownerRole", ''),
-                       loadedJob.get("priority", None),
                        frozenset(possibleLocations),
                        loadedJob.get("scramArch", None),
                        loadedJob.get("swVersion", None),
@@ -530,6 +529,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                     taskPendingSlots    = threshold["pending_slots"]
                     taskRunning         = threshold["task_running_jobs"]
                     taskPending         = threshold["task_pending_jobs"]
+                    taskPriority        = threshold["priority"]
                 except KeyError, ex:
                     msg =  "Had invalid threshold %s\n" % threshold
                     msg += str(ex)
@@ -641,14 +641,14 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'userdn': cachedJob[5],
                                'usergroup': cachedJob[6],
                                'userrole': cachedJob[7],
-                               'priority': cachedJob[8],
+                               'priority': taskPriority,
                                'taskType': taskType,
-                               'possibleSites': cachedJob[9],
-                               'scramArch': cachedJob[10],
-                               'swVersion': cachedJob[11],
-                               'name': cachedJob[12],
-                               'proxyPath': cachedJob[13],
-                               'requestName': cachedJob[14]}
+                               'possibleSites': cachedJob[8],
+                               'scramArch': cachedJob[9],
+                               'swVersion': cachedJob[10],
+                               'name': cachedJob[11],
+                               'proxyPath': cachedJob[12],
+                               'requestName': cachedJob[13]}
 
                     # Add to jobsToSubmit
                     jobsToSubmit[package].append(jobDict)

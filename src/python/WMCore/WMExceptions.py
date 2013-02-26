@@ -25,7 +25,9 @@ WMJobErrorCodes
 List of job error codes present in WMCOre, some of them coming from CMSSW, and a description
 of the error it represents.
 """
-WMJobErrorCodes = {61101 :
+WMJobErrorCodes = {60452 :
+                        "No run and lumi information in a file produced by cmsRun",
+                    61101 :
                         "No sites are available to submit the job because the location of its input(s)"
                         "do not pass the site whitelist/blacklist restrictions",
                     61102 :

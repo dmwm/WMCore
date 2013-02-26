@@ -7,16 +7,14 @@ Unit tests for the Report class.
 
 import unittest
 import os
-import xml.dom.minidom
 import time
 
-import WMCore.WMBase
-import WMCore.Algorithms.BasicAlgos as BasicAlgos
+from WMCore.Algorithms import BasicAlgos
+from WMCore.Configuration import ConfigSection
 from WMCore.Database.CMSCouch import CouchServer
-from WMQuality.TestInitCouchApp import TestInitCouchApp
-
 from WMCore.FwkJobReport.Report import Report
-from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
+from WMCore.WMBase import getTestBase
+from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 class ReportTest(unittest.TestCase):
     """
@@ -35,9 +33,9 @@ class ReportTest(unittest.TestCase):
         self.testInit.setDatabaseConnection(destroyAllDatabase = True)
         self.testInit.setupCouch("report_t/fwjrs", "FWJRDump")
 
-        self.xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+        self.xmlPath = os.path.join(getTestBase(),
                                     "WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
-        self.badxmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+        self.badxmlPath = os.path.join(getTestBase(),
                                     "WMCore_t/FwkJobReport_t/CMSSWFailReport2.xml")
         self.testDir = self.testInit.generateWorkDir()
         return
@@ -242,7 +240,7 @@ an exception occurred during current event processing
 cms::Exception caught in EventProcessor and rethrown
 ---- EventProcessorFailure END"""
 
-        xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+        xmlPath = os.path.join(getTestBase(),
                                "WMCore_t/FwkJobReport_t/CMSSWFailReport.xml")
 
         myReport = Report("cmsRun1")
@@ -273,7 +271,7 @@ cms::Exception caught in EventProcessor and rethrown
 
         Verify that parsing XML reports with multiple inputs works correctly.
         """
-        xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+        xmlPath = os.path.join(getTestBase(),
                                "WMCore_t/FwkJobReport_t/CMSSWMultipleInput.xml")
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
@@ -331,7 +329,7 @@ cms::Exception caught in EventProcessor and rethrown
 
         Verify that turning the FWJR into a JSON object works correctly.
         """
-        xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+        xmlPath = os.path.join(getTestBase(),
                                "WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
@@ -442,7 +440,7 @@ cms::Exception caught in EventProcessor and rethrown
         out of a Timing/SimpleMemoryCheck jobReport
         """
 
-        xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+        xmlPath = os.path.join(getTestBase(),
                                "WMCore_t/FwkJobReport_t/PerformanceReport.xml")
 
         myReport = Report("cmsRun1")
@@ -466,7 +464,7 @@ cms::Exception caught in EventProcessor and rethrown
         Verify that the performance section of the report is correctly converted
         to JSON.
         """
-        xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+        xmlPath = os.path.join(getTestBase(),
                                "WMCore_t/FwkJobReport_t/PerformanceReport.xml")
 
         myReport = Report("cmsRun1")
@@ -612,6 +610,34 @@ cms::Exception caught in EventProcessor and rethrown
 
         return
 
+    def testCheckLumiInformation(self):
+        """
+        _testCheckLumiInformation_
+
+        Test the function that checks if all files
+        have run lumi information
+        """
+
+        myReport = Report("cmsRun1")
+        myReport.parse(self.xmlPath)
+
+        myReport.checkForRunLumiInformation(stepName = "cmsRun1")
+
+        self.assertNotEqual(myReport.getExitCode(), 60452)
+
+        # Remove the lumi information on purpose
+        myReport2 = Report("cmsRun1")
+        myReport2.parse(self.xmlPath)
+        fRefs = myReport2.getAllFileRefsFromStep(step = "cmsRun1")
+        for fRef in fRefs:
+            fRef.runs = ConfigSection()
+        myReport2.checkForRunLumiInformation(stepName = "cmsRun1")
+        self.assertFalse(myReport2.stepSuccessful(stepName = "cmsRun1"))
+        self.assertEqual(myReport2.getExitCode(), 60452)
+
+        return
+
+
     def testTaskSuccessful(self):
         """
         _testTaskSuccessful_
@@ -639,7 +665,7 @@ cms::Exception caught in EventProcessor and rethrown
         couchdb = CouchServer(os.environ["COUCHURL"])
         fwjrdatabase = couchdb.connectDatabase("report_t/fwjrs")
 
-        self.mcPath = os.path.join(WMCore.WMBase.getTestBase(),
+        self.mcPath = os.path.join(getTestBase(),
                                    "WMCore_t/FwkJobReport_t/MulticoreReport.pkl")
         myReport = Report()
         myReport.unpersist(self.mcPath)

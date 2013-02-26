@@ -1,5 +1,53 @@
 WMStats.namespace('JobDetailList');
 (function() { 
+    
+    var stateTransitionFormat = function(state) {
+        return "<b>" + state['newstate'] + ":</b> " + 
+                WMStats.Utils.utcClock(new Date(state['timestamp'] * 1000));
+    }
+    
+    var inputFileFormat = function(inputFile) {
+        return inputFile['lfn'];
+    }
+    
+    var lumiFormat = function(lumis) {
+        
+        function lumiRangeFormat() {
+            if (startLumi == preLumi) {
+               lumiFormat.push("[" + startLumi + "]");
+            } else {
+               lumiFormat.push("[" + startLumi + " - " + preLumi + "]");
+            }    
+        }
+        
+        var preLumi = null;
+        var startLumi = null;
+        var lumiFormat = new Array();
+        for (var i in lumis) {
+            for (var j in lumis[i]) {
+                for (var k in lumis[i][j]) {
+                    var currentLumi = Number(lumis[i][j][k]);
+                    if (startLumi === null) {
+                        startLumi = currentLumi;
+                    } else if ((preLumi + 1) !== currentLumi) {
+                            lumiRangeFormat();
+                            startLumi = currentLumi;
+                    }
+                    preLumi = currentLumi;
+                }
+            }
+       }
+       
+       if (startLumi !== null) {
+           lumiRangeFormat();
+       }
+       return lumiFormat;
+    }
+    
+    var logArchiveFormat = function(archiveObj, key) {
+        return key;
+    }
+    
     var format = function (data) {
         var jobDetails = data.getData();
         var requestData = WMStats.ActiveRequestModel.getData();
@@ -33,14 +81,7 @@ WMStats.namespace('JobDetailList');
             } else {
                 htmlstr += "<li><b>Site:</b> " + jobDoc.site + "</li>";
             }
-            htmlstr += "<li><b>State Transition:</b>"
-            
-            for (var i in jobDoc.state_history) {
-                htmlstr += jobDoc.state_history[i]['newstate'] + ": " + jobDoc.state_history[i]['timestamp']
-                htmlstr +=  ", "
-            } 
-            htmlstr += "</li>";
-            
+            htmlstr += "<li>" + WMStats.Utils.expandFormat(jobDoc.state_history, "State Transition", stateTransitionFormat) + "</li>"
             htmlstr += "<li><b>Exit code:</b> " + jobDoc.exitcode + "</li>";
             htmlstr += "<li><b>Retry count:</b> " + jobDoc.retrycount + "</li>";
             htmlstr += "<li><b>Errors:</b> " 
@@ -59,23 +100,8 @@ WMStats.namespace('JobDetailList');
             } 
             htmlstr += "</li>";
             
-            htmlstr += "<li><b>Input Files:</b>"
-            
-            for (var i in jobDoc.inputfiles) {
-                htmlstr += jobDoc.inputfiles[i].lfn + " ";
-                htmlstr +=  "\n "
-            } 
-            htmlstr += "</li>";
-            
-            htmlstr += "<li><b>Lumis:</b>"
-            
-            for (var i in jobDoc.lumis) {
-                for (var j in jobDoc.lumis[i]) {
-                    htmlstr += jobDoc.lumis[i][j] + " "
-                }
-                htmlstr +=  "\n "
-            } 
-            htmlstr += "</li>";
+            htmlstr += "<li>" + WMStats.Utils.expandFormat(jobDoc.inputfiles, "Input files", inputFileFormat) + "</li>";
+            htmlstr += "<li>" + WMStats.Utils.expandFormat(lumiFormat(jobDoc.lumis), "Lumis") + "</li>";
             
             htmlstr += "<li><b>Output:</b> " 
             for (var i in jobDoc.output) {
@@ -97,7 +123,8 @@ WMStats.namespace('JobDetailList');
                 htmlstr += "</ul>";
                 htmlstr += "</ul>";
             }
-            htmlstr += "</li>"; 
+            htmlstr += "</li>";
+            htmlstr += "<li>" + WMStats.Utils.expandFormat(jobDoc.logArchiveLFN, "log archive", logArchiveFormat) + "</li>"; 
             htmlstr += "</ul>";
             htmlstr += "</div>";
         }

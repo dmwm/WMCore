@@ -33,6 +33,9 @@ from WMCore.WMBS.JobGroup   import JobGroup
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+from WMCore.Database.CMSCouch import CouchServer
+from WMCore.Lexicon import sanitizeURL
 
 class AccountantWorkerException(WMException):
     """
@@ -72,6 +75,7 @@ class AccountantWorker(WMConnectionBase):
         self.jobCompleteInput        = self.daofactory(classname = "Jobs.CompleteInput")
         self.setBulkOutcome          = self.daofactory(classname = "Jobs.SetOutcomeBulk")
         self.getWorkflowSpec         = self.daofactory(classname = "Workflow.GetSpecAndNameFromTask")
+        self.getJobInfoByID         = self.daofactory(classname = "Jobs.LoadFromID")
 
         self.dbsStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.SetStatus")
         self.dbsParentStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.GetParentStatus")
@@ -98,6 +102,12 @@ class AccountantWorker(WMConnectionBase):
 
         # Store location for the specs for DBS
         self.specDir = getattr(config.JobAccountant, 'specDir', None)
+        
+        jobDBurl = sanitizeURL(config.JobStateMachine.couchurl)['url']
+        jobDBName = config.JobStateMachine.couchDBName
+        jobCouchdb  = CouchServer(jobDBurl)
+        self.fwjrCouchDB = jobCouchdb.connectDatabase("%s/fwjrs" % jobDBName)
+        self.localWMStats = WMStatsWriter(config.TaskArchiver.localWMStatsURL)
 
         # Hold data for later commital
         self.dbsFilesToCreate  = []
@@ -441,6 +451,10 @@ class AccountantWorker(WMConnectionBase):
             outputFilesets = self.outputFilesetsForJob(outputMap, merged, moduleLabel)
             for outputFileset in outputFilesets:
                 self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputFileset})
+            
+            # associate logArchived file for parent jobs on wmstats assuming fileList is length is 1.
+            if jobType == "LogCollect":
+                self.associateLogCollectToParentJobsInWMStats(fwkJobReport, wmbsFile["lfn"], fwkJobReport.getTaskName())
 
         # Only save once job is done, and we're sure we made it through okay
         self._mapLocation(wmbsJob['fwjr'])
@@ -448,7 +462,31 @@ class AccountantWorker(WMConnectionBase):
         #wmbsJob.save()
 
         return
-
+    
+    def associateLogCollectToParentJobsInWMStats(self, fwkJobReport, logAchiveLFN, task):
+        inputFileList = fwkJobReport.getAllInputFiles()
+        requestName = task.split('/')[1]
+        keys = []
+        for inputFile in inputFileList:
+            keys.append([requestName, inputFile["lfn"]])
+        resultRows = self.fwjrCouchDB.loadView("FWJRDump", 'jobsByOutputLFN', 
+                                           keys = keys)['rows']
+        #get data from wmbs
+        parentWMBSJobIDs = []
+        for row in resultRows:
+            parentWMBSJobIDs.append({"jobid": row["value"]})
+        #update Job doc in wmstats
+        results = self.getJobInfoByID.execute(parentWMBSJobIDs)
+        parentJobNames = []
+        
+        if type(results) == list:
+            for jobInfo in results:
+                parentJobNames.append(jobInfo['name'])
+        else:
+            parentJobNames.append(results['name'])
+        
+        self.localWMStats.updateLogArchiveLFN(parentJobNames, logAchiveLFN)
+       
     def handleFailed(self, jobID, fwkJobReport):
         """
         _handleFailed_

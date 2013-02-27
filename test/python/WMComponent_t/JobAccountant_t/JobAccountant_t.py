@@ -118,6 +118,10 @@ class JobAccountantTest(unittest.TestCase):
         config.JobAccountant.componentDir = os.getcwd()
         config.JobAccountant.logLevel = 'SQLDEBUG'
         config.JobAccountant.specDir = self.testDir
+        
+        config.component_("TaskArchiver")
+        config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+        
         return config
 
     def setupDBForJobFailure(self, jobName, fwjrName):

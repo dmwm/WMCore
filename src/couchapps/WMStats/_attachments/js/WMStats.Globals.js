@@ -20,7 +20,7 @@ WMStats.Globals = function($){
     };
     
     function getAlertCollectorLink() {
-        return "/alertscollector/_design/AlertsCollector/index.html"
+        return "/couchdb/alertscollector/_design/AlertsCollector/index.html"
     };
     
     function getWorkloadSummaryPrefix () {

@@ -456,6 +456,9 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
     # it is not specified, so would become ''
     if not helper.getCampaign():
         helper.setCampaign(reqSchema["Campaign"])
+        # update request as well for wmstats update
+        # there is a better way to do this (passing helper to request but make sure all the information is there) 
+        request["Campaign"] = reqSchema["Campaign"]
         
     if "RunWhitelist" in reqSchema:
         helper.setRunWhitelist(reqSchema["RunWhitelist"])

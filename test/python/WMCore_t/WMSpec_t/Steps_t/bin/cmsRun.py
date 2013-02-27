@@ -24,12 +24,7 @@ class CmsRun:
     """
     def __init__(self, *args):
         self.args = list(args)
-        print self.args
-
-
-
-
-
+        open("BogusFile.txt", "w").close()
 
 if __name__ == '__main__':
     cmsrun = CmsRun(*sys.argv[1:])

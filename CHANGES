@@ -1,3 +1,14 @@
+0.9.45 to 0.9.46:
+  - Make sure the campaign is passed to WMStats with ACDC requests.  Pull
+    request #4448.
+  - Merge pull request #4442 from ticoann/deploy_march_1
+  - Squashed commit of the following:
+  - Several WMStats improvements from pull request #4442:
+    * Reformat the request summary.
+    * Add log archive location information
+    * Submit agent information with a POST to avoid errors from
+      long messages.
+
 0.9.44 to 0.9.45:
   - Fix issues with the handling of large requests in the WorkQueue.  Pull
     request #4439.

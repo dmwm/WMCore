@@ -134,3 +134,35 @@ WMStats.Utils.utcClock = function(date) {
                     appendZero(now.getUTCSeconds()) + " UTC";
     return utcString;
 };
+
+WMStats.Utils.expandFormat = function(dataArray, summaryStr, formatFunc) {
+    var htmlstr = "";
+    if (dataArray == undefined || dataArray.length == undefined ||
+        dataArray.length < 1) {
+     
+        htmlstr +=  "<strong>" +  summaryStr + ":</strong>";
+     } else {
+        htmlstr += "<details> <summary><strong>" + summaryStr +"</strong></summary><ul>";
+        if (formatFunc === undefined) {
+            formatFunc = function(x) {return x};
+        }
+        for (var i in dataArray) {
+            htmlstr += "<li>" + formatFunc(dataArray[i], i) + "</li>";
+        }
+        htmlstr += "</ul></details>";
+    }
+    return htmlstr;
+}
+
+
+WMStats.Utils.largeNumberFormat = function(number) {
+    var mega = 1000000;
+    var giga = 1000000000;
+    if (number < mega) {
+        return number;
+    } else if (number < giga) {
+        return (number/mega).toFixed(1) + " M";
+    } else {
+        return (number/giga).toFixed(1) + " G";
+    }
+}

@@ -73,6 +73,9 @@ class ExecuteMaster:
                 if not result == None:
                     skipToStep = result
             except WMException, ex:
+                msg = "Encountered error while running ExecuteMaster:\n"
+                msg += str(ex) + "\n"
+                logging.error(msg)
                 self.toTaskDirectory()
                 break
             except Exception, ex:

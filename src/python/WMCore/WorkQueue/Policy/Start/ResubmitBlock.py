@@ -41,7 +41,8 @@ class ResubmitBlock(StartPolicyInterface):
                             'ParentlessMergeBySize' : self.singleChunk,
                             'MinFileBased' : self.singleChunk,
                             'LumiBased' : self.singleChunk,
-                            'EventAwareLumiBased' : self.singleChunk}
+                            'EventAwareLumiBased' : self.singleChunk,
+                            'EventBased' : self.singleChunk}
         self.unsupportedAlgos = ['WMBSMergeBySize', 'SiblingProcessingBased']
         self.defaultAlgo = self.fixedSizeChunk
 

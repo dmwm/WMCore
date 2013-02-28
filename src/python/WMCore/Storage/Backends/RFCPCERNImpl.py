@@ -146,15 +146,15 @@ class RFCPCERNImpl(StageOutImpl):
 
         if isRemoteEOS:
 
-            (_,host,path,_) = self.splitPFN( remotePFN )
+            (_,host,path,_) = self.splitPFN(remotePFN)
 
-            result += "REMOTE_SIZE=`xrd '%s' stat '%s' | sed -r 's/.* Size: ([0-9]+) .*/\\1/'`\n" % ( host , path )
+            result += "REMOTE_SIZE=`xrd '%s' stat '%s' | sed -r 's/.* Size: ([0-9]+) .*/\\1/'`\n" % (host, path)
             result += "echo \"Remote File Size is: $REMOTE_SIZE\"\n"
 
             if useChecksum:
 
                 result += "echo \"Local File Checksum is: %s\"\n" % checksums['adler32']
-                result += "REMOTE_XS=`xrd '%s' getchecksum '%s' | sed -r 's/.* eos ([0-9a-fA-F]{8}).*/\\1/'`\n" % ( host , path )
+                result += "REMOTE_XS=`xrd '%s' getchecksum '%s' | sed -r 's/.* eos ([0-9a-fA-F]{8}).*/\\1/'`\n" % (host, path)
                 result += "echo \"Remote File Checksum is: $REMOTE_XS\"\n"
 
                 result += "if [ $REMOTE_SIZE ] && [ $REMOTE_XS ] && [ $LOCAL_SIZE == $REMOTE_SIZE ] && [ '%s' == $REMOTE_XS ]; then exit 0; " % checksums['adler32']
@@ -182,8 +182,8 @@ class RFCPCERNImpl(StageOutImpl):
         Alternate between EOS, CASTOR and local.
         """
         if self.isEOS(pfn):
-            (_,host,path,_) = self.splitPFN( pfn )
-            return "xrd %s rm %s" % ( host, path )
+            (_,host,path,_) = self.splitPFN(pfn)
+            return "xrd %s rm %s" % (host, path)
         try:
             simplePFN = self.parseCastorPath(pfn)
             return  "stager_rm -a -M %s ; nsrm %s" % (simplePFN, simplePFN)
@@ -200,8 +200,8 @@ class RFCPCERNImpl(StageOutImpl):
         """
         if self.isEOS(pfnToRemove):
 
-            (_,host,path,_) = self.splitPFN( pfn )
-            command = "xrd %s rm %s" % ( host, path )
+            (_,host,path,_) = self.splitPFN(pfnToRemove)
+            command = "xrd %s rm %s" % (host, path)
 
         else:
 
@@ -325,13 +325,13 @@ class RFCPCERNImpl(StageOutImpl):
         Check if the PFN is for EOS
 
         """
-        ( protocol,host,_,_) = self.splitPFN( pfn )
+        ( protocol,host,_,_) = self.splitPFN(pfn)
         if protocol == "root" and not host.startswith("castor"):
             return True
         else:
             return False
 
-    def splitPFN( self, pfn ):
+    def splitPFN(self, pfn):
         """
         _splitPFN_
 

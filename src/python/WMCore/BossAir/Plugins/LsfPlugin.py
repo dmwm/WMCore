@@ -17,13 +17,9 @@ import socket
 import logging
 import subprocess
 
-
 from WMCore.WMInit import getWMBASE
-
-from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
-
+from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
 from WMCore.FwkJobReport.Report import Report
-
 
 class LsfPlugin(BasePlugin):
     """
@@ -67,6 +63,7 @@ class LsfPlugin(BasePlugin):
         self.queue       = None
         self.resourceReq = None
         self.jobGroup    = None
+        self.basePrio    = getattr(config.BossAir, 'LsfBasePrio', 50)
 
         return
 
@@ -167,6 +164,19 @@ class LsfPlugin(BasePlugin):
                         command += ' -oo /dev/null'
                     else:
                         command += ' -oo %s/%s.%%J.out' % (lsfLogDir, jobName)
+
+                    if 'priority' in job:
+                        try:
+                            prio = int(job['priority'])
+                            command += ' -sp %i' % (self.basePrio + prio)
+                        except (ValueError, TypeError):
+                            logging.debug("Priority for job %i not castable to an int\n" % job['id'])
+                            logging.debug("Not setting priority")
+                            logging.debug("Priority: %s" % job['priority'])
+                        except Exception, ex:
+                            logging.debug("Got unhandled exception while setting priority for job %i\n" % job['id'])
+                            logging.debug(str(ex))
+                            logging.debug("Not setting priority")
 
                     command += ' < %s' % submitScriptFile
 

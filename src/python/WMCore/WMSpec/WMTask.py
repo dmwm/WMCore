@@ -1022,33 +1022,6 @@ class WMTaskHelper(TreeHelper):
         self.data.logBaseLFN = logBaseLFN
         return
 
-    def setTaskPriority(self, priority):
-        """
-        _setTaskPriority_
-
-        Set the relative priority of this task
-        Determines run order in compatible batch systems.
-        Expects an integer.
-        Higher is better (will be given first shot at open slots)
-        """
-        if not type(priority) == int:
-            try:
-                priority = int(priority)
-            except ValueError:
-                # Can't really do anything if you don't give an int
-                return
-
-        self.data.taskPriority = priority
-        return
-
-    def getTaskPriority(self):
-        """
-        _getTaskPriority_
-
-        Get the priority level for the task
-        """
-        return getattr(self.data, 'taskPriority', None)
-
     def addNotification(self, target):
         """
         _addNotification_

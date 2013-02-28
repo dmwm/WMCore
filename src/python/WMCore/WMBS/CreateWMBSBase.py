@@ -443,7 +443,7 @@ class CreateWMBSBase(DBCreator):
                                 VALUES ('%s')""" % (self.subTypes[i])
             self.inserts["wmbs_sub_types_%s" % self.subTypes[i]] = subTypeQuery
 
-        locationStates = ["Normal", "Down", "Draining", "Finalizing"]
+        locationStates = ["Normal", "Down", "Draining", "Aborted"]
 
         for i in locationStates:
             locationStateQuery = """INSERT INTO wmbs_location_state (name)

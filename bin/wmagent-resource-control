@@ -7,6 +7,7 @@ Utility script for manipulating resource control.
 """
 
 import sys
+import os
 
 from optparse import OptionParser
 
@@ -81,8 +82,8 @@ def createOptionParser():
                            help = "Specify submit plugin to use for specific site")
     myOptParser.add_option("--drain", dest = "state", action="store_const",
                            const = 'Draining', help = "Drain the site.")
-    myOptParser.add_option("--finalize", dest = "state", action="store_const",
-                           const = 'Finalizing', help = "Finalize workflows at the site.")
+    myOptParser.add_option("--abort", dest = "state", action="store_const",
+                           const = 'Aborted', help = "Abort jobs at the site.")
     myOptParser.add_option("--down", dest = "state", action="store_const",
                            const = 'Down', help = "Stop submission to the site.")
     myOptParser.add_option("--normal", dest = "state", action="store_const",
@@ -110,7 +111,8 @@ def getCMSSiteInfo(pattern):
 
     return nameSEMapping
 
-def addSites(resourceControl, allSites, ceName, plugin, pendingSlots, runningSlots, tier0Option = False, cmsName = None):
+def addSites(resourceControl, allSites, ceName, plugin, pendingSlots, runningSlots,
+             tier0Option = False, cmsName = None):
     """
     _addSites_
 
@@ -188,10 +190,9 @@ def updateSiteInfo(resourceControl, siteName, pendingSlots = None,
     """
     if resourceControl.listSiteInfo(siteName) is None:
         if pendingSlots is None or runningSlots is None or ceName is None or seName is None or plugin is None:
-            print "You must specify the number of pending or running slots, the SE name, "
+            print "You must specify the number of pending or running slots, the SE name,"
             print "the CE name and a plugin when adding a site."
-            print ""
-            myOptParser.print_help()
+            print "Type --help for more information."
             sys.exit(1)
 
         print "Adding %s to the resource control db..." % siteName
@@ -213,10 +214,11 @@ def updateSiteInfo(resourceControl, siteName, pendingSlots = None,
         resourceControl.setJobSlotsForSite(siteName = siteName,
                                            pendingJobSlots = pendingSlots,
                                            runningJobSlots = runningSlots)
-        tasksWithPriorities = getTaskTypes()
-        for task in tasksWithPriorities:
-            updateThresholdInfo(resourceControl, siteName, task, int(runningSlots), int(pendingSlots),
-                                priority = tasksWithPriorities[task])
+        if allTasks:
+            tasksWithPriorities = getTaskTypes()
+            for task in tasksWithPriorities:
+                updateThresholdInfo(resourceControl, siteName, task, runningSlots, pendingSlots,
+                                    priority = tasksWithPriorities[task])
 
     if seName != None:
         print "It's not possible to change a site's SE name after the site has"
@@ -239,14 +241,12 @@ def updateThresholdInfo(resourceControl, siteName, taskType, maxSlots = None, pe
     if resourceControl.listSiteInfo(siteName) is None:
         print "You must add the site to the database before you can add"
         print "thresholds."
-        print ""
-        myOptParser.print_help()
+        print "Type --help for more information."
         sys.exit(1)
 
     if maxSlots is None and pendingSlots is None:
         print "You must provide either pending or running slots for the task."
-        print ""
-        myOptParser.print_help()
+        print "Type --help for more information."
         sys.exit(1)
 
     resourceControl.insertThreshold(siteName = siteName, taskType = taskType,
@@ -262,8 +262,7 @@ def setSiteState(resourceControl, siteName, state):
     """
     if resourceControl.listSiteInfo(siteName) == None:
         print "You must add the site to the database before you can change its state"
-        print ""
-        myOptParser.print_help()
+        print "Type --help for more information."
         sys.exit(1)
 
     return resourceControl.changeSiteState(siteName, state)
@@ -271,7 +270,8 @@ def setSiteState(resourceControl, siteName, state):
 myOptParser = createOptionParser()
 (options, args) = myOptParser.parse_args()
 connectToDB()
-myResourceControl = ResourceControl()
+wmConfig = loadConfigurationFile(os.environ['WMAGENT_CONFIG'])
+myResourceControl = ResourceControl(config = wmConfig)
 
 if options.printThresholds:
     printThresholds(myResourceControl, options.siteName)
@@ -307,8 +307,11 @@ else:
         setSiteState(myResourceControl, options.siteName, options.state)
         sys.exit(0)
     elif options.taskType is None:
+        seName = options.seName
+        if options.seName:
+            seName = options.seName.strip().split(',')
         updateSiteInfo(myResourceControl, options.siteName, options.pendingSlots,
-                       options.runningSlots, options.ceName, options.seName,
+                       options.runningSlots, options.ceName, seName,
                        options.plugin, options.cmsName, options.allTasks)
         sys.exit(0)
     else:

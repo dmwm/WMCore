@@ -44,6 +44,7 @@ from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.ACDC.DataCollectionService  import DataCollectionService
 from WMCore.WMException                 import WMException
 from WMCore.FwkJobReport.Report         import Report
+from WMCore.WMExceptions                import WMJobPermanentSystemErrors
 
 class ErrorHandlerException(WMException):
     """
@@ -79,7 +80,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         self.maxProcessSize = getattr(self.config.ErrorHandler, 'maxProcessSize', 250)
         self.exitCodes      = getattr(self.config.ErrorHandler, 'failureExitCodes', [])
-        self.maxFailTime    = getattr(self.config.ErrorHandler, 'maxFailTime', 24 * 3600)
+        self.maxFailTime    = getattr(self.config.ErrorHandler, 'maxFailTime', 32 * 3600)
         self.readFWJR       = getattr(self.config.ErrorHandler, 'readFWJR', False)
         self.passCodes      = getattr(self.config.ErrorHandler, 'passExitCodes', [])
 
@@ -94,18 +95,17 @@ class ErrorHandlerPoller(BaseWorkerThread):
         #    self.sendAlert will be then be available
         self.initAlerts(compName = "ErrorHandler")
 
+        # Some exit codes imply an immediate failure, non-configurable
+        self.exitCodes.extend(WMJobPermanentSystemErrors)
+
         return
 
     def setup(self, parameters = None):
         """
         Load DB objects required for queries
         """
-
         # For now, does nothing
-
         return
-
-
 
     def terminate(self, params):
         """
@@ -116,11 +116,11 @@ class ErrorHandlerPoller(BaseWorkerThread):
         logging.debug("terminating. doing one more pass before we die")
         self.algorithm(params)
 
-
     def processRetries(self, jobs, jobType):
         """
-        Actually do the retries
+        _processRetries_
 
+        Actually do the retries
         """
         logging.info("Processing retries for %i failed jobs of type %s." % (len(jobs), jobType))
         exhaustJobs = []
@@ -138,59 +138,14 @@ class ErrorHandlerPoller(BaseWorkerThread):
             elif ajob['retry_count'] >= allowedRetries or jobType == 'create':
                 exhaustJobs.append(ajob)
                 msg = "Exhausting job %i" % ajob['id']
-                logging.error(msg)
+                logging.debug(msg)
                 self.sendAlert(4, msg = msg)
                 logging.debug("JobInfo: %s" % ajob)
 
         if self.readFWJR:
             # Then we have to check each FWJR for exit status
-            for job in cooloffPre:
-                report     = Report()
-                reportPath = job['fwjr_path']
-                if reportPath is None:
-                    logging.error("No FWJR in job %i, ErrorHandler can't process it.\n Passing it to cooloff." % job['id'])
-                    cooloffJobs.append(job)
-                    continue
-                if not os.path.isfile(reportPath):
-                    logging.error("Failed to find FWJR for job %i in location %s.\n Passing it to cooloff." % (job['id'], reportPath))
-                    cooloffJobs.append(job)
-                    continue
-                try:
-                    report.load(reportPath)
-
-                    # Retrieve information from report
-                    times = report.getFirstStartLastStop()
-                    startTime = None
-                    stopTime = None
-                    if times is not None:
-                        startTime = times['startTime']
-                        stopTime  = times['stopTime']
-                    if startTime == None or stopTime == None:
-                        # We have no information to make a decision, send them to cooloff.
-                        # The RetryManager will take it from here.
-                        logging.error("No start, stop times for steps for job %i" % job['id'])
-                        cooloffJobs.append(job)
-                    elif stopTime - startTime > self.maxFailTime:
-                        msg = "Job %i exhausted after running on node for %i seconds" % (job['id'], stopTime - startTime)
-                        logging.error(msg)
-                        exhaustJobs.append(job)
-                    elif report.getExitCode() in self.exitCodes:
-                        msg = "Job %i exhausted due to exitCode %s" % (job['id'], report.getExitCode())
-                        logging.error(msg)
-                        self.sendAlert(4, msg = msg)
-                        exhaustJobs.append(job)
-                    elif report.getExitCode() in self.passCodes:
-                        msg = "Job %i restarted immediately due to exitCode %i" % (job['id'], report.getExitCode())
-                        passJobs.append(job)
-                    else:
-                        cooloffJobs.append(job)
-
-                except Exception, ex:
-                    logging.error("Exception while trying to check jobs for failures!")
-                    logging.error(str(ex))
-                    logging.error("Ignoring and sending job to cooloff")
-                    cooloffJobs.append(job)
-                    continue
+            cooloffJobs, passJobs, exhaustFWJRJobs = self.readFWJRForErrors(cooloffPre)
+            exhaustJobs.extend(exhaustFWJRJobs)
         else:
             cooloffJobs = cooloffPre
 
@@ -212,7 +167,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         return exhaustJobs
 
-
     def handleACDC(self, jobList):
         """
         _handleACDC_
@@ -220,14 +174,77 @@ class ErrorHandlerPoller(BaseWorkerThread):
         Do the ACDC creation and hope it works
         """
         idList = [x['id'] for x in jobList]
+        logging.info("Starting to build ACDC with %i jobs" % len(idList))
+        logging.info("This operation will take some time...")
         loadList = self.loadJobsFromListFull(idList = idList)
-        logging.info("Starting to build ACDC with %i jobs" % len(loadList))
-        logging.info("This operation will take some time")
         for job in loadList:
             job.getMask()
-
         self.dataCollection.failedJobs(loadList)
         return
+
+    def readFWJRForErrors(self, failedJobs):
+        """
+        _readFWJRForErrors_
+
+        Check the FWJRs of the failed jobs
+        and determine those that can be retried
+        and which must be retried without going through cooloff.
+        Returns a triplet with cooloff, passed and exhausted jobs.
+        """
+        cooloffJobs = []
+        passJobs = []
+        exhaustJobs = []
+        for job in failedJobs:
+            report     = Report()
+            reportPath = job['fwjr_path']
+            if reportPath is None:
+                logging.error("No FWJR in job %i, ErrorHandler can't process it.\n Passing it to cooloff." % job['id'])
+                cooloffJobs.append(job)
+                continue
+            if not os.path.isfile(reportPath):
+                logging.error("Failed to find FWJR for job %i in location %s.\n Passing it to cooloff." % (job['id'], reportPath))
+                cooloffJobs.append(job)
+                continue
+            try:
+                report.load(reportPath)
+                # First let's check the time conditions
+                times = report.getFirstStartLastStop()
+                startTime = None
+                stopTime = None
+                if times is not None:
+                    startTime = times['startTime']
+                    stopTime = times['stopTime']
+
+                if startTime == None or stopTime == None:
+                    # We have no information to make a decision, keep going.
+                    logging.debug("No start, stop times for steps for job %i" % job['id'])
+                elif stopTime - startTime > self.maxFailTime:
+                    msg = "Job %i exhausted after running on node for %i seconds" % (job['id'], stopTime - startTime)
+                    logging.debug(msg)
+                    exhaustJobs.append(job)
+                    continue
+
+                if report.getExitCode() in self.exitCodes:
+                    msg = "Job %i exhausted due to exitCode %s" % (job['id'], report.getExitCode())
+                    logging.error(msg)
+                    self.sendAlert(4, msg = msg)
+                    exhaustJobs.append(job)
+                    continue
+
+                if report.getExitCode() in self.passCodes:
+                    msg = "Job %i restarted immediately due to exitCode %i" % (job['id'], report.getExitCode())
+                    passJobs.append(job)
+                    continue
+
+                cooloffJobs.append(job)
+
+            except Exception, ex:
+                logging.warning("Exception while trying to check jobs for failures!")
+                logging.warning(str(ex))
+                logging.warning("Ignoring and sending job to cooloff")
+                cooloffJobs.append(job)
+
+        return cooloffJobs, passJobs, exhaustJobs
 
     def splitJobList(self, jobList, jobType):
         """
@@ -240,7 +257,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
             return
 
         myThread = threading.currentThread()
-
         logging.debug("About to process %i errors" % len(jobList))
         myThread.transaction.begin()
         exhaustList = self.processRetries(jobList, jobType)
@@ -248,9 +264,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
         myThread.transaction.commit()
 
         return
-
-
-
 
     def handleErrors(self):
         """
@@ -281,7 +294,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
             idList     = idList[self.maxProcessSize:]
             submitList = self.loadJobsFromList(idList = tmpList)
             self.splitJobList(jobList = submitList, jobType = 'submit')
-
 
         # Run over executed jobs
         idList = self.getJobs.execute(state = 'JobFailed')
@@ -319,7 +331,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
             tmpJob.update(entry)
             listOfJobs.append(tmpJob)
 
-
         return listOfJobs
 
 
@@ -348,9 +359,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
             tmpJob.update(entry)
             listOfJobs.append(tmpJob)
 
-
         return listOfJobs
-
 
     def algorithm(self, parameters = None):
         """

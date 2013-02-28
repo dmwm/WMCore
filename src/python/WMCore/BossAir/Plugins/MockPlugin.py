@@ -194,6 +194,13 @@ class MockPlugin(BasePlugin):
 
         return runningList, changeList, completeList
 
+    def kill(self, jobs):
+        """
+        _kill_
+
+        Do nothing
+        """
+        pass
 
     def complete(self, jobs):
         """

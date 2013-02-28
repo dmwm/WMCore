@@ -1,3 +1,14 @@
+0.9.46 to 0.9.47:
+  - Fixes for campaign information in WMStates.  Pull request #4453.
+  - Improve site states functionality.  Pull request #4444.
+  - Fix diagnostics for when CMSSW segfaults.  Pull request #4445.
+  - Fix ACDC for MonteCarlo workflows.  Pull request #4452.
+  - Remove the check for the local wmc-dist-patch script as it is not 
+    shipped with the project source code. It gets included only during 
+    RPM build time.  Pull request #4446.
+  - Include task type priority in LSF jobs.  Pull request #4447.
+  - Fix file deletion in the CERN stageout plugin.  Pull request #4412.
+
 0.9.45 to 0.9.46:
   - Make sure the campaign is passed to WMStats with ACDC requests.  Pull
     request #4448.

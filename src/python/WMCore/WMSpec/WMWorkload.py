@@ -404,6 +404,8 @@ class WMWorkloadHelper(PersistencyHelper):
             raise RuntimeError, msg
         task = WMTask(taskName)
         helper = WMTaskHelper(task)
+        helper.setAcquisitionEra(self.getAcquisitionEra())
+        helper.setProcessingVersion(self.getProcessingVersion())
         helper.setTopOfTree()
         self.addTask(helper)
         return helper
@@ -707,6 +709,8 @@ class WMWorkloadHelper(PersistencyHelper):
         Change the acquisition era for all tasks in the spec and then update
         all of the output LFNs and datasets to use the new acquisition era.
         """
+        self.data.properties.acquisitionEra = acquisitionEra
+        
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
@@ -735,6 +739,9 @@ class WMWorkloadHelper(PersistencyHelper):
         Change the processing version for all tasks in the spec and then update
         all of the output LFNs and datasets to use the new processing version.
         """
+        if type(processingVersions) != dict:
+            self.data.properties.processingVersion = processingVersions
+
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
@@ -789,13 +796,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Get the acquisition era
         """
-
-        topTasks = self.getTopLevelTask()
-
-        if len(topTasks):
-            return topTasks[0].getAcquisitionEra()
-
-        return None
+        return getattr(self.data.properties, "acquisitionEra", None)
 
     def getProcessingVersion(self):
         """
@@ -803,12 +804,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Get the processingVersion
         """
-
-        topTasks = self.getTopLevelTask()
-
-        if len(topTasks):
-            return topTasks[0].getProcessingVersion()
-        return 0
+        return getattr(self.data.properties, "processingVersion", None)
 
     def getProcessingString(self):
         """

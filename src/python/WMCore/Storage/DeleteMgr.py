@@ -18,16 +18,6 @@ from WMCore.Storage.StageOutError import StageOutInitError
 from WMCore.Storage.Registry import retrieveStageOutImpl
 
 
-class DeleteSuccess(Exception):
-    """
-    _DeleteSuccess_
-
-    Exception used to escape stage out loop when deletion is successful
-    """
-    pass
-
-
-
 class DeleteMgr:
     """
     _DeleteMgr_
@@ -162,50 +152,51 @@ class DeleteMgr:
         Use call to delete a file
 
         """
+        print "==>Working on file: %s" % fileToDelete['LFN']
 
+        lfn = fileToDelete['LFN']
+        fileToDelete['SEName'] = self.seName
 
-        try:
-            print "==>Working on file: %s" % fileToDelete['LFN']
+        deleteSuccess = False
 
-            lfn = fileToDelete['LFN']
-            fileToDelete['SEName'] = self.seName
+        #  //
+        # // No override => use local-stage-out from site conf
+        #//  invoke for all files and check failures/successes
+        if not self.override:
+            print "===> Attempting To Delete."
+            try:
+                fileToDelete['PFN'] = self.deleteLFN(lfn)
+                deleteSuccess = True
+            except StageOutFailure, ex:
+                msg = "===> Local Stage Out Failure for file:\n"
+                msg += "======>  %s\n" % fileToDelete['LFN']
+                msg += str(ex)
+                print msg
 
-            #  //
-            # // No override => use local-stage-out from site conf
-            #//  invoke for all files and check failures/successes
-            if not self.override:
-                print "===> Attempting To Delete."
-                try:
-                    fileToDelete['PFN'] = self.deleteLFN(lfn)
-                    raise DeleteSuccess
-                except StageOutFailure, ex:
-                    msg = "===> Local Stage Out Failure for file:\n"
-                    msg += "======>  %s\n" % fileToDelete['LFN']
-                    msg += str(ex)
-
+        if not deleteSuccess and len(self.fallbacks) > 0:
             #  //
             # // Still here => override start using the fallback stage outs
             #//  If override is set, then that will be the only fallback available
             print "===> Attempting To Delete with Override."
             for fallback in self.fallbacks:
-                try:
-                    fileToDelete['PFN'] = self.deleteLFN(lfn, fallback)
-#                    if self.failed.has_key(lfn):
-#                        del self.failed[lfn]
-                    raise DeleteSuccess
-                except StageOutFailure, ex:
-                    continue
+                if not deleteSuccess:
+                    try:
+                        fileToDelete['PFN'] = self.deleteLFN(lfn, fallback)
+                        deleteSuccess = True
+                    except StageOutFailure, ex:
+                        continue
 
-        except DeleteSuccess:
+        if deleteSuccess:
             msg = "===> Delete Successful:\n"
             msg += "====> LFN: %s\n" % fileToDelete['LFN']
             msg += "====> PFN: %s\n" % fileToDelete['PFN']
             msg += "====> SE:  %s\n" % fileToDelete['SEName']
             print msg
             return fileToDelete
-        msg = "Unable to delete file:\n"
-        msg += fileToDelete['LFN']
-        raise StageOutFailure(msg, **fileToDelete)
+        else:
+            msg = "Unable to delete file:\n"
+            msg += fileToDelete['LFN']
+            raise StageOutFailure(msg, **fileToDelete)
 
 
     def deleteLFN(self, lfn, override = None):

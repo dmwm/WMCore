@@ -92,6 +92,9 @@ class PausedTool:
         else:
             matchedJobs = jobs.keys()
 
+        if not matchedJobs:
+            return []
+
         # Now that we know what we want, we instantiate the jobs
         result = self.getTaskType.execute(matchedJobs)
         WMBSJobs = []
@@ -146,10 +149,18 @@ class PausedTool:
         self.getOptions()
         allJobs = self.getPaused()
         jobs = self.filterJobs(allJobs)
+        if not jobs:
+            print "No paused jobs that matched the filters were found..."
+            return 0
         if self.action == "resume":
             self.resumeJobs(jobs)
         elif self.action == "fail":
-            self.failJobs(jobs)
+            confirm = raw_input("Are you sure you want to fail %d jobs? Type Y or N:\n" % len(jobs))
+            if confirm == "Y":
+                print "Failing the jobs..."
+                self.failJobs(jobs)
+            else:
+                print "Aborting... No changes were made."
         return 0
 
 def main():

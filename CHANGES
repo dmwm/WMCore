@@ -1,3 +1,7 @@
+0.9.47 to 0.9.48:
+  - Update file metadata in WMBS if the file already exists.  Pull
+    request #4443.
+
 0.9.46 to 0.9.47:
   - Fixes for campaign information in WMStates.  Pull request #4453.
   - Improve site states functionality.  Pull request #4444.

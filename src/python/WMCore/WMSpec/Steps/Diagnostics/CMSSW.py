@@ -9,10 +9,10 @@ Diagnostic implementation for a CMSSW job
 
 """
 
-import os
 import os.path
 import logging
 from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler
+from WMCore.FwkJobReport.Report import FwkJobReportException
 
 import WMCore.Algorithms.BasicAlgos as BasicAlgos
 
@@ -96,7 +96,11 @@ class CMSDefaultHandler(DiagnosticHandler):
 
         if os.path.exists(jobRepXml):
             # job report XML exists, load the exception information from it
-            executor.report.parse(jobRepXml)
+            try:
+                executor.report.parse(jobRepXml)
+            except FwkJobReportException:
+                # Job report is bad, the parse already puts a 50115 in the file
+                pass
             reportStep = executor.report.retrieveStep(executor.step._internal_name)
             reportStep.status = errCode
 
@@ -154,7 +158,11 @@ class CMSRunHandler(DiagnosticHandler):
 
         if os.path.exists(jobRepXml):
             # job report XML exists, load the exception information from it
-            executor.report.parse(jobRepXml)
+            try:
+                executor.report.parse(jobRepXml)
+            except FwkJobReportException:
+                # Job report is bad, the parse already puts a 50115 in the file
+                pass
             reportStep = executor.report.retrieveStep(executor.step._internal_name)
             reportStep.status = self.code
 
@@ -239,12 +247,12 @@ class EDMExceptionHandler(DiagnosticHandler):
             return
 
         # job report XML exists, load the exception information from it
-        executor.report.parse(jobRepXml)
-
-
-
-
-
+        try:
+            executor.report.parse(jobRepXml)
+        except FwkJobReportException:
+            # Job report is bad, the parse already puts a 50115 in the file
+            # just go on
+            pass
 
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)

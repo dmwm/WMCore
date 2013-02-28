@@ -532,6 +532,7 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS = True,
     setFileAddChecksum      = daofactory(classname = "Files.AddChecksumByLFN")
     addFileAction           = daofactory(classname = "Files.Add")
     addToFileset            = daofactory(classname = "Files.AddDupsToFileset")
+    updateFileAction        = daofactory(classname = "Files.Update")
 
     # build up list of binds for all files then run in single transaction
     parentageBinds = []
@@ -542,6 +543,7 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS = True,
     fileLFNs       = []
     lfnsToCreate   = []
     lfnList        = []
+    fileUpdate     = []
 
     for wmbsFile in files:
         lfn           = wmbsFile['lfn']
@@ -568,7 +570,13 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS = True,
             fileLocations.append({'lfn': lfn, 'location': loc})
 
         if wmbsFile.exists():
-            # skip creation; locations will be set to current values
+            # update events, size, first_event, merged
+            fileUpdate.append([lfn,
+                               wmbsFile['size'],
+                               wmbsFile['events'],
+                               None,
+                               wmbsFile["first_event"],
+                               wmbsFile['merged']])
             continue
 
         if lfn in lfnsToCreate:
@@ -596,6 +604,11 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS = True,
         setFileAddChecksum.execute(bulkList = fileCksumBinds,
                                    conn = conn,
                                    transaction = transaction)
+
+    if len(fileUpdate) > 0:
+        updateFileAction.execute(files = fileUpdate,
+                                 conn = conn,
+                                 transaction = transaction)
 
     if len(fileLocations) > 0:
         setFileLocation.execute(lfns = lfnList, locations = fileLocations,

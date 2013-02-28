@@ -24,7 +24,8 @@ from WMCore.Services.UUID import makeUUID
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Agent.Configuration import Configuration
 from WMCore.BossAir.RunJob import RunJob
-import WMCore.WMBase
+from WMCore.WMBase import getTestBase
+from WMCore.FwkJobReport.Report import Report
 
 class ResourceControlTest(unittest.TestCase):
     def setUp(self):
@@ -65,6 +66,138 @@ class ResourceControlTest(unittest.TestCase):
         Clear the schema.
         """
         self.testInit.clearDatabase()
+        return
+
+    def createJobs(self):
+        """
+        _createJobs_
+
+        Create test jobs in WMBS and BossAir
+        """
+        testWorkflow = Workflow(spec = makeUUID(), owner = "Steve",
+                                name = makeUUID(), task = "Test")
+        testWorkflow.create()
+
+        testFilesetA = Fileset(name = "TestFilesetA")
+        testFilesetA.create()
+        testFilesetB = Fileset(name = "TestFilesetB")
+        testFilesetB.create()
+        testFilesetC = Fileset(name = "TestFilesetC")
+        testFilesetC.create()
+
+        testFileA = File(lfn = "testFileA", locations = set(["testSE1", "testSE2"]))
+        testFileA.create()
+        testFilesetA.addFile(testFileA)
+        testFilesetA.commit()
+        testFilesetB.addFile(testFileA)
+        testFilesetB.commit()
+        testFilesetC.addFile(testFileA)
+        testFilesetC.commit()
+
+        testSubscriptionA = Subscription(fileset = testFilesetA,
+                                        workflow = testWorkflow,
+                                        type = "Processing")
+        testSubscriptionA.create()
+        testSubscriptionA.addWhiteBlackList([{"site_name": "testSite1", "valid": True}])
+        testSubscriptionB = Subscription(fileset = testFilesetB,
+                                        workflow = testWorkflow,
+                                        type = "Processing")
+        testSubscriptionB.create()
+        testSubscriptionB.addWhiteBlackList([{"site_name": "testSite1", "valid": False}])
+        testSubscriptionC = Subscription(fileset = testFilesetC,
+                                        workflow = testWorkflow,
+                                        type = "Merge")
+        testSubscriptionC.create()
+
+        testJobGroupA = JobGroup(subscription = testSubscriptionA)
+        testJobGroupA.create()
+        testJobGroupB = JobGroup(subscription = testSubscriptionB)
+        testJobGroupB.create()
+        testJobGroupC = JobGroup(subscription = testSubscriptionC)
+        testJobGroupC.create()
+
+        # Site1, Has been assigned a location and is complete.
+        testJobA = Job(name = "testJobA", files = [testFileA])
+        testJobA["couch_record"] = makeUUID()
+        testJobA.create(group = testJobGroupA)
+        testJobA["state"] = "success"
+
+        # Site 1, Has been assigned a location and is incomplete.
+        testJobB = Job(name = "testJobB", files = [testFileA])
+        testJobB["couch_record"] = makeUUID()
+        testJobB["cache_dir"] = self.tempDir
+        testJobB.create(group = testJobGroupA)
+        testJobB["state"] = "executing"
+        runJobB = RunJob()
+        runJobB.buildFromJob(testJobB)
+        runJobB["status"] = "PEND"
+
+        # Does not have a location, white listed to site 1
+        testJobC = Job(name = "testJobC", files = [testFileA])
+        testJobC["couch_record"] = makeUUID()
+        testJobC.create(group = testJobGroupA)
+        testJobC["state"] = "new"
+
+        # Site 2, Has been assigned a location and is complete.
+        testJobD = Job(name = "testJobD", files = [testFileA])
+        testJobD["couch_record"] = makeUUID()
+        testJobD.create(group = testJobGroupB)
+        testJobD["state"] = "success"
+
+        # Site 2, Has been assigned a location and is incomplete.
+        testJobE = Job(name = "testJobE", files = [testFileA])
+        testJobE["couch_record"] = makeUUID()
+        testJobE.create(group = testJobGroupB)
+        testJobE["state"] = "executing"
+        runJobE = RunJob()
+        runJobE.buildFromJob(testJobE)
+        runJobE["status"] = "RUN"
+
+        # Does not have a location, site 1 is blacklisted.
+        testJobF = Job(name = "testJobF", files = [testFileA])
+        testJobF["couch_record"] = makeUUID()
+        testJobF.create(group = testJobGroupB)
+        testJobF["state"] = "new"
+
+        # Site 3, Has been assigned a location and is complete.
+        testJobG = Job(name = "testJobG", files = [testFileA])
+        testJobG["couch_record"] = makeUUID()
+        testJobG.create(group = testJobGroupC)
+        testJobG["state"] = "cleanout"
+
+        # Site 3, Has been assigned a location and is incomplete.
+        testJobH = Job(name = "testJobH", files = [testFileA])
+        testJobH["couch_record"] = makeUUID()
+        testJobH.create(group = testJobGroupC)
+        testJobH["state"] = "new"
+
+        # Site 3, Does not have a location.
+        testJobI = Job(name = "testJobI", files = [testFileA])
+        testJobI["couch_record"] = makeUUID()
+        testJobI.create(group = testJobGroupC)
+        testJobI["state"] = "new"
+
+        # Site 3, Does not have a location and is in cleanout.
+        testJobJ = Job(name = "testJobJ", files = [testFileA])
+        testJobJ["couch_record"] = makeUUID()
+        testJobJ.create(group = testJobGroupC)
+        testJobJ["state"] = "cleanout"
+
+        changeStateAction = self.daoFactory(classname = "Jobs.ChangeState")
+        changeStateAction.execute(jobs = [testJobA, testJobB, testJobC, testJobD,
+                                          testJobE, testJobF, testJobG, testJobH,
+                                          testJobI, testJobJ])
+
+        self.insertRunJob.execute([runJobB, runJobE])
+
+        setLocationAction = self.daoFactory(classname = "Jobs.SetLocation")
+        setLocationAction.execute(testJobA["id"], "testSite1")
+        setLocationAction.execute(testJobB["id"], "testSite1")
+        setLocationAction.execute(testJobD["id"], "testSite1")
+        setLocationAction.execute(testJobE["id"], "testSite2")
+        setLocationAction.execute(testJobG["id"], "testSite1")
+        setLocationAction.execute(testJobH["id"], "testSite1")
+
         return
 
     def testInsert(self):
@@ -233,135 +366,14 @@ class ResourceControlTest(unittest.TestCase):
         """
         myResourceControl = ResourceControl()
         myResourceControl.insertSite("testSite1", 10, 20, "testSE1", "testCE1", "T1_US_FNAL", "LsfPlugin")
-        myResourceControl.insertSite("testSite2", 20, 40, "testSE2", "testCE2")
+        myResourceControl.insertSite("testSite2", 20, 40, "testSE2", "testCE2", "T3_US_FNAL", "LsfPlugin")
 
         myResourceControl.insertThreshold("testSite1", "Processing", 20, 10)
         myResourceControl.insertThreshold("testSite1", "Merge", 200, 100)
         myResourceControl.insertThreshold("testSite2", "Processing", 50, 25)
         myResourceControl.insertThreshold("testSite2", "Merge", 135, 65)
 
-        testWorkflow = Workflow(spec = makeUUID(), owner = "Steve",
-                                name = makeUUID(), task = "Test")
-        testWorkflow.create()
-
-        testFilesetA = Fileset(name = "TestFilesetA")
-        testFilesetA.create()
-        testFilesetB = Fileset(name = "TestFilesetB")
-        testFilesetB.create()
-        testFilesetC = Fileset(name = "TestFilesetC")
-        testFilesetC.create()
-
-        testFileA = File(lfn = "testFileA", locations = set(["testSE1", "testSE2"]))
-        testFileA.create()
-        testFilesetA.addFile(testFileA)
-        testFilesetA.commit()
-        testFilesetB.addFile(testFileA)
-        testFilesetB.commit()
-        testFilesetC.addFile(testFileA)
-        testFilesetC.commit()
-
-        testSubscriptionA = Subscription(fileset = testFilesetA,
-                                        workflow = testWorkflow,
-                                        type = "Processing")
-        testSubscriptionA.create()
-        testSubscriptionA.addWhiteBlackList([{"site_name": "testSite1", "valid": True}])
-        testSubscriptionB = Subscription(fileset = testFilesetB,
-                                        workflow = testWorkflow,
-                                        type = "Processing")
-        testSubscriptionB.create()
-        testSubscriptionB.addWhiteBlackList([{"site_name": "testSite1", "valid": False}])
-        testSubscriptionC = Subscription(fileset = testFilesetC,
-                                        workflow = testWorkflow,
-                                        type = "Merge")
-        testSubscriptionC.create()
-
-        testJobGroupA = JobGroup(subscription = testSubscriptionA)
-        testJobGroupA.create()
-        testJobGroupB = JobGroup(subscription = testSubscriptionB)
-        testJobGroupB.create()
-        testJobGroupC = JobGroup(subscription = testSubscriptionC)
-        testJobGroupC.create()
-
-        # Site1, Has been assigned a location and is complete.
-        testJobA = Job(name = "testJobA", files = [testFileA])
-        testJobA["couch_record"] = makeUUID()
-        testJobA.create(group = testJobGroupA)
-        testJobA["state"] = "success"
-
-        # Site 1, Has been assigned a location and is incomplete.
-        testJobB = Job(name = "testJobB", files = [testFileA])
-        testJobB["couch_record"] = makeUUID()
-        testJobB.create(group = testJobGroupA)
-        testJobB["state"] = "executing"
-        runJobB = RunJob()
-        runJobB.buildFromJob(testJobB)
-        runJobB["status"] = "PEND"
-
-        # Does not have a location, white listed to site 1
-        testJobC = Job(name = "testJobC", files = [testFileA])
-        testJobC["couch_record"] = makeUUID()
-        testJobC.create(group = testJobGroupA)
-        testJobC["state"] = "new"
-
-        # Site 2, Has been assigned a location and is complete.
-        testJobD = Job(name = "testJobD", files = [testFileA])
-        testJobD["couch_record"] = makeUUID()
-        testJobD.create(group = testJobGroupB)
-        testJobD["state"] = "success"
-
-        # Site 2, Has been assigned a location and is incomplete.
-        testJobE = Job(name = "testJobE", files = [testFileA])
-        testJobE["couch_record"] = makeUUID()
-        testJobE.create(group = testJobGroupB)
-        testJobE["state"] = "executing"
-        runJobE = RunJob()
-        runJobE.buildFromJob(testJobE)
-        runJobE["status"] = "RUN"
-
-        # Does not have a location, site 1 is blacklisted.
-        testJobF = Job(name = "testJobF", files = [testFileA])
-        testJobF["couch_record"] = makeUUID()
-        testJobF.create(group = testJobGroupB)
-        testJobF["state"] = "new"
-
-        # Site 3, Has been assigned a location and is complete.
-        testJobG = Job(name = "testJobG", files = [testFileA])
-        testJobG["couch_record"] = makeUUID()
-        testJobG.create(group = testJobGroupC)
-        testJobG["state"] = "cleanout"
-
-        # Site 3, Has been assigned a location and is incomplete.
-        testJobH = Job(name = "testJobH", files = [testFileA])
-        testJobH["couch_record"] = makeUUID()
-        testJobH.create(group = testJobGroupC)
-        testJobH["state"] = "new"
-
-        # Site 3, Does not have a location.
-        testJobI = Job(name = "testJobI", files = [testFileA])
-        testJobI["couch_record"] = makeUUID()
-        testJobI.create(group = testJobGroupC)
-        testJobI["state"] = "new"
-
-        # Site 3, Does not have a location and is in cleanout.
-        testJobJ = Job(name = "testJobJ", files = [testFileA])
-        testJobJ["couch_record"] = makeUUID()
-        testJobJ.create(group = testJobGroupC)
-        testJobJ["state"] = "cleanout"
-
-        changeStateAction = self.daoFactory(classname = "Jobs.ChangeState")
-        changeStateAction.execute(jobs = [testJobA, testJobB, testJobC, testJobD,
-                                          testJobE, testJobF, testJobG, testJobH,
-                                          testJobI, testJobJ])
-
-        self.insertRunJob.execute([runJobB, runJobE])
-
-        setLocationAction = self.daoFactory(classname = "Jobs.SetLocation")
-        setLocationAction.execute(testJobA["id"], "testSite1")
-        setLocationAction.execute(testJobB["id"], "testSite1")
-        setLocationAction.execute(testJobD["id"], "testSite1")
-        setLocationAction.execute(testJobE["id"], "testSite1")
-        setLocationAction.execute(testJobG["id"], "testSite1")
-        setLocationAction.execute(testJobH["id"], "testSite1")
+        self.createJobs()
 
         createThresholds = myResourceControl.listThresholdsForCreate()
         submitThresholds = myResourceControl.listThresholdsForSubmit()
@@ -388,7 +400,7 @@ class ResourceControlTest(unittest.TestCase):
 
         # We should also have a phedex_name
         self.assertEqual(createThresholds["testSite1"]["cms_name"], "T1_US_FNAL")
-        self.assertEqual(createThresholds["testSite2"]["cms_name"], None)
+        self.assertEqual(createThresholds["testSite2"]["cms_name"], "T3_US_FNAL")
 
         mergeThreshold1 = None
         mergeThreshold2 = None
@@ -400,16 +412,16 @@ class ResourceControlTest(unittest.TestCase):
                 mergeThreshold1 = threshold
             elif threshold['task_type'] == "Processing":
                 procThreshold1 = threshold
-        self.assertEqual(submitThresholds["testSite2"]['cms_name'], None)
+        self.assertEqual(submitThresholds["testSite2"]['cms_name'], "T3_US_FNAL")
         for threshold in submitThresholds["testSite2"]["thresholds"]:
             if threshold['task_type'] == "Merge":
                 mergeThreshold2 = threshold
             elif threshold['task_type'] == "Processing":
                 procThreshold2 = threshold
 
-        self.assertEqual(submitThresholds["testSite1"]["total_running_jobs"], 1,
+        self.assertEqual(submitThresholds["testSite1"]["total_running_jobs"], 0,
                          "Error: Wrong number of running jobs for submit thresholds.")
-        self.assertEqual(submitThresholds["testSite2"]["total_running_jobs"], 0,
+        self.assertEqual(submitThresholds["testSite2"]["total_running_jobs"], 1,
                          "Error: Wrong number of running jobs for submit thresholds.")
         self.assertEqual(submitThresholds["testSite1"]["total_pending_jobs"], 1,
                          "Error: Wrong number of pending jobs for submit thresholds.")
@@ -420,7 +432,7 @@ class ResourceControlTest(unittest.TestCase):
                          "Error: Wrong number of task running jobs for submit thresholds.")
         self.assertEqual(mergeThreshold1["task_pending_jobs"], 0,
                          "Error: Wrong number of task running jobs for submit thresholds.")
-        self.assertEqual(procThreshold1["task_running_jobs"], 1,
+        self.assertEqual(procThreshold1["task_running_jobs"], 0,
                          "Error: Wrong number of task running jobs for submit thresholds.")
         self.assertEqual(procThreshold1["task_pending_jobs"], 1,
                          "Error: Wrong number of task running jobs for submit thresholds.")
@@ -428,7 +440,7 @@ class ResourceControlTest(unittest.TestCase):
                          "Error: Wrong number of task running jobs for submit thresholds.")
         self.assertEqual(mergeThreshold2["task_pending_jobs"], 0,
                          "Error: Wrong number of task running jobs for submit thresholds.")
-        self.assertEqual(procThreshold2["task_running_jobs"], 0,
+        self.assertEqual(procThreshold2["task_running_jobs"], 1,
                          "Error: Wrong number of task running jobs for submit thresholds.")
         self.assertEqual(procThreshold2["task_pending_jobs"], 0,
                          "Error: Wrong number of task running jobs for submit thresholds.")
@@ -598,6 +610,33 @@ class ResourceControlTest(unittest.TestCase):
         result = myResourceControl.listThresholdsForCreate()
         self.assertEqual(result['testSite1']['state'], 'Down', 'Error: Wrong site state')
 
+    def testAbortedState(self):
+        """
+        _testAbortedState_
+
+        Check that we can kill jobs when a site is set to aborted
+        """
+        config = self.createConfig()
+        myResourceControl = ResourceControl(config)
+        myResourceControl.insertSite("testSite1", 10, 20, "testSE1", "testCE1", "T1_US_FNAL", "MockPlugin")
+        myResourceControl.insertSite("testSite2", 20, 40, "testSE2", "testCE2", "T1_IT_CNAF", "MockPlugin")
+
+        myResourceControl.insertThreshold("testSite1", "Processing", 20, 10)
+        myResourceControl.insertThreshold("testSite1", "Merge", 200, 100)
+        myResourceControl.insertThreshold("testSite2", "Processing", 50, 25)
+        myResourceControl.insertThreshold("testSite2", "Merge", 135, 65)
+
+        self.createJobs()
+
+        myResourceControl.changeSiteState("testSite1", "Aborted")
+
+        # Now check the tempDir for a FWJR for the killed job
+        reportPath = os.path.join(self.tempDir, "Report.0.pkl")
+        report = Report()
+        report.load(reportPath)
+        self.assertEqual(report.getExitCode(), 61301)
+        return
+
     def createConfig(self):
         """
         _createConfig_
@@ -613,13 +652,20 @@ class ResourceControlTest(unittest.TestCase):
         config.section_("CoreDatabase")
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
         config.CoreDatabase.socket = os.getenv("DBSOCK")
+        config.section_("BossAir")
+        config.BossAir.pluginDir = "WMCore.BossAir.Plugins"
+        config.BossAir.pluginNames = ["MockPlugin"]
+        config.BossAir.section_("MockPlugin")
+        config.BossAir.MockPlugin.fakeReport = os.path.join(getTestBase(),
+                                                         'WMComponent_t/JobAccountant_t/fwjrs',
+                                                         "MergeSuccess.pkl")
 
         configHandle = open(os.path.join(self.tempDir, "config.py"), "w")
         configHandle.write(str(config))
         configHandle.close()
 
         os.environ["WMAGENT_CONFIG"] = os.path.join(self.tempDir, "config.py")
-        return
+        return config
 
     def testInsertAllSEs(self):
         """
@@ -630,7 +676,7 @@ class ResourceControlTest(unittest.TestCase):
         """
         self.createConfig()
 
-        resControlPath = os.path.join(WMCore.WMBase.getTestBase(), "../../bin/wmagent-resource-control")
+        resControlPath = os.path.join(getTestBase(), "../../bin/wmagent-resource-control")
         env = os.environ
         env['PYTHONPATH'] = ":".join(sys.path)
         cmdline = [resControlPath, "--add-all-sites", "--plugin=CondorPlugin", "--pending-slots=100", "--running-slots=500" ]
@@ -638,7 +684,7 @@ class ResourceControlTest(unittest.TestCase):
                                    stdout = subprocess.PIPE,
                                    stderr = subprocess.STDOUT,
                                    env = env)
-        ( output, _ ) = retval.communicate()
+        (_, _) = retval.communicate()
 
         myResourceControl = ResourceControl()
         result = myResourceControl.listThresholdsForSubmit()
@@ -700,7 +746,7 @@ class ResourceControlTest(unittest.TestCase):
         """
         self.createConfig()
 
-        resControlPath = os.path.join(WMCore.WMBase.getTestBase(), "../../bin/wmagent-resource-control")
+        resControlPath = os.path.join(getTestBase(), "../../bin/wmagent-resource-control")
         env = os.environ
         env['PYTHONPATH'] = ":".join(sys.path)
         cmdline = [resControlPath, "--add-T0" ]
@@ -708,11 +754,10 @@ class ResourceControlTest(unittest.TestCase):
                                    stdout = subprocess.PIPE,
                                    stderr = subprocess.STDOUT,
                                    env = env)
-        ( _, _ ) = retval.communicate()
-
+        (_, _) = retval.communicate()
         myResourceControl = ResourceControl()
         result = myResourceControl.listThresholdsForSubmit()
-        self.assertTrue(len(result), 1)
+        self.assertEquals(len(result), 1)
         self.assertTrue('CERN' in result)
         for x in result:
             self.assertEqual(len(result[x]['thresholds']), 10)

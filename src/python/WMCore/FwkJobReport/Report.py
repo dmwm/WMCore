@@ -23,6 +23,7 @@ from WMCore.DataStructs.Run import Run
 
 from WMCore.FwkJobReport.FileInfo import FileInfo
 from WMCore.WMException           import WMException
+from WMCore.WMExceptions import WMJobErrorCodes
 
 
 class FwkJobReportException(WMException):
@@ -721,13 +722,13 @@ class Report:
         stepReport = self.retrieveStep(step = step)
 
         if not stepReport:
-            logging.error("Asked to retrieve files from non-existant step %s" % step)
+            logging.debug("Asked to retrieve files from non-existant step %s" % step)
             return []
 
         listOfModules = getattr(stepReport, 'outputModules', None)
 
         if not listOfModules:
-            logging.error("Asked to retrieve files from step %s with no outputModules" % step)
+            logging.debug("Asked to retrieve files from step %s with no outputModules" % step)
             logging.debug("StepReport: %s" % stepReport)
             return []
 
@@ -1295,7 +1296,6 @@ class Report:
           have an adler32 checksum.  If they don't it creates an error with
           code 60451 for the step, failing it.
         """
-
         error = None
         files = self.getAllFilesFromStep(step = stepName)
         for f in files:
@@ -1309,6 +1309,27 @@ class Report:
             self.addError(stepName, 60451, "NoAdler32Checksum", msg)
             self.setStepStatus(stepName = stepName, status = 60451)
 
+        return
+
+    def checkForRunLumiInformation(self, stepName):
+        """
+        _checkForRunLumiInformation_
+
+        Some steps require that all output files have run lumi information.
+        This will go through all output files in a step and make sure
+        they have run/lumi informaiton. If they don't it creates an error
+        with code 60452 for the step, failing it.
+
+        """
+        error = None
+        files = self.getAllFilesFromStep(step = stepName)
+        for f in files:
+            if not f.get('runs', {}):
+                error = f.get('lfn', None)
+        if error:
+            msg = '%s, file was %s' % (WMJobErrorCodes[60452], error)
+            self.addError(stepName, 60452, "NoRunLumiInformation", msg)
+            self.setStepStatus(stepName = stepName, status = 60452)
         return
 
     def stripInputFiles(self):

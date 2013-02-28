@@ -322,6 +322,7 @@ class CMSSW(Executor):
         self.report.addInfoToOutputFilesForStep(stepName = self.stepName, step = self.step)
 
         self.report.checkForAdlerChecksum(stepName = self.stepName)
+        self.report.checkForRunLumiInformation(stepName = self.stepName)
 
         if self.step.output.keep != True:
             self.report.killOutput()

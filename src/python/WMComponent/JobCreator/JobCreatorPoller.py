@@ -102,7 +102,7 @@ def runSplitter(jobFactory, splitParams):
 
 
 def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
-            wmTaskPrio = None, owner = None, ownerDN = None,
+            owner = None, ownerDN = None,
             ownerGroup = '', ownerRole = '',
             scramArch = None, swVersion = None, agentNumber = 0 ):
     """
@@ -122,7 +122,6 @@ def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
     job['agentNumber'] = agentNumber
     cacheDir         = job.getCache()
     job['cache_dir'] = cacheDir
-    job['priority']  = wmTaskPrio
     job['owner']     = owner
     job['ownerDN']   = ownerDN
     job['ownerGroup']   = ownerGroup
@@ -163,7 +162,6 @@ def creatorProcess(work, jobCacheDir):
             ownerDN = owner
 
         jobNumber    = work.get('jobNumber', 0)
-        wmTaskPrio   = work.get('wmTaskPrio', None)
     except KeyError, ex:
         msg =  "Could not find critical key-value in work input.\n"
         msg += str(ex)
@@ -189,7 +187,6 @@ def creatorProcess(work, jobCacheDir):
             saveJob(job = job, workflow = workflow,
                     wmTask = wmTaskName,
                     jobNumber = jobNumber,
-                    wmTaskPrio = wmTaskPrio,
                     sandbox = sandbox,
                     owner = owner,
                     ownerDN = ownerDN,
@@ -544,7 +541,6 @@ class JobCreatorPoller(BaseWorkerThread):
                 processDict = {'workflow': workflow,
                                'wmWorkload': wmWorkload, 'wmTaskName': wmTask.getPathName(),
                                'jobNumber': jobNumber, 'sandbox': wmTask.data.input.sandbox,
-                               'wmTaskPrio': wmTask.getTaskPriority(),
                                'owner': wmWorkload.getOwner().get('name', None),
                                'ownerDN': wmWorkload.getOwner().get('dn', None),
                                'ownerGroup': wmWorkload.getOwner().get('vogroup', ''),

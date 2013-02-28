@@ -28,6 +28,7 @@ from WMCore.BossAir.RunJob      import RunJob
 from WMCore.WMConnectionBase    import WMConnectionBase
 from WMCore.WMException         import WMException
 from WMCore.FwkJobReport.Report import Report
+from WMCore.WMExceptions        import WMJobErrorCodes
 
 
 class BossAirException(WMException):
@@ -652,27 +653,27 @@ class BossAirAPI(WMConnectionBase):
 
 
 
-    def kill(self, jobs, killMsg = None):
+    def kill(self, jobs, killMsg = None, errorCode = 61302):
         """
         _kill_
 
         Kill jobs using plugin functions:
 
-        Only running jobs (status = 1) will be killed
+        Only active jobs (status = 1) will be killed
         An optional killMsg can be sent; this will be written
-        into the job FWJR if one does not exist.
-
+        into the job FWJR. The errorCode will be the one specified
+        and if no killMsg is provided then a standard message associated with the
+        exit code will be used.
+        If a previous FWJR exists, this error will be appended to it.
         """
-        if len(jobs) < 1:
+        if not len(jobs):
             # Nothing to do here
             return
-
         self.check()
-
         jobsToKill = {}
 
-        # Now get a list of which jobs are running
-        # ONLY kill running jobs
+        # Now get a list of which jobs are in the batch system
+        # only kill jobs present there
         loadedJobs = self._buildRunningJobs(wmbsJobs = jobs)
 
         for runningJob in loadedJobs:
@@ -693,6 +694,34 @@ class BossAirAPI(WMConnectionBase):
                 try:
                     pluginInst = self.plugins[plugin]
                     pluginInst.kill(jobs = jobsToKill[plugin])
+                    # Register the killed jobs
+                    for job in jobsToKill[plugin]:
+                        if job.get('cache_dir', None) == None or job.get('retry_count', None) == None:
+                            continue
+                        # Try to save an error report as the jobFWJR
+                        if not os.path.isdir(job['cache_dir']):
+                            # Then we have a bad cache directory
+                            logging.error("Could not write a kill FWJR due to non-existant cache_dir for job %i\n" % job['id'])
+                            logging.debug("cache_dir: %s\n" % job['cache_dir'])
+                            continue
+                        reportName = os.path.join(job['cache_dir'],
+                                                      'Report.%i.pkl' % job['retry_count'])
+                        errorReport = Report()
+                        if os.path.exists(reportName) and os.path.getsize(reportName) > 0:
+                            # Then there's already a report there.  Add messages
+                            errorReport.load(reportName)
+                        # Build a better job message
+                        if killMsg:
+                            reportedMsg = killMsg
+                            reportedMsg += '\n Job last known status was: %s' % job.get('globalState', 'Unknown')
+                        else:
+                            reportedMsg = WMJobErrorCodes[errorCode]
+                            reportedMsg += '\n Job last known status was: %s' % job.get('globalState', 'Unknown')
+                        errorReport.addError("JobKilled", errorCode, "JobKilled", reportedMsg)
+                        try:
+                            errorReport.save(filename = reportName)
+                        except IOError, ioe:
+                            logging.warning('Cannot write report %s because of %s' % (reportName, ioe))
                 except WMException:
                     raise
                 except Exception, ex:
@@ -704,35 +733,6 @@ class BossAirAPI(WMConnectionBase):
                 finally:
                     # Even if kill fails, complete the jobs
                     self._complete(jobs = jobsToKill[plugin])
-
-
-        # If there is a killMsg, pass it on to the accountant via a FWJR
-        # NOTE: If a job brings back a FWJR before it gets killed, that FWJR is preserved.
-        # And updated with the killing message
-        if killMsg:
-            for job in jobs:
-                if job.get('cache_dir', None) == None or job.get('retry_count', None) == None:
-                    continue
-                # Try to save an error report as the jobFWJR
-                if not os.path.isdir(job['cache_dir']):
-                    # Then we have a bad cache directory
-                    logging.error("Could not write a kill FWJR due to non-existant cache_dir for job %i\n" % job['id'])
-                    logging.debug("cache_dir: %s\n" % job['cache_dir'])
-                    continue
-                reportName = os.path.join(job['cache_dir'],
-                                              'Report.%i.pkl' % job['retry_count'])
-                condorErrorReport = Report()
-                if os.path.exists(reportName) and os.path.getsize(reportName) > 0:
-                    # Then there's already a report there.  Add messages
-                    condorErrorReport.load(reportName)
-                #Build a better job message
-                reportedMsg = killMsg + '\n Job last known status was: %s' % job.get('globalState', 'Unknown')
-                condorErrorReport.addError("JobKilled", 61302, "JobKilled", reportedMsg)
-                try:
-                    condorErrorReport.save(filename = reportName)
-                except IOError, ioe:
-                    logging.warning('Cannot write report %s because of %s' % (reportName, ioe))
-
         return
 
 

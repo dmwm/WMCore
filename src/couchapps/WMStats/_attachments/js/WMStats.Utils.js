@@ -137,9 +137,7 @@ WMStats.Utils.utcClock = function(date) {
 
 WMStats.Utils.expandFormat = function(dataArray, summaryStr, formatFunc) {
     var htmlstr = "";
-    if (dataArray == undefined || dataArray.length == undefined ||
-        dataArray.length < 1) {
-     
+    if (dataArray == undefined || typeof (dataArray) !== "object" || dataArray.length == 0) {
         htmlstr +=  "<strong>" +  summaryStr + ":</strong>";
      } else {
         htmlstr += "<details> <summary><strong>" + summaryStr +"</strong></summary><ul>";

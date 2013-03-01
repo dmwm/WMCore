@@ -476,6 +476,28 @@ class FileTest(unittest.TestCase):
               "ERROR: Some locations are missing"
         return
 
+    def testEstimatedTimePerEvent(self):
+        """
+        _EstimatedTimePerEvent_
+
+        Create a file and add time per event information, 
+        gets it back and make sure that all is there 
+        """
+
+        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                        checksums = {'cksum':1})
+        testFileA.addRun(Run( 1, *[45]))
+        testFileA.create()
+        
+        testFileA.setEstimatedTimePerEvent(23.4)
+
+        assert testFileA.getEstimatedTimePerEvent() == 23.4
+        
+        testFileB = File(id = testFileA["id"])
+        assert testFileB.getEstimatedTimePerEvent() == 23.4 
+
+        return
+    
     def testSetLocation(self):
         """
         _testSetLocation_

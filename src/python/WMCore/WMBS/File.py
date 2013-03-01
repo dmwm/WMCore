@@ -397,6 +397,37 @@ class File(WMBSBase, WMFile):
         self.commitTransaction(existingTransaction)
         return
 
+    def setEstimatedTimePerEvent(self, timePerEvent):
+        """
+        _setEstimatedTimePerEvent_
+        
+        Updates WMBS_FILE_DETAILS with the provided time_per_event
+        """
+        
+        existingTransaction = self.beginTransaction()
+
+        action = self.daofactory(classname = "Files.SetEstimatedTimePerEvent")
+        action.execute({"fileid" : self['id'], "time_per_event" : timePerEvent}, \
+                            conn = self.getDBConn(), transaction = existingTransaction)
+
+        self.commitTransaction(existingTransaction)
+
+        return
+    
+    def getEstimatedTimePerEvent(self):
+        """
+        _getEstimatedTimePerEvent_
+        
+        Very simple, gets time_per_event from WMBS_FILE_DETAILS.
+        """
+        myThread = threading.currentThread()
+    
+        action = self.daofactory(classname = "Files.GetEstimatedTimePerEvent")
+        result = action.execute({"fileid" : self['id']}, \
+                            conn = self.getDBConn())
+        return result
+
+
     def setLocation(self, se, immediateSave = True):
         """
         Sets the location of a file. If immediateSave is True, commit change to
@@ -416,6 +447,7 @@ class File(WMBSBase, WMFile):
             self.updateLocations()
 
         return
+
 
     def setCksum(self, cksum, cktype):
         """

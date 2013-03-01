@@ -73,12 +73,13 @@ class CreateWMBSBase(DBCreator):
 
         self.create["02wmbs_file_details"] = \
           """CREATE TABLE wmbs_file_details (
-             id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
-             lfn          VARCHAR(500) NOT NULL,
-             filesize     BIGINT,
-             events       INTEGER,
-             first_event  BIGINT       NOT NULL DEFAULT 0,
-             merged       INT(1)       NOT NULL DEFAULT 0,
+             id               INTEGER      PRIMARY KEY AUTO_INCREMENT,
+             lfn              VARCHAR(500) NOT NULL,
+             filesize         BIGINT,
+             events           INTEGER,
+             time_per_event   FLOAT        NOT NULL DEFAULT 0,
+             first_event      BIGINT       NOT NULL DEFAULT 0,
+             merged           INT(1)       NOT NULL DEFAULT 0,
              UNIQUE (lfn))"""
 
         self.create["03wmbs_fileset_files"] = \

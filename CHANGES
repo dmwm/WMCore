@@ -1,3 +1,10 @@
+0.9.48 to 0.9.49:
+  - Fix straight to merge when splitting is changed.  Pull request #4457.
+  - Fix paused jobs script so that it doesn't crash if there are not paused
+    jobs.  Pull request #4455.
+  - Adds unit test for dashboard reco performance reporting.  Pull request
+    #4434.
+
 0.9.47 to 0.9.48:
   - Update file metadata in WMBS if the file already exists.  Pull
     request #4443.

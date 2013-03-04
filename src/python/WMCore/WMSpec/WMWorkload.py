@@ -997,12 +997,13 @@ class WMWorkloadHelper(PersistencyHelper):
 
         # Set the splitting algorithm for the task.  If the split algo is
         # EventBased, we need to disable straight to merge.  If this isn't an
-        # EventBased algo we need to enable straight to merge.
+        # EventBased algo we need to enable straight to merge. If straight
+        # to merge is disabled then keep it that way.
         taskHelper.setSplittingAlgorithm(splitAlgo, **splitArgs)
         for stepName in taskHelper.listAllStepNames():
             stepHelper = taskHelper.getStepHelper(stepName)
             if stepHelper.stepType() == "StageOut":
-                if splitAlgo != "EventBased" and minMergeSize:
+                if splitAlgo != "EventBased" and stepHelper.minMergeSize() != -1 and minMergeSize:
                     stepHelper.setMinMergeSize(minMergeSize, maxMergeEvents)
                 else:
                     stepHelper.disableStraightToMerge()

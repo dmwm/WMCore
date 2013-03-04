@@ -1032,10 +1032,6 @@ class WMWorkloadTest(unittest.TestCase):
 
         testWorkload.setJobSplittingParameters("/TestWorkload/ProcessingTask", "FileBased",
                                                {"files_per_job": 4})
-
-        stepHelper = procTask.getStepHelper("StageOut1")
-        self.assertEqual(stepHelper.minMergeSize(), 2,
-                         "Error: Wrong min merge size.")
         return
 
     def testUpdatingSubSplitParameters(self):

@@ -642,6 +642,18 @@ class WorkQueueTest(WorkQueueTestCase):
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.getWork(slots)), 3)
 
+    def testSplittingLargeInputs(self):
+        """
+        _testSplittingLargeInputs_
+
+        Check that we can split large inputs and store the processed inputs
+        in the inbox element correctly.
+        """
+        GlobalParams.setNumOfBlocksPerDataset(500)
+        self.globalQueue.queueWork(self.processingSpec.specUrl())
+        inboxElement = self.globalQueue.backend.getInboxElements(elementIDs = [self.processingSpec.name()])
+        self.assertEqual(len(inboxElement[0]['ProcessedInputs']), GlobalParams.numOfBlocksPerDataset())
+        return
 
     def testGlobalBlockSplitting(self):
         """Block splitting at global level"""
@@ -1175,8 +1187,8 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(self.queue.statusInbox()[0]['Status'], 'Failed')
 
 
-    def testDrainSite(self):
-        """Allow sites to drain"""
+    def testSiteStatus(self):
+        """Check that we only pull work on sites in Normal status"""
         self.globalQueue.queueWork(self.processingSpec.specUrl())
         self.globalQueue.queueWork(self.spec.specUrl())
         # acquire 1 element of a wf and then mark site as draining.
@@ -1188,17 +1200,16 @@ class WorkQueueTest(WorkQueueTestCase):
         existing_wf = existing_wf[0]
         rc = ResourceControl()
         rc.changeSiteState('T2_XX_SiteA', 'Draining')
-        # pull more work, only elements from previously pulled wf should be acquired
-        self.localQueue.pullWork(resources = {'doesnt exist' : 0}, draining_resources={'T2_XX_SiteA' : 10},
-                                 continuousReplication = False)
+        rc.changeSiteState('T2_XX_SiteB', 'Draining')
+        # pull more work, no work should be acquired
+        self.localQueue.pullWork(continuousReplication = False)
         syncQueues(self.localQueue)
         [self.fail('Got new wf %s for draining site' % x['RequestName']) for x in self.localQueue.statusInbox() if x['RequestName'] != existing_wf]
         # wmbs injection for draining sites continues to work
         self.assertTrue(self.localQueue.getWork({'T2_XX_SiteA' : 10}))
         # re-enable site and get remainder of work
         rc.changeSiteState('T2_XX_SiteA', 'Normal')
-        self.assertTrue(self.localQueue.pullWork({'T2_XX_SiteA' : 100},
-                                                 continuousReplication = False))
+        self.assertTrue(self.localQueue.pullWork(continuousReplication = False))
         syncQueues(self.localQueue)
         self.assertTrue(self.localQueue.getWork({'T2_XX_SiteA' : 100}))
 

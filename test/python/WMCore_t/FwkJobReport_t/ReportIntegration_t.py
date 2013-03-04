@@ -150,6 +150,7 @@ class ReportIntegrationTest(unittest.TestCase):
         config.section_("JobStateMachine")
         config.JobStateMachine.couchurl = os.getenv("COUCHURL")
         config.JobStateMachine.couchDBName = "report_integration_t"
+        config.JobStateMachine.jobSummaryDBName = "report_integration_wmagent_summary_t"
 
         config.component_("JobAccountant")
         config.JobAccountant.pollInterval = 60
@@ -157,6 +158,8 @@ class ReportIntegrationTest(unittest.TestCase):
         config.JobAccountant.componentDir = os.getcwd()
         config.JobAccountant.logLevel = 'SQLDEBUG'
 
+        config.component_("TaskArchiver")
+        config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
         return config
 
     def verifyJobSuccess(self, jobID):

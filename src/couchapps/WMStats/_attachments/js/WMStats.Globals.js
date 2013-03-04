@@ -20,7 +20,7 @@ WMStats.Globals = function($){
     };
     
     function getAlertCollectorLink() {
-        return "/alertscollector/_design/AlertsCollector/index.html"
+        return "/couchdb/alertscollector/_design/AlertsCollector/index.html"
     };
     
     function getWorkloadSummaryPrefix () {
@@ -35,6 +35,22 @@ WMStats.Globals = function($){
         } else if (_dbVariants[dbname] == "tier0") {
             return "t0_workloadsummary";
         }
+    };
+    
+    function getAgentUrlForJobs(agentURL, workflow, status) {
+        return "http://" + agentURL.split(':')[0] + ":5984/wmagent_jobdump%2Fjobs/_design/JobDump/_list/" + 
+                status + "Jobs/statusByWorkflowName?startkey=[%22" +
+                workflow + "%22]&endkey=[%22" + workflow + "%22%2C{}]&reduce=false&stale=ok";
+    }
+    
+    function formatJobLink(jobNumber, agentURL, workflow, status) {
+            if (jobNumber !== 0) {
+                return "<a href='" + getAgentUrlForJobs(agentURL, workflow, status) +
+                        "' target='_blank'>" + jobNumber + "</a>";
+                                     
+            } else {
+                return jobNumber;
+            };
     };
     
     return {
@@ -57,7 +73,8 @@ WMStats.Globals = function($){
                                 document.write('<script src="'+scripts[i]+'"><\/script>')
                                  }
               },
-        Event: {} // name space for Global Custom event
+        Event: {}, // name space for Global Custom event
+        formatJobLink: formatJobLink
         }
 }(jQuery)
 

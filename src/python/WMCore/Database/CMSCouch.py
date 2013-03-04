@@ -292,7 +292,7 @@ class Database(CouchDBRequests):
             uri += '?' + urllib.urlencode({'rev' : rev})
         return Document(id = id, inputDict = self.get(uri))
 
-    def updateDocument(self, doc_id, design, update_func, fields={}):
+    def updateDocument(self, doc_id, design, update_func, fields={}, useBody=False):
         """
         Call the update function update_func defined in the design document
         design for the document doc_id with a query string built from fields.
@@ -301,11 +301,17 @@ class Database(CouchDBRequests):
         """
         # Clean up /'s in the name etc.
         doc_id = urllib.quote_plus(doc_id)
-
-        updateUri = '/%s/_design/%s/_update/%s/%s?%s' % \
-            (self.name, design, update_func, doc_id, urllib.urlencode(fields))
-
-        return self.put(uri = updateUri, decode=False)
+        
+        if not useBody:
+            updateUri = '/%s/_design/%s/_update/%s/%s?%s' % \
+                (self.name, design, update_func, doc_id, urllib.urlencode(fields))
+    
+            return self.put(uri = updateUri, decode=False)
+        else:
+            updateUri = '/%s/_design/%s/_update/%s/%s' % \
+                (self.name, design, update_func, doc_id)
+    
+            return self.put(uri=updateUri, data=fields, decode=False)
 
     def documentExists(self, id, rev = None):
         """

@@ -297,35 +297,6 @@ class WMTaskTest(unittest.TestCase):
 
         return
 
-
-
-    def testSetGetPriority(self):
-        """
-        _testSetGetPriority_
-
-        Test and see whether we can set and get the
-        priorities in a task.
-        """
-
-        testTask = makeWMTask("TestTask")
-        testTask.setTaskType("Processing")
-
-        # Should be null to start
-        self.assertEqual(testTask.getTaskPriority(), None)
-
-        # Should not accept bad values
-        testTask.setTaskPriority(priority = 'fail')
-        self.assertEqual(testTask.getTaskPriority(), None)
-
-        # Should cast strings
-        testTask.setTaskPriority(priority = '1')
-        self.assertEqual(testTask.getTaskPriority(), 1)
-
-        # Should handle ints
-        testTask.setTaskPriority(priority = 2)
-        self.assertEqual(testTask.getTaskPriority(), 2)
-        return
-
     def testAddNotifications(self):
         """
         _testAddNotifications_

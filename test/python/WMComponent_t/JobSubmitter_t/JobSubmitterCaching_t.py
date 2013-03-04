@@ -49,7 +49,6 @@ class JobSubmitterCachingTest(unittest.TestCase):
                                             maxSlots = 10000, pendingSlots = 10000)
 
         self.testDir = self.testInit.generateWorkDir()
-        #os.environ["COUCHDB"] = "jobsubmittercaching_t"
         self.configFile = EmulatorSetup.setupWMAgentConfig()
         return
 
@@ -169,6 +168,7 @@ class JobSubmitterCachingTest(unittest.TestCase):
         """
         config            = self.createConfig()
         mySubmitterPoller = JobSubmitterPoller(config)
+        mySubmitterPoller.getThresholds()
         mySubmitterPoller.refreshCache()
 
         self.assertEqual(len(mySubmitterPoller.cachedJobIDs), 0,

@@ -3,7 +3,7 @@ WMStats.namespace("JobSummaryTable");
 WMStats.JobSummaryTable = function (data, containerDiv) {
     
     var tableConfig = {
-        "sDom": 'lfrtip',
+        "iDisplayLength": 25,
         "aoColumns": [
             { "mDataProp": function (source, type, val) {
                 if (type == 'display') {

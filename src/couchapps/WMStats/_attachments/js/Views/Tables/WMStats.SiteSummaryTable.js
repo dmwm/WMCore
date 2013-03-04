@@ -3,7 +3,8 @@ WMStats.namespace("SiteSummaryTable");
 WMStats.SiteSummaryTable = function (data, containerDiv) {
     
     var tableConfig = {
-        "sDom": 'lfrtip',
+        "iDisplayLength": 50,
+        "sDom": '<"top"plf>rt<"bottom"ip>',
         "sScrollX": "",
         "aoColumns": [
             {"sTitle": "D", 

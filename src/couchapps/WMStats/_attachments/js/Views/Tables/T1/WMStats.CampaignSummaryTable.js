@@ -3,6 +3,7 @@ WMStats.namespace("CampaignSummaryTable");
 WMStats.CampaignSummaryTable = function (data, containerDiv) {
     
     var tableConfig = {
+        "iDisplayLength": 50,
         "sScrollX": "",
         "aoColumns": [
             {"sTitle": "D", 

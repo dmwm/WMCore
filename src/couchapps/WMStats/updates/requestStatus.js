@@ -14,12 +14,13 @@ function (doc, req) {
         var legalTransition = true;
         if (lastState != statusObj.status) {
             if (lastState == "completed") {
-                if ((statusObj.status != "closed-out") && (statusObj.status != "normal-archived")) {
+                if ((statusObj.status != "closed-out") && (statusObj.status != "normal-archived")  && (statusObj.status != "rejected")) {
                     legalTransition = false;
                 }
-            } else if ((lastState == "aborted-completed") && (statusObj.status != "abort-archived")) {
+            } else if ((lastState == "aborted-completed") && (statusObj.status != "aborted-archived")) {
                 legalTransition = false;
-            } else if ((lastState == "normal-archived") || (lastState == "abort-archived")) {
+            } else if ((lastState == "normal-archived") || (lastState == "aborted-archived") || 
+                       (lastState == "rejected-archived")) {
                 legalTransition = false;
             }
             if (legalTransition) {

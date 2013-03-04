@@ -27,7 +27,7 @@
         tableRowBind: function(bind, parentSelector, func) {
             var currentObj = this;
             var selector =  parentSelector + " table tbody tr"
-            $(selector).live(bind, function () {
+            $(document).on(bind, selector, function () {
                 TableEventHandler.highlightRow(selector, this);
                 currentObj[func](this);
             });
@@ -120,11 +120,11 @@
 
     // actual event binding codes
     // row mouse over/ mouse out events
-    $('tr').live('mouseover', function(event) {
+    $(document).on('mouseover', 'tr', function(event) {
         $(this).addClass('mouseoverRow')
     });
     
-    $('tr').live('mouseout', function(event) {
+    $(document).on('mouseout', 'tr', function(event) {
         $(this).removeClass('mouseoverRow')
     });
 

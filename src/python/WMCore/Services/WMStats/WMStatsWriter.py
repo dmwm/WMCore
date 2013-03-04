@@ -116,7 +116,14 @@ class WMStatsWriter(WMStatsReader):
     def updateAgentInfo(self, agentInfo):
         return self.couchDB.updateDocument(agentInfo['_id'], 'WMStats',
                         'agentInfo',
-                        fields={'agent_info': JSONEncoder().encode(agentInfo)})
+                        {'agent_info': JSONEncoder().encode(agentInfo)},
+                        useBody=True)
+   
+    def updateLogArchiveLFN(self, jobNames, logArchiveLFN):
+        for jobName in jobNames:
+            self.couchDB.updateDocument(jobName, 'WMStats',
+                        'jobLogArchiveLocation',
+                        fields={'logArchiveLFN': logArchiveLFN}) 
 
     def deleteOldDocs(self, days):
         """

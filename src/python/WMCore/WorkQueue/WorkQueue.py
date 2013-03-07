@@ -781,6 +781,9 @@ class WorkQueue(WorkQueueBase):
             self.logger.warning('Backend busy or down: skipping cleanup tasks')
             return
 
+        if self.params['LocalQueueFlag']:
+            self.backend.checkReplicationStatus() # Check any replication error and fix it.
+
         self.backend.pullFromParent() # Check we are upto date with inbound changes
         if self.params['LocalQueueFlag']:
             self.backend.fixConflicts() # before doing anything fix any conflicts

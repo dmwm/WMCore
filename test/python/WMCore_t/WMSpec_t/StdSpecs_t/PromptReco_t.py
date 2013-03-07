@@ -141,7 +141,7 @@ class PromptRecoTest(unittest.TestCase):
                          "Error: LogArchive output fileset is wrong.")
 
         dqmWorkflow = Workflow(name = "TestWorkload",
-                               task = "/TestWorkload/Reco/RecoMergewrite_DQM/RecoMergewrite_DQMDQMHarvestMerged")
+                               task = "/TestWorkload/Reco/RecoMergewrite_DQM/RecoMergewrite_DQMEndOfRunDQMHarvestMerged")
         dqmWorkflow.load()
 
         logArchOutput = dqmWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
@@ -149,9 +149,9 @@ class PromptRecoTest(unittest.TestCase):
         logArchOutput.loadData()
         unmergedLogArchOutput.loadData()
 
-        self.assertEqual(logArchOutput.name, "/TestWorkload/Reco/RecoMergewrite_DQM/RecoMergewrite_DQMDQMHarvestMerged/unmerged-logArchive",
+        self.assertEqual(logArchOutput.name, "/TestWorkload/Reco/RecoMergewrite_DQM/RecoMergewrite_DQMEndOfRunDQMHarvestMerged/unmerged-logArchive",
                          "Error: LogArchive output fileset is wrong.")
-        self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/Reco/RecoMergewrite_DQM/RecoMergewrite_DQMDQMHarvestMerged/unmerged-logArchive",
+        self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/Reco/RecoMergewrite_DQM/RecoMergewrite_DQMEndOfRunDQMHarvestMerged/unmerged-logArchive",
                      "Error: LogArchive output fileset is wrong.")
 
         goldenOutputMods = ["write_RECO", "write_AOD", "write_DQM"]
@@ -371,10 +371,10 @@ class PromptRecoTest(unittest.TestCase):
             self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
                          "Error: Wrong split algorithm.")
 
-        dqmHarvestLogCollect = Fileset(name = "/TestWorkload/Reco/RecoMergewrite_DQM/RecoMergewrite_DQMDQMHarvestMerged/unmerged-logArchive")
+        dqmHarvestLogCollect = Fileset(name = "/TestWorkload/Reco/RecoMergewrite_DQM/RecoMergewrite_DQMEndOfRunDQMHarvestMerged/unmerged-logArchive")
         dqmHarvestLogCollect.loadData()
         dqmHarvestLogCollectWorkflow = Workflow(name = "TestWorkload",
-                                               task = "/TestWorkload/Reco/RecoMergewrite_DQM/RecoMergewrite_DQMDQMHarvestMerged/RecoMergewrite_DQMMergedDQMHarvestLogCollect")
+                                               task = "/TestWorkload/Reco/RecoMergewrite_DQM/RecoMergewrite_DQMEndOfRunDQMHarvestMerged/RecoMergewrite_DQMMergedEndOfRunDQMHarvestLogCollect")
         dqmHarvestLogCollectWorkflow.load()
 
         logCollectSub = Subscription(fileset = dqmHarvestLogCollect, workflow = dqmHarvestLogCollectWorkflow)

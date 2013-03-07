@@ -15,27 +15,33 @@ class Harvest(JobFactory):
     """
     _Harvest_
 
-    Create jobs to process all files in a fileset. A job will not be created
-    until the previous job (if there is one) has been completed and there
-    are available (new) files in the fileset.
+    Job splitting algoritm which creates a single job for all files
+    in the fileset (not neccessarily just available files).
+    Two distinct modes, Periodic and EndOfRun.
 
-    Under normal circumstances runs only once as no new files should be
-    added to the fileset after it has been closed.
+    In Periodic mode, we periodically create a job processing all
+    files. A job will not be created until the previous job (if
+    there is one) has been completed and there are new available
+    files in the fileset. The specified period is the amount of
+    time in seconds between the end of a job and the creation of
+    another job.
 
-    Note that the period here refers to the amount of time between the end of a
-    job and the creation of a new job.
+    In EndOfRun mode, create a job processing all files once the
+    input file has been closed. This means there will only be
+    a single job in total for the subscription.
+
+    For the EndOfRun mode support a sibling parameters that is
+    set if there is also a Periodic subscription. In this case
+    wait until the Periodic subscription is finished before
+    triggering the EndOfRun harvesting.
 
     """
 
-    def createJobsLocationWise(self, fileset):
+    def createJobsLocationWise(self, fileset, endOfRun):
 
         myThread = threading.currentThread()
         fileset.loadData(parentage = 0)
         allFiles = fileset.getFiles()
-        if fileset.open:
-            harvestType = 'Periodic-Harvest'
-        else:
-            harvestType = 'EndOfRun-Harvest'
 
         # sort by location and run
         locationDict = {}
@@ -71,11 +77,16 @@ class Harvest(JobFactory):
         baseName = makeUUID()
         self.newGroup()
 
+        if endOfRun:
+            harvestType = "EndOfRun"
+        else:
+            harvestType = "Periodic"
+
         for location in locationDict.keys():
             for run in locationDict[location].keys():
                 # Should create at least one job for every location/run, putting this here will do
                 jobCount += 1
-                self.newJob(name = "%s-%s-%i" % (baseName, harvestType, jobCount))
+                self.newJob(name = "%s-%s-Harvest-%i" % (baseName, harvestType, jobCount))
                 for f in locationDict[location][run]:
                     for fileRun in runDict[f['lfn']]:
                         if fileRun.run == run:
@@ -87,7 +98,8 @@ class Harvest(JobFactory):
                 if 'X509_USER_PROXY' in os.environ:
                     self.currentJob['proxyPath'] = os.environ['X509_USER_PROXY']
 
-                self.currentJob.addBaggageParameter("runIsComplete", not fileset.open)
+                if endOfRun:
+                    self.currentJob.addBaggageParameter("runIsComplete", True)
 
         return
 
@@ -98,37 +110,42 @@ class Harvest(JobFactory):
         """
         myThread = threading.currentThread()
 
-        periodicInterval = kwargs.get("periodic_harvest_interval", None)
-
-        fileset = self.subscription.getFileset()
-        fileset.load()
+        periodicInterval = kwargs.get("periodic_harvest_interval", 0)
+        periodicSibling = kwargs.get("periodic_harvest_sibling", False)
 
         daoFactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
+
         releasePeriodicJobDAO = daoFactory(classname = "JobSplitting.ReleasePeriodicJob")
-        acquiredFilesCountDAO = daoFactory(classname = "Subscriptions.AcquiredFilesCount")
+        periodicSiblingCompleteDAO = daoFactory(classname = "JobSplitting.PeriodicSiblingComplete")
 
-        # If fileset is open go for periodic, otherwise go to EndOfRun
-        if fileset.open:
-            # We need a valid periodic setting, if it doesn't exist, periodic is deactivated
-            if not periodicInterval:
-                return
+        fileset = self.subscription.getFileset()
+        fileset.load()
 
-            # Here we decide (in the DB) whether we trigger the Periodic job. Logic is
-            # * If there are no jobs yet, screw the delay, fire the first job.
-            # * If there are jobs before, look at the delay, is past? N: Bail Y: Fire job only if there are new files.
+        if periodicInterval and periodicInterval > 0:
+
+            # Trigger the Periodic Job if
+            #  * it is the first job OR
+            #  * the last job ended more than periodicInterval seconds ago
             triggerJob = releasePeriodicJobDAO.execute(subscription = self.subscription["id"], period = periodicInterval)
 
             if triggerJob:
-                self.createJobsLocationWise(fileset)
-        else:
-            # Here comes all the EndOfRun checks
-            filesInProcessing = acquiredFilesCountDAO.execute(subscription = self.subscription["id"])
-            if filesInProcessing > 0:
-                myThread.logger.debug("There are %d files being processed by previous jobs, not firing EndOfRun now" % filesInProcessing)
-                return
-            myThread.logger.debug("Creating End of Run harvesting job")
-            self.createJobsLocationWise(fileset)
+                myThread.logger.debug("Creating Periodic harvesting job")
+                self.createJobsLocationWise(fileset, False)
+
+        elif not fileset.open:
+
+            # Trigger the EndOfRun job if
+            #  * (same as Periodic to not have JobCreator go nuts and stop after the first iteration)  
+            #  * there is no Periodic sibling subscription OR 
+            #  * the Periodic sibling subscription is complete
+            triggerJob = releasePeriodicJobDAO.execute(subscription = self.subscription["id"], period = 3600)
+            if triggerJob and periodicSibling:
+                triggerJob = periodicSiblingCompleteDAO.execute(subscription = self.subscription["id"])
+
+            if triggerJob:
+                myThread.logger.debug("Creating EndOfRun harvesting job")
+                self.createJobsLocationWise(fileset, True)
 
         return

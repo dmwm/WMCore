@@ -361,10 +361,28 @@ class HarvestTest(unittest.TestCase):
             for lumiPair in runs[run]:
                 self.assertTrue(lumiPair in possibleLumiPairs[run], "Strange lumi pair in the job mask")
 
-        self.finishJobs(jobGroups, harvestSub)
+        harvestingWorkflowSib = Workflow(spec = "spec.xml",
+                                         owner = "hufnagel",
+                                         name = "TestWorkflowSib",
+                                         task="TestSib")
+        harvestingWorkflowSib.create()
+
+        harvestSubSib  = Subscription(fileset = multipleFilesFileset,
+                                      workflow = harvestingWorkflowSib,
+                                      split_algo = "Harvest",
+                                      type = "Harvesting")
+        harvestSubSib.create()
+
+        jobFactorySib = self.splitterFactory(package = "WMCore.WMBS", subscription = harvestSubSib)
+
         multipleFilesFileset.markOpen(False)
 
-        jobGroups = jobFactory(periodic_harvest_interval = 2)
+        jobGroups = jobFactorySib(periodic_harvest_sibling = True)
+        self.assertEqual(len(jobGroups), 0, "A single job group was created")
+                
+        self.finishJobs(jobGroups, harvestSub)
+
+        jobGroups = jobFactorySib(periodic_harvest_sibling = True)
         self.assertEqual(len(jobGroups), 1, "A single job group was not created")
         self.assertEqual(len(jobGroups[0].getJobs()), 4, "Four jobs were not created")
 

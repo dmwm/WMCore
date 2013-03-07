@@ -241,7 +241,7 @@ class ReRecoTest(unittest.TestCase):
                              "Error: Wrong split algo.")
 
         dqmWorkflow = Workflow(name = "TestWorkload",
-                               task = "/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputDQMHarvestMerged")
+                               task = "/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputEndOfRunDQMHarvestMerged")
         dqmWorkflow.load()
 
         topLevelFileset = Fileset(name = "/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/merged-Merged")
@@ -260,15 +260,15 @@ class ReRecoTest(unittest.TestCase):
         logArchOutput.loadData()
         unmergedLogArchOutput.loadData()
 
-        self.assertEqual(logArchOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputDQMHarvestMerged/unmerged-logArchive",
+        self.assertEqual(logArchOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputEndOfRunDQMHarvestMerged/unmerged-logArchive",
                          "Error: LogArchive output fileset is wrong.")
-        self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputDQMHarvestMerged/unmerged-logArchive",
+        self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputEndOfRunDQMHarvestMerged/unmerged-logArchive",
                      "Error: LogArchive output fileset is wrong.")
 
-        dqmHarvestLogCollect = Fileset(name = "/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputDQMHarvestMerged/unmerged-logArchive")
+        dqmHarvestLogCollect = Fileset(name = "/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputEndOfRunDQMHarvestMerged/unmerged-logArchive")
         dqmHarvestLogCollect.loadData()
         dqmHarvestLogCollectWorkflow = Workflow(name = "TestWorkload",
-                                               task = "/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputDQMHarvestMerged/DataProcessingMergeDQMoutputMergedDQMHarvestLogCollect")
+                                               task = "/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputEndOfRunDQMHarvestMerged/DataProcessingMergeDQMoutputMergedEndOfRunDQMHarvestLogCollect")
         dqmHarvestLogCollectWorkflow.load()
 
         logCollectSub = Subscription(fileset = dqmHarvestLogCollect, workflow = dqmHarvestLogCollectWorkflow)

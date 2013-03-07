@@ -26,10 +26,12 @@ class WorkQueueBackendTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setupCouch('wq_backend_test_inbox', 'WorkQueue')
         self.testInit.setupCouch('wq_backend_test', 'WorkQueue')
+        self.testInit.setupCouch('wq_backend_test_parent', 'WorkQueue')
         self.couch_db = self.testInit.couch.couchServer.connectDatabase('wq_backend_test')
         self.backend = WorkQueueBackend(db_url = self.testInit.couchUrl,
                                         db_name = 'wq_backend_test',
-                                        inbox_name = 'wq_backend_test_inbox')
+                                        inbox_name = 'wq_backend_test_inbox',
+                                        parentQueue = '%s/%s' % (self.testInit.couchUrl, 'wq_backend_test_parent'))
 
         self.processingSpec = rerecoWorkload('testProcessing', rerecoArgs)
 
@@ -92,6 +94,23 @@ class WorkQueueBackendTest(unittest.TestCase):
         # check no duplicates and no conflicts
         self.assertEqual(len(self.backend.db.allDocs()['rows']), 4) # design doc + workflow + 2 elements
         self.assertEqual(self.backend.db.loadView('WorkQueue', 'conflicts')['total_rows'], 0)
+
+    def testReplicationStatus(self):
+        """
+        _testReplicationStatus_
+
+        Check that we can catch replication errors,
+        the checkReplicationStatus returns True if there is no error.
+        """
+        self.backend.pullFromParent(continuous = True)
+        self.backend.sendToParent(continuous = True)
+        self.assertTrue(self.backend.checkReplicationStatus())
+        self.backend.pullFromParent(continuous = True, cancel = True)
+        self.backend.sendToParent(continuous = True, cancel = True)
+        self.assertFalse(self.backend.checkReplicationStatus())
+        self.backend.pullFromParent(continuous = True)
+        self.backend.sendToParent(continuous = True)
+        self.assertTrue(self.backend.checkReplicationStatus())
 
 if __name__ == '__main__':
     unittest.main()

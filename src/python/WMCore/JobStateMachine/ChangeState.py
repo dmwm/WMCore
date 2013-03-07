@@ -16,6 +16,7 @@ from WMCore.DataStructs.WMObject import WMObject
 from WMCore.JobStateMachine.Transitions import Transitions
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMConnectionBase import WMConnectionBase
+from WMCore.Lexicon import sanitizeURL
 
 CMSSTEP = re.compile(r'^cmsRun[0-9]+$')
 
@@ -323,6 +324,8 @@ class ChangeState(WMObject, WMConnectionBase):
                               "lumis": inputs,
                               "outputdataset": outputDataset,
                               "inputfiles": inputFiles,
+                              "acdc_url": "%s/%s" % (sanitizeURL(self.config.ACDC.couchurl)['url'], self.config.ACDC.database),
+                              "agent_name": self.config.Agent.hostName,
                               "output": outputs }
                 if couchDocID is not None:
                     try:

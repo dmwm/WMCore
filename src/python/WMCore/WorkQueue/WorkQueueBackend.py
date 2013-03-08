@@ -60,7 +60,7 @@ class WorkQueueBackend(object):
         self.pullFromParent(continuous = False)
         self.sendToParent(continuous = False)
 
-    def pullFromParent(self, continuous = True):
+    def pullFromParent(self, continuous = True, cancel = False):
         """Replicate from parent couch - blocking"""
         try:
             if self.parentCouchUrl and self.queueUrl:
@@ -68,11 +68,12 @@ class WorkQueueBackend(object):
                                       destination = "%s/%s" % (self.hostWithAuth, self.inbox.name),
                                       filter = 'WorkQueue/queueFilter',
                                       query_params = {'childUrl' : self.queueUrl, 'parentUrl' : self.parentCouchUrl},
-                                      continuous = continuous)
+                                      continuous = continuous,
+                                      cancel = cancel)
         except Exception, ex:
             self.logger.warning('Replication from %s failed: %s' % (self.parentCouchUrl, str(ex)))
 
-    def sendToParent(self, continuous = True):
+    def sendToParent(self, continuous = True, cancel = False):
         """Replicate to parent couch - blocking"""
         try:
             if self.parentCouchUrl and self.queueUrl:
@@ -80,7 +81,8 @@ class WorkQueueBackend(object):
                                       destination = self.parentCouchUrlWithAuth,
                                       filter = 'WorkQueue/queueFilter',
                                       query_params = {'childUrl' : self.queueUrl, 'parentUrl' : self.parentCouchUrl},
-                                      continuous = continuous)
+                                      continuous = continuous,
+                                      cancel = cancel)
         except Exception, ex:
             self.logger.warning('Replication to %s failed: %s' % (self.parentCouchUrl, str(ex)))
 
@@ -470,3 +472,37 @@ class WorkQueueBackend(object):
                     finalInjectionStatus.append({element._id : False})
 
             return finalInjectionStatus
+
+    def checkReplicationStatus(self):
+        """
+        _checkReplicationStatus_
+
+        Check if the workqueue replication is ok, if not
+        then delete the documents so that new replications can be triggered
+        when appropiate.
+        It returns True if there is no error, and False otherwise.
+        """
+
+        status = self.server.status()
+        replicationError = False
+        replicationCount = 0
+        expectedReplicationCount = 2 # GQ -> LQ-Inbox & LQ-Inbox -> GQ
+        # Remove the protocol frm the sanitized url
+        inboxUrl = sanitizeURL('%s/%s' % (self.server.url, self.inbox.name))['url'].split('/', 2)[2]
+        try:
+            for activeTasks in status['active_tasks']:
+                if activeTasks['type'] == 'Replication':
+                    if inboxUrl in activeTasks['task']:
+                        replicationCount += 1
+            if replicationCount < expectedReplicationCount:
+                replicationError = True
+        except:
+            replicationError = True
+
+        if replicationError:
+            # Stop workqueue related replication
+            self.logger.error("Stopping replication as it was in error state. It will be restarted.")
+            self.pullFromParent(continuous = True, cancel = True)
+            self.sendToParent(continuous = True, cancel = True)
+
+        return not replicationError

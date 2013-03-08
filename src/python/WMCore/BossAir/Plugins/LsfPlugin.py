@@ -192,7 +192,7 @@ class LsfPlugin(BasePlugin):
                     if returncode == 0:
                         # check for correct naming convention in PFN
                         regExpParser = re.compile('Job <([0-9]+)> is submitted to queue')
-                        match = regExpParser.match(stdout)
+                        match = regExpParser.search(stdout)
                         if match != None:
                             job['gridid'] = match.group(1)
                             successfulJobs.append(job)

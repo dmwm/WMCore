@@ -48,7 +48,6 @@ class CouchappTest(unittest.TestCase):
         # Setup config for couch connections
         config = self.testInit.getConfiguration()
         config.section_("JobStateMachine")
-        config.JobStateMachine.couchurl     = os.getenv("COUCHURL", "cmssrv52.fnal.gov:5984")
         config.JobStateMachine.couchDBName  = self.databaseName
 
         # Create couch server and connect to databases

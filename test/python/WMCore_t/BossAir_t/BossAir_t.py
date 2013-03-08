@@ -182,7 +182,7 @@ class BossAirTest(unittest.TestCase):
         Build a basic BossAir config
         """
 
-        config = Configuration()
+        config = self.testInit.getConfiguration()
 
         config.section_("Agent")
         config.Agent.agentName  = 'testAgent'
@@ -226,7 +226,6 @@ class BossAirTest(unittest.TestCase):
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL')
         config.JobStateMachine.couchDBName     = "bossair_t"
-
 
         # JobStatusLite
         config.component_('JobStatusLite')

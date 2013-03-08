@@ -439,7 +439,7 @@ class WMBSHelperTest(unittest.TestCase):
         cleanupTask = procTask.addTask("CleanupTask")
         cleanupTask.setInputReference(procTaskCMSSW, outputModule = "OutputA")
         cleanupTask.setTaskType("Merge")
-        cleanupTask.setSplittingAlgorithm("SiblingProcessingBase", files_per_job = 50)
+        cleanupTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 50)
         cleanupTaskCMSSW = cleanupTask.makeStep("cmsRun1")
         cleanupTaskCMSSW.setStepType("CMSSW")
         cleanupTaskCMSSWHelper = cleanupTaskCMSSW.getTypeHelper()

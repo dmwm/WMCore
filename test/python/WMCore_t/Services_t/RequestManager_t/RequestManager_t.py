@@ -42,7 +42,7 @@ class RequestManagerTest(RESTBaseUnitTest):
         
     def setUp(self):
         RESTBaseUnitTest.setUp(self)
-        self.testInit.setupCouch("%s" % self.couchDBName, "GroupUser", "ConfigCache")
+        self.testInit.setupCouch("%s" % self.couchDBName, "GroupUser", "ConfigCache", "ReqMgr")
         self.testInit.setupCouch("%s_wmstats" % self.couchDBName, "WMStats")
         # logging stuff from TestInit is broken, setting myself
         l = logging.getLogger()

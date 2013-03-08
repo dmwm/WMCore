@@ -114,14 +114,6 @@ def percentages(updates):
             percent_success = update['percent_success']
     return percent_complete, percent_success
 
-def getRequestDetails(requestName):
-    """ Return a dict with the intimate details of the request """
-    requestId = requestID(requestName)
-    request = getRequest(requestId)
-    request['Assignments'] = getAssignmentsByName(requestName)
-    request['RequestMessages'] = ChangeState.getMessages(requestName)
-    request['RequestUpdates'] = ChangeState.getProgress(requestName)
-    return request
 
 def getRequests():
     """ This only fills the details needed to make succint browser tables,

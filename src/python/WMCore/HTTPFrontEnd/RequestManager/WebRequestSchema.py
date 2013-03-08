@@ -106,7 +106,9 @@ class WebRequestSchema(WebAPI):
     @cherrypy.tools.secmodv2()
     def makeSchema(self, **schema):
         schema.setdefault('CouchURL', Utilities.removePasswordFromUrl(self.couchUrl))
+        # wrong naming ... but it's all over the place, it's the config cache DB name
         schema.setdefault('CouchDBName', self.configDBName)
+        schema.setdefault('CouchWorkloadDBName', self.workloadDBName)
 
         decodedSchema = {}
         for key in schema.keys():

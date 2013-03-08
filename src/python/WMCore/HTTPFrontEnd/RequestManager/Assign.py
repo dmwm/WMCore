@@ -17,6 +17,7 @@ import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeSt
 import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
 import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
 from WMCore.HTTPFrontEnd.RequestManager.ReqMgrAuth import ReqMgrAuth
+from WMCore.Database.CMSCouch import Database
 import WMCore.Lexicon
 from WMCore.Wrappers import JsonWrapper
 
@@ -292,3 +293,11 @@ class Assign(WebAPI):
                                                    priority = subscriptionPriority)
         helper.setDashboardActivity(kwargs.get("dashboard", ""))
         Utilities.saveWorkload(helper, request['RequestWorkflow'], self.wmstatWriteURL)
+        
+        # update AcquisitionEra in the Couch document (#4380)
+        # request object returned above from Oracle doesn't have information Couch
+        # database
+        reqDetails = Utilities.requestDetails(request["RequestName"])
+        couchDb = Database(reqDetails["CouchWorkloadDBName"], reqDetails["CouchURL"])
+        couchDb.updateDocument(request["RequestName"], "ReqMgr", "updaterequest",
+                               fields={"AcquisitionEra": reqDetails["AcquisitionEra"]})

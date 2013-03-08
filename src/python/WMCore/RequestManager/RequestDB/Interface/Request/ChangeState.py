@@ -7,9 +7,12 @@ State Change API methods
 
 """
 import logging
-import WMCore.RequestManager.RequestDB.Connection as DBConnect
 from cherrypy import HTTPError
+
+from WMCore.Wrappers.JsonWrapper import JSONEncoder
+import WMCore.RequestManager.RequestDB.Connection as DBConnect
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+from WMCore.Database.CMSCouch import Database
 
 # TODO: Merge with getRequest.requestID
 def getRequestID(factory, requestName):
@@ -56,7 +59,7 @@ def changeRequestPriority(requestName, priority):
     return
 
 
-def changeRequestStatus(requestName, newState, priority = None, wmstatUrl = None):
+def changeRequestStatus(requestName, newState, priority=None, wmstatUrl=None):
     """
     _changeRequestStatus_
 
@@ -71,16 +74,32 @@ def changeRequestStatus(requestName, newState, priority = None, wmstatUrl = None
     it's possible to change priority at one go. Hence the argument is here.
 
     """
+    # MySQL/Oracle
+    factory = DBConnect.getConnection()
+    reqId = getRequestID(factory, requestName)
+    changeRequestIDStatus(reqId, newState, priority)
+    
+    # CouchDB
+    # have to first get information where the request Couch document is,
+    # extracting the information from reqmgr_request.workflow table field
+    reqData = factory(classname = "Request.Get").execute(reqId)
+    # this would be something like this:
+    # http://localhost:5984/reqmgr_workload_cache/maxa_RequestString-OVERRIDE-ME_130306_205649_8066/spec
+    wfUrl = reqData['workflow']
+    # cut off /maxa_RequestString-OVERRIDE-ME_130306_205649_8066/spec
+    couchUrl = wfUrl.replace('/' + requestName + "/spec", '')
+    couchDbName = couchUrl[couchUrl.rfind('/') + 1:]
+    # cut off database name from the URL 
+    url = couchUrl.replace('/' + couchDbName, '')
+    couchDb = Database(couchDbName, url)
+    fields = {"RequestStatus": newState}
+    couchDb.updateDocument(requestName, "ReqMgr", "updaterequest", fields=fields) 
+
     #TODO: should we make this mendatory?
     if wmstatUrl:
         wmstatSvc = WMStatsWriter(wmstatUrl)
         wmstatSvc.updateRequestStatus(requestName, newState)
-
-    factory = DBConnect.getConnection()
-    reqId = getRequestID(factory, requestName)
-    changeRequestIDStatus(reqId, newState, priority)
-    return
-
+    
 
 def assignRequest(requestName, teamName, priorityModifier = 0, prodMgr = None, wmstatUrl = None):
     """

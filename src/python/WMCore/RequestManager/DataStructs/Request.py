@@ -1,19 +1,10 @@
-#!/usr/bin/env python
 """
-_Request_
-
 Data Object representing a request
-
 
 """
 
 
 class Request(dict):
-    """
-    _Request_
-
-
-    """
     def __init__(self):
         dict.__init__(self)
         #  //
@@ -23,7 +14,6 @@ class Request(dict):
         self.setdefault("RequestType", None)
         self.setdefault("RequestStatus", None)
         self.setdefault("RequestPriority", None)
-        self.setdefault("RequestWorkflow", None)
         self.setdefault("RequestNumEvents", None)
         self.setdefault("RequestSizeFiles", None)
         self.setdefault("AcquisitionEra", None)
@@ -53,11 +43,3 @@ class Request(dict):
         self.setdefault("SoftwareVersions", [])
         self.setdefault("InputDatasets", [])
         self.setdefault("InputDatasetTypes", {})
-
-
-        #  //
-        # // Workflow information
-        #//
-        self.setdefault("WorkflowSpec", None)
-        # DBS information
-        self.setdefault("DbsUrl", None)

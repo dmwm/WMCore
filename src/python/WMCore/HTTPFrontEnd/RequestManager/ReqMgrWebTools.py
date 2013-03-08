@@ -4,6 +4,7 @@ import time
 import logging
 import re
 import WMCore.Wrappers.JsonWrapper as JsonWrapper
+from WMCore.Wrappers.JsonWrapper import JSONEncoder
 import cherrypy
 from os import path
 from xml.dom.minidom import parse as parseDOM
@@ -12,6 +13,7 @@ from cherrypy import HTTPError
 from cherrypy.lib.static import serve_file
 from httplib import HTTPException
 import WMCore.Lexicon
+from WMCore.Database.CMSCouch import Database
 import cgi
 import WMCore.RequestManager.RequestDB.Settings.RequestStatus             as RequestStatus
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState      as ChangeState
@@ -316,8 +318,11 @@ def changeStatus(requestName, status, wmstatUrl):
             abortRequest(requestName)
         else:
             raise cherrypy.HTTPError(400, "You cannot abort a request in state %s" % oldStatus)
-    #FIXME needs logic about who is allowed to do which transition
-    ChangeState.changeRequestStatus(requestName, status, wmstatUrl = wmstatUrl)
+        
+    # finally, perform the transition, have to do it in both Oracle and CouchDB
+    # and in WMStats
+    ChangeState.changeRequestStatus(requestName, status, wmstatUrl=wmstatUrl)        
+
 
 def prepareForTable(request):
     """ Add some fields to make it easier to display a request """
@@ -449,7 +454,7 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
         raise HTTPError(400, "Error in Workload Validation: %s" % ex._message)
     
     helper = WMWorkloadHelper(request['WorkloadSpec'])
-
+    
     #4378 - ACDC (Resubmission) requests should inherit the Campaign ...
     # for Resubmission request, there already is previous Campaign set
     # this call would override it with initial request arguments where
@@ -466,7 +471,7 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
         
     # can't save Request object directly, because it makes it hard to retrieve the _rev
     metadata = {}
-    metadata.update(request)
+    metadata.update(request)    
     
     # Add the output datasets if necessary
     # for some bizarre reason OutpuDatasets is list of lists, when cloning
@@ -486,7 +491,29 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
     except CheckIn.RequestCheckInError, ex:
         msg = ex._message
         raise HTTPError(400, "Error in Request check-in: %s" % msg)
-    
+        
+    # Inconsistent request parameters between Oracle and Couch (#4380, #4388)
+    # metadata above is what is saved into couch to represent a request document.
+    # Number of request arguments on a corresponding couch document
+    # is not set, has default null/None values, update those accordingly now.
+    # It's a mess to have two mutually inconsistent database backends.
+    # Not easy to handle this earlier since couch is stored first and
+    # some parameters are worked out later when storing into Oracle.
+    reqDetails = requestDetails(request["RequestName"])
+    # couchdb request parameters which are null at the injection time and remain so
+    paramsToUpdate = ["RequestStatus",
+                      "ReqMgrRequestID",
+                      "RequestSizeFiles",
+                      "ReqMgrRequestBasePriority",
+                      "ReqMgrRequestorID",
+                      "AcquisitionEra",
+                      "ReqMgrGroupID"]
+    couchDb = Database(reqDetails["CouchWorkloadDBName"], reqDetails["CouchURL"])
+    fields = {}
+    for key in paramsToUpdate:
+        fields[key] = reqDetails[key]
+    couchDb.updateDocument(request["RequestName"], "ReqMgr", "updaterequest", fields=fields) 
+        
     try:
         wmstatSvc = WMStatsWriter(wmstatUrl)
         wmstatSvc.insertRequest(request)

@@ -1,28 +1,24 @@
 #!/usr/bin/env python
 #pylint: disable-msg=E1101, W6501, W0142, C0103, W0401, E1103
 # W0401: I am not going to import all those functions by hand
-
-
 """
+_DBSUploadPoller_t_
 
 DBSUpload test TestDBSUpload module and the harness
-
 """
-
 
 import os
 import sys
 import threading
-import time
 import unittest
+import time
 import cProfile, pstats
-import nose
 
 from nose.plugins.attrib import attr
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators.DBSClient.DBS2Interface import DBS2Interface
 
-from WMComponent.DBSUpload.DBSUpload       import DBSUpload
 from WMComponent.DBSUpload.DBSUploadPoller import DBSUploadPoller
 from WMComponent.DBS3Buffer.DBSBufferFile  import DBSBufferFile
 
@@ -30,31 +26,29 @@ from WMCore.WMFactory       import WMFactory
 from WMCore.DAOFactory      import DAOFactory
 from WMCore.Services.UUID   import makeUUID
 from WMCore.DataStructs.Run import Run
-from DBSAPI.dbsApi          import DbsApi
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Cache.WMConfigCache import ConfigCache
 from WMCore.Agent.HeartbeatAPI  import HeartbeatAPI
 
-from WMComponent.DBSUpload.DBSInterface import *
+from WMComponent.DBSUpload.DBSInterface import DBSInterface, listAlgorithms, \
+                                               listDatasetFiles, listBlocks, \
+                                               listPrimaryDatasets, listProcessedDatasets
 
 class DBSUploadTest(unittest.TestCase):
     """
+    _DBSUploadTest_
+
     TestCase for DBSUpload module
-
-    Note:
-      This fails if you use the in-memory syntax for sqlite
-      i.e. (DATABASE = sqlite://)
     """
-    _maxMessage = 10
 
+    _maxMessage = 10
 
     def setUp(self):
         """
         _setUp_
 
         setUp function for unittest
-
         """
         # Set constants
         self.couchDB      = "config_test"
@@ -74,12 +68,14 @@ class DBSUploadTest(unittest.TestCase):
         self.bufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                         logger = myThread.logger,
                                         dbinterface = myThread.dbi)
+        self.buffer3Factory = DAOFactory(package = "WMComponent.DBS3Buffer",
+                                         logger = myThread.logger,
+                                         dbinterface = myThread.dbi)
 
         locationAction = self.bufferFactory(classname = "DBSBufferFiles.AddLocation")
         locationAction.execute(siteName = "se1.cern.ch")
         locationAction.execute(siteName = "se1.fnal.gov")
         locationAction.execute(siteName = "malpaquet")
-
 
         # Set heartbeat
         self.componentName = 'JobSubmitter'
@@ -101,7 +97,6 @@ class DBSUploadTest(unittest.TestCase):
         self.configURL = "%s;;%s;;%s" % (os.environ["COUCHURL"],
                                          self.couchDB,
                                          configCache.getCouchID())
-
         return
 
     def tearDown(self):
@@ -111,8 +106,10 @@ class DBSUploadTest(unittest.TestCase):
         tearDown function for unittest
         """
 
-        self.testInit.clearDatabase(modules = ["WMComponent.DBS3Buffer",
-                                               'WMCore.Agent.Database'])
+        self.testInit.clearDatabase()
+        self.testInit.tearDownCouch()
+        self.testInit.delWorkDir()
+        return
 
     def createConfig(self):
         """
@@ -151,9 +148,6 @@ class DBSUploadTest(unittest.TestCase):
         config.DBSInterface.globalDBSVersion = 'DBS_2_0_9'
         config.DBSInterface.DBSUrl           = 'http://vocms09.cern.ch:8880/cms_dbs_int_local_yy_writer/servlet/DBSServlet'
         config.DBSInterface.DBSVersion       = 'DBS_2_0_9'
-        config.DBSInterface.DBSBlockMaxFiles = 10
-        config.DBSInterface.DBSBlockMaxSize  = 9999999999
-        config.DBSInterface.DBSBlockMaxTime  = 10000
         config.DBSInterface.MaxFilesToCommit = 10
 
         # addition for Alerts messaging framework, work (alerts) and control
@@ -168,19 +162,41 @@ class DBSUploadTest(unittest.TestCase):
 
         return config
 
+    def injectWorkflow(self, workflowName = 'TestWorkflow',
+                       taskPath = '/TestWorkflow/ReadingEvents',
+                       MaxWaitTime  = 10000,
+                       MaxFiles = 10,
+                       MaxEvents = 250000000,
+                       MaxSize = 9999999999):
+        """
+        _injectWorklow_
 
-    def getFiles(self, name, tier, nFiles = 12, site = "malpaquet"):
+        Inject a dummy worklow in DBSBuffer for testing,
+        returns the workflow ID
+        """
+        injectWorkflowDAO = self.buffer3Factory("InsertWorkflow")
+        workflowID = injectWorkflowDAO.execute(workflowName, taskPath,
+                                               MaxWaitTime, MaxFiles,
+                                               MaxEvents, MaxSize)
+        return workflowID
+
+    def getFiles(self, name, tier, nFiles = 12, site = "malpaquet", workflowName = None, taskPath = None,
+                 noChild = False):
         """
         Create some quick dummy test files
-
-
         """
+
+        if workflowName is not None and taskPath is not None:
+            workflowId = self.injectWorkflow(workflowName = workflowName,
+                                             taskPath = taskPath)
+        else:
+            workflowId = self.injectWorkflow()
 
         files = []
 
         for f in range(0, nFiles):
             testFile = DBSBufferFile(lfn = '%s-%s-%i' % (name, site, f), size = 1024,
-                                     events = 20, checksums = {'cksum': 1})
+                                     events = 20, checksums = {'cksum': 1}, workflowId = workflowId)
             testFile.setAlgorithm(appName = name, appVer = "CMSSW_3_1_1",
                                   appFam = "RECO", psetHash = "GIBBERISH",
                                   configContent = self.configURL)
@@ -191,19 +207,20 @@ class DBSUploadTest(unittest.TestCase):
             testFile.setLocation(site)
             files.append(testFile)
 
+        if not noChild:
+            testFileChild = DBSBufferFile(lfn = '%s-%s-child' %(name, site), size = 1024,
+                                     events = 10, checksums = {'cksum': 1},
+                                     workflowId = workflowId)
+            testFileChild.setAlgorithm(appName = name, appVer = "CMSSW_3_1_1",
+                                  appFam = "RECO", psetHash = "GIBBERISH",
+                                  configContent = self.configURL)
+            testFileChild.setDatasetPath("/%s/%s_2/RECO" %(name, name))
+            testFileChild.addRun(Run( 1, *[45]))
+            testFileChild.setGlobalTag("aGlobalTag")
+            testFileChild.create()
+            testFileChild.setLocation(site)
 
-        testFileChild = DBSBufferFile(lfn = '%s-%s-child' %(name, site), size = 1024,
-                                 events = 10, checksums = {'cksum': 1})
-        testFileChild.setAlgorithm(appName = name, appVer = "CMSSW_3_1_1",
-                              appFam = "RECO", psetHash = "GIBBERISH",
-                              configContent = self.configURL)
-        testFileChild.setDatasetPath("/%s/%s_2/RECO" %(name, name))
-        testFileChild.addRun(Run( 1, *[45]))
-        testFileChild.setGlobalTag("aGlobalTag")
-        testFileChild.create()
-        testFileChild.setLocation(site)
-
-        testFileChild.addParents([x['lfn'] for x in files])
+            testFileChild.addParents([x['lfn'] for x in files])
 
 
         return files
@@ -222,7 +239,7 @@ class DBSUploadTest(unittest.TestCase):
         """
         myThread = threading.currentThread()
         config = self.createConfig()
-        config.DBSInterface.DBSBlockMaxTime = 3
+        self.injectWorkflow(MaxWaitTime = 3)
         config.DBSUpload.pollInterval  = 4
 
         name = "ThisIsATest_%s" % (makeUUID())
@@ -355,8 +372,7 @@ class DBSUploadTest(unittest.TestCase):
         #raise nose.SkipTest
         myThread = threading.currentThread()
         config = self.createConfig()
-        config.DBSInterface.DBSBlockMaxTime = 20
-
+        self.injectWorkflow(MaxWaitTime = 20)
         name = "ThisIsATest_%s" % (makeUUID())
         tier = "RECO"
         nFiles = 12
@@ -484,7 +500,7 @@ class DBSUploadTest(unittest.TestCase):
             self.assertEqual(res[0], 'READY')
 
         config.DBSUpload.abortStepThree     = False
-        config.DBSInterface.DBSBlockMaxTime = 300
+        self.injectWorkflow(MaxWaitTime = 300)
         testDBSUpload = DBSUploadPoller(config = config)
         testDBSUpload.algorithm()
 
@@ -504,7 +520,7 @@ class DBSUploadTest(unittest.TestCase):
         result = listDatasetFiles(apiRef = globeAPI, datasetPath = datasetPath)
         self.assertEqual(len(result), 10)
 
-        config.DBSInterface.DBSBlockMaxTime = 1
+        myThread.dbi.processData("UPDATE dbsbuffer_workflow SET block_close_max_wait_time = 1")
         testDBSUpload = DBSUploadPoller(config = config)
         time.sleep(3)
         testDBSUpload.algorithm()
@@ -575,7 +591,7 @@ class DBSUploadTest(unittest.TestCase):
         """
         myThread = threading.currentThread()
         config = self.createConfig()
-        config.DBSInterface.DBSBlockMaxTime   = 3
+        self.injectWorkflow(MaxWaitTime = 3)
         config.DBSInterface.doGlobalMigration = False
         config.DBSUpload.pollInterval         = 4
 
@@ -650,6 +666,124 @@ class DBSUploadTest(unittest.TestCase):
 
         return
 
+    def testG_closeSettingsPerWorkflow(self):
+        """
+        _closeSettingsPerWorkflow_
+
+        Test our ability to close blocks depending on settings
+        configured for individual workflows.
+        This unit test that doesn't require an actual DBS instance to run.
+        """
+
+        myThread = threading.currentThread()
+        config = self.createConfig()
+        config.DBSInterface.doGlobalMigration = False
+
+        # First test, limit by number of files and timeout without new files
+        name = "ThisIsATest_%s" % (makeUUID())
+        tier = "RECO"
+        nFiles = 12
+        self.injectWorkflow(workflowName = name, taskPath = '/%s/Test' % name,
+                            MaxFiles = 5)
+        self.getFiles(name = name, tier = tier, nFiles = nFiles,
+                              workflowName = name, taskPath = '/%s/Test' % name)
+
+        # Load components that are necessary to check status
+        factory     = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")
+        dbinterface = factory.loadObject("UploadToDBS")
+
+        # Change the DBSUploadPoller imports on runtime
+        from WMComponent.DBSUpload import DBSUploadPoller as MockDBSUploadPoller
+        MockDBSUploadPoller.DBSInterface = DBS2Interface
+
+        # In the first round we should create blocks for the first dataset
+        # The child dataset should not be handled until the parent is uploaded
+        # First run creates 3 blocks, 2 are closed immediately and one is open
+        testDBSUpload = MockDBSUploadPoller.DBSUploadPoller(config = config)
+        testDBSUpload.algorithm()
+        openBlocks = dbinterface.findOpenBlocks()
+        closedBlocks = myThread.dbi.processData("SELECT id FROM dbsbuffer_block WHERE status = 'InGlobalDBS'")[0].fetchall()
+        self.assertEqual(len(openBlocks), 1)
+        self.assertEqual(len(closedBlocks), 2)
+        globalFiles = myThread.dbi.processData("SELECT id FROM dbsbuffer_file WHERE status = 'GLOBAL'")[0].fetchall()
+        notUploadedFiles = myThread.dbi.processData("SELECT * FROM dbsbuffer_file WHERE status = 'NOTUPLOADED'")[0].fetchall()
+        self.assertEqual(len(globalFiles), 12)
+        self.assertEqual(len(notUploadedFiles), 1)
+        self.assertTrue('child' in notUploadedFiles[0][1])
+        testDBSUpload.algorithm()
+        openBlocks = myThread.dbi.processData("SELECT id FROM dbsbuffer_block WHERE status != 'InGlobalDBS'")[0].fetchall()
+        closedBlocks = myThread.dbi.processData("SELECT id FROM dbsbuffer_block WHERE status = 'InGlobalDBS'")[0].fetchall()
+        self.assertEqual(len(openBlocks), 2)
+        self.assertEqual(len(closedBlocks), 2)
+        globalFiles = myThread.dbi.processData("SELECT id FROM dbsbuffer_file WHERE status = 'GLOBAL'")[0].fetchall()
+        notUploadedFiles = myThread.dbi.processData("SELECT * FROM dbsbuffer_file WHERE status = 'NOTUPLOADED'")[0].fetchall()
+        self.assertEqual(len(globalFiles), 13)
+        self.assertEqual(len(notUploadedFiles), 0)
+        # Test the timeout feature to close blocks
+        myThread.dbi.processData("UPDATE dbsbuffer_workflow SET block_close_max_wait_time = 0")
+        testDBSUpload.algorithm()
+        openBlocks = myThread.dbi.processData("SELECT id FROM dbsbuffer_block WHERE status != 'InGlobalDBS'")[0].fetchall()
+        closedBlocks = myThread.dbi.processData("SELECT id FROM dbsbuffer_block WHERE status = 'InGlobalDBS'")[0].fetchall()
+        self.assertEqual(len(openBlocks), 0)
+        self.assertEqual(len(closedBlocks), 4)
+        # Check the information that DBS received
+        dbsBlocks = testDBSUpload.dbsInterface.blocks
+        for dbsBlockName in dbsBlocks:
+            dbsBlock = dbsBlocks[dbsBlockName]
+            self.assertEqual(dbsBlock['OpenForWriting'], '0')
+            self.assertTrue(dbsBlock['nFiles'] in (1,2,5))
+
+        # Second test, limit by number of events and timeout with new files
+        name = "ThisIsATest_%s" % (makeUUID())
+        nFiles = 50
+        self.injectWorkflow(workflowName = name, taskPath = '/%s/Test' % name,
+                            MaxFiles = 45, MaxEvents = 800, MaxWaitTime = 2)
+        self.getFiles(name = name, tier = tier, nFiles = nFiles,
+                              workflowName = name, taskPath = '/%s/Test' % name)
+        testDBSUpload.algorithm()
+        testDBSUpload.algorithm()
+        openBlocks = myThread.dbi.processData("SELECT id FROM dbsbuffer_block WHERE status != 'InGlobalDBS'")[0].fetchall()
+        closedBlocks = myThread.dbi.processData("SELECT id FROM dbsbuffer_block WHERE status = 'InGlobalDBS'")[0].fetchall()
+        self.assertEqual(len(openBlocks), 2)
+        self.assertEqual(len(closedBlocks), 5)
+        # Throw 20 new files but sleep for 3 seconds first
+        time.sleep(3)
+        self.getFiles(name = name + '2', tier = tier, nFiles = 20,
+                      workflowName = name, taskPath = '/%s/Test' % name,
+                      noChild = True)
+        # Now a new block will have to be created as the last one timed out
+        testDBSUpload.algorithm()
+        openBlocks = myThread.dbi.processData("SELECT id FROM dbsbuffer_block WHERE status != 'InGlobalDBS'")[0].fetchall()
+        closedBlocks = myThread.dbi.processData("SELECT id FROM dbsbuffer_block WHERE status = 'InGlobalDBS'")[0].fetchall()
+        self.assertEqual(len(openBlocks), 1)
+        self.assertEqual(len(closedBlocks), 7)
+        dbsBlocks = testDBSUpload.dbsInterface.blocks
+        for dbsBlockName in dbsBlocks:
+            dbsBlock = dbsBlocks[dbsBlockName]
+            if name in dbsBlockName:
+                if dbsBlock['OpenForWriting'] == '1':
+                    self.assertEqual(dbsBlock['nFiles'], 20)
+                else:
+                    self.assertTrue(dbsBlock['events'] in (10,200,800))
+                    self.assertTrue(dbsBlock['nFiles'] in (1,10,40))
+
+        # Last test, check limitation by size
+        name = "ThisIsATest_%s" % (makeUUID())
+        nFiles = 10
+        self.injectWorkflow(workflowName = name, taskPath = '/%s/Test' % name,
+                            MaxFiles = 45, MaxEvents = 800, MaxSize = 2048)
+        self.getFiles(name = name, tier = tier, nFiles = nFiles,
+                              workflowName = name, taskPath = '/%s/Test' % name)
+        testDBSUpload.algorithm()
+        dbsBlocks = testDBSUpload.dbsInterface.blocks
+        for dbsBlockName in dbsBlocks:
+            dbsBlock = dbsBlocks[dbsBlockName]
+            if name in dbsBlockName:
+                self.assertEqual(dbsBlock['events'], 40)
+                self.assertEqual(dbsBlock['nFiles'], 2)
+                self.assertEqual(dbsBlock['size'], 2048)
+
+        return
 
 if __name__ == '__main__':
     unittest.main()

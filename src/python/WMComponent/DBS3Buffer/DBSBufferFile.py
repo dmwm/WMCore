@@ -22,12 +22,13 @@ from WMCore.WMBS.WMBSBase import WMBSBase
 class DBSBufferFile(WMBSBase, WMFile):
     def __init__(self, lfn = None, id = -1, size = None,
                  events = None, checksums = {}, parents = None, locations = None,
-                 status = "NOTUPLOADED"):
+                 status = "NOTUPLOADED", workflowId = None):
         WMBSBase.__init__(self)
         WMFile.__init__(self, lfn = lfn, size = size, events = events,
                         checksums = checksums, parents = parents, merged = True)
         self.setdefault("status", status)
         self.setdefault("id", id)
+        self.setdefault("workflowId", workflowId)
 
         # Parameters for the algorithm
         self.setdefault("appName", None)
@@ -200,6 +201,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         addAction.execute(files = self["lfn"], size = self["size"],
                           events = self["events"],
                           datasetAlgo = assocID, status = self["status"],
+                          workflowID = self["workflowId"],
                           conn = self.getDBConn(),
                           transaction = self.existingTransaction())
 

@@ -5,11 +5,6 @@ _LoadDBSFilesByDAS_
 MySQL implementation of LoadDBSFilesByDAS
 """
 
-
-
-
-import logging
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class LoadDBSFilesByDAS(DBFormatter):
@@ -19,7 +14,11 @@ class LoadDBSFilesByDAS(DBFormatter):
                     files.block_id AS block_id,
                     dbsbuffer_algo.app_name AS app_name, dbsbuffer_algo.app_ver AS app_ver,
                     dbsbuffer_algo.app_fam AS app_fam, dbsbuffer_algo.pset_hash AS pset_hash,
-                    dbsbuffer_algo.config_content, dbsbuffer_dataset.path AS dataset_path
+                    dbsbuffer_algo.config_content, dbsbuffer_dataset.path AS dataset_path,
+                    dbsbuffer_workflow.block_close_max_wait_time,
+                    dbsbuffer_workflow.block_close_max_files,
+                    dbsbuffer_workflow.block_close_max_events,
+                    dbsbuffer_workflow.block_close_max_size
              FROM dbsbuffer_file files
              INNER JOIN dbsbuffer_algo_dataset_assoc ON
                files.dataset_algo = dbsbuffer_algo_dataset_assoc.id
@@ -27,6 +26,8 @@ class LoadDBSFilesByDAS(DBFormatter):
                dbsbuffer_algo_dataset_assoc.algo_id = dbsbuffer_algo.id
              INNER JOIN dbsbuffer_dataset ON
                dbsbuffer_algo_dataset_assoc.dataset_id = dbsbuffer_dataset.id
+             INNER JOIN dbsbuffer_workflow ON
+               dbsbuffer_workflow.id = files.workflow
              LEFT OUTER JOIN dbsbuffer_block dbb ON dbb.id = files.block_id
              WHERE dbsbuffer_algo_dataset_assoc.id = :das
              AND files.status = 'NOTUPLOADED'

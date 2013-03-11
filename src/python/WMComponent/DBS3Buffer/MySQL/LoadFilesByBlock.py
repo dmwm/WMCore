@@ -21,7 +21,11 @@ class LoadFilesByBlock(MySQLLoadDBSFilesByDAS):
                     dbsbuffer_algo.config_content, dbsbuffer_dataset.path AS dataset_path,
                     dbsbuffer_dataset.acquisition_era AS acquisition_era,
                     dbsbuffer_dataset.processing_ver AS processing_ver,
-                    dbsbuffer_dataset.global_tag AS global_tag
+                    dbsbuffer_dataset.global_tag AS global_tag,
+                    dbsbuffer_workflow.block_close_max_wait_time,
+                    dbsbuffer_workflow.block_close_max_files,
+                    dbsbuffer_workflow.block_close_max_events,
+                    dbsbuffer_workflow.block_close_max_size
              FROM dbsbuffer_file files
              INNER JOIN dbsbuffer_algo_dataset_assoc ON
                files.dataset_algo = dbsbuffer_algo_dataset_assoc.id
@@ -29,6 +33,8 @@ class LoadFilesByBlock(MySQLLoadDBSFilesByDAS):
                dbsbuffer_algo_dataset_assoc.algo_id = dbsbuffer_algo.id
              INNER JOIN dbsbuffer_dataset ON
                dbsbuffer_algo_dataset_assoc.dataset_id = dbsbuffer_dataset.id
+             INNER JOIN dbsbuffer_workflow ON
+               dbsbuffer_workflow.id = files.workflow
              WHERE files.block_id = (SELECT id FROM dbsbuffer_block WHERE blockname = :block)
              ORDER BY files.id"""
 

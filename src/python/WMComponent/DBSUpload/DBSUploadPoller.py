@@ -159,11 +159,15 @@ def createBlock(datasetPath, location):
     block['NumberOfFiles'] = 0
     block['CreationDate']  = time.time()
     block['BlockSize']     = 0
+    block['NumberOfEvents'] = 0
     block['newFiles']      = []
     block['insertedFiles'] = []
     block['open']          = 1
     block['location']      = location
-
+    block['MaxCloseTime'] = None
+    block['MaxCloseEvents'] = None
+    block['MaxCloseFiles'] = None
+    block['MaxCloseSize'] = None
 
     return block
 
@@ -248,13 +252,7 @@ class DBSUploadPoller(BaseWorkerThread):
         self.setStatus = self.bufferFactory(classname = "DBSBufferFiles.SetStatus")
 
         # Set config parameters
-        self.maxBlockFiles    = self.config.DBSInterface.DBSBlockMaxFiles
-        self.maxBlockTime     = self.config.DBSInterface.DBSBlockMaxTime
-        self.maxBlockSize     = self.config.DBSInterface.DBSBlockMaxSize
         self.doMigration      = getattr(self.config.DBSInterface, 'doGlobalMigration', True)
-        logging.debug("Initializing with maxFiles %i, maxTime %i, maxSize %i" % (self.maxBlockFiles,
-                                                                                 self.maxBlockTime,
-                                                                                 self.maxBlockSize))
 
         if dbsconfig == None:
             self.dbsconfig = config
@@ -417,6 +415,7 @@ class DBSUploadPoller(BaseWorkerThread):
             block['Name']         = info['blockname']
             block['CreationDate'] = info['create_time']
             block['open']         = info['open']
+            block['MaxCloseTime'] = info['block_close_max_wait_time']
             blocks.append(block)
 
 
@@ -459,7 +458,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
         # Check for block timeout
         for block in blocks:
-            if time.time() - block['CreationDate'] > self.maxBlockTime:
+            if time.time() - block['CreationDate'] > block['MaxCloseTime']:
                 logging.info("Setting status to Pending due to timeout for block %s" % block['Name'])
                 block['open'] = 'Pending'
 
@@ -586,10 +585,19 @@ class DBSUploadPoller(BaseWorkerThread):
                 currentBlock = createBlock(datasetPath = dataset['Path'],
                                            location = location)
 
+            # Check if the file has the closing settings, otherwise plug in the settings from the newFile
+            if currentBlock['MaxCloseTime'] is None or currentBlock['MaxCloseFiles'] is None \
+                or currentBlock['MaxCloseSize'] is None or currentBlock['MaxCloseEvents'] is None:
+                currentBlock['MaxCloseTime'] = newFile['block_close_max_wait_time']
+                currentBlock['MaxCloseEvents'] = newFile['block_close_max_events']
+                currentBlock['MaxCloseFiles'] = newFile['block_close_max_files']
+                currentBlock['MaxCloseSize'] = newFile['block_close_max_size']
+
             # Now process the file
             currentBlock['newFiles'].append(newFile)
-            currentBlock['BlockSize']     += newFile['size']
+            currentBlock['BlockSize'] += newFile['size']
             currentBlock['NumberOfFiles'] += 1
+            currentBlock['NumberOfEvents'] += newFile['events']
 
         if currentBlock['NumberOfFiles'] > 0:
             blocksToHandle.append(currentBlock)
@@ -605,19 +613,24 @@ class DBSUploadPoller(BaseWorkerThread):
 
         Tells you if the block should be closed
         """
+        if block['MaxCloseTime'] is None or block['MaxCloseFiles'] is None \
+            or block['MaxCloseSize'] is None or block['MaxCloseEvents'] is None:
+            return True
 
-        if time.time() - int(block.get('CreationDate', 0)) >= self.maxBlockTime:
+        if time.time() - int(block.get('CreationDate', 0)) >= block['MaxCloseTime']:
             # We've timed out on this block
             return False
-        if block['NumberOfFiles'] >= self.maxBlockFiles:
+        if block['NumberOfFiles'] >= block['MaxCloseFiles']:
             # We've got too many files
             return False
-        if float(block.get('BlockSize')) >= self.maxBlockSize:
+        if float(block.get('BlockSize')) >= block['MaxCloseSize']:
+            # Block is too big
+            return False
+        if block['NumberOfEvents'] >= block['MaxCloseEvents']:
+            # Too many events in the block
             return False
 
         return True
-
-
 
     def createBlocksInDBSBuffer(self, readyBlocks):
         """

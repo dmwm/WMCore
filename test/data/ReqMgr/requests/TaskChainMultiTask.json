@@ -86,6 +86,10 @@
         "NonCustodialSites": [],
         "AutoApproveSubscriptionSites": [],
         "SubscriptionPriority": "Low",
-        "CustodialSubType" : "Move"
+        "CustodialSubType" : "Move",
+        "BlockCloseMaxWaitTime" : 66400,
+        "BlockCloseMaxFiles" : 500,
+        "BlockCloseMaxEvents" : 250000000,
+        "BlockCloseMaxSize" : 5000000000000
     }
 }

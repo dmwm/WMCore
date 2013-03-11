@@ -136,7 +136,15 @@ Memory limits: RSS (KiBytes) <input type="text" name="maxRSS" value=2411724 size
 VSS (KiBytes)<input type="text" name="maxVSize" value=2411724 size=10/><br/>
 Wallclock limits: Timeout (Seconds) <input type="text" name="SoftTimeout" value=129600 size=10/>
 GracePeriod (Seconds)<input type="text" name="GracePeriod" value=300 size=10/><br/>
-
+Block Closing Settings: Block timeout (Seconds) <input type="text" name="BlockCloseMaxWaitTime" value=$blockCloseMaxWaitTime size=10/>
+Max number of files <input type="text" name="BlockCloseMaxFiles" value=$blockCloseMaxFiles size=10/><br/>
+<!-- Indentation -->
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+&nbsp&nbsp&nbsp
+<!-- Indentation -->
+Max number of events <input type="text" name="BlockCloseMaxEvents" value=$blockCloseMaxEvents size=10/>
+Max block size (Bytes) <input type="text" name="BlockCloseMaxSize" value=$blockCloseMaxSize size=10/><br/>
 Acquisition Era: <input type="text" name="AcquisitionEra" size=20 value="$acqEra" /><br/>
 Processing Version:  <input type="text" name="ProcessingVersion"  size=10 value="$procVer" /><br/>
 Processing String: <input type="text" name="ProcessingString" size=20 value="$procString" /><br/>

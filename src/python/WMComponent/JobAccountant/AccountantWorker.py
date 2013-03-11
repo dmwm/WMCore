@@ -19,7 +19,6 @@ import logging
 import gc
 import collections
 
-from WMCore.Agent.Configuration  import Configuration
 from WMCore.FwkJobReport.Report  import Report
 from WMCore.DAOFactory           import DAOFactory
 from WMCore.WMConnectionBase     import WMConnectionBase
@@ -28,7 +27,6 @@ from WMCore.WMException          import WMException
 from WMCore.DataStructs.Run import Run
 from WMCore.WMBS.File       import File
 from WMCore.WMBS.Job        import Job
-from WMCore.WMBS.JobGroup   import JobGroup
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
@@ -36,6 +34,7 @@ from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import sanitizeURL
+from WMCore.WMSpec.WMWorkload import newWorkload
 
 class AccountantWorkerException(WMException):
     """
@@ -85,7 +84,8 @@ class AccountantWorker(WMConnectionBase):
         self.dbsInsertLocation = self.dbsDaoFactory(classname = "DBSBufferFiles.AddLocation")
         self.dbsSetChecksum    = self.dbsDaoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
         self.dbsSetRunLumi     = self.dbsDaoFactory(classname = "DBSBufferFiles.AddRunLumi")
-        self.insertWorkflow    = self.dbsDaoFactory(classname = "InsertWorkflow")
+        self.dbsUpdateSpec = self.dbsDaoFactory(classname = "UpdateSpec")
+        self.dbsInsertWorkflow = self.dbsDaoFactory(classname = "InsertWorkflow")
 
         self.dbsNewAlgoAction    = self.dbsDaoFactory(classname = "NewAlgo")
         self.dbsNewDatasetAction = self.dbsDaoFactory(classname = "NewDataset")
@@ -623,7 +623,6 @@ class AccountantWorker(WMConnectionBase):
                             workflowID = wf['workflowID']
                             break
                 if not workflowID:
-                    # Then we have to insert the workflow by hand
                     # Copy the spec to the DBSBuffer spec dir, if not possible
                     # then don't store the spec in the DBSBuffer database
                     if self.specDir:
@@ -641,9 +640,28 @@ class AccountantWorker(WMConnectionBase):
                             specPath = None
                     else:
                         specPath = None
-                    workflowID = self.insertWorkflow.execute(requestName = workflowName,
-                                                             taskPath    = taskPath,
-                                                             specPath    = specPath)
+                    workflowID = self.dbsUpdateSpec.execute(requestName = workflowName,
+                                                            taskPath = taskPath,
+                                                            specPath = specPath)
+                    if not workflowID:
+                        logging.error("The DBSBuffer database doesn't have a record for the workflow %s" % workflowName)
+                        logging.error("This shouldn't happen, the JobAccountant will read the spec and insert the proper record")
+                        if not specPath:
+                            logging.error("No spec either, nothing to do but insert some defaults")
+                            workflowID = self.dbsInsertWorkflow.execute(workflowName, taskPath,
+                                                                       66400,
+                                                                       500,
+                                                                       250000000,
+                                                                       5000000000000)
+                        else:
+                            workload = newWorkload(workflowName)
+                            workload.load(specPath)
+                            workflowID = self.dbsInsertWorkflow.execute(workflowName, taskPath,
+                                                                       workload.getBlockCloseMaxWaitTime(),
+                                                                       workload.getBlockCloseMaxFiles(),
+                                                                       workload.getBlockCloseMaxEvents(),
+                                                                       workload.getBlockCloseMaxSize(),
+                                                                       specPath)
                     self.workflowPaths.append(workflowPath)
                     self.workflowIDs.append({'workflowPath': workflowPath, 'workflowID': workflowID})
 
@@ -665,8 +683,6 @@ class AccountantWorker(WMConnectionBase):
                 for entry in selfChecksums.keys():
                     dbsCksumBinds.append({'lfn': lfn, 'cksum' : selfChecksums[entry],
                                           'cktype' : entry})
-
-
 
         try:
 

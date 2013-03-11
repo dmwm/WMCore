@@ -5,14 +5,11 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-import logging
 import os.path
 import threading
 import unittest
 import time
 import copy
-import random
-import tempfile
 
 import WMCore.WMBase
 from WMCore.FwkJobReport.Report import Report
@@ -27,6 +24,7 @@ from WMCore.WMBS.Job          import Job
 from WMCore.WMBS.File         import File
 from WMCore.WMBS.JobGroup     import JobGroup
 from WMCore.WMBS.Fileset      import Fileset
+from WMCore.WMSpec.WMWorkload import newWorkload
 
 from WMCore.DataStructs.Run   import Run
 
@@ -675,9 +673,9 @@ class JobAccountantTest(unittest.TestCase):
         self.cleanupFileset = Fileset(name = "Cleanup")
         self.cleanupFileset.create()
 
-        falseSpec = os.path.join(WMCore.WMBase.getTestBase(),
-                                 "WMComponent_t/JobAccountant_t/fwjrs",
-                                 "MergedSkimSuccess.pkl")
+        dummyWorkload = newWorkload("Steves")
+        dummyWorkload.save(os.path.join(self.testDir, 'initialSpecPath.pkl'))
+        falseSpec = os.path.join(self.testDir, 'initialSpecPath.pkl')
 
         self.testWorkflow = Workflow(spec = falseSpec, owner = "Steve",
                                      name = "TestWF", task = "TestTopTask")
@@ -820,9 +818,9 @@ class JobAccountantTest(unittest.TestCase):
         self.mergedAodOutputFileset = Fileset(name = "MergedAOD")
         self.mergedAodOutputFileset.create()
 
-        falseSpec = os.path.join(WMCore.WMBase.getTestBase(),
-                                 "WMComponent_t/JobAccountant_t/fwjrs",
-                                 "MergeSuccess.pkl")
+        dummyWorkload = newWorkload("Steves")
+        dummyWorkload.save(os.path.join(self.testDir, 'initialSpecPath.pkl'))
+        falseSpec = os.path.join(self.testDir, 'initialSpecPath.pkl')
         self.testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
                                      name = "Steves", task = "/Steves/Stupid/ProcessingTask")
         self.testWorkflow.create()

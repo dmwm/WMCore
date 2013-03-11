@@ -1,3 +1,12 @@
+0.9.49 to 0.9.50:
+  - Merge pull request #4463 from ticoann/add_acdc_info
+  - Merge pull request #4467 from hufnagel/lsfsubmitfix
+  - fix LSF submission when overloaded
+  - Merge pull request #4461 from dballesteros7/CheckReplicationStatusLQ
+  - WorkQueue fixes
+  - add the unittest
+  - add acdc and agent info in job document
+
 0.9.48 to 0.9.49:
   - Fix straight to merge when splitting is changed.  Pull request #4457.
   - Fix paused jobs script so that it doesn't crash if there are not paused

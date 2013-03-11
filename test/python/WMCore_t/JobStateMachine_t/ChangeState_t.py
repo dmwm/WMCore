@@ -56,12 +56,10 @@ class TestChangeState(unittest.TestCase):
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
-
-        self.couchServer = CouchServer(dburl = os.getenv("COUCHURL"))
-        self.config = Configuration()
-        self.config.component_("JobStateMachine")
-        self.config.JobStateMachine.couchurl = os.getenv("COUCHURL")
-        self.config.JobStateMachine.jobSummaryDBName = "job_summary"
+        
+        couchurl = os.getenv("COUCHURL")
+        self.couchServer = CouchServer(dburl = couchurl)
+        self.config = self.testInit.getConfiguration()
         return
 
     def tearDown(self):

@@ -245,6 +245,7 @@ class TestInit:
         config.Agent.contact = "fvlingen@caltech.edu"
         config.Agent.teamName = "Lakers"
         config.Agent.agentName = "Lebron James"
+        config.Agent.hostName = "testhost.laker.world"
 
         config.section_("General")
         # If you need a testDir, call testInit.generateWorkDir
@@ -266,6 +267,24 @@ class TestInit:
                 print "****WARNING: the DBHOST environment variable will be deprecated soon***"
                 print "****WARNING: UPDATE YOUR ENVIRONMENT OR TESTS WILL FAIL****"
             # after this you can augment it with whatever you need.
+        
+        couchurl = os.getenv("COUCHURL")
+        config.section_("ACDC")
+        config.ACDC.couchurl = couchurl
+        config.ACDC.database = "wmagent_acdc_t"
+        
+        config.component_("JobStateMachine")
+        config.JobStateMachine.couchurl = couchurl
+        config.JobStateMachine.jobSummaryDBName = "job_summary"
+        
+        config.component_("JobAccountant")
+        config.JobAccountant.pollInterval = 60
+        config.JobAccountant.componentDir = os.getcwd()
+        config.JobAccountant.logLevel = 'SQLDEBUG'
+        
+        config.component_("TaskArchiver")
+        config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+        
         return config
 
     def clearDatabase(self, modules = []):

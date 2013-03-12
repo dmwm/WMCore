@@ -6,6 +6,7 @@ Test case for SiteDB
 import unittest
 
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
 
 from nose.plugins.attrib import attr
 
@@ -18,7 +19,11 @@ class SiteDBTest(unittest.TestCase):
         """
         Setup for unit tests
         """
+        EmulatorHelper.setEmulators(siteDB = True)
         self.mySiteDB = SiteDBJSON()
+
+    def tearDown(self):
+        EmulatorHelper.resetEmulators()
 
     def testCmsNametoPhEDExNode(self):
         """
@@ -46,7 +51,7 @@ class SiteDBTest(unittest.TestCase):
         """
         Tests CmsNametoSE
         """
-        target = ['srm-cms.gridpp.rl.ac.uk', 'srm-cms-disk.gridpp.rl.ac.uk']
+        target = ['srm-cms.gridpp.rl.ac.uk']
         results = self.mySiteDB.cmsNametoSE("T1_UK_RAL")
         self.failUnless(sorted(results) == sorted(target))
 
@@ -62,20 +67,10 @@ class SiteDBTest(unittest.TestCase):
         """
         Tests CmsNametoCE
         """
-        target = ['lcgce09.gridpp.rl.ac.uk', 'lcgce06.gridpp.rl.ac.uk',
-                  'lcgce07.gridpp.rl.ac.uk', 'lcgce07.gridpp.rl.ac.uk']
+        target = ['lcgce11.gridpp.rl.ac.uk', 'lcgce10.gridpp.rl.ac.uk',
+                  'lcgce02.gridpp.rl.ac.uk']
         results = self.mySiteDB.cmsNametoCE("T1_UK_RAL")
         self.failUnless(sorted(results) == sorted(target))
-
-    def testJSONParser(self):
-        """
-        Tests the JSON parser directly
-        """
-        cmsName = "cmsgrid02.hep.wisc.edu"
-        results = self.mySiteDB.getJSON("CEtoCMSName",
-                                  file="CEtoCMSName",
-                                  name=cmsName)
-        self.failUnless(results['0']['name'] == "T2_US_Wisconsin")
 
     def testDNUserName(self):
         """
@@ -103,32 +98,10 @@ class SiteDBTest(unittest.TestCase):
         See if we can retrieve seNames from all sites
         """
 
-        ceNames = self.mySiteDB.getAllSENames()
-        self.assertTrue(len(ceNames) > 1)
-        self.assertTrue('cmssrm.fnal.gov' in ceNames)
+        seNames = self.mySiteDB.getAllSENames()
+        self.assertTrue(len(seNames) > 1)
+        self.assertTrue('cmssrm.fnal.gov' in seNames)
         return
-
-
-    @attr("integration")
-    def testParsingJsonWithApostrophe(self):
-        """
-        Tests parsing a DN json with an apostrophe in
-        """
-        json = """{"dn": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio Fano'", "user": "liviof"}"""
-        d = self.mySiteDB.parser.dictParser(json)
-        self.assertEquals("/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio Fano'", d['dn'])
-
-    @attr("integration")
-    def testParsingInvalidJsonWithApostrophe(self):
-        """
-        Tests parsing a DN invalid json (from sitedb v1) with an apostrophe in
-        """
-        json = """{'dn': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio' Fano', 'user': 'liviof'}"""
-        d = self.mySiteDB.parser.dictParser(json)
-        self.assertEquals("/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio' Fano", d['dn'])
-        json = """{'dn': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio Fano'', 'user': 'liviof'}"""
-        d = self.mySiteDB.parser.dictParser(json)
-        self.assertEquals("/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio Fano'", d['dn'])
 
 if __name__ == '__main__':
     unittest.main()

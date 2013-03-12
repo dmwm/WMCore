@@ -29,8 +29,20 @@
         "SkimInput1": "RECOoutput",
         "Skim1ConfigCacheID": "7559cf7a427be20436483f82fd109301",
         "OpenRunningTimeout" : 0
-	},
-		
+    },
+
+"changeSplitting":
+    {
+        "DataProcessing" :
+            {
+                "SplittingAlgo" : "EventAwareLumiBased",
+                "avg_events_per_job" : 1400,
+                "max_events_per_lumi" : 20000,
+                "halt_job_on_file_boundaries_event_aware" : "True",
+                "include_parents" : "False"
+            }
+    },
+
 "assignRequest":
 	{
 		"SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",

@@ -151,8 +151,8 @@ class ReqMgrClient(RESTClient):
         else:
             requestName = self._createRequestViaWebPage(config.requestArgs)
         self.approveRequest(requestName)
-        if config.assignRequests:
-            # if --assignRequests at the same time, it will be checking requestNames
+        if config.assignRequests or config.changeSplitting:
+            # if --assignRequests or --changeSplitting at the same time, it will be checking requestNames
             config.requestNames = [requestName]
         return requestName
         
@@ -216,7 +216,38 @@ class ReqMgrClient(RESTClient):
             assignArgs = copy.deepcopy(config.requestArgs["assignRequest"])
             doAssignRequest(assignArgs, requestName)
         
-                                
+
+    def changeSplitting(self, config):
+        """
+        Change the splitting for a task and request using the splitting
+        page, there is no REST API for this so stick to the page for now.
+        """
+
+        def changeSplittingForTask(requestName, taskName,
+                                   splittingAlgo, splittingArgs):
+            splittingParams = {}
+            splittingParams.update(splittingArgs)
+            splittingParams['requestName'] = requestName
+            splittingParams['splittingTask'] = '/%s/%s' % (requestName, taskName)
+            splittingParams['splittingAlgo'] = splittingAlgo
+            encodedParams = urllib.urlencode(splittingParams, True)
+            logging.info("Changing splitting parameters for request '%s' and task '%s' ..." % (requestName, taskName))
+            status, data = self.httpRequest("POST", "/reqmgr/view/handleSplittingPage",
+                                            data=encodedParams, headers=self.textHeaders)
+
+            if status != 200:
+                logging.error("Splitting change did not succeed.")
+                print data
+                sys.exit(1)
+            logging.info("Splitting change succeeded.")
+
+        for requestName in config.requestNames:
+            splittingArgs = config.requestArgs["changeSplitting"]
+            for taskName in splittingArgs:
+                taskInfo = splittingArgs[taskName]
+                changeSplittingForTask(requestName, taskName,
+                                       taskInfo["SplittingAlgo"], taskInfo)
+
     def userGroup(self, _):
         """
         List all groups and users registered with Request Manager.
@@ -330,13 +361,12 @@ class ReqMgrClient(RESTClient):
         params = {"priority": "%s" % priority}
         encodedParams = urllib.urlencode(params)
         status, data = self.httpRequest("PUT", "/reqmgr/reqMgr/request/%s" % requestName,
-                                        data=encodedParams, headers=self.textHeaders)        
+                                        data=encodedParams, headers=self.textHeaders)
         if status > 200:
             logging.error("Error occurred, exit.")
             print data
             sys.exit(1)
-            
-            
+
     def testResubmission(self, config):
         """
         The resubmission requests are taking as input name of an already
@@ -538,6 +568,8 @@ class ReqMgrClient(RESTClient):
         testRequestName = self.createRequest(config, restApi = True)
         config.requestNames = []
         config.requestNames.append(testRequestName)
+        # change the splitting before assigning
+        self.changeSplitting(config)
         # normally assignRequests() is called when config.assignRequests = True
         # flag is set, here it's called explicitly
         self.assignRequests(config)
@@ -625,20 +657,25 @@ def processCmdLine(args):
         errExit("Missing mandatory --reqMgrUrl.", parser)
     if opts.createRequest and not opts.configFile:
         errExit("When --createRequest, --configFile is necessary.", parser)
+    if opts.changeSplitting and not opts.createRequest and not opts.configFile:
+        errExit("Without --createRequest, --configFile must be specified for --changeSplitting.", parser)
+    if opts.changeSplitting and not opts.createRequest and not opts.requestNames:
+        errExit("Without --createRequest, --requestNames must be supplied to --changeSplitting.", parser)
     if opts.assignRequests and not opts.createRequest and not opts.configFile:
         errExit("Without --createRequest, --configFile must be specified for --assignRequests.", parser)
     if opts.assignRequests and not opts.createRequest and not opts.requestNames:
         errExit("Without --createRequest, --requestNames must be supplied to --assignRequests.", parser)
     if not opts.requestNames and (opts.queryRequests or opts.deleteRequests or \
-                                  (opts.assignRequests and not opts.createRequest)):
+                                  (opts.assignRequests and not opts.createRequest) or \
+                                  (opts.changeSplitting and not opts.createRequest)):
         errExit("--requestNames must be supplied.", parser)
     if opts.createRequest and opts.requestNames:
         errExit("--requestNames can't be provided with --createRequest", parser)
     if opts.allTests and not opts.configFile:
         errExit("When --allTests, --configFile is necessary", parser)
     if (opts.json and not opts.createRequest) and (opts.json and not opts.allTests) \
-        and (opts.json and not opts.assignRequests):
-        errExit("--json only with --createRequest, --allTests, --assignRequest", parser)
+        and (opts.json and not opts.assignRequests) and (opts.json and not opts.changeSplitting):
+        errExit("--json only with --createRequest, --allTests, --assignRequest, --changeSplitting", parser)
     for action in filter(lambda name: getattr(opts, name), actions):
         if opts.allTests and action and action != "allTests":
             errExit("Arguments --allTests and --%s mutually exclusive." % action, parser)
@@ -703,6 +740,11 @@ def defineCmdLineOptions(parser):
     # TODO
     # once ReqMgr has proper REST API for assign, then implement --setStates
     # taking a list of states to route requests through
+    # -p ---------------------------------------------------------------------\
+    help = "Action: Change splitting parameters for tasks in a request."
+    action = "changeSplitting"
+    actions.append(action)
+    parser.add_option("-p", "--" + action, action="store_true", help=help)
     # -s --------------------------------------------------------------------
     help = ("Action: Approve and assign request(s) specified by --requestNames "
             "or a new request when used with --createRequest. "
@@ -740,8 +782,7 @@ def defineCmdLineOptions(parser):
     help = "Verbose console output."
     parser.add_option("-v", "--verbose",  action="store_true", help=help)    
     return actions
-    
-    
+
 def processRequestArgs(intputConfigFile, commandLineJson):
     """
     Load request arguments from a file, blend with JSON from command line.
@@ -782,7 +823,7 @@ def initialization(commandLineArgs):
     logging.basicConfig(level=logging.DEBUG if config.verbose else logging.INFO)
     logging.debug("Set verbose console output.")
     reqMgrClient = ReqMgrClient(config.reqMgrUrl, config)
-    if config.createRequest or config.assignRequests or config.allTests:
+    if config.createRequest or config.assignRequests or config.changeSplitting or config.allTests:
         # process request arguments and store them
         config.requestArgs = processRequestArgs(config.configFile, config.json)
     return reqMgrClient, config, actions

@@ -14,6 +14,7 @@ from optparse import OptionParser
 from WMCore.WMInit import connectToDB
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 
 
@@ -88,6 +89,8 @@ def createOptionParser():
                            const = 'Down', help = "Stop submission to the site.")
     myOptParser.add_option("--normal", dest = "state", action="store_const",
                            const = 'Normal', help = "Normal operation for the site.")
+    myOptParser.add_option("--emulator", dest = "emulator", default= False, action = "store_true",
+                           help = "Use SiteDB emulator for unittests")
 
     return myOptParser
 
@@ -269,6 +272,10 @@ def setSiteState(resourceControl, siteName, state):
 
 myOptParser = createOptionParser()
 (options, args) = myOptParser.parse_args()
+
+if options.emulator:#emulate sitedb in unittests
+    EmulatorHelper.setEmulators(siteDB = True)
+
 connectToDB()
 wmConfig = loadConfigurationFile(os.environ['WMAGENT_CONFIG'])
 myResourceControl = ResourceControl(config = wmConfig)

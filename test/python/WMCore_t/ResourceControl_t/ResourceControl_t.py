@@ -26,6 +26,7 @@ from WMCore.Agent.Configuration import Configuration
 from WMCore.BossAir.RunJob import RunJob
 from WMCore.WMBase import getTestBase
 from WMCore.FwkJobReport.Report import Report
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
 
 class ResourceControlTest(unittest.TestCase):
     def setUp(self):
@@ -34,6 +35,9 @@ class ResourceControlTest(unittest.TestCase):
 
         Install schema and create a DAO factory for WMBS.
         """
+        EmulatorHelper.setEmulators(phedex = False, dbs = False,
+                                    siteDB = True, requestMgr = False)
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -65,6 +69,7 @@ class ResourceControlTest(unittest.TestCase):
 
         Clear the schema.
         """
+        EmulatorHelper.resetEmulators()
         self.testInit.clearDatabase()
         return
 
@@ -679,7 +684,7 @@ class ResourceControlTest(unittest.TestCase):
         resControlPath = os.path.join(getTestBase(), "../../bin/wmagent-resource-control")
         env = os.environ
         env['PYTHONPATH'] = ":".join(sys.path)
-        cmdline = [resControlPath, "--add-all-sites", "--plugin=CondorPlugin", "--pending-slots=100", "--running-slots=500" ]
+        cmdline = [resControlPath, "--add-all-sites", "--plugin=CondorPlugin", "--pending-slots=100", "--running-slots=500" , "--emulator"]
         retval = subprocess.Popen( cmdline,
                                    stdout = subprocess.PIPE,
                                    stderr = subprocess.STDOUT,

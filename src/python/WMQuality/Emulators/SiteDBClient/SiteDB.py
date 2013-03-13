@@ -4,6 +4,7 @@ _SiteDBClient_
 
 Emulating SiteDB
 """
+import re
 
 class SiteDBJSON(object):
     """
@@ -17,7 +18,11 @@ class SiteDBJSON(object):
     _sitenames_data = [{u'site_name': u'FNAL', u'type': u'cms', u'alias': u'T1_US_FNAL'},
                        {u'site_name': u'FNAL', u'type': u'phedex', u'alias': u'T1_US_FNAL_Buffer'},
                        {u'site_name': u'FNAL', u'type': u'phedex', u'alias': u'T1_US_FNAL_MSS'},
-                       {u'site_name': u'RAL', u'type': u'cms', u'alias': u'T1_UK_RAL'}]
+                       {u'site_name': u'RAL', u'type': u'cms', u'alias': u'T1_UK_RAL'},
+                       {u'site_name': u'Nebraska', u'type': u'cms', u'alias': u'T2_US_Nebraska'},
+                       {u'site_name': u'SITEA', u'type': u'cms', u'alias': u'T2_XX_SiteA'},
+                       {u'site_name': u'SITEB', u'type': u'cms', u'alias': u'T2_XX_SiteB'},
+                       {u'site_name': u'SITEC', u'type': u'cms', u'alias': u'T2_XX_SiteC'}]
 
     _siteresources_data = [{u'type': u'CE', u'site_name': u'RAL', u'fqdn': u'lcgce11.gridpp.rl.ac.uk', u'is_primary': u'n'},
                            {u'type': u'CE', u'site_name': u'RAL', u'fqdn': u'lcgce10.gridpp.rl.ac.uk', u'is_primary': u'n'},
@@ -26,16 +31,32 @@ class SiteDBJSON(object):
                            {u'type': u'CE', u'site_name': u'FNAL', u'fqdn': u'cmsosgce2.fnal.gov', u'is_primary': u'n'},
                            {u'type': u'CE', u'site_name': u'FNAL', u'fqdn': u'cmsosgce4.fnal.gov', u'is_primary': u'n'},
                            {u'type': u'CE', u'site_name': u'FNAL', u'fqdn': u'cmsosgce.fnal.gov', u'is_primary': u'n'},
-                           {u'type': u'SE', u'site_name': u'FNAL', u'fqdn': u'cmssrm.fnal.gov', u'is_primary': u'n'}]
+                           {u'type': u'SE', u'site_name': u'FNAL', u'fqdn': u'cmssrm.fnal.gov', u'is_primary': u'n'},
+                           {u'type': u'CE', u'site_name': u'Nebraska', u'fqdn': u'red.unl.edu', u'is_primary': u'n'},
+                           {u'type': u'CE', u'site_name': u'Nebraska', u'fqdn': u'red-gw1.unl.edu', u'is_primary': u'n'},
+                           {u'type': u'CE', u'site_name': u'Nebraska', u'fqdn': u'red-gw2.unl.edu', u'is_primary': u'n'},
+                           {u'type': u'CE', u'site_name': u'Nebraska', u'fqdn': u'ff-grid.unl.edu', u'is_primary': u'n'},
+                           {u'type': u'SE', u'site_name': u'Nebraska', u'fqdn': u'red-srm1.unl.edu', u'is_primary': u'n'},
+                           {u'type': u'SE', u'site_name': u'Nebraska', u'fqdn': u'srm.unl.edu', u'is_primary': u'n'},
+                           {u'type': u'SE', u'site_name': u'Nebraska', u'fqdn': u'dcache07.unl.edu', u'is_primary': u'n'},
+                           {u'type': u'SE', u'site_name': u'SITEA', u'fqdn': u'a.example.com', u'is_primary': u'n'},
+                           {u'type': u'SE', u'site_name': u'SITEB', u'fqdn': u'b.example.com', u'is_primary': u'n'},
+                           {u'type': u'SE', u'site_name': u'SITEC', u'fqdn': u'c.example.com', u'is_primary': u'n'}]
 
     def __init__(self, config={}):
         pass
 
     def _people(self, username=None, clearCache=False):
-        return self._people_data
+        if username:
+            return filter(lambda x: x['username']==username, self._people_data)
+        else:
+            return self._people_data
 
     def _sitenames(self, sitename=None, clearCache=False):
-        return self._sitenames_data
+        if sitename:
+            return filter(lambda x: x['site_name']==sitename, self._sitenames_data)
+        else:
+            return self._sitenames_data
 
     def _siteresources(self, clearCache=False):
         return self._siteresources_data
@@ -57,7 +78,10 @@ class SiteDBJSON(object):
         """
         Convert CMS name to list of CEs
         """
-        sitenames = filter(lambda x: x['type']=='cms' and x['alias']==cmsName, self._sitenames())[0]
+        try:
+            sitenames = filter(lambda x: x['type']=='cms' and x['alias']==cmsName, self._sitenames())[0]
+        except IndexError:
+            return []
         siteresources = filter(lambda x: x['site_name']==sitenames['site_name'], self._siteresources())
         ceList = filter(lambda x: x['type']=='CE', siteresources)
         ceList = map(lambda x: x['fqdn'], ceList)
@@ -67,11 +91,26 @@ class SiteDBJSON(object):
         """
         Convert CMS name to list of SEs
         """
-        sitenames = filter(lambda x: x['type']=='cms' and x['alias']==cmsName, self._sitenames())[0]
+        try:
+            sitenames = filter(lambda x: x['type']=='cms' and x['alias']==cmsName, self._sitenames())[0]
+        except IndexError:
+            return []
         siteresources = filter(lambda x: x['site_name']==sitenames['site_name'], self._siteresources())
         seList = filter(lambda x: x['type']=='SE', siteresources)
         seList = map(lambda x: x['fqdn'], seList)
         return seList
+
+    def getAllCENames(self):
+        """
+        _getAllCENames_
+
+        Get all CE names from SiteDB
+        This is so that we can easily add them to ResourceControl
+        """
+        siteresources = self._siteresources()
+        ceList = filter(lambda x: x['type']=='CE', siteresources)
+        ceList = map(lambda x: x['fqdn'], ceList)
+        return ceList
 
     def getAllSENames(self):
         """
@@ -97,11 +136,18 @@ class SiteDBJSON(object):
         cmsnames = map(lambda x: x['alias'], cmsnames)
         return cmsnames
 
-    def cmsNametoList(self, cmsName, kind, file):
+    def cmsNametoList(self, cmsname_pattern, kind, file):
+        """
+        Convert CMS name pattern T1*, T2* to a list of CEs or SEs. The file is
+        for backward compatibility with SiteDBv1
+        """
+        cmsname_pattern = cmsname_pattern.replace('*','.*')
+        cmsname_pattern = re.compile(cmsname_pattern)
+
         if kind=='CE':
-            return cmsNametoCE(cmsName)
+            return filter(lambda x: cmsname_pattern.match(x), self.getAllCENames())
         elif kind=='SE':
-            return cmsNametoSE(cmsName)
+            return filter(lambda x: cmsname_pattern.match(x), self.getAllSENames())
         else:
             raise NotImplemented('cmsNametoList for kind: %s is not yet implemented' % (kind))
 
@@ -109,7 +155,10 @@ class SiteDBJSON(object):
         """
         Convert SE name to the CMS Site they belong to
         """
-        siteresources = filter(lambda x: x['fqdn']==se, self._siteresources())[0]
+        try:
+            siteresources = filter(lambda x: x['fqdn']==se, self._siteresources())[0]
+        except IndexError:
+            return None
         cmsname = filter(lambda x: x['type']=='cms', self._sitenames(sitename=siteresources['site_name']))[0]['alias']
         return cmsname
 
@@ -118,7 +167,10 @@ class SiteDBJSON(object):
         Convert CMS name to list of Phedex Nodes
         """
         sitenames = self._sitenames()
-        sitename = filter(lambda x: x['type']=='cms' and x['alias']==cmsName, sitenames)[0]['site_name']
+        try:
+            sitename = filter(lambda x: x['type']=='cms' and x['alias']==cmsName, sitenames)[0]['site_name']
+        except IndexError:
+            return None
         phedexnames = filter(lambda x: x['type']=='phedex' and x['site_name']==sitename, sitenames)
         phedexnames = map(lambda x: x['alias'], phedexnames)
         return phedexnames

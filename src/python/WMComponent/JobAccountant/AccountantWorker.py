@@ -437,8 +437,19 @@ class AccountantWorker(WMConnectionBase):
                                                 transaction = self.existingTransaction())
 
         fileList = fwkJobReport.getAllFiles()
-
+        
+        bookKeepingSuccess = True
+        
         for fwjrFile in fileList:
+            # associate logArchived file for parent jobs on wmstats assuming fileList is length is 1.
+            if jobType == "LogCollect":
+                try:
+                    self.associateLogCollectToParentJobsInWMStats(fwkJobReport, fwjrFile["lfn"], fwkJobReport.getTaskName())
+                except Exception, ex:
+                    bookKeepingSuccess = False
+                    logging.error("Error occurred: associating log collect location, will try again\n %s" % str(ex))
+                    break
+                
             wmbsFile = self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"],
                                           jobID = jobID, task = fwkJobReport.getTaskName())
             merged = fwjrFile['merged']
@@ -451,14 +462,11 @@ class AccountantWorker(WMConnectionBase):
             outputFilesets = self.outputFilesetsForJob(outputMap, merged, moduleLabel)
             for outputFileset in outputFilesets:
                 self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputFileset})
-            
-            # associate logArchived file for parent jobs on wmstats assuming fileList is length is 1.
-            if jobType == "LogCollect":
-                self.associateLogCollectToParentJobsInWMStats(fwkJobReport, wmbsFile["lfn"], fwkJobReport.getTaskName())
 
-        # Only save once job is done, and we're sure we made it through okay
-        self._mapLocation(wmbsJob['fwjr'])
-        self.listOfJobsToSave.append(wmbsJob)
+        if bookKeepingSuccess:
+            # Only save once job is done, and we're sure we made it through okay
+            self._mapLocation(wmbsJob['fwjr'])
+            self.listOfJobsToSave.append(wmbsJob)
         #wmbsJob.save()
 
         return
@@ -470,7 +478,8 @@ class AccountantWorker(WMConnectionBase):
         for inputFile in inputFileList:
             keys.append([requestName, inputFile["lfn"]])
         resultRows = self.fwjrCouchDB.loadView("FWJRDump", 'jobsByOutputLFN', 
-                                           keys = keys)['rows']
+                                               options = {"stale": "update_after"},
+                                               keys = keys)['rows']
         #get data from wmbs
         parentWMBSJobIDs = []
         for row in resultRows:

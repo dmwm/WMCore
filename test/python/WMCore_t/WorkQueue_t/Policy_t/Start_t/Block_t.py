@@ -100,7 +100,7 @@ class BlockTestCase(unittest.TestCase):
         task = getFirstTask(blacklistBlockWorkload)
         units, rejectedWork = Block(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
-        self.assertEqual(len(rejectedWork), 1)
+        self.assertEqual(len(rejectedWork), 0)
         self.assertNotEqual(units[0]['Inputs'].keys(), rerecoArgs2['BlockBlacklist'])
 
         # Block Whitelist

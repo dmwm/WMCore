@@ -166,28 +166,6 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
 
         return
 
-    def testMinMergeSize1(self):
-        """
-        _testMinMergeSize1_
-
-        Set the minimum merge size to be 20,000 bytes which is more than the
-        sum of all file sizes in the WMBS instance.  Verify that no merge jobs
-        will be produced.
-        """
-        self.stuffWMBS()
-
-        splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
-
-        result = jobFactory(min_merge_size = 200000, max_merge_size = 2000000000,
-                            max_merge_events = 200000000)
-
-        assert len(result) == 0, \
-               "ERROR: No job groups should be returned."
-
-        return
-
     def testMinMergeSize1a(self):
         """
         _testMinMergeSize1a_
@@ -649,10 +627,10 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         self.stuffWMBS()
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute(siteName = "s2", seName = "somese2.cern.ch")
+        locationAction.execute(siteName = "s3", seName = "somese3.cern.ch")
 
         fileSite2 = File(lfn = "fileSite2", size = 4098, events = 1024,
-                         first_event = 0, locations = set(["somese2.cern.ch"]))
+                         first_event = 0, locations = set(["somese3.cern.ch"]))
         fileSite2.addRun(Run(1, *[46]))
         fileSite2.create()
 

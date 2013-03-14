@@ -27,7 +27,7 @@ class WorkQueueTest(RESTBaseUnitTest):
         # mysql example
         #self.config.setDBUrl('mysql://username@host.fnal.gov:3306/TestDB')
         #self.config.setDBSocket('/var/lib/mysql/mysql.sock')
-        self.schemaModules = ["WMCore.WMBS", "WMCore.ResourceControl"]
+        self.schemaModules = ["WMCore.WMBS", "WMCore.ResourceControl", "BossAir"]
 
     def setUp(self):
         """

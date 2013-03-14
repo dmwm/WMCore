@@ -2,13 +2,13 @@ import os
 import unittest
 import mox
 import WMCore_t.Storage_t.Plugins_t.PluginTestBase_t
-from WMCore.Storage.Plugins.DCCPFNALImpl import DCCPFNALImpl as ourPlugin
+from WMCore.Storage.Plugins.FNALImpl import FNALImpl as ourPlugin
 
 from WMCore.Storage.Plugins.CPImpl import CPImpl as ourFallbackPlugin
-import WMCore.Storage.Plugins.DCCPFNALImpl
 import subprocess
 from WMCore.WMBase import getWMBASE
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
+from nose.plugins.attrib import attr
 
 class RunCommandThing:
     def __init__(self, target):
@@ -29,17 +29,12 @@ class DCCPFNALImplTest(unittest.TestCase):
         def getImplStub(command, useNewVersion = None):
             return self.copyMocker
 
-        self.runCommandBackup   = WMCore.Storage.Plugins.DCCPFNALImpl.runCommand
-        WMCore.Storage.Plugins.DCCPFNALImpl.runCommand = runCommandStub
-        self.stageOutImplBackup = WMCore.Storage.Plugins.DCCPFNALImpl.retrieveStageOutImpl
-        WMCore.Storage.Plugins.DCCPFNALImpl.retrieveStageOutImpl = getImplStub
         pass
 
     def tearDown(self):
-        WMCore.Storage.Plugins.DCCPFNALImpl.runCommand = self.runCommandBackup
-        WMCore.Storage.Plugins.DCCPFNALImpl.retrieveStageOutImpl = self.stageOutImplBackup
+        pass
 
-
+    @attr("integration")
     def testFail(self):
 
         #first try to make a non existant file (regular)
@@ -104,6 +99,8 @@ class DCCPFNALImplTest(unittest.TestCase):
         testObject.doDelete('/store/unmerged/lustre/NOTAFILE',None, None, None, None )
         mox.Verify(self.runMocker)
         mox.Verify(self.copyMocker)
+
+    @attr("integration")
     def testWin(self):
 
 

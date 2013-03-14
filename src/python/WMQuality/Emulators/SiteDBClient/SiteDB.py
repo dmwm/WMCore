@@ -147,10 +147,13 @@ class SiteDBJSON(object):
         cmsname_pattern = cmsname_pattern.replace('*','.*')
         cmsname_pattern = re.compile(cmsname_pattern)
 
+        result = []
         if kind=='CE':
-            return filter(lambda x: cmsname_pattern.match(x), self.getAllCENames())
+            [ result.extend(self.cmsNametoCE(x)) for x in filter(lambda x: cmsname_pattern.match(x), self.getAllCMSNames())]
+            return result
         elif kind=='SE':
-            return filter(lambda x: cmsname_pattern.match(x), self.getAllSENames())
+            [ result.extend(self.cmsNametoSE(x)) for x in filter(lambda x: cmsname_pattern.match(x), self.getAllCMSNames())]
+            return result
         else:
             raise NotImplemented('cmsNametoList for kind: %s is not yet implemented' % (kind))
 

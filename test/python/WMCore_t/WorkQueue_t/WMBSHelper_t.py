@@ -487,8 +487,8 @@ class WMBSHelperTest(unittest.TestCase):
         locationDAO = self.daoFactory(classname = "Locations.New")
         self.ses = []
         for site in ['T2_XX_SiteA', 'T2_XX_SiteB']:
-            locationDAO.execute(siteName = site, seName = self.siteDB.cmsNametoSE(site))
-            self.ses.append(self.siteDB.cmsNametoSE(site))
+            locationDAO.execute(siteName = site, seName = self.siteDB.cmsNametoSE(site)[0])
+            self.ses.append(self.siteDB.cmsNametoSE(site)[0])
 
     def createWMSpec(self, name = 'ReRecoWorkload'):
         wmspec = rerecoWorkload(name, rerecoArgs)

@@ -9,6 +9,7 @@ from WMCore.Services.Service import Service
 from WMCore.Services.EmulatorSwitch import emulatorHook
 
 import json
+import re
 
 def row2dict(columns, row):
     """Convert rows to dictionaries with column keys from description"""
@@ -108,7 +109,10 @@ class SiteDBJSON(Service):
         """
         Convert CMS name to list of CEs
         """
-        sitenames = filter(lambda x: x['type']=='cms' and x['alias']==cmsName, self._sitenames())[0]
+        try:
+            sitenames = filter(lambda x: x['type']=='cms' and x['alias']==cmsName, self._sitenames())[0]
+        except IndexError:
+            return []
         siteresources = filter(lambda x: x['site_name']==sitenames['site_name'], self._siteresources())
         ceList = filter(lambda x: x['type']=='CE', siteresources)
         ceList = map(lambda x: x['fqdn'], ceList)
@@ -118,11 +122,26 @@ class SiteDBJSON(Service):
         """
         Convert CMS name to list of SEs
         """
-        sitenames = filter(lambda x: x['type']=='cms' and x['alias']==cmsName, self._sitenames())[0]
+        try:
+            sitenames = filter(lambda x: x['type']=='cms' and x['alias']==cmsName, self._sitenames())[0]
+        except IndexError:
+            return []
         siteresources = filter(lambda x: x['site_name']==sitenames['site_name'], self._siteresources())
         seList = filter(lambda x: x['type']=='SE', siteresources)
         seList = map(lambda x: x['fqdn'], seList)
         return seList
+
+    def getAllCENames(self):
+        """
+        _getAllCENames_
+
+        Get all CE names from SiteDB
+        This is so that we can easily add them to ResourceControl
+        """
+        siteresources = self._siteresources()
+        ceList = filter(lambda x: x['type']=='CE', siteresources)
+        ceList = map(lambda x: x['fqdn'], ceList)
+        return ceList
 
     def getAllSENames(self):
         """
@@ -148,11 +167,18 @@ class SiteDBJSON(Service):
         cmsnames = map(lambda x: x['alias'], cmsnames)
         return cmsnames
 
-    def cmsNametoList(self, cmsName, kind, file):
+    def cmsNametoList(self, cmsname_pattern, kind, file=None):
+        """
+        Convert CMS name pattern T1*, T2* to a list of CEs or SEs. The file is
+        for backward compatibility with SiteDBv1
+        """
+        cmsname_pattern = cmsname_pattern.replace('*','.*')
+        cmsname_pattern = re.compile(cmsname_pattern)
+
         if kind=='CE':
-            return cmsNametoCE(cmsName)
+            return filter(lambda x: cmsname_pattern.match(x), self.getAllCENames())
         elif kind=='SE':
-            return cmsNametoSE(cmsName)
+            return filter(lambda x: cmsname_pattern.match(x), self.getAllSENames())
         else:
             raise NotImplemented('cmsNametoList for kind: %s is not yet implemented' % (kind))
 
@@ -160,7 +186,10 @@ class SiteDBJSON(Service):
         """
         Convert SE name to the CMS Site they belong to
         """
-        siteresources = filter(lambda x: x['fqdn']==se, self._siteresources())[0]
+        try:
+            siteresources = filter(lambda x: x['fqdn']==se, self._siteresources())[0]
+        except IndexError:
+            return None
         cmsname = filter(lambda x: x['type']=='cms', self._sitenames(sitename=siteresources['site_name']))[0]['alias']
         return cmsname
 
@@ -169,7 +198,10 @@ class SiteDBJSON(Service):
         Convert CMS name to list of Phedex Nodes
         """
         sitenames = self._sitenames()
-        sitename = filter(lambda x: x['type']=='cms' and x['alias']==cmsName, sitenames)[0]['site_name']
+        try:
+            sitename = filter(lambda x: x['type']=='cms' and x['alias']==cmsName, sitenames)[0]['site_name']
+        except IndexError:
+            return None
         phedexnames = filter(lambda x: x['type']=='phedex' and x['site_name']==sitename, sitenames)
         phedexnames = map(lambda x: x['alias'], phedexnames)
         return phedexnames

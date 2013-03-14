@@ -20,9 +20,9 @@ class SiteDBJSON(object):
                        {u'site_name': u'FNAL', u'type': u'phedex', u'alias': u'T1_US_FNAL_MSS'},
                        {u'site_name': u'RAL', u'type': u'cms', u'alias': u'T1_UK_RAL'},
                        {u'site_name': u'Nebraska', u'type': u'cms', u'alias': u'T2_US_Nebraska'},
-                       {u'site_name': u'SITEA', u'type': u'cms', u'alias': u'T2_XX_SiteA'},
-                       {u'site_name': u'SITEB', u'type': u'cms', u'alias': u'T2_XX_SiteB'},
-                       {u'site_name': u'SITEC', u'type': u'cms', u'alias': u'T2_XX_SiteC'}]
+                       {u'site_name': u'T2_XX_SiteA', u'type': u'cms', u'alias': u'T2_XX_SiteA'},
+                       {u'site_name': u'T2_XX_SiteB', u'type': u'cms', u'alias': u'T2_XX_SiteB'},
+                       {u'site_name': u'T2_XX_SiteB', u'type': u'cms', u'alias': u'T2_XX_SiteC'}]
 
     _siteresources_data = [{u'type': u'CE', u'site_name': u'RAL', u'fqdn': u'lcgce11.gridpp.rl.ac.uk', u'is_primary': u'n'},
                            {u'type': u'CE', u'site_name': u'RAL', u'fqdn': u'lcgce10.gridpp.rl.ac.uk', u'is_primary': u'n'},
@@ -39,9 +39,12 @@ class SiteDBJSON(object):
                            {u'type': u'SE', u'site_name': u'Nebraska', u'fqdn': u'red-srm1.unl.edu', u'is_primary': u'n'},
                            {u'type': u'SE', u'site_name': u'Nebraska', u'fqdn': u'srm.unl.edu', u'is_primary': u'n'},
                            {u'type': u'SE', u'site_name': u'Nebraska', u'fqdn': u'dcache07.unl.edu', u'is_primary': u'n'},
-                           {u'type': u'SE', u'site_name': u'SITEA', u'fqdn': u'a.example.com', u'is_primary': u'n'},
-                           {u'type': u'SE', u'site_name': u'SITEB', u'fqdn': u'b.example.com', u'is_primary': u'n'},
-                           {u'type': u'SE', u'site_name': u'SITEC', u'fqdn': u'c.example.com', u'is_primary': u'n'}]
+                           {u'type': u'CE', u'site_name': u'T2_XX_SiteA', u'fqdn': u'T2_XX_SiteA', u'is_primary' : u'n'},
+                           {u'type': u'CE', u'site_name': u'T2_XX_SiteB', u'fqdn': u'T2_XX_SiteB', u'is_primary' : u'n'},
+                           {u'type': u'CE', u'site_name': u'T2_XX_SiteC', u'fqdn': u'T2_XX_SiteC', u'is_primary' : u'n'},
+                           {u'type': u'SE', u'site_name': u'T2_XX_SiteA', u'fqdn': u'T2_XX_SiteA', u'is_primary' : u'n'},
+                           {u'type': u'SE', u'site_name': u'T2_XX_SiteB', u'fqdn': u'T2_XX_SiteB', u'is_primary' : u'n'},
+                           {u'type': u'SE', u'site_name': u'T2_XX_SiteC', u'fqdn': u'T2_XX_SiteC', u'is_primary' : u'n'}]
 
     def __init__(self, config={}):
         pass

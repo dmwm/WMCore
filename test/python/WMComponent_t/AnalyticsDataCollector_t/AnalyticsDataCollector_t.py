@@ -44,11 +44,6 @@ class AnalyticsDataCollector_t(unittest.TestCase):
         """
         setup for test.
         """
-
-        myThread = threading.currentThread()
-        myThread.dbFactory = None
-        myThread.logger = None
-        myThread.dbi = None
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.reqmonDBName = "wmstat_t"

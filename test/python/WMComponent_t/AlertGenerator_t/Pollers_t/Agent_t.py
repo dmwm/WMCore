@@ -94,7 +94,6 @@ class AgentTest(unittest.TestCase):
         pd = poller._components[0]
         self.assertEqual(pd.pid, pid)
         self.assertEqual(pd.name, "TestComponent")
-        self.assertEqual(len(pd.children), 0)
         self.assertEqual(len(poller._compMeasurements), 1)
         mes = poller._compMeasurements[0]
         numMeasurements = round(config.AlertGenerator.bogusPoller.period / config.AlertGenerator.bogusPoller.pollInterval, 0)

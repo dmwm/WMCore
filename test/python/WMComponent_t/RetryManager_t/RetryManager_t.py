@@ -194,7 +194,7 @@ class RetryManagerTest(unittest.TestCase):
         idList = self.getJobs.execute(state = 'CreateCooloff')
         self.assertEqual(len(idList), 0)
 
-        idList = self.getJobs.execute(state = 'New')
+        idList = self.getJobs.execute(state = 'Created')
         self.assertEqual(len(idList), self.nJobs)
         return
 
@@ -847,10 +847,10 @@ class RetryManagerTest(unittest.TestCase):
 
         config = self.getConfig()
         changer = ChangeState(config)
-        changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
-        changer.propagate(testJobGroup.jobs, 'createcooloff', 'createfailed')
+        changer.propagate(testJobGroup.jobs, 'submitfailed', 'Created')
+        changer.propagate(testJobGroup.jobs, 'submitcooloff', 'submitfailed')
 
-        idList = self.getJobs.execute(state = 'CreateCooloff')
+        idList = self.getJobs.execute(state = 'SubmitCooloff')
         self.assertEqual(len(idList), self.nJobs)
 
         testRetryManager = RetryManagerPoller(config)
@@ -861,7 +861,7 @@ class RetryManagerTest(unittest.TestCase):
                                     stateTime = int(time.time()) - 50)
 
         testRetryManager.algorithm(None)
-        idList = self.getJobs.execute(state = 'CreateCooloff')
+        idList = self.getJobs.execute(state = 'SubmitCooloff')
         self.assertEqual(len(idList), self.nJobs)
 
         for job in testJobGroup.jobs:
@@ -870,10 +870,10 @@ class RetryManagerTest(unittest.TestCase):
 
         testRetryManager.algorithm(None)
 
-        idList = self.getJobs.execute(state = 'CreateCooloff')
+        idList = self.getJobs.execute(state = 'SubmitCooloff')
         self.assertEqual(len(idList), 0)
 
-        idList = self.getJobs.execute(state = 'New')
+        idList = self.getJobs.execute(state = 'Created')
         self.assertEqual(len(idList), self.nJobs)
 
 
@@ -882,8 +882,8 @@ class RetryManagerTest(unittest.TestCase):
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
 
         # Set job state
-        changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
-        changer.propagate(testJobGroup.jobs, 'createcooloff', 'createfailed')
+        changer.propagate(testJobGroup.jobs, 'submitfailed', 'created')
+        changer.propagate(testJobGroup.jobs, 'submitcooloff', 'submitfailed')
 
         # Set them to go off
         for job in testJobGroup.jobs:
@@ -893,10 +893,10 @@ class RetryManagerTest(unittest.TestCase):
 
         testRetryManager.algorithm(None)
 
-        idList = self.getJobs.execute(state = 'CreateCooloff')
+        idList = self.getJobs.execute(state = 'SubmitCooloff')
         self.assertEqual(len(idList), 0)
 
-        idList = self.getJobs.execute(state = 'New')
+        idList = self.getJobs.execute(state = 'Created')
         self.assertEqual(len(idList), self.nJobs * 2)
 
 

@@ -6,14 +6,15 @@ import mox
 import tempfile
 import os.path
 import WMCore_t.Storage_t.Plugins_t.PluginTestBase_t
-from WMCore.Storage.Plugins.SRMV2Impl import SRMV2Impl as ourPlugin
-
-import WMCore.Storage.Plugins.SRMV2Impl
-moduleWeAreTesting = WMCore.Storage.Plugins.SRMV2Impl
+from WMCore.Storage.Plugins.LCGImpl import LCGImpl as ourPlugin
+import WMCore.Storage.Plugins.LCGImpl
+moduleWeAreTesting = WMCore.Storage.Plugins.LCGImpl
 
 import subprocess
 from WMCore.WMBase import getWMBASE
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
+
+from nose.plugins.attrib import attr
 
 class popenMockHelper(object):
     def Popen(self,args,**kwargs):
@@ -45,6 +46,7 @@ class SRMV2ImplTest(unittest.TestCase):
             except:
                 pass
 
+    @attr("integration")
     def testFailSrmCopy(self):
 
         # copy a file and have it fail
@@ -73,6 +75,7 @@ class SRMV2ImplTest(unittest.TestCase):
                               None)
         self.my_mox.VerifyAll()
 
+    @attr("integration")
     def testFailOnFileSize(self):
 
         # copy a file and have it succeed
@@ -145,6 +148,7 @@ class SRMV2ImplTest(unittest.TestCase):
                               None)
         self.my_mox.VerifyAll()
 
+    @attr("integration")
     def testWin(self):
 
         # copy a file and have it succeed
@@ -218,6 +222,7 @@ class SRMV2ImplTest(unittest.TestCase):
         self.assertEqual(newPfn, 'srm://nonexistant.com/blah/?SFN=/store/NONEXISTANTTARGET')
         self.my_mox.VerifyAll()
 
+    @attr("integration")
     def testMkdir(self):
         testObject = ourPlugin()
         self.my_mox.StubOutWithMock(testObject, 'runCommandWarnOnError')

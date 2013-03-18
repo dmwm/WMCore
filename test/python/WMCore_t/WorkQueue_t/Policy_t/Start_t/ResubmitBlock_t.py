@@ -42,7 +42,8 @@ class ResubmitBlockTest(unittest.TestCase):
         # Define test environment
         self.couchUrl = os.environ["COUCHURL"]
         self.acdcDBName = 'resubmitblock_t'
-        self.validLocations = ['srm-cms.cern.ch', 'cmssrm-fzk.gridka.de', 'srm-eoscms.cern.ch']
+        self.validLocations = ['srm-cms.gridpp.rl.ac.uk', 'cmssrm.fnal.gov', 'srm.unl.edu']
+        self.validLocationsCMSNames = ['T2_US_Nebraska', 'T1_US_FNAL', 'T1_UK_RAL']
         self.workflowName = 'dballest_ReReco_workflow'
         couchServer = CouchServer(dburl = self.couchUrl)
         self.acdcDB = couchServer.connectDatabase(self.acdcDBName, create = False)
@@ -183,7 +184,7 @@ class ResubmitBlockTest(unittest.TestCase):
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
                 inputBlock = unit['Inputs'].keys()[0]
-                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocations))
+                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocationsCMSNames))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(50, unit['Jobs'])
                 self.assertEqual(acdcWorkload, unit['WMSpec'])
@@ -216,7 +217,7 @@ class ResubmitBlockTest(unittest.TestCase):
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
                 inputBlock = unit['Inputs'].keys()[0]
-                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocations))
+                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocationsCMSNames))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(100, unit['Jobs'])
                 self.assertEqual(acdcWorkload, unit['WMSpec'])
@@ -238,7 +239,7 @@ class ResubmitBlockTest(unittest.TestCase):
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
                 inputBlock = unit['Inputs'].keys()[0]
-                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocations))
+                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocationsCMSNames))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(500, unit['Jobs'])
                 self.assertEqual(acdcWorkload, unit['WMSpec'])
@@ -270,7 +271,7 @@ class ResubmitBlockTest(unittest.TestCase):
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
                 inputBlock = unit['Inputs'].keys()[0]
-                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocations))
+                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocationsCMSNames))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(100, unit['Jobs'])
                 self.assertEqual(acdcWorkload, unit['WMSpec'])
@@ -289,7 +290,7 @@ class ResubmitBlockTest(unittest.TestCase):
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
                 inputBlock = unit['Inputs'].keys()[0]
-                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocations))
+                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocationsCMSNames))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(100, unit['Jobs'])
                 self.assertEqual(acdcWorkload, unit['WMSpec'])

@@ -95,7 +95,7 @@ class DBSReaderTest(unittest.TestCase):
         self.assertEqual(49, len(files))
         self.assertTrue(FILE in files)
 
-    @attr("integrtion")
+    @attr("integration")
     def testGetDBSSummaryInfo(self):
         """getDBSSummaryInfo returns summary of dataset and block"""
         self.dbs = DBSReader(self.endpoint)

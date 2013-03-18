@@ -23,6 +23,7 @@ class DatasetTestCase(unittest.TestCase):
     splitArgs = dict(SliceType = 'NumberOfFiles', SliceSize = 5)
 
     def setUp(self):
+        Globals.GlobalParams.resetParams()
         EmulatorHelper.setEmulators(phedex = True, dbs = True,
                             siteDB = True, requestMgr = False)
 
@@ -46,7 +47,7 @@ class DatasetTestCase(unittest.TestCase):
                 self.assertEqual(Tier1ReRecoWorkload, unit['WMSpec'])
                 self.assertEqual(task, unit['Task'])
                 self.assertEqual(unit['Inputs'].keys(), [dataset])
-                self.assertEqual(40, unit['NumberOfLumis'])
+                self.assertEqual(8, unit['NumberOfLumis'])
                 self.assertEqual(20, unit['NumberOfFiles'])
                 self.assertEqual(20000, unit['NumberOfEvents'])
 
@@ -93,7 +94,7 @@ class DatasetTestCase(unittest.TestCase):
         units, _ = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Jobs'], 2.0)
-        self.assertEqual(20, units[0]['NumberOfLumis'])
+        self.assertEqual(4, units[0]['NumberOfLumis'])
         self.assertEqual(10, units[0]['NumberOfFiles'])
         self.assertEqual(10000, units[0]['NumberOfEvents'])
 
@@ -107,7 +108,7 @@ class DatasetTestCase(unittest.TestCase):
         units, _ = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Jobs'], 2.0)
-        self.assertEqual(20, units[0]['NumberOfLumis'])
+        self.assertEqual(4, units[0]['NumberOfLumis'])
         self.assertEqual(10, units[0]['NumberOfFiles'])
         self.assertEqual(10000, units[0]['NumberOfEvents'])
 
@@ -121,7 +122,7 @@ class DatasetTestCase(unittest.TestCase):
         units, _ = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Jobs'], 2.0)
-        self.assertEqual(20, units[0]['NumberOfLumis'])
+        self.assertEqual(4, units[0]['NumberOfLumis'])
         self.assertEqual(10, units[0]['NumberOfFiles'])
         self.assertEqual(10000, units[0]['NumberOfEvents'])
 
@@ -135,10 +136,10 @@ class DatasetTestCase(unittest.TestCase):
         units, _ = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset])
-        self.assertEqual(units[0]['Jobs'], 1.0)
-        self.assertEqual(25, units[0]['NumberOfLumis'])
-        self.assertEqual(5, units[0]['NumberOfFiles'])
-        self.assertEqual(5000, units[0]['NumberOfEvents'])
+        self.assertEqual(units[0]['Jobs'], 2.0)
+        self.assertEqual(10, units[0]['NumberOfLumis'])
+        self.assertEqual(10, units[0]['NumberOfFiles'])
+        self.assertEqual(10000, units[0]['NumberOfEvents'])
 
         rerecoArgs3 = {'RunWhitelist' : [1 ,2]}
         rerecoArgs3.update(rerecoArgs)
@@ -149,10 +150,10 @@ class DatasetTestCase(unittest.TestCase):
         units, _ = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset])
-        self.assertEqual(units[0]['Jobs'], 3.0)
-        self.assertEqual(75, units[0]['NumberOfLumis'])
-        self.assertEqual(15, units[0]['NumberOfFiles'])
-        self.assertEqual(15000, units[0]['NumberOfEvents'])
+        self.assertEqual(units[0]['Jobs'], 4.0)
+        self.assertEqual(20, units[0]['NumberOfLumis'])
+        self.assertEqual(20, units[0]['NumberOfFiles'])
+        self.assertEqual(20000, units[0]['NumberOfEvents'])
 
         # Run Blacklist
         rerecoArgs3 = {'RunBlacklist' : [2]}
@@ -165,7 +166,7 @@ class DatasetTestCase(unittest.TestCase):
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset])
         self.assertEqual(units[0]['Jobs'], 2.0)
-        self.assertEqual(50, units[0]['NumberOfLumis'])
+        self.assertEqual(10, units[0]['NumberOfLumis'])
         self.assertEqual(10, units[0]['NumberOfFiles'])
         self.assertEqual(10000, units[0]['NumberOfEvents'])
 
@@ -180,7 +181,7 @@ class DatasetTestCase(unittest.TestCase):
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset])
         self.assertEqual(units[0]['Jobs'], 2.0)
-        self.assertEqual(50, units[0]['NumberOfLumis'])
+        self.assertEqual(10, units[0]['NumberOfLumis'])
         self.assertEqual(10, units[0]['NumberOfFiles'])
         self.assertEqual(10000, units[0]['NumberOfEvents'])
 

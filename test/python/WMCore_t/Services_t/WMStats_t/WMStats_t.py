@@ -45,8 +45,9 @@ class WMStatsTest(unittest.TestCase):
         self.assertEquals(self.wmstatsWriter.updateTeam(schema[0]['RequestName'], 'teamA'), 'OK', 'update fail')
         self.assertEquals(self.wmstatsWriter.updateTeam("not_exist_schema", 'teamA'),
                           'ERROR: request not found - not_exist_schema')
-        totalStats = {'total_jobs': 100, 'input_events': 1000, 'input_lumis': 1234, 'input_num_file': 5}
-        self.assertEquals(self.wmstatsWriter.insertTotalStats(schema[0]['RequestName'], totalStats), 'OK', 'update fail')
+        totalStats = {'total_jobs': 100, 'input_events': 1000, 'input_lumis': 1234, 'input_num_files': 5}
+        self.assertEquals(self.wmstatsWriter.insertTotalStats(schema[0]['RequestName'], totalStats), 'INSERTED', 'update fail')
+        self.assertEquals(self.wmstatsWriter.insertTotalStats(schema[0]['RequestName'], totalStats), 'UPDATED', 'update fail')
         self.assertEquals(self.wmstatsWriter.insertTotalStats("not_exist_schema", totalStats),
                           'ERROR: request not found - not_exist_schema')
         spec1 = newWorkload(schema[0]['RequestName'])

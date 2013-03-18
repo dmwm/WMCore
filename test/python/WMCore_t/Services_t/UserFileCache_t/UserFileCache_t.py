@@ -21,8 +21,8 @@ class UserFileCacheTest(unittest.TestCase):
         Tests checksum method
         """
         self.ufc = UserFileCache()
-        checksum1 = self.ufc.checksum(fileName=path.join(getTestBase(), '../data/ewv_crab_EwvAnalysis_31_111229_140959_publish.tgz'))
-        checksum2 = self.ufc.checksum(fileName=path.join(getTestBase(), '../data/ewv_crab_EwvAnalysis_31_resubmit_111229_144319_publish.tgz'))
+        checksum1 = self.ufc.checksum(fileName=path.join(getTestBase(), 'WMCore_t/Services_t/UserFileCache_t/ewv_crab_EwvAnalysis_31_111229_140959_publish.tgz'))
+        checksum2 = self.ufc.checksum(fileName=path.join(getTestBase(), 'WMCore_t/Services_t/UserFileCache_t/ewv_crab_EwvAnalysis_31_resubmit_111229_144319_publish.tgz'))
         self.assertTrue(checksum1)
         self.assertTrue(checksum2)
         self.assertFalse(checksum1 == checksum2)

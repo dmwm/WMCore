@@ -5,7 +5,8 @@ _LCGImpl_
 Implementation of StageOutImplV2 interface for lcg-cp
 
 """
-import os, os.path, re, logging, subprocess
+import os, os.path, re, logging, subprocess, tempfile
+from subprocess import Popen
 
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure

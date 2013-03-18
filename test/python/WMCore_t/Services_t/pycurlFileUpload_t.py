@@ -1,7 +1,8 @@
 from WMCore.WebTools.RESTModel import RESTModel
-from WMCore.Services.Requests import uploadFile
+from WMCore.Services.Requests import Requests
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
+from WMCore.WMBase import getTestBase
 
 import logging
 import unittest
@@ -20,26 +21,27 @@ class PyCurlRESTServer(RESTBaseUnitTest):
     """
 
     def initialize(self):
-        self.config = DefaultConfig('PyCurlRESTModel')
+        self.config = DefaultConfig('WMCore_t.Services_t.PyCurlRESTModel')
         self.config.Webtools.environment = 'development'
         self.config.Webtools.error_log_level = logging.ERROR
         self.config.Webtools.access_log_level = logging.ERROR
         self.config.Webtools.port = 8888
         self.config.Webtools.host = '127.0.0.1'
-        self.config.UnitTests.object = 'PyCurlRESTModel'
+        self.config.UnitTests.object = 'WMCore_t.Services_t.PyCurlRESTModel'
+        self.requestHandler = Requests('http://127.0.0.1:8888/unittests/rest/')
 
     def testFileUpload(self):
         """
         The method upload a file (data/TestUpload.txt) and check if the server API has saved it
         """
         uploadedFilename = 'UploadedFile.txt'
-        fileName = os.path.join( os.path.dirname(__file__), "../../../data/TestUpload.txt")
+        fileName = os.path.join(getTestBase(), 'WMCore_t/Services_t/TestUpload.txt')
         #Check the uploaded file is not there
         if os.path.isfile(uploadedFilename):
             os.remove(uploadedFilename)
             self.assertFalse( os.path.isfile(uploadedFilename))
         #do the upload
-        res = uploadFile(fileName, 'http://127.0.0.1:8888/unittests/rest/file/')
+        res = self.requestHandler.uploadFile(fileName, 'http://127.0.0.1:8888/unittests/rest/file/')
         #the file is there now (?)
         self.assertTrue( os.path.isfile(uploadedFilename))
         self.assertEquals( open(uploadedFilename).read() , open(fileName).read() )
@@ -52,14 +54,14 @@ class PyCurlRESTServer(RESTBaseUnitTest):
         The method upload a file (data/TestUpload.txt) and check if the server API has saved it
         """
         uploadedFilename = 'UploadedFile.txt'
-        fileName = os.path.join( os.path.dirname(__file__), "../../../data/TestUpload.txt")
+        fileName = os.path.join(getTestBase(), 'WMCore_t/Services_t/TestUpload.txt')
         #Check the uploaded file is not there
         if os.path.isfile(uploadedFilename):
             os.remove(uploadedFilename)
             self.assertFalse( os.path.isfile(uploadedFilename))
         #do the upload using the wrong address
         try:
-            res = uploadFile(fileName, 'http://127.0.0.1:8888/unittests/rest/iAmNotThere/')
+            res = self.requestHandler.uploadFile(fileName, 'http://127.0.0.1:8888/unittests/rest/iAmNotThere/')
             self.fail()
         except HTTPException,he:
             self.assertEqual(he.status, 404)

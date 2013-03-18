@@ -451,6 +451,8 @@ class ReqMgrRESTModel(RESTModel):
             body = cherrypy.request.body.read()
             reqInputArgs = Utilities.unidecode(JsonWrapper.loads(body))
             reqInputArgs.setdefault('CouchURL', Utilities.removePasswordFromUrl(self.couchUrl))
+            reqInputArgs.setdefault('CouchWorkloadDBName', self.workloadDBName)
+            # wrong naming ... but it's all over the place, it's the config cache DB name
             reqInputArgs.setdefault('CouchDBName', self.configDBName)
             try:
                 self.info("Creating a request for: '%s'\n\tworkloadDB: '%s'\n\twmstatUrl: "

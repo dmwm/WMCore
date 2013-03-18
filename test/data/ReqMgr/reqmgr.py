@@ -382,8 +382,28 @@ class ReqMgrClient(RESTClient):
         config.requestNames.append(resubmissionRequest)
         logging.info("Resubmission tests finished.")
         
+        
+    def getCouchDbConnectionAndUri(self, config):
+        if config.reqMgrUrl.startswith("https://"):
+            couchDbConn = RESTClient(config.reqMgrUrl,
+                                     cert=config.cert, key=config.key)
+            uri = "/couchdb/reqmgr_workload_cache"
+        if config.reqMgrUrl.startswith("http://"):
+            # take COUCHURL env. variable
+            # if it contains username:password@host, then remove)
+            couchUrl = os.getenv("COUCHURL", None)
+            url = couchUrl
+            if couchUrl.find('@') > -1:
+                indexAt = couchUrl.find('@')
+                indexSlash = couchUrl.find("//")
+                url = couchUrl[:(indexSlash+2)]
+                url += couchUrl[(indexAt+1):] 
+            couchDbConn = RESTClient(url)
+            uri = "/reqmgr_workload_cache"
+        return couchDbConn, uri
+        
     
-    def checkCouchDB(self, config):
+    def checkCouchDb(self, config):
         """
         Returns number of request documents in the ReqMgr CouchDB database.
         Design documents are excluded from the result.
@@ -403,23 +423,8 @@ class ReqMgrClient(RESTClient):
         This check will also be removed for ReqMgr2 having only CouchDB backend.
                 
         """
-        if config.reqMgrUrl.startswith("https://"):
-            couchDbConn = RESTClient(config.reqMgrUrl,
-                                     cert=config.cert, key=config.key)
-            uri = "/couchdb/reqmgr_workload_cache"
-        if config.reqMgrUrl.startswith("http://"):
-            # take COUCHURL env. variable
-            # if it contains username:password@host, then remove)
-            couchUrl = os.getenv("COUCHURL", None)
-            url = couchUrl
-            if couchUrl.find('@') > -1:
-                indexAt = couchUrl.find('@')
-                indexSlash = couchUrl.find("//")
-                url = couchUrl[:(indexSlash+2)]
-                url += couchUrl[(indexAt+1):] 
-            couchDbConn = RESTClient(url)
-            uri = "/reqmgr_workload_cache"
-                                     
+        couchDbConn, uri = self.getCouchDbConnectionAndUri(config)
+                                             
         # get number of all documents
         status, data = couchDbConn.httpRequest("GET", uri)
         numAllDocs = json.loads(data)["doc_count"]
@@ -428,8 +433,77 @@ class ReqMgrClient(RESTClient):
         status, data = couchDbConn.httpRequest("GET", uri)
         numDesignDocs = len(json.loads(data)["rows"])
         return numAllDocs-numDesignDocs
-        
     
+    
+    def checkOracleCouchDbConsistency(self, config, testRequestName):
+        """
+        Compare consistency of selecte request data fields between
+        Oracle and CouchDB.
+        Compare data returned by "GET", "/reqmgr/reqMgr/request/REQUEST_NAME
+        which leads to Utilities.requestDetails(requestName) which pulls
+        information from Oracle and from spec stored in Couch attachment
+        and data fields from Couch request.
+        
+        """
+        # TODO 1:
+        # this list is not exhaustive and will be modified / amended
+        # should be checked if the request parameter actually exists in
+        # in both databases ... later this explicit list should be removed
+        # and check will be done on automatic inspection and later it will
+        # be removed altogether and Oracled dropped ...
+        # implement this check automatically without listing request arguments
+        # TODO 2:
+        # related to the current priority mess, they usually don't agree:
+        #    ReqMgrRequestBasePriority
+        #    RequestPriority
+        # TODO 3:
+        # double list: OutputDatasets (ticket already filed ...)
+        # Oracle:InputDatasetTypes: '{u'/QCD_HT-1000ToInf_TuneZ2star_8TeV-madgraph-pythia6/Summer12-START50_V13-v1/GEN': u'source'}' != CouchDB:InputDatasetTypes: '{}'
+        # Oracle:RequestNumEvents: '0' != CouchDB:RequestNumEvents: 'None'
+        fields = """RequestStatus
+            ReqMgrRequestID
+            RequestSizeFiles
+            ReqMgrRequestorID
+            AcquisitionEra
+            ReqMgrGroupID
+            SoftwareVersions
+            TimePerEvent
+            CMSSWVersion
+            Campaign
+            ConfigCacheUrl
+            CouchDBName
+            CouchURL
+            CouchWorkloadDBName
+            GlobalTag
+            Group
+            InputDatasets
+            Memory
+            ProcessingVersion
+            ReqMgrRequestorID
+            RequestDate
+            RequestEventSize
+            RequestName
+            RequestString
+            RequestType
+            Requestor
+            RequestorDN
+            ScramArch
+            SiteWhitelist
+            SizePerEvent""".split()
+        # data mainly from Oracle and spec
+        reqOracle = self.queryRequests(None, testRequestName)[0]
+        couchDbConn, uri = self.getCouchDbConnectionAndUri(config)
+        status, data = couchDbConn.httpRequest("GET", uri + "/" + testRequestName)
+        reqCouch = json.loads(data)
+        for field in fields:
+            try:
+                msg = ("Oracle:%s: '%s' != CouchDB:%s: '%s'" % (field, reqOracle[field],
+                                                             field, reqCouch[field]))  
+                assert str(reqOracle[field]) == str(reqCouch[field]), msg
+            except KeyError:
+                print "Field '%s' doesn't exist in one of the databases."
+        
+            
     def allTests(self, config):
         """
         Call all methods above. Tests everything.
@@ -442,7 +516,7 @@ class ReqMgrClient(RESTClient):
         
         # save number of current requests in the system 
         currentRequests = self.queryRequests(config)
-        currentCouchRequests = self.checkCouchDB(config)
+        currentCouchRequests = self.checkCouchDb(config)
         msg = ("Prior to allTests(): Number of requests in MySQL/Oracle "
                "database (%s) and CouchDB (%s) do not agree." %
                (len(currentRequests), currentCouchRequests))
@@ -476,6 +550,11 @@ class ReqMgrClient(RESTClient):
         assert testRequestData["RequestStatus"] == "assigned", msg
         assert testRequestData["RequestPriority"] == totalPriority, "New RequestPriority does not match!"
         
+        # take testRequestName for Oracle, CouchDB consistency check
+        # this request had status, priority modified, so it also tests whether
+        # it has been properly propagate into Couch corresponding document
+        self.checkOracleCouchDbConsistency(config, testRequestName) 
+        
         # test clone
         config.cloneRequest = testRequestName
         clonedRequestName = self.cloneRequest(config)
@@ -499,7 +578,7 @@ class ReqMgrClient(RESTClient):
         afterRequests = self.queryRequests(config)
         logging.info("%s requests in the system before this test." % len(afterRequests))
         assert currentRequests == afterRequests, "Requests in ReqMgr before and after this test not matching!"        
-        afterCouchRequests = self.checkCouchDB(config)
+        afterCouchRequests = self.checkCouchDb(config)
         msg = ("After allTests(): Number of requests in MySQL/Oracle "
                "database (%s) and CouchDB (%s) do not agree." %
                (len(afterRequests), afterCouchRequests))

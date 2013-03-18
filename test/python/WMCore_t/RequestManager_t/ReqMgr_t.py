@@ -89,7 +89,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.couchDBName = "reqmgr_t_0"
         RESTBaseUnitTest.setUp(self)
         self.testInit.setupCouch("%s" % self.couchDBName,
-                                 "GroupUser", "ConfigCache")
+                                 "GroupUser", "ConfigCache", "ReqMgr")
         self.testInit.setupCouch("%s_wmstats" % self.couchDBName,
                                  "WMStats")
         reqMgrHost = self.config.getServerUrl()

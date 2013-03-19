@@ -34,7 +34,17 @@
         "OpenRunningTimeout" : 0
 	},
 
-	
+"changeSplitting":
+    {
+        "StepOneProc" :
+            {
+                "SplittingAlgo" : "LumiBased",
+                "lumis_per_job" : 8,
+                "halt_job_on_file_boundaries" : "True",
+                "include_parents" : "False"
+            }
+    },
+
 "assignRequest":
 	{
 		"SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",

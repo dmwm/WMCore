@@ -27,6 +27,16 @@
 		"FirstLumi": 1
 	}, 
 
+"changeSplitting":
+    {
+        "Production" :
+            {
+                "SplittingAlgo" : "EventBased",
+                "events_per_job" : 1400,
+                "include_parents" : "False"
+            }
+    },
+
 "assignRequest":
 	{
 		"SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",

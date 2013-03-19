@@ -49,7 +49,16 @@
         "mergedLFNBase": "/store/relval",
         "unmergedLFNBase": "/store/unmerged"
     },
-        
+
+"changeSplitting":
+    {
+        "SingleMuPt100FS" :
+            {
+                "SplittingAlgo" : "EventBased",
+                "events_per_job" : 3500
+            }
+    },
+
 "assignRequest":
     {
         "SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",

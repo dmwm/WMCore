@@ -25,7 +25,17 @@
         "BlockBlacklist": [],
         "OpenRunningTimeout" : 0
 	}, 
-	
+
+"changeSplitting":
+    {
+        "MonteCarloFromGEN" :
+            {
+                "SplittingAlgo" : "LumiBased",
+                "lumis_per_job" : 1400,
+                "include_parents" : "False",
+                "halt_job_on_file_boundaries" : "True"
+             }
+    },
 
 "assignRequest":
 	{

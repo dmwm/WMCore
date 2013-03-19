@@ -1,3 +1,14 @@
+0.9.50 to 0.9.51:
+  - Fixes automatic testing of TaskChain requests. Pull request #4489.
+  - Fix most unit tests. Pull request #4487.
+  - Merge pull request #4485 from dballesteros7/FixUnitTests
+  - Restore the T2_XX_SiteA/B/C sites, SEs and CEs  
+  - Merge pull request #4484 from giffels/sitedbv2-unittest-fix
+  - Fix broken unittest caused SiteDBv2 emulator. Pull request #4418.
+  - ReqMgr2 - CouchDB request docs null fields. Pull request #4466.
+  - SiteDB emulator
+  - Move Service/SiteDB to SiteDBv2
+
 0.9.49 to 0.9.50:
   - Merge pull request #4463 from ticoann/add_acdc_info
   - Merge pull request #4467 from hufnagel/lsfsubmitfix

@@ -495,13 +495,25 @@ class ReqMgrClient(RESTClient):
         couchDbConn, uri = self.getCouchDbConnectionAndUri(config)
         status, data = couchDbConn.httpRequest("GET", uri + "/" + testRequestName)
         reqCouch = json.loads(data)
+        # TODO
+        # data fields should be automatically inspected rather than listed
+        # above
         for field in fields:
-            try:
-                msg = ("Oracle:%s: '%s' != CouchDB:%s: '%s'" % (field, reqOracle[field],
-                                                             field, reqCouch[field]))  
-                assert str(reqOracle[field]) == str(reqCouch[field]), msg
-            except KeyError:
-                print "Field '%s' doesn't exist in one of the databases."
+            def check(request, fieldName, databaseType):
+                try:
+                    request[fieldName]
+                    return True
+                except KeyError:
+                    print ("ERROR: Field '%s' doesn't exist in %s database." %
+                       (fieldName, databaseType))
+                    return False
+            
+            if not check(reqOracle, field, "Oracle"): continue
+            if not check(reqCouch, field, "CouchDB"): continue
+            
+            msg = ("ERROR: Oracle:%s: '%s' != CouchDB:%s: '%s'" %
+                    (field, reqOracle[field], field, reqCouch[field]))
+            assert str(reqOracle[field]) == str(reqCouch[field]), msg
         
             
     def allTests(self, config):

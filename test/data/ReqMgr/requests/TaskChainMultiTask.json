@@ -4,7 +4,6 @@
         "AcquisitionEra": "6_1_0-TEST_Testbed-base",
         "CMSSWVersion": "CMSSW_6_1_0",
         "Campaign": "Testbed_TEST",
-        "CouchURL": "https://cmsweb-testbed.cern.ch/couchdb",
         "ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
         "DQMConfigCacheID": "de444dec82fa4d973e6b94c27a3aaa8d",
         "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/dev",

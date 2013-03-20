@@ -9,8 +9,8 @@
 <body>
 #if $docId != None
 <b> Configuration </b><br>
-<a href="../showOriginalConfig/$docId" >Original Config</a> &nbsp&nbsp&nbsp
-<a href="../showTweakFile/$docId" >TweakFile</a><br><br>
+<a href="../showOriginalConfig/$requestName">Original Config</a> &nbsp&nbsp&nbsp
+<a href="../showTweakFile/$requestName">TweakFile</a><br><br>
 #end if
 
 #def $textarea($name, $value)
@@ -38,22 +38,6 @@
             <tr><td> $key </td> $textarea("blockWhitelist", $value)
         #elif $key == 'BlockBlacklist'
             <tr><td> $key </td> $textarea("blockBlacklist", $value)
-        #elif $key == 'CouchUrl'
-            #pass 
-        #elif $key == 'ScramArch'
-            <tr><td> $key </td><td><select name="ScramArch">
-            #for $option in ['slc4_ia32_gcc345', 'slc5_ia32_gcc434', 'slc5_amd64_gcc434']
-              #if $option == $value
-                <option selected>$option</option>
-              #else
-                <option>$option</option>
-              #end if
-            #end for
-            </select></td></tr>
-        #elif $key == 'CMSSWVersion'
-            <tr><td> $key </td><td><input name="$key" value=$value /></td></tr>
-        #elif $key == 'GlobalTag'
-            <tr><td> $key </td><td><input name="$key" value=$value /></td></tr>
         #else
             <tr><td> $quote($key) </td><td> $value </td></tr>
         #end if

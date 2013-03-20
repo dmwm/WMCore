@@ -1,5 +1,9 @@
-#!/usr/bin/env python
-""" Main Module for browsing and modifying requests """
+"""
+Main Module for browsing and modifying requests.
+
+"""
+
+
 import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
 import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
 import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
@@ -199,25 +203,49 @@ class ReqMgrBrowser(WebAPI):
                                 adminHtml=adminHtml,
                                 messages=request['RequestMessages'],
                                 updateDictList=request['RequestUpdates'])
+        
+        
+    def _getConfigCache(self, requestName, processMethod):
+        try:
+            request = Utilities.requestDetails(requestName)
+        except Exception, ex:
+            msg = "Cannot find request %s, check logs." % requestName
+            logging.error("%s, reason: %s" % (msg, ex))
+            return msg
+        url = request.get("ConfigCacheUrl", None) or self.couchUrl
+        try:
+            configCache = ConfigCache(url, self.configDBName)
+            configDocId = request["ConfigCacheID"]
+            configCache.loadByID(configDocId)
+        except Exception, ex:
+            msg = "Cannot find ConfigCache document %s on %s." % (configDocId, url)
+            logging.error("%s, reason: %s" % (msg, ex))
+            return msg
+        return getattr(configCache, processMethod)()
+            
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
-    def showOriginalConfig(self, docId):
-        """ Makes a link to the original text of the config """
-        configCache = ConfigCache(self.couchUrl, self.configDBName)
-        configCache.loadByID(docId)
-        configString =  configCache.getConfig()
-        if configString == None:
-            return "Cannot find document " + str(docId) + " in Couch DB"
-        return '<pre>' + configString + '</pre>'
+    def showOriginalConfig(self, requestName):
+        """
+        Makes a link to the original text of the config document.
+        
+        """
+        self.validate(requestName)
+        return '<pre>' + self._getConfigCache(requestName, "getConfig") + '</pre>'
+
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
-    def showTweakFile(self, docId):
-        """ Makes a link to the dump of the tweakfile """
-        configCache = ConfigCache(self.couchUrl, self.configDBName)
-        configCache.loadByID(docId)
-        return str(configCache.getPSetTweaks()).replace('\n', '<br>')
+    def showTweakFile(self, requestName):
+        """
+        Makes a link to the dump of the tweakfile.
+        
+        """
+        self.validate(requestName)
+        tweakString = self._getConfigCache(requestName, "getPSetTweaks")
+        return str(tweakString).replace('\n', '<br>')
+
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
@@ -337,12 +365,6 @@ class ReqMgrBrowser(WebAPI):
         helper.load(workload)
         schema = helper.data.request.schema
         message = ""
-        #inputTask = helper.getTask(requestType).data.input.dataset
-        if GlobalTag or CMSSWVersion:
-            helper.setCMSSWParams(cmsswVersion=CMSSWVersion, globalTag=GlobalTag)
-            helper.data.request.schema.CMSSWVersion = CMSSWVersion
-            helper.data.request.schema.GlobalTag = GlobalTag
-            message += "CMSSW version %s, GlobalTag %s<br/>" % (CMSSWVersion, GlobalTag)
         if runWhitelist != "" and runWhitelist != None:
             l = Utilities.parseRunList(runWhitelist)
             helper.setRunWhitelist(l)
@@ -363,9 +385,5 @@ class ReqMgrBrowser(WebAPI):
             helper.setBlockBlacklist(l)
             schema.BlockBlacklist = l
             message += 'Changed blockBlackList to %s<br>' % l
-        if ScramArch and ScramArch != schema.ScramArch:
-            message += "modifyng the Scram Arch to %s" % ScramArch
-            schema.ScramArch = ScramArch
-            helper.setCMSSWParams(cmsswVersion=schema.CMSSWVersion, scramArch=ScramArch)
         Utilities.saveWorkload(helper, workload)
         return message + detailsBackLink(requestName)

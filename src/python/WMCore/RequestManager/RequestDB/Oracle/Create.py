@@ -1,8 +1,13 @@
-#!/usr/bin/env python
 """
-_ReqMgr.RequestDB.MySQL_
+_ReqMgr.RequestDB.Oracle_
 
-MySQL Compatibility layer for Request Manager DB
+Oracle Compatibility layer for Request Manager DB
+Create all tables for ReqMgr in Oracle
+
+
+Priorities changed: only reqmgr_request:request_priority is
+really considered, all other priority values are ignored.
+
 """
 
 

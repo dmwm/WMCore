@@ -49,7 +49,7 @@ class ReqMgrBrowser(WebAPI):
         # Take a guess
         self.templatedir = config.templates
         self.fields = ['RequestName', 'Group', 'Requestor', 'RequestType',
-                       'ReqMgrRequestBasePriority', 'RequestStatus', 'Complete', 'Success']
+                       "RequestPriority", 'RequestStatus', 'Complete', 'Success']
         self.calculatedFields = {'Written': 'percentWritten', 'Merged':'percentMerged',
                                  'Complete':'percentComplete', 'Success' : 'percentSuccess'}
         # entries in the table that show up as HTML links for that entry
@@ -65,8 +65,6 @@ class ReqMgrBrowser(WebAPI):
             'Site Whitelist', 'Site Blacklist']
 
         self.adminMode = True
-        # don't allow mass editing.  Make people click one at a time.
-        #self.adminFields = {'RequestStatus':'statusMenu', 'ReqMgrRequestBasePriority':'Utilities.priorityMenu'}
         self.adminFields = {}
         self.couchUrl = config.couchUrl
         self.configDBName = config.configDBName
@@ -194,7 +192,7 @@ class ReqMgrBrowser(WebAPI):
         except AssertionError:
             raise cherrypy.HTTPError(404, "Cannot load request %s" % requestName)
         adminHtml = statusMenu(requestName, request['RequestStatus']) \
-                  + ' Priority ' + Utilities.priorityMenu(request)
+                  + ' Priority: ' + Utilities.priorityMenu(request)
         return self.templatepage("Request", requestName=requestName,
                                 detailsFields=self.detailsFields,
                                 requestSchema=request,
@@ -327,7 +325,6 @@ class ReqMgrBrowser(WebAPI):
         return "%i%%" % pct
 
     @cherrypy.expose
-    #@cherrypy.tools.secmodv2() security issue fix
     @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())    
     def doAdmin(self, **kwargs):
         """  format of kwargs is {'requestname:status' : 'approved', 'requestname:priority' : '2'} """
@@ -340,7 +337,7 @@ class ReqMgrBrowser(WebAPI):
                 priority = kwargs[requestName+':priority']
                 if priority != '':
                     Utilities.changePriority(requestName, priority, self.wmstatWriteURL)
-                    message += "Changed priority for %s to %s\n" % (requestName, priority)
+                    message += "Changed priority for %s to %s.\n" % (requestName, priority)
                 if status != "":
                     Utilities.changeStatus(requestName, status, self.wmstatWriteURL)
                     message += "Changed status for %s to %s\n" % (requestName, status)
@@ -351,7 +348,6 @@ class ReqMgrBrowser(WebAPI):
 
 
     @cherrypy.expose
-    #@cherrypy.tools.secmodv2() security issue fix
     @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
     # FIXME needs to check if authorized, or original user
     def modifyWorkload(self, requestName, workload,

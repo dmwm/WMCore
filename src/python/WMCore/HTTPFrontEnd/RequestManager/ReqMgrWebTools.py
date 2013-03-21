@@ -231,17 +231,27 @@ def removePasswordFromUrl(url):
         result = url[:slashslashat+2] + url[atat+1:]
     return result
 
+
 def changePriority(requestName, priority, wmstatUrl = None):
-    """ Changes the priority that's stored in the workload """
-    # fill in all details
-    request = GetRequest.getRequestByName(requestName)
-    groupPriority = request.get('ReqMgrGroupBasePriority', 0)
-    userPriority  = request.get('ReqMgrRequestorBasePriority', 0)
-    ChangeState.changeRequestPriority(requestName, priority)
+    """
+    Changes the priority that's stored in the workload.
+    Takes the current priority stored in the workload and adds
+    to it the input priority value. 
+    
+    """
+    request = requestDetails(requestName)
+    # change in Oracle
+    newPrior = int(priority)
+    ChangeState.changeRequestPriority(requestName, newPrior)
+    # change in workload (spec)
     helper = loadWorkload(request)
-    totalPriority = int(priority) + int(userPriority) + int(groupPriority)
-    helper.data.request.priority = totalPriority
+    helper.data.request.priority = newPrior
     saveWorkload(helper, request['RequestWorkflow'], wmstatUrl)
+    # change priority in CouchDB
+    couchDb = Database(request["CouchWorkloadDBName"], request["CouchURL"])
+    fields = {"RequestPriority": newPrior}
+    couchDb.updateDocument(requestName, "ReqMgr", "updaterequest", fields=fields) 
+    
 
 def abortRequest(requestName):
     """ Changes the state of the request to "aborted", and asks the work queue
@@ -292,7 +302,7 @@ def privileged():
 
     #FIXME doesn't check role in this specific site
     secure_roles = [role for role in cherrypy.request.user['roles'].keys() if role in security_roles()]
-    # and maybe we're running without securitya, in which case dn = 'None'
+    # and maybe we're running without security, in which case dn = 'None'
     return secure_roles != []
 
 def changeStatus(requestName, status, wmstatUrl):
@@ -358,9 +368,8 @@ def requestsWhichCouldLeadTo(newStatus):
 
 def priorityMenu(request):
     """ Returns HTML for a box to set priority """
-    return '(%iu, %ig) %i &nbsp<input type="text" size=2 name="%s:priority" />' % (
-            request['ReqMgrRequestorBasePriority'], request['ReqMgrGroupBasePriority'],
-            request['ReqMgrRequestBasePriority'],
+    return ' %i &nbsp<input type="text" size=2 name="%s:priority" />' % (
+            request['RequestPriority'],
             request['RequestName'])
 
 def sites(siteDbUrl):
@@ -504,7 +513,6 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
     paramsToUpdate = ["RequestStatus",
                       "ReqMgrRequestID",
                       "RequestSizeFiles",
-                      "ReqMgrRequestBasePriority",
                       "ReqMgrRequestorID",
                       "AcquisitionEra",
                       "ReqMgrGroupID"]

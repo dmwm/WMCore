@@ -5,7 +5,7 @@
 		"GlobalTag": "FT_R_44_V11::All",
 		"Campaign": "Campaign-OVERRIDE-ME",		
 		"RequestString": "RequestString-OVERRIDE-ME",
-		"RequestPriority": 100,
+		"RequestPriority": 1000,
 		"TimePerEvent": 60,
 		"ScramArch": "slc5_amd64_gcc434",
 		"RequestType": "ReReco",

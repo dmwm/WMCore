@@ -480,13 +480,9 @@ class ReqMgrClient(RESTClient):
         # should be checked if the request parameter actually exists in
         # in both databases ... later this explicit list should be removed
         # and check will be done on automatic inspection and later it will
-        # be removed altogether and Oracled dropped ...
+        # be removed altogether and Oracle dropped ...
         # implement this check automatically without listing request arguments
         # TODO 2:
-        # related to the current priority mess, they usually don't agree:
-        #    ReqMgrRequestBasePriority
-        #    RequestPriority
-        # TODO 3:
         # double list: OutputDatasets (ticket already filed ...)
         # Oracle:InputDatasetTypes: '{u'/QCD_HT-1000ToInf_TuneZ2star_8TeV-madgraph-pythia6/Summer12-START50_V13-v1/GEN': u'source'}' != CouchDB:InputDatasetTypes: '{}'
         # Oracle:RequestNumEvents: '0' != CouchDB:RequestNumEvents: 'None'
@@ -580,19 +576,16 @@ class ReqMgrClient(RESTClient):
             config.requestNames.append(self.createRequest(config, restApi = False))
             self.assignRequests(config)
     
-        # test priority changing (final priority will be sum of the current
-        # and new, so have to first find out the current)
+        # test priority changing. setting priority is absolute now,
+        # the sent value becomes the final priority, there is no composition
         # config.requestNames must be set
-        testRequestData = self.queryRequests(config, toQuery=testRequestName)[0]
-        currPriority = testRequestData["RequestPriority"]
-        newPriority = 10
-        totalPriority = currPriority + newPriority
+        newPriority = 11212
         self.changePriority(testRequestName, newPriority)
         testRequestData = self.queryRequests(config, toQuery=testRequestName)[0]
         # test state (should be "assigned"
         msg = "Status should be 'assigned', is '%s'" % testRequestData["RequestStatus"]
         assert testRequestData["RequestStatus"] == "assigned", msg
-        assert testRequestData["RequestPriority"] == totalPriority, "New RequestPriority does not match!"
+        assert testRequestData["RequestPriority"] == newPriority, "New RequestPriority does not match!"
         
         # take testRequestName for Oracle, CouchDB consistency check
         # this request had status, priority modified, so it also tests whether
@@ -606,8 +599,8 @@ class ReqMgrClient(RESTClient):
         # now test that the cloned request has correct priority
         clonedRequest = self.queryRequests(config, toQuery=clonedRequestName)[0]
         msg = ("Priorities don't match: original request: %s cloned request: %s" %
-               (totalPriority, clonedRequest["RequestPriority"]))
-        assert totalPriority == clonedRequest["RequestPriority"], msg
+               (newPriority, clonedRequest["RequestPriority"]))
+        assert newPriority == clonedRequest["RequestPriority"], msg
         
         # test Resubmission request, only if we have MonteCarlo request template in input
         if config.requestArgs["createRequest"]["RequestType"] == "MonteCarlo":

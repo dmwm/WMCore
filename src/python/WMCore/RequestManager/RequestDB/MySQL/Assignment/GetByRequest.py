@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 _GetByRequest_
 
@@ -25,7 +24,7 @@ class GetByRequest(DBFormatter):
 
         """
         self.sql = """
-        SELECT assign.team_id, assign.priority_modifier, team.team_name
+        SELECT assign.team_id, team.team_name
           FROM reqmgr_assignment assign
             JOIN reqmgr_teams team ON assign.team_id = team.team_id
           WHERE assign.request_id = :requestId"""
@@ -35,8 +34,7 @@ class GetByRequest(DBFormatter):
 
         output = []
         [ output.append({
-            "TeamName" : x[2],
+            "TeamName" : x[1],
             "TeamID"   : x[0],
-            "TeamPriority" : x[1],
             }) for x in self.format(result)]
         return output

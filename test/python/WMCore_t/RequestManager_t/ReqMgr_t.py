@@ -221,15 +221,9 @@ class ReqMgrTest(RESTBaseUnitTest):
         me = self.jsonSender.get('user/me')[0]
         self.assertTrue(requestName in me['requests'])
         self.assertEqual(self.jsonSender.put('request/%s?priority=5' % requestName)[1], 200)
-        self.assertEqual(self.jsonSender.post('user/me?priority=6')[1], 200)
-        self.assertEqual(self.jsonSender.post('group/PeopleLikeMe?priority=7')[1], 200)
 
-        # default priority of group and user of 1
         request = self.jsonSender.get('request/%s' % requestName)[0]
-        self.assertEqual(request['ReqMgrRequestBasePriority'], 5)
-        self.assertEqual(request['ReqMgrRequestorBasePriority'], 6)
-        self.assertEqual(request['ReqMgrGroupBasePriority'], 7)
-        self.assertEqual(request['RequestPriority'], 5+6+7)
+        self.assertEqual(request['RequestPriority'], 5)
 
         # Check LFN Bases
         self.assertEqual(request['UnmergedLFNBase'], '/store/unmerged')
@@ -703,7 +697,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         origRequest = response[0]
         self.assertEquals(origRequest["AcquisitionEra"], acquisitionEra)
         # test that the priority was correctly set in the brand-new request
-        self.assertEquals(origRequest["ReqMgrRequestBasePriority"], priority)
+        self.assertEquals(origRequest["RequestPriority"], priority)
         
         # test cloning not existing request
         self.assertRaises(HTTPException, self.jsonSender.put, "clone/%s" % "NotExistingRequestName")

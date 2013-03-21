@@ -5,7 +5,7 @@
 		"GlobalTag": "START53_V7A::All",
 		"Campaign": "Campaign-OVERRIDE-ME",		
 		"RequestString": "RequestString-OVERRIDE-ME",
-		"RequestPriority": 100,
+		"RequestPriority": 1000,
 		"TimePerEvent": 17.5,
 		"ScramArch": "slc5_amd64_gcc462",
 		"RequestType": "ReDigi",

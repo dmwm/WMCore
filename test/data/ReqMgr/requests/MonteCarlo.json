@@ -5,7 +5,7 @@
 		"GlobalTag": "START311_V2::All",
 		"Campaign": "Campaign-OVERRIDE-ME",
 		"RequestString": "RequestString-OVERRIDE-ME",
-		"RequestPriority": 100,
+		"RequestPriority": 1000,
 		"TimePerEvent": 40,
 		"FilterEfficiency": 0.0361,
 		"ScramArch": "slc5_amd64_gcc434",

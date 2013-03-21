@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 RequestManager Workload unittest
 

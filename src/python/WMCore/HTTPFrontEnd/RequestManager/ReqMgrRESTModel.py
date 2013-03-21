@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 ReqMgrRESTModel
 
@@ -10,6 +8,7 @@ DB interfaces they execute.
 
 https://twiki.cern.ch/twiki/bin/viewauth/CMS/ReqMgrSystemDesign
 """
+
 import sys
 import math
 import cherrypy
@@ -130,14 +129,6 @@ class ReqMgrRESTModel(RESTModel):
                                 'files_merged', 'percent_written',
                                 'percent_success', 'dataset'],
                         secured=True, validation = [self.validateUpdates])
-        self._addMethod('POST', 'user', self.postUser,
-                        args = ['user', 'priority'],
-                        secured=True, security_params=self.security_params,
-                        validation = [self.isalnum, self.intpriority])
-        self._addMethod('POST',  'group', self.postGroup,
-                        args = ['group', 'priority'],
-                        secured=True, security_params=self.security_params,
-                        validation = [self.isalnum, self.intpriority])
         self._addMethod('DELETE', 'request', self.deleteRequest,
                         args = ['requestName'],
                         secured=True, security_params=self.security_params,
@@ -624,15 +615,6 @@ class ReqMgrRESTModel(RESTModel):
             if k in index:
                 index[k] = float(index[k])
         return index
-
-    def postUser(self, user, priority):
-        """ Change the user's priority """
-        return UserManagement.setPriority(user, priority)
-
-    def postGroup(self, group, priority):
-        """ Change the group's priority """
-        return GroupManagement.setPriority(group, priority)
-
 
     # had no permission control before, security issue fix
     @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())

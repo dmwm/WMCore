@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 RequestManager unittest
 
@@ -118,15 +116,11 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
         workload = self.loadWorkload(requestName = requestName)
         self.assertEqual(workload.priority(), 0)
 
-        # Reset user, group priorities to 0
-        self.jsonSender.post('user/%s?priority=0' % userName)
-        self.jsonSender.post('group/%s?priority=0' % groupName)
-
         # Set priority == 5
         priority = 5
         self.jsonSender.put('request/%s?priority=%s' % (requestName, priority))
         request = self.jsonSender.get('request/%s' % requestName)[0]
-        self.assertEqual(request['ReqMgrRequestBasePriority'], priority)
+        self.assertEqual(request['RequestPriority'], priority)
         workload = self.loadWorkload(requestName = requestName)
         self.assertEqual(workload.priority(), priority)
 
@@ -134,7 +128,7 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
         priority = 100
         self.jsonSender.put('request/%s?priority=%s' % (requestName, priority))
         request = self.jsonSender.get('request/%s' % requestName)[0]
-        self.assertEqual(request['ReqMgrRequestBasePriority'], priority)
+        self.assertEqual(request['RequestPriority'], priority)
         workload = self.loadWorkload(requestName = requestName)
         self.assertEqual(workload.priority(), priority)
 
@@ -142,7 +136,7 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
         priority = -1
         self.jsonSender.put('request/%s?priority=%s' % (requestName, priority))
         request = self.jsonSender.get('request/%s' % requestName)[0]
-        self.assertEqual(request['ReqMgrRequestBasePriority'], priority)
+        self.assertEqual(request['RequestPriority'], priority)
         workload = self.loadWorkload(requestName = requestName)
         self.assertEqual(workload.priority(), priority)
 
@@ -161,7 +155,7 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
         priority = 99
         self.jsonSender.put('request/%s?priority=%s' % (requestName, priority))
         request = self.jsonSender.get('request/%s' % requestName)[0]
-        self.assertEqual(request['ReqMgrRequestBasePriority'], priority)
+        self.assertEqual(request['RequestPriority'], priority)
         workload = self.loadWorkload(requestName = requestName)
         self.assertEqual(workload.priority(), priority)
     
@@ -205,78 +199,6 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
             print ex.result
             self.assertTrue("Priority must have abs() less then MAXINT!" in ex.result)
         self.assertTrue(raises)
-
-        # Now try to violate the limits put on the requestPriority
-        # This test no longer works because the system is in insecure mode.  I think we
-        # need to figure out how to make it work in insecure mode, but I don't have
-        # any ideas.
-        
-        #raises = False
-        #try:
-        #    priority = 9999
-        #    self.jsonSender.put('request/%s?priority=%s' % (requestName, priority))
-        #except HTTPException, ex:
-        #    raises = True
-        #    self.assertEqual(ex.status, 400)
-        #    print ex.result
-        #    self.assertTrue("Request priority must have abs() less then 100" in ex.result)
-        #self.assertTrue(raises)
-
-
-    def testC_UserGroupRequestPriority(self):
-        """
-        _UserGroupRequestPriority_
-
-        Set the priorities of the user, the group, and the request
-        
-        """
-        userName     = 'Taizong'
-        groupName    = 'Li'
-        teamName     = 'Tang'
-        schema       = utils.getAndSetupSchema(self,
-                                               userName = userName,
-                                               groupName = groupName,
-                                               teamName = teamName)
-        result = self.jsonSender.put('request/testRequest', schema)
-        self.assertEqual(result[1], 200)
-        requestName = result[0]['RequestName']
-
-        workload = self.loadWorkload(requestName = requestName)
-        self.assertEqual(workload.priority(), 0)
-
-        # Reset user, group priorities to 0
-        self.jsonSender.post('user/%s?priority=0' % userName)
-        self.jsonSender.post('group/%s?priority=0' % groupName)
-
-        # Set priority == 5
-        priority = 5
-        self.jsonSender.put('request/%s?priority=%s' % (requestName, priority))
-        request = self.jsonSender.get('request/%s' % requestName)[0]
-        self.assertEqual(request['ReqMgrRequestBasePriority'], priority)
-        workload = self.loadWorkload(requestName = requestName)
-        self.assertEqual(workload.priority(), priority)
-
-        self.jsonSender.post('user/%s?priority=6' % userName)
-        self.jsonSender.put('request/%s?priority=%s' % (requestName, priority))
-        request = self.jsonSender.get('request/%s' % requestName)[0]
-        self.assertEqual(request['ReqMgrRequestBasePriority'], priority)
-        workload = self.loadWorkload(requestName = requestName)
-        self.assertEqual(workload.priority(), priority + 6)
-
-        self.jsonSender.post('group/%s?priority=7' % groupName)
-        self.jsonSender.put('request/%s?priority=%s' % (requestName, priority))
-        request = self.jsonSender.get('request/%s' % requestName)[0]
-        self.assertEqual(request['ReqMgrRequestBasePriority'], priority)
-        workload = self.loadWorkload(requestName = requestName)
-        self.assertEqual(workload.priority(), priority + 6 + 7)
-
-        self.jsonSender.post('user/%s?priority=0' % userName)
-        self.jsonSender.put('request/%s?priority=%s' % (requestName, priority))
-        request = self.jsonSender.get('request/%s' % requestName)[0]
-        self.assertEqual(request['ReqMgrRequestBasePriority'], priority)
-        workload = self.loadWorkload(requestName = requestName)
-        self.assertEqual(workload.priority(), priority + 7)
-
 
 
 if __name__=='__main__':

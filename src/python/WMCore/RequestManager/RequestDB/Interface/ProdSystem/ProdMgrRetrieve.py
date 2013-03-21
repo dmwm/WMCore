@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 _ProdMgrRetrieve_
 
@@ -39,7 +38,6 @@ def acceptRequest(requestId):
 
     """
     ChangeStatus.changeRequestIDStatus(requestId, "acquired")
-    return
 
 
 
@@ -52,7 +50,6 @@ def getRequest(requestId):
     Includes
     - All basic request information from DB
     - Teams the request has been assigned to
-    - Priority per assigned team
     - URL to download the workflow spec from
 
     TODO: Add download URL for the workflow spec.
@@ -63,10 +60,5 @@ def getRequest(requestId):
 
     request = GetRequest.getRequest(requestId)
     assigned = GetRequest.getRequestAssignments(requestId)
-
-    for team in assigned:
-        team['TeamPriority'] += request['RequestPriority']
     request['Assignments'] = assigned
-
-
     return request

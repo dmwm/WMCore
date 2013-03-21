@@ -57,7 +57,7 @@ class New(DBFormatter):
             raise RuntimeError, msg
 
         prep_id = request.get("prep_id", None)
-        priority = request.get("reqBasePriority", None)
+        priority = request.get("requestPriority", None)
         priority = priority if priority else 0
 
         self.sql = """

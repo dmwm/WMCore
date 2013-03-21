@@ -22,7 +22,6 @@ class Request(dict):
         # // ReqMgr specifics
         #//
         self.setdefault("ReqMgrRequestID", None)
-        self.setdefault("ReqMgrRequestBasePriority", None)
 
         #  //
         # // Requestor and group information

@@ -53,7 +53,6 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
     request["RequestType"] = reverseTypes[reqData['request_type']]
     request["RequestStatus"] = reverseStatus[reqData['request_status']]
     request["RequestPriority"] = reqData['request_priority']
-    request["ReqMgrRequestBasePriority"] = reqData['request_priority']
     request["RequestWorkflow"] = reqData['workflow']
     request["RequestNumEvents"] = reqData['request_num_events']
     request["RequestSizeFiles"] = reqData['request_size_files']
@@ -61,16 +60,8 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
 
     request["Group"] = groupData['group_name']
     request["ReqMgrGroupID"] = groupData['group_id']
-    request["ReqMgrGroupBasePriority"] = \
-                        groupData['group_base_priority']
     request["Requestor"] = userData['requestor_hn_name']
     request["ReqMgrRequestorID"] = userData['requestor_id']
-    request["ReqMgrRequestorBasePriority"] = \
-                                userData['requestor_base_priority']
-    request["RequestPriority"] = \
-      request['RequestPriority'] + groupData['group_base_priority']
-    request["RequestPriority"] = \
-      request['RequestPriority'] + userData['requestor_base_priority']
 
     updates = ChangeState.getProgress(requestName)
     request['percent_complete'], request['percent_success'] = percentages(updates)

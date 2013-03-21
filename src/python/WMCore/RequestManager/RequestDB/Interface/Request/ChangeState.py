@@ -49,14 +49,12 @@ def changeRequestIDStatus(requestId, newState, priority = None):
         priorityChange = factory(classname = "Request.Priority")
         priorityChange.execute(requestId, priority)
 
-    return
 
 def changeRequestPriority(requestName, priority):
     factory = DBConnect.getConnection()
     reqId = getRequestID(factory, requestName)
     priorityChange = factory(classname = "Request.Priority")
     priorityChange.execute(reqId, priority)
-    return
 
 
 def changeRequestStatus(requestName, newState, priority=None, wmstatUrl=None):
@@ -101,7 +99,7 @@ def changeRequestStatus(requestName, newState, priority=None, wmstatUrl=None):
         wmstatSvc.updateRequestStatus(requestName, newState)
     
 
-def assignRequest(requestName, teamName, priorityModifier = 0, prodMgr = None, wmstatUrl = None):
+def assignRequest(requestName, teamName, prodMgr = None, wmstatUrl = None):
     """
     _assignRequest_
 
@@ -112,9 +110,6 @@ def assignRequest(requestName, teamName, priorityModifier = 0, prodMgr = None, w
     - Changes the status to assigned
     - Creates an association to the team provided
     - Optionally associates the request to a prod mgr instance
-    - Optionally sets the priority modifier for the team (allows same request to be
-      shared between two teams with different priorities
-
 
     """
 
@@ -132,7 +127,7 @@ def assignRequest(requestName, teamName, priorityModifier = 0, prodMgr = None, w
         wmstatSvc.updateTeam(requestName, teamName)
 
     assigner = factory(classname = "Assignment.New")
-    assigner.execute(reqId, teamId, priorityModifier)
+    assigner.execute(reqId, teamId)
 
     changeRequestStatus(requestName, 'assigned', priority = None, wmstatUrl = wmstatUrl)
 
@@ -140,7 +135,6 @@ def assignRequest(requestName, teamName, priorityModifier = 0, prodMgr = None, w
         addPM = factory(classname = "Progress.ProdMgr")
         addPM.execute(reqId, prodMgr)
 
-    return
 
 def deleteAssignment(requestName):
     """
@@ -167,7 +161,6 @@ def updateRequest(requestName, paramDict):
     factory = DBConnect.getConnection()
     reqId = getRequestID(factory, requestName)
     factory(classname = "Progress.Update").execute(reqId, **paramDict)
-    return
 
 
 def getProgress(requestName):
@@ -188,4 +181,3 @@ def putMessage(requestName, message):
     #return factory(classname = "Progress.Message").execute(reqId, message)
     message = message[:999]
     factory(classname = "Progress.Message").execute(reqId, message)
-    return

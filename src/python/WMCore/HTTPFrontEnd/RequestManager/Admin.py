@@ -1,5 +1,15 @@
-#!/usr/bin/env python
-""" Main Module for browsing and modifying requests """
+"""
+Main Module for browsing and modifying requests.
+
+NOTE (2013-03-21):
+Individual user and group priorities removed. There are still
+APIs down here for modified those, which will probably just ignore
+input priority values. All these will not be ported to ReqMgr2.
+Leaving it here for now.
+
+"""
+
+
 import WMCore.RequestManager.RequestDB.Interface.User.Registration as Registration
 import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
 import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement as ProdManagement

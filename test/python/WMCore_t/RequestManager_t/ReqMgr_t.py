@@ -297,26 +297,22 @@ class ReqMgrTest(RESTBaseUnitTest):
         """
         badName = 'ThereIsNoWayThisNameShouldExist'
 
-        # First, try to find a non-existant request
+        # First, try to find a non-existent request
         # This should throw a 404 error.
         # The request name should not be in it
         self.checkForError(cls = 'request', badName = badName, exitCode = 404,
                            message = 'Given requestName not found')
 
-        # Now look for non-existant user
+        # Now look for non-existent user
         self.checkForError(cls = 'user', badName = badName, exitCode = 404,
                            message = 'Cannot find user')
 
-        # Now try non-existant group
-        self.checkForError(cls = 'group', badName = badName, exitCode = 404,
-                           message = "Cannot find group/group priority")
-
-        # Now try non-existant campaign
+        # Now try non-existent campaign
         self.checkForError(cls = 'campaign', badName = badName, exitCode = 404,
                            message = "Cannot find campaign")
 
         # Now try invalid message
-        # This raises a requestName error becuase it searches for the request
+        # This raises a requestName error because it searches for the request
         self.checkForError(cls = 'message', badName = badName, exitCode = 404,
                            message = "Given requestName not found", testEmpty = False)
 

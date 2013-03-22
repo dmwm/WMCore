@@ -136,7 +136,4 @@ def reqMgrConfig(
         active.monitorSvc.formatter.object = 'WMCore.WebTools.RESTFormatter'
         active.monitorSvc.template = os.path.join(installation, 'data/templates/WMCore/WebTools')
 
-    active.section_('yuiserver')
-    active.yuiserver.object = 'WMCore.WebTools.YUIServer'
-    active.yuiserver.yuidir = os.getenv("YUI_ROOT")
     return config

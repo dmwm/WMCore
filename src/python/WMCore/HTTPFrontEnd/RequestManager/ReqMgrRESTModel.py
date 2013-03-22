@@ -339,7 +339,6 @@ class ReqMgrRESTModel(RESTModel):
             result = {}
             result['groups'] = GroupInfo.groupsForUser(userName).keys()
             result['requests'] = UserRequests.listRequests(userName).keys()
-            result['priority'] = UserManagement.getPriority(userName)
             result.update(Registration.userInfo(userName))
             return result
         elif group != None:
@@ -350,14 +349,10 @@ class ReqMgrRESTModel(RESTModel):
 
 
     def getGroup(self, group=None, user=None):
-        """ No args lists all groups, one args returns JSON with users and priority """
+        """ No args lists all groups, one args returns JSON with users."""
         if group != None:
             result = {}
             result['users'] =  GroupInfo.usersInGroup(group)
-            try:
-                result['priority'] = GroupManagement.getPriority(group)
-            except IndexError:
-                raise cherrypy.HTTPError(404, "Cannot find group/group priority")
             return result
         elif user != None:
             return GroupInfo.groupsForUser(user).keys()

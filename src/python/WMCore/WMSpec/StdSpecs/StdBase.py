@@ -77,9 +77,9 @@ class StdBase(object):
         self.firstLumi = 1
         self.firstEvent = 1
         self.runNumber = 0
-        self.timePerEvent = 60
-        self.memory = 2000
-        self.sizePerEvent = 512
+        self.timePerEvent = None
+        self.memory = None
+        self.sizePerEvent = None
         self.periodicHarvestingInterval = 0
         self.dqmUploadProxy = None
         self.dqmUploadUrl = None
@@ -124,9 +124,9 @@ class StdBase(object):
         self.dashboardPort = arguments.get("DashboardPort", 8884)
         self.overrideCatalog = arguments.get("OverrideCatalog", None)
         self.runNumber = int(arguments.get("RunNumber", 0))
-        self.timePerEvent = int(arguments.get("TimePerEvent", 60))
-        self.memory = int(arguments.get("Memory", 2000))
-        self.sizePerEvent = int(arguments.get("SizePerEvent", 512))
+        self.timePerEvent = float(arguments.get("TimePerEvent", 12))
+        self.memory = float(arguments.get("Memory", 2300))
+        self.sizePerEvent = float(arguments.get("SizePerEvent", 512))
         self.periodicHarvestingInterval = int(arguments.get("PeriodicHarvest", 0))
         self.dqmUploadProxy = arguments.get("DQMUploadProxy", None)
         self.dqmUploadUrl = arguments.get("DQMUploadUrl", "https://cmsweb.cern.ch/dqm/dev")
@@ -286,7 +286,8 @@ class StdBase(object):
                             owner_vorole = "DEFAULT", stepType = "CMSSW",
                             userSandbox = None, userFiles = [], primarySubType = None,
                             forceMerged = False, forceUnmerged = False,
-                            configCacheUrl = None):
+                            configCacheUrl = None, timePerEvent = None, memoryReq = None,
+                            sizePerEvent = None):
         """
         _setupProcessingTask_
 
@@ -332,6 +333,9 @@ class StdBase(object):
             newSplitArgs[str(argName)] = splitArgs[argName]
 
         procTask.setSplittingAlgorithm(splitAlgo, **newSplitArgs)
+        procTask.setJobResourceInformation(timePerEvent = timePerEvent,
+                                           sizePerEvent = sizePerEvent,
+                                           memoryReq = memoryReq)
         procTask.setTaskType(taskType)
         procTask.setProcessingVersion(self.processingVersion)
         procTask.setAcquisitionEra(self.acquisitionEra)

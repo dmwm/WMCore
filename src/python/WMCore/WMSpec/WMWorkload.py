@@ -1013,7 +1013,7 @@ class WMWorkloadHelper(PersistencyHelper):
                                                           None))
         return
 
-    def listJobSplittingParametersByTask(self, initialTask = None):
+    def listJobSplittingParametersByTask(self, initialTask = None, performance = True):
         """
         _listJobSplittingParametersByTask_
 
@@ -1028,12 +1028,12 @@ class WMWorkloadHelper(PersistencyHelper):
 
         for task in taskIterator:
             taskName = task.getPathName()
-            taskParams = task.jobSplittingParameters()
+            taskParams = task.jobSplittingParameters(performance)
             del taskParams["siteWhitelist"]
             del taskParams["siteBlacklist"]
             output[taskName] = taskParams
             output[taskName]["type"] = task.taskType()
-            output.update(self.listJobSplittingParametersByTask(task))
+            output.update(self.listJobSplittingParametersByTask(task, performance))
 
         return output
 

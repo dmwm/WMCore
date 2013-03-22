@@ -574,6 +574,10 @@ def makeRequest(webApi, reqInputArgs, couchUrl, couchDB, wmstatUrl):
         d["SkimName"] = reqInputArgs["SkimName%s" % skimNumber]
         d["SkimInput"] = reqInputArgs["SkimInput%s" % skimNumber]
         d["Scenario"] = reqInputArgs["Scenario"]
+        d["TimePerEvent"] = reqInputArgs.get("SkimTimePerEvent%s" % skimNumber, None)
+        d["SizePerEvent"] = reqInputArgs.get("SkimSizePerEvent%s" % skimNumber, None)
+        d["Memory"] = reqInputArgs.get("SkimMemory%s" % skimNumber, None)
+
 
         if reqInputArgs.get("Skim%sConfigCacheID" % skimNumber, None) != None:
             d["ConfigCacheID"] = reqInputArgs["Skim%sConfigCacheID" % skimNumber]

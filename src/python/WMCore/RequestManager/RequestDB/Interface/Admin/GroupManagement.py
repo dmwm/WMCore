@@ -93,17 +93,3 @@ def deleteGroup(groupName):
     groupRemover = factory(classname = "Group.Delete")
     result = groupRemover.execute(groupName)
     return result
-
-def getPriority(groupName):
-    """ Set the group priority to the amount given """
-    factory = DBConnect.getConnection()
-    groupPriority = factory(classname = "Group.GetPriority")
-    result = groupPriority.execute(groupName)
-    return result
-
-def setPriority(groupName, priority):
-    """ Set the group priority to the amount given """
-    factory = DBConnect.getConnection()
-    groupPriority = factory(classname = "Group.SetPriority")
-    result = groupPriority.execute(groupName, priority)
-    return result

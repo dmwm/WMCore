@@ -10,7 +10,6 @@ set of jobs.
 Equivalent of a WorkflowSpec in the ProdSystem.
 """
 
-import os
 import os.path
 import time
 
@@ -440,6 +439,8 @@ class WMTaskHelper(TreeHelper):
           initial_lfn_counter
           merge_across_runs
           runWhitelist
+
+        Also preserve the performance section.
         """
         setACDCParams = {}
         for paramName in ["collectionName", "filesetName", "couchURL",
@@ -448,13 +449,17 @@ class WMTaskHelper(TreeHelper):
             if hasattr(self.data.input.splitting, paramName):
                 setACDCParams[paramName] = getattr(self.data.input.splitting,
                                                    paramName)
+        performanceConfig = getattr(self.data.input.splitting, "performance", None)
         
         delattr(self.data.input, "splitting")
         self.data.input.section_("splitting")
-        
+        self.data.input.splitting.section_("performance")
+
         setattr(self.data.input.splitting, "algorithm", algoName)
         self.setSplittingParameters(**params)
         self.setSplittingParameters(**setACDCParams)
+        if performanceConfig is not None:
+            self.data.input.splitting.performance = performanceConfig
         return
 
     def jobSplittingAlgorithm(self):
@@ -465,16 +470,22 @@ class WMTaskHelper(TreeHelper):
         """
         return getattr(self.data.input.splitting, "algorithm", None)
     
-    def jobSplittingParameters(self):
+    def jobSplittingParameters(self, performance = True):
         """
         _jobSplittingParameters_
-        
+
         Retrieve the job splitting parameters.  This will combine the job
         splitting parameters specified in the spec with the site white list
         and black list as those are passed to the job splitting code.
+        If required, also extract the performance parameters and pass them in the dict.
         """
         datadict = getattr(self.data.input, "splitting")
-        splittingParams = datadict.dictionary_()
+        if performance:
+            splittingParams = datadict.dictionary_whole_tree_()
+        else:
+            splittingParams = datadict.dictionary_()
+            if "performance" in splittingParams:
+                del splittingParams['performance']
         splittingParams["siteWhitelist"] = self.siteWhitelist()
         splittingParams["siteBlacklist"] = self.siteBlacklist()
 
@@ -482,8 +493,25 @@ class WMTaskHelper(TreeHelper):
             splittingParams["runWhitelist"] = self.inputRunWhitelist()
         if "runBlacklist" not in splittingParams.keys() and self.inputRunBlacklist() != None:
             splittingParams["runBlacklist"] = self.inputRunBlacklist()
-            
+
         return splittingParams
+
+    def setJobResourceInformation(self, timePerEvent = None,
+                                  memoryReq = None, sizePerEvent = None):
+        """
+        _setJobResourceInformation_
+
+        Set the values to estimate the required computing resources for a job,
+        the three key values are main memory usage, time per processing unit (e.g. time per event) and
+        disk usage per processing unit (e.g. size per event).
+        """
+        performanceParams = getattr(self.data.input.splitting, "performance")
+        performanceParams.timePerEvent = timePerEvent \
+                        or getattr(performanceParams, "timePerEvent", None)
+        performanceParams.memoryRequirement = memoryReq \
+                        or getattr(performanceParams, "memoryRequirement", None)
+        performanceParams.sizePerEvent = sizePerEvent \
+                        or getattr(performanceParams, "sizePerEvent", None)
 
     def addGenerator(self, generatorName, **settings):
         """
@@ -1244,6 +1272,7 @@ class WMTask(ConfigSectionTree):
         self.input.trustSiteLists = False
         self.input.section_("splitting")
         self.input.splitting.algorithm = None
+        self.input.splitting.section_("performance")
         self.constraints.section_("sites")
         self.constraints.sites.whitelist = []
         self.constraints.sites.blacklist = []

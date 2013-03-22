@@ -100,6 +100,15 @@ class ReqMgrBrowser(WebAPI):
         tableBody = self.drawRequests(requests)
         return self.templatepage("ReqMgrBrowser", yuiroot=self.yuiroot,
                                  fields=self.fields, tableBody=tableBody)
+        
+    @cherrypy.expose
+    @cherrypy.tools.secmodv2()
+    def index(self):
+        requests = GetRequest.getRequests()
+        tableBody = self.drawRequests(requests)
+        return self.templatepage("ReqMgrBrowser", yuiroot=self.yuiroot,
+                                 fields=self.fields, tableBody=tableBody)
+        
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2()

@@ -1,5 +1,5 @@
 # definition of the production Oracle DB for ReqMgr
-# names of the columns as retured by the "describe <table name>" command
+# names of the columns as returned by the "describe <table name>" command
 # on the SQLPlus prompt
 # Oracle DB tables defined in 
 #   WMCore/RequestManager/RequestDB/Oracle/Create.py

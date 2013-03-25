@@ -1,3 +1,8 @@
+Since ReqMgr depends on Oracle, CouchDB stores and they are inconsistent
+with each other, these tools are supposed to help straighten things out
+(dumpers, checkers/comparators, updaters ...).
+
+
 Utilities for:
     - dumping Oracle ReqMgr database into Python dictionaries
     - comparison / consistency between ReqMgr Oracle database and CouchDB
@@ -10,15 +15,9 @@ Dump the entire Oracle database:
 	python ./oracle_dump.py user/password@server > oracle_dump.py
 
 
-Consistency check of the requests (reqmgr_request table):
-
-on VM:
-source /data/current/apps/reqmgr/etc/profile.d/init.sh
+Consistency check of the requests (reqmgr_request table and CouchDB) (on VM):
 cd /data
+source /data/current/apps/reqmgr/etc/profile.d/init.sh
 # dump only reqmgr_request table
-python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/database_cleanup/oracle_dump.py user/pass@cms_reqmgr reqmgr_request > /data/oracle_dump_request_table.py
-
-# usually locally, copy oracle_dump_request_table.py over:
-# must have CMS web credentials available in env. vars, WMCore libs
-cd WMCore
-python src/python/WMCore/ReqMgr/database_cleanup/oracle_couchdb_comparison.py oracle_dump_request_table.py > comparison.log
+python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/database_cleanup/oracle_dump.py user/pass@cms_reqmgr reqmgr_request > oracle_dump_request_table.py
+python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/database_cleanup/oracle_couchdb_comparison.py oracle_dump_request_table.py > comparison.log

@@ -1,9 +1,12 @@
+"""
+Dump of Oracle database into Python dictionary.
 
-# dump of Oracle database into Python dictionary
-# usage:
-#   python oracle_dump.py user/password@server [TABLE_NAME] > output.dump
-#   python ./oracle_dump.py user/password@server reqmgr_request > \
-#       oracle_dump_request_table.py
+Usage:
+   python oracle_dump.py user/password@server [TABLE_NAME] > output.dump
+   python ./oracle_dump.py user/password@server reqmgr_request > \
+       oracle_dump_request_table.py
+       
+"""
 
 
 import sys

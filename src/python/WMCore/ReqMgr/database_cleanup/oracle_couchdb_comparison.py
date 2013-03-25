@@ -1,11 +1,17 @@
 #!/usr/bin/env python
 
-# usage:
-# python oracle_couchdb_comparison.py oracle_dump_request_table.py > \
-#       comparison.log
+"""
+Compare request names in the input table (dump from oracle_dump.py)
+and CouchDB request database.
 
-# needs to have credentials for accessing CMS web ready in
-# $X509_USER_CERT $X509_USER_KEY 
+
+Usage:
+    python oracle_couchdb_comparison.py oracle_dump_request_table.py > comparison.log
+
+needs to have credentials for accessing CMS web ready in
+$X509_USER_CERT $X509_USER_KEY, or proxy stored in /tmp/x509up_u<ID>
+
+""" 
 
 couch_url = "https://cmsweb.cern.ch/couchdb"
 couch_db_name = "reqmgr_workload_cache"
@@ -26,10 +32,9 @@ def main():
     print "Creating database connection ..."
     # couch_server = CouchServer(couch_url)
     db = Database(couch_db_name, couch_url)
+    execfile(sys.argv[1], globals())
+    oracle_requests = reqmgr_request # read from the input file
     
-    module = __import__(sys.argv[1].replace(".py", ''),
-        fromlist=["reqmgr_request"])
-    oracle_requests = getattr(module, "reqmgr_request")
     print "Oracle requests: %s" % len(oracle_requests)
 
     print "Retrieving data from CouchDB ..."

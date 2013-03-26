@@ -36,7 +36,8 @@ class Assign(WebAPI):
         # Take a guess
         self.templatedir = config.templates
         self.couchUrl = config.couchUrl
-        cleanUrl = Utilities.removePasswordFromUrl(self.couchUrl)
+        self.configDBName = config.configDBName
+        self.workloadDBName = config.workloadDBName
         self.configDBName = config.configDBName
         self.wmstatWriteURL = "%s/%s" % (self.couchUrl.rstrip('/'), config.wmstatDBName)
         if not noSiteDB:

@@ -38,6 +38,16 @@ import WMCore.RequestManager.RequestDB.Interface.Request.Campaign           as C
 
 
 
+# request arguments which are deprecated at injection (2013-03-26)
+# 'RequestWorkflow' is an exception that is it deprecated at injection
+# but is created and stored in CouchDB, others not
+# have this global so that it can easily be access from unitteest
+deprecatedRequestArgs = ["ReqMgrGroupID",
+                         "ReqMgrRequestID",
+                         "ReqMgrRequestorID",
+                         "ReqMgrRequestBasePriority",
+                         "RequestWorkflow",
+                         "WorkflowSpec"]
 
 
 class ReqMgrRESTModel(RESTModel):
@@ -50,7 +60,7 @@ class ReqMgrRESTModel(RESTModel):
         self.configDBName = config.configDBName
         self.wmstatWriteURL = "%s/%s" % (self.couchUrl.rstrip('/'), config.wmstatDBName)
         self.security_params = {'roles':config.security_roles}
-
+        
         # Optional values for individual methods
         self.reqPriorityMax = getattr(config, 'maxReqPriority', 100)
 
@@ -247,7 +257,6 @@ class ReqMgrRESTModel(RESTModel):
             # is not returning e.g. Campaign which
             # Utilities.requestDetails(requestName) does since it queries values
             # from helper (spec) (getRequestNames does but is wrong) 
-            return result
         else:
             result = Utilities.requestDetails(requestName)
             try:
@@ -256,7 +265,8 @@ class ReqMgrRESTModel(RESTModel):
             except:
                 # Ignore errors, then we just don't have a team name
                 pass
-            return result
+        return result
+
 
     def getRequestNames(self):
         # 2013-02-13 is wrong anyway (e.g. Campaign is not working)
@@ -436,6 +446,13 @@ class ReqMgrRESTModel(RESTModel):
             # sent in the body of the HTTP request
             body = cherrypy.request.body.read()
             reqInputArgs = Utilities.unidecode(JsonWrapper.loads(body))
+            # check for forbidden input arguments:
+            for deprec in deprecatedRequestArgs:
+                if deprec in reqInputArgs:
+                    msg = ("Creating request failed, unsupported input arg: %s: %s" %
+                           (deprec, reqInputArgs[deprec]))
+                    self.error(msg)
+                    raise cherrypy.HTTPError(400, msg)
             reqInputArgs.setdefault('CouchURL', Utilities.removePasswordFromUrl(self.couchUrl))
             reqInputArgs.setdefault('CouchWorkloadDBName', self.workloadDBName)
             # wrong naming ... but it's all over the place, it's the config cache DB name
@@ -500,10 +517,22 @@ class ReqMgrRESTModel(RESTModel):
                 # since we cloned the request, all the attributes
                 # manipulation in Utilities.makeRequest() should not be necessary
                 # the cloned request shall be identical but following arguments
-                toRemove = ("RequestName", "RequestDate", "timeStamp", "ReqMgrRequestID",
-                            "RequestWorkflow")
+                toRemove = ("RequestName",
+                            "RequestDate",
+                            "timeStamp",
+                            "RequestWorkflow",
+                            # these request arguments were deprecated
+                            # removed them in case of cloning old requests
+                            "ReqMgrGroupID",
+                            "ReqMgrRequestID",
+                            "ReqMgrRequestorID",
+                            "ReqMgrRequestBasePriority",
+                            "WorkflowSpec")
                 for remove in toRemove:
-                    del requestOrigDict[remove]
+                    try:
+                        del requestOrigDict[remove]
+                    except KeyError:
+                        pass
                 newReqSchema.update(requestOrigDict) # clone
                 
                 # problem that priority wasn't preserved went down from here:
@@ -633,7 +662,7 @@ class ReqMgrRESTModel(RESTModel):
         # Seangchan shall also fix here deleting such requests from WMStats (#4398)
         
         # returns None ...
-        response = RequestAdmin.deleteRequest(request['ReqMgrRequestID'])
+        response = RequestAdmin.deleteRequest(requestName)
         return response
 
 

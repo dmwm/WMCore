@@ -467,7 +467,7 @@ class ReqMgrClient(RESTClient):
     
     def checkOracleCouchDbConsistency(self, config, testRequestName):
         """
-        Compare consistency of selecte request data fields between
+        Compare consistency of selected request data fields between
         Oracle and CouchDB.
         Compare data returned by "GET", "/reqmgr/reqMgr/request/REQUEST_NAME
         which leads to Utilities.requestDetails(requestName) which pulls
@@ -487,11 +487,8 @@ class ReqMgrClient(RESTClient):
         # Oracle:InputDatasetTypes: '{u'/QCD_HT-1000ToInf_TuneZ2star_8TeV-madgraph-pythia6/Summer12-START50_V13-v1/GEN': u'source'}' != CouchDB:InputDatasetTypes: '{}'
         # Oracle:RequestNumEvents: '0' != CouchDB:RequestNumEvents: 'None'
         fields = """RequestStatus
-            ReqMgrRequestID
             RequestSizeFiles
-            ReqMgrRequestorID
             AcquisitionEra
-            ReqMgrGroupID
             SoftwareVersions
             TimePerEvent
             CMSSWVersion
@@ -505,7 +502,6 @@ class ReqMgrClient(RESTClient):
             InputDatasets
             Memory
             ProcessingVersion
-            ReqMgrRequestorID
             RequestDate
             RequestEventSize
             RequestName
@@ -540,6 +536,50 @@ class ReqMgrClient(RESTClient):
             msg = ("ERROR: Oracle:%s: '%s' != CouchDB:%s: '%s'" %
                     (field, reqOracle[field], field, reqCouch[field]))
             assert str(reqOracle[field]) == str(reqCouch[field]), msg
+            
+            
+    def checkCouchRequestFields(self, config, requestName):
+        """
+        Method checks data fields in Couch stored requests.
+        Method is called whenever there is a new request created.
+        
+        """
+        print "Checking CouchDB parameters on stored request %s" % requestName
+        # request parameters (fields) not allowed in Couch request document
+        deprecatedRequestArgs = ["ReqMgrGroupID",
+                                 "ReqMgrRequestID",
+                                 "ReqMgrRequestorID",
+                                 "ReqMgrRequestBasePriority",
+                                 "WorkflowSpec"]
+        # these must exist and have non empty value
+        requiredRequestArgs = ["RequestName",
+                               "RequestWorkflow",
+                               "RequestType",
+                               "RequestStatus",
+                               "RequestPriority"]
+       
+        couchDbConn, uri = self.getCouchDbConnectionAndUri(config)
+        status, data = couchDbConn.httpRequest("GET", uri + "/" + requestName)
+        request = json.loads(data)
+        for arg in deprecatedRequestArgs:
+            try:
+                request[arg]
+                print ("Request %s has forbidden parameter: %s" %
+                       (requestName, arg))
+                sys.exit(1)
+            except KeyError:
+                pass
+        for arg in requiredRequestArgs:
+            try:
+                val = request[arg]
+                if val == None or val == '' or val == "null" or val == "None":
+                    print ("Request %s has parameter %s but is unset: %s" %
+                           (requestName, arg, val))
+                    sys.exit(1)
+            except KeyError:
+                print ("Request %s doesn't have required parameter: %s" %
+                       (requestName, arg))
+        print "CouchDB parameters OK."
         
             
     def allTests(self, config):
@@ -562,6 +602,7 @@ class ReqMgrClient(RESTClient):
         
         # save the first created request name (testRequestName) for some later tests
         testRequestName = self.createRequest(config, restApi = True)
+        self.checkCouchRequestFields(config, testRequestName)
         config.requestNames = []
         config.requestNames.append(testRequestName)
         # change the splitting before assigning
@@ -575,6 +616,7 @@ class ReqMgrClient(RESTClient):
         if config.requestArgs["createRequest"]["RequestType"] != "TaskChain":
             config.requestNames.append(self.createRequest(config, restApi = False))
             self.assignRequests(config)
+            self.checkCouchRequestFields(config, config.requestNames[-1])
     
         # test priority changing. setting priority is absolute now,
         # the sent value becomes the final priority, there is no composition

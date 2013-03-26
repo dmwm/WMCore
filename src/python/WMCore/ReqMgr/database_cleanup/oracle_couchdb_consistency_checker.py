@@ -173,13 +173,15 @@ def main():
                     fields = {mapping["couch"]: o} # oracle value
                     # TODO
                     # CONTINUE
-                    
                     # not yet deployed on cms web ...
                     # couchdb.updateDocument(req_name, "ReqMgr", "updaterequest", fields=fields)
         
         # fields that should be removed from couch
-        to_remove = ["ReqMgrGroupID", "RequestWorkflow", "ReqMgrRequestID",
-                     "Workflowspec", "ReqMgrRequestBasePriority", "ReqMgrRequestorID"]
+        to_remove = ["ReqMgrGroupID",
+                     "ReqMgrRequestID",
+                     "ReqMgrRequestBasePriority",
+                     "ReqMgrRequestorID",
+                     "Workflowspec"]
         print "Couch fields to remove, values: ..."
         for removable in to_remove:
             try:

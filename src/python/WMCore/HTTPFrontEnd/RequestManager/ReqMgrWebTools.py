@@ -4,14 +4,12 @@ import time
 import logging
 import re
 import WMCore.Wrappers.JsonWrapper as JsonWrapper
-from WMCore.Wrappers.JsonWrapper import JSONEncoder
 import cherrypy
 from os import path
 from xml.dom.minidom import parse as parseDOM
 from xml.parsers.expat import ExpatError
 from cherrypy import HTTPError
 from cherrypy.lib.static import serve_file
-from httplib import HTTPException
 import WMCore.Lexicon
 from WMCore.Database.CMSCouch import Database
 import cgi
@@ -511,11 +509,9 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
     reqDetails = requestDetails(request["RequestName"])
     # couchdb request parameters which are null at the injection time and remain so
     paramsToUpdate = ["RequestStatus",
-                      "ReqMgrRequestID",
                       "RequestSizeFiles",
-                      "ReqMgrRequestorID",
                       "AcquisitionEra",
-                      "ReqMgrGroupID"]
+                      "RequestWorkflow"]
     couchDb = Database(reqDetails["CouchWorkloadDBName"], reqDetails["CouchURL"])
     fields = {}
     for key in paramsToUpdate:

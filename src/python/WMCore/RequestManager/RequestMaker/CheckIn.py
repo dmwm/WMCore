@@ -44,7 +44,7 @@ def _raiseCheckInError(request, ex, msg):
         if oldReqId != reqId:
             raise RequestCheckInError("Bad state deleting request %s/%s.  Please contact a ReqMgr administrator" % (oldReqId/ reqId))
         else:
-            RequestAdmin.deleteRequest(reqId)
+            RequestAdmin.deleteRequest(requestName)
     # get information about the last exception
     trace = traceback.format_exception(*sys.exc_info())
     traceString = ''.join(trace)

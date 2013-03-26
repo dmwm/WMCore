@@ -68,6 +68,7 @@ class ReqMgrBrowser(WebAPI):
         self.adminFields = {}
         self.couchUrl = config.couchUrl
         self.configDBName = config.configDBName
+        self.workloadDBName = config.workloadDBName
         self.yuiroot = config.yuiroot
         self.wmstatWriteURL = "%s/%s" % (self.couchUrl.rstrip('/'), config.wmstatDBName)
         cherrypy.engine.subscribe('start_thread', self.initThread)

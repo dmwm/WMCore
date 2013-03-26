@@ -1,12 +1,11 @@
-#!/usr/bin/env python
 """
 _GetRequest_
-
 
 API to get requests from the DB
 
 """
-import logging
+
+
 import WMCore.RequestManager.RequestDB.Connection as DBConnect
 import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListRequests
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
@@ -48,7 +47,6 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
     getUser = factory(classname = "Requestor.GetUserFromAssoc")
     userData = getUser.execute(reqData['requestor_group_id'])
     request = Request()
-    request["ReqMgrRequestID"] = reqData['request_id']
     request["RequestName"] = requestName
     request["RequestType"] = reverseTypes[reqData['request_type']]
     request["RequestStatus"] = reverseStatus[reqData['request_status']]
@@ -59,9 +57,7 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
     request["RequestEventSize"] = reqData['request_event_size']
 
     request["Group"] = groupData['group_name']
-    request["ReqMgrGroupID"] = groupData['group_id']
     request["Requestor"] = userData['requestor_hn_name']
-    request["ReqMgrRequestorID"] = userData['requestor_id']
 
     updates = ChangeState.getProgress(requestName)
     request['percent_complete'], request['percent_success'] = percentages(updates)
@@ -86,10 +82,10 @@ def requestID(requestName):
     """ Finds the ReqMgr database ID for a request """
     factory = DBConnect.getConnection()
     f =  factory(classname = "Request.FindByName")
-    id = f.execute(requestName)
-    if id == None:
+    reqId = f.execute(requestName)
+    if reqId == None:
         raise HTTPError(404, 'Given requestName not found')
-    return id
+    return reqId
 
 def getRequestByName(requestName):
     return getRequest(requestID(requestName))
@@ -174,9 +170,9 @@ def getRequestsByCriteria(classname, criterion):
     reverseTypes, reverseStatus = reverseLookups()
     return [getRequest(requestId[0], reverseTypes, reverseStatus) for requestId in requestIds]
 
+
 def getAssignmentsByName(requestName):
-    request = getRequestByName(requestName)
-    reqID = request['ReqMgrRequestID']
+    reqID = requestID(requestName)
     assignments = getRequestAssignments(reqID)
     return [assignment['TeamName'] for assignment in assignments]
 

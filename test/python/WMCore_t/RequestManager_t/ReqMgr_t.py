@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 RequestManager unittest
 
@@ -181,7 +179,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.assertEqual(self.jsonSender.put(urllib.quote('team/White Sox'))[1], 200)
         self.assertTrue('White Sox' in self.jsonSender.get('team')[0])
 
-        # some foreign key stuff to dealwith
+        # some foreign key stuff to deal with
         schema = utils.getSchema()
         version = "version/" + schema["CMSSWVersion"]
         self.assertTrue(self.jsonSender.put(version)[1] == 200)
@@ -704,7 +702,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         respose = self.jsonSender.get("request/%s" % result[0]["RequestName"])
         clonedRequest = respose[0]
         # these request arguments shall differ in the cloned request:
-        toDiffer = ["RequestName", "ReqMgrRequestID", "RequestWorkflow", "RequestStatus"]
+        toDiffer = ["RequestName", "RequestStatus"]
         for differ in toDiffer:
             self.assertNotEqual(origRequest[differ], clonedRequest[differ])
         # check the desired status of the cloned request
@@ -714,7 +712,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         # don't care about these two (they will likely be the same in the unittest
         # since the brand new request injection as well as the cloning probably
         # happen at roughly the same time)
-        toDiffer.extend(["RequestDate", "timeStamp"])
+        toDiffer.extend(["RequestDate", "timeStamp", "RequestWorkflow"])
         for differ in toDiffer:
             del origRequest[differ]
             del clonedRequest[differ]
@@ -724,8 +722,23 @@ class ReqMgrTest(RESTBaseUnitTest):
             msg = ("Request values: original: %s: %s cloned: %s: %s differ" %
                    (k1, origRequest[k1], k2, clonedRequest[k2]))
             self.assertEqual(origRequest[k1], clonedRequest[k2], msg)
-        
-        
+            
+
+    def testK_CheckRequestFailsInjectionForbiddenInputArg(self):
+        myThread = threading.currentThread()
+        userName     = 'Taizong'
+        groupName    = 'Li'
+        teamName     = 'Tang'
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
+        from WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel import deprecatedRequestArgs
+        for deprec in deprecatedRequestArgs:
+            schema = utils.getSchema(groupName=groupName, userName=userName)
+            schema[deprec] = "something"
+            self.assertRaises(HTTPException, self.jsonSender.put, "request", schema)
+            
 
 if __name__=='__main__':
     unittest.main()

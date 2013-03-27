@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 """
 _MakeRequest_
 
@@ -7,10 +7,6 @@ API for creating a new request in the database
 """
 
 
-
-
-
-import logging
 import WMCore.RequestManager.RequestDB.Connection as DBConnect
 
 
@@ -193,5 +189,3 @@ def updateRequestSize(requestName, reqEventsSize, reqFilesSize = None, reqSizeOf
 
     updateSize = factory(classname = "Request.Size")
     updateSize.execute(reqId, reqEventsSize, reqFilesSize, reqSizeOfEvent)
-
-    return

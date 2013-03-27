@@ -196,7 +196,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         """
         schema = utils.getAndSetupSchema(self)
         schema['RequestNumEvents'] = 100
-        schema['RequestEventSize'] = 101
+        schema['SizePerEvent'] = 101
         self.doRequest(schema)
 
 
@@ -232,7 +232,7 @@ class ReqMgrTest(RESTBaseUnitTest):
 
         # Check Num events
         self.assertEqual(request['RequestNumEvents'], 100)
-        self.assertEqual(request['RequestEventSize'], 101)
+        self.assertEqual(request['SizePerEvent'], 101)
 
         # only certain transitions allowed
         #self.assertEqual(self.jsonSender.put('request/%s?status=running' % requestName)[1], 400)

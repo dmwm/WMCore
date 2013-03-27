@@ -139,12 +139,16 @@ def main():
     map_names = [{"oracle": "REQUEST_NAME", "couch": "RequestName"},
                  {"oracle": "REQUEST_TYPE", "couch": "RequestType"},
                  {"oracle": "REQUEST_STATUS", "couch": "RequestStatus"},
-                 {"oracle": "REQUEST_PRIORITY", "couch": "RequestPriority"}]
-    # fields exist in newer couchdb documents but may still be None/Null
-    # RequestSizeEvents
-    # RequestSizeFiles
-    # PrepID
-    # RequestNumEvents
+                 {"oracle": "REQUEST_PRIORITY", "couch": "RequestPriority"},
+                 {"oracle": "WORKFLOW", "couch": "RequestWorkflow"},
+                 {"oracle": "REQUEST_EVENT_SIZE", "couch": "SizePerEvent"},
+                 {"oracle": "REQUEST_SIZE_FILES", "couch": "RequestSizeFiles"},
+                 {"oracle": "PREP_ID", "couch": "PrepID"},
+                 {"oracle": "REQUEST_NUM_EVENTS", "couch": "RequestNumEvents"},
+                 ]
+    
+    # some fields exist in newer couchdb documents but may still be None/Null
+
     counter = 0
     for oracle_req in get_oracle_data(oradb, "reqmgr_request",
                                       reqmgr_request_table_def):
@@ -181,7 +185,10 @@ def main():
                      "ReqMgrRequestID",
                      "ReqMgrRequestBasePriority",
                      "ReqMgrRequestorID",
-                     "Workflowspec"]
+                     "Workflowspec",
+                     "RequestSizeEvents",
+                     "RequestEventSize"]
+        
         print "Couch fields to remove, values: ..."
         for removable in to_remove:
             try:

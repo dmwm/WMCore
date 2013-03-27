@@ -511,7 +511,17 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
     paramsToUpdate = ["RequestStatus",
                       "RequestSizeFiles",
                       "AcquisitionEra",
-                      "RequestWorkflow"]
+                      "RequestWorkflow",
+                      "RequestType",
+                      "RequestStatus",
+                      "RequestPriority",
+                      "Requestor",
+                      "Group",
+                      "SizePerEvent",
+                      "PrepID",
+                      "RequestNumEvents",
+                      ]
+    
     couchDb = Database(reqDetails["CouchWorkloadDBName"], reqDetails["CouchURL"])
     fields = {}
     for key in paramsToUpdate:

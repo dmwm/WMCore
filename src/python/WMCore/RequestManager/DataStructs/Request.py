@@ -21,3 +21,5 @@ class Request(dict):
         self.setdefault("SoftwareVersions", [])
         self.setdefault("InputDatasets", [])
         self.setdefault("InputDatasetTypes", {})
+        self.setdefault("SizePerEvent", 0)
+        self.setdefault("PrepID", None)

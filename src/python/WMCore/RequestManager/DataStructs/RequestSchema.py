@@ -1,21 +1,6 @@
-#!/usr/bin/env python
-"""
-_RequestMakerInterface_
-
-
-Interface Definition for a RequestMaker implementation.
-
-A RequestMaker Implementation should do the following.
-
-- Instantiate with no args via a factory method
-- Be callable on a RequestMakerSchema implementation
-- Build WorkflowSpec instances
-- Embed each WorkflowSpec in a RequestSpec instance
-- Return a list of RequestSpec instances generated from the schema
-
-"""
 import WMCore.Lexicon
 import time
+
 
 class RequestSchema(dict):
     """
@@ -39,6 +24,7 @@ class RequestSchema(dict):
         self.setdefault("Requestor", None)
         self.setdefault("ScramArch", "slc5_amd64_gcc434")
         self.setdefault("RequestDate", list(time.gmtime()[:6]))
+        self.setdefault("SizePerEvent", 0)
         self.basicFields = self.keys()
         self.validateFields = []
 

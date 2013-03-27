@@ -47,7 +47,9 @@ deprecatedRequestArgs = ["ReqMgrGroupID",
                          "ReqMgrRequestorID",
                          "ReqMgrRequestBasePriority",
                          "RequestWorkflow",
-                         "WorkflowSpec"]
+                         "WorkflowSpec",
+                         "RequestSizeEvents",
+                         "RequestEventSize"]
 
 
 class ReqMgrRESTModel(RESTModel):
@@ -517,17 +519,11 @@ class ReqMgrRESTModel(RESTModel):
                 # since we cloned the request, all the attributes
                 # manipulation in Utilities.makeRequest() should not be necessary
                 # the cloned request shall be identical but following arguments
-                toRemove = ("RequestName",
+                toRemove = ["RequestName",
                             "RequestDate",
-                            "timeStamp",
-                            "RequestWorkflow",
-                            # these request arguments were deprecated
-                            # removed them in case of cloning old requests
-                            "ReqMgrGroupID",
-                            "ReqMgrRequestID",
-                            "ReqMgrRequestorID",
-                            "ReqMgrRequestBasePriority",
-                            "WorkflowSpec")
+                            "timeStamp"]
+                toRemove.extend(deprecatedRequestArgs)
+                            
                 for remove in toRemove:
                     try:
                         del requestOrigDict[remove]

@@ -503,7 +503,6 @@ class ReqMgrClient(RESTClient):
             Memory
             ProcessingVersion
             RequestDate
-            RequestEventSize
             RequestName
             RequestString
             RequestType
@@ -511,7 +510,13 @@ class ReqMgrClient(RESTClient):
             RequestorDN
             ScramArch
             SiteWhitelist
-            SizePerEvent""".split()
+            RequestWorkflow
+            RequestPriority
+            PrepID
+            SizePerEvent
+            RequestNumEvents
+            """.split()
+                        
         # data mainly from Oracle and spec
         reqOracle = self.queryRequests(None, testRequestName)[0]
         couchDbConn, uri = self.getCouchDbConnectionAndUri(config)
@@ -546,22 +551,34 @@ class ReqMgrClient(RESTClient):
         """
         print "Checking CouchDB parameters on stored request %s" % requestName
         # request parameters (fields) not allowed in Couch request document
-        deprecatedRequestArgs = ["ReqMgrGroupID",
-                                 "ReqMgrRequestID",
-                                 "ReqMgrRequestorID",
-                                 "ReqMgrRequestBasePriority",
-                                 "WorkflowSpec"]
-        # these must exist and have non empty value
-        requiredRequestArgs = ["RequestName",
-                               "RequestWorkflow",
-                               "RequestType",
-                               "RequestStatus",
-                               "RequestPriority"]
-       
+        deprecatedArgs = ["ReqMgrGroupID",
+                          "ReqMgrRequestID",
+                          "ReqMgrRequestorID",
+                          "ReqMgrRequestBasePriority",
+                          "WorkflowSpec",
+                          "RequestSizeEvents",
+                          "RequestEventSize"]
+        # request parameters (fields) which are mandatory on Couch request doc
+        # and must be non-empty
+        requiredArgs = ["RequestName",
+                        "RequestWorkflow",
+                        "RequestType",
+                        "RequestStatus",
+                        "RequestPriority",
+                        "Requestor",
+                        "Group",
+                        "SizePerEvent",
+                        "RequestSizeFiles",
+                        "RequestNumEvents"
+                        ]
+        # request parameters (fields) which are optional
+        optionalArgs = ["PrepID"]
+               
         couchDbConn, uri = self.getCouchDbConnectionAndUri(config)
         status, data = couchDbConn.httpRequest("GET", uri + "/" + requestName)
         request = json.loads(data)
-        for arg in deprecatedRequestArgs:
+        
+        for arg in deprecatedArgs:
             try:
                 request[arg]
                 print ("Request %s has forbidden parameter: %s" %
@@ -569,7 +586,7 @@ class ReqMgrClient(RESTClient):
                 sys.exit(1)
             except KeyError:
                 pass
-        for arg in requiredRequestArgs:
+        for arg in requiredArgs:
             try:
                 val = request[arg]
                 if val == None or val == '' or val == "null" or val == "None":
@@ -579,6 +596,13 @@ class ReqMgrClient(RESTClient):
             except KeyError:
                 print ("Request %s doesn't have required parameter: %s" %
                        (requestName, arg))
+        for arg in optionalArgs:
+            try:
+                val = request[arg]
+            except KeyError:
+                print ("Request %s doesn't have optional parameter defined: %s" %
+                       (requestName, arg))
+                
         print "CouchDB parameters OK."
         
             

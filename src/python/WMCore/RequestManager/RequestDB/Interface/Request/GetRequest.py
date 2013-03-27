@@ -54,10 +54,15 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
     request["RequestWorkflow"] = reqData['workflow']
     request["RequestNumEvents"] = reqData['request_num_events']
     request["RequestSizeFiles"] = reqData['request_size_files']
-    request["RequestEventSize"] = reqData['request_event_size']
-
+    # there used to be RequestEventSize argument, but then SizePerEvent
+    # got introduce and got adopted so this is replacing it, presenting
+    # this nomenclature inconsistency on Oracle level
+    request["SizePerEvent"] = reqData['request_event_size']
+    request["PrepID"] = reqData['prep_id']
+    
     request["Group"] = groupData['group_name']
     request["Requestor"] = userData['requestor_hn_name']
+     
 
     updates = ChangeState.getProgress(requestName)
     request['percent_complete'], request['percent_success'] = percentages(updates)

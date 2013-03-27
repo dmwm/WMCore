@@ -141,8 +141,8 @@ def checkIn(request, requestType = 'None'):
     if request["RequestNumEvents"] != None:
         MakeRequest.updateRequestSize(requestName, request["RequestNumEvents"],
                                       request.get("RequestSizeFiles", 0),
-                                      request.get("RequestEventSize", 0)
-                                      )
+                                      request.get("SizePerEvent", 0))
+        
     campaign = request.get("Campaign", "")
     if campaign != "" and campaign != None:
         Campaign.associateCampaign(campaign, reqId)

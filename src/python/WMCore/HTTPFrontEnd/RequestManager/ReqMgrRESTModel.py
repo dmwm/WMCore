@@ -256,9 +256,6 @@ class ReqMgrRESTModel(RESTModel):
         Otherwise, return an overview of all requests """
         if requestName == None:
             result = GetRequest.getRequests()
-            # is not returning e.g. Campaign which
-            # Utilities.requestDetails(requestName) does since it queries values
-            # from helper (spec) (getRequestNames does but is wrong) 
         else:
             result = Utilities.requestDetails(requestName)
             try:
@@ -649,10 +646,7 @@ class ReqMgrRESTModel(RESTModel):
         helper = Utilities.loadWorkload(request)
         couchDocId = requestName
         helper.deleteCouch(self.couchUrl, self.workloadDBName, couchDocId)
-        
-        # request = GetRequest.getRequestDetails(requestName)
-        #helper = loadWorkload(request)
-        
+                
         # #4289 - Request delete operation deletes the request from
         # MySQL/Oracle but not from CouchDB, fix here
         # Seangchan shall also fix here deleting such requests from WMStats (#4398)

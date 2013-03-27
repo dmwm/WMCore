@@ -44,6 +44,7 @@ class ResubmitBlockTest(unittest.TestCase):
         self.acdcDBName = 'resubmitblock_t'
         self.validLocations = ['srm-cms.gridpp.rl.ac.uk', 'cmssrm.fnal.gov', 'srm.unl.edu']
         self.validLocationsCMSNames = ['T2_US_Nebraska', 'T1_US_FNAL', 'T1_UK_RAL']
+        self.siteWhitelist = ['T2_XX_SiteA']
         self.workflowName = 'dballest_ReReco_workflow'
         couchServer = CouchServer(dburl = self.couchUrl)
         self.acdcDB = couchServer.connectDatabase(self.acdcDBName, create = False)
@@ -62,7 +63,8 @@ class ResubmitBlockTest(unittest.TestCase):
         EmulatorHelper.resetEmulators()
         return
 
-    def getProcessingACDCSpec(self, splittingAlgo = 'LumiBased', splittingArgs = {'lumis_per_job' : 8}):
+    def getProcessingACDCSpec(self, splittingAlgo = 'LumiBased', splittingArgs = {'lumis_per_job' : 8},
+                              setLocationFlag = False):
         """
         _getProcessingACDCSpec_
 
@@ -72,6 +74,9 @@ class ResubmitBlockTest(unittest.TestCase):
         Tier1ReRecoWorkload.truncate('ACDC_%s' % self.workflowName, '/%s/DataProcessing' % self.workflowName, self.couchUrl,
                                      self.acdcDBName)
         Tier1ReRecoWorkload.setJobSplittingParameters('/ACDC_%s/DataProcessing' % self.workflowName, splittingAlgo, splittingArgs)
+        if setLocationFlag:
+            Tier1ReRecoWorkload.setLocationDataSourceFlag()
+            Tier1ReRecoWorkload.setSiteWhitelist(self.siteWhitelist)
         return Tier1ReRecoWorkload
 
     def getMergeACDCSpec(self, splittingAlgo = 'ParentlessMergeBySize', splittingArgs = {}):
@@ -172,7 +177,7 @@ class ResubmitBlockTest(unittest.TestCase):
         _testFixedSizeChunksSplit_
 
         Test splitting a resubmit block in fixed size chunks of 250, it will
-        use a ReReco ACDC of the processing task
+        use a ReReco ACDC of the processing task.
         """
         self.stuffACDCDatabase()
         acdcWorkload = self.getProcessingACDCSpec('FileBased', {'files_per_job' : 5})
@@ -298,6 +303,38 @@ class ResubmitBlockTest(unittest.TestCase):
                 self.assertEqual(1000, unit['NumberOfLumis'])
                 self.assertEqual(500, unit['NumberOfFiles'])
                 self.assertEqual(125000, unit['NumberOfEvents'])
+                self.assertEqual(unit['ACDC'], {'database' : self.acdcDBName,
+                                                'fileset' : '/%s/DataProcessing' % self.workflowName,
+                                                'collection' : self.workflowName,
+                                                'server' : self.couchUrl})
+        return
+
+    def testSiteWhitelistsLocation(self):
+        """
+        _testSiteWhitelistsLocation_
+
+        Test splitting a resubmit block changing the block locations
+        according to the given site whitelist.
+        """
+        self.stuffACDCDatabase()
+        acdcWorkload = self.getProcessingACDCSpec('FileBased', {'files_per_job' : 5},
+                                                  setLocationFlag = True)
+        acdcWorkload.data.request.priority = 10000
+        for task in acdcWorkload.taskIterator():
+            policy = ResubmitBlock()
+            units, _ = policy(acdcWorkload, task)
+            self.assertEqual(len(units), 2)
+            for unit in units:
+                self.assertEqual(len(unit['Inputs']), 1)
+                inputBlock = unit['Inputs'].keys()[0]
+                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.siteWhitelist))
+                self.assertEqual(10000, unit['Priority'])
+                self.assertEqual(50, unit['Jobs'])
+                self.assertEqual(acdcWorkload, unit['WMSpec'])
+                self.assertEqual(task, unit['Task'])
+                self.assertEqual(500, unit['NumberOfLumis'])
+                self.assertEqual(250, unit['NumberOfFiles'])
+                self.assertEqual(62500, unit['NumberOfEvents'])
                 self.assertEqual(unit['ACDC'], {'database' : self.acdcDBName,
                                                 'fileset' : '/%s/DataProcessing' % self.workflowName,
                                                 'collection' : self.workflowName,

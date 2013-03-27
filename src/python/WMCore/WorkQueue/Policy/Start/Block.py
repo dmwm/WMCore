@@ -11,7 +11,7 @@ from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterf
 from copy import deepcopy
 from math import ceil
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
-from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements, cmsSiteNames
+from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements, makeLocationsList
 from WMCore import Lexicon
 
 class Block(StartPolicyInterface):
@@ -79,16 +79,7 @@ class Block(StartPolicyInterface):
             # Then get the locations from the site whitelist/blacklist + SiteDB
             siteWhitelist = task.siteWhitelist()
             siteBlacklist = task.siteBlacklist()
-            if siteWhitelist:
-                # Just get the ses matching the whitelists
-                self.sites = siteWhitelist
-            elif siteBlacklist:
-                # Get all CMS sites less the blacklist
-                allSites = cmsSiteNames()
-                self.sites = list(set(allSites) - set (siteBlacklist))
-            else:
-                # Run at any CMS site
-                self.sites = cmsSiteNames()
+            self.sites = makeLocationsList(siteWhitelist, siteBlacklist)
 
         blocks = []
         # Take data inputs or from spec

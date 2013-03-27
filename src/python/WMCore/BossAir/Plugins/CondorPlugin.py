@@ -893,6 +893,14 @@ class CondorPlugin(BasePlugin):
         if job.get('requestName', None):
             jdl.append('+WMAgent_RequestName = "%s"\n' % job['requestName'])
 
+        # Performance estimates
+        if job.get('estimatedJobTime', None):
+            jdl.append('+MaxWallTimeMins = %d\n' % int(job['estimatedJobTime']/60.0))
+        if job.get('estimatedMemoryUsage', None):
+            jdl.append('request_memory = %d\n' % int(job['estimatedMemoryUsage']))
+        if job.get('estimatedDiskUsage', None):
+            jdl.append('request_disk = %d\n' % int(job['estimatedDiskUsage']))
+
         return jdl
 
     def getCEName(self, jobSite):

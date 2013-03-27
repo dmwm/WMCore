@@ -23,7 +23,7 @@ __all__ = []
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from math import ceil
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
-from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements
+from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements, makeLocationsList
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 
@@ -45,9 +45,15 @@ class ResubmitBlock(StartPolicyInterface):
                             'EventBased' : self.singleChunk}
         self.unsupportedAlgos = ['WMBSMergeBySize', 'SiblingProcessingBased']
         self.defaultAlgo = self.fixedSizeChunk
+        self.sites = []
 
     def split(self):
         """Apply policy to spec"""
+        # Prepare a site list in case we need it
+        siteWhitelist = self.initialTask.siteWhitelist()
+        siteBlacklist = self.initialTask.siteBlacklist()
+        self.sites = makeLocationsList(siteWhitelist, siteBlacklist)
+
         for block in self.validBlocks(self.initialTask):
             if self.initialTask.parentProcessingFlag():
                 parentFlag = True
@@ -97,7 +103,10 @@ class ResubmitBlock(StartPolicyInterface):
             dbsBlock['NumberOfEvents'] = block['events']
             dbsBlock['NumberOfLumis'] = block['lumis']
             dbsBlock['ACDC'] = acdcInfo
-            dbsBlock["Sites"] = sitesFromStorageEelements(block["locations"])
+            if task.inputLocationFlag():
+                dbsBlock["Sites"] = self.sites
+            else:
+                dbsBlock["Sites"] = sitesFromStorageEelements(block["locations"])
             validBlocks.append(dbsBlock)
         else:
             if self.args['SplittingAlgo'] in self.unsupportedAlgos:
@@ -105,11 +114,11 @@ class ResubmitBlock(StartPolicyInterface):
             splittingFunc = self.defaultAlgo
             if self.args['SplittingAlgo'] in self.algoMapping:
                 splittingFunc = self.algoMapping[self.args['SplittingAlgo']]
-            validBlocks = splittingFunc(acdc, acdcInfo)
+            validBlocks = splittingFunc(acdc, acdcInfo, task)
 
         return validBlocks
 
-    def fixedSizeChunk(self, acdc, acdcInfo):
+    def fixedSizeChunk(self, acdc, acdcInfo, task):
         """Return a set of blocks with a fixed number of ACDC records"""
         fixedSizeBlocks = []
         chunkSize = 250
@@ -126,13 +135,16 @@ class ResubmitBlock(StartPolicyInterface):
             dbsBlock['NumberOfFiles'] = block['files']
             dbsBlock['NumberOfEvents'] = block['events']
             dbsBlock['NumberOfLumis'] = block['lumis']
-            dbsBlock["Sites"] = sitesFromStorageEelements(block["locations"])
+            if task.inputLocationFlag():
+                dbsBlock["Sites"] = self.sites
+            else:
+                dbsBlock["Sites"] = sitesFromStorageEelements(block["locations"])
             dbsBlock['ACDC'] = acdcInfo
             if dbsBlock['NumberOfFiles']:
                 fixedSizeBlocks.append(dbsBlock)
         return fixedSizeBlocks
 
-    def singleChunk(self, acdc, acdcInfo):
+    def singleChunk(self, acdc, acdcInfo, task):
         """Return a single block (inside a list) with all associated ACDC records"""
         result = []
         acdcBlock = acdc.singleChunkFileset(acdcInfo['collection'],
@@ -146,7 +158,10 @@ class ResubmitBlock(StartPolicyInterface):
         dbsBlock['NumberOfFiles'] = acdcBlock['files']
         dbsBlock['NumberOfEvents'] = acdcBlock['events']
         dbsBlock['NumberOfLumis'] = acdcBlock['lumis']
-        dbsBlock["Sites"] = sitesFromStorageEelements(acdcBlock["locations"])
+        if task.inputLocationFlag():
+            dbsBlock["Sites"] = self.sites
+        else:
+            dbsBlock["Sites"] = sitesFromStorageEelements(acdcBlock["locations"])
         dbsBlock['ACDC'] = acdcInfo
         if dbsBlock['NumberOfFiles']:
             result.append(dbsBlock)

@@ -26,6 +26,8 @@ function postUpdate(formName) {
                formElement["type"] != "hidden" && formElement["type"] != "radio") {
       continue;
     };
+    /* firefox in Mac and Windows create the input with the name - hack*/
+    if (isNaN(elementIndex)) continue;
 
     paramCount += 1;
     paramStr += updatedForm.elements[elementIndex].name + "=";

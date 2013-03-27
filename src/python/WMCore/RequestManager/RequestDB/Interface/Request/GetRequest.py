@@ -62,7 +62,6 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
     
     request["Group"] = groupData['group_name']
     request["Requestor"] = userData['requestor_hn_name']
-     
 
     updates = ChangeState.getProgress(requestName)
     request['percent_complete'], request['percent_success'] = percentages(updates)
@@ -81,7 +80,12 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
     request['InputDatasets'] = datasetsIn.keys()
     request['OutputDatasets'] = datasetsOut
     
+    # fetch AcquisitionEra from spec, it's not stored in Oracle at all
+    import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
+    helper = Utilities.loadWorkload(request)
+    request["AcquisitionEra"] = str(helper.getAcquisitionEra())
     return request
+
 
 def requestID(requestName):
     """ Finds the ReqMgr database ID for a request """
@@ -142,18 +146,6 @@ def getRequestDetails(requestName):
         if update.has_key('percent_success'):
             request['percent_success'] = update['percent_success']
     return request
-
-def getAllRequestDetails():
-    requests = ListRequests.listRequests()
-    result = []
-    for request in requests:
-        requestName = request['RequestName']
-        details = getRequestDetails(requestName)
-        # take out excessive information
-        del details['RequestUpdates']
-        del details['RequestMessages']
-        result.append(details)
-    return result
 
 
 def getRequestAssignments(requestId):

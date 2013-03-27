@@ -6,7 +6,6 @@ Unit tests for generic WMBS merging.
 """
 
 import unittest
-import os
 import threading
 
 from WMCore.WMBS.File import File
@@ -19,9 +18,7 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.DataStructs.Run import Run
 
 from WMCore.DAOFactory import DAOFactory
-from WMCore.WMFactory import WMFactory
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
-from WMCore.Services.UUID import makeUUID
 from WMQuality.TestInit import TestInit
 
 class WMBSMergeBySize(unittest.TestCase):
@@ -387,8 +384,10 @@ class WMBSMergeBySize(unittest.TestCase):
             jobFiles = job.getFiles()
 
             if len(jobFiles) == len(goldenFilesA):
+                self.assertEqual(job["estimatedDiskUsage"], 7)
                 goldenFiles = goldenFilesA
             else:
+                self.assertEqual(job["estimatedDiskUsage"], 4)
                 goldenFiles = goldenFilesB
 
             currentRun = 0
@@ -452,6 +451,8 @@ class WMBSMergeBySize(unittest.TestCase):
 
         assert len(result[0].jobs) == 1, \
                "ERROR: One job should have been returned."
+
+        self.assertEqual(result[0].jobs[0]["estimatedDiskUsage"], 7)
 
         jobFiles = list(result[0].jobs)[0].getFiles()
 
@@ -529,10 +530,13 @@ class WMBSMergeBySize(unittest.TestCase):
             jobFiles = job.getFiles()
 
             if jobFiles[0]["lfn"] in goldenFilesA:
+                self.assertEqual(job["estimatedDiskUsage"], 4)
                 goldenFiles = goldenFilesA
             elif jobFiles[0]["lfn"] in goldenFilesB:
+                self.assertEqual(job["estimatedDiskUsage"], 3)
                 goldenFiles = goldenFilesB
             else:
+                self.assertEqual(job["estimatedDiskUsage"], 4)
                 goldenFiles = goldenFilesC
 
             currentRun = 0
@@ -604,6 +608,8 @@ class WMBSMergeBySize(unittest.TestCase):
         goldenFilesA = ["file1", "file2", "file3", "file4"]
         goldenFilesB = ["fileA", "fileB", "fileC"]
         goldenFilesC = ["fileI", "fileII", "fileIII", "fileIV"]
+
+        self.assertEqual(result[0].jobs[0]["estimatedDiskUsage"], 7)
 
         jobFiles = list(result[0].jobs)[0].getFiles()
 
@@ -681,10 +687,13 @@ class WMBSMergeBySize(unittest.TestCase):
             jobFiles = job.getFiles()
 
             if jobFiles[0]["lfn"] in goldenFilesA:
+                self.assertEqual(job["estimatedDiskUsage"], 4)
                 goldenFiles = goldenFilesA
             elif jobFiles[0]["lfn"] in goldenFilesB:
+                self.assertEqual(job["estimatedDiskUsage"], 3)
                 goldenFiles = goldenFilesB
             else:
+                self.assertEqual(job["estimatedDiskUsage"], 4)
                 goldenFiles = goldenFilesC
 
             currentRun = 0
@@ -752,6 +761,8 @@ class WMBSMergeBySize(unittest.TestCase):
 
         assert len(result[0].jobs) == 1, \
                "ERROR: One job should have been returned."
+
+        self.assertEqual(result[0].jobs[0]["estimatedDiskUsage"], 7)
 
         goldenFilesA = ["file1", "file2", "file3", "file4"]
         goldenFilesB = ["fileA", "fileB", "fileC"]

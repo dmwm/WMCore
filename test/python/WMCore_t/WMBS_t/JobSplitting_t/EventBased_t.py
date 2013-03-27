@@ -44,6 +44,9 @@ class EventBasedTest(unittest.TestCase):
         couchSever = CouchServer(dburl = self.couchUrl)
         self.couchDB = couchSever.connectDatabase(self.couchDBName)
         self.populateWMBS()
+        self.performanceParams = {'timePerEvent' : 12,
+                                  'memoryRequirement' : 2300,
+                                  'sizePerEvent' : 400}
 
         return
 
@@ -207,7 +210,8 @@ class EventBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.singleFileSubscription)
 
-        jobGroups = jobFactory(events_per_job = 100)
+        jobGroups = jobFactory(events_per_job = 100,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
 
@@ -220,6 +224,11 @@ class EventBasedTest(unittest.TestCase):
         self.assertEqual(job["mask"].getMaxEvents(), None)
 
         self.assertEqual(job["mask"]["FirstEvent"], 0)
+
+        self.assertEqual(job["estimatedJobTime"], 100*12)
+        self.assertEqual(job["estimatedDiskUsage"], 400*100)
+        self.assertEqual(job["estimatedMemoryUsage"], 2300)
+
 
         return
 
@@ -234,7 +243,8 @@ class EventBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS", subscription = self.singleFileSubscription)
 
-        jobGroups = jobFactory(events_per_job = 1000)
+        jobGroups = jobFactory(events_per_job = 1000,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
 
@@ -247,6 +257,10 @@ class EventBasedTest(unittest.TestCase):
         self.assertEqual(job["mask"].getMaxEvents(), None)
 
         self.assertEqual(job["mask"]["FirstEvent"], None)
+
+        self.assertEqual(job["estimatedJobTime"], 100*12)
+        self.assertEqual(job["estimatedDiskUsage"], 400*100)
+        self.assertEqual(job["estimatedMemoryUsage"], 2300)
 
         return
 
@@ -261,7 +275,8 @@ class EventBasedTest(unittest.TestCase):
 
         jobFactory = splitter(package = "WMCore.WMBS", subscription = self.singleFileSubscription)
 
-        jobGroups = jobFactory(events_per_job = 50)
+        jobGroups = jobFactory(events_per_job = 50,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
 
@@ -272,6 +287,9 @@ class EventBasedTest(unittest.TestCase):
 
             self.assertTrue((job["mask"].getMaxEvents() == 50 and job["mask"]["FirstEvent"] == 0) or \
                             (job["mask"].getMaxEvents() is None and job["mask"]["FirstEvent"] == 50))
+            self.assertEqual(job["estimatedJobTime"], 50*12)
+            self.assertEqual(job["estimatedDiskUsage"], 400*50)
+            self.assertEqual(job["estimatedMemoryUsage"], 2300)
 
         return
 
@@ -286,7 +304,8 @@ class EventBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS", subscription = self.singleFileSubscription)
 
-        jobGroups = jobFactory(events_per_job = 99)
+        jobGroups = jobFactory(events_per_job = 99,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
 
@@ -295,8 +314,18 @@ class EventBasedTest(unittest.TestCase):
         for job in jobGroups[0].jobs:
             self.assertEqual(job.getFiles(type = "lfn"), ["/some/file/name"])
 
-            self.assertTrue((job["mask"].getMaxEvents() == 99 and job["mask"]["FirstEvent"] == 0) or \
-                            (job["mask"].getMaxEvents() is None and job["mask"]["FirstEvent"] == 99))
+            if job["mask"].getMaxEvents() == 99:
+                self.assertEqual(job["mask"]["FirstEvent"], 0)
+                self.assertEqual(job["estimatedJobTime"], 99*12)
+                self.assertEqual(job["estimatedDiskUsage"], 400*99)
+                self.assertEqual(job["estimatedMemoryUsage"], 2300)
+            elif job["mask"].getMaxEvents() is None:
+                self.assertEqual(job["mask"]["FirstEvent"], 99)
+                self.assertEqual(job["estimatedJobTime"], 1*12)
+                self.assertEqual(job["estimatedDiskUsage"], 400*1)
+                self.assertEqual(job["estimatedMemoryUsage"], 2300)
+            else:
+                self.fail("Unexpected splitting was performed")
         return
 
     def test100EventMultipleFileSplit(self):
@@ -309,7 +338,8 @@ class EventBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS", subscription = self.multipleFileSubscription)
 
-        jobGroups = jobFactory(events_per_job = 100)
+        jobGroups = jobFactory(events_per_job = 100,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
 
@@ -317,11 +347,11 @@ class EventBasedTest(unittest.TestCase):
 
         for job in jobGroups[0].jobs:
             self.assertEqual(len(job.getFiles(type = "lfn")), 1)
-
             self.assertEqual(job["mask"].getMaxEvents(), None)
-
-            assert job["mask"]["FirstEvent"] == 0, \
-                   "ERROR: Job's first event is incorrect."
+            self.assertEqual(job["mask"]["FirstEvent"], 0)
+            self.assertEqual(job["estimatedJobTime"], 100*12)
+            self.assertEqual(job["estimatedDiskUsage"], 400*100)
+            self.assertEqual(job["estimatedMemoryUsage"], 2300)
 
         return
 
@@ -335,7 +365,8 @@ class EventBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS", subscription = self.multipleFileSubscription)
 
-        jobGroups = jobFactory(events_per_job = 50)
+        jobGroups = jobFactory(events_per_job = 50,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
 
@@ -343,10 +374,15 @@ class EventBasedTest(unittest.TestCase):
 
         for job in jobGroups[0].jobs:
             self.assertEqual(len(job.getFiles(type = "lfn")), 1)
-            self.assertTrue((job["mask"].getMaxEvents() == 50 and job["mask"]["FirstEvent"] == 0) or \
-                            (job["mask"].getMaxEvents() is None and job["mask"]["FirstEvent"] == 50))
-
-
+            if job["mask"].getMaxEvents() == 50:
+                self.assertEqual(job["mask"]["FirstEvent"], 0)
+            elif job["mask"].getMaxEvents() is None:
+                self.assertEqual(job["mask"]["FirstEvent"], 50)
+            else:
+                self.fail("Unexpected splitting was performed")
+            self.assertEqual(job["estimatedJobTime"], 50*12)
+            self.assertEqual(job["estimatedDiskUsage"], 400*50)
+            self.assertEqual(job["estimatedMemoryUsage"], 2300)
         return
 
     def test150EventMultipleFileSplit(self):
@@ -361,7 +397,8 @@ class EventBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS", subscription = self.multipleFileSubscription)
 
-        jobGroups = jobFactory(events_per_job = 150)
+        jobGroups = jobFactory(events_per_job = 150,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
@@ -371,6 +408,9 @@ class EventBasedTest(unittest.TestCase):
         for job in jobGroups[0].jobs:
             self.assertEqual(job["mask"].getMaxEvents(), None)
             self.assertEqual(job["mask"]["FirstEvent"], None)
+            self.assertEqual(job["estimatedJobTime"], 100*12)
+            self.assertEqual(job["estimatedDiskUsage"], 400*100)
+            self.assertEqual(job["estimatedMemoryUsage"], 2300)
 
         return
 
@@ -385,7 +425,8 @@ class EventBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.multipleSiteSubscription)
 
-        jobGroups = jobFactory(events_per_job = 100)
+        jobGroups = jobFactory(events_per_job = 100,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 2)
 
@@ -397,8 +438,10 @@ class EventBasedTest(unittest.TestCase):
 
             self.assertEqual(job["mask"].getMaxEvents(), None)
 
-            assert job["mask"]["FirstEvent"] == 0, \
-                   "ERROR: Job's first event is incorrect."
+            self.assertEqual(job["mask"]["FirstEvent"], 0)
+            self.assertEqual(job["estimatedJobTime"], 100*12)
+            self.assertEqual(job["estimatedDiskUsage"], 400*100)
+            self.assertEqual(job["estimatedMemoryUsage"], 2300)
 
         return
 
@@ -417,7 +460,8 @@ class EventBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",subscription = singleMCSubscription)
 
         jobGroups = jobFactory(events_per_job = 2**30 - 1,
-                               events_per_lumi = 2**30 - 1)
+                               events_per_lumi = 2**30 - 1,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1,
                          "Error: JobFactory did not return one JobGroup")
         self.assertEqual(len(jobGroups[0].jobs), 2,
@@ -425,16 +469,21 @@ class EventBasedTest(unittest.TestCase):
                          % len(jobGroups[0].jobs))
         for job in jobGroups[0].jobs:
 
-            firstJobCondition = (job["mask"].getMaxEvents() == 2**30 - 1 and
-                                 job["mask"]["FirstLumi"] == 1 and
-                                 job["mask"]["FirstEvent"] == firstEvent and
-                                 job["mask"]["LastEvent"] <= 2**32)
-            secondJobCondition = (job["mask"].getMaxEvents() == 1 and
-                                  job["mask"]["FirstLumi"] == 2 and
-                                  job["mask"]["FirstEvent"] == 1)
-            self.assertTrue(firstJobCondition or secondJobCondition,
-                            "Job mask: %s didn't pass neither of the conditions"
-                            % job["mask"])
+            if job["mask"].getMaxEvents() == 2**30 - 1:
+                self.assertEqual(job["mask"]["FirstLumi"], 1)
+                self.assertEqual(job["mask"]["FirstEvent"], firstEvent)
+                self.assertTrue(job["mask"]["LastEvent"] <= 2**32)
+                self.assertEqual(job["estimatedJobTime"], (2**30 - 1)*12)
+                self.assertEqual(job["estimatedDiskUsage"], 400*(2**30 -1))
+                self.assertEqual(job["estimatedMemoryUsage"], 2300)
+            elif job["mask"].getMaxEvents() == 1:
+                self.assertEqual(job["mask"]["FirstLumi"], 2)
+                self.assertEqual(job["mask"]["FirstEvent"], 1)
+                self.assertEqual(job["estimatedJobTime"], 1*12)
+                self.assertEqual(job["estimatedDiskUsage"], 400*1)
+                self.assertEqual(job["estimatedMemoryUsage"], 2300)
+            else:
+                self.fail("Unexpected splitting was performed")
 
     def test_addParents(self):
         """
@@ -447,7 +496,8 @@ class EventBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.multipleFileSubscription)
 
-        jobGroups = jobFactory(events_per_job = 50, include_parents = True)
+        jobGroups = jobFactory(events_per_job = 50, include_parents = True,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
 
@@ -457,6 +507,9 @@ class EventBasedTest(unittest.TestCase):
             self.assertEqual(len(job.getFiles(type = "lfn")), 1)
             self.assertTrue((job["mask"].getMaxEvents() == 50 and job["mask"]["FirstEvent"] == 0) or \
                             (job["mask"].getMaxEvents() is None and job["mask"]["FirstEvent"] == 50))
+            self.assertEqual(job["estimatedJobTime"], 50*12)
+            self.assertEqual(job["estimatedDiskUsage"], 400*50)
+            self.assertEqual(job["estimatedMemoryUsage"], 2300)
             for f in job['input_files']:
                 self.assertEqual(len(f['parents']), 1)
                 self.assertEqual(list(f['parents'])[0]['lfn'], '/parent/lfn/')
@@ -479,7 +532,8 @@ class EventBasedTest(unittest.TestCase):
         jobGroups = jobFactory(events_per_job = 50, collectionName = "ACDC_TestEventBased",
                                couchURL = self.couchUrl, couchDB = self.couchDBName,
                                filesetName = "/ACDC_TestEventBased/Production",
-                               owner = "dballest@fnal.gov", group = "unknown")
+                               owner = "dballest@fnal.gov", group = "unknown",
+                               performance = self.performanceParams)
 
         self.assertEqual(1, len(jobGroups))
         jobGroup = jobGroups[0]
@@ -492,6 +546,9 @@ class EventBasedTest(unittest.TestCase):
             self.assertEqual(35, mask["LastLumi"] - mask["FirstLumi"])
             self.assertEqual(20000, mask["LastEvent"] - mask["FirstEvent"])
             self.assertFalse(mask["runAndLumis"])
+            self.assertEqual(job["estimatedJobTime"], 20000*12)
+            self.assertEqual(job["estimatedDiskUsage"], 400*20000)
+            self.assertEqual(job["estimatedMemoryUsage"], 2300)
 
         return
 

@@ -6,14 +6,6 @@ File based splitting algorithm that will chop a fileset into
 a set of jobs based on file boundaries
 """
 
-
-
-
-import threading
-import sys
-import logging
-import gc
-
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.WMBS.File               import File
 
@@ -33,6 +25,8 @@ class FileBased(JobFactory):
         getParents    = kwargs.get("include_parents", False)
         filesInJob    = 0
         listOfFiles   = []
+        timePerEvent, sizePerEvent, memoryRequirement = \
+                    self.getPerformanceParameters(kwargs.get('performance', {}))
 
         #Get a dictionary of sites, files
         locationDict = self.sortByLocation()
@@ -62,6 +56,7 @@ class FileBased(JobFactory):
                             jobsInGroup = 0
 
                     self.newJob(name = self.getJobName())
+                    self.currentJob.addResourceEstimates(memory = memoryRequirement)
 
                     filesInJob   = 0
                     jobsInGroup += 1
@@ -69,6 +64,10 @@ class FileBased(JobFactory):
 
                 filesInJob += 1
                 self.currentJob.addFile(f)
+                fileTime = f['events'] * timePerEvent
+                fileSize = f['events'] * sizePerEvent
+                self.currentJob.addResourceEstimates(jobTime = fileTime,
+                                                     disk = fileSize)
 
                 listOfFiles.append(f)
 

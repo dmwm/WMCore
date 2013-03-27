@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0613
+# pylint: disable-msg=W0613
 """
 _LumiBased_
 
@@ -19,7 +19,6 @@ from WMCore.DataStructs.Run import Run
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.WMBS.File               import File
-from WMCore.DataStructs.Fileset     import Fileset
 from WMCore.WMSpec.WMTask           import buildLumiMask
 
 def isGoodLumi(goodRunList, run, lumi):
@@ -78,15 +77,17 @@ class LumiBased(JobFactory):
 
         myThread = threading.currentThread()
 
-        lumisPerJob     = int(kwargs.get('lumis_per_job', 1))
-        splitOnFile     = bool(kwargs.get('halt_job_on_file_boundaries', True))
-        ignoreACDC      = bool(kwargs.get('ignore_acdc_except', False))
-        collectionName  = kwargs.get('collectionName', None)
-        splitOnRun      = kwargs.get('splitOnRun', True)
-        getParents      = kwargs.get('include_parents', False)
-        runWhitelist    = kwargs.get('runWhitelist', [])
-        runs            = kwargs.get('runs', None)
-        lumis           = kwargs.get('lumis', None)
+        lumisPerJob = int(kwargs.get('lumis_per_job', 1))
+        splitOnFile = bool(kwargs.get('halt_job_on_file_boundaries', True))
+        ignoreACDC = bool(kwargs.get('ignore_acdc_except', False))
+        collectionName = kwargs.get('collectionName', None)
+        splitOnRun = kwargs.get('splitOnRun', True)
+        getParents = kwargs.get('include_parents', False)
+        runWhitelist = kwargs.get('runWhitelist', [])
+        runs = kwargs.get('runs', None)
+        lumis = kwargs.get('lumis', None)
+        timePerEvent, sizePerEvent, memoryRequirement = \
+                    self.getPerformanceParameters(kwargs.get('performance', {}))
 
         goodRunList = {}
         if runs and lumis:
@@ -96,26 +97,26 @@ class LumiBased(JobFactory):
         if collectionName:
             try:
                 from WMCore.ACDC.DataCollectionService import DataCollectionService
-                couchURL       = kwargs.get('couchURL')
-                couchDB        = kwargs.get('couchDB')
-                filesetName    = kwargs.get('filesetName')
+                couchURL = kwargs.get('couchURL')
+                couchDB = kwargs.get('couchDB')
+                filesetName = kwargs.get('filesetName')
                 collectionName = kwargs.get('collectionName')
-                owner          = kwargs.get('owner')
-                group          = kwargs.get('group')
+                owner = kwargs.get('owner')
+                group = kwargs.get('group')
 
                 logging.info('Creating jobs for ACDC fileset %s' % filesetName)
                 dcs = DataCollectionService(couchURL, couchDB)
                 goodRunList = dcs.getLumiWhitelist(collectionName, filesetName, owner, group)
             except Exception, ex:
-                msg =  "Exception while trying to load goodRunList\n"
+                msg = "Exception while trying to load goodRunList\n"
                 if ignoreACDC:
-                    msg +=  "Ditching goodRunList\n"
+                    msg += "Ditching goodRunList\n"
                     msg += str(ex)
                     msg += str(traceback.format_exc())
                     logging.error(msg)
                     goodRunList = {}
                 else:
-                    msg +=  "Refusing to create any jobs.\n"
+                    msg += "Refusing to create any jobs.\n"
                     msg += str(ex)
                     msg += str(traceback.format_exc())
                     logging.error(msg)
@@ -139,30 +140,37 @@ class LumiBased(JobFactory):
                         f.addRun(run = Run(run, *lumiDict[run]))
 
             for f in lDict[key]:
-                #if hasattr(f, 'loadData'):
+                # if hasattr(f, 'loadData'):
                 #    f.loadData()
                 if len(f['runs']) == 0:
                     continue
+                f['lumiCount'] = 0
                 f['runs'] = sorted(f['runs'])
                 for run in f['runs']:
                     run.lumis.sort()
+                    f['lumiCount'] += len(run.lumis)
                 f['lowestRun'] = f['runs'][0]
-                #f['lowestRun'] = list(sorted(f['runs']))[0]
+                # Do average event per lumi calculation
+                if f['lumiCount']:
+                    f['avgEvtsPerLumi'] = float(f['events']) / f['lumiCount']
+                else:
+                    # No lumis in the file, ignore it
+                    continue
                 newlist.append(f)
-            locationDict[key] = sorted(newlist, key=operator.itemgetter('lowestRun'))
+            locationDict[key] = sorted(newlist, key = operator.itemgetter('lowestRun'))
 
 
 
 
-        #Split files into jobs with each job containing
-        #EXACTLY lumisPerJob number of lumis (except for maybe the last one)
+        # Split files into jobs with each job containing
+        # EXACTLY lumisPerJob number of lumis (except for maybe the last one)
 
-        totalJobs  = 0
-        firstRun   = None
-        lastLumi   = None
-        firstLumi  = None
-        stopJob    = True
-        lastRun    = None
+        totalJobs = 0
+        firstRun = None
+        lastLumi = None
+        firstLumi = None
+        stopJob = True
+        lastRun = None
         lumisInJob = 0
         for location in locationDict.keys():
 
@@ -202,16 +210,26 @@ class LumiBased(JobFactory):
                             if firstLumi != None and firstLumi != lumi:
                                 self.currentJob['mask'].addRunAndLumis(run = run.run,
                                                                        lumis = [firstLumi, lastLumi])
+                                addedEvents = ((lastLumi - firstLumi + 1) * f['avgEvtsPerLumi'])
+                                runAddedTime = addedEvents * timePerEvent
+                                runAddedSize = addedEvents * sizePerEvent
+                                self.currentJob.addResourceEstimates(jobTime = runAddedTime,
+                                                                     disk = runAddedSize)
                                 firstLumi = None
-                                lastLumi  = None
+                                lastLumi = None
                             continue
 
                         # You have to kill the lumi chain if they're not continuous
                         if lastLumi and not lumi == lastLumi + 1:
                             self.currentJob['mask'].addRunAndLumis(run = run.run,
                                                                    lumis = [firstLumi, lastLumi])
+                            addedEvents = ((lastLumi - firstLumi + 1) * f['avgEvtsPerLumi'])
+                            runAddedTime = addedEvents * timePerEvent
+                            runAddedSize = addedEvents * sizePerEvent
+                            self.currentJob.addResourceEstimates(jobTime = runAddedTime,
+                                                                 disk = runAddedSize)
                             firstLumi = None
-                            lastLumi  = None
+                            lastLumi = None
 
                         if firstLumi == None:
                             # Set the first lumi in the run
@@ -225,7 +243,13 @@ class LumiBased(JobFactory):
                             if firstLumi != None and lastLumi != None and lastRun != None:
                                 self.currentJob['mask'].addRunAndLumis(run = lastRun,
                                                                        lumis = [firstLumi, lastLumi])
-                            self.newJob(name = self.getJobName(length=totalJobs))
+                                addedEvents = ((lastLumi - firstLumi + 1) * f['avgEvtsPerLumi'])
+                                runAddedTime = addedEvents * timePerEvent
+                                runAddedSize = addedEvents * sizePerEvent
+                                self.currentJob.addResourceEstimates(jobTime = runAddedTime,
+                                                                     disk = runAddedSize)
+                            self.newJob(name = self.getJobName(length = totalJobs))
+                            self.currentJob.addResourceEstimates(memory = memoryRequirement)
                             firstLumi = lumi
                             lumisInJob = 0
                             totalJobs += 1
@@ -245,7 +269,11 @@ class LumiBased(JobFactory):
                         # Add this run to the mask
                         self.currentJob['mask'].addRunAndLumis(run = run.run,
                                                                lumis = [firstLumi, lastLumi])
+                        addedEvents = ((lastLumi - firstLumi + 1) * f['avgEvtsPerLumi'])
+                        runAddedTime = addedEvents * timePerEvent
+                        runAddedSize = addedEvents * sizePerEvent
+                        self.currentJob.addResourceEstimates(jobTime = runAddedTime, disk = runAddedSize)
                         firstLumi = None
-                        lastLumi  = None
+                        lastLumi = None
 
         return

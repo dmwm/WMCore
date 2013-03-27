@@ -49,6 +49,9 @@ class Job(WMObject, dict):
         self["fwjr_path"] = None
         self["workflow"] = None
         self["owner"] = None
+        self["estimatedJobTime"] = None
+        self["estimatedMemoryUsage"] = None
+        self["estimatedDiskUsage"] = None
         return
 
     #  //
@@ -125,6 +128,29 @@ class Job(WMObject, dict):
         """
         self["outcome"] = jobOutcome
         return
+
+    def addResourceEstimates(self, jobTime = None, memory = None, disk = None):
+        """
+        _addResourceEstimates_
+
+        Add to the current resource estimates, if None then initialize them
+        to the given value. Each value can be set independently.
+        """
+        # Update time
+        if self["estimatedJobTime"] is None:
+            self["estimatedJobTime"] = jobTime
+        elif jobTime is not None:
+            self["estimatedJobTime"] += jobTime
+        # Update memory
+        if self["estimatedMemoryUsage"] is None:
+            self["estimatedMemoryUsage"] = memory
+        elif memory is not None:
+            self["estimatedMemoryUsage"] += memory
+        # Update disk
+        if self["estimatedDiskUsage"] is None:
+            self["estimatedDiskUsage"] = disk
+        elif disk is not None:
+            self["estimatedDiskUsage"] += disk
 
     def getBaggage(self):
         """

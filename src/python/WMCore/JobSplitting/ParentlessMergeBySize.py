@@ -89,6 +89,7 @@ class ParentlessMergeBySize(JobFactory):
             newFile["locations"] = set([file["se_name"]])
             newFile.addRun(Run(file["file_run"], file["file_lumi"]))
             self.currentJob.addFile(newFile)
+            self.currentJob.addResourceEstimates(disk = float(file["file_size"])/1024)
 
     def defineMergeJobs(self, mergeableFiles):
         """

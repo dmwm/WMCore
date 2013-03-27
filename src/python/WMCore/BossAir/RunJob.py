@@ -27,7 +27,8 @@ class RunJob(dict):
                  sandbox = None, priority = None, site_cms_name = None,
                  taskType = None, possibleSites = [], sw_version = None,
                  scram_arch = None, siteName = None, jobName = None,
-                 proxyPath = None, requestName = None):
+                 proxyPath = None, requestName = None, jobTime = None,
+                 diskUsage = None, memoryUsage = None):
         """
         Just make sure you init the dictionary fields.
 
@@ -61,6 +62,9 @@ class RunJob(dict):
         self.setdefault('name', jobName)
         self.setdefault('proxyPath', proxyPath)
         self.setdefault('requestName', requestName)
+        self.setdefault('estimatedJobTime', jobTime)
+        self.setdefault('estimatedDiskUsage', diskUsage)
+        self.setdefault('estimatedMemoryUsage', memoryUsage)
 
         return
 

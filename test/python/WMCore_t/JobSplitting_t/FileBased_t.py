@@ -59,6 +59,10 @@ class FileBasedTest(unittest.TestCase):
         #self.multipleFileSubscription.create()
         #self.singleFileSubscription.create()
 
+        self.performanceParams = {'timePerEvent' : 12,
+                                  'memoryRequirement' : 2300,
+                                  'sizePerEvent' : 400}
+
         return
 
     def tearDown(self):
@@ -79,7 +83,8 @@ class FileBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(self.singleFileSubscription)
 
-        jobGroups = jobFactory(files_per_job = 1)
+        jobGroups = jobFactory(files_per_job = 1,
+                               performance = self.performanceParams)
 
         assert len(jobGroups) == 1, \
                "ERROR: JobFactory didn't return one JobGroup."
@@ -104,7 +109,8 @@ class FileBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(self.singleFileSubscription)
 
-        jobGroups = jobFactory(files_per_job = 10)
+        jobGroups = jobFactory(files_per_job = 10,
+                               performance = self.performanceParams)
 
         assert len(jobGroups) == 1, \
                "ERROR: JobFactory didn't return one JobGroup."
@@ -129,7 +135,8 @@ class FileBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(self.multipleFileSubscription)
 
-        jobGroups = jobFactory(files_per_job = 2)
+        jobGroups = jobFactory(files_per_job = 2,
+                               performance = self.performanceParams)
 
         assert len(jobGroups) == 1, \
                "ERROR: JobFactory didn't return one JobGroup."
@@ -160,7 +167,8 @@ class FileBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(self.multipleFileSubscription)
 
-        jobGroups = jobFactory(files_per_job = 3)
+        jobGroups = jobFactory(files_per_job = 3,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
 

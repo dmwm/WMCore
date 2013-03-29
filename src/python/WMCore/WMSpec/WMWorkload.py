@@ -6,9 +6,6 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 """
 
-import logging
-import os
-
 from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop
 from WMCore.WMSpec.Persistency import PersistencyHelper
@@ -1092,6 +1089,35 @@ class WMWorkloadHelper(PersistencyHelper):
                     outputDatasets.append(anotherDataset)
 
         return outputDatasets
+
+    def listPileupDatasets(self, initialTask = None):
+        """
+        _listPileUpDataset_
+
+        Returns a list of all the required pile-up datasets
+        in this workload
+        """
+        pileupDatasets = []
+
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            for stepName in task.listAllStepNames():
+                stepHelper = task.getStepHelper(stepName)
+                if stepHelper.stepType() == "CMSSW" or \
+                       stepHelper.stepType() == "MulticoreCMSSW":
+                    pileupSection = stepHelper.getPileup()
+                    if pileupSection is None: continue
+                    for pileupType in pileupSection.listSections_():
+                        datasets = getattr(getattr(stepHelper.data.pileup, pileupType), "dataset")
+                        pileupDatasets.extend(datasets)
+
+            pileupDatasets.extend(self.listPileupDatasets(task))
+
+        return list(set(pileupDatasets))
 
     def setSubscriptionInformationWildCards(self, wildcardDict, custodialSites = None,
                                             nonCustodialSites = None, autoApproveSites = None,

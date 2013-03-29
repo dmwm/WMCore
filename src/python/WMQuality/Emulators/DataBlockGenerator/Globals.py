@@ -1,4 +1,5 @@
 NOT_EXIST_DATASET = 'thisdoesntexist'
+PILEUP_DATASET = '/mixing/pileup/dataset'
 
 SITES = ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']
 
@@ -10,7 +11,11 @@ def getSites(block):
     if _BLOCK_LOCATIONS.has_key(block):
         return _BLOCK_LOCATIONS[block]
 
-    if block.endswith('#1'):
+    if block.split('#')[0] == PILEUP_DATASET:
+        # Pileup is at a single site
+        sites = ['T2_XX_SiteC']
+        _BLOCK_LOCATIONS[block] = sites
+    elif block.endswith('#1'):
         sites  = ['T2_XX_SiteA']
         _BLOCK_LOCATIONS[block] = sites
     elif block.endswith('#2'):

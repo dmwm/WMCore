@@ -44,7 +44,7 @@ def getTestArguments():
         # or alternatively CouchURL part can be replaced by ConfigCacheUrl,
         # then ConfigCacheUrl + CouchDBName + ConfigCacheID
         "ConfigCacheUrl": None,        
-        "PileupConfig": {"mc": "/some/cosmics/dataset"},        
+        "PileupConfig": {"mc": ["/mixing/pileup/dataset"]},
         
         "DashboardHost": "127.0.0.1",
         "DashboardPort": 8884,

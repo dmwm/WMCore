@@ -550,7 +550,26 @@ class DBS2Reader:
             return False
         return True
 
+    def listDatasetLocation(self, dataset):
+        """
+        _listDatasetLocation_
 
+        List the SEs where there is at least a block of the given
+        dataset.
+        """
+        self.checkDatasetPath(dataset)
+        try:
+            blocks = self.dbs.listBlocks(dataset, '*', nosite = False)
+        except DbsException, ex:
+            msg = "Error in DBSReader.listFileBlocks(%s)\n" % dataset
+            msg += "%s\n" % formatEx(ex)
+            raise DBSReaderError(msg)
+
+        result = set()
+        for block in blocks:
+            result |= set([x['Name'] for x in block['StorageElementList']])
+
+        return list(result)
 
     def blockToDatasetPath(self, blockName):
         """

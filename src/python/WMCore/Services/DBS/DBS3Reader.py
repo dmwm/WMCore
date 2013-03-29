@@ -612,6 +612,28 @@ class DBS3Reader:
         pathname = blocks[-1].get('dataset', None)
         return pathname
 
+    def listDatasetLocation(self, dataset):
+        """
+        _listDatasetLocation_
+
+        List the SEs where there is at least a block of the given
+        dataset.
+        """
+        self.checkDatasetPath(dataset)
+        args = {'dataset' : dataset, 'detail' : False}
+        try:
+            blocks = self.dbs.listBlocks(**args)
+        except DbsException, ex:
+            msg = "Error in DBSReader.listFileBlocks(%s)\n" % dataset
+            msg += "%s\n" % formatEx(ex)
+            raise DBSReaderError(msg)
+
+        blockNames = [ x['block_name'] for x in blocks ]
+        locations = set()
+        for blockName in blockNames:
+            locations |= set(self.listFileBlockLocation(blockName))
+
+        return list(locations)
 
     def checkDatasetPath(self, pathName):
         """

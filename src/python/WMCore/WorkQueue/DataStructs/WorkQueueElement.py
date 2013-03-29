@@ -29,6 +29,9 @@ class WorkQueueElement(dict):
         self.setdefault('Inputs', {})
         self.setdefault('ProcessedInputs', [])
         self.setdefault('RejectedInputs', [])
+        # Some workflows require additional datasets for PileUp
+        # Track their locations
+        self.setdefault('PileupData', {})
         #both ParentData and ParentFlag is needed in case there Dataset split,
         # even though ParentFlag is True it will have empty ParentData
         self.setdefault('ParentData', [])

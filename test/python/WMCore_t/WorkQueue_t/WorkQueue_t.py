@@ -18,6 +18,8 @@ from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 
 from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload as rerecoWMSpec, \
                                           getTestArguments as getRerecoArgs
+from WMCore.WMSpec.StdSpecs.ReDigi import reDigiWorkload as redigiWMSpec, \
+                                            getTestArguments as getRedigiArgs
 from WMQuality.Emulators.WMSpecGenerator.Samples.TestMonteCarloWorkload \
     import monteCarloWorkload, getMCArgs
 
@@ -29,6 +31,7 @@ from WMCore.DAOFactory import DAOFactory
 from WMQuality.Emulators import EmulatorSetup
 
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
+from WMCore_t.WMSpec_t.StdSpecs_t.ReDigi_t import injectReDigiConfigs
 from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
                                 import workload as MultiTaskProductionWorkload
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
@@ -49,11 +52,16 @@ parentProcArgs = getRerecoArgs()
 parentProcArgs.update(IncludeParents = "True")
 openRunningProcArgs = getRerecoArgs()
 openRunningProcArgs.update(OpenRunningTimeout = 10)
+redigiArgs = getRedigiArgs()
 
 
 def rerecoWorkload(workloadName, arguments):
     wmspec = rerecoWMSpec(workloadName, arguments)
     #wmspec.setStartPolicy("DatasetBlock")
+    return wmspec
+
+def redigiWorkload(workloadName, arguments):
+    wmspec = redigiWMSpec(workloadName, arguments)
     return wmspec
 
 def getFirstTask(wmspec):
@@ -130,6 +138,9 @@ class WorkQueueTest(WorkQueueTestCase):
                                                      'testOpenRunningSpec.spec'))
         self.openRunningSpec.save(self.openRunningSpec.specUrl())
 
+        # Redigi spec with pile-up
+        # Needs special configCache setup
+        self.createRedigiSpec()
 
         # setup Mock DBS and PhEDEx
         inputDataset = getFirstTask(self.processingSpec).inputDataset()
@@ -211,6 +222,22 @@ class WorkQueueTest(WorkQueueTestCase):
         EmulatorSetup.deleteConfig(self.configFile)
         EmulatorHelper.resetEmulators()
 
+
+    def createRedigiSpec(self):
+        """
+        _createRedigiSpec_
+
+        Create a bogus redigi spec, with configs and all the shiny things
+        """
+        configs = injectReDigiConfigs(self.configCacheDBInstance)
+        redigiArgs["CouchDBName"] = self.configCacheDB
+        redigiArgs["StepOneConfigCacheID"] = configs[0]
+        redigiArgs["StepTwoConfigCacheID"] = configs[1]
+        redigiArgs["StepThreeConfigCacheID"] = configs[2]
+        self.redigiSpec = redigiWorkload('reDigiSpec', redigiArgs)
+        self.redigiSpec.setSpecUrl(os.path.join(self.workDir,
+                                                'reDigiSpec.spec'))
+        self.redigiSpec.save(self.redigiSpec.specUrl())
 
     def createResubmitSpec(self, serverUrl, couchDB, parentage = False):
         """
@@ -1420,6 +1447,43 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(0, self.globalQueue.addWork(self.processingSpec.name()))
 
         return
+
+    def testProcessingWithPileup(self):
+        """Test a full WorkQueue cycle in a request with pileup datasets"""
+        specfile = self.redigiSpec.specUrl()
+        # Queue work with initial block count
+        self.assertEqual(GlobalParams.numOfBlocksPerDataset(), self.globalQueue.queueWork(specfile))
+        self.assertEqual(GlobalParams.numOfBlocksPerDataset(), len(self.globalQueue))
+
+        # All blocks are in Site A and B, but the pileup is only at C.
+        # We should not be able to pull the work.
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1,
+                                                   'T2_XX_SiteB' : 3,
+                                                   'T2_XX_SiteC' : 4},
+                                                  continuousReplication = False), 0)
+        # The PhEDEx emulator will move the pileup blocks to site A
+        self.globalQueue.updateLocationInfo()
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteB' : 1,
+                                                   'T2_XX_SiteC' : 4},
+                                                  continuousReplication = False), 0)
+
+        # Now try with site A
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1},
+                                                  continuousReplication = False), 1)
+        syncQueues(self.localQueue)
+        self.assertEqual(len(self.localQueue), 1)
+        self.assertEqual(len(self.globalQueue), 1)
+
+        # Pull it to WMBS, first try with an impossible site
+        # The pileup was split again in the local queue so site A is not there
+        self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA' : 1,
+                                                      'T2_XX_SiteB' : 3,
+                                                      'T2_XX_SiteC' : 4})), 0)
+        Globals.moveBlock({'/mixing/pileup/dataset#1' : ['T2_XX_SiteA', 'T2_XX_SiteC'],
+                           '/mixing/pileup/dataset#2' : ['T2_XX_SiteA', 'T2_XX_SiteC']})
+        self.localQueue.updateLocationInfo()
+        self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA' : 1})), 1)
+        self.assertEqual(len(self.localQueue), 0)
 
 if __name__ == "__main__":
     unittest.main()

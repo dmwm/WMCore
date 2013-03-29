@@ -62,7 +62,8 @@ class DataLocationMapper():
             self.sitedb = self.params['sitedb']
 
 
-    def __call__(self, dataItems, fullResync = False, dbses = {}):
+    def __call__(self, dataItems, fullResync = False, dbses = {},
+                 datasetSearch = False):
         result = {}
 
         # do a full resync every fullRefreshInterval interval
@@ -75,9 +76,11 @@ class DataLocationMapper():
         for dbs, dataItems in dataByDbs.items():
             # if global use phedex (not dls yet), else use dbs
             if isGlobalDBS(dbs):
-                output, fullResync = self.locationsFromPhEDEx(dataItems, fullResync)
+                output, fullResync = self.locationsFromPhEDEx(dataItems, fullResync,
+                                                              datasetSearch)
             else:
-                output, fullResync = self.locationsFromDBS(dbs, dataItems)
+                output, fullResync = self.locationsFromDBS(dbs, dataItems,
+                                                           datasetSearch)
 
             result[dbs] = output
         if fullResync:
@@ -86,7 +89,8 @@ class DataLocationMapper():
         return result, fullResync
 
 
-    def locationsFromPhEDEx(self, dataItems, fullResync = False):
+    def locationsFromPhEDEx(self, dataItems, fullResync = False,
+                            datasetSearch = False):
         """Get data location from phedex"""
         if self.params['locationFrom'] == 'subscription':
             # subscription api doesn't support partial update
@@ -102,10 +106,16 @@ class DataLocationMapper():
                 args['update_since'] = timeFloor(self.lastLocationUpdate, self.params['updateIntervalCoarseness'])
             for dataItem in dataItems:
                 try:
-                    response = self.phedex.getReplicaInfoForBlocks(block = [dataItem], **args)['phedex']
+                    if datasetSearch:
+                        response = self.phedex.getReplicaInfoForBlocks(dataset = [dataItem], **args)['phedex']
+                    else:
+                        response = self.phedex.getReplicaInfoForBlocks(block = [dataItem], **args)['phedex']
                     for block in response['block']:
                         nodes = [se['node'] for se in block['replica']]
-                        result[block['name']].update(nodes)
+                        if datasetSearch:
+                            result[dataItem].update(nodes)
+                        else:
+                            result[block['name']].update(nodes)
                 except Exception, ex:
                     logging.error('Error getting block location from phedex for %s: %s' % (dataItem, str(ex)))
         else:
@@ -118,7 +128,8 @@ class DataLocationMapper():
         return result, fullResync
 
 
-    def locationsFromDBS(self, dbs, dataItems):
+    def locationsFromDBS(self, dbs, dataItems,
+                         datasetSearch = False):
         """Get data location from dbs"""
         result = defaultdict(set)
         for item in dataItems:
@@ -127,10 +138,17 @@ class DataLocationMapper():
             # However this is not the normal path and will be deprecated if it is
             # replaced by dbs 3
             try:
-                seNames = dbs.listFileBlockLocation(item)
+                if datasetSearch:
+                    seNames = dbs.listDatasetLocation(item)
+                else:
+                    seNames = dbs.listFileBlockLocation(item)
                 result[item].update([self.sitedb.seToCMSName(x) for x in seNames])
             except Exception, ex:
                 logging.error('Erro getting block location from dbs for %s: %s' % (item, str(ex)))
+
+        # convert the sets to lists
+        for name, nodes in result.items():
+            result[name] = list(nodes)
 
         return result, True # partial dbs updates not supported
 
@@ -179,8 +197,9 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
             self.backend.saveElements(*modified)
 
         numOfParentLocations = self.updateParentLocation(fullResync)
+        numOfPileupLocations = self.updatePileupLocation(fullResync)
 
-        return len(dataLocations) + numOfParentLocations # probably not quite what we want, but will indicate whether some mappings were added or not
+        return len(dataLocations) + numOfParentLocations + numOfPileupLocations # probably not quite what we want, but will indicate whether some mappings were added or not
 
     def updateParentLocation(self, fullResync = False):
         dataItems = self.backend.getActiveParentData()
@@ -205,6 +224,34 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
                                 else:
                                     self.logger.info(data + ': Adding locations: ' + ', '.join(locations))
                                     element['ParentData'][pData] = list(set(pData['Sites']) | set(locations))
+                                modified.append(element)
+                                break
+            self.backend.saveElements(*modified)
+
+        return len(dataLocations)
+
+    def updatePileupLocation(self, fullResync = False):
+        dataItems = self.backend.getActivePileupData()
+
+        # fullResync incorrect with multiple dbs's - fix!!!
+        dataLocations, fullResync = DataLocationMapper.__call__(self, dataItems, fullResync,
+                                                                datasetSearch = True)
+
+        # elements with multiple changed data items will fail fix this, or move to store data outside element
+        for dataMapping in dataLocations.values():
+            modified = []
+            for data, locations in dataMapping.items():
+                elements = self.backend.getElementsForPileupData(data)
+                for element in elements:
+                    for pData in element['PileupData']:
+                        if pData == data:
+                            if sorted(locations) != sorted(element['PileupData'][pData]):
+                                if fullResync:
+                                    self.logger.info(data + ': Setting locations to: ' + ', '.join(locations))
+                                    element['PileupData'][pData] = locations
+                                else:
+                                    self.logger.info(data + ': Adding locations: ' + ', '.join(locations))
+                                    element['PileupData'][pData] = list(set(element['PileupData'][pData]) | set(locations))
                                 modified.append(element)
                                 break
             self.backend.saveElements(*modified)

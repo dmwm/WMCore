@@ -60,6 +60,10 @@ rerecoCmsswHelper.addOutputModule(
     processedDataset = "Processed",
     dataTier = "RECO")
 
+pileupConfig = {"data" : ["/mixing/pileup/dataset"]}
+rerecoCmsswHelper.setupPileup(pileupConfig,
+                              "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
+
 #Add a stageOut step
 skimStageOutHelper = skimStageOut.getTypeHelper()
 skimLogArchHelper  = skimLogArch.getTypeHelper()

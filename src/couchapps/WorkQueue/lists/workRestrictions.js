@@ -86,6 +86,20 @@ function(head, req) {
                 continue;
             }
 
+            // Check the pile up data, all pileup datasets must be at the site to be valid
+            noPileupSite = false;
+            if(ele["PileupData"]){
+                for(dataset in ele["PileupData"]){
+                    if(ele["PileupData"][dataset].indexOf(site) === -1){
+                        noPileupSite = true;
+                        break;
+                    }
+                }
+            }
+            if(noPileupSite){
+                continue;
+            }
+
             // input data restrictions
             var hasData = true;
             for (var data in ele['Inputs']) {

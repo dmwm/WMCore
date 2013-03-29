@@ -1674,6 +1674,46 @@ class WMWorkloadTest(unittest.TestCase):
                           'SomeURL/SomeDBName/DocIDThatIsReallyLong2/configFile'])
         return
 
+    def testPileupDatasetList(self):
+        """
+        _testPileupDatasetList_
+
+        Test that we can list all the pile up datasets in a workload including those not
+        in the top level task.
+        """
+        dataPileupConfig = {"data" : ["/some/minbias/data"]}
+        mcPileupConfig = {"data" : ["/some/minbias/data"],
+                          "mc" : ["/some/minbias/mc"]}
+
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        procTask = testWorkload.newTask("ProcessingTask")
+        procTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        procTask.setTaskType("Processing")
+        procTaskCmssw = procTask.makeStep("cmsRun1")
+        procTaskCmssw.setStepType("CMSSW")
+        procTask.applyTemplates()
+
+        procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
+        procTaskCmsswHelper.setupPileup(dataPileupConfig, 'dbslocation')
+
+        procTask2 = procTask.addTask("ProcessingTask2")
+        procTask2.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        procTask2.setTaskType("Processing")
+        procTask2Cmssw = procTask2.makeStep("cmsRun2")
+        procTask2Cmssw.setStepType("CMSSW")
+        procTask2.applyTemplates()
+
+        procTask3 = procTask2.addTask("ProcessingTask3")
+        procTask3.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        procTask3.setTaskType("Processing")
+        procTask3Cmssw = procTask3.makeStep("cmsRun2")
+        procTask3Cmssw.setStepType("CMSSW")
+        procTask3.applyTemplates()
+
+        procTask3CmsswHelper = procTask3Cmssw.getTypeHelper()
+        procTask3CmsswHelper.setupPileup(mcPileupConfig, 'dbslocation')
+        self.assertEqual(sorted(testWorkload.listPileupDatasets()), sorted(["/some/minbias/data",
+                                                                            "/some/minbias/mc"]))
 
 if __name__ == '__main__':
     unittest.main()

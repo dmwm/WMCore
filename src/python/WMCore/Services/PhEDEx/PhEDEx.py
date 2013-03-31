@@ -114,6 +114,7 @@ class PhEDEx(Service):
         Get replicas for given blocks
         kwargs are options passed through to phedex
 
+        dataset        dataset name, can be multiple (*)
         block          block name, can be multiple (*)
         node           node name, can be multiple (*)
         se             storage element name, can be multiple (*)
@@ -198,8 +199,6 @@ class PhEDEx(Service):
           o Input is a block and subscription is a dataset
           o Input is a block and subscription is a block
           o Input is a dataset and subscription is a dataset
-
-        Not supported:
           o Input is a dataset but only block subscriptions exist
         """
         from collections import defaultdict
@@ -209,9 +208,14 @@ class PhEDEx(Service):
         kwargs.setdefault('suspended', 'n') # active subscriptions by default
 
         dataItems = list(set(dataItems)) # force unique items
+        datasetsOnly = set()
         # get dict of dataset : (blocks or dataset)
         for item in dataItems:
-            inputs[item.split('#')[0]].add(item)
+            if len(item.split('#')) > 1:
+                inputs[item.split('#')[0]].add(item)
+            else:
+                inputs[item.split('#')[0]]
+                datasetsOnly.add(item)
 
         # Hard to query all at once in one GET call, POST not cacheable
         # Query each dataset and record relevant dataset or block location
@@ -234,16 +238,20 @@ class PhEDEx(Service):
                         # update locations for all items in this dataset
                         for item in items:
                             result[item].update(nodes)
+                        if dsname in datasetsOnly:
+                            result[dsname].update(nodes)
 
                     #if we have a block we must check for block level subscription also
                     # combine with original query when can give both dataset and block
-                    if any([x.find('#') > -1 for x in items]) and dset.has_key('block'):
+                    if dset.has_key('block'):
                         for block in dset['block']:
+                            nodes = [x['node'] for x in block['subscription']
+                                     if kwargs['suspended'] == 'either' or \
+                                        x['suspended'] == kwargs['suspended']]
+                            # update locations for this block and/or dataset
+                            if dsname in datasetsOnly:
+                                result[dsname].update(nodes)
                             if block['name'] in items:
-                                nodes = [x['node'] for x in block['subscription']
-                                         if kwargs['suspended'] == 'either' or \
-                                            x['suspended'] == kwargs['suspended']]
-                                # update locations for this block
                                 result[block['name']].update(nodes)
             except Exception, ex:
                 logging.error('Error looking up phedex subscription for %s: %s' % (dsname, str(ex)))

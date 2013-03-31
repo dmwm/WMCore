@@ -223,4 +223,20 @@ class DBSReader:
     def listBlockParents(self, block):
         return self.dataBlocks.getParentBlock(block, 1)
 
+    def listDatasetLocation(self, dataset):
+        """
+        _listDatasetLocation_
+
+        List the SEs where there is at least a block of the given
+        dataset.
+        """
+        blocks = self.getFileBlocksInfo(dataset, onlyClosedBlocks = False,
+                                        blockName = '*', locations = True)
+
+        result = set()
+        for block in blocks:
+            result |= set([x['Name'] for x in block['StorageElementList']])
+
+        return list(result)
+
 # pylint: enable-msg=W0613,R0201

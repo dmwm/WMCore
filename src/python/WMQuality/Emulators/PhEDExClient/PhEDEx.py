@@ -165,6 +165,11 @@ class PhEDEx(dict):
         Where are blocks located
         """
         data = {"phedex":{"request_timestamp":1254762796.13538, "block" : []}}
+        if 'dataset' in args:
+            args['block'] = []
+            for dataset in args['dataset']:
+                args['block'].extend(self.dataBlocks._blockGenerator(dataset))
+            args['block'] = [x['Name'] for x in args['block']]
         for block in args['block']:
             blocks = data['phedex']['block']
             files = self.dataBlocks.getFiles(block)
@@ -251,8 +256,6 @@ class PhEDEx(dict):
           o Input is a block and subscription is a dataset
           o Input is a block and subscription is a block
           o Input is a dataset and subscription is a dataset
-
-        Not supported:
           o Input is a dataset but only block subscriptions exist
         """
         from collections import defaultdict
@@ -283,13 +286,17 @@ class PhEDEx(dict):
 
                 #if we have a block we must check for block level subscription also
                 # combine with original query when can give both dataset and block
-                if item.find('#') > -1 and dset.has_key('block'):
+                if dset.has_key('block'):
                     for block in dset['block']:
+                        nodes = [x['node'] for x in block['subscription']
+                                 if x['suspended'] == 'n']
                         if block['name'] == item:
-                            nodes = [x['node'] for x in block['subscription']
-                                     if x['suspended'] == 'n']
                             result[item].update(nodes)
                             break
+                        elif dset['name'] == item:
+                            result[item].update(nodes)
+                            break
+
         return result
 
 

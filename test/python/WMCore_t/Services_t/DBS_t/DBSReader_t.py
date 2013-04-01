@@ -259,7 +259,5 @@ class DBSReaderTest(unittest.TestCase):
         self.assertEqual(self.dbs.blockToDatasetPath(BLOCK), DATASET)
         self.assertFalse(self.dbs.blockToDatasetPath(BLOCK + 'asas'))
 
-
-
 if __name__ == '__main__':
     unittest.main()

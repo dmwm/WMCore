@@ -394,5 +394,38 @@ class BlockTestCase(unittest.TestCase):
 
         return
 
+    def testDatasetLocation(self):
+        """
+        _testDatasetLocation_
+
+        This is a function of all start policies so only test it here
+        as there is no StartPolicyInterface unit test
+        """
+        policyInstance = Block(**self.splitArgs)
+        # The policy instance must be called first to initialize the values
+        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs)
+        for task in Tier1ReRecoWorkload.taskIterator():
+            policyInstance(Tier1ReRecoWorkload, task)
+            outputs = policyInstance.getDatasetLocations(Tier1ReRecoWorkload.listOutputDatasets())
+            for dataset in outputs:
+                self.assertEqual(sorted(outputs[dataset]), ['T2_XX_SiteA', 'T2_XX_SiteB'])
+        return
+
+    def testPileupData(self):
+        """
+        _testPileupData_
+
+        Check that every workqueue element split contains the pile up data
+        if it is present in the workload.
+        """
+        for task in MultiTaskProcessingWorkload.taskIterator():
+            units, _ = Block(**self.splitArgs)(MultiTaskProcessingWorkload, task)
+            self.assertEqual(Globals.GlobalParams.numOfBlocksPerDataset(), len(units))
+            for unit in units:
+                pileupData = unit["PileupData"]
+                self.assertEqual(len(pileupData), 1)
+                self.assertEqual(pileupData.values()[0], ["T2_XX_SiteC"])
+        return
+
 if __name__ == '__main__':
     unittest.main()

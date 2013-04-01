@@ -8,6 +8,8 @@ Unit tests for the WMBS File class.
 import unittest
 import os
 
+from WMCore.Database.CMSCouch import CouchServer
+
 from WMQuality.TestInit import TestInit
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 
@@ -33,6 +35,7 @@ class WorkQueueTestCase(unittest.TestCase):
         self.localQInboxDB = 'workqueue_t_local_inbox'
         self.localQDB2 = 'workqueue_t_local2'
         self.localQInboxDB2 = 'workqueue_t_local2_inbox'
+        self.configCacheDB = 'workqueue_t_config_cache'
 
         self.setSchema()
         self.testInit = TestInit('WorkQueueTest')
@@ -48,6 +51,10 @@ class WorkQueueTestCase(unittest.TestCase):
         self.testInit.setupCouch(self.localQInboxDB, *self.couchApps)
         self.testInit.setupCouch(self.localQDB2, *self.couchApps)
         self.testInit.setupCouch(self.localQInboxDB2, *self.couchApps)
+        self.testInit.setupCouch(self.configCacheDB, 'ConfigCache')
+
+        couchServer = CouchServer(os.environ.get("COUCHURL"))
+        self.configCacheDBInstance = couchServer.connectDatabase(self.configCacheDB)
 
         self.workDir = self.testInit.generateWorkDir()
         return

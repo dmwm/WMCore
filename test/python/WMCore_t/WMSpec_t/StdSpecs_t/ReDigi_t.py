@@ -20,6 +20,56 @@ from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
 
+def injectReDigiConfigs(configDatabase, combinedStepOne = False):
+    """
+    _injectReDigiConfigs_
+
+    Create bogus config cache documents for the various steps of the
+    ReDigi workflow.  Return the IDs of the documents.
+    """
+    stepOneConfig = Document()
+    stepOneConfig["info"] = None
+    stepOneConfig["config"] = None
+    stepOneConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
+    stepOneConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
+    stepOneConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
+    if combinedStepOne:
+        stepOneConfig["pset_tweak_details"] ={"process": {"outputModules_": ["RECODEBUGoutput", "DQMoutput"],
+                                                          "RECODEBUGoutput": {"dataset": {"filterName": "",
+                                                                                          "dataTier": "RECO-DEBUG-OUTPUT"}},
+                                                          "DQMoutput": {"dataset": {"filterName": "",
+                                                                                    "dataTier": "DQM"}}}}
+    else:
+        stepOneConfig["pset_tweak_details"] ={"process": {"outputModules_": ["RAWDEBUGoutput"],
+                                                          "RAWDEBUGoutput": {"dataset": {"filterName": "",
+                                                                                         "dataTier": "RAW-DEBUG-OUTPUT"}}}}
+
+    stepTwoConfig = Document()
+    stepTwoConfig["info"] = None
+    stepTwoConfig["config"] = None
+    stepTwoConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
+    stepTwoConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
+    stepTwoConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
+    stepTwoConfig["pset_tweak_details"] ={"process": {"outputModules_": ["RECODEBUGoutput", "DQMoutput"],
+                                                      "RECODEBUGoutput": {"dataset": {"filterName": "",
+                                                                                      "dataTier": "RECO-DEBUG-OUTPUT"}},
+                                                      "DQMoutput": {"dataset": {"filterName": "",
+                                                                                "dataTier": "DQM"}}}}
+
+    stepThreeConfig = Document()
+    stepThreeConfig["info"] = None
+    stepThreeConfig["config"] = None
+    stepThreeConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
+    stepThreeConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
+    stepThreeConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
+    stepThreeConfig["pset_tweak_details"] ={"process": {"outputModules_": ["aodOutputModule"],
+                                                        "aodOutputModule": {"dataset": {"filterName": "",
+                                                                                        "dataTier": "AODSIM"}}}}
+    stepOne = configDatabase.commitOne(stepOneConfig)[0]["id"]
+    stepTwo = configDatabase.commitOne(stepTwoConfig)[0]["id"]
+    stepThree = configDatabase.commitOne(stepThreeConfig)[0]["id"]
+    return (stepOne, stepTwo, stepThree)
+
 class ReDigiTest(unittest.TestCase):
     def setUp(self):
         """
@@ -53,56 +103,6 @@ class ReDigiTest(unittest.TestCase):
         EmulatorHelper.resetEmulators()
         return
 
-    def injectReDigiConfigs(self, combinedStepOne = False):
-        """
-        _injectReDigiConfigs_
-
-        Create bogus config cache documents for the various steps of the
-        ReDigi workflow.  Return the IDs of the documents.
-        """
-        stepOneConfig = Document()
-        stepOneConfig["info"] = None
-        stepOneConfig["config"] = None
-        stepOneConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
-        stepOneConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
-        stepOneConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
-        if combinedStepOne:
-            stepOneConfig["pset_tweak_details"] ={"process": {"outputModules_": ["RECODEBUGoutput", "DQMoutput"],
-                                                              "RECODEBUGoutput": {"dataset": {"filterName": "",
-                                                                                              "dataTier": "RECO-DEBUG-OUTPUT"}},
-                                                              "DQMoutput": {"dataset": {"filterName": "",
-                                                                                        "dataTier": "DQM"}}}}
-        else:
-            stepOneConfig["pset_tweak_details"] ={"process": {"outputModules_": ["RAWDEBUGoutput"],
-                                                              "RAWDEBUGoutput": {"dataset": {"filterName": "",
-                                                                                             "dataTier": "RAW-DEBUG-OUTPUT"}}}}
-
-        stepTwoConfig = Document()
-        stepTwoConfig["info"] = None
-        stepTwoConfig["config"] = None
-        stepTwoConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
-        stepTwoConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
-        stepTwoConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
-        stepTwoConfig["pset_tweak_details"] ={"process": {"outputModules_": ["RECODEBUGoutput", "DQMoutput"],
-                                                          "RECODEBUGoutput": {"dataset": {"filterName": "",
-                                                                                          "dataTier": "RECO-DEBUG-OUTPUT"}},
-                                                          "DQMoutput": {"dataset": {"filterName": "",
-                                                                                    "dataTier": "DQM"}}}}
-
-        stepThreeConfig = Document()
-        stepThreeConfig["info"] = None
-        stepThreeConfig["config"] = None
-        stepThreeConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
-        stepThreeConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
-        stepThreeConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
-        stepThreeConfig["pset_tweak_details"] ={"process": {"outputModules_": ["aodOutputModule"],
-                                                            "aodOutputModule": {"dataset": {"filterName": "",
-                                                                                            "dataTier": "AODSIM"}}}}
-        stepOne = self.configDatabase.commitOne(stepOneConfig)[0]["id"]
-        stepTwo = self.configDatabase.commitOne(stepTwoConfig)[0]["id"]
-        stepThree = self.configDatabase.commitOne(stepThreeConfig)[0]["id"]
-        return (stepOne, stepTwo, stepThree)
-
     def testDependentReDigi(self):
         """
         _testDependentReDigi_
@@ -113,7 +113,7 @@ class ReDigiTest(unittest.TestCase):
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "redigi_t"
-        configs = self.injectReDigiConfigs()
+        configs = injectReDigiConfigs(self.configDatabase)
         defaultArguments["StepOneConfigCacheID"] = configs[0]
         defaultArguments["StepTwoConfigCacheID"] = configs[1]
         defaultArguments["StepThreeConfigCacheID"] = configs[2]
@@ -631,7 +631,7 @@ class ReDigiTest(unittest.TestCase):
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "redigi_t"
-        configs = self.injectReDigiConfigs()
+        configs = injectReDigiConfigs(self.configDatabase)
         defaultArguments["StepOneConfigCacheID"] = configs[0]
         defaultArguments["StepTwoConfigCacheID"] = configs[1]
         defaultArguments["StepThreeConfigCacheID"] = configs[2]
@@ -669,7 +669,7 @@ class ReDigiTest(unittest.TestCase):
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "redigi_t"
-        configs = self.injectReDigiConfigs()
+        configs = injectReDigiConfigs(self.configDatabase)
         defaultArguments["StepOneConfigCacheID"] = configs[0]
         defaultArguments["StepTwoConfigCacheID"] = configs[1]
         defaultArguments["StepThreeConfigCacheID"] = configs[2]
@@ -705,7 +705,7 @@ class ReDigiTest(unittest.TestCase):
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "redigi_t"
-        configs = self.injectReDigiConfigs(combinedStepOne = True)
+        configs = injectReDigiConfigs(self.configDatabase, combinedStepOne = True)
         defaultArguments["StepOneConfigCacheID"] = configs[0]
         defaultArguments["StepTwoConfigCacheID"] = configs[2]
         defaultArguments["StepThreeConfigCacheID"] = None
@@ -733,7 +733,7 @@ class ReDigiTest(unittest.TestCase):
         defaultArguments = getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "redigi_t"
-        configs = self.injectReDigiConfigs()
+        configs = injectReDigiConfigs(self.configDatabase)
         defaultArguments["StepOneConfigCacheID"] = configs[2]
         defaultArguments["StepTwoConfigCacheID"] = None
         defaultArguments["StepThreeConfigCacheID"] = None

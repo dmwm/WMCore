@@ -63,6 +63,12 @@ class ReDigiWorkloadFactory(StdBase):
 
         # Define attributes used by this spec
         self.openRunningTimeout = None
+        self.stepTwoMemory = None
+        self.stepTwoSizePerEvent = None
+        self.stepTwoTimePerEvent = None
+        self.stepThreeMemory = None
+        self.stepThreeSizePerEvent = None
+        self.stepThreeTimePerEvent = None
 
         return
 
@@ -81,7 +87,8 @@ class ReDigiWorkloadFactory(StdBase):
 
         return mergeTasks
 
-    def addDependentProcTask(self, taskName, parentMergeTask, configCacheID):
+    def addDependentProcTask(self, taskName, parentMergeTask, configCacheID,
+                             timePerEvent, sizePerEvent, memoryReq):
         """
         _addDependentProcTask_
 
@@ -95,7 +102,9 @@ class ReDigiWorkloadFactory(StdBase):
                                               configDoc = configCacheID,
                                               configCacheUrl = self.configCacheUrl,
                                               splitAlgo = self.procJobSplitAlgo,
-                                              splitArgs = self.procJobSplitArgs, stepType = "CMSSW")
+                                              splitArgs = self.procJobSplitArgs, stepType = "CMSSW",
+                                              timePerEvent = timePerEvent, sizePerEvent = sizePerEvent,
+                                              memoryReq = memoryReq)
         self.addLogCollectTask(newTask, taskName = taskName + "LogCollect")
         mergeTasks = self.addMergeTasks(newTask, "cmsRun1", outputMods)
         return mergeTasks
@@ -178,14 +187,20 @@ class ReDigiWorkloadFactory(StdBase):
         stepOneMergeTask = stepOneMergeTasks[self.stepOneOutputModuleName]
         stepTwoMergeTasks = self.addDependentProcTask("StepTwoProc",
                                                       stepOneMergeTask,
-                                                      self.stepTwoConfigCacheID)
+                                                      self.stepTwoConfigCacheID,
+                                                      timePerEvent = self.stepTwoTimePerEvent,
+                                                      sizePerEvent = self.stepTwoSizePerEvent,
+                                                      memoryReq = self.stepTwoMemory)
 
         if self.stepThreeConfigCacheID == None or self.stepThreeConfigCacheID == "":
             return
 
         stepTwoMergeTask = stepTwoMergeTasks[self.stepTwoOutputModuleName]
         self.addDependentProcTask("StepThreeProc", stepTwoMergeTask,
-                                  self.stepThreeConfigCacheID)
+                                  self.stepThreeConfigCacheID,
+                                  timePerEvent = self.stepThreeTimePerEvent,
+                                  sizePerEvent = self.stepThreeSizePerEvent,
+                                  memoryReq = self.stepThreeMemory)
         return
 
     def setupChainedProcessing(self, stepOneTask):
@@ -232,7 +247,10 @@ class ReDigiWorkloadFactory(StdBase):
 
         mergeTask = mergeTasks[self.stepTwoOutputModuleName]
         self.addDependentProcTask("StepThreeProc", mergeTask,
-                                  self.stepThreeConfigCacheID)
+                                  self.stepThreeConfigCacheID,
+                                  timePerEvent = self.stepThreeTimePerEvent,
+                                  sizePerEvent = self.stepThreeSizePerEvent,
+                                  memoryReq = self.stepThreeMemory)
         return
 
     def buildWorkload(self):
@@ -259,7 +277,9 @@ class ReDigiWorkloadFactory(StdBase):
                                               configCacheUrl = self.configCacheUrl,
                                               configDoc = self.stepOneConfigCacheID,
                                               splitAlgo = self.procJobSplitAlgo,
-                                              splitArgs = self.procJobSplitArgs, stepType = "CMSSW")
+                                              splitArgs = self.procJobSplitArgs, stepType = "CMSSW",
+                                              timePerEvent = self.timePerEvent, memoryReq = self.memory,
+                                              sizePerEvent = self.sizePerEvent)
         self.addLogCollectTask(stepOneTask)
 
         if (self.keepStepOneOutput == True or self.keepStepOneOutput == "True") \
@@ -311,6 +331,15 @@ class ReDigiWorkloadFactory(StdBase):
         self.stepThreeConfigCacheID = arguments.get("StepThreeConfigCacheID")
         self.keepStepOneOutput = arguments.get("KeepStepOneOutput", True)
         self.keepStepTwoOutput = arguments.get("KeepStepTwoOutput", True)
+
+        # Check extra performance information
+        self.stepTwoTimePerEvent = float(arguments.get("StepTwoTimePerEvent", self.timePerEvent))
+        self.stepTwoSizePerEvent = float(arguments.get("StepTwoSizePerEvent", self.sizePerEvent))
+        self.stepTwoMemory = float(arguments.get("StepTwoMemory", self.memory))
+        self.stepThreeTimePerEvent = float(arguments.get("StepThreeTimePerEvent", self.timePerEvent))
+        self.stepThreeSizePerEvent = float(arguments.get("StepThreeSizePerEvent", self.sizePerEvent))
+        self.stepThreeMemory = float(arguments.get("StepThreeMemory", self.memory))
+
 
         # Pileup configuration for the first generation task
         self.pileupConfig = arguments.get("PileupConfig", None)

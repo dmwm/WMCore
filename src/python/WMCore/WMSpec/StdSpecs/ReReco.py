@@ -92,6 +92,11 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
             skimTask = skimmableTask.addTask(skimConfig["SkimName"])
             parentCmsswStep = skimmableTask.getStep("cmsRun1")
 
+            skimSizePerEvent = skimConfig.get("SizePerEvent", None) or self.sizePerEvent
+            skimTimePerEvent = skimConfig.get("TimePerEvent", None) or self.timePerEvent
+            skimMemory = skimConfig.get("Memory", None) or self.memory
+
+
             # Check that the splitting agrees, if the parent is event based then we must do WMBSMergeBySize
             # With reasonable defaults
             skimJobSplitAlgo = self.skimJobSplitAlgo
@@ -111,7 +116,10 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
                                                   couchURL = self.couchURL, couchDBName = self.couchDBName,
                                                   configCacheUrl = self.configCacheUrl,
                                                   configDoc = skimConfig["ConfigCacheID"], splitAlgo = skimJobSplitAlgo,
-                                                  splitArgs = skimJobSplitArgs)
+                                                  splitArgs = skimJobSplitArgs,
+                                                  timePerEvent = skimTimePerEvent,
+                                                  sizePerEvent = skimSizePerEvent,
+                                                  memoryReq = skimMemory)
             self.addLogCollectTask(skimTask, taskName = "%sLogCollect" % skimConfig["SkimName"])
 
             for outputModuleName in outputMods.keys():

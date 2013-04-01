@@ -85,7 +85,8 @@ class MonteCarloWorkloadFactory(StdBase):
                                               configDoc = self.configCacheID, splitAlgo = self.prodJobSplitAlgo,
                                               splitArgs = self.prodJobSplitArgs, configCacheUrl = self.configCacheUrl,
                                               seeding = self.seeding, totalEvents = self.totalEvents,
-                                              eventsPerLumi = self.eventsPerLumi)
+                                              eventsPerLumi = self.eventsPerLumi, timePerEvent = self.timePerEvent,
+                                              sizePerEvent = self.sizePerEvent, memoryReq = self.memory)
         self.addLogCollectTask(prodTask)
 
         # pile up support

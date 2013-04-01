@@ -97,7 +97,9 @@ class DataProcessingWorkloadFactory(StdBase):
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
                                               configCacheUrl = self.configCacheUrl, forceUnmerged = forceUnmerged,
                                               configDoc = self.configCacheID, splitAlgo = self.procJobSplitAlgo,
-                                              splitArgs = self.procJobSplitArgs, stepType = cmsswStepType)
+                                              splitArgs = self.procJobSplitArgs, stepType = cmsswStepType,
+                                              timePerEvent = self.timePerEvent, memoryReq = self.memory,
+                                              sizePerEvent = self.sizePerEvent)
         self.addLogCollectTask(procTask)
 
 

@@ -71,9 +71,9 @@ Software Release:
 #end def 
 
 #def performanceBlock
-Time per event (seconds): <input type="text" name="TimePerEvent" size=10 value=60 />
-Memory (Mbytes): <input type="text" name="Memory" size=10 value=2147483648 />
-Size per event (Kbytes): <input type="text" name="SizePerEvent" size=10 value=512000 /><br/>
+Time per event (Seconds): <input type="text" name="TimePerEvent" size=10 value=12 />
+Memory (MBytes): <input type="text" name="Memory" size=10 value=2300 />
+Size per event (KBytes): <input type="text" name="SizePerEvent" size=10 value=512 /><br/>
 #end def
 
 #def dqmOptions
@@ -157,6 +157,9 @@ function addSkim() {
   newdiv.innerHTML = 'Skim Name: <input type="text", name="SkimName'+nskim+'" size=20 value="skim'+nskim+'"/><br/>' 
   + ' Skim Input '+nskim+': <input type="text", name="SkimInput'+nskim+'" size=40"/><br/>' 
   +'Skim ConfigCache ID ' + nskim +': <input type="text" name="Skim'+nskim+'ConfigCacheID"/> <br/>'
+  +'Skim Time per Event ' + nskim +': <input type="text" name="SkimTimePerEvent'+nskim+'" size=10/> <br/>'
+  +'Skim Size per Event ' + nskim +': <input type="text" name="SkimSizePerEvent'+nskim+'" size=10/> <br/>'
+  +'Skim Memory ' + nskim +': <input type="text" name="SkimMemory'+nskim+'" size=10/> <br/>'
   ni.appendChild(newdiv);
   ++nskim;
 }

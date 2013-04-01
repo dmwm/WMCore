@@ -187,10 +187,10 @@ if __name__ == "__main__":
 
     """
 
-    scaleTester = scaleTestFiller()
-
-    while True:
-        print "Ready to begin scale testing"
-        scaleTester()
-        print "Done running for now, sleeping temporarily"
-        time.sleep(random.randint(10, 60))
+    if False: # Enable test at your own risk
+        scaleTester = scaleTestFiller()
+        while True:
+            print "Ready to begin scale testing"
+            scaleTester()
+            print "Done running for now, sleeping temporarily"
+            time.sleep(random.randint(10, 60))

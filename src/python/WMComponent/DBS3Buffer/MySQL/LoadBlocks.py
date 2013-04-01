@@ -5,16 +5,11 @@ _LoadBlocks_
 MySQL implementation of LoadBlocks
 """
 
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class LoadBlocks(DBFormatter):
     sql = """SELECT DISTINCT dbb.blockname as blockname, dbb.create_time as create_time,
                 dbb.status AS status, dbb.status3 AS status3,
-                (SELECT COUNT(*) FROM dbsbuffer_file dbf WHERE dbf.block_id = dbb.id) AS nFiles,
-                (SELECT SUM(dbf2.filesize) FROM dbsbuffer_file dbf2 WHERE dbf2.block_id = dbb.id) AS blocksize,
                 dbl.se_name AS location, dbf3.dataset_algo AS das
               FROM dbsbuffer_block dbb
               INNER JOIN dbsbuffer_file dbf3 ON
@@ -30,8 +25,6 @@ class LoadBlocks(DBFormatter):
             final = {}
             final['block_name']       = tmp['blockname']
             final['creation_date']    = tmp['create_time']
-            #final['file_count']       = tmp['nfiles']
-            #final['block_size']       = int(tmp['blocksize'])
             final['origin_site_name'] = tmp['location']
             final['DatasetAlgo']      = tmp['das']
 

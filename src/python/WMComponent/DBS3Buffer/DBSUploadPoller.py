@@ -181,9 +181,6 @@ class DBSUploadPoller(BaseWorkerThread):
 
         # This is slightly dangerous, but DBSUpload depends
         # on DBSInterface anyway
-        self.maxBlockFiles    = self.config.DBSUpload.DBSBlockMaxFiles
-        self.maxBlockTime     = self.config.DBSUpload.DBSBlockMaxTime
-        self.maxBlockSize     = self.config.DBSUpload.DBSBlockMaxSize
         self.dbsUrl           = self.config.DBSUpload.dbsUrl
 
         self.dbsUtil = DBSBufferUtil()
@@ -437,7 +434,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
                 currentBlock = self.getBlock(files[0], location, dasID, True)
                 currentBlock.setAcquisitionEra(era = dasInfo['AcquisitionEra'])
-                currentBlock.setProcessingVer(procVer = dasInfo['ProcessingVer'])                
+                currentBlock.setProcessingVer(procVer = dasInfo['ProcessingVer'])
 
                 for newFile in files:
                     if not newFile.get('block', 1) == None:
@@ -480,7 +477,7 @@ class DBSUploadPoller(BaseWorkerThread):
         Loop all Open blocks and mark them as Pending if they have timed out.
         """
         for block in self.blockCache.values():
-            if block.status == "Open" and block.getTime() > self.maxBlockTime:
+            if block.status == "Open" and block.getTime() > block.getMaxBlockTime():
                 block.status = "Pending"
                 self.blockCache[block.getName()] = block
 
@@ -515,14 +512,20 @@ class DBSUploadPoller(BaseWorkerThread):
         so open blocks about to time out can still get more
         files put in them.
         """
+
+        if block.getMaxBlockFiles() is None or block.getMaxBlockNumEvents() is None or \
+            block.getMaxBlockSize() is None or block.getMaxBlockTime() is None:
+            return True
         if block.status != 'Open':
             # Then somebody has dumped this already
             return False
-        if block.getTime() > self.maxBlockTime and doTime:
+        if block.getTime() > block.getMaxBlockTime() and doTime:
             return False
-        if block.getSize() + newFile['size'] > self.maxBlockSize:
+        if block.getSize() + newFile['size'] > block.getMaxBlockSize():
             return False
-        if block.getNFiles() >= self.maxBlockFiles:
+        if block.getNumEvents() + newFile['events'] > block.getMaxBlockNumEvents():
+            return False
+        if block.getNFiles() >= block.getMaxBlockFiles():
             # Then we have to dump it because this file
             # will put it over the limit.
             return False
@@ -665,7 +668,7 @@ class DBSUploadPoller(BaseWorkerThread):
             replaceKeys(block, 'NumberOfFiles', 'file_count')
             replaceKeys(block, 'location', 'origin_site_name')
             for key in ['insertedFiles', 'newFiles', 'DatasetAlgo', 'file_count',
-                        'block_size', 'origin_site_name', 'creation_date', 'open', 'Name']:
+                        'block_size', 'origin_site_name', 'creation_date', 'open', 'Name', 'block_events']:
                 if key in block.data.keys():
                     del block.data[key]
 

@@ -6,11 +6,9 @@ Unit tests for the DBSBufferFile class.
 """
 
 import unittest
-import os
 import threading
 
 from WMCore.DAOFactory import DAOFactory
-from WMCore.WMFactory  import WMFactory
 
 from WMQuality.TestInit import TestInit
 from WMCore.DataStructs.Run import Run
@@ -28,7 +26,7 @@ class DBSBufferFileTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
+        self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer"],
                                 useDefault = False)
 

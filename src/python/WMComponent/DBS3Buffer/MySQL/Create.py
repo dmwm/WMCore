@@ -65,10 +65,14 @@ class Create(DBCreator):
 
         self.create["03dbsbuffer_workflow"] = \
           """CREATE TABLE dbsbuffer_workflow (
-               id           INTEGER PRIMARY KEY AUTO_INCREMENT,
-               name         VARCHAR(255),
-               task         VARCHAR(255),
-               spec         VARCHAR(255),
+               id                           INTEGER PRIMARY KEY AUTO_INCREMENT,
+               name                         VARCHAR(255),
+               task                         VARCHAR(255),
+               spec                         VARCHAR(255),
+               block_close_max_wait_time    INTEGER UNSIGNED,
+               block_close_max_files        INTEGER UNSIGNED,
+               block_close_max_events       INTEGER UNSIGNED,
+               block_close_max_size         BIGINT UNSIGNED,
                UNIQUE(name, task)) ENGINE = InnoDB"""
 
         self.create["04dbsbuffer_file"] = \

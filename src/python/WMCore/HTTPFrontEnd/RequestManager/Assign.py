@@ -123,6 +123,10 @@ class Assign(WebAPI):
         if helper.getProcessingString():
             procString = helper.getProcessingString()
         dashboardActivity = helper.getDashboardActivity()
+        blockCloseMaxWaitTime = helper.getBlockCloseMaxWaitTime()
+        blockCloseMaxFiles = helper.getBlockCloseMaxFiles()
+        blockCloseMaxEvents = helper.getBlockCloseMaxEvents()
+        blockCloseMaxSize = helper.getBlockCloseMaxSize()
 
         (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
 
@@ -135,7 +139,11 @@ class Assign(WebAPI):
                                  acqEra = acqEra, procVer = procVer,
                                  procString = procString,
                                  dashboardActivity = dashboardActivity,
-                                 badRequests = [])
+                                 badRequests = [],
+                                 blockCloseMaxWaitTime = blockCloseMaxWaitTime,
+                                 blockCloseMaxFiles = blockCloseMaxFiles,
+                                 blockCloseMaxSize = blockCloseMaxSize,
+                                 blockCloseMaxEvents = blockCloseMaxEvents)
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles)
@@ -153,6 +161,10 @@ class Assign(WebAPI):
         goodRequests = []
         reqMergedBase = None
         reqUnmergedBase = None
+        blockCloseMaxWaitTime = 66400
+        blockCloseMaxFiles = 500
+        blockCloseMaxEvents = 250000000
+        blockCloseMaxSize = 5000000000000
         for request in allRequests:
             # make sure there's a workload attached
             try:
@@ -171,6 +183,10 @@ class Assign(WebAPI):
                             procVer = helper.getProcessingVersion()
                         if helper.getProcessingString() != None:
                             procString = helper.getProcessingString()
+                        blockCloseMaxWaitTime = helper.getBlockCloseMaxWaitTime()
+                        blockCloseMaxFiles = helper.getBlockCloseMaxFiles()
+                        blockCloseMaxEvents = helper.getBlockCloseMaxEvents()
+                        blockCloseMaxSize = helper.getBlockCloseMaxSize()
                         (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
                         dashboardActivity = helper.getDashboardActivity()
                         goodRequests.append(request)
@@ -189,7 +205,11 @@ class Assign(WebAPI):
                                  acqEra = acqEra, procVer = procVer,
                                  procString = procString,
                                  dashboardActivity = dashboardActivity,
-                                 badRequests = badRequestNames)
+                                 badRequests = badRequestNames,
+                                 blockCloseMaxWaitTime = blockCloseMaxWaitTime,
+                                 blockCloseMaxFiles = blockCloseMaxFiles,
+                                 blockCloseMaxSize = blockCloseMaxSize,
+                                 blockCloseMaxEvents = blockCloseMaxEvents)
 
     @cherrypy.expose
     #@cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles) security issue fix
@@ -292,6 +312,16 @@ class Assign(WebAPI):
                                                    autoApproveSites = autoApproveList,
                                                    custodialSubType = subscriptionType,
                                                    priority = subscriptionPriority)
+
+        # Block closing information
+        blockCloseMaxWaitTime = int(kwargs.get("BlockCloseMaxWaitTime", helper.getBlockCloseMaxWaitTime()))
+        blockCloseMaxFiles = int(kwargs.get("BlockCloseMaxFiles", helper.getBlockCloseMaxFiles()))
+        blockCloseMaxEvents = int(kwargs.get("BlockCloseMaxEvents", helper.getBlockCloseMaxEvents()))
+        blockCloseMaxSize = int(kwargs.get("BlockCloseMaxSize", helper.getBlockCloseMaxSize()))
+
+        helper.setBlockCloseSettings(blockCloseMaxWaitTime, blockCloseMaxFiles,
+                                     blockCloseMaxEvents, blockCloseMaxSize)
+
         helper.setDashboardActivity(kwargs.get("dashboard", ""))
         Utilities.saveWorkload(helper, request['RequestWorkflow'], self.wmstatWriteURL)
         

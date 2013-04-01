@@ -98,6 +98,11 @@ class MonteCarloWorkloadFactory(StdBase):
             self.addMergeTask(prodTask, self.prodJobSplitAlgo,
                               outputModuleName, lfn_counter = self.previousJobCount)
 
+        workload.setBlockCloseSettings(workload.getBlockCloseMaxWaitTime(),
+                                       workload.getBlockCloseMaxFiles(),
+                                       25000000,
+                                       workload.getBlockCloseMaxSize())
+
         return workload
 
 

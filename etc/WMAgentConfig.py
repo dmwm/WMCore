@@ -54,9 +54,6 @@ localDBSUrl = "https://cmst0dbs.cern.ch:8443/cms_dbs_prod_tier0_writer/servlet/D
 localDBSVersion = "DBS_2_0_8"
 globalDBSUrl = "https://cmsdbsprod.cern.ch:8443/cms_dbs_prod_global_writer/servlet/DBSServlet"
 globalDBSVersion = "DBS_2_0_8"
-dbsMaxBlockSize = 5000000000000
-dbsMaxBlockFiles = 500
-dbsBlockTimeout = 86400
 
 # Job retry information.  This includes the number of times a job will tried and
 # how long it will sit in cool off.
@@ -137,9 +134,6 @@ config.DBSInterface.DBSUrl = globalDBSUrl
 config.DBSInterface.DBSVersion = localDBSVersion
 config.DBSInterface.globalDBSUrl = globalDBSUrl
 config.DBSInterface.globalDBSVersion = globalDBSVersion
-config.DBSInterface.DBSBlockMaxSize = dbsMaxBlockSize
-config.DBSInterface.DBSBlockMaxFiles = dbsMaxBlockFiles
-config.DBSInterface.DBSBlockMaxTime = dbsBlockTimeout
 config.DBSInterface.MaxFilesToCommit = 200
 config.DBSInterface.doGlobalMigration = False
 

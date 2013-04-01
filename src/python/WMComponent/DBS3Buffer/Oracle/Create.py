@@ -227,10 +227,15 @@ class Create(DBCreator):
 
         self.create["13dbsbuffer_workflow"] = \
           """CREATE TABLE dbsbuffer_workflow (
-               id           INTEGER,
-               name         VARCHAR2(255),
-               task         VARCHAR2(255),
-               spec         VARCHAR2(255)) %s """ % tablespaceTable
+               id                           INTEGER,
+               name                         VARCHAR2(255),
+               task                         VARCHAR2(255),
+               spec                         VARCHAR2(255),
+               block_close_max_wait_time    NUMBER(11),
+               block_close_max_files        NUMBER(11),
+               block_close_max_events       NUMBER(11),
+               block_close_max_size         NUMBER(11),
+               ) %s """ % tablespaceTable
 
         self.create["10dbsbuffer_workflow_seq"] = \
           """CREATE SEQUENCE dbsbuffer_workflow_seq
@@ -345,10 +350,10 @@ class Create(DBCreator):
           """ALTER TABLE dbsbuffer_workflow ADD
                (CONSTRAINT dbsbuffer_workflow_uq UNIQUE (name, task) %s)""" % tablespaceIndex
 
-        #self.constraints["01_fk_dbsbuffer_file"] = \
-        #  """ALTER TABLE dbsbuffer_file ADD
-        #       (CONSTRAINT dbsbuffer_file  FOREIGN KEY (workflow)  REFERENCES dbsbuffer_workflow(id)
-        #         ON DELETE CASCADE)"""
+        self.constraints["01_fk_dbsbuffer_file"] = \
+          """ALTER TABLE dbsbuffer_file ADD
+               (CONSTRAINT dbsbuffer_file  FOREIGN KEY (workflow)  REFERENCES dbsbuffer_workflow(id)
+                 ON DELETE CASCADE)"""
 
         checksumTypes = ['cksum', 'adler32', 'md5']
         for i in checksumTypes:

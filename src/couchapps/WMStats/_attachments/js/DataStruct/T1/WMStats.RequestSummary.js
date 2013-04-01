@@ -60,7 +60,9 @@ WMStats.Requests = function(noFilterFlag) {
         var lastStatus = requestStatus[requestStatus.length - 1];
         
         //request is done
-        if (lastStatus.status !== 'running') return 0;
+        if (lastStatus.status !== 'running' ||
+            lastStatus.status !== 'running-closed' ||
+            lastStatus.status !== 'running-open') return 0;
         
         var totalJobs = reqSummary.getWMBSTotalJobs() - reqSummary.getJobStatus("canceled");
         // jobCompletion percentage 

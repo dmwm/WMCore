@@ -8,7 +8,8 @@ dbpath = dbpath.split('/index.html')[0];
 wmstatsUrlComponents = dbpath.split('/')
 dbname = wmstatsUrlComponents[wmstatsUrlComponents.length - 1];
 couchroot = dbpath.substring(0,dbpath.lastIndexOf('/'));
-
+//hack for support reqmgr_workload_config db access : change reqmgr rewrite rule
+if (couchroot.match(/:\d+$/) == null && couchroot.indexOf("couchdb") == -1) {couchroot += "/couchdb"};
 function couchapp_load(scripts) {
   for (var i=0; i < scripts.length; i++) {
     document.write('<script src="'+scripts[i]+'"><\/script>')

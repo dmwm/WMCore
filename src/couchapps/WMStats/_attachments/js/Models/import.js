@@ -10,7 +10,8 @@ WMStats.Globals.importScripts([
 ])
 
 if (WMStats.Globals.VARIANT == "tier1") {
-    WMStats.Globals.importScripts(["js/Models/T1/WMStats.ActiveRequestModel.js"]);
+    WMStats.Globals.importScripts(["js/Models/T1/WMStats.ActiveRequestModel.js",
+                                   "js/Models/T1/WMStats.ReqMgrRequestModel.js"]);
 } else if (WMStats.Globals.VARIANT == "tier0") {
     WMStats.Globals.importScripts(["js/Models/T0/WMStats.ActiveRequestModel.js"]);
 } else if (WMStats.Globals.VARIANT == "analysis") {

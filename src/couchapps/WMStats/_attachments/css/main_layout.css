@@ -47,6 +47,22 @@ tr.mouseclickRow {
     font: bold 0.9em verdana;
 }
 
+#external_link {
+    position: absolute;
+    bottom: 3px;
+    right: 300px;
+    font: bold 0.9em verdana;
+}
+
+#external_link a {
+    text-decoration: none;
+    color:#D1FFD1;
+}
+
+#external_link a:hover {
+    text-decoration: none;
+    color:#E6B517;
+}
 #clock {
     position: absolute;
     bottom: 1px;
@@ -508,4 +524,18 @@ legend {
     -moz-border-radius: 3px;
     border-radius: 3px;
     margin: 3px 0px 0px;
+}
+
+#acdc_submission{ 
+    position: absolute;
+    top: 50px;
+    left: 300px;
+    padding: 10px 10px 10px 10px;
+    -moz-box-shadow: 0 0 5px #888;
+    -webkit-box-shadow: 0 0 5px#888;
+    box-shadow: 0 0 5px #888;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    font-size: 1em;
+    z-index: 100;
 }

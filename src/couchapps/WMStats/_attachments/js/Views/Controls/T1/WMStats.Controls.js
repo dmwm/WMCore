@@ -22,7 +22,8 @@ WMStats.Controls = function($){
         var categoryBottons = 
         '<nav id="category_button" class="button-group">\
             <ul><li><a href="#campaign" class="nav-button nav-button-selected"> Campaign </a></li>\
-                <li><a href="#sites" class="nav-button button-unselected"> Site </a></li></ul>\
+                <li><a href="#sites" class="nav-button button-unselected"> Site </a></li>\
+                <li><a href="#cmssw" class="nav-button button-unselected"> CMSSW </a></li></ul>\
          </nav>';
         
         $(selector).append(categoryBottons);
@@ -66,6 +67,13 @@ WMStats.Controls = function($){
         $(selector + " ul").addClass("tabs-nav");
     };
     
+    function setExternalLink(selector) {
+        var outsideLink = 
+        '<a href="/couchdb/alertscollector/_design/AlertsCollector/index.html" target="alertColletorFrame"> agent alert </a>';
+        
+        $(selector).append(outsideLink);
+    };
+    
     return {
         setFilter: setFilter,
         setTabs: setTabs,
@@ -73,9 +81,11 @@ WMStats.Controls = function($){
         setAllRequestButton: setAllRequestButton,
         getCategoryButtonValue: getCategoryButtonValue,
         setViewSwitchButton: setViewSwitchButton,
+        setExternalLink: setExternalLink,
         getFilter: getFilter,
         requests: "requests",
         sites: "sites",
-        campaign: "campaign"
+        campaign: "campaign",
+        cmssw: "cmssw"
     }
 }(jQuery);

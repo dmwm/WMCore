@@ -97,6 +97,11 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
                                           outputModuleName)
             procMergeTasks[outputModuleName] = mergeTask
 
+        workload.setBlockCloseSettings(workload.getBlockCloseMaxWaitTime(),
+                                       workload.getBlockCloseMaxFiles(),
+                                       25000000,
+                                       workload.getBlockCloseMaxSize())
+
         return workload
     
 

@@ -50,7 +50,8 @@ class DBSBlock:
                           'acquisition_era':      {},   # Dict of acquisition era information
                           'primds':               {},   # Dict of primary dataset info
                           'dataset':              {},   # Dict of processed dataset info
-                          'file_parent_list':     []}   # List of file parents
+                          'file_parent_list':     [],   # List of file parents
+                          'close_settings':       {}}   # Dict of info about block close settings
 
         self.files     = []
         self.encoder   = JSONRequests()
@@ -69,6 +70,13 @@ class DBSBlock:
         self.data['block']['creation_date'] = int(time.time())
         self.data['block']['block_size'] = 0
         self.data['block']['file_count'] = 0
+        self.data['block']['block_events'] = 0
+
+        self.data['close_settings'] = {}
+        self.data['close_settings']['block_close_max_wait_time'] = None
+        self.data['close_settings']['block_close_max_events'] = None
+        self.data['close_settings']['block_close_max_size'] = None
+        self.data['close_settings']['block_close_max_files'] = None
         return
 
 
@@ -100,9 +108,14 @@ class DBSBlock:
             logging.debug("First file: %s    Last file: %s" % (l[0], l[-1]))
             return
 
+        for setting in self.data['close_settings']:
+            if self.data['close_settings'][setting] is None:
+                self.data['close_settings'][setting] = dbsFile[setting]
+
         self.files.append(dbsFile)
         self.data['block']['block_size'] += int(dbsFile['size'])
         self.data['block']['file_count'] += 1
+        self.data['block']['block_events'] += int(dbsFile['events'])
         
         # Assemble information for the file itself
         fileDict = {}
@@ -333,13 +346,15 @@ class DBSBlock:
 
         Get size of block
         """
+        return self.data['block']['block_size']
 
-        size = 0
+    def getNumEvents(self):
+        """
+        _getNumEvents_
 
-        for x in self.files:
-            size += x.get('size', 0)
-
-        return size
+        Get the number of events in the block
+        """
+        return self.data['block']['block_events']
 
     def getTime(self):
         """
@@ -350,6 +365,37 @@ class DBSBlock:
 
         return time.time() - self.startTime
 
+    def getMaxBlockTime(self):
+        """
+        _getMaxBlockTime_
+
+        Return the max time that the block should stay open
+        """
+        return self.data['close_settings']['block_close_max_wait_time']
+
+    def getMaxBlockSize(self):
+        """
+        _getMaxBlockSize_
+
+        Return the max size allowed for the block
+        """
+        return self.data['close_settings']['block_close_max_size']
+
+    def getMaxBlockNumEvents(self):
+        """
+        _getMaxBlockNumEvents_
+
+        Return the max number of events allowed for the block
+        """
+        return self.data['close_settings']['block_close_max_events']
+
+    def getMaxBlockFiles(self):
+        """
+        _getMaxBlockFiles_
+
+        Return the max number of files allowed for the block
+        """
+        return self.data['close_settings']['block_close_max_files']
 
     def getName(self):
         """

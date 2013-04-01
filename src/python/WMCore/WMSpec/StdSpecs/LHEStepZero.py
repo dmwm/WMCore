@@ -59,7 +59,11 @@ class LHEStepZeroWorkloadFactory(MonteCarloWorkloadFactory):
         self.prodJobSplitArgs  = arguments.setdefault("ProdJobSplitArgs",
                                                {"events_per_job": eventsPerJob,
                                                 "events_per_lumi": arguments['EventsPerLumi']})
-        return MonteCarloWorkloadFactory.__call__(self, workloadName, arguments)
+        mcWorkload = MonteCarloWorkloadFactory.__call__(self, workloadName, arguments)
+        mcWorkload.setBlockCloseSettings(mcWorkload.getBlockCloseMaxWaitTime(), 5,
+                                         250000000, mcWorkload.getBlockCloseMaxSize())
+
+        return mcWorkload
 
     def validateSchema(self, schema):
         """

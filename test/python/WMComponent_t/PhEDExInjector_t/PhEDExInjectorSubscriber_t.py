@@ -109,8 +109,10 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
                                    logger = myThread.logger,
                                    dbinterface = myThread.dbi)
         insertWorkflow = buffer3Factory(classname = "InsertWorkflow")
-        insertWorkflow.execute("BogusRequest", "BogusTask", os.path.join(getTestBase(),
-                                                                         "WMComponent_t/PhEDExInjector_t/specs/TestWorkload.pkl"))
+        insertWorkflow.execute("BogusRequest", "BogusTask",
+                               0,0,0,0,
+                               os.path.join(getTestBase(),
+                                            "WMComponent_t/PhEDExInjector_t/specs/TestWorkload.pkl"))
 
         checksums = {"adler32": "1234", "cksum": "5678"}
         testFileA = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,

@@ -487,9 +487,6 @@ class DBSInterface:
         self.version           = self.config.DBSVersion
         self.globalDBSUrl      = None
         self.committedRuns     = collections.deque(maxlen = 1000)
-        self.maxBlockFiles     = self.config.DBSBlockMaxFiles
-        self.maxBlockTime      = self.config.DBSBlockMaxTime
-        self.maxBlockSize      = self.config.DBSBlockMaxSize
         self.maxFilesToCommit  = self.config.MaxFilesToCommit
         self.doGlobalMigration = getattr(self.config, 'doGlobalMigration', True)
 

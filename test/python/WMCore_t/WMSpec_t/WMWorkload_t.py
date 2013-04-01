@@ -1715,5 +1715,29 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(sorted(testWorkload.listPileupDatasets()), sorted(["/some/minbias/data",
                                                                             "/some/minbias/mc"]))
 
+    def testBlockCloseSettings(self):
+        """
+        _testBlockCloseSettings_
+
+        Check the setters and getters for the block closing
+        parameters
+        """
+
+        testWorkload = self.makeTestWorkload()[0]
+        testWorkload.setBlockCloseSettings(1,2,3,4)
+        self.assertEqual(testWorkload.getBlockCloseMaxWaitTime(), 1)
+        self.assertEqual(testWorkload.getBlockCloseMaxFiles(), 2)
+        self.assertEqual(testWorkload.getBlockCloseMaxEvents(), 3)
+        self.assertEqual(testWorkload.getBlockCloseMaxSize(), 4)
+        return
+
+    def testListOutputProducingTasks(self):
+        testWorkload = self.makeTestWorkload()[0]
+        taskList = testWorkload.listOutputProducingTasks()
+        expectedTasks = ['/TestWorkload/ProcessingTask', '/TestWorkload/ProcessingTask/MergeTask',
+                         '/TestWorkload/ProcessingTask/MergeTask/SkimTask']
+        self.assertEqual(sorted(taskList), sorted(expectedTasks))
+        return
+
 if __name__ == '__main__':
     unittest.main()

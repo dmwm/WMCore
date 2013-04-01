@@ -1119,6 +1119,35 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return list(set(pileupDatasets))
 
+    def listOutputProducingTasks(self, initialTask = None):
+        """
+        _listOutputProducingTasks_
+
+        List the paths to any task capable of producing merged output
+        """
+        taskList = []
+
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            for stepName in task.listAllStepNames():
+                stepHelper = task.getStepHelper(stepName)
+                if not getattr(stepHelper.data.output, "keep", True):
+                    continue
+
+                if stepHelper.stepType() == "CMSSW" or \
+                       stepHelper.stepType() == "MulticoreCMSSW":
+                    if stepHelper.listOutputModules():
+                        taskList.append(task.getPathName())
+                        break
+
+            taskList.extend(self.listOutputProducingTasks(task))
+
+        return taskList
+
     def setSubscriptionInformationWildCards(self, wildcardDict, custodialSites = None,
                                             nonCustodialSites = None, autoApproveSites = None,
                                             priority = "Low", custodialSubType = "Move",
@@ -1270,6 +1299,59 @@ class WMWorkloadHelper(PersistencyHelper):
         overrideSection = self.data.section_('overrides')
         overrideSection.injectionSite = site
         return
+
+    def setBlockCloseSettings(self, blockCloseMaxWaitTime,
+                              blockCloseMaxFiles, blockCloseMaxEvents,
+                              blockCloseMaxSize):
+        """
+        _setBlockCloseSettings_
+
+        Set the parameters that define when a block should be closed
+        for this workload, they should all be defined so it is a single call
+        """
+        self.data.properties.blockCloseMaxWaitTime = blockCloseMaxWaitTime
+        self.data.properties.blockCloseMaxFiles = blockCloseMaxFiles
+        self.data.properties.blockCloseMaxEvents = blockCloseMaxEvents
+        self.data.properties.blockCloseMaxSize = blockCloseMaxSize
+
+    def getBlockCloseMaxWaitTime(self):
+        """
+        _getBlockCloseMaxWaitTime_
+
+        Return the amount of time that a block should stay open
+        for this workload before closing it in DBS
+        """
+
+        return getattr(self.data.properties, 'blockCloseMaxWaitTime', 66400)
+
+    def getBlockCloseMaxSize(self):
+        """
+        _getBlockCloseMaxSize_
+
+        Return the maximum size that a block from this workload should have
+        """
+
+        return getattr(self.data.properties, 'blockCloseMaxSize', 5000000000000)
+
+    def getBlockCloseMaxEvents(self):
+        """
+        _blockCloseMaxEvents_
+
+        Return the maximum number of events that a block from this workload
+        should have
+        """
+
+        return getattr(self.data.properties, 'blockCloseMaxEvents', 250000000)
+
+    def getBlockCloseMaxFiles(self):
+        """
+        _getBlockCloseMaxFiles_
+
+        Return the maximum amount of files that a block from this workload
+        should have
+        """
+
+        return getattr(self.data.properties, 'blockCloseMaxFiles', 500)
 
     def getUnmergedLFNBase(self):
         """
@@ -1590,6 +1672,10 @@ class WMWorkload(ConfigSection):
         self.properties.unmergedLFNBase = "/store/unmerged"
         self.properties.mergedLFNBase = "/store/data"
         self.properties.dashboardActivity = None
+        self.properties.blockCloseMaxWaitTime = 66400
+        self.properties.blockCloseMaxSize = 5000000000000
+        self.properties.blockCloseMaxFiles = 500
+        self.properties.blockCloseMaxEvents = 250000000
 
         # Overrides for this workload
         self.section_("overrides")

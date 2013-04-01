@@ -124,7 +124,7 @@ class ReqMgrBrowser(WebAPI):
         self.validate(requestName)
         request = GetRequest.getRequestByName(requestName)
         helper = Utilities.loadWorkload(request)
-        splittingDict = helper.listJobSplittingParametersByTask()
+        splittingDict = helper.listJobSplittingParametersByTask(performance = False)
         taskNames = splittingDict.keys()
         taskNames.sort()
 

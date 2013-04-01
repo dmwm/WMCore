@@ -147,9 +147,11 @@ class WMTaskTest(unittest.TestCase):
         testTask = makeWMTask("TestTask")
         testTask.setTaskType("Processing")
 
-        assert testTask.taskType() == "Processing", \
-               "Error: Wrong task type."
+        self.assertEqual(testTask.taskType(), "Processing",
+                         "Error: Wrong task type.")
 
+        testTask.setJobResourceInformation(timePerEvent = 12, memoryReq = 2300000,
+                                           sizePerEvent = 512)
         testTask.setSplittingAlgorithm("MadeUpAlgo", events_per_job = 100,
                                        max_job_size = 24,
                                        one_more_param = "Hello")
@@ -165,32 +167,52 @@ class WMTaskTest(unittest.TestCase):
                                  run_whitelist = [1, 2, 3],
                                  run_blacklist = [4, 5])
 
-        assert testTask.jobSplittingAlgorithm() == "MadeUpAlgo", \
-               "Error: Wrong job splitting algorithm name."
+        # Make sure we can set individual performance parameters without affecting the others
+        testTask.setJobResourceInformation(timePerEvent = 14)
 
+        self.assertEqual(testTask.jobSplittingAlgorithm(),"MadeUpAlgo",
+               "Error: Wrong job splitting algorithm name.")
+
+        algoParams = testTask.jobSplittingParameters(performance = False)
+        self.assertEqual(len(algoParams), 8,
+                         "Error: Wrong number of algo parameters.")
         algoParams = testTask.jobSplittingParameters()
+        self.assertEqual(len(algoParams), 9,
+                         "Error: Wrong number of algo parameters.")
 
-        assert len(algoParams.keys()) == 8, \
-               "Error: Wrong number of algo parameters."
+        self.assertTrue("algorithm" in algoParams,
+                        "Error: Missing algo parameter.")
+        self.assertEqual(algoParams["algorithm"], "MadeUpAlgo",
+                         "Error: Parameter has wrong value.")
 
-        assert "algorithm" in algoParams.keys(), \
-               "Error: Missing algo parameter."
-        assert algoParams["algorithm"] == "MadeUpAlgo", \
-               "Error: Parameter has wrong value."
-        assert "events_per_job" in algoParams.keys(), \
-               "Error: Missing algo parameter."
-        assert algoParams["events_per_job"] == 100, \
-               "Error: Parameter has wrong value."
-        assert "max_job_size" in algoParams.keys(), \
-               "Error: Missing algo parameter."
-        assert algoParams["max_job_size"] == 24, \
-               "Error: Parameter has wrong value."
-        assert "one_more_param" in algoParams.keys(), \
-               "Error: Missing algo parameter."
-        assert algoParams["one_more_param"] == "Hello", \
-               "Error: Parameter has wrong value."
-        assert len(algoParams["runWhitelist"]) == 3, \
-               "Error: Wrong number of runs in whitelist."
+        self.assertTrue("events_per_job" in algoParams,
+                        "Error: Missing algo parameter.")
+        self.assertEqual(algoParams["events_per_job"], 100,
+                         "Error: Parameter has wrong value.")
+
+        self.assertTrue("max_job_size" in algoParams,
+                        "Error: Missing algo parameter.")
+        self.assertEqual(algoParams["max_job_size"], 24,
+                         "Error: Parameter has wrong value.")
+
+        self.assertTrue("one_more_param" in algoParams,
+                        "Error: Missing algo parameter.")
+        self.assertEqual(algoParams["one_more_param"], "Hello",
+                         "Error: Parameter has wrong value.")
+
+        self.assertTrue("runWhitelist" in algoParams,
+                        "Error: Missing algo parameter.")
+        self.assertEqual(len(algoParams["runWhitelist"]), 3,
+                         "Error: Wrong number of runs in whitelist.")
+
+        self.assertTrue("performance" in algoParams,
+                        "Error: Missing algo parameter.")
+        self.assertEqual(algoParams["performance"]["timePerEvent"], 14,
+                         "Error: Wrong time per event")
+        self.assertEqual(algoParams["performance"]["memoryRequirement"], 2300000,
+                         "Error: Wrong memory requirement")
+        self.assertEqual(algoParams["performance"]["sizePerEvent"], 512,
+                         "Error: Wrong size per event")
 
         return
 

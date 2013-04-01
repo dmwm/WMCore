@@ -205,7 +205,10 @@ class ParameterStorage(object):
                                 'scramArch' : 'ScramArch',
                                 'processingVersion' : 'ProcessingVersion',
                                 'processingString' : 'ProcessingString',
-                                'acquisitionEra' : 'AcquisitionEra'
+                                'acquisitionEra' : 'AcquisitionEra',
+                                'timePerEvent' : 'TimePerEvent',
+                                'sizePerEvent' : 'SizePerEvent',
+                                'memory' : 'Memory'
                                 }
         return
 

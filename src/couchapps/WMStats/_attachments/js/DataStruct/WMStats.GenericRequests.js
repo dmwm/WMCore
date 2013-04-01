@@ -188,6 +188,10 @@ WMStats.RequestStruct.prototype = {
             } else if (this[field] && field == 'tasks'){
                 //TODO need to handle the 
                 //this._dataByWorkflow[doc.workflow][field] = doc[field];
+            } else if (field == 'agent_url') {
+                if (this[field] === undefined) this[field] = [];
+                WMStats.Utils.addToSet(this[field], doc[field])
+            
             } else {
                 this[field] = doc[field];
             }
@@ -441,10 +445,18 @@ WMStats.RequestsByKey = function (category, summaryFunc) {
         for (var workflow in dataByWorkflow) {
             var key = _get(dataByWorkflow[workflow], _category, "NA");
             if (typeof key == 'object') {
-                // handles sites and tasks case
-                for (var prop in key) {
-                    _updateData(prop, key[prop]);
+                if (key.length) {
+                    // handles array case
+                    for (var index in key) {
+                        _updateData(key[index], dataByWorkflow[workflow])
+                    }
+                } else {
+                    // handles sites and tasks case
+                    for (var prop in key) {
+                        _updateData(prop, key[prop]);
+                    }
                 }
+                
             } else {
                 if (key == "NA" && _category == "sites" || _category == "tasks") {
                     // summary base shouldn't be higher level. since sites and tasks

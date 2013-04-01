@@ -15,7 +15,9 @@ WMStats.Globals.importScripts([
 if (WMStats.Globals.VARIANT == "tier1") {
     //import tier1 specific table
     WMStats.Globals.importScripts(["js/DataStruct/T1/WMStats.RequestSummary.js",
-                                   "js/DataStruct/T1/WMStats.CampaignSummary.js"])
+                                   "js/DataStruct/T1/WMStats.CampaignSummary.js",
+                                   "js/DataStruct/T1/WMStats.CMSSWSummary.js",
+                                   "js/DataStruct/T1/WMStats.ReqMgrRequest.js"])
 } else if (WMStats.Globals.VARIANT == "tier0") {
     //import tie0 specific table
     WMStats.Globals.importScripts(["js/DataStruct/T0/WMStats.RequestSummary.js",

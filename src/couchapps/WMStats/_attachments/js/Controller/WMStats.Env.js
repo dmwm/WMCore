@@ -18,3 +18,6 @@ WMStats.Env.CurrentRequestData = null;
 
 // env variable for request detail box status
 WMStats.Env.RequestDetailOpen = false;
+
+// env variable for JobSummaryTable - hold data information
+WMStats.Env.JobSummaryTable = null;

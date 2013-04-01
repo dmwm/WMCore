@@ -9,7 +9,7 @@ function(doc) {
         }
     }
     listErrors.sort();
-    emit([doc.workflow, doc.task, doc.state, doc.exitcode, doc.site, listErrors], 
+    emit([doc.workflow, doc.task, doc.state, doc.exitcode, doc.site, doc.acdc_url, doc.agent_name, listErrors], 
          {'id': doc['_id'], 'rev': doc['_rev']});
   }
 }

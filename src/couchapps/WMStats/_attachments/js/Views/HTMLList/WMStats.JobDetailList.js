@@ -3,7 +3,8 @@ WMStats.namespace('JobDetailList');
     
     var stateTransitionFormat = function(state) {
         return "<b>" + state['newstate'] + ":</b> " + 
-                WMStats.Utils.utcClock(new Date(state['timestamp'] * 1000));
+                WMStats.Utils.utcClock(new Date(state['timestamp'] * 1000)) + 
+                ",  " + state['location'];
     }
     
     var inputFileFormat = function(inputFile) {
@@ -81,6 +82,8 @@ WMStats.namespace('JobDetailList');
             } else {
                 htmlstr += "<li><b>Site:</b> " + jobDoc.site + "</li>";
             }
+            htmlstr += "<li><b>Agent:</b> " + jobDoc.agent_name + "</li>"
+            htmlstr += "<li><b>ACDC URL:</b> " + jobDoc.acdc_url + "</li>"
             htmlstr += "<li>" + WMStats.Utils.expandFormat(jobDoc.state_history, "State Transition", stateTransitionFormat) + "</li>"
             htmlstr += "<li><b>Exit code:</b> " + jobDoc.exitcode + "</li>";
             htmlstr += "<li><b>Retry count:</b> " + jobDoc.retrycount + "</li>";

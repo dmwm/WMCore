@@ -332,6 +332,9 @@ class ChangeState(WMObject, WMConnectionBase):
                         currentJobDoc = self.jsumdatabase.document(id = jobSummaryId)
                         jobSummary['_rev'] = currentJobDoc['_rev']
                         jobSummary['state_history'] = currentJobDoc.get('state_history', [])
+                        noEmptyList = ["inputfiles", "lumis"]
+                        for prop in noEmptyList:
+                            jobSummary[prop] = jobSummary[prop] if jobSummary[prop] else currentJobDoc.get(prop, [])
                     except CouchNotFoundError:
                         pass
                 self.jsumdatabase.queue(jobSummary, timestamp = True)

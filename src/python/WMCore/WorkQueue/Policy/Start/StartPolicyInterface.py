@@ -9,6 +9,7 @@ import types
 
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
+from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements
 #from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement as WorkQueueElement
 from WMCore.WMException import WMException
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
@@ -187,6 +188,6 @@ class StartPolicyInterface(PolicyInterface):
         dbs = self.dbs()
         result = {}
         for datasetPath in datasets:
-            locations = dbs.listDatasetLocation(datasetPath)
+            locations = sitesFromStorageEelements(dbs.listDatasetLocation(datasetPath))
             result[datasetPath] = locations
         return result

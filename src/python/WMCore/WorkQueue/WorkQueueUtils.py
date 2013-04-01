@@ -70,6 +70,22 @@ def cmsSiteNames():
         pass
     return __cmsSiteNames
 
+def makeLocationsList(siteWhitelist, siteBlacklist):
+    """
+    _makeLocationsList_
+
+    Make a location list based on the intersection between a site white list
+    and blacklist, if none specified then all sites are listed.
+    """
+    sites = cmsSiteNames()
+    if siteWhitelist:
+        # Just get the CMS sites matching the whitelists
+        sites = list(set(sites) & set(siteWhitelist))
+    if siteBlacklist:
+        # Get all CMS sites less the blacklist
+        sites = list(set(sites) - set (siteBlacklist))
+    return sites
+
 def queueFromConfig(config):
     """Create a queue from the config object"""
     config = queueConfigFromConfigObject(config)

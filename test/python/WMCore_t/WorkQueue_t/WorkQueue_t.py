@@ -1047,10 +1047,10 @@ class WorkQueueTest(WorkQueueTestCase):
         spec.save(spec.specUrl())
         self.localQueue.params['Teams'] = ['cmsdataops']
         self.globalQueue.queueWork(spec.specUrl(), "Resubmit_TestWorkload", team = "cmsdataops")
-        self.localQueue.pullWork({"T1_US_FNAL": 100},
-                                 continuousReplication = False)
+        self.assertEqual(self.localQueue.pullWork({"T1_US_FNAL": 100},
+                                                  continuousReplication = False), 1)
         syncQueues(self.localQueue)
-        self.localQueue.getWork({"T1_US_FNAL": 100})
+        self.assertEqual(len(self.localQueue.getWork({"T1_US_FNAL": 100})), 1)
 
     def testResubmissionWithParentsWorkflow(self):
         """Test workflow resubmission with parentage via ACDC"""
@@ -1067,6 +1067,26 @@ class WorkQueueTest(WorkQueueTestCase):
                                  continuousReplication = False)
         syncQueues(self.localQueue)
         self.localQueue.getWork({"T1_US_FNAL": 100})
+
+    def testResubmissionWorkflowSiteWhitelistLocations(self):
+        """ Test an ACDC workflow where we use the site whitelist as locations"""
+        acdcCouchDB = "workqueue_t_acdc"
+        self.testInit.setupCouch(acdcCouchDB, "GroupUser", "ACDC")
+
+        spec = self.createResubmitSpec(self.testInit.couchUrl,
+                                       acdcCouchDB)
+        spec.setSpecUrl(os.path.join(self.workDir, 'resubmissionWorkflow.spec'))
+        spec.setSiteWhitelist('T1_UK_RAL')
+        spec.setLocationDataSourceFlag()
+        spec.save(spec.specUrl())
+        self.localQueue.params['Teams'] = ['cmsdataops']
+        self.globalQueue.queueWork(spec.specUrl(), "Resubmit_TestWorkload", team = "cmsdataops")
+        self.assertEqual(self.localQueue.pullWork({"T1_US_FNAL": 100},
+                                 continuousReplication = False), 0)
+        self.assertEqual(self.localQueue.pullWork({"T1_UK_RAL": 100},
+                                 continuousReplication = False), 1)
+        syncQueues(self.localQueue)
+        self.assertEqual(len(self.localQueue.getWork({"T1_UK_RAL": 100})),1)
 
     def testThrottling(self):
         """Pull work only if all previous work processed in child"""

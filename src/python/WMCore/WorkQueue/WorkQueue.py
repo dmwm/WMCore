@@ -30,6 +30,7 @@ from WMCore.WorkQueue.WorkQueueExceptions import TERMINAL_EXCEPTIONS
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueError
 from WMCore.WorkQueue.WorkQueueUtils import get_dbs
 from WMCore.WorkQueue.WorkQueueUtils import cmsSiteNames
+from WMCore.WorkQueue.WorkQueueUtils import makeLocationsList
 
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
 from WMCore.ACDC.DataCollectionService import DataCollectionService
@@ -351,6 +352,14 @@ class WorkQueue(WorkQueueBase):
                                            group = wmspec.getOwner().get("group"))
             block = {}
             block["Files"] = fileLists
+            if wmspec.locationDataSourceFlag():
+                seElements = []
+                for cmsSite in match['Inputs'].values()[0]: #TODO: Allow more than one
+                    ses = self.SiteDB.cmsNametoSE(cmsSite)
+                    seElements.extend(ses)
+                seElements = list(set(seElements))
+                for fileInfo in block["Files"]:
+                    fileInfo['locations'] = seElements
             return blockName, block
         else:
             dbs = get_dbs(match['Dbs'])

@@ -75,5 +75,7 @@ WMStats.namespace('RequestDetailList');
     
     WMStats.RequestDetailList = function (data, containerDiv) {
          $(containerDiv).html(format(data));
+         $(containerDiv).show("slide", {}, 500);
+         WMStats.Env.RequestDetailOpen = true;
     }
 })();

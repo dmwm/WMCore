@@ -4,6 +4,7 @@ WMStats.namespace("GenericController");
  // collapsible bar
     function closeRequestDetail() {
         $("#request_view div.detail_data").hide('puff', {}, 500);
+        $("#acdc_submission").hide('puff', {}, 500);
         WMStats.Env.RequestDetailOpen = false;
     };
     

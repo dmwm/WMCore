@@ -7,7 +7,8 @@ MINIFIED_DIR = "../src/couchapps/WMStats/_attachments/js/minified"
     
 globalLib = ["WMStats.Globals.js",
              "WMStats.Utils.js",
-             "WMStats.Couch.js"]
+             "WMStats.Couch.js",
+             "WMStats.Ajax.js"]
 
 dataStrunct = ["DataStruct/WMStats._StructBase.js",
                "DataStruct/WMStats.GenericRequests.js",
@@ -23,7 +24,9 @@ dataStrunct = ["DataStruct/WMStats._StructBase.js",
 
 # tier1 specific library
 t1_dataStruct = ["DataStruct/T1/WMStats.RequestSummary.js",
-                "DataStruct/T1/WMStats.CampaignSummary.js"]
+                "DataStruct/T1/WMStats.CampaignSummary.js",
+                "DataStruct/T1/WMStats.CMSSWSummary.js",
+                "DataStruct/T1/WMStats.ReqMgrRequest.js"]
 
 # tier0 specific library
 t0_dataStruct = ["DataStruct/T0/WMStats.RequestSummary.js",
@@ -42,6 +45,8 @@ views = ["Views/Controls/WMStats.CommonControls.js",
          "Views/HTMLList/WMStats.JobDetailList.js",
          "Views/HTMLList/WMStats.AgentStatusGUI.js",
          "Views/HTMLList/WMStats.AgentDetailList.js",
+         "Views/HTMLList/WMStats.CategoryTitle.js",
+         "Views/HTMLList/WMStats.RequestTitle.js",
          "Views/Graphs/WMStats.SiteHistoryGraph.js"]
 
 # tier1 specific library
@@ -49,11 +54,13 @@ t1_views = ["Views/Controls/T1/WMStats.Controls.js",
             "Views/Tables/T1/WMStats.ActiveRequestTable.js",
             "Views/Tables/T1/WMStats.ActiveRequestTableWithJob.js",
             "Views/Tables/T1/WMStats.CampaignSummaryTable.js",
+            "Views/Tables/T1/WMStats.CMSSWSummaryTable.js",
             "Views/HTMLList/T1/WMStats.RequestDetailList.js",
             "Views/HTMLList/T1/WMStats.RequestAlertGUI.js",
             "Views/HTMLList/T1/WMStats.CategoryDetailList.js",
             "Views/HTMLList/T1/WMStats.RequestSummaryList.js",
-            "Views/HTMLList/T1/WMStats.RequestDataList.js"]
+            "Views/HTMLList/T1/WMStats.RequestDataList.js",
+            "Views/HTMLList/T1/WMStats.ResubmissionList.js"]
 
 # tier1 specific library
 t0_views = ["Views/Controls/T0/WMStats.Controls.js",
@@ -85,7 +92,8 @@ models =["Models/WMStats._ModelBase.js",
          "Models/WMStats.RequestSearchModel.js",
          "Models/WMStats.HistoryModel.js"]
 
-t1_models =["Models/T1/WMStats.ActiveRequestModel.js"]
+t1_models =["Models/T1/WMStats.ActiveRequestModel.js",
+            "Models/T1/WMStats.ReqMgrRequestModel.js"]
 
 t0_models =["Models/T0/WMStats.ActiveRequestModel.js"]
 

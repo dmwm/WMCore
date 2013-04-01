@@ -119,8 +119,9 @@ function getCategorizedData(category) {
 
     $(WMStats.Globals.Event).on(E.JOB_SUMMARY_READY, 
         function(event, data) {
+            WMStats.RequestTitle(data, '#request_title');
             $("#job_view div.detail_data").empty();
-            WMStats.JobSummaryTable(data, "#job_view div.summary_data");
+            WMStats.Env.JobSummaryTable = WMStats.JobSummaryTable(data, "#job_view div.summary_data");
             WMStats.GenericController.switchView("#job_view");
         })
 
@@ -141,8 +142,6 @@ function getCategorizedData(category) {
             var data = {key: workflow, requests: requests, summary: reqSummary};
             //$("#request_view div.detail_data").show("slide", {direction: "down"}, 500);
             WMStats.RequestDetailList(data, "#request_view div.detail_data");
-            $("#request_view div.detail_data").show("slide", {}, 500);
-            WMStats.Env.RequestDetailOpen = true;
         })
 
     $(WMStats.Globals.Event).on(E.JOB_DETAIL_READY, 
@@ -227,4 +226,15 @@ function getCategorizedData(category) {
         function(event, data) {
             $('#loading_page').show();
         });
+    
+    $(WMStats.Globals.Event).on(E.RESUBMISSION_SUMMARY_READY, 
+        function(event, data) {
+            var reqMgrReq = WMStats.ReqMgrRequestModel.getData().getData();
+            var summary = WMStats.ViewModel.Resubmission;
+            summary.Memory = reqMgrReq.Memory;
+            summary.SizePerEvent = reqMgrReq.SizePerEvent;
+            summary.TimePerEvent = reqMgrReq.TimePerEvent;
+            //summary.Requestor = reqMgrReq.Requestor;
+            WMStats.ResubmissionList(summary, '#acdc_submission');
+    })
 })(jQuery);

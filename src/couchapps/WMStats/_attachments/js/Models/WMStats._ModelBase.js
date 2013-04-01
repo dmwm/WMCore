@@ -7,6 +7,7 @@ WMStats._ModelBase = function(initView, options, dataStruct) {
     this._dataStruct = dataStruct;
     this._trigger = null;
     this._data = null;
+    // default _dbSource is wmstats database
     this._dbSource = WMStats.Couch;
 }
 
@@ -42,10 +43,13 @@ WMStats._ModelBase.prototype = {
         
         if (view === "allDocs") {
             return this.retrieveAllDocs(options);
-        } else {
+        } else if (view === "doc") {
+            return this.retrieveDoc(options);
+        }else {
             return this._dbSource.view(view, options, 
                                jQuery.proxy(this.callback, this));
         }
+       
     },
     
     retrieveAllDocs: function (options) {
@@ -53,6 +57,10 @@ WMStats._ModelBase.prototype = {
             var options = this._options;
         }
         return this._dbSource.allDocs(options, jQuery.proxy(this.callback, this))
+    },
+    
+    retrieveDoc: function (docID) {
+        return this._dbSource.openDoc(docID, jQuery.proxy(this.callback, this))
     },
     
     setDBSource: function(dbSource) {

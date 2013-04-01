@@ -28,5 +28,10 @@ WMStats._StructBase.prototype = {
             
         }
         return data;
+    },
+    
+    convertCouchData: function(couchData) {
+        // defaut conversion need to be over written
+        return couchData;
     }
 };

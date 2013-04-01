@@ -3,7 +3,7 @@ WMStats.namespace('RequestSummaryList');
     var numFormat = WMStats.Utils.largeNumberFormat;
     var format = function (summary) {
         var summaryStruct = summary.summaryStruct
-        htmlstr = "";
+        var htmlstr = "";
         htmlstr += "<legend>filtered stats</legend>";
         htmlstr += "<div class='requestSummaryBox'>";
         htmlstr += "<ul>";

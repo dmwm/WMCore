@@ -43,8 +43,16 @@ WMStats.Globals = function($){
                 workflow + "%22]&endkey=[%22" + workflow + "%22%2C{}]&reduce=false&stale=ok";
     }
     
-    function formatJobLink(jobNumber, agentURL, workflow, status) {
+    function formatJobLink(jobNumber, agentURLs, workflow, status) {
             if (jobNumber !== 0) {
+                if (agentURLs.constructor.name === "String"){
+                    agentURL = agentURLs
+                } else if (agentURLs.length && (agentURLs[0].constructor.name === "String")){
+                    //TODO: need to handle properly multiple agent
+                    agentURL = agentURLs[0];
+                } else {
+                    return jobNumber
+                }
                 return "<a href='" + getAgentUrlForJobs(agentURL, workflow, status) +
                         "' target='_blank'>" + jobNumber + "</a>";
                                      
@@ -52,7 +60,7 @@ WMStats.Globals = function($){
                 return jobNumber;
             };
     };
-    
+
     return {
         REQ_DETAIL_URL_PREFIX: getReqDetailPrefix(),
         WORKLOAD_SUMMARY_URL_PREFIX: getWorkloadSummaryPrefix(),
@@ -60,9 +68,11 @@ WMStats.Globals = function($){
                               complete: function(){$('#loading_page').hide()}},
         COUCHDB_NAME: dbname,
         WORKLOAD_SUMMARY_COUCHDB_NAME:  getWorkloadSummaryDB(), 
+        REQMGR_COUCHDB_NAME: "reqmgr_workload_cache", //TODO: need to be configurable"reqmgrdb"
         VARIANT: _dbVariants[dbname],
         COUCHAPP_DESIGN: "WMStats",
         WORKLOAD_SUMMARY_COUCHAPP_DESIGN: "WorkloadSummary",
+        REQMGR_COUCHAPP_DESIGN: "ReqMgr",
         ALERT_COLLECTOR_LINK: getAlertCollectorLink(),
         CONFIG: null, //this will be set when WMStats.Couch.loadConfig is called. just place holder or have default config
         loadScript: function (url, success) {
@@ -98,6 +108,12 @@ WMStats.CustomEvents.LOADING_DIV_END = "C_10";
 
 WMStats.CustomEvents.HISTORY_LOADED = "C_11";
 WMStats.CustomEvents.AJAX_LOADING_START = "C_12";
+WMStats.CustomEvents.RESUBMISSION_SUMMARY_READY = "C_13";
+WMStats.CustomEvents.RESUBMISSION_SUCCESS = "C_14";
 
 //workload summary page event
 WMStats.CustomEvents.WORKLOAD_SUMMARY_READY = "W_1";
+
+//view model (need to move to proper location)
+WMStats.namespace("ViewModel");
+WMStats.ViewModel.Resubmission = {};

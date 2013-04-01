@@ -70,7 +70,7 @@ dependencies = {
                                      'WMCore.Services', 'WMCore.Services.DBS+', 'WMCore.Services.PhEDEx+',
                                      'WMCore.Services.RequestManager+', 'WMCore.Services.SiteDB+',
                                      'WMCore.Services.JSONParser+', 'WMCore.Services.WMStats+',
-                                     'WMCore.WMSpec', 'WMCore.WMSpec.Steps',
+                                     'WMCore.WMSpec', 'WMCore.WMSpec.Steps', 'WMCore.WMSpec.Steps.Templates',
                                      'WMCore.ACDC', 'WMCore.GroupUser', 'WMCore.Alerts'],
                         'modules' : ['WMCore.Algorithms.__init__', 'WMCore.Algorithms.Permissions',
                                      'WMCore.Algorithms.MiscAlgos', 'WMCore.Algorithms.ParseXMLFile',

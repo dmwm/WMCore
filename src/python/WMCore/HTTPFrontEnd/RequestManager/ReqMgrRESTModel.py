@@ -456,6 +456,7 @@ class ReqMgrRESTModel(RESTModel):
             reqInputArgs.setdefault('CouchWorkloadDBName', self.workloadDBName)
             # wrong naming ... but it's all over the place, it's the config cache DB name
             reqInputArgs.setdefault('CouchDBName', self.configDBName)
+            reqInputArgs.setdefault('Requestor', cherrypy.request.user["login"])
             try:
                 self.info("Creating a request for: '%s'\n\tworkloadDB: '%s'\n\twmstatUrl: "
                              "'%s' ..." % (reqInputArgs, self.workloadDBName,

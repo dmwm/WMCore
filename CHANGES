@@ -1,3 +1,36 @@
+0.9.51 to 0.9.52:
+  - WMStats April updates.  Pull request #4513.
+  - Fix the initial location for pileup.  Pull request #4512.
+  - Include workflow performance information in the workflow.  Pull request #4508.
+  - Add WMCore.WMSpec.Steps.Templates as a WorkQueue dependency.  Pull request
+    #4511.
+  - Allow the DBS blocking settings to be specified per request.  Pull request
+    #4471.
+  - Start tracking the location of pileup data in the WorkQueue.  Pull request
+    #4507.
+  - Add a validation function for the ReqMgr CouchApp.  Pull request #4505.
+  - Fix the job splitting page in ReqMgr to work in Firefox.  Pull request #4503. 
+  - Allow ACDC requests to use xrootd.  Pull request #4502. 
+  - Fix the ReqMgr GetRequest DAO so that it fetches all request information.  Pull request
+    #4501.
+  - Second round of ReqMgr CouchDB values fixes.  Pull request #4500.
+  - First round of ReqMgr CouchDB values fixes.  Pull request #4499.
+  - Updates to ReqMgr Oracle/CouchDB consistency tools.  Pull request #4497.
+  - Further remove per user and group priorities in the ReqMgr.  Fix links to broken
+    pages.  Pull request #4495. 
+  - Vastly simplify request priorities by removing per user and group priorities.  Pull
+    request #4494. 
+  - Properly display the ScramArch on the request details page and fix links to the
+    original config and tweak.  Pull request #4492.
+  - Add support for changing the job splitting parameters for a request from the ReqMgr
+    command line script.  Pull request #4470.
+  - Properly handle jobs with no input files that go through the cool off state.  Pull
+    request #4493.
+  - Add Transient OutputModule functionality to the TaskChain request type.  Pull request
+    #4488.
+  - When updating LogCollect information in WMStats from the JobAccountant don't bomb out
+    if there is a communication error.  Pull request #4481.
+
 0.9.50 to 0.9.51:
   - Fixes automatic testing of TaskChain requests. Pull request #4489.
   - Fix most unit tests. Pull request #4487.

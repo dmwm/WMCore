@@ -18,6 +18,7 @@ from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
 
 
 def makeGeneratorConfig(couchDatabase):
@@ -260,6 +261,7 @@ class TaskChainTests(unittest.TestCase):
                 "ConfigCacheID" : processorDocs['Reco'],
                 "SplittingAlgorithm" : "FileBased",
                 "SplittingArguments" : {"files_per_job" : 1 },
+                "TransientOutputModules" : ["writeRECO"]
             },
             "Task5" : {
                 "TaskName" : "ALCAReco",
@@ -268,7 +270,6 @@ class TaskChainTests(unittest.TestCase):
                 "ConfigCacheID" : processorDocs['ALCAReco'],
                 "SplittingAlgorithm" : "LumiBased",
                 "SplittingArguments" : {"lumis_per_job" : 8 },
-
 
             },
             "Task6" : {
@@ -285,7 +286,13 @@ class TaskChainTests(unittest.TestCase):
 
         factory = TaskChainWorkloadFactory()
 
+        # Test a malformed task chain definition
+        arguments['Task4']['TransientOutputModules'].append('writeAOD')
+        self.assertRaises(WMSpecFactoryException, factory.validateSchema, arguments)
+
+        arguments['Task4']['TransientOutputModules'].remove('writeAOD')
         try:
+            factory.validateSchema(arguments)
             self.workload = factory("PullingTheChain", arguments)
         except Exception, ex:
             msg = "Error invoking TaskChainWorkloadFactory:\n%s" % str(ex)
@@ -308,16 +315,16 @@ class TaskChainTests(unittest.TestCase):
                         arguments['Task4'])
         self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/ALCAReco"),
                         arguments['Task5'])
-        self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/GenSimMergewriteGENSIM/DigiHLT_new/Reco/RecoMergewriteRECO/Skims"),
+        self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/GenSimMergewriteGENSIM/DigiHLT_new/Reco/Skims"),
                         arguments['Task6'])
 
         # Verify the output datasets
         outputDatasets = self.workload.listOutputDatasets()
-        self.assertEqual(len(outputDatasets), 13, "Number of output datasets doesn't match")
+        self.assertEqual(len(outputDatasets), 12, "Number of output datasets doesn't match")
         self.assertTrue("/RelValTTBar/ReleaseValidation-GenSimFilter-v1/GEN-SIM" in outputDatasets,
                         "/RelValTTBar/ReleaseValidation-GenSimFilter-v1/GEN-SIM not in output datasets")
-        self.assertTrue("/RelValTTBar/ReleaseValidation-reco-v1/RECO" in outputDatasets,
-                        "/RelValTTBar/ReleaseValidation-reco-v1/RECO not in output datasets")
+        self.assertFalse("/RelValTTBar/ReleaseValidation-reco-v1/RECO" in outputDatasets,
+                        "/RelValTTBar/ReleaseValidation-reco-v1/RECO in output datasets")
         self.assertTrue("/RelValTTBar/ReleaseValidation-AOD-v1/AOD" in outputDatasets,
                         "/RelValTTBar/ReleaseValidation-AOD-v1/AOD not in output datasets")
         self.assertTrue("/RelValTTBar/ReleaseValidation-alca-v1/ALCARECO" in outputDatasets,
@@ -371,14 +378,14 @@ class TaskChainTests(unittest.TestCase):
             unmerged.loadData()
 
             mergedset = task.getPathName() + "/" + task.name() + "Merge" + outputModule + "/merged-Merged"
-            if outputModule == "logArchive" or not taskConf.get("KeepOutput", True):
+            if outputModule == "logArchive" or not taskConf.get("KeepOutput", True) or outputModule in taskConf.get("TransientOutputModules", []):
                 mergedset = task.getPathName() + "/unmerged-" + outputModule
             unmergedset = task.getPathName() + "/unmerged-" + outputModule
 
             self.assertEqual(mergedset, merged.name, "Merged fileset name is wrong")
             self.assertEqual(unmergedset, unmerged.name, "Unmerged fileset name  is wrong")
 
-            if outputModule != "logArchive" and taskConf.get("KeepOutput", True):
+            if outputModule != "logArchive" and taskConf.get("KeepOutput", True) and outputModule not in taskConf.get("TransientOutputModules", []):
                 mergeTask = task.getPathName() + "/" + task.name() + "Merge" + outputModule
 
                 mergeWorkflow = Workflow(name = self.workload.name(),

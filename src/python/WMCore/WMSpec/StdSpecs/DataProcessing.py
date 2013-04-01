@@ -53,6 +53,7 @@ class DataProcessingWorkloadFactory(StdBase):
 
         # Define attributes used by this spec
         self.openRunningTimeout = None
+        self.transientModules = []
 
         return
 

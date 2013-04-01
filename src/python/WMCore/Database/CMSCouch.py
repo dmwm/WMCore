@@ -380,6 +380,20 @@ class Database(CouchDBRequests):
         self.last_seq = data['last_seq']
         return data
 
+    def changesWithFilter(self, filter, limit=1000, since=-1):
+        """
+        Get the changes since sequence number. Store the last sequence value to
+        self.last_seq. If the since is negative use self.last_seq.
+        """
+        if since < 0:
+            since = self.last_seq
+        data = self.get('/%s/_changes?limit=%s&since=%s&filter=%s' % (self.name, limit, since, filter))
+        self.last_seq = data['last_seq']
+        return data
+    
+    def purge(self, data):
+        return self.post('/%s/_purge' % self.name, data)
+        
     def loadView(self, design, view, options = {}, keys = []):
         """
         Load a view by getting, for example:

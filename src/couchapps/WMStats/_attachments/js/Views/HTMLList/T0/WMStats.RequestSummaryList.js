@@ -2,7 +2,7 @@ WMStats.namespace('RequestSummaryList');
 (function() { 
     var format = function (summary) {
         var summaryStruct = summary.summaryStruct
-        htmlstr = "";
+        var htmlstr = "";
         htmlstr += "<div class='requestSummaryBox'>"
         htmlstr += "<ul>";
         htmlstr += "<li><b>requests:</b> " + summary.summaryStruct.length + "</li>";

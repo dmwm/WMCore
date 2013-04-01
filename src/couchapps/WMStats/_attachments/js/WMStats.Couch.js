@@ -5,6 +5,7 @@
 WMStats.namespace("CouchBase")
 WMStats.namespace("Couch")
 WMStats.namespace("WorkloadSummaryCouch")
+WMStats.namespace("ReqMgrCouch")
 
 WMStats.CouchBase = function(dbName, designName){
     // couchapp name
@@ -19,7 +20,7 @@ WMStats.CouchBase = function(dbName, designName){
         var options = options || {};
         options.success = callback;
         //var ajaxOptions = ajaxOptions || WMStats.Globals.AJAX_LOADING_STATUS
-        var ajaxOptions = ajaxOptions
+        //var ajaxOptions = ajaxOptions
         if (ajaxOptions) {
             for (var opt in ajaxOptions) {
                 options[opt] = ajaxOptions[opt];
@@ -60,10 +61,17 @@ WMStats.CouchBase = function(dbName, designName){
     function allDocs(options, callback, ajaxOptions){
         return _couchDB.allDocs(_combineOption(options, callback, ajaxOptions));
     }
+    
+    function openDoc(docId, callback){
+        return _couchDB.openDoc(docId, _combineOption({}, callback)); 
+    }
 
-    return {'loadConfig': loadConfig, 'view': view, "allDocs": allDocs};
+    return {'loadConfig': loadConfig, 'view': view, "allDocs": allDocs,
+            'openDoc': openDoc};
 }
 
 WMStats.Couch = WMStats.CouchBase(WMStats.Globals.COUCHDB_NAME, WMStats.Globals.COUCHAPP_DESIGN);
 WMStats.WorkloadSummaryCouch = WMStats.CouchBase(WMStats.Globals.WORKLOAD_SUMMARY_COUCHDB_NAME,
                                                  WMStats.Globals.WORKLOAD_SUMMARY_COUCHAPP_DESIGN);
+WMStats.ReqMgrCouch = WMStats.CouchBase(WMStats.Globals.REQMGR_COUCHDB_NAME,
+                                                 WMStats.Globals.REQMGR_SUMMARY_COUCHAPP_DESIGN);

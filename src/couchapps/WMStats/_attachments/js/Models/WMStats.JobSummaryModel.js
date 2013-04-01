@@ -4,7 +4,7 @@ WMStats.JobSummaryModel = new WMStats._ModelBase('jobsByStatusWorkflow', {},
                                           WMStats.JobSummary);
 
 WMStats.JobSummaryModel.setRequest = function(workflow) {
-    this._options = {'reduce': true, 'group_level': 6, 'startkey':[workflow], 
+    this._options = {'reduce': true, 'group_level': 8, 'startkey':[workflow], 
                    'endkey':[workflow, {}]};
 }
 WMStats.JobSummaryModel.setTrigger([WMStats.CustomEvents.JOB_SUMMARY_READY,

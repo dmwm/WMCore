@@ -15,6 +15,7 @@
     <div id="monitor_title">
         <div id="wmstats_logo"></div>
         <div id="link_tabs"></div>
+        <div id="external_link"></div>
         <div id="clock"></div>
     </div>
     <div id="activeRequestPage">
@@ -42,13 +43,16 @@
                     </div>
                     <div id="request_view">
                         <div id="view_switch_bar"></div>
+                        <div id="category_title"></div>
                         <div class="detail_data hideDiv draggable"></div>
                         <div class="summary_data"></div>
                     </div>
                     <div class="summary_data"></div>
                     <div id="job_view">
+                        <div id="request_title"></div>
                         <div class="summary_data"></div>
                         <div class="detail_data"></div>
+                        <div id="acdc_submission" class="hideDiv draggable"></div>
                     </div>
                 </div>
                 <div id="loading_page" ></div>
@@ -86,6 +90,7 @@
     <script src="js/WMStats.Globals.js" type='text/javascript'> </script>
     <script src="js/WMStats.Utils.js" type='text/javascript'> </script>
     <script src="js/WMStats.Couch.js" type='text/javascript'> </script>
+    <script src="js/WMStats.Ajax.js" type='text/javascript'> </script>
     
     <!-- importing order is critical -->
     <!-- data structure -->
@@ -117,6 +122,7 @@
         $('#loading_page').addClass("front").show();
         //applyTemplate();
         WMStats.CommonControls.setLinkTabs("#link_tabs");
+        WMStats.Controls.setExternalLink("#external_link");
         WMStats.CommonControls.setUTCClock("#clock");
         WMStats.GenericController.switchPage('#activeRequestPage');
         WMStats.CommonControls.setWorkloadSummarySearch("#search_option_board")

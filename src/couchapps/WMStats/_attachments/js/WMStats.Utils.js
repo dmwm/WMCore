@@ -164,3 +164,44 @@ WMStats.Utils.largeNumberFormat = function(number) {
         return (number/giga).toFixed(1) + " G";
     }
 }
+
+WMStats.Utils.splitCouchServiceURL = function(url) {
+    var urlArray = url.split('/');
+    return {'couchUrl': urlArray.slice(0, -1).join('/'), 'couchdb': urlArray[urlArray.length - 1]}
+}
+
+
+WMStats.Utils.acdcRequestSting = function(originalRequest, requestor) {
+    var stripRequestor = originalRequest.replace(new RegExp('^'+ requestor), "ACDC");
+    return stripRequestor.replace(/_\d+_\d+_\d+$/, "");
+}
+
+WMStats.Utils.contains = function(value, container) {
+    //container is object or array
+    if (container.constructor.name === "Array") {
+        for (var index in container) {
+            if (value == container[index]) {
+                return index;
+            }
+        }
+        return -1;
+    }
+    
+    if (container.constructor.name === "Object") {
+        for (var index in container) {
+            if (value == index) {
+                return index;
+            }
+        }
+        return -1;
+    }
+}
+
+WMStats.Utils.addToSet = function(array, value) {
+    if (WMStats.Utils.contains(value, array) === -1) {
+        array.push(value);
+        return true;
+    } else {
+        return false;
+    }
+}

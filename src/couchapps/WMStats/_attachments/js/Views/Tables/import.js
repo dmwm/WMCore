@@ -11,7 +11,8 @@ if (WMStats.Globals.VARIANT == "tier1") {
     WMStats.Globals.importScripts(["js/Views/Tables/T1/WMStats.ActiveRequestTable.js",
                                    "js/Views/Tables/T1/WMStats.ActiveRequestTableWithJob.js",
                                    "js/Views/Tables/T1/WMStats.CampaignSummaryTable.js",
-                                   "js/Views/Tables/WMStats.SiteSummaryTable.js"])
+                                   "js/Views/Tables/WMStats.SiteSummaryTable.js",
+                                   "js/Views/Tables/T1/WMStats.CMSSWSummaryTable.js"])
 } else if (WMStats.Globals.VARIANT == "tier0") {
     //import tie0 specific table
     WMStats.Globals.importScripts(["js/Views/Tables/T0/WMStats.ActiveRequestTable.js",

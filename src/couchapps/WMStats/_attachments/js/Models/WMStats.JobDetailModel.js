@@ -7,8 +7,10 @@ WMStats.JobDetailModel.setOptions = function(summary) {
     var startkey = null;
     if ((typeof summary.site) == "object") {
         startkey = [summary.workflow, summary.task, summary.status, summary.exitCode]
-    } else {
+    } else if (!summary.acdcURL) {
         startkey = [summary.workflow, summary.task, summary.status, summary.exitCode, summary.site]
+    } else {
+        startkey = [summary.workflow, summary.task, summary.status, summary.exitCode, summary.site, summary.acdcURL]
     }
     this._options= {'include_docs': true, 'reduce': false, 
               'startkey': startkey,

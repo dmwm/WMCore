@@ -6,5 +6,5 @@ Core libraries for Workload Management Packages
 
 """
 
-__version__ = '0.9.52'
+__version__ = '0.9.53'
 __all__ = []

@@ -267,6 +267,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
+        self.assertEqual(request['DbsUrl'], 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet')
 
 
     @attr('integration')
@@ -317,6 +318,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
+        self.assertEqual(request['DbsUrl'], 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet')
 
 
     @attr('integration')
@@ -436,6 +438,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
+        self.assertEqual(request['DbsUrl'], 'None')
 
         workload = self.loadWorkload(requestName)
         self.assertEqual(workload.data.request.schema.Task1.SplittingArguments,
@@ -490,6 +493,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
+        self.assertEqual(request['DbsUrl'], 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet')
 
 
     def testH_MonteCarlo(self):
@@ -561,6 +565,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
+        self.assertEqual(request['DbsUrl'], 'None')
 
 
     def testI_RelValMC(self):
@@ -769,7 +774,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
-
+        self.assertEqual(request['DbsUrl'], 'None')
 
 
 if __name__=='__main__':

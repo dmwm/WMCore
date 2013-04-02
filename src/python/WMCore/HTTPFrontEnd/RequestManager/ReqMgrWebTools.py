@@ -634,6 +634,8 @@ def requestDetails(requestName):
     schema['AcquisitionEra']  = str(helper.getAcquisitionEra())
     if schema['SoftwareVersions'] == ['DEPRECATED']:
         schema['SoftwareVersions'] = helper.getCMSSWVersions()
+    # DbsUrl is only in couch or the spec, get it from the later
+    schema['DbsUrl'] = str(task.dbsUrl())
     return schema
 
 def serveFile(contentType, prefix, *args):

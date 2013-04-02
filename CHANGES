@@ -1,3 +1,6 @@
+0.9.52 to 0.9.53:
+  - add requestor if not specified. Pull request #4514.
+
 0.9.51 to 0.9.52:
   - WMStats April updates.  Pull request #4513.
   - Fix the initial location for pileup.  Pull request #4512.

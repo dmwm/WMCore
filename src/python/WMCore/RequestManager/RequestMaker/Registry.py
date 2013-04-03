@@ -115,10 +115,9 @@ def buildWorkloadForRequest(typename, schema):
     if schema.get('CMSSWVersion') and schema.get('CMSSWVersion') not in request['SoftwareVersions']:
         request['SoftwareVersions'].append(schema.get('CMSSWVersion'))
 
-    # Usually DbsUrl is not in the schema, and gets a default value in the WMSpec creation
-    # Use the top level task DBSUrl as the DBSUrl for the whole request, store it in CouchDB
-    request['DbsUrl'] = (workload.getTopLevelTask()[0]).dbsUrl()
-
+    if schema.get("DbsUrl", None):
+        request["DbsUrl"] = schema.get("DbsUrl")
+        
     return request
 
 

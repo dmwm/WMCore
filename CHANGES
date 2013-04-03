@@ -1,3 +1,6 @@
+0.9.54 to 0.9.55:
+  - ReqMgr request parameter DbsUrl stored in CouchDB. Pull request #4516.
+
 0.9.53 to 0.9.54:
   - Restore DBS Url in CouchDB. Pull request #4515.
 

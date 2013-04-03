@@ -634,9 +634,15 @@ def requestDetails(requestName):
     schema['AcquisitionEra']  = str(helper.getAcquisitionEra())
     if schema['SoftwareVersions'] == ['DEPRECATED']:
         schema['SoftwareVersions'] = helper.getCMSSWVersions()
-    # DbsUrl is only in couch or the spec, get it from the later
-    schema['DbsUrl'] = str(task.dbsUrl())
+        
+    # get DbsUrl from CouchDB
+    if schema.get("CouchWorkloadDBName", None) and schema.get("CouchURL", None):
+        couchDb = Database(schema["CouchWorkloadDBName"], schema["CouchURL"])
+        couchReq = couchDb.document(requestName)
+        schema["DbsUrl"] = couchReq.get("DbsUrl", None)
+        
     return schema
+
 
 def serveFile(contentType, prefix, *args):
     """Return a workflow from the cache"""

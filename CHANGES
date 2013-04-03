@@ -1,3 +1,6 @@
+0.9.53 to 0.9.54:
+  - Restore DBS Url in CouchDB. Pull request #4515.
+
 0.9.52 to 0.9.53:
   - add requestor if not specified. Pull request #4514.
 

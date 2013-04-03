@@ -1,3 +1,8 @@
+0.9.55 to 0.9.56:
+  - Merge requested by seangchan
+  - fix running close eta
+  - ReqMgr fixed unittets for #4516
+
 0.9.54 to 0.9.55:
   - ReqMgr request parameter DbsUrl stored in CouchDB. Pull request #4516.
 

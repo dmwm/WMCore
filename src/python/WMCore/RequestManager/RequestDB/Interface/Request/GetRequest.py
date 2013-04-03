@@ -6,6 +6,7 @@ API to get requests from the DB
 """
 
 
+import logging
 import WMCore.RequestManager.RequestDB.Connection as DBConnect
 import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListRequests
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
@@ -82,8 +83,12 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
     
     # fetch AcquisitionEra from spec, it's not stored in Oracle at all
     import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
-    helper = Utilities.loadWorkload(request)
-    request["AcquisitionEra"] = str(helper.getAcquisitionEra())
+    try:
+        helper = Utilities.loadWorkload(request)
+        request["AcquisitionEra"] = str(helper.getAcquisitionEra())
+    except Exception, ex:
+        logging.error("Could not check workload for %s, reason: %s" %
+                      (request["RequestName"], ex))
     return request
 
 

@@ -572,7 +572,7 @@ class ReqMgrClient(RESTClient):
                         "RequestNumEvents"
                         ]
         # request parameters (fields) which are optional
-        optionalArgs = ["PrepID"]
+        optionalArgs = ["PrepID", "DbsUrl"]
                
         couchDbConn, uri = self.getCouchDbConnectionAndUri(config)
         status, data = couchDbConn.httpRequest("GET", uri + "/" + requestName)
@@ -667,7 +667,7 @@ class ReqMgrClient(RESTClient):
         msg = ("Priorities don't match: original request: %s cloned request: %s" %
                (newPriority, clonedRequest["RequestPriority"]))
         assert newPriority == clonedRequest["RequestPriority"], msg
-        msg = ("DBS Url don't match: original request %s cloned request: %s" %
+        msg = ("DbsUrl don't match: original request %s cloned request: %s" %
                (testRequestData["DbsUrl"], clonedRequest["DbsUrl"]))
         assert testRequestData["DbsUrl"] == clonedRequest["DbsUrl"], msg
         

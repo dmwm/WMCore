@@ -267,7 +267,6 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
-        self.assertEqual(request['DbsUrl'], 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet')
 
 
     @attr('integration')
@@ -286,6 +285,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                                                groupName = groupName,
                                                teamName = teamName)
         schema['RequestType'] = "ReDigi"
+        schema['DbsUrl'] = 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet'
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
@@ -318,7 +318,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
-        self.assertEqual(request['DbsUrl'], 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet')
+        self.assertEqual(request['DbsUrl'], schema['DbsUrl'])
 
 
     @attr('integration')
@@ -358,6 +358,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
+        self.assertEqual(request['DbsUrl'], schema['DbsUrl'])
         
 
     @attr('integration')
@@ -438,7 +439,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
-        self.assertEqual(request['DbsUrl'], 'None')
+        self.assertEqual(request['DbsUrl'], None)
 
         workload = self.loadWorkload(requestName)
         self.assertEqual(workload.data.request.schema.Task1.SplittingArguments,
@@ -461,6 +462,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                                                groupName = groupName,
                                                teamName = teamName)
         schema['RequestType'] = "MonteCarloFromGEN"
+        schema['DbsUrl'] = 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet'
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
@@ -493,7 +495,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
-        self.assertEqual(request['DbsUrl'], 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet')
+        self.assertEqual(request['DbsUrl'], schema['DbsUrl'])
 
 
     def testH_MonteCarlo(self):
@@ -565,7 +567,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
-        self.assertEqual(request['DbsUrl'], 'None')
+        self.assertEqual(request['DbsUrl'], None)
 
 
     def testI_RelValMC(self):
@@ -774,7 +776,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
-        self.assertEqual(request['DbsUrl'], 'None')
+        self.assertEqual(request['DbsUrl'], None)
 
 
 if __name__=='__main__':

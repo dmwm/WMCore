@@ -224,15 +224,15 @@ class ErrorHandlerPoller(BaseWorkerThread):
                     exhaustJobs.append(job)
                     continue
 
-                if report.getExitCode() in self.exitCodes:
-                    msg = "Job %i exhausted due to exitCode %s" % (job['id'], report.getExitCode())
+                if len([x for x in report.getExitCodes() if x in self.exitCodes]):
+                    msg = "Job %i exhausted due to a bad exit code (%s)" % (job['id'], str(report.getExitCodes()))
                     logging.error(msg)
                     self.sendAlert(4, msg = msg)
                     exhaustJobs.append(job)
                     continue
 
-                if report.getExitCode() in self.passCodes:
-                    msg = "Job %i restarted immediately due to exitCode %i" % (job['id'], report.getExitCode())
+                if len([x for x in report.getExitCodes() if x in self.passCodes]):
+                    msg = "Job %i restarted immediately due to an exit code (%s)" % (job['id'], str(report.getExitCodes()))
                     passJobs.append(job)
                     continue
 

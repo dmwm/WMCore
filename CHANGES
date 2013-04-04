@@ -1,3 +1,7 @@
+0.9.56 to 0.9.57:
+  - Fix DbsUrl for clones. Pull request #4535.
+  - ReqMgr - removing wrong DBS URL from configuration. Pull request #4534.
+
 0.9.55 to 0.9.56:
   - Merge requested by seangchan
   - fix running close eta

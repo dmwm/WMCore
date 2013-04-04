@@ -158,6 +158,11 @@ class PerformanceMonitor(WMRuntimeMonitor):
         """
         killProc = False
         killHard = False
+        reason = ''
+        errorCodeLookup = {'RSS' : 50660,
+                           'VSZ' : 50661,
+                           'Wallclock time' : 50664,
+                           '' : 99999}
 
         if self.disableStep:
             # Then we aren't doing CPU monitoring
@@ -201,10 +206,12 @@ class PerformanceMonitor(WMRuntimeMonitor):
             msg += "Job has exceeded maxRSS: %s\n" % self.maxRSS
             msg += "Job has RSS: %s\n" % rss
             killProc = True
+            reason = 'RSS'
         if self.maxVSize != None and vsize >= self.maxVSize:
             msg += "Job has exceeded maxVSize: %s\n" % self.maxVSize
             msg += "Job has VSize: %s\n" % vsize
             killProc = True
+            reason = 'VSZ'
 
         #Let's check the running time
         currentTime = time.time()
@@ -212,6 +219,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
         if self.hardTimeout != None and self.softTimeout != None:
             if (currentTime - self.startTime) > self.softTimeout:
                 killProc = True
+                reason = 'Wallclock time'
                 msg += "Job has been running for more than: %s\n" % str(self.softTimeout)
                 msg += "Job has been running for: %s\n" % str(currentTime - self.startTime)
             if (currentTime - self.startTime) > self.hardTimeout:
@@ -234,7 +242,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
                 # Create a new step that won't be overridden by an exiting CMSSW
                 if not report.retrieveStep(step = "PerformanceError"):
                     report.addStep(reportname = "PerformanceError")
-                report.addError(stepName = "PerformanceError", exitCode = 99900,
+                report.addError(stepName = "PerformanceError", exitCode = errorCodeLookup[reason],
                                 errorType = "PerformanceKill", errorDetails = msg)
                 report.save(logPath)
             except Exception, ex:

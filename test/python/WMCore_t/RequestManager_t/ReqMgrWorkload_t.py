@@ -187,7 +187,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
-        
+        self.assertEqual(request['DbsUrl'], 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet')
 
     @attr('integration')
     def testB_Analysis(self):
@@ -267,7 +267,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
-
+        self.assertEqual(request['DbsUrl'], 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet')
 
     @attr('integration')
     def testD_ReDigi(self):
@@ -285,7 +285,6 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                                                groupName = groupName,
                                                teamName = teamName)
         schema['RequestType'] = "ReDigi"
-        schema['DbsUrl'] = 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet'
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
@@ -318,8 +317,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
-        self.assertEqual(request['DbsUrl'], schema['DbsUrl'])
-
+        self.assertEqual(request['DbsUrl'], 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet')
 
     @attr('integration')
     def testE_StoreResults(self):
@@ -462,7 +460,6 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                                                groupName = groupName,
                                                teamName = teamName)
         schema['RequestType'] = "MonteCarloFromGEN"
-        schema['DbsUrl'] = 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet'
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
@@ -495,8 +492,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
-        self.assertEqual(request['DbsUrl'], schema['DbsUrl'])
-
+        self.assertEqual(request['DbsUrl'], 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet')
 
     def testH_MonteCarlo(self):
         """
@@ -514,6 +510,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                                                groupName = groupName,
                                                teamName = teamName)
         schema['RequestType'] = "MonteCarlo"
+        schema['DbsUrl'] = 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet'
 
         # Set some versions
         schema['ProcessingVersion'] = '2012'
@@ -567,7 +564,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
-        self.assertEqual(request['DbsUrl'], None)
+        self.assertEqual(request['DbsUrl'], schema['DbsUrl'])
 
 
     def testI_RelValMC(self):
@@ -693,6 +690,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         schema['AcquisitionEra']    = 'ae2012'
         schema['FirstEvent'] = 1
         schema['FirstLumi'] = 1
+        schema['DbsUrl'] = 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet'
 
         try:
             raises = False
@@ -776,7 +774,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
-        self.assertEqual(request['DbsUrl'], None)
+        self.assertEqual(request['DbsUrl'], schema['DbsUrl'])
 
 
 if __name__=='__main__':

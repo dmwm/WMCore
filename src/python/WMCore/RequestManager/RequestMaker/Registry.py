@@ -116,7 +116,9 @@ def buildWorkloadForRequest(typename, schema):
         request['SoftwareVersions'].append(schema.get('CMSSWVersion'))
 
     if schema.get("DbsUrl", None):
-        request["DbsUrl"] = schema.get("DbsUrl")
+        request["DbsUrl"] = schema["DbsUrl"]
+    else:
+        request["DbsUrl"] = (workload.getTopLevelTask()[0]).dbsUrl()
         
     return request
 

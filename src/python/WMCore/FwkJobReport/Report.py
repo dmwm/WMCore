@@ -1324,8 +1324,14 @@ class Report:
         error = None
         files = self.getAllFilesFromStep(step = stepName)
         for f in files:
-            if not f.get('runs', {}):
+            if not f.get('runs', None):
                 error = f.get('lfn', None)
+            else:
+                for run in f['runs']:
+                    lumis = run.lumis
+                    if not lumis:
+                        error = f.get('lfn', None)
+                        break
         if error:
             msg = '%s, file was %s' % (WMJobErrorCodes[60452], error)
             self.addError(stepName, 60452, "NoRunLumiInformation", msg)

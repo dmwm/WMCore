@@ -224,7 +224,11 @@ class DBSBlock:
 
         Set the block's processing version.
         """
-        self.data["processing_era"]["processing_version"] = procVer
+        if procVer.count("-") == 1:
+            (junk, self.data["processing_era"]["processing_version"]) = procVer.split("-v")
+        else:
+            self.data["processing_era"]["processing_version"] = procVer
+
         self.data["processing_era"]["create_by"] = "WMAgent"
         self.data["processing_era"]["description"] = ""
         return

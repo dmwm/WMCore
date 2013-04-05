@@ -1,3 +1,10 @@
+0.9.57 to 0.9.58:
+  - Catch empty lumi runs.  Pull request #4537.
+  - Include performance estimates in Condor JDLs.  Pull request #4536. 
+  - Avoid re-running performance killed jobs.  Pull request #4538.
+  - Fix the resource control call to load all T1s and T2s which was broken by
+    the migration to SiteDB V2.  Pull request #4532.
+
 0.9.56 to 0.9.57:
   - Fix DbsUrl for clones. Pull request #4535.
   - ReqMgr - removing wrong DBS URL from configuration. Pull request #4534.

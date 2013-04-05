@@ -73,7 +73,11 @@ class FindDASToUpload(DBFormatter):
             entry['PSetContent']        = r['psetcontent']
             entry['Dataset']            = r['dataset']
             entry['AcquisitionEra']     = r['acquisitionera']
-            entry['ProcessingVer']      = r['processingver']
+            if r["processingver"].count("-") == 1:
+                (junk, entry["ProcessingVer"]) = r["processingver"].split("-v")
+            else:
+                entry['ProcessingVer']      = r['processingver']
+                
             entry['GlobalTag']          = r['global_tag']
             ret.append(entry)
 

@@ -275,6 +275,33 @@ class Report:
         """
         return getattr(self.data, 'siteName', {})
 
+    def getExitCodes(self):
+        """
+        _getExitCodes_
+
+        Return a list of all non-zero exit codes in the report
+        """
+        returnCodes = set()
+        for stepName in self.listSteps():
+            returnCodes.update(self.getStepExitCodes(stepName = stepName))
+        return returnCodes
+
+    def getStepExitCodes(self, stepName):
+        """
+        _getStepExitCodes_
+
+        Returns a list of all non-zero exit codes in the step
+        """
+        returnCodes = set()
+        reportStep = self.retrieveStep(stepName)
+        errorCount = getattr(reportStep.errors, "errorCount", 0)
+        for i in range(errorCount):
+            reportError = getattr(reportStep.errors, "error%i" % i)
+            if getattr(reportError, 'exitCode', None):
+                returnCodes.add(int(reportError.exitCode))
+
+        return returnCodes
+
     def getExitCode(self):
         """
         _getExitCode_

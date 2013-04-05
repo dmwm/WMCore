@@ -395,3 +395,20 @@ class JobFactory(WMObject):
                     newParents.add(parent)
 
         return newParents
+
+    def getPerformanceParameters(self, defaultParams):
+        """
+        _getPerformanceParameters_
+
+        This generic JobFactory function allows all splitters to easily
+        retrieve the parameters to specify the resource requirements for
+        the created jobs.
+        # TODO: Check couchDB for performance on the current task
+                and if not available it falls back to the default params.
+        It returns a tuple with the following values:
+        timePerEvent, sizePerEvent, memoryRequirement
+        """
+        timePerEvent = defaultParams.get('timePerEvent', 0)
+        sizePerEvent = defaultParams.get('sizePerEvent', 0)
+        memory = defaultParams.get('memoryRequirement', 0)
+        return timePerEvent, sizePerEvent, memory

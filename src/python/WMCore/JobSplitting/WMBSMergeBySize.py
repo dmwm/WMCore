@@ -61,7 +61,7 @@ def sortedFilesFromMergeUnits(mergeUnits):
 
         for file in mergeUnit["files"]:
             newFile = File(id = file["file_id"], lfn = file["file_lfn"],
-                           events = file["file_events"])
+                           events = file["file_events"], size = file["file_size"])
 
             # The WMBS data structure puts locations that are passed in through
             # the constructor in the "newlocations" attribute.  We want these to
@@ -147,6 +147,7 @@ class WMBSMergeBySize(JobFactory):
         sortedFiles = sortedFilesFromMergeUnits(mergeUnits)
 
         for file in sortedFiles:
+            self.currentJob.addResourceEstimates(disk = float(file["size"])/1024)
             self.currentJob.addFile(file)
 
     def defineMergeJobs(self, mergeUnits):

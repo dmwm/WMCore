@@ -9,14 +9,6 @@ number of files, it will not create any jobs UNLESS the
 fileset is closed.
 """
 
-
-
-
-import threading
-import sys
-import logging
-import gc
-
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.WMBS.File               import File
 

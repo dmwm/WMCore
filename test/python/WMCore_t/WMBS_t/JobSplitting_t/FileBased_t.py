@@ -111,6 +111,10 @@ class FileBasedTest(unittest.TestCase):
                                                      split_algo = "FileBased",
                                                      type = "Processing")
         self.multipleSiteSubscription.create()
+
+        self.performanceParams = {'timePerEvent' : 12,
+                                  'memoryRequirement' : 2300,
+                                  'sizePerEvent' : 400}
         return
 
     def tearDown(self):
@@ -160,13 +164,17 @@ class FileBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.singleFileSubscription)
 
-        jobGroups = jobFactory(files_per_job = 1)
+        jobGroups = jobFactory(files_per_job = 1,
+                               performance = self.performanceParams)
 
 
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 1)
         job = jobGroups[0].jobs.pop()
         self.assertEqual(job.getFiles(type = "lfn"), ["/some/file/name"])
+        self.assertEqual(job["estimatedMemoryUsage"], 2300)
+        self.assertEqual(job["estimatedDiskUsage"], 400 * 100)
+        self.assertEqual(job["estimatedJobTime"], 12 * 100)
 
         return
 
@@ -181,12 +189,16 @@ class FileBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.singleFileSubscription)
 
-        jobGroups = jobFactory(files_per_job = 10)
+        jobGroups = jobFactory(files_per_job = 10,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 1)
         job = jobGroups[0].jobs.pop()
         self.assertEqual(job.getFiles(type = "lfn"), ["/some/file/name"])
+        self.assertEqual(job["estimatedMemoryUsage"], 2300)
+        self.assertEqual(job["estimatedDiskUsage"], 400 * 100)
+        self.assertEqual(job["estimatedJobTime"], 12 * 100)
 
         return
 
@@ -203,7 +215,8 @@ class FileBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.multipleFileSubscription)
 
-        jobGroups = jobFactory(files_per_job = 2)
+        jobGroups = jobFactory(files_per_job = 2,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 5)
@@ -213,6 +226,10 @@ class FileBasedTest(unittest.TestCase):
             self.assertEqual(len(job.getFiles()), 2)
             for file in job.getFiles(type = "lfn"):
                 fileList.append(file)
+            self.assertEqual(job["estimatedMemoryUsage"], 2300)
+            self.assertEqual(job["estimatedDiskUsage"], 400 * 100 * 2)
+            self.assertEqual(job["estimatedJobTime"], 12 * 100 * 2)
+
         self.assertEqual(len(fileList), 10)
 
         return
@@ -228,7 +245,8 @@ class FileBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.multipleFileSubscription)
 
-        jobGroups = jobFactory(files_per_job = 3)
+        jobGroups = jobFactory(files_per_job = 3,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 4)
@@ -238,6 +256,16 @@ class FileBasedTest(unittest.TestCase):
             assert len(job.getFiles()) in [3, 1], "ERROR: Job contains incorrect number of files"
             for file in job.getFiles(type = "lfn"):
                 fileList.append(file)
+            if len(job.getFiles()) == 3:
+                self.assertEqual(job["estimatedMemoryUsage"], 2300)
+                self.assertEqual(job["estimatedDiskUsage"], 400 * 100 * 3)
+                self.assertEqual(job["estimatedJobTime"], 12 * 100 * 3)
+            elif len(job.getFiles()) == 1:
+                self.assertEqual(job["estimatedMemoryUsage"], 2300)
+                self.assertEqual(job["estimatedDiskUsage"], 400 * 100)
+                self.assertEqual(job["estimatedJobTime"], 12 * 100)
+            else:
+                self.fail("Unexpected splitting reached")
         self.assertEqual(len(fileList), 10)
 
         return
@@ -259,14 +287,18 @@ class FileBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.multipleSiteSubscription)
 
-        jobGroups = jobFactory(files_per_job = 10)
+        jobGroups = jobFactory(files_per_job = 10,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 2)
         self.assertEqual(len(jobGroups[0].jobs), 1)
-
-        fileList = []
+        self.assertEqual(jobGroups[0].jobs[0]["estimatedMemoryUsage"], 2300)
+        self.assertEqual(jobGroups[0].jobs[0]["estimatedDiskUsage"], 100 * 400 * 5)
+        self.assertEqual(jobGroups[0].jobs[0]["estimatedJobTime"], 100 * 12 * 5)
         self.assertEqual(len(jobGroups[1].jobs[0].getFiles()), 5)
-
+        self.assertEqual(jobGroups[1].jobs[0]["estimatedMemoryUsage"], 2300)
+        self.assertEqual(jobGroups[1].jobs[0]["estimatedDiskUsage"], 100 * 400 * 5)
+        self.assertEqual(jobGroups[1].jobs[0]["estimatedJobTime"], 100 * 12 * 5)
 
         return
 
@@ -285,7 +317,8 @@ class FileBasedTest(unittest.TestCase):
 
 
         jobGroups = jobFactory(files_per_job = 10, limit_file_loading = True,
-                               file_load_limit = 1)
+                               file_load_limit = 1,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 1)
@@ -303,7 +336,8 @@ class FileBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.multipleFileSubscription)
 
-        jobGroups = jobFactory(files_per_job = 10, respect_run_boundaries = True)
+        jobGroups = jobFactory(files_per_job = 10, respect_run_boundaries = True,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
@@ -321,7 +355,8 @@ class FileBasedTest(unittest.TestCase):
                               subscription = self.multipleFileSubscription)
 
         jobGroups = jobFactory(files_per_job = 2,
-                               include_parents  = True)
+                               include_parents  = True,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 5)
@@ -422,7 +457,8 @@ class FileBasedTest(unittest.TestCase):
     def crazyAssFunction(self, jobFactory, file_load_limit = 1):
         groups = ['test']
         while groups != []:
-            groups = jobFactory(files_per_job = 1, file_load_limit = file_load_limit)
+            groups = jobFactory(files_per_job = 1, file_load_limit = file_load_limit,
+                                performance = self.performanceParams)
             yield groups
 
 if __name__ == '__main__':

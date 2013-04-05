@@ -34,6 +34,9 @@ class LumiBasedTest(unittest.TestCase):
         """
 
         self.testWorkflow = Workflow()
+        self.performanceParams = {'timePerEvent' : 12,
+                                  'memoryRequirement' : 2300,
+                                  'sizePerEvent' : 400}
 
         return
 
@@ -98,7 +101,8 @@ class LumiBasedTest(unittest.TestCase):
 
 
         jobGroups = jobFactory(lumis_per_job = 3,
-                               halt_job_on_file_boundaries = True)
+                               halt_job_on_file_boundaries = True,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
@@ -111,7 +115,8 @@ class LumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.DataStructs",
                               subscription = twoLumiFiles)
         jobGroups = jobFactory(lumis_per_job = 1,
-                               halt_job_on_file_boundaries = True)
+                               halt_job_on_file_boundaries = True,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
@@ -123,7 +128,8 @@ class LumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.DataStructs",
                               subscription = wholeLumiFiles)
         jobGroups = jobFactory(lumis_per_job = 2,
-                               halt_job_on_file_boundaries = True)
+                               halt_job_on_file_boundaries = True,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         # 10 because we split on run boundaries
         self.assertEqual(len(jobGroups[0].jobs), 10)
@@ -149,7 +155,8 @@ class LumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.DataStructs",
                               subscription = twoSiteSubscription)
         jobGroups = jobFactory(lumis_per_job = 1,
-                               halt_job_on_file_boundaries = True)
+                               halt_job_on_file_boundaries = True,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 2)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
@@ -171,7 +178,8 @@ class LumiBasedTest(unittest.TestCase):
 
         jobGroups = jobFactory(lumis_per_job = 3,
                                halt_job_on_file_boundaries = False,
-                               splitOnRun = False)
+                               splitOnRun = False,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
@@ -192,7 +200,8 @@ class LumiBasedTest(unittest.TestCase):
                               subscription = testSubscription)
         jobGroups = jobFactory(lumis_per_job = 3,
                                halt_job_on_file_boundaries = True,
-                               splitOnRun = True)
+                               splitOnRun = True,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 10)

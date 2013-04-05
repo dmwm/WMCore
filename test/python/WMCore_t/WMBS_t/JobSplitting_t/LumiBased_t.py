@@ -5,9 +5,7 @@ _LumiBased_t
 Test lumi based splitting.
 """
 
-import os
 import threading
-import logging
 import unittest
 import random
 
@@ -19,12 +17,11 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.DataStructs.Run import Run
 
 from WMCore.DAOFactory import DAOFactory
-from WMCore.WMFactory import WMFactory
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.Services.UUID import makeUUID
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 from WMCore.ACDC.DataCollectionService import DataCollectionService
-from WMCore.WMSpec.WMWorkload import newWorkload, WMWorkloadHelper
+from WMCore.WMSpec.WMWorkload import newWorkload
 
 def getJob(workload):
     """
@@ -58,7 +55,7 @@ class LumiBasedTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        #self.testInit.clearDatabase(modules = ['WMCore.WMBS'])
+        # self.testInit.clearDatabase(modules = ['WMCore.WMBS'])
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.testInit.setupCouch("lumi_t", "GroupUser", "ACDC")
@@ -73,9 +70,12 @@ class LumiBasedTest(unittest.TestCase):
         locationAction.execute(siteName = 's2', seName = "otherse.cern.ch")
 
         self.testWorkflow = Workflow(spec = "spec.xml", owner = "mnorman",
-                                     name = "wf001", task="Test")
+                                     name = "wf001", task = "Test")
         self.testWorkflow.create()
 
+        self.performanceParams = {'timePerEvent' : 12,
+                                  'memoryRequirement' : 2300,
+                                  'sizePerEvent' : 400}
 
         return
 
@@ -133,7 +133,7 @@ class LumiBasedTest(unittest.TestCase):
         testFileset.commit()
 
 
-        testSubscription  = Subscription(fileset = testFileset,
+        testSubscription = Subscription(fileset = testFileset,
                                          workflow = self.testWorkflow,
                                          split_algo = "LumiBased",
                                          type = "Processing")
@@ -158,39 +158,51 @@ class LumiBasedTest(unittest.TestCase):
 
 
         jobGroups = jobFactory(lumis_per_job = 3,
-                               halt_job_on_file_boundaries = True)
+                               halt_job_on_file_boundaries = True,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
             self.assertTrue(len(job['input_files']), 1)
-
-
-
+            self.assertEqual(job['estimatedJobTime'], 100 * 12)
+            self.assertEqual(job['estimatedDiskUsage'], 100 * 400)
+            self.assertEqual(job['estimatedMemoryUsage'], 2300)
 
         twoLumiFiles = self.createSubscription(nFiles = 5, lumisPerFile = 2)
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = twoLumiFiles)
         jobGroups = jobFactory(lumis_per_job = 1,
-                               halt_job_on_file_boundaries = True)
+                               halt_job_on_file_boundaries = True,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
             self.assertEqual(len(job['input_files']), 1)
-
+            self.assertEqual(job['estimatedJobTime'], 50 * 12)
+            self.assertEqual(job['estimatedDiskUsage'], 50 * 400)
+            self.assertEqual(job['estimatedMemoryUsage'], 2300)
 
 
         wholeLumiFiles = self.createSubscription(nFiles = 5, lumisPerFile = 3)
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = wholeLumiFiles)
         jobGroups = jobFactory(lumis_per_job = 2,
-                               halt_job_on_file_boundaries = True)
+                               halt_job_on_file_boundaries = True,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         # 10 because we split on run boundaries
         self.assertEqual(len(jobGroups[0].jobs), 10)
         jobList = jobGroups[0].jobs
-        for job in jobList:
+        for idx, job in enumerate(jobList, start = 1):
             # Have should have one file, half two
-            self.assertTrue(len(job['input_files']) in [1,2])
+            self.assertEqual(len(job['input_files']), 1)
+            if idx % 2 == 0:
+                self.assertEqual(job['estimatedJobTime'], (1.0 * 100 / 3) * 12)
+                self.assertEqual(job['estimatedDiskUsage'], (1.0 * 100 / 3) * 400)
+            else:
+                self.assertEqual(job['estimatedJobTime'], (2.0 * 100 / 3) * 12)
+                self.assertEqual(job['estimatedDiskUsage'], (2.0 * 100 / 3) * 400)
+            self.assertEqual(job['estimatedMemoryUsage'], 2300)
 
 
         mask0 = jobList[0]['mask'].getRunAndLumis()
@@ -211,13 +223,15 @@ class LumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = twoSiteSubscription)
         jobGroups = jobFactory(lumis_per_job = 1,
-                               halt_job_on_file_boundaries = True)
+                               halt_job_on_file_boundaries = True,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 2)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
             self.assertEqual(len(job['input_files']), 1)
-
-
+            self.assertEqual(job['estimatedJobTime'], 50 * 12)
+            self.assertEqual(job['estimatedDiskUsage'], 50 * 400)
+            self.assertEqual(job['estimatedMemoryUsage'], 2300)
 
     def testB_NoRunNoFileSplitting(self):
         """
@@ -233,7 +247,8 @@ class LumiBasedTest(unittest.TestCase):
 
         jobGroups = jobFactory(lumis_per_job = 3,
                                halt_job_on_file_boundaries = False,
-                               splitOnRun = False)
+                               splitOnRun = False,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
@@ -242,7 +257,13 @@ class LumiBasedTest(unittest.TestCase):
         # The first job should have three lumis from one run
         # The second three lumis from two different runs
         self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
+        self.assertEqual(jobs[0]['estimatedJobTime'], 60 * 12)
+        self.assertEqual(jobs[0]['estimatedDiskUsage'], 60 * 400)
+        self.assertEqual(jobs[0]['estimatedMemoryUsage'], 2300)
         self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]], 1L: [[100L, 100L]]})
+        self.assertEqual(jobs[1]['estimatedJobTime'], 60 * 12)
+        self.assertEqual(jobs[1]['estimatedDiskUsage'], 60 * 400)
+        self.assertEqual(jobs[1]['estimatedMemoryUsage'], 2300)
 
 
         # And it should still be the same when you load it out of the database
@@ -256,7 +277,8 @@ class LumiBasedTest(unittest.TestCase):
                               subscription = testSubscription)
         jobGroups = jobFactory(lumis_per_job = 3,
                                halt_job_on_file_boundaries = True,
-                               splitOnRun = True)
+                               splitOnRun = True,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 10)
@@ -272,7 +294,8 @@ class LumiBasedTest(unittest.TestCase):
                               subscription = testSubscription)
         jobGroups = jobFactory(lumis_per_job = 10,
                                halt_job_on_file_boundaries = False,
-                               splitOnRun = False)
+                               splitOnRun = False,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 2)
@@ -386,7 +409,7 @@ class LumiBasedTest(unittest.TestCase):
         testJobI = getJob(workload)
         testJobI.addFile(testFileJ)
 
-        #dcs.failedJobs([testJobA, testJobB, testJobC, testJobD, testJobE,
+        # dcs.failedJobs([testJobA, testJobB, testJobC, testJobD, testJobE,
         #                testJobF, testJobG, testJobH, testJobI])
 
         dcs.failedJobs([testJobA, testJobD, testJobH])
@@ -407,7 +430,7 @@ class LumiBasedTest(unittest.TestCase):
         testFileset.addFile(testFileJ)
         testFileset.commit()
 
-        testSubscription  = Subscription(fileset = testFileset,
+        testSubscription = Subscription(fileset = testFileset,
                                          workflow = self.testWorkflow,
                                          split_algo = "LumiBased",
                                          type = "Processing")
@@ -425,7 +448,8 @@ class LumiBasedTest(unittest.TestCase):
                                owner = "evansde77",
                                group = "DMWM",
                                couchURL = self.testInit.couchUrl,
-                               couchDB = self.testInit.couchDbName)
+                               couchDB = self.testInit.couchDbName,
+                               performance = self.performanceParams)
 
 
         self.assertEqual(jobGroups[0].jobs[0]['mask'].getRunAndLumis(), {1L: [[1L, 2L], [3L, 3L], [11L, 12L]]})
@@ -443,7 +467,7 @@ class LumiBasedTest(unittest.TestCase):
 
 
         baseName = makeUUID()
-        nFiles   = 10
+        nFiles = 10
 
         testFileset = Fileset(name = baseName)
         testFileset.create()
@@ -459,25 +483,26 @@ class LumiBasedTest(unittest.TestCase):
         testFileset.commit()
 
 
-        testSubscription  = Subscription(fileset = testFileset,
+        testSubscription = Subscription(fileset = testFileset,
                                          workflow = self.testWorkflow,
                                          split_algo = "LumiBased",
                                          type = "Processing")
         testSubscription.create()
 
-        splitter   = SplitterFactory()
+        splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = testSubscription)
 
         jobGroups = jobFactory(lumis_per_job = 2,
                                halt_job_on_file_boundaries = False,
-                               splitOnRun = False)
+                               splitOnRun = False,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 10)
         for j in jobs:
-            runs =  j['mask'].getRunAndLumis()
+            runs = j['mask'].getRunAndLumis()
             for r in runs.keys():
                 self.assertEqual(len(runs[r]), 2)
                 for l in runs[r]:
@@ -486,6 +511,10 @@ class LumiBasedTest(unittest.TestCase):
                     # meaning that the first and last lumis are the same
                     self.assertEqual(len(l), 2)
                     self.assertEqual(l[0], l[1])
+            self.assertEqual(j['estimatedJobTime'], 100 * 12)
+            self.assertEqual(j['estimatedDiskUsage'], 100 * 400)
+            self.assertEqual(j['estimatedMemoryUsage'], 2300)
+
 
         return
 
@@ -506,7 +535,8 @@ class LumiBasedTest(unittest.TestCase):
 
         jobGroups = jobFactory(lumis_per_job = 3,
                                split_files_between_job = True,
-                               include_parents = True)
+                               include_parents = True,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
@@ -517,7 +547,6 @@ class LumiBasedTest(unittest.TestCase):
                              list(f['parents'])[0]['lfn'].split('_')[0])
 
         return
-
 
     def testF_RunWhitelist(self):
         """
@@ -536,7 +565,8 @@ class LumiBasedTest(unittest.TestCase):
 
         jobGroups = jobFactory(lumis_per_job = 10,
                                split_files_between_job = True,
-                               runWhitelist = [1])
+                               runWhitelist = [1],
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 1)
@@ -544,20 +574,6 @@ class LumiBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups[0].jobs[0]['input_files'][0]['runs']), 1)
         self.assertEqual(jobGroups[0].jobs[0]['input_files'][0]['runs'][0].run, 1)
         return
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 if __name__ == '__main__':
     unittest.main()

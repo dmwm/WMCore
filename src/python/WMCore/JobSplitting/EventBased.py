@@ -29,7 +29,8 @@ class EventBased(JobFactory):
         eventsPerLumi = int(kwargs.get("events_per_lumi", eventsPerJob))
         getParents   = kwargs.get("include_parents", False)
         collectionName  = kwargs.get('collectionName', None)
-
+        timePerEvent, sizePerEvent, memoryRequirement = \
+                    self.getPerformanceParameters(kwargs.get('performance', {}))
         acdcFileList = []
 
         # If we have runLumi info, we need to load it from couch
@@ -95,20 +96,33 @@ class EventBased(JobFactory):
                             self.newJob(name = self.getJobName(length=totalJobs))
                             self.currentJob.addFile(f)
                             if eventsPerJob + currentEvent < eventsInFile:
+                                jobTime = eventsPerJob * timePerEvent
+                                diskRequired = eventsPerJob * sizePerEvent
                                 self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, currentEvent)
                             else:
+                                jobTime = (eventsInFile - currentEvent) * timePerEvent
+                                diskRequired = (eventsInFile - currentEvent) * sizePerEvent
                                 self.currentJob["mask"].setMaxAndSkipEvents(None,
                                                                             currentEvent)
+                            self.currentJob.addResourceEstimates(jobTime = jobTime,
+                                                                 memory = memoryRequirement,
+                                                                 disk = diskRequired)
                             currentEvent += eventsPerJob
                             totalJobs    += 1
                     else:
                         self.newJob(name = self.getJobName(length=totalJobs))
                         self.currentJob.addFile(f)
+                        jobTime = eventsInFile * timePerEvent
+                        diskRequired = eventsInFile * sizePerEvent
+                        self.currentJob.addResourceEstimates(jobTime = jobTime,
+                                                             memory = memoryRequirement,
+                                                             disk = diskRequired)
                         totalJobs += 1
                 else:
                     if acdcFileList:
                         if f['lfn'] in [x['lfn'] for x in acdcFileList]:
-                            self.createACDCJobs(f, acdcFileList)
+                            self.createACDCJobs(f, acdcFileList,
+                                                timePerEvent, sizePerEvent, memoryRequirement)
                         continue
                     #This assumes there's only one run which is the case for MC
                     lumis = runs[0].lumis
@@ -130,7 +144,11 @@ class EventBased(JobFactory):
                                                                             currentEvent)
                                 self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob,
                                                                            currentLumi)
+                                jobTime = eventsPerJob * timePerEvent
+                                diskRequired = eventsPerJob * sizePerEvent
                             else:
+                                jobTime = eventsRemaining * timePerEvent
+                                diskRequired = eventsRemaining * sizePerEvent
                                 lumisPerJob = int(ceil(float(eventsRemaining)/eventsPerLumi))
                                 self.currentJob["mask"].setMaxAndSkipEvents(eventsRemaining,
                                                                             currentEvent)
@@ -140,6 +158,9 @@ class EventBased(JobFactory):
                             currentEvent += eventsPerJob
                             totalEvents  += eventsPerJob
                             totalJobs    += 1
+                            self.currentJob.addResourceEstimates(jobTime = jobTime,
+                                                                 memory = memoryRequirement,
+                                                                 disk = diskRequired)
                     else:
                         self.newJob(name = self.getJobName(length=totalJobs))
                         self.currentJob.addFile(f)
@@ -151,9 +172,15 @@ class EventBased(JobFactory):
                                                                     currentEvent)
                         self.currentJob["mask"].setMaxAndSkipLumis(lastLumi -
                                                         currentLumi + 1, currentLumi)
+                        jobTime = eventsInFile * timePerEvent
+                        diskRequired = eventsInFile * sizePerEvent
+                        self.currentJob.addResourceEstimates(jobTime = jobTime,
+                                                             memory = memoryRequirement,
+                                                             disk = diskRequired)
                         totalJobs += 1
 
-    def createACDCJobs(self, fakeFile, acdcFileInfo):
+    def createACDCJobs(self, fakeFile, acdcFileInfo,
+                       timePerEvent, sizePerEvent, memoryRequirement):
         """
         _createACDCJobs_
 
@@ -169,5 +196,10 @@ class EventBased(JobFactory):
                                                             acdcFile["first_event"])
                 self.currentJob["mask"].setMaxAndSkipLumis(len(acdcFile["lumis"]) - 1,
                                                            acdcFile["lumis"][0])
+                jobTime = (acdcFile["events"] - acdcFile["first_event"] + 1) * timePerEvent
+                diskRequired = (acdcFile["events"] - acdcFile["first_event"] + 1) * sizePerEvent
+                self.currentJob.addResourceEstimates(jobTime = jobTime,
+                                                     memory = memoryRequirement,
+                                                     disk = diskRequired)
                 totalJobs += 1
         return

@@ -38,6 +38,9 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         """
 
         self.testWorkflow = Workflow()
+        self.performanceParams = {'timePerEvent' : 12,
+                                  'memoryRequirement' : 2300,
+                                  'sizePerEvent' : 400}
 
         return
 
@@ -107,7 +110,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
 
 
         jobGroups = jobFactory(halt_job_on_file_boundaries = True,
-                               events_per_job = 100)
+                               events_per_job = 100,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
@@ -120,7 +124,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.DataStructs",
                               subscription = twoLumiFiles)
         jobGroups = jobFactory(halt_job_on_file_boundaries = True,
-                               events_per_job = 50)
+                               events_per_job = 50,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
@@ -132,7 +137,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.DataStructs",
                               subscription = wholeLumiFiles)
         jobGroups = jobFactory(halt_job_on_file_boundaries = True,
-                               events_per_job = 67)
+                               events_per_job = 67,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         # 10 because we split on run boundaries
         self.assertEqual(len(jobGroups[0].jobs), 10)
@@ -158,7 +164,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.DataStructs",
                               subscription = twoSiteSubscription)
         jobGroups = jobFactory(halt_job_on_file_boundaries = True,
-                               events_per_job = 50)
+                               events_per_job = 50,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 2)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
@@ -180,7 +187,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
 
         jobGroups = jobFactory(halt_job_on_file_boundaries = False,
                                splitOnRun = False,
-                               events_per_job = 60)
+                               events_per_job = 60,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
@@ -197,7 +205,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
                               subscription = testSubscription)
         jobGroups = jobFactory(halt_job_on_file_boundaries = True,
                                splitOnRun = True,
-                               events_per_job = 60)
+                               events_per_job = 60,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 10)
@@ -229,7 +238,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         #3.6 lumis per job, which rounds to 3, the algorithm always approximates to the lower integer.
         jobGroups = jobFactory(halt_job_on_file_boundaries = True,
                                splitOnRun = True,
-                               events_per_job = 360)
+                               events_per_job = 360,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 15, "There should be 15 jobs")
@@ -238,7 +248,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         #This results in the algorithm reducing the lumis per job to 2
         jobGroups = jobFactory(halt_job_on_file_boundaries = True,
                                splitOnRun = True,
-                               events_per_job = 200)
+                               events_per_job = 200,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 20, "There should be 20 jobs")
@@ -249,7 +260,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.DataStructs",
                               subscription = testSubscription)
         jobGroups = jobFactory(halt_job_on_file_boundaries = True,
-                               events_per_job = 5000)
+                               events_per_job = 5000,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 5, "There should be 5 jobs")
@@ -261,7 +273,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
                               subscription = testSubscription)
         jobGroups = jobFactory(halt_job_on_file_boundaries = True,
                                splitOnRun = True,
-                               events_per_job = 5000)
+                               events_per_job = 5000,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 25, "There should be 5 jobs")
@@ -288,7 +301,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         #a single job containing all files
         jobGroups = jobFactory(halt_job_on_file_boundaries = False,
                                splitOnRun = False,
-                               events_per_job = 360)
+                               events_per_job = 360,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 1, "There should be 1 job")
@@ -324,7 +338,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         #The 3rd job only contains the second file, the fourth and fifth job split the third file
         jobGroups = jobFactory(halt_job_on_file_boundaries = False,
                                splitOnRun = False,
-                               events_per_job = 150)
+                               events_per_job = 150,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs
@@ -369,7 +384,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         #The settings for this splitting are 700 events per job
         jobGroups = jobFactory(splitOnRun = True,
                                halt_job_on_file_boundaries = False,
-                               events_per_job = 700)
+                               events_per_job = 700,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 6, "Six jobs must be in the jobgroup")
@@ -404,7 +420,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         jobGroups = jobFactory(halt_job_on_file_boundaries = True,
                                splitOnRun = True,
                                events_per_job = 550,
-                               max_events_per_lumi = 800)
+                               max_events_per_lumi = 800,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs
@@ -444,7 +461,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         jobGroups = jobFactory(halt_job_on_file_boundaries = True,
                                splitOnRun = True,
                                events_per_job = 550,
-                               max_events_per_lumi = 800)
+                               max_events_per_lumi = 800,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs

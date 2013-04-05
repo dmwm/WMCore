@@ -365,7 +365,10 @@ class JobSubmitterPoller(BaseWorkerThread):
                        loadedJob.get("swVersion", None),
                        loadedJob["name"],
                        loadedJob.get("proxyPath", None),
-                       newJob['request_name'])
+                       newJob['request_name'],
+                       loadedJob.get("estimatedJobTime", None),
+                       loadedJob.get("estimatedDiskUsage", None),
+                       loadedJob.get("estimatedMemoryUsage", None))
 
             self.jobDataCache[workflowName][jobID] = jobInfo
 
@@ -648,7 +651,10 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'swVersion': cachedJob[10],
                                'name': cachedJob[11],
                                'proxyPath': cachedJob[12],
-                               'requestName': cachedJob[13]}
+                               'requestName': cachedJob[13],
+                               'estimatedJobTime' : cachedJob[14],
+                               'estimatedDiskUsage' : cachedJob[15],
+                               'estimatedMemoryUsage' : cachedJob[16]}
 
                     # Add to jobsToSubmit
                     jobsToSubmit[package].append(jobDict)

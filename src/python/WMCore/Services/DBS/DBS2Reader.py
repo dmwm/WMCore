@@ -182,6 +182,35 @@ class DBS2Reader:
         """
         return [ x['LogicalFileName'] for x in self.dbs.listFiles(datasetPath)]
 
+    def listDatasetFileDetails(self, datasetPath, getParents=False):
+        """
+        _listDatasetFileDetails_
+
+        Get list of lumis, events, and parents for each file in a dataset
+        """
+
+        fileDetails = self.dbs.listFiles(datasetPath, retriveList=["retrive_lumi", "retrive_run", "retrive_block", "retrive_parent"])
+        files = {}
+        for f in fileDetails:
+            #prepare the dict of lumis
+            lumis = {}
+            for l in f['LumiList']:
+                if l['RunNumber'] in lumis:
+                    lumis[l['RunNumber']].append(l['LumiSectionNumber'])
+                else:
+                    lumis[l['RunNumber']] = [ l['LumiSectionNumber'] ]
+
+            files[f['LogicalFileName']] = {
+                "BlockName" : f['Block']['Name'],
+                "NumberOfEvents" : f['NumberOfEvents'],
+                "Lumis" : lumis,
+                "Parents" : [ x['LogicalFileName'] for x in f['ParentList'] ],
+                "Size" : f['FileSize'],
+                "Checksums" : {'Adler32': f['Adler32'], 'Checksum': f['Checksum'], 'Md5': f['Md5']}
+            }
+
+        return files
+
 
     def crossCheck(self, datasetPath, *lfns):
         """

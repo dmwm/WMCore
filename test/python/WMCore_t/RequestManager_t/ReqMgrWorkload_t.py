@@ -318,6 +318,9 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
         self.assertEqual(request['DbsUrl'], 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet')
+        self.assertEqual(request['SizePerEvent'], 512)
+        self.assertEqual(request['RequestNumEvents'], 0)
+        self.assertEqual(request['RequestSizeFiles'], 0)
 
     @attr('integration')
     def testE_StoreResults(self):
@@ -493,6 +496,10 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
         self.assertEqual(request['DbsUrl'], 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet')
+        self.assertEqual(request['SizePerEvent'], 512)
+        self.assertEqual(request['RequestNumEvents'], 0)
+        self.assertEqual(request['RequestSizeFiles'], 0)
+
 
     def testH_MonteCarlo(self):
         """
@@ -565,7 +572,9 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
         self.assertEqual(request['DbsUrl'], schema['DbsUrl'])
-
+        self.assertEqual(request['SizePerEvent'], 512)
+        self.assertEqual(request['RequestNumEvents'], 100)
+        self.assertEqual(request['RequestSizeFiles'], 0)
 
     def testI_RelValMC(self):
         """
@@ -775,7 +784,9 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
         self.assertEqual(request['DbsUrl'], schema['DbsUrl'])
-
+        self.assertEqual(request['SizePerEvent'], 512)
+        self.assertEqual(request['RequestNumEvents'], 100)
+        self.assertEqual(request['RequestSizeFiles'], 0)
 
 if __name__=='__main__':
     unittest.main()

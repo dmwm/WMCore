@@ -140,7 +140,6 @@ class CMSSW_t(unittest.TestCase):
         Test the execution of a script
         which exits with non-zero code.
         """
-        #
         self.step.application.command.executable = "brokenCmsRun.py"
         shutil.copy(os.path.join(getTestBase(),
                                  "WMCore_t/FwkJobReport_t/CMSSWFailReport.xml"),
@@ -193,6 +192,32 @@ class CMSSW_t(unittest.TestCase):
                 report = Report()
                 report.load("Report.pkl")
                 self.assertEqual(134, report.getExitCode())
+        except Exception, ex:
+            self.fail("Failure encountered, %s" % str(ex))
+        finally:
+            os.chdir(self.oldCwd)
+        return
+
+    def testD_ExecuteNoOutput(self):
+        """
+        _ExecuteNoOutput_
+
+        Test what happens when no output is produced,
+        the proper error should be included.
+        """
+        self.step.application.command.executable = "cmsRun.py"
+        shutil.copy(os.path.join(getTestBase(),
+                                 "WMCore_t/FwkJobReport_t/CMSSWSkippedAll.xml"),
+                    os.path.join(self.step.builder.workingDir, "FrameworkJobReport.xml"))
+        try:
+            os.chdir(self.step.builder.workingDir)
+            executor = StepFactory.getStepExecutor("CMSSW")
+            executor.initialise(self.step, self.job)
+            executor.pre()
+            executor.step.runtime.scramPreScripts.remove("SetupCMSSWPset")
+            executor.execute()
+            executor.post()
+            self.assertEqual(60450, executor.report.getExitCode())
         except Exception, ex:
             self.fail("Failure encountered, %s" % str(ex))
         finally:

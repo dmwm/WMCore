@@ -1,0 +1,43 @@
+<FrameworkJobReport>
+<SkippedFile Pfn="dcap://cmsdca1.fnal.gov:24141/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A611-E211-A851-0019B9F581C9.root" Lfn="/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A611-E211-A851-0019B9F581C9.root" />
+<SkippedFile Pfn="dcap://cmsdca.fnal.gov:24125/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C.root" Lfn="/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C.root" />
+<ReadBranches>
+</ReadBranches>
+<PerformanceReport>
+  <PerformanceSummary Metric="StorageStatistics">
+    <Metric Name="Parameter-untracked-bool-enabled" Value="true"/>
+    <Metric Name="Parameter-untracked-bool-stats" Value="true"/>
+    <Metric Name="Parameter-untracked-string-cacheHint" Value="application-only"/>
+    <Metric Name="Parameter-untracked-string-readHint" Value="auto-detect"/>
+    <Metric Name="ROOT-tfile-read-totalMegabytes" Value="2.55324"/>
+    <Metric Name="ROOT-tfile-write-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-dcap-open-maxMsecs" Value="0"/>
+    <Metric Name="Timing-dcap-open-minMsecs" Value="0"/>
+    <Metric Name="Timing-dcap-open-numOperations" Value="2"/>
+    <Metric Name="Timing-dcap-open-numSuccessfulOperations" Value="0"/>
+    <Metric Name="Timing-dcap-open-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-dcap-open-totalMsecs" Value="0"/>
+    <Metric Name="Timing-dcap-stagein-maxMsecs" Value="0"/>
+    <Metric Name="Timing-dcap-stagein-minMsecs" Value="0"/>
+    <Metric Name="Timing-dcap-stagein-numOperations" Value="2"/>
+    <Metric Name="Timing-dcap-stagein-numSuccessfulOperations" Value="0"/>
+    <Metric Name="Timing-dcap-stagein-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-dcap-stagein-totalMsecs" Value="0"/>
+    <Metric Name="Timing-root-open-maxMsecs" Value="0"/>
+    <Metric Name="Timing-root-open-minMsecs" Value="0"/>
+    <Metric Name="Timing-root-open-numOperations" Value="2"/>
+    <Metric Name="Timing-root-open-numSuccessfulOperations" Value="0"/>
+    <Metric Name="Timing-root-open-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-root-open-totalMsecs" Value="0"/>
+    <Metric Name="Timing-tstoragefile-construct-maxMsecs" Value="0"/>
+    <Metric Name="Timing-tstoragefile-construct-minMsecs" Value="0"/>
+    <Metric Name="Timing-tstoragefile-construct-numOperations" Value="4"/>
+    <Metric Name="Timing-tstoragefile-construct-numSuccessfulOperations" Value="0"/>
+    <Metric Name="Timing-tstoragefile-construct-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-tstoragefile-construct-totalMsecs" Value="0"/>
+  </PerformanceSummary>
+</PerformanceReport>
+
+<GeneratorInfo>
+</GeneratorInfo>
+</FrameworkJobReport>

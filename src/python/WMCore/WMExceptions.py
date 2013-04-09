@@ -28,11 +28,15 @@ of the error it represents.
 WMJobErrorCodes = {50660 :
                         "Application terminated by wrapper for using too much RSS",
                     50661 :
-                        "Application terminated by wrapper for using too much VSZ",
+                        "Application terminated by wrapper for using too much VSize",
                     50664 :
                         "Application terminated by wrapper for using too much wallclock time",
+                    60450 :
+                        "No output files present in the report",
+                    60451 :
+                        "No Adler32 checksum available in file",
                     60452 :
-                        "No run and lumi information in a file produced by cmsRun",
+                        "No run/lumi information in file",
                     61101 :
                         "No sites are available to submit the job because the location of its input(s)"
                         "do not pass the site whitelist/blacklist restrictions",
@@ -47,7 +51,7 @@ WMJobErrorCodes = {50660 :
 
 """
 WMJobPermanentSystemErrors
-List of job errors produced by WMCore that are internal to the framework and are used
+List of job errors produced by WMCore that are internal to the application and are used
 to indicate that a job should not be retried since the error is permanent
 """
 WMJobPermanentSystemErrors = [61102]

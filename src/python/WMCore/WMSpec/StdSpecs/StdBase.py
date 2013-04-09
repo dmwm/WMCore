@@ -80,7 +80,7 @@ class StdBase(object):
         self.timePerEvent = None
         self.memory = None
         self.sizePerEvent = None
-        self.periodicHarvestingInterval = 0
+        self.periodicHarvestInterval = 0
         self.dqmUploadProxy = None
         self.dqmUploadUrl = None
         self.dqmSequences = None
@@ -127,7 +127,7 @@ class StdBase(object):
         self.timePerEvent = float(arguments.get("TimePerEvent", 12))
         self.memory = float(arguments.get("Memory", 2300))
         self.sizePerEvent = float(arguments.get("SizePerEvent", 512))
-        self.periodicHarvestingInterval = int(arguments.get("PeriodicHarvest", 0))
+        self.periodicHarvestInterval = int(arguments.get("PeriodicHarvestInterval", 0))
         self.dqmUploadProxy = arguments.get("DQMUploadProxy", None)
         self.dqmUploadUrl = arguments.get("DQMUploadUrl", "https://cmsweb.cern.ch/dqm/dev")
         self.dqmSequences = arguments.get("DqmSequences", [])
@@ -573,6 +573,8 @@ class StdBase(object):
         mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
 
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
+        mergeTaskStageHelper = mergeTaskStageOut.getTypeHelper()
+
         mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                         scramArch = self.scramArch)
 
@@ -595,6 +597,8 @@ class StdBase(object):
         else:
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge")
 
+        mergeTaskStageHelper.setMinMergeSize(0, 0)
+
         self.addOutputModule(mergeTask, "Merged",
                              primaryDataset = getattr(parentOutputModule, "primaryDataset"),
                              dataTier = getattr(parentOutputModule, "dataTier"),
@@ -605,7 +609,7 @@ class StdBase(object):
         if self.enableHarvesting and getattr(parentOutputModule, "dataTier") in ["DQMROOT", "DQM"]:
             self.addDQMHarvestTask(mergeTask, "Merged",
                                    uploadProxy = self.dqmUploadProxy,
-                                   periodic_harvest_interval= self.periodicHarvestingInterval,
+                                   periodic_harvest_interval= self.periodicHarvestInterval,
                                    doLogCollect = doLogCollect)
         return mergeTask
 
@@ -628,15 +632,22 @@ class StdBase(object):
         cleanupTask.applyTemplates()
         return
 
-    def addDQMHarvestTask(self, parentTask, parentOutputModuleName,
-                          uploadProxy = None, periodic_harvest_interval = 0,
+    def addDQMHarvestTask(self, parentTask, parentOutputModuleName, uploadProxy = None,
+                          periodic_harvest_interval = 0, periodic_harvest_sibling = False,
                           parentStepName = "cmsRun1", doLogCollect = True):
         """
         _addDQMHarvestTask_
 
         Create a DQM harvest task to harvest the files produces by the parent task.
         """
-        harvestTask = parentTask.addTask("%sDQMHarvest%s" % (parentTask.name(), parentOutputModuleName))
+        if periodic_harvest_interval:
+            harvestType = "Periodic"
+        else:
+            harvestType = "EndOfRun"
+
+        harvestTask = parentTask.addTask("%s%sDQMHarvest%s" % (parentTask.name(),
+                                                               harvestType,
+                                                               parentOutputModuleName))
         self.addDashboardMonitoring(harvestTask)
         harvestTaskCmssw = harvestTask.makeStep("cmsRun1")
         harvestTaskCmssw.setStepType("CMSSW")
@@ -648,7 +659,9 @@ class StdBase(object):
 
         harvestTask.setTaskLogBaseLFN(self.unmergedLFNBase)
         if doLogCollect:
-            self.addLogCollectTask(harvestTask, taskName = "%s%sDQMHarvestLogCollect" % (parentTask.name(), parentOutputModuleName))
+            self.addLogCollectTask(harvestTask, taskName = "%s%s%sDQMHarvestLogCollect" % (parentTask.name(),
+                                                                                           parentOutputModuleName,
+                                                                                           harvestType))
 
         harvestTask.setTaskType("Harvesting")
         harvestTask.applyTemplates()
@@ -669,7 +682,8 @@ class StdBase(object):
         harvestTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
 
         harvestTask.setSplittingAlgorithm("Harvest",
-                                          periodic_harvest_interval = periodic_harvest_interval)
+                                          periodic_harvest_interval = periodic_harvest_interval,
+                                          periodic_harvest_sibling = periodic_harvest_sibling)
 
         datasetName = "/%s/%s/%s" % (getattr(parentOutputModule, "primaryDataset"),
                                      getattr(parentOutputModule, "processedDataset"),
@@ -699,6 +713,13 @@ class StdBase(object):
         harvestTaskUploadHelper = harvestTaskUpload.getTypeHelper()
         harvestTaskUploadHelper.setProxyFile(uploadProxy)
         harvestTaskUploadHelper.setServerURL(self.dqmUploadUrl)
+
+        # if this was a Periodic harvesting add another for EndOfRun
+        if periodic_harvest_interval:
+            self.addDQMHarvestTask(parentTask = parentTask, parentOutputModuleName = parentOutputModuleName, uploadProxy = uploadProxy,
+                                   periodic_harvest_interval = 0, periodic_harvest_sibling = True,
+                                   parentStepName = parentStepName, doLogCollect = doLogCollect)
+
         return
 
     def setupPileup(self, task, pileupConfig):

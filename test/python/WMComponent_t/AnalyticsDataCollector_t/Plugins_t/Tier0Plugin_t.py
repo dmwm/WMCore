@@ -134,7 +134,7 @@ class Tier0PluginTest(unittest.TestCase):
                             'ExpressAlcaSkimwrite_StreamZFast_ALCARECO', 'ExpressCleanupUnmergedwrite_StreamZFast_DQM',
                             'ExpressCleanupUnmergedwrite_ExpressPhysics_FEVT', 'ExpressCleanupUnmergedwrite_StreamZFast_ALCARECO']
         alcaHarvestTask = 'ExpressAlcaSkimwrite_StreamZFast_ALCARECOAlcaHarvestALCARECOStreamPromptCalibProd'
-        dqmHarvestTask = 'ExpressMergewrite_StreamZFast_DQMDQMHarvestMerged'
+        dqmHarvestTask = 'ExpressMergewrite_StreamZFast_DQMEndOfRunDQMHarvestMerged'
 
         self.stateMap = {'Merge' : [],
                          'Harvesting' : [],
@@ -225,7 +225,7 @@ class Tier0PluginTest(unittest.TestCase):
                       '%s/RecoMergewrite_AOD',
                       '%s/RecoMergewrite_DQM',
                       '%s/RecoMergewrite_RECO']
-        harvestingTask = '%s/RecoMergewrite_DQM/RecoMergewrite_DQMDQMHarvestMerged' % topLevelTask
+        harvestingTask = '%s/RecoMergewrite_DQM/RecoMergewrite_DQMEndOfRunDQMHarvestMerged' % topLevelTask
 
         self.stateMap['AlcaSkim'].append(wmbsHelper.topLevelSubscription)
 

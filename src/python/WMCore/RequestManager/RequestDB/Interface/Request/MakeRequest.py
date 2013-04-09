@@ -168,12 +168,13 @@ def associateSoftware(requestName, softwareName):
 
 
 
-def updateRequestSize(requestName, reqEventsSize, reqFilesSize = None, reqSizeOfEvent = None):
+def updateRequestSize(requestName, reqEventsSize,
+                      reqFilesSize, reqSizeOfEvent):
     """
     _updateRequestSize_
 
     Update the size of the request in events to be generated/read
-    and optionally  the number of files to be read for processing
+    and the number of files to be read for processing
     requests
 
     """

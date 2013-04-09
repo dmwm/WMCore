@@ -191,10 +191,10 @@ class CouchFileset(Fileset):
                   "include_docs": True, "reduce": False}
         result = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs",
                                        params)
-
         self.files = {}
         for row in result["rows"]:
             self.files.update(row["doc"]["files"])
+            self["files"] = self.files
         return
 
     def fileCount(self):

@@ -37,6 +37,10 @@ class ReportTest(unittest.TestCase):
                                     "WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
         self.badxmlPath = os.path.join(getTestBase(),
                                     "WMCore_t/FwkJobReport_t/CMSSWFailReport2.xml")
+        self.skippedFilesxmlPath = os.path.join(getTestBase(),
+                                    "WMCore_t/FwkJobReport_t/CMSSWSkippedNonExistentFile.xml")
+        self.skippedAllFilesxmlPath = os.path.join(getTestBase(),
+                                                   "WMCore_t/FwkJobReport_t/CMSSWSkippedAll.xml")
         self.testDir = self.testInit.generateWorkDir()
         return
 
@@ -753,6 +757,45 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertEqual(len(originalReport.retrieveStep("cmsRun1").outputModules), originalOutputModules - 1,
                          "Error: The number of output modules is incorrect after deletion")
 
+    def testSkippedFiles(self):
+        """
+        _testDeleteOutputModule_
+
+        If asked delete an output module, if it doesn't
+        exist then do nothing
+        """
+        # Check a report where some files were skipped but not all
+        originalReport = Report("cmsRun1")
+        originalReport.parse(self.skippedFilesxmlPath)
+        self.assertEqual(originalReport.getAllSkippedFiles(),
+                         ['/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A611-E211-A851-0019B9F581C9.root'])
+
+        # For negative control, check a good report with no skipped files
+        goodReport = Report("cmsRun1")
+        goodReport.parse(self.xmlPath)
+        self.assertEqual(goodReport.getAllSkippedFiles(), [])
+
+        # Check a report where all files were skipped
+        badReport = Report("cmsRun1")
+        badReport.parse(self.skippedAllFilesxmlPath)
+        self.assertEqual(sorted(badReport.getAllSkippedFiles()),
+                         ['/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A611-E211-A851-0019B9F581C9.root',
+                          '/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C.root'])
+
+        return
+
+    def testOutputCheck(self):
+        """
+        _testOutputCheck_
+
+        Check that we can identify bad reports with no output files
+        """
+        badReport = Report("cmsRun1")
+        badReport.parse(self.skippedAllFilesxmlPath)
+        badReport.checkForOutputFiles("cmsRun1")
+        self.assertFalse(badReport.stepSuccessful(stepName = "cmsRun1"))
+        self.assertEqual(badReport.getExitCode(), 60450)
+        return
 
 if __name__ == "__main__":
     unittest.main()

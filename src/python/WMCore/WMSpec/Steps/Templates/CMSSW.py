@@ -335,6 +335,25 @@ class CMSSWStepHelper(CoreHelper):
             setattr(self.data.application.configuration, "eventsPerLumi",
                     eventsPerLumi)
 
+    def getSkipBadFiles(self):
+        """
+        _getSkipBadFiles_
+
+        Check if we can skip inexistent files instead of failing the job
+        """
+        return getattr(self.data.application.configuration, "skipBadFiles",
+                False)
+
+    def setSkipBadFiles(self, skipBadFiles):
+        """
+        _setSkipBadFiles_
+
+        Add a flag to indicate the CMSSW process if we can
+        skip inexistent files instead of failing the job
+        """
+        setattr(self.data.application.configuration, "skipBadFiles",
+                skipBadFiles)
+
     def setMulticoreCores(self, ncores):
         """
         _setMulticoreCores_

@@ -15,7 +15,9 @@ class LoadForErrorHandler(DBFormatter):
     _LoadForErrorHandler_
 
     Retrieve meta data for a job given it's ID.  This includes the name,
-    job group and last update time.
+    job group and last update time. It also works for the AccountantWorker
+    to determine ACDC records for skipped files in successful jobs, this mode
+    is used when a file selection is provided.
     """
     sql = """SELECT wmbs_job.id, jobgroup, wmbs_job.name AS name,
                     wmbs_job_state.name AS state, state_time, retry_count,
@@ -78,7 +80,8 @@ class LoadForErrorHandler(DBFormatter):
 
         return formattedResult
 
-    def execute(self, jobID, conn = None, transaction = False):
+    def execute(self, jobID, fileSelection = None,
+                conn = None, transaction = False):
         """
         _execute_
 
@@ -103,6 +106,8 @@ class LoadForErrorHandler(DBFormatter):
                                            transaction = transaction)
         fileList  = self.formatDict(filesResult)
         fileBinds = []
+        if fileSelection:
+            fileList = filter(lambda x : x['lfn'] in fileSelection[x['jobid']], fileList)
         for x in fileList:
             # Add new runs
             x['newRuns'] = []
@@ -160,9 +165,6 @@ class LoadForErrorHandler(DBFormatter):
             else:
                 # If the file is there, just add the location
                 filesForJobs[jobid][f['id']]['locations'].add(f['se_name'])
-
-
-
 
         for j in jobList:
             if j['id'] in filesForJobs.keys():

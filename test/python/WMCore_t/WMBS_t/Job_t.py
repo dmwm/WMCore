@@ -756,16 +756,18 @@ class JobTest(unittest.TestCase):
 
         testFileA = File(lfn = makeUUID(), locations = "setest.site.ch")
         testFileB = File(lfn = makeUUID(), locations = "setest.site.ch")
+        testFileC = File(lfn = makeUUID(), locations = "setest.site.ch")
         testFileA.create()
         testFileB.create()
+        testFileC.create()
 
-        testFileset.addFile([testFileA, testFileB])
-        bogusFileset.addFile([testFileA, testFileB])
+        testFileset.addFile([testFileA, testFileB, testFileC])
+        bogusFileset.addFile([testFileA, testFileB, testFileC])
         testFileset.commit()
         bogusFileset.commit()
 
-        testSubscription.acquireFiles([testFileA, testFileB])
-        bogusSubscription.acquireFiles([testFileA, testFileB])
+        testSubscription.acquireFiles([testFileA, testFileB, testFileC])
+        bogusSubscription.acquireFiles([testFileA, testFileB, testFileC])
 
         testJobGroup = JobGroup(subscription = testSubscription)
         bogusJobGroup = JobGroup(subscription = bogusSubscription)
@@ -773,9 +775,9 @@ class JobTest(unittest.TestCase):
         bogusJobGroup.create()
 
         testJobA = Job(name = "TestJobA", files = [testFileA])
-        testJobB = Job(name = "TestJobB", files = [testFileA])
-        testJobC = Job(name = "TestJobC", files = [testFileB])
-        bogusJob = Job(name = "BogusJob", files = [testFileA, testFileB])
+        testJobB = Job(name = "TestJobB", files = [testFileA, testFileB])
+        testJobC = Job(name = "TestJobC", files = [testFileC])
+        bogusJob = Job(name = "BogusJob", files = [testFileA, testFileB, testFileC])
         testJobA.create(group = testJobGroup)
         testJobB.create(group = testJobGroup)
         testJobC.create(group = testJobGroup)
@@ -797,7 +799,7 @@ class JobTest(unittest.TestCase):
         testJobB["outcome"] = "success"
         testJobB.save()
 
-        testJobB.completeInputFiles()
+        testJobB.completeInputFiles(skipFiles = [testFileB["lfn"]])
 
         availFiles = len(testSubscription.filesOfStatus("Available"))
         assert availFiles == 0, \
@@ -812,7 +814,7 @@ class JobTest(unittest.TestCase):
                "Error: test sub has wrong number of complete files: %s" % compFiles
 
         failFiles = len(testSubscription.filesOfStatus("Failed"))
-        assert failFiles == 0, \
+        assert failFiles == 1, \
                "Error: test sub has wrong number of failed files: %s" % failFiles
 
         availFiles = len(bogusSubscription.filesOfStatus("Available"))
@@ -820,7 +822,7 @@ class JobTest(unittest.TestCase):
                "Error: test sub has wrong number of available files: %s" % availFiles
 
         acqFiles = len(bogusSubscription.filesOfStatus("Acquired"))
-        assert acqFiles == 2, \
+        assert acqFiles == 3, \
                "Error: test sub has wrong number of acquired files: %s" % acqFiles
 
         compFiles = len(bogusSubscription.filesOfStatus("Completed"))

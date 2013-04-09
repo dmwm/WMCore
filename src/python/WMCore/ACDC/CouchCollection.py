@@ -62,7 +62,6 @@ class CouchCollection(Collection):
                   "reduce": True, "group_level": 4}
         result = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs",
                                        params)
-
         self["filesets"] = []
         for row in result["rows"]:
             fileset = CouchFileset(database = self.database, url = self.url,

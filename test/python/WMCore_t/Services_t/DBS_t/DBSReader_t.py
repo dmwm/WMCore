@@ -119,7 +119,7 @@ class DBSReaderTest(unittest.TestCase):
                                     108, 98, 103, 109, 105]))
             )
 
-    @attr("integrtion")
+    @attr("integration")
     def testGetDBSSummaryInfo(self):
         """getDBSSummaryInfo returns summary of dataset and block"""
         self.dbs = DBSReader(self.endpoint)

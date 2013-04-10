@@ -197,6 +197,53 @@ class DBS3Reader:
         """
         return [ x['logical_file_name'] for x in self.dbs.listFiles(dataset = datasetPath)]
 
+    def listDatasetFileDetails(self, datasetPath, getParents=False):
+        """
+        _listDatasetFileDetails_
+
+        Get list of lumis, events, and parents for each file in a dataset
+        Return a dict where the keys are the files, and for each file we have something like:
+            { 'NumberOfEvents': 545,
+              'BlockName': '/HighPileUp/Run2011A-v1/RAW#dd6e0796-cbcc-11e0-80a9-003048caaace',
+              'Lumis': {173658: [8, 12, 9, 14, 19, 109, 105]},
+              'Parents': [],
+              'Checksums': {'Checksum': '22218315', 'Adler32': 'a41a1446', 'Md5': 'NOTSET'},
+              'Size': 286021145
+            }
+
+        """
+        fileDetails = self.dbs.listFiles(dataset=datasetPath, detail=True)
+        blocks = set() #the set of blocks of the dataset
+        #Iterate over the files and prepare the set of blocks and a dict where the keys are the files
+        files = {}
+        for f in fileDetails:
+            blocks.add(f['block_name'])
+            files[f['logical_file_name']] = {
+                "BlockName" : f['block_name'],
+                "NumberOfEvents" : f['event_count'],
+                "Lumis" : {},
+                "Parents" : [],
+                "Size" : f['file_size'],
+                "Checksums" : {'Adler32': f['adler32'], 'Checksum': f['check_sum'], 'Md5': f['md5']}
+            }
+
+        #Iterate over the blocks and get parents and lumis
+        for blockName in blocks:
+            #get the parents
+            if getParents:
+                parents = self.dbs.listFileParents(block_name=blockName)
+                for p in parents:
+                    files[p['logical_file_name']]['Parents'].extend(p['parent_logical_file_name'])
+            #get the lumis
+            file_lumis = self.dbs.listFileLumis(block_name=blockName)
+            for f in file_lumis:
+                if f['run_num'] in files[f['logical_file_name']]['Lumis']:
+                    files[f['logical_file_name']]['Lumis'][f['run_num']].extend(f['lumi_section_num'])
+                else:
+                    files[f['logical_file_name']]['Lumis'][f['run_num']] = f['lumi_section_num']
+
+        return files
+
 
     def crossCheck(self, datasetPath, *lfns):
         """

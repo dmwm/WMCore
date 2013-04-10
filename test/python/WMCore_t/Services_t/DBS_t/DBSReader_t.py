@@ -96,6 +96,30 @@ class DBSReaderTest(unittest.TestCase):
         self.assertTrue(FILE in files)
 
     @attr("integration")
+    def testlistDatasetFileDetails(self):
+        """testlistDatasetFilesDetails returns lumis, events, and parents of a dataset"""
+        TESTFILE = '/store/data/Run2011A/HighPileUp/RAW/v1/000/173/658/56484BAB-CBCB-E011-AF00-BCAEC518FF56.root'
+        for endpoint in [self.endpoint, 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet']:
+            self.dbs = DBSReader(endpoint)
+            details = self.dbs.listDatasetFileDetails(DATASET)
+            self.assertEqual(len(details), 49)
+            self.assertTrue(TESTFILE in details)
+            self.assertEqual(details[TESTFILE]['NumberOfEvents'], 545)
+            self.assertEqual(details[TESTFILE]['Size'], 286021145)
+            self.assertEqual(details[TESTFILE]['BlockName'], '/HighPileUp/Run2011A-v1/RAW#dd6e0796-cbcc-11e0-80a9-003048caaace')
+            self.assertEqual(details[TESTFILE]['Checksums'],
+                {'Checksum': '22218315', 'Adler32': 'a41a1446', 'Md5': 'NOTSET'}
+            )
+            self.assertTrue( 173658 in details[TESTFILE]['Lumis'])
+            self.assertEqual( sorted(details[TESTFILE]['Lumis'][173658]),
+                sorted( map( long, [8, 12, 9, 14, 10, 6, 2, 1, 4, 3, 36, 49, 16, 11, 27, 35, 46, 39, 20, 24, 52, 23, 40, 42, 45, 21, 32, 37,  \
+                                    25, 22, 5, 33, 17, 15, 26, 50, 18, 29, 51, 44, 69, 43, 30, 73, 19, 41, 13, 38, 7, 31, 75, 48, 59, 65, 55, \
+                                    57, 34, 28, 74, 47, 64, 61, 68, 77, 66, 71, 60, 76, 70, 67, 62, 78, 82, 79, 88, 56, 101, 92, 58, 72, 54,  \
+                                    63, 96, 53, 84, 95, 89, 85, 99, 81, 91, 102, 80, 100, 107, 94, 93, 90, 86, 87, 83, 97, 104, 110, 111, 106,\
+                                    108, 98, 103, 109, 105]))
+            )
+
+    @attr("integration")
     def testGetDBSSummaryInfo(self):
         """getDBSSummaryInfo returns summary of dataset and block"""
         self.dbs = DBSReader(self.endpoint)

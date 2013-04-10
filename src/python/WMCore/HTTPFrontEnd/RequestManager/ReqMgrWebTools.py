@@ -634,7 +634,10 @@ def requestDetails(requestName):
     schema['AcquisitionEra']  = str(helper.getAcquisitionEra())
     if schema['SoftwareVersions'] == ['DEPRECATED']:
         schema['SoftwareVersions'] = helper.getCMSSWVersions()
-        
+
+    # Check in the CouchWorkloadDBName if not present
+    schema.setdefault("CouchWorkloadDBName", "reqmgr_workload_cache")
+
     # get DbsUrl from CouchDB
     if schema.get("CouchWorkloadDBName", None) and schema.get("CouchURL", None):
         couchDb = Database(schema["CouchWorkloadDBName"], schema["CouchURL"])

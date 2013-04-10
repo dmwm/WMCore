@@ -138,10 +138,9 @@ def checkIn(request, requestType = 'None'):
     except Exception, ex:
         _raiseCheckInError(request, ex, "Unable to associate software for this request")
 
-    if request["RequestNumEvents"] != None:
-        MakeRequest.updateRequestSize(requestName, request["RequestNumEvents"],
-                                      request.get("RequestSizeFiles", 0),
-                                      request.get("SizePerEvent", 0))
+    MakeRequest.updateRequestSize(requestName, request.get("RequestNumEvents", 0),
+                                  request.get("RequestSizeFiles", 0),
+                                  request.get("SizePerEvent", 0))
         
     campaign = request.get("Campaign", "")
     if campaign != "" and campaign != None:

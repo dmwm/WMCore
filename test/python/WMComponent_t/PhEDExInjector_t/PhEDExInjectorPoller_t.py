@@ -76,7 +76,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
 
-    def stuffDatabase(self, custodialSite = "srm-cms.cern.ch", spec = "TestWorkload.pkl"):
+    def stuffDatabase(self, spec = "TestWorkload.pkl"):
         """
         _stuffDatabase_
 
@@ -106,7 +106,6 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
         testFileA.setDatasetPath(self.testDatasetA)
-        testFileA.setCustodialSite(custodialSite = custodialSite)
         testFileA.addRun(Run(2, *[45]))
         testFileA.create()
 
@@ -117,7 +116,6 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
         testFileB.setDatasetPath(self.testDatasetA)
-        testFileB.setCustodialSite(custodialSite = custodialSite)
         testFileB.addRun(Run(2, *[45]))
         testFileB.create()
 
@@ -128,7 +126,6 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
         testFileC.setDatasetPath(self.testDatasetA)
-        testFileC.setCustodialSite(custodialSite = custodialSite)
         testFileC.addRun(Run(2, *[45]))
         testFileC.create()
 
@@ -143,7 +140,6 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
         testFileD.setDatasetPath(self.testDatasetB)
-        testFileD.setCustodialSite(custodialSite = custodialSite)
         testFileD.addRun(Run(2, *[45]))
         testFileD.create()
 
@@ -154,7 +150,6 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
         testFileE.setDatasetPath(self.testDatasetB)
-        testFileE.setCustodialSite(custodialSite = custodialSite)
         testFileE.addRun(Run(2, *[45]))
         testFileE.create()
 
@@ -312,7 +307,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         First make sure we properly handle having no custodialSite
         """
 
-        self.stuffDatabase(custodialSite = None)
+        self.stuffDatabase()
 
         poller = PhEDExInjectorPoller(self.createConfig())
 
@@ -326,41 +321,6 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         self.assertEqual(uninjectedFiles.keys(), ['srm-cms.cern.ch'])
 
         return
-
-    def test_CustodialSiteB(self):
-        """
-        _CustodialSiteB_
-
-        Test and make sure that we can handle a real custodial site
-        """
-
-        self.stuffDatabase(custodialSite = 'se.fnal.gov')
-        myThread        = threading.currentThread()
-        daofactory      = DAOFactory(package = "WMComponent.PhEDExInjector.Database",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
-        getUninjected   = daofactory(classname = "GetUninjectedFiles")
-        uninjectedFiles = getUninjected.execute()
-        self.assertEqual(uninjectedFiles.keys(), ['se.fnal.gov'])
-        return
-
-    def test_OverrideSiteC(self):
-        """
-        _test_OverrideSiteC_
-
-        Test that we can set a spec with an override site and the files
-        will be associated with that site, even if there is a custodial override
-        """
-        self.stuffDatabase(custodialSite = 'se.fnal.gov', spec = 'TestOverrideWorkload.pkl')
-        myThread        = threading.currentThread()
-        daofactory      = DAOFactory(package = "WMComponent.PhEDExInjector.Database",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
-        getUninjected   = daofactory(classname = "GetUninjectedFiles")
-        uninjectedFiles = getUninjected.execute()
-        self.assertEqual(uninjectedFiles.keys(), ['se.cern.ch'])
-        return
-
 
 if __name__ == '__main__':
     unittest.main()

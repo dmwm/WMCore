@@ -234,9 +234,6 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.assertEqual(request['UnmergedLFNBase'], '/store/unmerged')
         self.assertEqual(request['MergedLFNBase'], '/store/data')
 
-        # Check random other
-        self.assertEqual(request['CustodialSite'], 'US_T1_FNAL')
-
         # Check Num events
         self.assertEqual(request['RequestNumEvents'], 100)
         self.assertEqual(request['SizePerEvent'], 101)

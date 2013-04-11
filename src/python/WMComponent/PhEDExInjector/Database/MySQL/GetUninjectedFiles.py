@@ -17,7 +17,6 @@ class GetUninjectedFiles(DBFormatter):
                     dbsbuffer_file.filesize AS filesize,
                     dbsbuffer_block.blockname AS blockname,
                     dbsbuffer_dataset.path AS dataset,
-                    dbsbuffer_dataset.custodial_site AS custodial_site,
                     dbsbuffer_location.se_name AS location,
                     dbsbuffer_file_checksums.cksum as cksum,
                     dbsbuffer_checksum_type.type as cktype,
@@ -91,10 +90,7 @@ class GetUninjectedFiles(DBFormatter):
                     self.logger.error("Error: %s" % str(ex))
                     continue
             if not overridden:
-                if row['custodial_site'] != None:
-                    location = row['custodial_site']
-                elif not overridden:
-                    location = row['location']
+                location = row['location']
 
 
             if location not in formattedResult.keys():

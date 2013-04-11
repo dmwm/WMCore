@@ -30,7 +30,6 @@ class Create(DBCreator):
                            valid_status    VARCHAR(20),
                            global_tag      VARCHAR(255),
                            parent          VARCHAR(500),
-                           custodial_site  VARCHAR(255),
                            subscribed int default 0,
                            primary key(id)
                         ) ENGINE=InnoDB"""

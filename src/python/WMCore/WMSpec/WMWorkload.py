@@ -858,24 +858,6 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return getattr(self.data.properties, 'campaign', None)
 
-    def setCustodialSite(self, siteName):
-        """
-        _setCustodialSite_
-
-        Set the custody site for all datasets produced
-        by this workflow
-        """
-        self.data.properties.custodialSite = siteName
-        return
-
-    def getCustodialSite(self):
-        """
-        _getCustodialSite_
-
-        Get the custodial site for this workflow
-        """
-        return getattr(self.data.properties, 'custodialSite', None)
-
     def setLFNBase(self, mergedLFNBase, unmergedLFNBase):
         """
         _setLFNBase_

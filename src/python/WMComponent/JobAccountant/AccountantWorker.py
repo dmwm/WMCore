@@ -355,7 +355,6 @@ class AccountantWorker(WMConnectionBase):
         dbsFile.setProcessingVer(ver = jobReportFile.get('processingVer', None))
         dbsFile.setAcquisitionEra(era = jobReportFile.get('acquisitionEra', None))
         dbsFile.setGlobalTag(globalTag = jobReportFile.get('globalTag', None))
-        dbsFile.setCustodialSite(custodialSite = jobReportFile.get('custodialSite', None))
         dbsFile['task'] = task
 
         for run in jobReportFile["runs"]:

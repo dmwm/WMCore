@@ -939,7 +939,6 @@ class DBSBufferFileTest(unittest.TestCase):
         testFileA.setAcquisitionEra(era = "AcqEra")
         testFileA.setGlobalTag(globalTag = "GlobalTag")
         testFileA.setDatasetParent(datasetParent = "Parent")
-        testFileA.setCustodialSite(custodialSite = 'testCustody')
         testFileA.create()
 
         # There are no accessors for these things because load is never called
@@ -949,10 +948,6 @@ class DBSBufferFileTest(unittest.TestCase):
         self.assertEqual(das['GlobalTag'], 'GlobalTag')
         self.assertEqual(das['ValidStatus'], 'VALID')
 
-        # Test things with no accessors whatsoever
-        myThread = threading.currentThread()
-        self.assertEqual(myThread.dbi.processData("SELECT custodial_site FROM dbsbuffer_dataset")[0].fetchall()[0][0],
-                         'testCustody')
         return
 
 

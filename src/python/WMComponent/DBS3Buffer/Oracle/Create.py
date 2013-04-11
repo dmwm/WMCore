@@ -39,7 +39,6 @@ class Create(DBCreator):
                  valid_status      VARCHAR2(20),
                  global_tag        VARCHAR2(255),
                  parent            VARCHAR2(500),
-                 custodial_site    VARCHAR2(255),
                  subscribed        INT DEFAULT 0
                )"""
         self.create["01dbsbuffer_dataset_seq"] = \

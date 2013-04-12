@@ -1,3 +1,12 @@
+0.9.58 to 0.9.59:
+  - Fix broken DBS3Buffer creation in Oracle.  Pull request 4543.
+  - Store correctly the SizePerEvent and friends.  Pull request #4540.
+  - Add the listDatasetFileDetails API to the DBSReader classes for CRAB3.  Pull
+    request #4539.
+  - Change the harvesting job splitter to have two distinct modes: periodic and
+    end of run.  Fix StdBase so that it configures the harvesting job splitter
+    correctly.  Pull request #4459.
+
 0.9.57 to 0.9.58:
   - Catch empty lumi runs.  Pull request #4537.
   - Include performance estimates in Condor JDLs.  Pull request #4536. 

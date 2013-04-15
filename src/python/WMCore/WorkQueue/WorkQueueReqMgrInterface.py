@@ -38,7 +38,7 @@ class WorkQueueReqMgrInterface():
 
         try:    # report back to ReqMgr
             uptodate_elements = self.report(queue)
-            msg += "Updated ReqMgr status for: %s" % ", ".join([x['RequestName'] for x in uptodate_elements])
+            msg += "Updated ReqMgr status for: %s\n" % ", ".join([x['RequestName'] for x in uptodate_elements])
         except:
             self.logger.exception("Error caught during RequestManager update")
         else:
@@ -46,8 +46,14 @@ class WorkQueueReqMgrInterface():
                 self.deleteFinishedWork(queue, uptodate_elements)
             except:
                 self.logger.exception("Error caught during work deletion")
-            else:
-                queue.backend.recordTaskActivity('reqmgr_sync', msg)
+
+        try: # synch with ReqMgr for priorities of available work
+            updatedWorkflows = self.synchronizePriority(queue)
+            msg += "Updated WorkQueue elements for: %s" % ", ".join(updatedWorkflows)
+        except:
+            self.logger.exception("Error caught while trying to update from ReqMgr")
+
+        queue.backend.recordTaskActivity('reqmgr_sync', msg)
 
     def queueNewRequests(self, queue):
         """Get requests from regMgr and queue to workqueue"""
@@ -328,3 +334,20 @@ class WorkQueueReqMgrInterface():
 
         self.logger.info("%s element(s) added to open requests" % work)
         return work
+
+    def synchronizePriority(self, queue):
+        """Check the available elements in the queue and compare the priority with ReqMgr, update if necessary"""
+        self.logger.info("Checking available requests for ReqMgr priority changes")
+        changes = set()
+        requests = {}
+        elements = queue.backend.getElements(status = "Available")
+        requestNames = set(x['RequestName'] for x in elements)
+        for request in requestNames:
+            requests[request] = self.reqMgr.getRequest(request)
+        for element in elements:
+            elementPrio = element['Priority']
+            requestPrio = requests[element['RequestName']]['RequestPriority']
+            if requestPrio != elementPrio:
+                queue.backend.updateElements(element.id, Priority = requestPrio)
+                changes.add(element['RequestName'])
+        return changes

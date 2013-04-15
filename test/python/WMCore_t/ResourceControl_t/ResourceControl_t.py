@@ -237,14 +237,14 @@ class ResourceControlTest(unittest.TestCase):
         self.assertEqual( createThresholds["testSite1"]["total_slots"], 10,
                           "Error: Wrong number of total slots." )
 
-        self.assertEqual( createThresholds["testSite1"]["pending_jobs"], 0,
+        self.assertEqual( createThresholds["testSite1"]["pending_jobs"], {0 : 0},
                           "Error: Wrong number of running jobs: %s" %
                               createThresholds["testSite1"]["pending_jobs"] )
 
         self.assertEqual( createThresholds["testSite2"]["total_slots"], 100,
                           "Error: Wrong number of total slots." )
 
-        self.assertEqual( createThresholds["testSite2"]["pending_jobs"], 0,
+        self.assertEqual( createThresholds["testSite2"]["pending_jobs"], {0 : 0},
                           "Error: Wrong number of running jobs." )
 
         thresholds = myResourceControl.listThresholdsForSubmit()
@@ -395,12 +395,12 @@ class ResourceControlTest(unittest.TestCase):
         # We should have two running jobs with locations at site one,
         # two running jobs without locations at site two, and one running
         # job without a location at site one and two.
-        self.assertEqual( createThresholds["testSite1"]["pending_jobs"], 4,
+        self.assertEqual( createThresholds["testSite1"]["pending_jobs"], {0 : 4},
                "Error: Wrong number of pending jobs for site 1" )
 
         # We should have one running job with a location at site 2 and
         # another running job without a location.
-        self.assertEqual( createThresholds["testSite2"]["pending_jobs"], 2,
+        self.assertEqual( createThresholds["testSite2"]["pending_jobs"], {0 : 2},
                "Error: Wrong number of pending jobs for site 2" )
 
         # We should also have a phedex_name

@@ -136,7 +136,8 @@ def freeSlots(multiplier = 1.0, minusRunning = False, allowedStates = ['Normal']
     """
     from WMCore.ResourceControl.ResourceControl import ResourceControl
     rc_sites = ResourceControl().listThresholdsForCreate()
-    sites = defaultdict(lambda: 0)
+    thresholds = defaultdict(lambda: 0)
+    jobCounts = defaultdict(dict)
     for name, site in rc_sites.items():
         if not site.get('cms_name'):
             logging.warning("Not fetching work for %s, cms_name not defined" % name)
@@ -146,17 +147,12 @@ def freeSlots(multiplier = 1.0, minusRunning = False, allowedStates = ['Normal']
         if site['state'] not in allowedStates:
             continue
         slots = site['total_slots']
+        thresholds[site['cms_name']] += (slots * multiplier)
         if minusRunning:
-            slots -= site['pending_jobs']
-        sites[site['cms_name']] += (slots * multiplier)
+            jobCounts[site['cms_name']] = dict((k, jobCounts[site['cms_name']].get(k, 0) + site['pending_jobs'].get(k, 0))
+                                               for k in site['pending_jobs'])
 
-    # At the end delete entries < 1
-    # This allows us to combine multiple sites under the same CMS_Name
-    # Without going nuts
-    for site in sites.keys():
-        if sites[site] < 1:
-            del sites[site]
-    return dict(sites)
+    return dict(thresholds), dict(jobCounts)
 
 class WMBSHelper(WMConnectionBase):
     """
@@ -277,7 +273,8 @@ class WMBSHelper(WMConnectionBase):
                             owner_vorole = self.wmSpec.getOwner().get("vorole", "DEFAULT"),
                             name = self.wmSpec.name(), task = task.getPathName(),
                             wfType = self.wmSpec.getDashboardActivity(),
-                            alternativeFilesetClose = alternativeFilesetClose)
+                            alternativeFilesetClose = alternativeFilesetClose,
+                            priority = self.wmSpec.priority())
         workflow.create()
         subscription = Subscription(fileset = fileset, workflow = workflow,
                                     split_algo = task.jobSplittingAlgorithm(),

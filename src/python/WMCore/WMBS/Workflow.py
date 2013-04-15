@@ -36,12 +36,13 @@ class Workflow(WMBSBase, WMWorkflow):
     def __init__(self, spec = None, owner = "unknown", dn = "unknown",
                  group = "unknown", owner_vogroup = "DEFAULT",
                  owner_vorole = "DEFAULT", name = None, task = None,
-                 wfType = None, id = -1, alternativeFilesetClose = False):
+                 wfType = None, id = -1, alternativeFilesetClose = False,
+                 priority = None):
         WMBSBase.__init__(self)
         WMWorkflow.__init__(self, spec = spec, owner = owner, dn = dn,
                             group = group, owner_vogroup = owner_vogroup,
                             owner_vorole = owner_vorole, name = name,
-                            task = task, wfType = wfType)
+                            task = task, wfType = wfType, priority = priority)
 
         if self.dn == "unknown":
             self.dn = owner
@@ -118,6 +119,7 @@ class Workflow(WMBSBase, WMWorkflow):
         action.execute(spec = self.spec, owner = userid, name = self.name,
                        task = self.task, wfType = self.wfType,
                        alt_fs_close = self.alternativeFilesetClose,
+                       priority = self.priority,
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction())
 
@@ -174,6 +176,7 @@ class Workflow(WMBSBase, WMWorkflow):
         self.vogroup = result["vorole"]
         self.task = result["task"]
         self.wfType = result["type"]
+        self.priority = result["priority"]
 
         action = self.daofactory(classname = "Workflow.LoadOutput")
         results = action.execute(workflow = self.id, conn = self.getDBConn(),

@@ -234,7 +234,8 @@ class Create(CreateWMBSBase):
                type  VARCHAR(255),
                owner INTEGER      NOT NULL,
                alt_fs_close INTEGER NOT NULL,
-               injected INTEGER   DEFAULT 0
+               injected INTEGER   DEFAULT 0,
+               priority INTEGER   DEFAULT 0
                ) %s""" % tablespaceTable
 
         self.indexes["01_pk_wmbs_workflow"] = \

@@ -111,6 +111,7 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         reqMgrInt(globalQ)
         self.assertEqual(len(globalQ), 2)
         self.assertEqual(reqMgr.status[reqMgr.names[0]], 'acquired')
+        self.assertEqual(len(globalQ.backend.getElements(Priority = 100)), 2)
 
         # local queue acquires and runs
         globalQ.updateLocationInfo()

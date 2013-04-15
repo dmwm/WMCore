@@ -12,13 +12,20 @@ class ListThresholdsForCreate(DBFormatter):
     assignedSQL = """SELECT wmbs_location.site_name, wmbs_location.pending_slots,
                             wmbs_location.cms_name, wmbs_location.plugin,
                             COUNT(wmbs_job.id) AS total, wls.name AS state,
-                            runjob.status AS job_status FROM wmbs_job
+                            runjob.status AS job_status, wmbs_workflow.priority
+                            FROM wmbs_job
                        INNER JOIN wmbs_job_state ON
                          wmbs_job.state = wmbs_job_state.id
                        INNER JOIN wmbs_location ON
                          wmbs_job.location = wmbs_location.id
                        INNER JOIN wmbs_location_state wls ON
                          wls.id = wmbs_location.state
+                       INNER JOIN wmbs_jobgroup ON
+                         wmbs_jobgroup.id = wmbs_job.jobgroup
+                       INNER JOIN wmbs_subscription ON
+                         wmbs_subscription.id = wmbs_jobgroup.subscription
+                       INNER JOIN wmbs_workflow ON
+                         wmbs_workflow.id = wmbs_subscription.workflow
                        LEFT OUTER JOIN (SELECT wmbs_id AS id, bl_status.name as status
                                         FROM bl_runjob
                                             INNER JOIN bl_status ON
@@ -32,13 +39,16 @@ class ListThresholdsForCreate(DBFormatter):
                            wmbs_job_state.name != 'killed'
                      GROUP BY wmbs_location.site_name,
                      wmbs_location.pending_slots, wmbs_location.cms_name,
-                     wls.name, runjob.status, wmbs_location.plugin"""
+                     wls.name, runjob.status, wmbs_location.plugin,
+                     wmbs_workflow.priority"""
 
     unassignedSQL = """SELECT wmbs_location.site_name, wmbs_location.pending_slots,
                               wmbs_location.cms_name, wls.name AS state,
-                              COUNT(unassigned_jobs.job) AS job_count FROM wmbs_location
+                              COUNT(unassigned_jobs.job) AS job_count, unassigned_jobs.priority
+                              FROM wmbs_location
                          LEFT OUTER JOIN
-                           (SELECT DISTINCT wmbs_job_assoc.job, wmbs_file_location.location
+                           (SELECT DISTINCT wmbs_job_assoc.job, wmbs_file_location.location,
+                                            wmbs_workflow.priority
                               FROM wmbs_job_assoc
                               INNER JOIN wmbs_file_location ON
                                 wmbs_job_assoc.fileid = wmbs_file_location.fileid
@@ -48,6 +58,10 @@ class ListThresholdsForCreate(DBFormatter):
                                 wmbs_job.state = wmbs_job_state.id
                               INNER JOIN wmbs_jobgroup ON
                                 wmbs_job.jobgroup = wmbs_jobgroup.id
+                              INNER JOIN wmbs_subscription ON
+                                wmbs_jobgroup.subscription = wmbs_subscription.id
+                              INNER JOIN wmbs_workflow ON
+                                wmbs_workflow.id = wmbs_subscription.workflow
                               LEFT OUTER JOIN wmbs_subscription_validation wsv
                                 ON wsv.location_id = wmbs_file_location.location
                                 AND wsv.subscription_id = wmbs_jobgroup.subscription
@@ -63,7 +77,7 @@ class ListThresholdsForCreate(DBFormatter):
                           INNER JOIN wmbs_location_state wls ON
                             wls.id = wmbs_location.state
                             GROUP BY wmbs_location.site_name, wmbs_location.pending_slots,
-                            wmbs_location.cms_name, wls.name"""
+                            wmbs_location.cms_name, wls.name, unassigned_jobs.priority"""
 
     def format(self, assignedResults, unassignedResults):
         """
@@ -79,11 +93,13 @@ class ListThresholdsForCreate(DBFormatter):
         for result in assignedResults:
             if result["total"] == None:
                 result["total"] = 0
+            siteName = result["site_name"]
 
-            if not result["site_name"] in results:
-                results[result["site_name"]] = {"total_slots": 0, "pending_jobs": 0,
-                                                "cms_name": result["cms_name"],
-                                                "state" : result["state"]}
+            if not siteName in results:
+                results[siteName] = {"cms_name" : result["cms_name"],
+                                     "state" : result["state"],
+                                     "pending_jobs" : {},
+                                     "total_slots" : result["pending_slots"]}
 
             countJobs = True
             if result['job_status']:
@@ -94,20 +110,29 @@ class ListThresholdsForCreate(DBFormatter):
                 if status == 'Running':
                     countJobs = False
 
+            priority = result["priority"]
+
+            if priority not in results[siteName]["pending_jobs"]:
+                results[siteName]["pending_jobs"][priority] = 0
+
             if countJobs:
-                results[result["site_name"]]["pending_jobs"] += result["total"]
+                results[siteName]["pending_jobs"][priority] += result["total"]
 
             results[result["site_name"]]["total_slots"] = result["pending_slots"]
 
         # Sum up all the jobs currently unassigned
         for result in unassignedResults:
             siteName = result['site_name']
-            if not results.has_key(siteName):
+            if siteName not in results:
                 results[siteName] = {"total_slots": result["pending_slots"],
-                                     "pending_jobs": 0,
+                                     "pending_jobs": {},
                                      "cms_name": result["cms_name"],
                                      "state" : result["state"]}
-            results[siteName]['pending_jobs'] += result['job_count']
+            priority = result["priority"] or 0
+
+            if priority not in results[siteName]['pending_jobs']:
+                results[siteName]['pending_jobs'][priority] = 0
+            results[siteName]['pending_jobs'][priority] += result['job_count']
 
         return results
 

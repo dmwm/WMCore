@@ -248,8 +248,15 @@ def changePriority(requestName, priority, wmstatUrl = None):
     # change priority in CouchDB
     couchDb = Database(request["CouchWorkloadDBName"], request["CouchURL"])
     fields = {"RequestPriority": newPrior}
-    couchDb.updateDocument(requestName, "ReqMgr", "updaterequest", fields=fields) 
-    
+    couchDb.updateDocument(requestName, "ReqMgr", "updaterequest", fields=fields)
+    # push the change to the WorkQueue
+    response = ProdManagement.getProdMgr(requestName)
+    if response == [] or response[0] is None or response[0] == "":
+        # Request must not be assigned yet, we are safe here
+        return
+    workqueue = WorkQueue.WorkQueue(response[0])
+    workqueue.updatePriority(requestName, priority)
+    return
 
 def abortRequest(requestName):
     """ Changes the state of the request to "aborted", and asks the work queue

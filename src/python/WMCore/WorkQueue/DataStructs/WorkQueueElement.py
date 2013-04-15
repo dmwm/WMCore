@@ -34,7 +34,7 @@ class WorkQueueElement(dict):
         self.setdefault('PileupData', {})
         #both ParentData and ParentFlag is needed in case there Dataset split,
         # even though ParentFlag is True it will have empty ParentData
-        self.setdefault('ParentData', [])
+        self.setdefault('ParentData', {})
         self.setdefault('ParentFlag', False)
         # 0 jobs are valid where we need to accept all blocks (only dqm etc subscriptions will run)
         self.setdefault('Jobs', None)
@@ -215,6 +215,16 @@ class WorkQueueElement(dict):
         for locations in self['Inputs'].values():
             if site not in locations:
                 return False
+        # Parent data as well
+        if self['ParentFlag']:
+            for locations in self['ParentData'].values():
+                if site not in locations:
+                    return False
+
+        # Pileup data must be checked
+        for locations in self['PileupData'].values():
+            if site not in locations:
+                return False
 
         # workflow restrictions
         if self['SiteWhitelist'] and site not in self['SiteWhitelist']:
@@ -222,3 +232,4 @@ class WorkQueueElement(dict):
         if site in self['SiteBlacklist']:
             return False
         return True
+

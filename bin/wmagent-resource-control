@@ -25,19 +25,18 @@ def getTaskTypes(tier0 = False):
     Get the list of task types we are currently using with
     priorities.
     """
-    taskTypes = {"Merge" : 5,
-                 "Cleanup" : 5,
-                 "Harvesting" : 5,
-                 "LogCollect" : 3,
-                 "Skim" : 2,
-                 "Production" : 1,
-                 "Processing" : 1,
-                 "Analysis" : 1
-                 }
+    taskTypes = ["Merge",
+                 "Cleanup",
+                 "Harvesting",
+                 "LogCollect",
+                 "Skim",
+                 "Production",
+                 "Processing",
+                 "Analysis"]
 
     if tier0:
-        taskTypes["Repack"] = 4
-        taskTypes["Express"] = 5
+        taskTypes.append("Repack")
+        taskTypes.append("Express")
 
     return taskTypes
 
@@ -78,7 +77,7 @@ def createOptionParser():
     myOptParser.add_option("--task-type", dest = "taskType",
                            help = "Specify the name of the task to add/modify")
     myOptParser.add_option("--priority", dest = "priority", default = None,
-                           help = "Specify the priority of the threshold at the site (higher is better)")
+                           help = "Specify the priority of the task across all sites (higher is better)")
     myOptParser.add_option("--plugin", dest = "plugin",
                            help = "Specify submit plugin to use for specific site")
     myOptParser.add_option("--drain", dest = "state", action="store_const",
@@ -134,10 +133,9 @@ def addSites(resourceControl, allSites, ceName, plugin, pendingSlots, runningSlo
         updateSiteInfo(resourceControl, siteName, pendingSlots, runningSlots,
                        ceName or siteName, allSites[siteName], plugin, cmsName or siteName)
 
-        tasksWithPriorities = getTaskTypes(tier0Option)
-        for task in tasksWithPriorities:
-            updateThresholdInfo(resourceControl, siteName, task, runningSlots, pendingSlots,
-                                priority = tasksWithPriorities[task])
+        tasks = getTaskTypes(tier0Option)
+        for task in tasks:
+            updateThresholdInfo(resourceControl, siteName, task, runningSlots, pendingSlots)
 
     return
 
@@ -220,8 +218,7 @@ def updateSiteInfo(resourceControl, siteName, pendingSlots = None,
         if allTasks:
             tasksWithPriorities = getTaskTypes()
             for task in tasksWithPriorities:
-                updateThresholdInfo(resourceControl, siteName, task, runningSlots, pendingSlots,
-                                    priority = tasksWithPriorities[task])
+                updateThresholdInfo(resourceControl, siteName, task, runningSlots, pendingSlots)
 
     if seName != None:
         print "It's not possible to change a site's SE name after the site has"
@@ -235,7 +232,7 @@ def updateSiteInfo(resourceControl, siteName, pendingSlots = None,
 
     return
 
-def updateThresholdInfo(resourceControl, siteName, taskType, maxSlots = None, pendingSlots = None, priority = None):
+def updateThresholdInfo(resourceControl, siteName, taskType, maxSlots = None, pendingSlots = None):
     """
     _updateThresholdInfo_
 
@@ -253,8 +250,21 @@ def updateThresholdInfo(resourceControl, siteName, taskType, maxSlots = None, pe
         sys.exit(1)
 
     resourceControl.insertThreshold(siteName = siteName, taskType = taskType,
-                                    maxSlots = maxSlots, pendingSlots = pendingSlots,
-                                    priority = priority)
+                                    maxSlots = maxSlots, pendingSlots = pendingSlots)
+    return
+
+def updateTaskPriority(resourceControl, taskType, priority):
+    """
+    _updateTaskPriority_
+
+    Update the priority of a task in the database, if task
+    doesn't exist then add it.
+    """
+    if taskType is None:
+        print "Sub-task type must be specified when changing priority."
+        myOptParser.print_help()
+        sys.exit(1)
+    resourceControl.changeTaskPriority(taskType, priority)
     return
 
 def setSiteState(resourceControl, siteName, state):
@@ -284,7 +294,9 @@ if options.printThresholds:
     printThresholds(myResourceControl, options.siteName)
     sys.exit(0)
 else:
-    if options.addT0 == True:
+    if options.priority:
+        updateTaskPriority(myResourceControl, options.taskType, options.priority)
+    elif options.addT0 == True:
         t0Sites = {'CERN' : ['srm-cms.cern.ch', 'srm-eoscms.cern.ch']}
         cmsName = 'T0_CH_CERN'
         ceName = 'CERN'
@@ -325,5 +337,5 @@ else:
         taskType = options.taskType.strip().split(',')
         updateThresholdInfo(myResourceControl, options.siteName,
                             taskType, options.runningSlots,
-                            options.pendingSlots, priority = options.priority)
+                            options.pendingSlots)
         sys.exit(0)

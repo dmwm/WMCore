@@ -81,10 +81,9 @@ class MonitoringTest(unittest.TestCase):
         listSubTypes = self.daoFactory(classname = "Monitoring.ListSubTypes")
         subTypes = listSubTypes.execute()
 
-        schemaTypes = CreateWMBSBase().subTypes
+        schemaTypes = [x[0] for x in CreateWMBSBase().subTypes]
         assert len(subTypes) == len(schemaTypes), \
                "Error: Number of subscription types don't match."
-
         for subType in subTypes:
             assert subType in schemaTypes, \
                    "Error: Missing subscription type: %s" % subType

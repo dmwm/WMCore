@@ -1,17 +1,11 @@
 #!/usr/bin/env python
-import os
 import unittest
-import shutil
 
-from WMCore.Wrappers import JsonWrapper
 from WMCore.WorkQueue.WorkQueue import globalQueue
+from WMCore.WorkQueue.WorkQueue import localQueue
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
-#decorator import for RESTServer setup
-from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
-from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
-from WMQuality.Emulators import EmulatorSetup
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
@@ -43,6 +37,9 @@ class WorkQueueTest(unittest.TestCase):
                                 useDefault = False)
         self.testInit.setupCouch('workqueue_t', *self.couchApps)
         self.testInit.setupCouch('workqueue_t_inbox', *self.couchApps)
+        self.testInit.setupCouch('local_workqueue_t', *self.couchApps)
+        self.testInit.setupCouch('local_workqueue_t_inbox', *self.couchApps)
+        self.testInit.generateWorkDir()
         return
 
     def tearDown(self):
@@ -52,7 +49,6 @@ class WorkQueueTest(unittest.TestCase):
         Drop all the WMBS tables.
         """
         self.testInit.tearDownCouch()
-        #EmulatorSetup.deleteConfig(self.configFile)
         EmulatorHelper.resetEmulators()
         self.specGenerator.removeSpecs()
 
@@ -77,6 +73,48 @@ class WorkQueueTest(unittest.TestCase):
         self.assertEqual(wqApi.getWMBSUrl(), [])
         self.assertEqual(wqApi.getWMBSUrlByRequest(), [])
 
+    def testUpdatePriorityService(self):
+        """
+        _testUpdatePriorityService_
+
+        Check that we can update the priority correctly also
+        check the available workflows feature
+        """
+        specName = "RerecoSpec"
+        specUrl = self.specGenerator.createReRecoSpec(specName, "file")
+        globalQ = globalQueue(DbName = 'workqueue_t',
+                              QueueURL = self.testInit.couchUrl)
+        localQ = localQueue(DbName = 'local_workqueue_t',
+                            QueueURL = self.testInit.couchUrl,
+                            CacheDir = self.testInit.testDir,
+                            ParentQueueCouchUrl = '%s/workqueue_t' % self.testInit.couchUrl,
+                            ParentQueueInboxCouchDBName = 'workqueue_t_inbox'
+                            )
+        # Try a full chain of priority update and propagation
+        self.assertTrue(globalQ.queueWork(specUrl, "RerecoSpec", "teamA") > 0)
+        globalApi = WorkQueueDS(self.testInit.couchUrl, 'workqueue_t')
+        globalApi.updatePriority(specName, 100)
+        self.assertEqual(globalQ.backend.getWMSpec(specName).priority(), 100)
+        storedElements = globalQ.backend.getElementsForWorkflow(specName)
+        for element in storedElements:
+            self.assertEqual(element['Priority'], 100)
+        self.assertTrue(localQ.pullWork({'T2_XX_SiteA' : 10}, continuousReplication = False) > 0)
+        localQ.processInboundWork(continuous = False)
+        storedElements = localQ.backend.getElementsForWorkflow(specName)
+        for element in storedElements:
+            self.assertEqual(element['Priority'], 100)
+        localApi = WorkQueueDS(self.testInit.couchUrl, 'local_workqueue_t')
+        localApi.updatePriority(specName, 500)
+        self.assertEqual(localQ.backend.getWMSpec(specName).priority(), 500)
+        storedElements = localQ.backend.getElementsForWorkflow(specName)
+        for element in storedElements:
+            self.assertEqual(element['Priority'], 500)
+        self.assertEqual(localApi.getAvailableWorkflows(), set([(specName, 500)]))
+        # Attempt to update an inexistent workflow in the queue
+        try:
+            globalApi.updatePriority('NotExistent', 2)
+        except:
+            self.fail('No exception should be raised.')
 
 if __name__ == '__main__':
 

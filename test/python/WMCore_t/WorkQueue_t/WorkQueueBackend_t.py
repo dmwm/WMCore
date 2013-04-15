@@ -62,13 +62,13 @@ class WorkQueueBackendTest(unittest.TestCase):
                                          Status = 'Available',
                                          Jobs = 10, Priority = 0.1)
         self.backend.insertElements([element])
-        self.backend.availableWork({'place' : 1000})
+        self.backend.availableWork({'place' : 1000}, {})
         # timestamp in elements have second coarseness, 2nd element must
         # have a higher timestamp to force it after the 1st
         time.sleep(1)
         self.backend.insertElements([lowprielement, element2, highprielement])
-        self.backend.availableWork({'place' : 1000})
-        work = self.backend.availableWork({'place' : 1000})
+        self.backend.availableWork({'place' : 1000}, {})
+        work = self.backend.availableWork({'place' : 1000}, {})
         # order should be high to low, with the standard elements in the order
         # they were queueud
         self.assertEqual([x['RequestName'] for x in work[0]],

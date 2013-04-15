@@ -237,14 +237,14 @@ class ResourceControlTest(unittest.TestCase):
         self.assertEqual( createThresholds["testSite1"]["total_slots"], 10,
                           "Error: Wrong number of total slots." )
 
-        self.assertEqual( createThresholds["testSite1"]["pending_jobs"], 0,
+        self.assertEqual( createThresholds["testSite1"]["pending_jobs"], {0 : 0},
                           "Error: Wrong number of running jobs: %s" %
                               createThresholds["testSite1"]["pending_jobs"] )
 
         self.assertEqual( createThresholds["testSite2"]["total_slots"], 100,
                           "Error: Wrong number of total slots." )
 
-        self.assertEqual( createThresholds["testSite2"]["pending_jobs"], 0,
+        self.assertEqual( createThresholds["testSite2"]["pending_jobs"], {0 : 0},
                           "Error: Wrong number of running jobs." )
 
         thresholds = myResourceControl.listThresholdsForSubmit()
@@ -395,12 +395,12 @@ class ResourceControlTest(unittest.TestCase):
         # We should have two running jobs with locations at site one,
         # two running jobs without locations at site two, and one running
         # job without a location at site one and two.
-        self.assertEqual( createThresholds["testSite1"]["pending_jobs"], 4,
+        self.assertEqual( createThresholds["testSite1"]["pending_jobs"], {0 : 4},
                "Error: Wrong number of pending jobs for site 1" )
 
         # We should have one running job with a location at site 2 and
         # another running job without a location.
-        self.assertEqual( createThresholds["testSite2"]["pending_jobs"], 2,
+        self.assertEqual( createThresholds["testSite2"]["pending_jobs"], {0 : 2},
                "Error: Wrong number of pending jobs for site 2" )
 
         # We should also have a phedex_name
@@ -560,8 +560,10 @@ class ResourceControlTest(unittest.TestCase):
 
         myResourceControl = ResourceControl()
         myResourceControl.insertSite("testSite1", 20, 40, "testSE1", "testCE1")
-        myResourceControl.insertThreshold("testSite1", "Processing", 10, 8, priority = 1)
-        myResourceControl.insertThreshold("testSite1", "Merge", 5, 3, priority = 2)
+        myResourceControl.insertThreshold("testSite1", "Processing", 10, 8)
+        myResourceControl.insertThreshold("testSite1", "Merge", 5, 3)
+        myResourceControl.changeTaskPriority("Merge", 3)
+        myResourceControl.changeTaskPriority("Processing", 1)
 
         result = myResourceControl.listThresholdsForSubmit()
 
@@ -569,8 +571,10 @@ class ResourceControlTest(unittest.TestCase):
         self.assertEqual(result['testSite1']['thresholds'][1]['task_type'], 'Processing')
 
 
-        myResourceControl.insertThreshold("testSite1", "Processing", 10, 8, priority = 2)
-        myResourceControl.insertThreshold("testSite1", "Merge", 5, 3, priority = 1)
+        myResourceControl.insertThreshold("testSite1", "Processing", 10, 8)
+        myResourceControl.insertThreshold("testSite1", "Merge", 5, 3)
+        myResourceControl.changeTaskPriority("Merge", 1)
+        myResourceControl.changeTaskPriority("Processing", 3)
 
         # Should now be in reverse order
         result = myResourceControl.listThresholdsForSubmit()
@@ -578,22 +582,18 @@ class ResourceControlTest(unittest.TestCase):
         self.assertEqual(result['testSite1']['thresholds'][0]['task_type'], 'Processing')
 
         myResourceControl.insertSite("testSite2", 20, 40, "testSE2", "testCE2")
-        myResourceControl.insertThreshold("testSite2", "Processing", 10, 8, priority = 1)
-        myResourceControl.insertThreshold("testSite2", "Merge", 5, 3, priority = 2)
+        myResourceControl.insertThreshold("testSite2", "Processing", 10, 8)
+        myResourceControl.insertThreshold("testSite2", "Merge", 5, 3)
 
-        # Should be in proper order for site 2
+
+        # Should be in the same order for site 1 and 2
         result = myResourceControl.listThresholdsForSubmit()
-        self.assertEqual(result['testSite2']['thresholds'][0]['task_type'], 'Merge')
-        self.assertEqual(result['testSite2']['thresholds'][1]['task_type'], 'Processing')
+        self.assertEqual(result['testSite2']['thresholds'][0]['task_type'], result['testSite1']['thresholds'][0]['task_type'])
+        self.assertEqual(result['testSite2']['thresholds'][1]['task_type'], result['testSite1']['thresholds'][1]['task_type'])
 
-        # Should now be in reverse order for site 1
-        self.assertEqual(result['testSite1']['thresholds'][1]['task_type'], 'Merge')
-        self.assertEqual(result['testSite1']['thresholds'][0]['task_type'], 'Processing')
-
-        myResourceControl.insertThreshold("testSite2", "Merge", 20, 10)
+        myResourceControl.changeTaskPriority("Merge", 4)
         result = myResourceControl.listThresholdsForSubmit()
-        self.assertEqual(result['testSite2']['thresholds'][0]['priority'], 2)
-
+        self.assertEqual(result['testSite2']['thresholds'][0]['priority'], 4)
 
         return
 
@@ -606,7 +606,7 @@ class ResourceControlTest(unittest.TestCase):
         """
         myResourceControl = ResourceControl()
         myResourceControl.insertSite("testSite1", 20, 40, "testSE1", "testCE1")
-        myResourceControl.insertThreshold("testSite1", "Processing", 10, 5, priority = 1)
+        myResourceControl.insertThreshold("testSite1", "Processing", 10, 5)
 
         result = myResourceControl.listThresholdsForCreate()
         self.assertEqual(result['testSite1']['state'], 'Normal', 'Error: Wrong site state')
@@ -691,6 +691,13 @@ class ResourceControlTest(unittest.TestCase):
                                    env = env)
         (_, _) = retval.communicate()
 
+        cmdline = [resControlPath, "--priority=20", "--task-type=Processing"]
+        retval = subprocess.Popen( cmdline,
+                                   stdout = subprocess.PIPE,
+                                   stderr = subprocess.STDOUT,
+                                   env = env)
+        (_, _) = retval.communicate()
+
         myResourceControl = ResourceControl()
         result = myResourceControl.listThresholdsForSubmit()
         self.assertTrue('T1_US_FNAL' in result.keys())
@@ -700,7 +707,7 @@ class ResourceControlTest(unittest.TestCase):
             self.assertEqual(result[x]['total_running_slots'], 500)
             for thresh in result[x]['thresholds']:
                 if thresh['task_type'] == 'Processing':
-                    self.assertEqual(thresh['priority'], 1)
+                    self.assertEqual(thresh['priority'], 20)
                     self.assertEqual(thresh['max_slots'], 500)
 
         # Verify that sites with more than one SE were added correctly.
@@ -716,8 +723,8 @@ class ResourceControlTest(unittest.TestCase):
         Depending on the WMCore.Services.SiteDB interface
         """
         myResourceControl = ResourceControl()
-        taskList = [{'taskType': 'Processing', 'maxSlots': 100, 'pendingSlots' : 80, 'priority': 1},
-                    {'taskType': 'Merge', 'maxSlots': 50, 'pendingSlots' : 30, 'priority': 2}]
+        taskList = [{'taskType': 'Processing', 'maxSlots': 100, 'pendingSlots' : 80},
+                    {'taskType': 'Merge', 'maxSlots': 50, 'pendingSlots' : 30}]
 
         myResourceControl.insertAllSEs(siteName = 'test', pendingSlots = 200,
                                        runningSlots = 400,
@@ -732,12 +739,12 @@ class ResourceControlTest(unittest.TestCase):
             self.assertEqual(result[x]['total_running_slots'], 400)
             for thresh in result[x]['thresholds']:
                 if thresh['task_type'] == 'Processing':
-                    self.assertEqual(thresh['priority'], 1)
+                    self.assertEqual(thresh['priority'], 0)
                     self.assertEqual(thresh['max_slots'], 100)
                     self.assertEqual(thresh['pending_slots'], 80)
 
                 else:
-                    self.assertEqual(thresh['priority'], 2)
+                    self.assertEqual(thresh['priority'], 5)
                     self.assertEqual(thresh['max_slots'], 50)
                     self.assertEqual(thresh['pending_slots'], 30)
         return
@@ -770,7 +777,7 @@ class ResourceControlTest(unittest.TestCase):
             self.assertEqual(result[x]['total_running_slots'], -1)
             for thresh in result[x]['thresholds']:
                 if thresh['task_type'] == 'Processing':
-                    self.assertEqual(thresh['priority'], 1)
+                    self.assertEqual(thresh['priority'], 0)
                     self.assertEqual(thresh['max_slots'], -1)
 
         # Verify that sites with more than one SE were added correctly.

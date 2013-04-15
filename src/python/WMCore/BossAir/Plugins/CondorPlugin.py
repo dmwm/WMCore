@@ -17,6 +17,7 @@ import traceback
 import subprocess
 import multiprocessing
 import glob
+import shlex
 
 import WMCore.Algorithms.BasicAlgos as BasicAlgos
 
@@ -187,7 +188,8 @@ class CondorPlugin(BasePlugin):
         self.submitWMSMode = getattr(config.BossAir, 'submitWMSMode', False)
         self.errorThreshold= getattr(config.BossAir, 'submitErrorThreshold', 10)
         self.errorCount    = 0
-
+        self.defaultTaskPriority = getattr(config.BossAir, 'defaultTaskPriority', 0)
+        self.maxTaskPriority     = getattr(config.BossAir, 'maxTaskPriority', 1e7)
 
         # Build ourselves a pool
         self.pool     = []
@@ -720,9 +722,38 @@ class CondorPlugin(BasePlugin):
 
         return
 
+    def updateJobInformation(self, workflow, task, **kwargs):
+        """
+        _updateJobInformation_
 
+        Update job information for all jobs in the workflow and task,
+        the change will take effect if the job is Idle or becomes idle.
 
-
+        The currently supported changes are only priority for which both the task (taskPriority)
+        and workflow priority (requestPriority) must be provided.
+        """
+        if 'taskPriority' in kwargs and 'requestPriority' in kwargs:
+            # Do a priority update
+            priority = (int(kwargs['requestPriority']) + int(kwargs['taskPriority'])*self.maxTaskPriority)
+            command = 'condor_qedit -constraint \'WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"\' ' %(task, workflow)
+            command += 'JobPrio %s' % priority
+            command = shlex.split(command)
+            proc = subprocess.Popen(command, stderr = subprocess.PIPE,
+                                    stdout = subprocess.PIPE)
+            _, stderr = proc.communicate()
+            if proc.returncode != 0:
+                # Check if there are actually jobs to update
+                command = 'condor_q -constraint \'WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"\' ' %(task, workflow)
+                command += '-format \'WMAgentID:\%d:::\' WMAgent_JobID'
+                command = shlex.split(command)
+                proc = subprocess.Popen(command, stderr = subprocess.PIPE,
+                                        stdout = subprocess.PIPE)
+                stdout, _ = proc.communicate()
+                if stdout != '':
+                    msg = 'HTCondor edit failed with exit code %d\n'% proc.returncode
+                    msg += 'Error was: %s' % stderr
+                    raise BossAirPluginException(msg)
+        return
 
     # Start with submit functions
 
@@ -846,10 +877,19 @@ class CondorPlugin(BasePlugin):
             jdl.append("transfer_output_files = Report.%i.pkl\n" % (job["retry_count"]))
 
             # Add priority if necessary
+            task_priority = job.get("taskPriority", self.defaultTaskPriority)
+            try:
+                task_priority = int(task_priority)
+            except:
+                logging.error("Priority for task not castable to an int")
+                logging.error("Not setting priority")
+                logging.debug("Priority: %s" % task_priority)
+                task_priority = 0
+
+            prio = 0
             if job.get('priority', None) != None:
                 try:
                     prio = int(job['priority'])
-                    jdl.append("priority = %i\n" % prio)
                 except ValueError:
                     logging.error("Priority for job %i not castable to an int\n" % job['id'])
                     logging.error("Not setting priority")
@@ -858,6 +898,8 @@ class CondorPlugin(BasePlugin):
                     logging.error("Got unhandled exception while setting priority for job %i\n" % job['id'])
                     logging.error(str(ex))
                     logging.error("Not setting priority")
+
+            jdl.append("priority = %i\n" % (task_priority + prio*self.maxTaskPriority))
 
             jdl.append("+WMAgent_JobID = %s\n" % job['jobid'])
 
@@ -893,6 +935,12 @@ class CondorPlugin(BasePlugin):
         if job.get('requestName', None):
             jdl.append('+WMAgent_RequestName = "%s"\n' % job['requestName'])
 
+        if job.get('taskName', None):
+            jdl.append('+WMAgent_SubTaskName = "%s"\n' % job['taskName'])
+
+        if job.get('subTaskType', None):
+            jdl.append('+WMAgent_SubTaskType = "%s"\n' % job['taskType'])
+
         # Performance estimates
         if job.get('estimatedJobTime', None):
             jdl.append('+MaxWallTimeMins = %d\n' % int(job['estimatedJobTime']/60.0))
@@ -915,19 +963,12 @@ class CondorPlugin(BasePlugin):
             self.locationDict[jobSite] = siteInfo[0].get('ce_name', None)
         return self.locationDict[jobSite]
 
-
-
-
-
     def getClassAds(self):
         """
         _getClassAds_
 
         Grab classAds from condor_q using xml parsing
         """
-
-        constraint = "\"WMAgent_JobID =!= UNDEFINED\""
-
 
         jobInfo = {}
 
@@ -940,7 +981,7 @@ class CondorPlugin(BasePlugin):
                    '-format', '(WMAgentID:\%d):::',  'WMAgent_JobID']
 
         pipe = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = False)
-        stdout, stderr = pipe.communicate()
+        stdout, _ = pipe.communicate()
         classAdsRaw = stdout.split(':::')
 
         if not pipe.returncode == 0:
@@ -948,7 +989,6 @@ class CondorPlugin(BasePlugin):
             logging.error("condor_q returned non-zero value %s" % str(pipe.returncode))
             logging.error("Skipping classAd processing this round")
             return None
-
 
         if classAdsRaw == '':
             # We have no jobs
@@ -979,6 +1019,5 @@ class CondorPlugin(BasePlugin):
                 jobInfo[int(tmpDict['WMAgentID'])] = tmpDict
 
         logging.info("Retrieved %i classAds" % len(jobInfo))
-
 
         return jobInfo

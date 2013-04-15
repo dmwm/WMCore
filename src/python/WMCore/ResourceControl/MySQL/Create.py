@@ -29,7 +29,6 @@ class Create(DBCreator):
             sub_type_id   INTEGER NOT NULL,
             pending_slots INTEGER NOT NULL,
             max_slots     INTEGER NOT NULL,
-            priority      INTEGER DEFAULT 1,
             FOREIGN KEY (site_id) REFERENCES wmbs_location(id) ON DELETE CASCADE,
             FOREIGN KEY (sub_type_id) REFERENCES wmbs_sub_types(id) ON DELETE CASCADE)"""
 

@@ -96,3 +96,13 @@ class BasePlugin:
 
 
         return
+
+    def updateJobInformation(self, workflow, task, **kwargs):
+        """
+        _updateJobInformation_
+
+        Update information on pending jobs
+        where supported, the values are updated
+        are passed through the kwargs
+        """
+        pass

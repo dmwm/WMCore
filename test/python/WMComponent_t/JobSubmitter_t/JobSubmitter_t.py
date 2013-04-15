@@ -96,8 +96,7 @@ class JobSubmitterTest(unittest.TestCase):
                        'Processing' : {'pendingSlots' : 5,
                                        'runningSlots' : 10},
                        'Merge' : {'pendingSlots' : 2,
-                                  'runningSlots' : 5,
-                                  'priority' : 5}}
+                                  'runningSlots' : 5}}
 
         resourceControl = ResourceControl()
         resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site),
@@ -106,8 +105,7 @@ class JobSubmitterTest(unittest.TestCase):
         for task in options['tasks']:
             resourceControl.insertThreshold(siteName = site, taskType = task,
                                             maxSlots = options[task]['runningSlots'],
-                                            pendingSlots = options[task]['pendingSlots'],
-                                            priority = options[task].get('priority', 1))
+                                            pendingSlots = options[task]['pendingSlots'])
         if options.get('state'):
             resourceControl.changeSiteState(site, options.get('state'))
 

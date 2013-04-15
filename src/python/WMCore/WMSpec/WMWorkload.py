@@ -187,6 +187,13 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data.sandbox = sandboxPath
 
+    def setPriority(self, priority):
+        """
+        _setPriority_
+
+        Set the priority for the workload
+        """
+        self.data.request.priority = int(priority)
 
     def priority(self):
         """

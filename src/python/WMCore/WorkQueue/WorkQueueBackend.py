@@ -311,19 +311,31 @@ class WorkQueueBackend(object):
                 pass
 
 
-    def availableWork(self, conditions, teams = None, wfs = None):
-        """Get work which is available to be run"""
+    def availableWork(self, thresholds, siteJobCounts, teams = None, wfs = None):
+        """
+        Get work which is available to be run
+
+        Assume thresholds is a dictionary; keys are the site name, values are
+        the maximum number of running jobs at that site.
+
+        Assumes site_job_counts is a dictionary-of-dictionaries; keys are the site
+        name and task priorities.  The value is the number of jobs running at that
+        priority.
+        """
         elements = []
-        for site in conditions.keys():
-            if not conditions[site] > 0:
-                del conditions[site]
-        if not conditions:
-            return elements, conditions
+
+        # We used to pre-filter sites, looking to see if there are idle job slots
+        # We don't do this anymore, as we may over-allocate
+        # jobs to sites if the new jobs have a higher priority.
+
+        # If there are no sites, punt early.
+        if not thresholds:
+            return elements, thresholds, siteJobCounts
 
         options = {}
         options['include_docs'] = True
         options['descending'] = True
-        options['resources'] = conditions
+        options['resources'] = thresholds
         if teams:
             options['teams'] = teams
         if wfs:
@@ -337,24 +349,33 @@ class WorkQueueBackend(object):
         else:
             result = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
             result = json.loads(result)
+
+        # Iterate through the results; apply whitelist / blacklist / data
+        # locality restrictions.  Only assign jobs if they are high enough
+        # priority.
         for i in result:
             element = CouchWorkQueueElement.fromDocument(self.db, i)
-            elements.append(element)
+            prio = element['Priority']
 
-            # Remove 1st random site that can run work
-            names = conditions.keys()
-            random.shuffle(names)
-            for site in names:
+            possibleSite = None
+            sites = thresholds.keys()
+            random.shuffle(sites)
+            for site in sites:
                 if element.passesSiteRestriction(site):
-                    slots_left = conditions[site] - element['Jobs']
-                    if slots_left > 0:
-                        conditions[site] = slots_left
-                    else:
-                        conditions.pop(site, None)
-                    break
-            if not conditions:
-                break
-        return elements, conditions
+                    # Count the number of jobs currently running of greater priority
+                    prio = element['Priority']
+                    curJobCount = sum(map(lambda x : x[1] if x[0] >= prio else 0, siteJobCounts.get(site, {}).items()))
+                    if curJobCount < thresholds[site]:
+                        possibleSite = site
+                        break
+
+            if possibleSite:
+                elements.append(element)
+                if site not in siteJobCounts:
+                    siteJobCounts[site] = {}
+                siteJobCounts[site][prio] = siteJobCounts[site].setdefault(prio, 0) + element['Jobs']
+
+        return elements, thresholds, siteJobCounts
 
     def getActiveData(self):
         """Get data items we have work in the queue for"""

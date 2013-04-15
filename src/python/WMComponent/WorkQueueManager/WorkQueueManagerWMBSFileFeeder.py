@@ -57,13 +57,13 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         self.queue.logger.info("Getting work and feeding WMBS files")
 
         # need to make sure jobs are created
-        resources = freeSlots(minusRunning = True, allowedStates = ['Normal', 'Draining'],
+        resources, jobCounts = freeSlots(minusRunning = True, allowedStates = ['Normal', 'Draining'],
                               knownCmsSites = cmsSiteNames())
 
         for site in resources:
             self.queue.logger.info("I need %d jobs on site %s" % (resources[site], site))
 
-        self.previousWorkList = self.queue.getWork(resources)
+        self.previousWorkList = self.queue.getWork(resources, jobCounts)
         self.queue.logger.info("%s of units of work acquired for file creation"
                                % len(self.previousWorkList))
         return

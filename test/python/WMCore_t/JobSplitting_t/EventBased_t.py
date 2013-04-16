@@ -61,7 +61,7 @@ class EventBasedTest(unittest.TestCase):
                                                   split_algo = "EventBased",
                                                   type = "Processing")
 
-        self.performanceParams = {'timePerEvent' : 12,
+        self.performanceParams = {'timePerEvent' : None,
                                   'memoryRequirement' : 2300,
                                   'sizePerEvent' : 400}
 

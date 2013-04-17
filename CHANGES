@@ -1,3 +1,7 @@
+0.9.59 to 0.9.60:
+  - Add OpenSSL dependency to support new myproxy client by Diego
+  - Add Jenkins bits to git
+
 0.9.58 to 0.9.59:
   - Fix broken DBS3Buffer creation in Oracle.  Pull request 4543.
   - Store correctly the SizePerEvent and friends.  Pull request #4540.

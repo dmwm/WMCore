@@ -118,17 +118,9 @@ function(head, req) {
                 send(",");
             }
             send(toJSON(row["doc"])); // need whole document, id etc...
-            var jobs = ele['Jobs'];
-            var slots = resources[site];
-            if (slots - jobs > 0) {
-                resources[site] = slots - jobs;
-            } else {
-                delete resources[site];
-            }
 
             first = false; // from now on prepend "," to output
             break; // we have work, move to next element (break out of site loop)
-
         } // end resources
     } // end rows
 

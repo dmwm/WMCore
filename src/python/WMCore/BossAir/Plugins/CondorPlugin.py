@@ -187,7 +187,8 @@ class CondorPlugin(BasePlugin):
         self.submitWMSMode = getattr(config.BossAir, 'submitWMSMode', False)
         self.errorThreshold= getattr(config.BossAir, 'submitErrorThreshold', 10)
         self.errorCount    = 0
-
+        self.defaultTaskPriority = getattr(config.BossAir, 'defaultTaskPriority', 0)
+        self.maxTaskPriority     = getattr(config.BossAir, 'maxTaskPriority', 1e7)
 
         # Build ourselves a pool
         self.pool     = []
@@ -846,10 +847,19 @@ class CondorPlugin(BasePlugin):
             jdl.append("transfer_output_files = Report.%i.pkl\n" % (job["retry_count"]))
 
             # Add priority if necessary
+            task_priority = job.get("taskPriority", self.defaultTaskPriority)
+            try:
+                task_priority = int(task_priority)
+            except:
+                logging.error("Priority for task not castable to an int")
+                logging.error("Not setting priority")
+                logging.debug("Priority: %s" % task_priority)
+                task_priority = 0
+
+            prio = 0
             if job.get('priority', None) != None:
                 try:
                     prio = int(job['priority'])
-                    jdl.append("priority = %i\n" % prio)
                 except ValueError:
                     logging.error("Priority for job %i not castable to an int\n" % job['id'])
                     logging.error("Not setting priority")
@@ -858,6 +868,8 @@ class CondorPlugin(BasePlugin):
                     logging.error("Got unhandled exception while setting priority for job %i\n" % job['id'])
                     logging.error(str(ex))
                     logging.error("Not setting priority")
+
+            jdl.append("priority = %i\n" % (task_priority + prio*self.maxTaskPriority))
 
             jdl.append("+WMAgent_JobID = %s\n" % job['jobid'])
 

@@ -156,10 +156,10 @@ class ResourceControl(WMConnectionBase):
         """
         _listThresholdsForCreate_
 
-        This will return a two level dictionary with the first level being
+        This will return a three level dictionary with the first level being
         keyed by site name.  The second level will have the following keys:
           total_slots - Total number of pending slots available at the site
-          pending_jobs - Total number of jobs pending at the site
+          pending_jobs - Total number of jobs pending at the site per priority level, it is a dictionary
         """
         listAction = self.daofactory(classname = "ListThresholdsForCreate")
         return listAction.execute(conn = self.getDBConn(),

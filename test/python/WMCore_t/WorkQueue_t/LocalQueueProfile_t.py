@@ -84,7 +84,7 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
         siteJobs = {}
         for site in Globals.SITES:
             siteJobs[site] = 100000
-        self.localQueue.getWork(siteJobs)
+        self.localQueue.getWork(siteJobs, {})
 
 
 if __name__ == "__main__":

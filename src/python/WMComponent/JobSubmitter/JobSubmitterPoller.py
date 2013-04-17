@@ -81,6 +81,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # Additions for caching-based JobSubmitter
         self.workflowTimestamps = {}
+        self.workflowPrios      = {}
         self.cachedJobIDs       = set()
         self.cachedJobs         = {}
         self.jobDataCache       = {}
@@ -342,12 +343,15 @@ class JobSubmitterPoller(BaseWorkerThread):
                 locTypeCache = self.cachedJobs[possibleLocation][newJob["type"]]
                 workflowName = newJob['workflow']
                 timestamp    = newJob['timestamp']
+                prio         = newJob['task_priority']
                 if not locTypeCache.has_key(workflowName):
                     locTypeCache[workflowName] = set()
                 if not self.jobDataCache.has_key(workflowName):
                     self.jobDataCache[workflowName] = {}
                 if not workflowName in self.workflowTimestamps:
                     self.workflowTimestamps[workflowName] = timestamp
+                if workflowName not in self.workflowPrios:
+                    self.workflowPrios[workflowName] = prio
 
                 locTypeCache[workflowName].add(jobID)
 
@@ -368,7 +372,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                        newJob['request_name'],
                        loadedJob.get("estimatedJobTime", None),
                        loadedJob.get("estimatedDiskUsage", None),
-                       loadedJob.get("estimatedMemoryUsage", None))
+                       loadedJob.get("estimatedMemoryUsage", None),
+                       newJob['task_priority'])
 
             self.jobDataCache[workflowName][jobID] = jobInfo
 
@@ -577,9 +582,19 @@ class JobSubmitterPoller(BaseWorkerThread):
                     cachedJobWorkflow = None
 
                     workflows = taskCache.keys()
-                    # Sorting by timestamp on the subscription
-                    sortingKey = lambda x : self.workflowTimestamps[x]
-                    workflows.sort(key = sortingKey)
+                    # Sorting by prio and timestamp on the subscription
+                    def sortingCmp(x, y):
+                        if (x not in self.workflowTimestamps) or (y not in self.workflowTimestamps):
+                            return -1
+                        if (x not in self.workflowPrios) or (y not in self.workflowPrios):
+                            return -1
+                        if self.workflowPrios[x] > self.workflowPrios[y]:
+                            return -1
+                        elif self.workflowPrios[x] == self.workflowPrios[y]:
+                            return cmp(self.workflowTimestamps[x], self.workflowTimestamps[y])
+                        else:
+                            return 1
+                    workflows.sort(cmp = sortingCmp)
 
                     for workflow in workflows:
                         # Run a while loop until you get a job
@@ -654,7 +669,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'requestName': cachedJob[13],
                                'estimatedJobTime' : cachedJob[14],
                                'estimatedDiskUsage' : cachedJob[15],
-                               'estimatedMemoryUsage' : cachedJob[16]}
+                               'estimatedMemoryUsage' : cachedJob[16],
+                               'taskPriority' : cachedJob[17]}
 
                     # Add to jobsToSubmit
                     jobsToSubmit[package].append(jobDict)
@@ -681,6 +697,11 @@ class JobSubmitterPoller(BaseWorkerThread):
         for workflow in workflowsWithTimestamp:
             if workflow not in allWorkflows:
                 del self.workflowTimestamps[workflow]
+
+        workflowsWithPrios = self.workflowPrios.keys()
+        for workflow in workflowsWithPrios:
+            if workflow not in allWorkflows:
+                del self.workflowPrios[workflow]
 
         logging.info("Have %s packages to submit." % len(jobsToSubmit))
         logging.info("Done assigning site locations.")

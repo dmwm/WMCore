@@ -10,6 +10,7 @@ _JobSubmitterPoller_t_
 Submit jobs for execution.
 """
 
+import random
 import logging
 import threading
 import os.path
@@ -635,10 +636,14 @@ class JobSubmitterPoller(BaseWorkerThread):
                     # Add the sandbox to a global list
                     self.sandboxPackage[package] = cachedJob[3]
 
+                    possibleSites = cachedJob[8]
+                    random.shuffle(possibleSites)
+                    fakeAssignedSiteName = possibleSites[0]
+
                     # Create a job dictionary object
                     jobDict = {'id': cachedJob[0],
                                'retry_count': cachedJob[1],
-                               'custom': {'location': siteName},
+                               'custom': {'location': fakeAssignedSiteName},
                                'cache_dir': cachedJob[4],
                                'packageDir': package,
                                'userdn': cachedJob[5],
@@ -646,7 +651,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'userrole': cachedJob[7],
                                'priority': taskPriority,
                                'taskType': taskType,
-                               'possibleSites': cachedJob[8],
+                               'possibleSites': possibleSites,
                                'scramArch': cachedJob[9],
                                'swVersion': cachedJob[10],
                                'name': cachedJob[11],
@@ -660,7 +665,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                     jobsToSubmit[package].append(jobDict)
 
                     # Deal with accounting
-                    nJobsRequired -= 1
+                    if len(possibleSites) == 1:
+                        nJobsRequired -= 1
                     totalPending  += 1
                     taskPending   += 1
 

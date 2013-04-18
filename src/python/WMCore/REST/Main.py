@@ -95,7 +95,10 @@ class Logger(LogManager):
              'h': remote.name or remote.ip,
              'r': request.request_line,
              's': response.status.split(" ", 1)[0],
+             # request.rfile.rfile.bytes_read is a custom CMS web
+             # cherrypy patch not always available, hence the test
              'i': (getattr(request.rfile, 'rfile', None)
+                   and getattr(request.rfile.rfile, "bytes_read", None)
                    and request.rfile.rfile.bytes_read) or "-",
              'b': nout or "-",
              'T': delta_time,

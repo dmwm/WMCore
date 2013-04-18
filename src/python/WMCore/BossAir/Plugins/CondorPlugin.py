@@ -613,6 +613,10 @@ class CondorPlugin(BasePlugin):
                 if not job['status_time']:
                     if job['status'] == 'Running':
                         job['status_time'] = int(jobAd.get('runningTime', 0))
+                        # If we transitioned to running then check the site we are running at
+                        job['location'] = jobAd.get('runningCMSSite', None)
+                        if job['location'] is None:
+                            logging.debug('Something is not right here, a job (%s) is running with no CMS site' % str(jobAd))
                     elif job['status'] == 'Idle':
                         job['status_time'] = int(jobAd.get('submitTime', 0))
                     else:
@@ -620,8 +624,6 @@ class CondorPlugin(BasePlugin):
                     changeList.append(job)
 
                 runningList.append(job)
-
-
 
         return runningList, changeList, completeList
 
@@ -783,6 +785,7 @@ class CondorPlugin(BasePlugin):
         jdl.append("Log = condor.$(Cluster).$(Process).log\n")
 
         jdl.append("+WMAgent_AgentName = \"%s\"\n" %(self.agent))
+        jdl.append("+JOBGLIDEIN_CMSSite= \"$$([ifThenElse(GLIDEIN_CMSSite is undefined, \\\"Unknown\\\", GLIDEIN_CMSSite)])\"\n")
 
         jdl.extend(self.customizeCommon(jobList))
 
@@ -978,6 +981,7 @@ class CondorPlugin(BasePlugin):
                    '-format', '(stateTime:\%s)  ', 'EnteredCurrentStatus',
                    '-format', '(runningTime:\%s)  ', 'JobStartDate',
                    '-format', '(submitTime:\%s)  ', 'QDate',
+                   '-format', '(runningCMSSite:\%s)  ', 'MATCH_EXP_JOBGLIDEIN_CMSSite',
                    '-format', '(WMAgentID:\%d):::',  'WMAgent_JobID']
 
         pipe = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = False)

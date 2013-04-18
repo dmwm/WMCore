@@ -659,8 +659,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                     self.sandboxPackage[package] = cachedJob[3]
 
                     possibleSites = cachedJob[8]
-                    random.shuffle(possibleSites)
-                    fakeAssignedSiteName = possibleSites[0]
+                    possibleSiteList = list(possibleSites)
+                    fakeAssignedSiteName = random.choice(possibleSiteList)
 
                     # Create a job dictionary object
                     jobDict = {'id': cachedJob[0],

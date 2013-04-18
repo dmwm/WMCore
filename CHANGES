@@ -1,3 +1,6 @@
+0.9.60 to 0.9.61:
+  - ReqMgr2 project startup. Pull request #4555.
+
 0.9.59 to 0.9.60:
   - Add OpenSSL dependency to support new myproxy client by Diego
   - Add Jenkins bits to git

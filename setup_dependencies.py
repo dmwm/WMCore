@@ -65,6 +65,16 @@ dependencies = {
                                     'src/couchapps/ConfigCache+',
                                     'src/couchapps/WMStats+'],
                         },
+                'reqmgr2':{
+                        'packages': ['WMCore.ReqMgr+',
+                                    ],
+                        'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
+                        'statics': ['src/couchapps/ReqMgr+',
+                                    'src/couchapps/ConfigCache+',
+                                    'src/couchapps/WMStats+',
+                                    'src/html/reqmgr+',
+                                   ],
+                          },
                 'workqueue':{
                         'packages': ['WMCore.WorkQueue+', 'WMCore.Wrappers+',
                                      'WMCore.Services', 'WMCore.Services.DBS+', 'WMCore.Services.PhEDEx+',
@@ -118,20 +128,6 @@ dependencies = {
                 'wmclient':{
                         'systems': ['wmc-runtime', 'wmc-database']
                         },
-                #'reqmon':{
-                #        'packages': ['WMCore.HTTPFrontEnd',
-                #                     'WMCore.HTTPFrontEnd.GlobalMonitor+',
-                #                     'WMCore.Services',
-                #                     'WMCore.Services.RequestManager+',
-                #                     'WMCore.Services.WorkQueue+',
-                #                     'WMCore.Services.WMBS+',
-                #                     'WMCore.Services.WMAgent+'],
-                #       'modules': ['WMCore.Database.CMSCouch'],
-                #       'systems':['wmc-web'],
-                #        'statics': ['src/html/GlobalMonitor',
-                #                    'src/javascript/WMCore/WebTools/GlobalMonitor+']
-                #        },
-                
                 'reqmon':{
                         'statics': ['src/couchapps/WMStats+', 
                                     'src/couchapps/WorkloadSummary+'],

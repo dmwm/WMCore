@@ -476,7 +476,7 @@ class Proxy(Credential):
 
         if retcode > 0 :
             self.logger.error("Unable to retrieve delegated proxy for user DN %s! Exit code:%s output:%s" \
-                              % (self.userDN, retcode, msg) )
+	                      % (self.userDN, retcode, msg) )
             return proxyFilename
 
         self.vomsExtensionRenewal(proxyFilename, voAttribute)
@@ -519,10 +519,9 @@ class Proxy(Credential):
         ## set environ and add voms extensions
         cmdList = []
         cmdList.append('env')
-        cmdList.append('X509_USER_CERT=%s' %proxy)
-        cmdList.append('X509_USER_KEY=%s' %proxy)
-        cmdList.append('voms-proxy-init -noregen -voms %s -cert %s -key %s -out %s -bits 1024 -valid %s'
-                       % (voAttribute, proxy, proxy, proxy, vomsValid) )
+        cmdList.append('X509_USER_PROXY=%s' %proxy)
+        cmdList.append('voms-proxy-init -noregen -voms %s -out %s -bits 1024 -valid %s'
+                       % (voAttribute, proxy, vomsValid) )
         cmd = ' '.join(cmdList)
         msg, retcode = execute_command(self.setUI() + cmd, self.logger, self.commandTimeout)
 
@@ -557,8 +556,10 @@ class Proxy(Credential):
         if retcode != 0:
             self.logger.error( "Error while checking proxy timeleft for %s" % proxy )
             return timeLeft
-
-        timeLeft = int( timeLeftLocal.strip() )
+        try:
+            timeLeft = int( timeLeftLocal.strip() )
+        except ValueError:
+            timeLeft = sum(int(x) * 60 ** i for i,x in enumerate(reversed(timeLeftLocal.strip().split(":"))))
 
         if timeLeft > 0:
             ACTimeLeftLocal = self.getVomsLife(proxy)
@@ -602,8 +603,11 @@ class Proxy(Credential):
 
         if retcode != 0:
             return result
+        try:
 
-        result = int( ACtimeLeftLocal )
+            result = int( ACtimeLeftLocal )
+        except ValueError:
+            result = sum(int(x) * 60 ** i for i,x in enumerate(reversed(ACtimeLeftLocal.split(":"))))
 
         return result
 

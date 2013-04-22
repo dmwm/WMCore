@@ -200,6 +200,15 @@ function generateProduction(splitAlgo, splitParams) {
   if ("events_per_lumi" in splitParams) {
     procStr += generateInputRow("Events per lumi:", "events_per_lumi", splitParams);
   }
+  if ("lheInputFiles" in splitParams) {
+    procStr += '<tr><td>Processing LHE files?: <select name="lheInputFiles">';
+      if (splitParams["lheInputFiles"] == true) {
+        procStr += "<option selected>True</option><option>False</option>\n";
+      } else {
+        procStr += "<option>True</option><option selected>False</option>\n";
+      }
+      procStr += '</td></tr>\n'
+  }
   procStr += "</table>\n";
   return procStr;
 }

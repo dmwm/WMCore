@@ -427,6 +427,7 @@ class EventBasedTest(unittest.TestCase):
         jobFactory = splitter(singleMCSubscription)
 
         jobGroups = jobFactory(events_per_job = 99,
+                               lheInputFiles = True,
                                performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1,
                          "Error: JobFactory did not return one JobGroup")
@@ -444,6 +445,7 @@ class EventBasedTest(unittest.TestCase):
             self.assertTrue(firstJobCondition or secondJobCondition,
                             "Job mask: %s didn't pass neither of the conditions"
                             % job["mask"])
+            self.assertTrue(job.getBaggage().lheInputFiles)
 
 
     def testMC50EventSplit(self):
@@ -477,6 +479,8 @@ class EventBasedTest(unittest.TestCase):
             self.assertTrue(firstJobCondition or secondJobCondition,
                             "Job mask: %s didn't pass neither of the conditions"
                             % job["mask"])
+            self.assertFalse(job.getBaggage().lheInputFiles)
+
         return
 
     def testMCShiftedEventSplit(self):

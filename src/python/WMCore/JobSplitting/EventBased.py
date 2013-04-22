@@ -28,6 +28,7 @@ class EventBased(JobFactory):
         eventsPerJob = int(kwargs.get("events_per_job", 100))
         eventsPerLumi = int(kwargs.get("events_per_lumi", eventsPerJob))
         getParents   = kwargs.get("include_parents", False)
+        lheInput = kwargs.get("lheInputFiles", False)
         collectionName  = kwargs.get('collectionName', None)
         timePerEvent, sizePerEvent, memoryRequirement = \
                     self.getPerformanceParameters(kwargs.get('performance', {}))
@@ -122,7 +123,8 @@ class EventBased(JobFactory):
                     if acdcFileList:
                         if f['lfn'] in [x['lfn'] for x in acdcFileList]:
                             self.createACDCJobs(f, acdcFileList,
-                                                timePerEvent, sizePerEvent, memoryRequirement)
+                                                timePerEvent, sizePerEvent, memoryRequirement,
+                                                lheInput)
                         continue
                     #This assumes there's only one run which is the case for MC
                     lumis = runs[0].lumis
@@ -133,6 +135,7 @@ class EventBased(JobFactory):
                         while totalEvents < eventsInFile:
                             self.newJob(name = self.getJobName(length=totalJobs))
                             self.currentJob.addFile(f)
+                            self.currentJob.addBaggageParameter("lheInputFiles",lheInput)
                             lumisPerJob = int(ceil(float(eventsPerJob)
                                                 / eventsPerLumi))
                             #Limit the number of events to a unsigned 32bit int
@@ -180,7 +183,8 @@ class EventBased(JobFactory):
                         totalJobs += 1
 
     def createACDCJobs(self, fakeFile, acdcFileInfo,
-                       timePerEvent, sizePerEvent, memoryRequirement):
+                       timePerEvent, sizePerEvent, memoryRequirement,
+                       lheInputOption):
         """
         _createACDCJobs_
 
@@ -191,6 +195,7 @@ class EventBased(JobFactory):
         for acdcFile in acdcFileInfo:
             if fakeFile['lfn'] == acdcFile['lfn']:
                 self.newJob(name = self.getJobName(length = totalJobs))
+                self.currentJob.addBaggageParameter("lheInputFiles", lheInputOption)
                 self.currentJob.addFile(fakeFile)
                 self.currentJob["mask"].setMaxAndSkipEvents(acdcFile["events"],
                                                             acdcFile["first_event"])

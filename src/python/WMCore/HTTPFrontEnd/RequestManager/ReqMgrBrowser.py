@@ -172,6 +172,11 @@ class ReqMgrBrowser(WebAPI):
             splitParams["events_per_job"] = int(submittedParams["events_per_job"])
             if submittedParams.has_key("events_per_lumi"):
                 splitParams["events_per_lumi"] = int(submittedParams["events_per_lumi"])
+            if "lheInputFiles" in submittedParams:
+                if str(submittedParams["lheInputFiles"]) == "True":
+                    splitParams["lheInputFiles"] = True
+                else:
+                    splitParams["lheInputFiles"] = False
         elif splittingAlgo == "Harvest":
             splitParams["periodic_harvest_interval"] = int(submittedParams["periodic_harvest_interval"])
         elif 'Merg' in splittingTask:

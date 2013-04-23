@@ -308,7 +308,7 @@ class WMWorkloadTest(unittest.TestCase):
         testWorkload.setRunWhitelist([4])
         testWorkload.setRunBlacklist([5, 6])
 
-        for task in [procTestTask, mergeTestTask, weirdTestTask]:
+        for task in [procTestTask]:
             self.assertEqual(len(task.siteWhitelist()), 2,
                              "Error: Wrong number of sites in white list.")
             self.assertEqual(len(task.siteBlacklist()), 1,
@@ -320,6 +320,12 @@ class WMWorkloadTest(unittest.TestCase):
                             "Error: Site missing from white list.")
             self.assertTrue("T1_DE_KIT" in task.siteBlacklist(),
                             "Error: Site missing from black list.")
+
+        for task in [mergeTestTask, weirdTestTask]:
+            self.assertEqual(len(task.siteWhitelist()), 0,
+                             "Error: Wrong number of sites in white list.")
+            self.assertEqual(len(task.siteBlacklist()), 0,
+                             "Error: Wrong number of sites in black list.")
 
         for task in [procTestTask, weirdTestTask]:
             self.assertEqual(len(task.inputBlockWhitelist()), 1,

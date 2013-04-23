@@ -1,3 +1,8 @@
+0.9.61 to 0.9.62:
+  - Return ProcessingString and ProcessingVersion from the get request ReqMgr
+    call.  Pull request #4563.
+  - Configuring ASO databases when setting up an agent.  Pull request #4553.
+
 0.9.60 to 0.9.61:
   - ReqMgr2 project startup. Pull request #4555.
 

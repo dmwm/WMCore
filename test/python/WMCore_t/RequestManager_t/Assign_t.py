@@ -1,6 +1,5 @@
-#!/usr/bin/env python
-
 """
+
 RequestManager unittest
 
 Tests the functions of the REST API
@@ -28,11 +27,6 @@ from WMCore_t.RequestManager_t.ReqMgr_t import RequestManagerConfig
 
 
 class AssignTest(RESTBaseUnitTest):
-    """
-    _AssignTest_
-
-    """
-
     def setUp(self):
         """
         setUP global values
@@ -41,8 +35,7 @@ class AssignTest(RESTBaseUnitTest):
         """
         self.couchDBName = "reqmgr_t_0"
         RESTBaseUnitTest.setUp(self, initRoot = False)
-        self.testInit.setupCouch("%s" % self.couchDBName,
-                                 "GroupUser", "ConfigCache", "ReqMgr")
+        self.testInit.setupCouch("%s" % self.couchDBName, "ConfigCache", "ReqMgr")
         reqMgrHost = self.config.getServerUrl()
         self.jsonSender = JSONRequests(reqMgrHost)
         

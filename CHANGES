@@ -1,3 +1,7 @@
+0.9.62 to 0.9.63:
+  - Removed GroupUser couchapp from ReqMgr unittests.  Pull request #4565.
+  - Remove unused etc/ReqMgrConfig.py.  Pull request #4560.
+
 0.9.61 to 0.9.62:
   - Return ProcessingString and ProcessingVersion from the get request ReqMgr
     call.  Pull request #4563.

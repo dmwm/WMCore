@@ -86,9 +86,13 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
     try:
         helper = Utilities.loadWorkload(request)
         request["AcquisitionEra"] = str(helper.getAcquisitionEra())
+        # add ProcessingVersion and ProcessingString in the response (#4561)
+        request["ProcessingVersion"] = str(helper.getProcessingVersion())
+        request["ProcessingString"] = str(helper.getProcessingString())
     except Exception, ex:
         logging.error("Could not check workload for %s, reason: %s" %
                       (request["RequestName"], ex))
+    
     return request
 
 

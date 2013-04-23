@@ -24,8 +24,6 @@ from WMCore_t.RequestManager_t import utils
 
 class ReqMgrPriorityTest(RESTBaseUnitTest):
     """
-    _ReqMgrPriorityTest_
-
     Basic test for setting the priority in ReqMgr Services
     
     """
@@ -37,11 +35,9 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
         """
         self.couchDBName = "reqmgr_t_0"
         RESTBaseUnitTest.setUp(self)
-        self.testInit.setupCouch("%s" % self.couchDBName,
-                                 "GroupUser", "ConfigCache", "ReqMgr")
-        self.testInit.setupCouch("%s_wmstats" % self.couchDBName,
-                                 "WMStats")
-        reqMgrHost      = self.config.getServerUrl()
+        self.testInit.setupCouch("%s" % self.couchDBName, "ConfigCache", "ReqMgr")
+        self.testInit.setupCouch("%s_wmstats" % self.couchDBName, "WMStats")
+        reqMgrHost = self.config.getServerUrl()
         self.jsonSender = JSONRequests(reqMgrHost)
         
 

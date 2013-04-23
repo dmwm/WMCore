@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Unittest for ReqMgr utilities
 
@@ -11,8 +9,6 @@ from WMCore.HTTPFrontEnd.RequestManager import ReqMgrWebTools
 
 class ReqMgrWebToolsTest(unittest.TestCase):
     """
-    _ReqMgrWebTools_
-
     Test class for the ReqMgr utility functions
 
     This ONLY tests things that don't touch the DB

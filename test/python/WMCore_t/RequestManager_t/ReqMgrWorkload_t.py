@@ -28,8 +28,6 @@ from WMCore_t.RequestManager_t import utils
 
 class ReqMgrWorkloadTest(RESTBaseUnitTest):
     """
-    _ReqMgrWorkloadTest_
-
     Test that sets up and checks the validations of the various main WMSpec.StdSpecs
     This is mostly a simple set of tests which can be very repetitive.
     
@@ -39,13 +37,12 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         """
         setUP global values
         Database setUp is done in base class
+        
         """
         self.couchDBName = "reqmgr_t_0"
         RESTBaseUnitTest.setUp(self)
-        self.testInit.setupCouch("%s" % self.couchDBName,
-                                 "GroupUser", "ConfigCache", "ReqMgr")
-        self.testInit.setupCouch("%s_wmstats" % self.couchDBName,
-                                 "WMStats")
+        self.testInit.setupCouch("%s" % self.couchDBName, "ConfigCache", "ReqMgr")
+        self.testInit.setupCouch("%s_wmstats" % self.couchDBName, "WMStats")
         reqMgrHost = self.config.getServerUrl()
         self.jsonSender = JSONRequests(reqMgrHost)
 
@@ -787,6 +784,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['SizePerEvent'], 512)
         self.assertEqual(request['RequestNumEvents'], 100)
         self.assertEqual(request['RequestSizeFiles'], 0)
+
 
 if __name__=='__main__':
     unittest.main()

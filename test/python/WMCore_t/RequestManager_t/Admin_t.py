@@ -1,9 +1,6 @@
-#!/usr/bin/env python
-
 """
-Admin_t
-
 Test for code in the RequestDB/Admin section
+
 """
 import os
 import unittest
@@ -20,8 +17,6 @@ from WMCore_t.RequestManager_t import utils
 
 class AdminTest(RESTBaseUnitTest):
     """
-    _AdminTest_
-
     Test for the lower-level DB code in the admin section
     
     """
@@ -33,8 +28,7 @@ class AdminTest(RESTBaseUnitTest):
         """
         self.couchDBName = "reqmgr_t_0"
         RESTBaseUnitTest.setUp(self)
-        self.testInit.setupCouch("%s" % self.couchDBName,
-                                 "GroupUser", "ConfigCache", "ReqMgr")
+        self.testInit.setupCouch("%s" % self.couchDBName, "ConfigCache", "ReqMgr")
         reqMgrHost = self.config.getServerUrl()
         self.jsonSender = JSONRequests(reqMgrHost)
 

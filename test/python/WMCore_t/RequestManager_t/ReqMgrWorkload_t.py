@@ -676,8 +676,13 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         result = self.jsonSender.put('request/testRequest', schema)
         resubmitName = result[0]['RequestName']
         result = self.jsonSender.get('request/%s' % resubmitName)
-        request = result[0]
-        
+
+        couchServer = CouchServer(self.testInit.couchUrl)
+        reqmgrCouch = couchServer.connectDatabase(self.couchDBName)
+        result = reqmgrCouch.loadView('ReqMgr', 'childresubmissionrequests', {}, [requestName])['rows']
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]['key'], requestName)
+        self.assertEqual(result[0]['id'], resubmitName)
 
     def testK_LHEStepZero(self):
         """

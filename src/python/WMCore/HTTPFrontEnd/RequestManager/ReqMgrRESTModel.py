@@ -141,6 +141,12 @@ class ReqMgrRESTModel(RESTModel):
                                 'files_merged', 'percent_written',
                                 'percent_success', 'dataset'],
                         secured=True, validation = [self.validateUpdates])
+        self._addMethod('POST', 'closeout', self.closeOutRequest,
+                        args = ['requestName', 'cascade'], secured=True,
+                        validation=[self.isalnum], expires = 0)
+        self._addMethod('POST', 'announce', self.announceRequest,
+                        args = ['requestName', 'cascade'], secured=True,
+                        validation=[self.isalnum], expires = 0)
         self._addMethod('DELETE', 'request', self.deleteRequest,
                         args = ['requestName'],
                         secured=True, security_params=self.security_params,
@@ -622,6 +628,39 @@ class ReqMgrRESTModel(RESTModel):
         - *dataset*        string (dataset name)
         """
         return ChangeState.updateRequest(requestName, kwargs)
+
+    def closeOutRequest(self, requestName, cascade = False):
+        """
+        Close out a request, if the cascade option is given
+        then it will search for any Resubmission requests
+        for which the given request is a parent and close them out
+        too.
+        """
+        requestsToCloseOut = [requestName]
+        if cascade == "True":
+            requestsToCloseOut.extend(Utilities.retrieveResubmissionChildren(requestName,
+                                                                             self.couchUrl,
+                                                                             self.workloadDBName))
+        for requestName in requestsToCloseOut:
+            Utilities.changeStatus(requestName, 'closed-out',
+                                   wmstatUrl = self.wmstatWriteURL)
+        return
+
+    def announceRequest(self, requestName, cascade = False):
+        """
+        Announce a request, if the cascade option is given
+        then it will search for any Resubmission requests
+        for which the given request is a parent and announce them too.
+        """
+        requestsToAnnounce = [requestName]
+        if cascade == "True":
+            requestsToAnnounce.extend(Utilities.retrieveResubmissionChildren(requestName,
+                                                                             self.couchUrl,
+                                                                             self.workloadDBName))
+        for requestName in requestsToAnnounce:
+            Utilities.changeStatus(requestName, 'announced',
+                                   wmstatUrl = self.wmstatWriteURL)
+        return
 
     def validateUpdates(self, index):
         """ Check the values for the updates """

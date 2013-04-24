@@ -80,12 +80,10 @@ class SiteDBJSON(Service):
         return people
 
     def _sitenames(self, sitename=None, clearCache=False):
+        file = 'site-names.json'
+        sitenames = self.getJSON('site-names', file=file, clearCache=clearCache)
         if sitename:
-            file = 'site-names_%s.json' % (sitename)
-            sitenames = self.getJSON('site-names', file=file, clearCache=clearCache, data=dict(match=sitename))
-        else:
-            file = 'site-names.json'
-            sitenames = self.getJSON('site-names', file=file, clearCache=clearCache)
+            sitenames = filter(lambda x: x['site_name'] == sitename, sitenames)
         return sitenames
 
     def _siteresources(self, clearCache=False):
@@ -178,29 +176,34 @@ class SiteDBJSON(Service):
         result = []
         if kind=='CE':
             for ce in self.getAllCENames():
-                cmsName = self.seToCMSName(ce)
-                if cmsname_pattern.match(cmsName):
+                cmsNames = self.seToCMSName(ce)
+                if any(cmsname_pattern.match(cmsName) for cmsName in cmsNames):
                     result.append(ce)
         elif kind=='SE':
             for se in self.getAllSENames():
-                cmsName = self.seToCMSName(se)
-                if cmsname_pattern.match(cmsName):
+                cmsNames = self.seToCMSName(se)
+                if any(cmsname_pattern.match(cmsName) for cmsName in cmsNames):
                     result.append(se)
         else:
             raise NotImplemented('cmsNametoList for kind: %s is not yet implemented' % (kind))
 
-        return result
+        return set(result)
 
     def seToCMSName(self, se):
         """
-        Convert SE name to the CMS Site they belong to
+        Convert SE name to the CMS Site they belong to,
+        this is not a 1-to-1 relation but 1-to-many, return a list of cms site alias
         """
         try:
-            siteresources = filter(lambda x: x['fqdn']==se, self._siteresources())[0]
+            siteresources = filter(lambda x: x['fqdn']==se, self._siteresources())
         except IndexError:
             return None
-        cmsname = filter(lambda x: x['type']=='cms', self._sitenames(sitename=siteresources['site_name']))[0]['alias']
-        return cmsname
+        siteNames = []
+        for resource in siteresources:
+            siteNames.extend(self._sitenames(sitename=resource['site_name']))
+        cmsname = filter(lambda x: x['type']=='cms', siteNames)
+        return [x['alias'] for x in cmsname]
+
 
     def cmsNametoPhEDExNode(self, cmsName):
         """

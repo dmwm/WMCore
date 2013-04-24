@@ -105,11 +105,12 @@ def getCMSSiteInfo(pattern):
 
     siteDB = SiteDBJSON()
     for seName in siteDB.cmsNametoList(pattern, "SE", "result.json"):
-        cmsName = siteDB.seToCMSName(seName)
-        if nameSEMapping.has_key(cmsName):
-            nameSEMapping[cmsName].append(seName)
-        else:
-            nameSEMapping[cmsName] = [seName]
+        cmsNames = siteDB.seToCMSName(seName)
+        for cmsName in cmsNames:
+            if cmsName in nameSEMapping:
+                nameSEMapping[cmsName].append(seName)
+            else:
+                nameSEMapping[cmsName] = [seName]
 
     return nameSEMapping
 

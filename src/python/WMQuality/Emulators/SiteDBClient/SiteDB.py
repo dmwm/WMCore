@@ -10,8 +10,8 @@ class SiteDBJSON(object):
     """
     API for dealing with retrieving information from SiteDB
     """
-    _people_data = [{'dn' : '/C=UK/O=eScience/OU=Bristol/L=IS/CN=simon metson',
-                     'username' : 'metson'},
+    _people_data = [{'dn' : '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=gutsche/CN=582680/CN=Oliver Gutsche',
+                     'username' : 'gutsche'},
                     {'dn' : "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio Fano'",
                      'username' : 'liviof'}]
 
@@ -22,7 +22,9 @@ class SiteDBJSON(object):
                        {u'site_name': u'Nebraska', u'type': u'cms', u'alias': u'T2_US_Nebraska'},
                        {u'site_name': u'T2_XX_SiteA', u'type': u'cms', u'alias': u'T2_XX_SiteA'},
                        {u'site_name': u'T2_XX_SiteB', u'type': u'cms', u'alias': u'T2_XX_SiteB'},
-                       {u'site_name': u'T2_XX_SiteC', u'type': u'cms', u'alias': u'T2_XX_SiteC'}]
+                       {u'site_name': u'T2_XX_SiteC', u'type': u'cms', u'alias': u'T2_XX_SiteC'},
+                       {u'site_name': u'CERN Tier-2', u'type': u'cms', u'alias': u'T2_CH_CERN'},
+                       {u'site_name': u'CERN Tier-2 HLT', u'type': u'cms', u'alias': u'T2_CH_CERN_HLT'}]
 
     _siteresources_data = [{u'type': u'CE', u'site_name': u'RAL', u'fqdn': u'lcgce11.gridpp.rl.ac.uk', u'is_primary': u'n'},
                            {u'type': u'CE', u'site_name': u'RAL', u'fqdn': u'lcgce10.gridpp.rl.ac.uk', u'is_primary': u'n'},
@@ -44,7 +46,10 @@ class SiteDBJSON(object):
                            {u'type': u'CE', u'site_name': u'T2_XX_SiteC', u'fqdn': u'T2_XX_SiteC', u'is_primary' : u'n'},
                            {u'type': u'SE', u'site_name': u'T2_XX_SiteA', u'fqdn': u'T2_XX_SiteA', u'is_primary' : u'n'},
                            {u'type': u'SE', u'site_name': u'T2_XX_SiteB', u'fqdn': u'T2_XX_SiteB', u'is_primary' : u'n'},
-                           {u'type': u'SE', u'site_name': u'T2_XX_SiteC', u'fqdn': u'T2_XX_SiteC', u'is_primary' : u'n'}]
+                           {u'type': u'SE', u'site_name': u'T2_XX_SiteC', u'fqdn': u'T2_XX_SiteC', u'is_primary' : u'n'},
+                           {u'type': u'SE', u'site_name': u'CERN Tier-2', u'fqdn': u'srm-eoscms.cern.ch', u'is_primary' : u'n'},
+                           {u'type': u'CE', u'site_name': u'CERN Tier-2', u'fqdn': u'ce207.cern.ch', u'is_primary' : u'n'},
+                           {u'type': u'SE', u'site_name': u'CERN Tier-2 HLT', u'fqdn': u'srm-eoscms.cern.ch', u'is_primary' : u'n'}]
 
     def __init__(self, config={}):
         pass
@@ -149,24 +154,33 @@ class SiteDBJSON(object):
 
         result = []
         if kind=='CE':
-            [ result.extend(self.cmsNametoCE(x)) for x in filter(lambda x: cmsname_pattern.match(x), self.getAllCMSNames())]
-            return result
+            for ce in self.getAllCENames():
+                cmsNames = self.seToCMSName(ce)
+                if any(cmsname_pattern.match(cmsName) for cmsName in cmsNames):
+                    result.append(ce)
         elif kind=='SE':
-            [ result.extend(self.cmsNametoSE(x)) for x in filter(lambda x: cmsname_pattern.match(x), self.getAllCMSNames())]
-            return result
+            for se in self.getAllSENames():
+                cmsNames = self.seToCMSName(se)
+                if any(cmsname_pattern.match(cmsName) for cmsName in cmsNames):
+                    result.append(se)
         else:
             raise NotImplemented('cmsNametoList for kind: %s is not yet implemented' % (kind))
+
+        return set(result)
 
     def seToCMSName(self, se):
         """
         Convert SE name to the CMS Site they belong to
         """
         try:
-            siteresources = filter(lambda x: x['fqdn']==se, self._siteresources())[0]
+            siteresources = filter(lambda x: x['fqdn']==se, self._siteresources())
         except IndexError:
             return None
-        cmsname = filter(lambda x: x['type']=='cms', self._sitenames(sitename=siteresources['site_name']))[0]['alias']
-        return cmsname
+        siteNames = []
+        for resource in siteresources:
+            siteNames.extend(self._sitenames(sitename=resource['site_name']))
+        cmsname = filter(lambda x: x['type']=='cms', siteNames)
+        return [x['alias'] for x in cmsname]
 
     def cmsNametoPhEDExNode(self, cmsName):
         """

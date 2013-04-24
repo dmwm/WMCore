@@ -142,7 +142,8 @@ class DataLocationMapper():
                     seNames = dbs.listDatasetLocation(item)
                 else:
                     seNames = dbs.listFileBlockLocation(item)
-                result[item].update([self.sitedb.seToCMSName(x) for x in seNames])
+                for se in seNames:
+                    result[item].update(self.sitedb.seToCMSName(se))
             except Exception, ex:
                 logging.error('Erro getting block location from dbs for %s: %s' % (item, str(ex)))
 

@@ -327,16 +327,16 @@ if __name__ == "__main__":
         agent_instance = wmagentConfig.CoreDatabase.connectUrl.split(agent_database)[0]
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "AsyncTransfer", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "monitor", basePath)
-        installCouchApp(wmagentConfig.AsyncTransfer.couch_statinstance, wmagentConfig.AsyncTransfer.statitics_database, "stat", basePath)
-        installCouchApp(wmagentConfig.AsyncTransfer.couch_user_monitoring_instance, wmagentConfig.AsyncTransfer.user_monitoring_db, "UserMonitoring", basePath)
+        installCouchApp(wmagentConfig.Statistics.couch_statinstance, wmagentConfig.Statistics.statitics_database, "stat", basePath)
+        installCouchApp(wmagentConfig.Analytics.couch_user_monitoring_instance, wmagentConfig.Analytics.user_monitoring_db, "UserMonitoring", basePath)
         installCouchApp(wmagentConfig.DBSPublisher.couch_instance, wmagentConfig.DBSPublisher.files_database, "DBSPublisher", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.jobs_database, "Jobs", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.config_database, "config", basePath)
         installCouchApp(agent_instance, agent_database, "Agent", baseWMCorePath)
         if options.cron:
             setupCronCompaction(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database)
-            setupCronCompaction(wmagentConfig.AsyncTransfer.couch_statinstance, wmagentConfig.AsyncTransfer.statitics_database)
-            setupCronCompaction(wmagentConfig.AsyncTransfer.couch_user_monitoring_instance, wmagentConfig.AsyncTransfer.user_monitoring_db)
+            setupCronCompaction(wmagentConfig.Statistics.couch_statinstance, wmagentConfig.Statistics.statitics_database)
+            setupCronCompaction(wmagentConfig.Analytics.couch_user_monitoring_instance, wmagentConfig.Analytics.user_monitoring_db)
             setupCronCompaction(agent_instance, agent_database)
 
     if hasattr(wmagentConfig, "reqmgr"):

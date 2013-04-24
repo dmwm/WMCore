@@ -684,3 +684,20 @@ def associateCampaign(campaign, requestName, couchURL, couchDBName):
     helper = loadWorkload(request)
     helper.setCampaign(campaign = campaign)
     helper.saveCouch(couchUrl = couchURL, couchDBName = couchDBName)
+
+def retrieveResubmissionChildren(requestName, couchUrl, couchDBName):
+    """
+    _retrieveResubmissionChildren_
+
+    Construct a list of request names which are the resubmission
+    offspring from a request. This is a recursive
+    call with a single requestName as input.
+    The result only includes the children and not the original request.
+    """
+    childrenRequestNames = []
+    reqmgrDb = Database(couchDBName, couchUrl)
+    result = reqmgrDb.loadView('ReqMgr', 'childresubmissionrequests', keys = [requestName])['rows']
+    for child in result:
+        childrenRequestNames.append(child['id'])
+        childrenRequestNames.extend(retrieveResubmissionChildren(child['id'], couchUrl, couchDBName))
+    return childrenRequestNames

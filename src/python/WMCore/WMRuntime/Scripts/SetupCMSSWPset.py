@@ -615,9 +615,9 @@ class SetupCMSSWPset(ScriptInterface):
         self.handleDQMFileSaver()
 
         # Check if we accept skipping bad files
-        if hasattr(self.step.data.applicaton.configuration, "skipBadFiles"):
+        if hasattr(self.step.data.application.configuration, "skipBadFiles"):
             self.process.source.skipBadFiles = \
-                cms.untracked.bool(self.step.data.applicaton.configuration.skipBadFiles)
+                cms.untracked.bool(self.step.data.application.configuration.skipBadFiles)
 
         #Apply events per lumi section if available
         if hasattr(self.step.data.application.configuration, "eventsPerLumi"):

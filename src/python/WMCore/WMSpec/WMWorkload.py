@@ -476,43 +476,35 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return siteList
 
-    def setSiteWhitelist(self, siteWhitelist, initialTask = None):
+    def setSiteWhitelist(self, siteWhitelist):
         """
         _setSiteWhitelist_
 
-        Set the site white list for all tasks in the workload.
+        Set the site white list for the top level tasks in the workload.
         """
         if type(siteWhitelist) != type([]):
             siteWhitelist = [siteWhitelist]
 
-        if initialTask:
-            taskIterator = initialTask.childTaskIterator()
-        else:
-            taskIterator = self.taskIterator()
+        taskIterator = self.taskIterator()
 
         for task in taskIterator:
             task.setSiteWhitelist(siteWhitelist)
-            self.setSiteWhitelist(siteWhitelist, task)
 
         return
 
-    def setSiteBlacklist(self, siteBlacklist, initialTask = None):
+    def setSiteBlacklist(self, siteBlacklist):
         """
         _setSiteBlacklist_
 
-        Set the site black list for all tasks in the workload.
+        Set the site black list for the top level tasks in the workload.
         """
         if type(siteBlacklist) != type([]):
             siteBlacklist = [siteBlacklist]
 
-        if initialTask:
-            taskIterator = initialTask.childTaskIterator()
-        else:
-            taskIterator = self.taskIterator()
+        taskIterator = self.taskIterator()
 
         for task in taskIterator:
             task.setSiteBlacklist(siteBlacklist)
-            self.setSiteBlacklist(siteBlacklist, task)
 
         return
 

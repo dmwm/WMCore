@@ -878,6 +878,44 @@ class Report:
 
         return listOfFiles
 
+    def getAllSkippedFiles(self):
+        """
+        _getAllSkippedFiles_
+
+        Get a list of LFNs for all the input files
+        listed as skipped on the report.
+        """
+        listOfFiles = []
+        for step in self.data.steps:
+            tmp = self.getSkippedFilesFromStep(stepName = step)
+            if tmp:
+                listOfFiles.extend(tmp)
+
+        return listOfFiles
+
+    def getSkippedFilesFromStep(self, stepName):
+        """
+        _getSkippedFilesFromStep_
+
+        Get a list of LFNs skipped in the given step
+        """
+        skippedFiles = []
+
+        step = self.retrieveStep(stepName)
+
+        filesSection = step.skipped.files
+        fileCount = getattr(filesSection, "fileCount", 0)
+
+        for fileNum in range(fileCount):
+            fileSection = getattr(filesSection, "file%d" % fileNum)
+            lfn = getattr(fileSection, "LogicalFileName", None)
+            if lfn is not None:
+                skippedFiles.append(lfn)
+            else:
+                logging.error("Found no LFN in file %s" % str(fileSection))
+
+        return skippedFiles
+
     def getStepErrors(self, stepName):
         """
         _getStepErrors_
@@ -1332,7 +1370,7 @@ class Report:
                 error = f.get('lfn', None)
 
         if error:
-            msg = "No Adler32 checksum available in file %s" % error
+            msg = '%s, file was %s' % (WMJobErrorCodes[60451], error)
             self.addError(stepName, 60451, "NoAdler32Checksum", msg)
             self.setStepStatus(stepName = stepName, status = 60451)
 
@@ -1363,6 +1401,21 @@ class Report:
             msg = '%s, file was %s' % (WMJobErrorCodes[60452], error)
             self.addError(stepName, 60452, "NoRunLumiInformation", msg)
             self.setStepStatus(stepName = stepName, status = 60452)
+        return
+
+    def checkForOutputFiles(self, stepName):
+        """
+        _checkForOutputFiles_
+
+        Verify that there is at least an output file, either from
+        analysis or from an output module.
+        """
+        files = self.getAllFilesFromStep(step = stepName)
+        analysisFiles = self.getAnalysisFilesFromStep(step = stepName)
+        if not (len(files) > 0 or len(analysisFiles) > 0):
+            msg = WMJobErrorCodes[60450]
+            self.addError(stepName, 60450, "NoOutput", msg)
+            self.setStepStatus(stepName = stepName, status = 60450)
         return
 
     def stripInputFiles(self):

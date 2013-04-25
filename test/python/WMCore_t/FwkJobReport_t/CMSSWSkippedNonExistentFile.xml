@@ -1,0 +1,824 @@
+<FrameworkJobReport>
+<SkippedFile Pfn="dcap://cmsdca1.fnal.gov:24141/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A611-E211-A851-0019B9F581C9.root" Lfn="/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A611-E211-A851-0019B9F581C9.root" />
+
+<InputFile>
+<State  Value="closed"/>
+<LFN>/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C9.root</LFN>
+<PFN>dcap://cmsdca1.fnal.gov:24141/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C9.root</PFN>
+<Catalog></Catalog>
+<ModuleLabel>source</ModuleLabel>
+<GUID>1ED243E7-A622-E211-A851-0019B9F581C9</GUID>
+<Branches>
+  <Branch>FEDRawDataCollection_rawDataCollector__LHC.</Branch>
+  <Branch>L1GlobalTriggerObjectMapRecord_hltL1GtObjectMap__HLT.</Branch>
+  <Branch>edmTriggerResults_TriggerResults__HLT.</Branch>
+  <Branch>triggerTriggerEvent_hltTriggerSummaryAOD__HLT.</Branch>
+</Branches>
+<InputType>primaryFiles</InputType>
+<InputSourceClass>PoolSource</InputSourceClass>
+<EventsRead>5</EventsRead>
+<Runs>
+<Run ID="206379">
+   <LumiSection ID="1"/>
+</Run>
+
+</Runs>
+</InputFile>
+
+<File>
+<State  Value="closed"/>
+<LFN></LFN>
+<PFN>reco_RAW2DIGI_L1Reco_RECO_ALCA_USER_DQM.root</PFN>
+<Catalog></Catalog>
+<ModuleLabel>RECOoutput</ModuleLabel>
+<GUID>6A9E21BE-219E-E211-B5F9-D4AE52A4547B</GUID>
+<Branches>
+  <Branch>L1GlobalTriggerObjectMapRecord_hltL1GtObjectMap__HLT.</Branch>
+  <Branch>edmTriggerResults_TriggerResults__HLT.</Branch>
+  <Branch>triggerTriggerEvent_hltTriggerSummaryAOD__HLT.</Branch>
+  <Branch>csctfTrackStubCSCTriggerContainer_csctfDigis_DT_RECO.</Branch>
+  <Branch>HcalNoiseSummary_hcalnoise__RECO.</Branch>
+  <Branch>HcalUnpackerReport_castorDigis__RECO.</Branch>
+  <Branch>HcalUnpackerReport_hcalDigis__RECO.</Branch>
+  <Branch>L1GlobalTriggerEvmReadoutRecord_gtEvmDigis__RECO.</Branch>
+  <Branch>L1GlobalTriggerObjectMaps_l1L1GtObjectMap__RECO.</Branch>
+  <Branch>L1GlobalTriggerReadoutRecord_gtDigis__RECO.</Branch>
+  <Branch>L1MuDTChambPhContainer_dttfDigis__RECO.</Branch>
+  <Branch>L1MuDTChambThContainer_dttfDigis__RECO.</Branch>
+  <Branch>L1MuDTTrackContainer_dttfDigis_DATA_RECO.</Branch>
+  <Branch>L1MuGMTReadoutCollection_gtDigis__RECO.</Branch>
+  <Branch>CSCDetIdCSCCorrelatedLCTDigiMuonDigiCollection_csctfDigis__RECO.</Branch>
+  <Branch>DTChamberIdDTLocalTriggerMuonDigiCollection_muonDTDigis__RECO.</Branch>
+  <Branch>DTLayerIdDTDigiMuonDigiCollection_muonDTDigis__RECO.</Branch>
+  <Branch>RPCDetIdRPCDigiMuonDigiCollection_muonRPCDigis__RECO.</Branch>
+  <Branch>SiStripEventSummary_siStripDigis__RECO.</Branch>
+  <Branch>double_ak5CaloJets_rho_RECO.</Branch>
+  <Branch>double_ak7CaloJets_rho_RECO.</Branch>
+  <Branch>double_iterativeCone15CaloJets_rho_RECO.</Branch>
+  <Branch>double_iterativeCone5CaloJets_rho_RECO.</Branch>
+  <Branch>double_kt4CaloJets_rho_RECO.</Branch>
+  <Branch>double_kt6CaloJets_rho_RECO.</Branch>
+  <Branch>double_ak5CaloJets_sigma_RECO.</Branch>
+  <Branch>double_ak7CaloJets_sigma_RECO.</Branch>
+  <Branch>double_iterativeCone15CaloJets_sigma_RECO.</Branch>
+  <Branch>double_iterativeCone5CaloJets_sigma_RECO.</Branch>
+  <Branch>double_kt4CaloJets_sigma_RECO.</Branch>
+  <Branch>double_kt6CaloJets_sigma_RECO.</Branch>
+  <Branch>recoCaloClustersToOnerecoClusterShapesAssociation_cosmicBasicClusters_CosmicBarrelShapeAssoc_RECO.</Branch>
+  <Branch>recoCaloClustersToOnerecoClusterShapesAssociation_cosmicBasicClusters_CosmicEndcapShapeAssoc_RECO.</Branch>
+  <Branch>recoTracksToOnerecoTracksAssociation_tevMuons_default_RECO.</Branch>
+  <Branch>recoTracksToOnerecoTracksAssociation_tevMuons_dyt_RECO.</Branch>
+  <Branch>recoTracksToOnerecoTracksAssociation_tevMuons_firstHit_RECO.</Branch>
+  <Branch>recoTracksToOnerecoTracksAssociation_tevMuons_picky_RECO.</Branch>
+  <Branch>PixelDigiedmDetSetVector_siPixelDigis__RECO.</Branch>
+  <Branch>SiStripDigiedmDetSetVector_siStripZeroSuppression_ProcessedRaw_RECO.</Branch>
+  <Branch>SiStripDigiedmDetSetVector_siStripZeroSuppression_ScopeMode_RECO.</Branch>
+  <Branch>SiStripDigiedmDetSetVector_siStripZeroSuppression_VirginRaw_RECO.</Branch>
+  <Branch>SiStripDigiedmDetSetVector_siStripDigis_ZeroSuppressed_RECO.</Branch>
+  <Branch>SiStripProcessedRawDigiedmDetSetVector_siStripZeroSuppression_APVCMProcessedRaw_RECO.</Branch>
+  <Branch>SiStripProcessedRawDigiedmDetSetVector_siStripZeroSuppression_APVCMScopeMode_RECO.</Branch>
+  <Branch>SiStripProcessedRawDigiedmDetSetVector_siStripZeroSuppression_APVCMVirginRaw_RECO.</Branch>
+  <Branch>SiStripRawDigiedmDetSetVector_siStripDigis_ProcessedRaw_RECO.</Branch>
+  <Branch>SiStripRawDigiedmDetSetVector_siStripZeroSuppression_ProcessedRaw_RECO.</Branch>
+  <Branch>SiStripRawDigiedmDetSetVector_siStripDigis_ScopeMode_RECO.</Branch>
+  <Branch>SiStripRawDigiedmDetSetVector_siStripZeroSuppression_ScopeMode_RECO.</Branch>
+  <Branch>SiStripRawDigiedmDetSetVector_siStripDigis_VirginRaw_RECO.</Branch>
+  <Branch>SiStripRawDigiedmDetSetVector_siStripZeroSuppression_VirginRaw_RECO.</Branch>
+  <Branch>DetIdedmEDCollection_siStripDigis__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_beamhaloTracks__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ckfInOutTracksFromConversions__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ckfOutInTracksFromConversions__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_cosmicMuons__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_cosmicMuons1Leg__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_cosmicMuonsEndCapsOnly__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_cosmicMuonsNoRPC__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_cosmicMuonsWitht0Correction__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_cosmictrackfinderP5__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_cosmictrackfinderP5Bottom__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_cosmictrackfinderP5Top__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ctfWithMaterialTracksP5__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ctfWithMaterialTracksP5Bottom__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ctfWithMaterialTracksP5LHCNavigation__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ctfWithMaterialTracksP5Top__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_globalBeamHaloMuonEndCapslOnly__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_globalCosmicMuons__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_globalCosmicMuons1Leg__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_globalCosmicMuonsNoRPC__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_globalCosmicMuonsWitht0Correction__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_globalCosmicSplitMuons__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_regionalCosmicTracks__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_splittedTracksP5__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_standAloneMuons__RECO.</Branch>
+  <Branch>CSCDetIdCSCRecHit2DsOwnedRangeMap_csc2DRecHits__RECO.</Branch>
+  <Branch>CSCDetIdCSCSegmentsOwnedRangeMap_cscSegments__RECO.</Branch>
+  <Branch>DTChamberIdDTRecSegment4DsOwnedRangeMap_dt4DSegments__RECO.</Branch>
+  <Branch>DTChamberIdDTRecSegment4DsOwnedRangeMap_dt4DSegmentsT0Seg__RECO.</Branch>
+  <Branch>DTLayerIdDTRecHit1DPairsOwnedRangeMap_dt1DRecHits__RECO.</Branch>
+  <Branch>RPCDetIdRPCRecHitsOwnedRangeMap_rpcRecHits__RECO.</Branch>
+  <Branch>CaloTowersSorted_towerMaker__RECO.</Branch>
+  <Branch>EcalRecHitsSorted_ecalRecHit_EcalRecHitsEB_RECO.</Branch>
+  <Branch>EcalRecHitsSorted_ecalRecHit_EcalRecHitsEE_RECO.</Branch>
+  <Branch>EcalRecHitsSorted_ecalPreshowerRecHit_EcalRecHitsES_RECO.</Branch>
+  <Branch>HBHERecHitsSorted_hbhereco__RECO.</Branch>
+  <Branch>HFRecHitsSorted_hfreco__RECO.</Branch>
+  <Branch>HORecHitsSorted_horeco__RECO.</Branch>
+  <Branch>ZDCDataFramesSorted_hcalDigis__RECO.</Branch>
+  <Branch>ZDCRecHitsSorted_zdcreco__RECO.</Branch>
+  <Branch>edmTriggerResults_TriggerResults__RECO.</Branch>
+  <Branch>booledmValueMap_PhotonIDProd_PhotonCutBasedIDLoose_RECO.</Branch>
+  <Branch>booledmValueMap_PhotonIDProd_PhotonCutBasedIDLooseEM_RECO.</Branch>
+  <Branch>booledmValueMap_PhotonIDProd_PhotonCutBasedIDTight_RECO.</Branch>
+  <Branch>recoDeDxDataedmValueMap_dedxDiscrimASmiCTF__RECO.</Branch>
+  <Branch>recoDeDxDataedmValueMap_dedxDiscrimASmiCosmicTF__RECO.</Branch>
+  <Branch>recoDeDxDataedmValueMap_dedxHarmonic2CTF__RECO.</Branch>
+  <Branch>recoDeDxDataedmValueMap_dedxHarmonic2CosmicTF__RECO.</Branch>
+  <Branch>recoDeDxDataedmValueMap_dedxTruncated40CTF__RECO.</Branch>
+  <Branch>recoDeDxDataedmValueMap_dedxTruncated40CosmicTF__RECO.</Branch>
+  <Branch>recoIsoDepositedmValueMap_muIsoDepositJets__RECO.</Branch>
+  <Branch>recoIsoDepositedmValueMap_muIsoDepositTk__RECO.</Branch>
+  <Branch>recoIsoDepositedmValueMap_muIsoDepositCalByAssociatorTowers_ecal_RECO.</Branch>
+  <Branch>recoIsoDepositedmValueMap_muIsoDepositCalByAssociatorTowers_hcal_RECO.</Branch>
+  <Branch>recoIsoDepositedmValueMap_muIsoDepositCalByAssociatorTowers_ho_RECO.</Branch>
+  <Branch>recoMuonMETCorrectionDataedmValueMap_muonMETValueMapProducer_muCorrData_RECO.</Branch>
+  <Branch>recoMuonMETCorrectionDataedmValueMap_muonTCMETValueMapProducer_muCorrData_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_lhcSTAMuons_combined_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_muons_combined_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_muons1Leg_combined_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_muonsBeamHaloEndCapsOnly_combined_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_muonsWitht0Correction_combined_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_splitMuons_combined_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_lhcSTAMuons_csc_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_muons_csc_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_muons1Leg_csc_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_muonsBeamHaloEndCapsOnly_csc_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_muonsWitht0Correction_csc_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_splitMuons_csc_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_lhcSTAMuons_dt_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_muons_dt_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_muons1Leg_dt_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_muonsBeamHaloEndCapsOnly_dt_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_muonsWitht0Correction_dt_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_splitMuons_dt_RECO.</Branch>
+  <Branch>SiPixelClusteredmNewDetSetVector_siPixelClusters__RECO.</Branch>
+  <Branch>SiPixelRecHitedmNewDetSetVector_siPixelRecHits__RECO.</Branch>
+  <Branch>SiStripClusteredmNewDetSetVector_siStripClusters__RECO.</Branch>
+  <Branch>SiStripMatchedRecHit2DedmNewDetSetVector_siStripMatchedRecHits_matchedRecHit_RECO.</Branch>
+  <Branch>SiStripRecHit2DedmNewDetSetVector_siStripMatchedRecHits_rphiRecHit_RECO.</Branch>
+  <Branch>SiStripRecHit2DedmNewDetSetVector_siStripMatchedRecHits_rphiRecHitUnmatched_RECO.</Branch>
+  <Branch>SiStripRecHit2DedmNewDetSetVector_siStripMatchedRecHits_stereoRecHit_RECO.</Branch>
+  <Branch>SiStripRecHit2DedmNewDetSetVector_siStripMatchedRecHits_stereoRecHitUnmatched_RECO.</Branch>
+  <Branch>recoBeamHaloSummary_BeamHaloSummary__RECO.</Branch>
+  <Branch>recoBeamSpot_offlineBeamSpot__RECO.</Branch>
+  <Branch>recoCSCHaloData_CSCHaloData__RECO.</Branch>
+  <Branch>recoEcalHaloData_EcalHaloData__RECO.</Branch>
+  <Branch>recoGlobalHaloData_GlobalHaloData__RECO.</Branch>
+  <Branch>recoHcalHaloData_HcalHaloData__RECO.</Branch>
+  <Branch>intL1CSCSPStatusDigisstdpair_csctfDigis__RECO.</Branch>
+  <Branch>BeamSpotOnlines_scalersRawToDigi__RECO.</Branch>
+  <Branch>DcsStatuss_scalersRawToDigi__RECO.</Branch>
+  <Branch>L1AcceptBunchCrossings_scalersRawToDigi__RECO.</Branch>
+  <Branch>L1CaloEmCands_gctDigis__RECO.</Branch>
+  <Branch>L1CaloRegions_gctDigis__RECO.</Branch>
+  <Branch>L1GctEmCands_gctDigis_isoEm_RECO.</Branch>
+  <Branch>L1GctEmCands_gctDigis_nonIsoEm_RECO.</Branch>
+  <Branch>L1GctEtHads_gctDigis__RECO.</Branch>
+  <Branch>L1GctEtMisss_gctDigis__RECO.</Branch>
+  <Branch>L1GctEtTotals_gctDigis__RECO.</Branch>
+  <Branch>L1GctFibreWords_gctDigis__RECO.</Branch>
+  <Branch>L1GctHFBitCountss_gctDigis__RECO.</Branch>
+  <Branch>L1GctHFRingEtSumss_gctDigis__RECO.</Branch>
+  <Branch>L1GctHtMisss_gctDigis__RECO.</Branch>
+  <Branch>L1GctInternEmCands_gctDigis__RECO.</Branch>
+  <Branch>L1GctInternEtSums_gctDigis__RECO.</Branch>
+  <Branch>L1GctInternHFDatas_gctDigis__RECO.</Branch>
+  <Branch>L1GctInternHtMisss_gctDigis__RECO.</Branch>
+  <Branch>L1GctInternJetDatas_gctDigis__RECO.</Branch>
+  <Branch>L1GctJetCands_gctDigis_cenJets_RECO.</Branch>
+  <Branch>L1GctJetCands_gctDigis_forJets_RECO.</Branch>
+  <Branch>L1GctJetCands_gctDigis_tauJets_RECO.</Branch>
+  <Branch>L1GctJetCountss_gctDigis__RECO.</Branch>
+  <Branch>L1MuGMTCands_gtDigis__RECO.</Branch>
+  <Branch>L1MuRegionalCands_gtDigis_CSC_RECO.</Branch>
+  <Branch>L1MuRegionalCands_gtDigis_DT_RECO.</Branch>
+  <Branch>L1MuRegionalCands_gtDigis_RPCb_RECO.</Branch>
+  <Branch>L1MuRegionalCands_gtDigis_RPCf_RECO.</Branch>
+  <Branch>L1TriggerErrors_gctDigis__RECO.</Branch>
+  <Branch>L1TriggerScalerss_scalersRawToDigi__RECO.</Branch>
+  <Branch>Level1TriggerScalerss_scalersRawToDigi__RECO.</Branch>
+  <Branch>LumiScalerss_scalersRawToDigi__RECO.</Branch>
+  <Branch>TrajectorySeeds_CosmicMuonSeed__RECO.</Branch>
+  <Branch>TrajectorySeeds_CosmicMuonSeedEndCapsOnly__RECO.</Branch>
+  <Branch>TrajectorySeeds_CosmicMuonSeedWitht0Correction__RECO.</Branch>
+  <Branch>TrajectorySeeds_ancientMuonSeed__RECO.</Branch>
+  <Branch>doubles_ak5CaloJets_rhos_RECO.</Branch>
+  <Branch>doubles_ak7CaloJets_rhos_RECO.</Branch>
+  <Branch>doubles_iterativeCone15CaloJets_rhos_RECO.</Branch>
+  <Branch>doubles_iterativeCone5CaloJets_rhos_RECO.</Branch>
+  <Branch>doubles_kt4CaloJets_rhos_RECO.</Branch>
+  <Branch>doubles_kt6CaloJets_rhos_RECO.</Branch>
+  <Branch>doubles_ak5CaloJets_sigmas_RECO.</Branch>
+  <Branch>doubles_ak7CaloJets_sigmas_RECO.</Branch>
+  <Branch>doubles_iterativeCone15CaloJets_sigmas_RECO.</Branch>
+  <Branch>doubles_iterativeCone5CaloJets_sigmas_RECO.</Branch>
+  <Branch>doubles_kt4CaloJets_sigmas_RECO.</Branch>
+  <Branch>doubles_kt6CaloJets_sigmas_RECO.</Branch>
+  <Branch>edmErrorSummaryEntrys_logErrorHarvester__RECO.</Branch>
+  <Branch>l1extraL1EmParticles_l1extraParticles_Isolated_RECO.</Branch>
+  <Branch>l1extraL1EmParticles_l1extraParticles_NonIsolated_RECO.</Branch>
+  <Branch>l1extraL1EtMissParticles_l1extraParticles_MET_RECO.</Branch>
+  <Branch>l1extraL1EtMissParticles_l1extraParticles_MHT_RECO.</Branch>
+  <Branch>l1extraL1HFRingss_l1extraParticles__RECO.</Branch>
+  <Branch>l1extraL1JetParticles_l1extraParticles_Central_RECO.</Branch>
+  <Branch>l1extraL1JetParticles_l1extraParticles_Forward_RECO.</Branch>
+  <Branch>l1extraL1JetParticles_l1extraParticles_Tau_RECO.</Branch>
+  <Branch>l1extraL1MuonParticles_l1extraParticles__RECO.</Branch>
+  <Branch>recoCaloClusters_cosmicBasicClusters_CosmicBarrelBasicClusters_RECO.</Branch>
+  <Branch>recoCaloClusters_cosmicBasicClusters_CosmicEndcapBasicClusters_RECO.</Branch>
+  <Branch>recoCaloClusters_hybridSuperClusters_hybridBarrelBasicClusters_RECO.</Branch>
+  <Branch>recoCaloClusters_uncleanedHybridSuperClusters_hybridBarrelBasicClusters_RECO.</Branch>
+  <Branch>recoCaloClusters_hybridSuperClusters_uncleanOnlyHybridBarrelBasicClusters_RECO.</Branch>
+  <Branch>recoCaloJets_ak5CaloJets__RECO.</Branch>
+  <Branch>recoCaloJets_ak7CaloJets__RECO.</Branch>
+  <Branch>recoCaloJets_iterativeCone15CaloJets__RECO.</Branch>
+  <Branch>recoCaloJets_iterativeCone5CaloJets__RECO.</Branch>
+  <Branch>recoCaloJets_kt4CaloJets__RECO.</Branch>
+  <Branch>recoCaloJets_kt6CaloJets__RECO.</Branch>
+  <Branch>recoCaloMETs_corMetGlobalMuons__RECO.</Branch>
+  <Branch>recoCaloMETs_met__RECO.</Branch>
+  <Branch>recoCaloMETs_metHO__RECO.</Branch>
+  <Branch>recoCaloMETs_metNoHF__RECO.</Branch>
+  <Branch>recoCaloMETs_metNoHFHO__RECO.</Branch>
+  <Branch>recoCaloMETs_metOpt__RECO.</Branch>
+  <Branch>recoCaloMETs_metOptHO__RECO.</Branch>
+  <Branch>recoCaloMETs_metOptNoHF__RECO.</Branch>
+  <Branch>recoCaloMETs_metOptNoHFHO__RECO.</Branch>
+  <Branch>recoCaloMuons_calomuons__RECO.</Branch>
+  <Branch>recoClusterShapes_cosmicBasicClusters_CosmicBarrelShape_RECO.</Branch>
+  <Branch>recoClusterShapes_cosmicBasicClusters_CosmicEndcapShape_RECO.</Branch>
+  <Branch>recoConversions_conversions__RECO.</Branch>
+  <Branch>recoHcalNoiseRBXs_hcalnoise__RECO.</Branch>
+  <Branch>recoMETs_htMetIC5__RECO.</Branch>
+  <Branch>recoMETs_htMetKT4__RECO.</Branch>
+  <Branch>recoMETs_htMetKT6__RECO.</Branch>
+  <Branch>recoMETs_tcMet__RECO.</Branch>
+  <Branch>recoMuons_lhcSTAMuons__RECO.</Branch>
+  <Branch>recoMuons_muons__RECO.</Branch>
+  <Branch>recoMuons_muons1Leg__RECO.</Branch>
+  <Branch>recoMuons_muonsBeamHaloEndCapsOnly__RECO.</Branch>
+  <Branch>recoMuons_muonsNoRPC__RECO.</Branch>
+  <Branch>recoMuons_muonsWitht0Correction__RECO.</Branch>
+  <Branch>recoMuons_splitMuons__RECO.</Branch>
+  <Branch>recoPhotons_photons__RECO.</Branch>
+  <Branch>recoPhotonCores_photonCore__RECO.</Branch>
+  <Branch>recoSuperClusters_correctedHybridSuperClusters__RECO.</Branch>
+  <Branch>recoSuperClusters_uncleanedHybridSuperClusters__RECO.</Branch>
+  <Branch>recoSuperClusters_cosmicSuperClusters_CosmicBarrelSuperClusters_RECO.</Branch>
+  <Branch>recoSuperClusters_cosmicSuperClusters_CosmicEndcapSuperClusters_RECO.</Branch>
+  <Branch>recoTracks_beamhaloTracks__RECO.</Branch>
+  <Branch>recoTracks_ckfInOutTracksFromConversions__RECO.</Branch>
+  <Branch>recoTracks_ckfOutInTracksFromConversions__RECO.</Branch>
+  <Branch>recoTracks_cosmicMuons__RECO.</Branch>
+  <Branch>recoTracks_cosmicMuons1Leg__RECO.</Branch>
+  <Branch>recoTracks_cosmicMuonsEndCapsOnly__RECO.</Branch>
+  <Branch>recoTracks_cosmicMuonsNoRPC__RECO.</Branch>
+  <Branch>recoTracks_cosmicMuonsWitht0Correction__RECO.</Branch>
+  <Branch>recoTracks_cosmictrackfinderP5__RECO.</Branch>
+  <Branch>recoTracks_cosmictrackfinderP5Bottom__RECO.</Branch>
+  <Branch>recoTracks_cosmictrackfinderP5Top__RECO.</Branch>
+  <Branch>recoTracks_ctfWithMaterialTracksP5__RECO.</Branch>
+  <Branch>recoTracks_ctfWithMaterialTracksP5Bottom__RECO.</Branch>
+  <Branch>recoTracks_ctfWithMaterialTracksP5LHCNavigation__RECO.</Branch>
+  <Branch>recoTracks_ctfWithMaterialTracksP5Top__RECO.</Branch>
+  <Branch>recoTracks_globalBeamHaloMuonEndCapslOnly__RECO.</Branch>
+  <Branch>recoTracks_globalCosmicMuons__RECO.</Branch>
+  <Branch>recoTracks_globalCosmicMuons1Leg__RECO.</Branch>
+  <Branch>recoTracks_globalCosmicMuonsNoRPC__RECO.</Branch>
+  <Branch>recoTracks_globalCosmicMuonsWitht0Correction__RECO.</Branch>
+  <Branch>recoTracks_globalCosmicSplitMuons__RECO.</Branch>
+  <Branch>recoTracks_regionalCosmicTracks__RECO.</Branch>
+  <Branch>recoTracks_splittedTracksP5__RECO.</Branch>
+  <Branch>recoTracks_standAloneMuons__RECO.</Branch>
+  <Branch>recoTracks_standAloneMuons_UpdatedAtVtx_RECO.</Branch>
+  <Branch>recoTracks_tevMuons_default_RECO.</Branch>
+  <Branch>recoTracks_tevMuons_dyt_RECO.</Branch>
+  <Branch>recoTracks_tevMuons_firstHit_RECO.</Branch>
+  <Branch>recoTracks_tevMuons_picky_RECO.</Branch>
+  <Branch>recoTrackExtras_beamhaloTracks__RECO.</Branch>
+  <Branch>recoTrackExtras_ckfInOutTracksFromConversions__RECO.</Branch>
+  <Branch>recoTrackExtras_ckfOutInTracksFromConversions__RECO.</Branch>
+  <Branch>recoTrackExtras_cosmicMuons__RECO.</Branch>
+  <Branch>recoTrackExtras_cosmicMuons1Leg__RECO.</Branch>
+  <Branch>recoTrackExtras_cosmicMuonsEndCapsOnly__RECO.</Branch>
+  <Branch>recoTrackExtras_cosmicMuonsNoRPC__RECO.</Branch>
+  <Branch>recoTrackExtras_cosmicMuonsWitht0Correction__RECO.</Branch>
+  <Branch>recoTrackExtras_cosmictrackfinderP5__RECO.</Branch>
+  <Branch>recoTrackExtras_cosmictrackfinderP5Bottom__RECO.</Branch>
+  <Branch>recoTrackExtras_cosmictrackfinderP5Top__RECO.</Branch>
+  <Branch>recoTrackExtras_ctfWithMaterialTracksP5__RECO.</Branch>
+  <Branch>recoTrackExtras_ctfWithMaterialTracksP5Bottom__RECO.</Branch>
+  <Branch>recoTrackExtras_ctfWithMaterialTracksP5LHCNavigation__RECO.</Branch>
+  <Branch>recoTrackExtras_ctfWithMaterialTracksP5Top__RECO.</Branch>
+  <Branch>recoTrackExtras_globalBeamHaloMuonEndCapslOnly__RECO.</Branch>
+  <Branch>recoTrackExtras_globalCosmicMuons__RECO.</Branch>
+  <Branch>recoTrackExtras_globalCosmicMuons1Leg__RECO.</Branch>
+  <Branch>recoTrackExtras_globalCosmicMuonsNoRPC__RECO.</Branch>
+  <Branch>recoTrackExtras_globalCosmicMuonsWitht0Correction__RECO.</Branch>
+  <Branch>recoTrackExtras_globalCosmicSplitMuons__RECO.</Branch>
+  <Branch>recoTrackExtras_regionalCosmicTracks__RECO.</Branch>
+  <Branch>recoTrackExtras_splittedTracksP5__RECO.</Branch>
+  <Branch>recoTrackExtras_standAloneMuons__RECO.</Branch>
+  <Branch>recoTrackExtras_tevMuons_default_RECO.</Branch>
+  <Branch>recoTrackExtras_tevMuons_dyt_RECO.</Branch>
+  <Branch>recoTrackExtras_tevMuons_firstHit_RECO.</Branch>
+  <Branch>recoTrackExtras_tevMuons_picky_RECO.</Branch>
+  <Branch>recoVertexs_offlinePrimaryVertices__RECO.</Branch>
+  <Branch>cscL1TrackCSCDetIdCSCCorrelatedLCTDigiMuonDigiCollectionstdpairs_csctfDigis__RECO.</Branch>
+</Branches>
+<OutputModuleClass>PoolOutputModule</OutputModuleClass>
+<TotalEvents>5</TotalEvents>
+
+<DataType>Data</DataType>
+
+<BranchHash>d1c2c493630cfc40fa7af010a8850312</BranchHash>
+
+<Runs>
+<Run ID="206379">
+   <LumiSection ID="1"/>
+</Run>
+
+</Runs>
+
+<Inputs>
+<Input>
+  <LFN>/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C9.root</LFN>
+  <PFN>dcap://cmsdca1.fnal.gov:24141/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C9.root</PFN>
+  <FastCopying>0</FastCopying>
+</Input>
+</Inputs>
+</File>
+
+<File>
+<State  Value="closed"/>
+<LFN></LFN>
+<PFN>reco_RAW2DIGI_L1Reco_RECO_ALCA_USER_DQM_inDQM.root</PFN>
+<Catalog></Catalog>
+<ModuleLabel>DQMoutput</ModuleLabel>
+<GUID>10E732BE-219E-E211-B5F9-D4AE52A4547B</GUID>
+<Branches>
+</Branches>
+<OutputModuleClass>PoolOutputModule</OutputModuleClass>
+<TotalEvents>5</TotalEvents>
+
+<DataType>Data</DataType>
+
+<BranchHash>d41d8cd98f00b204e9800998ecf8427e</BranchHash>
+
+<Runs>
+<Run ID="206379">
+   <LumiSection ID="1"/>
+</Run>
+
+</Runs>
+
+<Inputs>
+<Input>
+  <LFN>/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C9.root</LFN>
+  <PFN>dcap://cmsdca1.fnal.gov:24141/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C9.root</PFN>
+  <FastCopying>0</FastCopying>
+</Input>
+</Inputs>
+</File>
+
+<File>
+<State  Value="closed"/>
+<LFN></LFN>
+<PFN>DtCalibCosmics.root</PFN>
+<Catalog></Catalog>
+<ModuleLabel>ALCARECOStreamDtCalibCosmics</ModuleLabel>
+<GUID>507C35BE-219E-E211-B5F9-D4AE52A4547B</GUID>
+<Branches>
+  <Branch>edmTriggerResults_TriggerResults__HLT.</Branch>
+  <Branch>L1GlobalTriggerReadoutRecord_gtDigis__RECO.</Branch>
+  <Branch>L1MuDTChambPhContainer_dttfDigis__RECO.</Branch>
+  <Branch>L1MuDTChambThContainer_dttfDigis__RECO.</Branch>
+  <Branch>L1MuDTTrackContainer_dttfDigis_DATA_RECO.</Branch>
+  <Branch>L1MuGMTReadoutCollection_gtDigis__RECO.</Branch>
+  <Branch>DTChamberIdDTLocalTriggerMuonDigiCollection_muonDTDigis__RECO.</Branch>
+  <Branch>DTLayerIdDTDigiMuonDigiCollection_muonDTDigis__RECO.</Branch>
+  <Branch>DTChamberIdDTRecSegment4DsOwnedRangeMap_dt4DSegments__RECO.</Branch>
+  <Branch>edmTriggerResults_TriggerResults__RECO.</Branch>
+  <Branch>L1MuGMTCands_gtDigis__RECO.</Branch>
+  <Branch>L1MuRegionalCands_gtDigis_CSC_RECO.</Branch>
+  <Branch>L1MuRegionalCands_gtDigis_DT_RECO.</Branch>
+  <Branch>L1MuRegionalCands_gtDigis_RPCb_RECO.</Branch>
+  <Branch>L1MuRegionalCands_gtDigis_RPCf_RECO.</Branch>
+  <Branch>recoMuons_muons__RECO.</Branch>
+  <Branch>recoTracks_cosmicMuons__RECO.</Branch>
+</Branches>
+<OutputModuleClass>PoolOutputModule</OutputModuleClass>
+<TotalEvents>5</TotalEvents>
+
+<DataType>Data</DataType>
+
+<BranchHash>f1fb7e4eb73c5886c73b0f2943edb069</BranchHash>
+
+<Runs>
+<Run ID="206379">
+   <LumiSection ID="1"/>
+</Run>
+
+</Runs>
+
+<Inputs>
+<Input>
+  <LFN>/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C9.root</LFN>
+  <PFN>dcap://cmsdca1.fnal.gov:24141/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C9.root</PFN>
+  <FastCopying>0</FastCopying>
+</Input>
+</Inputs>
+</File>
+
+<File>
+<State  Value="closed"/>
+<LFN></LFN>
+<PFN>HcalCalHOCosmics.root</PFN>
+<Catalog></Catalog>
+<ModuleLabel>ALCARECOStreamHcalCalHOCosmics</ModuleLabel>
+<GUID>163237BE-219E-E211-B5F9-D4AE52A4547B</GUID>
+<Branches>
+  <Branch>HOCalibVariabless_hoCalibCosmicsProducer_HOCalibVariableCollection_RECO.</Branch>
+</Branches>
+<OutputModuleClass>PoolOutputModule</OutputModuleClass>
+<TotalEvents>5</TotalEvents>
+
+<DataType>Data</DataType>
+
+<BranchHash>d5ed2ef0e31db6b788dfee9f5ac5ec2f</BranchHash>
+
+<Runs>
+<Run ID="206379">
+   <LumiSection ID="1"/>
+</Run>
+
+</Runs>
+
+<Inputs>
+<Input>
+  <LFN>/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C9.root</LFN>
+  <PFN>dcap://cmsdca1.fnal.gov:24141/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C9.root</PFN>
+  <FastCopying>0</FastCopying>
+</Input>
+</Inputs>
+</File>
+
+<File>
+<State  Value="closed"/>
+<LFN></LFN>
+<PFN>MuAlGlobalCosmics.root</PFN>
+<Catalog></Catalog>
+<ModuleLabel>ALCARECOStreamMuAlGlobalCosmics</ModuleLabel>
+<GUID>9CDF49BE-219E-E211-B5F9-D4AE52A4547B</GUID>
+<Branches>
+  <Branch>edmTriggerResults_TriggerResults__HLT.</Branch>
+  <Branch>L1GlobalTriggerReadoutRecord_gtDigis__RECO.</Branch>
+  <Branch>CSCDetIdCSCALCTDigiMuonDigiCollection_muonCSCDigis_MuonCSCALCTDigi_RECO.</Branch>
+  <Branch>CSCDetIdCSCCLCTDigiMuonDigiCollection_muonCSCDigis_MuonCSCCLCTDigi_RECO.</Branch>
+  <Branch>CSCDetIdCSCComparatorDigiMuonDigiCollection_muonCSCDigis_MuonCSCComparatorDigi_RECO.</Branch>
+  <Branch>CSCDetIdCSCCorrelatedLCTDigiMuonDigiCollection_muonCSCDigis_MuonCSCCorrelatedLCTDigi_RECO.</Branch>
+  <Branch>CSCDetIdCSCDCCFormatStatusDigiMuonDigiCollection_muonCSCDigis_MuonCSCDCCFormatStatusDigi_RECO.</Branch>
+  <Branch>CSCDetIdCSCRPCDigiMuonDigiCollection_muonCSCDigis_MuonCSCRPCDigi_RECO.</Branch>
+  <Branch>CSCDetIdCSCStripDigiMuonDigiCollection_muonCSCDigis_MuonCSCStripDigi_RECO.</Branch>
+  <Branch>CSCDetIdCSCWireDigiMuonDigiCollection_muonCSCDigis_MuonCSCWireDigi_RECO.</Branch>
+  <Branch>DTChamberIdDTLocalTriggerMuonDigiCollection_muonDTDigis__RECO.</Branch>
+  <Branch>DTLayerIdDTDigiMuonDigiCollection_muonDTDigis__RECO.</Branch>
+  <Branch>RPCDetIdRPCDigiMuonDigiCollection_muonRPCDigis__RECO.</Branch>
+  <Branch>RPCRawDataCounts_muonRPCDigis__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ALCARECOMuAlGlobalCosmics_GlobalMuon_RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ALCARECOMuAlGlobalCosmics_StandAlone_RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ALCARECOMuAlGlobalCosmics_TrackerOnly_RECO.</Branch>
+  <Branch>CSCDetIdCSCRecHit2DsOwnedRangeMap_csc2DRecHits__RECO.</Branch>
+  <Branch>CSCDetIdCSCSegmentsOwnedRangeMap_cscSegments__RECO.</Branch>
+  <Branch>DTChamberIdDTRecSegment4DsOwnedRangeMap_dt4DSegments__RECO.</Branch>
+  <Branch>DTLayerIdDTRecHit1DPairsOwnedRangeMap_dt1DRecHits__RECO.</Branch>
+  <Branch>RPCDetIdRPCRecHitsOwnedRangeMap_rpcRecHits__RECO.</Branch>
+  <Branch>edmTriggerResults_TriggerResults__RECO.</Branch>
+  <Branch>SiPixelClusteredmNewDetSetVector_ALCARECOMuAlGlobalCosmics__RECO.</Branch>
+  <Branch>SiStripClusteredmNewDetSetVector_ALCARECOMuAlGlobalCosmics__RECO.</Branch>
+  <Branch>DcsStatuss_scalersRawToDigi__RECO.</Branch>
+  <Branch>L1AcceptBunchCrossings_scalersRawToDigi__RECO.</Branch>
+  <Branch>recoMuons_ALCARECOMuAlGlobalCosmics_SelectedMuons_RECO.</Branch>
+  <Branch>recoTracks_ALCARECOMuAlGlobalCosmics_GlobalMuon_RECO.</Branch>
+  <Branch>recoTracks_ALCARECOMuAlGlobalCosmics_StandAlone_RECO.</Branch>
+  <Branch>recoTracks_ALCARECOMuAlGlobalCosmics_TrackerOnly_RECO.</Branch>
+  <Branch>recoTrackExtras_ALCARECOMuAlGlobalCosmics_GlobalMuon_RECO.</Branch>
+  <Branch>recoTrackExtras_ALCARECOMuAlGlobalCosmics_StandAlone_RECO.</Branch>
+  <Branch>recoTrackExtras_ALCARECOMuAlGlobalCosmics_TrackerOnly_RECO.</Branch>
+  <Branch>LinkBoardElectronicIndexintstdpairs_muonRPCDigis__RECO.</Branch>
+</Branches>
+<OutputModuleClass>PoolOutputModule</OutputModuleClass>
+<TotalEvents>0</TotalEvents>
+
+<DataType></DataType>
+
+<BranchHash>c68427c958052ead39bb51821d2673b4</BranchHash>
+
+<Runs>
+<Run ID="206379">
+   <LumiSection ID="1"/>
+</Run>
+
+</Runs>
+
+<Inputs>
+<Input>
+  <LFN>/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C9.root</LFN>
+  <PFN>dcap://cmsdca1.fnal.gov:24141/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C9.root</PFN>
+  <FastCopying>0</FastCopying>
+</Input>
+</Inputs>
+</File>
+
+<File>
+<State  Value="closed"/>
+<LFN></LFN>
+<PFN>TkAlCosmics0T.root</PFN>
+<Catalog></Catalog>
+<ModuleLabel>ALCARECOStreamTkAlCosmics0T</ModuleLabel>
+<GUID>64A14CBE-219E-E211-B5F9-D4AE52A4547B</GUID>
+<Branches>
+  <Branch>edmTriggerResults_TriggerResults__HLT.</Branch>
+  <Branch>L1GlobalTriggerReadoutRecord_gtDigis__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ALCARECOTkAlCosmicsCTF0T__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ALCARECOTkAlCosmicsCosmicTF0T__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ALCARECOTkAlCosmicsRegional0T__RECO.</Branch>
+  <Branch>edmTriggerResults_TriggerResults__RECO.</Branch>
+  <Branch>SiPixelClusteredmNewDetSetVector_ALCARECOTkAlCosmicsCTF0T__RECO.</Branch>
+  <Branch>SiPixelClusteredmNewDetSetVector_ALCARECOTkAlCosmicsCosmicTF0T__RECO.</Branch>
+  <Branch>SiPixelClusteredmNewDetSetVector_ALCARECOTkAlCosmicsRegional0T__RECO.</Branch>
+  <Branch>SiPixelClusteredmNewDetSetVector_siPixelClusters__RECO.</Branch>
+  <Branch>SiStripClusteredmNewDetSetVector_ALCARECOTkAlCosmicsCTF0T__RECO.</Branch>
+  <Branch>SiStripClusteredmNewDetSetVector_ALCARECOTkAlCosmicsCosmicTF0T__RECO.</Branch>
+  <Branch>SiStripClusteredmNewDetSetVector_ALCARECOTkAlCosmicsRegional0T__RECO.</Branch>
+  <Branch>SiStripClusteredmNewDetSetVector_siStripClusters__RECO.</Branch>
+  <Branch>DcsStatuss_scalersRawToDigi__RECO.</Branch>
+  <Branch>L1AcceptBunchCrossings_scalersRawToDigi__RECO.</Branch>
+  <Branch>recoMuons_muons1Leg__RECO.</Branch>
+  <Branch>recoTracks_ALCARECOTkAlCosmicsCTF0T__RECO.</Branch>
+  <Branch>recoTracks_ALCARECOTkAlCosmicsCosmicTF0T__RECO.</Branch>
+  <Branch>recoTracks_ALCARECOTkAlCosmicsRegional0T__RECO.</Branch>
+  <Branch>recoTrackExtras_ALCARECOTkAlCosmicsCTF0T__RECO.</Branch>
+  <Branch>recoTrackExtras_ALCARECOTkAlCosmicsCosmicTF0T__RECO.</Branch>
+  <Branch>recoTrackExtras_ALCARECOTkAlCosmicsRegional0T__RECO.</Branch>
+</Branches>
+<OutputModuleClass>PoolOutputModule</OutputModuleClass>
+<TotalEvents>0</TotalEvents>
+
+<DataType></DataType>
+
+<BranchHash>bb424660d369b801b9b8dd5d4e448a54</BranchHash>
+
+<Runs>
+<Run ID="206379">
+   <LumiSection ID="1"/>
+</Run>
+
+</Runs>
+
+<Inputs>
+<Input>
+  <LFN>/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C9.root</LFN>
+  <PFN>dcap://cmsdca1.fnal.gov:24141/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C9.root</PFN>
+  <FastCopying>0</FastCopying>
+</Input>
+</Inputs>
+</File>
+<ReadBranches>
+<Branch Name="FEDRawDataCollection_rawDataCollector__LHC." ReadCount="5" />
+<Branch Name="L1GlobalTriggerObjectMapRecord_hltL1GtObjectMap__HLT." ReadCount="5" />
+<Branch Name="edmTriggerResults_TriggerResults__HLT." ReadCount="5" />
+<Branch Name="triggerTriggerEvent_hltTriggerSummaryAOD__HLT." ReadCount="5" />
+</ReadBranches>
+<PerformanceReport>
+  <PerformanceSummary Metric="StorageStatistics">
+    <Metric Name="Parameter-untracked-bool-enabled" Value="true"/>
+    <Metric Name="Parameter-untracked-bool-stats" Value="true"/>
+    <Metric Name="Parameter-untracked-string-cacheHint" Value="application-only"/>
+    <Metric Name="Parameter-untracked-string-readHint" Value="auto-detect"/>
+    <Metric Name="ROOT-tfile-read-totalMegabytes" Value="2.55324"/>
+    <Metric Name="ROOT-tfile-write-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-dcap-close-maxMsecs" Value="2.9161"/>
+    <Metric Name="Timing-dcap-close-minMsecs" Value="2.9161"/>
+    <Metric Name="Timing-dcap-close-numOperations" Value="1"/>
+    <Metric Name="Timing-dcap-close-numSuccessfulOperations" Value="1"/>
+    <Metric Name="Timing-dcap-close-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-dcap-close-totalMsecs" Value="2.9161"/>
+    <Metric Name="Timing-dcap-construct-maxMsecs" Value="0.001024"/>
+    <Metric Name="Timing-dcap-construct-minMsecs" Value="0.001024"/>
+    <Metric Name="Timing-dcap-construct-numOperations" Value="1"/>
+    <Metric Name="Timing-dcap-construct-numSuccessfulOperations" Value="1"/>
+    <Metric Name="Timing-dcap-construct-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-dcap-construct-totalMsecs" Value="0.001024"/>
+    <Metric Name="Timing-dcap-destruct-maxMsecs" Value="0.03712"/>
+    <Metric Name="Timing-dcap-destruct-minMsecs" Value="0.03712"/>
+    <Metric Name="Timing-dcap-destruct-numOperations" Value="1"/>
+    <Metric Name="Timing-dcap-destruct-numSuccessfulOperations" Value="1"/>
+    <Metric Name="Timing-dcap-destruct-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-dcap-destruct-totalMsecs" Value="0.03712"/>
+    <Metric Name="Timing-dcap-open-maxMsecs" Value="368.015"/>
+    <Metric Name="Timing-dcap-open-minMsecs" Value="368.015"/>
+    <Metric Name="Timing-dcap-open-numOperations" Value="2"/>
+    <Metric Name="Timing-dcap-open-numSuccessfulOperations" Value="1"/>
+    <Metric Name="Timing-dcap-open-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-dcap-open-totalMsecs" Value="368.015"/>
+    <Metric Name="Timing-dcap-position-maxMsecs" Value="0.242944"/>
+    <Metric Name="Timing-dcap-position-minMsecs" Value="0"/>
+    <Metric Name="Timing-dcap-position-numOperations" Value="179"/>
+    <Metric Name="Timing-dcap-position-numSuccessfulOperations" Value="179"/>
+    <Metric Name="Timing-dcap-position-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-dcap-position-totalMsecs" Value="0.911104"/>
+    <Metric Name="Timing-dcap-prefetch-maxMsecs" Value="0"/>
+    <Metric Name="Timing-dcap-prefetch-minMsecs" Value="0"/>
+    <Metric Name="Timing-dcap-prefetch-numOperations" Value="0"/>
+    <Metric Name="Timing-dcap-prefetch-numSuccessfulOperations" Value="0"/>
+    <Metric Name="Timing-dcap-prefetch-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-dcap-prefetch-totalMsecs" Value="0"/>
+    <Metric Name="Timing-dcap-read-maxMsecs" Value="40.8991"/>
+    <Metric Name="Timing-dcap-read-minMsecs" Value="0.001024"/>
+    <Metric Name="Timing-dcap-read-numOperations" Value="18"/>
+    <Metric Name="Timing-dcap-read-numSuccessfulOperations" Value="18"/>
+    <Metric Name="Timing-dcap-read-totalMegabytes" Value="0.0312052"/>
+    <Metric Name="Timing-dcap-read-totalMsecs" Value="68.3128"/>
+    <Metric Name="Timing-dcap-readv-maxMsecs" Value="667.544"/>
+    <Metric Name="Timing-dcap-readv-minMsecs" Value="11.8541"/>
+    <Metric Name="Timing-dcap-readv-numOperations" Value="5"/>
+    <Metric Name="Timing-dcap-readv-numSuccessfulOperations" Value="5"/>
+    <Metric Name="Timing-dcap-readv-totalMegabytes" Value="1.41311"/>
+    <Metric Name="Timing-dcap-readv-totalMsecs" Value="758.541"/>
+    <Metric Name="Timing-dcap-stagein-maxMsecs" Value="119.381"/>
+    <Metric Name="Timing-dcap-stagein-minMsecs" Value="119.381"/>
+    <Metric Name="Timing-dcap-stagein-numOperations" Value="2"/>
+    <Metric Name="Timing-dcap-stagein-numSuccessfulOperations" Value="1"/>
+    <Metric Name="Timing-dcap-stagein-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-dcap-stagein-totalMsecs" Value="119.381"/>
+    <Metric Name="Timing-dcap-write-maxMsecs" Value="0"/>
+    <Metric Name="Timing-dcap-write-minMsecs" Value="0"/>
+    <Metric Name="Timing-dcap-write-numOperations" Value="0"/>
+    <Metric Name="Timing-dcap-write-numSuccessfulOperations" Value="0"/>
+    <Metric Name="Timing-dcap-write-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-dcap-write-totalMsecs" Value="0"/>
+    <Metric Name="Timing-dcap-writev-maxMsecs" Value="0"/>
+    <Metric Name="Timing-dcap-writev-minMsecs" Value="0"/>
+    <Metric Name="Timing-dcap-writev-numOperations" Value="0"/>
+    <Metric Name="Timing-dcap-writev-numSuccessfulOperations" Value="0"/>
+    <Metric Name="Timing-dcap-writev-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-dcap-writev-totalMsecs" Value="0"/>
+    <Metric Name="Timing-file-close-maxMsecs" Value="0.0448"/>
+    <Metric Name="Timing-file-close-minMsecs" Value="0.005888"/>
+    <Metric Name="Timing-file-close-numOperations" Value="6"/>
+    <Metric Name="Timing-file-close-numSuccessfulOperations" Value="6"/>
+    <Metric Name="Timing-file-close-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-file-close-totalMsecs" Value="0.07552"/>
+    <Metric Name="Timing-file-construct-maxMsecs" Value="0.002048"/>
+    <Metric Name="Timing-file-construct-minMsecs" Value="0.000768"/>
+    <Metric Name="Timing-file-construct-numOperations" Value="6"/>
+    <Metric Name="Timing-file-construct-numSuccessfulOperations" Value="6"/>
+    <Metric Name="Timing-file-construct-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-file-construct-totalMsecs" Value="0.009984"/>
+    <Metric Name="Timing-file-destruct-maxMsecs" Value="0.019968"/>
+    <Metric Name="Timing-file-destruct-minMsecs" Value="0.002048"/>
+    <Metric Name="Timing-file-destruct-numOperations" Value="6"/>
+    <Metric Name="Timing-file-destruct-numSuccessfulOperations" Value="6"/>
+    <Metric Name="Timing-file-destruct-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-file-destruct-totalMsecs" Value="0.030208"/>
+    <Metric Name="Timing-file-flush-maxMsecs" Value="35.1951"/>
+    <Metric Name="Timing-file-flush-minMsecs" Value="0.347904"/>
+    <Metric Name="Timing-file-flush-numOperations" Value="18"/>
+    <Metric Name="Timing-file-flush-numSuccessfulOperations" Value="18"/>
+    <Metric Name="Timing-file-flush-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-file-flush-totalMsecs" Value="74.4538"/>
+    <Metric Name="Timing-file-open-maxMsecs" Value="0.884992"/>
+    <Metric Name="Timing-file-open-minMsecs" Value="0.412928"/>
+    <Metric Name="Timing-file-open-numOperations" Value="6"/>
+    <Metric Name="Timing-file-open-numSuccessfulOperations" Value="6"/>
+    <Metric Name="Timing-file-open-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-file-open-totalMsecs" Value="3.84614"/>
+    <Metric Name="Timing-file-position-maxMsecs" Value="0.45696"/>
+    <Metric Name="Timing-file-position-minMsecs" Value="0.000768"/>
+    <Metric Name="Timing-file-position-numOperations" Value="1432"/>
+    <Metric Name="Timing-file-position-numSuccessfulOperations" Value="1432"/>
+    <Metric Name="Timing-file-position-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-file-position-totalMsecs" Value="114.447"/>
+    <Metric Name="Timing-file-prefetch-maxMsecs" Value="0"/>
+    <Metric Name="Timing-file-prefetch-minMsecs" Value="0"/>
+    <Metric Name="Timing-file-prefetch-numOperations" Value="0"/>
+    <Metric Name="Timing-file-prefetch-numSuccessfulOperations" Value="0"/>
+    <Metric Name="Timing-file-prefetch-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-file-prefetch-totalMsecs" Value="0"/>
+    <Metric Name="Timing-file-read-maxMsecs" Value="0"/>
+    <Metric Name="Timing-file-read-minMsecs" Value="0"/>
+    <Metric Name="Timing-file-read-numOperations" Value="0"/>
+    <Metric Name="Timing-file-read-numSuccessfulOperations" Value="0"/>
+    <Metric Name="Timing-file-read-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-file-read-totalMsecs" Value="0"/>
+    <Metric Name="Timing-file-readv-maxMsecs" Value="0"/>
+    <Metric Name="Timing-file-readv-minMsecs" Value="0"/>
+    <Metric Name="Timing-file-readv-numOperations" Value="0"/>
+    <Metric Name="Timing-file-readv-numSuccessfulOperations" Value="0"/>
+    <Metric Name="Timing-file-readv-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-file-readv-totalMsecs" Value="0"/>
+    <Metric Name="Timing-file-write-maxMsecs" Value="10.3401"/>
+    <Metric Name="Timing-file-write-minMsecs" Value="0.001024"/>
+    <Metric Name="Timing-file-write-numOperations" Value="1432"/>
+    <Metric Name="Timing-file-write-numSuccessfulOperations" Value="1432"/>
+    <Metric Name="Timing-file-write-totalMegabytes" Value="4.54673"/>
+    <Metric Name="Timing-file-write-totalMsecs" Value="187.025"/>
+    <Metric Name="Timing-file-writev-maxMsecs" Value="0"/>
+    <Metric Name="Timing-file-writev-minMsecs" Value="0"/>
+    <Metric Name="Timing-file-writev-numOperations" Value="0"/>
+    <Metric Name="Timing-file-writev-numSuccessfulOperations" Value="0"/>
+    <Metric Name="Timing-file-writev-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-file-writev-totalMsecs" Value="0"/>
+    <Metric Name="Timing-root-open-maxMsecs" Value="0"/>
+    <Metric Name="Timing-root-open-minMsecs" Value="0"/>
+    <Metric Name="Timing-root-open-numOperations" Value="1"/>
+    <Metric Name="Timing-root-open-numSuccessfulOperations" Value="0"/>
+    <Metric Name="Timing-root-open-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-root-open-totalMsecs" Value="0"/>
+    <Metric Name="Timing-tstoragefile-close-maxMsecs" Value="2.99213"/>
+    <Metric Name="Timing-tstoragefile-close-minMsecs" Value="0.012032"/>
+    <Metric Name="Timing-tstoragefile-close-numOperations" Value="7"/>
+    <Metric Name="Timing-tstoragefile-close-numSuccessfulOperations" Value="7"/>
+    <Metric Name="Timing-tstoragefile-close-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-tstoragefile-close-totalMsecs" Value="3.13754"/>
+    <Metric Name="Timing-tstoragefile-construct-maxMsecs" Value="655.11"/>
+    <Metric Name="Timing-tstoragefile-construct-minMsecs" Value="1.38803"/>
+    <Metric Name="Timing-tstoragefile-construct-numOperations" Value="9"/>
+    <Metric Name="Timing-tstoragefile-construct-numSuccessfulOperations" Value="7"/>
+    <Metric Name="Timing-tstoragefile-construct-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-tstoragefile-construct-totalMsecs" Value="669.938"/>
+    <Metric Name="Timing-tstoragefile-flush-maxMsecs" Value="35.201"/>
+    <Metric Name="Timing-tstoragefile-flush-minMsecs" Value="0.350976"/>
+    <Metric Name="Timing-tstoragefile-flush-numOperations" Value="18"/>
+    <Metric Name="Timing-tstoragefile-flush-numSuccessfulOperations" Value="18"/>
+    <Metric Name="Timing-tstoragefile-flush-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-tstoragefile-flush-totalMsecs" Value="74.5252"/>
+    <Metric Name="Timing-tstoragefile-read-maxMsecs" Value="667.909"/>
+    <Metric Name="Timing-tstoragefile-read-minMsecs" Value="0.002048"/>
+    <Metric Name="Timing-tstoragefile-read-numOperations" Value="171"/>
+    <Metric Name="Timing-tstoragefile-read-numSuccessfulOperations" Value="171"/>
+    <Metric Name="Timing-tstoragefile-read-totalMegabytes" Value="1.0502"/>
+    <Metric Name="Timing-tstoragefile-read-totalMsecs" Value="829.179"/>
+    <Metric Name="Timing-tstoragefile-readActual-maxMsecs" Value="667.547"/>
+    <Metric Name="Timing-tstoragefile-readActual-minMsecs" Value="0.001792"/>
+    <Metric Name="Timing-tstoragefile-readActual-numOperations" Value="23"/>
+    <Metric Name="Timing-tstoragefile-readActual-numSuccessfulOperations" Value="23"/>
+    <Metric Name="Timing-tstoragefile-readActual-totalMegabytes" Value="1.44432"/>
+    <Metric Name="Timing-tstoragefile-readActual-totalMsecs" Value="826.908"/>
+    <Metric Name="Timing-tstoragefile-readAsync-maxMsecs" Value="0"/>
+    <Metric Name="Timing-tstoragefile-readAsync-minMsecs" Value="0"/>
+    <Metric Name="Timing-tstoragefile-readAsync-numOperations" Value="5"/>
+    <Metric Name="Timing-tstoragefile-readAsync-numSuccessfulOperations" Value="0"/>
+    <Metric Name="Timing-tstoragefile-readAsync-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-tstoragefile-readAsync-totalMsecs" Value="0"/>
+    <Metric Name="Timing-tstoragefile-readViaCache-maxMsecs" Value="667.906"/>
+    <Metric Name="Timing-tstoragefile-readViaCache-minMsecs" Value="0.000768"/>
+    <Metric Name="Timing-tstoragefile-readViaCache-numOperations" Value="153"/>
+    <Metric Name="Timing-tstoragefile-readViaCache-numSuccessfulOperations" Value="153"/>
+    <Metric Name="Timing-tstoragefile-readViaCache-totalMegabytes" Value="1.019"/>
+    <Metric Name="Timing-tstoragefile-readViaCache-totalMsecs" Value="760.615"/>
+    <Metric Name="Timing-tstoragefile-seek-maxMsecs" Value="0.459008"/>
+    <Metric Name="Timing-tstoragefile-seek-minMsecs" Value="0.001024"/>
+    <Metric Name="Timing-tstoragefile-seek-numOperations" Value="1603"/>
+    <Metric Name="Timing-tstoragefile-seek-numSuccessfulOperations" Value="1603"/>
+    <Metric Name="Timing-tstoragefile-seek-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-tstoragefile-seek-totalMsecs" Value="117.393"/>
+    <Metric Name="Timing-tstoragefile-stat-maxMsecs" Value="0.254976"/>
+    <Metric Name="Timing-tstoragefile-stat-minMsecs" Value="0.20992"/>
+    <Metric Name="Timing-tstoragefile-stat-numOperations" Value="2"/>
+    <Metric Name="Timing-tstoragefile-stat-numSuccessfulOperations" Value="2"/>
+    <Metric Name="Timing-tstoragefile-stat-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-tstoragefile-stat-totalMsecs" Value="0.464896"/>
+    <Metric Name="Timing-tstoragefile-write-maxMsecs" Value="10.3421"/>
+    <Metric Name="Timing-tstoragefile-write-minMsecs" Value="0.002816"/>
+    <Metric Name="Timing-tstoragefile-write-numOperations" Value="1432"/>
+    <Metric Name="Timing-tstoragefile-write-numSuccessfulOperations" Value="1432"/>
+    <Metric Name="Timing-tstoragefile-write-totalMegabytes" Value="4.54673"/>
+    <Metric Name="Timing-tstoragefile-write-totalMsecs" Value="191.42"/>
+    <Metric Name="Timing-tstoragefile-writeActual-maxMsecs" Value="10.3401"/>
+    <Metric Name="Timing-tstoragefile-writeActual-minMsecs" Value="0.001792"/>
+    <Metric Name="Timing-tstoragefile-writeActual-numOperations" Value="1432"/>
+    <Metric Name="Timing-tstoragefile-writeActual-numSuccessfulOperations" Value="1432"/>
+    <Metric Name="Timing-tstoragefile-writeActual-totalMegabytes" Value="4.54673"/>
+    <Metric Name="Timing-tstoragefile-writeActual-totalMsecs" Value="188.923"/>
+    <Metric Name="Timing-tstoragefile-writeViaCache-maxMsecs" Value="0"/>
+    <Metric Name="Timing-tstoragefile-writeViaCache-minMsecs" Value="0"/>
+    <Metric Name="Timing-tstoragefile-writeViaCache-numOperations" Value="1432"/>
+    <Metric Name="Timing-tstoragefile-writeViaCache-numSuccessfulOperations" Value="0"/>
+    <Metric Name="Timing-tstoragefile-writeViaCache-totalMegabytes" Value="0"/>
+    <Metric Name="Timing-tstoragefile-writeViaCache-totalMsecs" Value="0"/>
+  </PerformanceSummary>
+</PerformanceReport>
+
+<GeneratorInfo>
+</GeneratorInfo>
+</FrameworkJobReport>

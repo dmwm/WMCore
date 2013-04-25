@@ -346,7 +346,7 @@ class Job(WMBSBase, WMJob):
 
         return state
 
-    def completeInputFiles(self):
+    def completeInputFiles(self, skipFiles = None):
         """
         _completeInputFiles_
 
@@ -354,7 +354,8 @@ class Job(WMBSBase, WMJob):
         """
 
         action = self.daofactory(classname = "Jobs.CompleteInput")
-        state  = action.execute(self["id"], conn = self.getDBConn(),
+        state  = action.execute(self["id"], lfnsToSkip = {self["id"] : skipFiles},
+                                conn = self.getDBConn(),
                                 transaction = self.existingTransaction)
 
         return state

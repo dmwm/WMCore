@@ -52,3 +52,13 @@ WMStats.WorkloadSummaryTable = function (data, containerDiv) {
     
     return WMStats.Table(tableConfig).create(containerDiv, filterConfig);
 };
+
+(function() {
+    
+     var vm = WMStats.ViewModel;
+     
+     vm.SearchPage.subscribe("data", function(){
+        WMStats.WorkloadSummaryTable(vm.SearchPage.data(), "#search_result_board");
+     });
+})();
+    

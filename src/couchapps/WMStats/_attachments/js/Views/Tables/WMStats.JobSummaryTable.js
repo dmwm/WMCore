@@ -3,15 +3,9 @@ WMStats.namespace("JobSummaryTable");
 WMStats.JobSummaryTable = function (data, containerDiv) {
     
     var tableConfig = {
+        "sDom": '<"top"plf>rt<"bottom"ip>',
         "iDisplayLength": 25,
         "aoColumns": [
-            /*
-            {"sTitle": "D", 
-             "sDefaultContent": 0,
-             "fnRender": function ( o, val ) {
-                            return WMStats.Utils.formatDetailButton("detail");
-                        }},
-            */
             {"sTitle": "L", 
              "sDefaultContent": 0,
              "fnRender": function ( o, val ) {
@@ -53,6 +47,25 @@ WMStats.JobSummaryTable = function (data, containerDiv) {
     
     var filterConfig = {};
 
-    $(containerDiv).data('workflow', (data.getData()).workflow)
-    return WMStats.Table(tableConfig).create(containerDiv, filterConfig);
+    $(containerDiv).data('workflow', (data.getData()).workflow);
+    
+    // store the table data
+    WMStats.JobSummaryTable.data = WMStats.Table(tableConfig).create(containerDiv, filterConfig);
+    return WMStats.JobSummaryTable.data;
 };
+
+(function() {
+    var vm = WMStats.ViewModel;
+    
+    vm.JobView.subscribe("data", function() {
+        // need to create the lower level view
+        var divSelector = vm.JobView.id() + " div.summary_data";
+        WMStats.JobSummaryTable(vm.JobView.data(), divSelector);
+    });
+    
+    /*
+    vm.AlertJobView.subscribe("data", function() {
+        WMStats.JobSummaryTable(vm.AlertJobView.data(), vm.AlertJobView.id());
+    });
+    */
+})();

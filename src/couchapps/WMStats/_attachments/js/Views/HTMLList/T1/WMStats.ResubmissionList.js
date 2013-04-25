@@ -9,6 +9,7 @@ WMStats.namespace('ResubmissionList');
         htmlstr += "<li><b>Request String: :</b><input type='text' name='RequestString' size=30 value='" + summary.RequestString + "'/></li>";
         htmlstr += "<li><b>Original Request Name: :</b>" + summary.OriginalRequestName + "</li>";
         htmlstr += "<li><b>Initial Task Path:</b> " + summary.InitialTaskPath + "</li>";
+
         if (summary.ACDCServer) {
             htmlstr += "<li><b>ACDC Server URL:</b> " + summary.ACDCServer + "</li>";
             htmlstr += "<li><b>ACDC DB Name:</b> " + summary.ACDCDatabase + "</li>";
@@ -42,16 +43,22 @@ WMStats.namespace('ResubmissionList');
          $(containerDiv).show("slide", {}, 500);
     }
     
+    var vm = WMStats.ViewModel;
+    vm.Resubmission.subscribe("data", function() {
+        WMStats.ResubmissionList(vm.Resubmission.data(), vm.Resubmission.id());
+    });
+
     $(document).on('click', "#acdc_submission button", function(event){
-        WMStats.ViewModel.Resubmission.RequestString = $('#acdc_submission input[name="RequestString"]').val()
-        if (WMStats.ViewModel.Resubmission.ACDCServer === undefined) {
-            WMStats.ViewModel.Resubmission.ACDCServer = $('#acdc_submission input[name="ACDCServer"]').val()
+        var resubmissionData = WMStats.ViewModel.Resubmission.data();
+        resubmissionData.RequestString = $('#acdc_submission input[name="RequestString"]').val()
+        if (resubmissionData.ACDCServer === undefined) {
+            resubmissionData.ACDCServer = $('#acdc_submission input[name="ACDCServer"]').val()
         }
-        if (WMStats.ViewModel.Resubmission.ACDCDatabase === undefined) {
-            WMStats.ViewModel.Resubmission.ACDCDatabase = $('#acdc_submission input[name="ACDCDatabase"]').val()
+        if (resubmissionData.ACDCDatabase === undefined) {
+            resubmissionData.ACDCDatabase = $('#acdc_submission input[name="ACDCDatabase"]').val()
         }
         //WMStats.ViewModel.Resubmission.Requestor = $('#acdc_submission input[name="Requestor"]').val()
-        WMStats.Ajax.requestMgr.putRequest(WMStats.ViewModel.Resubmission);
+        WMStats.Ajax.requestMgr.putRequest(resubmissionData);
         event.preventDefault();
         })
      
@@ -59,4 +66,5 @@ WMStats.namespace('ResubmissionList');
         function(event, requestName) {
             $('#acdc_submission div.requestDetailBox').append(WMStats.Utils.formatReqDetailUrl(requestName))
     })
+
 })();

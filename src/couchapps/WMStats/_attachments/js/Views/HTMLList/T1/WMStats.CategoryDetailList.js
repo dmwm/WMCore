@@ -36,9 +36,16 @@ WMStats.namespace('CategoryDetailList');
         htmlstr += "</ul>";
         htmlstr += "</div>";
         return htmlstr;
-    }
+    };
     
     WMStats.CategoryDetailList = function (data, containerDiv) {
          $(containerDiv).html(format(data));
-    }
+    };
+    
+    var vm = WMStats.ViewModel;
+    
+    vm.CategoryDetail.subscribe("data", function() {
+        WMStats.CategoryDetailList(vm.CategoryDetail.data(), vm.CategoryDetail.id());
+    });
+    
 })();

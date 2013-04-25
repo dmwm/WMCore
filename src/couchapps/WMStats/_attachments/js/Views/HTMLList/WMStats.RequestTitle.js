@@ -10,7 +10,8 @@ WMStats.namespace('WMStats.RequestTitle');
             workflow = data.getData().workflow;
             dataType = 1;
         }
-        var requestInfo = WMStats.ActiveRequestModel.getData().getDataByWorkflow(workflow);
+        var requestInfo = WMStats.ActiveRequestModel.getData().getData(workflow);
+
         var htmlstr = "";
         //htmlstr += "<legend>request</legend>";
         htmlstr += "<div class='requestSummaryBox'>";

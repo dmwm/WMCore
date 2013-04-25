@@ -401,6 +401,10 @@ def makeJobTweak(job):
     that can be used to modify a CMSSW process.
     """
     result = PSetTweak()
+    baggage = job.getBaggage()
+
+    # Check in the baggage if we are processing .lhe files
+    lheInput = getattr(baggage, "lheInputFiles", False)
 
     # Input files and secondary input files.
     primaryFiles = []
@@ -426,7 +430,7 @@ def makeJobTweak(job):
         result.addParameter("process.source.fileNames", primaryFiles)
         if len(secondaryFiles) > 0:
             result.addParameter("process.source.secondaryFileNames", secondaryFiles)
-    else:
+    elif not lheInput:
         #First event parameter should be set from whatever the mask says,
         #That should have the added protection of not going over 2^32 - 1
         #If there is nothing in the mask, then we fallback to the counter method
@@ -448,8 +452,11 @@ def makeJobTweak(job):
     # We don't want to set skip events for MonteCarlo jobs which have
     # no input files.
     firstEvent = mask['FirstEvent']
-    if firstEvent != None and firstEvent >= 0 and len(primaryFiles) > 0:
-        result.addParameter("process.source.skipEvents", firstEvent)
+    if firstEvent != None and firstEvent >= 0 and (len(primaryFiles) > 0 or lheInput):
+        if lheInput:
+            result.addParameter("process.source.skipEvents", firstEvent - 1)
+        else:
+            result.addParameter("process.source.skipEvents", firstEvent)
 
     firstRun = mask['FirstRun']
     if firstRun != None:
@@ -473,8 +480,6 @@ def makeJobTweak(job):
         result.addParameter("process.source.lumisToProcess", lumisToProcess)
 
     # install any settings from the per job baggage
-    baggage = job.getBaggage()
-
     procSection = getattr(baggage, "process", None)
     if procSection == None:
         return result

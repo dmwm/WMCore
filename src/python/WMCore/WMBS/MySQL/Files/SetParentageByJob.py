@@ -25,11 +25,12 @@ class SetParentageByJob(DBFormatter):
                  wmbs_job_assoc.job = wmbs_job.id
              INNER JOIN wmbs_jobgroup ON
                  wmbs_jobgroup.id = wmbs_job.jobgroup
-             INNER JOIN wmbs_sub_files_complete ON
-                 wmbs_jobgroup.subscription = wmbs_sub_files_complete.subscription
-                 AND wmbs_sub_files_complete.fileid = wmbs_job_assoc.fileid
+             LEFT OUTER JOIN wmbs_sub_files_failed ON
+                 wmbs_jobgroup.subscription = wmbs_sub_files_failed.subscription
+                 AND wmbs_sub_files_failed.fileid = wmbs_job_assoc.fileid
              WHERE wmbs_job_assoc.job  = :jobid
              AND wmbs_file_details.lfn = :child
+             AND wmbs_sub_files_failed.fileid IS NULL
     """
 
 

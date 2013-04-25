@@ -25,6 +25,7 @@ from WMCore.WMBS.File         import File
 from WMCore.WMBS.JobGroup     import JobGroup
 from WMCore.WMBS.Fileset      import Fileset
 from WMCore.WMSpec.WMWorkload import newWorkload
+from WMCore.ACDC.DataCollectionService import DataCollectionService
 
 from WMCore.DataStructs.Run   import Run
 
@@ -50,6 +51,7 @@ class JobAccountantTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setupCouch("jobaccountant_t", "JobDump")
+        self.testInit.setupCouch("jobaccountant_acdc_t", "ACDC", "GroupUser")
         self.testInit.setupCouch("jobaccountant_wmstats_t", "WMStats")
         self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer",
                                                 "WMCore.WMBS"],
@@ -105,6 +107,10 @@ class JobAccountantTest(unittest.TestCase):
         """
         config = self.testInit.getConfiguration()
         self.testInit.generateWorkDir(config)
+
+        config.section_("ACDC")
+        config.ACDC.couchurl = os.getenv("COUCHURL")
+        config.ACDC.database = "jobaccountant_acdc_t"
 
         config.section_("JobStateMachine")
         config.JobStateMachine.couchurl = os.getenv("COUCHURL")
@@ -359,7 +365,8 @@ class JobAccountantTest(unittest.TestCase):
 
         return
 
-    def verifyFileMetaData(self, jobID, fwkJobReportFiles, site = "cmssrm.fnal.gov"):
+    def verifyFileMetaData(self, jobID, fwkJobReportFiles, site = "cmssrm.fnal.gov",
+                           skippedJobReportFiles = 0):
         """
         _verifyFileMetaData_
 
@@ -417,7 +424,7 @@ class JobAccountantTest(unittest.TestCase):
             assert list(outputFile["locations"])[0] == list(fwkJobReportFile["locations"])[0], \
                    "Error: wrong location for file."
 
-            assert len(outputFile["parents"]) == len(inputLFNs), \
+            assert len(outputFile["parents"]) == (len(inputLFNs) - skippedJobReportFiles), \
                    "Error: Output file has wrong number of parents."
             for outputParent in outputFile["parents"]:
                 assert outputParent["lfn"] in inputLFNs, \
@@ -800,7 +807,8 @@ class JobAccountantTest(unittest.TestCase):
                                      jobReport.getAllFilesFromStep("cmsRun1"))
         return
 
-    def setupDBForMergeSuccess(self, createDBSParents = True, noLumi = False):
+    def setupDBForMergeSuccess(self, createDBSParents = True, noLumi = False,
+                               skipMode = False):
         """
         _setupDBForMergeSuccess_
 
@@ -922,6 +930,11 @@ class JobAccountantTest(unittest.TestCase):
                                        fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
                                                                "WMComponent_t/JobAccountant_t/fwjrs",
                                                                "MergeSuccessNoLumi.pkl"))
+        elif skipMode:
+            self.setFWJRAction.execute(jobID = self.testJob["id"],
+                                       fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
+                                                               "WMComponent_t/JobAccountant_t/fwjrs",
+                                                               "MergeSuccessSkipFile.pkl"))
         else:
             self.setFWJRAction.execute(jobID = self.testJob["id"],
                                        fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
@@ -983,6 +996,70 @@ class JobAccountantTest(unittest.TestCase):
         self.assertEqual(result, 1)
 
         return
+
+    def testMergeSuccessSkippedFiles(self):
+        """
+        _testMergeSuccessSkippedFiles_
+
+        Test the accountant's handling of a merge job where
+        not all inputs where found but it still succeeded.
+        """
+        self.setupDBForMergeSuccess(skipMode = True)
+
+        config = self.createConfig()
+        accountant = JobAccountantPoller(config)
+        accountant.setup()
+        accountant.algorithm()
+
+        jobReport = Report()
+        jobReport.unpersist(os.path.join(WMCore.WMBase.getTestBase(),
+                                         "WMComponent_t/JobAccountant_t/fwjrs",
+                                         "MergeSuccessSkipFile.pkl"))
+        self.verifyFileMetaData(self.testJob["id"], jobReport.getAllFilesFromStep("cmsRun1"),
+                                skippedJobReportFiles = 1)
+        self.verifyJobSuccess(self.testJob["id"])
+
+        dbsParents = ["/path/to/some/lfnA", "/path/to/some/lfnB"]
+        self.verifyDBSBufferContents("Merge", dbsParents, jobReport.getAllFilesFromStep("cmsRun1"))
+
+        self.recoOutputFileset.loadData()
+        self.mergedRecoOutputFileset.loadData()
+        self.aodOutputFileset.loadData()
+        self.mergedAodOutputFileset.loadData()
+
+        assert len(self.mergedRecoOutputFileset.getFiles(type = "list")) == 0, \
+               "Error: No files should be in the merged reco fileset."
+        assert len(self.recoOutputFileset.getFiles(type = "list")) == 0, \
+               "Error: No files should be in the reco fileset."
+
+        assert len(self.mergedAodOutputFileset.getFiles(type = "list")) == 1, \
+               "Error: One file should be in the merged aod fileset."
+        assert len(self.aodOutputFileset.getFiles(type = "list")) == 3, \
+               "Error: Three files should be in the aod fileset."
+
+        fwjrFile = jobReport.getAllFilesFromStep("cmsRun1")[0]
+        assert fwjrFile["lfn"] in self.mergedAodOutputFileset.getFiles(type = "lfn"), \
+                       "Error: file is missing from merged aod output fileset."
+
+        myThread = threading.currentThread()
+        result = myThread.dbi.processData("SELECT * FROM dbsbuffer_workflow")[0].fetchall()[0]
+        self.assertEqual(result[1], 'Steves')
+        self.assertEqual(result[2], '/Steves/Stupid/Task')
+        self.assertEqual(result[3], os.path.join(self.testDir,
+                                    "Steves.pkl"))
+
+        result = myThread.dbi.processData("SELECT workflow FROM dbsbuffer_file WHERE id = 4")[0].fetchall()[0][0]
+        self.assertEqual(result, 1)
+
+        result = myThread.dbi.processData("SELECT fileid FROM wmbs_sub_files_failed")[0].fetchall()[0][0]
+        self.assertEqual(result, 6)
+
+        dataCollectionService = DataCollectionService(os.environ["COUCHURL"], 'jobaccountant_acdc_t')
+        x = dataCollectionService.getDataCollection('Steves', 'Steve', 'unknown')
+        self.assertEqual(len(x["filesets"]), 1)
+        self.assertEqual(len(x["filesets"][0]["files"]), 1)
+        return
+
 
     def testMergeSuccessNoLumi(self):
         """

@@ -582,6 +582,9 @@ class StdBase(object):
         mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
         mergeTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
 
+        if splitAlgo != "WMBSMergeBySize":
+            mergeTaskCmsswHelper.setSkipBadFiles(True)
+
         mergeTask.setSplittingAlgorithm(splitAlgo,
                                         max_merge_size = self.maxMergeSize,
                                         min_merge_size = self.minMergeSize,

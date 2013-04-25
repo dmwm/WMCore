@@ -49,7 +49,7 @@ class DataCollectionService(CouchService):
         return coll
 
     @CouchUtils.connectToCouch
-    def failedJobs(self, failedJobs):
+    def failedJobs(self, failedJobs, useMask = True):
         """
         _failedJobs_
 
@@ -76,7 +76,10 @@ class DataCollectionService(CouchService):
             fileset = CouchFileset(database = self.database, url = self.url,
                                     name = taskName)
             coll.addFileset(fileset)
-            fileset.add(files = job['input_files'], mask = job['mask'])
+            if useMask:
+                fileset.add(files = job['input_files'], mask = job['mask'])
+            else:
+                fileset.add(files = job['input_files'])
 
         return
 

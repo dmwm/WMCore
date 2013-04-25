@@ -973,6 +973,11 @@ class WMWorkloadHelper(PersistencyHelper):
             if childTask.taskType() == "Merge":
                 if splitAlgo == "EventBased" and taskHelper.taskType() != "Production":
                     mergeAlgo = "WMBSMergeBySize"
+                    for stepName in childTask.listAllStepNames():
+                        stepHelper = childTask.getStepHelper(stepName)
+                        if stepHelper.stepType() == "CMSSW":
+                            stepCmsswHelper = stepHelper.getTypeHelper()
+                            stepCmsswHelper.setSkipBadFiles(False)
                 else:
                     mergeAlgo = "ParentlessMergeBySize"
 
@@ -996,6 +1001,10 @@ class WMWorkloadHelper(PersistencyHelper):
                     stepHelper.setMinMergeSize(minMergeSize, maxMergeEvents)
                 else:
                     stepHelper.disableStraightToMerge()
+            if stepHelper.stepType() == "CMSSW" and splitAlgo == "WMBSMergeBySize" \
+                and stepHelper.getSkipBadFiles():
+                stepHelper.setSkipBadFiles(False)
+
             if taskHelper.isTopOfTree() and stepHelper.stepType() == "CMSSW" \
                 and taskHelper.taskType() == "Production":
                 stepHelper.setEventsPerLumi(splitArgs.get("events_per_lumi",

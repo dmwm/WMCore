@@ -500,22 +500,27 @@ class AccountantWorker(WMConnectionBase):
         resultRows = self.fwjrCouchDB.loadView("FWJRDump", 'jobsByOutputLFN', 
                                                options = {"stale": "update_after"},
                                                keys = keys)['rows']
-        #get data from wmbs
-        parentWMBSJobIDs = []
-        for row in resultRows:
-            parentWMBSJobIDs.append({"jobid": row["value"]})
-        #update Job doc in wmstats
-        results = self.getJobInfoByID.execute(parentWMBSJobIDs)
-        parentJobNames = []
-        
-        if type(results) == list:
-            for jobInfo in results:
-                parentJobNames.append(jobInfo['name'])
+        if len(resultRows) > 0:
+            #get data from wmbs
+            parentWMBSJobIDs = []
+            for row in resultRows:
+                parentWMBSJobIDs.append({"jobid": row["value"]})
+            #update Job doc in wmstats
+            results = self.getJobInfoByID.execute(parentWMBSJobIDs)
+            parentJobNames = []
+            
+            if type(results) == list:
+                for jobInfo in results:
+                    parentJobNames.append(jobInfo['name'])
+            else:
+                parentJobNames.append(results['name'])
+            
+            self.localWMStats.updateLogArchiveLFN(parentJobNames, logAchiveLFN)
         else:
-            parentJobNames.append(results['name'])
-        
-        self.localWMStats.updateLogArchiveLFN(parentJobNames, logAchiveLFN)
-       
+            #TODO: if the couch db is consistent with DB this should be removed (checking resultRow > 0)
+            #It need to be failed and retried.
+            logging.error("job report is missing for updating log archive mapping\n Input file list\n %s" % inputFileList)
+            
     def handleFailed(self, jobID, fwkJobReport):
         """
         _handleFailed_

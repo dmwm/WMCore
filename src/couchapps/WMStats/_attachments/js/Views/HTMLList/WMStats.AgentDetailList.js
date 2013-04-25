@@ -85,4 +85,13 @@ WMStats.namespace("AgentDetailList");
     WMStats.AgentDetailList = function (data, containerDiv) {
          $(containerDiv).html(format(data));
     }
+    
+    // controller for this view to be triggered
+    var vm = WMStats.ViewModel;
+    vm.AgentPage.subscribe("data", function() {
+        //TODO get id form the view
+        var divID = '#agent_detail';
+        WMStats.AgentDetailList(vm.AgentPage.data(), divID);
+    })
+        
 })();

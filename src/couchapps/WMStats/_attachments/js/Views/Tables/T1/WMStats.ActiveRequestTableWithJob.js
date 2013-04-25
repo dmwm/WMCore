@@ -4,6 +4,7 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
 
     var formatReqDetailUrl = WMStats.Utils.formatReqDetailUrl;
     var formatWorkloadSummarylUrl = WMStats.Utils.formatWorkloadSummarylUrl;
+    var _activePageData = WMStats.ViewModel.ActiveRequestPage.data();
 
     var tableConfig = {
         "iDisplayLength": 25,
@@ -25,15 +26,17 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
             { "mDataProp": "workflow", "sTitle": "workflow",
               "fnRender": function ( o, val ) {
                             return formatReqDetailUrl(o.aData.workflow);
-                      },
+                  }, 
               "bUseRendered": false, "sWidth": "150px"
             },
             { "mDataProp": function (source, type, val) { 
-                              return source.request_status[source.request_status.length -1].status
+                              var requestInfo = _activePageData.getData(source.workflow);
+                              return requestInfo.request_status[requestInfo.request_status.length -1].status
                            }, "sTitle": "status",
               "fnRender": function ( o, val ) {
+                            var requestInfo = _activePageData.getData(o.aData.workflow);
                             return formatWorkloadSummarylUrl(o.aData.workflow, 
-                                o.aData.request_status[o.aData.request_status.length -1].status);
+                                requestInfo.request_status[requestInfo.request_status.length -1].status);
                           },
               "bUseRendered": false
             },
@@ -46,9 +49,14 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
             },
             { "sDefaultContent": 0,
               "sTitle": "queued", 
-              "fnRender": function ( o, val ) {
-                            var reqSummary = requestData.getSummary(o.aData.workflow);
-                            return reqSummary.getTotalQueued();
+              "mDataProp": function ( source, type, val ) {
+                            var reqSummary = requestData.getSummary(source.workflow);
+                            var jobs = reqSummary.getTotalQueued();
+                            if (type === 'display') {
+                                  var requestInfo = _activePageData.getData(source.workflow);
+                                  return WMStats.Globals.formatJobLink(jobs, requestInfo.agent_url, source.workflow, "pending")
+                                }
+                                return jobs;
                           }
             },
             { "sDefaultContent": 0,
@@ -57,7 +65,8 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
                                 var reqSummary = requestData.getSummary(source.workflow);
                                 var jobs = reqSummary.getPending();
                                 if (type === 'display') {
-                                  return WMStats.Globals.formatJobLink(jobs, source.agent_url, source.workflow, "pending")
+                                  var requestInfo = _activePageData.getData(source.workflow);
+                                  return WMStats.Globals.formatJobLink(jobs, requestInfo.agent_url, source.workflow, "running")
                                 }
                                 return jobs;
                               }
@@ -68,7 +77,8 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
                                 var reqSummary = requestData.getSummary(source.workflow);
                                 var jobs = reqSummary.getRunning();
                                 if (type === 'display') {
-                                  return WMStats.Globals.formatJobLink(jobs, source.agent_url, source.workflow, "running")
+                                  var requestInfo = _activePageData.getData(source.workflow);
+                                  return WMStats.Globals.formatJobLink(jobs, requestInfo.agent_url, source.workflow, "running")
                                 }
                                 return jobs;
                               }
@@ -79,7 +89,8 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
                                 var reqSummary = requestData.getSummary(source.workflow);
                                 var jobs = reqSummary.getJobStatus("success");
                                 if (type === 'display') {
-                                  return WMStats.Globals.formatJobLink(jobs, source.agent_url, source.workflow, "success")
+                                  var requestInfo = _activePageData.getData(source.workflow);
+                                  return WMStats.Globals.formatJobLink(jobs, requestInfo.agent_url, source.workflow, "success")
                                 }
                                 return jobs;
                               }
@@ -89,8 +100,9 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
               "mDataProp": function ( source, type, val ) {
                                 var reqSummary = requestData.getSummary(source.workflow);
                                 var jobs = reqSummary.getTotalFailure();
+                                var requestInfo = _activePageData.getData(source.workflow);
                                 if (type === 'display') {
-                                  return WMStats.Globals.formatJobLink(jobs, source.agent_url, source.workflow, "failed")
+                                  return WMStats.Globals.formatJobLink(jobs, requestInfo.agent_url, source.workflow, "failed")
                                 }
                                 return jobs;
                               }
@@ -100,8 +112,9 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
               "mDataProp": function ( source, type, val ) {
                                 var reqSummary = requestData.getSummary(source.workflow);
                                 var jobs = reqSummary.getTotalCooloff();
+                                var requestInfo = _activePageData.getData(source.workflow);
                                 if (type === 'display') {
-                                  return WMStats.Globals.formatJobLink(jobs, source.agent_url, source.workflow, "cooloff")
+                                  return WMStats.Globals.formatJobLink(jobs, requestInfo.agent_url, source.workflow, "cooloff")
                                 }
                                 return jobs;
                               }

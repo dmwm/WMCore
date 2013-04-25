@@ -20,7 +20,7 @@ WMStats.Agents = function (couchData) {
         var currentTime = Math.round(new Date().getTime() / 1000);
         var dataList = this.getData();
         var agentPollingCycle = 600;
-        agentNumber = {error: 0, stable:0};
+        agentData.agentNumber = {error: 0, stable:0};
         
         function getStatus(agentInfo) {
             var lastUpdatedDuration = currentTime - agentInfo.timestamp;
@@ -44,5 +44,8 @@ WMStats.Agents = function (couchData) {
         }
         return dataList;
     }
+    // initial calculation
+    agentData.getAlertList();
+    
     return agentData
 };

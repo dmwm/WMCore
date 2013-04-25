@@ -76,22 +76,22 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
             { "sDefaultContent": 0,
               "sTitle": "submitted", 
               "fnRender": function ( o, val ) {
-                           var result = requestData.getDataByWorkflow(o.aData.workflow, "status.submitted.first", 0);
-                           result += requestData.getDataByWorkflow(o.aData.workflow, "status.submitted.retry", 0);
+                           var result = requestData.getKeyValue(o.aData.workflow, "status.submitted.first", 0);
+                           result += requestData.getKeyValue(o.aData.workflow, "status.submitted.retry", 0);
                            return result
                           }
             },
             { "sDefaultContent": 0,
               "sTitle": "pending", 
               "fnRender": function ( o, val ) {
-                           var result = requestData.getDataByWorkflow(o.aData.workflow, "status.submitted.pending", 0);
+                           var result = requestData.getKeyValue(o.aData.workflow, "status.submitted.pending", 0);
                            return result
                           }
             },
             { "sDefaultContent": 0,
               "sTitle": "running", 
               "fnRender": function ( o, val ) {
-                           var result = requestData.getDataByWorkflow(o.aData.workflow, "status.submitted.running", 0);
+                           var result = requestData.getKeyValue(o.aData.workflow, "status.submitted.running", 0);
                            return result
                           }
             },
@@ -112,7 +112,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
             { "sDefaultContent": 0,
               "sTitle": "run", 
               "fnRender": function ( o, val ) {
-                            return requestData.getDataByWorkflow(o.aData.workflow, "run", 0);
+                            return requestData.getKeyValue(o.aData.workflow, "run", 0);
                           }
             }
             //TODO add more data (consult dataops)

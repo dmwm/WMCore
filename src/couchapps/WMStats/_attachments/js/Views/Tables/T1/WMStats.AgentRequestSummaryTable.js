@@ -1,6 +1,6 @@
-WMStats.namespace("CampaignSummaryTable");
+WMStats.namespace("AgentRequestSummaryTable");
 
-WMStats.CampaignSummaryTable = function (data, containerDiv) {
+WMStats.AgentRequestSummaryTable = function (data, containerDiv) {
     
     var tableConfig = {
         "iDisplayLength": 50,
@@ -16,7 +16,7 @@ WMStats.CampaignSummaryTable = function (data, containerDiv) {
              "fnRender": function ( o, val ) {
                             return WMStats.Utils.formatDetailButton("drill");
                         }},
-            { "mDataProp": "key", "sTitle": "campaign"},               
+            { "mDataProp": "key", "sTitle": "agent"},               
             { "mDataProp": function (source, type, val) { 
                               return source.summary.summaryStruct.numRequests;
                            }, "sTitle": "requests", "sDefaultContent": 0, 
@@ -24,13 +24,14 @@ WMStats.CampaignSummaryTable = function (data, containerDiv) {
             { "sDefaultContent": 0,
               "sTitle": "job progress", 
               "mDataProp": function (source, type, val) { 
-                            var campaignSummary = source.summary;
-                            var totalJobs = campaignSummary.getWMBSTotalJobs() || 1;
-                            var result = (campaignSummary.getJobStatus("success") + campaignSummary.getTotalFailure()) /
+                            var agentRequestSummary = source.summary;
+                            var totalJobs = agentRequestSummary.getWMBSTotalJobs() || 1;
+                            var result = (agentRequestSummary.getJobStatus("success") + agentRequestSummary.getTotalFailure()) /
                                      totalJobs * 100
                             return  (result.toFixed(1) + "%");
                           }
             },
+            /*
             { "sDefaultContent": 0,
               "sTitle": "event progress", 
               "mDataProp": function (source, type, val) { 
@@ -49,12 +50,13 @@ WMStats.CampaignSummaryTable = function (data, containerDiv) {
                             return (result.toFixed(1) + "%");
                           }
             },
+            */
             { "sDefaultContent": 0,
               "sTitle": "failure rate", 
               "mDataProp": function (source, type, val) { 
-                           var campaignSummary = source.summary;
-                           var totalFailure = campaignSummary.getTotalFailure();
-                           var totalJobs = (campaignSummary.getJobStatus("success") + totalFailure) || 1
+                           var agentRequestSummary = source.summary;
+                           var totalFailure = agentRequestSummary.getTotalFailure();
+                           var totalJobs = (agentRequestSummary.getJobStatus("success") + totalFailure) || 1
                            var result = totalFailure / totalJobs * 100;
                            return (result.toFixed(1)  + "%");
                           }
@@ -62,8 +64,8 @@ WMStats.CampaignSummaryTable = function (data, containerDiv) {
             { "sDefaultContent": 0,
               "sTitle": "cool off ", 
               "mDataProp": function (source, type, val) {
-                            var campaignSummary = source.summary;
-                            return (campaignSummary.getTotalCooloff());
+                            var agentRequestSummary = source.summary;
+                            return (agentRequestSummary.getTotalCooloff());
                           }
             }
         ]

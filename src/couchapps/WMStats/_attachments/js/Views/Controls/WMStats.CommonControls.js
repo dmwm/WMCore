@@ -1,6 +1,9 @@
 WMStats.namespace("CommonControls");
 WMStats.CommonControls = function($){
     
+    var vm =  WMStats.ViewModel;
+    var vmRegistry = WMStats.ViewModel.Registry;
+    
     function setUTCClock(selector) {
        setInterval(function() {
             $(selector).text(WMStats.Utils.utcClock());
@@ -11,12 +14,28 @@ WMStats.CommonControls = function($){
        var linkTabs = 
         '<nav id="linkTabs" class="linkTabs">\
             <ul><li><a href="#activeRequestPage"> active request </a></li>\
+                <li><a href="#requestAlertPage"> request alert <strong></strong></a></li>\
                 <li><a href="#agentInfoPage"> agent info <strong></strong></a></li>\
                 <li><a href="#workloadSummaryPage"> search </a></li></ul>\
          </nav>';
         
         $(selector).append(linkTabs);
+        
+        // add controller for this view
+        function changeTab(event, data) {
+            $('#linkTabs li').removeClass("title-tab-selected").addClass("title-tab-hide");
+            $('#linkTabs a[href="' + data.id() +'"]').parent().removeClass("title-tab-hide").addClass("title-tab-selected")
+        }
+        // viewModel -> view control
+        vm.subscribe("page", changeTab);
+        
+        // view -> viewModel control
+        $(document).on('click', "#linkTabs li a", function(event){
+            vm.page(vmRegistry[this.hash])
+            event.preventDefault();
+        });
     };
+
     function setWorkloadSummarySearch(selector) {
         var searchOption =
                 '<fieldset id="SearchOptionsPane">\
@@ -41,24 +60,34 @@ WMStats.CommonControls = function($){
                      </fieldset>';
                      
         $(selector).append(searchOption);
+        
+        // change the search options
+        $(document).on('change', 'select[name="SearchOptions"]',function(){
+            var filterType = $(':selected', this).attr('data-search-type');
+            var searchBox = $('#searchPane .SearchBox');
+            $(searchBox).empty();
+            $('div.template.'+ filterType).children().clone().appendTo('#searchPane .SearchBox');
+            $('#searchPane .SearchBox input[name="dateRange1"]').datepicker({
+                altField: 'input[name="dateRange1"]', 
+                altFormat: "yy/mm/dd", 
+                changeYear: true, 
+                yearRange: "2012:c"});
+            $('#searchPane .SearchBox input[name="dateRange2"]').datepicker({
+                altField: 'input[name="dateRange2"]', 
+                altFormat: "yy/mm/dd", 
+                changeYear: true, 
+                yearRange: "2012:c"});
+        });
+        
+        // control submit button
+        $(document).on('click', '#WorkloadSummarySearchButton', function(event) {
+            var keys = {};
+            keys.searchCategory = $('#search_option_board select[name="SearchOptions"] :selected').val();
+            keys.searchValue = $('input[name="workloadSummarySearch"]').val();
+            vm.SearchPage.keys(keys);
+            event.stopPropagation();
+        })
     };
-    
-    $(document).on('change', 'select[name="SearchOptions"]',function(){
-        var filterType = $(':selected', this).attr('data-search-type');
-        var searchBox = $('#searchPane .SearchBox');
-        $(searchBox).empty();
-        $('div.template.'+ filterType).children().clone().appendTo('#searchPane .SearchBox');
-        $('#searchPane .SearchBox input[name="dateRange1"]').datepicker({
-            altField: 'input[name="dateRange1"]', 
-            altFormat: "yy/mm/dd", 
-            changeYear: true, 
-            yearRange: "2012:c"});
-        $('#searchPane .SearchBox input[name="dateRange2"]').datepicker({
-            altField: 'input[name="dateRange2"]', 
-            altFormat: "yy/mm/dd", 
-            changeYear: true, 
-            yearRange: "2012:c"});
-    });
     
     return {
         setUTCClock: setUTCClock,

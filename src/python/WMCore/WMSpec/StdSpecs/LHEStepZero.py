@@ -39,6 +39,7 @@ class LHEStepZeroWorkloadFactory(MonteCarloWorkloadFactory):
 
     def __init__(self):
         MonteCarloWorkloadFactory.__init__(self)
+        self.lheInputFiles = False
 
     def __call__(self, workloadName, arguments):
         """
@@ -51,6 +52,9 @@ class LHEStepZeroWorkloadFactory(MonteCarloWorkloadFactory):
         filterEfficiency = float(arguments.get('FilterEfficiency', 1.0))
         totalTime        = int(arguments.get('TotalTime', 9 * 3600))
         self.totalEvents = int(int(arguments['RequestNumEvents']) / filterEfficiency)
+        if arguments.get("LheInputFiles", False) == True \
+             or arguments.get("LheInputFiles", False) == "True":
+            self.lheInputFiles = True
 
         # These are mostly place holders because the job splitting algo and
         # parameters will be updated after the workflow has been created.
@@ -59,6 +63,7 @@ class LHEStepZeroWorkloadFactory(MonteCarloWorkloadFactory):
         self.prodJobSplitArgs  = arguments.setdefault("ProdJobSplitArgs",
                                                {"events_per_job": eventsPerJob,
                                                 "events_per_lumi": arguments['EventsPerLumi']})
+        self.prodJobSplitArgs.setdefault("lheInputFiles", self.lheInputFiles)
         mcWorkload = MonteCarloWorkloadFactory.__call__(self, workloadName, arguments)
         mcWorkload.setBlockCloseSettings(mcWorkload.getBlockCloseMaxWaitTime(), 5,
                                          250000000, mcWorkload.getBlockCloseMaxSize())

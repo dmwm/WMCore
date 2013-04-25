@@ -59,8 +59,11 @@ class SiteDBTest(unittest.TestCase):
         """
         Tests CmsNametoSE
         """
-        target = 'T1_US_FNAL'
+        target = ['T1_US_FNAL']
         results = self.mySiteDB.seToCMSName("cmssrm.fnal.gov")
+        self.failUnless(results == target)
+        target = sorted(['T2_CH_CERN', 'T2_CH_CERN_HLT'])
+        results = sorted(self.mySiteDB.seToCMSName("srm-eoscms.cern.ch"))
         self.failUnless(results == target)
 
     def testCmsNametoCE(self):
@@ -76,8 +79,8 @@ class SiteDBTest(unittest.TestCase):
         """
         Tests DN to Username lookup
         """
-        testDn = "/C=UK/O=eScience/OU=Bristol/L=IS/CN=simon metson"
-        testUserName = "metson"
+        testDn = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=gutsche/CN=582680/CN=Oliver Gutsche"
+        testUserName = "gutsche"
         userName = self.mySiteDB.dnUserName(dn=testDn)
         self.failUnless(testUserName == userName)
 

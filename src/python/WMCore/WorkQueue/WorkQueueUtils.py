@@ -47,11 +47,11 @@ def sitesFromStorageEelements(ses):
     result = set()
     for se in ses:
         try:
-            site = __sitedb.seToCMSName(se)
+            sites = __sitedb.seToCMSName(se)
         except:
             print "Unable to get site name for %s" % se
         else:
-            result.add(site)
+            result.update(sites)
     return list(result)
 
 __cmsSiteNames = []

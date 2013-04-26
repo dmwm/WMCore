@@ -880,13 +880,18 @@ class FileTest(unittest.TestCase):
         testJobGroup.create()
 
         testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
-                              events = 20, checksums = {'cksum': 1})
+                              events = 20, checksums = {'cksum': 1},
+                              locations = set(['se1.cern.ch', 'se1.fnal.gov']))
         testFileParentA.addRun(Run( 1, *[45]))
         testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
-                              events = 20, checksums = {'cksum': 1})
+                              events = 20, checksums = {'cksum': 1},
+                              locations = set(['se1.cern.ch', 'se1.fnal.gov']))
         testFileParentB.addRun(Run( 1, *[45]))
         testFileParentA.create()
         testFileParentB.create()
+        testFileset.addFile(testFileParentA)
+        testFileset.addFile(testFileParentB)
+        testFileset.commit()
 
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
                          checksums = {'cksum':1})
@@ -894,10 +899,13 @@ class FileTest(unittest.TestCase):
         testFileA.create()
 
         testJobA = Job()
+        testJobA["outcome"] = 'success'
         testJobA.create(group = testJobGroup)
         testJobA.addFile(testFileParentA)
         testJobA.addFile(testFileParentB)
         testJobA.associateFiles()
+        testSubscription.acquireFiles()
+        testJobA.completeInputFiles()
 
 
         parentAction = self.daofactory(classname = "Files.SetParentageByJob")

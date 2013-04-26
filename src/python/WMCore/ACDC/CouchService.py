@@ -6,6 +6,7 @@ CouchService.py
 Created by Dave Evans on 2010-04-20.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
+from time import time
 
 from WMCore.ACDC.Service import Service
 from WMCore.ACDC.CouchCollection import CouchCollection
@@ -103,3 +104,34 @@ class CouchService(Service):
 
         for fileset in collectionInstance["filesets"]:
             yield fileset
+
+    @CouchUtils.connectToCouch
+    def removeFilesetsByCollectionName(self, collectionName):
+        """
+        _removeFilesetsByCollectionName_
+
+        Remove all the collections matching certain collection
+        name.
+        """
+        result = self.couchdb.loadView("ACDC", "byCollectionName", keys = [collectionName])
+        for entry in result["rows"]:
+            self.couchdb.queueDelete(entry["value"])
+        self.couchdb.commit()
+        return
+
+    @CouchUtils.connectToCouch
+    def removeOldFilesets(self, expirationDays):
+        """
+        _removeOldFilesets_
+
+        Remove filesets older than certain date defined
+        in expirationDays (in days).
+        """
+        cutoutPoint = time() - (expirationDays * 3600 * 24)
+        result = self.couchdb.loadView("ACDC", "byTimestamp", {"endkey" : cutoutPoint})
+        count = 0
+        for entry in result["rows"]:
+            self.couchdb.queueDelete(entry["value"])
+            count += 1
+        self.couchdb.commit()
+        return count

@@ -1,3 +1,17 @@
+0.9.63 to 0.9.64:
+  - Cascade close-out. Implement the option to close-out/announce requests and cascade the status change to all resubmission children for the request. Pull request #4575.
+  - refactor wmstats adding agent view, adding back search option for job view. Pull request #4577
+  - Support a many-to-many CMS site to SE relation. Pull request #4576.
+  - Fix ASO installation scripts. Pull request #4571
+  - Extend LHEStepZero support. Include a new option that indicates if we are processing lhe input files instead of forking a generator in cmsRun. Pull request #4567
+  - Align Proxy to the slc6 ui. get-proxy-info returns a string in a different format on the UI found on slc6. Pull request #4559
+  - Remove site lists for second-level tasks. Pull Request #4568
+  - Record location changes in WMBS and Couch
+  - Report where job started. Disregard thresholds for jobs with multiple possible running sites. For monitoring purposes, report one random site in the possible site list as the 'pending' site. Pull request #4557
+  - Priority handling improvement allowing priorities to span schedds. Pull request #4554
+  - Fix cases where performance parameters are None. Pull request #4549
+  - Make robust merge jobs. Pull request #4580, #4566
+
 0.9.62 to 0.9.63:
   - Removed GroupUser couchapp from ReqMgr unittests.  Pull request #4565.
   - Remove unused etc/ReqMgrConfig.py.  Pull request #4560.

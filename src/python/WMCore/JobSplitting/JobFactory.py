@@ -408,7 +408,7 @@ class JobFactory(WMObject):
         It returns a tuple with the following values:
         timePerEvent, sizePerEvent, memoryRequirement
         """
-        timePerEvent = defaultParams.get('timePerEvent', 0)
-        sizePerEvent = defaultParams.get('sizePerEvent', 0)
-        memory = defaultParams.get('memoryRequirement', 0)
+        timePerEvent = defaultParams.get('timePerEvent', None) or 0
+        sizePerEvent = defaultParams.get('sizePerEvent', None) or 0
+        memory = defaultParams.get('memoryRequirement', None) or 0
         return timePerEvent, sizePerEvent, memory

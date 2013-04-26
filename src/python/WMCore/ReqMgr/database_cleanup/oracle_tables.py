@@ -34,37 +34,45 @@ reqmgr_oracle_tables_defition = {
     "reqmgr_assignment":
         ["REQUEST_ID", "TEAM_ID", "PRIORITY_MODIFIER"],
     
+    # TODO (may exist on some requests)
     "reqmgr_input_dataset":
         ["DATASET_ID", "REQUEST_ID", "DATASET_NAME", "DATASET_TYPE"],
     
+    # TODO (may exist on some requests)
     "reqmgr_output_dataset":
         ["DATASET_ID", "REQUEST_ID", "DATASET_NAME", "SIZE_PER_EVENT",
          "CUSTODIAL_SITE"],
     
+    # TODO (may exist on some requests)
     "reqmgr_software":
         ["SOFTWARE_ID", "SOFTWARE_NAME", "SCRAM_ARCH"],
     
+    # TODO (may exist on some requests)
     "reqmgr_software_dependency":
         ["REQUEST_ID", "SOFTWARE_ID"],
     
+    # TODO (may exist on some requests)
     "reqmgr_progress_update":
         ["REQUEST_ID", "UPDATE_TIME", "EVENTS_WRITTEN", "EVENTS_MERGED",
         "FILES_WRITTEN", "FILES_MERGED", "ASSOCIATED_DATASET",
         "TIME_PER_EVENT", "SIZE_PER_EVENT", "PERCENT_SUCCESS", 
         "PERCENT_COMPLETE"],
     
+    # TODO
     "reqmgr_message":
         ["REQUEST_ID", "UPDATE_TIME", "MESSAGE"],
     
+    # to ignore
     "reqmgr_assigned_prodmgr":
         ["REQUEST_ID", "PRODMGR_ID"],
     
+    # to ignore
     "reqmgr_assigned_prodagent":
         ["REQUEST_ID", "PRODAGENT_ID"],
     
     "reqmgr_campaign":
         ["CAMPAIGN_ID", "CAMPAIGN_NAME"],
-    
+
     "reqmgr_campaign_assoc":
         ["REQUEST_ID", "CAMPAIGN_ID"]
 }

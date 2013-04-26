@@ -29,7 +29,7 @@ class WMAgentTasks(BaseWorkerThread):
         """
         """
 
-        data = self.wq.getWork(self.resources)
+        data = self.wq.getWork(self.resources, {})
         print "Data back from workqueue"
         print "%s: %s" % (self.resources, data)
         if len(data) != 0:

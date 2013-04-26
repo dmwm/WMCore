@@ -11,7 +11,7 @@ class Workflow(Pickleable):
     def __init__(self, spec = None, owner = "unknown", dn = "unknown",
                  group = "unknown", owner_vogroup = "unknown",
                  owner_vorole = "unknown", name = None, task = None,
-                 wfType = None):
+                 wfType = None, priority = None):
         self.spec = spec
         self.name = name
         # person making the request
@@ -24,6 +24,7 @@ class Workflow(Pickleable):
         self.task = task
         self.wfType = wfType
         self.outputMap = {}
+        self.priority = priority or 0
 
     def addOutput(self, outputIdentifier, outputFileset,
                   mergedOutputFileset = None):

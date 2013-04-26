@@ -1,6 +1,7 @@
 from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError
 from WMCore.Wrappers import JsonWrapper as json
 from WMCore.Lexicon import splitCouchServiceURL
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 # TODO: this could be derived from the Service class to use client side caching
 class WorkQueue(object):
@@ -13,6 +14,7 @@ class WorkQueue(object):
         # if dbName not given assume we have to split
         if not dbName:
             couchURL, dbName = splitCouchServiceURL(couchURL)
+        self.hostWithAuth = couchURL
         self.server = CouchServer(couchURL)
         self.db = self.server.connectDatabase(dbName, create = False)
 
@@ -105,6 +107,15 @@ class WorkQueue(object):
             answer = self.db.makeRequest(uri = thisuri, type = 'PUT')
         return
 
+    def getAvailableWorkflows(self):
+        """Get the workflows that have all their elements
+           available in the workqueue"""
+        data = self.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
+                                {'reduce' : False})
+        availableSet = set((x['value']['RequestName'], x['value']['Priority']) for x in data.get('rows', []) if x['key'][1] == 'Available')
+        notAvailableSet = set((x['value']['RequestName'], x['value']['Priority']) for x in data.get('rows', []) if x['key'][1] != 'Available')
+        return availableSet - notAvailableSet
+
     def cancelWorkflow(self, wf):
         """Cancel a workflow"""
         nonCancelableElements = ['Done', 'Canceled', 'Failed']
@@ -113,3 +124,22 @@ class WorkQueue(object):
                                  'reduce' : False})
         elements = [x['id'] for x in data.get('rows', []) if x['key'][1] not in nonCancelableElements]
         return self.updateElements(*elements, Status = 'CancelRequested')
+
+    def updatePriority(self, wf, priority):
+        """Update priority of a workflow, this implies
+           updating the spec and the priority of the Available elements"""
+        # Update elements in Available status
+        data = self.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
+                                {'startkey' : [wf], 'endkey' : [wf, {}],
+                                 'reduce' : False})
+        elementsToUpdate = [x['id'] for x in data.get('rows', []) if x['key'][1] == 'Available']
+        if elementsToUpdate:
+            self.updateElements(*elementsToUpdate, Priority = priority)
+        # Update the spec, if it exists
+        if self.db.documentExists(wf):
+            wmspec = WMWorkloadHelper()
+            wmspec.load(self.db['host'] + "/%s/%s/spec" % (self.db.name, wf))
+            wmspec.setPriority(priority)
+            dummy_values = {'name' : wmspec.name()}
+            wmspec.saveCouch(self.hostWithAuth, self.db.name, dummy_values)
+        return

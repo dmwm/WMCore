@@ -778,6 +778,26 @@ class BossAirAPI(WMConnectionBase):
 
         return results
 
+    def updateJobInformation(self, workflow, task, **kwargs):
+        """
+        _updateJobInformation_
+
+        Update the information of jobs in a particular workflow and task,
+        the data will be updated according the keyword arguments which
+        will be interpreted by the individual plugins accordingly.
+        """
+        for plugin in self.plugins.keys():
+            try:
+                pluginInst = self.plugins[plugin]
+                pluginInst.updateJobInformation(workflow, task, **kwargs)
+            except WMException:
+                raise
+            except Exception, ex:
+                msg =  "Unhandled exception while calling update method for plugin %s\n" % plugin
+                msg += str(ex)
+                logging.error(msg)
+                raise BossAirException(msg)
+        return
 
     def _buildRunningJobsFromRunJobs(self, runJobs):
         """

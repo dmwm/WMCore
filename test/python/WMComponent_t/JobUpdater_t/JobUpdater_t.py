@@ -84,6 +84,10 @@ class JobUpdaterTest(unittest.TestCase):
         config.component_('JobUpdater')
         config.JobUpdater.reqMgrUrl = 'https://cmsweb-dev.cern.ch/reqmgr/reqMgr'
 
+        # JobStateMachine
+        config.section_('JobStateMachine')
+        config.JobStateMachine.couchDBName = 'bogus'
+
         # BossAir
         config.section_('BossAir')
         config.BossAir.pluginNames = ['MockPlugin']

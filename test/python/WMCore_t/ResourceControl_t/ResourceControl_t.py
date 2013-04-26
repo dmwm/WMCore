@@ -657,6 +657,8 @@ class ResourceControlTest(unittest.TestCase):
         config.section_("CoreDatabase")
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
         config.CoreDatabase.socket = os.getenv("DBSOCK")
+        config.section_("JobStateMachine")
+        config.JobStateMachine.couchDBName = "bogus"
         config.section_("BossAir")
         config.BossAir.pluginDir = "WMCore.BossAir.Plugins"
         config.BossAir.pluginNames = ["MockPlugin"]

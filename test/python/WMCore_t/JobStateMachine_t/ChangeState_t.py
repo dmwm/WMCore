@@ -872,5 +872,92 @@ class TestChangeState(unittest.TestCase):
 
         return
 
+    def testUpdateLocation(self):
+        """
+        _testUpdateLocation_
+
+        Check that we can update the location of a job through
+        the state machine.
+        """
+        change = ChangeState(self.config, "changestate_t")
+
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site2", seName = "somese2.cern.ch")
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task = "Test")
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow,
+                                        split_algo = "FileBased")
+        testSubscription.create()
+
+        testFileA = File(lfn = "SomeLFNA", events = 1024, size = 2048,
+                         locations = set(["somese.cern.ch", "somese2.cern.ch"]))
+        testFileB = File(lfn = "SomeLFNB", events = 1025, size = 2049,
+                         locations = set(["somese.cern.ch", "somese2.cern.ch"]))
+        testFileA.create()
+        testFileB.create()
+
+        testFileset.addFile(testFileA)
+        testFileset.addFile(testFileB)
+        testFileset.commit()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = testSubscription)
+        jobGroup = jobFactory(files_per_job = 1)[0]
+
+        assert len(jobGroup.jobs) == 2, \
+               "Error: Splitting should have created two jobs."
+
+        testJobA = jobGroup.jobs[0]
+        testJobA["user"] = "sfoulkes"
+        testJobA["group"] = "DMWM"
+        testJobA["taskType"] = "Merge"
+        testJobA["site_cms_name"] = "site1"
+        testJobB = jobGroup.jobs[1]
+        testJobB["user"] = "sfoulkes"
+        testJobB["group"] = "DMWM"
+        testJobB["taskType"] = "Processing"
+        testJobB["site_cms_name"] = "site2"
+
+        change.propagate([testJobA, testJobB], "new", "none")
+        change.propagate([testJobA, testJobB], "created", "new")
+        change.propagate([testJobA, testJobB], "executing", "created")
+
+        testJobADoc = change.jobsdatabase.document(testJobA["couch_record"])
+
+        maxKey = max(testJobADoc["states"].keys())
+        transition = testJobADoc["states"][maxKey]
+        self.assertEqual(transition["location"], "site1")
+
+        testJobBDoc = change.jobsdatabase.document(testJobB["couch_record"])
+
+        maxKey = max(testJobBDoc["states"].keys())
+        transition = testJobBDoc["states"][maxKey]
+        self.assertEqual(transition["location"], "site2")
+
+        jobs = [{'jobid' : 1, 'location' : 'site2'}]
+
+        change.recordLocationChange(jobs)
+
+        testJobADoc = change.jobsdatabase.document(testJobA["couch_record"])
+
+        maxKey = max(testJobADoc["states"].keys())
+        transition = testJobADoc["states"][maxKey]
+        self.assertEqual(transition["location"], "site2")
+
+        listJobsDAO = self.daoFactory(classname = "Jobs.GetLocation")
+        jobid = [{'jobid' : 1}, {'jobid' : 2}]
+        jobsLocation = listJobsDAO.execute(jobid)
+        for job in jobsLocation:
+            self.assertEqual(job['site_name'], 'site2')
+
+        return
+
 if __name__ == "__main__":
     unittest.main()

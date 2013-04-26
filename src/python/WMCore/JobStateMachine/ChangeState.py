@@ -92,6 +92,7 @@ class ChangeState(WMObject, WMConnectionBase):
         self.incrementRetryDAO = self.daofactory("Jobs.IncrementRetry")
         self.workflowTaskDAO = self.daofactory("Jobs.GetWorkflowTask")
         self.jobTypeDAO = self.daofactory("Jobs.GetType")
+        self.updateLocationDAO = self.daofactory("Jobs.UpdateLocation")
 
         self.maxUploadedInputFiles = getattr(self.config.JobStateMachine, 'maxFWJRInputFiles', 1000)
         return
@@ -470,3 +471,31 @@ class ChangeState(WMObject, WMConnectionBase):
             #Increment retry when commanded
             if incrementRetry:
                 job["retry_count"] += 1
+
+    def recordLocationChange(self, jobs):
+        """
+        _recordLocationChange_
+
+        Record a location change in couch and WMBS,
+        this expects a list of dictionaries with
+        jobid and location keys which represent
+        the job id in WMBS and new location respectively.
+        """
+        # First update safely in WMBS
+        self.updateLocationDAO.execute(jobs, conn = self.getDBConn(),
+                                       transaction = self.existingTransaction())
+        # Now try couch, this can fail and we don't require it to succeed
+        try:
+            jobIDs = [x['jobid'] for x in jobs]
+            couchIDs = self.getCouchDAO.execute(jobIDs, conn = self.getDBConn(),
+                                                transaction = self.existingTransaction())
+            locationCache = dict((x['jobid'], x['location']) for x in jobs)
+            for entry in couchIDs:
+                couchRecord = entry['couch_record']
+                location = locationCache[entry['jobid']]
+                updateUri = "/" + self.jobsdatabase.name + "/_design/JobDump/_update/locationTransition/" + couchRecord
+                updateUri += "?location=%s" % (location)
+                self.jobsdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
+        except Exception, ex:
+            logging.error("Error updating job in couch: %s" % str(ex))
+            logging.error(traceback.format_exc())

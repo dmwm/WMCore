@@ -289,6 +289,7 @@ class TaskChainWorkloadFactory(StdBase):
         self.arguments = {}
         self.multicore = False
         self.multicoreNCores = 1
+        self.ignoredOutputModules = []
 
     def __call__(self, workloadName, arguments):
         """
@@ -304,6 +305,7 @@ class TaskChainWorkloadFactory(StdBase):
         self.configCacheUrl = arguments.get("ConfigCacheUrl", None)
         self.frameworkVersion = arguments["CMSSWVersion"]
         self.globalTag = arguments.get("GlobalTag", None)
+        self.ignoredOutputModules = arguments.get("IgnoredOutputModules", [])
 
         # Optional arguments that default to something reasonable.
         self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
@@ -349,7 +351,8 @@ class TaskChainWorkloadFactory(StdBase):
                 # all subsequent tasks have to be processing tasks
                 self.setupTask(task, taskConf)
             self.taskMapping[task.name()] = taskConf
-            
+
+        self.workload.ignoreOutputModules(self.ignoredOutputModules)
         return self.workload  
 
             
@@ -390,7 +393,8 @@ class TaskChainWorkloadFactory(StdBase):
                                               configCacheUrl = self.configCacheUrl,
                                               splitArgs = splitArguments, stepType = cmsswStepType,
                                               seeding = taskConf['Seeding'], totalEvents = taskConf['RequestNumEvents'],
-                                              forceUnmerged = forceUnmerged)
+                                              forceUnmerged = forceUnmerged, timePerEvent = self.timePerEvent,
+                                              memoryReq = self.memory, sizePerEvent = self.sizePerEvent)
 
         # Set up any pileup
         if 'MCPileup' in taskConf or 'DataPileup' in taskConf:
@@ -470,7 +474,8 @@ class TaskChainWorkloadFactory(StdBase):
                                               configCacheUrl = self.configCacheUrl,
                                               configDoc = configCacheID, splitAlgo = splitAlgorithm,
                                               splitArgs = splitArguments, stepType = cmsswStepType,
-                                              forceUnmerged = forceUnmerged)
+                                              forceUnmerged = forceUnmerged, timePerEvent = self.timePerEvent,
+                                              memoryReq = self.memory, sizePerEvent = self.sizePerEvent)
 
 
         if 'MCPileup' in taskConf or 'DataPileup' in taskConf:

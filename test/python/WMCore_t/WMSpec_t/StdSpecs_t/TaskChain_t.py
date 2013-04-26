@@ -35,7 +35,7 @@ def makeGeneratorConfig(couchDatabase):
     newConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
     newConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
     newConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
-    newConfig["pset_tweak_details"] ={"process": {"outputModules_": ["writeGENSIM"],
+    newConfig["pset_tweak_details"] = {"process": {"outputModules_": ["writeGENSIM"],
                                                   "writeGENSIM": {"dataset": {"filterName": "GenSimFilter",
                                                                           "dataTier": "GEN-SIM"}}}}
     result = couchDatabase.commitOne(newConfig)
@@ -60,9 +60,11 @@ def makeProcessingConfigs(couchDatabase):
     rawConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e234f"
     rawConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10876a7"
     rawConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
-    rawConfig["pset_tweak_details"] ={"process": {"outputModules_": ["writeRAWDIGI"],
+    rawConfig["pset_tweak_details"] = {"process": {"outputModules_": ["writeRAWDIGI", "writeRAWDEBUGDIGI"],
                                                   "writeRAWDIGI": {"dataset": {"filterName": "RawDigiFilter",
-                                                                          "dataTier": "RAW-DIGI"}}}}
+                                                                          "dataTier": "RAW-DIGI"}},
+                                                  "writeRAWDEBUGDIGI" : {"dataset": {"filterName": "RawDebugDigiFilter",
+                                                                          "dataTier": "RAW-DEBUG-DIGI"}}}}
     recoConfig = Document()
     recoConfig["info"] = None
     recoConfig["config"] = None
@@ -176,7 +178,7 @@ class TaskChainTests(unittest.TestCase):
                                 useDefault = False)
 
         couchServer = CouchServer(os.environ["COUCHURL"])
-        self.configDatabase = couchServer.connectDatabase("taskchain_t")  
+        self.configDatabase = couchServer.connectDatabase("taskchain_t")
         self.testInit.generateWorkDir()
         self.workload = None
         return
@@ -201,6 +203,7 @@ class TaskChainTests(unittest.TestCase):
         it mocks a request where there are 2 similar paths starting
         from the generator, each one with a different PrimaryDataset, CMSSW configuration
         and processed dataset. Dropping the RAW output as well.
+        Also include an ignored output module to keep things interesting...
         """
         generatorDoc = makeGeneratorConfig(self.configDatabase)
         processorDocs = makeProcessingConfigs(self.configDatabase)
@@ -219,6 +222,7 @@ class TaskChainTests(unittest.TestCase):
             "DashboardHost": "127.0.0.1",
             "DashboardPort": 8884,
             "TaskChain" : 6,
+            "IgnoredOutputModules" : ["writeSkim2", "writeRAWDEBUGDIGI"],
             "Task1" :{
                 "TaskName" : "GenSim",
                 "ConfigCacheID" : generatorDoc,
@@ -308,19 +312,19 @@ class TaskChainTests(unittest.TestCase):
 
         firstTask = self.workload.getTaskByPath("/PullingTheChain/GenSim")
 
-        self._checkTask(firstTask, arguments['Task1'])
-        self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/GenSimMergewriteGENSIM/DigiHLT_new"), arguments['Task2'])
-        self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref"), arguments['Task3'])
+        self._checkTask(firstTask, arguments['Task1'], arguments)
+        self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/GenSimMergewriteGENSIM/DigiHLT_new"), arguments['Task2'], arguments)
+        self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref"), arguments['Task3'], arguments)
         self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/GenSimMergewriteGENSIM/DigiHLT_new/Reco"),
-                        arguments['Task4'])
+                        arguments['Task4'], arguments)
         self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/ALCAReco"),
-                        arguments['Task5'])
+                        arguments['Task5'], arguments)
         self._checkTask(self.workload.getTaskByPath("/PullingTheChain/GenSim/GenSimMergewriteGENSIM/DigiHLT_new/Reco/Skims"),
-                        arguments['Task6'])
+                        arguments['Task6'], arguments)
 
         # Verify the output datasets
         outputDatasets = self.workload.listOutputDatasets()
-        self.assertEqual(len(outputDatasets), 12, "Number of output datasets doesn't match")
+        self.assertEqual(len(outputDatasets), 11, "Number of output datasets doesn't match")
         self.assertTrue("/RelValTTBar/ReleaseValidation-GenSimFilter-v1/GEN-SIM" in outputDatasets,
                         "/RelValTTBar/ReleaseValidation-GenSimFilter-v1/GEN-SIM not in output datasets")
         self.assertFalse("/RelValTTBar/ReleaseValidation-reco-v1/RECO" in outputDatasets,
@@ -333,13 +337,15 @@ class TaskChainTests(unittest.TestCase):
             self.assertTrue("/RelValTTBar/ReleaseValidation-alca%d-v1/ALCARECO" % i in outputDatasets,
                             "/RelValTTBar/ReleaseValidation-alca%d-v1/ALCARECO not in output datasets" % i)
         for i in range(1, 6):
+            if i == 2:
+                continue
             self.assertTrue("/RelValTTBar/ReleaseValidation-skim%d-v1/RECO-AOD" % i in outputDatasets,
                             "/RelValTTBar/ReleaseValidation-skim%d-v1/RECO-AOD not in output datasets" % i)
 
         return
 
 
-    def _checkTask(self, task, taskConf):
+    def _checkTask(self, task, taskConf, centralConf):
         """
         _checkTask_
 
@@ -378,14 +384,17 @@ class TaskChainTests(unittest.TestCase):
             unmerged.loadData()
 
             mergedset = task.getPathName() + "/" + task.name() + "Merge" + outputModule + "/merged-Merged"
-            if outputModule == "logArchive" or not taskConf.get("KeepOutput", True) or outputModule in taskConf.get("TransientOutputModules", []):
+            if outputModule == "logArchive" or not taskConf.get("KeepOutput", True) \
+                or outputModule in taskConf.get("TransientOutputModules", []) or outputModule in centralConf.get("IgnoredOutputModules", []):
                 mergedset = task.getPathName() + "/unmerged-" + outputModule
             unmergedset = task.getPathName() + "/unmerged-" + outputModule
 
             self.assertEqual(mergedset, merged.name, "Merged fileset name is wrong")
             self.assertEqual(unmergedset, unmerged.name, "Unmerged fileset name  is wrong")
 
-            if outputModule != "logArchive" and taskConf.get("KeepOutput", True) and outputModule not in taskConf.get("TransientOutputModules", []):
+            if outputModule != "logArchive" and taskConf.get("KeepOutput", True) \
+                and outputModule not in taskConf.get("TransientOutputModules", []) \
+                and outputModule not in centralConf.get("IgnoredOutputModules", []):
                 mergeTask = task.getPathName() + "/" + task.name() + "Merge" + outputModule
 
                 mergeWorkflow = Workflow(name = self.workload.name(),
@@ -427,7 +436,7 @@ class TaskChainTests(unittest.TestCase):
                     self.assertEqual("%s-%s-v%s" % (taskConf["AcquisitionEra"], taskConf["ProcessingString"],
                                                    taskConf["ProcessingVersion"]), "Wrong processed dataset for module")
 
-        #Test subscriptions
+        # Test subscriptions
         if "InputTask" not in taskConf:
             inputFileset = "%s-%s-SomeBlock" % (self.workload.name(), task.name())
         elif "Merge" in task.getPathName().split("/")[-2]:
@@ -519,7 +528,7 @@ class TaskChainTests(unittest.TestCase):
                 "InputFromOutputModule" : "writeRECO",
                 "ConfigCacheID" : processorDocs['Skims'],
                 "SplittingAlgorithm" : "FileBased",
-                "SplittingArguments" : {"files_per_job" : 10 }, 
+                "SplittingArguments" : {"files_per_job" : 10 },
             }
         }
 
@@ -539,25 +548,26 @@ class TaskChainTests(unittest.TestCase):
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
 
-        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT"), arguments['Task1'])
-        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco"), arguments['Task2'])
+        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT"), arguments['Task1'], arguments)
+        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco"), arguments['Task2'],
+                        arguments)
         self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco"),
-                        arguments['Task3'])
+                        arguments['Task3'], arguments)
         self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims"),
-                        arguments['Task4'])
+                        arguments['Task4'], arguments)
 
         digi = self.workload.getTaskByPath("/YankingTheChain/DigiHLT")
         digiStep = digi.getStepHelper("cmsRun1")
         self.assertEqual(digiStep.getGlobalTag(), arguments['GlobalTag'])
         self.assertEqual(digiStep.getCMSSWVersion(), arguments['CMSSWVersion'])
         self.assertEqual(digiStep.getScramArch(), arguments['ScramArch'])
- 
+
         reco = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco")
         recoStep = reco.getStepHelper("cmsRun1")
         self.assertEqual(recoStep.getGlobalTag(), arguments['Task2']['GlobalTag'])
         self.assertEqual(recoStep.getCMSSWVersion(), arguments['Task2']['CMSSWVersion'])
         self.assertEqual(recoStep.getScramArch(), arguments['Task2']['ScramArch'])
- 
+
         alca = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco")
         alcaStep = alca.getStepHelper("cmsRun1")
         self.assertEqual(alcaStep.getGlobalTag(), arguments['Task3']['GlobalTag'])
@@ -572,9 +582,11 @@ class TaskChainTests(unittest.TestCase):
 
         # Verify the output datasets
         outputDatasets = self.workload.listOutputDatasets()
-        self.assertEqual(len(outputDatasets), 13, "Number of output datasets doesn't match")
+        self.assertEqual(len(outputDatasets), 14, "Number of output datasets doesn't match")
         self.assertTrue("/MinimumBias/ReleaseValidation-RawDigiFilter-v1/RAW-DIGI" in outputDatasets,
                         "/MinimumBias/ReleaseValidation-RawDigiFilter-v1/RAW-DIGI not in output datasets")
+        self.assertTrue("/MinimumBias/ReleaseValidation-RawDebugDigiFilter-v1/RAW-DEBUG-DIGI" in outputDatasets,
+                        "/MinimumBias/ReleaseValidation-RawDebugDigiFilter-v1/RAW-DEBUG-DIGI not in output datasets")
         self.assertTrue("/ZeroBias/ReleaseValidation-reco-v1/RECO" in outputDatasets,
                         "/ZeroBias/ReleaseValidation-reco-v1/RECO not in output datasets")
         self.assertTrue("/ZeroBias/ReleaseValidation-AOD-v1/AOD" in outputDatasets,
@@ -589,7 +601,7 @@ class TaskChainTests(unittest.TestCase):
                             "/MinimumBias/ReleaseValidation-skim%d-v1/RECO-AOD not in output datasets" % i)
 
         return
- 
+
     def testProcessingWithScenarios(self):
         """
         _testProcessingWithScenarios_
@@ -672,12 +684,13 @@ class TaskChainTests(unittest.TestCase):
         testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
 
-        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT"), arguments['Task1'])
-        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco"), arguments['Task2'])
+        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT"), arguments['Task1'], arguments)
+        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco"), arguments['Task2'],
+                        arguments)
         self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergeALCARECOoutput/ALCAReco"),
-                        arguments['Task3'])
+                        arguments['Task3'], arguments)
         self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergeRECOoutput/Skims"),
-                        arguments['Task4'])
+                        arguments['Task4'], arguments)
 
 
 
@@ -692,9 +705,9 @@ class TaskChainTests(unittest.TestCase):
         alcaAppConf = alcaStep.data.application.configuration
         self.assertEqual(alcaAppConf.scenario, arguments['Task3']['ProcScenario'])
         self.assertEqual(alcaAppConf.function, arguments['Task3']['ScenarioMethod'])
-        
+
         return
-        
+
 
 if __name__ == '__main__':
     unittest.main()

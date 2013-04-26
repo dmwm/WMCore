@@ -172,22 +172,33 @@ WMStats.RequestStruct.prototype = {
     },
     
     updateFromCouchDoc: function (doc) {
+        
+        function _tasksUpdateFunction (baseObj, addObj, field) {
+            if (field === "JobType") {
+                baseObj[field] = addObj[field];
+            } else if (field === "updated"){
+                baseObj[field] = Math.max(baseObj[field], addObj[field]);
+            } else {
+                baseObj[field] += addObj[field];
+            }
+        }; 
+        
         for (var field in doc) {
-            //handles when request is splited in more than one agents
+            //handles when request is split in more than one agents
             if (this[field] && 
                 (field == 'sites' || field == 'status')){
                 this._addJobs(this[field], doc[field])
+            } else if (this[field] && field == 'tasks'){
+                this._addJobs(this[field], doc[field], true,  _tasksUpdateFunction)
+            
             } else if (this[field] && field == 'output_progress') {
                 var outProgress = this.output_progress;
                 for (var index in outProgress){
                     for (var prop in doc[field][index]) {
                         outProgress[index][prop] += doc[field][index][prop];
-                        //TODO: need combine dataset separtely
+                        //TODO: need combine dataset separately
                     }
                 }
-            } else if (this[field] && field == 'tasks'){
-                //TODO need to handle the 
-                //this._dataByWorkflow[doc.workflow][field] = doc[field];
             } else if (field == 'agent_url') {
                 if (this[field] === undefined) this[field] = [];
                 WMStats.Utils.addToSet(this[field], doc[field])
@@ -209,6 +220,8 @@ WMStats.GenericRequests = function (noFilterFlag) {
      */
     // request data by workflow name
     this._dataByWorkflow = {};
+    // request data by agent - only contains information from agent
+    // i.e. job status.
     this._dataByWorkflowAgent = {}
     this._get = WMStats.Utils.get;
     this._filter = {};
@@ -226,7 +239,7 @@ WMStats.GenericRequests.prototype = {
     
     _getRequestObj: function (request) {
         if (typeof(request) == "string") {
-            return this.getDataByWorkflow(request);
+            return this.getData(request);
         } else {
             return request;
         }
@@ -297,16 +310,28 @@ WMStats.GenericRequests.prototype = {
     },
     
     updateRequest: function(doc) {
-
-        var request = this.getDataByWorkflow(doc.workflow);
-        if (!request) {
-            this._dataByWorkflow[doc.workflow] = new WMStats.RequestStruct(doc.workflow);
-        }
-        this._dataByWorkflow[doc.workflow].updateFromCouchDoc(doc)
+        /*
+         * 
+         */
+        var workflow = doc.workflow;
+        var agentURL = doc.agent_url;
         
-        if (doc.agent_url) {
-            var requestWithAgent = this.getRequestByNameAndAgent(doc.workflow, doc.agent_url);
-            requestWithAgent.updateFromCouchDoc(doc);
+        if (workflow && !this._dataByWorkflow[workflow]) {
+            this._dataByWorkflow[workflow] = new WMStats.RequestStruct(workflow);;
+        }
+        
+        if (agentURL && !this._dataByWorkflowAgent[workflow]) {
+            this._dataByWorkflowAgent[workflow] = {};
+        }
+        //if it is new agent create one.
+        if (agentURL && !this._dataByWorkflowAgent[workflow][agentURL]){
+            this._dataByWorkflowAgent[workflow][agentURL] = new WMStats.RequestStruct(workflow);
+        }
+        
+        // update both _databyWorkflow
+        this.getData(workflow).updateFromCouchDoc(doc);
+        if (agentURL) {
+            this.getData(workflow, agentURL).updateFromCouchDoc(doc);
         }
     },
     
@@ -319,67 +344,64 @@ WMStats.GenericRequests.prototype = {
         }
     },
 
-    filterRequests: function() {
-        var requestData = this.getDataByWorkflow();
+    filterRequests: function(filter) {
+        var requestData = this.getData();
         var filteredData = {}
+        var requestWithAgentData = this.getDataWithAgent();
+        var filteredDataWithAgent = {}
+        if (filter === undefined) {filter = this._filter;}
         for (var workflowName in requestData) {
-            if (this._andFilter(requestData[workflowName], this._filter)){
+            if (this._andFilter(requestData[workflowName], filter)){
                 filteredData[workflowName] =  requestData[workflowName];
+                filteredDataWithAgent[workflowName] =  requestWithAgentData[workflowName];
             }
         }
         this._filteredRequests = WMStats.Requests();
-        this._filteredRequests.setDataByWorkflow(filteredData);
+        this._filteredRequests.setDataByWorkflow(filteredData, filteredDataWithAgent);
         return this._filteredRequests;
     },
-    
 
-    getRequestByNameAndAgent: function(workflow, agentUrl) {
-        // if ther in no agentUrl get all agent for given workflow
-        if (!agentUrl){
-            return this._dataByWorkflowAgent[workflow];
-        }
-        // if is new workflow, create one.
-        if (!this._dataByWorkflowAgent[workflow]) {
-            this._dataByWorkflowAgent[workflow] = {};
-        }
-        //if it is new agent create one.
-        if (!this._dataByWorkflowAgent[workflow][agentUrl]){
-            this._dataByWorkflowAgent[workflow][agentUrl] = new WMStats.RequestStruct(workflow);
-        }
-        return this._dataByWorkflowAgent[workflow][agentUrl];
-    },
-    
-    getDataByWorkflow: function(request, keyString, defaultVal) {
+    getKeyValue: function(request, keyString, defaultVal) {
         "keyString is opject property separte by ."
-        if (!request) return this._dataByWorkflow;
-        else if (!keyString) return this._dataByWorkflow[request];
-        else return this._get(this._dataByWorkflow[request], keyString, defaultVal);
+        return this._get(this._dataByWorkflow[request], keyString, defaultVal);
     },
     
-    getData: function(workflow) {
-        if (workflow){
-            var requestsObj = {};
-            requestsObj[workflow] = this._dataByWorkflow[workflow]
-            return {requests: requestsObj,
-                    summary: this.getSummary(workflow),
-                    key: workflow}
+    getData: function(workflow, agentURL) {
+        if (workflow && (agentURL === "all" || agentURL === "NA" )) {
+            return this._dataByWorkflowAgent[workflow]
+        } else if (workflow && agentURL) {
+            return this._dataByWorkflowAgent[workflow][agentURL]
+        } else if (workflow){
+            return this._dataByWorkflow[workflow];
+        } else{
+            return this._dataByWorkflow;
         }
-        return this._dataByWorkflow;
+    },
+    
+    getDataWithAgent: function(workflow, agentURL) {
+        if (workflow && (agentURL === "all" || agentURL === "NA" )) {
+            return this._dataByWorkflowAgent[workflow]
+        } else if (workflow && agentURL) {
+            return this._dataByWorkflowAgent[workflow][agentURL]
+        } else{
+            return this._dataByWorkflowAgent;
+        }
     },
     
     getFilteredRequests: function() {
         return this._filteredRequests;
     },
     
-    setDataByWorkflow: function(data) {
+    setDataByWorkflow: function(data, agentData) {
         "keyString is opject property separte by ."
         this._dataByWorkflow = data;
+        this._dataByWorkflowAgent = agentData;
     },
     
     getList: function(sortFunc) {
         var list = [];
-        for (var request in this.getDataByWorkflow()) {
-            list.push(this.getDataByWorkflow(request))
+        for (var request in this.getData()) {
+            list.push(this.getData(request))
         }
         if (sortFunc) {
             return list.sort(sortFunc);
@@ -388,15 +410,16 @@ WMStats.GenericRequests.prototype = {
         }
     },
 
-    getSummary: function(workflow) {
-        var summary =  WMStats.RequestsSummary();
+    getSummary: function(workflow, agentURL) {
         
+        var requests = this.getData(workflow, agentURL)
         if (workflow) {
-            return summary.createSummaryFromRequestDoc(this.getDataByWorkflow(workflow));
+            return requests.getSummary()
         } else {
+            var summary =  WMStats.RequestsSummary();
             //TODO need to cache the information
-            for (var request in this.getDataByWorkflow()) {
-                summary.updateFromRequestDoc(this.getDataByWorkflow(request));
+            for (var requestName in requests) {
+                summary.update(this.getData(requestName).getSummary());
             }
             return summary;
         }
@@ -404,7 +427,7 @@ WMStats.GenericRequests.prototype = {
     
     getAlertRequests: function() {
         var alertRequests = [];
-        for (var workflow in this.getDataByWorkflow()) {
+        for (var workflow in this.getData()) {
             var reqSummary = this.getSummary(workflow);
             var coolOff = reqSummary.getTotalCooloff();
             var paused = reqSummary.getTotalPaused();
@@ -429,7 +452,27 @@ WMStats.RequestsByKey = function (category, summaryFunc) {
     
     function categorize(requestData) {
         
-        function _updateData(key, summaryBase) {
+        function _getRequestData(workflow, agentURL){
+            if (_category === "agent" && agentURL !== "all" && agentURL !== "NA" ) {
+                return requestData.getData(workflow, agentURL);
+            } else {
+                return requestData.getData(workflow);
+            }
+        }
+        
+        function _getCategoryKey(workflow){
+            if (_category === "agent") {
+                var agentCategory = requestData.getData(workflow, "all");
+                if (agentCategory === undefined) {
+                    return "NA";
+                } else {
+                    return agentCategory;
+                }
+            } else {
+                return requestData.getKeyValue(workflow, _category, "NA");
+            }
+        }
+        function _updateData(key, workflow, summaryBase) {
             if (_data[key] === undefined) {
                 //initial set up
                 _data[key] = {};
@@ -437,33 +480,34 @@ WMStats.RequestsByKey = function (category, summaryFunc) {
                 _data[key].summary =  summaryFunc();
                 _data[key].key = key;
             }
-            _data[key].requests[workflow] = dataByWorkflow[workflow];
+            var requestInfo = _getRequestData(workflow, key);
+            _data[key].requests[workflow] = requestInfo;
             _data[key].summary.updateFromRequestDoc(summaryBase)
         };
-
+        
         var dataByWorkflow = requestData.getData();
         for (var workflow in dataByWorkflow) {
-            var key = _get(dataByWorkflow[workflow], _category, "NA");
+            var key = _getCategoryKey(workflow);
             if (typeof key == 'object') {
                 if (key.length) {
                     // handles array case
                     for (var index in key) {
-                        _updateData(key[index], dataByWorkflow[workflow])
+                        _updateData(key[index], workflow, requestData.getData(workflow))
                     }
                 } else {
-                    // handles sites and tasks case
+                    // handles agent, sites and tasks case
                     for (var prop in key) {
-                        _updateData(prop, key[prop]);
+                        _updateData(prop, workflow, key[prop]);
                     }
                 }
                 
             } else {
-                if (key == "NA" && _category == "sites" || _category == "tasks") {
+                if (key == "NA" && _category == "sites" || _category == "tasks" || _category == "agent") {
                     // summary base shouldn't be higher level. since sites and tasks
                     // has sub hierarchy
-                    _updateData(key, {});
+                    _updateData(key, workflow, {});
                 } else {
-                    _updateData(key, dataByWorkflow[workflow]);
+                    _updateData(key, workflow, requestData.getData(workflow));
                 }
             }
             
@@ -480,7 +524,9 @@ WMStats.RequestsByKey = function (category, summaryFunc) {
     
     function getRequestData(key){
         var requestData = WMStats.Requests();
-        requestData.setDataByWorkflow(_data[key].requests);
+        if (_data[key] !== undefined) {
+            requestData.setDataByWorkflow(_data[key].requests);
+        }
         return requestData;
     };
     

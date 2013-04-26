@@ -25,4 +25,11 @@ WMStats.namespace('RequestSummaryList');
     WMStats.RequestSummaryList = function (data, containerDiv) {
          $(containerDiv).html(format(data));
     }
+    
+    var vm = WMStats.ViewModel;
+    
+    vm.ActiveRequestPage.subscribe("data", function() {
+            var filteredData = vm.ActiveRequestPage.data();
+            WMStats.RequestSummaryList(filteredData.getSummary(), "#filter_summary");
+        })
 })();

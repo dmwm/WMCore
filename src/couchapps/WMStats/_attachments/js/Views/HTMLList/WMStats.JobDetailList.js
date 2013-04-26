@@ -76,7 +76,7 @@ WMStats.namespace('JobDetailList');
             htmlstr += "<li><b>Workflow:</b> " + jobDoc.workflow + "</li>";
             htmlstr += "<li><b>Task:</b> " + jobDoc.task + "</li>";
             htmlstr += "<li><b>Status:</b> " + jobDoc.state + "</li>";
-            htmlstr += "<li><b>Input dataset:</b> " + requestData.getDataByWorkflow(jobDoc.workflow, "inputdataset", "") + "</li>";
+            htmlstr += "<li><b>Input dataset:</b> " + requestData.getKeyValue(jobDoc.workflow, "inputdataset", "") + "</li>";
             if (typeof jobDoc.site == "object") {
                 htmlstr += "<li><b>Site:</b> N/A </li>";
             } else {
@@ -115,6 +115,10 @@ WMStats.namespace('JobDetailList');
                 
                 htmlstr += "<li><b>location:</b> ";
                 htmlstr += jobDoc.output[i].location;
+                if (jobDoc.output[i].type === "logArchive") {
+                    htmlstr += "<li class='pfn'><b>pfn:</b> ";
+                    // call phedex to get lfn
+                }
                 /*
                 for (var j in jobDoc.output[i].location) {
                     htmlstr += jobDoc.output[i].location[j] + " ";
@@ -138,4 +142,31 @@ WMStats.namespace('JobDetailList');
     WMStats.JobDetailList = function (data, containerDiv) {
          $(containerDiv).html(format(data));
     }
+    
+    // control job Detail
+    
+    var vm = WMStats.ViewModel;
+    
+    vm.JobDetail.subscribe("data", function() {
+        WMStats.JobDetailList(vm.JobDetail.data(), vm.JobDetail.id());
+    });
+    /*
+    vm.AlertJobDetail.subscribe("data", function() {
+        WMStats.JobDetailList(vm.AlertJobDetail.data(), vm.AlertJobDetail.id());
+    });
+    */
+    $(document).on('click', "#jobDetailNav li a", function(event){
+        $('div.jobDetailBox').hide();
+        $(this.hash).show();
+        //TODO call phedex to get PFN
+        
+        $("#jobDetailNav li a").removeClass("button-selected").addClass("button-unselected");
+        $(this).removeClass("button-unselected").addClass("button-selected");
+        event.preventDefault();
+    })
+    
+    $(WMStats.Globals.Event).on(WMStats.CustomEvents.PHEDEX_PFN_SUCCESS, 
+        function(event, requestName) {
+            $('#acdc_submission div.requestDetailBox').append(WMStats.Utils.formatReqDetailUrl(requestName))
+    })
 })();

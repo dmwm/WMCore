@@ -6,7 +6,7 @@
 WMStats.namespace("Globals")
 
 WMStats.Globals = function($){
-    var _dbVariants = {'wmstats': 'tier1', 'tier0_wmstats': 'tier0', 'analysis_wmstats': 'analysis' }
+    var _dbVariants = {'wmstats': 'tier1', 'tier0_wmstats': 'tier0'}
 
     function getReqDetailPrefix () {
         if (_dbVariants[dbname] == "tier1") {

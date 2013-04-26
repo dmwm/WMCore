@@ -14,6 +14,4 @@ if (WMStats.Globals.VARIANT == "tier1") {
                                    "js/Models/T1/WMStats.ReqMgrRequestModel.js"]);
 } else if (WMStats.Globals.VARIANT == "tier0") {
     WMStats.Globals.importScripts(["js/Models/T0/WMStats.ActiveRequestModel.js"]);
-} else if (WMStats.Globals.VARIANT == "analysis") {
-    WMStats.Globals.importScripts(["js/Models/T1/WMStats.ActiveRequestModel.js"]);
-};
+}

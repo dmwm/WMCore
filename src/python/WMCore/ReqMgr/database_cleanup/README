@@ -21,3 +21,11 @@ source /data/current/apps/reqmgr/etc/profile.d/init.sh
 # dump only reqmgr_request table
 python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/database_cleanup/oracle_dump.py user/pass@cms_reqmgr reqmgr_request > oracle_dump_request_table.py
 python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/database_cleanup/oracle_couchdb_comparison.py oracle_dump_request_table.py > comparison.log
+
+
+Deleting requests from CouchDB:
+python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/couchdb_cleanup.py requestlist.txt
+
+
+Request values level consistency check/correction:
+python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/database_cleanup/oracle_couchdb_consistency_checker.py user/pass@cms_reqmgr 2>&1 | tee log

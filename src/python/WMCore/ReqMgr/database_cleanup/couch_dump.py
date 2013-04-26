@@ -5,6 +5,7 @@ Couch dumper.
 
 Dump one or more, comma separated fields from CouchDB datatabase.
 Dumps entire database ids when run without arguments.
+Dumps entire documents when run just with -f (full).
 
 """
 
@@ -17,7 +18,7 @@ import sys
 from WMCore.Database.CMSCouch import CouchServer, Database, Document
 
 
-def dump(fields=None):
+def dump(full_dump=False, fields=None):
     print "Querying fields: %s\n\n" % fields
     db = Database(couch_db_name, couch_url)
     couch_requests = db.allDocs()
@@ -33,14 +34,21 @@ def dump(fields=None):
                 except KeyError:
                     s += "%s:n/a  " % f 
             print "%s  %s\n" % (s, doc["RequestName"])
+        elif full_dump:
+            print "%s\n%s\n%s\n" % (row["id"], doc, 70*'-')
         else:
             print row["id"]
         doc_counter += 1
+        #if doc_counter > 100:
+        #    break
     print "Total documents: %s" % doc_counter 
         
 
 def main():
-    if len(sys.argv) < 2:
+    if sys.argv[-1] == "-f":
+        dump(full_dump=True)
+        return
+    elif len(sys.argv) < 2:
         dump()
     elif len(sys.argv) == 2:
         l = sys.argv[1].split(',')

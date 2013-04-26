@@ -518,7 +518,7 @@ legend {
     padding: 5px;
 }
 
-.agent_detail_box { 
+.agent_detail_box, .request_error_box{ 
     padding: 3px;
     -webkit-border-radius: 3px;
     -moz-border-radius: 3px;

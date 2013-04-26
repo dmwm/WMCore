@@ -5,7 +5,6 @@ WMStats.namespace('CategoryDetailList');
         var reqDoc = requestStruct.requests;
         var reqSummary = requestStruct.summary;
         
-        //var allRequests.getDataByWorkflow =  allRequests.getDataByWorkflow
         htmlstr += "<div class='requestDetailBox'>"
         htmlstr += "<ul>";
         if (reqDoc) {

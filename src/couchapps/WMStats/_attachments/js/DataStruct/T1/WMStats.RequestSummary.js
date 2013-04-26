@@ -51,7 +51,7 @@ WMStats.Requests = function(noFilterFlag) {
     tier1Requests.estimateCompletionTime = function(request) {
         //TODO need to improve the algo
         // no infomation to calulate the estimate completion time
-        var aData = this.getDataByWorkflow(request);
+        var aData = WMStats.ActiveRequestModel.getData().getData(request);
         var reqSummary = this.getSummary(request);
         var completedJobs = reqSummary.getJobStatus("success") + reqSummary.getTotalFailure();
         if (completedJobs == 0) return -1;
@@ -63,7 +63,7 @@ WMStats.Requests = function(noFilterFlag) {
         if (lastStatus.status !== 'running' &&
             lastStatus.status !== 'running-closed' &&
             lastStatus.status !== 'running-open') return 0;
-        
+
         var totalJobs = reqSummary.getWMBSTotalJobs() - reqSummary.getJobStatus("canceled");
         // jobCompletion percentage 
         var completionRatio = (completedJobs / totalJobs);
@@ -72,11 +72,35 @@ WMStats.Requests = function(noFilterFlag) {
         var timeLeft = Math.round((duration / (completionRatio * queueInjectionRatio)) - duration);
         
         return timeLeft;
+    };
+    
+    tier1Requests.getRequestAlerts = function() {
+        
+        var alertRequests = {};
+        alertRequests['configError'] = []
+        alertRequests['siteError'] = []
+        for (var workflow in this.getData()) {
+            var reqSummary = this.getSummary(workflow);
+            var cooloff = reqSummary.getTotalCooloff();
+            var paused = reqSummary.getTotalPaused();
+            var failure = reqSummary.getTotalFailure();
+            var success = reqSummary.getJobStatus("success");
+            var totalFailed = cooloff + paused + failure;
+            if ( totalFailed > 0) {
+                if (success === 0) {
+                    alertRequests['configError'].push(this.getData(workflow));
+                } else if ((totalFailed / (totalFailed + success)) > 0.85) {
+                    alertRequests['siteError'].push(this.getData(workflow));
+                }
+            }
+        }
+        return alertRequests;
     }
+    
     
     tier1Requests.requestNotPulledAlert = function() {
         var alertRequests = [];
-        for (var workflow in this.getDataByWorkflow()) {
+        for (var workflow in this.getData()) {
             var reqStatusInfo = this.getRequestStatusAndTime(workflow);
             var currentTime = Math.round(new Date().getTime() / 1000);
             var timeThreshold = 600 // 10 min

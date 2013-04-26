@@ -1,6 +1,7 @@
 WMStats.namespace('RequestDetailList');
 (function() { 
     
+    var vm = WMStats.ViewModel;
     var transitionFormat = function(dataArray, maxLength, summaryStr) {
         var htmlstr = "";
         if (dataArray == undefined || dataArray.length == undefined ||
@@ -22,7 +23,6 @@ WMStats.namespace('RequestDetailList');
         var reqDoc = requestStruct.requests;
         var reqSummary = requestStruct.summary;
         
-        //var allRequests.getDataByWorkflow =  allRequests.getDataByWorkflow
         htmlstr += "<div class='requestDetailBox'>"
         htmlstr += "<ul>";
         if (reqDoc) {
@@ -45,7 +45,13 @@ WMStats.namespace('RequestDetailList');
         return htmlstr;
     }
     
-    WMStats.RequestDetailList = function (data, containerDiv) {
-         $(containerDiv).html(format(data));
+    WMStats.RequestDetailList = function (workflow, containerDiv) {
+        var allRequests = vm.ActiveRequestPage.data();
+        var reqDoc = allRequests.getData(workflow);
+        var reqSummary = allRequests.getSummary(workflow);
+        var requests = {};
+        requests[workflow] = reqDoc;
+        var data = {key: workflow, requests: requests, summary: reqSummary};
+        $(containerDiv).html(format(data));
     }
 })();

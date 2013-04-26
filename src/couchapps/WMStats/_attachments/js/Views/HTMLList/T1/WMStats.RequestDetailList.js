@@ -1,6 +1,7 @@
 WMStats.namespace('RequestDetailList');
 (function() { 
     
+    var vm = WMStats.ViewModel;
     var progressFormat = function(progressStat, totalEvents, totalLumis) {
         var formatStr = "<ul>";
         for (var output in progressStat) {
@@ -73,9 +74,22 @@ WMStats.namespace('RequestDetailList');
         return htmlstr;
     }
     
-    WMStats.RequestDetailList = function (data, containerDiv) {
+    WMStats.RequestDetailList = function (workflow, containerDiv) {
+         var allRequests = vm.ActiveRequestPage.data();
+         var reqDoc = allRequests.getData(workflow);
+         var reqSummary = allRequests.getSummary(workflow);
+         var requests = {};
+         requests[workflow] = reqDoc;
+         var data = {key: workflow, requests: requests, summary: reqSummary};
+         
          $(containerDiv).html(format(data));
          $(containerDiv).show("slide", {}, 500);
          WMStats.Env.RequestDetailOpen = true;
-    }
+    };
+    
+    var vm = WMStats.ViewModel;
+
+    vm.RequestDetail.subscribe("requestName", function() {
+        WMStats.RequestDetailList(vm.RequestDetail.requestName(), vm.RequestDetail.id());
+    });
 })();

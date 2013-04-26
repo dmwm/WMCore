@@ -193,6 +193,13 @@ config.JobStatusLite.logLevel = globalLogLevel
 config.JobStatusLite.pollInterval = 60
 config.JobStatusLite.stateTimeouts = {"Error": 1800, "Running": 169200, "Pending": 360000}
 
+config.component_("JobUpdater")
+config.JobUpdater.namespace = "WMComponent.JobUpdater.JobUpdater"
+config.JobUpdater.componentDir = config.General.workDir + "/JobUpdater"
+config.JobUpdater.logLevel = globalLogLevel
+config.JobUpdater.pollInterval = 120
+config.JobUpdater.reqMgrUrl = 'https://cmsweb.cern.ch/reqmgr/reqMgr'
+
 config.component_("ErrorHandler")
 config.ErrorHandler.namespace = "WMComponent.ErrorHandler.ErrorHandler"
 config.ErrorHandler.componentDir  = config.General.workDir + "/ErrorHandler"

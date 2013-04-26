@@ -234,7 +234,8 @@ class Create(CreateWMBSBase):
                type  VARCHAR(255),
                owner INTEGER      NOT NULL,
                alt_fs_close INTEGER NOT NULL,
-               injected INTEGER   DEFAULT 0
+               injected INTEGER   DEFAULT 0,
+               priority INTEGER   DEFAULT 0
                ) %s""" % tablespaceTable
 
         self.indexes["01_pk_wmbs_workflow"] = \
@@ -285,7 +286,8 @@ class Create(CreateWMBSBase):
         self.create["08wmbs_sub_types"] = \
           """CREATE TABLE wmbs_sub_types (
                id   INTEGER      NOT NULL,
-               name VARCHAR(255) NOT NULL
+               name VARCHAR(255) NOT NULL,
+               priority INTEGER DEFAULT 0
                ) %s""" % tablespaceTable
 
         self.indexes["01_pk_wmbs_sub_types"] = \
@@ -656,13 +658,13 @@ class Create(CreateWMBSBase):
                                (wmbs_job_state_SEQ.nextval, '%s')""" % jobState
             self.inserts["job_state_%s" % jobState] = jobStateQuery
 
-        self.subTypes = ["Processing", "Merge", "Harvesting", "Cleanup",
-                         "LogCollect", "Skim", "Analysis", "Production",
-                         "MultiProcessing", "MultiProduction"]
-        for i in range(len(self.subTypes)):
-            subTypeQuery = """INSERT INTO wmbs_sub_types (id, name)
-                              VALUES (wmbs_sub_types_SEQ.nextval, '%s')""" % (self.subTypes[i])
-            self.inserts["wmbs_sub_types_%s" % self.subTypes[i]] = subTypeQuery
+        self.subTypes = [("Processing", 0), ("Merge", 5), ("Harvesting", 3), ("Cleanup", 5),
+                         ("LogCollect", 3), ("Skim", 3), ("Analysis", 0), ("Production", 0),
+                         ("MultiProcessing", 0), ("MultiProduction", 0)]
+        for pair in self.subTypes:
+            subTypeQuery = """INSERT INTO wmbs_sub_types (id, name, priority)
+                              VALUES (wmbs_sub_types_SEQ.nextval, '%s', %d)""" % (pair[0], pair[1])
+            self.inserts["wmbs_sub_types_%s" % pair[0]] = subTypeQuery
 
         locationStates = ["Normal", "Down", "Draining", "Aborted"]
 

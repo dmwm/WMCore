@@ -18,7 +18,7 @@ class ListThresholdsForSubmit(DBFormatter):
                     wmbs_sub_types.name AS task_type,
                     job_count.job_status,
                     job_count.jobs,
-                    rc_threshold.priority,
+                    wmbs_sub_types.priority,
                     wmbs_location_state.name AS state,
                     wmbs_location.plugin AS plugin
                     FROM wmbs_location
@@ -50,7 +50,7 @@ class ListThresholdsForSubmit(DBFormatter):
                            bl_status.name) job_count ON
                   wmbs_location.id = job_count.location AND
                   wmbs_sub_types.id = job_count.subtype
-               ORDER BY rc_threshold.priority DESC"""
+               ORDER BY wmbs_sub_types.priority DESC"""
     seSql = """SELECT wl.site_name AS site_name,
                       wls.se_name
                FROM wmbs_location wl

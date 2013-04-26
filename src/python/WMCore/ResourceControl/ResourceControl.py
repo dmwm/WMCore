@@ -87,7 +87,23 @@ class ResourceControl(WMConnectionBase):
         results[0]["se_name"] = seNames
         return results[0]
 
-    def insertThreshold(self, siteName, taskType, maxSlots, pendingSlots, priority = None):
+    def changeTaskPriority(self, taskType, priority):
+        """
+        _changeTaskPriority_
+
+        Change the priority of a sub task in WMBS. If the task
+        type doesn't exist already then it will be added first.
+        """
+        existingTransaction = self.beginTransaction()
+        subTypeAction = self.wmbsDAOFactory(classname = "Subscriptions.InsertType")
+        subTypeAction.execute(subType = taskType,
+                              priority = priority,
+                              conn = self.getDBConn(),
+                              transaction = existingTransaction)
+        self.commitTransaction(existingTransaction)
+        return
+
+    def insertThreshold(self, siteName, taskType, maxSlots, pendingSlots):
         """
         _insertThreshold_
 
@@ -101,23 +117,23 @@ class ResourceControl(WMConnectionBase):
         insertAction = self.daofactory(classname = "InsertThreshold")
         if type(taskType) == type([]):
             for singleTask in taskType:
-                subTypeAction.execute(subType = singleTask, conn = self.getDBConn(),
+                subTypeAction.execute(subType = singleTask,
+                                      conn = self.getDBConn(),
                                       transaction = self.existingTransaction())
                 insertAction.execute(siteName = siteName,
                                      taskType = singleTask,
                                      maxSlots = maxSlots,
                                      pendingSlots = pendingSlots,
-                                     priority = priority,
                                      conn = self.getDBConn(),
                                      transaction = self.existingTransaction())
         else:
-            subTypeAction.execute(subType = taskType, conn = self.getDBConn(),
+            subTypeAction.execute(subType = taskType,
+                                  conn = self.getDBConn(),
                                   transaction = self.existingTransaction())
             insertAction.execute(siteName = siteName,
                                      taskType = taskType,
                                      maxSlots = maxSlots,
                                      pendingSlots = pendingSlots,
-                                     priority = priority,
                                      conn = self.getDBConn(),
                                      transaction = self.existingTransaction())
 
@@ -156,10 +172,10 @@ class ResourceControl(WMConnectionBase):
         """
         _listThresholdsForCreate_
 
-        This will return a two level dictionary with the first level being
+        This will return a three level dictionary with the first level being
         keyed by site name.  The second level will have the following keys:
           total_slots - Total number of pending slots available at the site
-          pending_jobs - Total number of jobs pending at the site
+          pending_jobs - Total number of jobs pending at the site per priority level, it is a dictionary
         """
         listAction = self.daofactory(classname = "ListThresholdsForCreate")
         return listAction.execute(conn = self.getDBConn(),
@@ -240,13 +256,12 @@ class ResourceControl(WMConnectionBase):
                                 seName = SE, runningSlots = runningSlots,
                                 ceName = ceName, cmsName = cmsName, plugin = plugin)
                 for task in taskList:
-                    if not task.has_key('maxSlots') or not task.has_key('taskType') \
-                           or not task.has_key('priority'):
+                    if not task.has_key('maxSlots') or not task.has_key('taskType'):
                         msg =  "Incomplete task in taskList for ResourceControl.insertAllSEs\n"
                         msg += task
                         raise ResourceControlException(msg)
                     self.insertThreshold(siteName = sName, taskType = task['taskType'],
-                                         maxSlots = task['maxSlots'], pendingSlots = task['pendingSlots'], priority = task['priority'])
+                                         maxSlots = task['maxSlots'], pendingSlots = task['pendingSlots'])
 
 
         return

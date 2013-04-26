@@ -38,8 +38,7 @@ class Create(DBCreator):
             site_id INTEGER NOT NULL,
             sub_type_id INTEGER NOT NULL,
             pending_slots INTEGER NOT NULL,
-            max_slots INTEGER NOT NULL,
-            priority  INTEGER DEFAULT 1) %s""" % tablespaceTable
+            max_slots INTEGER NOT NULL) %s""" % tablespaceTable
 
         self.constraints["rc_threshold_fk1"] = \
           """ALTER TABLE rc_threshold ADD

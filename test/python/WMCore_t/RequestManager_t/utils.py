@@ -38,3 +38,19 @@ def getSchema(groupName = 'PeopleLikeMe', userName = 'me'):
     schema['Memory'] = 3000
     schema['SizePerEvent'] = 512
     return schema
+
+def getResubmissionSchema(originalRequest, initialTask,
+                          groupName = 'PeopleLikeMe', userName = 'me'):
+    schema = {}
+    schema['RequestName'] = 'TestResubmission'
+    schema['RequestType'] = 'Resubmission'
+    schema['Requestor'] = '%s' % userName
+    schema['Group'] = '%s' % groupName
+    schema['TimePerEvent'] = '12'
+    schema['Memory'] = 3000
+    schema['SizePerEvent'] = 512
+    schema['OriginalRequestName'] = originalRequest
+    schema['InitialTaskPath'] = initialTask
+    schema['ACDCServer'] = os.environ['COUCHURL']
+    schema['ACDCDatabase'] = 'bogus'
+    return schema

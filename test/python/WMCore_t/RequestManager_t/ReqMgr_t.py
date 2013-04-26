@@ -737,5 +737,49 @@ class ReqMgrTest(RESTBaseUnitTest):
             self.assertRaises(HTTPException, self.jsonSender.put, "request", schema)
             
 
+    def testL_CascadeCloseOutAnnnouncement(self):
+        myThread = threading.currentThread()
+        userName     = 'Taizong'
+        groupName    = 'Li'
+        teamName     = 'Tang'
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
+        result = self.jsonSender.put("request", schema)[0]
+        originalRequest = result['RequestName']
+        depth = 2
+        nReq = 3
+        requests = [originalRequest]
+        def createChildrenRequest(parentRequest, i, nReq):
+            createdRequests = []
+            resubSchema = utils.getResubmissionSchema(parentRequest, "/%s/DataProcessing" % parentRequest,
+                                                      groupName, userName)
+            result = self.jsonSender.put("request", resubSchema)[0]
+            requestName = result['RequestName']
+            createdRequests.append(requestName)
+            if i:
+                for _ in range(nReq):
+                    createdRequests.extend(createChildrenRequest(requestName, i - 1, nReq))
+            return createdRequests
+        requests.extend(createChildrenRequest(originalRequest, depth, nReq))
+        for request in requests:
+            self.changeStatusAndCheck(request, 'assignment-approved')
+        for request in requests:
+            self.jsonSender.put("assignment?team=%s&requestName=%s" % (teamName, request))
+        for status in ['acquired',
+                       'running-open', 'running-closed',
+                       'completed']:
+            for request in requests:
+                self.changeStatusAndCheck(request, status)
+        self.jsonSender.post('closeout?requestName=%s&cascade=True' % originalRequest)
+        for request in requests:
+            result = self.jsonSender.get('request/%s' % request)
+            self.assertEqual(result[0]['RequestStatus'], 'closed-out')
+        self.jsonSender.post('announce?requestName=%s&cascade=True' % originalRequest)
+        for request in requests:
+            result = self.jsonSender.get('request/%s' % request)
+            self.assertEqual(result[0]['RequestStatus'], 'announced')
+
 if __name__=='__main__':
     unittest.main()

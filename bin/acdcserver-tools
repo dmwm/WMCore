@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+"""
+acdcserver-tools
+
+Utility script for mantaining the acdcserver
+"""
+
+from optparse import OptionParser, OptionGroup
+import os
+import sys
+import time
+import logging
+
+from WMCore.Configuration import loadConfigurationFile
+from WMCore.ACDC.CouchService import CouchService
+
+def createOptionParser():
+    """
+    _createOptionParser_
+
+    Create an option parser that knows the options
+    available to this script.
+    """
+    myOptParser = OptionParser()
+    myOptParser.add_option("--cleanup", dest = "cleanupAction",
+                           default = False, action = "store_true",
+                           help = "Cleanup old documents in ACDC database")
+
+    group = OptionGroup(myOptParser, "General options.",
+                    "General options to direct behavior")
+    group.add_option("--config", dest = "config", help = "WMAgent config",
+                     default = os.environ.get("WMAGENT_CONFIG", None))
+    myOptParser.add_option_group(group)
+
+    return myOptParser
+
+def cleanupDocuments(config):
+    """
+    _cleanupDocuments_
+
+    Cleanup old documents in the database according
+    to the configuration values.
+    """
+    acdcService = CouchService(url = config.ACDC.couchurl, database = config.ACDC.dbname)
+    deleted = acdcService.removeOldFilesets(config.ACDC.cleaningInterval)
+    logging.info("Deleted %d documents older than %d days" % (deleted, config.ACDC.cleaningInterval))
+    return
+
+def main():
+    myOptParser = createOptionParser()
+    (options, args) = myOptParser.parse_args()
+
+    if not options.config or not os.path.exists(options.config):
+        msg = "No Config file provided\n"
+        msg += "provide one with the --config option"
+        logging.error(msg)
+        return 1
+
+    cfgObject = loadConfigurationFile(options.config)
+
+    if options.cleanupAction:
+        # Do cleanup operation
+        cleanupDocuments(cfgObject)
+
+    return 0
+
+if __name__ == '__main__':
+    sys.exit(main())

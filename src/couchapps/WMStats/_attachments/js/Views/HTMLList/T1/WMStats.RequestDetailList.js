@@ -29,7 +29,25 @@ WMStats.namespace('RequestDetailList');
             htmlstr += "</ul></details>";
         }
         return htmlstr;
-    }
+    };
+    
+    var statusFormat = function(statusObj) {
+        if (typeof statusObj === "object") {
+            var format = "";
+            for (var status  in statusObj) {
+                format += "<b>" + status + "</b>";
+                if(typeof statusObj[status] === "object") format += "-";
+                format += statusFormat(statusObj[status]);
+            }
+            return format;
+        } else {
+            return  ":" + statusObj + ", ";
+        }
+    };
+    
+    var siteStatusFormat = function(statusObj, site) {
+        return "<b>" + site + ":</b> " + statusFormat(statusObj);
+    };
     
     var format = function (requestStruct) {
         var htmlstr = '<div class="closingButton">X</div>';
@@ -69,6 +87,9 @@ WMStats.namespace('RequestDetailList');
             htmlstr += "<li><b>failure:</b>" + reqSummary.getTotalFailure()  + "</li>";
             htmlstr += "<li><b>success:</b> " + reqSummary.getJobStatus("success", 0) + "</li>";
         }
+        if (reqDoc.sites) {
+            htmlstr += "<li>" + WMStats.Utils.expandFormat(reqDoc.sites, "Sites", siteStatusFormat) + "</li>"
+        }
         htmlstr += "</ul>";
         htmlstr += "</div>";
         return htmlstr;
@@ -84,7 +105,7 @@ WMStats.namespace('RequestDetailList');
          
          $(containerDiv).html(format(data));
          $(containerDiv).show("slide", {}, 500);
-         WMStats.Env.RequestDetailOpen = true;
+         vm.RequestDetail.open = true;
     };
     
     var vm = WMStats.ViewModel;

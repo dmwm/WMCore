@@ -79,7 +79,15 @@ WMStats.Requests = function(noFilterFlag) {
         var alertRequests = {};
         alertRequests['configError'] = []
         alertRequests['siteError'] = []
+        var ignoreStatus = ["closed-out",
+                            "announced",
+                            "aborted",
+                            "rejected"] 
         for (var workflow in this.getData()) {
+            var requestInfo = this.getData(workflow);
+            // filter ignoreStatus
+            if (ignoreStatus.indexOf(requestInfo.getLastState()) !== -1) continue;
+            
             var reqSummary = this.getSummary(workflow);
             var cooloff = reqSummary.getTotalCooloff();
             var paused = reqSummary.getTotalPaused();

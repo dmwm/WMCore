@@ -19,7 +19,7 @@ WMStats.RequestAlertGUI = function (requestData, containerDiv) {
             var cooloff = summary.getTotalCooloff()
             var failure =summary.getTotalFailure();
             var success = summary.getJobStatus("success");
-            htmlList += ('<li> <a class="requestAlert">' + workflow + "</a>: cooloff " + cooloff + " failure:" + failure + " success:" + success + '</li>');
+            htmlList += ('<li> <a class="requestAlert">' + workflow + "</a>: status:" + configError[i].getLastState() + ", cooloff " + cooloff + " failure:" + failure + " success:" + success + '</li>');
         }
         htmlList += "</ul></div></fieldset>";
         
@@ -36,7 +36,7 @@ WMStats.RequestAlertGUI = function (requestData, containerDiv) {
             var cooloff = summary.getTotalCooloff()
             var failure =summary.getTotalFailure();
             var success = summary.getJobStatus("success");
-            htmlList += ('<li> <a class="requestAlert">' + workflow + "</a>: cooloff " + cooloff + " failure:" + failure + " success:" + success + '</li>');
+            htmlList += ('<li> <a class="requestAlert">' + workflow + "</a>:  status:" + siteError[i].getLastState() + ", cooloff " + cooloff + " failure:" + failure + " success:" + success + '</li>');
         }
         htmlList += "</ul></div></fieldset>";
         errorFlag = true;

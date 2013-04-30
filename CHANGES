@@ -1,3 +1,9 @@
+0.9.64 to 0.9.65:
+  - filter out "closed-out","announced","aborted","rejected" status from request alert. Pull request #4583
+  - Add ACDC Server CouchApp to cmsweb. Pull request #4587
+  - add detail site job information for request. Pull request #4586
+  - Fix a few unit tests. Pull request #4585
+
 0.9.63 to 0.9.64:
   - Cascade close-out. Implement the option to close-out/announce requests and cascade the status change to all resubmission children for the request. Pull request #4575.
   - refactor wmstats adding agent view, adding back search option for job view. Pull request #4577

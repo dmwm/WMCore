@@ -11,6 +11,7 @@ from xml.parsers.expat import ExpatError
 from cherrypy import HTTPError
 from cherrypy.lib.static import serve_file
 import WMCore.Lexicon
+from WMCore.ACDC.CouchService import CouchService
 from WMCore.Database.CMSCouch import Database
 import cgi
 import WMCore.RequestManager.RequestDB.Settings.RequestStatus             as RequestStatus
@@ -310,7 +311,7 @@ def privileged():
     # and maybe we're running without security, in which case dn = 'None'
     return secure_roles != []
 
-def changeStatus(requestName, status, wmstatUrl):
+def changeStatus(requestName, status, wmstatUrl, acdcUrl):
     """ Changes the status for this request """
     request = GetRequest.getRequestByName(requestName)
     if not status in RequestStatus.StatusList:
@@ -334,10 +335,16 @@ def changeStatus(requestName, status, wmstatUrl):
         else:
             raise cherrypy.HTTPError(400, "You cannot abort a request in state %s" % oldStatus)
         
+    if status == 'announced':
+        # cleanup acdc database, if possible
+        if acdcUrl:
+            url, database = WMCore.Lexicon.splitCouchServiceURL(acdcUrl)
+            acdcService = CouchService(url = url, database = database)
+            acdcService.removeFilesetsByCollectionName(requestName)
+
     # finally, perform the transition, have to do it in both Oracle and CouchDB
     # and in WMStats
-    ChangeState.changeRequestStatus(requestName, status, wmstatUrl=wmstatUrl)        
-
+    ChangeState.changeRequestStatus(requestName, status, wmstatUrl=wmstatUrl)
 
 def prepareForTable(request):
     """ Add some fields to make it easier to display a request """

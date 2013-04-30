@@ -37,6 +37,7 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
         RESTBaseUnitTest.setUp(self)
         self.testInit.setupCouch("%s" % self.couchDBName, "ConfigCache", "ReqMgr")
         self.testInit.setupCouch("%s_wmstats" % self.couchDBName, "WMStats")
+        self.testInit.setupCouch("%s_acdc" % self.couchDBName, "ACDC")
         reqMgrHost = self.config.getServerUrl()
         self.jsonSender = JSONRequests(reqMgrHost)
         

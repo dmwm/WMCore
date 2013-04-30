@@ -171,6 +171,13 @@ WMStats.RequestStruct.prototype = {
         return this._summary.createSummaryFromRequestDoc(this);
     },
     
+    getLastState: function() {
+        if (this.request_status){
+            return this.request_status[this.request_status.length -1].status;
+        };
+        return null;
+    },
+    
     updateFromCouchDoc: function (doc) {
         
         function _tasksUpdateFunction (baseObj, addObj, field) {

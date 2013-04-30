@@ -31,12 +31,12 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
             },
             { "mDataProp": function (source, type, val) {
                               var requestInfo = _activePageData.getData(source.workflow);
-                              return requestInfo.request_status[requestInfo.request_status.length -1].status
+                              return requestInfo.getLastState()
                            }, "sTitle": "status",
               "fnRender": function ( o, val ) {
                             var requestInfo = _activePageData.getData(o.aData.workflow);
                             return formatWorkloadSummarylUrl(o.aData.workflow, 
-                                requestInfo.request_status[requestInfo.request_status.length -1].status);
+                                requestInfo.getLastState());
                           },
               "bUseRendered": false
             },

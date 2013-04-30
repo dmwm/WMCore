@@ -16,6 +16,7 @@ class Announce(BulkOperations):
     def __init__(self, config):
         BulkOperations.__init__(self, config)
         self.wmstatWriteURL = "%s/%s" % (config.couchUrl.rstrip('/'), config.wmstatDBName)
+        self.acdcURL = "%s/%s" % (config.couchUrl.rstrip('/'), config.acdcDBName)
         self.searchFields = ["RequestName", "RequestType"]
 
     @cherrypy.expose
@@ -46,7 +47,8 @@ class Announce(BulkOperations):
         badDatasets = []
         for requestName in requests:
             WMCore.Lexicon.identifier(requestName)
-            ChangeState.changeRequestStatus(requestName, 'announced', wmstatUrl = self.wmstatWriteURL)
+            Utilities.changeStatus(requestName, 'announced', wmstatUrl = self.wmstatWriteURL,
+                                   acdcUrl = self.acdcURL)
             datasets.extend(Utilities.getOutputForRequest(requestName))
         for dataset in datasets:
             # was needed for the DBS call to wrong DBS URL

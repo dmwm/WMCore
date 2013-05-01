@@ -23,14 +23,17 @@ class LoadBlocksByDAS(DBFormatter):
                 INNER JOIN dbsbuffer_location dbl ON dbl.id = dbb.location
                 INNER JOIN dbsbuffer_workflow dbw ON dbw.id = dbf3.workflow
                 WHERE dbb.status = 'Open'
-                AND dbf3.dataset_algo = :das
-                GROUP BY dbb.blockname"""
+                AND dbf3.dataset_algo = :das"""
 
     def format(self, result):
         tmpList = self.formatDict(result)
         blockList = []
+        blockNames = set()
         for tmp in tmpList:
             final = {}
+            if tmp['blockname'] in blockNames:
+                # Block with different settings, ignore
+                continue
             final['ID']            = tmp['id']
             final['Name']          = tmp['blockname']
             final['CreationDate']  = tmp['create_time']
@@ -46,6 +49,7 @@ class LoadBlocksByDAS(DBFormatter):
             final['MaxCloseFiles'] = tmp['block_close_max_files']
             final['MaxCloseSize'] = tmp['block_close_max_size']
             blockList.append(final)
+            blockNames.add(tmp['blockname'])
 
         return blockList
 

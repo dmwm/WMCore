@@ -128,6 +128,15 @@ config.DBSUpload.logLevel = globalLogLevel
 config.DBSUpload.workerThreads = 1
 config.DBSUpload.pollInterval = 100
 
+config.component_("DBS3Upload")
+config.DBS3Upload.namespace = "WMComponent.DBS3Buffer.DBS3Upload"
+config.DBS3Upload.componentDir = config.General.workDir + "/DBS3Upload"
+config.DBS3Upload.logLevel = globalLogLevel
+config.DBS3Upload.workerThreads = 1
+config.DBS3Upload.pollInterval = 100
+config.DBS3Upload.dbsUrl = "https://dbs3-testbed.cern.ch/dbs/prod/global/DBSWriter"
+config.DBS3Upload.dbs3UploadOnly = True
+
 config.section_("DBSInterface")
 #config.DBSInterface.DBSUrl = localDBSUrl
 config.DBSInterface.DBSUrl = globalDBSUrl

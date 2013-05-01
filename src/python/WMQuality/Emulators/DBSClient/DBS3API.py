@@ -40,7 +40,7 @@ class DbsApi():
             currentInfo = json.load(inFileHandle)
             inFileHandle.close()
         outFileHandle = open(self.dbsPath, 'w')
-        currentInfo.append(blockDump['block'])
+        currentInfo.append(blockDump)
         json.dump(currentInfo, outFileHandle)
         outFileHandle.close()
 

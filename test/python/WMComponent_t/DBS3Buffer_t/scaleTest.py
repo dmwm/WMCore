@@ -119,17 +119,17 @@ class scaleTestFiller:
         config.CoreDatabase.socket     = os.getenv("DBSOCK")
 
 
-        config.component_("DBSUpload")
-        config.DBSUpload.pollInterval     = 10
-        config.DBSUpload.logLevel         = 'DEBUG'
-        config.DBSUpload.DBSBlockMaxFiles = 500
-        config.DBSUpload.DBSBlockMaxTime  = 600
-        config.DBSUpload.DBSBlockMaxSize  = 999999999999
-        config.DBSUpload.dbsUrl           = 'http://cms-xen40.fnal.gov:8787/dbs/prod/global/DBSWriter'
-        config.DBSUpload.namespace        = 'WMComponent.DBS3Buffer.DBSUpload'
-        config.DBSUpload.componentDir     = os.path.join(os.getcwd(), 'Components')
-        config.DBSUpload.nProcesses       = 1
-        config.DBSUpload.dbsWaitTime      = 1
+        config.component_("DBS3Upload")
+        config.DBS3Upload.pollInterval     = 10
+        config.DBS3Upload.logLevel         = 'DEBUG'
+        config.DBS3Upload.DBSBlockMaxFiles = 500
+        config.DBS3Upload.DBSBlockMaxTime  = 600
+        config.DBS3Upload.DBSBlockMaxSize  = 999999999999
+        config.DBS3Upload.dbsUrl           = 'http://cms-xen40.fnal.gov:8787/dbs/prod/global/DBSWriter'
+        config.DBS3Upload.namespace        = 'WMComponent.DBS3Buffer.DBSUpload'
+        config.DBS3Upload.componentDir     = os.path.join(os.getcwd(), 'Components')
+        config.DBS3Upload.nProcesses       = 1
+        config.DBS3Upload.dbsWaitTime      = 1
 
         return config
 

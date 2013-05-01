@@ -24,7 +24,7 @@ from WMComponent.DBS3Buffer.DBSUploadPoller import DBSUploadPoller
 
 
 
-class DBSUpload(Harness):
+class DBS3Upload(Harness):
     """
     Load the poller thread
 
@@ -34,15 +34,15 @@ class DBSUpload(Harness):
         # call the base class
         Harness.__init__(self, config)
         self.pollTime = 1
-        print "DBSUpload.__init__"
+        print "DBS3Upload.__init__"
 
     def preInitialization(self):
-        print "DBSUpload.preInitialization"
+        print "DBS3Upload.preInitialization"
 
         # Add event loop to worker manager
         myThread = threading.currentThread()
 
-        pollInterval = self.config.DBSUpload.pollInterval
+        pollInterval = self.config.DBS3Upload.pollInterval
         logging.info("Setting poll interval to %s seconds" % pollInterval)
         myThread.workerThreadManager.addWorker(DBSUploadPoller(self.config), pollInterval)
 

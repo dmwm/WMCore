@@ -101,18 +101,18 @@ class DBSUploadTest(unittest.TestCase):
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
         config.CoreDatabase.socket     = os.getenv("DBSOCK")
 
-        config.component_("DBSUpload")
-        config.DBSUpload.pollInterval     = 10
-        config.DBSUpload.logLevel         = 'DEBUG'
-        #config.DBSUpload.dbsUrl           = "https://cmsweb-testbed.cern.ch/dbs/dev/global/DBSWriter"
-        #config.DBSUpload.dbsUrl           = "https://dbs3-dev01.cern.ch/dbs/prod/global/DBSWriter"
-        config.DBSUpload.dbsUrl           = self.dbsUrl
-        config.DBSUpload.namespace        = 'WMComponent.DBS3Buffer.DBSUpload'
-        config.DBSUpload.componentDir     = os.path.join(os.getcwd(), 'Components')
-        config.DBSUpload.nProcesses       = 1
-        config.DBSUpload.dbsWaitTime      = 0.1
-        config.DBSUpload.datasetType      = "VALID"
-        config.DBSUpload.dbs3UploadOnly   = dbs3UploadOnly
+        config.component_("DBS3Upload")
+        config.DBS3Upload.pollInterval     = 10
+        config.DBS3Upload.logLevel         = 'DEBUG'
+        #config.DBS3Upload.dbsUrl           = "https://cmsweb-testbed.cern.ch/dbs/dev/global/DBSWriter"
+        #config.DBS3Upload.dbsUrl           = "https://dbs3-dev01.cern.ch/dbs/prod/global/DBSWriter"
+        config.DBS3Upload.dbsUrl           = self.dbsUrl
+        config.DBS3Upload.namespace        = 'WMComponent.DBS3Buffer.DBSUpload'
+        config.DBS3Upload.componentDir     = os.path.join(os.getcwd(), 'Components')
+        config.DBS3Upload.nProcesses       = 1
+        config.DBS3Upload.dbsWaitTime      = 0.1
+        config.DBS3Upload.datasetType      = "VALID"
+        config.DBS3Upload.dbs3UploadOnly   = dbs3UploadOnly
         return config
 
     def createParentFiles(self, acqEra, nFiles = 10,

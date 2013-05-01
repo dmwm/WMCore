@@ -181,7 +181,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
         # This is slightly dangerous, but DBSUpload depends
         # on DBSInterface anyway
-        self.dbsUrl           = self.config.DBSUpload.dbsUrl
+        self.dbsUrl           = self.config.DBS3Upload.dbsUrl
 
         self.dbsUtil = DBSBufferUtil()
 
@@ -189,12 +189,12 @@ class DBSUploadPoller(BaseWorkerThread):
         self.pool   = []
         self.input  = None
         self.result = None
-        self.nProc  = getattr(self.config.DBSUpload, 'nProcesses', 4)
-        self.wait   = getattr(self.config.DBSUpload, 'dbsWaitTime', 1)
-        self.nTries = getattr(self.config.DBSUpload, 'dbsNTries', 300)
-        self.dbs3UploadOnly = getattr(self.config.DBSUpload, "dbs3UploadOnly", False)
-        self.physicsGroup   = getattr(self.config.DBSUpload, "physicsGroup", "NoGroup")
-        self.datasetType    = getattr(self.config.DBSUpload, "datasetType", "PRODUCTION")
+        self.nProc  = getattr(self.config.DBS3Upload, 'nProcesses', 4)
+        self.wait   = getattr(self.config.DBS3Upload, 'dbsWaitTime', 1)
+        self.nTries = getattr(self.config.DBS3Upload, 'dbsNTries', 300)
+        self.dbs3UploadOnly = getattr(self.config.DBS3Upload, "dbs3UploadOnly", False)
+        self.physicsGroup   = getattr(self.config.DBS3Upload, "physicsGroup", "NoGroup")
+        self.datasetType    = getattr(self.config.DBS3Upload, "datasetType", "PRODUCTION")
         self.blockCount     = 0
 
         # List of blocks currently in processing
@@ -209,8 +209,8 @@ class DBSUploadPoller(BaseWorkerThread):
 
         self.filesToUpdate = []
 
-        self.produceCopy = getattr(self.config.DBSUpload, 'copyBlock', False)
-        self.copyPath    = getattr(self.config.DBSUpload, 'copyBlockPath',
+        self.produceCopy = getattr(self.config.DBS3Upload, 'copyBlock', False)
+        self.copyPath    = getattr(self.config.DBS3Upload, 'copyBlockPath',
                                    '/data/mnorman/block.json')
 
         return

@@ -13,6 +13,7 @@ import urllib
 import tempfile
 import unittest
 import threading
+import random
 from httplib import HTTPException
 
 from nose.plugins.attrib import attr
@@ -30,6 +31,13 @@ from WMCore.RequestManager.RequestDB.Interface.Admin   import SoftwareManagement
 #decorator import for RESTServer setup
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup  import DefaultConfig
+
+# ACDC service
+from WMCore.ACDC.CouchService import CouchService
+from WMCore.ACDC.CouchCollection import CouchCollection
+from WMCore.ACDC.CouchFileset import CouchFileset
+from WMCore.DataStructs.File import File
+from WMCore.Services.UUID import makeUUID
 
 from WMCore_t.RequestManager_t import utils
 
@@ -63,6 +71,7 @@ class RequestManagerConfig(DefaultConfig):
         self.UnitTests.views.active.rest.configDBName   = dbName
         self.UnitTests.views.active.rest.workloadDBName = dbName
         self.UnitTests.views.active.rest.wmstatDBName   = "%s_wmstats" % dbName
+        self.UnitTests.views.active.rest.acdcDBName   = "%s_acdc" % dbName
 
     def _setupAssign(self):
         self.UnitTests.views.active.rest.sitedb  = "https://cmsweb.cern.ch/sitedb/json/index/"
@@ -87,9 +96,10 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.testInit.setupCouch("%s" % self.couchDBName, "ConfigCache", "ReqMgr")
         self.testInit.setupCouch("%s_wmstats" % self.couchDBName,
                                  "WMStats")
+        self.testInit.setupCouch("%s_acdc" % self.couchDBName,
+                                 "ACDC", "GroupUser")
         reqMgrHost = self.config.getServerUrl()
         self.jsonSender = JSONRequests(reqMgrHost)
-
 
     def initialize(self):
         self.config = RequestManagerConfig(
@@ -735,10 +745,42 @@ class ReqMgrTest(RESTBaseUnitTest):
             schema = utils.getSchema(groupName=groupName, userName=userName)
             schema[deprec] = "something"
             self.assertRaises(HTTPException, self.jsonSender.put, "request", schema)
-            
+
+    def setupACDCDatabase(self, collectionName, taskPath,
+                          user, group):
+        """
+        _setupACDCDatabase_
+
+        Populate an ACDC database with bogus records
+        associated to certain collection name, user and task path.
+        """
+        acdcServer = CouchService(url = self.testInit.couchUrl,
+                                  database = "%s_acdc" % self.couchDBName)
+        owner = acdcServer.newOwner(group, user)
+        testCollection = CouchCollection(database = self.testInit.couchDbName,
+                                          url = self.testInit.couchUrl,
+                                          name = collectionName)
+        testCollection.setOwner(owner)
+        testFileset = CouchFileset(database = self.testInit.couchDbName,
+                                    url = self.testInit.couchUrl,
+                                    name = taskPath)
+        testCollection.addFileset(testFileset)
+
+        testFiles = []
+        for _ in range(5):
+            testFile = File(lfn = makeUUID(), size = random.randint(1024, 4096),
+                            events = random.randint(1024, 4096))
+            testFiles.append(testFile)
+
+        testFileset.add(testFiles)
 
     def testL_CascadeCloseOutAnnnouncement(self):
-        myThread = threading.currentThread()
+        """
+        _testL_CascadeCloseOutAnnouncement_
+
+        Test the cascade closeout REST call, also
+        check that when announced a request deletes all ACDC records in the system.
+        """
         userName     = 'Taizong'
         groupName    = 'Li'
         teamName     = 'Tang'
@@ -748,6 +790,8 @@ class ReqMgrTest(RESTBaseUnitTest):
                                                teamName = teamName)
         result = self.jsonSender.put("request", schema)[0]
         originalRequest = result['RequestName']
+        self.setupACDCDatabase(originalRequest, "/%s/DataProcessing" % originalRequest,
+                               result['Requestor'], result['Group'])
         depth = 2
         nReq = 3
         requests = [originalRequest]
@@ -757,6 +801,7 @@ class ReqMgrTest(RESTBaseUnitTest):
                                                       groupName, userName)
             result = self.jsonSender.put("request", resubSchema)[0]
             requestName = result['RequestName']
+            self.setupACDCDatabase(requestName, "/%s/DataProcessing" % requestName, result['Requestor'], result['Group'])
             createdRequests.append(requestName)
             if i:
                 for _ in range(nReq):
@@ -773,13 +818,31 @@ class ReqMgrTest(RESTBaseUnitTest):
             for request in requests:
                 self.changeStatusAndCheck(request, status)
         self.jsonSender.post('closeout?requestName=%s&cascade=True' % originalRequest)
+        svc = CouchService(url = self.testInit.couchUrl,
+                                  database = "%s_acdc" % self.couchDBName)
+
+        owner = svc.newOwner(groupName, userName)
         for request in requests:
             result = self.jsonSender.get('request/%s' % request)
             self.assertEqual(result[0]['RequestStatus'], 'closed-out')
+            testCollection = CouchCollection(database = self.testInit.couchDbName,
+                                             url = self.testInit.couchUrl,
+                                             name = request)
+            testCollection.setOwner(owner)
+            testCollection.populate()
+            self.assertNotEqual(len(testCollection["filesets"]), 0)
+
         self.jsonSender.post('announce?requestName=%s&cascade=True' % originalRequest)
         for request in requests:
+
             result = self.jsonSender.get('request/%s' % request)
             self.assertEqual(result[0]['RequestStatus'], 'announced')
+            testCollection = CouchCollection(database = self.testInit.couchDbName,
+                                             url = self.testInit.couchUrl,
+                                             name = request)
+            testCollection.setOwner(owner)
+            testCollection.populate()
+            self.assertEqual(len(testCollection["filesets"]), 0)
 
 if __name__=='__main__':
     unittest.main()

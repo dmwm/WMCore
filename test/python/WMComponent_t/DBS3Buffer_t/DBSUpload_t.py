@@ -483,9 +483,10 @@ class DBSUploadTest(unittest.TestCase):
             fakeDBS.close()
             self.assertEqual(len(fakeDBSInfo), 2)
             for block in fakeDBSInfo:
-                self.assertEqual(block['block_events'], 140)
-                self.assertEqual(block['file_count'], 7)
-                self.assertEqual(block['open_for_writing'], 0)
+                self.assertNotIn('block_events', block['block'])
+                self.assertEqual(block['block']['file_count'], 7)
+                self.assertEqual(block['block']['open_for_writing'], 0)
+                self.assertNotIn('close_settings', block)
             time.sleep(3)
             dbsUploader.algorithm()
             openBlocks = dbsUtil.findOpenBlocks()
@@ -495,13 +496,12 @@ class DBSUploadTest(unittest.TestCase):
             fakeDBS.close()
             self.assertEqual(len(fakeDBSInfo), 3)
             for block in fakeDBSInfo:
-                if block['file_count'] != 6:
-                    self.assertEqual(block['block_events'], 140)
-                    self.assertEqual(block['file_count'], 7)
-                else:
-                    self.assertEqual(block['block_events'], 120)
-                self.assertEqual(block['open_for_writing'], 0)
-    
+                if block['block']['file_count'] != 6:
+                    self.assertEqual(block['block']['file_count'], 7)
+                self.assertNotIn('block_events', block['block'])
+                self.assertEqual(block['block']['open_for_writing'], 0)
+                self.assertNotIn('close_settings', block)
+
             # Now check the limit by size and timeout with new files
             acqEra = "TropicalSeason%s" % (int(time.time()))
             workflowName = 'TestWorkload%s' % (int(time.time()))
@@ -521,10 +521,11 @@ class DBSUploadTest(unittest.TestCase):
             fakeDBS.close()
             self.assertEqual(len(fakeDBSInfo), 6)
             for block in fakeDBSInfo:
-                if acqEra in block['block_name']:
-                    self.assertEqual(block['block_events'], 100)
-                    self.assertEqual(block['file_count'], 5)
-                self.assertEqual(block['open_for_writing'], 0)
+                if acqEra in block['block']['block_name']:
+                    self.assertEqual(block['block']['file_count'], 5)
+                self.assertNotIn('block_events', block['block'])
+                self.assertNotIn('close_settings', block)
+                self.assertEqual(block['block']['open_for_writing'], 0)
     
             # Put more files, they will go into the same block and then it will be closed
             # after timeout
@@ -541,15 +542,15 @@ class DBSUploadTest(unittest.TestCase):
             fakeDBS.close()
             self.assertEqual(len(fakeDBSInfo), 7)
             for block in fakeDBSInfo:
-                if acqEra in block['block_name']:
-                    if block['file_count'] < 5:
-                        self.assertEqual(block['block_events'], 80)
-                        self.assertEqual(block['file_count'], 4)
+                if acqEra in block['block']['block_name']:
+                    if block['block']['file_count'] < 5:
+                        self.assertEqual(block['block']['file_count'], 4)
                     else:
-                        self.assertEqual(block['block_events'], 100)
-                        self.assertEqual(block['file_count'], 5)
-                self.assertEqual(block['open_for_writing'], 0)
-    
+                        self.assertEqual(block['block']['file_count'], 5)
+                self.assertNotIn('block_events', block['block'])
+                self.assertEqual(block['block']['open_for_writing'], 0)
+                self.assertNotIn('close_settings', block)
+
             # Finally test size limits
             acqEra = "TropicalSeason%s" % (int(time.time()))
             workflowName = 'TestWorkload%s' % (int(time.time()))
@@ -570,14 +571,13 @@ class DBSUploadTest(unittest.TestCase):
             fakeDBS.close()
             self.assertEqual(len(fakeDBSInfo), 11)
             for block in fakeDBSInfo:
-                if acqEra in block['block_name']:
-                    if block['file_count'] == 1:
-                        self.assertEqual(block['block_events'], 20)
-                    else:
-                        self.assertEqual(block['block_events'], 40)
-                        self.assertEqual(block['block_size'], 2048)
-                        self.assertEqual(block['file_count'], 2)
-                self.assertEqual(block['open_for_writing'], 0)
+                if acqEra in block['block']['block_name']:
+                    if block['block']['file_count'] != 1:
+                        self.assertEqual(block['block']['block_size'], 2048)
+                        self.assertEqual(block['block']['file_count'], 2)
+                self.assertNotIn('block_events', block['block'])
+                self.assertEqual(block['block']['open_for_writing'], 0)
+                self.assertNotIn('close_settings', block)
         except:
             self.fail("We failed at some point in the test")
         finally:

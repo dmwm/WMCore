@@ -737,7 +737,7 @@ class DBSUploadTest(unittest.TestCase):
         name = "ThisIsATest_%s" % (makeUUID())
         nFiles = 50
         self.injectWorkflow(workflowName = name, taskPath = '/%s/Test' % name,
-                            MaxFiles = 45, MaxEvents = 800, MaxWaitTime = 2)
+                            MaxFiles = 45, MaxEvents = 800, MaxWaitTime = 10000)
         self.getFiles(name = name, tier = tier, nFiles = nFiles,
                               workflowName = name, taskPath = '/%s/Test' % name)
         testDBSUpload.algorithm()
@@ -746,8 +746,10 @@ class DBSUploadTest(unittest.TestCase):
         closedBlocks = myThread.dbi.processData("SELECT id FROM dbsbuffer_block WHERE status = 'InGlobalDBS'")[0].fetchall()
         self.assertEqual(len(openBlocks), 2)
         self.assertEqual(len(closedBlocks), 5)
-        # Throw 20 new files but sleep for 3 seconds first
-        time.sleep(3)
+        # Throw 20 new file
+        # Reset the timer such that the blocks appear to have been created 10001 seconds ago
+        creationTime = int(time.time() - 10001)
+        myThread.dbi.processData("UPDATE dbsbuffer_block SET create_time = %d WHERE status != 'InGlobalDBS'" % creationTime)
         self.getFiles(name = name + '2', tier = tier, nFiles = 20,
                       workflowName = name, taskPath = '/%s/Test' % name,
                       noChild = True)

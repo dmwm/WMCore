@@ -19,7 +19,6 @@ class LoadBlocks(DBFormatter):
                INNER JOIN dbsbuffer_workflow dbw ON df1.workflow = dbw.id
                WHERE db1.status = 'Open'
                OR db1.status = 'Pending'
-               GROUP BY db1.blockname
              """
 
     def execute(self, conn = None, transaction = False):
@@ -27,4 +26,13 @@ class LoadBlocks(DBFormatter):
         result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = transaction)
 
-        return self.formatDict(result)
+        # Check for duplicate records due to multiple workflows writing in the same block
+        rawResult = self.formatDict(result)
+        blockNames = set()
+        finalResult = []
+        for entry in rawResult:
+            if entry['blockname'] in blockNames:
+                continue
+            finalResult.append(entry)
+            blockNames.add(entry['blockname'])
+        return finalResult

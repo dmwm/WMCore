@@ -668,7 +668,12 @@ class DBSUploadPoller(BaseWorkerThread):
             replaceKeys(block, 'NumberOfFiles', 'file_count')
             replaceKeys(block, 'location', 'origin_site_name')
             for key in ['insertedFiles', 'newFiles', 'DatasetAlgo', 'file_count',
-                        'block_size', 'origin_site_name', 'creation_date', 'open', 'Name', 'block_events']:
+                        'block_size', 'origin_site_name', 'creation_date', 'open', 'Name',
+                        'block.block_events', 'close_settings']:
+                if '.' in key:
+                    firstkey, subkey = key.split('.', 1)
+                    if firstkey in block.data and subkey in block.data[firstkey]:
+                        del block.data[firstkey][subkey]
                 if key in block.data.keys():
                     del block.data[key]
 

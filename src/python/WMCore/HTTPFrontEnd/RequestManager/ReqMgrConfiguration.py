@@ -22,6 +22,7 @@ def reqMgrConfig(
     workloadCouchDB = 'reqmgr_workload_cache',
     workloadSummaryCouchDB = "workloadsummary",
     wmstatCouchDB = "wmstats",
+    acdcCouchDB = "acdcserver",
     connectURL = None,
     startup = "Root.py",
     addMonitor = True):
@@ -70,6 +71,7 @@ def reqMgrConfig(
     config.reqmgr.configDBName = configCouchDB
     config.reqmgr.workloadDBName = workloadCouchDB
     config.reqmgr.wmstatDBName = wmstatCouchDB
+    config.reqmgr.acdcDBName = acdcCouchDB
     config.reqmgr.security_roles = ['Admin', 'Developer', 'Data Manager', 'developer', 'admin', 'data-manager']
     config.reqmgr.yuiroot = yuiroot
 

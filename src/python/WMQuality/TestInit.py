@@ -284,7 +284,8 @@ class TestInit:
         
         config.component_("TaskArchiver")
         config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
-        
+        config.TaskArchiver.ReqMgrSeviceURL = "request manager service url"
+         
         return config
 
     def clearDatabase(self, modules = []):

@@ -844,5 +844,19 @@ class ReqMgrTest(RESTBaseUnitTest):
             testCollection.populate()
             self.assertEqual(len(testCollection["filesets"]), 0)
 
+            
+    def testM_PutRequestStats(self):
+        userName     = 'Taizong'
+        groupName    = 'Li'
+        teamName     = 'Tang'
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
+        result = self.jsonSender.put('request/testRequest', schema)
+        stats = {'total_jobs': 100, 'input_events': 100, 'input_lumis': 100, 'input_num_files': 100}
+        result = self.jsonSender.put('requestStats/testRequest?stats=%s' % json.dumps(stats))
+        self.assertEqual(result, True)
+
 if __name__=='__main__':
     unittest.main()

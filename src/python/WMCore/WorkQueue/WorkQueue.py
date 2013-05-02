@@ -41,6 +41,7 @@ from WMCore.Database.CMSCouch import CouchNotFoundError, CouchInternalServerErro
 
 from WMCore import Lexicon
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+from WMCore.Services.RequestManager.RequestManager import RequestManager
 #  //
 # // Convenience constructor functions
 #//
@@ -979,6 +980,15 @@ class WorkQueue(WorkQueueBase):
                             wmstatSvc.insertTotalStats(inbound['WMSpec'].name(), totalStats)
                         except Exception, ex:
                             self.logger.info('Error publishing %s to WMStats: %s' % (inbound['RequestName'], str(ex)))
+                    # update request mgr couch doc
+                    if not self.params.get('LocalQueueFlag'):
+                        # only update global stats for global queue
+                        try:
+                            # add the total work on wmstat summary or add the recently split work
+                            reqmgrSvc = RequestManager({'endpoint': self.params.get('ReqMgrServiceURL')})
+                            reqmgrSvc.putRequestStats(inbound['WMSpec'].name(), totalStats)
+                        except Exception, ex:
+                            self.logger.info('Error publishing %s to Request Mgr: %s' % (inbound['RequestName'], str(ex)))
 
             except TERMINAL_EXCEPTIONS, ex:
                 if not continuous:

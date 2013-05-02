@@ -43,7 +43,7 @@ class GetOpenBlocks(DBFormatter):
                      WHERE dbsbuffer_block_parent.status3 = 'Pending'
                      GROUP BY dbsbuffer_block.id) pending_parents ON
                     dbsbuffer_block.id = pending_parents.block_id
-              WHERE (dbsbuffer_block.status = 'Closed' OR dbsbuffer_block.status = 'InDBS') AND
+              WHERE (dbsbuffer_block.status = 'Closed' OR dbsbuffer_block.status = 'InGlobalDBS') AND
                     (dbsbuffer_block.status3 = 'Pending' OR dbsbuffer_block.status3 = 'Open') AND
                     (pending_parents.parent_count IS NULL or pending_parents.parent_count = 0)"""
 

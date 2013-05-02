@@ -1,8 +1,8 @@
-0.9.65 to 0.9.66:
-  - Merge pull request #4589 from dballesteros7/DBS-DBS-DBS
-  - Merge pull request #4591 from dballesteros7/DBS3
-  - Deploy DBS3Upload in standard WMAgent
-  - Fix queries for Oracle compatibility
+0.9.65 to 0.9.67:
+  - Fix issue with DBS3 upload. Pull request #4593
+  - Implement ACDC cleanup operations in ReqMgr. Pull request #4590
+  - Deploy DBS3Upload in standard WMAgent. Pull request #4591
+  - Fix queries for Oracle compatibility. Pull request #4589
 
 0.9.64 to 0.9.65:
   - filter out "closed-out","announced","aborted","rejected" status from request alert. Pull request #4583

@@ -61,6 +61,7 @@ class ReqMgrRESTModel(RESTModel):
         self.workloadDBName = config.workloadDBName
         self.configDBName = config.configDBName
         self.wmstatWriteURL = "%s/%s" % (self.couchUrl.rstrip('/'), config.wmstatDBName)
+        self.acdcURL = "%s/%s" % (self.couchUrl.rstrip('/'), config.acdcDBName)
         self.security_params = {'roles':config.security_roles}
         
         # Optional values for individual methods
@@ -426,7 +427,7 @@ class ReqMgrRESTModel(RESTModel):
 
     def putWorkQueue(self, request, url):
         """ Registers the request as "acquired" by the workqueue with the given URL """
-        Utilities.changeStatus(request, "acquired", self.wmstatWriteURL)
+        Utilities.changeStatus(request, "acquired", self.wmstatWriteURL, self.acdcURL)
         return ProdManagement.associateProdMgr(request, urllib.unquote(url))
 
     def validatePutWorkQueue(self, index):
@@ -490,7 +491,7 @@ class ReqMgrRESTModel(RESTModel):
             if status == 'assigned':
                 raise cherrypy.HTTPError(403, "Cannot change status without a team.  Please use PUT /reqmgr/reqMgr/assignment/<team>/<requestName>")
             try:
-                Utilities.changeStatus(requestName, status, self.wmstatWriteURL)
+                Utilities.changeStatus(requestName, status, self.wmstatWriteURL, self.acdcURL)
             except RuntimeError as ex:
                 # ignore some of these errors: https://svnweb.cern.ch/trac/CMSDMWM/ticket/2002
                 if status != 'announced' and status != 'closed-out':
@@ -543,7 +544,8 @@ class ReqMgrRESTModel(RESTModel):
                 # change the clone request state as desired
                 Utilities.changeStatus(newReqSchema["RequestName"],
                                        "assignment-approved",
-                                        self.wmstatWriteURL)
+                                        self.wmstatWriteURL,
+                                        self.acdcURL)
                 return request
             else:
                 msg = "Request '%s' not found." % requestName
@@ -643,7 +645,8 @@ class ReqMgrRESTModel(RESTModel):
                                                                              self.workloadDBName))
         for requestName in requestsToCloseOut:
             Utilities.changeStatus(requestName, 'closed-out',
-                                   wmstatUrl = self.wmstatWriteURL)
+                                   self.wmstatWriteURL,
+                                   self.acdcURL)
         return
 
     def announceRequest(self, requestName, cascade = False):
@@ -659,7 +662,8 @@ class ReqMgrRESTModel(RESTModel):
                                                                              self.workloadDBName))
         for requestName in requestsToAnnounce:
             Utilities.changeStatus(requestName, 'announced',
-                                   wmstatUrl = self.wmstatWriteURL)
+                                   self.wmstatWriteURL,
+                                   self.acdcURL)
         return
 
     def validateUpdates(self, index):

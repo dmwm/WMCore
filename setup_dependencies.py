@@ -53,7 +53,8 @@ dependencies = {'wmc-rest':{
                                      'WMCore.Services.WMBS',
                                      'WMCore.Services.WMAgent',
                                      'WMCore.Services.Dashboard',
-                                     'WMCore.Services.WMStats'],
+                                     'WMCore.Services.WMStats',
+                                     'WMCore.ACDC'],
 
                         'systems':['wmc-web', 'wmc-runtime'],
                         'statics': ['src/templates/WMCore/WebTools/RequestManager',

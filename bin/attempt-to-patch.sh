@@ -16,6 +16,7 @@ if [ -s $SOURCE_NAME ]; then
   MASTER_COMMIT=$(head -n1 REPLACEMENT_SOURCE.tar)
   tail -n +2 REPLACEMENT_SOURCE.tar > user.patch
   cd $CODE_PATH
+  git clean -dfx
   git checkout $MASTER_COMMIT
   git apply ../user.patch || true
   git status

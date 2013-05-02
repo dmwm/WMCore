@@ -54,6 +54,7 @@ from WMCore.Credential.Proxy                     import Proxy
 from WMComponent.JobCreator.CreateWorkArea       import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller     import retrieveWMSpec
 from WMCore.Services.WMStats.WMStatsWriter       import WMStatsWriter
+from WMCore.Services.RequestManager.RequestManager import RequestManager
 
 from WMCore.DataStructs.MathStructs.DiscreteSummaryHistogram import DiscreteSummaryHistogram
 from WMCore.DataStructs.MathStructs.ContinuousSummaryHistogram import ContinuousSummaryHistogram
@@ -212,10 +213,11 @@ class TaskArchiverPoller(BaseWorkerThread):
         
         if not self.useReqMgrForCompletionCheck:
             #sets the local monitor summary couch db
-            self.wmstatsCouchDB = WMStatsWriter(self.config.TaskArchiver.localWMStatsURL);
+            self.wmstatsCouchDB = WMStatsWriter(self.config.TaskArchiver.localWMStatsURL)
             self.centralCouchDBWriter = self.wmstatsCouchDB;
         else:
-            self.centralCouchDBWriter = WMStatsWriter(self.config.TaskArchiver.centralWMStatsURL);
+            self.centralCouchDBWriter = WMStatsWriter(self.config.TaskArchiver.centralWMStatsURL)
+            self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
         # Start a couch server for getting job info
         # from the FWJRs for committal to archive
         try:
@@ -329,6 +331,8 @@ class TaskArchiverPoller(BaseWorkerThread):
         logging.info("Found %d candidate workflows for deletion" % len(finishedwfs))
         centralCouchAlive = True
         try:
+            #TODO: need to enable when reqmgr2 -wmstats is ready
+            #abortedWorkflows = self.reqmgrCouchDBWriter.workflowsByStatus(["aborted"], format = "dict");
             abortedWorkflows = self.centralCouchDBWriter.workflowsByStatus(["aborted"], format = "dict");
         except Exception, ex:
            centralCouchAlive = False
@@ -357,8 +361,13 @@ class TaskArchiverPoller(BaseWorkerThread):
                         logging.info("status updated to completed %s" % workflow)
     
                     if workflow in abortedWorkflows:
-                        self.centralCouchDBWriter.updateRequestStatus(workflow, "aborted-completed")
-                        logging.info("status updated to aborted-completed %s" % workflow)
+                        #TODO: remove when reqmgr2-wmstats deployed
+                        newState =  "aborted-completed"
+                        self.centralCouchDBWriter.updateRequestStatus(workflow, newState);
+                        # update reqmgr workload document only request mgr is installed
+                        if not self.useReqMgrForCompletionCheck:
+                            self.reqmgrSvc.updateRequestStatus(workflow, newState); 
+                            logging.info("status updated to %s : %s" % (newState, workflow))
     
                     wfsToDelete[workflow] = {"spec" : spec, "workflows": finishedwfs[workflow]["workflows"]}
     

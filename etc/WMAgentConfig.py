@@ -265,6 +265,7 @@ config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl
 config.TaskArchiver.centralWMStatsURL = "Central WMStats URL"
 config.TaskArchiver.DataKeepDays = 0.125 # delete after 3 hours
 config.TaskArchiver.cleanCouchInterval = 60 * 20 # 20 min
+config.TaskArchiver.ReqMgrServiceURL = "ReqMgr rest service"
 
 config.webapp_('WMBSService')
 config.WMBSService.default_expires = 0

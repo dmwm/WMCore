@@ -136,6 +136,10 @@ class ReqMgrRESTModel(RESTModel):
                        args = ['campaign', 'request'],
                        secured=True,
                        validation = [self.isalnum])
+        self._addMethod('PUT', 'requestStats', self.putRequestStats,
+                       args = ['request', 'stats'],
+                       secured=True,
+                       validation = [self.validateStats])
         self._addMethod('POST', 'request', self.postRequest,
                         args = ['requestName', 'events_written',
                                 'events_merged', 'files_written',
@@ -614,7 +618,17 @@ class ReqMgrRESTModel(RESTModel):
         else:
             Campaign.addCampaign(campaign)
 
-
+    def putRequestStats(self, request, stats):
+        requestID = GetRequest.requestID(request)
+        if requestID:
+            stats = Utilities.unidecode(JsonWrapper.loads(stats))
+            Utilities.updateRequestStats(requestName = request,
+                                         stats = stats,
+                                         couchURL = self.couchUrl,
+                                         couchDBName = self.workloadDBName)
+            return True;
+        else:
+            return False;
 #    def postRequest(self, requestName, events_written=None, events_merged=None,
 #                    files_written=None, files_merged = None, dataset=None):
     def postRequest(self, requestName, **kwargs):
@@ -677,6 +691,14 @@ class ReqMgrRESTModel(RESTModel):
                 index[k] = float(index[k])
         return index
 
+    def validateStats(self, index):
+        """ Check the values for the updates """
+        for k in ['input_lummis', 'input_num_files',
+                  'input_events', 'total_jobs']:
+            if k in index:
+                index[k] = int(index[k])
+        return index
+    
     # had no permission control before, security issue fix
     @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
     def deleteRequest(self, requestName):

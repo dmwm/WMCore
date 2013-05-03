@@ -231,10 +231,10 @@ class Create(DBCreator):
                name                         VARCHAR2(255),
                task                         VARCHAR2(255),
                spec                         VARCHAR2(255),
-               block_close_max_wait_time    NUMBER(11),
-               block_close_max_files        NUMBER(11),
-               block_close_max_events       NUMBER(11),
-               block_close_max_size         NUMBER(11)
+               block_close_max_wait_time    INTEGER,
+               block_close_max_files        INTEGER,
+               block_close_max_events       INTEGER,
+               block_close_max_size         INTEGER
                ) %s """ % tablespaceTable
 
         self.create["10dbsbuffer_workflow_seq"] = \

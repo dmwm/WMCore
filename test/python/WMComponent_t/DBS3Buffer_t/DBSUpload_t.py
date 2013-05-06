@@ -296,7 +296,7 @@ class DBSUploadTest(unittest.TestCase):
                        MaxWaitTime  = 1,
                        MaxFiles = 5,
                        MaxEvents = 250000000,
-                       MaxSize = 9999999999):
+                       MaxSize = 99999000000999999):
         """
         _injectWorklow_
 

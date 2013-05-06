@@ -276,7 +276,7 @@ class Proxy(Credential):
 
         return
 
-    def delegate(self, credential = None, serverRenewer = False ):
+    def delegate(self, credential = None, serverRenewer = False, nokey = False):
         """
         Delegate the user proxy to myproxy.
         It is possible also to delegate a server
@@ -289,7 +289,11 @@ class Proxy(Credential):
         if self.myproxyServer:
             myproxyDelegCmd = 'X509_USER_PROXY=%s ; myproxy-init -d -n -s %s' % (credential, self.myproxyServer)
 
-            if serverRenewer and len( self.serverDN.strip() ) > 0:
+            if nokey is True:
+                credname = sha1(self.serverDN+self.userDN).hexdigest()
+                myproxyDelegCmd = 'X509_USER_PROXY=%s ; myproxy-init -s %s -x -Z \'%s\' --voms cms -l \'%s\' -t 168:00 -c %s' \
+                                  % (credential, self.myproxyServer, self.serverDN, credname, self.myproxyValidity)
+            elif serverRenewer and len( self.serverDN.strip() ) > 0:
                 serverCredName = sha1(self.serverDN).hexdigest()
                 myproxyDelegCmd += ' -x -R \'%s\' -Z \'%s\' -k %s -t 168:00 -c %s ' \
                                    % (self.serverDN, self.serverDN, serverCredName, self.myproxyValidity )
@@ -300,7 +304,7 @@ class Proxy(Credential):
 
         return
 
-    def getMyProxyTimeLeft( self , proxy = None, serverRenewer = False ):
+    def getMyProxyTimeLeft( self , proxy = None, serverRenewer = False, nokey = False ):
         """
         Get myproxy timeleft. Speciying serverRenewer=True means
         that your are delegating your proxy management in myproxy
@@ -309,6 +313,20 @@ class Proxy(Credential):
         proxyTimeleft = -1
 
         if self.myproxyServer:
+
+            if nokey is True and serverRenewer is True:
+                credname = sha1(self.serverDN+self.userDN).hexdigest()
+                checkMyProxyCmd = 'myproxy-info -l %s -s %s' %(credname, self.myproxyServer)
+                output, retcode = execute_command(self.setUI() +  checkMyProxyCmd, self.logger, self.commandTimeout )
+                if retcode > 0 or not output:
+                    return proxyTimeleft
+                timeleftList = re.compile("timeleft: (?P<hours>[\\d]*):(?P<minutes>[\\d]*):(?P<seconds>[\\d]*)").findall(output)
+                if len(timeleftList) > 1 or len(timeleftList) == 0:
+                    raise CredentialException(str(timeleftList))
+                else:
+                    hours, minutes, seconds = timeleftList[0]
+                    proxyTimeleft = int(hours)*3600 + int(minutes)*60 + int(seconds)
+                    return proxyTimeleft
 
             if not proxy:
                 proxy = self.getProxyFilename( serverRenewer )

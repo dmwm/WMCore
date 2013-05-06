@@ -11,6 +11,7 @@ import time
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
+from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import sanitizeURL
 
@@ -43,6 +44,7 @@ class CleanCouchPoller(BaseWorkerThread):
         if self.useReqMgrForCompletionCheck:
             self.deletableStates = ["announced"]
             self.centralCouchDBWriter = WMStatsWriter(self.config.TaskArchiver.centralWMStatsURL)
+            self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
         else:
             # Tier0 case
             self.deletableStates = ["completed"]
@@ -99,7 +101,10 @@ class CleanCouchPoller(BaseWorkerThread):
         for workflowName in workflows:
             if self.cleanAllLocalCouchDB(workflowName):
                 self.centralCouchDBWriter.updateRequestStatus(workflowName, archiveState)
-                logging.info("status updated to %s %s" % (archiveState, workflowName))
+                # update reqmgr workload document
+                if self.useReqMgrForCompletionCheck:
+                    self.reqmgrSvc.updateRequestStatus(workflowName, archiveState); 
+                    logging.info("status updated to %s %s" % (archiveState, workflowName))
                 
     def deleteWorkflowFromJobCouch(self, workflowName, db):
         """

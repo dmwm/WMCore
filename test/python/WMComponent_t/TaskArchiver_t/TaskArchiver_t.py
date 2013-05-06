@@ -157,6 +157,7 @@ class TaskArchiverTest(unittest.TestCase):
         config.TaskArchiver.uploadPublishInfo = self.uploadPublishInfo
         config.TaskArchiver.uploadPublishDir  = self.uploadPublishDir
         config.TaskArchiver.userFileCacheURL = os.getenv('UFCURL', 'http://cms-xen38.fnal.gov:7725/userfilecache/')
+        config.TaskArchiver.ReqMgrServiceURL = "https://cmsweb-dev.cern.ch/reqmgr/rest"
 
         config.section_("ACDC")
         config.ACDC.couchurl                = config.JobStateMachine.couchurl
@@ -971,7 +972,9 @@ class TaskArchiverTest(unittest.TestCase):
         myThread = threading.currentThread()
         self.dbsDaoFactory = DAOFactory(package="WMComponent.DBS3Buffer", logger=myThread.logger, dbinterface=myThread.dbi)
         self.insertWorkflow = self.dbsDaoFactory(classname="InsertWorkflow")
-        workflowID = self.insertWorkflow.execute(requestName='TestWorkload', taskPath='TestWorkload/Analysis')
+        workflowID = self.insertWorkflow.execute(requestName='TestWorkload', taskPath='TestWorkload/Analysis', 
+                                                 blockMaxCloseTime=100, blockMaxFiles=100,
+                                                 blockMaxEvents=100, blockMaxSize=100)
         myThread.dbi.processData("update dbsbuffer_file set workflow=1 where id < 4")
 
         # Run the test again

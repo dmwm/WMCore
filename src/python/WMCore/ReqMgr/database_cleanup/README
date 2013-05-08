@@ -3,29 +3,76 @@ with each other, these tools are supposed to help straighten things out
 (dumpers, checkers/comparators, updaters ...).
 
 
-Utilities for:
-    - dumping Oracle ReqMgr database into Python dictionaries
-    - comparison / consistency between ReqMgr Oracle database and CouchDB
-    - ultimate goal is to drop Oracle database from ReqMgr, keeping data only
-        in CouchDB
-    - as of 2013-01-16, ReqMgr Oracle database dump (in Python dictionaries)
-        is slightly under 900MB, approx. half is in the reqmgr_message table
+cd /data
+source /data/current/apps/reqmgr/etc/profile.d/init.sh
 
 Dump the entire Oracle database:
 	python ./oracle_dump.py user/password@server > oracle_dump.py
 
-
 Consistency check of the requests (reqmgr_request table and CouchDB) (on VM):
-cd /data
-source /data/current/apps/reqmgr/etc/profile.d/init.sh
-# dump only reqmgr_request table
-python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/database_cleanup/oracle_dump.py user/pass@cms_reqmgr reqmgr_request > oracle_dump_request_table.py
-python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/database_cleanup/oracle_couchdb_comparison.py oracle_dump_request_table.py > comparison.log
+	# dump only reqmgr_request table
+	python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/database_cleanup/oracle_dump.py user/pass@cms_reqmgr reqmgr_request > oracle_dump_request_table.py
+	python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/database_cleanup/oracle_couchdb_comparison.py oracle_dump_request_table.py > comparison.log
 
 
 Deleting requests from CouchDB:
-python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/couchdb_cleanup.py requestlist.txt
+	python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/database_cleanup/couchdb_cleanup.py requestlist.txt
 
 
 Request values level consistency check/correction:
-python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/database_cleanup/oracle_couchdb_consistency_checker.py user/pass@cms_reqmgr 2>&1 | tee log
+	python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/database_cleanup/oracle_couchdb_consistency_checker.py user/pass@cms_reqmgr 2>&1 | tee log
+	
+	
+
+
+
+
+Checking Oracle database from SQLPlus prompt, SQL queries:
+
+# get number of requests, returns all requests in the system:
+select count(REQUEST_NAME) from reqmgr_request;
+
+
+# get number of requests, returns all requests in the system ; 
+# check group information (reqmgr_request-reqmgr_group_association-reqmgr_group association):
+select count(reqmgr_request.REQUEST_NAME) from reqmgr_request, reqmgr_request_type, reqmgr_request_status, reqmgr_group, reqmgr_group_association where reqmgr_request_type.TYPE_ID=reqmgr_request.REQUEST_TYPE and reqmgr_request_status.STATUS_ID=reqmgr_request.REQUEST_STATUS and reqmgr_group.GROUP_ID=reqmgr_group_association.GROUP_ID and reqmgr_group_association.ASSOCIATION_ID=reqmgr_request.REQUESTOR_GROUP_ID;
+select count(reqmgr_group.GROUP_NAME) from reqmgr_request, reqmgr_request_type, reqmgr_request_status, reqmgr_group, reqmgr_group_association where reqmgr_request_type.TYPE_ID=reqmgr_request.REQUEST_TYPE and reqmgr_request_status.STATUS_ID=reqmgr_request.REQUEST_STATUS and reqmgr_group.GROUP_ID=reqmgr_group_association.GROUP_ID and reqmgr_group_association.ASSOCIATION_ID=reqmgr_request.REQUESTOR_GROUP_ID;
+
+
+# get number of requests, returns all requests in the system ;
+# check requestor information (reqmgr_request-reqmgr_group_association-reqmgr_requestor association):
+select count(reqmgr_request.REQUEST_NAME) from reqmgr_request, reqmgr_request_type, reqmgr_request_status, reqmgr_group, reqmgr_group_association, reqmgr_requestor where reqmgr_request_type.TYPE_ID=reqmgr_request.REQUEST_TYPE and reqmgr_request_status.STATUS_ID=reqmgr_request.REQUEST_STATUS and reqmgr_group.GROUP_ID=reqmgr_group_association.GROUP_ID and reqmgr_group_association.ASSOCIATION_ID=reqmgr_request.REQUESTOR_GROUP_ID and reqmgr_request.REQUESTOR_GROUP_ID=reqmgr_group_association.ASSOCIATION_ID and reqmgr_group_association.REQUESTOR_ID=reqmgr_requestor.REQUESTOR_ID;
+select count(reqmgr_requestor.REQUESTOR_HN_NAME) from reqmgr_request, reqmgr_request_type, reqmgr_request_status, reqmgr_group, reqmgr_group_association, reqmgr_requestor where reqmgr_request_type.TYPE_ID=reqmgr_request.REQUEST_TYPE and reqmgr_request_status.STATUS_ID=reqmgr_request.REQUEST_STATUS and reqmgr_group.GROUP_ID=reqmgr_group_association.GROUP_ID and reqmgr_group_association.ASSOCIATION_ID=reqmgr_request.REQUESTOR_GROUP_ID and reqmgr_request.REQUESTOR_GROUP_ID=reqmgr_group_association.ASSOCIATION_ID and reqmgr_group_association.REQUESTOR_ID=reqmgr_requestor.REQUESTOR_ID;
+
+
+# team information (when a request gets assigned):
+# i.e. only requests which have not reached assignment state,
+# i.e. have no association set over reqmgr_request-reqmgr_assignment-reqmgr_teams
+select count(reqmgr_assignment.REQUEST_ID) from reqmgr_assignment;
+# all queries below return the same number of requests
+select count(reqmgr_request.REQUEST_NAME) from reqmgr_request, reqmgr_teams, reqmgr_assignment where reqmgr_request.REQUEST_ID=reqmgr_assignment.REQUEST_ID and reqmgr_assignment.TEAM_ID=reqmgr_teams.TEAM_ID;
+select count(reqmgr_request.REQUEST_NAME) from reqmgr_request, reqmgr_request_type, reqmgr_request_status, reqmgr_group, reqmgr_group_association, reqmgr_requestor, reqmgr_teams, reqmgr_assignment where reqmgr_request_type.TYPE_ID=reqmgr_request.REQUEST_TYPE and reqmgr_request_status.STATUS_ID=reqmgr_request.REQUEST_STATUS and reqmgr_group.GROUP_ID=reqmgr_group_association.GROUP_ID and reqmgr_group_association.ASSOCIATION_ID=reqmgr_request.REQUESTOR_GROUP_ID and reqmgr_request.REQUESTOR_GROUP_ID=reqmgr_group_association.ASSOCIATION_ID and reqmgr_group_association.REQUESTOR_ID=reqmgr_requestor.REQUESTOR_ID and reqmgr_request.REQUEST_ID=reqmgr_assignment.REQUEST_ID and reqmgr_assignment.TEAM_ID=reqmgr_teams.TEAM_ID;
+select count(reqmgr_teams.TEAM_NAME) from reqmgr_request, reqmgr_teams, reqmgr_assignment where reqmgr_request.REQUEST_ID=reqmgr_assignment.REQUEST_ID and reqmgr_assignment.TEAM_ID=reqmgr_teams.TEAM_ID;
+
+
+# software versions
+# does not return all requests in the system, some are missing software information
+select count(reqmgr_request.REQUEST_NAME) from reqmgr_request, reqmgr_software, reqmgr_software_dependency where reqmgr_request.REQUEST_ID=reqmgr_software_dependency.REQUEST_ID and reqmgr_software_dependency.SOFTWARE_ID=reqmgr_software.SOFTWARE_ID;
+
+# campaign
+# returns only 6797 out of current 29506 requests
+select count(reqmgr_request.REQUEST_NAME) from reqmgr_request, reqmgr_campaign, reqmgr_campaign_assoc where reqmgr_request.REQUEST_ID=reqmgr_campaign_assoc.REQUEST_ID and reqmgr_campaign_assoc.CAMPAIGN_ID=reqmgr_campaign.CAMPAIGN_ID;
+
+
+# other data fields:
+reqmgr_request.REQUEST_NAME, 
+reqmgr_request_type.TYPE_NAME, 
+reqmgr_request_status.STATUS_NAME, 
+reqmgr_request.REQUEST_PRIORITY, 
+reqmgr_request.REQUESTOR_GROUP_ID, 
+reqmgr_request.WORKFLOW,  
+reqmgr_request.REQUEST_EVENT_SIZE, 
+reqmgr_request.REQUEST_SIZE_FILES, 
+reqmgr_request.PREP_ID, 
+reqmgr_request.REQUEST_NUM_EVENTS, 
+-reqmgr_group.GROUP_NAME

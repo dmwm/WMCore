@@ -14,11 +14,14 @@ This tools checks consistency on the request level, that is data
 fields in CouchDB request documents with data stored in Oracle.
 
 This script should also correct any inconsistencies (correcting values
-in CouchDB and later removing dispensable CouchDB request fields)
+in CouchDB and later removing dispensable CouchDB request fields).
 It will have to be run repeatedly like Oracle/CouchDB database level
 consistency check (which is done here at the beginning too).
 
-Run with -c (commit) to update changes in CouchDB.
+Run with -c (commit) to perform updates in CouchDB.
+
+All checks and updates correspond to progress recoreded on
+https://github.com/dmwm/WMCore/issues/4388
 
 """
 
@@ -54,28 +57,41 @@ MAPPING=(
          {"oracle": "REQUEST_PRIORITY", "couch": "RequestPriority"},
          {"oracle": "REQUESTOR_GROUP_ID", "couch": "ReqMgrGroupID"},
          {"oracle": "WORKFLOW", "couch": "RequestWorkflow"},
-         {"oracle": "REQUEST_EVENT_SIZE", "couch": "SizePerEvent"},
+         {"oracle": "REQUEST_EVENT_SIZE", "couch": "RequestEventSize"},
          {"oracle": "REQUEST_SIZE_FILES", "couch": "RequestSizeFiles"},
          {"oracle": "PREP_ID", "couch": "PrepID"},
          {"oracle": "REQUEST_NUM_EVENTS", "couch": "RequestNumEvents"},
          {"oracle": "GROUP_NAME", "couch": "Group"},
+         {"oracle": "REQUESTOR_HN_NAME", "couch": "Requestor"},
+         {"oracle": "REQUESTOR_DN_NAME", "couch": "RequestorDN"},
          
-         # TODO issues with SQL definition if REQUESTOR and/or CAMPAIGN is involved
-         #{"oracle": "REQUESTOR_HN_NAME", "couch": "Requestor"},
-         #{"oracle": "REQUESTOR_DN_NAME", "couch": "RequestorDN"},
-         #{"oracle": "CAMPAIGN_NAME", "couch": "Campaign"},
+         # team
+         # applies only to requests which reached assignment state
+         # WARNING:
+         # by including teams, not all requests will be returned in
+         # the query to compare/update the above data fields
+         # {"oracle": "TEAM_NAME", "couch": "Team"},
          
-         # up to the discussion how to store: Team or teams (exists on some
-         # couch requests) ; list of teams (where it exists, but it's 1 item),
-         # or just store single team under 'Team' (preferred)
-         # {"oracle": "TEAM_NAME", "couch": "teams"},
+         # reqmgr_input_dataset
+         # WARNING:
+         # only some requests have InputDataset assigned, so not
+         # all requests are returned
+         #{"oracle": "DATASET_NAME", "couch": "InputDataset"},
+         #{"oracle": "DATASET_TYPE", "couch": "InputDatasetTypes"},
+         
+         # reqmgr_output_dataset
+         #{"oracle": "DATASET_NAME", "couch": "OutputDatasets"},
+         #{"oracle": "SIZE_PER_EVENT", "couch": "SizePerEvent"},
+         
+         # reqmgr_software reqmgr_software_dependency
+         {"oracle": "SOFTWARE_NAME", "couch": "CMSSWVersion"},
+         {"oracle": "SCRAM_ARCH", "couch": "ScramArch"},         
         )
+
 ORACLE_FIELDS = [item["oracle"] for item in MAPPING]
 COUCH_FIELDS = [item["couch"] for item in MAPPING]
 
-# select everything from reqmgr_request table
-#    REQUEST_TYPE is index into reqmgr_request_type
-#    REQUEST_STATUS is index into reqmgr_request_status
+
 SQL=("select "
      "reqmgr_request.REQUEST_NAME, "
      "reqmgr_request_type.TYPE_NAME, "
@@ -87,36 +103,65 @@ SQL=("select "
      "reqmgr_request.REQUEST_SIZE_FILES, "
      "reqmgr_request.PREP_ID, "
      "reqmgr_request.REQUEST_NUM_EVENTS, "
-     "reqmgr_group.GROUP_NAME "
-     # TODO issues with SQL definition if REQUESTOR and/or CAMPAIGN is involved
-     # ", " 
-     #"reqmgr_requestor.REQUESTOR_HN_NAME, "
-     #"reqmgr_requestor.REQUESTOR_DN_NAME, "
-     #"reqmgr_teams.TEAM_NAME, "
-     #"reqmgr_campaign.CAMPAIGN_NAME "
-     "from reqmgr_request, reqmgr_request_type, reqmgr_request_status, "
-     "reqmgr_group, reqmgr_group_association "
+     "reqmgr_group.GROUP_NAME, "
+     "reqmgr_requestor.REQUESTOR_HN_NAME, "
+     "reqmgr_requestor.REQUESTOR_DN_NAME, "
      
-     #, reqmgr_requestor, reqmgr_teams, "
-     #"reqmgr_assignment, reqmgr_campaign, reqmgr_campaign_assoc "
+     # team
+     #"reqmgr_teams.TEAM_NAME "
+     
+     # reqmgr_input_dataset
+     #"reqmgr_input_dataset.DATASET_NAME, "
+     #"reqmgr_input_dataset.DATASET_TYPE "
+     
+     # reqmgr_output_dataset
+     #"reqmgr_output_dataset.DATASET_NAME, "
+     #"reqmgr_output_dataset.SIZE_PER_EVENT "
+     
+     # reqmgr_software reqmgr_software_dependency
+     "reqmgr_software.SOFTWARE_NAME, "
+     "reqmgr_software.SCRAM_ARCH "
+     
+     "from reqmgr_request, reqmgr_request_type, reqmgr_request_status, "
+     "reqmgr_group, reqmgr_group_association, reqmgr_requestor, "
+     
+     # team
+     #"reqmgr_teams, reqmgr_assignment "
+     
+     # reqmgr_input_dataset
+     # "reqmgr_input_dataset "
+     
+     # reqmgr_output_dataset
+     # "reqmgr_output_dataset "
+     
+     # reqmgr_software reqmgr_software_dependency
+     "reqmgr_software, reqmgr_software_dependency "
+     
      "where reqmgr_request_type.TYPE_ID=reqmgr_request.REQUEST_TYPE "
      "and reqmgr_request_status.STATUS_ID=reqmgr_request.REQUEST_STATUS "
      "and reqmgr_group.GROUP_ID=reqmgr_group_association.GROUP_ID "
      "and reqmgr_group_association.ASSOCIATION_ID=reqmgr_request.REQUESTOR_GROUP_ID "
-     
-     # TODO issues with SQL definition if REQUESTOR and/or CAMPAIGN is involved
-     #"and reqmgr_request.REQUESTOR_GROUP_ID=reqmgr_group_association.ASSOCIATION_ID "
-     #"and reqmgr_group_association.REQUESTOR_ID=reqmgr_requestor.REQUESTOR_ID "
-     #"and reqmgr_campaign.CAMPAIGN_ID=reqmgr_campaign_assoc.CAMPAIGN_ID "
-     #"and reqmgr_campaign_assoc.REQUEST_ID=reqmgr_request.REQUEST_ID "
-     
+     "and reqmgr_request.REQUESTOR_GROUP_ID=reqmgr_group_association.ASSOCIATION_ID "
+     "and reqmgr_group_association.REQUESTOR_ID=reqmgr_requestor.REQUESTOR_ID "
+     # team
      #"and reqmgr_request.REQUEST_ID=reqmgr_assignment.REQUEST_ID "
      #"and reqmgr_assignment.TEAM_ID=reqmgr_teams.TEAM_ID "
      
+     # reqmgr_input_dataset
+     #"and reqmgr_request.REQUEST_ID=reqmgr_input_dataset.REQUEST_ID"
+     
+     # reqmgr_output_dataset
+     #"and reqmgr_request.REQUEST_ID=reqmgr_output_dataset.REQUEST_ID"
+     
+     # reqmgr_software reqmgr_software_dependency
+     "and reqmgr_request.REQUEST_ID=reqmgr_software_dependency.REQUEST_ID "
+     "and reqmgr_software_dependency.SOFTWARE_ID=reqmgr_software.SOFTWARE_ID"
      
 # limit the number of rows returned by oracle
 #     "and rownum < 5"
     )
+# END OF SQL
+
 # ; semi-colon at the end nicely yields
 # cx_Oracle.DatabaseError: ORA-00911: invalid character
 # without any other description

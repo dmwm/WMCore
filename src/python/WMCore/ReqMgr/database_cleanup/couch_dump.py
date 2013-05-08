@@ -4,8 +4,8 @@
 Couch dumper.
 
 Dump one or more, comma separated fields from CouchDB datatabase.
-Dumps entire database ids when run without arguments.
-Dumps entire documents when run just with -f (full).
+Dumps entire database documents IDs when run without arguments.
+Dumps entire database, entire documents when run just with -f (full).
 
 """
 
@@ -52,7 +52,7 @@ def main():
         dump()
     elif len(sys.argv) == 2:
         l = sys.argv[1].split(',')
-        dump(l)
+        dump(fields=l)
             
 
 if __name__ == "__main__":

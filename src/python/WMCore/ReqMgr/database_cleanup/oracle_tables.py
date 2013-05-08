@@ -21,7 +21,7 @@ reqmgr_oracle_tables_defition = {
     
     "reqmgr_group_association":
         ["ASSOCIATION_ID", "REQUESTOR_ID", "GROUP_ID"],
-    
+
     "reqmgr_teams":
         ["TEAM_ID", "TEAM_NAME"],
     
@@ -34,31 +34,29 @@ reqmgr_oracle_tables_defition = {
     "reqmgr_assignment":
         ["REQUEST_ID", "TEAM_ID", "PRIORITY_MODIFIER"],
     
-    # TODO (may exist on some requests)
     "reqmgr_input_dataset":
         ["DATASET_ID", "REQUEST_ID", "DATASET_NAME", "DATASET_TYPE"],
     
-    # TODO (may exist on some requests)
     "reqmgr_output_dataset":
         ["DATASET_ID", "REQUEST_ID", "DATASET_NAME", "SIZE_PER_EVENT",
          "CUSTODIAL_SITE"],
     
-    # TODO (may exist on some requests)
     "reqmgr_software":
         ["SOFTWARE_ID", "SOFTWARE_NAME", "SCRAM_ARCH"],
     
-    # TODO (may exist on some requests)
     "reqmgr_software_dependency":
         ["REQUEST_ID", "SOFTWARE_ID"],
     
-    # TODO (may exist on some requests)
+    # this information is already stored in wmstats couch database, it's
+    # reqmgr volatile data and will not be put in reqmgr_workload_cache
     "reqmgr_progress_update":
         ["REQUEST_ID", "UPDATE_TIME", "EVENTS_WRITTEN", "EVENTS_MERGED",
         "FILES_WRITTEN", "FILES_MERGED", "ASSOCIATED_DATASET",
         "TIME_PER_EVENT", "SIZE_PER_EVENT", "PERCENT_SUCCESS", 
         "PERCENT_COMPLETE"],
     
-    # TODO
+    # this information is already stored in wmstats couch database, it's
+    # reqmgr volatile data and will not be put in reqmgr_workload_cache
     "reqmgr_message":
         ["REQUEST_ID", "UPDATE_TIME", "MESSAGE"],
     

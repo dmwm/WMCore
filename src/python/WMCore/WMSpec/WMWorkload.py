@@ -1102,10 +1102,10 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         _listPileUpDataset_
 
-        Returns a list of all the required pile-up datasets
-        in this workload
+        Returns a dictionary with all the required pile-up datasets
+        in this workload and their associated dbs url as the key
         """
-        pileupDatasets = []
+        pileupDatasets = {}
 
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
@@ -1119,13 +1119,16 @@ class WMWorkloadHelper(PersistencyHelper):
                        stepHelper.stepType() == "MulticoreCMSSW":
                     pileupSection = stepHelper.getPileup()
                     if pileupSection is None: continue
+                    dbsUrl = stepHelper.data.dbsUrl
+                    if dbsUrl not in pileupDatasets:
+                        pileupDatasets[dbsUrl] = set()
                     for pileupType in pileupSection.listSections_():
                         datasets = getattr(getattr(stepHelper.data.pileup, pileupType), "dataset")
-                        pileupDatasets.extend(datasets)
+                        pileupDatasets[dbsUrl].update(datasets)
 
-            pileupDatasets.extend(self.listPileupDatasets(task))
+            pileupDatasets.update(self.listPileupDatasets(task))
 
-        return list(set(pileupDatasets))
+        return pileupDatasets
 
     def listOutputProducingTasks(self, initialTask = None):
         """

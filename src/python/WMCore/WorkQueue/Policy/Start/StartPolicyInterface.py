@@ -87,8 +87,9 @@ class StartPolicyInterface(PolicyInterface):
 
         # if pileup is found, check that they are valid datasets
         try:
-            if self.wmspec.listPileupDatasets():
-                for dataset in self.wmspec.listPileupDatasets():
+            pileupDatasets = self.wmspec.listPileupDatasets()
+            for dbsUrl in pileupDatasets:
+                for dataset in pileupDatasets[dbsUrl]:
                     Lexicon.dataset(dataset)
         except Exception, ex: # can throw many errors e.g. AttributeError, AssertionError etc.
             error = WorkQueueWMSpecError(self.wmspec, "Pileup dataset validation error: %s" % str(ex))
@@ -158,10 +159,11 @@ class StartPolicyInterface(PolicyInterface):
             raise error
         return self.workQueueElements, self.rejectedWork
 
-    def dbs(self):
+    def dbs(self, dbs_url = None):
         """Get DBSReader"""
         from WMCore.WorkQueue.WorkQueueUtils import get_dbs
-        dbs_url = self.initialTask.dbsUrl()
+        if dbs_url is None:
+            dbs_url = self.initialTask.dbsUrl()
         return get_dbs(dbs_url)
 
     @staticmethod
@@ -185,9 +187,10 @@ class StartPolicyInterface(PolicyInterface):
 
     def getDatasetLocations(self, datasets):
         """Returns a dictionary with the location of the datasets according to DBS"""
-        dbs = self.dbs()
         result = {}
-        for datasetPath in datasets:
-            locations = sitesFromStorageEelements(dbs.listDatasetLocation(datasetPath))
-            result[datasetPath] = locations
+        for dbsUrl in datasets:
+            dbs = self.dbs(dbsUrl)
+            for datasetPath in datasets[dbsUrl]:
+                locations = sitesFromStorageEelements(dbs.listDatasetLocation(datasetPath))
+                result[datasetPath] = locations
         return result

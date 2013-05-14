@@ -122,7 +122,11 @@ class RFCPCERNImpl(StageOutImpl):
 
                 checksums['adler32'] = "%08x" % int(checksums['adler32'], 16)
 
-                result += "-ODeos.targetsize=$LOCAL_SIZE\&eos.checksum=%s " % checksums['adler32']
+                # non-functional in 3.3.1 xrootd clients due to bug
+                #result += "-ODeos.targetsize=$LOCAL_SIZE\&eos.checksum=%s " % checksums['adler32']
+
+                # therefor embed information into target URL
+                targetPFN += "?eos.targetsize=$LOCAL_SIZE&eos.checksum=%s" % checksums['adler32']
 
         else:
 

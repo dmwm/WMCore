@@ -1722,8 +1722,10 @@ class WMWorkloadTest(unittest.TestCase):
 
         procTask3CmsswHelper = procTask3Cmssw.getTypeHelper()
         procTask3CmsswHelper.setupPileup(mcPileupConfig, 'dbslocation')
-        self.assertEqual(sorted(testWorkload.listPileupDatasets()), sorted(["/some/minbias/data",
-                                                                            "/some/minbias/mc"]))
+        self.assertTrue('dbslocation' in testWorkload.listPileupDatasets())
+        self.assertEqual(len(testWorkload.listPileupDatasets()), 1)
+        self.assertEqual(testWorkload.listPileupDatasets()['dbslocation'], set(["/some/minbias/data",
+                                                                                "/some/minbias/mc"]))
 
     def testBlockCloseSettings(self):
         """

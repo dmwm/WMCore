@@ -406,7 +406,8 @@ class BlockTestCase(unittest.TestCase):
         Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs)
         for task in Tier1ReRecoWorkload.taskIterator():
             policyInstance(Tier1ReRecoWorkload, task)
-            outputs = policyInstance.getDatasetLocations(Tier1ReRecoWorkload.listOutputDatasets())
+            outputs = policyInstance.getDatasetLocations({'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet' :
+                                                          Tier1ReRecoWorkload.listOutputDatasets()})
             for dataset in outputs:
                 self.assertEqual(sorted(outputs[dataset]), ['T2_XX_SiteA', 'T2_XX_SiteB'])
         return

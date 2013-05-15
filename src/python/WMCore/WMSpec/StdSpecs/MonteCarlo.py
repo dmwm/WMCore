@@ -128,6 +128,8 @@ class MonteCarloWorkloadFactory(StdBase):
         self.totalEvents = int(int(arguments["RequestNumEvents"]) / filterEfficiency)
         self.firstEvent  = int(arguments.get("FirstEvent", 1))
         self.firstLumi   = int(arguments.get("FirstLumi", 1))
+        # We don't write out every event in MC, adjust the size per event accordingly
+        self.sizePerEvent = self.sizePerEvent * filterEfficiency
 
         # pileup configuration for the first generation task
         self.pileupConfig = arguments.get("PileupConfig", None)

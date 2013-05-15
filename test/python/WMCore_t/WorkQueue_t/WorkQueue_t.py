@@ -45,7 +45,6 @@ from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.Lexicon import sanitizeURL
 
-
 rerecoArgs = getRerecoArgs()
 mcArgs = getMCArgs()
 parentProcArgs = getRerecoArgs()
@@ -53,7 +52,8 @@ parentProcArgs.update(IncludeParents = "True")
 openRunningProcArgs = getRerecoArgs()
 openRunningProcArgs.update(OpenRunningTimeout = 10)
 redigiArgs = getRedigiArgs()
-
+pileupMcArgs = getMCArgs()
+pileupMcArgs.update(PileupConfig = {"mc": ["/mixing/pileup/dataset"]})
 
 def rerecoWorkload(workloadName, arguments):
     wmspec = rerecoWMSpec(workloadName, arguments)
@@ -105,6 +105,13 @@ class WorkQueueTest(WorkQueueTestCase):
         getFirstTask(self.spec).addProduction(totalevents = 10000)
         self.spec.setSpecUrl(os.path.join(self.workDir, 'testworkflow.spec'))
         self.spec.save(self.spec.specUrl())
+
+        # Production spec plus pileup
+        self.productionPileupSpec = monteCarloWorkload('testProduction', pileupMcArgs)
+        getFirstTask(self.productionPileupSpec).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
+        getFirstTask(self.productionPileupSpec).addProduction(totalevents = 10000)
+        self.productionPileupSpec.setSpecUrl(os.path.join(self.workDir, 'testworkflowPileupMc.spec'))
+        self.productionPileupSpec.save(self.productionPileupSpec.specUrl())
 
         # Sample Tier1 ReReco spec
         self.processingSpec = rerecoWorkload('testProcessing', rerecoArgs)
@@ -1517,6 +1524,13 @@ class WorkQueueTest(WorkQueueTestCase):
         self.localQueue.updateLocationInfo()
         self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA' : 1}, {})), 1)
         self.assertEqual(len(self.localQueue), 0)
+
+    def testPileupOnProdution(self):
+        """Test that we can split properly a Production workflow with pileup"""
+        specfile = self.productionPileupSpec.specUrl()
+        # Sanity check on queueWork only
+        self.assertEqual(1, self.globalQueue.queueWork(specfile))
+        self.assertEqual(1, len(self.globalQueue))
 
     def testPrioritiesWorkPolling(self):
         """Test how the priorities and current jobs in the queue affect the workqueue behavior

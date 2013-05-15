@@ -483,10 +483,10 @@ class DBSUploadTest(unittest.TestCase):
             fakeDBS.close()
             self.assertEqual(len(fakeDBSInfo), 2)
             for block in fakeDBSInfo:
-                self.assertNotIn('block_events', block['block'])
+                self.assertTrue('block_events' not in block['block'])
                 self.assertEqual(block['block']['file_count'], 7)
                 self.assertEqual(block['block']['open_for_writing'], 0)
-                self.assertNotIn('close_settings', block)
+                self.assertTrue('close_settings' not in block)
             time.sleep(3)
             dbsUploader.algorithm()
             openBlocks = dbsUtil.findOpenBlocks()
@@ -498,9 +498,9 @@ class DBSUploadTest(unittest.TestCase):
             for block in fakeDBSInfo:
                 if block['block']['file_count'] != 6:
                     self.assertEqual(block['block']['file_count'], 7)
-                self.assertNotIn('block_events', block['block'])
+                self.assertTrue('block_events' not in block['block'])
                 self.assertEqual(block['block']['open_for_writing'], 0)
-                self.assertNotIn('close_settings', block)
+                self.assertTrue('close_settings' not in block)
 
             # Now check the limit by size and timeout with new files
             acqEra = "TropicalSeason%s" % (int(time.time()))
@@ -523,8 +523,8 @@ class DBSUploadTest(unittest.TestCase):
             for block in fakeDBSInfo:
                 if acqEra in block['block']['block_name']:
                     self.assertEqual(block['block']['file_count'], 5)
-                self.assertNotIn('block_events', block['block'])
-                self.assertNotIn('close_settings', block)
+                self.assertTrue('block_events' not in block['block'])
+                self.assertTrue('close_settings' not in block)
                 self.assertEqual(block['block']['open_for_writing'], 0)
     
             # Put more files, they will go into the same block and then it will be closed
@@ -547,9 +547,9 @@ class DBSUploadTest(unittest.TestCase):
                         self.assertEqual(block['block']['file_count'], 4)
                     else:
                         self.assertEqual(block['block']['file_count'], 5)
-                self.assertNotIn('block_events', block['block'])
+                self.assertTrue('block_events' not in block['block'])
                 self.assertEqual(block['block']['open_for_writing'], 0)
-                self.assertNotIn('close_settings', block)
+                self.assertTrue('close_settings' not in block)
 
             # Finally test size limits
             acqEra = "TropicalSeason%s" % (int(time.time()))
@@ -575,9 +575,9 @@ class DBSUploadTest(unittest.TestCase):
                     if block['block']['file_count'] != 1:
                         self.assertEqual(block['block']['block_size'], 2048)
                         self.assertEqual(block['block']['file_count'], 2)
-                self.assertNotIn('block_events', block['block'])
+                self.assertTrue('block_events' not in block['block'])
                 self.assertEqual(block['block']['open_for_writing'], 0)
-                self.assertNotIn('close_settings', block)
+                self.assertTrue('close_settings' not in block)
         except:
             self.fail("We failed at some point in the test")
         finally:

@@ -229,7 +229,7 @@ class Create(DBCreator):
           """CREATE TABLE dbsbuffer_workflow (
                id                           INTEGER,
                name                         VARCHAR2(255),
-               task                         VARCHAR2(255),
+               task                         VARCHAR2(550),
                spec                         VARCHAR2(255),
                block_close_max_wait_time    INTEGER,
                block_close_max_files        INTEGER,

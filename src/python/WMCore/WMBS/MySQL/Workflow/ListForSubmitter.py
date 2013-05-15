@@ -17,8 +17,8 @@ class ListForSubmitter(DBFormatter):
     List the available workflows in WMBS with the workflow
     priority
     """
-    sql = """SELECT wmbs_workflow.name,
-                    wmbs_workflow.priority
+    sql = """SELECT wmbs_workflow.name AS name,
+                    MIN(wmbs_workflow.priority) AS priority
              FROM wmbs_workflow
              GROUP BY wmbs_workflow.name"""
 

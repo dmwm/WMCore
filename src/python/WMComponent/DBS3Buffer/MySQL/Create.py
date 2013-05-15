@@ -30,9 +30,24 @@ class Create(DBCreator):
                            valid_status    VARCHAR(20),
                            global_tag      VARCHAR(255),
                            parent          VARCHAR(500),
-                           subscribed int default 0,
                            primary key(id)
                         ) ENGINE=InnoDB"""
+
+        self.create["02dbsbuffer_dataset_subscription"] = \
+            """CREATE TABLE dbsbuffer_dataset_subscription
+                (
+                    id                     INTEGER PRIMARY KEY AUTO_INCREMENT,
+                    dataset_id             BIGINT UNSIGNED NOT NULL,
+                    site                   VARCHAR(100) NOT NULL,
+                    custodial              INTEGER DEFAULT 0,
+                    auto_approve           INTEGER DEFAULT 0,
+                    move                   INTEGER DEFAULT 0,
+                    priority               VARCHAR(10) DEFAULT 'Low',
+                    subscribed             INTEGER DEFAULT 0,
+                    FOREIGN KEY (dataset_id) REFERENCES dbsbuffer_dataset(id)
+                        ON DELETE CASCADE,
+                    UNIQUE (dataset_id, site, custodial, auto_approve, move, priority)
+                ) ENGINE=InnoDB"""
 
         self.create["02dbsbuffer_algo"] = \
               """CREATE TABLE dbsbuffer_algo
@@ -67,7 +82,6 @@ class Create(DBCreator):
                id                           INTEGER PRIMARY KEY AUTO_INCREMENT,
                name                         VARCHAR(255),
                task                         VARCHAR(550),
-               spec                         VARCHAR(255),
                block_close_max_wait_time    INTEGER UNSIGNED,
                block_close_max_files        INTEGER UNSIGNED,
                block_close_max_events       INTEGER UNSIGNED,

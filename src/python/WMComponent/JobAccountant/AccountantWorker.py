@@ -86,16 +86,9 @@ class AccountantWorker(WMConnectionBase):
         self.dbsInsertLocation = self.dbsDaoFactory(classname = "DBSBufferFiles.AddLocation")
         self.dbsSetChecksum    = self.dbsDaoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
         self.dbsSetRunLumi     = self.dbsDaoFactory(classname = "DBSBufferFiles.AddRunLumi")
-        self.dbsUpdateSpec = self.dbsDaoFactory(classname = "UpdateSpec")
-        self.dbsInsertWorkflow = self.dbsDaoFactory(classname = "InsertWorkflow")
+        self.dbsGetWorkflow    = self.dbsDaoFactory(classname = "ListWorkflow")
 
-        self.dbsNewAlgoAction    = self.dbsDaoFactory(classname = "NewAlgo")
-        self.dbsNewDatasetAction = self.dbsDaoFactory(classname = "NewDataset")
-        self.dbsAssocAction      = self.dbsDaoFactory(classname = "AlgoDatasetAssoc")
-        self.dbsExistsAction     = self.dbsDaoFactory(classname = "DBSBufferFiles.ExistsForAccountant")
         self.dbsLFNHeritage      = self.dbsDaoFactory(classname = "DBSBufferFiles.BulkHeritageParent")
-
-        self.dbsSetDatasetAlgoAction = self.dbsDaoFactory(classname = "SetDatasetAlgo")
 
         self.stateChanger = ChangeState(config)
 
@@ -601,13 +594,6 @@ class AccountantWorker(WMConnectionBase):
         runLumiBinds  = []
         selfChecksums = None
 
-        taskPaths = map(lambda x: x.get('task', None), self.dbsFilesToCreate)
-        taskPaths = filter(None, taskPaths)
-        taskMap   = self.getWorkflowSpec.execute(taskPaths,
-                                                 conn = self.getDBConn(),
-                                                 transaction = self.existingTransaction())
-
-
         for dbsFile in self.dbsFilesToCreate:
             # Append a tuple in the format specified by DBSBufferFiles.Add
             # Also run insertDatasetAlgo
@@ -643,63 +629,26 @@ class AccountantWorker(WMConnectionBase):
                     logging.error(msg)
                     raise AccountantWorkerException(msg)
 
-            # Handle inserting the workflow using the taskPath and the requestName
-            taskPath     = str(dbsFile.get('task', None))
-            workflowID   = None
-            workflowName = taskMap.get(taskPath, {}).get('name', None)
-            specPath     = taskMap.get(taskPath, {}).get('spec', None)
-            if not (taskPath and workflowName and specPath):
-                logging.error("Could not find workflow in WMBS")
-                logging.error("Not doing workflow association!")
+            # Associate the workflow to the file using the taskPath and the requestName
+            taskPath     = str(dbsFile.get('task'))
+            if not taskPath:
+                msg = "Can't do workflow association, this is not acceptable.\n"
+                msg += "DbsFile : %s" % str(dbsFile)
+                raise AccountantWorkerException(msg)
+            workflowName = taskPath.split('/')[1]
+            workflowPath = '%s:%s' % (workflowName, taskPath)
+            if workflowPath in self.workflowPaths:
+                for wf in self.workflowIDs:
+                    if wf['workflowPath'] == workflowPath:
+                        workflowID = wf['workflowID']
+                        break
             else:
-                workflowPath = '%s:%s' % (workflowName, taskPath)
-                if workflowPath in self.workflowPaths:
-                    for wf in self.workflowIDs:
-                        if wf['workflowPath'] == workflowPath:
-                            workflowID = wf['workflowID']
-                            break
-                if not workflowID:
-                    # Copy the spec to the DBSBuffer spec dir, if not possible
-                    # then don't store the spec in the DBSBuffer database
-                    if self.specDir:
-                        specFile = "%s.pkl" % workflowName
-                        targetFile = os.path.join(self.specDir, specFile)
-                        try:
-                            if not os.path.exists(self.specDir):
-                                os.mkdir(self.specDir)
-                            if not os.path.exists(targetFile):
-                                shutil.copy(specPath, targetFile)
-                            specPath = targetFile
-                        except Exception, ex:
-                            logging.error("Failed copying spec to target dir")
-                            logging.error("Message: %s" % str(ex))
-                            specPath = None
-                    else:
-                        specPath = None
-                    workflowID = self.dbsUpdateSpec.execute(requestName = workflowName,
-                                                            taskPath = taskPath,
-                                                            specPath = specPath)
-                    if not workflowID:
-                        logging.error("The DBSBuffer database doesn't have a record for the workflow %s" % workflowName)
-                        logging.error("This shouldn't happen, the JobAccountant will read the spec and insert the proper record")
-                        if not specPath:
-                            logging.error("No spec either, nothing to do but insert some defaults")
-                            workflowID = self.dbsInsertWorkflow.execute(workflowName, taskPath,
-                                                                       66400,
-                                                                       500,
-                                                                       250000000,
-                                                                       5000000000000)
-                        else:
-                            workload = newWorkload(workflowName)
-                            workload.load(specPath)
-                            workflowID = self.dbsInsertWorkflow.execute(workflowName, taskPath,
-                                                                       workload.getBlockCloseMaxWaitTime(),
-                                                                       workload.getBlockCloseMaxFiles(),
-                                                                       workload.getBlockCloseMaxEvents(),
-                                                                       workload.getBlockCloseMaxSize(),
-                                                                       specPath)
-                    self.workflowPaths.append(workflowPath)
-                    self.workflowIDs.append({'workflowPath': workflowPath, 'workflowID': workflowID})
+                result = self.dbsGetWorkflow.execute(workflowName, taskPath, conn = self.getDBConn(),
+                                                         transaction = self.existingTransaction())
+                workflowID = result['id']
+
+            self.workflowPaths.append(workflowPath)
+            self.workflowIDs.append({'workflowPath': workflowPath, 'workflowID': workflowID})
 
             lfn           = dbsFile['lfn']
             selfChecksums = dbsFile['checksums']

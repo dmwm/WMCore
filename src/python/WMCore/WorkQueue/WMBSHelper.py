@@ -25,6 +25,7 @@ from WMCore.WMException import WMException
 from WMCore.DataStructs.Run import Run
 
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 # Added to allow bulk commits
 from WMCore.DAOFactory           import DAOFactory
 from WMCore.WMConnectionBase     import WMConnectionBase
@@ -196,13 +197,12 @@ class WMBSHelper(WMConnectionBase):
         self.getLocations            = self.daofactory(classname = "Locations.ListSites")
         self.getLocationInfo         = self.daofactory(classname = "Locations.GetSiteInfo")
 
-        # DAOs from DBSBuffer for file commit
+        # DAOs from DBSBuffer
         self.dbsCreateFiles    = self.dbsDaoFactory(classname = "DBSBufferFiles.Add")
         self.dbsSetLocation    = self.dbsDaoFactory(classname = "DBSBufferFiles.SetLocationByLFN")
         self.dbsInsertLocation = self.dbsDaoFactory(classname = "DBSBufferFiles.AddLocation")
         self.dbsSetChecksum    = self.dbsDaoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
         self.dbsInsertWorkflow = self.dbsDaoFactory(classname = "InsertWorkflow")
-
 
         # Added for file creation bookkeeping
         self.dbsFilesToCreate     = []
@@ -390,6 +390,7 @@ class WMBSHelper(WMConnectionBase):
         sub = self.createSubscription(self.topLevelTask, self.topLevelFileset)
 
         self._createWorkflowsInDBSBuffer()
+        self._createDatasetSubscriptionsInDBSBuffer()
 
         if block != None:
             logging.info('"%s" Injecting block %s (%d files) into wmbs' % (self.wmSpec.name(),
@@ -461,6 +462,20 @@ class WMBSHelper(WMConnectionBase):
                                                          conn = self.getDBConn(), transaction = self.existingTransaction())
             if task == self.topLevelTask.getPathName():
                 self.topLevelTaskDBSBufferId = workflow_id
+
+    def _createDatasetSubscriptionsInDBSBuffer(self):
+        """
+        _createDatasetSubscriptionsInDBSBuffer_
+
+        Insert the subscriptions defined in the workload for the output
+        datasets with the different options.
+        """
+        subInfo = self.wmSpec.getSubscriptionInformation()
+        for dataset in subInfo:
+            dbsDataset = DBSBufferDataset(path = dataset)
+            dbsDataset.create()
+            dbsDataset.addSubscription(subInfo[dataset])
+        return
 
     def _createFilesInDBSBuffer(self):
         """

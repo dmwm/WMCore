@@ -15,7 +15,7 @@ class InsertWorkflow(MySQLInsertWorkflow):
     """
 
     sql = """INSERT INTO dbsbuffer_workflow
-                (id, name, task, spec,
+                (id, name, task,
                 block_close_max_wait_time,
                 block_close_max_files,
                 block_close_max_events,
@@ -23,7 +23,6 @@ class InsertWorkflow(MySQLInsertWorkflow):
              SELECT dbsbuffer_workflow_seq.nextval,
                     :name,
                     :task,
-                    :spec,
                     :blockMaxCloseTime,
                     :blockMaxFiles,
                     :blockMaxEvents,

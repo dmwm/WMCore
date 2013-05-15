@@ -17,10 +17,12 @@ class ListDataset(DBFormatter):
     Retrieve information about a dataset in the DBSBuffer.  This is mostly used
     by the unit tests.
     """
-    sql = """SELECT id, path, acqusition_era, processing_ver FROM dbsbuffer_dataset
+    sql = """SELECT id, path, acquisition_era, processing_ver,
+                    valid_status, global_tag, parent FROM dbsbuffer_dataset
                WHERE path = :path"""
 
-    sqlID = """SELECT id, path, acquisition_era, processing_ver FROM dbsbuffer_dataset
+    sqlID = """SELECT id, path, acquisition_era, processing_ver,
+                    valid_status, global_tag, parent FROM dbsbuffer_dataset
                  WHERE id = :id"""
 
     def execute(self, datasetID = None, datasetPath = None, conn = None,

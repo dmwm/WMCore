@@ -6,62 +6,88 @@ from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import SubscriptionList
 
 class SubscriptionListTest(unittest.TestCase):
     """
-    _subscriptionListTest_
+    _SubscriptionListTest_
 
-    I don't know what this does.
+    Test class for the subscription list data structure
     """
 
     def setUp(self):
         """
         _setUp_
 
-        Nothing
+        Nothing to setup
         """
-        return
+        pass
 
     def tearDown(self):
         """
         _tearDown_
 
-        Nothing
+        Nothing to tear down
         """
-        return
+        pass
 
-
-    def test_SubscriptionList(self):
+    def testSubscriptionList(self):
         """
         _SubscriptionList_
 
-        Whatever
+        Check that we can organize and agreggate correctly a bunch of different subscriptions
+        in standard scenarios
         """
+        subList = SubscriptionList()
+        # Two GEN datasets subscribed to many sites non-custodially and custodially to one
+        subs = []
+        genDatasetA = "/DeadlyNeurotoxinOnTestSubjectSim/Run1970-Test-v2/GEN"
+        subs.append({"datasetPathList" : genDatasetA, "nodeList" : "T1_US_FNAL",
+                     "group" : "dataops", "custodial" : "y", "move" : "y"})
+        subs.append({"datasetPathList" : genDatasetA, "nodeList" : "T2_IT_Bari",
+                     "group" : "dataops", "request_only" : "n"})
+        subs.append({"datasetPathList" : genDatasetA, "nodeList" : "T2_CH_CERN",
+                     "group" : "dataops", "request_only" : "n"})
+        subs.append({"datasetPathList" : genDatasetA, "nodeList" : "T2_US_Wisconsin",
+                     "group" : "dataops"})
+        genDatasetB = "/NotEnoughEnergyToLieIn1.1V/Run1970-Potato-v2/GEN"
+        subs.append({"datasetPathList" : genDatasetB, "nodeList" : "T1_IT_CNAF",
+                     "group" : "dataops", "custodial" : "y", "move" : "y"})
+        subs.append({"datasetPathList" : genDatasetB, "nodeList" : "T2_IT_Bari",
+                     "group" : "dataops", "request_only" : "n"})
+        subs.append({"datasetPathList" : genDatasetB, "nodeList" : "T2_CH_CERN",
+                     "group" : "dataops", "request_only" : "n"})
+        subs.append({"datasetPathList" : genDatasetB, "nodeList" : "T2_US_Wisconsin",
+                     "group" : "dataops"})
+        # RECO,DQM,AOD datasets subscribed custodially to 2 sites
+        recoDatasetA = '/TestWeightedCubes/Run1970-Test-v2/%s'
+        recoDatasetB = '/RepulsiveGel/Run1970-Test-v2/%s'
+        subs.append({"datasetPathList" : recoDatasetA % 'AOD' , "nodeList" : "T1_US_FNAL",
+                     "group" : "dataops", "custodial" : "y", "move" : "y"})
+        subs.append({"datasetPathList" : recoDatasetA % 'DQM' , "nodeList" : "T1_US_FNAL",
+                     "group" : "dataops", "custodial" : "y", "move" : "y"})
+        subs.append({"datasetPathList" : recoDatasetB % 'AOD' , "nodeList" : "T1_DE_KIT",
+                     "group" : "dataops", "custodial" : "y", "move" : "y"})
+        subs.append({"datasetPathList" : recoDatasetB % 'DQM' , "nodeList" : "T1_DE_KIT",
+                     "group" : "dataops", "custodial" : "y", "move" : "y"})
 
-        policy = SubscriptionList()
-        # what will you do with run ID.
-        row = [6, "/Cosmics/Test-CRAFTv8/RAW",1, "T2_CH_CAF" , 'high', 'y']
-        results = []
-        for i in range(6):
-            results.append(row)
+        for sub in subs:
+            phedexSub = PhEDExSubscription(**sub)
+            subList.addSubscription(phedexSub)
 
-        results.append([7, "/Cosmics/Test-CRAFTv8/ALCARECO", 2, "FNAL" , 'normal', 'y'])
-        results.append([8, "/Cosmics/Test-CRAFTv8/RECO", 1, "T2_CH_CAF" , 'high', 'y'])
-        results.append([8, "/Cosmics/Test-CRAFTv8/RECO", 2, "FNAL" , 'high', 'y'])
+        # One subscription per node
+        self.assertEqual(len(subList.getSubscriptionList()), 6)
+        goldenDatasetLists = [set([genDatasetA, genDatasetB]),
+                              set([genDatasetA, recoDatasetA % 'AOD',
+                                   recoDatasetA % 'DQM']), set([genDatasetB]),
+                              set([recoDatasetB % 'AOD', recoDatasetB % 'DQM'])]
+        for sub in subList.getSubscriptionList():
+            self.assertTrue(set(sub.getDatasetPaths()) in goldenDatasetLists)
 
-        print policy.getSubscriptionList()
+        subList.compact()
 
-        for row in results:
-            # make a tuple (dataset_path_id, dataset_path_name)
-            # make a tuple (node_id, node_name)
-            subscription = PhEDExSubscription((row[0], row[1]), (row[2], row[3]),
-                                              row[4], row[5])
-            policy.addSubscription(subscription)
-
-        i = 0
-        for sub in policy.getSubscriptionList():
-            i += 1
-            print "Subscription %s" % i
-            print sub.getDatasetPaths()
-            print sub.getNodes()
-
+        # Compact should have reduced 2 of them to 1
+        goldenNodeLists = [set(["T1_US_FNAL"]), set(["T2_IT_Bari", "T2_CH_CERN"]),
+                           set(["T1_IT_CNAF"]), set(["T1_DE_KIT"]), set(["T2_US_Wisconsin"])]
+        self.assertEqual(len(subList.getSubscriptionList()), 5)
+        for sub in subList.getSubscriptionList():
+            self.assertTrue(set(sub.getNodes()) in goldenNodeLists)
         return
 
 if __name__ == '__main__':

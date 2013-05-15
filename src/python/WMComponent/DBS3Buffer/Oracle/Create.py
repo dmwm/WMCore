@@ -38,8 +38,7 @@ class Create(DBCreator):
                  acquisition_era   VARCHAR2(255),
                  valid_status      VARCHAR2(20),
                  global_tag        VARCHAR2(255),
-                 parent            VARCHAR2(500),
-                 subscribed        INT DEFAULT 0
+                 parent            VARCHAR2(500)
                )"""
         self.create["01dbsbuffer_dataset_seq"] = \
           """CREATE SEQUENCE dbsbuffer_dataset_seq
@@ -53,6 +52,33 @@ class Create(DBCreator):
                FOR EACH ROW
                  BEGIN
                    SELECT dbsbuffer_dataset_seq.nextval INTO :NEW.ID FROM dual;
+                 END;"""
+
+        self.create["02dbsbuffer_dataset_subscription"] = \
+            """CREATE TABLE dbsbuffer_dataset_subscription
+                (
+                    id                 NUMBER(11) NOT NULL ENABLE,
+                    dataset_id         NUMBER(11) NOT NULL ENABLE,
+                    site               VARCHAR(100) NOT NULL ENABLE,
+                    custodial          INT DEFAULT 0,
+                    auto_approve       INT DEFAULT 0,
+                    move               INT DEFAULT 0,
+                    priority           VARCHAR(10) DEFAULT 'Low',
+                    subscribed         INT DEFAULT 0
+                )"""
+
+        self.create["02dbsbuffer_dataset_subscription_seq"] = \
+          """CREATE SEQUENCE dbsbuffer_dataset_sub_seq
+               start with 1
+               increment by 1
+               nomaxvalue"""
+
+        self.create["02dbsbuffer_dataset_subscription_trg"] = \
+          """CREATE TRIGGER dbsbuffer_dataset_sub_trg
+               BEFORE INSERT ON dbsbuffer_dataset_subscription
+               FOR EACH ROW
+                 BEGIN
+                   SELECT dbsbuffer_dataset_sub_seq.nextval INTO :NEW.ID FROM dual;
                  END;"""
 
         self.create["02dbsbuffer_algo"] = \
@@ -229,7 +255,6 @@ class Create(DBCreator):
                id                           INTEGER,
                name                         VARCHAR2(255),
                task                         VARCHAR2(550),
-               spec                         VARCHAR2(255),
                block_close_max_wait_time    INTEGER,
                block_close_max_files        INTEGER,
                block_close_max_events       INTEGER,
@@ -263,6 +288,20 @@ class Create(DBCreator):
         self.indexes["02_pk_dbsbuffer_dataset"] = \
           """ALTER TABLE dbsbuffer_dataset ADD
                (CONSTRAINT dbsbuffer_dataset_unique UNIQUE (Path) %s)""" % tablespaceIndex
+
+        self.indexes["01_pk_dbsbuffer_dataset_subscription"] = \
+          """ALTER TABLE dbsbuffer_dataset_subscription ADD
+               (CONSTRAINT dbsbuffer_dataset_sub_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
+
+        self.indexes["02_pk_dbsbuffer_dataset_subscription"] = \
+          """ALTER TABLE dbsbuffer_dataset_subscription ADD
+               (CONSTRAINT dbsbuffer_dataset_sub_unique UNIQUE (dataset_id, site,
+                        custodial, auto_approve, move, priority) %s)""" % tablespaceIndex
+
+        self.constraints["01_fk_dbsbuffer_dataset_subscription"] = \
+          """ALTER TABLE dbsbuffer_dataset_subscription ADD
+               (CONSTRAINT dbsbuffer_dataset_sub_dataset  FOREIGN KEY (dataset_id)
+                   REFERENCES dbsbuffer_dataset(id) ON DELETE CASCADE)"""
 
         self.indexes["01_pk_dbsbuffer_algo"] = \
           """ALTER TABLE dbsbuffer_algo ADD

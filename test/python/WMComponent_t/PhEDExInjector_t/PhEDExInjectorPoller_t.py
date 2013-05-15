@@ -10,13 +10,11 @@ back down and verify that everything is complete.
 import threading
 import time
 import unittest
-import os
 import logging
 
 from WMComponent.PhEDExInjector.PhEDExInjectorPoller import PhEDExInjectorPoller
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 
-from WMCore.WMBase import getTestBase
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.UUID import makeUUID
 
@@ -46,7 +44,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
 
         self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer"],
                                 useDefault = False)
@@ -94,9 +92,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                                    dbinterface = myThread.dbi)
         insertWorkflow = buffer3Factory(classname = "InsertWorkflow")
         insertWorkflow.execute("BogusRequest", "BogusTask",
-                               0,0,0,0,
-                               os.path.join(getTestBase(),
-                               "WMComponent_t/PhEDExInjector_t/specs/%s" % spec))
+                               0, 0, 0, 0)
 
         checksums = {"adler32": "1234", "cksum": "5678"}
         testFileA = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
@@ -309,10 +305,8 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         self.stuffDatabase()
 
-        poller = PhEDExInjectorPoller(self.createConfig())
-
         myThread = threading.currentThread()
-        daofactory    = DAOFactory(package = "WMComponent.PhEDExInjector.Database",
+        daofactory = DAOFactory(package = "WMComponent.PhEDExInjector.Database",
                                    logger = myThread.logger,
                                    dbinterface = myThread.dbi)
         getUninjected = daofactory(classname = "GetUninjectedFiles")

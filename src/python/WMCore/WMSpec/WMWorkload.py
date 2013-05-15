@@ -1259,6 +1259,7 @@ class WMWorkloadHelper(PersistencyHelper):
                                                                                subInfo[dataset]["CustodialSubType"])
                 else:
                     subInfo[dataset] = taskSubInfo[dataset]
+                subInfo[dataset]["CustodialSites"] = list(set(subInfo[dataset]["CustodialSites"]) - set(subInfo[dataset]["NonCustodialSites"]))
 
         return subInfo
 

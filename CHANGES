@@ -1,3 +1,16 @@
+0.9.67 to 0.9.68:
+  - Bugfix unit test. Pull request #4611.
+  - Fix pileup dataset location tracking. Pull request #4607 from dballesteros7
+  - Fix sizePerEvent for MC. Pull request #4608 from dballesteros7
+  - fix ListForSubmitter DAO to work with Oracle. Pull request #4605 from hufnagel.
+  - workaround for CERN xrootd bug. Pull request #4604 from hufnagel
+  - Bugfixes. Pull request #4602.
+  - Fix Ops proxy argument. Pull request #4601.
+  - ReqMgr Oracle/CouchDB consistency work. Pull request #4600 from zdenekmaxa
+  - Fix column sizes in oracle table. Pull request #4598 from dballesteros7
+  - Clean working directories when testing patching. Pull request #4597 from PerilousApricot
+  - Fixed version of MyProxy module UI free, with unit test. Pull request #4592 from cinquo
+
 0.9.65 to 0.9.67:
   - Fix issue with DBS3 upload. Pull request #4593
   - Implement ACDC cleanup operations in ReqMgr. Pull request #4590

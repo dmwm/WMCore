@@ -49,6 +49,9 @@ class ReportIntegrationTest(unittest.TestCase):
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
+        self.dbsfactory = DAOFactory(package = "WMComponent.DBS3Buffer",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
         locationAction = self.daofactory(classname = "Locations.New")
         locationAction.execute(siteName = "site1", seName = "cmssrm.fnal.gov")
 
@@ -68,14 +71,18 @@ class ReportIntegrationTest(unittest.TestCase):
         mergedFileset.create()
 
         procWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
-                                name = "TestWF", task = "None")
+                                name = "TestWF", task = "/TestWF/None")
         procWorkflow.create()
         procWorkflow.addOutput("outputRECORECO", unmergedFileset)
 
         mergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
-                                 name = "MergeWF", task = "None")
+                                 name = "MergeWF", task = "/MergeWF/None")
         mergeWorkflow.create()
         mergeWorkflow.addOutput("Merged", mergedFileset)
+
+        insertWorkflow = self.dbsfactory(classname = "InsertWorkflow")
+        insertWorkflow.execute("TestWF", "/TestWF/None", 0, 0, 0, 0)
+        insertWorkflow.execute("MergeWF", "/MergeWF/None", 0, 0, 0, 0)
 
         self.procSubscription = Subscription(fileset = inputFileset,
                                              workflow = procWorkflow,
@@ -299,6 +306,7 @@ class ReportIntegrationTest(unittest.TestCase):
         fwjrPath = os.path.join(self.tempDir, "ProcReport.pkl")
         cmsRunStep = myReport.retrieveStep("cmsRun1")
         cmsRunStep.status = 0
+        myReport.setTaskName('/TestWF/None')
         myReport.persist(fwjrPath)
 
         self.setFWJRAction.execute(jobID = self.testJob["id"], fwjrPath = fwjrPath)
@@ -341,6 +349,7 @@ class ReportIntegrationTest(unittest.TestCase):
                                "dataTier": "RECO"}
 
         fwjrPath = os.path.join(self.tempDir, "MergeReport.pkl")
+        myReport.setTaskName('/MergeWF/None')
         cmsRunStep = myReport.retrieveStep("mergeReco")
         cmsRunStep.status = 0
         myReport.persist(fwjrPath)

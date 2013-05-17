@@ -94,7 +94,6 @@ FrameworkJobReport.cmsRun1.output.Merged.files.file0.guid = '26BB8797-36AE-E111-
 FrameworkJobReport.cmsRun1.output.Merged.files.file0.configURL = 'None;;None;;None'
 FrameworkJobReport.cmsRun1.output.Merged.files.file0.location = 'srmcms.pic.es'
 FrameworkJobReport.cmsRun1.output.Merged.files.file0.input = ['/store/unmerged/Run2012B/MuEG/RAW-RECO/LogError-PromptSkim-v1/000/195/376/0000/DCF6629B-7FAD-E111-8681-00266CFFCC7C.root']
-FrameworkJobReport.cmsRun1.output.Merged.files.file0.custodialSite = None
 FrameworkJobReport.cmsRun1.output.Merged.files.file0.validStatus = 'VALID'
 FrameworkJobReport.cmsRun1.output.Merged.files.file0.ouput_module_class = 'PoolOutputModule'
 FrameworkJobReport.cmsRun1.output.Merged.files.file0.globalTag = 'GR_P_V32::All'

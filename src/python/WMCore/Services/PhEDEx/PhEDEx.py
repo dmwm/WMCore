@@ -366,6 +366,53 @@ class PhEDEx(Service):
 
         return result_dict
 
+    def getRequestList(self, **kwargs):
+        """
+        _getRequestList_
+
+        Get the list of requests in the system according to the given options:
+
+        request *        request id
+        type             request type, 'xfer' (default) or 'delete'
+        approval         approval state, 'approved', 'disapproved', 'mixed', or 'pending'
+        requested_by *   requestor's name
+        node *           name of the destination node
+                         (show requests in which this node is involved)
+        decision         decision at the node, 'approved', 'disapproved' or 'pending'
+        group *          user group
+        create_since     created since this time
+        create_until     created until this time
+        decide_since     decided since this time
+        decide_until     decided until this time
+        dataset *        dataset is part of request, or a block from this dataset
+        block *          block is part of request, or part of a dataset in request
+        decided_by *     name of person who approved the request
+        * could be multiple and/or with wildcard
+        ** when both 'block' and 'dataset' are present, they form a logical disjunction (ie. or)
+        """
+        callname = 'requestlist'
+        return self._getResult(callname, args = kwargs, verb = "GET")
+
+    def getTransferRequests(self, **kwargs):
+        """
+        _getTransferRequests_
+
+        Get the detailed information about transfer requests, options are:
+
+        request          request number, may be multiple
+        node             name of the destination node, may be multiple
+        group            name of the group, may be multiple
+        limit            maximal number of records returned
+        create_since     created after this time
+        approval         approval state: approved, disapproved, pending or mixed
+                         default is all, may be multiple
+        requested_by *   human name of the requestor, may be multiple
+        * requested_by only works with approval option
+        ** without any input, the default "create_since" is set to 24 hours ago
+        """
+        callname = 'transferrequests'
+        return self._getResult(callname, args = kwargs, verb = "GET")
+
     def _testNonExistentInEmulator(self):
         # This is a dummy function to use in unittests to make sure the right class is
         # instantiated

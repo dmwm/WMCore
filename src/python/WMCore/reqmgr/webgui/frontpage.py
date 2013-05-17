@@ -5,7 +5,7 @@ Main ReqMgr web page handler.
 
 from WMCore.REST.Server import RESTFrontPage
 
-import WMCore.ReqMgr.service.regexp as rx
+import WMCore.reqmgr.service.regexp as rx
 
 
 class FrontPage(RESTFrontPage):

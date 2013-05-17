@@ -7,20 +7,20 @@ import time
 import cherrypy
 from datetime import datetime, timedelta
 
-from WMCore.Database.CMSCouch import CouchServer, Database, Document, CouchError
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
 from WMCore.REST.Validation import validate_str
 
-import WMCore.ReqMgr.service.regexp as rx
+from WMCore.reqmgr.service.auxiliary import ReqMgrBaseRestEntity
+import WMCore.reqmgr.service.regexp as rx
 
 
-class Request(RESTEntity):    
-    def __init__(self, app, api, config, mount, db_pool):
-        self.db_pool = db_pool
-        self.config = config
-        RESTEntity.__init__(self, app, api, config, mount)
-        
+class Request(ReqMgrBaseRestEntity):
+    def __init__(self, app, api, config, mount, db_handler):
+        # main CouchDB database where requests/workloads are stored
+        self.db_name = config.couch_reqmgr_db
+        ReqMgrBaseRestEntity.__init__(self, app, api, config, mount, db_handler)
+
         
     def validate(self, apiobj, method, api, param, safe):
         validate_str("request_name", param, safe, rx.RX_REQUEST_NAME, optional=True)
@@ -28,7 +28,6 @@ class Request(RESTEntity):
         
     
     @restcall
-    @tools.expires(secs=-1)
     def get(self, request_name, all):
         """
         Returns most recent list of requests in the system.
@@ -39,15 +38,8 @@ class Request(RESTEntity):
             number of days.
         
         """
-        couchdb = self.db_pool.reqmgr_couchdb
         if request_name:
-            try:
-                request_doc = couchdb.document(request_name)
-            except CouchError, ex:
-                msg = ("ERROR: Query of '%s' request failed, reason: %s" %
-                       (request_name, ex))
-                cherrypy.log(msg)
-                raise cherrypy.HTTPError(400, msg)
+            request_doc = self.db_handler.document(self.db_name, request_name)
             return rows([request_doc])
         else:
             options = {"descending": True}
@@ -56,8 +48,7 @@ class Request(RESTEntity):
                 current_date = list(time.gmtime()[:6])
                 from_date = datetime(*current_date) - timedelta(days=past_days)
                 options["endkey"] = list(from_date.timetuple()[:6])
-            request_docs = couchdb.loadView("ReqMgr", "bydate", options=options)
+            request_docs = self.db_handler.view(self.db_name,
+                                                "ReqMgr", "bydate",
+                                                options=options)
             return rows([request_docs])
-            
-    # TODO
-    # other methods put(), post() will be used to modify and create requests        

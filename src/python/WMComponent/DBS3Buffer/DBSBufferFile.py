@@ -4,20 +4,13 @@ _DBSBufferFile_
 
 A simple object representing a file in DBSBuffer.
 """
-
-
-
-
-import time
-import threading
-import logging
+from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 
 from WMCore.DataStructs.File import File as WMFile
-from WMCore.DAOFactory import DAOFactory
-from WMCore.Database.Transaction import Transaction
-
 from WMCore.DataStructs.Run import Run
+from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.WMBSBase import WMBSBase
+
 
 class DBSBufferFile(WMBSBase, WMFile):
     def __init__(self, lfn = None, id = -1, size = None,
@@ -42,7 +35,6 @@ class DBSBufferFile(WMBSBase, WMFile):
         self.setdefault("validStatus", None)
         self.setdefault("globalTag", None)
         self.setdefault("datasetParent", None)
-        self.setdefault("custodialSite", None)
 
         if locations == None:
             self.setdefault("newlocations", set())
@@ -153,7 +145,6 @@ class DBSBufferFile(WMBSBase, WMFile):
         Insert the dataset and algorithm for this file into the DBS Buffer.
         """
         newAlgoAction = self.daoFactory(classname = "NewAlgo")
-        newDatasetAction = self.daoFactory(classname = "NewDataset")
         assocAction = self.daoFactory(classname = "AlgoDatasetAssoc")
 
         existingTransaction = self.beginTransaction()
@@ -164,15 +155,17 @@ class DBSBufferFile(WMBSBase, WMFile):
                               conn = self.getDBConn(),
                               transaction = True)
 
-        newDatasetAction.execute(datasetPath    = self["datasetPath"],
-                                 processingVer  = self['processingVer'],
-                                 acquisitionEra = self['acquisitionEra'],
-                                 validStatus    = self['validStatus'],
-                                 globalTag      = self.get('globalTag', None),
-                                 parent         = self['datasetParent'],
-                                 custodialSite  = self['custodialSite'],
-                                 conn = self.getDBConn(),
-                                 transaction = True)
+        dbsbufferDataset = DBSBufferDataset(self["datasetPath"],
+                                            processingVer = self['processingVer'],
+                                            acquisitionEra = self['acquisitionEra'],
+                                            validStatus = self['validStatus'],
+                                            globalTag = self.get('globalTag', None),
+                                            parent = self['datasetParent'])
+
+        if dbsbufferDataset.exists():
+            dbsbufferDataset.updateDataset()
+        else:
+            dbsbufferDataset.create()
 
         assocID = assocAction.execute(appName = self["appName"], appVer = self["appVer"],
                                       appFam = self["appFam"], psetHash = self["psetHash"],
@@ -459,21 +452,6 @@ class DBSBufferFile(WMBSBase, WMFile):
         """
 
         return self['datasetParent']
-
-    def setCustodialSite(self, custodialSite):
-        """
-        _setCustodialSite_
-
-        """
-        self['custodialSite'] = custodialSite
-        return
-
-    def getCustodialSite(self):
-        """
-        _getCustodialSite_
-
-        """
-        return self['custodialSite']
 
     def getParentLFNs(self):
         """

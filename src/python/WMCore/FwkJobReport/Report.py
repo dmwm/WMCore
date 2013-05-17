@@ -733,7 +733,6 @@ class Report:
         newFile["globalTag"]      = getattr(fileRef, 'globalTag', None)
         newFile['configURL']      = getattr(fileRef, 'configURL', None)
         newFile['inputPath']      = getattr(fileRef, 'inputPath', None)
-        newFile['custodialSite']  = getattr(fileRef, 'custodialSite', None)
         newFile["outputModule"]   = outputModule
         newFile["fileRef"] = fileRef
 
@@ -1263,20 +1262,6 @@ class Report:
         # Should now have all the fileRefs
         for f in fileRefs:
             f.inputPath = inputPath
-        return
-
-    def setCustodialSite(self, custodialSite):
-        """
-        _setCustodialSite_
-
-        Set a custodial site for every file (eventually for every dataset)
-        """
-
-        fileRefs = self.getAllFileRefs()
-
-        # Should now have all the fileRefs
-        for f in fileRefs:
-            f.custodialSite = custodialSite
         return
 
     def setStepRSS(self, stepName, min, max, average):

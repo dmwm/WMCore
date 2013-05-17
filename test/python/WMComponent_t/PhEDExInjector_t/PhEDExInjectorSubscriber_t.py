@@ -9,6 +9,7 @@ import os
 import threading
 import unittest
 
+from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.PhEDExInjector.PhEDExInjectorSubscriber import PhEDExInjectorSubscriber
 
@@ -21,11 +22,10 @@ from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 from WMQuality.TestInit import TestInit
 
-from nose.plugins.attrib import attr
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 class PhEDExInjectorSubscriberTest(unittest.TestCase):
     """
@@ -72,7 +72,7 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         self.testInit.clearDatabase()
         EmulatorHelper.resetEmulators()
 
-    def createConfig(self, safeMode):
+    def createConfig(self, safeMode = False):
         """
         _createConfig_
 
@@ -89,17 +89,17 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         config.PhEDExInjector.group = "Saturn"
         config.PhEDExInjector.pollInterval = 30
         config.PhEDExInjector.subscribeInterval = 60
-        config.PhEDExInjector.safeOperationMode = safeMode
+        config.PhEDExInjector.safeMode = safeMode
 
         return config
 
-    def stuffDatabase(self):
+    def stuffDatabase(self, safeMode = False):
         """
         _stuffDatabase_
 
         Fill the dbsbuffer with some files and blocks.  We'll insert a total
         of 5 files spanning two blocks.  There will be a total of two datasets
-        inserted into the database, both from the same workflow.
+        inserted into the database.
 
         All files will be already in GLOBAL and in_phedex
         """
@@ -109,10 +109,10 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
                                    logger = myThread.logger,
                                    dbinterface = myThread.dbi)
         insertWorkflow = buffer3Factory(classname = "InsertWorkflow")
-        insertWorkflow.execute("BogusRequest", "BogusTask",
-                               0,0,0,0,
-                               os.path.join(getTestBase(),
-                                            "WMComponent_t/PhEDExInjector_t/specs/TestWorkload.pkl"))
+        insertWorkflow.execute("BogusRequestA", "BogusTask",
+                               0, 0, 0, 0)
+        insertWorkflow.execute("BogusRequestB", "BogusTask",
+                               0, 0, 0, 0)
 
         checksums = {"adler32": "1234", "cksum": "5678"}
         testFileA = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
@@ -179,8 +179,8 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
 
         self.blockAName = self.testDatasetA + "#" + makeUUID()
         self.blockBName = self.testDatasetB + "#" + makeUUID()
-        createBlock.execute(block = self.blockAName, locations = ["srm-cms.cern.ch"], open_status = 0)
-        createBlock.execute(block = self.blockBName, locations = ["srm-cms.cern.ch"], open_status = 0)
+        createBlock.execute(block = self.blockAName, locations = ["srm-cms.cern.ch"], open_status = 'Closed')
+        createBlock.execute(block = self.blockBName, locations = ["srm-cms.cern.ch"], open_status = 'Closed')
 
         bufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                    logger = myThread.logger,
@@ -208,11 +208,32 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         phedexStatus.execute(testFileE["lfn"], 1)
 
         associateWorkflow = buffer3Factory(classname = "DBSBufferFiles.AssociateWorkflowToFile")
-        associateWorkflow.execute(testFileA["lfn"], "BogusRequest", "BogusTask")
-        associateWorkflow.execute(testFileB["lfn"], "BogusRequest", "BogusTask")
-        associateWorkflow.execute(testFileC["lfn"], "BogusRequest", "BogusTask")
-        associateWorkflow.execute(testFileD["lfn"], "BogusRequest", "BogusTask")
-        associateWorkflow.execute(testFileE["lfn"], "BogusRequest", "BogusTask")
+        associateWorkflow.execute(testFileA["lfn"], "BogusRequestA", "BogusTask")
+        associateWorkflow.execute(testFileB["lfn"], "BogusRequestA", "BogusTask")
+        associateWorkflow.execute(testFileC["lfn"], "BogusRequestA", "BogusTask")
+        associateWorkflow.execute(testFileD["lfn"], "BogusRequestB", "BogusTask")
+        associateWorkflow.execute(testFileE["lfn"], "BogusRequestB", "BogusTask")
+
+        # Make the desired subscriptions
+        insertSubAction = buffer3Factory(classname = "NewSubscription")
+        datasetA = DBSBufferDataset(path = self.testDatasetA)
+        datasetB = DBSBufferDataset(path = self.testDatasetB)
+        workload = WMWorkloadHelper()
+        workload.load(os.path.join(getTestBase(), 'WMComponent_t/PhEDExInjector_t/specs/TestWorkload.pkl'))
+        if safeMode:
+            # Override the settings
+            workload.setSubscriptionInformation(custodialSites = ["T1_UK_RAL", "T1_US_FNAL"],
+                                                nonCustodialSites = ["T3_CO_Uniandes"],
+                                                priority = "High", custodialSubType = "Move",
+                                                autoApproveSites = [],
+                                                dataTier = "RECO")
+            workload.setSubscriptionInformation(custodialSites = ["T1_UK_RAL"],
+                                                nonCustodialSites = [],
+                                                autoApproveSites = [],
+                                                priority = "Low", custodialSubType = "Move",
+                                                dataTier = "RAW")
+        insertSubAction.execute(datasetA.exists(), workload.getSubscriptionInformation()[self.testDatasetA])
+        insertSubAction.execute(datasetB.exists(), workload.getSubscriptionInformation()[self.testDatasetB])
 
         return
 
@@ -220,19 +241,17 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         """
         _stuffWMBS_
 
-        Inject the workflow in WMBS and add the subscriptions
+        Inject a workflow in WMBS and add the subscriptions
         """
 
-        testWorkflow = Workflow(spec = os.path.join(getTestBase(),
-                                                    "WMComponent_t/PhEDExInjector_t/specs/TestWorkload.pkl"),
+        testWorkflow = Workflow(spec = "bogus.xml",
                                 owner = "/CN=OU/DN=SomeoneWithPermissions",
-                                name = "BogusRequest", task = "BogusTask", owner_vogroup = "", owner_vorole = "")
+                                name = "BogusRequestB", task = "BogusTask", owner_vogroup = "", owner_vorole = "")
         testWorkflow.create()
 
-        testMergeWorkflow = Workflow(spec = os.path.join(getTestBase(),
-                                                    "WMComponent_t/PhEDExInjector_t/specs/TestWorkload.pkl"),
+        testMergeWorkflow = Workflow(spec = "bogus.xml",
                                      owner = "/CN=OU/DN=SomeoneWithPermissions",
-                                     name = "BogusRequest", task = "BogusTask/Merge", owner_vogroup = "", owner_vorole = "")
+                                     name = "BogusRequestB", task = "BogusTask/Merge", owner_vogroup = "", owner_vorole = "")
         testMergeWorkflow.create()
 
         testWMBSFileset = Fileset(name = "TopFileset")
@@ -267,20 +286,19 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
 
         return (testSubscription, testSubscriptionMerge)
 
-    def testUnsafeModeSubscriptions(self):
+    def testNormalModeSubscriptions(self):
         """
-        _testUnsafeModeSubscriptions_
+        _testNormalModeSubscriptions_
 
         Tests that we can make custodial/non-custodial subscriptions on
-        unsafe operation mode, this time we don't need WMBS for anything.
+        normal operation mode, this time we don't need WMBS for anything.
         All is subscribed in one go.
 
         Check that the requests are correct.
         """
 
         self.stuffDatabase()
-        config = self.createConfig(safeMode = False)
-
+        config = self.createConfig()
         subscriber = PhEDExInjectorSubscriber(config)
         subscriber.setup({})
         subscriber.algorithm({})
@@ -297,7 +315,7 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         subInfoA = subscriptions[self.testDatasetA]
         self.assertEqual(len(subInfoA), 3, "Dataset A was not subscribed to all sites")
         for subInfo in subInfoA:
-            site = subInfo["node"][0]
+            site = subInfo["node"]
             self.assertEqual(subInfo["priority"], "normal", "Wrong priority for subscription")
             if site == "T1_UK_RAL_MSS" or site == "T3_CO_Uniandes":
                 self.assertEqual(subInfo["custodial"], "n", "Wrong custodiality for dataset A at %s" % subInfo["node"])
@@ -318,7 +336,7 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         subInfoB = subscriptions[self.testDatasetB]
         self.assertEqual(len(subInfoB), 2, "Dataset B was not subscribed to all sites")
         for subInfo in subInfoB:
-            site = subInfo["node"][0]
+            site = subInfo["node"]
             self.assertEqual(subInfo["priority"], "high", "Wrong priority for subscription")
             if site == "T1_UK_RAL_MSS" or site == "T2_CH_CERN":
                 self.assertEqual(subInfo["custodial"], "n", "Wrong custodiality for dataset B at %s" % subInfo["node"])
@@ -328,8 +346,16 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
                 self.fail("Dataset B was subscribed to a wrong site %s" % site)
 
         myThread = threading.currentThread()
-        result = myThread.dbi.processData("SELECT COUNT(*) FROM dbsbuffer_dataset where subscribed = 1")[0].fetchall()
-        self.assertEqual(result[0][0], 2, "Not all datasets were marked as subscribed")
+        result = myThread.dbi.processData("SELECT COUNT(*) FROM dbsbuffer_dataset_subscription where subscribed = 1")[0].fetchall()
+        self.assertEqual(result[0][0], 5, "Not all datasets were marked as subscribed")
+        result = myThread.dbi.processData("SELECT site FROM dbsbuffer_dataset_subscription where subscribed = 0")[0].fetchall()
+        self.assertEqual(result[0][0], "T1_IT_CNAF", "A non-valid CMS site was subscribed")
+
+        # Reset and run again and make sure that no duplicate subscriptions are created
+        myThread.dbi.processData("UPDATE dbsbuffer_dataset_subscription SET subscribed = 0")
+        subscriber.algorithm({})
+        self.assertEqual(len(subscriptions[self.testDatasetA]), 3)
+        self.assertEqual(len(subscriptions[self.testDatasetB]), 2)
 
         return
 
@@ -338,21 +364,15 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         _testSafeModeSubscriptions_
 
         Tests that we can make custodial/non-custodial subscriptions on
-        safe operation mode, make sure that the flow of subscriptions
-        obeys the rule laid in the subscriber documentation.
-
-        Check that the requests are correct.
+        safe operation mode, custodial moves are made on block level only
+        while the
         """
-        config = self.createConfig(safeMode = True)
-        self.stuffDatabase()
-        topSubscription, mergeSubscription = self.stuffWMBS()
 
-        # Start the subscriber
+        self.stuffDatabase(safeMode = True)
+        self.stuffWMBS()
+        config = self.createConfig(safeMode = True)
         subscriber = PhEDExInjectorSubscriber(config)
         subscriber.setup({})
-
-        # Run once, this means that all custodial and non-custodial subscriptions
-        # will be made but none will be Move
         subscriber.algorithm({})
 
         phedexInstance = subscriber.phedex
@@ -367,16 +387,18 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         subInfoA = subscriptions[self.testDatasetA]
         self.assertEqual(len(subInfoA), 3, "Dataset A was not subscribed to all sites")
         for subInfo in subInfoA:
-            site = subInfo["node"][0]
-            self.assertEqual(subInfo["priority"], "normal", "Wrong priority for subscription")
-            if site == "T1_UK_RAL_MSS" or site == "T3_CO_Uniandes":
-                self.assertEqual(subInfo["custodial"], "n", "Wrong custodiality for dataset A at %s" % subInfo["node"])
-                self.assertEqual(subInfo["request_only"], "n", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
-                self.assertEqual(subInfo["move"], "n", "Wrong subscription type for dataset A at %s" % subInfo["node"])
-            elif site == "T1_US_FNAL_MSS":
+            site = subInfo["node"]
+            self.assertEqual(subInfo["priority"], "high", "Wrong priority for subscription")
+            if site == "T1_UK_RAL_MSS" or site == "T1_US_FNAL_MSS":
                 self.assertEqual(subInfo["custodial"], "y", "Wrong custodiality for dataset A at %s" % subInfo["node"])
-                self.assertEqual(subInfo["request_only"], "n", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["request_only"], "y", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["move"], "y", "Wrong subscription type for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["level"], "block", "Wrong level for dataset A at %s" % subInfo["node"])
+            elif site == "T3_CO_Uniandes":
+                self.assertEqual(subInfo["custodial"], "n", "Wrong custodiality for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["request_only"], "y", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
                 self.assertEqual(subInfo["move"], "n", "Wrong subscription type for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["level"], "dataset", "Wrong level for dataset A at %s" % subInfo["node"])
             else:
                 self.fail("Dataset A was subscribed  to a wrong site %s" % site)
 
@@ -384,53 +406,27 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         # According to the spec, this is not custodial anywhere
         # Non-custodial at T1_UK_RAL and T2_CH_CERN
         # Request only at both sites and with high priority
-        self.assertTrue(self.testDatasetB in subscriptions, "Dataset B was not subscribed")
-        subInfoB = subscriptions[self.testDatasetB]
-        self.assertEqual(len(subInfoB), 2, "Dataset B was not subscribed to all sites")
-        for subInfo in subInfoB:
-            site = subInfo["node"][0]
-            self.assertEqual(subInfo["priority"], "high", "Wrong priority for subscription")
-            if site == "T1_UK_RAL_MSS" or site == "T2_CH_CERN":
-                self.assertEqual(subInfo["custodial"], "n", "Wrong custodiality for dataset B at %s" % subInfo["node"])
-                self.assertEqual(subInfo["request_only"], "y", "Wrong requestOnly for dataset B at %s" % subInfo["node"])
-                self.assertEqual(subInfo["move"], "n", "Wrong subscription type for dataset B at %s" % subInfo["node"])
-            else:
-                self.fail("Dataset B was subscribed to a wrong site %s" % site)
+        self.assertTrue(self.testDatasetB not in subscriptions)
 
         myThread = threading.currentThread()
-        result = myThread.dbi.processData("SELECT COUNT(*) FROM dbsbuffer_dataset where subscribed = 1")[0].fetchall()
-        self.assertEqual(result[0][0], 2, "Not all datasets were marked as partially subscribed")
+        result = myThread.dbi.processData("SELECT COUNT(*) FROM dbsbuffer_dataset_subscription where subscribed = 1")[0].fetchall()
+        self.assertEqual(result[0][0], 1, "Custodial move datasets were marked as subscribed")
+        result = myThread.dbi.processData("SELECT move, custodial FROM dbsbuffer_dataset_subscription where subscribed = 0")[0].fetchall()
+        for value in result:
+            self.assertEqual((1, 1), value)
 
-        # Now finish the Processing subscription and run the algorithm again
-        topSubscription.markFinished()
+        # Run again, it will subscribe the blocks again only
         subscriber.algorithm({})
+        self.assertEqual(len(subscriptions[self.testDatasetA]), 5)
+        self.assertTrue(self.testDatasetB not in subscriptions)
 
-        self.assertTrue(self.testDatasetA in subscriptions, "Dataset A was not subscribed")
-        subInfoA = subscriptions[self.testDatasetA]
-        self.assertEqual(len(subInfoA), 4, "Dataset A was not subscribed again to custodial site")
-        moveCount = 0
-        for subInfo in subInfoA:
-            site = subInfo["node"][0]
-            self.assertEqual(subInfo["priority"], "normal", "Wrong priority for subscription")
-            if site == "T1_UK_RAL_MSS" or site == "T3_CO_Uniandes":
-                self.assertEqual(subInfo["custodial"], "n", "Wrong custodiality for dataset A at %s" % subInfo["node"])
-                self.assertEqual(subInfo["request_only"], "n", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
-                self.assertEqual(subInfo["move"], "n", "Wrong subscription type for dataset A at %s" % subInfo["node"])
-            elif site == "T1_US_FNAL_MSS":
-                self.assertEqual(subInfo["custodial"], "y", "Wrong custodiality for dataset A at %s" % subInfo["node"])
-                self.assertEqual(subInfo["request_only"], "n", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
-                if subInfo["move"] == "y":
-                    moveCount += 1
-            else:
-                self.fail("Dataset A was subscribed  to a wrong site %s" % site)
-        self.assertEqual(moveCount, 1, "Move subscription was not made")
-
-        self.assertTrue(self.testDatasetB in subscriptions, "Dataset B was not subscribed")
-        subInfoB = subscriptions[self.testDatasetB]
-        self.assertEqual(len(subInfoB), 2, "Dataset B was susbcribed again")
-
-        result = myThread.dbi.processData("SELECT COUNT(*) FROM dbsbuffer_dataset where subscribed = 2")[0].fetchall()
-        self.assertEqual(result[0][0], 2, "Not all datasets were marked as subscribed")
+        # Delete the wmbs entries
+        myThread.dbi.processData("DELETE FROM wmbs_workflow")
+        subscriber.algorithm({})
+        self.assertEqual(len(subscriptions[self.testDatasetA]), 7)
+        self.assertTrue(self.testDatasetB in subscriptions)
+        self.assertEqual(len(subscriptions[self.testDatasetB]), 1)
+        self.assertEqual(subscriptions[self.testDatasetB][0]['level'], 'block')
 
         return
 

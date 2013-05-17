@@ -257,3 +257,20 @@ def makePhEDExXMLForDatasets(dbsUrl, datasetPaths):
 
     xmlString = spec.save()
     return xmlString
+
+def makePhEDExXMLForBlocks(dbsUrl, datasets):
+    """
+    _makePhEDExXMLForBlocks_
+
+    Given a DBS Url, dictionary of datasets and blocks,
+    generate an XML structure for injection
+    It assumes that all blocks are closed
+    """
+    spec = XMLInjectionSpec(dbsUrl)
+    for datasetPath in datasets:
+        xmlDataset = spec.getDataset(datasetPath)
+        for blockPath in datasets[datasetPath]:
+            xmlDataset.getFileblock(blockPath, 'n')
+
+    xmlString = spec.save()
+    return xmlString

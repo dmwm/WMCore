@@ -902,11 +902,11 @@ class WMTaskHelper(TreeHelper):
                 outputModuleSection.priority = "Low"
 
             outputModuleSection = getattr(self.data.subscriptions, outputModule)
-            if custodialSites:
+            if custodialSites is not None:
                 outputModuleSection.custodialSites = custodialSites
-            if nonCustodialSites:
+            if nonCustodialSites  is not None:
                 outputModuleSection.nonCustodialSites = nonCustodialSites
-            if autoApproveSites:
+            if autoApproveSites  is not None:
                 outputModuleSection.autoApproveSites = autoApproveSites
             outputModuleSection.priority = priority
             outputModuleSection.custodialSubType = custodialSubType

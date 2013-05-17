@@ -31,6 +31,7 @@ from WMCore.DataStructs.Run   import Run
 
 from WMComponent.JobAccountant.JobAccountantPoller import JobAccountantPoller
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMComponent.JobAccountant.AccountantWorker import AccountantWorker
 from nose.plugins.attrib import attr
 
@@ -76,6 +77,7 @@ class JobAccountantTest(unittest.TestCase):
                                            logger = myThread.logger,
                                            dbinterface = myThread.dbi)
         self.countDBSFilesAction = self.dbsbufferFactory(classname = "CountFiles")
+        self.insertWorkflow = self.dbsbufferFactory(classname = "InsertWorkflow")
 
         dbsLocationAction = self.dbsbufferFactory(classname = "DBSBufferFiles.AddLocation")
         dbsLocationAction.execute(siteName = "cmssrm.fnal.gov")
@@ -679,7 +681,7 @@ class JobAccountantTest(unittest.TestCase):
         self.mergedAlcaOutputFileset.create()
         self.cleanupFileset = Fileset(name = "Cleanup")
         self.cleanupFileset.create()
-
+        self.insertWorkflow.execute("Steves", "/Steves/TestAlcaTask", 0, 0, 0, 0)
         dummyWorkload = newWorkload("Steves")
         dummyWorkload.save(os.path.join(self.testDir, 'initialSpecPath.pkl'))
         falseSpec = os.path.join(self.testDir, 'initialSpecPath.pkl')
@@ -826,9 +828,13 @@ class JobAccountantTest(unittest.TestCase):
         self.mergedAodOutputFileset = Fileset(name = "MergedAOD")
         self.mergedAodOutputFileset.create()
 
+        self.insertWorkflow.execute("Steves", "/Steves/Stupid/Task", 0, 0, 0, 0)
+        dummyDataset = DBSBufferDataset(path = "/Mu/IansMagicMushroomSoup-T0Test-AnalyzeThisAndGetAFreePhD-PreScaleThingy10-v9_29_pre14replaythingy_v5/AOD")
+        dummyDataset.create()
         dummyWorkload = newWorkload("Steves")
         dummyWorkload.save(os.path.join(self.testDir, 'initialSpecPath.pkl'))
         falseSpec = os.path.join(self.testDir, 'initialSpecPath.pkl')
+
         self.testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
                                      name = "Steves", task = "/Steves/Stupid/ProcessingTask")
         self.testWorkflow.create()
@@ -989,11 +995,16 @@ class JobAccountantTest(unittest.TestCase):
         result = myThread.dbi.processData("SELECT * FROM dbsbuffer_workflow")[0].fetchall()[0]
         self.assertEqual(result[1], 'Steves')
         self.assertEqual(result[2], '/Steves/Stupid/Task')
-        self.assertEqual(result[3], os.path.join(self.testDir,
-                                    "Steves.pkl"))
 
         result = myThread.dbi.processData("SELECT workflow FROM dbsbuffer_file WHERE id = 4")[0].fetchall()[0][0]
         self.assertEqual(result, 1)
+
+        datasetInfo = myThread.dbi.processData("SELECT * FROM dbsbuffer_dataset")[0].fetchall()[0]
+        self.assertEqual(datasetInfo[1], "/Mu/IansMagicMushroomSoup-T0Test-AnalyzeThisAndGetAFreePhD-PreScaleThingy10-v9_29_pre14replaythingy_v5/AOD")
+        self.assertEqual(datasetInfo[2], "9")
+        self.assertEqual(datasetInfo[3], "IansMagicMushroomSoup")
+        self.assertEqual(datasetInfo[4], "Production")
+        self.assertEqual(datasetInfo[5], "GT:Super")
 
         return
 
@@ -1045,8 +1056,6 @@ class JobAccountantTest(unittest.TestCase):
         result = myThread.dbi.processData("SELECT * FROM dbsbuffer_workflow")[0].fetchall()[0]
         self.assertEqual(result[1], 'Steves')
         self.assertEqual(result[2], '/Steves/Stupid/Task')
-        self.assertEqual(result[3], os.path.join(self.testDir,
-                                    "Steves.pkl"))
 
         result = myThread.dbi.processData("SELECT workflow FROM dbsbuffer_file WHERE id = 4")[0].fetchall()[0][0]
         self.assertEqual(result, 1)
@@ -1109,8 +1118,6 @@ class JobAccountantTest(unittest.TestCase):
         result = myThread.dbi.processData("SELECT * FROM dbsbuffer_workflow")[0].fetchall()[0]
         self.assertEqual(result[1], 'Steves')
         self.assertEqual(result[2], '/Steves/Stupid/Task')
-        self.assertEqual(result[3], os.path.join(self.testDir,
-                                    "Steves.pkl"))
 
         result = myThread.dbi.processData("SELECT workflow FROM dbsbuffer_file WHERE id = 4")[0].fetchall()[0][0]
         self.assertEqual(result, 1)
@@ -1164,8 +1171,6 @@ class JobAccountantTest(unittest.TestCase):
         result = myThread.dbi.processData("SELECT * FROM dbsbuffer_workflow")[0].fetchall()[0]
         self.assertEqual(result[1], 'Steves')
         self.assertEqual(result[2], '/Steves/Stupid/Task')
-        self.assertEqual(result[3], os.path.join(self.testDir,
-                                    "Steves.pkl"))
 
         result = myThread.dbi.processData("SELECT workflow FROM dbsbuffer_file WHERE id = 1")[0].fetchall()[0][0]
         self.assertEqual(result, 1)
@@ -1354,7 +1359,7 @@ class JobAccountantTest(unittest.TestCase):
         self.aodOutputFileset.create()
         self.mergedAodOutputFileset = Fileset(name = "MergedAOD")
         self.mergedAodOutputFileset.create()
-
+        self.insertWorkflow.execute("Steves", "/Steves/Stupid/Task", 0, 0, 0, 0)
         self.testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
                                      name = "TestWF", task = "None")
         self.testWorkflow.create()

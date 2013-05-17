@@ -30,7 +30,7 @@ class PhEDEx(dict):
         self['endpoint'] = "phedex_emulator"
         self.dataBlocks = DataBlockGenerator()
         self.subRequests = {}
-        
+
     def injectBlocks(self, node, xmlData, verbose = 0, strict = 1):
 
         """
@@ -47,31 +47,28 @@ class PhEDEx(dict):
         Store the subscription information in the object,
         tests can retrieve it and verify it
         """
-
-        args = {}
-
-        args['node'] = []
         for node in subscription.nodes:
-            args['node'].append(node)
+            args = {}
 
-        document = parseString(xmlData)
-        datasets = document.getElementsByTagName("dataset")
-        for dataset in datasets:
-            datasetName = dataset.getAttribute("name")
+            args['node'] = node
 
-        if datasetName not in self.subRequests:
-            self.subRequests[datasetName] = []
+            document = parseString(xmlData)
+            datasets = document.getElementsByTagName("dataset")
+            for dataset in datasets:
+                datasetName = dataset.getAttribute("name")
 
-        args['data'] = xmlData
-        args['level'] = subscription.level
-        args['priority'] = subscription.priority
-        args['move'] = subscription.move
-        args['static'] = subscription.static
-        args['custodial'] = subscription.custodial
-        args['group'] = subscription.group
-        args['request_only'] = subscription.request_only
+                if datasetName not in self.subRequests:
+                    self.subRequests[datasetName] = []
 
-        self.subRequests[datasetName].append(args)
+                args['data'] = xmlData
+                args['level'] = subscription.level
+                args['priority'] = subscription.priority
+                args['move'] = subscription.move
+                args['static'] = subscription.static
+                args['custodial'] = subscription.custodial
+                args['group'] = subscription.group
+                args['request_only'] = subscription.request_only
+                self.subRequests[datasetName].append(args)
 
         return
 
@@ -197,8 +194,7 @@ class PhEDEx(dict):
                             datasetSelected = dataItem
                             find = True
                             break
-
-                if not datasetList or find:
+                if not(datasetList and find):
                     data['phedex']['dataset'].append({'name' : dataset, 'files' : filesInDataset,
                                                       'block' : []})
 
@@ -215,6 +211,8 @@ class PhEDEx(dict):
 #                                 'time_created': '1232989000', 'priority': 'low',
 #                                 'time_update': None, 'node_id': '781',
 #                                 'suspended': 'n', 'group': None})
+                if dataset in self.subRequests:
+                    subs.extend(self.subRequests[dataset])
                 datasetSelected['subscription'] = subs
 
                 blocks = datasetSelected['block']
@@ -237,9 +235,8 @@ class PhEDEx(dict):
         # different structure depending on whether we ask for dataset or blocks
 
         if args.has_key('dataset') and args['dataset']:
-            for dataset in args['dataset']:
-                blockList = self.dataBlocks.getBlocks(dataset)
-                _blockInfoGenerator(blockList)
+            blockList = self.dataBlocks.getBlocks(args['dataset'])
+            _blockInfoGenerator(blockList)
         elif args.has_key('block') and args['block']:
             _blockInfoGenerator(args['block'])
 
@@ -271,7 +268,7 @@ class PhEDEx(dict):
             # First query for a dataset level subscription (most common)
             # this returns block level subscriptions also.
             # Rely on httplib2 caching to not resend on every block in dataset
-            kwargs['dataset'], kwargs['block'] = [item.split('#')[0]], []
+            kwargs['dataset'] = item.split('#')[0]
             response = self.subscriptions(**kwargs)['phedex']
 
             # iterate over response as can't jump to specific datasets
@@ -298,6 +295,28 @@ class PhEDEx(dict):
                             break
 
         return result
+
+    def getRequestList(self, **kwargs):
+        """
+        _getRequestList_
+
+        Emulated request list, for now it does nothing
+        """
+        goldenResponse = {"phedex":{"request":[], "request_timestamp":1368636296.94707,
+                                    "request_version":"2.3.15-comp", "request_call":"requestlist",
+                                    "call_time":0.34183, "request_date":"2013-05-15 16:44:56 UTC"}}
+        return goldenResponse
+
+    def getTransferRequests(self, **kwargs):
+        """
+        _getTransferRequests_
+
+        Emulated request details, for now it does nothing
+        """
+        goldenResponse = {"phedex":{"request":[], "request_timestamp":1368636365.73521,
+                                    "request_version":"2.3.15-comp", "request_call":"transferrequests",
+                                    "call_time":0.03909, "request_date":"2013-05-15 16:46:05 UTC"}}
+        return goldenResponse
 
 
     def emulator(self):

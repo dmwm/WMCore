@@ -11,15 +11,15 @@ class MarkDatasetSubscribed(DBFormatter):
     """
     _MarkDatasetSubscribed_
 
-    Marks the given dataset as subscribed in the database,
-    this can be either setting the state to 1 or 2,
-    depending on the operation mode and type of subscription made.
+    Marks the given dataset subscription as subscribed in the database
     """
 
-    sql = "UPDATE dbsbuffer_dataset SET subscribed = :subscribed WHERE path = :path"
+    sql = "UPDATE dbsbuffer_dataset_subscription SET subscribed = 1 WHERE id = :id"
 
-    def execute(self, datasetPath, subscribed = 1, conn = None, transaction = False):
-        self.dbi.processData(self.sql, binds = {"path": datasetPath,
-                                                "subscribed" : subscribed},
+    def execute(self, subIds, conn = None, transaction = False):
+        binds = []
+        for subId in subIds:
+            binds.append({"id" : subId})
+        self.dbi.processData(self.sql, binds,
                              conn = conn, transaction = transaction)
         return

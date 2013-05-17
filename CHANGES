@@ -1,3 +1,6 @@
+0.9.69 to 0.9.70:
+  - ReqMgr2 auxiliary database. Pull request #4619.
+
 0.9.68 to 0.9.69:
   - PhEDEx improvement. Pull request #4617
   - Remove custodial site. Pull request #4617

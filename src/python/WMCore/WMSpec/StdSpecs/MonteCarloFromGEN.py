@@ -72,8 +72,11 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
         Not that there will be LogCollect tasks created for each processing
         task and Cleanup tasks created for each merge task.
         """
-        (self.inputPrimaryDataset, self.inputProcessedDataset,
+        (inputPrimaryDataset, self.inputProcessedDataset,
          self.inputDataTier) = self.inputDataset[1:].split("/")
+
+        if self.inputPrimaryDataset is None:
+            self.inputPrimaryDataset = inputPrimaryDataset
 
         workload = self.createWorkload()
         workload.setDashboardActivity("lheproduction")
@@ -93,7 +96,6 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
 
         procMergeTasks = {}
         for outputModuleName in outputMods.keys():
-            outputModuleInfo = outputMods[outputModuleName]
             mergeTask = self.addMergeTask(procTask, self.procJobSplitAlgo,
                                           outputModuleName)
             procMergeTasks[outputModuleName] = mergeTask
@@ -118,6 +120,9 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
         self.inputDataset = arguments["InputDataset"]
         self.frameworkVersion = arguments["CMSSWVersion"]
         self.globalTag = arguments["GlobalTag"]
+
+        # Optional override arguments
+        self.inputPrimaryDataset = arguments.get("PrimaryDataset")
 
         # The CouchURL and name of the ConfigCache database must be passed in
         # by the ReqMgr or whatever is creating this workflow.

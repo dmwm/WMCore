@@ -80,9 +80,14 @@ class MonteCarloFromGENTest(unittest.TestCase):
         arguments = getTestArguments()
         arguments["ConfigCacheID"] = self.injectConfig()
         arguments["CouchDBName"] = "mclhe_t"
+        arguments["PrimaryDataset"] = "WaitThisIsNotMinimumBias"
         testWorkload = monteCarloFromGENWorkload("TestWorkload", arguments)
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DMWM")
+
+        self.assertEqual(len(testWorkload.listOutputDatasets()), 2)
+        self.assertTrue("/WaitThisIsNotMinimumBias/WMAgentCommissioning10-FilterRECO-v2/RECO" in testWorkload.listOutputDatasets())
+        self.assertTrue("/WaitThisIsNotMinimumBias/WMAgentCommissioning10-FilterALCARECO-v2/ALCARECO" in testWorkload.listOutputDatasets())
 
         testWMBSHelper = WMBSHelper(testWorkload, "MonteCarloFromGEN", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()

@@ -736,23 +736,23 @@ class CondorPlugin(BasePlugin):
         """
         if 'taskPriority' in kwargs and 'requestPriority' in kwargs:
             # Do a priority update
-            priority = (int(kwargs['requestPriority']) + int(kwargs['taskPriority'])*self.maxTaskPriority)
-            command = 'condor_qedit -constraint \'WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"\' ' %(task, workflow)
-            command += 'JobPrio %s' % priority
+            priority = int(kwargs['requestPriority'] + kwargs['taskPriority'] * self.maxTaskPriority)
+            command = 'condor_qedit -constraint \'WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"\' ' % (task, workflow)
+            command += 'JobPrio %i' % priority
             command = shlex.split(command)
             proc = subprocess.Popen(command, stderr = subprocess.PIPE,
                                     stdout = subprocess.PIPE)
             _, stderr = proc.communicate()
             if proc.returncode != 0:
                 # Check if there are actually jobs to update
-                command = 'condor_q -constraint \'WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"\' ' %(task, workflow)
+                command = 'condor_q -constraint \'WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"\' ' % (task, workflow)
                 command += '-format \'WMAgentID:\%d:::\' WMAgent_JobID'
                 command = shlex.split(command)
                 proc = subprocess.Popen(command, stderr = subprocess.PIPE,
                                         stdout = subprocess.PIPE)
                 stdout, _ = proc.communicate()
                 if stdout != '':
-                    msg = 'HTCondor edit failed with exit code %d\n'% proc.returncode
+                    msg = 'HTCondor edit failed with exit code %d\n' % proc.returncode
                     msg += 'Error was: %s' % stderr
                     raise BossAirPluginException(msg)
         return
@@ -902,7 +902,7 @@ class CondorPlugin(BasePlugin):
                     logging.error(str(ex))
                     logging.error("Not setting priority")
 
-            jdl.append("priority = %i\n" % (task_priority + prio*self.maxTaskPriority))
+            jdl.append("priority = %i\n" % int(task_priority + prio * self.maxTaskPriority))
 
             jdl.append("+WMAgent_JobID = %s\n" % job['jobid'])
 

@@ -1,3 +1,8 @@
+0.9.68 to 0.9.69:
+  - PhEDEx improvement. Pull request #4617
+  - Remove custodial site. Pull request #4617
+  - Fix JobPrio update in Condor. Pull request #4616
+
 0.9.67 to 0.9.68:
   - Bugfix unit test. Pull request #4611.
   - Fix pileup dataset location tracking. Pull request #4607 from dballesteros7

@@ -137,13 +137,12 @@ def uploadWorker(input, results, dbsUrl):
             results.put({'name': name, 'success': True})
         except Exception, ex:
             exString = str(ex)
-            if 'Duplicate entry' in exString:
+            if 'Block already exists.' in exString:
                 # Then this is probably a duplicate
                 # Ignore this for now
-                logging.error("Had duplicate entry for block %s\n" % name)
-                logging.error("Ignoring for now.\n")
-                logging.error("Exception: %s\n" % exString)
-                logging.error("Traceback: %s\n" % str(traceback.format_exc()))
+                logging.error("Had duplicate entry for block %s. Ignoring for now." % name)
+                logging.debug("Exception: %s" % exString)
+                logging.debug("Traceback: %s" % str(traceback.format_exc()))
                 results.put({'name': name, 'success': True})
             else:
                 msg =  "Error trying to process block %s through DBS.\n" % name

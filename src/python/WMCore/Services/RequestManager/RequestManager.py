@@ -175,3 +175,14 @@ class RequestManager(Service):
         # Can't use api url as assignment page has a lot of unique logic.
         return self._getResult('../assign/handleAssignmentPage',
                                 args = kwargs, verb = 'POST', decoder = False)
+    
+    def updateRequestStatus(self, requestName, status):
+        args = {'requestName': requestName, 'status': status}
+        callname = 'request'
+        return self._getResult(callname, args = args, verb = "PUT")
+    
+    def putRequestStats(self, request, stats):
+        args = {'requestName': request, 'stats': JsonWrapper.dumps(stats)}
+        callname = 'request'
+        return self._getResult(callname, args = args, verb = "PUT")
+        

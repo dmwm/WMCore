@@ -26,7 +26,11 @@ StatusList = [
     "closed-out",
     "announced",
     "aborted",
-    "rejected"
+    "aborted-completed",
+    "rejected",
+    "normal-archived",
+    "aborted-archived",
+    "rejected-archived"
     ]
 
 NextStatus = {
@@ -46,7 +50,11 @@ NextStatus = {
  "epic-FAILED" : ["epic-FAILED"],
  "completed" : ["completed", "closed-out", "rejected"],
  "closed-out" : ["announced"],
- "announced" : [],
- "aborted" : ["aborted", "testing-approved", "assigned", "rejected", "failed"],
- "rejected" : ["rejected"]
+ "announced" : ["normal-archived"],
+ "aborted" : ["aborted", "testing-approved", "assigned", "rejected", "failed", "aborted-completed"],
+ "rejected" : ["rejected", "rejected-archived"],
+ "aborted-completed": ["aborted-archived"],
+ "normal-archived":[],
+ "aborted-archived":[],
+ "rejected-archived":[]
 }

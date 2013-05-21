@@ -133,6 +133,7 @@ def modifyConfiguration(config, **args):
         config.TaskArchiver.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
         config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
         config.TaskArchiver.centralWMStatsURL = args["wmstats_url"]
+        config.TaskArchiver.ReqMgrServiceURL = args["reqmgr_url"]
 
 
     if hasattr(config,"AsyncTransfer"):
@@ -221,9 +222,11 @@ def modifyConfiguration(config, **args):
         if args.get('workqueue_db_name'):
             config.WorkQueueManager.dbname = args['workqueue_db_name']
             config.WorkQueueManager.inboxDatabase = config.WorkQueueManager.dbname + '_inbox'
-        config.WorkQueueManager.reqMgrConfig['endpoint'] = "http://%s:%s/reqmgr/reqMgr/" % (args["reqmgr_hostname"], args["reqmgr_port"])
+        reqMgrSvc = "http://%s:%s/reqmgr/reqMgr/" % (args["reqmgr_hostname"], args["reqmgr_port"])
+        config.WorkQueueManager.reqMgrConfig['endpoint'] = reqMgrSvc
         config.WorkQueueManager.queueParams['WMStatsCouchUrl'] = "%s/%s" % (config.WorkQueueManager.couchurl.rstrip(), config.WorkQueueManager.wmstatDBName)
-
+        config.WorkQueueManager.queueParams['ReqMgrServiceURL'] = reqMgrSvc
+        
     # Custom Local WorkQueue
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'LocalQueue':
         if args.get("global_workqueue_url", None):
@@ -265,7 +268,7 @@ def main(argv=None):
              "workqueue_db_name=", "cs_hostname=", "cs_port=", "host_dn=", "couch_url=",
              "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=",
              "ufc_service_url=", "ufc_cachedir=", "client_mapping=", "wmbs_service_port=",
-             "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy="])
+             "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=", "reqmgr_url="])
 
         except getopt.error, msg:
             raise Usage(msg)
@@ -285,7 +288,7 @@ def main(argv=None):
                           '--sb_hostname', '--sb_port', '--sb_basepath', '--ufc_hostname',
                           '--ufc_port', '--ufc_service_url', '--ufc_cachedir',
                           '--client_mapping', '--wmbs_service_port', '--workload_summary_url',
-                          '--wmstats_url', '--ops_proxy'):
+                          '--wmstats_url', '--ops_proxy', '--reqmgr_url'):
 
                 parameters[option[2:]] = value
 

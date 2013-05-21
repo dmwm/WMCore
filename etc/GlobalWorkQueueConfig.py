@@ -69,5 +69,6 @@ config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
 config.WorkQueueManager.level = "GlobalQueue"
 config.WorkQueueManager.pollInterval = 600
 config.WorkQueueManager.queueParams = {'WMStatsCouchUrl': "%s/%s" % (config.WorkQueueManager.couchurl.rstrip(), config.WorkQueueManager.wmstatDBName)}
+config.WorkQueueManager.queueParams['Config'] = config
 config.WorkQueueManager.reqMgrConfig = {'teamName' : config.Agent.teamName,
                                         'endpoint': "%s/reqMgr/" % reqMgrUrl}

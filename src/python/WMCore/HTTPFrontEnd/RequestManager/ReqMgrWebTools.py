@@ -708,3 +708,8 @@ def retrieveResubmissionChildren(requestName, couchUrl, couchDBName):
         childrenRequestNames.append(child['id'])
         childrenRequestNames.extend(retrieveResubmissionChildren(child['id'], couchUrl, couchDBName))
     return childrenRequestNames
+
+def updateRequestStats(requestName, stats, couchURL, couchDBName):
+    couchDB = Database(couchDBName, couchURL)
+    return couchDB.updateDocument(requestName, 'ReqMgr', 'totalstats',
+                                         fields=stats)

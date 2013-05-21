@@ -259,6 +259,22 @@ class WMBSHelper(WMConnectionBase):
         """
         _createSubscription_
 
+        Create subscriptions in the database.
+        This includes workflows in WMBS and DBSBuffer, output maps, datasets
+        and phedex subscriptions, and filesets for each task below and including
+        the given task.
+        """
+        sub = self._createSubscriptionsInWMBS(task, fileset, alternativeFilesetClose)
+
+        self._createWorkflowsInDBSBuffer()
+        self._createDatasetSubscriptionsInDBSBuffer()
+
+        return sub
+
+    def _createSubscriptionsInWMBS(self, task, fileset, alternativeFilesetClose = False):
+        """
+        __createSubscriptionsInWMBS_
+
         Create subscriptions in WMBS for all the tasks in the spec.  This
         includes filesets, workflows and the output map for each task.
         """
@@ -316,7 +332,7 @@ class WMBSHelper(WMConnectionBase):
                             if primaryDataset != None:
                                 self.mergeOutputMapping[mergedOutputFileset.id] = primaryDataset
 
-                        self.createSubscription(childTask, outputFileset, alternativeFilesetClose)
+                        self._createSubscriptionsInWMBS(childTask, outputFileset, alternativeFilesetClose)
 
                 if mergedOutputFileset == None:
                     workflow.addOutput(outputModuleName, outputFileset,
@@ -388,9 +404,6 @@ class WMBSHelper(WMConnectionBase):
 
         self.createTopLevelFileset()
         sub = self.createSubscription(self.topLevelTask, self.topLevelFileset)
-
-        self._createWorkflowsInDBSBuffer()
-        self._createDatasetSubscriptionsInDBSBuffer()
 
         if block != None:
             logging.info('"%s" Injecting block %s (%d files) into wmbs' % (self.wmSpec.name(),

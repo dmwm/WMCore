@@ -58,7 +58,7 @@ class StoreResultsTest(unittest.TestCase):
 
         testWMBSHelper = WMBSHelper(testWorkload, "StoreResults", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         testWorkflow = Workflow(name = "TestWorkload",
                                 task = "/TestWorkload/StoreResults")

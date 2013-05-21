@@ -427,7 +427,7 @@ class RelValMCTest(unittest.TestCase):
 
         testWMBSHelper = WMBSHelper(testWorkload, "Generation", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         # now run the tests on single workload instance installed into WMBS
         # each of the subtests is dealing with specific tasks
@@ -462,7 +462,7 @@ class RelValMCTest(unittest.TestCase):
 
         testWMBSHelper = WMBSHelper(testWorkload, "Generation", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         # now run the tests on single workload instance installed into WMBS
         # each of the subtests is dealing with specific tasks

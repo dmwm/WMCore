@@ -96,12 +96,19 @@ class StartPolicyInterface(PolicyInterface):
             raise error
 
     def newQueueElement(self, **args):
+        # DBS Url may not be available in the initial task
+        # but in the pileup data (MC pileup)
+        dbsUrl = self.initialTask.dbsUrl()
+        if dbsUrl is None and self.pileupData:
+            # Get the first DBS found
+            dbsUrl = self.wmspec.listPileupDatasets().keys()[0]
+
         args.setdefault('Status', 'Available')
         args.setdefault('WMSpec', self.wmspec)
         args.setdefault('Task', self.initialTask)
         args.setdefault('RequestName', self.wmspec.name())
         args.setdefault('TaskName', self.initialTask.name())
-        args.setdefault('Dbs', self.initialTask.dbsUrl())
+        args.setdefault('Dbs', dbsUrl)
         args.setdefault('SiteWhitelist', self.initialTask.siteWhitelist())
         args.setdefault('SiteBlacklist', self.initialTask.siteBlacklist())
         args.setdefault('EndPolicy', self.wmspec.endPolicyParameters())

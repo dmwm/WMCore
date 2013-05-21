@@ -1525,12 +1525,14 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA' : 1}, {})), 1)
         self.assertEqual(len(self.localQueue), 0)
 
-    def testPileupOnProdution(self):
+    def testPileupOnProduction(self):
         """Test that we can split properly a Production workflow with pileup"""
         specfile = self.productionPileupSpec.specUrl()
         # Sanity check on queueWork only
         self.assertEqual(1, self.globalQueue.queueWork(specfile))
         self.assertEqual(1, len(self.globalQueue))
+        self.assertEqual(len(self.globalQueue.backend.getActivePileupData()),1)
+        self.assertNotEqual(self.globalQueue.backend.getActivePileupData()[0]['dbs_url'], None)
 
     def testPrioritiesWorkPolling(self):
         """Test how the priorities and current jobs in the queue affect the workqueue behavior

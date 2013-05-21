@@ -38,6 +38,7 @@ from WMCore.ACDC.CouchCollection import CouchCollection
 from WMCore.ACDC.CouchFileset import CouchFileset
 from WMCore.DataStructs.File import File
 from WMCore.Services.UUID import makeUUID
+from WMCore.Services.RequestManager.RequestManager import RequestManager
 
 from WMCore_t.RequestManager_t import utils
 
@@ -100,6 +101,12 @@ class ReqMgrTest(RESTBaseUnitTest):
                                  "ACDC", "GroupUser")
         reqMgrHost = self.config.getServerUrl()
         self.jsonSender = JSONRequests(reqMgrHost)
+<<<<<<< HEAD
+=======
+        self.params = {}
+        self.params['endpoint'] = reqMgrHost
+        self.reqService = RequestManager(self.params)
+>>>>>>> reqmgr_wmstats_combine
 
     def initialize(self):
         self.config = RequestManagerConfig(
@@ -846,17 +853,18 @@ class ReqMgrTest(RESTBaseUnitTest):
 
             
     def testM_PutRequestStats(self):
-        userName     = 'Taizong'
-        groupName    = 'Li'
-        teamName     = 'Tang'
+        userName     = 'Kobe'
+        groupName    = 'Bryant'
+        teamName     = 'Lakers'
         schema       = utils.getAndSetupSchema(self,
                                                userName = userName,
                                                groupName = groupName,
                                                teamName = teamName)
-        result = self.jsonSender.put('request/testRequest', schema)
+        result = self.jsonSender.put("request", schema)[0]
+        originalRequest = result['RequestName']
         stats = {'total_jobs': 100, 'input_events': 100, 'input_lumis': 100, 'input_num_files': 100}
-        result = self.jsonSender.put('requestStats/testRequest?stats=%s' % json.dumps(stats))
-        self.assertEqual(result, True)
+        result = self.reqService.putRequestStats(originalRequest, stats)
+        self.assertEqual(result['RequestName'], originalRequest)
 
 if __name__=='__main__':
     unittest.main()

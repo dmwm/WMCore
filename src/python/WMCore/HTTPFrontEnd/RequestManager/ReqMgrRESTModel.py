@@ -99,8 +99,8 @@ class ReqMgrRESTModel(RESTModel):
                        args = ['campaign'],
                        secured=True, validation = [self.isalnum], expires = 0)
         self._addMethod('PUT', 'request', self.putRequest,
-                       args = ['requestName', 'status', 'priority'],
-                       secured=True, validation = [self.isalnum, self.reqPriority])
+                       args = ['requestName', 'status', 'priority', 'stats'],
+                       secured=True, validation = [self.isalnumExceptStats, self.reqPriority, self.validateStats])
         self._addMethod('PUT', 'clone', self.cloneRequest,
                        args = ['requestName'],
                        secured=True, validation = [self.isalnum])
@@ -208,6 +208,13 @@ class ReqMgrRESTModel(RESTModel):
         for v in index.values():
             WMCore.Lexicon.identifier(v)
         return index
+    
+    def isalnumExceptStats(self, index):
+        """ Validates that all input is alphanumeric,
+            with spaces and underscores tolerated"""
+        if index.has_key('stats'):
+            return index
+        return self.isalnum(index);
 
     def getDataset(self, prim, proc, tier):
         """ If only prim exists, assume it's urlquoted.
@@ -442,7 +449,7 @@ class ReqMgrRESTModel(RESTModel):
 
     # had no permission control before, security issue fix
     @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
-    def putRequest(self, requestName=None, status=None, priority=None):
+    def putRequest(self, requestName=None, status=None, priority=None, stats=None):
         request = None
         if requestName:
             try:
@@ -502,7 +509,12 @@ class ReqMgrRESTModel(RESTModel):
                     self.error("RuntimeError while changeStatus: reason: %s" % ex)
                     raise cherrypy.HTTPError(403, "Failed to change status: %s" % str(ex))
         if priority != None:
-            Utilities.changePriority(requestName, priority, self.wmstatWriteURL) 
+            Utilities.changePriority(requestName, priority, self.wmstatWriteURL)
+        if stats != None:
+            Utilities.updateRequestStats(requestName = requestName,
+                                         stats = stats,
+                                         couchURL = self.couchUrl,
+                                         couchDBName = self.workloadDBName) 
         return request
     
     
@@ -618,17 +630,6 @@ class ReqMgrRESTModel(RESTModel):
         else:
             Campaign.addCampaign(campaign)
 
-    def putRequestStats(self, request, stats):
-        requestID = GetRequest.requestID(request)
-        if requestID:
-            stats = Utilities.unidecode(JsonWrapper.loads(stats))
-            Utilities.updateRequestStats(requestName = request,
-                                         stats = stats,
-                                         couchURL = self.couchUrl,
-                                         couchDBName = self.workloadDBName)
-            return True;
-        else:
-            return False;
 #    def postRequest(self, requestName, events_written=None, events_merged=None,
 #                    files_written=None, files_merged = None, dataset=None):
     def postRequest(self, requestName, **kwargs):
@@ -693,10 +694,14 @@ class ReqMgrRESTModel(RESTModel):
 
     def validateStats(self, index):
         """ Check the values for the updates """
+
+        if not index.has_key('stats'):
+            return index
+        index['stats'] = Utilities.unidecode(JsonWrapper.loads(index['stats']))
         for k in ['input_lummis', 'input_num_files',
                   'input_events', 'total_jobs']:
-            if k in index:
-                index[k] = int(index[k])
+            if k in index['stats']:
+                index['stats'][k] = int(index['stats'][k])
         return index
     
     # had no permission control before, security issue fix

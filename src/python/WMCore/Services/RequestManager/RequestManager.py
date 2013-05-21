@@ -182,7 +182,7 @@ class RequestManager(Service):
         return self._getResult(callname, args = args, verb = "PUT")
     
     def putRequestStats(self, request, stats):
-        args = {'request': request, 'stats': JsonWrapper.dumps(stats)}
-        callname = 'requestStats'
+        args = {'requestName': request, 'stats': JsonWrapper.dumps(stats)}
+        callname = 'request'
         return self._getResult(callname, args = args, verb = "PUT")
         

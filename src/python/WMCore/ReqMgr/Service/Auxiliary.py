@@ -19,7 +19,7 @@ from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
 from WMCore.REST.Validation import validate_str
 
-import WMCore.reqmgr.service.regexp as rx
+import WMCore.ReqMgr.Service.RegExp as rx
 
 
 class HelloWorld(RESTEntity):
@@ -73,6 +73,23 @@ class Info(ReqMgrBaseRestEntity):
     @restcall
     @tools.expires(secs=-1)
     def get(self):
+        # authorization / access control:
+        # cherrypy (modified CMS web version here) can read this information
+        # from HTTP headers. CMS web frontend puts this information into
+        # headers as read from SiteDB (or on private VM from a fake
+        # SiteDB file)
+        print "DN: %s" % cherrypy.request.user['dn']
+        print "Requestor/login: %s" % cherrypy.request.user['login']
+        print "cherrypy.request: %s" % cherrypy.request
+        print "cherrypy.request.user: %s" % cherrypy.request.user
+        # from WMCore.REST.Auth import authz_match
+        # authz_match(role=["Global Admin"], group=["global"])
+        # check SiteDB/DataWhoAmI.py
+        
+        # implement as authentication decorator over modification calls
+        # check config.py main.authz_defaults and SiteDB
+        # (only Admin: ReqMgr to be able to modify stuff)
+        
         wmcore_reqmgr_version = WMCore.__version__
         
         db = self.db_handler.get_db("reqmgr_workload_cache")

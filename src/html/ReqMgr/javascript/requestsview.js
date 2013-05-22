@@ -13,8 +13,8 @@
 var requestsView = 
 {
 	mainAppUrl: "/reqmgr2",
-    closedCellInnerHTML: "&nbsp;<img src=\"/reqmgr2/ui/static/?html/reqmgr/img/details_closed.gif\"</img>&nbsp;",
-    openCellInnerHTML: "&nbsp;<img src=\"/reqmgr2/ui/static/?html/reqmgr/img/details_open.gif\"</img>",				
+    closedCellInnerHTML: "&nbsp;<img src=\"/reqmgr2/ui/static/?html/ReqMgr/img/details_closed.gif\"</img>&nbsp;",
+    openCellInnerHTML: "&nbsp;<img src=\"/reqmgr2/ui/static/?html/ReqMgr/img/details_open.gif\"</img>",				
     
     /* 
      * main page building & display

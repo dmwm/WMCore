@@ -5,7 +5,7 @@ Main ReqMgr web page handler.
 
 from WMCore.REST.Server import RESTFrontPage
 
-import WMCore.reqmgr.service.regexp as rx
+import WMCore.ReqMgr.Service.RegExp as rx
 
 
 class FrontPage(RESTFrontPage):
@@ -19,7 +19,7 @@ class FrontPage(RESTFrontPage):
         """
         
         # must be in a static content directory
-        frontpage = "html/reqmgr/index.html"
+        frontpage = "html/ReqMgr/index.html"
         roots = \
         {
             "html":

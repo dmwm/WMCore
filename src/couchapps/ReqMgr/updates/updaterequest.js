@@ -2,13 +2,28 @@
 // input: valueKey (what to change), value - new value
 function(doc, req)
 {
-	log(req);
-	// req.query is dictionary fields into the 
-	// CMSCouch.Database.updateDocument() method, which is a dictionary
-	var newValues = req.query;
-	for (key in newValues)
-	{
-		doc[key] = newValues[key];  
-	}
-    return [doc, "OK"]	
+    log(req);
+
+    function updateTransition() {
+        var currentTS =  Math.round((new Date()).getTime() / 1000);
+        var statusObj = {"Status": doc.RequestStatus, "UpdateTime": currentTS};
+        
+        if (!doc.RequestTransition) {
+            doc.RequestTransition = new Array();
+            doc.RequestTransition.push(statusObj);
+        } else {
+            doc.RequestTransition.push(statusObj);
+        }
+    }
+    // req.query is dictionary fields into the 
+    // CMSCouch.Database.updateDocument() method, which is a dictionary
+    var newValues = req.query;
+    for (key in newValues)
+    {   
+        doc[key] = newValues[key];
+        if (key == "RequestStatus") {
+            updateTransition();
+        }
+    }
+    return [doc, "OK"];
 }

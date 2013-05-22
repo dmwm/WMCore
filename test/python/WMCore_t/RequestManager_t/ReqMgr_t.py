@@ -38,6 +38,7 @@ from WMCore.ACDC.CouchCollection import CouchCollection
 from WMCore.ACDC.CouchFileset import CouchFileset
 from WMCore.DataStructs.File import File
 from WMCore.Services.UUID import makeUUID
+from WMCore.Services.RequestManager.RequestManager import RequestManager
 
 from WMCore_t.RequestManager_t import utils
 
@@ -100,6 +101,10 @@ class ReqMgrTest(RESTBaseUnitTest):
                                  "ACDC", "GroupUser")
         reqMgrHost = self.config.getServerUrl()
         self.jsonSender = JSONRequests(reqMgrHost)
+
+        self.params = {}
+        self.params['endpoint'] = reqMgrHost
+        self.reqService = RequestManager(self.params)
 
     def initialize(self):
         self.config = RequestManagerConfig(
@@ -840,6 +845,21 @@ class ReqMgrTest(RESTBaseUnitTest):
             testCollection.setOwner(owner)
             testCollection.populate()
             self.assertEqual(len(testCollection["filesets"]), 0)
+
+            
+    def testM_PutRequestStats(self):
+        userName     = 'Kobe'
+        groupName    = 'Bryant'
+        teamName     = 'Lakers'
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
+        result = self.jsonSender.put("request", schema)[0]
+        originalRequest = result['RequestName']
+        stats = {'total_jobs': 100, 'input_events': 100, 'input_lumis': 100, 'input_num_files': 100}
+        result = self.reqService.putRequestStats(originalRequest, stats)
+        self.assertEqual(result['RequestName'], originalRequest)
 
 if __name__=='__main__':
     unittest.main()

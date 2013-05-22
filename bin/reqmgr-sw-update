@@ -16,7 +16,7 @@ than consult TC at every request injection.
 import sys
 import os
 
-from WMCore.reqmgr.service.auxiliary import update_software
+from WMCore.ReqMgr.Service.Auxiliary import update_software
 
 
 if len(sys.argv) < 2:

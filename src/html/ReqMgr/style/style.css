@@ -1,7 +1,7 @@
 body
 {
 	font-family: Verdana, Arial, Helvetica, sans-serif;
-	background-image:url('/reqmgr2/ui/static/?html/reqmgr/img/gradientfromtop.gif');
+	background-image:url('/reqmgr2/ui/static/?html/ReqMgr/img/gradientfromtop.gif');
 	background-repeat:repeat-x;	
 }
 
@@ -63,7 +63,7 @@ div.loadmorebottom
 
 div.loadmorebottomloading
 {
-	background-image:url('/reqmgr2/ui/static/?html/reqmgr/img/loading-small.gif');
+	background-image:url('/reqmgr2/ui/static/?html/ReqMgr/img/loading-small.gif');
 	background-repeat:no-repeat;
 	background-position:center; 
 }
@@ -78,7 +78,7 @@ div.loadmorebottomloading
     top:0px;
     left:0px;
     display:block;
-    background:transparent url('/reqmgr2/ui/static/?html/reqmgr/img/shadow.gif') repeat;
+    background:transparent url('/reqmgr2/ui/static/?html/ReqMgr/img/shadow.gif') repeat;
 }
 
 

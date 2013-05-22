@@ -11,8 +11,8 @@ from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
 from WMCore.REST.Validation import validate_str
 
-from WMCore.reqmgr.service.auxiliary import ReqMgrBaseRestEntity
-import WMCore.reqmgr.service.regexp as rx
+from WMCore.ReqMgr.Service.Auxiliary import ReqMgrBaseRestEntity
+import WMCore.ReqMgr.Service.RegExp as rx
 
 
 class Request(ReqMgrBaseRestEntity):

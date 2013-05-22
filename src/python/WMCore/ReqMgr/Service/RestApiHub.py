@@ -10,13 +10,13 @@ from WMCore.Configuration import Configuration
 from WMCore.REST.Server import RESTApi
 from WMCore.REST.Format import RawFormat
 
-from WMCore.reqmgr.service.couchdb import ReqMgrCouchDB
-from WMCore.reqmgr.service.auxiliary import HelloWorld
-from WMCore.reqmgr.service.auxiliary import Info
-from WMCore.reqmgr.service.auxiliary import Group
-from WMCore.reqmgr.service.auxiliary import Team
-from WMCore.reqmgr.service.auxiliary import Software
-from WMCore.reqmgr.service.request import Request
+from WMCore.ReqMgr.Service.Couch import ReqMgrCouch
+from WMCore.ReqMgr.Service.Auxiliary import HelloWorld
+from WMCore.ReqMgr.Service.Auxiliary import Info
+from WMCore.ReqMgr.Service.Auxiliary import Group
+from WMCore.ReqMgr.Service.Auxiliary import Team
+from WMCore.ReqMgr.Service.Auxiliary import Software
+from WMCore.ReqMgr.Service.Request import Request
 
 
 
@@ -37,7 +37,7 @@ class RestApiHub(RESTApi):
     cherrypy.log("ReqMgr entire configuration:\n%s" % Configuration.getInstance())    
     cherrypy.log("ReqMgr REST hub configuration subset:\n%s" % config)
     
-    db_handler = ReqMgrCouchDB(config) 
+    db_handler = ReqMgrCouch(config) 
     
     # Makes raw format as default
     #self.formats.insert(0, ('application/raw', RawFormat()))

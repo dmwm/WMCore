@@ -19,7 +19,7 @@ from WMCore.Database.CMSCouch import CouchServer, Database, Document
 from WMCore.Database.CMSCouch import CouchError, CouchNotFoundError
 
 
-class ReqMgrCouchDB(object):
+class ReqMgrCouch(object):
     
     def _create_conn(self, db_name):
         cherrypy.log("Creating CouchDB connection to '%s' ... " % db_name)

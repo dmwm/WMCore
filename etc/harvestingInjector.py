@@ -139,6 +139,6 @@ for workloadTask in workload.taskIterator():
     injectFilesFromDBS(inputFileset, inputDatasetPath, options.RunWhitelist)
 
     myWMBSHelper = WMBSHelper(workload)
-    myWMBSHelper.createSubscription(workloadTash.getPathName())
+    myWMBSHelper._createSubscriptionsInWMBS(workloadTash.getPathName())
 
 myThread.transaction.commit()

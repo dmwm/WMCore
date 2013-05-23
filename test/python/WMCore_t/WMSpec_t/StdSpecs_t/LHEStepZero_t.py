@@ -54,7 +54,7 @@ class LHEStepZeroTest(MonteCarloTest):
 
         testWMBSHelper = WMBSHelper(testWorkload, "Production", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         self._commonMonteCarloTest()
 

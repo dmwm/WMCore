@@ -308,7 +308,7 @@ class TaskChainTests(unittest.TestCase):
 
         testWMBSHelper = WMBSHelper(self.workload, "GenSim", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         firstTask = self.workload.getTaskByPath("/PullingTheChain/GenSim")
 
@@ -545,7 +545,7 @@ class TaskChainTests(unittest.TestCase):
 
         testWMBSHelper = WMBSHelper(self.workload, "DigiHLT", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
 
         self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT"), arguments['Task1'], arguments)
@@ -681,7 +681,7 @@ class TaskChainTests(unittest.TestCase):
 
         testWMBSHelper = WMBSHelper(self.workload, "DigiHLT", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
 
         self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT"), arguments['Task1'], arguments)

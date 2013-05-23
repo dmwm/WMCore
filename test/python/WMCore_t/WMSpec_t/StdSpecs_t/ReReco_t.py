@@ -126,7 +126,7 @@ class ReRecoTest(unittest.TestCase):
 
         testWMBSHelper = WMBSHelper(testWorkload, "DataProcessing", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         skimWorkflow = Workflow(name = "TestWorkload",
                                 task = "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim")
@@ -316,7 +316,7 @@ class ReRecoTest(unittest.TestCase):
 
         testWMBSHelper = WMBSHelper(testWorkload, "DataProcessing", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         skimWorkflow = Workflow(name = "TestWorkload",
                                 task = "/TestWorkload/DataProcessing/SomeSkim")

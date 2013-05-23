@@ -205,7 +205,7 @@ class Tier0PluginTest(unittest.TestCase):
 
         wmbsHelper = WMBSHelper(workload, 'Reco', 'SomeBlock', cachepath = self.testDir)
         wmbsHelper.createTopLevelFileset()
-        wmbsHelper.createSubscription(wmbsHelper.topLevelTask, wmbsHelper.topLevelFileset)
+        wmbsHelper._createSubscriptionsInWMBS(wmbsHelper.topLevelTask, wmbsHelper.topLevelFileset)
 
         self.stateMap = {'AlcaSkim' : [],
                          'Merge' : [],

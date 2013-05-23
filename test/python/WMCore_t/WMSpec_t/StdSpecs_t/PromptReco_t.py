@@ -79,7 +79,7 @@ class PromptRecoTest(unittest.TestCase):
 
         testWMBSHelper = WMBSHelper(testWorkload, "Reco", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         recoWorkflow = Workflow(name = "TestWorkload",
                                 task = "/TestWorkload/Reco")
@@ -409,7 +409,7 @@ class PromptRecoTest(unittest.TestCase):
 
         testWMBSHelper = WMBSHelper(testWorkload, "Reco", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         recoWorkflow = Workflow(name = "TestWorkload",
                                 task = "/TestWorkload/Reco")

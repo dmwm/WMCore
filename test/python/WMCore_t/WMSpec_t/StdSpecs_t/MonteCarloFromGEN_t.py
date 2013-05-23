@@ -86,7 +86,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
 
         testWMBSHelper = WMBSHelper(testWorkload, "MonteCarloFromGEN", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         procWorkflow = Workflow(name = "TestWorkload",
                                 task = "/TestWorkload/MonteCarloFromGEN")

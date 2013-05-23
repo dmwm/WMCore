@@ -124,7 +124,7 @@ class ReDigiTest(unittest.TestCase):
 
         testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         topLevelFileset = Fileset(name = "TestWorkload-StepOneProc-SomeBlock")
         topLevelFileset.loadData()
@@ -654,7 +654,7 @@ class ReDigiTest(unittest.TestCase):
         
         testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         self.verifyDiscardRAW()
         return
@@ -690,7 +690,7 @@ class ReDigiTest(unittest.TestCase):
 
         testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         self.verifyKeepAOD()
         return
@@ -718,7 +718,7 @@ class ReDigiTest(unittest.TestCase):
         testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock", cachepath = self.testInit.testDir)
 
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         self.verifyDiscardRAW()
         return
@@ -745,7 +745,7 @@ class ReDigiTest(unittest.TestCase):
         testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock", cachepath = self.testInit.testDir)
 
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         self.verifyKeepAOD()
         return

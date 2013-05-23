@@ -72,7 +72,7 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         self.testInit.clearDatabase()
         EmulatorHelper.resetEmulators()
 
-    def createConfig(self, safeMode = False):
+    def createConfig(self, tier0Mode = False):
         """
         _createConfig_
 
@@ -89,11 +89,11 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         config.PhEDExInjector.group = "Saturn"
         config.PhEDExInjector.pollInterval = 30
         config.PhEDExInjector.subscribeInterval = 60
-        config.PhEDExInjector.safeMode = safeMode
+        config.PhEDExInjector.tier0Mode = tier0Mode
 
         return config
 
-    def stuffDatabase(self, safeMode = False):
+    def stuffDatabase(self, tier0Mode = False):
         """
         _stuffDatabase_
 
@@ -220,17 +220,17 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         datasetB = DBSBufferDataset(path = self.testDatasetB)
         workload = WMWorkloadHelper()
         workload.load(os.path.join(getTestBase(), 'WMComponent_t/PhEDExInjector_t/specs/TestWorkload.pkl'))
-        if safeMode:
+        if tier0Mode:
             # Override the settings
-            workload.setSubscriptionInformation(custodialSites = ["T1_UK_RAL", "T1_US_FNAL"],
+            workload.setSubscriptionInformation(custodialSites = ["T0_CH_CERN", "T1_US_FNAL"],
                                                 nonCustodialSites = ["T3_CO_Uniandes"],
-                                                priority = "High", custodialSubType = "Move",
-                                                autoApproveSites = [],
+                                                priority = "Normal", custodialSubType = "Replica",
+                                                autoApproveSites = ["T0_CH_CERN"],
                                                 dataTier = "RECO")
-            workload.setSubscriptionInformation(custodialSites = ["T1_UK_RAL"],
+            workload.setSubscriptionInformation(custodialSites = ["T0_CH_CERN", "T1_UK_RAL"],
                                                 nonCustodialSites = [],
                                                 autoApproveSites = [],
-                                                priority = "Low", custodialSubType = "Move",
+                                                priority = "High", custodialSubType = "Replica",
                                                 dataTier = "RAW")
         insertSubAction.execute(datasetA.exists(), workload.getSubscriptionInformation()[self.testDatasetA])
         insertSubAction.execute(datasetB.exists(), workload.getSubscriptionInformation()[self.testDatasetB])
@@ -359,18 +359,17 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
 
         return
 
-    def testSafeModeSubscriptions(self):
+    def testTier0ModeSubscriptions(self):
         """
-        _testSafeModeSubscriptions_
+        _testTier0ModeSubscriptions_
 
         Tests that we can make custodial/non-custodial subscriptions on
-        safe operation mode, custodial moves are made on block level only
-        while the
+        tier0 operation mode, custodial moves are made on block level.
         """
 
-        self.stuffDatabase(safeMode = True)
+        self.stuffDatabase(tier0Mode = True)
         self.stuffWMBS()
-        config = self.createConfig(safeMode = True)
+        config = self.createConfig(tier0Mode = True)
         subscriber = PhEDExInjectorSubscriber(config)
         subscriber.setup({})
         subscriber.algorithm({})
@@ -379,54 +378,71 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         subscriptions = phedexInstance.subRequests
 
         # Let's check /BogusPrimary/Run2012Z-PromptReco-v1/RECO
-        # According to the spec, this should be custodial at T1_US_FNAL
-        # Non-custodial at T1_UK_RAL and T3_CO_Uniandes
-        # Autoapproved in all sites
+        # According to the spec, this should be custodial at T0_CH_CERN and T1_US_FNAL
+        # Non-custodial at T2_US_Vanderbilt
+        # Autoapproved at CERN
         # Priority is normal
         self.assertTrue(self.testDatasetA in subscriptions, "Dataset A was not subscribed")
         subInfoA = subscriptions[self.testDatasetA]
-        self.assertEqual(len(subInfoA), 3, "Dataset A was not subscribed to all sites")
+        self.assertEqual(len(subInfoA), 4, "Dataset A was not subscribed to all sites")
         for subInfo in subInfoA:
             site = subInfo["node"]
-            self.assertEqual(subInfo["priority"], "high", "Wrong priority for subscription")
-            if site == "T1_UK_RAL_MSS" or site == "T1_US_FNAL_MSS":
+            if subInfo['level'] == 'block':
+                self.assertEqual(subInfo["custodial"], "y", "Wrong custodiality for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["request_only"], "n", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["move"], "y", "Wrong subscription type for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["node"], "T0_CH_CERN_MSS", "Wrong node for dataset A, block subscription.")
+                self.assertEqual(subInfo["priority"], "high", "Wrong priority for subscription")
+            elif site == "T0_CH_CERN_MSS":
+                self.assertEqual(subInfo["custodial"], "y", "Wrong custodiality for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["request_only"], "n", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["move"], "n", "Wrong subscription type for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["level"], "dataset", "Wrong level for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["priority"], "normal", "Wrong priority for subscription")
+            elif site == "T1_US_FNAL_MSS":
                 self.assertEqual(subInfo["custodial"], "y", "Wrong custodiality for dataset A at %s" % subInfo["node"])
                 self.assertEqual(subInfo["request_only"], "y", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
-                self.assertEqual(subInfo["move"], "y", "Wrong subscription type for dataset A at %s" % subInfo["node"])
-                self.assertEqual(subInfo["level"], "block", "Wrong level for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["move"], "n", "Wrong subscription type for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["level"], "dataset", "Wrong level for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["priority"], "normal", "Wrong priority for subscription")
             elif site == "T3_CO_Uniandes":
                 self.assertEqual(subInfo["custodial"], "n", "Wrong custodiality for dataset A at %s" % subInfo["node"])
                 self.assertEqual(subInfo["request_only"], "y", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
                 self.assertEqual(subInfo["move"], "n", "Wrong subscription type for dataset A at %s" % subInfo["node"])
                 self.assertEqual(subInfo["level"], "dataset", "Wrong level for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["priority"], "normal", "Wrong priority for subscription")
             else:
                 self.fail("Dataset A was subscribed  to a wrong site %s" % site)
+        self.assertEqual(len([x for x in subInfoA if x['level'] == 'block']), 1)
 
         # Now check /BogusPrimary/CRUZET11-v1/RAW
-        # According to the spec, this is not custodial anywhere
-        # Non-custodial at T1_UK_RAL and T2_CH_CERN
+        # According to the spec, custodial to T0_CH_CERN_MSS and T1_UK_RAL_MSS
         # Request only at both sites and with high priority
-        self.assertTrue(self.testDatasetB not in subscriptions)
+        self.assertTrue(self.testDatasetB in subscriptions)
+        subInfoB = subscriptions[self.testDatasetB]
+        self.assertEqual(len(subInfoB), 2, "Dataset B was not subscribed to all sites")
+        for subInfo in subInfoB:
+            site = subInfo["node"]
+            if site == "T0_CH_CERN_MSS" or site == "T1_UK_RAL_MSS":
+                self.assertEqual(subInfo["custodial"], "y", "Wrong custodiality for dataset B at %s" % subInfo["node"])
+                self.assertEqual(subInfo["request_only"], "y", "Wrong requestOnly for dataset B at %s" % subInfo["node"])
+                self.assertEqual(subInfo["move"], "n", "Wrong subscription type for dataset B at %s" % subInfo["node"])
+                self.assertEqual(subInfo["level"], "dataset", "Wrong level for dataset B at %s" % subInfo["node"])
+                self.assertEqual(subInfo["priority"], "high", "Wrong priority for subscription")
+            else:
+                self.fail("Dataset B was subscribed  to a wrong site %s" % site)
 
         myThread = threading.currentThread()
         result = myThread.dbi.processData("SELECT COUNT(*) FROM dbsbuffer_dataset_subscription where subscribed = 1")[0].fetchall()
-        self.assertEqual(result[0][0], 1, "Custodial move datasets were marked as subscribed")
-        result = myThread.dbi.processData("SELECT move, custodial FROM dbsbuffer_dataset_subscription where subscribed = 0")[0].fetchall()
-        for value in result:
-            self.assertEqual((1, 1), value)
-
-        # Run again, it will subscribe the blocks again only
-        subscriber.algorithm({})
-        self.assertEqual(len(subscriptions[self.testDatasetA]), 5)
-        self.assertTrue(self.testDatasetB not in subscriptions)
+        self.assertEqual(result[0][0], 5, "Custodial move datasets were marked as subscribed")
 
         # Delete the wmbs entries
         myThread.dbi.processData("DELETE FROM wmbs_workflow")
         subscriber.algorithm({})
-        self.assertEqual(len(subscriptions[self.testDatasetA]), 7)
+        self.assertEqual(len(subscriptions[self.testDatasetA]), 5)
         self.assertTrue(self.testDatasetB in subscriptions)
-        self.assertEqual(len(subscriptions[self.testDatasetB]), 1)
-        self.assertEqual(subscriptions[self.testDatasetB][0]['level'], 'block')
+        self.assertEqual(len(subscriptions[self.testDatasetB]), 3)
+        self.assertEqual(len([x for x in subscriptions[self.testDatasetB] if x['level'] == 'block']), 1)
 
         return
 

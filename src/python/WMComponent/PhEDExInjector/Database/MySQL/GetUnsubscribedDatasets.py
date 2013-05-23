@@ -32,10 +32,6 @@ class GetUnsubscribedDatasets(DBFormatter):
                    dbsbuffer_file.status = 'GLOBAL' AND
                    dbsbuffer_file.in_phedex = 1 AND
                    dbsbuffer_dataset.path != 'bogus'"""
-    sqlSafe = sql + """ AND (
-                    dbsbuffer_dataset_subscription.move = 0 OR
-                    dbsbuffer_dataset_subscription.custodial = 0)
-                    """
 
     def formatToPhEDEx(self, result):
         """
@@ -58,12 +54,8 @@ class GetUnsubscribedDatasets(DBFormatter):
             entry['priority'] = entry['priority'].lower()
         return result
 
-    def execute(self, safeMode = False,
-                conn = None, transaction = False):
-        if safeMode:
-            result = self.dbi.processData(self.sqlSafe, conn = conn,
-                                          transaction = transaction)
-        else:
-            result = self.dbi.processData(self.sql, conn = conn,
-                                          transaction = transaction)
+    def execute(self, conn = None, transaction = False):
+
+        result = self.dbi.processData(self.sql, conn = conn,
+                                      transaction = transaction)
         return self.formatToPhEDEx(self.formatDict(result))

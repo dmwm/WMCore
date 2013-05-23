@@ -3,7 +3,7 @@
 """
 _GetUnsubscribedBlocks_
 
-MySQL implementation of PhEDExInjector.Database.GGetUnsubscribedBlocks
+MySQL implementation of PhEDExInjector.Database.GetUnsubscribedBlocks
 
 Created on May 6, 2013
 
@@ -16,16 +16,15 @@ class GetUnsubscribedBlocks(DBFormatter):
     """
     _GetUnsubscribedBlocks_
 
-    Gets the unsubscribed blocks from DBSBuffer
+    Gets the unsubscribed closed blocks from DBSBuffer
+    that are subscribed to a specific site and where
+    the workflow that produced all the files in them
+    is finished.
     """
 
     sql = """SELECT DISTINCT dbsbuffer_dataset_subscription.id,
                              dbsbuffer_dataset.path,
                              dbsbuffer_dataset_subscription.site,
-                             dbsbuffer_dataset_subscription.custodial,
-                             dbsbuffer_dataset_subscription.auto_approve,
-                             dbsbuffer_dataset_subscription.move,
-                             dbsbuffer_dataset_subscription.priority,
                              dbsbuffer_block.blockname
                FROM dbsbuffer_dataset_subscription
                INNER JOIN dbsbuffer_dataset ON
@@ -40,37 +39,16 @@ class GetUnsubscribedBlocks(DBFormatter):
                  dbsbuffer_file.workflow = dbsbuffer_workflow.id
                LEFT OUTER JOIN wmbs_workflow ON
                  wmbs_workflow.name = dbsbuffer_workflow.name
-             WHERE dbsbuffer_dataset_subscription.subscribed = 0 AND
-                   dbsbuffer_file.status = 'GLOBAL' AND
+             WHERE dbsbuffer_file.status = 'GLOBAL' AND
                    dbsbuffer_file.in_phedex = 1 AND
                    dbsbuffer_dataset.path != 'bogus' AND
                    wmbs_workflow.id is NULL AND
-                   dbsbuffer_dataset_subscription.move = 1 AND
-                   dbsbuffer_dataset_subscription.custodial = 1 AND
-                   dbsbuffer_block.status = 'Closed'"""
+                   dbsbuffer_block.status = 'Closed' AND
+                   dbsbuffer_dataset_subscription.site = :node"""
 
-    def formatToPhEDEx(self, result):
-        """
-        _formatToPhEDEx_
-
-        Format the result to the same format
-        as the PhEDEx datasvc uses
-        """
-        for entry in result:
-            if entry['auto_approve'] == 1:
-                entry['request_only'] = 'n'
-            else:
-                entry['request_only'] = 'y'
-            del entry['auto_approve']
-            for key in ['custodial', 'move']:
-                if entry[key] == 1:
-                    entry[key] = 'y'
-                else:
-                    entry[key] = 'n'
-            entry['priority'] = entry['priority'].lower()
-        return result
-
-    def execute(self, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, conn = conn,
+    def execute(self, node = 'T0_CH_CERN',
+                conn = None, transaction = False):
+        binds = {'node' : node}
+        result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
-        return self.formatToPhEDEx(self.formatDict(result))
+        return self.formatDict(result)

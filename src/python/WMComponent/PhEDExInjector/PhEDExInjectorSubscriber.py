@@ -23,19 +23,15 @@ The usual flow of operation is:
   this is done according to the configuration options and aggregated to minimize
   the number of PhEDEx requests.
 
-There is a safe mode operation, which is aimed for the Tier-0 use case:
+There is a Tier-0 operation mode:
 
-Note: This only applies for datasets marked for custodial move subscriptions,
-      in safe mode all other subscription flavors are treated as above
-
-- Find all unsubscribed datasets
-- Find all closed blocks belonging to unsubscribed datasets
+- Look for dataset subscriptions to the Tier-0, even if already marked as subscribed.
+- Find all closed blocks belonging to the Tier-0 datasets
   which don't contain files produced by active workflows, where
   an active workflow is defined as a workflow still present in WMBS.
-- Subscribe those blocks as move custodial
-- Don't mark the dataset as subscribed
+- Subscribe those blocks as move custodial auto-approved
 
-The safe mode is activated using config.PhEDExInjector.safeMode = True
+The Tier-0 mode is activated using config.PhEDExInjector.tier0Mode = True
 
 Additional options are:
 
@@ -72,7 +68,7 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
         self.siteDB = SiteDBJSON()
         self.dbsUrl = config.DBSInterface.globalDBSUrl
         self.group = getattr(config.PhEDExInjector, "group", "DataOps")
-        self.safeMode = getattr(config.PhEDExInjector, "safeMode", False)
+        self.tier0Mode = getattr(config.PhEDExInjector, "tier0Mode", False)
 
         # We will map node names to CMS names, that what the spec will have.
         # If a CMS name is associated to many PhEDEx node then choose the MSS option
@@ -119,85 +115,69 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
 
         Run the subscription algorithm as configured
         """
-        if self.safeMode:
-            self.subscribeBlocks()
+        if self.tier0Mode:
+            self.subscribeTier0Blocks()
         self.subscribeDatasets()
         return
 
-    def subscribeBlocks(self):
+    def subscribeTier0Blocks(self):
         """
-        _subscribeBlocks_
+        _subscribeTier0Blocks_
 
-        Subscribe custodial blocks that are requested
-        as a move subscription, only on non-active workflows.
+        Subscribe blocks to the Tier-0 where a replica subscription
+        already exists. All Tier-0 subscriptions are move, custodial
+        and autoapproved with high priority.
         """
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
         # Check for candidate blocks for subscription
-        blocksToSubscribe = self.getUnsubscribedBlocks.execute(conn = myThread.transaction.conn,
+        blocksToSubscribe = self.getUnsubscribedBlocks.execute(node = 'T0_CH_CERN',
+                                                               conn = myThread.transaction.conn,
                                                                transaction = True)
 
-        # TODO: Check for existing block subscriptions
+        if not blocksToSubscribe:
+            return
 
-        # Sort by dataset and subscription options
-        # The subscription map has tuples as keys where the tuple
-        # has the following structure
-        # (site<TX_XX_XX_XX>, custodial<y or n>, request_only<y or n>, move<y or n>, priority<low,normal,high>)
+        # For the blocks we don't really care about the subscription options
+        # We are subscribing all blocks with the same recipe.
         subscriptionMap = {}
         for subInfo in blocksToSubscribe:
-            key = (subInfo['site'], subInfo['custodial'], subInfo['request_only'],
-                   subInfo['move'], subInfo['priority'])
-            if key not in subscriptionMap:
-                subscriptionMap[key] = {}
-            if subInfo['path'] not in subscriptionMap[key]:
-                subscriptionMap[key][subInfo['path']] = []
-            subscriptionMap[key][subInfo['path']].append(subInfo['blockname'])
+            dataset = subInfo['path']
+            if dataset not in subscriptionMap:
+                subscriptionMap[dataset] = []
+            subscriptionMap[dataset].append(subInfo['blockname'])
 
-        for subOptions in subscriptionMap:
-            # Check that the site is valid
-            site = subOptions[0]
-            custodial = subOptions[1]
-            request_only = subOptions[2]
-            move = subOptions[3]
-            priority = subOptions[4]
-            if site not in self.cmsToPhedexMap:
-                msg = "Site %s doesn't appear to be valid to PhEDEx, " % site
-                msg += "skipping subscriptions for datasets: %s" % ', '.join(x for x in subscriptionMap[subOptions])
-                logging.error(msg)
-                self.sendAlert(7, msg = msg)
-                continue
-            datasets = subscriptionMap[subOptions].keys()
+        site = 'T0_CH_CERN'
+        custodial = 'y'
+        request_only = 'n'
+        move = 'y'
+        priority = 'High'
 
-            # Get the phedex node
-            isMSS = "MSS" in self.cmsToPhedexMap[site]
-            phedexNode = self.cmsToPhedexMap[site].get("MSS") \
-                            or self.cmsToPhedexMap[site]["Disk"]
-            logging.info("Subscribing %s to %s" % (datasets, site))
+        # Get the phedex node
+        phedexNode = self.cmsToPhedexMap[site]["MSS"]
 
-            # Avoid custodial subscriptions to disk nodes
-            if not isMSS and custodial == 'y': custodial = 'n'
-            # Avoid move subscriptions and replica
-            if custodial == 'n': move = 'n'
+        logging.error("Subscribing %d blocks, from %d datasets to the Tier-0" % (len(subscriptionMap), sum([len(x) for x in subscriptionMap.values()])))
 
-            logging.info("Request options: Custodial - %s, Move - %s" % (custodial.upper(),
-                                                                         move.upper(),))
+        newSubscription = PhEDExSubscription(subscriptionMap.keys(),
+                                             phedexNode, self.group,
+                                             custodial = custodial,
+                                             request_only = request_only,
+                                             move = move,
+                                             priority = priority,
+                                             level = 'block',
+                                             blocks = subscriptionMap)
 
-            newSubscription = PhEDExSubscription(datasets, phedexNode, self.group,
-                                                 custodial = custodial,
-                                                 request_only = request_only,
-                                                 move = move,
-                                                 priority = priority,
-                                                 level = 'block',
-                                                 blocks = subscriptionMap[subOptions])
-            try:
-                xmlData = XMLDrop.makePhEDExXMLForBlocks(self.dbsUrl,
-                                                         newSubscription.getDatasetsAndBlocks())
-                logging.debug(str(xmlData))
-                self.phedex.subscribe(newSubscription, xmlData)
-            except Exception, ex:
-                logging.error("Something went wrong when communicating with PhEDEx, will try again later.")
-                logging.error("Exception: %s" % str(ex))
+        # TODO: Check for blocks already subscribed
+
+        try:
+            xmlData = XMLDrop.makePhEDExXMLForBlocks(self.dbsUrl,
+                                                     newSubscription.getDatasetsAndBlocks())
+            logging.debug(str(xmlData))
+            self.phedex.subscribe(newSubscription, xmlData)
+        except Exception, ex:
+            logging.error("Something went wrong when communicating with PhEDEx, will try again later.")
+            logging.error("Exception: %s" % str(ex))
 
     def subscribeDatasets(self):
         """
@@ -209,8 +189,7 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
         myThread.transaction.begin()
 
         # Check for completely unsubscribed datasets
-        unsubscribedDatasets = self.getUnsubscribed.execute(safeMode = self.safeMode,
-                                                            conn = myThread.transaction.conn,
+        unsubscribedDatasets = self.getUnsubscribed.execute(conn = myThread.transaction.conn,
                                                             transaction = True)
 
         # Keep a list of subscriptions to tick as subscribed in the database

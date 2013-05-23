@@ -130,31 +130,41 @@ class PhEDEx(dict):
                                                "se"   : "cmssrm.fnal.gov",
                                                "technology" : "dCache",
                                                "id" : 2})
+        nodeMappings["phedex"]["node"].append({"name" : "T0_CH_CERN_MSS",
+                                               "kind" : "MSS",
+                                               "se"   : "srm-cms.cern.ch",
+                                               "technology" : "Castor",
+                                               "id" : 3})
+        nodeMappings["phedex"]["node"].append({"name" : "T0_CH_CERN_Buffer",
+                                               "kind" : "Buffer",
+                                               "se"   : "srm-cms.cern.ch",
+                                               "technology" : "Castor",
+                                               "id" : 4})
         nodeMappings["phedex"]["node"].append({"name" : "T1_UK_RAL_MSS",
                                                "kind" : "MSS",
                                                "se"   : "srm-cms.gridpp.rl.ac.uk",
                                                "technology" : "Castor",
-                                               "id" : 3})
+                                               "id" : 5})
         nodeMappings["phedex"]["node"].append({"name" : "T1_UK_RAL_Buffer",
                                                "kind" : "Buffer",
                                                "se"   : "srm-cms.gridpp.rl.ac.uk",
                                                "technology" : "Castor",
-                                               "id" : 4})
+                                               "id" : 6})
         nodeMappings["phedex"]["node"].append({"name" : "T1_UK_RAL_Disk",
                                                "kind" : "Disk",
                                                "se"   : "srm-cms-disk.gridpp.rl.ac.uk",
                                                "technology" : "Disk",
-                                               "id" : 5})
+                                               "id" : 7})
         nodeMappings["phedex"]["node"].append({"name" : "T2_CH_CERN",
                                                "kind" : "Disk",
                                                "se"   : "srm-eoscms.cern.ch",
                                                "technology" : "Disk",
-                                               "id" : 6})
+                                               "id" : 8})
         nodeMappings["phedex"]["node"].append({"name" : "T3_CO_Uniandes",
                                                "kind" : "Disk",
                                                "se"   : "moboro.uniandes.edu.co",
                                                "technology" : "DPM",
-                                               "id" : 7})
+                                               "id" : 9})
         return nodeMappings
 
     def getReplicaInfoForBlocks(self, **args):
@@ -214,6 +224,9 @@ class PhEDEx(dict):
                 if dataset in self.subRequests:
                     subs.extend(self.subRequests[dataset])
                 datasetSelected['subscription'] = subs
+                for sub in subs:
+                    if sub['level'] == 'block':
+                        subs.remove(sub)
 
                 blocks = datasetSelected['block']
                 locations= self.dataBlocks.getLocation(block)

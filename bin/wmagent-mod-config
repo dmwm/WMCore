@@ -133,7 +133,9 @@ def modifyConfiguration(config, **args):
         config.TaskArchiver.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
         config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
         config.TaskArchiver.centralWMStatsURL = args["wmstats_url"]
-        config.TaskArchiver.ReqMgrServiceURL = args["reqmgr_url"]
+        # t0 agent doesn't have reqmgr_url
+        if args.has_key("reqmgr_url"):
+            config.TaskArchiver.ReqMgrServiceURL = args["reqmgr_url"]
 
 
     if hasattr(config,"AsyncTransfer"):

@@ -277,7 +277,7 @@ class MonteCarloTest(unittest.TestCase):
 
         return
 
-    def testRelValMCWithPileup(self):
+    def testMCWithPileup(self):
         """
         Create a Monte Carlo workflow and verify that it is injected correctly
         into WMBS and invoke its detailed test.

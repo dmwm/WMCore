@@ -1,29 +1,25 @@
 """
+_PileupFetcher_t_
+
 The purpose of this test is to track what is happening in the PileupFetcher module.
-The test instantiates RelValMC worklow (copied from RelValMC_t test) and calls
-the PileupFetcher on its generation task.
+The test instantiates a MC worklow and calls the PileupFetcher on its generation task.
 """
 
 import os
-import shutil
 import unittest
 
-from WMCore.WMSpec.StdSpecs.RelValMC import getTestArguments, relValMCWorkload
-from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.Workflow import Workflow
-from WMCore.WorkQueue.WMBSHelper import WMBSHelper
+import WMCore.WMSpec.WMStep as WMStep
+import WMCore.WMSpec.WMTask as WMTask
+
+from WMCore.Services.DBS.DBSReader import DBSReader
+from WMCore.Database.CMSCouch import CouchServer, Document
+from WMCore.WMRuntime.SandboxCreator import SandboxCreator
+from WMCore.WMSpec.StdSpecs.MonteCarlo import getTestArguments, monteCarloWorkload
+from WMCore.WMSpec.Steps.Fetchers.PileupFetcher import PileupFetcher
+from WMCore.Wrappers.JsonWrapper import JSONDecoder
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
-from WMCore.Database.CMSCouch import CouchServer, Document
-from WMCore.WMSpec.Steps.Fetchers.PileupFetcher import PileupFetcher
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-import WMCore.WMSpec.WMTask as WMTask
-import WMCore.WMSpec.WMStep as WMStep
-from DBSAPI.dbsApi import DbsApi
-from WMCore.WMRuntime.SandboxCreator import SandboxCreator
-from WMCore.Wrappers.JsonWrapper import JSONDecoder
-
 
 class PileupFetcherTest(unittest.TestCase):
     def setUp(self):
@@ -39,32 +35,23 @@ class PileupFetcherTest(unittest.TestCase):
                                 useDefault = False)
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("pileupfetcher_t")
-        self.dirsToErase = []
-
+        self.testDir = self.testInit.generateWorkDir()
+        EmulatorHelper.setEmulators(dbs = True)
 
     def tearDown(self):
         """
         Clear out the database.
-
         """
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
-        for path in self.dirsToErase:
-            shutil.rmtree(path)
+        self.testInit.delWorkDir()
+        EmulatorHelper.resetEmulators()
 
-
-    def _getConfigBase(self):
+    def injectGenerationConfig(self):
         """
-        The RelValMC workload is supposed to have the same set of config
-        values like MonteCarlo, ReReco and PromptSkim workloads combined
-        plus three additional config values:
-            - GenConfig - ConfigCacheID of the config for the generation task (MonteCarlo)
-            - RecoConfig - ConfigCacheID of the config for the reco step (ReReco)
-            - AlcaRecoConfig - ConfigCacheID of the config for the skim/alcareco step (PromptSkim)
-        this base config values are taken from MonteCarlo_t, ReReco_t, no test for PromptSkim_t
+        _injectGenerationConfig_
 
-        configurations will be similar, they'll only differ in the output modules they define.
-
+        Inject a generation config for the MC workflow.
         """
         config = Document()
         config["info"] = None
@@ -73,87 +60,12 @@ class PileupFetcherTest(unittest.TestCase):
         config["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
         config["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
         config["pset_tweak_details"] = None
-        return config
-
-
-    def injectGenerationConfig(self):
-        """
-        Gen step - Will have one output module, data tier is configurable
-        in the workflow.
-
-        """
-        config = self._getConfigBase()
         config["pset_tweak_details"] = \
             {"process": {"outputModules_": ["OutputA"],
                          "OutputA": {"dataset": {"filterName": "OutputAFilter",
                                                  "dataTier": "GEN-SIM-RAW"}}}}
         result = self.configDatabase.commitOne(config)
         return result[0]["id"]
-
-    def injectStepOneConfig(self):
-        """
-        _injectStepOneConfig_
-
-        Will output RAW data.
-        """
-        config = self._getConfigBase()
-        config["pset_tweak_details"] = \
-            {"process": {"outputModules_": ["OutputB"],
-                         "OutputB": {"dataset": {"filterName": "OutputBFilter",
-                                                 "dataTier": "GEN-SIM-RAW"}}}}
-        result = self.configDatabase.commitOne(config)
-        return result[0]["id"]
-
-    def injectStepTwoConfig(self):
-        """
-        _injectStepTwoConfig_
-
-        Will output RECO and AOD.
-        """
-        config = self._getConfigBase()
-        config["pset_tweak_details"] = \
-            {"process": {"outputModules_": ["OutputC", "OutputD"],
-                         "OutputC": {"dataset": {"filterName": "OutputCFilter",
-                                                 "dataTier": "GEN-SIM-RECO"}},
-                         "OutputD": {"dataset": {"filterName": "OutputDFilter",
-                                                 "dataTier": "AODSIM"}}}}
-        result = self.configDatabase.commitOne(config)
-        return result[0]["id"]
-
-
-    def injectReconstructionConfig(self):
-        """
-        Reco step - Will have two output modules. Filter name can be anything,
-        data tiers will be "GEN-SIM-RECO" and "ALCARECO".
-
-        """
-        config = self._getConfigBase()
-        config["pset_tweak_details"] = \
-            {"process": {"outputModules_": ["RecoA", "RecoB"],
-                         "RecoA": {"dataset": {"filterName": "RecoAFilter",
-                                               "dataTier": "GEN-SIM-RECO"}},
-                         "RecoB": {"dataset": {"filterName": "RecoBFilter",
-                                               "dataTier": "ALCARECO"}}}}
-        result = self.configDatabase.commitOne(config)
-        return result[0]["id"]
-
-
-    def injectAlcaRecoConfig(self):
-        """
-        AlcaReco step configuration, will have two output modules.
-        Filter name can be anything, data tiers can be anything.
-
-        """
-        config = self._getConfigBase()
-        config["pset_tweak_details"] = \
-            {"process": {"outputModules_": ["AlcaRecoA", "AlcaRecoB"],
-                         "AlcaRecoA": {"dataset": {"filterName": "AlcaRecoAFilter",
-                                                   "dataTier": "GEN-SIM-RECO-ALCARECOA"}},
-                         "AlcaRecoB": {"dataset": {"filterName": "AlcaRecoBFilter",
-                                                   "dataTier": "GEN-SIM-RECO-ALCARECOB"}}}}
-        result = self.configDatabase.commitOne(config)
-        return result[0]["id"]
-
 
     def _queryAndCompareWithDBS(self, pileupDict, defaultArguments, dbsUrl):
         """
@@ -164,12 +76,9 @@ class PileupFetcherTest(unittest.TestCase):
 
         """
         args = {}
-        # this should have been set in CMSSWStepHelper along with
-        # the pileup configuration
-        args["url"] = dbsUrl
         args["version"] = "DBS_2_0_9"
         args["mode"] = "GET"
-        dbsApi = DbsApi(args)
+        reader = DBSReader(dbsUrl, **args)
 
         inputArgs = defaultArguments["PileupConfig"]
 
@@ -178,7 +87,7 @@ class PileupFetcherTest(unittest.TestCase):
         for pileupType in inputArgs:
             m = ("pileup type '%s' not in PileupFetcher-produced pileup "
                  "configuration: '%s'" % (pileupType, pileupDict))
-            self.failUnless(pileupType in pileupDict, m)
+            self.assertTrue(pileupType in pileupDict, m)
 
         # now query DBS for compare actual results on files lists for each
         # pileup type and dataset and location (storage element names)
@@ -189,30 +98,29 @@ class PileupFetcherTest(unittest.TestCase):
         for pileupType, datasets  in inputArgs.items():
             # this is from the pileup configuration produced by PileupFetcher
             blockDict = pileupDict[pileupType]
-            m = "Number of datasets for pileup type '%s' is not equal." % pileupType
-            self.assertEqual(len(blockDict), len(datasets), m)
 
             for dataset in datasets:
-                dbsFileBlocks = dbsApi.listBlocks(dataset = dataset)
-                fileList = [] # list of files in the block (dbsFile["LogicalFileName"])
-                storageElemNames = [] # list of StorageElementName
-                for dbsFileBlock in dbsFileBlocks:
-                    blockName = dbsFileBlock["Name"]
+                dbsFileBlocks = reader.listFileBlocks(dataset = dataset)
+                for dbsFileBlockName in dbsFileBlocks:
+                    fileList = [] # list of files in the block (dbsFile["LogicalFileName"])
+                    storageElemNames = set() # list of StorageElementName
                     # each DBS block has a list under 'StorageElementList', iterate over
-                    for storElem in dbsFileBlock["StorageElementList"]:
-                        storageElemNames.append(storElem["Name"])
+                    storageElements = reader.listFileBlockLocation(dbsFileBlockName)
+                    for storElem in storageElements:
+                        storageElemNames.add(storElem)
                     # now get list of files in the block
-                    dbsFiles = dbsApi.listFiles(blockName = blockName)
+                    dbsFiles = reader.listFilesInBlock(dbsFileBlockName)
                     for dbsFile in dbsFiles:
                         fileList.append(dbsFile["LogicalFileName"])
-                # now compare the sets:
-                m = ("StorageElementNames don't agree for pileup type '%s', "
-                     "dataset '%s' in configuration: '%s'" % (pileupType, dataset, pileupDict))
-                self.assertEqual(blockDict[blockName]["StorageElementNames"], storageElemNames, m)
-                m = ("FileList don't agree for pileup type '%s', dataset '%s' "
-                     " in configuration: '%s'" % (pileupType, dataset, pileupDict))
-                self.assertEqual(blockDict[blockName]["FileList"], fileList)
-
+                    # now compare the sets:
+                    m = ("StorageElementNames don't agree for pileup type '%s', "
+                         "dataset '%s' in configuration: '%s'" % (pileupType, dataset, pileupDict))
+                    self.assertEqual(set(blockDict[dbsFileBlockName]["StorageElementNames"]), storageElemNames, m)
+                    m = ("FileList don't agree for pileup type '%s', dataset '%s' "
+                         " in configuration: '%s'" % (pileupType, dataset, pileupDict))
+                    print fileList
+                    print blockDict[dbsFileBlockName]["FileList"]
+                    self.assertEqual(sorted(blockDict[dbsFileBlockName]["FileList"]), sorted(fileList))
 
     def _queryPileUpConfigFile(self, defaultArguments, task, taskPath):
         """
@@ -232,34 +140,22 @@ class PileupFetcherTest(unittest.TestCase):
                 try:
                     f = open(pileupConfig, 'r')
                     json = f.read()
-                    # loads directly the Python dictionary
-                    pileupDict =  decoder.decode(json)
+                    pileupDict = decoder.decode(json)
                     f.close()
                 except IOError:
                     m = "Could not read pileup JSON configuration file: '%s'" % pileupConfig
-                    raise RuntimeError(m)
+                    self.fail(m)
                 self._queryAndCompareWithDBS(pileupDict, defaultArguments, helper.data.dbsUrl)
 
+    def testPileupFetcherOnMC(self):
+        pileupMcArgs = getTestArguments()
+        pileupMcArgs["PileupConfig"] = {"cosmics": ["/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"],
+                                        "minbias": ["/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"]}
+        pileupMcArgs["CouchURL"] = os.environ["COUCHURL"]
+        pileupMcArgs["CouchDBName"] = "pileupfetcher_t"
+        pileupMcArgs["ConfigCacheID"] = self.injectGenerationConfig()
 
-    def testPileupFetcherOnRelValMC(self):
-        defaultArguments = getTestArguments()
-        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
-        defaultArguments["CouchDBName"] = "pileupfetcher_t"
-        # in this test, try not to define generation task datatier (first output module
-        # should be automatically picked up)
-        #defaultArguments["GenDataTier"] = "GEN-SIM-RAW"
-        defaultArguments["GenOutputModuleName"] = "OutputA"
-        defaultArguments["StepOneOutputModuleName"] = "OutputB"
-        defaultArguments["GenConfigCacheID"] = self.injectGenerationConfig()
-        defaultArguments["RecoConfigCacheID"] = self.injectReconstructionConfig()
-        defaultArguments["AlcaRecoConfigCacheID"] = self.injectAlcaRecoConfig()
-        defaultArguments["StepOneConfigCacheID"] = self.injectStepOneConfig()
-        defaultArguments["StepTwoConfigCacheID"] = self.injectStepTwoConfig()
-        # add pile up information - for the generation task
-        defaultArguments["PileupConfig"] = {"cosmics": ["/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"],
-                                            "minbias": ["/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"]}
-
-        testWorkload = relValMCWorkload("TestWorkload", defaultArguments)
+        testWorkload = monteCarloWorkload("TestWorkload", pileupMcArgs)
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
 
@@ -268,8 +164,7 @@ class PileupFetcherTest(unittest.TestCase):
         # is inserted into WMBS: feed the workload instance directly into fetcher:
         fetcher = PileupFetcher()
         creator = SandboxCreator()
-        pathBase = "%s/%s" % ("/tmp", testWorkload.name())
-        self.dirsToErase.append(pathBase)
+        pathBase = "%s/%s" % (self.testDir, testWorkload.name())
         for topLevelTask in testWorkload.taskIterator():
             for taskNode in topLevelTask.nodeIterator():
                 # this is how the call to PileupFetcher is happening
@@ -280,10 +175,7 @@ class PileupFetcherTest(unittest.TestCase):
                 # create Sandbox for the fetcher ...
                 creator._makePathonPackage(taskPath)
                 fetcher(task)
-
-                self._queryPileUpConfigFile(defaultArguments, task, taskPath)
-
-
+                self._queryPileUpConfigFile(pileupMcArgs, task, taskPath)
 
 if __name__ == "__main__":
     unittest.main()

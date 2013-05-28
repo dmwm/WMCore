@@ -56,12 +56,11 @@ class ResourceControl(WMConnectionBase):
         setStateAction.execute(siteName = siteName, state = state,
                                conn = self.getDBConn(),
                                transaction = self.existingTransaction())
-        if state == "Aborted" and self.config:
-            # Kill all jobs in the batch system assigned to this site
-            executingJobs = self.wmbsDAOFactory(classname = "Jobs.ListByStateAndLocation")
-            jobIds = executingJobs.execute(state = 'executing', location = siteName)
-            bossAir = BossAirAPI(self.config, noSetup = True)
-            bossAir.kill(jobIds, errorCode = 61301)
+
+        executingJobs = self.wmbsDAOFactory(classname = "Jobs.ListByStateAndLocation")
+        jobIds = executingJobs.execute(state = 'Pending', location = siteName)
+        bossAir = BossAirAPI(self.config, noSetup = True)
+        bossAir.updateSiteInformation(jobIds, siteName, state in ("Aborted","Draining","Down"))
         return
 
     def listSiteInfo(self, siteName):

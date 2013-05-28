@@ -100,7 +100,7 @@ class JobSubmitterTest(unittest.TestCase):
 
         resourceControl = ResourceControl()
         resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site),
-                                   ceName = site, plugin = "MockPlugin", pendingSlots = options['pendingSlots'],
+                                   ceName = site, plugin = "CondorPlugin", pendingSlots = options['pendingSlots'],
                                    runningSlots = options['runningSlots'], cmsName = site)
         for task in options['tasks']:
             resourceControl.insertThreshold(siteName = site, taskType = task,
@@ -124,7 +124,7 @@ class JobSubmitterTest(unittest.TestCase):
         if name is None:
             name = makeUUID()
 
-        testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman",
+        testWorkflow = Workflow(spec = workloadSpec, owner = "tapas",
                                 name = name, task = "basicWorkload/Production")
         testWorkflow.create()
 
@@ -238,14 +238,18 @@ class JobSubmitterTest(unittest.TestCase):
 
         # BossAir and MockPlugin configuration
         config.section_("BossAir")
-        config.BossAir.pluginNames = ['MockPlugin']
+        #config.BossAir.pluginNames = ['MockPlugin']
+        #Here Test the CondorPlugin instead of MockPlugin
+        config.BossAir.pluginNames = ['CondorPlugin']
         config.BossAir.pluginDir   = 'WMCore.BossAir.Plugins'
         config.BossAir.multicoreTaskTypes = ['MultiProcessing', 'MultiProduction']
         config.BossAir.nCondorProcesses = 1
-        config.BossAir.section_("MockPlugin")
-        config.BossAir.MockPlugin.fakeReport = os.path.join(getTestBase(),
-                                                         'WMComponent_t/JobSubmitter_t',
-                                                         "submit.sh")
+        #config.BossAir.section_("MockPlugin")
+        #config.BossAir.MockPlugin.fakeReport = os.path.join(getTestBase(),
+        #                                                 'WMComponent_t/JobSubmitter_t',
+        #                                                 "submit.sh")
+
+        
         # JobSubmitter configuration
         config.component_("JobSubmitter")
         config.JobSubmitter.logLevel      = 'DEBUG'
@@ -736,7 +740,7 @@ class JobSubmitterTest(unittest.TestCase):
                                        Processing = {'pendingSlots' : 10, 'runningSlots' :-1},
                                        Merge = {'pendingSlots' : 10, 'runningSlots' :-1, 'priority' : 5})
 
-        myResourceControl = ResourceControl()
+        myResourceControl = ResourceControl(config)
         myResourceControl.changeSiteState('T2_US_Florida', 'Draining')
         # First test that we prefer Normal over drain, and T1 over T2/T3
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
@@ -806,7 +810,7 @@ class JobSubmitterTest(unittest.TestCase):
 
         return
 
-    @attr('performance')
+    @attr('integration')
     def testF_PollerProfileTest(self):
         """
         _testF_PollerProfileTest_

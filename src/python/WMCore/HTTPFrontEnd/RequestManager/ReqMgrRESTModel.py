@@ -41,7 +41,7 @@ import WMCore.RequestManager.RequestDB.Interface.Request.Campaign           as C
 # request arguments which are deprecated at injection (2013-03-26)
 # 'RequestWorkflow' is an exception that is it deprecated at injection
 # but is created and stored in CouchDB, others not
-# have this global so that it can easily be access from unitteest
+# have this global so that it can easily be access from unittest
 deprecatedRequestArgs = ["ReqMgrGroupID",
                          "ReqMgrRequestID",
                          "ReqMgrRequestorID",

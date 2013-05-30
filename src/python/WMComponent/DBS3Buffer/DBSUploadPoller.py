@@ -144,6 +144,19 @@ def uploadWorker(input, results, dbsUrl):
                 logging.debug("Exception: %s" % exString)
                 logging.debug("Traceback: %s" % str(traceback.format_exc()))
                 results.put({'name': name, 'success': True})
+            elif 'Proxy Error' in exString:
+                # This is probably a successfully inserton that went bad.
+                # Make sure of it!
+                result = dbsApi.listBlocks(block_name = name)
+                for blockResult in result:
+                    if blockResult['block_name'] == name:
+                        results.put({'name': name, 'success': True})
+                        break
+                else:
+                    msg = "Got a proxy error but the block (%s) is not in DBS3 yet." % name
+                    logging.error(msg)
+                    logging.error(str(traceback.format_exc()))
+                    results.put({'name': name, 'success': False, 'error': msg})
             else:
                 msg =  "Error trying to process block %s through DBS.\n" % name
                 msg += exString

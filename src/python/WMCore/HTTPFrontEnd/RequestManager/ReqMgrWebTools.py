@@ -640,6 +640,7 @@ def requestDetails(requestName):
     # take the stuff from the DB preferentially
     schema.update(request)
     task = helper.getTopLevelTask()[0]
+    
     schema['Site Whitelist']  = task.siteWhitelist()
     schema['Site Blacklist']  = task.siteBlacklist()
     schema['MergedLFNBase']   = str(helper.getMergedLFNBase())
@@ -658,6 +659,8 @@ def requestDetails(requestName):
         couchReq = couchDb.document(requestName)
         schema["DbsUrl"] = couchReq.get("DbsUrl", None)
         
+    # https://github.com/dmwm/WMCore/issues/4588
+    schema["SubscriptionInformation"] = helper.getSubscriptionInformation()
     return schema
 
 

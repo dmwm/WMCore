@@ -77,8 +77,9 @@ WMStats.Requests = function(noFilterFlag) {
     tier1Requests.getRequestAlerts = function() {
         
         var alertRequests = {};
-        alertRequests['configError'] = []
-        alertRequests['siteError'] = []
+        alertRequests['configError'] = [];
+        alertRequests['siteError'] = [];
+        alertRequests['failed'] = [];
         var ignoreStatus = ["closed-out",
                             "announced",
                             "aborted",
@@ -86,8 +87,12 @@ WMStats.Requests = function(noFilterFlag) {
         for (var workflow in this.getData()) {
             var requestInfo = this.getData(workflow);
             // filter ignoreStatus
-            if (ignoreStatus.indexOf(requestInfo.getLastState()) !== -1) continue;
-            
+            lastState = requestInfo.getLastState()
+            if (ignoreStatus.indexOf(lastState) !== -1) continue;
+            if (lastState == "failed" || lastState == "epic-FAILED") {
+                alertRequests['failed'].push(this.getData(workflow));
+            };
+                
             var reqSummary = this.getSummary(workflow);
             var cooloff = reqSummary.getTotalCooloff();
             var paused = reqSummary.getTotalPaused();

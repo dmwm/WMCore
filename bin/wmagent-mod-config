@@ -137,17 +137,22 @@ def modifyConfiguration(config, **args):
         if args.has_key("reqmgr_url"):
             config.TaskArchiver.ReqMgrServiceURL = args["reqmgr_url"]
 
-
     if hasattr(config,"AsyncTransfer"):
         config.CoreDatabase.connectUrl = '%s/asynctransfer_agent' % args["couch_url"]
         config.AsyncTransfer.couch_instance = args["couch_url"]
         config.AsyncTransfer.data_source = args["couch_url"]
         config.AsyncTransfer.serverDN = args["host_dn"]
-        config.AsyncTransfer.couch_statinstance = args["couch_url"]
         config.AsyncTransfer.couch_user_monitoring_instance = args["couch_url"]
-        config.AsyncTransfer.user_monitoring_instance = args["wmstats_url"]
         config.AsyncTransfer.opsProxy = args["ops_proxy"]
 
+    if hasattr(config,"Analytics"):
+        config.Analytics.couch_user_monitoring_instance = args["couch_url"]
+        config.Analytics.amq_auth_file = args["amq_auth_file"]
+        config.Analytics.couch_instance = args["couch_url"]
+
+    if hasattr(config,"Statistics"):
+        config.Statistics.couch_statinstance = args["couch_url"]
+        config.Statistics.couch_instance = args["couch_url"]
 
     if hasattr(config,"DBSPublisher"):
         config.DBSPublisher.couch_instance = args["couch_url"]
@@ -228,7 +233,7 @@ def modifyConfiguration(config, **args):
         config.WorkQueueManager.reqMgrConfig['endpoint'] = reqMgrSvc
         config.WorkQueueManager.queueParams['WMStatsCouchUrl'] = "%s/%s" % (config.WorkQueueManager.couchurl.rstrip(), config.WorkQueueManager.wmstatDBName)
         config.WorkQueueManager.queueParams['ReqMgrServiceURL'] = reqMgrSvc
-        
+
     # Custom Local WorkQueue
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'LocalQueue':
         if args.get("global_workqueue_url", None):
@@ -270,7 +275,8 @@ def main(argv=None):
              "workqueue_db_name=", "cs_hostname=", "cs_port=", "host_dn=", "couch_url=",
              "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=",
              "ufc_service_url=", "ufc_cachedir=", "client_mapping=", "wmbs_service_port=",
-             "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=", "reqmgr_url="])
+             "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=", "reqmgr_url=",
+             "amq_auth_file="])
 
         except getopt.error, msg:
             raise Usage(msg)
@@ -290,7 +296,7 @@ def main(argv=None):
                           '--sb_hostname', '--sb_port', '--sb_basepath', '--ufc_hostname',
                           '--ufc_port', '--ufc_service_url', '--ufc_cachedir',
                           '--client_mapping', '--wmbs_service_port', '--workload_summary_url',
-                          '--wmstats_url', '--ops_proxy', '--reqmgr_url'):
+                          '--wmstats_url', '--ops_proxy', '--reqmgr_url', '--amq_auth_file'):
 
                 parameters[option[2:]] = value
 

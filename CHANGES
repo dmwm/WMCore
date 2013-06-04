@@ -1,3 +1,6 @@
+0.9.70 to 0.9.71:
+  - WMStats request alert failure warning. Pull request #4657.
+
 0.9.69 to 0.9.70:
   - ReqMgr2 auxiliary database. Pull request #4619.
 

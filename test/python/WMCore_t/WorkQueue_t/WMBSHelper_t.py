@@ -472,6 +472,7 @@ class WMBSHelperTest(unittest.TestCase):
                                             lfnBase = "bogusUnmerged",
                                             mergedLFNBase = "bogusMerged",
                                             filterName = None)
+
         return testWorkload
 
     def setupMCWMSpec(self):
@@ -493,6 +494,9 @@ class WMBSHelperTest(unittest.TestCase):
     def createWMSpec(self, name = 'ReRecoWorkload'):
         wmspec = rerecoWorkload(name, rerecoArgs)
         wmspec.setSpecUrl("/path/to/workload")
+        wmspec.setSubscriptionInformation(custodialSites = [],
+                                          nonCustodialSites = [], autoApproveSites = [],
+                                          priority = "Low", custodialSubType = "Move")
         return wmspec
 
     def createMCWMSpec(self, name = 'MonteCarloWorkload'):

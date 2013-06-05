@@ -54,6 +54,7 @@ dependencies = {'wmc-rest':{
                                      'WMCore.Services.WMAgent',
                                      'WMCore.Services.Dashboard',
                                      'WMCore.Services.WMStats',
+                                     'WMCore.Services.SiteDB+',
                                      'WMCore.ACDC'],
 
                         'systems':['wmc-web', 'wmc-runtime'],

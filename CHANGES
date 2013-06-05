@@ -1,3 +1,9 @@
+0.9.72 to 0.9.73:
+  - Replacing old SiteDB v1 API with v2. Pull request #4664.
+  - Add support in Reqmgr for deterministic pileup. Pull request #4662.
+  - Allow overrides on the Primary dataset. Pull request #4652.
+  - Allow multiple DQMConfigCacheIDs in TaskChain. Pull request #4651.
+
 0.9.71 to 0.9.72:
   - Using SiteDB v2 API. Pull request #4661.
 

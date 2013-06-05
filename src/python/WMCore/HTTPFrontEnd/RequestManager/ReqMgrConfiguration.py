@@ -16,7 +16,10 @@ def reqMgrConfig(
     reqMgrHost = "http://%s:%d" % (socket.gethostname().lower(), 8240),
     proxyBase = None,
     couchurl = os.getenv("COUCHURL"),
-    sitedb = 'https://cmsweb.cern.ch/sitedb/json/index/CEtoCMSName?name',
+    # SiteDB v1 API
+    #sitedb = 'https://cmsweb.cern.ch/sitedb/json/index/CEtoCMSName?name',
+    # SiteDB v2 API
+    sitedb = "https://cmsweb.cern.ch/sitedb/data/prod/site-names",
     yuiroot = "/reqmgr/yuiserver/yui",
     configCouchDB = 'reqmgr_config_cache',
     workloadCouchDB = 'reqmgr_workload_cache',

@@ -41,7 +41,11 @@ class Assign(WebAPI):
         self.configDBName = config.configDBName
         self.wmstatWriteURL = "%s/%s" % (self.couchUrl.rstrip('/'), config.wmstatDBName)
         if not noSiteDB:
-            self.sites = Utilities.sites(config.sitedb)
+            try:
+                self.sites = Utilities.sites(config.sitedb)
+            except Exception, ex:
+                logging.error("Could not retrieve sites from SiteDB, reason: %s" % ex)
+                self.sites = []
         else:
             self.sites = []
         # yet 0.9.40 had also another self.mergedLFNBases which was differentiating

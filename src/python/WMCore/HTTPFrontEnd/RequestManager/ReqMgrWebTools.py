@@ -4,6 +4,7 @@ import time
 import logging
 import re
 import WMCore.Wrappers.JsonWrapper as JsonWrapper
+from WMCore.Services.Requests import JSONRequests
 import cherrypy
 from os import path
 from xml.dom.minidom import parse as parseDOM
@@ -383,16 +384,38 @@ def priorityMenu(request):
     return ' %i &nbsp<input type="text" size=2 name="%s:priority" />' % (
             request['RequestPriority'],
             request['RequestName'])
+    
 
 def sites(siteDbUrl):
-    """ download a list of all the sites from siteDB """
-    data = JsonWrapper.loads(urllib.urlopen(siteDbUrl).read().replace("'", '"'))
-    # kill duplicates, then put in alphabetical order
-    siteset = set([d['name'] for d in data.values()])
-    # warning: alliteration
-    sitelist = list(siteset)
-    sitelist.sort()
-    return sitelist
+    """
+    Download a list of all the sites from SiteDB.
+    Uses SiteDB v2 API.
+    Using plain urllib gives an error:
+    ...
+        content = zlib.decompress(content)
+        zlib.error: Error -3 while decompressing data: incorrect header check
+    
+    have to go via pycurl.
+    
+    SiteDB returns result in the following form:
+        {'result': [['cms', 'ASGC', 'T1_TW_ASGC'], 
+                    ['cms', 'BY-NCPHEP', 'T3_BY_NCPHEP'],
+                    ... <sites> ...
+                    ['phedex', 'cinvestav', 'T3_MX_Cinvestav']],
+         'desc': {'columns': ['type', 'site_name', 'alias']}}
+    Process the list and select only type:'cms' containing items (aliases).
+    
+    """
+    uriSepIndex = siteDbUrl.find('/', len("https://"))
+    url = siteDbUrl[0:uriSepIndex]
+    uri =  siteDbUrl[uriSepIndex:]
+    caller = JSONRequests(url=url, idict={"pycurl": True})
+    result, status, reason, cached = caller.makeRequest(uri=uri)
+    # iterate over and select 'cms' items
+    sites = [s[2] for s in result["result"] if s[0] == "cms"]
+    sites.sort()
+    return sites
+    
 
 def quote(data):
     """

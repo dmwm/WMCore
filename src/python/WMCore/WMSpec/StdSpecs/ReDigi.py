@@ -343,6 +343,8 @@ class ReDigiWorkloadFactory(StdBase):
 
         # Pileup configuration for the first generation task
         self.pileupConfig = arguments.get("PileupConfig", None)
+        # If the pileup is data pileup, we may want deterministic pileup
+        self.deterministicPileup = arguments.get("DeterministicPileup", False)
 
         # Optional arguments that default to something reasonable.
         self.blockBlacklist = arguments.get("BlockBlacklist", [])
@@ -357,6 +359,7 @@ class ReDigiWorkloadFactory(StdBase):
         self.procJobSplitArgs = arguments.get("StdJobSplitArgs",
                                               {"lumis_per_job": 8,
                                                "include_parents": self.includeParents})
+        self.procJobSplitArgs.setdefault("deterministicPileup", self.deterministicPileup)
         return self.buildWorkload()
 
     def validateSchema(self, schema):

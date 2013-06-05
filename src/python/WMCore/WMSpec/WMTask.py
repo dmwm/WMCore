@@ -455,7 +455,7 @@ class WMTaskHelper(TreeHelper):
                 setACDCParams[paramName] = getattr(self.data.input.splitting,
                                                    paramName)
         preservedParams = {}
-        for paramName in ["lheInputFiles", "include_parents"]:
+        for paramName in ["lheInputFiles", "include_parents", "deterministicPileup"]:
             if hasattr(self.data.input.splitting, paramName):
                 preservedParams[paramName] = getattr(self.data.input.splitting,
                                                      paramName)

@@ -1,5 +1,9 @@
+0.9.71 to 0.9.72:
+  - Using SiteDB v2 API. Pull request #4661.
+
 0.9.70 to 0.9.71:
   - WMStats request alert failure warning. Pull request #4657.
+  - [a lot of commits missing here!]
 
 0.9.69 to 0.9.70:
   - ReqMgr2 auxiliary database. Pull request #4619.

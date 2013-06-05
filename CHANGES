@@ -1,3 +1,6 @@
+0.9.73 to 0.9.74:
+  - ReqMgr SiteDB v2, forgotten dependency fix. Pull request #4666.
+
 0.9.72 to 0.9.73:
   - Replacing old SiteDB v1 API with v2. Pull request #4664.
   - Add support in Reqmgr for deterministic pileup. Pull request #4662.

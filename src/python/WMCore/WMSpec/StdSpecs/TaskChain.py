@@ -208,7 +208,8 @@ class ParameterStorage(object):
                                 'acquisitionEra' : 'AcquisitionEra',
                                 'timePerEvent' : 'TimePerEvent',
                                 'sizePerEvent' : 'SizePerEvent',
-                                'memory' : 'Memory'
+                                'memory' : 'Memory',
+                                'dqmConfigCacheID' : 'DQMConfigCacheID'
                                 }
         return
 

@@ -1,25 +1,29 @@
-""" Functions external to the web interface classes"""
+"""
+Functions external to the web interface classes.
+
+"""
+
 import urllib
 import time
 import logging
 import re
-import WMCore.Wrappers.JsonWrapper as JsonWrapper
-from WMCore.Services.Requests import JSONRequests
-import cherrypy
+import cgi
 from os import path
-from xml.dom.minidom import parse as parseDOM
-from xml.parsers.expat import ExpatError
+import cherrypy
 from cherrypy import HTTPError
 from cherrypy.lib.static import serve_file
+
+from xml.dom.minidom import parse as parseDOM
+from xml.parsers.expat import ExpatError
+
 import WMCore.Lexicon
 from WMCore.ACDC.CouchService import CouchService
 from WMCore.Database.CMSCouch import Database
-import cgi
-import WMCore.RequestManager.RequestDB.Settings.RequestStatus             as RequestStatus
-import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState      as ChangeState
-import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest       as GetRequest
-import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement     as ProdManagement
-import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests     as ListRequests
+import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
+import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
+import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
+import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement as ProdManagement
+import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListRequests
 import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
 import WMCore.Services.WorkQueue.WorkQueue as WorkQueue
 import WMCore.RequestManager.RequestMaker.CheckIn as CheckIn
@@ -28,6 +32,7 @@ from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
 from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+
 
 def addSiteWildcards(wildcardKeys, sites, wildcardSites):
     """
@@ -384,37 +389,6 @@ def priorityMenu(request):
     return ' %i &nbsp<input type="text" size=2 name="%s:priority" />' % (
             request['RequestPriority'],
             request['RequestName'])
-    
-
-def sites(siteDbUrl):
-    """
-    Download a list of all the sites from SiteDB.
-    Uses SiteDB v2 API.
-    Using plain urllib gives an error:
-    ...
-        content = zlib.decompress(content)
-        zlib.error: Error -3 while decompressing data: incorrect header check
-    
-    have to go via pycurl.
-    
-    SiteDB returns result in the following form:
-        {'result': [['cms', 'ASGC', 'T1_TW_ASGC'], 
-                    ['cms', 'BY-NCPHEP', 'T3_BY_NCPHEP'],
-                    ... <sites> ...
-                    ['phedex', 'cinvestav', 'T3_MX_Cinvestav']],
-         'desc': {'columns': ['type', 'site_name', 'alias']}}
-    Process the list and select only type:'cms' containing items (aliases).
-    
-    """
-    uriSepIndex = siteDbUrl.find('/', len("https://"))
-    url = siteDbUrl[0:uriSepIndex]
-    uri =  siteDbUrl[uriSepIndex:]
-    caller = JSONRequests(url=url, idict={"pycurl": True})
-    result, status, reason, cached = caller.makeRequest(uri=uri)
-    # iterate over and select 'cms' items
-    sites = [s[2] for s in result["result"] if s[0] == "cms"]
-    sites.sort()
-    return sites
     
 
 def quote(data):

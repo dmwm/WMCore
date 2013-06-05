@@ -1,11 +1,12 @@
-#!/usr/bin/env python
 """
 Main Module for browsing and modifying requests
 as done by the dataOps operators to assign requests
 to processing sites.
 
-Handles site whitelist/blacklist info as well
+Handles site whitelist/blacklist info as well.
+
 """
+
 import types
 import copy
 import logging
@@ -20,12 +21,14 @@ from WMCore.HTTPFrontEnd.RequestManager.ReqMgrAuth import ReqMgrAuth
 from WMCore.Database.CMSCouch import Database
 import WMCore.Lexicon
 from WMCore.Wrappers import JsonWrapper
-
 from WMCore.WebTools.WebAPI import WebAPI
+from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
+
+
 
 class Assign(WebAPI):
     """ Used by data ops to assign requests to processing sites"""
-    def __init__(self, config, noSiteDB = False):
+    def __init__(self, config, noSiteDB=False):
         """
         _init_
 
@@ -42,10 +45,14 @@ class Assign(WebAPI):
         self.wmstatWriteURL = "%s/%s" % (self.couchUrl.rstrip('/'), config.wmstatDBName)
         if not noSiteDB:
             try:
-                self.sites = Utilities.sites(config.sitedb)
+                # Download a list of all the sites from SiteDB, uses v2 API.
+                sitedb = SiteDBJSON()
+                self.sites = sitedb.getAllCMSNames()    
+                self.sites.sort()
             except Exception, ex:
-                logging.error("Could not retrieve sites from SiteDB, reason: %s" % ex)
-                self.sites = []
+                msg = "ERROR: Could not retrieve sites from SiteDB, reason: %s" % ex
+                cherrypy.log(msg)
+                raise
         else:
             self.sites = []
         # yet 0.9.40 had also another self.mergedLFNBases which was differentiating

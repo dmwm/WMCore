@@ -14,6 +14,9 @@ from WMCore.REST.Validation import validate_str
 from WMCore.ReqMgr.Service.Auxiliary import ReqMgrBaseRestEntity
 import WMCore.ReqMgr.Service.RegExp as rx
 
+from RequestStatus import REQUEST_STATUS_LIST, REQUEST_STATUS_TRANSITION
+from RequestType import REQUEST_TYPES
+
 
 class Request(ReqMgrBaseRestEntity):
     def __init__(self, app, api, config, mount, db_handler):
@@ -43,7 +46,7 @@ class Request(ReqMgrBaseRestEntity):
             return rows([request_doc])
         else:
             options = {"descending": True}
-            if not all:
+            if all == "false":
                 past_days = self.config.default_view_requests_since_num_days
                 current_date = list(time.gmtime()[:6])
                 from_date = datetime(*current_date) - timedelta(days=past_days)
@@ -52,3 +55,42 @@ class Request(ReqMgrBaseRestEntity):
                                                 "ReqMgr", "bydate",
                                                 options=options)
             return rows([request_docs])
+        
+        
+        
+class RequestStatus(RESTEntity):
+    def __init__(self, app, api, config, mount):
+        RESTEntity.__init__(self, app, api, config, mount)
+
+
+    def validate(self, apiobj, method, api, param, safe):
+        validate_str("transition", param, safe, rx.RX_BOOL_FLAG, optional=True)
+    
+    
+    @restcall
+    def get(self, transition):
+        """
+        Return list of allowed request status.
+        If transition, return exhaustive list with all request status
+        and their defined transitions.
+        
+        """
+        if transition == "true":
+            return rows(REQUEST_STATUS_TRANSITION)
+        else:
+            return rows(REQUEST_STATUS_LIST)
+    
+    
+    
+class RequestType(RESTEntity):
+    def __init__(self, app, api, config, mount):
+        RESTEntity.__init__(self, app, api, config, mount)
+    
+    
+    def validate(self, apiobj, method, api, param, safe):
+        pass
+    
+    
+    @restcall
+    def get(self):
+        return rows(REQUEST_TYPES)

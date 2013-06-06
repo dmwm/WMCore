@@ -17,7 +17,8 @@ from WMCore.ReqMgr.Service.Auxiliary import Group
 from WMCore.ReqMgr.Service.Auxiliary import Team
 from WMCore.ReqMgr.Service.Auxiliary import Software
 from WMCore.ReqMgr.Service.Request import Request
-
+from WMCore.ReqMgr.Service.Request import RequestStatus
+from WMCore.ReqMgr.Service.Request import RequestType
 
 
 
@@ -47,5 +48,7 @@ class RestApiHub(RESTApi):
                "request": Request(app, self, config, mount, db_handler),
                "group": Group(app, self, config, mount, db_handler),
                "team": Team(app, self, config, mount, db_handler),
-               "sw": Software(app, self, config, mount, db_handler),
+               "software": Software(app, self, config, mount, db_handler),
+               "status": RequestStatus(app, self, config, mount),
+               "type": RequestType(app, self, config, mount),
               })

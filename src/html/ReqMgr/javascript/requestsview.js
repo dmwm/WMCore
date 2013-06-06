@@ -13,8 +13,8 @@
 var requestsView = 
 {
 	mainAppUrl: "/reqmgr2",
-    closedCellInnerHTML: "&nbsp;<img src=\"/reqmgr2/ui/static/?html/ReqMgr/img/details_closed.gif\"</img>&nbsp;",
-    openCellInnerHTML: "&nbsp;<img src=\"/reqmgr2/ui/static/?html/ReqMgr/img/details_open.gif\"</img>",				
+    closedCellInnerHTML: "&nbsp;<img src=\"/reqmgr2/static/?html/ReqMgr/img/details_closed.gif\"</img>&nbsp;",
+    openCellInnerHTML: "&nbsp;<img src=\"/reqmgr2/static/?html/ReqMgr/img/details_open.gif\"</img>",				
     
     /* 
      * main page building & display
@@ -176,7 +176,7 @@ var requestsView =
      */
 	update: function()
 	{
-    	var url = requestsView.mainAppUrl + "/request";
+    	var url = requestsView.mainAppUrl + "/data/request";
 	    var options = {"method": "GET", "reloadPage": false};	    
 	    var data = {};
 	    utils.makeHttpRequest(url, requestsView.processRequestsData, data, options);

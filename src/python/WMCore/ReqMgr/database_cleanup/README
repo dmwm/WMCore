@@ -46,7 +46,7 @@ select count(reqmgr_requestor.REQUESTOR_HN_NAME) from reqmgr_request, reqmgr_req
 
 
 # team information (when a request gets assigned):
-# i.e. only requests which have not reached assignment state,
+# i.e. only requests which have not reached assignment status,
 # i.e. have no association set over reqmgr_request-reqmgr_assignment-reqmgr_teams
 select count(reqmgr_assignment.REQUEST_ID) from reqmgr_assignment;
 # all queries below return the same number of requests

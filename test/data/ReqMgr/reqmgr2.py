@@ -95,7 +95,7 @@ class ReqMgrClient(RESTClient):
         # ReqMgr based on WMCore.REST API requires accept types defined
         self.headers = {"Content-type": "application/x-www-form-urlencoded",
                         "Accept": "application/json"}
-        self.urn_prefix = "/reqmgr2"
+        self.urn_prefix = "/reqmgr2/data"
         RESTClient.__init__(self, url, cert=config.cert, key=config.key)
         
         
@@ -139,13 +139,31 @@ class ReqMgrClient(RESTClient):
         data = self._caller_checker("/team", "GET")
         assert team not in data, "%s should be deleted from %s" % (team, data)
         
-        data = self._caller_checker("/sw", "GET")
+        data = self._caller_checker("/software", "GET")
         
         data = self._caller_checker("/request", "GET")
         data = self._caller_checker("/request?all=false", "GET")
         data = self._caller_checker("/request?all=true", "GET")
         req_name = data[0]["rows"][0]["id"] # is RequestName
         self._caller_checker("/request?request_name=%s" % req_name, "GET")
+        
+        data = self._caller_checker("/status", "GET")
+        assert len(data) > 0, "%s should be non-empty list." % data
+        # test some request status
+        status = ["assigned", "assignment-approved", "failed", "new"]
+        for s in status: assert s in data, "%s is not in %s" % (s, data)
+        data2 = self._caller_checker("/status?transition=false", "GET")
+        assert data == data2, "%s != %s" % (data, data2)
+        # returns also all allowed transitions
+        data = self._caller_checker("/status?transition=true", "GET")
+        for status_def in data:
+            status = status_def.keys()[0]
+            trans = status_def[status]
+            assert status in data2, "%s is not in %s" % (status, data2)
+            assert isinstance(trans, list), "transition %s should be list" % trans
+            
+        data = self._caller_checker("/type", "GET")
+        assert len(data) > 0, "%s should be non-empty list." % data
         
         print "\nall_tests succeeded."
         

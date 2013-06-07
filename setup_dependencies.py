@@ -67,14 +67,14 @@ dependencies = {'wmc-rest':{
                                     'src/couchapps/WMStats+'],
                         },
                 'reqmgr2':{
-                        'packages': ['WMCore.reqmgr+',
+                        'packages': ['WMCore.ReqMgr+',
                                     ],
                         'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
                         'statics': ['src/couchapps/ReqMgr+',
                                     'src/couchapps/ReqMgrAux+',
                                     'src/couchapps/ConfigCache+',
                                     'src/couchapps/WMStats+',
-                                    'src/html/reqmgr+',
+                                    'src/html/ReqMgr+',
                                    ],
                           },
                 'workqueue':{

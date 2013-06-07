@@ -66,7 +66,7 @@ MAPPING=(
          {"oracle": "REQUESTOR_DN_NAME", "couch": "RequestorDN"},
          
          # team
-         # applies only to requests which reached assignment state
+         # applies only to requests which reached assignment status
          # WARNING:
          # by including teams, not all requests will be returned in
          # the query to compare/update the above data fields

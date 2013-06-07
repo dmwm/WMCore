@@ -22,6 +22,7 @@ from WMCore.REST.Validation import validate_str
 import WMCore.ReqMgr.Service.RegExp as rx
 
 
+
 class HelloWorld(RESTEntity):
     
     def validate(self, apiobj, method, api, param, safe):
@@ -58,7 +59,6 @@ class ReqMgrBaseRestEntity(RESTEntity):
         self.config = config
         RESTEntity.__init__(self, app, api, config, mount)
     
-
 
 
 class Info(ReqMgrBaseRestEntity):
@@ -213,7 +213,7 @@ class Team(ReqMgrBaseRestEntity):
     "teams" is used as id of the document, but the document
         itself has to be JSON: we use {"teams": [list, of, group, names]
         
-    When request goes through assignment state, it gets assigned
+    When request goes through assignment status, it gets assigned
     to a team.
     Where a request gets run is controlled by SiteBlack/White list.
         
@@ -375,10 +375,10 @@ def update_software(config_file):
     """
     config = loadConfigurationFile(config_file)
     # source of the data
-    tag_collector_url = config.views.restapihub.tag_collector_url
+    tag_collector_url = config.views.data.tag_collector_url
     # store the data into CouchDB auxiliary database under "software" document
-    couch_host = config.views.restapihub.couch_host
-    reqmgr_aux_db = config.views.restapihub.couch_reqmgr_aux_db
+    couch_host = config.views.data.couch_host
+    reqmgr_aux_db = config.views.data.couch_reqmgr_aux_db
     
     # get data from tag collector
     all_archs_and_versions = _get_all_scramarchs_and_versions(tag_collector_url)
@@ -399,8 +399,13 @@ def update_software(config_file):
     
     # now compare recent data from tag collector and what we already have stored
     if all_archs_and_versions != sw_already_stored:
-        logging.warn("ScramArch/CMSSW releases changed, updating software document ...")
+        logging.debug("ScramArch/CMSSW releases changed, updating software document ...")
         doc = Document(id="software", inputDict=all_archs_and_versions)
         couchdb.commitOne(doc)
-    else:
-        logging.warn("No change in ScramArch/CMSSW releases, no update.")
+        # TODO
+        # remove this, only to observe differences during update attempts
+        #msg = ("Really changed? Compare:\n"
+        #       "sw_already_stored:\n%s\n"
+        #       "all_archs_and_versions (returned from TC):\n%s\n" %
+        #       (sw_already_stored, all_archs_and_versions))
+        #print msg

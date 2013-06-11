@@ -1,3 +1,16 @@
+0.9.75 to 0.9.76:
+  - Configuration defaults for 0.9.69a. Pull request #4676.
+  - Use stale views in the TaskArchiver. Pull request #4675. 
+  - fix acdc resubmission. Pull request #4668.
+  - Fix bug in WMBSHelper when no subs are present. Pull request #4663.
+  - increase default request timeout to 2 min. Pull request #4660
+  - Catch proxy errors. Pull request #4650
+  - Clean up the log. Pull request #4639
+  - Fix location update for Pileup on Generation. Pull request #4629
+  - Catch duplicate insertions in DBS. Pull request #4626
+  - Fix bug with updating the logArch location. Pull request #4624
+  - if parent job don't exist ignore. Pull request #4579.
+
 0.9.74 to 0.9.75:
   - ReqMgr2 - request status, request types APIs, other fixes
     for VM deployment from CamelCase renaming. Pull request #4669.

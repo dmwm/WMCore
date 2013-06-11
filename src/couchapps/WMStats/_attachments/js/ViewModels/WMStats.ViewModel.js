@@ -368,7 +368,7 @@ WMStats.ViewModel = (function (){
             WMStats.ReqMgrRequestModel.retrieveDoc(keys.requestName);
         };
         
-        resubmission.formatResubmissionData = function(requestInfo) {
+        resubmission.formatResubmissionData = function(reqMgrRequest) {
             var summary = {};
             // from resubmission keys
             summary.OriginalRequestName = resubmission.keys().requestName;
@@ -380,19 +380,22 @@ WMStats.ViewModel = (function (){
                 summary.ACDCDatabase = acdcServiceUrl.couchdb;
             }
             
+            requestInfo = reqMgrRequest.getData()
             //from passing request info
             summary.Memory = requestInfo.Memory;
             summary.SizePerEvent = requestInfo.SizePerEvent;
             summary.TimePerEvent = requestInfo.TimePerEvent;
-            
-            //TODO remove this line when requestInfo has all the information
-            requestInfo = WMStats.ActiveRequestModel.getData().getData(summary.OriginalRequestName);
-            
             summary.DbsUrl = requestInfo.DbsUrl || "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet";
             summary.Group = requestInfo.Group;
             summary.RequestPriority = requestInfo.RequestPriority
             summary.RequestString = WMStats.Utils.acdcRequestSting(summary.OriginalRequestName, requestInfo.Requestor)
             summary.PrepID = requestInfo.PrepID;
+            
+            /*
+            //TODO this handles the legacy data need to be removed
+            requestInfo = WMStats.ActiveRequestModel.getData().getData(summary.OriginalRequestName);
+            summary.Group.requestInfo.group
+            */
             summary.RequestType = "Resubmission";
             
             return summary;

@@ -50,6 +50,9 @@ class NewSubscription(DBFormatter):
                        'priority' : subscriptionInfo['Priority']}
             binds.append(subInfo)
 
+        if not binds:
+            return
+
         self.dbi.processData(self.sql,
-                                      binds = binds, conn = conn,
-                                      transaction = transaction)
+                             binds = binds, conn = conn,
+                             transaction = transaction)

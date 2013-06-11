@@ -505,6 +505,10 @@ class TaskArchiverTest(unittest.TestCase):
         jobs = jobdb.loadView("JobDump", "jobsByWorkflowName",
                               options = {"startkey": [workflowName],
                                          "endkey": [workflowName, {}]})['rows']
+        fwjrdb.loadView("FWJRDump", "fwjrsByWorkflowName",
+                        options = {"startkey": [workflowName],
+                                   "endkey": [workflowName, {}]})['rows']
+
         self.assertEqual(len(jobs), 2*self.nJobs)
 
         from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
@@ -602,11 +606,20 @@ class TaskArchiverTest(unittest.TestCase):
         os.makedirs(cachePath)
         self.assertTrue(os.path.exists(cachePath))
 
+        couchdb      = CouchServer(config.JobStateMachine.couchurl)
+        jobdb        = couchdb.connectDatabase("%s/jobs" % self.databaseName)
+        fwjrdb       = couchdb.connectDatabase("%s/fwjrs" % self.databaseName)
+        jobdb.loadView("JobDump", "jobsByWorkflowName",
+                        options = {"startkey": [workload.name()],
+                                   "endkey": [workload.name(), {}]})['rows']
+        fwjrdb.loadView("FWJRDump", "fwjrsByWorkflowName",
+                        options = {"startkey": [workload.name()],
+                                   "endkey": [workload.name(), {}]})['rows']
+
         testTaskArchiver = TaskArchiverPoller(config = config)
         testTaskArchiver.algorithm()
 
         dbname       = getattr(config.JobStateMachine, "couchDBName")
-        couchdb      = CouchServer(config.JobStateMachine.couchurl)
         workdatabase = couchdb.connectDatabase("%s/workloadsummary" % dbname)
 
         workloadSummary = workdatabase.document(id = workload.name())

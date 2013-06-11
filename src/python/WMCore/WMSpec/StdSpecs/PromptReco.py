@@ -5,15 +5,83 @@ _PromptReco_
 Standard PromptReco workflow.
 """
 
-from WMCore.Cache.WMConfigCache import ConfigCache
-from WMCore.WMSpec.StdSpecs.PromptSkim import injectIntoConfigCache, \
-                                              parseT0ProcVer
-from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-import WMCore.Lexicon
 import logging
 import os
+import re
+import shutil
+import tempfile
+import urllib
 
+import WMCore.Lexicon
 
+from WMCore.Cache.WMConfigCache import ConfigCache
+from WMCore.WMInit import getWMBASE
+from WMCore.WMRuntime.Tools.Scram import Scram
+from WMCore.WMSpec.StdSpecs.StdBase import StdBase
+
+def injectIntoConfigCache(frameworkVersion, scramArch, initCommand,
+                          configUrl, configLabel, couchUrl, couchDBName,
+                          envPath = None, binPath = None):
+    """
+    _injectIntoConfigCache_
+    """
+    logging.info("Injecting to config cache.\n")
+    configTempDir = tempfile.mkdtemp()
+    configPath = os.path.join(configTempDir, "cmsswConfig.py")
+    configString = urllib.urlopen(fixCVSUrl(configUrl)).read(-1)
+    configFile = open(configPath, "w")
+    configFile.write(configString)
+    configFile.close()
+
+    scramTempDir = tempfile.mkdtemp()
+    wmcoreBase = getWMBASE()
+    if not envPath:
+        envPath = os.path.normpath(os.path.join(wmcoreBase, "../../../../../../../../apps/wmagent/etc/profile.d/init.sh"))
+    scram = Scram(version = frameworkVersion, architecture = scramArch,
+                  directory = scramTempDir, initialise = initCommand,
+                  envCmd = "source %s" % envPath)
+    scram.project()
+    scram.runtime()
+
+    if not binPath:
+        scram("python2.6 %s/../../../bin/inject-to-config-cache %s %s PromptSkimmer cmsdataops %s %s None" % (wmcoreBase,
+                                                                                                              couchUrl,
+                                                                                                              couchDBName,
+                                                                                                              configPath,
+                                                                                                              configLabel))
+    else:
+        scram("python2.6 %s/inject-to-config-cache %s %s PromptSkimmer cmsdataops %s %s None" % (binPath,
+                                                                                                 couchUrl,
+                                                                                                 couchDBName,
+                                                                                                 configPath,
+                                                                                                 configLabel))
+
+    shutil.rmtree(configTempDir)
+    shutil.rmtree(scramTempDir)
+    return
+
+def parseT0ProcVer(procVer, procString = None):
+    compoundProcVer = r"^(((?P<ProcString>[a-zA-Z0-9_]+)-)?v)?(?P<ProcVer>[0-9]+)$"
+    match = re.match(compoundProcVer, procVer)
+    if match:
+        return {'ProcString' : match.group('ProcString') or procString,
+                'ProcVer' : int(match.group('ProcVer'))}
+    logging.error('Processing version %s is not compatible'
+                                % procVer)
+    raise Exception
+
+def fixCVSUrl(url):
+    """
+    _fixCVSUrl_
+
+    Checks the url, if it looks like a cvs url then make sure it has no
+    view option in it, so it can be downloaded correctly
+    """
+    cvsPatt = '(http://cmssw\.cvs\.cern\.ch.*\?).*(revision=[0-9]*\.[0-9]*).*'
+    cvsMatch = re.match(cvsPatt, url)
+    if cvsMatch:
+        url = cvsMatch.groups()[0] + cvsMatch.groups()[1]
+    return url
 
 def getTestArguments():
     """

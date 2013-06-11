@@ -125,7 +125,7 @@ class Service(dict):
         self.setdefault("method", None)
 
         #Set a timeout for the socket
-        self.setdefault("timeout", 30)
+        self.setdefault("timeout", 120)
 
         # then update with the incoming dict
         self.update(cfg_dict)

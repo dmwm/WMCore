@@ -103,14 +103,14 @@ class Details(dict):
         If it takes more than a couple of seconds, kill -9 it.
 
         """
-        os.kill(self['ProcessID'], signal)
+        os.killpg(self['ProcessGroupID'], signal)
         for count in range(0, 3):
             time.sleep(1)
             if not self.isAlive():
                 self.removeAndBackupDaemonFile()
                 return
             continue
-        os.kill(self['ProcessID'], 9)
+        os.killpg(self['ProcessGroupID'], 9)
         self.removeAndBackupDaemonFile()
         return
 

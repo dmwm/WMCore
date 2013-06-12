@@ -152,7 +152,7 @@ def modifyConfiguration(config, **args):
     if hasattr(config,"DBSPublisher"):
         config.DBSPublisher.couch_instance = args["couch_url"]
         config.DBSPublisher.serverDN = args["host_dn"]
-        config.DBSPublisher.userFileCacheEndpoint = args["ufc_service_url"]
+        config.DBSPublisher.cache_area = args["ufc_service_url"]
         config.DBSPublisher.opsProxy = args["ops_proxy"]
 
     if hasattr(config,"CRABInterface"):
@@ -228,7 +228,7 @@ def modifyConfiguration(config, **args):
         config.WorkQueueManager.reqMgrConfig['endpoint'] = reqMgrSvc
         config.WorkQueueManager.queueParams['WMStatsCouchUrl'] = "%s/%s" % (config.WorkQueueManager.couchurl.rstrip(), config.WorkQueueManager.wmstatDBName)
         config.WorkQueueManager.queueParams['ReqMgrServiceURL'] = reqMgrSvc
-        
+
     # Custom Local WorkQueue
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'LocalQueue':
         if args.get("global_workqueue_url", None):

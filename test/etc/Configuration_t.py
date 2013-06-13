@@ -30,9 +30,5 @@ class ConfigurationTest(unittest.TestCase):
         config = "%s/WMAgentConfigAgentOnly.py" % self.configBase
         configObj = loadConfigurationFile(config)
 
-    def testWMAgentPromptSkimConfig(self):
-        config = "%s/WMAgentPromptSkimConfig.py" % self.configBase
-        configObj = loadConfigurationFile(config)
-
 if __name__ == "__main__":
     unittest.main()

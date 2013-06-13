@@ -46,7 +46,7 @@ def execute_command( command, logger, timeout ):
 
     logger.debug('Executing : \n command : %s\n output : %s\n error: %s\n retcode : %s' % (command, stdout, stderr, rc))
 
-    return stdout, rc
+    return stdout, stderr, rc
 
 def destroyListCred( credNameList = [], credTimeleftList = { }, logger = None, timeout = 0 ):
     """
@@ -196,7 +196,7 @@ class Proxy(Credential):
 
         if proxy == None: proxy = self.getProxyFilename()
         getSubjectCmd = "voms-proxy-info -file "+proxy+" -identity"
-        subject, retcode = execute_command(self.setUI() + getSubjectCmd, self.logger, self.commandTimeout)
+        subject, _, retcode = execute_command(self.setUI() + getSubjectCmd, self.logger, self.commandTimeout)
 
         if retcode == 0:
             subject = subject.strip()
@@ -213,7 +213,7 @@ class Proxy(Credential):
             certFile = self.getProxyFilename()
 
         subjFromCertCmd = 'openssl x509 -in '+certFile+' -subject -noout'
-        subjectResult, retcode = execute_command(self.setUI() + subjFromCertCmd, self.logger, self.commandTimeout)
+        subjectResult, _, retcode = execute_command(self.setUI() + subjFromCertCmd, self.logger, self.commandTimeout)
 
         subject = None
         if retcode == 0:
@@ -302,8 +302,9 @@ class Proxy(Credential):
                 serverCredName = sha1(self.serverDN).hexdigest()
                 myproxyDelegCmd += ' -x -R \'%s\' -Z \'%s\' -k %s -t 168:00 -c %s ' \
                                    % (self.serverDN, self.serverDN, serverCredName, self.myproxyValidity )
-            execute_command( self.setUI() +  myproxyDelegCmd, self.logger, self.commandTimeout )
-
+            _, stderr, _ = execute_command( self.setUI() +  myproxyDelegCmd, self.logger, self.commandTimeout )
+            if stderr.find('proxy will expire') > -1: 
+                raise CredentialException('Your certificate is shorter than %s ' % self.myproxyValidity) 
         else:
             self.logger.error( "myproxy server not set for the proxy %s" % credential )
 
@@ -322,7 +323,7 @@ class Proxy(Credential):
             if nokey is True and serverRenewer is True:
                 credname = sha1(self.serverDN+self.userDN).hexdigest()
                 checkMyProxyCmd = 'myproxy-info -l %s -s %s' %(credname, self.myproxyServer)
-                output, retcode = execute_command(self.setUI() +  checkMyProxyCmd, self.logger, self.commandTimeout )
+                output, _, retcode = execute_command(self.setUI() +  checkMyProxyCmd, self.logger, self.commandTimeout )
                 if retcode > 0 or not output:
                     return proxyTimeleft
                 timeleftList = re.compile("timeleft: (?P<hours>[\\d]*):(?P<minutes>[\\d]*):(?P<seconds>[\\d]*)").findall(output)
@@ -336,7 +337,7 @@ class Proxy(Credential):
             if not proxy:
                 proxy = self.getProxyFilename( serverRenewer )
             checkMyProxyCmd = 'myproxy-info -d -s ' + self.myproxyServer
-            output, retcode = execute_command(self.setUI() +  checkMyProxyCmd, self.logger, self.commandTimeout )
+            output, _, retcode = execute_command(self.setUI() +  checkMyProxyCmd, self.logger, self.commandTimeout )
 
             if retcode > 0 or not output:
                 return proxyTimeleft
@@ -392,7 +393,7 @@ class Proxy(Credential):
                 proxy = self.getProxyFilename( checkRenewer )
 
             checkMyProxyCmd = 'myproxy-info -d -s ' + self.myproxyServer
-            output, retcode = execute_command( self.setUI() +  checkMyProxyCmd, self.logger, self.commandTimeout )
+            output, _, retcode = execute_command( self.setUI() +  checkMyProxyCmd, self.logger, self.commandTimeout )
 
             if retcode > 0 and not output:
                 valid = False
@@ -495,7 +496,7 @@ class Proxy(Credential):
         cmdList.append('myproxy-logon -d -n -s %s -o %s -l \"%s\" -k %s -t 168:00'
                        % (self.myproxyServer, proxyFilename, self.userDN, credServerName) )
         logonCmd = ' '.join(cmdList)
-        msg, retcode = execute_command(self.setUI() + logonCmd, self.logger, self.commandTimeout)
+        msg, _, retcode = execute_command(self.setUI() + logonCmd, self.logger, self.commandTimeout)
 
         if retcode > 0 :
             self.logger.error("Unable to retrieve delegated proxy for user DN %s! Exit code:%s output:%s" \
@@ -525,7 +526,7 @@ class Proxy(Credential):
         """
         ## get validity time for retrieved flat proxy
         cmd = 'grid-proxy-info -file ' + proxy + ' -timeleft'
-        timeLeft, retcode = execute_command(self.setUI() + cmd, self.logger, self.commandTimeout)
+        timeLeft, _, retcode = execute_command(self.setUI() + cmd, self.logger, self.commandTimeout)
 
         if retcode != 0:
             self.logger.error("Error while checking retrieved proxy timeleft for %s" % proxy )
@@ -546,7 +547,7 @@ class Proxy(Credential):
         cmdList.append('voms-proxy-init -noregen -voms %s -out %s -bits 1024 -valid %s'
                        % (voAttribute, proxy, vomsValid) )
         cmd = ' '.join(cmdList)
-        msg, retcode = execute_command(self.setUI() + cmd, self.logger, self.commandTimeout)
+        msg, _, retcode = execute_command(self.setUI() + cmd, self.logger, self.commandTimeout)
 
         if retcode > 0:
             self.logger.error('Unable to renew proxy voms extension: %s' % msg )
@@ -574,7 +575,7 @@ class Proxy(Credential):
             proxy = self.getProxyFilename()
 
         timeLeftCmd = 'voms-proxy-info -file '+proxy+' -timeleft'
-        timeLeftLocal, retcode = execute_command(self.setUI() + timeLeftCmd, self.logger, self.commandTimeout)
+        timeLeftLocal, _, retcode = execute_command(self.setUI() + timeLeftCmd, self.logger, self.commandTimeout)
 
         if retcode != 0:
             self.logger.error( "Error while checking proxy timeleft for %s" % proxy )
@@ -622,7 +623,7 @@ class Proxy(Credential):
         """
         result = 0
         cmd = 'voms-proxy-info -file ' + proxy + ' -actimeleft'
-        ACtimeLeftLocal, retcode = execute_command(self.setUI() + cmd, self.logger, self.commandTimeout)
+        ACtimeLeftLocal, _, retcode = execute_command(self.setUI() + cmd, self.logger, self.commandTimeout)
 
         if retcode != 0:
             return result
@@ -641,7 +642,7 @@ class Proxy(Credential):
         done by getProxyDetails.
         """
         roleCapCmd = 'env X509_USER_PROXY=%s voms-proxy-info -fqan' % proxy
-        attribute, retcode = execute_command(self.setUI() + roleCapCmd,
+        attribute, _, retcode = execute_command(self.setUI() + roleCapCmd,
                                              self.logger,
                                              self.commandTimeout)
         if retcode == 0:

@@ -1,3 +1,10 @@
+0.9.76 to 0.9.77:
+  - add check on cert/proxy length. Pull request 4682.
+  - check voms- exec. pull request #4680
+  - Update cache area param for ASO. Pull request #4674
+  - Add AMQ_AUTH_FILE. Pull request #4658
+  - Kill child process when shutdown. Pull request #4632.
+
 0.9.75 to 0.9.76:
   - Configuration defaults for 0.9.69a. Pull request #4676.
   - Use stale views in the TaskArchiver. Pull request #4675. 

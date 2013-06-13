@@ -657,7 +657,7 @@ class BossAirAPI(WMConnectionBase):
 
 
 
-    def kill(self, jobs, killMsg = None, errorCode = 61302):
+    def kill(self, jobs, killMsg = None, errorCode = 61300):
         """
         _kill_
 
@@ -798,6 +798,29 @@ class BossAirAPI(WMConnectionBase):
                 logging.error(msg)
                 raise BossAirException(msg)
         return
+
+    def updateSiteInformation(self, jobs, siteName, excludeSite):
+        """
+        _updateSiteInformation_
+
+        Modify condor classAd for all Idle jobs for a site if it has gone Down, Draining or Aborted.
+        Kill all jobs if the site is the only site for the job.
+        """
+        for plugin in self.plugins.keys():
+            try:
+                pluginInst = self.plugins[plugin]
+                pluginInst.updateSiteInformation(jobs, siteName, excludeSite)
+            except WMException:
+                raise
+            except Exception, ex:
+                msg =  "Unhandled exception while calling update method for plugin %s\n" % plugin
+                msg += str(ex)
+                logging.error(msg)
+                raise BossAirException(msg)
+        return
+
+            
+
 
     def _buildRunningJobsFromRunJobs(self, runJobs):
         """

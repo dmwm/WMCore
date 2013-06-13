@@ -79,7 +79,7 @@ class ResourceControlTest(unittest.TestCase):
 
         Create test jobs in WMBS and BossAir
         """
-        testWorkflow = Workflow(spec = makeUUID(), owner = "Steve",
+        testWorkflow = Workflow(spec = makeUUID(), owner = "tapas",
                                 name = makeUUID(), task = "Test")
         testWorkflow.create()
 
@@ -597,14 +597,16 @@ class ResourceControlTest(unittest.TestCase):
 
         return
 
-    def testChangeState(self):
+    def testChangeSiteState(self):
         """
-        _testChangeState_
+        _testNewState_
 
         Check that we can change the state between different values and
         retrieve it through the threshold methods
         """
-        myResourceControl = ResourceControl()
+        self.tempDir = '.'
+        config = self.createConfig()
+        myResourceControl = ResourceControl(config)
         myResourceControl.insertSite("testSite1", 20, 40, "testSE1", "testCE1")
         myResourceControl.insertThreshold("testSite1", "Processing", 10, 5)
 
@@ -615,17 +617,22 @@ class ResourceControlTest(unittest.TestCase):
         result = myResourceControl.listThresholdsForCreate()
         self.assertEqual(result['testSite1']['state'], 'Down', 'Error: Wrong site state')
 
+        #If you set the value to 'Normal' instead of 'Down' this test should FAIL
+        #self.assertEqual(result['testSite1']['state'], 'Normal', 'Error: Wrong site state')
+
     def testAbortedState(self):
         """
         _testAbortedState_
 
         Check that we can kill jobs when a site is set to aborted
+        ### We no longer need this test as we are not killing jobs that are running
         """
+        self.tempDir = '.'
         config = self.createConfig()
         myResourceControl = ResourceControl(config)
         myResourceControl.insertSite("testSite1", 10, 20, "testSE1", "testCE1", "T1_US_FNAL", "MockPlugin")
         myResourceControl.insertSite("testSite2", 20, 40, "testSE2", "testCE2", "T1_IT_CNAF", "MockPlugin")
-
+        
         myResourceControl.insertThreshold("testSite1", "Processing", 20, 10)
         myResourceControl.insertThreshold("testSite1", "Merge", 200, 100)
         myResourceControl.insertThreshold("testSite2", "Processing", 50, 25)
@@ -635,11 +642,11 @@ class ResourceControlTest(unittest.TestCase):
 
         myResourceControl.changeSiteState("testSite1", "Aborted")
 
-        # Now check the tempDir for a FWJR for the killed job
-        reportPath = os.path.join(self.tempDir, "Report.0.pkl")
-        report = Report()
-        report.load(reportPath)
-        self.assertEqual(report.getExitCode(), 61301)
+        ### Now check the tempDir for a FWJR for the killed job
+        #reportPath = os.path.join(self.tempDir, "Report.0.pkl")
+        #report = Report()
+        #report.load(reportPath)
+        #self.assertEqual(report.getExitCode(), 61301)
         return
 
     def createConfig(self):
@@ -658,7 +665,9 @@ class ResourceControlTest(unittest.TestCase):
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
         config.CoreDatabase.socket = os.getenv("DBSOCK")
         config.section_("JobStateMachine")
-        config.JobStateMachine.couchDBName = "bogus"
+        config.JobStateMachine.couchurl        = os.getenv('COUCHURL')
+        config.JobStateMachine.couchDBName = "bossair_t"
+        config.JobStateMachine.jobSummaryDBName = 'wmagent_summary_t'
         config.section_("BossAir")
         config.BossAir.pluginDir = "WMCore.BossAir.Plugins"
         config.BossAir.pluginNames = ["MockPlugin"]

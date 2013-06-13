@@ -44,6 +44,8 @@ WMJobErrorCodes = {50660 :
                         "The job can only run at a site that is currently in Aborted state",
                     61103 :
                         "The JobSubmitter component could not load the job pickle",
+                    61104 :
+                        "The job can only run at a site that is currently in Draining state",
                     61300 :
                         "The job was killed by the WMAgent, reason is unknown.",
                     61301 :

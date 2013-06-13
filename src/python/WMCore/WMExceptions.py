@@ -26,28 +26,30 @@ List of job error codes present in WMCore, some of them coming from CMSSW, and a
 of the error it represents.
 """
 WMJobErrorCodes = {50660 :
-                        "Application terminated by wrapper for using too much RSS",
-                    50661 :
-                        "Application terminated by wrapper for using too much VSize",
-                    50664 :
-                        "Application terminated by wrapper for using too much wallclock time",
-                    60450 :
-                        "No output files present in the report",
-                    60451 :
-                        "No Adler32 checksum available in file",
-                    60452 :
-                        "No run/lumi information in file",
-                    61101 :
-                        "No sites are available to submit the job because the location of its input(s)"
-                        "do not pass the site whitelist/blacklist restrictions",
-                    61102 :
-                        "The job can only run at a site that is currently in Aborted state",
-                    61103 :
-                        "The JobSubmitter component could not load the job pickle",
-                    61300 :
-                        "The job was killed by the WMAgent, reason is unknown.",
-                    61301 :
-                        "The job was killed by the WMAgent because the site it was running at was set to Aborted"}
+                   "Application terminated by wrapper for using too much RSS",
+                   50661 :
+                   "Application terminated by wrapper for using too much VSize",
+                   50664 :
+                   "Application terminated by wrapper for using too much wallclock time",
+                   60450 :
+                   "No output files present in the report",
+                   60451 :
+                   "No Adler32 checksum available in file",
+                   60452 :
+                   "No run/lumi information in file",
+                   61101 :
+                   "No sites are available to submit the job because the location of its input(s)"
+                   "do not pass the site whitelist/blacklist restrictions",
+                   61102 :
+                   "The job can run only at a site that is currently in Aborted state",
+                   61103 :
+                   "The JobSubmitter component could not load the job pickle",
+                   61104 :
+                   "The job can run only at a site that is currently in Draining state",
+                   61300 :
+                   "The job was killed by the WMAgent, reason is unknown.",
+                   61301 :
+                   "The job was killed by the WMAgent because the site it was running at was set to Aborted"}
 
 """
 WMJobPermanentSystemErrors

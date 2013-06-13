@@ -245,7 +245,7 @@ class JobSubmitterPoller(BaseWorkerThread):
           - Path to sanbox
           - Path to cache directory
         """
-        badJobs = dict([(x, []) for x in range(61101,61104)])
+        badJobs = dict([(x, []) for x in range(61101,61105)])
         dbJobs = set()
 
         logging.info("Refreshing priority cache...")
@@ -320,23 +320,27 @@ class JobSubmitterPoller(BaseWorkerThread):
                     blackList.extend(self.cmsNames.get(cmsName, []))
                 possibleLocations = possibleLocations - set(blackList)
 
-            non_abort_sites = [x for x in possibleLocations if x not in self.abortSites]
-            if non_abort_sites: # if there is at least a non aborted site then run there, otherwise fail the job
-                possibleLocations = non_abort_sites
-            else:
+            if len(possibleLocations) == 0:
                 newJob['name'] = loadedJob['name']
-                badJobs[61102].append(newJob)
+                badJobs[61101].append(newJob)
                 continue
+            else :
+                non_abort_sites = [x for x in possibleLocations if x not in self.abortSites]
+                if non_abort_sites: # if there is at least a non aborted site then run there, otherwise fail the job
+                    possibleLocations = non_abort_sites
+                else:
+                    newJob['name'] = loadedJob['name']
+                    badJobs[61102].append(newJob)
+                    continue
 
             # try to remove draining sites if possible, this is needed to stop
             # jobs that could run anywhere blocking draining sites
             non_draining_sites = [x for x in possibleLocations if x not in self.drainSites]
             if non_draining_sites: # if >1 viable non-draining site remove draining ones
                 possibleLocations = non_draining_sites
-
-            if len(possibleLocations) == 0:
+            else:
                 newJob['name'] = loadedJob['name']
-                badJobs[61101].append(newJob)
+                badJobs[61104].append(newJob)
                 continue
 
             batchDir = self.addJobsToPackage(loadedJob)

@@ -196,25 +196,5 @@ class ConfigTest(unittest.TestCase):
 
         return
 
-    @attr('integration')
-    def testB_WMAgentPromptSkimConfig(self):
-        """
-        _WMAgentConfig_
-
-        Test the WMAgentConfig file in WMCORE/etc
-        """
-
-        # Get the config
-        configPath = os.path.join(WMCore.WMInit.getWMBASE(),
-                                  'etc', 'WMAgentPromptSkimConfig.py')
-
-
-        self.initComponents(configPath = configPath)
-
-
-        return
-
-
-
 if __name__ == "__main__":
     unittest.main()

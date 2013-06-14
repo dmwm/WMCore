@@ -573,63 +573,6 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['RequestNumEvents'], 100)
         self.assertEqual(request['RequestSizeFiles'], 0)
 
-    def testI_RelValMC(self):
-        """
-        _RelValMC_
-
-        Test RelValMC workflows
-        
-        """
-        userName     = 'Taizong'
-        groupName    = 'Li'
-        teamName     = 'Tang'
-        schema       = utils.getAndSetupSchema(self,
-                                               userName = userName,
-                                               groupName = groupName,
-                                               teamName = teamName)
-        schema['RequestType'] = "RelValMC"
-        try:
-            raises = False
-            result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
-            raises = True
-            self.assertEqual(ex.status, 400)
-            self.assertTrue("Error in Workload Validation: Missing required field "
-                            "'PrimaryDataset' in workload validation!" in ex.result)
-        self.assertTrue(raises)
-
-        schema["GenConfigCacheID"]        = "fakeID"
-        schema["StepOneConfigCacheID"]    = "fakeID"
-        schema["StepTwoConfigCacheID"]    = "fakeID"
-        schema["CouchDBName"]             = self.couchDBName
-        schema["CouchURL"]                = os.environ.get("COUCHURL")
-        schema["PrimaryDataset"]          = "ReallyFake"
-        schema["RequestNumEvents"]        = 100
-        schema["GenOutputModuleName"]     = "ThisIsAName"
-        schema["StepOneOutputModuleName"] = "ThisIsAName"
-
-        try:
-            raises = False
-            result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
-            raises = True
-            self.assertEqual(ex.status, 400)
-            self.assertTrue("Failure to load ConfigCache while validating workload" in ex.result)
-
-        configID = self.createConfig()
-        schema["GenConfigCacheID"]     = configID
-        schema["StepOneConfigCacheID"] = configID
-        schema["StepTwoConfigCacheID"] = configID
-        result = self.jsonSender.put('request/testRequest', schema)
-        requestName = result[0]['RequestName']
-
-        result = self.jsonSender.get('request/%s' % requestName)
-        request = result[0]
-        self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
-        self.assertEqual(request['Group'], groupName)
-        self.assertEqual(request['Requestor'], userName)
-
-
     def testJ_Resubmission(self):
         """
         _Resubmission_

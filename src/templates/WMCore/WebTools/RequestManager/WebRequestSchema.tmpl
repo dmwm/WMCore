@@ -198,7 +198,6 @@ First lumi: <input type="text" name="FirstLumi" size=10 value=1 /><br/>
     <ul class="yui-nav">
         <li class="selected"><a href="#rereco"><em>ReReco</em></a></li>
         <li><a href="#mc"><em>Monte Carlo</em></a></li>
-        <li><a href="#relvalmc"><em>RelVal MC</em></a></li>
         <li><a href="#storeResults"><em>StoreResults</em></a></li>
         <li><a href="#DataProcessing"><em>DataProcessing</em></a></li>
         <li><a href="#Resubmission"><em>Resubmission</em></a></li>
@@ -233,23 +232,6 @@ Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
 Data Pileup: <input type="text" name="DataPileup" size=80 /><br/>
 MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
             $trailerBlock("MonteCarlo")
-        </div>
-        <div id="relvalmc">
-            $headerBlock
-            $softwareBlock
-            $campaignBlock
-Global Tag: <input type="text" name="GlobalTag" size=20 value=""/> &nbsp &nbsp
-# of Events: <input type="text" name="RequestNumEvents" size=10 value=1000 /><br/>
-Generation ConfigCache ID <input type="text" name="GenConfigCacheID" size=80 /><br/>
-Generation Output Module Name: <input type="text" name="GenOutputModuleName" size=40 /><br/>
-Step One ConfigCache ID <input type="text" name="StepOneConfigCacheID" size=80 /><br/>
-Step Two ConfigCache ID <input type="text" name="StepTwoConfigCacheID" size=80 /><br/>
-StepOne Output Module Name: <input type="text" name="StepOneOutputModuleName" size=40 /><br/>
-Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
-Data Pileup: <input type="text" name="DataPileup" size=80 /><br/>
-MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
-            $performanceBlock
-            $trailerBlock("RelValMC")
         </div>
         <div id="storeResults">
             $headerBlock

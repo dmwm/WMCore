@@ -10,7 +10,6 @@ NOTE: This should come from the RequestFactory stuff later on
 
 TypesList = [
     "MonteCarlo",
-    "RelValMC",
     "CmsGen",
     "Reco",
     "ReReco",

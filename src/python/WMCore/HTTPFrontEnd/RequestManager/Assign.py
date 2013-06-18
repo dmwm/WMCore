@@ -298,7 +298,7 @@ class Assign(WebAPI):
                                   int(kwargs.get("MaxMergeSize", 4294967296)),
                                   int(kwargs.get("MaxMergeEvents", 50000)))
         helper.setupPerformanceMonitoring(int(kwargs.get("maxRSS", 2411724)),
-                                          int(kwargs.get("maxVSize", 2411724)),
+                                          int(kwargs.get("maxVSize", 20411724)),
                                           int(kwargs.get("SoftTimeout", 129600)),
                                           int(kwargs.get("GracePeriod", 300)))
 

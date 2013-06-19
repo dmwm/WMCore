@@ -13,19 +13,19 @@ class DataCache(object):
         DataCache._duration = sec;
 
     @staticmethod
-    def getRequestData():
+    def getAgentRequestData():
         if (DataCache._agentRequestData):
             return DataCache._agentRequestData["data"]
         else:
             return None
 
     @staticmethod
-    def setRequestData(agentRequestData):
+    def setAgentRequestData(agentRequestData):
         DataCache._agentRequestData["time"] = int(time.time())
         DataCache._agentRequestData["data"] = agentRequestData
 
     @staticmethod
-    def isRequestDataExpired():
+    def isAgentRequestDataExpired():
         if not DataCache._agentRequestData:
             return True
 

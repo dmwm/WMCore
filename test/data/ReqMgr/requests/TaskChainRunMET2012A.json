@@ -1,0 +1,87 @@
+{
+"createRequest":
+    {
+        "AcquisitionEra": {},
+        "CMSSWVersion": "CMSSW_6_1_2",
+        "Campaign": "Campaign-OVERRIDE-ME",
+        "ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
+        "DQMConfigCacheID": "fcd00e29ab6cfb3b94e098241a1b828f",
+        "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
+        "EnableDQMHarvest": 1,
+        "GlobalTag": "PRE_61_V1::All",
+        "Requestor": "Requestor-OVERRIDE-ME",
+        "Group": "DATAOPS",
+        "ProcessingVersion": 1,
+        "RequestString": "RV612_TEST_TaskChain_RunMET2012A",
+        "DbsUrl": "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet",
+        "RequestPriority": 1000,
+        "RequestType": "TaskChain",
+        "ScramArch": "slc5_amd64_gcc472",
+        "SiteWhitelist": ["T2_CH_CERN", "T1_US_FNAL"],
+        "TimePerEvent": 20,
+        "Memory": 2400,
+        "SizePerEvent": 512,
+        "RequestSizeFiles": 2000, 
+        "Task1": {"InputDataset": "/MET/Run2012A-v1/RAW",
+            "RunWhitelist": [191226],
+            "KeepOutput": "False",
+            "AcquisitionEra": "CMSSW_6_1_2",
+            "ProcessingString": "PRE_P61_V1_TEST_bed_RelVal_met2012A",
+            "GlobalTag": "PRE_P61_V1::All",
+            "SplittingArguments": {"lumis_per_job": 6},
+            "SplittingAlgorithm": "LumiBased",
+            "ConfigCacheID": "fcd00e29ab6cfb3b94e098241a1b5b18",
+            "TaskName": "HLTD"},
+        "Task2": {
+            "KeepOutput": "True",
+            "AcquisitionEra": "CMSSW_6_1_2",
+            "ProcessingString": "PRE_61_V1_TEST_bed_RelVal_met2012A",
+            "GlobalTag": "PRE_61_V1::All",
+            "InputFromOutputModule": "RAWoutput",
+            "InputTask": "HLTD",
+            "SplittingArguments": {"lumis_per_job": 3},
+            "SplittingAlgorithm": "LumiBased",
+            "ConfigCacheID": "fcd00e29ab6cfb3b94e098241a1b643e",
+            "TaskName": "RECODreHLT"},
+        "TaskChain": 2,
+        "dashboardActivity": "test",
+        "mergedLFNBase": "/store/relval",
+        "unmergedLFNBase": "/store/unmerged"
+    },
+
+"changeSplitting":
+    {
+        "HLTD" :
+            {
+                "SplittingAlgo": "LumiBased",
+                "lumis_per_job": 6,
+                "halt_job_on_file_boundaries" : "True"
+            }
+    },
+
+"assignRequest":
+    {
+        "SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
+        "SiteBlacklist": [],
+        "MergedLFNBase": "/store/relval",
+        "UnmergedLFNBase": "/store/unmerged",
+        "MinMergeSize": 2147483648,
+        "MaxMergeSize": 4294967296,
+        "MaxMergeEvents": 50000,
+        "AcquisitionEra": {"HLTD": "CMSSW_6_1_2",
+                           "RECODreHLT": "CMSSW_6_1_2"},
+        "ProcessingString" : {"HLTD" : "ProcessingString-OVERRIDE-ME",
+                              "RECODreHLT" : "ProcessingString-1-OVERRIDE-ME"},
+        "ProcessingVersion": 1,
+        "maxRSS": 3072000,
+        "maxVSize": 20072000,
+        "SoftTimeout": 129600,
+        "GracePeriod": 300,
+        "dashboard": "test",
+        "Team": "Team--OVERRIDE-ME",
+        "BlockCloseMaxWaitTime": 28800,
+        "BlockCloseMaxFiles": 500,
+        "BlockCloseMaxEvents": 20000000,
+        "BlockCloseMaxSize": 5000000000000
+    }
+}

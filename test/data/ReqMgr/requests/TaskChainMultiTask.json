@@ -55,8 +55,8 @@
     {
         "SingleMuPt100FS" :
             {
-                "SplittingAlgo" : "EventBased",
-                "events_per_job" : 3500
+                "SplittingAlgo": "EventBased",
+                "events_per_job": 3500
             }
     },
 

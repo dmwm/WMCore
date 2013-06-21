@@ -31,3 +31,6 @@ WMCore_t.RequestManager_t.ReqMgr_t.ReqMgrTest.testF_TestWhitelistBlacklist
 WMCore_t.RequestManager_t.ReqMgr_t.ReqMgrTest.testG_AddDuplicateUser
 WMCore_t.RequestManager_t.ReqMgr_t.ReqMgrTest.testH_RemoveSoftwareVersion
 WMCore_t.RequestManager_t.ReqMgr_t.ReqMgrTest.testI_CheckConfigIDs
+WMCore_t.Services_t.Service_t.ServiceTest.WMCore_t.Services_t.Service_t.ServiceTest.testClear
+WMCore_t.Services_t.Service_t.ServiceTest.WMCore_t.Services_t.Service_t.ServiceTest.testSocketTimeout 
+WMCore_t.Services_t.Service_t.ServiceTest.WMCore_t.Services_t.Service_t.ServiceTest.testClearAndRepopulate

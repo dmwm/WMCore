@@ -175,7 +175,7 @@ class SimpleMyProxy(Credential):
 
     def __init__(self, args):
         Credential.__init__( self, args )
-        self.logger = logging.getLogger(type(self).__name__)
+        self.logger = args['logger'] if 'logger' in args else logging.getLogger(type(self).__name__)
 
     def checkMyProxy(self, username, certfile=None, keyfile=None, myproxyserver='myproxy.cern.ch', myproxyport=7512):
         """

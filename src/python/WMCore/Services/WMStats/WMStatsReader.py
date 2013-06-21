@@ -55,6 +55,14 @@ class WMStatsReader():
 
         return stateDict
 
+    def jobSummayByWorkflow(self, requests):
+        """
+        
+        """
+        options = {"keys": requests, 
+                   "reduce": true, "group": true, "descending": true};
+    
+    
     def getDBInstance(self):
         return self.couchDB
     

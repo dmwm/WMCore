@@ -3,8 +3,6 @@ import traceback
 import cherrypy
 import cherrypy.process.wspbus as cherrybus
 
-
-
 def start(server):
     try:
         server.start(blocking=False)
@@ -17,7 +15,6 @@ def start(server):
         print traceback.format_exc()
         server.stop()
         raise e
-
 
 def stop(server):
     server.stop()

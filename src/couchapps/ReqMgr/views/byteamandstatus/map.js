@@ -1,3 +1,5 @@
 function(doc) {
-  emit([doc.Team, doc.RequestStatus], null);
+	if (doc.Team) {
+		emit([doc.Team, doc.RequestStatus], null);
+	}
 }

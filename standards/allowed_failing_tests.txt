@@ -34,3 +34,7 @@ WMCore_t.RequestManager_t.ReqMgr_t.ReqMgrTest.testI_CheckConfigIDs
 WMCore_t.Services_t.Service_t.ServiceTest.WMCore_t.Services_t.Service_t.ServiceTest.testClear
 WMCore_t.Services_t.Service_t.ServiceTest.WMCore_t.Services_t.Service_t.ServiceTest.testSocketTimeout 
 WMCore_t.Services_t.Service_t.ServiceTest.WMCore_t.Services_t.Service_t.ServiceTest.testClearAndRepopulate
+WMCore_t.Services_t.Service_t.ServiceTest.WMCore_t.Services_t.Service_t.ServiceTest.testCacheDuration
+WMCore_t.Services_t.Service_t.ServiceTest.WMCore_t.Services_t.Service_t.ServiceTest.testNoCacheDuration
+WMCore_t.Services_t.Service_t.ServiceTest.WMCore_t.Services_t.Service_t.ServiceTest.testBadStatusLine
+WMCore_t.Services_t.Service_t.ServiceTest.WMCore_t.Services_t.Service_t.ServiceTest.testNoCache

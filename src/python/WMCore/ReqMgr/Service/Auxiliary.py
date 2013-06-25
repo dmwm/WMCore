@@ -37,7 +37,7 @@ class HelloWorld(RESTEntity):
         validate_str("name", param, safe, rx.RX_REQUEST_NAME, optional=True)
 
 
-    @restcall(compression=[], formats = [('application/json', JSONFormat())])
+    @restcall(formats = [('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     def get(self, name):
         """

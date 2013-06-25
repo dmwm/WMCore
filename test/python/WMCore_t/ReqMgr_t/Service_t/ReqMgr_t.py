@@ -4,7 +4,7 @@ import os
 import unittest
 import shutil
 
-from TestConfig import TestConfig
+from WMCore_t.ReqMgr_t.Config import Config
 from WMQuality.REST.RESTBaseUnitTestWithDBBackend import RESTBaseUnitTestWithDBBackend
 
 class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
@@ -23,7 +23,7 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         setUP global values
         """
         appport = 19888
-        config = TestConfig(appport, os.getenv("COUCHURL"), False);
+        config = Config(appport, os.getenv("COUCHURL"), False);
         self.setConfig(config)
         self.setCouchDBs([(config.views.restapihub.couch_reqmgr_db, "ReqMgr")])
         self.setSchemaModules([])
@@ -32,14 +32,14 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
     def tearDown(self):
         RESTBaseUnitTestWithDBBackend.tearDown(self)
 
-    def atestRequest(self):
+    def testRequest(self):
         # add request related REST API test
         #
         #self.jsonSender.put('request/' + schema['RequestName'], schema) 
         #print self.jsonSender.get('request', incoming_headers=self.adminHeader)
-        print self.jsonSender.get('request')
+        print self.jsonSender.get('request?statusList=[]')
     
-    def testHello(self):
+    def atestHello(self):
         print self.jsonSender.get('hello')
         print self.jsonSender.get('hello?name=Tiger')
 if __name__ == '__main__':

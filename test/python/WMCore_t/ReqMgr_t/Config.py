@@ -9,7 +9,7 @@ Everything configurable in ReqMgr is defined here.
 from WMCore.Configuration import Configuration
 from os import path
 
-class TestConfig(Configuration):
+class Config(Configuration):
 
     def __init__(self, appport, couchurl, secure=True):
         Configuration.__init__(self)

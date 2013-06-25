@@ -197,6 +197,8 @@ class Requests(dict):
             headers[key] = self.additionalHeaders[key]
 
         #And now overwrite any headers that have been passed into the call:
+        #WARNING: doesn't work with deplate so only accept gzip 
+        incoming_headers["accept-encoding"] = "gzip,identity"
         headers.update(incoming_headers)
 
         # httpib2 requires absolute url

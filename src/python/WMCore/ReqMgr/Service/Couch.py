@@ -74,17 +74,17 @@ class ReqMgrCouch(object):
             raise cherrypy.HTTPError(400, msg)
         
 
-    def view(self, db_name, app_name, view_name, options={}):
+    def view(self, db_name, app_name, view_name, options={}, keys=[]):
         """
         Return results of a view query.
         
         """
         try:
             db = self.get_db(db_name)
-            request_docs = db.loadView(app_name, view_name, options=options)
+            request_docs = db.loadView(app_name, view_name, options=options, keys=keys)
             return request_docs
         except CouchError, ex:
-            msg = ("ERROR: Query of CouchDB database '%s', "
-                   "view '%s' failed." % (db_name, app_name))
-            cherrypy.log(msg + " Reason: %s" % ex)
-            raise cherrypy.HTTPError(400, msg)
+            msg = ("ERROR: Query of CouchDB database %s,  couchapp %s view %s failed."
+                    % (db_name, app_name, view_name))
+            cherrypy.log("%s Reason: %s" % (msg, ex))
+            raise cherrypy.HTTPError(400, "%s Reason: %s" % (msg, ex))

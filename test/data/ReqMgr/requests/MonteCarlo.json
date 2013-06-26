@@ -16,7 +16,6 @@
 		"DataPileup": "",
 		"MCPileup": "",
 		"PrepID": "MCTEST-GEN-0001",
-		"Requestor": "Requestor-OVERRIDE-ME",
 		"Group": "DATAOPS",
 		"RunWhitelist": [],
         "TotalTime": 14400, 

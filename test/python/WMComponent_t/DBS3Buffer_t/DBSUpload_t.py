@@ -471,6 +471,7 @@ class DBSUploadTest(unittest.TestCase):
             # create all the blocks and upload one with less than 150 events.
             # On the second iteration the second block is uploaded.
             dbsUploader.algorithm()
+            dbsUploader.checkBlocks()
             openBlocks = dbsUtil.findOpenBlocks()
             self.assertEqual(len(openBlocks), 1)
             globalFiles = myThread.dbi.processData("SELECT id FROM dbsbuffer_file WHERE status = 'InDBS'")[0].fetchall()
@@ -489,6 +490,7 @@ class DBSUploadTest(unittest.TestCase):
                 self.assertTrue('close_settings' not in block)
             time.sleep(3)
             dbsUploader.algorithm()
+            dbsUploader.checkBlocks()
             openBlocks = dbsUtil.findOpenBlocks()
             self.assertEqual(len(openBlocks), 0)
             fakeDBS = open(self.dbsUrl, 'r')
@@ -513,7 +515,7 @@ class DBSUploadTest(unittest.TestCase):
                                    workflowName = workflowName,
                                    taskPath = taskPath)
             dbsUploader.algorithm()
-    
+            dbsUploader.checkBlocks()
             openBlocks = dbsUtil.findOpenBlocks()
             self.assertEqual(len(openBlocks), 1)
             fakeDBS = open(self.dbsUrl, 'r')
@@ -534,7 +536,7 @@ class DBSUploadTest(unittest.TestCase):
                                    workflowName = workflowName,
                                    taskPath = taskPath)
             dbsUploader.algorithm()
-    
+            dbsUploader.checkBlocks()
             openBlocks = dbsUtil.findOpenBlocks()
             self.assertEqual(len(openBlocks), 0)
             fakeDBS = open(self.dbsUrl, 'r')
@@ -562,8 +564,10 @@ class DBSUploadTest(unittest.TestCase):
                                    workflowName = workflowName,
                                    taskPath = taskPath)
             dbsUploader.algorithm()
+            dbsUploader.checkBlocks()
             time.sleep(2)
             dbsUploader.algorithm()
+            dbsUploader.checkBlocks()
     
             self.assertEqual(len(openBlocks), 0)
             fakeDBS = open(self.dbsUrl, 'r')

@@ -56,13 +56,16 @@ class RESTClient(object):
             self.conn = HTTPConnection(url)
             
             
-    def http_request(self, verb, uri, data=None, header=None):
+    def http_request(self, verb, uri, data=None, headers=None):
         logging.debug("Request: %s %s %s ..." % (verb, uri, data))
-        self.conn.request(verb, uri, body=data, headers=self.headers)
+        self.conn.request(verb, uri, body=data, headers=headers or self.headers)
         resp = self.conn.getresponse()
         data = resp.read()
         logging.debug("Status: %s" % resp.status)
         logging.debug("Reason: %s" % resp.reason)
+        if resp.status != 200:
+            if hasattr(resp.msg, "x-error-detail"):
+                logging.warn("Message: %s" % resp.msg["x-error-detail"])
         return resp.status, data
             
         
@@ -85,16 +88,17 @@ class ReqMgrClient(RESTClient):
         logging.info("Approving request '%s' ..." % requestName)
         status, data = self.http_request("PUT", "/reqmgr/reqMgr/request",
                                         data=encodedParams, headers=self.textHeaders)
-                                        
-    For WMCore.REST, PUT method, sending args = json.dumps({"group_name": group})
-        didn't work, experimented with headers, no luck - had to do urlencoding
-               
+                                                       
     """
+    
     def __init__(self, url, config):
         logging.info("ReqMgr url: %s" % url)
-        # ReqMgr based on WMCore.REST API requires accept types defined
-        self.headers = {"Content-type": "application/x-www-form-urlencoded",
-                        "Accept": "application/json"}
+        # ReqMgr based on WMCore.REST API requires accept types defined        
+        self.headersUrl = {"Content-type": "application/x-www-form-urlencoded",
+                          "Accept": "application/json"}
+        self.headersBody = {"Content-type": "application/json",
+                            "Accept": "application/json"}
+        self.headers = self.headersUrl 
         self.urn_prefix = "/reqmgr2/data"
         RESTClient.__init__(self, url, cert=config.cert, key=config.key)
         
@@ -115,7 +119,88 @@ class ReqMgrClient(RESTClient):
             assert status == 200, "Call status is: %s" % status
             print "status: %s\n%s" % (status, data)
         return data
+    
+    
+    def delete_requests(self, config):
+        urn = self.urn_prefix +  "/request"
+        for request_name in config.request_names:
+            logging.info("Deleting '%s' request ..." % request_name)            
+            args = urllib.urlencode({"request_name": request_name})
+            status, data = self.http_request("DELETE", urn, data=args)
+            if status != 200:
+                print data
+                sys.exit(1)
+            logging.info("Done.")           
+    
+
+    def create_request(self, config):
+        """
+        config.request_args - arguments for both creation and assignment
         
+        """
+        logging.info("Injecting request args:\n%s ..." %
+                     config.request_args["createRequest"])
+        json_args = json.dumps(config.request_args["createRequest"])
+        urn = self.urn_prefix + "/request"
+        status, data = self.http_request("POST", urn, data=json_args,
+                                         headers=self.headersBody)
+        #if status > 216:
+        #    logging.error("Error occurred, exit.")
+        #    print data
+        #    sys.exit(1)
+        data = json.loads(data)
+        print data
+        #request_name = data.values()[0]["RequestName"] 
+        #logging.info("Create request '%s' succeeded." % requestName)
+        
+        #return request_name
+        
+    
+    def query_requests(self, config, to_query=None):
+        """
+        If to_query and config.request_names are not specified, then
+        all requests in the system are queried.
+        toQuery - particular request name to query.
+        config.request_names - list of requests to query.
+        
+        Returns a list of requests in either case.
+        
+        """  
+        if to_query:
+            requests_to_query = [to_query]
+        else:
+            requests_to_query = config.request_names
+            
+        requests_data = []
+        if requests_to_query:
+            for request_name in requests_to_query:
+                logging.info("Querying '%s' request ..." % request_name)
+                urn = self.urn_prefix + "/request?request_name=%s" % request_name
+                status, data = self.http_request("GET", urn)
+                if status != 200:
+                    print data
+                    sys.exit(1)           
+                request = json.loads(data)["result"][0]
+                for k, v in sorted(request.items()):
+                    print "\t%s: %s" % (k, v)
+                requests_data.append(request)
+            # returns data on requests in the same order as in the config.request_names
+            return requests_data
+        else:
+            logging.info("Querying all requests ...")
+            urn = self.urn_prefix + "/request?all=true"
+            status, data = self.http_request("GET", urn)
+            if status != 200:
+                print data
+                sys.exit(1)
+            requests = json.loads(data)
+            requests = requests["result"][0]["rows"]
+            keys = ("RequestName", "RequestType", "RequestType", "RequestStatus")
+            for r in requests:
+                print " ".join(["%s: '%s'" % (k, r["value"][k]) for k in keys])
+            logging.info("%s requests in the system." % len(requests))
+            return requests
+
 
     def all_tests(self, config):
         self._caller_checker("/hello", "GET", exp_data="Hello world")
@@ -165,6 +250,8 @@ class ReqMgrClient(RESTClient):
         data = self._caller_checker("/type", "GET")
         assert len(data) > 0, "%s should be non-empty list." % data
         
+        self.create_request(config)
+        
         print "\nall_tests succeeded."
         
     
@@ -193,9 +280,24 @@ def process_cli_args(args):
     # check command line arguments validity
     if not opts.reqmgrurl:
         err_exit("Missing mandatory --reqmgrurl.", parser)
+
+    if opts.create_request and not opts.config_file:
+        err_exit("When --create_request, --config_file is necessary.", parser)
+    if opts.create_request and opts.request_names:
+        err_exit("--request_names can't be provided with --create_request", parser)
+    if opts.all_tests and not opts.config_file:
+        err_exit("When --all_tests, --config_file is necessary", parser)
+    if (opts.json and not opts.create_request) and (opts.json and not opts.all_tests):
+        err_exit("--json only with --create_request, --all_tests", parser)
+        
     for action in filter(lambda name: getattr(opts, name), actions):
         if opts.all_tests and action and action != "all_tests":
             err_exit("Arguments --all_tests and --%s mutually exclusive." % action, parser)
+
+    if opts.request_names:
+        # make it a list here
+        opts.request_names = opts.request_names.split(',')
+            
     return opts, actions
 
 
@@ -219,16 +321,83 @@ def define_cli_options(parser):
             "returns a list of the requests in ReqMgr) "
             "e.g.: https://maxareqmgr01.cern.ch")
     parser.add_option("-u", "--reqmgrurl", help=help)
+    # -f --------------------------------------------------------------------
+    help = "Request template with arguments definition, request config file."
+    parser.add_option("-f", "--config_file", help=help)    
+    # -j --------------------------------------------------------------------
+    help = ("JSON string to override values from --config_file. "
+            "e.g. --json=\'{\"createRequest\": {\"Requestor\": \"efajardo\"}, "
+            "\"assignRequest\": {\"FirstLumi\": 1}}\' "
+            "e.g. --json=`\"cat alan.json\"`")
+    parser.add_option("-j", "--json", help=help)    
+    # -r --------------------------------------------------------------------
+    help = ("Request name or list of comma-separated names to perform "
+            "actions upon.")
+    parser.add_option("-r", "--request_names", help=help)
+    # -v ---------------------------------------------------------------------
+    help = "Verbose console output."
+    parser.add_option("-v", "--verbose",  action="store_true", help=help)
+    # actions definition below ----------------------------------------------    
+    # -i --------------------------------------------------------------------   
+    help = ("Action: Create and inject a request. Whichever from the config "
+            "file defined arguments can be overridden from "
+            "command line and a few have to be so (*-OVERRIDE-ME ending). "
+            "Depends on --config_file.")
+    action = "create_request"
+    actions.append(action)  
+    parser.add_option("-i", "--" + action, action="store_true", help=help)
+    # -d --------------------------------------------------------------------
+    help = "Action: Delete request(s) specified by --request_names."
+    action = "delete_requests"
+    actions.append(action)
+    parser.add_option("-d", "--" + action, action="store_true", help=help)    
+    # -q --------------------------------------------------------------------
+    help = "Action: Query request(s) specified by --request_names."
+    action = "query_requests"
+    actions.append(action)
+    parser.add_option("-q", "--" + action, action="store_true", help=help)
     # -a --------------------------------------------------------------------
     help = ("Action: Perform all operations this script allows. "
             "Check all REST API of the ReqMgr service.")
     action = "all_tests"
     actions.append(action)
     parser.add_option("-a", "--" + action, action="store_true", help=help)
-    # -v ---------------------------------------------------------------------\
-    help = "Verbose console output."
-    parser.add_option("-v", "--verbose",  action="store_true", help=help)    
+    
     return actions
+
+
+def process_request_args(intput_config_file, command_line_json):    
+    """
+    Load request arguments from a file, blend with JSON from command line.
+    
+    """
+    logging.info("Loading file '%s' ..." % intput_config_file)
+    try:
+        request_args = json.load(open(intput_config_file, 'r'))
+    except IOError as ex:
+        logging.fatal("Reading request arguments file '%s' failed, "
+                      "reason: %s." % (intput_config_file, ex))
+        sys.exit(1)
+    if command_line_json:
+        logging.info("Parsing request arguments on the command line ...")
+        cli_json = json.loads(command_line_json)
+        # if a key exists in cli_json, update values in the main request_args dict
+        for k in request_args.keys():
+            if cli_json.has_key(k):
+                request_args[k].update(cli_json[k])            
+    else:
+        logging.warn("No request arguments to override (--json)? Some values will be wrong.")
+        
+    # iterate over all items recursively and warn about those ending with 
+    # OVERRIDE-ME, hence not overridden
+    def check(items):
+        for k, v in items:
+            if isinstance(v, dict):
+                check(v.items())
+            if isinstance(v, unicode) and v.endswith("OVERRIDE-ME"):
+                logging.warn("Not properly set: %s: %s" % (k, v))
+    check(request_args.items())
+    return request_args
 
     
 def initialization(cli_args):
@@ -237,6 +406,9 @@ def initialization(cli_args):
     logging.basicConfig(level=logging.DEBUG if config.verbose else logging.INFO)
     logging.debug("Set verbose console output.")
     reqmgr_client = ReqMgrClient(config.reqmgrurl, config)
+    if config.create_request or config.all_tests:
+        # process request arguments and store them
+        config.request_args = process_request_args(config.config_file, config.json)    
     return reqmgr_client, config, actions
     
 
@@ -254,7 +426,8 @@ def main():
         # pass them entire configuration
         reqmgr_client.__getattribute__(action)(config)
     if not actions:
-        reqmgr_client.all_tests(config)
+        reqmgr_client.query_requests(config)
+        
         
     
 if __name__ == "__main__":

@@ -112,27 +112,28 @@ WMStats.Requests = function(noFilterFlag) {
     
     
     tier1Requests.requestNotPulledAlert = function() {
-        var alertRequests = [];
+        var alertRequests = {};
+        alertRequests['assignedStall'] = [];
+        alertRequests['statusStall'] = [];
         for (var workflow in this.getData()) {
             var reqStatusInfo = this.getRequestStatusAndTime(workflow);
             var currentTime = Math.round(new Date().getTime() / 1000);
-            var timeThreshold = 600 // 10 min
+            var assignThreshold = 7200; // 2 hours
+            var status = reqStatusInfo.status;
             //Global Queue not pulling case
-            if (reqStatusInfo.status == "assigned") {
-                // not updated for 20 min
-                if ((currentTime - reqStatusInfo.update_time) > timeThreshold) {
-                    alertRequests.push({'request': this.getData(workflow),
-                                        'message': "not pulled by GQ"});
+            if (status == "assigned") {
+                if ((currentTime - reqStatusInfo.update_time) > assignThreshold) {
+                    alertRequests['assignedStall'].push(this.getData(workflow));
                 }
             }
             //TODO: this needs to be redefined for several use case
             // since local queue is partially pulled check
             //localqueue not pulled case
-            if (reqStatusInfo.status == "acquired") {
-                // not updated for 20 min
-                if ((currentTime - reqStatusInfo.update_time) > timeThreshold) {
-                    alertRequests.push({'request': this.getData(workflow),
-                                        'message': "not pulled by LQ"});
+            var twoDayThreshold = 3600 * 24 * 2; //2 days
+            if (status == "acquired" || status == "running-open" || 
+                status == "running-closed") {
+                if ((currentTime - reqStatusInfo.update_time) > twoDayThreshold) {
+                    alertRequests['statusStall'].push(this.getData(workflow));
                 }
             }
         }

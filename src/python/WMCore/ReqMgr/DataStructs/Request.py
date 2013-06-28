@@ -2,11 +2,6 @@
 Unlike ReqMgr1 defining Request and RequestSchema classes,
 define just 1 class. Derived from Python dict and implementing
 necessary conversion and validation extra methods possibly needed.
-
-NOTE:
-if practical, define here a sublist of necessary request fields to
-    check, otherwise let it fail during validation in spec that
-    some necessary field is missing
     
 TODO/NOTE:
 not sure what 'inputMode' request input argument is good for ... investigate
@@ -49,17 +44,11 @@ class Request(dict):
         self.setdefault("RequestWorkflow", None)        
         self.setdefault("RequestDate", None),
         
-        # TODO1
-        # these values will contain full URL instead of the
-        # database name up to no. So some of these values
-        # will get deprecated and new ones will be introduced
-        # holding the entire database URL
-        # URL of the ReqMgr CouchDB server
-        # TODO2
+        # TODO
         # reassess if these CouchDB related details are necessary to be stored
         # in the request document! ReqMgr1 has all of these 3.
         self.setdefault("CouchURL", None) 
-        # name of the ConfigCache database in Couch (historical misleading naming)
+        # name of the ConfigCache database in Couch (historicaly misleading naming)
         self.setdefault("CouchDBName", None)
         # name of the main ReqMgr CouchDB database
         self.setdefault("CouchWorkloadDBName", None)
@@ -105,46 +94,7 @@ class Request(dict):
             if self[arg]:
                 msg = "ERROR: Request parameter %s can't be specified by the user." % arg
                 raise RequestDataError(msg)
-                        
-        
-    def validate(self):
-        for identifier in ["ScramArch", "RequestName", "Group", "Requestor",
-                           "RequestName", "Campaign", "ConfigCacheID"]:
-            self.lexicon(identifier, WMCore.Lexicon.identifier)
-        self.lexicon("CMSSWVersion", WMCore.Lexicon.cmsswversion)
-        for dataset in ["InputDataset", "OutputDataset"]:
-            self.lexicon(dataset, WMCore.Lexicon.dataset)
-        if self["Scenario"] and self["ConfigCacheID"]:
-            msg = "ERROR: Scenario and ConfigCacheID are mutually exclusive."
-            raise RequestDataError(msg)
-        if self["RequestType"] not in REQUEST_TYPES:
-            msg = "ERROR: Request/Workload type '%s' not known." % self["RequestType"]
-            raise RequestDataError(msg)
-        
-        # TODO
-        # do also CMSSW versions validity, like in CheckIn.checkIn()
-        """
-        if not scramArch in versions.keys():
-            m = ("Cannot find scramArch %s in ReqMgr (the one(s) available: %s)" %
-                 (scramArch, versions))
-            raise RequestCheckInError(m)
-        for version in request.get('SoftwareVersions', []):
-            if not version in versions[scramArch]:
-                raise RequestCheckInError("Cannot find software version %s in ReqMgr for "
-                                          "scramArch %s. Supported versions: %s" %
-                                          (version, scramArch, versions[scramArch]))
-        """
-        
-        # TODO
-        # should be checking user/group membership? probably impossible, groups
-        # is nothing that would be SiteDB ... (and there is no internal user
-        # management here)
-        
-        # TODO
-        # when is method is called, all automatic request arguments are
-        # already figured out, should check that newly created RequestName
-        # does not exist in Couch database, by any chance
-        
+                                
         
     def lexicon(self, field, validator):
         if self.get(field, None) != None:

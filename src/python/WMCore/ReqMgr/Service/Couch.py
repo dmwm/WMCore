@@ -53,6 +53,7 @@ class ReqMgrCouch(object):
                # will be necessary later:
                #config.couch_config_cache_db,
                #config.couch_workload_summary_db,
+               # WMStats, due to shared database, will not be necessary
                #config.couch_wmstats_db,
         for db in dbs:
             setattr(self, db, self._create_conn(db))

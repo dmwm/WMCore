@@ -9,7 +9,6 @@
         "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
         "EnableDQMHarvest": 1,
         "GlobalTag": "PRE_61_V1::All",
-        "Requestor": "Requestor-OVERRIDE-ME",
         "Group": "DATAOPS",
         "ProcessingVersion": 1,
         "RequestString": "RV612_TEST_TaskChain_RunMET2012A",

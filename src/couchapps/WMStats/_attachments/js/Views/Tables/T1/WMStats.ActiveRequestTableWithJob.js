@@ -114,9 +114,33 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
                                 var jobs = reqSummary.getTotalCooloff();
                                 var requestInfo = _activePageData.getData(source.workflow);
                                 if (type === 'display') {
-                                  return WMStats.Globals.formatJobLink(jobs, requestInfo.agent_url, source.workflow, "cooloff")
+                                  return WMStats.Globals.formatJobLink(jobs, requestInfo.agent_url, source.workflow, "cooloff");
                                 }
                                 return jobs;
+                              }
+            },
+            { "sDefaultContent": "N/A",
+              "sTitle": "GQ", 
+              "mDataProp": function ( source, type, val ) {
+                                if (type === 'display') {
+                                  return WMStats.Globals.getGQLink(source.workflow);
+                                }
+                                return;
+                              }
+            },
+            { "sDefaultContent": "N/A",
+              "sTitle": "LQ", 
+              "mDataProp": function ( source, type, val ) {
+              					var requestInfo = _activePageData.getData(source.workflow);
+                                if (type === 'display') {
+                                  if (requestInfo.agent_url) {
+                                  	return WMStats.Globals.getLQLink(requestInfo.agent_url, source.workflow);	
+                                  }else {
+                                  	return "N/A";
+                                  }
+                                  
+                                }
+                                return;
                               }
             }
         ]

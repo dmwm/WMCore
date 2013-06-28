@@ -13,7 +13,6 @@
         "ScramArch": "slc5_amd64_gcc434",
         "ProcessingVersion": 1,
         "GlobalTag": "GR10_P_v4::All",
-        "Scenario": "pp",
         "TimePerEvent": 40,
         "Memory": 2394,
         "Group": "DATAOPS",

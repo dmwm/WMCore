@@ -14,7 +14,6 @@
         "RequestString": "RV610_TEST_SingleMuPt100",
         "RequestPriority": 1000,
         "RequestType": "TaskChain",
-        "Requestor": "Requestor-OVERRIDE-ME",
         "ScramArch": "slc5_amd64_gcc472",
         "SiteWhitelist": ["T2_CH_CERN", "T1_US_FNAL"],
         "Memory": 2400,

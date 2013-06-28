@@ -144,16 +144,15 @@ class ReqMgrClient(RESTClient):
         urn = self.urn_prefix + "/request"
         status, data = self.http_request("POST", urn, data=json_args,
                                          headers=self.headersBody)
-        #if status > 216:
-        #    logging.error("Error occurred, exit.")
-        #    print data
-        #    sys.exit(1)
+        if status > 216:
+            logging.error("Error occurred, exit.")
+            print data
+            sys.exit(1)
         data = json.loads(data)
         print data
-        #request_name = data.values()[0]["RequestName"] 
-        #logging.info("Create request '%s' succeeded." % requestName)
-        
-        #return request_name
+        request_name = data["result"][0]["RequestName"] 
+        logging.info("Create request '%s' succeeded." % request_name)
+        return request_name
         
     
     def query_requests(self, config, to_query=None):

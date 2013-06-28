@@ -27,6 +27,23 @@ WMStats.Globals = function($){
         return "/couchdb/" + getWorkloadSummaryDB() + "/_design/WorkloadSummary/_show/histogramByWorkflow/";
     };
     
+    function getGQLink(request) {
+    	var gqLink = "/couchdb/workqueue/_design/WorkQueue/_rewrite/elementsInfo?request=" + request;
+    	return "<a href='" + gqLink + "' target='_blank'>GQ</a>";
+    };
+    
+    function getLQLink(agentURLs, request){
+    	if (agentURLs.constructor.name === "String"){
+            agentURL = agentURLs
+        } else if (agentURLs.length && (agentURLs[0].constructor.name === "String")){
+            //TODO: need to handle properly multiple agent
+            agentURL = agentURLs[0];
+        };
+    	var lqLink = "http://" + agentURL.split(':')[0] + 
+    	             ":5984/workqueue/_design/WorkQueue/_rewrite/elementsInfo?request=" + request;
+    	return "<a href='" + lqLink + "' target='_blank'>LQ</a>";
+    };
+    
     function getWorkloadSummaryDB() {
         if (_dbVariants[dbname] == "tier1") {
             return "workloadsummary";
@@ -38,7 +55,7 @@ WMStats.Globals = function($){
     };
     
     function getAgentUrlForJobs(agentURL, workflow, status) {
-        return "http://" + agentURL.split(':')[0] + ":5984/wmagent_jobdump%2Fjobs/_design/JobDump/_list/" + 
+    	return "http://" + agentURL.split(':')[0] + ":5984/wmagent_jobdump%2Fjobs/_design/JobDump/_list/" + 
                 status + "Jobs/statusByWorkflowName?startkey=[%22" +
                 workflow + "%22]&endkey=[%22" + workflow + "%22%2C{}]&reduce=false&stale=ok";
     }
@@ -84,7 +101,9 @@ WMStats.Globals = function($){
                                  }
               },
         Event: {}, // name space for Global Custom event
-        formatJobLink: formatJobLink
+        formatJobLink: formatJobLink,
+        getGQLink: getGQLink,
+        getLQLink: getLQLink
         }
 }(jQuery)
 

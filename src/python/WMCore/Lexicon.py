@@ -195,6 +195,8 @@ def lfn(candidate):
     oldStyleTier0LFN = '/store/data/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s/%(root)s' % lfnParts
     tier0LFN = '/store/(backfill/[0-9]/){0,1}(t0temp/){0,1}(data|express|hidata)/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s/%(counter)s/%(root)s' % lfnParts
 
+    storeMcLFN = '/store/mc/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)(/([a-zA-Z0-9\-_]+))*/([a-zA-Z0-9\-_]+).root'
+
     storeResultsLFN = '/store/results/%(physics_group)s/%(primDS)s/%(secondary)s/%(primDS)s/%(tier)s/%(secondary)s/%(counter)s/%(root)s' % lfnParts
 
     try:
@@ -219,6 +221,11 @@ def lfn(candidate):
 
     try:
         return check(oldStyleTier0LFN, candidate)
+    except AssertionError:
+        pass
+
+    try:
+        return check(storeMcLFN, candidate)
     except AssertionError:
         return check(storeResultsLFN, candidate)
 

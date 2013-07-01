@@ -1,3 +1,21 @@
+0.9.77 to 0.9.78:
+  - ReqMgr2 request injection extended, polished. Pull request #4707.
+  - add GQ LQ link and request alert for assigned, acquired and running status. Pull request #4704.
+  - ReqMgr1, 2 - StoreResults injection. Pull request #4702.
+  - ReqMgr2 request injection prototype. Pull request #4701.
+  - Bugfix for JobUpdater. Pull request #4700.
+  - ReqMgr2 unittests. Pull request #4697.
+  - Continuing to silence jenkins
+  - Trying to silence jenkins
+  - SimpleMyProxy: use logger from arguments if there is one. Pull request #4694.
+  - ReqMgr TaskChain request templates added. Pull request #4693.
+  - RelValMC further clean up. Pull request #4691.
+  - Fixed issue #4681. Increased VSS limit to 20411724. Pull request #4690.
+  - Remove the RelVal MC Spec. Pull request #4687.
+  - Remove PromptSkimming from the system. Pull request #4688.
+  - Fixed WMExceptions code and duplicate/incorrect errors. issue 4623. Pull request #4685.
+  - Add /store/mc/* to qualified lfn names. YG. Pull request #4655.
+
 0.9.76 to 0.9.77:
   - add check on cert/proxy length. Pull request 4682.
   - check voms- exec. pull request #4680

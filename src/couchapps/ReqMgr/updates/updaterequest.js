@@ -22,7 +22,7 @@ function(doc, req)
     {   
         doc[key] = newValues[key];
         if (key == "RequestStatus") {
-            updateTransition();
+        	updateTransition();
         }
     }
     return [doc, "OK"];

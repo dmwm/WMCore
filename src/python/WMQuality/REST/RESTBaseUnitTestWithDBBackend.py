@@ -12,8 +12,7 @@ from WMQuality.REST.ServerSetup import RESTMainTestServer
 import WMQuality.CherrypyTestInit as CherrypyTestInit
 
 
-
-class RESTBaseUnitTestWithCouchDB(unittest.TestCase):
+class RESTBaseUnitTestWithDBBackend(unittest.TestCase):
 
     def setUp(self, initRoot = True):
         """
@@ -23,12 +22,14 @@ class RESTBaseUnitTestWithCouchDB(unittest.TestCase):
             config is WMCore.REST application config
             
             i.e.
-            class ClildClass(RESTBaseUnitTestWithCouchDB):
+            class ClildClass(RESTBaseUnitTestWithDBBackend):
+                
                 def setUp(self):
                     self.setConfig(WMCore.ReqMgr.Config)
                     # following setters are optional
                     self.setCouchDBs([("reqmgr_workload_config", "ReqMgr")])
-                    self.setSchemaModules(["WMCore.WMBS"])                
+                    self.setSchemaModules(["WMCore.WMBS"])
+                    
             
         """
         if self.schemaModules or self.couchDBs:
@@ -50,17 +51,17 @@ class RESTBaseUnitTestWithCouchDB(unittest.TestCase):
                 for (dbName, couchApp) in self.couchDBs:
                     self.testInit.setupCouch(dbName, couchApp)
             
+
         logging.info("This is our config: %s" % self.config)
 
         self.initRoot = initRoot
         if initRoot:
-            self.server = RESTMainTestServer(self.config, os.getcwd(),
-                                             self._testMethodName)
+            self.server = RESTMainTestServer(self.config, os.getcwd(), self._testMethodName)
             CherrypyTestInit.start(self.server)
             self.jsonSender = self.server.jsonSender
             #TODO: find the way to check the api with the permission
             #self.adminHeader = self.server.header
-            
+        return
 
     def tearDown(self):
         if self.initRoot:
@@ -74,26 +75,22 @@ class RESTBaseUnitTestWithCouchDB(unittest.TestCase):
         
         self.config = None
         self.jsonSender = None
-        
+        return
     
     def setSchemaModules(self, schemaModules):
         """
         This need to be set if backend db connection is needed
         ie. 
         schemaModules = ["WMCore.WMBS","WMComponent.DBS3Buffer","WMCore.BossAir"]
-        
         """
         self.schemaModules = schemaModules or []
-        
     
     def setCouchDBs(self, couchDBs):
         """
         This need to be set if counchdb connection is needed
         couchDBs = [("reqmgr_workload_config", "ReqMgr"),  ]
-        
         """
         self.couchDBs = couchDBs or []
-    
     
     def setConfig(self, config):
         self.config = config

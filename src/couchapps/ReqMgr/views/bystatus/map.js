@@ -3,5 +3,5 @@ function(doc) {
   if (doc.RequestTransition) {
   	updateTime = doc.RequestTransition[doc.RequestTransition.length - 1].UpdateTime;
   }
-  emit(doc.RequestStatus, undateTime);
+  emit(doc.RequestStatus, updateTime);
 }

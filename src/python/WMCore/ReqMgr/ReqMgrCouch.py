@@ -13,16 +13,16 @@ def handleCouchError(func):
             raise cherrypy.HTTPError(400, "%s Reason: %s" % (msg, ex))
         return wrapperFunc
     
-def couch_err_handler():
+def couch_err_handler(decorator):
     def decorate(cls):
         for attr in cls.__dict__:
             if callable(getattr(cls, attr)):
-                setattr(cls, attr, handleCouchError(getattr(cls, attr)))
+                setattr(cls, attr, decorator(getattr(cls, attr)))
         return cls
     return decorate
 
-@couch_err_handler
-class RESTBackednCouchDB(Database):
+@couch_err_handler(handleCouchError)
+class RESTBackendCouchDB(Database):
     pass
 
 
@@ -44,7 +44,7 @@ class ReqMgrCouch(object):
     
     def _create_conn(self, db_name):
         cherrypy.log("Creating CouchDB connection to '%s' ... " % db_name)
-        return RESTBackednCouchDB(dbname=db_name, url=self.config.couch_host)
+        return RESTBackendCouchDB(dbname=db_name, url=self.config.couch_host)
     
     
     def get_db(self, db_name):

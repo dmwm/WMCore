@@ -38,8 +38,8 @@ class Config(Configuration):
         views = self.section_("views")
         
         # redirector for the REST API implemented handlers
-        restapihub = views.section_("restapihub")
-        restapihub.object = "WMCore.ReqMgr.Service.RestApiHub.RestApiHub"
+        data = views.section_("data")
+        .object = "WMCore.ReqMgr.Service.RestApiHub.RestApiHub"
         # The couch host is defined during deployment time.
         restapihub.couch_host = couchurl
         # practical to have this kind of configuration values not in

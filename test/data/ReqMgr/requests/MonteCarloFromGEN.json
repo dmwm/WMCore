@@ -12,7 +12,6 @@
 		"ConfigCacheID": "ab954d9a1856afd1f980173d4e87430a",
 		"ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
 		"PrepID": "MCTEST-LHE-0001",
-		"Requestor": "Requestor-OVERRIDE-ME",
 		"Group": "DATAOPS",
 		"TotalTime": 28800,
 		"RunWhitelist": [],

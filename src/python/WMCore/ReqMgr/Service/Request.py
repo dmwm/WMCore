@@ -7,6 +7,7 @@ import time
 import cherrypy
 from datetime import datetime, timedelta
 
+import WMCore.Lexicon
 from WMCore.Database.CMSCouch import Database, CouchError
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
@@ -95,27 +96,28 @@ class Request(ReqMgrBaseRestEntity):
         Create / inject a new request. Request input schema is specified in 
         the body of the request as JSON encoded data.
         
-        All request arguments manipulation to happen in the .request_initialize()
-        
-        All request arguments validation to happen in DataStructs.Request.validate() 
-        
+        ReqMgr related request arguments validation to happen in
+            DataStructs.Request.validate(), the rest in spec.
+
+        ReqMgr related arguments manipulation to happen in the .request_initialize(),
+            before the spec is instantiated.
+                
         TODO:
         this method will have some parts factored out so that e.g. clone call
         can share functionality.
         
+        NOTES:
+        1) do not strip spaces, #4705 will fails upon injection with spaces ; 
+            currently the chain relies on a number of things coming in #4705
+        
+        2) reqInputArgs = Utilities.unidecode(JsonWrapper.loads(body))
+            (from ReqMgrRESTModel.putRequest)
+                
         """
         json_input_request_args = cherrypy.request.body.read()
         request_input_dict = JsonWrapper.loads(json_input_request_args)        
-        # strip spaces
-        for k, v in request_input_dict.iteritems():
-            if isinstance(v, str):
-                request_input_dict[k] = v.strip()
         
         cherrypy.log("INFO: Create request, input args: %s ..." % request_input_dict)
-        
-        # TODO
-        # necessary? (is in ReqMgrRESTModel.putRequest)
-        #reqInputArgs = Utilities.unidecode()
         
         request = RequestData() # this returns a new request dictionary
         request.update(request_input_dict)
@@ -124,82 +126,92 @@ class Request(ReqMgrBaseRestEntity):
             request.validate_automatic_args_empty()
             # fill in automatic request arguments and further request args meddling
             self.request_initialize(request)
-            request.validate()
+            self.request_validate(request)
         except RequestDataError, ex:
             cherrypy.log(ex.message)
             raise cherrypy.HTTPError(400, ex.message)
+                        
+        cherrypy.log("INFO: Request initialization and validation succeeded."
+                     " Instantiating spec/workload ...")
+        # TODO
+        # watch the above instantiation, it seems to take rather long time ...
+
+        # will be stored under request["WorkloadSpec"]
+        self.create_workload_attach_to_request(request, request_input_dict)
+                        
+        cherrypy.log("INFO: Request corresponding workload instantiated, storing ...")
+        
+        helper = WMWorkloadHelper(request["WorkloadSpec"])
+        # TODO
+        # this should be revised for ReqMgr2        
+        #4378 - ACDC (Resubmission) requests should inherit the Campaign ...
+        # for Resubmission request, there already is previous Campaign set
+        # this call would override it with initial request arguments where
+        # it is not specified, so would become ''
+        # TODO
+        # these kind of calls should go into some workload initialization
+        if not helper.getCampaign():
+            helper.setCampaign(request["Campaign"])
+
+        if request.has_key("RunWhitelist"):
+            helper.setRunWhitelist(request["RunWhitelist"])
+        
+        # storing the request document into Couch
+
+        # can't save Request object directly, because it makes it hard to retrieve
+        # the _rev
+        # TODO
+        # don't understand this. may just be possible to keep dealing with
+        # 'request' and not create this metadata
+        metadata = {}
+        metadata.update(request)    
+
+        # TODO
+        # this should be verified and straighten up in ReqMgr2, should not need this    
+        # Add the output datasets if necessary
+        # for some bizarre reason OutpuDatasets is list of lists, when cloning
+        # [['/MinimumBias/WMAgentCommissioning10-v2/RECO'], ['/MinimumBias/WMAgentCommissioning10-v2/ALCARECO']]
+        # #3743
+        #if not clone:
+        #    for ds in helper.listOutputDatasets():
+        #        if ds not in request['OutputDatasets']:
+        #            request['OutputDatasets'].append(ds)
                 
-        # the request arguments below shall be handled automatically by either
-        # being specified in the input or already have correct default
-        # values in the schema definition
-        
-        # the arguments manipulation stuff (currently commented out) below
-        # should all go into request request_initialize()
-
-        # TODO
-        # do we need InputDataset and InputDatasets?
-        # this likely the cause of #3743
-        #if reqInputArgs.has_key("InputDataset"):
-        # reqSchema["InputDatasets"] = [reqInputArgs["InputDataset"]]
-
-        # TODO
-        # don't understand this, have to clarify with Diego
-        # it's from (ReqMgrWebtools) Utilities.makeRequest()
-        """
-        skimNumber = 1
-        # a list of dictionaries
-        reqSchema["SkimConfigs"] = []
-        while reqInputArgs.has_key("SkimName%s" % skimNumber):
-            d = {}
-            d["SkimName"] = reqInputArgs["SkimName%s" % skimNumber]
-            d["SkimInput"] = reqInputArgs["SkimInput%s" % skimNumber]
-            d["Scenario"] = reqInputArgs["Scenario"]
-            d["TimePerEvent"] = reqInputArgs.get("SkimTimePerEvent%s" % skimNumber, None)
-            d["SizePerEvent"] = reqInputArgs.get("SkimSizePerEvent%s" % skimNumber, None)
-            d["Memory"] = reqInputArgs.get("SkimMemory%s" % skimNumber, None)
+        # Store new request into Couch
+        try:
+            # don't want to JSONify the whole workflow
+            del metadata["WorkloadSpec"]
+            workload_url = helper.saveCouch(request["CouchURL"],
+                                            request["CouchWorkloadDBName"],
+                                            metadata=metadata)
+            # TODO
+            # this will have to be updated now, when the Couch url is known. The question
+            # is whether this request argument is necessary at all since it should
+            # always be CouchUrl/DbName/RequestName/spec so it can easily be derived
+            # if this not necessary, this below step of updating the document is
+            # not necessary unlike it was the case in ReqMgr1 
+            request["RequestWorkflow"] = workload_url        
+            params_to_update = ["RequestWorkflow"]
+            couchdb = Database(request["CouchWorkloadDBName"], request["CouchURL"])
+            fields = {}
+            for key in params_to_update:
+                fields[key] = request[key]
+            couchdb.updateDocument(request["RequestName"], "ReqMgr", "updaterequest",
+                                   fields=fields)
+        except CouchError, ex:
+            # TODO simulate exception here to see how much gets exposed to the client
+            # and how much gets logged when it's like this
+            msg = "ERROR: Storing into Couch failed, reason: %s" % ex.reason
+            cherrypy.log(msg)
+            raise cherrypy.HTTPError(500, msg)
+             
+        cherrypy.log("INFO: Request '%s' created and stored." % request["RequestName"])        
+        # do not want to return to client spec data
+        del request["WorkloadSpec"]
+        return rows([request])
     
     
-            if reqInputArgs.get("Skim%sConfigCacheID" % skimNumber, None) != None:
-                d["ConfigCacheID"] = reqInputArgs["Skim%sConfigCacheID" % skimNumber]
-    
-            reqSchema["SkimConfigs"].append(d)
-            skimNumber += 1
-        """
-        
-        # TODO
-        # another arguments fiddling mess, do later
-        # it's from (ReqMgrWebtools) Utilities.makeRequest()
-        """
-        if reqInputArgs.has_key("DataPileup") or reqInputArgs.has_key("MCPileup"):
-            reqSchema["PileupConfig"] = {}
-            if reqInputArgs.has_key("DataPileup") and reqInputArgs["DataPileup"] != "":
-                reqSchema["PileupConfig"]["data"] = [reqInputArgs["DataPileup"]]
-            if reqInputArgs.has_key("MCPileup") and reqInputArgs["MCPileup"] != "":
-                reqSchema["PileupConfig"]["mc"] = [reqInputArgs["MCPileup"]]
-        """
-        
-        # TODO
-        # it's from (ReqMgrWebtools) Utilities.makeRequest()
-        # should go into request_initialize()
-        """
-        for runlist in ["RunWhitelist", "RunBlacklist"]:
-            if runlist in reqInputArgs:
-                reqSchema[runlist] = parseRunList(reqInputArgs[runlist])
-        for blocklist in ["BlockWhitelist", "BlockBlacklist"]:
-            if blocklist in reqInputArgs:
-                reqSchema[blocklist] = parseBlockList(reqInputArgs[blocklist])
-        for stringList in ["DqmSequences", "IgnoredOutputModules", "TransientOutputModules"]:
-            if stringList in reqInputArgs:
-                reqSchema[stringList] = parseStringListWithoutValidation(reqInputArgs[stringList])
-        """
-        
-        cherrypy.log("INFO: Request initialization and validation succeeded.")
-        
-        # it's from (ReqMgrWebtools) Utilities.makeRequest()
-        # request = buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl)
-
-        # build workload
-        # WMCore/RequestManager/RequestMaker/Registry.py
+    def create_workload_attach_to_request(self, request, request_input_dict):        
         try:
             factory_name = "%sWorkloadFactory" % request["RequestType"]
             mod = __import__("WMCore.WMSpec.StdSpecs.%s" % request["RequestType"],
@@ -227,118 +239,68 @@ class Request(ReqMgrBaseRestEntity):
             cherrypy.log(msg)
             raise cherrypy.HTTPError(400, msg)
         
-        # TODO
-        # watch the above instantiation, seems to take rather long time to pass
-        
-        cherrypy.log("INFO: Request corresponding workload instantiated, storing ...")
-            
-        # TODO
-        # explore what exactly is here in the data
-        # is it the spec instance?, then it all fine
+        # make instantiated spec part of the request instance            
         request["WorkloadSpec"] = workload.data
         
-        if request.get("DbsUrl", None):
-            request["DbsUrl"] = (workload.getTopLevelTask()[0]).dbsUrl()
-                
-        # workload under request["WorkloadSpec"] is now part of the request instance
-        # at this point, it's the end of 
-        # Registry.buildWorkloadForRequest(typename, schema):
-        
-        helper = WMWorkloadHelper(request["WorkloadSpec"])
 
-        # TODO
-        # this should be revised for ReqMgr2        
-        #4378 - ACDC (Resubmission) requests should inherit the Campaign ...
-        # for Resubmission request, there already is previous Campaign set
-        # this call would override it with initial request arguments where
-        # it is not specified, so would become ''
-        # TODO
-        # these kind of calls should go into some workload initialization
-        if not helper.getCampaign():
-            helper.setCampaign(request["Campaign"])
-
-        if request.has_key("RunWhitelist"):
-            helper.setRunWhitelist(request["RunWhitelist"])
-        
-        # storing the request document into Couch
-
-        # can't save Request object directly, because it makes it hard to retrieve
-        # the _rev
-        # TODO
-        # don't understand this. may just be possible to keep dealing with
-        # 'request' and not create this metadata
-        metadata = {}
-        metadata.update(request)    
-    
-        # Add the output datasets if necessary
-        # for some bizarre reason OutpuDatasets is list of lists, when cloning
-        # [['/MinimumBias/WMAgentCommissioning10-v2/RECO'], ['/MinimumBias/WMAgentCommissioning10-v2/ALCARECO']]
-        # #3743
-        # TODO
-        # this should be verified and straighten up in ReqMgr2, should not need this
-        #if not clone:
-        #    for ds in helper.listOutputDatasets():
-        #        if ds not in request['OutputDatasets']:
-        #            request['OutputDatasets'].append(ds)
-                
-        # Store new request into Couch
-        
-        try:
-            # don't want to JSONify the whole workflow
-            del metadata["WorkloadSpec"]
-            workload_url = helper.saveCouch(request["CouchURL"],
-                                            request["CouchWorkloadDBName"],
-                                            metadata=metadata)
-            
-            # TODO
-            # this will have to be updated now, when the Couch url is known. The question
-            # is whether this request argument is necessary since it should always be
-            # CouchUrl/DbName/RequestName/spec so it can easily be derived 
-            request["RequestWorkflow"] = workload_url
-        
-            # now comes the step of storing into Oracle
-            # CheckIn.checkIn(request, reqSchema['RequestType'])
-    
-            # TODO
-            # was the case in ReqMgr1, now just update RequestWorkflow, it's the URL
-            # and it's not entire clear if this is necessary since it can be worked out
-            # otherwise, have to check
-            # this will most likely not be necessary
-            params_to_update = ["RequestWorkflow"]
-            couchdb = Database(request["CouchWorkloadDBName"], request["CouchURL"])
-            fields = {}
-            for key in params_to_update:
-                fields[key] = request[key]
-            couchdb.updateDocument(request["RequestName"], "ReqMgr", "updaterequest",
-                                   fields=fields)
-        except CouchError, ex:
-            # TODO simulate exception here to see how much gets exposed to the client
-            # and how much gets logged when it's like this
-            msg = "ERROR: Storing into Couch failed, reason: %s" % ex.reason
-            cherrypy.log(msg)
-            raise cherrypy.HTTPError(500, msg)
-             
-        # TODO
-        # WMStats interaction
-        # 1) first there should be a link to the database so it's not necessary
-        #    to instantiate the writer it at every single manipulation
-        # 2) scrutinize the request injection flow from ReqMgrRESTModel.putRequest()
-        #    where and how WMStatsURL is used, concentrate stuff at 1 place
-        # this is what ReqMgrWebTools.buildWorkloadAndCheckIn() has:
-        """        
-        try:
-            wmstatSvc = WMStatsWriter(wmstatUrl)
-            wmstatSvc.insertRequest(request)
-        except Exception as ex:
-            webApi.error("Could not update WMStats, reason: %s" % ex)
-            raise HTTPError(400, "Creating request failed, could not update WMStats.")
+    def request_validate(self, request):
         """
-
-        cherrypy.log("INFO: Request '%s' created and stored." % request["RequestName"])        
-        # do not want to return to client spec data
-        del request["WorkloadSpec"]
-        return rows([request])
-
+        Validate input request arguments.
+        Upon call of this method, all automatic request arguments are
+        already figured out.
+        
+        TODO:
+        Some of these validations will be removed once #4705 is in, in
+        favour of validation done in specs during instantiation.
+        
+        NOTE:
+        Checking user/group membership? probably impossible, groups is nothing
+        that would be SiteDB ... (and there is no internal user management here)
+        
+        """
+        for identifier in ["ScramArch", "RequestName", "Group", "Requestor",
+                           "RequestName", "Campaign", "ConfigCacheID"]:
+            request.lexicon(identifier, WMCore.Lexicon.identifier)
+        request.lexicon("CMSSWVersion", WMCore.Lexicon.cmsswversion)
+        for dataset in ["InputDataset", "OutputDataset"]:
+            request.lexicon(dataset, WMCore.Lexicon.dataset)
+        if request["Scenario"] and request["ConfigCacheID"]:
+            msg = "ERROR: Scenario and ConfigCacheID are mutually exclusive."
+            raise RequestDataError(msg)
+        if request["RequestType"] not in REQUEST_TYPES:
+            msg = "ERROR: Request/Workload type '%s' not known." % request["RequestType"]
+            raise RequestDataError(msg)
+        
+        # check that newly created RequestName does not exist in Couch
+        # database or requests already, by any chance.
+        try:
+            db = self.db_handler.get_db(self.db_name)
+            doc = db.document(request["RequestName"])
+            msg = ("ERROR: Request '%s' already exists in the database: %s." %
+                   (request["RequestName"], doc))
+            raise RequestDataError(msg)            
+        except CouchError:
+            # this is what we want here to happen - document does not exist
+            pass
+        
+        # check that specified ScramArch, CMSSWVersion, SoftwareVersions all
+        # exist and match
+        db = self.db_handler.get_db(self.config.couch_reqmgr_aux_db)
+        sw = db.document("software")
+        if request["ScramArch"] not in sw.keys():
+            msg = ("Specified ScramArch '%s not present in ReqMgr database "
+                   "(data is taken from TC, available ScramArch: %s)." %
+                   (request["ScramArch"], sw.keys()))
+            raise RequestDataError(msg)
+        # from previously called request_initialize(), SoftwareVersions contains
+        # the value from CMSSWVersion, it's enough to validate only SoftwareVersions        
+        for version in request.get("SoftwareVersions", []):
+            if version not in sw[request["ScramArch"]]:
+                msg = ("Specified software version '%s' not found for "
+                       "ScramArch '%s'. Supported versions: %s." %
+                       (version, request["ScramArch"], sw[request["ScramArch"]])) 
+                raise RequestDataError(msg)
+    
 
     def request_initialize(self, request):
         """
@@ -370,11 +332,15 @@ class Request(ReqMgrBaseRestEntity):
         request["RequestName"] += "_%s_%s" % (current_time, seconds)    
         request["RequestDate"] = list(time.gmtime()[:6])
         
-        if request.has_key("FilterEfficiency"):
-            request["FilterEfficiency"] = float(request["FilterEfficiency"])
         if request["CMSSWVersion"] and request["CMSSWVersion"] not in request["SoftwareVersions"]:
             request["SoftwareVersions"].append(request["CMSSWVersion"])
             
+        # TODO
+        # do we need InputDataset and InputDatasets? when one is just a list
+        # containing the other? ; could be related to #3743 problem
+        if request.has_key("InputDataset"):
+            request["InputDatasets"] = [request["InputDataset"]]
+                                
             
     def request_initilize_attach_input_to_workload(self, workload, request_input_dict):
         """
@@ -382,9 +348,8 @@ class Request(ReqMgrBaseRestEntity):
         workload is a corresponding newly created workload instance and 
             request_input_dict is attached to workload under 'schema'
         
-        ReqMgr1 does this in RequestMaker.Registry.loadRequestSchema()
-        
-        This method is only a slight modification of loadRequestSchema()
+        ReqMgr1 does this in RequestMaker.Registry.loadRequestSchema(), and
+            this method is only a slight modification of it.
         
         Storing this original injection time information is probably not
         crucially necessary but is definitely practical, keep that.
@@ -398,7 +363,7 @@ class Request(ReqMgrBaseRestEntity):
                 setattr(schema, key, value)
             except Exception, ex:
                 # attach TaskChain tasks
-                # TODO this may be a good example where recursion is practical
+                # TODO this may be a good example where recursion would be practical
                 if (type(value) == dict and rid["RequestType"] == 'TaskChain' and
                     "Task" in key):
                     new_section = schema.section_(key)
@@ -416,12 +381,10 @@ class Request(ReqMgrBaseRestEntity):
         # ReqMgr2 does not allow Requestor request argument specified in the
         # injection input so it can't be set here based on request_input_dict.
         # If it's absolutely necessary, it can be passed to his method from the 
-        # called, where it's known, and set on the workload. But I doubt there
+        # caller, where it's known, and set on the workload. But I doubt there
         # needs to be so much data duplication yet again between stuff stored
         # in Couch and on workload.
         #wl.data.owner.Requestor = schema.Requestor
-        if hasattr(schema, "RequestPriority"):
-            wl.data.request.priority = schema.RequestPriority
   
         
         

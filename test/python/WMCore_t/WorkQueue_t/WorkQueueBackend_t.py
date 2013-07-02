@@ -11,12 +11,13 @@ from WMCore.WorkQueue.WorkQueueBackend import WorkQueueBackend
 from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
 
-from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload as rerecoWMSpec, \
-                                          getTestArguments as getRerecoArgs
+from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
+from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
-rerecoArgs = getRerecoArgs()
+rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
 def rerecoWorkload(workloadName, arguments):
-    wmspec = rerecoWMSpec(workloadName, arguments)
+    factory = ReRecoWorkloadFactory()
+    wmspec = factory.factoryWorkloadConstruction(workloadName, arguments)
     return wmspec
 
 class WorkQueueBackendTest(unittest.TestCase):
@@ -32,7 +33,7 @@ class WorkQueueBackendTest(unittest.TestCase):
                                         db_name = 'wq_backend_test',
                                         inbox_name = 'wq_backend_test_inbox',
                                         parentQueue = '%s/%s' % (self.testInit.couchUrl, 'wq_backend_test_parent'))
-
+        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
         self.processingSpec = rerecoWorkload('testProcessing', rerecoArgs)
 
 

@@ -19,11 +19,12 @@ from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
 from WMCore.GroupUser.User import makeUser
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
-from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload, getTestArguments
+from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WorkQueue.Policy.Start.ResubmitBlock import ResubmitBlock
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoWorkError, WorkQueueWMSpecError
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
+from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
 class ResubmitBlockTest(unittest.TestCase):
 
@@ -70,7 +71,10 @@ class ResubmitBlockTest(unittest.TestCase):
 
         Get a ACDC spec for the processing task of a ReReco workload
         """
-        Tier1ReRecoWorkload = rerecoWorkload(self.workflowName, getTestArguments())
+        factory = ReRecoWorkloadFactory()
+        rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
+        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
+        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction(self.workflowName, rerecoArgs)
         Tier1ReRecoWorkload.truncate('ACDC_%s' % self.workflowName, '/%s/DataProcessing' % self.workflowName, self.couchUrl,
                                      self.acdcDBName)
         Tier1ReRecoWorkload.setJobSplittingParameters('/ACDC_%s/DataProcessing' % self.workflowName, splittingAlgo, splittingArgs)
@@ -85,7 +89,10 @@ class ResubmitBlockTest(unittest.TestCase):
 
         Get a ACDC spec for the merge task of a ReReco workload
         """
-        Tier1ReRecoWorkload = rerecoWorkload(self.workflowName, getTestArguments())
+        factory = ReRecoWorkloadFactory()
+        rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
+        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
+        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction(self.workflowName, rerecoArgs)
         Tier1ReRecoWorkload.truncate('ACDC_%s' % self.workflowName, '/%s/DataProcessing/DataProcessingMergeRECOoutput' % self.workflowName,
                                      self.couchUrl, self.acdcDBName)
         Tier1ReRecoWorkload.setJobSplittingParameters('/ACDC_%s/DataProcessingMergeRECOoutput' % self.workflowName,
@@ -100,7 +107,7 @@ class ResubmitBlockTest(unittest.TestCase):
         and merge
         """
         filesetName = '/%s/DataProcessing' % self.workflowName
-        owner = 'sfoulkes@fnal.gov'
+        owner = 'unknown'
         group = 'unknown'
 
 

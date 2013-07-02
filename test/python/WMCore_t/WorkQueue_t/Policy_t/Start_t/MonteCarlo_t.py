@@ -28,10 +28,10 @@ class MonteCarloTestCase(unittest.TestCase):
         # change split defaults for this test
         totalevents = 1000000
         splitArgs = dict(SliceType = 'NumberOfEvents', SliceSize = 100, MaxJobsPerElement = 5)
-
+        mcArgs["EventsPerJob"] = 100
         BasicProductionWorkload = monteCarloWorkload('MonteCarloWorkload', mcArgs)
         getFirstTask(BasicProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
-        getFirstTask(BasicProductionWorkload).addProduction(totalevents = totalevents)
+        getFirstTask(BasicProductionWorkload).addProduction(totalEvents = totalevents)
         getFirstTask(BasicProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         for task in BasicProductionWorkload.taskIterator():
             units, _ = MonteCarlo(**splitArgs)(BasicProductionWorkload, task)
@@ -80,7 +80,7 @@ class MonteCarloTestCase(unittest.TestCase):
             {'events_per_job': splitArgs['SliceSize'],
              'events_per_lumi': splitArgs['SubSliceSize']})
         getFirstTask(LHEProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
-        getFirstTask(LHEProductionWorkload).addProduction(totalevents = totalevents)
+        getFirstTask(LHEProductionWorkload).addProduction(totalEvents = totalevents)
         getFirstTask(LHEProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         for task in LHEProductionWorkload.taskIterator():
             units, _ = MonteCarlo(**splitArgs)(LHEProductionWorkload, task)
@@ -133,7 +133,7 @@ class MonteCarloTestCase(unittest.TestCase):
             {'events_per_job': splitArgs['SliceSize'],
              'events_per_lumi': splitArgs['SliceSize']})
         getFirstTask(LHEProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
-        getFirstTask(LHEProductionWorkload).addProduction(totalevents = totalevents)
+        getFirstTask(LHEProductionWorkload).addProduction(totalEvents = totalevents)
         getFirstTask(LHEProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         for task in LHEProductionWorkload.taskIterator():
             units, _ = MonteCarlo(**splitArgs)(LHEProductionWorkload, task)
@@ -185,7 +185,7 @@ class MonteCarloTestCase(unittest.TestCase):
             {'events_per_job': splitArgs['SliceSize'],
              'events_per_lumi': splitArgs['SubSliceSize']})
         getFirstTask(LHEProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
-        getFirstTask(LHEProductionWorkload).addProduction(totalevents = totalevents)
+        getFirstTask(LHEProductionWorkload).addProduction(totalEvents = totalevents)
         getFirstTask(LHEProductionWorkload).setFirstEventAndLumi(50,100)
         getFirstTask(LHEProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         for task in LHEProductionWorkload.taskIterator():
@@ -257,7 +257,7 @@ class MonteCarloTestCase(unittest.TestCase):
         """Specs with no work"""
         mcspec = monteCarloWorkload('testProcessingInvalid', mcArgs)
         # 0 events
-        getFirstTask(mcspec).addProduction(totalevents = 0)
+        getFirstTask(mcspec).addProduction(totalEvents = 0)
         for task in mcspec.taskIterator():
             self.assertRaises(WorkQueueNoWorkError, MonteCarlo(), mcspec, task)
 

@@ -33,28 +33,6 @@ class ReqMgrWebToolsTest(unittest.TestCase):
         
         """
         pass
-    
-    
-    def testA_ParseRunList(self):
-        l0 = ''
-        l1 = ' [1,  2,  3 ] '
-        l2 = '1,  2, 3   '
-        l3 = u'1,  2, 3   '
-        l4 = [1,2,3]
-        l5 = {1:2, 3:4}
-        self.assertEqual(ReqMgrWebTools.parseRunList(l0), [])
-        self.assertEqual(ReqMgrWebTools.parseRunList(l1), [1,2,3])
-        self.assertEqual(ReqMgrWebTools.parseRunList(l2), [1,2,3])
-        self.assertEqual(ReqMgrWebTools.parseRunList(l3), [1,2,3])
-        self.assertEqual(ReqMgrWebTools.parseRunList(l4), [1,2,3])
-  
-  
-    def testB_ParseBlockList(self):
-        l3 = '  ["/test/test/test#Barack", "  /test/test/test#Sarah  ",/test/test/test#George]'
-        self.assertEqual(ReqMgrWebTools.parseBlockList(l3), ['/test/test/test#Barack',
-                                                             '/test/test/test#Sarah',
-                                                             '/test/test/test#George'])
-
 
     def testC_RemovePassword(self):
         url = 'http://sarah:maverick@whitehouse.gov:1600/birthcertificates/trig'

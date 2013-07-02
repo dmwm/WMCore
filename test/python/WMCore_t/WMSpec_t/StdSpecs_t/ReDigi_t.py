@@ -14,7 +14,7 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
-from WMCore.WMSpec.StdSpecs.ReDigi import getTestArguments, reDigiWorkload
+from WMCore.WMSpec.StdSpecs.ReDigi import ReDigiWorkloadFactory
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
@@ -110,17 +110,18 @@ class ReDigiTest(unittest.TestCase):
         Verfiy that a dependent ReDigi workflow that keeps stages out
         RAW data is created and installed into WMBS correctly.
         """
-        defaultArguments = getTestArguments()
+        defaultArguments = ReDigiWorkloadFactory.getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "redigi_t"
         configs = injectReDigiConfigs(self.configDatabase)
         defaultArguments["StepOneConfigCacheID"] = configs[0]
         defaultArguments["StepTwoConfigCacheID"] = configs[1]
         defaultArguments["StepThreeConfigCacheID"] = configs[2]
+        defaultArguments["StepOneOutputModuleName"] = "RAWDEBUGoutput"
+        defaultArguments["StepTwoOutputModuleName"] = "RECODEBUGoutput"
 
-        testWorkload = reDigiWorkload("TestWorkload", defaultArguments)
-        testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
+        factory = ReDigiWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
 
         testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
@@ -166,7 +167,7 @@ class ReDigiTest(unittest.TestCase):
         stepOneWorkflow = Workflow(spec = "somespec", name = "TestWorkload",
                                    task = "/TestWorkload/StepOneProc")
         stepOneWorkflow.load()
-        self.assertEqual(stepOneWorkflow.wfType, 'redigi')
+        self.assertEqual(stepOneWorkflow.wfType, 'reprocessing')
         self.assertTrue("logArchive" in stepOneWorkflow.outputMap.keys(),
                         "Error: Step one missing output module.")
         self.assertTrue("RAWDEBUGoutput" in stepOneWorkflow.outputMap.keys(),
@@ -628,18 +629,20 @@ class ReDigiTest(unittest.TestCase):
         step one/step two information in WMBS as the step three information is
         the same as the dependent workflow.
         """
-        defaultArguments = getTestArguments()
+        defaultArguments = ReDigiWorkloadFactory.getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "redigi_t"
         configs = injectReDigiConfigs(self.configDatabase)
         defaultArguments["StepOneConfigCacheID"] = configs[0]
         defaultArguments["StepTwoConfigCacheID"] = configs[1]
         defaultArguments["StepThreeConfigCacheID"] = configs[2]
+        defaultArguments["StepOneOutputModuleName"] = "RAWDEBUGoutput"
+        defaultArguments["StepTwoOutputModuleName"] = "RECODEBUGoutput"
+        defaultArguments["MCPileup"] = "/mixing/pileup/dataset"
         defaultArguments["KeepStepOneOutput"] = False
 
-        testWorkload = reDigiWorkload("TestWorkload", defaultArguments)
-        testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
+        factory = ReDigiWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
 
         # Verify that pileup is configured for both of the cmsRun steps in the
         # top level task.
@@ -666,7 +669,7 @@ class ReDigiTest(unittest.TestCase):
         Verify that a chained ReDigi workflow that discards RAW and RECO data
         can be created and installed into WMBS correctly.
         """
-        defaultArguments = getTestArguments()
+        defaultArguments = ReDigiWorkloadFactory.getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "redigi_t"
         configs = injectReDigiConfigs(self.configDatabase)
@@ -675,10 +678,11 @@ class ReDigiTest(unittest.TestCase):
         defaultArguments["StepThreeConfigCacheID"] = configs[2]
         defaultArguments["KeepStepOneOutput"] = False
         defaultArguments["KeepStepTwoOutput"] = False
+        defaultArguments["StepOneOutputModuleName"] = "RAWDEBUGoutput"
+        defaultArguments["StepTwoOutputModuleName"] = "RECODEBUGoutput"
 
-        testWorkload = reDigiWorkload("TestWorkload", defaultArguments)
-        testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
+        factory = ReDigiWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
 
         self.assertTrue(len(testWorkload.getTopLevelTask()) == 1,
                         "Error: Wrong number of top level tasks.")
@@ -702,19 +706,17 @@ class ReDigiTest(unittest.TestCase):
         Verify that a ReDigi workflow that uses a single step one config
         installs into WMBS correctly.
         """
-        defaultArguments = getTestArguments()
+        defaultArguments = ReDigiWorkloadFactory.getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "redigi_t"
         configs = injectReDigiConfigs(self.configDatabase, combinedStepOne = True)
         defaultArguments["StepOneConfigCacheID"] = configs[0]
         defaultArguments["StepTwoConfigCacheID"] = configs[2]
-        defaultArguments["StepThreeConfigCacheID"] = None
         defaultArguments["StepOneOutputModuleName"] = "RECODEBUGoutput"
 
-        testWorkload = reDigiWorkload("TestWorkload", defaultArguments)
-        testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
-        
+        factory = ReDigiWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
+
         testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock", cachepath = self.testInit.testDir)
 
         testWMBSHelper.createTopLevelFileset()
@@ -730,17 +732,14 @@ class ReDigiTest(unittest.TestCase):
         Verify that a single step ReDigi workflow can be created and installed
         correctly into WMBS.
         """
-        defaultArguments = getTestArguments()
+        defaultArguments = ReDigiWorkloadFactory.getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "redigi_t"
         configs = injectReDigiConfigs(self.configDatabase)
         defaultArguments["StepOneConfigCacheID"] = configs[2]
-        defaultArguments["StepTwoConfigCacheID"] = None
-        defaultArguments["StepThreeConfigCacheID"] = None
 
-        testWorkload = reDigiWorkload("TestWorkload", defaultArguments)
-        testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
+        factory = ReDigiWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
         
         testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", "SomeBlock", cachepath = self.testInit.testDir)
 

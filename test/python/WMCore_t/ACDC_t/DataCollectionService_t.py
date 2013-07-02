@@ -8,20 +8,14 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
 import unittest
-import os
-import random
 
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.ACDC.DataCollectionService import DataCollectionService
-from WMCore.WMSpec.WMWorkload import newWorkload, WMWorkloadHelper
 from WMCore.WMBS.Job import Job
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
 from WMCore.Services.UUID import makeUUID
-
-from WMCore.WMSpec.StdSpecs.ReDigi import getTestArguments, reDigiWorkload
-from WMCore.Database.CMSCouch import CouchServer, Document
 
 class DataCollectionService_t(unittest.TestCase):
     def setUp(self):

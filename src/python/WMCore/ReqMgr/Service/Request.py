@@ -31,6 +31,8 @@ class Request(RESTEntity):
         # main CouchDB database where requests/workloads are stored
         RESTEntity.__init__(self, app, api, config, mount)
         self.reqmgr_db = api.db_handler.get_db(config.couch_reqmgr_db)
+        # this need for the post validtiaon 
+        self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)
     
     def validate(self, apiobj, method, api, param, safe):
         # to make validate successful
@@ -85,27 +87,32 @@ class Request(RESTEntity):
         campaign = kwargs.get("campaign", False)
         workqueue = kwargs.get("workqueue", False)
         team = kwargs.get("team", False)
-
+        # eventhing should be stale view. this only needs for test
+        _nostale = kwargs.get("_nostale", False)
+        option = {}
+        if not _nostale:
+            option['stale'] = "update_after"
+            
         request_info =[]
         
         if status and not team:
-            request_info.append(self.get_reqmgr_view("bystatus" , {}, status, "list"))
+            request_info.append(self.get_reqmgr_view("bystatus" , option, status, "list"))
         if status and team:
-            request_info.append(self.get_reqmgr_view("byteamandstatus", {}, team, "list"))
+            request_info.append(self.get_reqmgr_view("byteamandstatus", option, team, "list"))
         if name:
             request_info.append(self._getReuestsByNames(name))
         if prep_id:
-            request_info.append(self.get_reqmgr_view("byprepid", {}, prep_id, "list"))
+            request_info.append(self.get_reqmgr_view("byprepid", option, prep_id, "list"))
         if inputdataset:
-            request_info.append(self.get_reqmgr_view("byinputdataset", {}, inputdataset, "list"))
+            request_info.append(self.get_reqmgr_view("byinputdataset", option, inputdataset, "list"))
         if outputdataset:
-            request_info.append(self.get_reqmgr_view("byoutputdataset", {}, outputdataset, "list"))
+            request_info.append(self.get_reqmgr_view("byoutputdataset", option, outputdataset, "list"))
         if date_range:
-            request_info.append(self.get_reqmgr_view("bydate", {}, date_range, "list"))
+            request_info.append(self.get_reqmgr_view("bydate", option, date_range, "list"))
         if campaign:
-            request_info.append( self.get_reqmgr_view("bycampaign", {}, campaign, "list"))
+            request_info.append( self.get_reqmgr_view("bycampaign", option, campaign, "list"))
         if workqueue:
-            request_info.append(self.get_reqmgr_view("byworkqueue", {}, workqueue, "list"))
+            request_info.append(self.get_reqmgr_view("byworkqueue", option, workqueue, "list"))
         
         #get interaction of the request
         return self._intersection_of_request_info(request_info);
@@ -113,15 +120,13 @@ class Request(RESTEntity):
     def _intersection_of_request_info(self, request_info):
         return request_info[0]    
         
-    def _get_stale_view(self, couchdb, couchapp, view, options, keys, format):
+    def _get_couch_view(self, couchdb, couchapp, view, options, keys, format):
         
         if not options:
             options = {}
-        options["stale"] = "update_after"
-        options["include_docs"] = True
+        options.setdefault("include_docs", True)
         result = couchdb.loadView(couchapp, view, options, keys)
-        print result
-
+        
         if format == "dict":
             request_info = {}
             for item in result["rows"]:
@@ -136,12 +141,12 @@ class Request(RESTEntity):
     
     def get_reqmgr_view(self, view, options, keys, format):
         
-        return self._get_stale_view(self.reqmgr_db, "ReqMgr", view, options, keys, format)
+        return self._get_couch_view(self.reqmgr_db, "ReqMgr", view, options, keys, format)
     
     
     def get_wmstats_view(self, view, options, keys, format):
         
-        return self._get_stale_view(self.wmstatsCouch, "WMStats", view, options, keys, format)
+        return self._get_couch_view(self.wmstatsCouch, "WMStats", view, options, keys, format)
        
     
     def _get_request_by_names(self, names, stale="update_after"):
@@ -363,8 +368,7 @@ class Request(RESTEntity):
         # check that newly created RequestName does not exist in Couch
         # database or requests already, by any chance.
         try:
-            db = self.db_handler.get_db(self.db_name)
-            doc = db.document(request["RequestName"])
+            doc = self.reqmgr_db.document(request["RequestName"])
             msg = ("ERROR: Request '%s' already exists in the database: %s." %
                    (request["RequestName"], doc))
             raise RequestDataError(msg)            
@@ -374,8 +378,7 @@ class Request(RESTEntity):
         
         # check that specified ScramArch, CMSSWVersion, SoftwareVersions all
         # exist and match
-        db = self.db_handler.get_db(self.config.couch_reqmgr_aux_db)
-        sw = db.document("software")
+        sw = self.reqmgr_aux_db.document("software")
         if request["ScramArch"] not in sw.keys():
             msg = ("Specified ScramArch '%s not present in ReqMgr database "
                    "(data is taken from TC, available ScramArch: %s)." %

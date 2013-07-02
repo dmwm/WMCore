@@ -1,7 +1,7 @@
 import cherrypy
 from WMCore.Database.CMSCouch import Database, CouchError
 
-def handleCouchError(func):
+def couch_request_error(func):
     def wrapperFunc(*args, **kwargs):
         try:
             func(*args, **kwargs)
@@ -21,7 +21,7 @@ def couch_err_handler(decorator):
         return cls
     return decorate
 
-@couch_err_handler(handleCouchError)
+@couch_err_handler(couch_request_error)
 class RESTBackendCouchDB(Database):
     pass
 

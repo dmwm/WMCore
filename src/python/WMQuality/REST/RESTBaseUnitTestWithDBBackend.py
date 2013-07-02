@@ -49,7 +49,10 @@ class RESTBaseUnitTestWithDBBackend(unittest.TestCase):
             
             if self.couchDBs:
                 for (dbName, couchApp) in self.couchDBs:
-                    self.testInit.setupCouch(dbName, couchApp)
+                    if couchApp:
+                        self.testInit.setupCouch(dbName, couchApp)
+                    else:
+                        self.testInit.setupCouch(dbName)
             
 
         logging.info("This is our config: %s" % self.config)

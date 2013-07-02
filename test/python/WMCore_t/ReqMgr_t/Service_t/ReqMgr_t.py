@@ -3,11 +3,22 @@
 import os
 import unittest
 import shutil
+import json
 
 #from WMCore_t.ReqMgr_t.Config import Config
 from WMCore_t.ReqMgr_t.TestConfig import config
-from WMCore.WMSpec.StdSpecs.MonteCarlo import getTestArguments
+from WMCore.Wrappers import JsonWrapper
+from WMCore.WMBase import getWMBASE
 from WMQuality.REST.RESTBaseUnitTestWithDBBackend import RESTBaseUnitTestWithDBBackend
+
+# this needs to move in better location
+def insertDataToCouch(couchUrl, couchDBName, data):
+    import WMCore.Database.CMSCouch
+    server = WMCore.Database.CMSCouch.CouchServer(couchUrl)
+    database = server.connectDatabase(couchDBName)
+    
+    doc = database.commit(data)
+    return doc
 
 class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
     """
@@ -27,52 +38,33 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         appport = 19888
         #config = Config(appport, os.getenv("COUCHURL"), False);
         self.setConfig(config)
-        self.setCouchDBs([(config.views.data.couch_reqmgr_db, "ReqMgr")])
+        self.setCouchDBs([(config.views.data.couch_reqmgr_db, "ReqMgr"), 
+                          (config.views.data.couch_reqmgr_aux_db, None)])
         self.setSchemaModules([])
         RESTBaseUnitTestWithDBBackend.setUp(self)
+        
+        #Warning: this assumes the same structure in jenkins wmcore_root/test
+        #requestPath = os.path.join(getWMBASE(), "test", "data", "ReqMgr", "requests")
+        requestPath = os.path.join("..", "..", "..", "..", "data", "ReqMgr", "requests")
+        mcFile = open(os.path.join(requestPath, "MonteCarlo.json"), 'r')
+        self.mcArgs = JsonWrapper.load(mcFile)["createRequest"]
+        
+        #cmsswPath = os.path.join(getWMBASE(), "test", "data", "ReqMgr")
+        cmsswPath = os.path.join("..", "..", "..", "..", "data", "ReqMgr")
+        cmsswFile = open(os.path.join(cmsswPath, "aux.json"), 'r')
+        cmsswDoc = JsonWrapper.load(cmsswFile)
+        insertDataToCouch(os.getenv("COUCHURL"), config.views.data.couch_reqmgr_aux_db, cmsswDoc)        
         
     def tearDown(self):
         RESTBaseUnitTestWithDBBackend.tearDown(self)
 
     def testRequest(self):
-        # add request related REST API test
-        #
-        #args = getTestArguments()
-        #del args["Requestor"]
-        #del args["CouchURL"]
-        #del args["CouchDBName"]
         
-        #TODO : gets the info directly from /test/data/ReqMgr/request
-        args ={         
-        "CMSSWVersion": "CMSSW_4_1_8",
-        "GlobalTag": "START311_V2::All",
-        "Campaign": "Campaign-OVERRIDE-ME",
-        "RequestString": "RequestString-OVERRIDE-ME",
-        "RequestPriority": 1000,
-        "FilterEfficiency": 0.0361,
-        "ScramArch": "slc5_amd64_gcc434",
-        "RequestType": "MonteCarlo",
-        "RequestNumEvents": 2000,
-        "ConfigCacheID": "4029c9cd130f25d65bdced2311536c52",
-        "ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
-        "PrimaryDataset": "BdToMuMu_2MuPtFilter_7TeV-pythia6-evtgen",
-        "DataPileup": "",
-        "MCPileup": "",
-        "PrepID": "MCTEST-GEN-0001",
-        "Group": "DATAOPS",
-        "RunWhitelist": [],
-        "TotalTime": 14400, 
-        "TimePerEvent": 40,
-        "Memory": 2394,
-        "SizePerEvent": 512,
-        "FirstEvent": 1,
-        "FirstLumi": 1
-        }
-
-        self.jsonSender.post('data/request', args)
+        self.jsonSender.post('data/request', self.mcArgs)
         #TODO: need to make stale option disabled to have the correct record
-        print self.jsonSender.get('data/request?status=new&status=assigned')
-    
+        result = self.jsonSender.get('data/request?status=new&status=assigned&_nostale=true')[0]['result']
+        print result
+        
 if __name__ == '__main__':
 
     unittest.main()

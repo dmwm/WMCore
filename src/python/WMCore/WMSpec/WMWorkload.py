@@ -1335,7 +1335,7 @@ class WMWorkloadHelper(PersistencyHelper):
         should have
         """
 
-        return getattr(self.data.properties, 'blockCloseMaxEvents', 250000000)
+        return getattr(self.data.properties, 'blockCloseMaxEvents', 25000000)
 
     def getBlockCloseMaxFiles(self):
         """

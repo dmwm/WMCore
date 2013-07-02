@@ -12,33 +12,9 @@ fetches from DBS the information about pileup input.
 
 """
 
-import logging
-import os
-import time
-
-from WMCore.WMSpec.StdSpecs.Analysis import AnalysisWorkloadFactory, getCommonTestArgs
-from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-
-
-def getTestArguments():
-    """
-    _getTestArguments_
-
-    """
-    args = getCommonTestArgs()
-
-    args["PrimaryDataset"] = "MonteCarloData"
-    args["RequestNumEvents"] = 10
-    args["ConfigCacheID"] = "f90fc973b731a37c531f6e60e6c57955"
-    # or alternatively CouchURL part can be replaced by ConfigCacheUrl,
-    # then ConfigCacheUrl + CouchDBName + ConfigCacheID
-    args["ConfigCacheUrl"] = None    
-
-    args["FirstEvent"] = 1
-    args["FirstLumi"] = 1
-
-    return args
-
+from WMCore.Lexicon import dataset
+from WMCore.WMSpec.StdSpecs.Analysis import AnalysisWorkloadFactory
+from WMCore.WMSpec.WMWorkloadTools import parsePileupConfig
 
 class PrivateMCWorkloadFactory(AnalysisWorkloadFactory):
     """
@@ -46,11 +22,6 @@ class PrivateMCWorkloadFactory(AnalysisWorkloadFactory):
 
     Generate User (Private) Monte Carlo workflows.
     """
-
-    def __init__(self):
-        super(PrivateMCWorkloadFactory, self).__init__()
-        self.requiredFields = ["CMSSWVersion", "AnalysisConfigCacheDoc", "PrimaryDataset",
-                               "CouchURL", "CouchDBName", "RequestNumEvents", "ScramArch"]
 
     def buildWorkload(self):
         """
@@ -63,18 +34,27 @@ class PrivateMCWorkloadFactory(AnalysisWorkloadFactory):
         self.commonWorkload()
         prodTask = self.workload.newTask("PrivateMC")
 
-        self.workload.setWorkQueueSplitPolicy("MonteCarlo", self.prodJobSplitAlgo, self.prodJobSplitArgs)
+        self.workload.setWorkQueueSplitPolicy("MonteCarlo",
+                                              self.analysisJobSplitAlgo,
+                                              self.analysisJobSplitArgs)
         self.workload.setEndPolicy("SingleShot")
 
         outputMods = self.setupProcessingTask(prodTask, "PrivateMC", None,
-                                              couchURL=self.couchURL, couchDBName=self.couchDBName,
+                                              couchURL = self.couchURL,
+                                              couchDBName = self.couchDBName,
                                               configCacheUrl = self.configCacheUrl,
-                                              configDoc=self.configCacheID, splitAlgo=self.prodJobSplitAlgo,
-                                              splitArgs=self.prodJobSplitArgs,
-                                              seeding=self.seeding, totalEvents=self.totalEvents,
-                                              userSandbox=self.userSandbox, userFiles=self.userFiles)
+                                              configDoc = self.configCacheID,
+                                              splitAlgo = self.analysisJobSplitAlgo,
+                                              splitArgs = self.analysisJobSplitArgs,
+                                              seeding = self.seeding,
+                                              totalEvents = self.totalEvents,
+                                              userSandbox = self.userSandbox,
+                                              userFiles = self.userFiles)
 
         self.setUserOutput(prodTask)
+
+        # Pileup configuration for the first generation task
+        self.pileupConfig = parsePileupConfig(self.mcPileup, self.dataPileup)
 
         # Pile up support
         if self.pileupConfig:
@@ -82,37 +62,31 @@ class PrivateMCWorkloadFactory(AnalysisWorkloadFactory):
 
         return self.workload
 
-    def __call__(self, workloadName, arguments):
-        """
-        Create a workload instance for a MonteCarlo request
-
-        """
-
-        # Monte Carlo arguments
-        self.inputPrimaryDataset = arguments["PrimaryDataset"]
-        self.seeding = arguments.get("Seeding", "AutomaticSeeding")
-        self.firstEvent = arguments.get("FirstEvent", 1)
-        self.firstLumi = arguments.get("FirstLumi", 1)
-
-        # Pileup configuration for the first generation task
-        self.pileupConfig = arguments.get("PileupConfig", None)
-        self.configCacheUrl = arguments.get("ConfigCacheUrl", None)
-
-        # Splitting arguments
-        self.totalEvents = int(arguments.get("TotalUnits", 1))
-        self.prodJobSplitAlgo  = arguments.get("JobSplitAlgo", "EventBased")
-        self.prodJobSplitArgs  = arguments.get("JobSplitArgs", {"events_per_job": self.totalEvents})
-
-        return super(PrivateMCWorkloadFactory, self).__call__(workloadName, arguments)
-
-
-def privateMCWorkload(workloadName, arguments):
-    """
-    _privateMCWorkload_
-
-    Instantiate the PrivateMCWorkloadFactory and have it generate a workload for
-    the given parameters.
-
-    """
-    factory = PrivateMCWorkloadFactory()
-    return factory(workloadName, arguments)
+    @staticmethod
+    def getWorkloadArguments():
+        baseArgs = AnalysisWorkloadFactory.getWorkloadArguments()
+        specArgs = {"PrimaryDataset" : {"default" : "MonteCarloData", "type" : str,
+                                        "optional" : False, "validate" : None,
+                                        "attr" : "inputPrimaryDataset", "null" : False},
+                    "Seeding" : {"default" : "AutomaticSeeding", "type" : str,
+                                 "optional" : True, "validate" : lambda x : x in ["ReproducibleSeeding",
+                                                                                  "AutomaticSeeding"],
+                                 "attr" : "seeding", "null" : False},
+                    "FirstEvent" : {"default" : 1, "type" : int,
+                                    "optional" : True, "validate" : lambda x : x > 0,
+                                    "attr" : "firstEvent", "null" : False},
+                    "FirstLumi" : {"default" : 1, "type" : int,
+                                    "optional" : True, "validate" : lambda x : x > 0,
+                                    "attr" : "firstLumi", "null" : False},
+                    "MCPileup" : {"default" : None, "type" : str,
+                                  "optional" : True, "validate" : dataset,
+                                  "attr" : "mcPileup", "null" : False},
+                    "DataPileup" : {"default" : None, "type" : str,
+                                    "optional" : True, "validate" : dataset,
+                                    "attr" : "dataPileup", "null" : False},
+                    "TotalUnits" : {"default" : None, "type" : int,
+                                    "optional" : True, "validate" : lambda x : x > 0,
+                                    "attr" : "totalEvents", "null" : False}}
+        baseArgs["InputDataset"]["optional"] = True
+        baseArgs.update(specArgs)
+        return baseArgs

@@ -4,73 +4,18 @@ _ReDigi_
 
 Standard two/three step redigi workflow.
 """
-
-import os
-
-from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 
-def getTestArguments():
-    """
-    _getTestArguments_
+from WMCore.Lexicon import dataset
+from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
+from WMCore.WMSpec.WMWorkloadTools import strToBool, parsePileupConfig
 
-    This should be where the default REQUIRED arguments go
-    This serves as documentation for what is currently required
-    by the standard DataProcessing workload in importable format.
-
-    NOTE: These are test values.  If used in real workflows they
-    will cause everything to crash/die/break, and we will be forced
-    to hunt you down and kill you.
-    """
-    arguments = {
-        "AcquisitionEra": "WMAgentCommissioning10",
-        "Requestor": "sfoulkes@fnal.gov",
-        "InputDataset": "/MinimumBias/Commissioning10-v4/RAW",
-        "CMSSWVersion": "CMSSW_3_9_7",
-        "ScramArch": "slc5_ia32_gcc434",
-        "ProcessingVersion": 2,
-        "GlobalTag": "GR10_P_v4::All",
-
-        "StepOneOutputModuleName": "RAWDEBUGoutput",
-        "StepTwoOutputModuleName": "RECODEBUGoutput",
-        "StepTwoConfigCacheID": "3a4548750b61f485d42b4aa850ba385e",
-        "StepOneConfigCacheID": "3a4548750b61f485d42b4aa850b9ede5",
-        "StepThreeConfigCacheID": "3a4548750b61f485d42b4aa850ba4ab7",
-        "KeepStepOneOutput": True,
-        "KeepStepTwoOutput": True,
-
-        "CouchURL": os.environ.get("COUCHURL", None),
-        "CouchDBName": "wmagent_configcachescf",
-        # or alternatively CouchURL part can be replaced by ConfigCacheUrl,
-        # then ConfigCacheUrl + CouchDBName + ConfigCacheID
-        "ConfigCacheUrl": None,        
-        "PileupConfig": {"mc": ["/mixing/pileup/dataset"]},
-        
-        "DashboardHost": "127.0.0.1",
-        "DashboardPort": 8884,
-        }
-
-    return arguments
-
-class ReDigiWorkloadFactory(StdBase):
+class ReDigiWorkloadFactory(DataProcessing):
     """
     _ReDigiWorkloadFactory_
 
     Stamp out ReDigi workflows.
     """
-    def __init__(self):
-        StdBase.__init__(self)
-
-        # Define attributes used by this spec
-        self.openRunningTimeout = None
-        self.stepTwoMemory = None
-        self.stepTwoSizePerEvent = None
-        self.stepTwoTimePerEvent = None
-        self.stepThreeMemory = None
-        self.stepThreeSizePerEvent = None
-        self.stepThreeTimePerEvent = None
-
-        return
 
     def addMergeTasks(self, parentTask, parentStepName, outputMods):
         """
@@ -80,7 +25,6 @@ class ReDigiWorkloadFactory(StdBase):
         """
         mergeTasks = {}
         for outputModuleName in outputMods.keys():
-            outputModuleInfo = outputMods[outputModuleName]
             mergeTask = self.addMergeTask(parentTask, self.procJobSplitAlgo,
                                           outputModuleName, parentStepName)
             mergeTasks[outputModuleName] = mergeTask
@@ -115,7 +59,7 @@ class ReDigiWorkloadFactory(StdBase):
 
         Modify the step one task to include two more CMSSW steps and chain the
         output between all three steps.
-        
+
         """
         configCacheUrl = self.configCacheUrl or self.couchURL
         parentCmsswStep = stepOneTask.getStep("cmsRun1")
@@ -132,7 +76,7 @@ class ReDigiWorkloadFactory(StdBase):
         stepTwoCmsswHelper.setupChainedProcessing("cmsRun1", self.stepOneOutputModuleName)
         stepTwoCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                       scramArch = self.scramArch)
-        
+
         stepTwoCmsswHelper.setConfigCache(configCacheUrl, self.stepTwoConfigCacheID,
                                           self.couchDBName)
         stepTwoCmsswHelper.keepOutput(False)
@@ -144,9 +88,9 @@ class ReDigiWorkloadFactory(StdBase):
         stepThreeCmsswHelper.setGlobalTag(self.globalTag)
         stepThreeCmsswHelper.setupChainedProcessing("cmsRun2", self.stepTwoOutputModuleName)
         stepThreeCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
-                                      scramArch = self.scramArch)
+                                        scramArch = self.scramArch)
         stepThreeCmsswHelper.setConfigCache(configCacheUrl, self.stepThreeConfigCacheID,
-                                          self.couchDBName)
+                                            self.couchDBName)
 
         configOutput = self.determineOutputModules(None, None, self.stepTwoConfigCacheID,
                                                    configCacheUrl, self.couchDBName)
@@ -181,7 +125,7 @@ class ReDigiWorkloadFactory(StdBase):
         """
         stepOneMergeTasks = self.addMergeTasks(stepOneTask, "cmsRun1", outputMods)
 
-        if self.stepTwoConfigCacheID == None or self.stepTwoConfigCacheID == "":
+        if self.stepTwoConfigCacheID is None:
             return
 
         stepOneMergeTask = stepOneMergeTasks[self.stepOneOutputModuleName]
@@ -192,7 +136,7 @@ class ReDigiWorkloadFactory(StdBase):
                                                       sizePerEvent = self.stepTwoSizePerEvent,
                                                       memoryReq = self.stepTwoMemory)
 
-        if self.stepThreeConfigCacheID == None or self.stepThreeConfigCacheID == "":
+        if self.stepThreeConfigCacheID is None:
             return
 
         stepTwoMergeTask = stepTwoMergeTasks[self.stepTwoOutputModuleName]
@@ -209,7 +153,7 @@ class ReDigiWorkloadFactory(StdBase):
 
         Modify the step one task to include a second chained CMSSW step to
         do RECO on the RAW.
-        
+
         """
         configCacheUrl = self.configCacheUrl or self.couchURL
         parentCmsswStep = stepOneTask.getStep("cmsRun1")
@@ -242,7 +186,7 @@ class ReDigiWorkloadFactory(StdBase):
 
         mergeTasks = self.addMergeTasks(stepOneTask, "cmsRun2", outputMods)
 
-        if self.stepThreeConfigCacheID == None or self.stepThreeConfigCacheID == "":
+        if self.stepThreeConfigCacheID is None:
             return
 
         mergeTask = mergeTasks[self.stepTwoOutputModuleName]
@@ -266,7 +210,7 @@ class ReDigiWorkloadFactory(StdBase):
          self.inputDataTier) = self.inputDataset[1:].split("/")
 
         workload = self.createWorkload()
-        workload.setDashboardActivity("redigi")
+        workload.setDashboardActivity("reprocessing")
         self.reportWorkflowToDashboard(workload.getDashboardActivity())
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs,
                                          OpenRunningTimeout = self.openRunningTimeout)
@@ -282,17 +226,15 @@ class ReDigiWorkloadFactory(StdBase):
                                               sizePerEvent = self.sizePerEvent)
         self.addLogCollectTask(stepOneTask)
 
-        if (self.keepStepOneOutput == True or self.keepStepOneOutput == "True") \
-               and (self.keepStepTwoOutput == True or self.keepStepTwoOutput == "True"):
+        if self.keepStepOneOutput and self.keepStepTwoOutput:
             self.setupDependentProcessing(stepOneTask, outputMods)
-        elif (self.keepStepOneOutput == False or self.keepStepOneOutput == "False") \
-                 and (self.keepStepTwoOutput == True or self.keepStepTwoOutput == "True"):
+        elif not self.keepStepOneOutput and self.keepStepTwoOutput:
             self.setupChainedProcessing(stepOneTask)
-        elif (self.keepStepOneOutput == False or self.keepStepOneOutput == "False") \
-                 and (self.keepStepTwoOutput == False or self.keepStepTwoOutput == "False"):
+        elif not self.keepStepOneOutput and not self.keepStepTwoOutput:
             self.setupThreeStepChainedProcessing(stepOneTask)
         else:
             # Steps one and two are dependent, step three is chained.
+            # Not supported
             pass
 
         if self.pileupConfig:
@@ -306,87 +248,101 @@ class ReDigiWorkloadFactory(StdBase):
 
         Create a ReDigi workload with the given parameters.
         """
-        StdBase.__call__(self, workloadName, arguments)
+        DataProcessing.__call__(self, workloadName, arguments)
 
-        # Required parameters that must be specified by the Requestor.
-        self.inputDataset = arguments["InputDataset"]
-        self.frameworkVersion = arguments["CMSSWVersion"]
-        self.globalTag = arguments["GlobalTag"]
+        # Transform the pileup as required by the CMSSW step
+        self.pileupConfig = parsePileupConfig(self.mcPileup, self.dataPileup)
 
-        # The CouchURL and name of the ConfigCache database must be passed in
-        # by the ReqMgr or whatever is creating this workflow.
-        self.couchURL = arguments["CouchURL"]
-        self.couchDBName = arguments["CouchDBName"]
-        self.configCacheUrl = arguments.get("ConfigCacheUrl", None)
-
-        # ReDigi is split by block and can receive more blocks after first split for certain delay
-        self.openRunningTimeout = int(arguments.get("OpenRunningTimeout", 0))
-
-        # Pull down the configs and the names of the output modules so that
-        # we can chain things together properly.
-        self.stepOneOutputModuleName = arguments.get("StepOneOutputModuleName", None)
-        self.stepTwoOutputModuleName = arguments.get("StepTwoOutputModuleName")
-        self.stepOneConfigCacheID = arguments.get("StepOneConfigCacheID")
-        self.stepTwoConfigCacheID = arguments.get("StepTwoConfigCacheID", None)
-        self.stepThreeConfigCacheID = arguments.get("StepThreeConfigCacheID")
-        self.keepStepOneOutput = arguments.get("KeepStepOneOutput", True)
-        self.keepStepTwoOutput = arguments.get("KeepStepTwoOutput", True)
-
-        # Check extra performance information
-        self.stepTwoTimePerEvent = float(arguments.get("StepTwoTimePerEvent", self.timePerEvent))
-        self.stepTwoSizePerEvent = float(arguments.get("StepTwoSizePerEvent", self.sizePerEvent))
-        self.stepTwoMemory = float(arguments.get("StepTwoMemory", self.memory))
-        self.stepThreeTimePerEvent = float(arguments.get("StepThreeTimePerEvent", self.timePerEvent))
-        self.stepThreeSizePerEvent = float(arguments.get("StepThreeSizePerEvent", self.sizePerEvent))
-        self.stepThreeMemory = float(arguments.get("StepThreeMemory", self.memory))
-
-
-        # Pileup configuration for the first generation task
-        self.pileupConfig = arguments.get("PileupConfig", None)
-        # If the pileup is data pileup, we may want deterministic pileup
-        self.deterministicPileup = arguments.get("DeterministicPileup", False)
-
-        # Optional arguments that default to something reasonable.
-        self.blockBlacklist = arguments.get("BlockBlacklist", [])
-        self.blockWhitelist = arguments.get("BlockWhitelist", [])
-        self.runBlacklist = arguments.get("RunBlacklist", [])
-        self.runWhitelist = arguments.get("RunWhitelist", [])
-        self.emulation = arguments.get("Emulation", False)
-
-        # These are mostly place holders because the job splitting algo and
-        # parameters will be updated after the workflow has been created.
-        self.procJobSplitAlgo = arguments.get("StdJobSplitAlgo", "LumiBased")
-        self.procJobSplitArgs = arguments.get("StdJobSplitArgs",
-                                              {"lumis_per_job": 8,
-                                               "include_parents": self.includeParents})
+        # Adjust the pileup splitting
         self.procJobSplitArgs.setdefault("deterministicPileup", self.deterministicPileup)
+
+        # Adjust the sizePerEvent, timePerEvent and memory for step two and three
+        if self.stepTwoTimePerEvent is None:
+            self.stepTwoTimePerEvent = self.timePerEvent
+        if self.stepTwoSizePerEvent is None:
+            self.stepTwoSizePerEvent = self.sizePerEvent
+        if self.stepTwoMemory is None:
+            self.stepTwoMemory = self.memory
+        if self.stepThreeTimePerEvent is None:
+            self.stepThreeTimePerEvent = self.timePerEvent
+        if self.stepThreeSizePerEvent is None:
+            self.stepThreeSizePerEvent = self.sizePerEvent
+        if self.stepThreeMemory is None:
+            self.stepThreeMemory = self.memory
+
+
         return self.buildWorkload()
 
-    def validateSchema(self, schema):
-        """
-        _validateSchema_
+    @staticmethod
+    def getWorkloadArguments():
+        baseArgs = DataProcessing.getWorkloadArguments()
+        specArgs = {"StepOneOutputModuleName" : {"default" : None, "type" : str,
+                                                 "optional" : True, "validate" : None,
+                                                 "attr" : "stepOneOutputModuleName", "null" : False},
+                    "StepTwoOutputModuleName" : {"default" : None, "type" : str,
+                                                 "optional" : True, "validate" : None,
+                                                 "attr" : "stepTwoOutputModuleName", "null" : False},
+                    "StepOneConfigCacheID" : {"default" : None, "type" : str,
+                                              "optional" : False, "validate" : None,
+                                              "attr" : "stepOneConfigCacheID", "null" : False},
+                    "StepTwoConfigCacheID" : {"default" : None, "type" : str,
+                                              "optional" : True, "validate" : None,
+                                              "attr" : "stepTwoConfigCacheID", "null" : False},
+                    "StepThreeConfigCacheID" : {"default" : None, "type" : str,
+                                                "optional" : True, "validate" : None,
+                                                "attr" : "stepThreeConfigCacheID", "null" : False},
+                    "KeepStepOneOutput" : {"default" : True, "type" : strToBool,
+                                           "optional" : True, "validate" : None,
+                                           "attr" : "keepStepOneOutput", "null" : False},
+                    "KeepStepTwoOutput" : {"default" : True, "type" : strToBool,
+                                           "optional" : True, "validate" : None,
+                                           "attr" : "keepStepTwoOutput", "null" : False},
+                    "StepTwoTimePerEvent" : {"default" : None, "type" : float,
+                                             "optional" : True, "validate" : lambda x : x > 0,
+                                             "attr" : "stepTwoTimePerEvent", "null" : False},
+                    "StepThreeTimePerEvent" : {"default" : None, "type" : float,
+                                               "optional" : True, "validate" : lambda x : x > 0,
+                                               "attr" : "stepThreeTimePerEvent", "null" : False},
+                    "StepTwoSizePerEvent" : {"default" : None, "type" : float,
+                                             "optional" : True, "validate" : lambda x : x > 0,
+                                             "attr" : "stepTwoSizePerEvent", "null" : False},
+                    "StepThreeSizePerEvent" : {"default" : None, "type" : float,
+                                               "optional" : True, "validate" : lambda x : x > 0,
+                                               "attr" : "stepThreeSizePerEvent", "null" : False},
+                    "StepTwoMemory" : {"default" : None, "type" : float,
+                                       "optional" : True, "validate" : lambda x : x > 0,
+                                       "attr" : "stepTwoMemory", "null" : False},
+                    "StepThreeMemory" : {"default" : None, "type" : float,
+                                         "optional" : True, "validate" : lambda x : x > 0,
+                                         "attr" : "stepThreeMemory", "null" : False},
+                    "MCPileup" : {"default" : None, "type" : str,
+                                  "optional" : True, "validate" : dataset,
+                                  "attr" : "mcPileup", "null" : False},
+                    "DataPileup" : {"default" : None, "type" : str,
+                                    "optional" : True, "validate" : dataset,
+                                    "attr" : "dataPileup", "null" : False},
+                    "DeterministicPileup" : {"default" : False, "type" : strToBool,
+                                             "optional" : True, "validate" : None,
+                                             "attr" : "deterministicPileup", "null" : False}}
+        baseArgs.update(specArgs)
+        return baseArgs
 
-        Check for required fields, and some skim facts
-        """
-        requiredFields = ["CMSSWVersion", "ScramArch",
-                          "GlobalTag", "InputDataset",
-                          "StepOneConfigCacheID", "CouchURL",
-                          "CouchDBName"]
-        self.requireValidateFields(fields = requiredFields, schema = schema,
-                                   validate = False)
+    def validateSchema(self, schema):
         couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
-        outMod = self.validateConfigCacheExists(configID = schema["StepOneConfigCacheID"],
-                                                couchURL = couchUrl,
-                                                couchDBName = schema["CouchDBName"],
-                                                getOutputModules = True)
+        self.validateConfigCacheExists(configID = schema["StepOneConfigCacheID"],
+                                       couchURL = couchUrl,
+                                       couchDBName = schema["CouchDBName"])
+        if schema.get("StepTwoConfigCacheID") is not None:
+            self.validateConfigCacheExists(configID = schema["StepTwoConfigCacheID"],
+                                           couchURL = couchUrl,
+                                           couchDBName = schema["CouchDBName"])
+            if schema.get("StepOneOutputModuleName") is None:
+                self.raiseValidationException("StepTwoConfigCacheID is specified but StepOneOutputModuleName isn't")
+        if schema.get("StepThreeConfigCacheID") is not None:
+            self.validateConfigCacheExists(configID = schema["StepThreeConfigCacheID"],
+                                           couchURL = couchUrl,
+                                           couchDBName = schema["CouchDBName"])
+            if schema.get("StepTwoOutputModuleName") is None:
+                self.raiseValidationException("StepThreeConfigCacheID is specified but StepTwoOutputModuleName isn't")
         return
 
-def reDigiWorkload(workloadName, arguments):
-    """
-    _reDigiWorkload_
-
-    Instantiate the ReDigiWorkflowFactory and have it generate a workload for
-    the given parameters.
-    """
-    myReDigiFactory = ReDigiWorkloadFactory()
-    return myReDigiFactory(workloadName, arguments)

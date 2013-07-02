@@ -85,93 +85,15 @@ Example initial processing task
  },
 """
 
-from WMCore.WMSpec.StdSpecs.StdBase import StdBase, WMSpecFactoryException
-
-# Validate functions
-def validateSubTask(task, firstTask = False):
-    """
-    _validateSubTask_
-    
-    Check required fields for a sub task
-    """
-    reqKeys = ["TaskName", "SplittingAlgorithm", "SplittingArguments"]
-    for rK in reqKeys:
-        if not task.has_key(rK):
-            msg = "Sub Task missing Required Key: %s\n" % rK
-            msg += str(task)
-            raise WMSpecFactoryException(msg)
-    # 
-    # input definition checks
-    #
-    if not firstTask:
-        if not task.has_key("InputTask"):
-            msg = "Task %s has no InputTask setting" % task['TaskName']
-            raise WMSpecFactoryException(msg)
-        if not task.has_key("InputFromOutputModule"):
-            msg = "Task %s has no InputFromOutputModule setting" % task['TaskName']
-            raise WMSpecFactoryException(msg)
-        
-    # configuration checks
-    check = task.has_key("ProcScenario") or task.has_key("ConfigCacheID")
-    if not check:
-        msg = "Task %s has no Scenario or ConfigCacheID, one of these must be provided" % task['TaskName']
-        raise WMSpecFactoryException(msg)
-    if task.has_key("ProcScenario"):
-        if not task.has_key("ScenarioMethod"):
-            msg = "Scenario Specified for Task %s but no ScenarioMethod provided" % task['TaskName']
-            raise WMSpecFactoryException(msg)
-        scenArgs = task.get("ScenarioArgs", {})
-        if not scenArgs.has_key("writeTiers"):
-            msg = "task %s ScenarioArgs does not contain writeTiers argument" % task['TaskName']
-            raise WMSpecFactoryException, msg
-
-def validateGenFirstTask(task):
-    """
-    _validateGenFirstTask_
-    
-    Validate first task contains all stuff required for generation
-    """
-    if not task.has_key("RequestNumEvents"):
-        msg = "RequestNumEvents is required for first Generator task"
-        raise WMSpecFactoryException(msg)
-
-    if not task.has_key("PrimaryDataset"):
-        msg = "PrimaryDataset is required for first Generator task"
-        raise WMSpecFactoryException(msg)
-
-def validateProcFirstTask(task):
-    """
-    _validateProcFirstTask_
-    
-    Validate that Processing First task contains required params
-    """
-    if task['InputDataset'].count('/') != 3:
-        raise WMSpecFactoryException("Need three slashes in InputDataset %s " % task['InputDataset'])
-
-def parsePileupConfig(taskConfig):
-    """
-    _parsePileupConfig_
-
-    If the pileup config is defined as MCPileup and DataPileup
-    then make sure we get the usual dictionary as
-    PileupConfig : {'mc' : '/mc/procds/tier', 'data': '/minbias/procds/tier'}
-
-    This overrides any existing PileupConfig attribute in the task dict,
-    the requestor shouldn't have put both forms of the pileup config anyway.
-    """
-    pileUpConfig = {}
-    if taskConfig.get('MCPileup', None):
-        pileUpConfig['mc'] = [taskConfig['MCPileup']]
-    if taskConfig.get('DataPileup', None):
-        pileUpConfig['data'] = [taskConfig['DataPileup']]
-    taskConfig['PileupConfig'] = pileUpConfig
+from WMCore.Lexicon import identifier, couchurl, block, primdataset, dataset
+from WMCore.WMSpec.StdSpecs.StdBase import StdBase
+from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool, validateArguments,\
+    parsePileupConfig
 
 #
 # simple utils for data mining the request dictionary
 # 
-getTaskN = lambda args, tasknum: args.get("Task%s" % tasknum, None)
-isGenerator = lambda args: not args["Task1"].has_key("InputDataset")
-parentTaskName = lambda args: args.get("InputTask", None)
+isGenerator = lambda args: not args["Task1"].get("InputDataset", None)
 parentTaskModule = lambda args: args.get("InputFromOutputModule", None)
 
 
@@ -287,10 +209,6 @@ class TaskChainWorkloadFactory(StdBase):
         StdBase.__init__(self)
         self.mergeMapping = {}
         self.taskMapping = {}
-        self.arguments = {}
-        self.multicore = False
-        self.multicoreNCores = 1
-        self.ignoredOutputModules = []
 
     def __call__(self, workloadName, arguments):
         """
@@ -300,33 +218,23 @@ class TaskChainWorkloadFactory(StdBase):
         """
         StdBase.__call__(self, workloadName, arguments)
         self.workload = self.createWorkload()
-        self.arguments = arguments
-        self.couchURL = arguments['CouchURL']
-        self.couchDBName = arguments['CouchDBName']
-        self.configCacheUrl = arguments.get("ConfigCacheUrl", None)
-        self.frameworkVersion = arguments["CMSSWVersion"]
-        self.globalTag = arguments.get("GlobalTag", None)
-        self.ignoredOutputModules = arguments.get("IgnoredOutputModules", [])
 
-        # Optional arguments that default to something reasonable.
-        self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
-        self.emulation = arguments.get("Emulation", False)
-        
-        numTasks = arguments['TaskChain']
-        for i in range(1, numTasks+1):
-            #consistency check that there are numTasks defined in the request:
-            if not arguments.has_key("Task%s" % i):
-                msg = "Specified number of tasks: %s does not match defined task dictionary for Task%s" % (i, i)
-                raise RuntimeError, msg
-                
-            taskConf = getTaskN(arguments, i)
-            parent = parentTaskName(taskConf)
+        for i in range(1, self.taskChain + 1):
+
+            originalTaskConf = arguments["Task%d" % i]
+            taskConf = {}
+            # Make a shallow copy of the taskConf
+            for k,v in originalTaskConf.items():
+                taskConf[k] = v
+            parent = taskConf.get("InputTask", None)
+
+            self.modifyTaskConfiguration(taskConf, i == 1, i == 1 and 'InputDataset' not in taskConf)
 
             # Set task-specific global parameters
-            self.blockBlacklist = taskConf.get("BlockBlacklist", [])
-            self.blockWhitelist = taskConf.get("BlockWhitelist", [])
-            self.runBlacklist   = taskConf.get("RunBlacklist", [])
-            self.runWhitelist   = taskConf.get("RunWhitelist", [])
+            self.blockBlacklist = taskConf["BlockBlacklist"]
+            self.blockWhitelist = taskConf["BlockWhitelist"]
+            self.runBlacklist   = taskConf["RunBlacklist"]
+            self.runWhitelist   = taskConf["RunWhitelist"]
 
             parentTask = None
             if parent in self.mergeMapping:
@@ -338,13 +246,13 @@ class TaskChainWorkloadFactory(StdBase):
                 self.workload.setDashboardActivity("relval")
                 if isGenerator(arguments):
                     # generate mc events
-                    self.workload.setWorkQueueSplitPolicy("MonteCarlo", taskConf['SplittingAlgorithm'], 
+                    self.workload.setWorkQueueSplitPolicy("MonteCarlo", taskConf['SplittingAlgo'], 
                                                           taskConf['SplittingArguments'])
                     self.workload.setEndPolicy("SingleShot")
                     self.setupGeneratorTask(task, taskConf)
                 else:
                     # process an existing dataset
-                    self.workload.setWorkQueueSplitPolicy("Block", taskConf['SplittingAlgorithm'],
+                    self.workload.setWorkQueueSplitPolicy("Block", taskConf['SplittingAlgo'],
                                                      taskConf['SplittingArguments'])
                     self.setupTask(task, taskConf)
                 self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
@@ -381,10 +289,10 @@ class TaskChainWorkloadFactory(StdBase):
         """
         cmsswStepType = "CMSSW"
         configCacheID = taskConf['ConfigCacheID']
-        splitAlgorithm = taskConf.get('SplittingAlgorithm', 'EventBased')
-        splitArguments = taskConf.get('SplittingArguments', {'events_per_job': int((24*3600)/float(self.timePerEvent))})
-        keepOutput = taskConf.get('KeepOutput', True)
-        transientModules = taskConf.get('TransientOutputModules', [])
+        splitAlgorithm = taskConf["SplittingAlgo"]
+        splitArguments = taskConf["SplittingArguments"]
+        keepOutput = taskConf["KeepOutput"]
+        transientModules = taskConf["TransientOutputModules"]
         forceUnmerged = (not keepOutput) or (len(transientModules) > 0)
 
         self.inputPrimaryDataset = taskConf['PrimaryDataset']
@@ -397,10 +305,7 @@ class TaskChainWorkloadFactory(StdBase):
                                               forceUnmerged = forceUnmerged, timePerEvent = self.timePerEvent,
                                               memoryReq = self.memory, sizePerEvent = self.sizePerEvent)
 
-        # Set up any pileup
-        if 'MCPileup' in taskConf or 'DataPileup' in taskConf:
-            parsePileupConfig(taskConf)
-        if taskConf.get('PileupConfig', None):
+        if taskConf["PileupConfig"]:
             self.setupPileup(task, taskConf['PileupConfig'])
 
         self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
@@ -415,23 +320,23 @@ class TaskChainWorkloadFactory(StdBase):
     def setupTask(self, task, taskConf):
         """
         _setupTask_
-        
-        Build the task using the setupProcessingTask from StdBase and set the parents appropriately to handle
-        a processing task
+
+        Build the task using the setupProcessingTask from StdBase
+        and set the parents appropriately to handle a processing task
         """
-       
+
         cmsswStepType  = "CMSSW"
-        configCacheID  = taskConf.get('ConfigCacheID', None)
-        splitAlgorithm = taskConf.get('SplittingAlgorithm', 'LumiBased')
-        splitArguments = taskConf.get('SplittingArguments', {'lumis_per_job': 8})
-        keepOutput     = taskConf.get('KeepOutput', True)
-        transientModules = taskConf.get('TransientOutputModules', [])
+        configCacheID  = taskConf["ConfigCacheID"]
+        splitAlgorithm = taskConf["SplittingAlgo"]
+        splitArguments = taskConf["SplittingArguments"]
+        keepOutput     = taskConf["KeepOutput"]
+        transientModules = taskConf["TransientOutputModules"]
         forceUnmerged = (not keepOutput) or (len(transientModules) > 0)
 
         # in case the initial task is a processing task, we have an input dataset, otherwise
         # we look up the parent task and step
-        inputDataset = taskConf.get("InputDataset", None)
-        if inputDataset != None:
+        inputDataset = taskConf["InputDataset"]
+        if inputDataset is not None:
             self.inputDataset = inputDataset
             (self.inputPrimaryDataset, self.inputProcessedDataset,
              self.inputDataTier) = self.inputDataset[1:].split("/")
@@ -443,10 +348,10 @@ class TaskChainWorkloadFactory(StdBase):
             inputTaskConf = self.taskMapping[inputTask]
             parentTaskForMod = self.mergeMapping[inputTask][taskConf['InputFromOutputModule']]
             inpStep = parentTaskForMod.getStep("cmsRun1")
-            if not inputTaskConf.get('KeepOutput', True) or len(inputTaskConf.get('TransientOutputModules', [])) > 0:
-                inpMod = taskConf['InputFromOutputModule']
+            if not inputTaskConf["KeepOutput"] or len(inputTaskConf["TransientOutputModules"]) > 0:
+                inpMod = taskConf["InputFromOutputModule"]
                 # Check if the splitting has to be changed
-                if inputTaskConf.get('SplittingAlgorithm', 'LumiBased') == 'EventBased' \
+                if inputTaskConf["SplittingAlgo"] == 'EventBased' \
                    and (('InputDataset' in inputTaskConf) or ('InputTask' in inputTaskConf)):
                     splitAlgorithm = 'WMBSMergeBySize'
                     splitArguments = {'max_merge_size'   : self.maxMergeSize,
@@ -457,31 +362,29 @@ class TaskChainWorkloadFactory(StdBase):
                 inpMod = "Merged"
 
         currentPrimaryDataset = self.inputPrimaryDataset
-        if taskConf.get("PrimaryDataset") is not None:
+        if taskConf["PrimaryDataset"] is not None:
             self.inputPrimaryDataset = taskConf.get("PrimaryDataset")
 
-        scenarioFunc = None
-        scenarioArgs = {}
         couchUrl = self.couchURL
         couchDB = self.couchDBName
-        if taskConf.get("ProcScenario", None) != None:
-            self.procScenario = taskConf['ProcScenario']
-            scenarioFunc = taskConf['ScenarioMethod']
-            scenarioArgs = taskConf['ScenarioArguments']
-
-        outputMods = self.setupProcessingTask(task, "Processing", inputDataset, inputStep = inpStep, inputModule = inpMod,
-                                              scenarioName = self.procScenario, scenarioFunc = scenarioFunc, scenarioArgs = scenarioArgs,
-                                              couchURL = couchUrl, couchDBName = couchDB,
+        outputMods = self.setupProcessingTask(task, "Processing",
+                                              inputDataset,
+                                              inputStep = inpStep,
+                                              inputModule = inpMod,
+                                              couchURL = couchUrl,
+                                              couchDBName = couchDB,
                                               configCacheUrl = self.configCacheUrl,
-                                              configDoc = configCacheID, splitAlgo = splitAlgorithm,
-                                              splitArgs = splitArguments, stepType = cmsswStepType,
-                                              forceUnmerged = forceUnmerged, timePerEvent = self.timePerEvent,
-                                              memoryReq = self.memory, sizePerEvent = self.sizePerEvent)
+                                              configDoc = configCacheID,
+                                              splitAlgo = splitAlgorithm,
+                                              splitArgs = splitArguments,
+                                              stepType = cmsswStepType,
+                                              forceUnmerged = forceUnmerged,
+                                              timePerEvent = self.timePerEvent,
+                                              memoryReq = self.memory,
+                                              sizePerEvent = self.sizePerEvent)
 
 
-        if 'MCPileup' in taskConf or 'DataPileup' in taskConf:
-            parsePileupConfig(taskConf)
-        if taskConf.get('PileupConfig', None):
+        if taskConf["PileupConfig"]:
             self.setupPileup(task, taskConf['PileupConfig'])
 
         self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
@@ -523,6 +426,146 @@ class TaskChainWorkloadFactory(StdBase):
 
         return
 
+    def modifyTaskConfiguration(self, taskConf,
+                                firstTask = False, generator = False):
+        """
+        _modifyTaskConfiguration_
+
+        Modify the TaskConfiguration according to the specifications
+        in getWorkloadArguments and getTaskArguments. It does
+        type casting and assigns default values.
+        """
+        taskArguments = self.getTaskArguments(firstTask, generator)
+        for argument in taskArguments:
+            if argument not in taskConf:
+                taskConf[argument] = taskArguments[argument]["default"]
+            else:
+                taskConf[argument] = taskArguments[argument]["type"](taskConf[argument])
+        baseArguments = self.getWorkloadArguments()
+        for argument in baseArguments:
+            if argument in taskConf:
+                taskConf[argument] = baseArguments[argument]["type"](taskConf[argument])
+        if taskConf["EventsPerJob"] is None:
+            taskConf["EventsPerJob"] = (8.0 * 3600.0)/(taskConf.get("TimePerEvent", self.timePerEvent))
+        if generator:
+            taskConf["SplittingAlgo"] = "EventBased"
+        taskConf["SplittingArguments"] = {}
+        if taskConf["SplittingAlgo"] == "EventBased" or taskConf["SplittingAlgo"] == "EventAwareLumiBased":
+            taskConf["SplittingArguments"]["events_per_job"] = taskConf["EventsPerJob"]
+            if taskConf["SplittingAlgo"] == "EventAwareLumiBased":
+                taskConf["SplittingArguments"]["max_events_per_lumi"] = 20000
+        elif taskConf["SplittingAlgo"] == "LumiBased":
+            taskConf["SplittingArguments"]["lumis_per_job"] = taskConf["LumisPerJob"]
+        elif taskConf["SplittingAlgo"] == "FileBased":
+            taskConf["SplittingArguments"]["files_per_job"] = taskConf["FilesPerJob"]
+
+        taskConf["PileupConfig"] = parsePileupConfig(taskConf["MCPileup"], taskConf["DataPileup"])
+        return
+
+    @staticmethod
+    def getWorkloadArguments():
+        baseArgs = StdBase.getWorkloadArguments()
+        specArgs = {"GlobalTag" : {"default" : "GT_TC_V1", "type" : str,
+                                   "optional" : False, "validate" : None,
+                                   "attr" : "globalTag", "null" : False},
+                    "CouchURL" : {"default" : "http://localhost:5984", "type" : str,
+                                  "optional" : False, "validate" : couchurl,
+                                  "attr" : "couchURL", "null" : False},
+                    "CouchDBName" : {"default" : "dp_configcache", "type" : str,
+                                     "optional" : False, "validate" : identifier,
+                                     "attr" : "couchDBName", "null" : False},
+                    "ConfigCacheUrl" : {"default" : None, "type" : str,
+                                        "optional" : True, "validate" : None,
+                                        "attr" : "configCacheUrl", "null" : True},
+                    "IgnoredOutputModules" : {"default" : [], "type" : makeList,
+                                              "optional" : True, "validate" : None,
+                                              "attr" : "ignoredOutputModules", "null" : False},
+                    "TaskChain" : {"default" : 1, "type" : int,
+                                   "optional" : False, "validate" : lambda x : x > 0,
+                                   "attr" : "taskChain", "null" : False},
+                    "FirstEvent" : {"default" : 1, "type" : int,
+                                    "optional" : True, "validate" : lambda x : x > 0,
+                                    "attr" : "firstEvent", "null" : False},
+                    "FirstLumi" : {"default" : 1, "type" : int,
+                                    "optional" : True, "validate" : lambda x : x > 0,
+                                    "attr" : "firstLumi", "null" : False}}
+        baseArgs.update(specArgs)
+        return baseArgs
+
+    @staticmethod
+    def getTaskArguments(firstTask = False, generator = False):
+        """
+        _getTaskArguments_
+
+        Each task dictionary specifies its own set of arguments
+        that need to be validated as well, most of them are already
+        defined in StdBase.getWorkloadArguments and those do not appear here
+        since they are all optional. Here only new arguments are listed.
+        """
+        specArgs = {"TaskName" : {"default" : None, "type" : str,
+                                  "optional" : False, "validate" : None,
+                                  "null" : False},
+                    "ConfigCacheID" : {"default" : None, "type" : str,
+                                       "optional" : False, "validate" : None,
+                                       "null" : False},
+                    "KeepOutput" : {"default" : True, "type" : strToBool,
+                                    "optional" : True, "validate" : None,
+                                    "null" : False},
+                    "TransientOutputModules" : {"default" : [], "type" : makeList,
+                                                "optional" : True, "validate" : None,
+                                                "null" : False},
+                    "PrimaryDataset" : {"default" : None, "type" : str,
+                                        "optional" : not generator, "validate" : primdataset,
+                                        "null" : False},
+                    "Seeding" : {"default" : "AutomaticSeeding", "type" : str,
+                                 "optional" : True, "validate" : lambda x : x in ["ReproducibleSeeding", "AutomaticSeeding"],
+                                 "null" : False},
+                    "RequestNumEvents" : {"default" : 1000, "type" : int,
+                                          "optional" : not generator, "validate" : lambda x : x > 0,
+                                          "null" : False},
+                    "MCPileup" : {"default" : None, "type" : str,
+                                  "optional" : True, "validate" : dataset,
+                                  "null" : False},
+                    "DataPileup" : {"default" : None, "type" : str,
+                                    "optional" : True, "validate" : dataset,
+                                    "null" : False},
+                    "InputDataset" : {"default" : None, "type" : str,
+                                      "optional" : generator or not firstTask, "validate" : dataset,
+                                      "null" : False},
+                    "InputTask" : {"default" : None, "type" : str,
+                                   "optional" : firstTask, "validate" : None,
+                                   "null" : False},
+                    "InputFromOutputModule" : {"default" : None, "type" : str,
+                                               "optional" : firstTask, "validate" : None,
+                                               "null" : False},
+                    "BlockBlacklist" : {"default" : [], "type" : makeList,
+                                        "optional" : True, "validate" : lambda x: all([block(y) for y in x]),
+                                        "null" : False},
+                    "BlockWhitelist" : {"default" : [], "type" : makeList,
+                                        "optional" : True, "validate" : lambda x: all([block(y) for y in x]),
+                                        "null" : False},
+                    "RunBlacklist" : {"default" : [], "type" : makeList,
+                                      "optional" : True, "validate" : lambda x: all([int(y) > 0 for y in x]),
+                                      "null" : False},
+                    "RunWhitelist" : {"default" : [], "type" : makeList,
+                                      "optional" : True, "validate" : lambda x: all([int(y) > 0 for y in x]),
+                                      "null" : False},
+                    "SplittingAlgo" : {"default" : "EventAwareLumiBased", "type" : str,
+                                       "optional" : True, "validate" : lambda x: x in ["EventBased", "LumiBased",
+                                                                                       "EventAwareLumiBased", "FileBased"],
+                                       "null" : False},
+                    "EventsPerJob" : {"default" : None, "type" : int,
+                                      "optional" : True, "validate" : lambda x : x > 0,
+                                      "null" : False},
+                    "LumisPerJob" : {"default" : 8, "type" : int,
+                                     "optional" : True, "validate" : lambda x : x > 0,
+                                     "null" : False},
+                    "FilesPerJob" : {"default" : 1, "type" : int,
+                                     "optional" : True, "validate" : lambda x : x > 0,
+                                     "null" : False}
+                    }
+        return specArgs
+
     def validateSchema(self, schema):
         """
         _validateSchema_
@@ -530,41 +573,26 @@ class TaskChainWorkloadFactory(StdBase):
         Go over each task and make sure it matches validation
         parameters derived from Dave's requirements.
         """
-        try:
-            numTasks = int(schema['TaskChain'])
-        except ValueError:
-            msg = "TaskChain parameter is not an Integer"
-            self.raiseValidationException(msg = msg)
-
-        if numTasks == 0:
-            msg = "No tasks present in taskChain!"
-            self.raiseValidationException(msg = msg)
-
+        numTasks = schema['TaskChain']
         transientMapping = {}
-        for i in range(1, numTasks+1):
+        for i in range(1, numTasks + 1):
             taskName = "Task%s" % i
-            if not schema.has_key(taskName):
+            if taskName not in schema:
                 msg = "No Task%s entry present in request" % i
                 self.raiseValidationException(msg = msg)
 
             task = schema[taskName]
             # We can't handle non-dictionary tasks
             if type(task) != dict:
-                    msg =  "Non-dictionary input for task in TaskChain.\n"
-                    msg += "Could be an indicator of JSON error.\n"
-                    self.raiseValidationException(msg = msg)
+                msg =  "Non-dictionary input for task in TaskChain.\n"
+                msg += "Could be an indicator of JSON error.\n"
+                self.raiseValidationException(msg = msg)
 
-            if i == 1:
-                if task.has_key('InputDataset'):
-                    validateProcFirstTask(task)
-                else:
-                    validateGenFirstTask(task)
-                validateSubTask(task, firstTask = True)
-            else:
-                validateSubTask(task)
+            # Generic task parameter validation
+            self.validateTask(task, self.getTaskArguments(i == 1, i == 1 and 'InputDataset' not in task))
 
             # Validate the existence of the configCache
-            if task.has_key("ConfigCacheID"):
+            if task["ConfigCacheID"]:
                 configCacheUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
                 self.validateConfigCacheExists(configID = task['ConfigCacheID'],
                                                couchURL = configCacheUrl,
@@ -585,12 +613,23 @@ class TaskChainWorkloadFactory(StdBase):
                 msg += "This is a malformed task chain workload"
                 self.raiseValidationException(msg)
 
-def taskChainWorkload(workloadName, arguments):
-    """
-    _taskChainWorkload_
-    
-    Helper to generate a TaskChain workload given the name & arguments provided
+    def validateTask(self, taskConf, taskArgumentDefinition):
+        """
+        _validateTask_
 
-    """
-    f = TaskChainWorkloadFactory()
-    return f(workloadName, arguments)
+        Validate the task information against the given
+        argument description
+        """
+        msg = validateArguments(taskConf, taskArgumentDefinition)
+        if msg is not None:
+            self.raiseValidationException(msg)
+        # Also retrieve the "main" arguments which may be overriden in the task
+        # Change them all to optional for validation
+        baseArgs = self.getWorkloadArguments()
+        for arg in baseArgs:
+            baseArgs[arg]["optional"] = True
+        msg = validateArguments(taskConf, baseArgs)
+        if msg is not None:
+            self.raiseValidationException(msg)
+        return
+

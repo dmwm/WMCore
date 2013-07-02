@@ -1,8 +1,7 @@
 from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
-from WMCore.WMSpec.StdSpecs.MonteCarlo import getTestArguments
 
 def getMCArgs():
-    mcArgs = getTestArguments()
+    mcArgs = MonteCarloWorkloadFactory.getTestArguments()
     mcArgs.update({
                    "CouchURL": None,
                    "CouchDBName": None,

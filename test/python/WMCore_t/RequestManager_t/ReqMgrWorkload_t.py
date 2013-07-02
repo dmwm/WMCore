@@ -123,14 +123,15 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                                          groupName = groupName,
                                          teamName = teamName)
         del schema['GlobalTag']
+        configID = self.createConfig(bad = False)
+        schema['ConfigCacheID'] = configID
         raises = False
         try:
             self.jsonSender.put('request/testRequest', schema)
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Error in Workload Validation: Missing required "
-                            "field 'GlobalTag' in workload validation!" in ex.result)
+            self.assertTrue("Error in Workload Validation: Argument GlobalTag is required." in ex.result)
         self.assertTrue(raises)
 
         schema = utils.getSchema(groupName = groupName,  userName = userName)
@@ -146,13 +147,13 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
 
         schema = utils.getSchema(groupName = groupName,  userName = userName)
         raises = False
-        del schema['ProcScenario']
+        del schema['ConfigCacheID']
         try:
             self.jsonSender.put('request/testRequest', schema)
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("No Scenario or Config in Processing Request!" in ex.result)
+            self.assertTrue("rror in Workload Validation: Argument ConfigCacheID is required." in ex.result)
         self.assertTrue(raises)
 
         configID = self.createConfig(bad = True)
@@ -172,6 +173,11 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertTrue(raises)
 
         schema = utils.getSchema(groupName = groupName,  userName = userName)
+        configID = self.createConfig(bad = False)
+        schema['ConfigCacheID'] = configID
+        schema["CouchDBName"] = self.couchDBName
+        schema["CouchURL"]    = os.environ.get("COUCHURL")
+
         try:
             result = self.jsonSender.put('request/testRequest', schema)
         except Exception,ex:
@@ -184,7 +190,6 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
-        self.assertEqual(request['DbsUrl'], 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet')
 
     @attr('integration')
     def testB_Analysis(self):
@@ -223,49 +228,6 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         #self.assertEqual(request['Group'], groupName)
         #self.assertEqual(request['Requestor'], userName)
 
-
-    @attr('integration')
-    def testC_DataProcessing(self):
-        """
-        _DataProcessing_
-
-        Test DataProcessing workflows
-        
-        """
-        userName     = 'Taizong'
-        groupName    = 'Li'
-        teamName     = 'Tang'
-        schema       = utils.getAndSetupSchema(self,
-                                               userName = userName,
-                                               groupName = groupName,
-                                               teamName = teamName)
-        schema['RequestType'] = "DataProcessing"
-        
-        del schema['ProcScenario']
-        try:
-            raises = False
-            result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
-            raises = True
-            self.assertEqual(ex.status, 400)
-            self.assertTrue("No Scenario or Config in Processing Request!" in ex.result)
-        self.assertTrue(raises)
-
-        # Now we have to make ourselves a configCache
-        configID = self.createConfig()
-        schema["ConfigCacheID"] = configID
-        schema["CouchDBName"] = self.couchDBName
-        schema["CouchURL"]    = os.environ.get("COUCHURL")
-        result = self.jsonSender.put('request/testRequest', schema)
-        requestName = result[0]['RequestName']
-        
-        result = self.jsonSender.get('request/%s' % requestName)
-        request = result[0]
-        self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
-        self.assertEqual(request['Group'], groupName)
-        self.assertEqual(request['Requestor'], userName)
-        self.assertEqual(request['DbsUrl'], 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet')
-
     @attr('integration')
     def testD_ReDigi(self):
         """
@@ -288,8 +250,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Error in Workload Validation: Missing required "
-                            "field 'StepOneConfigCacheID' in workload validation!" in ex.result)
+            self.assertTrue("Error in Workload Validation: Argument StepOneConfigCacheID is required." in ex.result)
         self.assertTrue(raises)
 
         schema["StepOneConfigCacheID"] = "fakeID"
@@ -314,7 +275,6 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
-        self.assertEqual(request['DbsUrl'], 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet')
         self.assertEqual(request['SizePerEvent'], 512)
         self.assertEqual(request['RequestNumEvents'], 0)
         self.assertEqual(request['RequestSizeFiles'], 0)
@@ -341,11 +301,12 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Error in Workload Validation: Missing required "
-                            "field 'DbsUrl' in workload validation!" in ex.result)
+            print ex.result
+            self.assertTrue("Error in Workload Validation: Argument CmsPath is required." in ex.result)
         self.assertTrue(raises)
 
         schema['DbsUrl']            = 'http://fake.dbs.url/dbs'
+        schema['CmsPath']           = '/fake/tmp/path'
         schema['AcquisitionEra']    = 'era'
         schema['ProcessingVersion'] = 1
         result = self.jsonSender.put('request/testRequest', schema)
@@ -387,35 +348,31 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         schema["TaskChain"] = 5
         chains = {"Task1" : {"TaskName" : "GenSim",
                              "ConfigCacheID" : generatorDoc,
-                              "SplittingAlgorithm"  : "EventBased",
-                              "SplittingArguments" : {"events_per_job" : 250},
+                              "SplittingAlgo"  : "EventBased",
+                              "EventsPerJob" : 250,
                               "RequestNumEvents" : 10000,
-                              "Seeding" : "Automatic",
                               "PrimaryDataset" : "RelValTTBar"},
                   "Task2" : {"TaskName" : "DigiHLT",
                              "InputTask" : "GenSim",
                              "InputFromOutputModule" : "writeGENSIM",
                              "ConfigCacheID" : processorDocs['DigiHLT'],
-                             "SplittingAlgorithm" : "FileBased",
-                             "SplittingArguments" : {"files_per_job" : 1 } },
+                             "SplittingAlgo" : "FileBased"},
                   "Task3" : {"TaskName" : "Reco",
                              "InputTask" : "DigiHLT",
                              "InputFromOutputModule" : "writeRAWDIGI",
                              "ConfigCacheID" : processorDocs['Reco'],
-                             "SplittingAlgorithm" : "FileBased",
-                             "SplittingArguments" : {"files_per_job" : 1 } },
+                             "SplittingAlgo" : "FileBased"},
                   "Task4" : {"TaskName" : "ALCAReco",
                              "InputTask" : "Reco",
                              "InputFromOutputModule" : "writeALCA",
                              "ConfigCacheID" : processorDocs['ALCAReco'],
-                             "SplittingAlgorithm" : "FileBased",
-                             "SplittingArguments" : {"files_per_job" : 1 } },
+                             "SplittingAlgo" : "FileBased"},
                   "Task5" : {"TaskName" : "Skims",
                              "InputTask" : "Reco",
                              "InputFromOutputModule" : "writeRECO",
                              "ConfigCacheID" : processorDocs['Skims'],
-                             "SplittingAlgorithm" : "FileBased",
-                             "SplittingArguments" : {"files_per_job" : 10 } } }
+                             "SplittingAlgo" : "FileBased",
+                             "FilesPerJob" : 10 } }
         schema.update(chains)
         args = utils.getAndSetupSchema(self,
                                        userName = userName,
@@ -429,19 +386,19 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         schema["CouchDBName"] = self.couchDBName
         schema["CouchURL"]    = os.environ.get("COUCHURL")
         
+
         result = self.jsonSender.put('request/testRequest', schema)
-        
+
         requestName = result[0]['RequestName']
         result = self.jsonSender.get('request/%s' % requestName)
         request = result[0]
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
-        self.assertEqual(request['DbsUrl'], None)
 
         workload = self.loadWorkload(requestName)
-        self.assertEqual(workload.data.request.schema.Task1.SplittingArguments,
-                         {'events_per_job': 250})
+        self.assertEqual(workload.data.request.schema.Task1["EventsPerJob"],
+                         250)
 
 
     @attr('integration')
@@ -466,8 +423,8 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Error in Workload Validation: Missing required "
-                            "field 'ConfigCacheID' in workload validation!" in ex.result)
+            print ex.result
+            self.assertTrue("Error in Workload Validation: Argument ConfigCacheID can't be None" in ex.result)
         self.assertTrue(raises)
 
         schema["ConfigCacheID"] = "fakeID"
@@ -492,7 +449,6 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
         self.assertEqual(request['Group'], groupName)
         self.assertEqual(request['Requestor'], userName)
-        self.assertEqual(request['DbsUrl'], 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet')
         self.assertEqual(request['SizePerEvent'], 512)
         self.assertEqual(request['RequestNumEvents'], 0)
         self.assertEqual(request['RequestSizeFiles'], 0)
@@ -519,8 +475,6 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         # Set some versions
         schema['ProcessingVersion'] = '2012'
         schema['AcquisitionEra']    = 'ae2012'
-        schema['FirstEvent'] = 1
-        schema['FirstLumi'] = 1
 
         try:
             raises = False
@@ -528,8 +482,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Error in Workload Validation: Missing required "
-                            "field 'ConfigCacheID' in workload validation!" in ex.result)
+            self.assertTrue("Error in Workload Validation: Argument ConfigCacheID can't be None" in ex.result)
         self.assertTrue(raises)
 
         schema["ConfigCacheID"] = "fakeID"
@@ -587,8 +540,12 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                                                userName = userName,
                                                groupName = groupName,
                                                teamName = teamName)
-        schema['RequestType'] = "DataProcessing"
-        schema['ProdScenario'] = 'pp'
+        schema['RequestType'] = "ReReco"
+        configID = self.createConfig()
+        schema["ConfigCacheID"] = configID
+        schema["CouchDBName"] = self.couchDBName
+        schema["CouchURL"]    = os.environ.get("COUCHURL")
+
         result = self.jsonSender.put('request/testRequest', schema)
         requestName = result[0]['RequestName']
 
@@ -602,11 +559,9 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         except HTTPException, ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Error in Workload Validation: Missing required "
-                            "field 'OriginalRequestName' in workload validation!" in ex.result)
+            self.assertTrue("Error in Workload Validation: Argument InitialTaskPath is required." in ex.result)
         self.assertTrue(raises)
 
-        schema["OriginalRequestName"] = requestName
         schema["InitialTaskPath"]     = '/%s/DataProcessing' % requestName
         schema["ACDCServer"]          = os.environ.get("COUCHURL")
         schema["ACDCDatabase"]        = self.couchDBName
@@ -623,116 +578,6 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]['key'], requestName)
         self.assertEqual(result[0]['id'], resubmitName)
-
-    def testK_LHEStepZero(self):
-        """
-        _LHEStepZero_
-
-        Test LHEStepZero workflows
-        
-        """
-        userName     = 'Taizong'
-        groupName    = 'Li'
-        teamName     = 'Tang'
-        schema       = utils.getAndSetupSchema(self,
-                                               userName = userName,
-                                               groupName = groupName,
-                                               teamName = teamName)
-        schema['RequestType'] = "LHEStepZero"
-        # Set some versions
-        schema['ProcessingVersion'] = '2012'
-        schema['AcquisitionEra']    = 'ae2012'
-        schema['FirstEvent'] = 1
-        schema['FirstLumi'] = 1
-        schema['DbsUrl'] = 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet'
-
-        try:
-            raises = False
-            result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
-            raises = True
-            self.assertEqual(ex.status, 400)
-            self.assertTrue("Error in Workload Validation: Missing required "
-                            "field 'ConfigCacheID' in workload validation!" in ex.result)
-        self.assertTrue(raises)
-
-        schema["ConfigCacheID"] = "fakeID"
-        schema["CouchDBName"] = self.couchDBName
-        schema["CouchURL"]    = os.environ.get("COUCHURL")
-        schema["PrimaryDataset"] = "ReallyFake"
-        schema["RequestNumEvents"] = 100
-        try:
-            raises = False
-            result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
-            raises = True
-            self.assertEqual(ex.status, 400)
-        self.assertTrue(raises)
-
-        configID = self.createConfig()
-        schema["ConfigCacheID"] = configID
-        schema["FilterEfficiency"] = -0.5
-
-        try:
-            raises = False
-            result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
-            raises = True
-            self.assertEqual(ex.status, 400)
-            # until exception handling is redone (New REST API)
-            #self.assertTrue("Negative filter efficiency for MC workflow" in ex.result)
-        self.assertTrue(raises)
-
-        schema["FilterEfficiency"] = 1.0
-
-        try:
-            raises = False
-            result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
-            raises = True
-            self.assertEqual(ex.status, 400)
-            # until exception handling is redone (New REST API)
-            #self.assertTrue("No events per lumi information was entered" in ex.result)
-        self.assertTrue(raises)
-
-        schema["EventsPerLumi"] = "-10"
-
-        try:
-            raises = False
-            result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
-            raises = True
-            self.assertEqual(ex.status, 400)
-            # until exception handling is redone (New REST API)
-            #self.assertTrue("The events per lumi input from the user is invalid, only positive numbers allowed" in ex.result)
-        self.assertTrue(raises)
-
-        schema["EventsPerLumi"] = "101"
-
-        try:
-            raises = False
-            result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
-            raises = True
-            self.assertEqual(ex.status, 400)
-            # until exception handling is redone (New REST API)
-            #self.assertTrue("More events per lumi than total events requested" in ex.result)
-        self.assertTrue(raises)
-
-        schema["EventsPerLumi"] = "20"
-        result = self.jsonSender.put('request/testRequest', schema)
-        requestName = result[0]['RequestName']
-
-        result = self.jsonSender.get('request/%s' % requestName)
-        request = result[0]
-        self.assertEqual(request['CMSSWVersion'], schema['CMSSWVersion'])
-        self.assertEqual(request['Group'], groupName)
-        self.assertEqual(request['Requestor'], userName)
-        self.assertEqual(request['DbsUrl'], schema['DbsUrl'])
-        self.assertEqual(request['SizePerEvent'], 512)
-        self.assertEqual(request['RequestNumEvents'], 100)
-        self.assertEqual(request['RequestSizeFiles'], 0)
-
 
 if __name__=='__main__':
     unittest.main()

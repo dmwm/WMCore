@@ -115,11 +115,10 @@ def buildWorkloadForRequest(typename, schema):
     if schema.get('CMSSWVersion') and schema.get('CMSSWVersion') not in request['SoftwareVersions']:
         request['SoftwareVersions'].append(schema.get('CMSSWVersion'))
 
-    if schema.get("DbsUrl", None):
-        request["DbsUrl"] = schema["DbsUrl"]
-    else:
-        request["DbsUrl"] = (workload.getTopLevelTask()[0]).dbsUrl()
-        
+    # Storing the DBSURL causes problems for cloning
+    # If it is not present in the schema then there is no reason to store
+    # it in couch.
+
     return request
 
 
@@ -151,5 +150,3 @@ def loadRequestSchema(workload, requestSchema):
     # might belong in another method to apply existing schema
     workload.data.owner.Group = schema.Group
     workload.data.owner.Requestor = schema.Requestor
-    if hasattr(schema, 'RequestPriority'):
-        workload.data.request.priority = schema.RequestPriority

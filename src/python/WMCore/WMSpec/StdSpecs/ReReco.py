@@ -5,66 +5,80 @@ _ReReco_
 Standard ReReco workflow.
 """
 
-import os
-import WMCore.Lexicon
+from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
+from WMCore.WMSpec.WMWorkloadTools import makeList, validateArguments
 
-from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessingWorkloadFactory
-from WMCore.WMSpec.StdSpecs.StdBase        import WMSpecFactoryException
-
-def getTestArguments():
-    """
-    _getTestArguments_
-
-    This should be where the default REQUIRED arguments go
-    This serves as documentation for what is currently required
-    by the standard ReReco workload in importable format.
-
-    NOTE: These are test values.  If used in real workflows they
-    will cause everything to crash/die/break, and we will be forced
-    to hunt you down and kill you.
-    """
-    arguments = {
-        "AcquisitionEra": "WMAgentCommissioning10",
-        "Requestor": "sfoulkes@fnal.gov",
-        "InputDataset": "/MinimumBias/Commissioning10-v4/RAW",
-        "CMSSWVersion": "CMSSW_3_9_7",
-        "ScramArch": "slc5_ia32_gcc434",
-        "ProcessingVersion": "2",
-        "SkimInput": "output",
-        "GlobalTag": "GR10_P_v4::All",
-
-        "CouchURL": os.environ.get("COUCHURL", None),
-        "CouchDBName": "scf_wmagent_configcache",
-        # or alternatively CouchURL part can be replaced by ConfigCacheUrl,
-        # then ConfigCacheUrl + CouchDBName + ConfigCacheID
-        "ConfigCacheUrl": None,
-
-        "ProcScenario": "cosmics",
-        "DashboardHost": "127.0.0.1",
-        "DashboardPort": 8884,
-        "TimePerEvent" : 1,
-        "Memory"       : 1,
-        "SizePerEvent" : 1,
-        }
-
-    return arguments
-
-class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
+class ReRecoWorkloadFactory(DataProcessing):
     """
     _ReRecoWorkloadFactory_
 
     Stamp out ReReco workflows.
     """
-    def __init__(self):
-        DataProcessingWorkloadFactory.__init__(self)
-        return
+
+    def buildWorkload(self):
+        """
+        _buildWorkload_
+
+        Build the workload given all of the input parameters.  At the very least
+        this will create a processing task and merge tasks for all the outputs
+        of the processing task.
+        Note that there will be LogCollect tasks created for each processing
+        task and Cleanup tasks created for each merge task.
+        """
+        (self.inputPrimaryDataset, self.inputProcessedDataset,
+         self.inputDataTier) = self.inputDataset[1:].split("/")
+
+        workload = self.createWorkload()
+        workload.setDashboardActivity("reprocessing")
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
+        workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo,
+                                         self.procJobSplitArgs,
+                                         OpenRunningTimeout = self.openRunningTimeout)
+        procTask = workload.newTask("DataProcessing")
+
+        cmsswStepType = "CMSSW"
+        taskType = "Processing"
+        if self.multicore:
+            taskType = "MultiProcessing"
+
+        forceUnmerged = False
+        if self.transientModules:
+            # If we have at least one output module not being merged,
+            # we must force all the processing task to be unmerged
+            forceUnmerged = True
+
+        outputMods = self.setupProcessingTask(procTask, taskType,
+                                              self.inputDataset,
+                                              couchURL = self.couchURL,
+                                              couchDBName = self.couchDBName,
+                                              configCacheUrl = self.configCacheUrl,
+                                              forceUnmerged = forceUnmerged,
+                                              configDoc = self.configCacheID,
+                                              splitAlgo = self.procJobSplitAlgo,
+                                              splitArgs = self.procJobSplitArgs,
+                                              stepType = cmsswStepType,
+                                              timePerEvent = self.timePerEvent,
+                                              memoryReq = self.memory,
+                                              sizePerEvent = self.sizePerEvent)
+        self.addLogCollectTask(procTask)
+
+        for outputModuleName in outputMods.keys():
+            # Only merge the desired outputs
+            if outputModuleName not in self.transientModules:
+                self.addMergeTask(procTask, self.procJobSplitAlgo,
+                                  outputModuleName)
+            else:
+                self.addCleanupTask(procTask, outputModuleName)
+
+        self.addSkims(workload)
+
+        return workload
 
     def addSkims(self, workload):
         """
         _addSkims_
 
         Add skims to the standard dataprocessing workload that was given.
-
         Note that there will be LogCollect tasks created for each processing
         task and Cleanup tasks created for each merge task.
         """
@@ -77,56 +91,51 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
         for outputModule in self.transientModules:
             skimmableTasks[outputModule] = procTask
 
-
         for skimConfig in self.skimConfigs:
-            if skimConfig["SkimInput"] not in skimmableTasks:
-                # This is an extremely rare case - we have to wait until the entire system is built to get to this point
-                # But if we do get here we need to raise a Validation exception, which is normally only raised in the validate
-                # steps.  This is a once in a lifetime thing - don't go raising validationExceptions in the rest of the code.
-                error = "Processing config does not have the following output module: %s.  " % skimConfig["SkimInput"]
-                error += "Please change your skim input to be one of the following: %s" % skimmableTasks.keys()
-                self.raiseValidationException(msg = error)
-
-
             skimmableTask = skimmableTasks[skimConfig["SkimInput"]]
             skimTask = skimmableTask.addTask(skimConfig["SkimName"])
             parentCmsswStep = skimmableTask.getStep("cmsRun1")
 
-            skimSizePerEvent = skimConfig.get("SizePerEvent", None) or self.sizePerEvent
-            skimTimePerEvent = skimConfig.get("TimePerEvent", None) or self.timePerEvent
-            skimMemory = skimConfig.get("Memory", None) or self.memory
-
+            skimSizePerEvent = skimConfig["SizePerEvent"]
+            skimTimePerEvent = skimConfig["TimePerEvent"]
+            skimMemory = skimConfig["Memory"]
 
             # Check that the splitting agrees, if the parent is event based then we must do WMBSMergeBySize
             # With reasonable defaults
-            skimJobSplitAlgo = self.skimJobSplitAlgo
-            skimJobSplitArgs = self.skimJobSplitArgs
+            skimJobSplitAlgo = skimConfig["SkimJobSplitAlgo"]
+            skimJobSplitArgs = skimConfig["SkimJobSplitArgs"]
             if skimmableTask.jobSplittingAlgorithm == "EventBased":
                 skimJobSplitAlgo = "WMBSMergeBySize"
                 skimJobSplitArgs = {"max_merge_size"   : self.maxMergeSize,
                                     "min_merge_size"   : self.minMergeSize,
                                     "max_merge_events" : self.maxMergeEvents,
                                     "max_wait_time"    : self.maxWaitTime}
+
             # Define the input module
             inputModule = "Merged"
             if skimConfig["SkimInput"] in self.transientModules:
                 inputModule = skimConfig["SkimInput"]
 
-            outputMods = self.setupProcessingTask(skimTask, "Skim", inputStep = parentCmsswStep, inputModule = inputModule,
-                                                  couchURL = self.couchURL, couchDBName = self.couchDBName,
+            outputMods = self.setupProcessingTask(skimTask, "Skim",
+                                                  inputStep = parentCmsswStep,
+                                                  inputModule = inputModule,
+                                                  couchURL = self.couchURL,
+                                                  couchDBName = self.couchDBName,
                                                   configCacheUrl = self.configCacheUrl,
-                                                  configDoc = skimConfig["ConfigCacheID"], splitAlgo = skimJobSplitAlgo,
+                                                  configDoc = skimConfig["ConfigCacheID"],
+                                                  splitAlgo = skimJobSplitAlgo,
                                                   splitArgs = skimJobSplitArgs,
                                                   timePerEvent = skimTimePerEvent,
                                                   sizePerEvent = skimSizePerEvent,
                                                   memoryReq = skimMemory)
+
             self.addLogCollectTask(skimTask, taskName = "%sLogCollect" % skimConfig["SkimName"])
 
             for outputModuleName in outputMods.keys():
                 self.addMergeTask(skimTask, skimJobSplitAlgo,
                                   outputModuleName)
 
-        return workload
+        return
 
     def __call__(self, workloadName, arguments):
         """
@@ -134,32 +143,88 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
 
         Create a ReReco workload with the given parameters.
         """
-        workload = DataProcessingWorkloadFactory.__call__(self, workloadName, arguments)
+        DataProcessing.__call__(self, workloadName, arguments)
 
-        # The SkimConfig parameter must be a list of dictionaries where each
-        # dictionary will have the following keys:
-        #  SkimName
-        #  SkimInput
-        #  SkimSplitAlgo - Optional at workflow creation time
-        #  SkimSplitParams - Optional at workflow creation time
-        #  ConfigCacheID
-        #  Scenario
-        #
-        # The ConfigCacheID and Scenaio are mutually exclusive, only one can be
-        # set.  The SkimSplitAlgo and SkimSplitParams don't have to be set when
-        # the workflow is created but must be set when the workflow is approved.
-        # The SkimInput is the name of the output module in the  processing step
-        # that will be used as the input for the skim.
-        self.skimConfigs = arguments.get("SkimConfigs", [])
+        # Arrange the skims in a skimConfig object (i.e. a list of skim configurations)
+        self.skimConfigs = []
+        skimIndex = 1
+        while "SkimName%s" % skimIndex in arguments:
+            skimConfig = {}
+            skimConfig["SkimName"] = arguments["SkimName%s" % skimIndex]
+            skimConfig["SkimInput"] = arguments["SkimInput%s" % skimIndex]
+            skimConfig["ConfigCacheID"] = arguments["Skim%sConfigCacheID" % skimIndex]
+            skimConfig["TimePerEvent"] = float(arguments.get("SkimTimePerEvent%s" % skimIndex, self.timePerEvent))
+            skimConfig["SizePerEvent"] = float(arguments.get("SkimSizePerEvent%s" % skimIndex, self.sizePerEvent))
+            skimConfig["Memory"] = float(arguments.get("SkimMemory%s" % skimIndex, self.memory))
+            skimConfig["SkimJobSplitAlgo"] = arguments.get("SkimSplittingAlgo%s" % skimIndex, "FileBased")
+            skimConfig["SkimJobSplitArgs"] = {"include_parents" : True}
+            if skimConfig["SkimJobSplitAlgo"] == "FileBased":
+                skimConfig["SkimJobSplitArgs"]["files_per_job"] = int(arguments.get("SkimFilesPerJob%s" % skimIndex, 1))
+            elif skimConfig["SkimJobSplitAlgo"] == "EventBased" or skimConfig["SkimJobSplitAlgo"] == "EventAwareLumiBased":
+                skimConfig["SkimJobSplitArgs"]["events_per_job"] = int(arguments.get("SkimEventsPerJob%s" % skimIndex, int((8.0 * 3600.0) / skimConfig["TimePerEvent"])))
+                if skimConfig["SkimJobSplitAlgo"] == "EventAwareLumiBased":
+                    skimConfig["SkimJobSplitAlgo"]["max_events_per_lumi"] = 20000
+            elif skimConfig["SkimJobSplitAlgo"] == "LumiBased":
+                skimConfig["SkimJobSplitArgs"["lumis_per_job"]] = int(arguments.get("SkimLumisPerJob%s" % skimIndex, 8))
+            self.skimConfigs.append(skimConfig)
+            skimIndex += 1
 
-        # These are mostly place holders because the job splitting algo and
-        # parameters will be updated after the workflow has been created.
-        self.skimJobSplitAlgo = arguments.get("SkimJobSplitAlgo", "FileBased")
-        self.skimJobSplitArgs = arguments.get("SkimJobSplitArgs",
-                                              {"files_per_job": 1,
-                                               "include_parents": True})
+        return self.buildWorkload()
 
-        return self.addSkims(workload)
+    @staticmethod
+    def getWorkloadArguments():
+
+        baseArgs = DataProcessing.getWorkloadArguments()
+        specArgs = {"TransientOutputModules" : {"default" : [], "type" : makeList,
+                                                "optional" : True, "validate" : None,
+                                                "attr" : "transientModules", "null" : False},
+                    "ConfigCacheID" : {"default" : None, "type" : str,
+                                       "optional" : False, "validate" : None,
+                                       "attr" : "configCacheID", "null" : False}}
+        baseArgs.update(specArgs)
+        return baseArgs
+
+    @staticmethod
+    def getSkimArguments():
+        """
+        _getSkimArguments_
+
+        Skim arguments can be many of the same, it depends on the number
+        of defined skims. However we need to keep the same definition of its arguments
+        in a generic form. This method follows the same definition of getWorkloadArguments in StdBase.
+        """
+        skimArgs = {
+                    "SkimName#N" : {"default" : None, "type" : str,
+                                    "optional" : False, "validate" : None,
+                                    "null" : False},
+                    "SkimInput#N" : {"default" : None, "type" : str,
+                                     "optional" : False, "validate" : None,
+                                     "null" : False},
+                    "Skim#NConfigCacheID" : {"default" : None, "type" : str,
+                                             "optional" : False, "validate" : None,
+                                             "null" : False},
+                    "SkimTimePerEvent#N" : {"default" : None, "type" : float,
+                                            "optional" : True, "validate" : lambda x : x > 0,
+                                            "null" : False},
+                    "SkimSizePerEvent#N" : {"default" : None, "type" : float,
+                                            "optional" : True, "validate" : lambda x : x > 0,
+                                            "null" : False},
+                    "SkimMemory#N" : {"default" : None, "type" : float,
+                                      "optional" : True, "validate" : lambda x : x > 0,
+                                      "null" : False},
+                    "SkimSplittingAlgo#N" : {"default" : None, "type" : str,
+                                             "optional" : True, "validate" : None,
+                                             "null" : False},
+                    "SkimEventsPerJob#N" : {"default" : None, "type" : int,
+                                            "optional" : True, "validate" : lambda x : x > 0,
+                                            "null" : False},
+                    "SkimLumisPerJob#N" : {"default" : 8, "type" : int,
+                                           "optional" : True, "validate" : lambda x : x > 0,
+                                           "null" : False},
+                    "SkimFilesPerJob#N" : {"default" : 1, "type" : int,
+                                           "optional" : True, "validate" : lambda x : x > 0,
+                                           "null" : False}}
+        return skimArgs
 
     def validateSchema(self, schema):
         """
@@ -167,45 +232,37 @@ class ReRecoWorkloadFactory(DataProcessingWorkloadFactory):
 
         Check for required fields, and some skim facts
         """
-        # TODO
-        # this list of required arguments is most likely incomplete, obsolete ...
-        requiredFields = ["CMSSWVersion", "ScramArch",
-                          "GlobalTag", "InputDataset"]
-        self.requireValidateFields(fields = requiredFields, schema = schema,
-                                   validate = False)
+        DataProcessing.validateSchema(self, schema)
+        couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
+        mainOutputModules = self.validateConfigCacheExists(configID = schema["ConfigCacheID"],
+                                                           couchURL = couchUrl,
+                                                           couchDBName = schema["CouchDBName"],
+                                                           getOutputModules = True).keys()
 
-        if schema.get('ConfigCacheID', None) and schema.get('CouchURL', None) and schema.get('CouchDBName', None):
-            couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
-            outMod = self.validateConfigCacheExists(configID = schema['ConfigCacheID'],
-                                                    couchURL = couchUrl,
-                                                    couchDBName = schema["CouchDBName"],
-                                                    getOutputModules = True)
-        # TODO
-        # ProcScenario is now in request arguments Scenario, however this change
-        # didn't quite make it in the workflows implementation (#4280) 
-        elif not schema.get('ProcScenario', None):
-            self.raiseValidationException(msg = "No Scenario or Config in Processing Request!")
+        # Skim facts have to be validated outside the usual master validation
+        skimArguments = self.getSkimArguments()
+        skimIndex = 1
+        skimInputs = set()
+        while "SkimName%s" % skimIndex in schema:
+            instanceArguments = {}
+            for argument in skimArguments.keys():
+                realArg = argument.replace("#N", str(skimIndex))
+                instanceArguments[realArg] = skimArguments[argument]
+            msg = validateArguments(schema, instanceArguments)
+            if msg is not None:
+                self.raiseValidationException(msg)
 
-        try:
-            WMCore.Lexicon.dataset(schema.get('InputDataset', ''))
-        except AssertionError:
-            self.raiseValidationException(msg = "Invalid input dataset!")
+            self.validateConfigCacheExists(configID = schema["Skim%sConfigCacheID" % skimIndex],
+                                           couchURL = couchUrl,
+                                           couchDBName = schema["CouchDBName"])
+            if schema["SkimInput%s" % skimIndex] not in mainOutputModules:
+                error = "Processing config does not have the following output module: %s." % schema["SkimInput%s" % skimIndex]
+                self.raiseValidationException(msg = error)
+            skimInputs.add(schema["SkimInput%s" % skimIndex])
+            skimIndex += 1
 
         # Validate that the transient output modules are used in a skim task
-        if 'TransientOutputModules' in schema:
-            for outMod in schema['TransientOutputModules']:
-                for skimConfig in schema.get('SkimConfigs', []):
-                    if outMod == skimConfig['SkimInput']:
-                        break
-                else:
-                    self.raiseValidationException(msg = 'A transient output module was specified but no skim was defined for it')
-
-def rerecoWorkload(workloadName, arguments):
-    """
-    _rerecoWorkload_
-
-    Instantiate the ReRecoWorkflowFactory and have it generate a workload for
-    the given parameters.
-    """
-    myReRecoFactory = ReRecoWorkloadFactory()
-    return myReRecoFactory(workloadName, arguments)
+        if "TransientOutputModules" in schema:
+            diffSet = set(schema["TransientOutputModules"]) - skimInputs
+            if diffSet:
+                self.raiseValidationException(msg = "A transient output module was specified but no skim was defined for it")

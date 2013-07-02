@@ -208,7 +208,7 @@ class TaskChainTests(unittest.TestCase):
         generatorDoc = makeGeneratorConfig(self.configDatabase)
         processorDocs = makeProcessingConfigs(self.configDatabase)
 
-
+        testArguments = TaskChainWorkloadFactory.getTestArguments()
         arguments = {
             "AcquisitionEra": "ReleaseValidation",
             "Requestor": "sfoulkes@fnal.gov",
@@ -226,10 +226,9 @@ class TaskChainTests(unittest.TestCase):
             "Task1" :{
                 "TaskName" : "GenSim",
                 "ConfigCacheID" : generatorDoc,
-                "SplittingAlgorithm"  : "EventBased",
-                "SplittingArguments" : {"events_per_job" : 250},
+                "SplittingAlgo"  : "EventBased",
                 "RequestNumEvents" : 10000,
-                "Seeding" : "Automatic",
+                "Seeding" : "AutomaticSeeding",
                 "PrimaryDataset" : "RelValTTBar",
             },
             "Task2" : {
@@ -237,8 +236,7 @@ class TaskChainTests(unittest.TestCase):
                 "InputTask" : "GenSim",
                 "InputFromOutputModule" : "writeGENSIM",
                 "ConfigCacheID" : processorDocs['DigiHLT'],
-                "SplittingAlgorithm" : "LumiBased",
-                "SplittingArguments" : {"lumis_per_job" : 2 },
+                "SplittingAlgo" : "LumiBased",
                 "CMSSWVersion" : "CMSSW_5_2_6",
                 "GlobalTag" : "GR_39_P_V5:All",
                 "PrimaryDataset" : "PURelValTTBar",
@@ -249,8 +247,7 @@ class TaskChainTests(unittest.TestCase):
                 "InputTask" : "GenSim",
                 "InputFromOutputModule" : "writeGENSIM",
                 "ConfigCacheID" : processorDocs['DigiHLT'],
-                "SplittingAlgorithm" : "EventBased",
-                "SplittingArguments" : {"events_per_job" : 100 },
+                "SplittingAlgo" : "EventBased",
                 "CMSSWVersion" : "CMSSW_5_2_7",
                 "GlobalTag" : "GR_40_P_V5:All",
                 "AcquisitionEra" : "ReleaseValidationNewConditions",
@@ -263,8 +260,7 @@ class TaskChainTests(unittest.TestCase):
                 "InputTask" : "DigiHLT_new",
                 "InputFromOutputModule" : "writeRAWDIGI",
                 "ConfigCacheID" : processorDocs['Reco'],
-                "SplittingAlgorithm" : "FileBased",
-                "SplittingArguments" : {"files_per_job" : 1 },
+                "SplittingAlgo" : "FileBased",
                 "TransientOutputModules" : ["writeRECO"]
             },
             "Task5" : {
@@ -272,8 +268,7 @@ class TaskChainTests(unittest.TestCase):
                 "InputTask" : "DigiHLT_ref",
                 "InputFromOutputModule" : "writeRAWDIGI",
                 "ConfigCacheID" : processorDocs['ALCAReco'],
-                "SplittingAlgorithm" : "LumiBased",
-                "SplittingArguments" : {"lumis_per_job" : 8 },
+                "SplittingAlgo" : "LumiBased",
 
             },
             "Task6" : {
@@ -281,13 +276,14 @@ class TaskChainTests(unittest.TestCase):
                 "InputTask" : "Reco",
                 "InputFromOutputModule" : "writeRECO",
                 "ConfigCacheID" : processorDocs['Skims'],
-                "SplittingAlgorithm" : "LumiBased",
-                "SplittingArguments" : {"lumis_per_job" : 10 },
+                "SplittingAlgo" : "LumiBased",
 
             }
 
         }
-
+        testArguments.update(arguments)
+        arguments = testArguments
+        print arguments
         factory = TaskChainWorkloadFactory()
 
         # Test a malformed task chain definition
@@ -296,16 +292,13 @@ class TaskChainTests(unittest.TestCase):
 
         arguments['Task4']['TransientOutputModules'].remove('writeAOD')
         try:
-            factory.validateSchema(arguments)
-            self.workload = factory("PullingTheChain", arguments)
+            self.workload = factory.factoryWorkloadConstruction("PullingTheChain", arguments)
         except Exception, ex:
             msg = "Error invoking TaskChainWorkloadFactory:\n%s" % str(ex)
+            import traceback
+            traceback.print_exc()
             self.fail(msg)
-
-
-        self.workload.setSpecUrl("somespec")
-        self.workload.setOwnerDetails("evansde@fnal.gov", "DMWM")
-
+        print self.workload.data
         testWMBSHelper = WMBSHelper(self.workload, "GenSim", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
@@ -352,7 +345,7 @@ class TaskChainTests(unittest.TestCase):
         Verify the correctness of the task
 
         """
-        if "InputTask" in taskConf:
+        if taskConf.get("InputTask") is not None:
             inpTaskPath = task.getPathName()
             inpTaskPath = inpTaskPath.replace(task.name(), "")
             inpTaskPath += "cmsRun1"
@@ -422,7 +415,7 @@ class TaskChainTests(unittest.TestCase):
             if outputModule != "logArchive":
                 taskOutputMods = task.getOutputModulesForStep(stepName = "cmsRun1")
                 currentModule = getattr(taskOutputMods, outputModule)
-                if "PrimaryDataset" in taskConf:
+                if taskConf.get("PrimaryDataset") is not None:
                     self.assertEqual(currentModule.primaryDataset, taskConf["PrimaryDataset"], "Wrong primary dataset")
                 processedDatasetParts = ["AcquisitionEra, ProcessingString, ProcessingVersion"]
                 allParts = True
@@ -437,7 +430,7 @@ class TaskChainTests(unittest.TestCase):
                                                    taskConf["ProcessingVersion"]), "Wrong processed dataset for module")
 
         # Test subscriptions
-        if "InputTask" not in taskConf:
+        if taskConf.get("InputTask") is None:
             inputFileset = "%s-%s-SomeBlock" % (self.workload.name(), task.name())
         elif "Merge" in task.getPathName().split("/")[-2]:
             inpTaskPath = task.getPathName().replace(task.name(), "")
@@ -451,17 +444,17 @@ class TaskChainTests(unittest.TestCase):
         taskSubscription = Subscription(fileset = taskFileset, workflow = workflow)
         taskSubscription.loadData()
 
-        if "InputTask" not in taskConf and "InputDataset" not in taskConf:
+        if taskConf.get("InputTask") is None and taskConf.get("InputDataset") is None:
             # Production type
             self.assertEqual(taskSubscription["type"], "Production",
                              "Error: Wrong subscription type for processing task")
-            self.assertEqual(taskSubscription["split_algo"], taskConf["SplittingAlgorithm"],
+            self.assertEqual(taskSubscription["split_algo"], taskConf["SplittingAlgo"],
                              "Error: Wrong split algo for generation task")
         else:
             # Processing type
             self.assertEqual(taskSubscription["type"], "Processing", "Wrong subscription type for task")
             if taskSubscription["split_algo"] != "WMBSMergeBySize":
-                self.assertEqual(taskSubscription["split_algo"], taskConf['SplittingAlgorithm'], "Splitting algo mismatch")
+                self.assertEqual(taskSubscription["split_algo"], taskConf['SplittingAlgo'], "Splitting algo mismatch")
             else:
                 self.assertEqual(taskFileset.name, inpTaskPath + "unmerged-%s" % taskConf["InputFromOutputModule"],
                                  "Subscription uses WMBSMergeBySize on a merge fileset")
@@ -478,6 +471,7 @@ class TaskChainTests(unittest.TestCase):
         each task
         """
         processorDocs = makeProcessingConfigs(self.configDatabase)
+        testArguments = TaskChainWorkloadFactory.getTestArguments()
         arguments = {
             "AcquisitionEra": "ReleaseValidation",
             "Requestor": "sfoulkes@fnal.gov",
@@ -495,18 +489,16 @@ class TaskChainTests(unittest.TestCase):
                 "TaskName" : "DigiHLT",
                 "ConfigCacheID" : processorDocs['DigiHLT'],
                 "InputDataset" : "/MinimumBias/Commissioning10-v4/GEN-SIM",
-                "SplittingAlgorithm"  : "FileBased",
-                "SplittingArguments" : {"files_per_job" : 1}
+                "SplittingAlgo"  : "FileBased",
             },
             "Task2" : {
                 "TaskName" : "Reco",
                 "InputTask" : "DigiHLT",
                 "InputFromOutputModule" : "writeRAWDIGI",
                 "ConfigCacheID" : processorDocs['Reco'],
-                "SplittingAlgorithm" : "FileBased",
-                "SplittingArguments" : {"files_per_job" : 1 },
+                "SplittingAlgo" : "FileBased",
                 "GlobalTag" : "GlobalTagForReco",
-                "CMSSWVersion" : "CMSSW_RECO_1",
+                "CMSSWVersion" : "CMSSW_3_1_2",
                 "ScramArch" : "CompatibleRECOArch",
                 "PrimaryDataset" : "ZeroBias",
             },
@@ -515,10 +507,9 @@ class TaskChainTests(unittest.TestCase):
                 "InputTask" : "Reco",
                 "InputFromOutputModule" : "writeALCA",
                 "ConfigCacheID" : processorDocs['ALCAReco'],
-                "SplittingAlgorithm" : "FileBased",
-                "SplittingArguments" : {"files_per_job" : 1 },
+                "SplittingAlgo" : "FileBased",
                 "GlobalTag" : "GlobalTagForALCAReco",
-                "CMSSWVersion" : "CMSSW_ALCA_1",
+                "CMSSWVersion" : "CMSSW_3_1_3",
                 "ScramArch" : "CompatibleALCAArch",
 
             },
@@ -527,21 +518,18 @@ class TaskChainTests(unittest.TestCase):
                 "InputTask" : "Reco",
                 "InputFromOutputModule" : "writeRECO",
                 "ConfigCacheID" : processorDocs['Skims'],
-                "SplittingAlgorithm" : "FileBased",
-                "SplittingArguments" : {"files_per_job" : 10 },
+                "SplittingAlgo" : "FileBased",
             }
         }
+        testArguments.update(arguments)
+        arguments = testArguments
 
         factory = TaskChainWorkloadFactory()
         try:
-            self.workload = factory("YankingTheChain", arguments)
+            self.workload = factory.factoryWorkloadConstruction("YankingTheChain", arguments)
         except Exception, ex:
             msg = "Error invoking TaskChainWorkloadFactory:\n%s" % str(ex)
             self.fail(msg)
-
-
-        self.workload.setSpecUrl("somespec")
-        self.workload.setOwnerDetails("evansde@fnal.gov", "DMWM")
 
         testWMBSHelper = WMBSHelper(self.workload, "DigiHLT", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
@@ -601,113 +589,6 @@ class TaskChainTests(unittest.TestCase):
                             "/MinimumBias/ReleaseValidation-skim%d-v1/RECO-AOD not in output datasets" % i)
 
         return
-
-    def testProcessingWithScenarios(self):
-        """
-        _testProcessingWithScenarios_
-
-        Test creating a processing workload with an input dataset that
-        uses scenarios instead of configuration files
-        """
-        processorDocs = makeProcessingConfigs(self.configDatabase)
-        arguments = {
-            "AcquisitionEra": "ReleaseValidation",
-            "Requestor": "sfoulkes@fnal.gov",
-            "CMSSWVersion": "CMSSW_3_5_8",
-            "ScramArch": "slc5_ia32_gcc434",
-            "ProcessingVersion": 1,
-            "GlobalTag": "GR10_P_v4::All",
-            "CouchURL": self.testInit.couchUrl,
-            "CouchDBName": self.testInit.couchDbName,
-            "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],
-            "DashboardHost": "127.0.0.1",
-            "DashboardPort": 8884,
-            "TaskChain" : 4,
-            "Task1" :{
-                "TaskName" : "DigiHLT",
-                "ConfigCacheID" : processorDocs['DigiHLT'],
-                "InputDataset" : "/MinimumBias/Commissioning10-v4/GEN-SIM",
-                "SplittingAlgorithm"  : "FileBased",
-                "SplittingArguments" : {"files_per_job" : 1},
-            },
-            "Task2" : {
-                "TaskName" : "Reco",
-                "InputTask" : "DigiHLT",
-                "InputFromOutputModule" : "writeRAWDIGI",
-                "ProcScenario" : "pp",
-                "ScenarioMethod" : "promptReco",
-                "ScenarioArguments" : { 'outputs' : [ { 'dataTier' : "RECO",
-                                                        'moduleLabel' : "RECOoutput" },
-                                                      { 'dataTier' : "AOD",
-                                                        'moduleLabel' : "AODoutput" },
-                                                      { 'dataTier' : "ALCARECO",
-                                                        'moduleLabel' : "ALCARECOoutput" } ] },
-                "SplittingAlgorithm" : "FileBased",
-                "SplittingArguments" : {"files_per_job" : 1 },
-            },
-            "Task3" : {
-                "TaskName" : "ALCAReco",
-                "InputTask" : "Reco",
-                "InputFromOutputModule" : "ALCARECOoutput",
-                "ProcScenario" : "pp",
-                "ScenarioMethod" : "alcaReco",
-                "ScenarioArguments" : { 'outputs' : [ { 'dataTier' : "ALCARECO",
-                                                        'moduleLabel' : "ALCARECOoutput" } ] },
-                "SplittingAlgorithm" : "FileBased",
-                "SplittingArguments" : {"files_per_job" : 1 },
-
-            },
-            "Task4" : {
-                "TaskName" : "Skims",
-                "InputTask" : "Reco",
-                "InputFromOutputModule" : "RECOoutput",
-                "ConfigCacheID" : processorDocs['Skims'],
-                "SplittingAlgorithm" : "FileBased",
-                "SplittingArguments" : {"files_per_job" : 10 },
-            }
-        }
-
-        factory = TaskChainWorkloadFactory()
-        try:
-            self.workload = factory("YankingTheChain", arguments)
-        except Exception, ex:
-            msg = "Error invoking TaskChainWorkloadFactory:\n%s" % str(ex)
-            self.fail(msg)
-
-
-        self.workload.setSpecUrl("somespec")
-        self.workload.setOwnerDetails("evansde@fnal.gov", "DMWM")
-
-
-        testWMBSHelper = WMBSHelper(self.workload, "DigiHLT", "SomeBlock", cachepath = self.testInit.testDir)
-        testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
-
-
-        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT"), arguments['Task1'], arguments)
-        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco"), arguments['Task2'],
-                        arguments)
-        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergeALCARECOoutput/ALCAReco"),
-                        arguments['Task3'], arguments)
-        self._checkTask(self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergeRECOoutput/Skims"),
-                        arguments['Task4'], arguments)
-
-
-
-        reco = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco")
-        recoStep = reco.getStepHelper("cmsRun1")
-        recoAppConf = recoStep.data.application.configuration
-        self.assertEqual(recoAppConf.scenario, arguments['Task2']['ProcScenario'])
-        self.assertEqual(recoAppConf.function, arguments['Task2']['ScenarioMethod'])
-
-        alca = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergeALCARECOoutput/ALCAReco")
-        alcaStep = alca.getStepHelper("cmsRun1")
-        alcaAppConf = alcaStep.data.application.configuration
-        self.assertEqual(alcaAppConf.scenario, arguments['Task3']['ProcScenario'])
-        self.assertEqual(alcaAppConf.function, arguments['Task3']['ScenarioMethod'])
-
-        return
-
 
 if __name__ == '__main__':
     unittest.main()

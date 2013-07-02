@@ -6,16 +6,12 @@ Unit tests for the StoreResults workflow.
 """
 
 import unittest
-import os
-import threading
 
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-
+from WMCore.WMSpec.StdSpecs.StoreResults import StoreResultsWorkloadFactory
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
-from WMCore.WMSpec.StdSpecs.StoreResults import getTestArguments, storeResultsWorkload
-
 from WMQuality.TestInit import TestInit
 
 class StoreResultsTest(unittest.TestCase):
@@ -50,11 +46,12 @@ class StoreResultsTest(unittest.TestCase):
         Create a StoreResults workflow and verify it installs into WMBS
         correctly.
         """
-        arguments = getTestArguments()
+        arguments = StoreResultsWorkloadFactory.getTestArguments()
         arguments.update({'CmsPath' :"/uscmst1/prod/sw/cms"})
-        testWorkload = storeResultsWorkload("TestWorkload", arguments)
-        testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwnerDetails("ewv@fnal.gov", "DMWM")
+
+        factory = StoreResultsWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload",
+                                                                               arguments)
 
         testWMBSHelper = WMBSHelper(testWorkload, "StoreResults", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
@@ -102,7 +99,6 @@ class StoreResultsTest(unittest.TestCase):
                          "Error: Wrong subscription type.")
         self.assertEqual(procSubscription["split_algo"], "ParentlessMergeBySize",
                          "Error: Wrong split algo.")
-
 
         return
 

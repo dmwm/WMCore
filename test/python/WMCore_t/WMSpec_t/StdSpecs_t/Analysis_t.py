@@ -8,7 +8,7 @@ Unit tests for the analysis workflow.
 import unittest
 import os
 
-from WMCore.WMSpec.StdSpecs.Analysis import getTestArguments, AnalysisWorkloadFactory
+from WMCore.WMSpec.StdSpecs.Analysis import AnalysisWorkloadFactory
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
@@ -79,16 +79,14 @@ class AnalysisTest(unittest.TestCase):
         """
         _testAnalysis_
         """
-        defaultArguments = getTestArguments()
+        defaultArguments = AnalysisWorkloadFactory.getTestArguments()
         defaultArguments["CouchUrl"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "analysis_t"
         defaultArguments["AnalysisConfigCacheDoc"] = self.injectAnalysisConfig()
         defaultArguments["ProcessingVersion"] = 1
 
         analysisProcessingFactory = AnalysisWorkloadFactory()
-        testWorkload = analysisProcessingFactory("TestWorkload", defaultArguments)
-        testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwnerDetails("marco.mascheroni@cern.ch", "DMWM")
+        testWorkload = analysisProcessingFactory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
 
         testWMBSHelper = WMBSHelper(testWorkload, "Analysis", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()

@@ -6,225 +6,177 @@ Created by Dave Evans on 2010-08-17.
 Copyright (c) 2010 Fermilab. All rights reserved.
 
 Support for pile up:
-normally, the generation task has no input. However, if there is a
+Normally, the generation task has no input. However, if there is a
 pile up section defined in the configuration, the generation task
 fetches from DBS the information about pileup input.
-
 """
 
-import os
-import math
-
+from WMCore.Lexicon import primdataset, couchurl, identifier, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-
-def getTestArguments():
-    """
-    _getTestArguments_
-
-    """
-    args = {}
-    args["AcquisitionEra"] = "CSA2010"
-    args["Requestor"] = "sfoulkes@fnal.gov"
-    args["ScramArch"] =  "slc5_ia32_gcc434"
-    args["PrimaryDataset"] = "MonteCarloData"
-    args["ProcessingVersion"] = 2
-    args["GlobalTag"] = None
-    args["RequestNumEvents"] = 10
-
-    # CouchURL + CouchDBName + ConfigCacheID define full configuration document URL
-    args["CouchURL"] = os.environ.get("COUCHURL", None)
-    # ConfigCache database name
-    args["CouchDBName"] = "scf_wmagent_configcache"
-    args["ConfigCacheID"] = "f90fc973b731a37c531f6e60e6c57955"
-    # or alternatively CouchURL part can be replaced by ConfigCacheUrl,
-    # then ConfigCacheUrl + CouchDBName + ConfigCacheID
-    args["ConfigCacheUrl"] = None
-
-    args["FirstLumi"] = 1
-    args["FirstEvent"] = 1
-
-    args["CMSSWVersion"] = "CMSSW_3_8_1"
-          
-    args["TimePerEvent"] = 60
-    args["FilterEfficiency"] = 1.0
-    args["TotalTime"] = 9 * 3600
-    args['DashboardHost'] = "127.0.0.1"
-    args['DashboardPort'] = 8884
-    return args
-
+from WMCore.WMSpec.WMWorkloadTools import strToBool, parsePileupConfig
 
 class MonteCarloWorkloadFactory(StdBase):
     """
     _MonteCarloWorkloadFactory_
 
     Stamp out Monte Carlo workflows.
-
     """
-
-    def __init__(self):
-        StdBase.__init__(self)
-
 
     def buildWorkload(self):
         """
         _buildWorkload_
 
-        Build a workflow for a MonteCarlo request.  This means a production
-        config and merge tasks for each output module.
-
+        Build a workflow for a MonteCarlo request.
+        This represents the following tree:
+        - Production task
+          - Merge task
+            - LogCollect task
+          - Cleanup task
+          - LogCollect task
         """
         workload = self.createWorkload()
         workload.setDashboardActivity("production")
         self.reportWorkflowToDashboard(workload.getDashboardActivity())
-        workload.setWorkQueueSplitPolicy("MonteCarlo", self.prodJobSplitAlgo, self.prodJobSplitArgs)
+        workload.setWorkQueueSplitPolicy("MonteCarlo", self.prodJobSplitAlgo,
+                                         self.prodJobSplitArgs)
         workload.setEndPolicy("SingleShot")
         prodTask = workload.newTask("Production")
 
         outputMods = self.setupProcessingTask(prodTask, "Production", None,
-                                              couchURL = self.couchURL, couchDBName = self.couchDBName,
-                                              configDoc = self.configCacheID, splitAlgo = self.prodJobSplitAlgo,
-                                              splitArgs = self.prodJobSplitArgs, configCacheUrl = self.configCacheUrl,
-                                              seeding = self.seeding, totalEvents = self.totalEvents,
-                                              eventsPerLumi = self.eventsPerLumi, timePerEvent = self.timePerEvent,
-                                              sizePerEvent = self.sizePerEvent, memoryReq = self.memory)
+                                              couchURL = self.couchURL,
+                                              couchDBName = self.couchDBName,
+                                              configDoc = self.configCacheID,
+                                              splitAlgo = self.prodJobSplitAlgo,
+                                              splitArgs = self.prodJobSplitArgs,
+                                              configCacheUrl = self.configCacheUrl,
+                                              seeding = self.seeding,
+                                              totalEvents = self.totalEvents,
+                                              eventsPerLumi = self.eventsPerLumi,
+                                              timePerEvent = self.timePerEvent,
+                                              sizePerEvent = self.sizePerEvent,
+                                              memoryReq = self.memory)
         self.addLogCollectTask(prodTask)
 
         # pile up support
         if self.pileupConfig:
             self.setupPileup(prodTask, self.pileupConfig)
 
-        prodMergeTasks = {}
         for outputModuleName in outputMods.keys():
-            outputModuleInfo = outputMods[outputModuleName]
             self.addMergeTask(prodTask, self.prodJobSplitAlgo,
-                              outputModuleName, lfn_counter = self.previousJobCount)
+                              outputModuleName,
+                              lfn_counter = self.previousJobCount)
 
+        maxFiles = workload.getBlockCloseMaxFiles()
+        if self.eventsPerLumi != self.eventsPerJob:
+            # Heuristic protection for blocks with too much lumis
+            maxFiles = 5
+
+        # Change some defaults in the DBS block close settings
         workload.setBlockCloseSettings(workload.getBlockCloseMaxWaitTime(),
-                                       workload.getBlockCloseMaxFiles(),
-                                       25000000,
+                                       maxFiles,
+                                       workload.getBlockCloseMaxEvents(),
                                        workload.getBlockCloseMaxSize())
 
         return workload
 
-
     def __call__(self, workloadName, arguments):
         """
-        Create a workload instance for a MonteCarlo request
-
+        Store the arguments in attributes with the proper
+        formatting.
         """
         StdBase.__call__(self, workloadName, arguments)
 
-        # Required parameters that must be specified by the Requestor.
-        self.inputPrimaryDataset = arguments["PrimaryDataset"]
-        self.frameworkVersion    = arguments["CMSSWVersion"]
-        self.globalTag           = arguments["GlobalTag"]
-        self.seeding             = arguments.get("Seeding", "AutomaticSeeding")
-        self.configCacheID   = arguments["ConfigCacheID"]
+        # Adjust the events by the filter efficiency
+        self.totalEvents = int(self.requestNumEvents / self.filterEfficiency)
 
-        # Splitting arguments
-        timePerEvent     = int(arguments.get("TimePerEvent", 60))
-        filterEfficiency = float(arguments.get("FilterEfficiency", 1.0))
-        totalTime        = int(arguments.get("TotalTime", 9 * 3600))
-        self.totalEvents = int(int(arguments["RequestNumEvents"]) / filterEfficiency)
-        self.firstEvent  = int(arguments.get("FirstEvent", 1))
-        self.firstLumi   = int(arguments.get("FirstLumi", 1))
-        # We don't write out every event in MC, adjust the size per event accordingly
-        self.sizePerEvent = self.sizePerEvent * filterEfficiency
+        # We don't write out every event in MC,
+        # adjust the size per event accordingly
+        self.sizePerEvent = self.sizePerEvent * self.filterEfficiency
 
-        # pileup configuration for the first generation task
-        self.pileupConfig = arguments.get("PileupConfig", None)
+        # Tune the splitting, only EventBased is allowed for MonteCarlo
+        # 8h jobs are CMS standard, set the default with that in mind
+        self.prodJobSplitAlgo = "EventBased"
+        if self.eventsPerJob is None:
+            self.eventsPerJob = int((8.0 * 3600.0) / self.timePerEvent)
+        if self.eventsPerLumi is None:
+            self.eventsPerLumi = self.eventsPerJob
+        self.prodJobSplitArgs = {"events_per_job": self.eventsPerJob,
+                                  "events_per_lumi" : self.eventsPerLumi,
+                                  "lheInputFiles" : self.lheInputFiles}
 
-        #Events per lumi configuration (Allow others to inherit)
-        self.eventsPerLumi = arguments.get("EventsPerLumi", None)
-        if self.eventsPerLumi != None:
-            self.eventsPerLumi = int(self.eventsPerLumi)
+        # Transform the pileup as required by the CMSSW step
+        self.pileupConfig = parsePileupConfig(self.mcPileup, self.dataPileup)
 
-        # The CouchURL and name of the ConfigCache database must be passed in
-        # by the ReqMgr or whatever is creating this workflow.
-        self.couchURL = arguments["CouchURL"]
-        self.couchDBName = arguments["CouchDBName"]
-        self.configCacheUrl = arguments.get("ConfigCacheUrl", None)
-        
-        # Optional arguments that default to something reasonable.
-        self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
-        self.emulation = arguments.get("Emulation", False)
-
-        # These are mostly place holders because the job splitting algo and
-        # parameters will be updated after the workflow has been created.
-        eventsPerJob = int(totalTime/timePerEvent/filterEfficiency)
-        self.prodJobSplitAlgo  = arguments.get("ProdJobSplitAlgo", "EventBased")
-        self.prodJobSplitArgs  = arguments.get("ProdJobSplitArgs",
-                                               {"events_per_job": eventsPerJob})
-        self.previousJobCount  = 0
-        if self.firstEvent > 1 or self.firstLumi > 1:
-            self.previousJobCount = int(math.ceil(self.firstEvent/float(self.prodJobSplitArgs["events_per_job"])))
+        # Production can be extending statistics,
+        # need to move the initial lfn counter
+        self.previousJobCount = 0
+        if self.firstLumi > 1:
+            lumisPerJob = int(float(self.eventsPerJob) / self.eventsPerLumi)
+            self.previousJobCount = self.firstLumi / lumisPerJob
             self.prodJobSplitArgs["initial_lfn_counter"] = self.previousJobCount
-        
+
         return self.buildWorkload()
 
     def validateSchema(self, schema):
-        """
-        _validateSchema_
-
-        Check for required fields, and some skim facts
-        
-        """
-        requiredFields = ["CMSSWVersion", "ConfigCacheID",
-                          "PrimaryDataset", "CouchURL",
-                          "CouchDBName", "RequestNumEvents",
-                          "GlobalTag", "ScramArch",
-                          "FirstEvent", "FirstLumi"]
-        self.requireValidateFields(fields = requiredFields, schema = schema,
-                                   validate = False)
         couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
-        outMod = self.validateConfigCacheExists(configID = schema["ConfigCacheID"],
-                                                couchURL = couchUrl,
-                                                couchDBName = schema["CouchDBName"],
-                                                getOutputModules = True)
-        if schema.get("ProdJobSplitAlgo", "EventBased") == "EventBased":
-            self.validateEventBasedParameters(schema = schema)
-
-
-    def validateEventBasedParameters(self, schema):
-        """
-        _validateEventBasedParameters_
-
-        Validate the EventBased splitting job parameters
-        """
-        # First, see if they passed stuff in
-        if schema.get("ProdJobSplitArgs", None):
-            if not schema["ProdJobSplitArgs"].has_key("events_per_job"):
-                msg = "Workflow submitted with invalid ProdJobSplitArgs to match SplitAlgo"
-                self.raiseValidationException(msg = msg)
-            if not int(schema["ProdJobSplitArgs"]['events_per_job']) > 0:
-                msg = "Invalid number of events_per_job entered by user"
-                self.raiseValidationException(msg = msg)
-        else:
-            # Get the default arguments
-            timePerEvent     = int(schema.get("TimePerEvent", 60))
-            filterEfficiency = float(schema.get("FilterEfficiency", 1.0))
-            totalTime        = int(schema.get("TotalTime", 9 * 3600))
-
-            if not totalTime > 0:
-                self.raiseValidationException(msg = "Negative total time for MC workflow")
-            if not filterEfficiency > 0.0:
-                self.raiseValidationException(msg = "Negative filter efficiency for MC workflow")
-            if not timePerEvent > 0:
-                self.raiseValidationException(msg = "Negative time per event for MC workflow")
-            if not int(totalTime/timePerEvent/filterEfficiency) > 0:
-                self.raiseValidationException(msg = "No events created in MC workflow")
-
+        self.validateConfigCacheExists(configID = schema["ConfigCacheID"],
+                                       couchURL = couchUrl,
+                                       couchDBName = schema["CouchDBName"])
         return
 
+    @staticmethod
+    def getWorkloadArguments():
+        baseArgs = StdBase.getWorkloadArguments()
+        specArgs = {"PrimaryDataset" : {"default" : "BlackHoleTest", "type" : str,
+                                        "optional" : False, "validate" : primdataset,
+                                        "attr" : "inputPrimaryDataset", "null" : False},
+                    "Seeding" : {"default" : "AutomaticSeeding", "type" : str,
+                                 "optional" : True, "validate" : lambda x : x in ["ReproducibleSeeding",
+                                                                                  "AutomaticSeeding"],
+                                 "attr" : "seeding", "null" : False},
+                    "GlobalTag" : {"default" : "GT_MC_V1:All", "type" : str,
+                                   "optional" : False, "validate" : None,
+                                   "attr" : "globalTag", "null" : False},
+                    "ConfigCacheID" : {"default" : None, "type" : str,
+                                       "optional" : False, "validate" : None,
+                                       "attr" : "configCacheID", "null" : False},
+                    "CouchURL" : {"default" : "http://localhost:5984", "type" : str,
+                                  "optional" : False, "validate" : couchurl,
+                                  "attr" : "couchURL", "null" : False},
+                    "CouchDBName" : {"default" : "mc_configcache", "type" : str,
+                                     "optional" : False, "validate" : identifier,
+                                     "attr" : "couchDBName", "null" : False},
+                    "ConfigCacheUrl" : {"default" : None, "type" : str,
+                                        "optional" : True, "validate" : None,
+                                        "attr" : "configCacheUrl", "null" : False},
+                    "FilterEfficiency" : {"default" : 1.0, "type" : float,
+                                          "optional" : True, "validate" : lambda x : x > 0.0,
+                                          "attr" : "filterEfficiency", "null" : False},
+                    "RequestNumEvents" : {"default" : 1000, "type" : int,
+                                          "optional" : False, "validate" : lambda x : x > 0,
+                                          "attr" : "requestNumEvents", "null" : False},
+                    "FirstEvent" : {"default" : 1, "type" : int,
+                                    "optional" : True, "validate" : lambda x : x > 0,
+                                    "attr" : "firstEvent", "null" : False},
+                    "FirstLumi" : {"default" : 1, "type" : int,
+                                    "optional" : True, "validate" : lambda x : x > 0,
+                                    "attr" : "firstLumi", "null" : False},
+                    "MCPileup" : {"default" : None, "type" : str,
+                                  "optional" : True, "validate" : dataset,
+                                  "attr" : "mcPileup", "null" : False},
+                    "DataPileup" : {"default" : None, "type" : str,
+                                    "optional" : True, "validate" : dataset,
+                                    "attr" : "dataPileup", "null" : False},
+                    "EventsPerJob" : {"default" : None, "type" : int,
+                                      "optional" : True, "validate" : lambda x : x > 0,
+                                      "attr" : "eventsPerJob", "null" : True},
+                    "EventsPerLumi" : {"default" : None, "type" : int,
+                                       "optional" : True, "validate" : lambda x : x > 0,
+                                       "attr" : "eventsPerLumi", "null" : True},
+                    "LheInputFiles" : {"default" : False, "type" : strToBool,
+                                       "optional" : True, "validate" : None,
+                                       "attr" : "lheInputFiles", "null" : False}
+                    }
+        baseArgs.update(specArgs)
 
-
-def monteCarloWorkload(workloadName, arguments):
-    """
-    _monteCarloWorkload_
-
-    Instantiate the MonteCarloWorkflowFactory and have it generate a workload for
-    the given parameters.
-
-    """
-    myMonteCarloFactory = MonteCarloWorkloadFactory()
-    return myMonteCarloFactory(workloadName, arguments)
+        return baseArgs

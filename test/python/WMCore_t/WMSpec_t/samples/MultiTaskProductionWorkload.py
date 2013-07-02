@@ -24,7 +24,7 @@ workload.setEndPolicy('SingleShot')
 # // set up the production task
 #//
 production = workload.newTask("Production1")
-production.addProduction(totalevents = 1000)
+production.addProduction(totalEvents = 1000)
 production.setTaskType("Merge")
 prodCmssw = production.makeStep("cmsRun1")
 prodCmssw.setStepType("CMSSW")
@@ -91,7 +91,7 @@ merge.setInputReference(prodCmssw, outputModule = "writeData")
 # print workload.data
 
 production = workload.newTask("Production2")
-production.addProduction(totalevents = 2000)
+production.addProduction(totalEvents = 2000)
 production.setTaskType("Merge")
 production.setSiteWhitelist(["T2_XX_SiteB"])
 production.setSplittingAlgorithm("EventBased", events_per_job = 100)

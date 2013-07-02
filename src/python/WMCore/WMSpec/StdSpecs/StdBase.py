@@ -6,13 +6,13 @@ Base class with helper functions for standard WMSpec files.
 """
 import logging
 
-from WMCore.WMSpec.WMWorkload import newWorkload
-
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
-from WMCore.Lexicon import lfnBase, identifier, procversion
-from WMCore.WMException import WMException
-from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.Configuration import ConfigSection
+from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname
+from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
+from WMCore.WMException import WMException
+from WMCore.WMSpec.WMWorkload import newWorkload
+from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool, validateArguments
 
 analysisTaskTypes = ['Analysis', 'PrivateMC']
 
@@ -40,54 +40,20 @@ class StdBase(object):
         Setup parameters that will be used by all workflows.  These parameters
         are not required to be set when the workflow is first created but will
         need to be set before the sandbox is created and jobs are made.
+        These parameters in the init are set all to None, then they wil
+        be overwritten in the call.
 
         These parameters can be changed after the workflow has been created by
         the methods in the WMWorkloadHelper class.
         """
+        argumentDefinition = self.getWorkloadArguments()
+        for arg in argumentDefinition:
+            setattr(self, argumentDefinition[arg]["attr"], None)
+
+        # Internal parameters
         self.workloadName = None
-        self.priority = 0
-        self.owner = "unknown"
-        self.owner_dn = "unknown"
-        self.group = "unknown"
-        self.owner_vogroup = "DEFAULT"
-        self.owner_vorole = "DEFAULT"
-        self.acquisitionEra = None
-        self.scramArch = None
-        self.inputPrimaryDataset = None
-        self.inputProcessedDataset = None
-        self.inputDataTier = None
-        self.processingVersion = 0
-        self.processingString  = None
-        self.siteBlacklist = []
-        self.siteWhitelist = []
-        self.unmergedLFNBase = None
-        self.mergedLFNBase = None
-        self.minMergeSize = 2147483648
-        self.maxMergeSize = 4294967296
-        self.maxWaitTime = 24 * 3600
-        self.maxMergeEvents = 100000
-        self.validStatus = None
-        self.includeParents = False
-        self.dbsUrl = None
-        self.multicore = False
-        self.multicoreNCores = 1
-        self.dashboardHost = None
-        self.dashboardPort = 0
-        self.overrideCatalog = None
-        self.firstLumi = 1
-        self.firstEvent = 1
-        self.runNumber = 0
-        self.timePerEvent = None
-        self.memory = None
-        self.sizePerEvent = None
-        self.periodicHarvestInterval = 0
-        self.dqmUploadProxy = None
-        self.dqmUploadUrl = None
-        self.dqmSequences = None
-        self.dqmConfigCacheID = None
-        self.procScenario = None
-        self.enableHarvesting = True
-        self.enableNewStageout = False
+        self.multicoreNCores = None
+
         return
 
     def __call__(self, workloadName, arguments):
@@ -98,59 +64,17 @@ class StdBase(object):
         method and pull out any that are setup by this base class.
         """
         self.workloadName = workloadName
-        self.priority = arguments.get("Priority", 0)
-        self.owner = arguments.get("Requestor", "unknown")
-        self.owner_dn = arguments.get("RequestorDN", "unknown")
-        self.group = arguments.get("Group", "unknown")
-        if arguments.has_key('VoGroup'):
-            self.owner_vogroup = arguments['VoGroup']
-        if arguments.has_key('VoRole'):
-            self.owner_vorole = arguments['VoRole']
-        self.acquisitionEra = arguments.get("AcquisitionEra", None)
-        self.scramArch = arguments.get("ScramArch", None)
-        self.processingVersion = int(arguments.get("ProcessingVersion", 0))
-        self.processingString = arguments.get("ProcessingString", None)
-        self.siteBlacklist = arguments.get("SiteBlacklist", [])
-        self.siteWhitelist = arguments.get("SiteWhitelist", [])
-        self.unmergedLFNBase = arguments.get("UnmergedLFNBase", "/store/unmerged")
-        self.mergedLFNBase = arguments.get("MergedLFNBase", "/store/data")
-        self.minMergeSize = arguments.get("MinMergeSize", 2147483648)
-        self.maxMergeSize = arguments.get("MaxMergeSize", 4294967296)
-        self.maxWaitTime = arguments.get("MaxWaitTime", 24 * 3600)
-        self.maxMergeEvents = arguments.get("MaxMergeEvents", 100000)
-        self.validStatus = arguments.get("ValidStatus", "PRODUCTION")
-        self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
-        self.dashboardHost = arguments.get("DashboardHost", "cms-wmagent-job.cern.ch")
-        self.dashboardPort = arguments.get("DashboardPort", 8884)
-        self.overrideCatalog = arguments.get("OverrideCatalog", None)
-        self.runNumber = int(arguments.get("RunNumber", 0))
-        self.timePerEvent = float(arguments.get("TimePerEvent", 12))
-        self.memory = float(arguments.get("Memory", 2300))
-        self.sizePerEvent = float(arguments.get("SizePerEvent", 512))
-        self.periodicHarvestInterval = int(arguments.get("PeriodicHarvestInterval", 0))
-        self.dqmUploadProxy = arguments.get("DQMUploadProxy", None)
-        self.dqmUploadUrl = arguments.get("DQMUploadUrl", "https://cmsweb.cern.ch/dqm/dev")
-        self.dqmSequences = arguments.get("DqmSequences", [])
-        self.dqmConfigCacheID = arguments.get("DQMConfigCacheID", None)
-        self.procScenario = arguments.get("ProcScenario", None)
-        self.enableHarvesting = arguments.get("EnableHarvesting", True)
-        self.enableNewStageout = arguments.get("EnableNewStageout", False)
+        argumentDefinition = self.getWorkloadArguments()
+        for arg in argumentDefinition:
+            if arg in arguments:
+                setattr(self, argumentDefinition[arg]["attr"], argumentDefinition[arg]["type"](arguments[arg]))
+            elif argumentDefinition[arg]["optional"]:
+                setattr(self, argumentDefinition[arg]["attr"], argumentDefinition[arg]["default"])
 
-        if arguments.get("IncludeParents", False) == "True":
-            self.includeParents = True
-        else:
-            self.includeParents = False
-
-        if arguments.has_key("Multicore"):
-            numCores = arguments.get("Multicore")
-            if numCores == None or numCores == "":
-                self.multicore = False
-            elif numCores == "auto":
-                self.multicore = True
-                self.multicoreNCores = "auto"
-            else:
-                self.multicore = True
-                self.multicoreNCores = numCores
+        # Definition of parameters that depend on the value of others
+        if hasattr(self, "multicore") and self.multicore:
+            self.multicore = True
+            self.multicoreNCores = self.multicore
 
         return
 
@@ -274,6 +198,7 @@ class StdBase(object):
         workload.setProcessingVersion(processingVersions = self.processingVersion)
         workload.setProcessingString(processingStrings = self.processingString)
         workload.setValidStatus(validStatus = self.validStatus)
+        workload.setPriority(self.priority)
         return workload
 
     def setupProcessingTask(self, procTask, taskType, inputDataset = None, inputStep = None,
@@ -343,7 +268,7 @@ class StdBase(object):
 
         if taskType in ["Production", 'PrivateMC'] and totalEvents != None:
             procTask.addGenerator(seeding)
-            procTask.addProduction(totalevents = totalEvents)
+            procTask.addProduction(totalEvents = totalEvents)
             procTask.setFirstEventAndLumi(firstEvent = self.firstEvent,
                                           firstLumi = self.firstLumi)
         else:
@@ -750,7 +675,7 @@ class StdBase(object):
         If something breaks, raise a WMSpecFactoryException.  A message
         in that excpetion will be transferred to an HTTP Error later on.
         """
-        return
+        pass
 
     def validateWorkload(self, workload):
         """
@@ -788,72 +713,16 @@ class StdBase(object):
         This is validation for global inputs that have to be implemented for
         multiple types of workflows in the exact same way.
 
-        Usually used for type-checking, etc.
+        This uses programatically the definitions in getWorkloadArguments
+        for type-checking, existence, null tests and the specific validation functions.
+
+        Any spec-specific extras are implemented in the overriden validateSchema
         """
-
-        try:
-            procversion(str(schema.get("ProcessingVersion", 0)))
-        except AssertionError:
-            self.raiseValidationException(msg = "Non-integer castable ProcessingVersion found")
-
-        performanceFields = ['TimePerEvent', 'Memory', 'SizePerEvent']
-
-        for field in performanceFields:
-            self._validatePerformanceField(field, schema)
-
-        if schema.get("EnableHarvesting", True):
-            # If enableHarvesting requested, then a few conditions must be met
-            if "DQMConfigCacheID" not in schema and "ProcScenario" not in schema:
-                self.raiseValidationException("Harvesting was requested, but no scenario or config cache ID was given")
-            if "DQMConfigCacheID" in schema:
-                if "ConfigCacheUrl" not in schema and "CouchURL" not in schema:
-                    self.raiseValidationException("Harvesting was requested, but no couch url was given")
-                if "CouchDBName" not in schema:
-                    self.raiseValidationException("Harvesting was requested, but no couchdb name was given")
-                couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
-                self.validateConfigCacheExists(configID = schema["DQMConfigCacheID"],
-                                                    couchURL = couchUrl,
-                                                    couchDBName = schema["CouchDBName"])
-
-        return
-
-    def _validatePerformanceField(self, field, schema):
-        """
-        __validatePerformanceField_
-
-        Validates an integer field, that is mandatory. So it raises a validation
-        exception if the field is not in the schema or is not integer-castable.
-        """
-        try:
-            int(schema[field])
-        except KeyError:
-            self.raiseValidationException(msg = "The %s must be specified" % field)
-        except ValueError:
-            self.raiseValidationException(msg = "Please specify a valid %s" % field)
-
-    def requireValidateFields(self, fields, schema, validate = False):
-        """
-        _requireValidateFields_
-
-        Standard tool for StdBase derived classes to make sure
-        that a schema has a certain set of valid fields.  Uses WMCore.Lexicon.identifier
-
-        To be used in validateWorkload()
-        """
-
-        for field in fields:
-            if not field in schema.keys():
-                msg = "Missing required field '%s' in workload validation!" % field
-                self.raiseValidationException(msg = msg)
-            if schema[field] == None:
-                msg = "NULL value for required field %s!" % field
-                self.raiseValidationException(msg = msg)
-            if validate:
-                try:
-                    identifier(candidate = schema[field])
-                except AssertionError, ex:
-                    msg = "Schema value for field '%s' failed Lexicon validation" % field
-                    self.raiseValidationException(msg = msg)
+        # Validate the arguments according to the workload arguments definition
+        argumentDefinition = self.getWorkloadArguments()
+        msg = validateArguments(schema, argumentDefinition)
+        if msg is not None:
+            self.raiseValidationException(msg)
         return
 
     def raiseValidationException(self, msg):
@@ -877,18 +746,18 @@ class StdBase(object):
 
         if configID == '' or configID == ' ':
             self.raiseValidationException(msg = "ConfigCacheID is invalid and cannot be loaded")
-            
+
         configCache = ConfigCache(dbURL = couchURL, couchDBName = couchDBName,
                                   id = configID)
         try:
             configCache.loadByID(configID = configID)
-        except ConfigCacheException, ex:
+        except ConfigCacheException:
             self.raiseValidationException(msg = "Failure to load ConfigCache while validating workload")
 
         duplicateCheck = {}
         try:
             outputModuleInfo = configCache.getOutputModuleInfo()
-        except Exception, ex:
+        except Exception:
             # Something's gone wrong with trying to open the configCache
             msg = "Error in getting output modules from ConfigCache during workload validation.  Check ConfigCache formatting!"
             self.raiseValidationException(msg = msg)
@@ -911,3 +780,131 @@ class StdBase(object):
             return outputModuleInfo
 
         return
+
+    @staticmethod
+    def getWorkloadArguments():
+        """
+        _getWorkloadArguments_
+
+        This represents the authorative list of request arguments that are
+        interpreted by the current spec class. 
+        The list is formatted as a 2-level dictionary, the keys in the first level
+        are the identifiers for the arguments processed by the current spec.
+        The second level dictionary contains the information about that argument for
+        validation:
+
+        - default: Gives a default value if not provided,
+                   this default value usually is good enough for a standard workflow. If the argument is not optional
+                   and a default value is provided, this is only meant for test purposes.
+        - type: A function that verifies the type of the argument, it may also cast it into the appropiate python type.    
+                If the input is not compatible with the expected type, this method must throw an exception.
+        - optional: This boolean value indicates if the value must be provided or not
+        - validate: A function which validates the input after type casting,
+                    it returns True if the input is valid, it can throw exceptions on invalid input.
+        - attr: This represents the name of the attribute corresponding to the argument in the WMSpec object.
+        - null: This indicates if the argument can have None as its value.
+        Example:
+        {
+            RequestPriority : {'default' : 0,
+                               'type' : int,
+                               'optional' : False,
+                               'validate' : lambda x : x > 0,
+                               'attr' : 'priority',
+                               'null' : False}
+        }
+        This replaces the old syntax in the __call__ of:
+
+        self.priority = arguments.get("RequestPriority", 0)
+        """
+        arguments = {"RequestPriority": {"default" : 0, "type" : int,
+                                         "optional" : False, "validate" : lambda x : (x >= 0 and x < 1e6),
+                                         "attr" : "priority"},
+                     "Requestor": {"default" : "unknown", "optional" : False,
+                                   "attr" : "owner"},
+                     "RequestorDN" : {"default" : "unknown", "optional" : False,
+                                      "attr" : "owner_dn"},
+                     "Group" : {"default" : "unknown", "optional" : False,
+                                "attr" : "group"},
+                     "VoGroup" : {"default" : "DEFAULT", "attr" : "owner_vogroup"},
+                     "VoRole" : {"default" : "DEFAULT", "attr" : "owner_vorole"},
+                     "AcquisitionEra" : {"default" : "None", "validate" : acqname},
+                     "CMSSWVersion" : {"default" : "CMSSW_5_3_7", "validate" : cmsswversion,
+                                       "optional" : False, "attr" : "frameworkVersion"},
+                     "ScramArch" : {"default" : "slc5_amd64_gcc462", "optional" : False},
+                     "ProcessingVersion" : {"default" : 0, "type" : int},
+                     "ProcessingString" : {"default" : None, "null" : True},
+                     "SiteBlacklist" : {"default" : [], "type" : makeList,
+                                        "validate" : lambda x: all([cmsname(y) for y in x])},
+                     "SiteWhitelist" : {"default" : [], "type" : makeList,
+                                        "validate" : lambda x: all([cmsname(y) for y in x])},
+                     "UnmergedLFNBase" : {"default" : "/store/unmerged"},
+                     "MergedLFNBase" : {"default" : "/store/data"},
+                     "MinMergeSize" : {"default" : 2 * 1024 * 1024 * 1024, "type" : int,
+                                       "validate" : lambda x : x > 0},
+                     "MaxMergeSize" : {"default" : 4 * 1024 * 1024 * 1024, "type" : int,
+                                       "validate" : lambda x : x > 0},
+                     "MaxWaitTime" : {"default" : 24 * 3600, "type" : int,
+                                      "validate" : lambda x : x > 0},
+                     "MaxMergeEvents" : {"default" : 100000, "type" : int,
+                                         "validate" : lambda x : x > 0},
+                     "ValidStatus" : {"default" : "PRODUCTION"},
+                     "DbsUrl" : {"default" : "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"},
+                     "DashboardHost" : {"default" : "cms-wmagent-job.cern.ch"},
+                     "DashboardPort" : {"default" : 8884, "type" : int,
+                                        "validate" : lambda x : x > 0},
+                     "OverrideCatalog" : {"default" : None, "null" : True},
+                     "RunNumber" : {"default" : 0, "type" : int},
+                     "TimePerEvent" : {"default" : 12.0, "type" : float,
+                                       "optional" : False, "validate" : lambda x : x > 0},
+                     "Memory" : {"default" : 2300.0, "type" : float,
+                                 "optional" : False, "validate" : lambda x : x > 0},
+                     "SizePerEvent" : {"default" : 512.0, "type" : float,
+                                       "optional" : False, "validate" : lambda x : x > 0},
+                     "PeriodicHarvestInterval" : {"default" : 0, "type" : int,
+                                                  "validate" : lambda x : x >= 0},
+                     "DQMUploadProxy" : {"default" : None, "null" : True,
+                                         "attr" : "dqmUploadProxy"},
+                     "DQMUploadUrl" : {"default" : "https://cmsweb.cern.ch/dqm/dev",
+                                       "attr" : "dqmUploadUrl"},
+                     "DQMSequences" : {"default" : [], "type" : makeList,
+                                       "attr" : "dqmSequences"},
+                     "DQMConfigCacheID" : {"default" : None, "null" : True,
+                                           "attr" : "dqmConfigCacheID"},
+                     "EnableHarvesting" : {"default" : False, "type" : strToBool},
+                     "EnableNewStageout" : {"default" : False, "type" : strToBool},
+                     "IncludeParents" : {"default" : False,  "type" : strToBool},
+                     "Multicore" : {"default" : None, "null" : True,
+                                    "validate" : lambda x : x == "auto" or (int(x) > 0)}}
+
+        # Set defaults for the argument specification
+        for arg in arguments:
+            arguments[arg].setdefault("type", str)
+            arguments[arg].setdefault("optional", True)
+            arguments[arg].setdefault("null", False)
+            arguments[arg].setdefault("validate", None)
+            arguments[arg].setdefault("attr", arg[:1].lower() + arg[1:])
+
+        return arguments
+
+    @classmethod
+    def getTestArguments(cls):
+        """
+        _getTestArguments_
+
+        Using the getWorkloadArguments definition, build a request schema
+        that may pass basic validation and create successfully a workload
+        of the current spec. Only for testing purposes! Any use of this function
+        outside of unit tests and integration tests may put your life in danger.
+        Note that in some cases like ConfigCacheID, there is no default that will work
+        and tests should specifically provide one.
+        """
+        workloadDefinition = cls.getWorkloadArguments()
+        schema = {}
+        for arg in workloadDefinition:
+            # Dashboard parameter must be re-defined for test purposes
+            if arg == "DashboardHost":
+                schema[arg] = "127.0.0.1"
+            elif not workloadDefinition[arg]["optional"]:
+                schema[arg] = workloadDefinition[arg]["default"]
+
+        return schema

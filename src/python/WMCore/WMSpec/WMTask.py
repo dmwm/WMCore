@@ -768,9 +768,6 @@ class WMTaskHelper(TreeHelper):
             self.data.section_("production")
         
         for opt, arg in options.items():
-            if opt == 'totalevents':
-                self.data.production.totalEvents = arg
-            
             setattr(self.data.production, opt, arg)
     
     def inputDataset(self):

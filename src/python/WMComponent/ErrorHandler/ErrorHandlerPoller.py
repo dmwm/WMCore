@@ -116,56 +116,67 @@ class ErrorHandlerPoller(BaseWorkerThread):
         logging.debug("terminating. doing one more pass before we die")
         self.algorithm(params)
 
-    def processRetries(self, jobs, jobType):
+    def exhaustJobs(self, jobList):
+        """
+        _exhaustJobs_
+
+        Actually do the jobs exhaustion
+        """
+
+        self.changeState.propagate(jobList, 'exhausted', 'retrydone')
+
+        # Remove all the files in the exhausted jobs.
+        logging.debug("About to fail input files for exhausted jobs")
+        for job in jobList:
+            job.failInputFiles()
+
+        self.handleACDC(jobList)
+
+        return
+
+    def processRetries(self, jobList, state):
         """
         _processRetries_
 
         Actually do the retries
         """
-        logging.info("Processing retries for %i failed jobs of type %s." % (len(jobs), jobType))
-        exhaustJobs = []
+        logging.info("Processing retries for %d failed jobs of type %sfailed" % (len(jobList), state))
+        retrydoneJobs = []
         cooloffJobs = []
-        cooloffPre  = []
         passJobs    = []
 
         # Retries < max retry count
-        for ajob in jobs:
-            allowedRetries = self.maxRetries.get(ajob['type'], self.maxRetries['default'])
+        for job in jobList:
+            allowedRetries = self.maxRetries.get(job['type'], self.maxRetries['default'])
             # Retries < allowed max retry count
-            if ajob['retry_count'] < allowedRetries and jobType != 'create':
-                cooloffPre.append(ajob)
+            if job['retry_count'] < allowedRetries and state != 'create':
+                cooloffJobs.append(job)
             # Check if Retries >= allowed max retry count
-            elif ajob['retry_count'] >= allowedRetries or jobType == 'create':
-                exhaustJobs.append(ajob)
-                msg = "Exhausting job %i" % ajob['id']
+            elif job['retry_count'] >= allowedRetries or state == 'create':
+                retrydoneJobs.append(job)
+                msg = "Stopping retries for job %d" % job['id']
                 logging.debug(msg)
                 self.sendAlert(4, msg = msg)
-                logging.debug("JobInfo: %s" % ajob)
+                logging.debug("JobInfo: %s" % job)
 
         if self.readFWJR:
             # Then we have to check each FWJR for exit status
-            cooloffJobs, passJobs, exhaustFWJRJobs = self.readFWJRForErrors(cooloffPre)
-            exhaustJobs.extend(exhaustFWJRJobs)
-        else:
-            cooloffJobs = cooloffPre
+            cooloffJobs, passJobs, retrydoneFWJRJobs = self.readFWJRForErrors(cooloffJobs)
+            retrydoneJobs.extend(retrydoneFWJRJobs)
 
-
-        #Now to actually do something.
+        # Now to actually do something.
         logging.debug("About to propagate jobs")
-        self.changeState.propagate(exhaustJobs, 'exhausted', \
-                                   '%sfailed' %(jobType))
-        self.changeState.propagate(cooloffJobs, '%scooloff' %(jobType), \
-                                   '%sfailed' %(jobType), updatesummary = True)
+        if len(retrydoneJobs) > 0:
+            self.changeState.propagate(retrydoneJobs, 'retrydone',
+                                       '%sfailed' % state)
+        if len(cooloffJobs) > 0:
+            self.changeState.propagate(cooloffJobs, '%scooloff' % state,
+                                       '%sfailed' % state, updatesummary = True)
         if len(passJobs) > 0:
             # Overwrite the transition states and move directly to created
             self.changeState.propagate(passJobs, 'created', 'new')
 
-        # Remove all the files in the exhausted jobs.
-        logging.debug("About to fail input files for exhausted jobs")
-        for job in exhaustJobs:
-            job.failInputFiles()
-
-        return exhaustJobs
+        return
 
     def handleACDC(self, jobList):
         """
@@ -176,13 +187,13 @@ class ErrorHandlerPoller(BaseWorkerThread):
         idList = [x['id'] for x in jobList]
         logging.info("Starting to build ACDC with %i jobs" % len(idList))
         logging.info("This operation will take some time...")
-        loadList = self.loadJobsFromListFull(idList = idList)
+        loadList = self.loadJobsFromListFull(idList)
         for job in loadList:
             job.getMask()
         self.dataCollection.failedJobs(loadList)
         return
 
-    def readFWJRForErrors(self, failedJobs):
+    def readFWJRForErrors(self, jobList):
         """
         _readFWJRForErrors_
 
@@ -194,7 +205,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         cooloffJobs = []
         passJobs = []
         exhaustJobs = []
-        for job in failedJobs:
+        for job in jobList:
             report     = Report()
             reportPath = job['fwjr_path']
             if reportPath is None:
@@ -246,21 +257,28 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         return cooloffJobs, passJobs, exhaustJobs
 
-    def splitJobList(self, jobList, jobType):
+    def handleRetryDoneJobs(self, jobList):
         """
-        _splitJobList_
+        _handleRetryDoneJobs_
 
-        Split up list of jobs into more manageable chunks if necessary
         """
-        if len(jobList) < 1:
-            # Nothing to do
-            return
-
         myThread = threading.currentThread()
-        logging.debug("About to process %i errors" % len(jobList))
+        logging.debug("About to process %d retry done jobs" % len(jobList))
         myThread.transaction.begin()
-        exhaustList = self.processRetries(jobList, jobType)
-        self.handleACDC(jobList = exhaustList)
+        self.exhaustJobs(jobList)
+        myThread.transaction.commit()
+        
+        return
+
+    def handleFailedJobs(self, jobList, state):
+        """
+        _handleFailedJobs_
+
+        """
+        myThread = threading.currentThread()
+        logging.debug("About to process %d failures" % len(jobList))
+        myThread.transaction.begin()
+        self.processRetries(jobList, state)
         myThread.transaction.commit()
 
         return
@@ -271,39 +289,25 @@ class ErrorHandlerPoller(BaseWorkerThread):
         available, create the subscriptions
         """
 
-        createList = []
-        submitList = []
-        jobList    = []
+        # Run over created, submitted and executed job failures
+        failure_states = [ 'create', 'submit', 'job' ]
+        for state in failure_states:
+            idList = self.getJobs.execute(state = "%sfailed" % state)
+            logging.info("Found %d failed jobs in state %sfailed" % (len(idList), state))
+            while len(idList) > 0:
+                tmpList = idList[:self.maxProcessSize]
+                idList = idList[self.maxProcessSize:]
+                jobList = self.loadJobsFromList(tmpList)
+                self.handleFailedJobs(jobList, state)
 
-        # Run over created jobs
-        idList = self.getJobs.execute(state = 'CreateFailed')
-        logging.info("Found %s failed jobs failed during creation" \
-                     % len(idList))
-        while len(idList) > 0:
-            tmpList    = idList[:self.maxProcessSize]
-            idList     = idList[self.maxProcessSize:]
-            createList = self.loadJobsFromList(idList = tmpList)
-            self.splitJobList(jobList = createList, jobType = 'create')
-
-        # Run over submitted jobs
-        idList = self.getJobs.execute(state = 'SubmitFailed')
-        logging.info("Found %s failed jobs failed during submit" \
-                     % len(idList))
-        while len(idList) > 0:
-            tmpList    = idList[:self.maxProcessSize]
-            idList     = idList[self.maxProcessSize:]
-            submitList = self.loadJobsFromList(idList = tmpList)
-            self.splitJobList(jobList = submitList, jobType = 'submit')
-
-        # Run over executed jobs
-        idList = self.getJobs.execute(state = 'JobFailed')
-        logging.info("Found %s failed jobs failed during execution" \
-                     % len(idList))
+        # Run over jobs done with retries
+        idList = self.getJobs.execute(state = 'retrydone')
+        logging.info("Found %d jobs done with all retries" % len(idList))
         while len(idList) > 0:
             tmpList = idList[:self.maxProcessSize]
-            idList  = idList[self.maxProcessSize:]
-            jobList = self.loadJobsFromList(idList = tmpList)
-            self.splitJobList(jobList = jobList,    jobType = 'job')
+            idList = idList[self.maxProcessSize:]
+            jobList = self.loadJobsFromList(tmpList)
+            self.handleRetryDoneJobs(jobList)
 
         return
 

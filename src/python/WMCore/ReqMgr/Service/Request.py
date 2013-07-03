@@ -100,7 +100,8 @@ class Request(RESTEntity):
         if status and team:
             request_info.append(self.get_reqmgr_view("byteamandstatus", option, team, "list"))
         if name:
-            request_info.append(self._getReuestsByNames(name))
+            request_doc = self.reqmgr_db.document(name)
+            request_info.append(rows([request_doc]))
         if prep_id:
             request_info.append(self.get_reqmgr_view("byprepid", option, prep_id, "list"))
         if inputdataset:
@@ -142,22 +143,15 @@ class Request(RESTEntity):
         
     
     def get_reqmgr_view(self, view, options, keys, format):
-        
-        return self._get_couch_view(self.reqmgr_db, "ReqMgr", view, options, keys, format)
+        return self._get_couch_view(self.reqmgr_db, "ReqMgr", view,
+                                    options, keys, format)
     
     
     def get_wmstats_view(self, view, options, keys, format):
-        
-        return self._get_couch_view(self.wmstatsCouch, "WMStats", view, options, keys, format)
+        return self._get_couch_view(self.wmstatsCouch, "WMStats", view,
+                                    options, keys, format)
        
-    
-    def _get_request_by_names(self, names, stale="update_after"):
-        """
-        TODO: names can be regular expression or list of names
-        """
-        request_doc = self.reqmgr_db.document(self.db_name, names)
-        return rows([request_doc])
-        
+            
     def _combine_request(self, request_info, requestAgentUrl, cache):
         keys = {}
         requestAgentUrlList = []

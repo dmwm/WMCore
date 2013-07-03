@@ -14,9 +14,8 @@ from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
 from WMCore.Wrappers import JsonWrapper
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
-from WMCore.REST.Validation import validate_str
+from WMCore.REST.Validation import validate_str, validate_strlist
 
-from WMCore.ReqMgr.Service.Auxiliary import ReqMgrBaseRestEntity
 import WMCore.ReqMgr.Service.RegExp as rx
 
 from WMCore.ReqMgr.DataStructs.Request import RequestDataError
@@ -27,60 +26,158 @@ from WMCore.ReqMgr.DataStructs.Request import Request as RequestData
 
 
 
-class Request(ReqMgrBaseRestEntity):
-    def __init__(self, app, api, config, mount, db_handler):
+class Request(RESTEntity):
+    def __init__(self, app, api, config, mount):
         # main CouchDB database where requests/workloads are stored
-        self.db_name = config.couch_reqmgr_db
-        ReqMgrBaseRestEntity.__init__(self, app, api, config, mount, db_handler)
-
-        
-    def validate(self, apiobj, method, api, param, safe):
-        if method in ("GET",):
-            validate_str("all", param, safe, rx.RX_BOOL_FLAG, optional=True)
-            validate_str("request_name", param, safe, rx.RX_REQUEST_NAME, optional=True)
-        if method in ("DELETE", ):
-            validate_str("request_name", param, safe, rx.RX_REQUEST_NAME, optional=False)
-        
+        RESTEntity.__init__(self, app, api, config, mount)
+        self.reqmgr_db = api.db_handler.get_db(config.couch_reqmgr_db)
+        # this need for the post validtiaon 
+        self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)
     
+    def validate(self, apiobj, method, api, param, safe):
+        # to make validate successful
+        # move the validated argument to safe
+        # make param empty
+        # other wise raise the error 
+        
+        if method in ['GET', 'PUT', 'POST']:
+            for prop in param.kwargs:
+                safe.kwargs[prop] = param.kwargs[prop]
+            
+            for prop in safe.kwargs:
+                del param.kwargs[prop]
+#             
+#             permittedParams = ["statusList", "names", "type", "prepID", "inputDataset", 
+#                                "outputDataset", "dateRange", "campaign", "workqueue", "team"]
+#             validate_strlist("statusList", param, safe, '*')
+#             validate_strlist("names", param, safe, rx.RX_REQUEST_NAME)
+#             validate_str("type", param, safe, "*", optional=True)
+#             validate_str("prepID", param, safe, "*", optional=True)
+#             validate_str("inputDataset", param, safe, rx.RX_REQUEST_NAME, optional=True)
+#             validate_str("outputDataset", param, safe, rx.RX_REQUEST_NAME, optional=True)
+#             validate_strlist("dateRagne", param, safe, rx.RX_REQUEST_NAME)
+#             validate_str("campaign", param, safe, "*", optional=True)
+#             validate_str("workqueue", param, safe, "*", optional=True)
+#             validate_str("team", param, safe, "*", optional=True)
+            
     @restcall
-    def get(self, request_name, all):
+    def get(self, **kwargs):
         """
-        Returns most recent list of requests in the system.
-        Query particular request if request_name is specified.
-        Return complete list of all requests in the system if all is set.
-            If all is not set, check "default_view_requests_since_num_days"
-            config value and show only requests not older than this
-            number of days.
+        Returns request info depending on the conditions set by kwargs
+        Currently defined kwargs are following.
+        statusList, requestNames, requestType, prepID, inputDataset, outputDataset, dateRange
+        If jobInfo is True, returns jobInfomation about the request as well.
             
         TODO:
         stuff like this has to filtered out from result of this call:
             _attachments: {u'spec': {u'stub': True, u'length': 51712, u'revpos': 2, u'content_type': u'application/json'}}
             _id: maxa_RequestString-OVERRIDE-ME_130621_174227_9225
-            _rev: 4-c6ceb2737793aaeac3f1cdf591593da4
-        
+            _rev: 4-c6ceb2737793aaeac3f1cdf591593da4        
+
         """
-        if request_name:
-            request_doc = self.db_handler.document(self.db_name, request_name)
-            return rows([request_doc])
+        # list of status
+        status = kwargs.get("status", False)
+        # list of request names
+        name = kwargs.get("name", False)
+        type = kwargs.get("type", False)
+        prep_id = kwargs.get("prep_id", False)
+        inputdataset = kwargs.get("inputdataset", False)
+        outputdataset = kwargs.get("outputdataset", False)
+        date_range = kwargs.get("date_range", False)
+        campaign = kwargs.get("campaign", False)
+        workqueue = kwargs.get("workqueue", False)
+        team = kwargs.get("team", False)
+        # eventhing should be stale view. this only needs for test
+        _nostale = kwargs.get("_nostale", False)
+        option = {}
+        if not _nostale:
+            option['stale'] = "update_after"
+            
+        request_info =[]
+        
+        if status and not team:
+            request_info.append(self.get_reqmgr_view("bystatus" , option, status, "list"))
+        if status and team:
+            request_info.append(self.get_reqmgr_view("byteamandstatus", option, team, "list"))
+        if name:
+            request_info.append(self._getReuestsByNames(name))
+        if prep_id:
+            request_info.append(self.get_reqmgr_view("byprepid", option, prep_id, "list"))
+        if inputdataset:
+            request_info.append(self.get_reqmgr_view("byinputdataset", option, inputdataset, "list"))
+        if outputdataset:
+            request_info.append(self.get_reqmgr_view("byoutputdataset", option, outputdataset, "list"))
+        if date_range:
+            request_info.append(self.get_reqmgr_view("bydate", option, date_range, "list"))
+        if campaign:
+            request_info.append( self.get_reqmgr_view("bycampaign", option, campaign, "list"))
+        if workqueue:
+            request_info.append(self.get_reqmgr_view("byworkqueue", option, workqueue, "list"))
+        
+        #get interaction of the request
+        return self._intersection_of_request_info(request_info);
+        
+    def _intersection_of_request_info(self, request_info):
+        return request_info[0]    
+        
+    def _get_couch_view(self, couchdb, couchapp, view, options, keys, format):
+        
+        if not options:
+            options = {}
+        options.setdefault("include_docs", True)
+        if type(keys) == str:
+            keys = [keys]
+        result = couchdb.loadView(couchapp, view, options, keys)
+        
+        if format == "dict":
+            request_info = {}
+            for item in result["rows"]:
+                request_info[item["id"]] = None
+            return request_info
         else:
-            options = {"descending": True}
-            if all == "false":
-                past_days = self.config.default_view_requests_since_num_days
-                current_date = list(time.gmtime()[:6])
-                from_date = datetime(*current_date) - timedelta(days=past_days)
-                options["endkey"] = list(from_date.timetuple()[:6])
-            request_docs = self.db_handler.view(self.db_name,
-                                                "ReqMgr", "bydate",
-                                                options=options)
-            return rows([request_docs])
+            request_info = []
+            for item in result["rows"]:
+                request_info.append(item["id"])
+            return request_info
         
+    
+    def get_reqmgr_view(self, view, options, keys, format):
         
+        return self._get_couch_view(self.reqmgr_db, "ReqMgr", view, options, keys, format)
+    
+    
+    def get_wmstats_view(self, view, options, keys, format):
+        
+        return self._get_couch_view(self.wmstatsCouch, "WMStats", view, options, keys, format)
+       
+    
+    def _get_request_by_names(self, names, stale="update_after"):
+        """
+        TODO: names can be regular expression or list of names
+        """
+        request_doc = self.reqmgr_db.document(self.db_name, names)
+        return rows([request_doc])
+        
+    def _combine_request(self, request_info, requestAgentUrl, cache):
+        keys = {}
+        requestAgentUrlList = []
+        for row in requestAgentUrl["rows"]:
+            request = row["key"][0]
+            if not keys[request]: 
+                keys[request] = []
+            keys[request].append(row["key"][1])
+
+        for request in request_info: 
+            for agentUrl in keys[request]: 
+                requestAgentUrlList.append([request, agentUrl]);
+
+        return requestAgentUrlList;
+
     @restcall
     def delete(self, request_name):
         cherrypy.log("INFO: Deleting request document '%s' ..." % request_name)
-        couchdb = self.db_handler.get_db(self.db_name)
         try:
-            couchdb.delete_doc(request_name)
+            self.reqmgr_db.delete_doc(request_name)
         except CouchError, ex:
             msg = "ERROR: Delete failed."
             cherrypy.log(msg + " Reason: %s" % ex)
@@ -192,11 +289,10 @@ class Request(ReqMgrBaseRestEntity):
             # not necessary unlike it was the case in ReqMgr1 
             request["RequestWorkflow"] = workload_url        
             params_to_update = ["RequestWorkflow"]
-            couchdb = Database(request["CouchWorkloadDBName"], request["CouchURL"])
             fields = {}
             for key in params_to_update:
                 fields[key] = request[key]
-            couchdb.updateDocument(request["RequestName"], "ReqMgr", "updaterequest",
+            self.reqmgr_db.updateDocument(request["RequestName"], "ReqMgr", "updaterequest",
                                    fields=fields)
         except CouchError, ex:
             # TODO simulate exception here to see how much gets exposed to the client
@@ -274,8 +370,7 @@ class Request(ReqMgrBaseRestEntity):
         # check that newly created RequestName does not exist in Couch
         # database or requests already, by any chance.
         try:
-            db = self.db_handler.get_db(self.db_name)
-            doc = db.document(request["RequestName"])
+            doc = self.reqmgr_db.document(request["RequestName"])
             msg = ("ERROR: Request '%s' already exists in the database: %s." %
                    (request["RequestName"], doc))
             raise RequestDataError(msg)            
@@ -285,8 +380,7 @@ class Request(ReqMgrBaseRestEntity):
         
         # check that specified ScramArch, CMSSWVersion, SoftwareVersions all
         # exist and match
-        db = self.db_handler.get_db(self.config.couch_reqmgr_aux_db)
-        sw = db.document("software")
+        sw = self.reqmgr_aux_db.document("software")
         if request["ScramArch"] not in sw.keys():
             msg = ("Specified ScramArch '%s not present in ReqMgr database "
                    "(data is taken from TC, available ScramArch: %s)." %
@@ -320,8 +414,8 @@ class Request(ReqMgrBaseRestEntity):
         request["Requestor"] = cherrypy.request.user["login"]
         request["RequestorDN"] = cherrypy.request.user.get("dn", "unknown")
         # assign first starting status, should be 'new'
-        request["RequestStatus"] = REQUEST_STATUS_LIST[0]
-
+        request["RequestStatus"] = REQUEST_STATUS_LIST[0] 
+        request["RequestTransition"] = [{"Status": request["RequestStatus"], "UpdateTime": int(time.time())}]
         current_time = time.strftime('%y%m%d_%H%M%S', time.localtime(time.time()))
         seconds = int(10000 * (time.time() % 1.0))
         request_string = request.get("RequestString", "")
@@ -385,9 +479,7 @@ class Request(ReqMgrBaseRestEntity):
         # needs to be so much data duplication yet again between stuff stored
         # in Couch and on workload.
         #wl.data.owner.Requestor = schema.Requestor
-  
-        
-        
+
 class RequestStatus(RESTEntity):
     def __init__(self, app, api, config, mount):
         RESTEntity.__init__(self, app, api, config, mount)

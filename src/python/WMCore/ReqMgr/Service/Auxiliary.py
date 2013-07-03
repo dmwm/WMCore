@@ -20,6 +20,7 @@ from WMCore.REST.Tools import tools
 from WMCore.REST.Validation import validate_str
 
 import WMCore.ReqMgr.Service.RegExp as rx
+from WMCore.REST.Format import *
 
 
 
@@ -36,7 +37,7 @@ class HelloWorld(RESTEntity):
         validate_str("name", param, safe, rx.RX_REQUEST_NAME, optional=True)
 
 
-    @restcall
+    @restcall(formats = [('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     def get(self, name):
         """
@@ -52,19 +53,11 @@ class HelloWorld(RESTEntity):
         return msg
     
 
-
-class ReqMgrBaseRestEntity(RESTEntity):
-    def __init__(self, app, api, config, mount, db_handler):
-        self.db_handler = db_handler
-        self.config = config
+class Info(RESTEntity):
+    def __init__(self, app, api, config, mount):
         RESTEntity.__init__(self, app, api, config, mount)
-    
-
-
-class Info(ReqMgrBaseRestEntity):
-    def __init__(self, app, api, config, mount, db_handler):
-        ReqMgrBaseRestEntity.__init__(self, app, api, config, mount, db_handler)
-        
+        self.reqmgr_db = api.db_handler.get_db(config.couch_reqmgr_db)
+        self.config = config
                 
     def validate(self, apiobj, method, api, param, safe):
         pass
@@ -92,14 +85,13 @@ class Info(ReqMgrBaseRestEntity):
         
         wmcore_reqmgr_version = WMCore.__version__
         
-        db = self.db_handler.get_db("reqmgr_workload_cache")
-        reqmgr_db_info = db.info()
+        reqmgr_db_info = self.reqmgr_db.info()
         reqmgr_db_info["reqmgr_couch_url"] = self.config.couch_host 
         
         # retrieve the last injected request in the system
         # curl ... /reqmgr_workload_cache/_design/ReqMgr/_view/bydate?descending=true&limit=1
         options = {"descending": True, "limit": 1} 
-        reqmgr_last_injected_request = db.loadView("ReqMgr",
+        reqmgr_last_injected_request = self.reqmgr_db.loadView("ReqMgr",
                                                     "bydate",
                                                     options=options)
         result = {"wmcore_reqmgr_version": wmcore_reqmgr_version,
@@ -111,7 +103,7 @@ class Info(ReqMgrBaseRestEntity):
     
 
 
-class Group(ReqMgrBaseRestEntity):
+class Group(RESTEntity):
     """
     Groups are stored in the ReqMgr reqmgr_auxiliary database.
     "group" is used as id of the document, but the document
@@ -125,11 +117,11 @@ class Group(ReqMgrBaseRestEntity):
         
     """
     
-    def __init__(self, app, api, config, mount, db_pool):
+    def __init__(self, app, api, config, mount):
         # CouchDB auxiliary database name
-        self.db_name = config.couch_reqmgr_aux_db        
-        ReqMgrBaseRestEntity.__init__(self, app, api, config, mount, db_pool)
-
+        RESTEntity.__init__(self, app, api, config, mount)
+        self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)    
+        
 
     def validate(self, apiobj, method, api, param, safe):
         if method in ("GET", "HEAD"):
@@ -146,7 +138,7 @@ class Group(ReqMgrBaseRestEntity):
         Return list of all groups.
             
         """
-        groups = self.db_handler.document(self.db_name, "groups")
+        groups = self.reqmgr_aux_db.document("groups")
         del groups["_id"]
         del groups["_rev"]
         return rows(groups.keys())
@@ -159,13 +151,12 @@ class Group(ReqMgrBaseRestEntity):
         if group_name doesn't exist.
         
         """
-        groups = self.db_handler.document(self.db_name, "groups")
+        groups = self.reqmgr_aux_db.document("groups")
         if group_name in groups:
             del groups[group_name]
-            db = self.db_handler.get_db(self.db_name)
             # TODO
             # this should ideally also wrap try-except
-            db.commitOne(groups)
+            self.reqmgr_aux_db.commitOne(groups)
             return rows(["OK"])
         else:
             msg = "ERROR: Group '%s' not found in the database." % group_name
@@ -180,16 +171,15 @@ class Group(ReqMgrBaseRestEntity):
         Creates groups document if it doesn't exist.
         
         """
-        db = self.db_handler.get_db(self.db_name)
         try:
-            groups = db.document("groups")
+            groups = self.reqmgr_aux_db.document("groups")
         except CouchNotFoundError, ex:
             msg = ("ERROR: Retrieving groups document failed, reason: %s"
                    " Creating the document ..." % ex)
             cherrypy.log(msg)
             try:
                 doc = Document(id="groups", inputDict={group_name: None})
-                db.commitOne(doc)
+                self.reqmgr_aux_db.commitOne(doc)
                 return
             except CouchError, ex:
                 msg = "ERROR: Creating document groups failed, reason: %s" % ex
@@ -202,12 +192,12 @@ class Group(ReqMgrBaseRestEntity):
             groups[group_name] = None
             # TODO
             # this should ideally also wrap try-except            
-            db.commitOne(groups)
+            self.reqmgr_aux_db.commitOne(groups)
             return rows(["OK"])
             
         
 
-class Team(ReqMgrBaseRestEntity):
+class Team(RESTEntity):
     """
     Teams are stored in the ReqMgr reqmgr_auxiliary database.
     "teams" is used as id of the document, but the document
@@ -219,11 +209,11 @@ class Team(ReqMgrBaseRestEntity):
         
     """
     
-    def __init__(self, app, api, config, mount, db_pool):
+    def __init__(self, app, api, config, mount):
+        RESTEntity.__init__(self, app, api, config, mount)
         # CouchDB auxiliary database name
-        self.db_name = config.couch_reqmgr_aux_db                
-        ReqMgrBaseRestEntity.__init__(self, app, api, config, mount, db_pool)
-
+        self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)                
+        
         
     def validate(self, apiobj, method, api, param, safe):
         if method in ("GET", "HEAD"):
@@ -238,7 +228,7 @@ class Team(ReqMgrBaseRestEntity):
         Return list of all teams.
             
         """
-        teams = self.db_handler.document(self.db_name, "teams")
+        teams = self.reqmgr_aux_db.document("teams")
         del teams["_id"]
         del teams["_rev"]
         return rows(teams.keys())
@@ -251,13 +241,12 @@ class Team(ReqMgrBaseRestEntity):
         if team_name doesn't exist.
         
         """
-        teams = self.db_handler.document(self.db_name, "teams")
+        teams = self.reqmgr_aux_db.document("teams")
         if team_name in teams:
             del teams[team_name]
-            db = self.db_handler.get_db(self.db_name)
             # TODO
             # this should ideally also wrap try-except
-            db.commitOne(teams)
+            self.reqmgr_aux_db.commitOne(teams)
             return rows(["OK"])
         else:
             msg = "ERROR: Team '%s' not found in the database." % team_name
@@ -272,16 +261,15 @@ class Team(ReqMgrBaseRestEntity):
         Creates teams document if it doesn't exist.
         
         """
-        db = self.db_handler.get_db(self.db_name)
         try:
-            teams = db.document("teams")
+            teams = self.reqmgr_aux_db.document("teams")
         except CouchNotFoundError, ex:
             msg = ("ERROR: Retrieving teams document failed, reason: %s"
                    " Creating the document ..." % ex)
             cherrypy.log(msg)
             try:
                 doc = Document(id="teams", inputDict={team_name: None})
-                db.commitOne(doc)
+                self.reqmgr_aux_db.commitOne(doc)
                 return
             except CouchError, ex:
                 msg = "ERROR: Creating document teams failed, reason: %s" % ex
@@ -294,12 +282,12 @@ class Team(ReqMgrBaseRestEntity):
             teams[team_name] = None
             # TODO
             # this should ideally also wrap try-except            
-            db.commitOne(teams)
+            self.reqmgr_aux_db.commitOne(teams)
             return rows(["OK"])
         
         
     
-class Software(ReqMgrBaseRestEntity):
+class Software(RESTEntity):
     """
     Software - handle CMSSW versions and scram architectures.
     Stored in stored in the ReqMgr reqmgr_auxiliary database, document
@@ -307,10 +295,10 @@ class Software(ReqMgrBaseRestEntity):
         
     """
     
-    def __init__(self, app, api, config, mount, db_pool):
+    def __init__(self, app, api, config, mount):
+        RESTEntity.__init__(self, app, api, config, mount)
         # CouchDB auxiliary database name
-        self.db_name = config.couch_reqmgr_aux_db        
-        ReqMgrBaseRestEntity.__init__(self, app, api, config, mount, db_pool)
+        self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)
         
         
     def validate(self, apiobj, method, api, param, safe):
@@ -323,7 +311,7 @@ class Software(ReqMgrBaseRestEntity):
         Return entire "software" document - all versions and scramarchs.
             
         """
-        sw = self.db_handler.document(self.db_name, "software")
+        sw = self.reqmgr_aux_db.document("software")
         del sw["_id"]
         del sw["_rev"]
         return rows([sw])

@@ -1,0 +1,2 @@
+{"_id": "software",  "slc5_amd64_gcc434": ["CMSSW_4_1_8", "CMSSW_6_2_0_pre5slc6"], 
+ "slc5_amd64_gcc462": ["CMSSW_5_1_3", "CMSSW_5_2_0_pre6", "CMSSW_5_2_0_pre6DQM"]}

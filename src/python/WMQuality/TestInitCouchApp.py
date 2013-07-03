@@ -96,7 +96,9 @@ class TestInitCouchApp(TestInit):
         self.databases.append(dbName)
         self.couch = CouchAppTestHarness(dbName)
         self.couch.create(dropExistingDb=self.dropExistingDb)
-        self.couch.pushCouchapps(*[os.path.join(self.couchAppRoot(couchapp), couchapp) for couchapp in couchapps ])
+        # just create the db is couchapps are not specified
+        if len(couchapps) > 0:
+            self.couch.pushCouchapps(*[os.path.join(self.couchAppRoot(couchapp), couchapp) for couchapp in couchapps ])
 
 
     couchUrl = property(lambda x: x.couch.couchUrl)

@@ -6,7 +6,7 @@ Common module for helper methods, Classes for RequestManager related unittests.
 import os
 import urllib
 
-import WMCore.WMSpec.StdSpecs.ReReco as ReReco
+from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 
     
 def getAndSetupSchema(testInstance, groupName = 'PeopleLikeMe',
@@ -27,15 +27,11 @@ def getAndSetupSchema(testInstance, groupName = 'PeopleLikeMe',
 
 
 def getSchema(groupName = 'PeopleLikeMe', userName = 'me'):
-    schema = ReReco.getTestArguments()
+    schema = ReRecoWorkloadFactory.getTestArguments()
     schema['RequestName'] = 'TestReReco'
     schema['RequestType'] = 'ReReco'
-    schema['CmsPath'] = "/uscmst1/prod/sw/cms"
     schema['Requestor'] = '%s' % userName
     schema['Group'] = '%s' % groupName
-    schema['TimePerEvent'] = '12'
-    schema['Memory'] = 3000
-    schema['SizePerEvent'] = 512
     return schema
 
 def getResubmissionSchema(originalRequest, initialTask,

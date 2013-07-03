@@ -10,16 +10,12 @@ NOTE: This should come from the RequestFactory stuff later on
 
 TypesList = [
     "MonteCarlo",
-    "CmsGen",
-    "Reco",
     "ReReco",
     "StoreResults",
-    "DataProcessing",
     "Analysis",
     "Resubmission",
     "ReDigi",
     "MonteCarloFromGEN",
     "TaskChain",
-    "PrivateMC",
-    "LHEStepZero",
+    "PrivateMC"
     ]

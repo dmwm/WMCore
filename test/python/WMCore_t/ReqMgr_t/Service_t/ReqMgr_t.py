@@ -44,8 +44,8 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         RESTBaseUnitTestWithDBBackend.setUp(self)
         
         #Warning: this assumes the same structure in jenkins wmcore_root/test
-        #requestPath = os.path.join(getWMBASE(), "test", "data", "ReqMgr", "requests")
-        requestPath = os.path.join("..", "..", "..", "..", "data", "ReqMgr", "requests")
+        requestPath = os.path.join(getWMBASE(), "test", "data", "ReqMgr", "requests")
+        #requestPath = os.path.join("..", "..", "..", "..", "data", "ReqMgr", "requests")
         mcFile = open(os.path.join(requestPath, "MonteCarlo.json"), 'r')
         self.mcArgs = JsonWrapper.load(mcFile)["createRequest"]
         

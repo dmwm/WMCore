@@ -138,10 +138,8 @@ class PausedTool:
             if self.dryRun:
                 print 'Job %d would be failed' % job['id']
             else:
-                self.changer.propagate(job, 'killed', 'jobpaused',updatesummary=True)
-                job.failInputFiles()
-                #TODO: Create ACDC on killed jobs
                 print "Failing job %d" % job['id']
+                self.changer.propagate(job, 'retrydone', 'jobpaused',updatesummary=True)
         return
 
     def execute(self):

@@ -12,12 +12,12 @@ import shutil
 import tempfile
 import urllib
 
-import WMCore.Lexicon
-
 from WMCore.Cache.WMConfigCache import ConfigCache
+from WMCore.Lexicon import dataset, couchurl, identifier, block
 from WMCore.WMInit import getWMBASE
 from WMCore.WMRuntime.Tools.Scram import Scram
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
+from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool
 
 def injectIntoConfigCache(frameworkVersion, scramArch, initCommand,
                           configUrl, configLabel, couchUrl, couchDBName,
@@ -83,71 +83,12 @@ def fixCVSUrl(url):
         url = cvsMatch.groups()[0] + cvsMatch.groups()[1]
     return url
 
-def getTestArguments():
-    """
-    _getTestArguments_
-
-    This should be where the default REQUIRED arguments go
-    This serves as documentation for what is currently required
-    by the standard PromptReco workload in importable format.
-
-    NOTE: These are test values.  If used in real workflows they
-    will cause everything to crash/die/break, and we will be forced
-    to hunt you down and kill you.
-    """
-    arguments = {
-        "Requestor": "Dirk.Hufnagel@cern.ch",
-
-        "ScramArch" : "slc5_amd64_gcc462",
-
-        # these must be overridden
-        "AcquisitionEra": "WMAgentCommissioning12",
-        "CMSSWVersion" : "CMSSW_5_2_1",
-
-        "ProcessingVersion" : 1,
-        "ProcScenario" : "cosmics",
-        "GlobalTag" : "GR_P_V29::All",
-
-        "InputDataset" : "/Cosmics/Run2012A-v1/RAW",
-        "WriteTiers" : ["RECO", "AOD", "DQM", "ALCARECO"],
-        "AlcaSkims" : ["TkAlCosmics0T","MuAlGlobalCosmics","HcalCalHOCosmics"],
-        "DqmSequences" : [ "@common", "@jetmet" ],
-
-        "CouchURL": None,
-        "CouchDBName": "promptreco_t",
-        # or alternatively CouchURL part can be replaced by ConfigCacheUrl,
-        # then ConfigCacheUrl + CouchDBName + ConfigCacheID
-        "ConfigCacheUrl": None,
-        
-        "InitCommand": os.environ.get("INIT_COMMAND", None),
-        "RunNumber": 195360,
-
-        #PromptSkims should be a list of ConfigSection objects with the
-        #following attributes
-        #DataTier: "RECO"
-        #SkimName: "CosmicsSkim1"
-        #TwoFileRead: True
-        #ConfigURL: http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/Skimming/test/tier1/skim_Cosmics.py?revision=1.2&pathrev=SkimsFor426
-        #ProcessingVersion: PromptSkim-v1
-        "PromptSkims": [],
-
-        "DashboardHost": "127.0.0.1",
-        "DashboardPort": 8884,
-        }
-
-    return arguments
-
 class PromptRecoWorkloadFactory(StdBase):
     """
     _PromptRecoWorkloadFactory_
 
     Stamp out PromptReco workflows.
     """
-    def __init__(self):
-        StdBase.__init__(self)
-        self.multicore = False
-        self.multicoreNCores = 1
-        return
 
     def buildWorkload(self):
         """
@@ -287,81 +228,118 @@ class PromptRecoWorkloadFactory(StdBase):
         """
         StdBase.__call__(self, workloadName, arguments)
 
-        # Required parameters that must be specified by the Requestor.
-        self.frameworkVersion = arguments['CMSSWVersion']
-        self.globalTag = arguments['GlobalTag']
-        self.writeTiers = arguments['WriteTiers']
-        self.alcaSkims = arguments['AlcaSkims']
-        self.inputDataset = arguments['InputDataset']
-        self.promptSkims = arguments['PromptSkims']
-        self.couchURL = arguments['CouchURL']
-        self.couchDBName = arguments['CouchDBName']
-        self.configCacheUrl = arguments.get("ConfigCacheUrl", None)
-        self.initCommand = arguments['InitCommand']
-
-        #Optional parameters
-        self.envPath = arguments.get('EnvPath', None)
-        self.binPath = arguments.get('BinPath', None)
-
-        if arguments.has_key('Multicore'):
-            numCores = arguments.get('Multicore')
-            if numCores == None or numCores == "":
-                self.multicore = False
-            elif numCores == "auto":
-                self.multicore = True
-                self.multicoreNCores = "auto"
-            else:
-                self.multicore = True
-                self.multicoreNCores = numCores
-
-        # Do we run log collect ? (Tier0 does not support it yet)
-        self.doLogCollect = arguments.get("DoLogCollect", True)
-
-        # Optional arguments that default to something reasonable.
-        self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
-        self.blockBlacklist = arguments.get("BlockBlacklist", [])
-        self.blockWhitelist = arguments.get("BlockWhitelist", [])
-        self.runBlacklist = arguments.get("RunBlacklist", [])
-        self.runWhitelist = arguments.get("RunWhitelist", [])
-        self.emulation = arguments.get("Emulation", False)
-
         # These are mostly place holders because the job splitting algo and
         # parameters will be updated after the workflow has been created.
-        self.procJobSplitAlgo = arguments.get("StdJobSplitAlgo", "EventBased")
-        self.procJobSplitArgs = arguments.get("StdJobSplitArgs",
-                                              {"events_per_job": 500})
-        self.skimJobSplitAlgo = arguments.get("SkimJobSplitAlgo", "FileBased")
+        self.procJobSplitArgs = {}
+        if self.procJobSplitAlgo == "EventBased" or self.procJobSplitAlgo == "EventAwareLumiBased":
+            if self.eventsPerJob is None:
+                self.eventsPerJob = int((8.0 * 3600.0) / self.timePerEvent)
+            self.procJobSplitArgs["events_per_job"] = self.eventsPerJob
+            if self.procJobSplitAlgo == "EventAwareLumiBased":
+                self.procJobSplitArgs["max_events_per_lumi"] = 20000
+        elif self.procJobSplitAlgo == "LumiBased":
+            self.procJobSplitArgs["lumis_per_job"] = self.lumisPerJob
+        elif self.procJobSplitAlgo == "FileBased":
+            self.procJobSplitArgs["files_per_job"] = self.filesPerJob
+        self.skimJobSplitArgs = {}
+        if self.skimJobSplitAlgo == "EventBased" or self.skimJobSplitAlgo == "EventAwareLumiBased":
+            if self.eventsPerJob is None:
+                self.eventsPerJob = int((8.0 * 3600.0) / self.timePerEvent)
+            self.skimJobSplitArgs["events_per_job"] = self.eventsPerJob
+            if self.skimJobSplitAlgo == "EventAwareLumiBased":
+                self.skimJobSplitArgs["max_events_per_lumi"] = 20000
+        elif self.skimJobSplitAlgo == "LumiBased":
+            self.skimJobSplitArgs["lumis_per_job"] = self.lumisPerJob
+        elif self.skimJobSplitAlgo == "FileBased":
+            self.skimJobSplitArgs["files_per_job"] = self.filesPerJob
         self.skimJobSplitArgs = arguments.get("SkimJobSplitArgs",
                                               {"files_per_job": 1,
                                                "include_parents": True})
 
         return self.buildWorkload()
 
-    def validateSchema(self, schema):
-        """
-        _validateSchema_
-
-        Check for required fields, and some skim facts
-        """
-        requiredFields = ["ScramArch", "CMSSWVersion", "ProcessingVersion",
-                          "ProcScenario", "GlobalTag", "InputDataset",
-                          "WriteTiers", "AlcaSkims"]
-        self.requireValidateFields(fields = requiredFields, schema = schema,
-                                   validate = False)
-
-        try:
-            WMCore.Lexicon.dataset(schema.get('InputDataset', ''))
-        except AssertionError:
-            self.raiseValidationException(msg = "Invalid input dataset!")
-
-
-
-def promptrecoWorkload(workloadName, arguments):
-    """
-    _promptrecoWorkload_
-
-    Instantiate the PromptRecoWorkflowFactory and have it generate
-    a workload for the given parameters.
-    """
-    myPromptRecoFactory = PromptRecoWorkloadFactory()
-    return myPromptRecoFactory(workloadName, arguments)
+    @staticmethod
+    def getWorkloadArguments():
+        baseArgs = StdBase.getWorkloadArguments()
+        specArgs = {"Scenario" : {"default" : "pp", "type" : str,
+                                  "optional" : False, "validate" : None,
+                                  "attr" : "procScenario", "null" : False},
+                    "GlobalTag" : {"default" : "GR_P_V29::All", "type" : str,
+                                   "optional" : False, "validate" : None,
+                                   "attr" : "globalTag", "null" : False},
+                    "WriteTiers" : {"default" : ["RECO", "AOD", "DQM", "ALCARECO"],
+                                    "type" : makeList, "optional" : False,
+                                    "validate" : None,
+                                    "attr" : "writeTiers", "null" : False},
+                    "AlcaSkims" : {"default" : ["TkAlCosmics0T","MuAlGlobalCosmics","HcalCalHOCosmics"],
+                                   "type" : makeList, "optional" : False,
+                                   "validate" : None,
+                                   "attr" : "alcaSkims", "null" : False},
+                    "InputDataset" : {"default" : "/Cosmics/Run2012A-v1/RAW", "type" : str,
+                                      "optional" : False, "validate" : dataset,
+                                      "attr" : "inputDataset", "null" : False},
+                    "PromptSkims" : {"default" : [], "type" : makeList,
+                                     "optional" : True, "validate" : None,
+                                     "attr" : "promptSkims", "null" : False},
+                    "CouchURL" : {"default" : None, "type" : str,
+                                  "optional" : False, "validate" : couchurl,
+                                  "attr" : "couchURL", "null" : False},
+                    "CouchDBName" : {"default" : "promptreco_t", "type" : str,
+                                     "optional" : False, "validate" : identifier,
+                                     "attr" : "couchDBName", "null" : False},
+                    "ConfigCacheUrl" : {"default" : None, "type" : str,
+                                        "optional" : True, "validate" : couchurl,
+                                        "attr" : "configCacheUrl", "null" : False},
+                    "InitCommand" : {"default" : None, "type" : str,
+                                     "optional" : True, "validate" : None,
+                                     "attr" : "initCommand", "null" : False},
+                    "EnvPath" : {"default" : None, "type" : str,
+                                 "optional" : True, "validate" : None,
+                                 "attr" : "envPath", "null" : True},
+                    "BinPath" : {"default" : None, "type" : str,
+                                 "optional" : True, "validate" : None,
+                                 "attr" : "binPath", "null" : True},
+                    "DoLogCollect" : {"default" : True, "type" : strToBool,
+                                      "optional" : True, "validate" : None,
+                                      "attr" : "doLogCollect", "null" : False},
+                    "BlockBlacklist" : {"default" : [], "type" : makeList,
+                                        "optional" : True, "validate" : lambda x: all([block(y) for y in x]),
+                                        "attr" : "blockBlacklist", "null" : False},
+                    "BlockWhitelist" : {"default" : [], "type" : makeList,
+                                        "optional" : True, "validate" : lambda x: all([block(y) for y in x]),
+                                        "attr" : "blockWhitelist", "null" : False},
+                    "RunBlacklist" : {"default" : [], "type" : makeList,
+                                      "optional" : True, "validate" : lambda x: all([int(y) > 0 for y in x]),
+                                      "attr" : "runBlacklist", "null" : False},
+                    "RunWhitelist" : {"default" : [], "type" : makeList,
+                                      "optional" : True, "validate" : lambda x: all([int(y) > 0 for y in x]),
+                                      "attr" : "runWhitelist", "null" : False},
+                    "SplittingAlgo" : {"default" : "EventBased", "type" : str,
+                                       "optional" : True, "validate" : lambda x: x in ["EventBased", "LumiBased",
+                                                                                       "EventAwareLumiBased", "FileBased"],
+                                       "attr" : "procJobSplitAlgo", "null" : False},
+                    "EventsPerJob" : {"default" : 500, "type" : int,
+                                      "optional" : True, "validate" : lambda x : x > 0,
+                                      "attr" : "eventsPerJob", "null" : False},
+                    "LumisPerJob" : {"default" : 8, "type" : int,
+                                     "optional" : True, "validate" : lambda x : x > 0,
+                                     "attr" : "lumisPerJob", "null" : False},
+                    "FilesPerJob" : {"default" : 1, "type" : int,
+                                     "optional" : True, "validate" : lambda x : x > 0,
+                                     "attr" : "filesPerJob", "null" : False},
+                    "SkimSplittingAlgo" : {"default" : "FileBased", "type" : str,
+                                           "optional" : True, "validate" : lambda x: x in ["EventBased", "LumiBased",
+                                                                                           "EventAwareLumiBased", "FileBased"],
+                                           "attr" : "skimJobSplitAlgo", "null" : False},
+                    "SkimEventsPerJob" : {"default" : 500, "type" : int,
+                                          "optional" : True, "validate" : lambda x : x > 0,
+                                          "attr" : "skimEventsPerJob", "null" : False},
+                    "SkimLumisPerJob" : {"default" : 8, "type" : int,
+                                         "optional" : True, "validate" : lambda x : x > 0,
+                                         "attr" : "skimLumisPerJob", "null" : False},
+                    "SkimFilesPerJob" : {"default" : 1, "type" : int,
+                                         "optional" : True, "validate" : lambda x : x > 0,
+                                         "attr" : "skimFilesPerJob", "null" : False}
+                    }
+        baseArgs.update(specArgs)
+        return baseArgs

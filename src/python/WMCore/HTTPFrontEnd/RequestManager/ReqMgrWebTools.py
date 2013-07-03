@@ -59,86 +59,6 @@ def addSiteWildcards(wildcardKeys, sites, wildcardSites):
         if found:
             sites.append(k)
 
-
-def parseRunList(l):
-    """ Changes a string into a list of integers """
-    result = None
-    if isinstance(l, list):
-        result = l
-    elif isinstance(l, basestring):
-        toks = l.lstrip(' [').rstrip(' ]').split(',')
-        if toks == ['']:
-            return []
-        result = [int(tok) for tok in toks]
-    elif isinstance(l, int):
-        result = [l]
-    else:
-        raise cherrypy.HTTPError(400, "Bad Run list of type " + type(l).__name__)
-
-    # If we're here, we have a list of runs
-    for r in result:
-        try:
-            tmp = int(r)
-        except ValueError:
-            raise cherrypy.HTTPError(400, "Given runList without integer run numbers")
-        if not tmp == r:
-            raise cherrypy.HTTPError(400, "Given runList without valid integer run numbers")
-    return result
-    #raise RuntimeError, "Bad Run list of type " + type(l).__name__
-
-def parseBlockList(l):
-    """ Changes a string into a list of strings """
-    result = None
-    if isinstance(l, list):
-        result = l
-    elif isinstance(l, basestring):
-        toks = l.lstrip(' [').rstrip(' ]').split(',')
-        if toks == ['']:
-            return []
-        # only one set of quotes
-        result = [str(tok.strip(' \'"')) for tok in toks]
-    else:
-        raise cherrypy.HTTPError(400, "Bad Run list of type " + type(l).__name__)
-
-    # If we've gotten here we've got a list of blocks
-    # Hopefully they pass validation
-    for block in result:
-        try:
-            WMCore.Lexicon.block(candidate = block)
-        except AssertionError, ex:
-            raise cherrypy.HTTPError(400, "Block in blockList has invalid name")
-    return result
-
-def parseStringListWithoutValidation(l):
-    """
-    _parseStringListWithoutValidation
-
-    Changes a string into a list of  generic strings,
-    this doesn't validate the strings in the list
-    against the Lexicon
-    """
-    result = None
-    if isinstance(l, list):
-        result = l
-    elif isinstance(l, basestring):
-        toks = l.lstrip(' [').rstrip(' ]').split(',')
-        if toks == ['']:
-            return []
-        # only one set of quotes
-        result = [str(tok.strip(' \'"')) for tok in toks]
-    else:
-        raise cherrypy.HTTPError(400, "Bad list of type " + type(l).__name__)
-    return result
-
-def parseSite(kw, name):
-    """ puts site whitelist & blacklists into nice format"""
-    value = kw.get(name, [])
-    if value == None:
-        value = []
-    if not isinstance(value, list):
-        value = [value]
-    return value
-
 def allScramArchsAndVersions():
     """
     _allScramArchs_
@@ -411,33 +331,6 @@ def unidecode(data):
     else:
         return data
 
-def validate(schema):
-    schema.validate()
-    for field in ['RequestName', 'Requestor', 'RequestString',
-        'Campaign', 'ProcScenario', 'ConfigCacheID', 'inputMode',
-        'CouchDBName', 'Group']:
-        value = schema.get(field, '')
-        if value and value != '':
-            WMCore.Lexicon.identifier(value)
-    for field in ['CouchURL']:
-        value = schema.get(field, '')
-        if value and value != '':
-            WMCore.Lexicon.couchurl(schema[field])
-            schema[field] = removePasswordFromUrl(value)
-    for field in ['InputDatasets', 'OutputDatasets']:
-        for dataset in schema.get(field, []):
-            if dataset and dataset != '':
-                WMCore.Lexicon.dataset(dataset)
-    for field in ['InputDataset', 'OutputDataset']:
-        value = schema.get(field, '')
-        if value and value != '':
-            WMCore.Lexicon.dataset(schema[field])
-    for field in ['SoftwareVersion']:
-        value = schema.get(field, '')
-        if value and value != '':
-            WMCore.Lexicon.cmsswversion(schema[field])
-            
-            
 def getNewRequestSchema(reqInputArgs):
     """
     Create a new schema
@@ -483,10 +376,7 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
     # update request as well for wmstats update
     # there is a better way to do this (passing helper to request but make sure all the information is there) 
     request["Campaign"] = helper.getCampaign()
-        
-    if "RunWhitelist" in reqSchema:
-        helper.setRunWhitelist(reqSchema["RunWhitelist"])
-        
+
     # can't save Request object directly, because it makes it hard to retrieve the _rev
     metadata = {}
     metadata.update(request)    
@@ -554,7 +444,6 @@ def makeRequest(webApi, reqInputArgs, couchUrl, couchDB, wmstatUrl):
     Handles the submission of requests.
     
     """
-
     # make sure no extra spaces snuck in
     for k, v in reqInputArgs.iteritems():
         if isinstance(v, str):
@@ -562,71 +451,19 @@ def makeRequest(webApi, reqInputArgs, couchUrl, couchDB, wmstatUrl):
             
     webApi.info("makeRequest(): reqInputArgs: '%s'" %  reqInputArgs)
     reqSchema = getNewRequestSchema(reqInputArgs)
-            
-    # TODO
-    # the request arguments below shall be handled automatically by either
-    # being specified in the input or already have correct default
-    # values in the schema definition
-    
-    reqSchema["Campaign"] = reqInputArgs.get("Campaign", "")
-    
-    if 'ProcScenario' in reqInputArgs and 'ConfigCacheID' in reqInputArgs:
-        # Use input mode to delete the unused one
-        inputMode = reqInputArgs.get('inputMode', None)
-        if inputMode == 'scenario':
-            del reqSchema['ConfigCacheID']
 
-    if 'EnableDQMHarvest' not in reqInputArgs:
-        reqSchema["EnableHarvesting"] = False
+    # Campaign is just for ReqMgr information but it is optional, so it defaults to empty
+    # Should it default to something else??
+    reqSchema["Campaign"] = reqInputArgs.get("Campaign", "")
 
     if reqInputArgs.has_key("InputDataset"):
         reqSchema["InputDatasets"] = [reqInputArgs["InputDataset"]]
-    if reqInputArgs.has_key("FilterEfficiency"):
-        reqInputArgs["FilterEfficiency"] = float(reqInputArgs["FilterEfficiency"])
-    skimNumber = 1
-    # a list of dictionaries
-    reqSchema["SkimConfigs"] = []
-    while reqInputArgs.has_key("SkimName%s" % skimNumber):
-        d = {}
-        d["SkimName"] = reqInputArgs["SkimName%s" % skimNumber]
-        d["SkimInput"] = reqInputArgs["SkimInput%s" % skimNumber]
-        d["Scenario"] = reqInputArgs["Scenario"]
-        d["TimePerEvent"] = reqInputArgs.get("SkimTimePerEvent%s" % skimNumber, None)
-        d["SizePerEvent"] = reqInputArgs.get("SkimSizePerEvent%s" % skimNumber, None)
-        d["Memory"] = reqInputArgs.get("SkimMemory%s" % skimNumber, None)
-
-
-        if reqInputArgs.get("Skim%sConfigCacheID" % skimNumber, None) != None:
-            d["ConfigCacheID"] = reqInputArgs["Skim%sConfigCacheID" % skimNumber]
-
-        reqSchema["SkimConfigs"].append(d)
-        skimNumber += 1
-
-    if reqInputArgs.has_key("DataPileup") or reqInputArgs.has_key("MCPileup"):
-        reqSchema["PileupConfig"] = {}
-        if reqInputArgs.has_key("DataPileup") and reqInputArgs["DataPileup"] != "":
-            reqSchema["PileupConfig"]["data"] = [reqInputArgs["DataPileup"]]
-        if reqInputArgs.has_key("MCPileup") and reqInputArgs["MCPileup"] != "":
-            reqSchema["PileupConfig"]["mc"] = [reqInputArgs["MCPileup"]]
-
-    for runlist in ["RunWhitelist", "RunBlacklist"]:
-        if runlist in reqInputArgs:
-            reqSchema[runlist] = parseRunList(reqInputArgs[runlist])
-    for blocklist in ["BlockWhitelist", "BlockBlacklist"]:
-        if blocklist in reqInputArgs:
-            reqSchema[blocklist] = parseBlockList(reqInputArgs[blocklist])
-    for stringList in ["DqmSequences", "IgnoredOutputModules", "TransientOutputModules"]:
-        if stringList in reqInputArgs:
-            reqSchema[stringList] = parseStringListWithoutValidation(reqInputArgs[stringList])
-
-    validate(reqSchema)
 
     # Get the DN
     reqSchema['RequestorDN'] = cherrypy.request.user.get('dn', 'unknown')
-    
+
     request = buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl)
     return request
-    
 
 def requestDetails(requestName):
     """ Adds details from the Couch document as well as the database """
@@ -650,12 +487,6 @@ def requestDetails(requestName):
     # Check in the CouchWorkloadDBName if not present
     schema.setdefault("CouchWorkloadDBName", "reqmgr_workload_cache")
 
-    # get DbsUrl from CouchDB
-    if schema.get("CouchWorkloadDBName", None) and schema.get("CouchURL", None):
-        couchDb = Database(schema["CouchWorkloadDBName"], schema["CouchURL"])
-        couchReq = couchDb.document(requestName)
-        schema["DbsUrl"] = couchReq.get("DbsUrl", None)
-        
     # https://github.com/dmwm/WMCore/issues/4588
     schema["SubscriptionInformation"] = helper.getSubscriptionInformation()
     return schema

@@ -14,7 +14,7 @@ import unittest
 from httplib import HTTPException
 
 from WMCore.Services.Requests import JSONRequests
-
+from WMCore.Cache.WMConfigCache import ConfigCache
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
@@ -76,6 +76,29 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
         workload.load(url)
         return workload
 
+    def createConfig(self, bad = False):
+        """
+        _createConfig_
+
+        Create a config of some sort that we can load out of ConfigCache
+        
+        """
+        PSetTweak = {'process': {'outputModules_': ['ThisIsAName'],
+                                 'ThisIsAName': {'dataset': {'dataTier': 'RECO',
+                                                             'filterName': 'Filter'}}}}
+        BadTweak  = {'process': {'outputModules_': ['ThisIsAName1', 'ThisIsAName2'],
+                                 'ThisIsAName1': {'dataset': {'dataTier': 'RECO',
+                                                             'filterName': 'Filter'}},
+                                 'ThisIsAName2': {'dataset': {'dataTier': 'RECO',
+                                                             'filterName': 'Filter'}}}}
+        configCache = ConfigCache(os.environ["COUCHURL"], couchDBName = self.couchDBName)
+        configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
+        if bad:
+            configCache.setPSetTweaks(PSetTweak = BadTweak)
+        else:
+            configCache.setPSetTweaks(PSetTweak = PSetTweak)
+        configCache.save()
+        return configCache.getCouchID()
 
     def changeStatusAndCheck(self, requestName, statusName):
         """
@@ -106,6 +129,11 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
                                                userName = userName,
                                                groupName = groupName,
                                                teamName = teamName)
+        configID = self.createConfig()
+        schema["ConfigCacheID"] = configID
+        schema["CouchDBName"] = self.couchDBName
+        schema["CouchURL"]    = os.environ.get("COUCHURL")
+
         result = self.jsonSender.put('request/testRequest', schema)
         self.assertEqual(result[1], 200)
         requestName = result[0]['RequestName']
@@ -172,6 +200,11 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
                                                userName = userName,
                                                groupName = groupName,
                                                teamName = teamName)
+        configID = self.createConfig()
+        schema["ConfigCacheID"] = configID
+        schema["CouchDBName"] = self.couchDBName
+        schema["CouchURL"]    = os.environ.get("COUCHURL")
+
         result = self.jsonSender.put('request/testRequest', schema)
         self.assertEqual(result[1], 200)
         requestName = result[0]['RequestName']

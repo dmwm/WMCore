@@ -27,12 +27,11 @@ from WMCore.WorkQueue.WMBSHelper import killWorkflow
 from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
 from WMQuality.Emulators.DBSClient.DBSReader import DBSReader as MockDBSReader
 from WMQuality.Emulators.SiteDBClient.SiteDB import SiteDBJSON as fakeSiteDB
-from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload, \
-                                          getTestArguments as getRerecoArgs
+from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 
 from WMQuality.Emulators.WMSpecGenerator.Samples.TestMonteCarloWorkload \
     import monteCarloWorkload, getMCArgs
-
+from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 from WMQuality.Emulators import EmulatorSetup
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
@@ -40,7 +39,7 @@ from WMCore.BossAir.BossAirAPI              import BossAirAPI
 from WMCore.Configuration                   import loadConfigurationFile
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 
-rerecoArgs = getRerecoArgs()
+rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
 mcArgs = getMCArgs()
 
 def getFirstTask(wmspec):
@@ -492,7 +491,9 @@ class WMBSHelperTest(unittest.TestCase):
             self.ses.append(self.siteDB.cmsNametoSE(site)[0])
 
     def createWMSpec(self, name = 'ReRecoWorkload'):
-        wmspec = rerecoWorkload(name, rerecoArgs)
+        factory = ReRecoWorkloadFactory()
+        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
+        wmspec = factory.factoryWorkloadConstruction(name, rerecoArgs)
         wmspec.setSpecUrl("/path/to/workload")
         wmspec.setSubscriptionInformation(custodialSites = [],
                                           nonCustodialSites = [], autoApproveSites = [],

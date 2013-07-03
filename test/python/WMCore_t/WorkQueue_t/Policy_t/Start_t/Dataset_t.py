@@ -5,7 +5,7 @@
 
 import unittest
 from WMCore.WorkQueue.Policy.Start.Dataset import Dataset
-from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload, getTestArguments
+from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload \
@@ -13,9 +13,10 @@ from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload \
 from WMCore.WorkQueue.WorkQueueExceptions import *
 from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 from WMQuality.Emulators.DataBlockGenerator import Globals
+from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
-rerecoArgs = getTestArguments()
-parentProcArgs = getTestArguments()
+rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
+parentProcArgs = ReRecoWorkloadFactory.getTestArguments()
 parentProcArgs.update(IncludeParents = "True")
 
 class DatasetTestCase(unittest.TestCase):
@@ -32,7 +33,9 @@ class DatasetTestCase(unittest.TestCase):
 
     def testTier1ReRecoWorkload(self):
         """Tier1 Re-reco workflow"""
-        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs)
+        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
+        factory = ReRecoWorkloadFactory()
+        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         Tier1ReRecoWorkload.setStartPolicy('Dataset', **self.splitArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
@@ -76,7 +79,9 @@ class DatasetTestCase(unittest.TestCase):
 
     def testWhiteBlackLists(self):
         """Block/Run White/Black lists"""
-        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs)
+        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
+        factory = ReRecoWorkloadFactory()
+        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         Tier1ReRecoWorkload.setStartPolicy('Dataset', **self.splitArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
@@ -87,7 +92,7 @@ class DatasetTestCase(unittest.TestCase):
         # Block blacklist
         rerecoArgs2 = {'BlockBlacklist' : [dataset + '#1']}
         rerecoArgs2.update(rerecoArgs)
-        blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
+        blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
                                                      rerecoArgs2)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
@@ -101,7 +106,7 @@ class DatasetTestCase(unittest.TestCase):
         # Block Whitelist
         rerecoArgs2['BlockWhitelist'] = [dataset + '#1']
         rerecoArgs2['BlockBlacklist'] = []
-        blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
+        blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
                                                      rerecoArgs2)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
@@ -115,7 +120,7 @@ class DatasetTestCase(unittest.TestCase):
         # Block Mixed Whitelist
         rerecoArgs2['BlockWhitelist'] = [dataset + '#2']
         rerecoArgs2['BlockBlacklist'] = [dataset + '#1']
-        blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
+        blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
                                                      rerecoArgs2)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
@@ -129,7 +134,7 @@ class DatasetTestCase(unittest.TestCase):
         # Run Whitelist
         rerecoArgs3 = {'RunWhitelist' : [1]}
         rerecoArgs3.update(rerecoArgs)
-        blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
+        blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
                                                      rerecoArgs3)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
@@ -143,7 +148,7 @@ class DatasetTestCase(unittest.TestCase):
 
         rerecoArgs3 = {'RunWhitelist' : [1 ,2]}
         rerecoArgs3.update(rerecoArgs)
-        blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
+        blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
                                                      rerecoArgs3)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
@@ -158,7 +163,7 @@ class DatasetTestCase(unittest.TestCase):
         # Run Blacklist
         rerecoArgs3 = {'RunBlacklist' : [2]}
         rerecoArgs3.update(rerecoArgs)
-        blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
+        blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
                                                     rerecoArgs3)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
@@ -173,7 +178,7 @@ class DatasetTestCase(unittest.TestCase):
         # Run Mixed Whitelist
         rerecoArgs3 = {'RunBlacklist' : [1], 'RunWhitelist' : [2]}
         rerecoArgs3.update(rerecoArgs)
-        blacklistBlockWorkload = rerecoWorkload('ReRecoWorkload',
+        blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
                                                      rerecoArgs3)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
@@ -188,7 +193,9 @@ class DatasetTestCase(unittest.TestCase):
 
     def testDataDirectiveFromQueue(self):
         """Test data directive from queue"""
-        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs)
+        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
+        factory = ReRecoWorkloadFactory()
+        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
@@ -202,8 +209,9 @@ class DatasetTestCase(unittest.TestCase):
     def testLumiSplitTier1ReRecoWorkload(self):
         """Tier1 Re-reco workflow split by Lumi"""
         splitArgs = dict(SliceType = 'NumberOfLumis', SliceSize = 2)
-
-        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs)
+        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
+        factory = ReRecoWorkloadFactory()
+        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         Tier1ReRecoWorkload.setStartPolicy('Dataset', **splitArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
@@ -223,7 +231,9 @@ class DatasetTestCase(unittest.TestCase):
         # a large number of lumis to ensure we get multiple runs
         Globals.GlobalParams.setNumOfLumisPerBlock(10)
         splitArgs = dict(SliceType = 'NumberOfLumis', SliceSize = 1)
-        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs)
+        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
+        factory = ReRecoWorkloadFactory()
+        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         Tier1ReRecoWorkload.setRunWhitelist([2, 3])
         Tier1ReRecoWorkload.setStartPolicy('Dataset', **splitArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
@@ -249,25 +259,27 @@ class DatasetTestCase(unittest.TestCase):
     def testInvalidSpecs(self):
         """Specs with no work"""
         # no dataset
-        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
+        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
+        factory = ReRecoWorkloadFactory()
+        processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
         getFirstTask(processingSpec).data.input.dataset = None
         for task in processingSpec.taskIterator():
             self.assertRaises(WorkQueueWMSpecError, Dataset(), processingSpec, task)
 
         # invalid dbs url
-        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
+        processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
         getFirstTask(processingSpec).data.input.dataset.dbsurl = 'wrongprot://dbs.example.com'
         for task in processingSpec.taskIterator():
             self.assertRaises(WorkQueueWMSpecError, Dataset(), processingSpec, task)
 
         # invalid dataset name
-        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
+        processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
         getFirstTask(processingSpec).data.input.dataset.primary = Globals.NOT_EXIST_DATASET
         for task in processingSpec.taskIterator():
             self.assertRaises(WorkQueueNoWorkError, Dataset(), processingSpec, task)
 
         # invalid run whitelist
-        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
+        processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
         processingSpec.setRunWhitelist([666]) # not in this dataset
         for task in processingSpec.taskIterator():
             self.assertRaises(WorkQueueNoWorkError, Dataset(), processingSpec, task)
@@ -277,7 +289,9 @@ class DatasetTestCase(unittest.TestCase):
         test parent processing: should have the same results as rereco test
         with the parent flag and dataset.
         """
-        parentProcSpec = rerecoWorkload('testParentProcessing', parentProcArgs)
+        parentProcArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
+        factory = ReRecoWorkloadFactory()
+        parentProcSpec = factory.factoryWorkloadConstruction('testParentProcessing', parentProcArgs)
         parentProcSpec.setStartPolicy('Dataset', **self.splitArgs)
         inputDataset = getFirstTask(parentProcSpec).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,

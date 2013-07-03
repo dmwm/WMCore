@@ -23,4 +23,3 @@ class Request(dict):
         self.setdefault("InputDatasetTypes", {})
         self.setdefault("SizePerEvent", 0)
         self.setdefault("PrepID", None)
-        self.setdefault("DbsUrl", None)

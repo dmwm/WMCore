@@ -98,8 +98,6 @@ def sortListByKey(input, key):
 
     return final
 
-
-
 def uploadWorker(input, results, dbsUrl):
     """
     _uploadWorker_
@@ -134,35 +132,29 @@ def uploadWorker(input, results, dbsUrl):
         try:
             logging.debug("About to call insert block with block: %s" % block)
             dbsApi.insertBulkBlock(blockDump = block)
-            results.put({'name': name, 'success': True})
+            results.put({'name': name, 'success': "uploaded"})
         except Exception, ex:
             exString = str(ex)
-            if 'Block already exists.' in exString:
+            if 'Block %s already exists' % name in exString:
                 # Then this is probably a duplicate
                 # Ignore this for now
                 logging.error("Had duplicate entry for block %s. Ignoring for now." % name)
                 logging.debug("Exception: %s" % exString)
                 logging.debug("Traceback: %s" % str(traceback.format_exc()))
-                results.put({'name': name, 'success': True})
+                results.put({'name': name, 'success': "uploaded"})
             elif 'Proxy Error' in exString:
                 # This is probably a successfully inserton that went bad.
-                # Make sure of it!
-                result = dbsApi.listBlocks(block_name = name)
-                for blockResult in result:
-                    if blockResult['block_name'] == name:
-                        results.put({'name': name, 'success': True})
-                        break
-                else:
-                    msg = "Got a proxy error but the block (%s) is not in DBS3 yet." % name
-                    logging.error(msg)
-                    logging.error(str(traceback.format_exc()))
-                    results.put({'name': name, 'success': False, 'error': msg})
+                # Put it on the check list
+                msg = "Got a proxy error for block (%s)." % name
+                logging.error(msg)
+                logging.error(str(traceback.format_exc()))
+                results.put({'name': name, 'success': "check"})
             else:
                 msg =  "Error trying to process block %s through DBS.\n" % name
                 msg += exString
                 logging.error(msg)
                 logging.error(str(traceback.format_exc()))
-                results.put({'name': name, 'success': False, 'error': msg})
+                results.put({'name': name, 'success': "error", 'error': msg})
 
     return
 
@@ -172,9 +164,6 @@ class DBSUploadException(WMException):
     all the things that will go wrong
 
     """
-
-
-
 
 class DBSUploadPoller(BaseWorkerThread):
     """
@@ -199,6 +188,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
 
         self.pool   = []
+        self.blocksToCheck = []
         self.input  = None
         self.result = None
         self.nProc  = getattr(self.config.DBS3Upload, 'nProcesses', 4)
@@ -208,6 +198,7 @@ class DBSUploadPoller(BaseWorkerThread):
         self.physicsGroup   = getattr(self.config.DBS3Upload, "physicsGroup", "NoGroup")
         self.datasetType    = getattr(self.config.DBS3Upload, "datasetType", "PRODUCTION")
         self.blockCount     = 0
+        self.dbsApi = DbsApi(url = self.dbsUrl)
 
         # List of blocks currently in processing
         self.queuedBlocks = []
@@ -241,14 +232,14 @@ class DBSUploadPoller(BaseWorkerThread):
         self.result = multiprocessing.Queue()
 
         # Starting up the pool:
-        for x in range(self.nProc):
+        for _ in range(self.nProc):
             p = multiprocessing.Process(target = uploadWorker,
-                                        args = (self.input, self.result, self.dbsUrl))
+                                        args = (self.input,
+                                                self.result, self.dbsUrl))
             p.start()
             self.pool.append(p)
 
         return
-
 
     def __del__(self):
         """
@@ -266,7 +257,7 @@ class DBSUploadPoller(BaseWorkerThread):
         Kill all connections and terminate
         """
         terminate = False
-        for x in self.pool:
+        for _ in self.pool:
             try:
                 self.input.put('STOP')
             except Exception, ex:
@@ -308,7 +299,8 @@ class DBSUploadPoller(BaseWorkerThread):
         """
         _algorithm_
 
-        First, load blocks
+        First, check blocks that may be already uploaded
+        Then, load blocks
         Then, load files
         Then, move files into blocks
         Then add new blocks in DBSBuffer
@@ -317,6 +309,7 @@ class DBSUploadPoller(BaseWorkerThread):
         """
         try:
             logging.info("Starting the DBSUpload Polling Cycle")
+            self.checkBlocks()
             self.loadBlocks()
 
             # The following two functions will actually place new files into
@@ -740,10 +733,13 @@ class DBSUploadPoller(BaseWorkerThread):
         for result in blocksToClose:
             # Remove from list of work being processed
             self.queuedBlocks.remove(result.get('name'))
-            if result.get('success', False):
+            if result["success"] == "uploaded":
                 block = self.blockCache.get(result.get('name'))
                 block.status = 'InDBS'
                 loadedBlocks.append(block)
+            elif result["success"] == "check":
+                block = result["name"]
+                self.blocksToCheck.append(block)
             else:
                 logging.error("Error found in multiprocess during process of block %s" % result.get('name'))
                 logging.error(result['error'])
@@ -754,7 +750,7 @@ class DBSUploadPoller(BaseWorkerThread):
             myThread.transaction.begin()
             self.dbsUtil.updateBlocks(loadedBlocks, self.dbs3UploadOnly)
             if not self.dbs3UploadOnly:
-                self.dbsUtil.updateFileStatus(loadedBlocks, "InDBS")            
+                self.dbsUtil.updateFileStatus(loadedBlocks, "InDBS")
             myThread.transaction.commit()
         except WMException:
             myThread.transaction.rollback()
@@ -780,4 +776,64 @@ class DBSUploadPoller(BaseWorkerThread):
             self.close()
 
         # And we're done
+        return
+
+    def checkBlocks(self):
+        """
+        _checkBlocks_
+
+        Check with DBS3 if the blocks marked as check are
+        uploaded or not.
+        """
+        myThread = threading.currentThread()
+        blocksUploaded = []
+
+        # See if there is anything to check
+        for block in self.blocksToCheck:
+            logging.debug("Checking block existence: %s" % block)
+            # Check in DBS if the block was really inserted
+            try:
+                result = self.dbsApi.listBlocks(block_name = block)
+                for blockResult in result:
+                    if blockResult['block_name'] == block:
+                        loadedBlock = self.blockCache.get(block)
+                        loadedBlock.status = 'InDBS'
+                        blocksUploaded.append(loadedBlock)
+                        break
+            except Exception, ex:
+                exString = str(ex)
+                msg =  "Error trying to check block %s through DBS.\n" % block
+                msg += exString
+                logging.error(msg)
+                logging.error(str(traceback.format_exc()))
+        # Update the status of those blocks that were truly inserted
+        try:
+            myThread.transaction.begin()
+            self.dbsUtil.updateBlocks(blocksUploaded, self.dbs3UploadOnly)
+            if not self.dbs3UploadOnly:
+                self.dbsUtil.updateFileStatus(blocksUploaded, "InDBS")
+            myThread.transaction.commit()
+        except WMException:
+            myThread.transaction.rollback()
+            raise
+        except Exception, ex:
+            msg =  "Unhandled exception while finished closed blocks in DBSBuffer\n"
+            msg += str(ex)
+            logging.error(msg)
+            logging.debug("Blocks for Update: %s\n" % blocksUploaded)
+            myThread.transaction.rollback()
+            raise DBSUploadException(msg)
+
+        for block in blocksUploaded:
+            # Clean things up
+            name     = block.getName()
+            location = block.getLocation()
+            das      = block.das
+            self.dasCache[das][location].remove(name)
+            del self.blockCache[name]
+
+        # Clean the check list
+        self.blocksToCheck = []
+
+        # We're done
         return

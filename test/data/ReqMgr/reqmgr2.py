@@ -174,7 +174,7 @@ class ReqMgrClient(RESTClient):
         if requests_to_query:
             for request_name in requests_to_query:
                 logging.info("Querying '%s' request ..." % request_name)
-                urn = self.urn_prefix + "/request?request_name=%s" % request_name
+                urn = self.urn_prefix + "/request?name=%s" % request_name
                 status, data = self.http_request("GET", urn)
                 if status != 200:
                     print data
@@ -186,6 +186,7 @@ class ReqMgrClient(RESTClient):
             # returns data on requests in the same order as in the config.request_names
             return requests_data
         else:
+            raise RuntimeError("Implementation not completed, work on GET method underway.")
             logging.info("Querying all requests ...")
             urn = self.urn_prefix + "/request?all=true"
             status, data = self.http_request("GET", urn)
@@ -224,13 +225,7 @@ class ReqMgrClient(RESTClient):
         assert team not in data, "%s should be deleted from %s" % (team, data)
         
         data = self._caller_checker("/software", "GET")
-        
-        data = self._caller_checker("/request", "GET")
-        data = self._caller_checker("/request?all=false", "GET")
-        data = self._caller_checker("/request?all=true", "GET")
-        req_name = data[0]["rows"][0]["id"] # is RequestName
-        self._caller_checker("/request?request_name=%s" % req_name, "GET")
-        
+                
         data = self._caller_checker("/status", "GET")
         assert len(data) > 0, "%s should be non-empty list." % data
         # test some request status
@@ -249,8 +244,14 @@ class ReqMgrClient(RESTClient):
         data = self._caller_checker("/type", "GET")
         assert len(data) > 0, "%s should be non-empty list." % data
         
-        self.create_request(config)
+        # request tests
+        new_request_name = self.create_request(config) 
         
+        data = self._caller_checker("/request?name=%s" % new_request_name, "GET")
+        request = data[0]
+        assert request["RequestName"] == new_request_name  
+        assert request["RequestStatus"] == "new"
+                        
         print "\nall_tests succeeded."
         
     

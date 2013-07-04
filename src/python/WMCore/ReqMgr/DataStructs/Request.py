@@ -4,17 +4,17 @@ define just 1 class. Derived from Python dict and implementing
 necessary conversion and validation extra methods possibly needed.
     
 TODO/NOTE:
-not sure what 'inputMode' request input argument is good for ... investigate
-
-TODO/NOTE:
-InputDataset vs InputDatasets - do we need both of these?    
-
+    'inputMode' should be removed by now (2013-07)
+    
+    since arguments validation #4705, arguments which are later
+        validated during spec instantiation and which are not
+        present in the request injection request, can't be defined
+        here because their None value is not allowed in the spec.
+        This is the case for e.g. DbsUrl, AcquisitionEra
+        This module should probably define only absolutely
+        necessary request parameters and not any optional ones.
+    
 """
-
-import WMCore.Lexicon
-
-from RequestType import REQUEST_TYPES 
-
 
 
 class RequestDataError(Exception):
@@ -61,7 +61,6 @@ class Request(dict):
         self.setdefault("RequestPriority", None)
         self.setdefault("RequestNumEvents", None)
         self.setdefault("RequestSizeFiles", None)
-        self.setdefault("AcquisitionEra", None)
         self.setdefault("Group", None)
         self.setdefault("OutputDatasets", [])
         # particular CMSSW version to run on
@@ -72,7 +71,6 @@ class Request(dict):
         self.setdefault("InputDatasetTypes", {})
         self.setdefault("SizePerEvent", 0)
         self.setdefault("PrepID", None)
-        self.setdefault("DbsUrl", None)
         self.setdefault("ScramArch", None)
         self.setdefault("GlobalTag", None)
         self.setdefault("ConfigCacheID", None)

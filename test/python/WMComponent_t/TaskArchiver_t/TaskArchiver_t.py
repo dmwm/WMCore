@@ -72,7 +72,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMComponent.DBS3Buffer"],
                                 useDefault = False)
         self.databaseName = "taskarchiver_t_0"
@@ -314,7 +314,8 @@ class TaskArchiverTest(unittest.TestCase):
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
         changer.propagate(testJobGroup.jobs, 'complete', 'executing')
         changer.propagate(testJobGroup.jobs, 'jobfailed', 'complete')
-        changer.propagate(testJobGroup.jobs, 'exhausted', 'jobfailed')
+        changer.propagate(testJobGroup.jobs, 'retrydone', 'jobfailed')
+        changer.propagate(testJobGroup.jobs, 'exhausted', 'retrydone')
         changer.propagate(testJobGroup.jobs, 'cleanout', 'exhausted')
 
         testSubscription.completeFiles([testFileA, testFileB])

@@ -12,8 +12,7 @@ from WMCore.DataStructs.Run import Run
 from WMCore.DataStructs.Job import Job
 
 from WMCore.FwkJobReport.ReportEmu import ReportEmu
-from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload
-from WMCore.WMSpec.StdSpecs.ReReco import getTestArguments
+from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 
 class ReportEmuTest(unittest.TestCase):
     """
@@ -33,7 +32,8 @@ class ReportEmuTest(unittest.TestCase):
         self.acquisitionEra = "WMAgentCommissioining10"
         self.primaryDataset = "MinimumBias"
 
-        self.workload = rerecoWorkload("Tier1ReReco", getTestArguments())
+        self.workload = WMSpecGenerator().createReRecoSpec("Tier1ReReco")
+        print self.workload.data
         return
 
     def verifyOutputMetaData(self, outputFile, job):

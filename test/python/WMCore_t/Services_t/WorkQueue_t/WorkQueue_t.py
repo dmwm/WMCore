@@ -65,10 +65,10 @@ class WorkQueueTest(unittest.TestCase):
         #This only checks minimum client call not exactly correctness of return
         # values.
         self.assertEqual(wqApi.getTopLevelJobsByRequest(),
-                         [{'total_jobs': 2, 'request_name': specName}])
+                         [{'total_jobs': 10, 'request_name': specName}])
         self.assertEqual(wqApi.getChildQueues(), [])
         self.assertEqual(wqApi.getJobStatusByRequest(),
-            [{'status': 'Available', 'jobs': 2, 'request_name': specName}])
+            [{'status': 'Available', 'jobs': 10, 'request_name': specName}])
         self.assertEqual(wqApi.getChildQueuesByRequest(), [])
         self.assertEqual(wqApi.getWMBSUrl(), [])
         self.assertEqual(wqApi.getWMBSUrlByRequest(), [])

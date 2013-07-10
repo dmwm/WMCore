@@ -98,9 +98,11 @@ def createConfig(couchDBName):
     Create a config of some sort that we can load out of ConfigCache
     """
     
-    PSetTweak = {'process': {'outputModules_': ['RECOoutput'],
+    PSetTweak = {'process': {'outputModules_': ['RECOoutput', 'ALCARECOoutput'],
                              'RECOoutput': {'dataset': {'dataTier': 'RECO',
-                                                         'filterName': 'Filter'}}}}
+                                                         'filterName': 'Filter'}},
+                             'ALCARECOoutput': {'dataset': {'dataTier': 'ALCARECO',
+                                                            'filterName': 'AlcaFilter'}}}}
 
     configCache = ConfigCache(os.environ["COUCHURL"], couchDBName = couchDBName)
     configCache.createUserGroup(groupname = "testGroup", username = 'testOps')

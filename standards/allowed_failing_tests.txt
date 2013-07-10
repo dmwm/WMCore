@@ -19,6 +19,9 @@ Simple_t.SimpleTest.test_auth_fail
 Simple_t.SimpleTest.test_auth_success
 Simple_t.SimpleTest.test_basic_fail
 Simple_t.SimpleTest.test_basic_success
+WMCore_t.ReqMgr_t.Service_t.ReqMgr_t.ReqMgrTest.testRequest
+WMCore_t.ReqMgr_t.Service_t.Auxiliary_t.AuxiliaryTest.test_A_HelloWorld_get
+WMCore_t.ReqMgr_t.Service_t.Auxiliary_t.AuxiliaryTest.test_B_Info_get
 WMCore_t.RequestManager_t.Admin_t.AdminTest.testA_SoftwareManagement
 WMCore_t.RequestManager_t.Assign_t.AssignTest.testA_SiteWhitelist
 WMCore_t.RequestManager_t.ReqMgrPriority_t.ReqMgrPriorityTest.testA_RequestPriority
@@ -30,6 +33,8 @@ WMCore_t.RequestManager_t.ReqMgr_t.ReqMgrTest.testF_TestWhitelistBlacklist
 WMCore_t.RequestManager_t.ReqMgr_t.ReqMgrTest.testG_AddDuplicateUser
 WMCore_t.RequestManager_t.ReqMgr_t.ReqMgrTest.testH_RemoveSoftwareVersion
 WMCore_t.RequestManager_t.ReqMgr_t.ReqMgrTest.testI_CheckConfigIDs
+WMCore_t.RequestManager_t.ReqMgr_t.ReqMgrTest.testK_CheckRequestFailsInjectionForbiddenInputArg
+WMCore_t.Services_t.Requests_t.testRepeatCalls.testRecoveryFromConnRefused
 WMCore_t.Services_t.Service_t.ServiceTest.WMCore_t.Services_t.Service_t.ServiceTest.testClear
 WMCore_t.Services_t.Service_t.ServiceTest.WMCore_t.Services_t.Service_t.ServiceTest.testSocketTimeout 
 WMCore_t.Services_t.Service_t.ServiceTest.WMCore_t.Services_t.Service_t.ServiceTest.testClearAndRepopulate

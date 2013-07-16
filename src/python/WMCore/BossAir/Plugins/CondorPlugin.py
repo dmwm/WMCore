@@ -704,7 +704,48 @@ class CondorPlugin(BasePlugin):
         return
 
 
+    def updateSiteInformation(self, jobs, siteName, excludeSite):
+        """
+        _updateSiteInformation_
 
+        Modify condor classAd for all Idle jobs for a site if it has gone Down, Draining or Aborted.
+        Kill all jobs if the site is the only site for the job.
+        """
+        jobInfo = self.getClassAds()
+        jobtokill=[]
+        for job in jobs:
+            jobID = job['jobid']
+            jobAd = jobInfo.get(jobID)
+            if excludeSite :
+                if siteName in jobAd.get('DESIRED_Sites') and siteName in jobAd.get('ExtDESIRED_Sites') :
+                    usi = jobAd.get('DESIRED_Sites').split(', ')
+                    print len(usi)
+                    if len(usi) > 1 :
+                        usi.remove(siteName)
+                        usi = usi.__str__().lstrip('[').rstrip(']')
+                        usi = filter(lambda c: c not in "\'", usi)
+                        command = 'condor_qedit  -constraint \'WMAgent_JobID==%i\' DESIRED_Sites \'"%s"\'' %(jobID, usi)
+                        proc = subprocess.Popen(command, stderr = subprocess.PIPE,
+                                                stdout = subprocess.PIPE, shell = True)
+                        out, err = proc.communicate()
+                    else:
+                        jobtokill.append(job)
+                else :
+                    logging.error("Cannot find siteName %s in the sitelist" % siteName)
+            else :
+                if siteName in jobAd.get('ExtDESIRED_Sites') and siteName not in jobAd.get('DESIRED_Sites') :
+                    usi = jobAd.get('DESIRED_Sites').split(', ')
+                    usi.append(siteName)
+                    usi = usi.__str__().lstrip('[').rstrip(']')
+                    usi = filter(lambda c: c not in "\'", usi)
+                    command = 'condor_qedit  -constraint \'WMAgent_JobID==%i\' DESIRED_Sites \'"%s"\'' %(jobID, usi)
+                    proc = subprocess.Popen(command, stderr = subprocess.PIPE,
+                                            stdout = subprocess.PIPE, shell = True)
+                    out, err = proc.communicate()
+                else :
+                    logging.error("Cannot find siteName %s in the sitelist" % siteName)
+        
+        return jobtokill
 
 
 
@@ -736,25 +777,26 @@ class CondorPlugin(BasePlugin):
         """
         if 'taskPriority' in kwargs and 'requestPriority' in kwargs:
             # Do a priority update
-            priority = int(kwargs['requestPriority'] + kwargs['taskPriority'] * self.maxTaskPriority)
-            command = 'condor_qedit -constraint \'WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"\' ' % (task, workflow)
-            command += 'JobPrio %i' % priority
+            priority = (int(kwargs['requestPriority']) + int(kwargs['taskPriority'])*self.maxTaskPriority)
+            command = 'condor_qedit -constraint \'WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"\' ' %(task, workflow)
+            command += 'JobPrio %s' % priority
             command = shlex.split(command)
             proc = subprocess.Popen(command, stderr = subprocess.PIPE,
                                     stdout = subprocess.PIPE)
             _, stderr = proc.communicate()
             if proc.returncode != 0:
                 # Check if there are actually jobs to update
-                command = 'condor_q -constraint \'WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"\' ' % (task, workflow)
+                command = 'condor_q -constraint \'WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"\' ' %(task, workflow)
                 command += '-format \'WMAgentID:\%d:::\' WMAgent_JobID'
                 command = shlex.split(command)
                 proc = subprocess.Popen(command, stderr = subprocess.PIPE,
                                         stdout = subprocess.PIPE)
                 stdout, _ = proc.communicate()
                 if stdout != '':
-                    msg = 'HTCondor edit failed with exit code %d\n' % proc.returncode
+                    msg = 'HTCondor edit failed with exit code %d\n'% proc.returncode
                     msg += 'Error was: %s' % stderr
                     raise BossAirPluginException(msg)
+                
         return
 
     # Start with submit functions
@@ -902,7 +944,7 @@ class CondorPlugin(BasePlugin):
                     logging.error(str(ex))
                     logging.error("Not setting priority")
 
-            jdl.append("priority = %i\n" % int(task_priority + prio * self.maxTaskPriority))
+            jdl.append("priority = %i\n" % (task_priority + prio*self.maxTaskPriority))
 
             jdl.append("+WMAgent_JobID = %s\n" % job['jobid'])
 
@@ -931,6 +973,13 @@ class CondorPlugin(BasePlugin):
             jdl.append('+DESIRED_Sites = \"%s\"\n' % strg)
         else:
             jdl.append('+DESIRED_Sites = \"%s\"\n' %(jobCE))
+
+        if self.submitWMSMode and len(job.get('potentialSites', [])) > 0:
+            strg = list(job.get('potentialSites')).__str__().lstrip('[').rstrip(']')
+            strg = filter(lambda c: c not in "\'", strg)
+            jdl.append('+ExtDESIRED_Sites = \"%s\"\n' % strg)
+        else:
+            jdl.append('+ExtDESIRED_Sites = \"%s\"\n' %(jobCE))
 
         if job.get('proxyPath', None):
             jdl.append('x509userproxy = %s\n' % job['proxyPath'])
@@ -987,6 +1036,8 @@ class CondorPlugin(BasePlugin):
                    '-format', '(stateTime:\%s)  ', 'EnteredCurrentStatus',
                    '-format', '(runningTime:\%s)  ', 'JobStartDate',
                    '-format', '(submitTime:\%s)  ', 'QDate',
+                   '-format', '(DESIRED_Sites:\%s)  ', 'DESIRED_Sites',                   
+                   '-format', '(ExtDESIRED_Sites:\%s)  ', 'ExtDESIRED_Sites',                   
                    '-format', '(runningCMSSite:\%s)  ', 'MATCH_EXP_JOBGLIDEIN_CMSSite',
                    '-format', '(WMAgentID:\%d):::',  'WMAgent_JobID']
 

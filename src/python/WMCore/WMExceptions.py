@@ -41,7 +41,7 @@ WMJobErrorCodes = {50660 :
                    "No sites are available to submit the job because the location of its input(s)"
                    "do not pass the site whitelist/blacklist restrictions",
                    61102 :
-                   "The job can run only at a site that is currently in Aborted state",
+                   "The job can only run at a site that is currently in Aborted state",
                    61103 :
                    "The JobSubmitter component could not load the job pickle",
                    61104 :
@@ -49,7 +49,11 @@ WMJobErrorCodes = {50660 :
                    61300 :
                    "The job was killed by the WMAgent, reason is unknown.",
                    61301 :
-                   "The job was killed by the WMAgent because the site it was running at was set to Aborted"}
+                   "The job was killed by the WMAgent because the site it was running at was set to Aborted",
+                   61302 :
+                   "The job was killed by the WMAgent because the site it was running at was set to Draining",
+                   61303 :
+                   "The job was killed by the WMAgent because the site it was running at was set to Down"}
 
 """
 WMJobPermanentSystemErrors

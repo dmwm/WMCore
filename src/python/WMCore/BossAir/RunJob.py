@@ -25,11 +25,11 @@ class RunJob(dict):
                  userrole = '', plugin = None,
                  cache_dir = None, status_time = None, packageDir = None,
                  sandbox = None, priority = None, site_cms_name = None,
-                 taskType = None, possibleSites = [], sw_version = None,
+                 taskType = None, possibleSites = None, sw_version = None,
                  scram_arch = None, siteName = None, jobName = None,
                  proxyPath = None, requestName = None, jobTime = None,
                  diskUsage = None, memoryUsage = None, taskPriority = None,
-                 taskName = None):
+                 taskName = None, potentialSites = None):
         """
         Just make sure you init the dictionary fields.
 
@@ -68,6 +68,7 @@ class RunJob(dict):
         self.setdefault('estimatedMemoryUsage', memoryUsage)
         self.setdefault('taskPriority', taskPriority)
         self.setdefault('taskName', taskName)
+        self.setdefault('potentialSites', potentialSites)
 
         return
 

@@ -268,3 +268,9 @@ class MockPlugin(BasePlugin):
 
     def __del__(self):
         self.close(self.myinput, None)
+
+    def updateSiteInformation(self, jobs, siteName, excludeSite) :
+        """
+        almost do nothing
+        """
+        return jobs

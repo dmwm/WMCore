@@ -288,7 +288,6 @@ class JobSubmitterPoller(BaseWorkerThread):
                 self.sendAlert(6, msg = msg)
                 raise JobSubmitterPollerException(msg)
 
-
             loadedJob['retry_count'] = newJob['retry_count']
 
             # Grab the possible locations
@@ -299,6 +298,10 @@ class JobSubmitterPoller(BaseWorkerThread):
             possibleLocations = set()
             rawLocations      = loadedJob["input_files"][0]["locations"]
 
+            # Create another set of locations that may change when a site goes white/black listed
+            # Does not care about the non_draining or aborted sites, they may change and that is the point
+            potentialLocations = set()
+
             # Transform se into siteNames
             for loc in rawLocations:
                 if not loc in self.siteKeys.keys():
@@ -308,6 +311,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 else:
                     for siteName in self.siteKeys[loc]:
                         possibleLocations.add(siteName)
+                        potentialLocations.add(siteName)
 
             if len(loadedJob["siteWhitelist"]) > 0:
                 whiteList = []
@@ -320,6 +324,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                     blackList.extend(self.cmsNames.get(cmsName, []))
                 possibleLocations = possibleLocations - set(blackList)
 
+            potentialLocations.update(possibleLocations)
             if len(possibleLocations) == 0:
                 newJob['name'] = loadedJob['name']
                 badJobs[61101].append(newJob)
@@ -385,7 +390,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                        loadedJob.get("estimatedJobTime", None),
                        loadedJob.get("estimatedDiskUsage", None),
                        loadedJob.get("estimatedMemoryUsage", None),
-                       newJob['task_name'])
+                       newJob['task_name'],
+                       frozenset(potentialLocations),)
 
             self.jobDataCache[workflowName][jobID] = jobInfo
 
@@ -665,6 +671,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                     possibleSites = cachedJob[8]
                     possibleSiteList = list(possibleSites)
                     fakeAssignedSiteName = random.choice(possibleSiteList)
+                    potentialSites = cachedJob[18]
 
                     # Create a job dictionary object
                     jobDict = {'id': cachedJob[0],
@@ -687,7 +694,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'estimatedDiskUsage' : cachedJob[15],
                                'estimatedMemoryUsage' : cachedJob[16],
                                'taskPriority' : self.workflowPrios[workflow],
-                               'taskName' : cachedJob[17]}
+                               'taskName' : cachedJob[17],
+                               'potentialSites' : potentialSites}
 
                     # Add to jobsToSubmit
                     jobsToSubmit[package].append(jobDict)

@@ -143,6 +143,9 @@ class LocalCouchDBData():
             data[x['key'][0]].setdefault('tasks', {})
             data[x['key'][0]]['tasks'].setdefault(x['key'][1], {}) 
             data[x['key'][0]]['tasks'][x['key'][1]].setdefault('sites', {})
+            if x['key'][2] == {}:
+                logging.warning("site information is missing (ignore and continue - investigate): %s" % x)
+                continue
             data[x['key'][0]]['tasks'][x['key'][1]]['sites'][x['key'][2]] = x['value']
             data[x['key'][0]]['tasks'][x['key'][1]]['sites'][x['key'][2]].setdefault('dataset', {})
             if x['key'][3]:
@@ -351,6 +354,8 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
 
         doc['timestamp'] = uploadTime
         #doc['output_progress'] = fwjrInfo.get(request, [])
+        #if task is not specified set default
+        doc.setdefault('tasks', {})
         if request in fwjrInfo:
             doc['tasks'] = combineAnalyticsData(doc['tasks'], fwjrInfo[request]['tasks'])
         if request in finishedTasks:

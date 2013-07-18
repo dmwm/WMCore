@@ -127,14 +127,20 @@ dependencies = {'wmc-rest':{
                         'modules': ['WMCore.FwkJobReport.FileInfo', 'WMCore.Services.Requests',
                                     'WMCore.Services.Service', 'WMCore.Services.pycurl_manager'],
                         },
+                'crabtaskworker':{
+                        'packages':['WMCore..WorkQueue', 'WMCore.Credential', 'WMCore.Algorithms+',
+                                     'WMCore.JobSplitting', 'WMCore.Services.SiteDB+', 'WMCore.Services.DBS+'],
+                        'modules': ['WMCore.WMBS.File', 'WMCore.WMBS.WMBSBase', 'WMCore.WMBS.__init__'],
+                        'systems': ['wmc-database'],
+                        },
                 'wmclient':{
                         'systems': ['wmc-runtime', 'wmc-database']
                         },
                 'reqmon':{
-                        'statics': ['src/couchapps/WMStats+', 
+                        'statics': ['src/couchapps/WMStats+',
                                     'src/couchapps/WorkloadSummary+'],
                         },
-                'alertscollector': 
+                'alertscollector':
                 {
                         'statics': ['src/couchapps/AlertsCollector+'],
                 },

@@ -386,14 +386,20 @@ def update_software(config_file):
         return
     
     # now compare recent data from tag collector and what we already have stored
-    if all_archs_and_versions != sw_already_stored:
+    # sorting is necessary
+    if sorted(all_archs_and_versions) != sorted(sw_already_stored):
         logging.debug("ScramArch/CMSSW releases changed, updating software document ...")
         doc = Document(id="software", inputDict=all_archs_and_versions)
         couchdb.commitOne(doc)
+    """
         # TODO
-        # remove this, only to observe differences during update attempts
+        # this is only to observe differences during update attempts
+        # reference: https://github.com/dmwm/WMCore/issues/4715
         #msg = ("Really changed? Compare:\n"
         #       "sw_already_stored:\n%s\n"
         #       "all_archs_and_versions (returned from TC):\n%s\n" %
         #       (sw_already_stored, all_archs_and_versions))
         #print msg
+    else:
+        print "CMSSW versions identical, no database update necessary."
+    """

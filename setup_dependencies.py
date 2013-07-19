@@ -128,7 +128,7 @@ dependencies = {'wmc-rest':{
                                     'WMCore.Services.Service', 'WMCore.Services.pycurl_manager'],
                         },
                 'crabtaskworker':{
-                        'packages':['WMCore..WorkQueue', 'WMCore.Credential', 'WMCore.Algorithms+',
+                        'packages':['WMCore..WorkQueue', 'WMCore.Credential', 'WMCore.Algorithms+', 'WMCore.WMSpec+',
                                      'WMCore.JobSplitting', 'WMCore.Services.SiteDB+', 'WMCore.Services.DBS+'],
                         'modules': ['WMCore.WMBS.File', 'WMCore.WMBS.WMBSBase', 'WMCore.WMBS.__init__'],
                         'systems': ['wmc-database'],

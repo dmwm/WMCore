@@ -892,7 +892,7 @@ class TaskArchiverTest(unittest.TestCase):
             return
         # Request will be only interesting for performance if it's a ReReco or PromptReco
         (isReReco, isPromptReco) = (False, False)
-        if getattr(workload.data.request.schema, "RequestType", None) == 'ReReco':
+        if workload.getRequestType() == 'ReReco':
             isReReco=True
         # Yes, few people like magic strings, but have a look at :
         # https://github.com/dmwm/T0/blob/master/src/python/T0/RunConfig/RunConfigAPI.py#L718

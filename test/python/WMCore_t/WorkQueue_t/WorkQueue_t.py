@@ -1287,7 +1287,16 @@ class WorkQueueTest(WorkQueueTestCase):
         existing_wf = [x['RequestName'] for x in self.localQueue.statusInbox()]
         self.assertEqual(1, len(existing_wf))
         existing_wf = existing_wf[0]
-        rc = ResourceControl()
+        bossAirConfig = Configuration()
+        bossAirConfig.section_("BossAir")
+        bossAirConfig.BossAir.pluginDir = "WMCore.BossAir.Plugins"
+        bossAirConfig.BossAir.pluginNames = []
+        bossAirConfig.section_("Agent")
+        bossAirConfig.Agent.agentName = "TestAgent"
+        bossAirConfig.section_("JobStateMachine")
+        bossAirConfig.JobStateMachine.couchurl = os.environ["COUCHURL"]
+        bossAirConfig.JobStateMachine.couchDBName = "testcouchdb"
+        rc = ResourceControl(bossAirConfig)
         rc.changeSiteState('T2_XX_SiteA', 'Draining')
         rc.changeSiteState('T2_XX_SiteB', 'Draining')
         # pull more work, no work should be acquired

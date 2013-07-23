@@ -122,9 +122,9 @@ class EventBased(JobFactory):
                 else:
                     if acdcFileList:
                         if f['lfn'] in [x['lfn'] for x in acdcFileList]:
-                            self.createACDCJobs(f, acdcFileList,
-                                                timePerEvent, sizePerEvent, memoryRequirement,
-                                                lheInput)
+                            totalJobs = self.createACDCJobs(f, acdcFileList,
+                                                            timePerEvent, sizePerEvent, memoryRequirement,
+                                                            lheInput, totalJobs)
                         continue
                     #This assumes there's only one run which is the case for MC
                     lumis = runs[0].lumis
@@ -184,14 +184,13 @@ class EventBased(JobFactory):
 
     def createACDCJobs(self, fakeFile, acdcFileInfo,
                        timePerEvent, sizePerEvent, memoryRequirement,
-                       lheInputOption):
+                       lheInputOption, totalJobs = 0):
         """
         _createACDCJobs_
 
         Create ACDC production jobs, this are treated differentely
         since it is an exact copy of the failed jobs.
         """
-        totalJobs = 0
         for acdcFile in acdcFileInfo:
             if fakeFile['lfn'] == acdcFile['lfn']:
                 self.newJob(name = self.getJobName(length = totalJobs))
@@ -207,4 +206,4 @@ class EventBased(JobFactory):
                                                      memory = memoryRequirement,
                                                      disk = diskRequired)
                 totalJobs += 1
-        return
+        return totalJobs

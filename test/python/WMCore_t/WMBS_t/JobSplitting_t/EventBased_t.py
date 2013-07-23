@@ -169,16 +169,15 @@ class EventBasedTest(unittest.TestCase):
 
     def generateFakeMCFile(self, numEvents = 100, firstEvent = 1,
                            lastEvent = 100, firstLumi = 1, lastLumi = 10,
-                           index = 1):
+                           index = 1, existingSub = None):
         """
         _generateFakeMCFile_
 
         Generates a fake MC file for testing production EventBased
-        creation of jobs
+        creation of jobs, it creates a single file subscription if no
+        existing subscription is provided.
         """
-        # MC comes with only one MCFakeFile
-        singleMCFileset = Fileset(name = "MCTestFileset-%i" % index)
-        singleMCFileset.create()
+        # MC comes with MCFakeFile(s)
         newFile = File("MCFakeFile-some-hash-%s" % str(index).zfill(5), size = 1000,
                        events = numEvents,
                        locations = set(["somese.cern.ch"]))
@@ -186,18 +185,24 @@ class EventBasedTest(unittest.TestCase):
         newFile["first_event"] = firstEvent
         newFile["last_event"] = lastEvent
         newFile.create()
-        singleMCFileset.addFile(newFile)
-        singleMCFileset.commit()
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+        if existingSub is None:
+            singleMCFileset = Fileset(name = "MCTestFileset-%i" % index)
+            singleMCFileset.create()
+            singleMCFileset.addFile(newFile)
+            singleMCFileset.commit()
+            testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = "Test")
-        testWorkflow.create()
-
-        singleMCFileSubscription = Subscription(fileset = singleMCFileset,
-                                                workflow = testWorkflow,
-                                                split_algo = "EventBased",
-                                                type = "Production")
-        singleMCFileSubscription.create()
-        return singleMCFileSubscription
+            testWorkflow.create()
+            singleMCFileSubscription = Subscription(fileset = singleMCFileset,
+                                                    workflow = testWorkflow,
+                                                    split_algo = "EventBased",
+                                                    type = "Production")
+            singleMCFileSubscription.create()
+            return singleMCFileSubscription
+        else:
+            existingSub['fileset'].addFile(newFile)
+            existingSub['fileset'].commit()
+            return existingSub
 
     def testExactEvents(self):
         """
@@ -523,8 +528,10 @@ class EventBasedTest(unittest.TestCase):
         Test the ability of the EventBased algorithm of creating
         jobs from ACDC correctly
         """
-        self.populateACDCCouch()
+        self.populateACDCCouch(numFiles = 4)
         mcSubscription = self.generateFakeMCFile(20000, 1, 20001, 1, 8750, 0)
+        mcSubscription = self.generateFakeMCFile(20000, 1, 20001, 8751, 17500, 1, mcSubscription)
+        mcSubscription = self.generateFakeMCFile(20000, 1, 20001, 17501, 26250, 2, mcSubscription)
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = mcSubscription)
@@ -537,11 +544,10 @@ class EventBasedTest(unittest.TestCase):
 
         self.assertEqual(1, len(jobGroups))
         jobGroup = jobGroups[0]
-        self.assertEqual(250, len(jobGroup.jobs))
+        self.assertEqual(750, len(jobGroup.jobs))
 
         for job in jobGroup.jobs:
             self.assertEqual(1, len(job["input_files"]))
-            self.assertEqual("MCFakeFile-some-hash-00000", job["input_files"][0]["lfn"])
             mask = job["mask"]
             self.assertEqual(35, mask["LastLumi"] - mask["FirstLumi"])
             self.assertEqual(20000, mask["LastEvent"] - mask["FirstEvent"])

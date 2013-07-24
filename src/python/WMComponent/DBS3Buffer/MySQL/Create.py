@@ -81,7 +81,7 @@ class Create(DBCreator):
           """CREATE TABLE dbsbuffer_workflow (
                id                           INTEGER PRIMARY KEY AUTO_INCREMENT,
                name                         VARCHAR(255),
-               task                         VARCHAR(1100),
+               task                         VARCHAR(550),
                block_close_max_wait_time    INTEGER UNSIGNED,
                block_close_max_files        INTEGER UNSIGNED,
                block_close_max_events       INTEGER UNSIGNED,

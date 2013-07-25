@@ -148,7 +148,7 @@ def procversion(candidate):
 
 def procstring(candidate):
     """ Identifier """
-    return identifier(candidate)
+    return check(r'[a-zA-Z0-9_]{1,100}$', candidate)
 
 def acqname(candidate):
     """

@@ -230,7 +230,7 @@ class Create(CreateWMBSBase):
                id    INTEGER      NOT NULL,
                spec  VARCHAR(500) NOT NULL,
                name  VARCHAR(255) NOT NULL,
-               task  VARCHAR(550) NOT NULL,
+               task  VARCHAR(500) NOT NULL,
                type  VARCHAR(255),
                owner INTEGER      NOT NULL,
                alt_fs_close INTEGER NOT NULL,

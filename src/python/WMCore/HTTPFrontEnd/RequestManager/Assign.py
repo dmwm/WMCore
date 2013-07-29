@@ -292,6 +292,17 @@ class Assign(WebAPI):
         helper.setProcessingVersion(kwargs["ProcessingVersion"])
         helper.setAcquisitionEra(kwargs["AcquisitionEra"])
         helper.setProcessingString(kwargs.get("ProcessingString", None))
+
+        # Now verify the output datasets
+        outputDatasets = helper.listOutputDatasets()
+        for dataset in outputDatasets:
+            tokens = dataset.split("/")
+            procds = tokens[2]
+            try:
+                WMCore.Lexicon.procdataset(procds)
+            except AssertionError:
+                raise cherrypy.HTTPError(400, "Bad output dataset name, check the processed dataset.")
+
         #FIXME not validated
         helper.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
         helper.setMergeParameters(int(kwargs.get("MinMergeSize", 2147483648)),

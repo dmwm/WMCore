@@ -67,7 +67,10 @@ class StdBase(object):
         argumentDefinition = self.getWorkloadArguments()
         for arg in argumentDefinition:
             if arg in arguments:
-                setattr(self, argumentDefinition[arg]["attr"], argumentDefinition[arg]["type"](arguments[arg]))
+                if arguments[arg] is None:
+                    setattr(self, argumentDefinition[arg]["attr"], arguments[arg])
+                else:
+                    setattr(self, argumentDefinition[arg]["attr"], argumentDefinition[arg]["type"](arguments[arg]))
             elif argumentDefinition[arg]["optional"]:
                 setattr(self, argumentDefinition[arg]["attr"], argumentDefinition[arg]["default"])
 

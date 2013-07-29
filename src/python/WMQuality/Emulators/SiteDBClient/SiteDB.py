@@ -84,29 +84,15 @@ class SiteDBJSON(object):
 
     def cmsNametoCE(self, cmsName):
         """
-        Convert CMS name to list of CEs
+        Convert CMS name (also pattern) to list of CEs
         """
-        try:
-            sitenames = filter(lambda x: x['type']=='cms' and x['alias']==cmsName, self._sitenames())[0]
-        except IndexError:
-            return []
-        siteresources = filter(lambda x: x['site_name']==sitenames['site_name'], self._siteresources())
-        ceList = filter(lambda x: x['type']=='CE', siteresources)
-        ceList = map(lambda x: x['fqdn'], ceList)
-        return ceList
+        return self.cmsNametoList(cmsName, 'CE')
 
     def cmsNametoSE(self, cmsName):
         """
-        Convert CMS name to list of SEs
+        Convert CMS name (also pattern) to list of SEs
         """
-        try:
-            sitenames = filter(lambda x: x['type']=='cms' and x['alias']==cmsName, self._sitenames())[0]
-        except IndexError:
-            return []
-        siteresources = filter(lambda x: x['site_name']==sitenames['site_name'], self._siteresources())
-        seList = filter(lambda x: x['type']=='SE', siteresources)
-        seList = map(lambda x: x['fqdn'], seList)
-        return seList
+        return self.cmsNametoList(cmsName, 'SE')
 
     def getAllCENames(self):
         """
@@ -144,29 +130,38 @@ class SiteDBJSON(object):
         cmsnames = map(lambda x: x['alias'], cmsnames)
         return cmsnames
 
-    def cmsNametoList(self, cmsname_pattern, kind, file):
+    def cmsNametoList(self, cmsname_pattern, kind, file=None):
         """
         Convert CMS name pattern T1*, T2* to a list of CEs or SEs. The file is
         for backward compatibility with SiteDBv1
         """
         cmsname_pattern = cmsname_pattern.replace('*','.*')
+        cmsname_pattern = cmsname_pattern.replace('%','.*')
         cmsname_pattern = re.compile(cmsname_pattern)
 
-        result = []
-        if kind=='CE':
-            for ce in self.getAllCENames():
-                cmsNames = self.seToCMSName(ce)
-                if any(cmsname_pattern.match(cmsName) for cmsName in cmsNames):
-                    result.append(ce)
-        elif kind=='SE':
-            for se in self.getAllSENames():
-                cmsNames = self.seToCMSName(se)
-                if any(cmsname_pattern.match(cmsName) for cmsName in cmsNames):
-                    result.append(se)
-        else:
-            raise NotImplemented('cmsNametoList for kind: %s is not yet implemented' % (kind))
+        sitenames = filter(lambda x: x['type']=='cms' and cmsname_pattern.match(x['alias']),
+                           self._sitenames())
+        sitenames = set(map(lambda x: x['site_name'], sitenames))
+        siteresources = filter(lambda x: x['site_name'] in sitenames, self._siteresources())
+        hostlist = filter(lambda x: x['type']==kind, siteresources)
+        hostlist = map(lambda x: x['fqdn'], hostlist)
 
-        return set(result)
+        return hostlist
+
+    def ceToCMSName(self, ce):
+        """
+        Convert SE name to the CMS Site they belong to,
+        this is not a 1-to-1 relation but 1-to-many, return a list of cms site alias
+        """
+        try:
+            siteresources = filter(lambda x: x['fqdn']==ce, self._siteresources())
+        except IndexError:
+            return None
+        siteNames = []
+        for resource in siteresources:
+            siteNames.extend(self._sitenames(sitename=resource['site_name']))
+        cmsname = filter(lambda x: x['type']=='cms', siteNames)
+        return [x['alias'] for x in cmsname]
 
     def seToCMSName(self, se):
         """
@@ -194,7 +189,6 @@ class SiteDBJSON(object):
         phedexnames = filter(lambda x: x['type']=='phedex' and x['site_name']==sitename, sitenames)
         phedexnames = map(lambda x: x['alias'], phedexnames)
         return phedexnames
-
 
     def phEDExNodetocmsName(self, node):
         """

@@ -55,6 +55,14 @@ class SiteDBTest(unittest.TestCase):
         results = self.mySiteDB.cmsNametoSE("T1_UK_RAL")
         self.failUnless(sorted(results) == sorted(target))
 
+    def testCmsNamePatterntoSE(self):
+        """
+        Tests CmsNamePatterntoSE
+        """
+        target = ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']
+        results = self.mySiteDB.cmsNametoSE("%T2_XX")
+        self.failUnless(sorted(results) == sorted(target))
+
     def testSEtoCmsName(self):
         """
         Tests CmsNametoSE
@@ -73,6 +81,14 @@ class SiteDBTest(unittest.TestCase):
         target = ['lcgce11.gridpp.rl.ac.uk', 'lcgce10.gridpp.rl.ac.uk',
                   'lcgce02.gridpp.rl.ac.uk']
         results = self.mySiteDB.cmsNametoCE("T1_UK_RAL")
+        self.failUnless(sorted(results) == sorted(target))
+
+    def testCmsNamePatterntoCE(self):
+        """
+        Tests CmsNamePatterntoCE
+        """
+        target = ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']
+        results = self.mySiteDB.cmsNametoCE("%T2_XX")
         self.failUnless(sorted(results) == sorted(target))
 
     def testDNUserName(self):

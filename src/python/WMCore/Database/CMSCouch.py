@@ -16,6 +16,7 @@ import urllib
 import re
 import hashlib
 import base64
+import logging
 from httplib import HTTPException
 from datetime import timedelta, datetime
 
@@ -956,3 +957,99 @@ class CouchForbidden(CouchError):
     def __init__(self, reason, data, result):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchForbidden"
+
+
+class CouchMonitor(object):
+    
+    def __init__(self, couchURL):
+        self.couchServer = CouchServer(couchURL)
+        self.replicatorDB = self.couchServer.connectDatabase('_replicator', False)
+        # this is set {source: {taget: update_sequence}}
+        self.previousUpdateSequence  = {}
+    
+    def deleteReplicatorDocs(self, source, target, repDocs = None):
+        if repDocs == None:
+            repDocs = self.replicatorDB.allDocs(options={'include_docs': True})['rows']
+        
+        filteredDocs = self._filterReplicationDocs(repDocs, source, target)
+        if len(filteredDocs) == 0:
+            return 
+        for doc in filteredDocs:
+            self.replicatorDB.queueDelete(doc)
+        return self.replicatorDB.commit()
+    
+    def _filterReplicationDocs(self, repDocs, source, target):
+        filteredDocs = []
+        for j in repDocs:
+            if not j['id'].startswith('_'):
+                if j['doc']['source'] == source and j['doc']['target'] == target:
+                    doc = {}
+                    doc["_id"]  = j['id']
+                    doc["_rev"] = j['value']['rev']
+                    doc["_replication_state"] = j["doc"]["_replication_state"]
+                    filteredDocs.append(doc)
+        return filteredDocs
+    
+    def getPreviousUpdateSequence(self, source, target):
+        targetDict = self.previousUpdateSequence.setdefault(source, {})
+        return targetDict.setdefault(target, 0)
+    
+    def setPreviousUpdateSequence(self, source, target, updateSeq):
+        self.previousUpdateSequence[source][target] = updateSeq
+        
+    def recoverReplicationErrors(self, source, target):
+        previousUpdateNum = self.getPreviousUpdateSequence(source, target)
+        
+        couchInfo = self.checkCouchServerStatus(source, target, previousUpdateNum)
+        if (couchInfo['status'] == 'error'):
+            logging.info("Deleting the replicator documents ...")
+            self.deleteReplicatorDocs(source, target)
+            logging.info("Setting the replication to central monitor ...")
+            self.couchServer.replicate(source, target, continuous = True,
+                                   filter = 'WMStats/repfilter', useReplicator = True)
+            couchInfo = self.checkCouchServerStatus(source, target, previousUpdateNum)
+        #if (couchInfo['status'] != 'down'):
+        #    restart couch server
+        return couchInfo
+
+    
+    def checkCouchServerStatus(self, source, target, previousUpdateNum):
+        try:
+            dbInfo =  self.couchServer.get("/%s" % source)
+            activeTasks = self.couchServer.get("/_active_tasks")
+            replicationFlag = False
+            passwdStrippedURL = target.split("@")[-1]
+            
+            for activeStatus in activeTasks:
+                if activeStatus["type"] == "Replication":
+                    if passwdStrippedURL in activeStatus["task"]:
+                        replicationFlag = self.checkReplicationStatus(activeStatus, 
+                                                    dbInfo, source, target, previousUpdateNum)
+                        break
+            
+            if replicationFlag:
+                return {'status': 'ok'}
+            else:
+                return {'status':'error', 'error_message': "replication stopped"}
+        except Exception, ex:
+            import traceback
+            msg = traceback.format_exc() 
+            logging.debug(msg)
+            return {'status':'down', 'error_message': str(ex)}
+    
+    def checkReplicationStatus(self, activeStatus, dbInfo, source, target, previousUpdateNum):
+        """
+        adhog way to check the replication
+        """
+        
+        logging.info("checking the replication status")
+        if "Starting" in activeStatus["status"]:
+            logging.info("Starting status: ok")
+            return True
+        elif "update" in activeStatus["status"]:
+            updateNum = int(activeStatus["status"].split('#')[-1])
+            self.setPreviousUpdateSequence(source, target, updateNum)
+            if updateNum == dbInfo["update_seq"] or updateNum > previousUpdateNum:
+                logging.info("update upto date: ok")
+                return True
+        return False

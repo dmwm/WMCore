@@ -5,11 +5,11 @@ WMStats.namespace('JobDetailList');
         return "<b>" + state['newstate'] + ":</b> " + 
                 WMStats.Utils.utcClock(new Date(state['timestamp'] * 1000)) + 
                 ",  " + state['location'];
-    }
+    };
     
     var inputFileFormat = function(inputFile) {
         return inputFile['lfn'];
-    }
+    };
     
     var lumiFormat = function(lumis) {
         
@@ -18,9 +18,9 @@ WMStats.namespace('JobDetailList');
                lumiFormat.push("[" + startLumi + "]");
             } else {
                lumiFormat.push("[" + startLumi + " - " + preLumi + "]");
-            }    
-        }
-        
+            };
+        };
+
         var preLumi = null;
         var startLumi = null;
         var lumiFormat = new Array();
@@ -33,17 +33,17 @@ WMStats.namespace('JobDetailList');
                     } else if ((preLumi + 1) !== currentLumi) {
                             lumiRangeFormat();
                             startLumi = currentLumi;
-                    }
+                    };
                     preLumi = currentLumi;
-                }
-            }
-       }
+                };
+            };
+       };
        
        if (startLumi !== null) {
            lumiRangeFormat();
-       }
+       };
        return lumiFormat;
-    }
+    };
     
     var logArchiveFormat = function(archiveObj, key) {
         return key;

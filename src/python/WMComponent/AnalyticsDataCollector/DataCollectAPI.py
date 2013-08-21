@@ -8,12 +8,9 @@ JobInfoByID
 Retrieve information about a job from couch and format it nicely.
 """
 
-import sys
-import datetime
 import os
 import time
-import re
-import urllib
+from WMCore.Configuration import loadConfigurationFile
 import logging
 from WMCore.Agent.Daemon.Details import Details
 from WMCore.Database.CMSCouch import CouchServer
@@ -228,7 +225,6 @@ class WMAgentDBData():
 
         results = self.componentStatusAction.execute()
         currentTime = time.time()
-        agentStatus = "ok";
         agentInfo = {}
         agentInfo['down_components'] = []
 
@@ -276,6 +272,7 @@ class WMAgentDBData():
         agentInfo['down_components'] = list(agentInfo['down_components'])
         return agentInfo
         
+    
     def getBatchJobInfo(self):
         return self.batchJobAction.execute()
 
@@ -442,3 +439,8 @@ def _getCouchACDCHtmlBase(acdcCouchURL):
 
 
     return '%s/_design/ACDC/collections.html' % sanitizeURL(acdcCouchURL)['url']
+
+def isDrainMode():
+    configPath = os.getenv('WMAGENT_CONFIG')
+    config = loadConfigurationFile(configPath)
+    return config.WorkQueueManager.queueParams.get('DrainMode', False)

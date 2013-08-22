@@ -10,11 +10,12 @@ import logging
 import time
 import traceback
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from WMCore.Database.CMSCouch import CouchMonitor
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import LocalCouchDBData, \
      WMAgentDBData, combineAnalyticsData, convertToRequestCouchDoc, \
-     convertToAgentCouchDoc
+     convertToAgentCouchDoc, isDrainMode
 from WMCore.WMFactory import WMFactory
 
 class AnalyticsPoller(BaseWorkerThread):
@@ -58,6 +59,8 @@ class AnalyticsPoller(BaseWorkerThread):
         # set the connection for local couchDB call
         self.localSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL)
         self.centralWMStatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.centralWMStatsURL)
+        #TODO: change the config to hold couch url
+        self.localCouchServer = CouchMonitor(self.config.JobStateMachine.couchurl)
         
         if self.pluginName != None:
             pluginFactory = WMFactory("plugins", "WMComponent.AnalyticsDataCollector.Plugins")
@@ -128,7 +131,11 @@ class AnalyticsPoller(BaseWorkerThread):
     def collectAgentInfo(self):
         #TODO: agent info (need to include job Slots for the sites)
         # always checks couch first
-        couchInfo = self.recoverCouchErrors()
+        source = self.config.JobStateMachine.jobSummaryDBName
+        target = self.config.AnalyticsDataCollector.centralWMStatsURL
+        couchInfo = self.localCouchServer.recoverReplicationErrors(source, target)
+        logging.info("getting couchdb replication status: %s" % couchInfo)
+        
         agentInfo = self.wmagentDB.getComponentStatus(self.config)
         agentInfo.update(self.agentInfo)
         
@@ -137,6 +144,14 @@ class AnalyticsPoller(BaseWorkerThread):
             agentInfo['status'] = couchInfo['status']
             couchInfo['name'] = "CouchServer"
             agentInfo['down_component_detail'].append(couchInfo)
+        
+        if isDrainMode():
+            logging.info("Agent is in DrainMode")
+            agentInfo['drain_mode'] = True
+            agentInfo['status'] = "warning"
+        else:
+            agentInfo['drain_mode'] = False
+            
         return agentInfo
 
     def uploadAgentInfoToCentralWMStats(self, agentInfo, uploadTime):
@@ -145,31 +160,3 @@ class AnalyticsPoller(BaseWorkerThread):
         self.centralWMStatsCouchDB.updateAgentInfo(agentDocs)
         logging.info("Agent data direct upload success\n %s request" % len(agentDocs))
 
-    def checkLocalCouchServerStatus(self):
-        localCouchServer = self.localSummaryCouchDB.getServerInstance()
-        try:
-            status = localCouchServer.status()
-            replicationError = True
-            for activeStatus in status['active_tasks']:
-                if activeStatus["type"] == "Replication":
-                    if self.config.AnalyticsDataCollector.centralWMStatsURL in activeStatus["task"]:
-                        replicationError = False
-                        break
-            if replicationError:
-                return {'status':'error', 'error_message': "replication stopped"}
-            else:
-                return {'status': 'ok'}
-        except Exception, ex:
-            return {'status':'down', 'error_message': str(ex)}
-        
-    def recoverCouchErrors(self):
-        couchInfo = self.checkLocalCouchServerStatus()
-        if (couchInfo['status'] == 'error'):
-            logging.info("Deleting the replicator documents ...")
-            self.localSummaryCouchDB.deleteReplicatorDocs()
-            logging.info("Setting the replication to central monitor ...")
-            self.localSummaryCouchDB.replicate(self.config.AnalyticsDataCollector.centralWMStatsURL)
-            couchInfo = self.checkLocalCouchServerStatus()
-        #if (couchInfo['status'] != 'down'):
-        #    restart couch server
-        return couchInfo

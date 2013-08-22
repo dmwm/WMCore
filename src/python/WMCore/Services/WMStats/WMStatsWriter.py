@@ -177,7 +177,7 @@ class WMStatsWriter(WMStatsReader):
                 doc["_id"]  = j['id']
                 doc["_rev"] = j['value']['rev']
                 self.replicatorDB.queueDelete(doc)
-        committed = self.replicatorDB.commit()
+        return self.replicatorDB.commit()
 
     def deleteDocsByIDs(self, ids):
         docs = self.couchDB.allDocs(keys=ids)['rows']

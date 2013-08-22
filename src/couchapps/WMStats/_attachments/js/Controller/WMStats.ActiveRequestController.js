@@ -9,29 +9,29 @@ WMStats.namespace("ActiveRequestController");
     $(WMStats.Globals.Event).on(E.REQUESTS_LOADED, 
         function(event) {
             vm.propagateUpdate();
-        })
+        });
 
     $(WMStats.Globals.Event).on(E.AGENTS_LOADED, 
         function(event, agentData) {
             vm.propagateUpdate();
-        })
+        });
 
     $(WMStats.Globals.Event).on(E.JOB_SUMMARY_READY, 
         function(event, data) {
             vm.JobView.updateDataAndChild(data);
             //vm.AlertJobView.updateDataAndChild(data);
-        })
+        });
 
     $(WMStats.Globals.Event).on(E.JOB_DETAIL_READY, 
         function(event, data) {
             vm.JobDetail.data(data);
-        })
+        });
 
     $(WMStats.Globals.Event).on(E.RESUBMISSION_SUMMARY_READY, 
         function(event, data) {
-            var rData = vm.Resubmission.formatResubmissionData(data)
+            var rData = vm.Resubmission.formatResubmissionData(data);
             vm.Resubmission.data(rData);
-    })
+    });
 
     $(WMStats.Globals.Event).on(E.LOADING_DIV_START, 
         function(event, data) {
@@ -46,7 +46,7 @@ WMStats.namespace("ActiveRequestController");
     $(WMStats.Globals.Event).on(E.LOADING_DIV_END, 
         function(event, data) {
             $('#loading_page').hide();
-        })
+        });
         
     $(WMStats.Globals.Event).on(E.AJAX_LOADING_START, 
         function(event, data) {

@@ -83,11 +83,11 @@ WMStats.Requests = function(noFilterFlag) {
         var ignoreStatus = ["closed-out",
                             "announced",
                             "aborted",
-                            "rejected"] 
+                            "rejected"]; 
         for (var workflow in this.getData()) {
             var requestInfo = this.getData(workflow);
             // filter ignoreStatus
-            lastState = requestInfo.getLastState()
+            lastState = requestInfo.getLastState();
             if (ignoreStatus.indexOf(lastState) !== -1) continue;
             if (lastState == "failed" || lastState == "epic-FAILED") {
                 alertRequests['failed'].push(this.getData(workflow));
@@ -108,7 +108,7 @@ WMStats.Requests = function(noFilterFlag) {
             }
         }
         return alertRequests;
-    }
+    };
     
     
     tier1Requests.requestNotPulledAlert = function() {
@@ -125,20 +125,35 @@ WMStats.Requests = function(noFilterFlag) {
                 if ((currentTime - reqStatusInfo.update_time) > assignThreshold) {
                     alertRequests['assignedStall'].push(this.getData(workflow));
                 }
-            }
+            };
             //TODO: this needs to be redefined for several use case
             // since local queue is partially pulled check
             //localqueue not pulled case
             var twoDayThreshold = 3600 * 24 * 2; //2 days
-            if (status == "acquired" || status == "running-open" || 
-                status == "running-closed") {
+            var runningJobs = this.getSummary(workflow).getRunning();
+            if (runningJobs < 1 && (status == "acquired" || status == "running-open" || 
+                status == "running-closed")) {
                 if ((currentTime - reqStatusInfo.update_time) > twoDayThreshold) {
                     alertRequests['statusStall'].push(this.getData(workflow));
-                }
-            }
-        }
+                };
+            };
+        };
         return alertRequests;
-    }
+    };
 
+    tier1Requests.numOfRequestError = function() {
+    	var alertData = this.getRequestAlerts();
+    	var numError = {};
+    	numError.alert = 0;
+    	for (var error in alertData) {
+        	numError.alert += alertData[error].length;
+        };
+        var stallData = this.requestNotPulledAlert();
+        numError.stalled = 0;
+        for (var error in stallData) {
+        	numError.stalled += stallData[error].length;
+        };
+        return numError;
+    };
     return tier1Requests;
 };

@@ -9,7 +9,9 @@ WMStats.RequestAlertGUI = function (requestData, containerDiv) {
             for (var i in errorArray) {
                 var workflow = errorArray[i].getName();
                 var summary = errorArray[i].getSummary();
-                var cooloff = summary.getTotalCooloff()
+                var running = summary.getRunning();
+                var pending = summary.getPending();
+                var cooloff = summary.getTotalCooloff();
                 var failure =summary.getTotalFailure();
                 var success = summary.getJobStatus("success");
                 var lastState = errorArray[i].getLastStateAndTime();
@@ -21,7 +23,8 @@ WMStats.RequestAlertGUI = function (requestData, containerDiv) {
                 } 
                 htmlList += ('<li> <a class="requestAlert">' + workflow + "</a>: status:" + 
                              lastStatus + " (" + lastUpdate + "), cooloff " + cooloff + 
-                             " failure:" + failure + " success:" + success + '</li>');
+                             " failure:" + failure + " success:" + success +
+                             " running:" + running + " pending:" + pending + '</li>');
             }
             htmlList += "</ul></div></fieldset>";
             
@@ -37,7 +40,8 @@ WMStats.RequestAlertGUI = function (requestData, containerDiv) {
     var assignedStall = notPulledRequests.assignedStall;
     var statusStall = notPulledRequests.statusStall;
     var errorFlag = false;
-    var numError = configError.length + siteError.length + failed.length + assignedStall.length + statusStall;
+    var numError = (configError.length + siteError.length + failed.length + 
+                    assignedStall.length + statusStall.length);
     var htmlList = "";
     
     displayAlert(assignedStall, "assigned > 2h");

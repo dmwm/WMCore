@@ -3,20 +3,20 @@ WMStats.namespace("Agents");
 WMStats.Agents = function (couchData) {
     
     var agentData = new WMStats._StructBase();
-    agentData.agentNumber = {error: 0, stable:0}
+    agentData.agentNumber = {error: 0, stable:0};
     
     agentData.convertCouchData = function(data) {
                                      var dataRows = data.rows;
                                      var rows = [];
                                      for (var i in dataRows) {
                                          var tableRow = dataRows[i].value;
-                                         rows.push(tableRow)
-                                     }
+                                         rows.push(tableRow);
+                                     };
                                      return rows;
-                                 }
+                                };
     if (couchData) agentData.setData(couchData);
     
-    agentData.getAlertList = function() {
+    agentData.getAlertList = function(){
         var currentTime = Math.round(new Date().getTime() / 1000);
         var dataList = this.getData();
         var agentPollingCycle = 600;
@@ -32,20 +32,24 @@ WMStats.Agents = function (couchData) {
                 agentData.agentNumber.error += 1;
                 return {status: "component_down",
                         message: agentInfo.down_components};
+            } else if (agentInfo.drain_mode) {
+                agentData.agentNumber.error += 1;
+                return {status: "drain_mode",
+                        message: "Drain Mode"};
             } else {
                 agentData.agentNumber.stable += 1;
                 return {status: "ok", 
                         message: WMStats.Utils.foramtDuration(lastUpdatedDuration)};
-            } 
+            };
         };
         
         for (var index in dataList) {
             dataList[index]['alert'] = getStatus(dataList[index]);
-        }
+        };
         return dataList;
-    }
+    };
     // initial calculation
     agentData.getAlertList();
     
-    return agentData
+    return agentData;
 };

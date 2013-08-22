@@ -12,9 +12,9 @@ WMStats.namespace('WMStats.CategoryTitle');
         htmlstr += "</ul>";
         htmlstr += "</div>";
         return htmlstr;
-    }
+    };
     
     WMStats.CategoryTitle = function (data, containerDiv) {
          $(containerDiv).html(format(data));
-    }
+    };
 })();

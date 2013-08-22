@@ -67,7 +67,7 @@ class JobAccountantPoller(BaseWorkerThread):
         accountant worker.
         """
         completeJobs = self.getJobsAction.execute(state = "complete")
-        logging.info("Jobs: %s" % completeJobs)
+        logging.info("Found %d completed jobs" % len(completeJobs))
 
         if len(completeJobs) == 0:
             # Then we have no work to do.  Bye!

@@ -6,7 +6,7 @@ Standard ReReco workflow.
 """
 
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
-from WMCore.WMSpec.WMWorkloadTools import makeList, validateArguments
+from WMCore.WMSpec.WMWorkloadTools import makeList, validateArgumentsCreate
 
 class ReRecoWorkloadFactory(DataProcessing):
     """
@@ -248,7 +248,7 @@ class ReRecoWorkloadFactory(DataProcessing):
             for argument in skimArguments.keys():
                 realArg = argument.replace("#N", str(skimIndex))
                 instanceArguments[realArg] = skimArguments[argument]
-            msg = validateArguments(schema, instanceArguments)
+            msg = validateArgumentsCreate(schema, instanceArguments)
             if msg is not None:
                 self.raiseValidationException(msg)
 

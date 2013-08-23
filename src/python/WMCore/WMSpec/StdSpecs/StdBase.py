@@ -8,11 +8,11 @@ import logging
 
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 from WMCore.Configuration import ConfigSection
-from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname
+from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname, couchurl
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMException import WMException
 from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool, validateArguments
+from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool, validateArgumentsCreate
 
 analysisTaskTypes = ['Analysis', 'PrivateMC']
 
@@ -53,6 +53,7 @@ class StdBase(object):
         # Internal parameters
         self.workloadName = None
         self.multicoreNCores = None
+        self.schema = None
 
         return
 
@@ -64,15 +65,20 @@ class StdBase(object):
         method and pull out any that are setup by this base class.
         """
         self.workloadName = workloadName
+        self.schema = {}
         argumentDefinition = self.getWorkloadArguments()
         for arg in argumentDefinition:
             if arg in arguments:
                 if arguments[arg] is None:
                     setattr(self, argumentDefinition[arg]["attr"], arguments[arg])
                 else:
-                    setattr(self, argumentDefinition[arg]["attr"], argumentDefinition[arg]["type"](arguments[arg]))
+                    value = argumentDefinition[arg]["type"](arguments[arg])
+                    setattr(self, argumentDefinition[arg]["attr"], value)
+                    self.schema[arg] = value
             elif argumentDefinition[arg]["optional"]:
-                setattr(self, argumentDefinition[arg]["attr"], argumentDefinition[arg]["default"])
+                defaultValue = argumentDefinition[arg]["default"]
+                setattr(self, argumentDefinition[arg]["attr"], defaultValue)
+                self.schema[arg] = defaultValue
 
         # Definition of parameters that depend on the value of others
         if hasattr(self, "multicore") and self.multicore:
@@ -202,6 +208,8 @@ class StdBase(object):
         workload.setProcessingString(processingStrings = self.processingString)
         workload.setValidStatus(validStatus = self.validStatus)
         workload.setPriority(self.priority)
+        workload.setCampaign(self.campaign)
+        workload.setRequestType(self.requestType)
         return workload
 
     def setupProcessingTask(self, procTask, taskType, inputDataset = None, inputStep = None,
@@ -723,7 +731,7 @@ class StdBase(object):
         """
         # Validate the arguments according to the workload arguments definition
         argumentDefinition = self.getWorkloadArguments()
-        msg = validateArguments(schema, argumentDefinition)
+        msg = validateArgumentsCreate(schema, argumentDefinition)
         if msg is not None:
             self.raiseValidationException(msg)
         return
@@ -783,6 +791,9 @@ class StdBase(object):
             return outputModuleInfo
 
         return
+    
+    def getSchema(self):
+        return self.schema
 
     @staticmethod
     def getWorkloadArguments():
@@ -819,7 +830,9 @@ class StdBase(object):
 
         self.priority = arguments.get("RequestPriority", 0)
         """
-        arguments = {"RequestPriority": {"default" : 0, "type" : int,
+        arguments = {"RequestType" : {"default" : "unknown", "optional" : False,
+                                      "attr" : "requestType"},
+                     "RequestPriority": {"default" : 0, "type" : int,
                                          "optional" : False, "validate" : lambda x : (x >= 0 and x < 1e6),
                                          "attr" : "priority"},
                      "Requestor": {"default" : "unknown", "optional" : False,
@@ -831,6 +844,7 @@ class StdBase(object):
                      "VoGroup" : {"default" : "DEFAULT", "attr" : "owner_vogroup"},
                      "VoRole" : {"default" : "DEFAULT", "attr" : "owner_vorole"},
                      "AcquisitionEra" : {"default" : "None", "validate" : acqname},
+                     "Campaign" : {"default" : None, "optional" : True, "attr" : "campaign"},
                      "CMSSWVersion" : {"default" : "CMSSW_5_3_7", "validate" : cmsswversion,
                                        "optional" : False, "attr" : "frameworkVersion"},
                      "ScramArch" : {"default" : "slc5_amd64_gcc462", "optional" : False},
@@ -877,7 +891,56 @@ class StdBase(object):
                      "EnableNewStageout" : {"default" : False, "type" : strToBool},
                      "IncludeParents" : {"default" : False,  "type" : strToBool},
                      "Multicore" : {"default" : None, "null" : True,
-                                    "validate" : lambda x : x == "auto" or (int(x) > 0)}}
+                                    "validate" : lambda x : x == "auto" or (int(x) > 0)},
+                     
+                     #from assignment: performance monitoring data
+                     "MaxRSS" : {"default" : 2411724, "type" : int, "validate" : lambda x : x > 0},
+                     "MaxVSize" : {"default" : 20411724, "type" : int, "validate" : lambda x : x > 0},
+                     "SoftTimeout" : {"default" : 129600, "type" : int, "validate" : lambda x : x > 0},
+                     "GracePeriod" : {"default" : 300, "type" : int, "validate" : lambda x : x > 0},
+                     "UseSiteListAsLocation" : {"default" : False, "type" : bool},
+                     
+                     # Set phedex subscription information
+                     "CustodialSites" : {"default" : [], "type" : makeList,
+                                        "validate" : lambda x: all([cmsname(y) for y in x])},
+                     "NonCustodialSites" : {"default" : [], "type" : makeList,
+                                        "validate" : lambda x: all([cmsname(y) for y in x])},
+                     "AutoApproveSubscriptionSites" : {"default" : [], "type" : makeList,
+                                        "validate" : lambda x: all([cmsname(y) for y in x])},
+                     # should be Low, Normal, High
+                     "SubscriptionPriority" : {"default" : "Low", "type" : str,
+                                        "validate" : lambda x: all([cmsname(y) for y in x])},
+                     # shouldbe Move Replica  
+                     "CustodialSubType" : {"default" : "Move", "type" : str,
+                                        "validate" : lambda x: all([cmsname(y) for y in x])},
+                     
+                     # Block closing informaiont
+                     "BlockCloseMaxWaitTime" : {"default" : 66400, "type" : int, "validate" : lambda x : x > 0},
+                     "BlockCloseMaxFiles" : {"default" : 500, "type" : int, "validate" : lambda x : x > 0},
+                     "BlockCloseMaxEvents" : {"default" : 25000000, "type" : int, "validate" : lambda x : x > 0},
+                     "BlockCloseMaxSize" : {"default" : 5000000000000, "type" : int, "validate" : lambda x : x > 0},
+                     
+                     # dashboard activity
+                     "DashboardActivity" : {"default" : "", "type" : str},
+                     # team name
+                     "Team" : {"default" : "", "type" : str},
+                     
+                     # this is specified automatically by reqmgr.
+#                      "RequestName" : {"default" : "AnotherRequest", "type" : str,
+#                                      "optional" : False, "validate" : None,
+#                                      "attr" : "requestName", "null" : False},
+                     "CouchURL" : {"default" : "http://localhost:5984", "type" : str,
+                                 "optional" : False, "validate" : couchurl,
+                                 "attr" : "couchURL", "null" : False},
+                     "CouchDBName" : {"default" : "dp_configcache", "type" : str,
+                                    "optional" : True, "validate" : identifier,
+                                    "attr" : "couchDBName", "null" : False},
+                     "ConfigCacheUrl" : {"default" : None, "type" : str,
+                                       "optional" : True, "validate" : None,
+                                       "attr" : "configCacheUrl", "null" : True},
+                     "CouchWorkloadDBName" : {"default" : "reqmgr_workload_cache", "type" : str,
+                                    "optional" : False, "validate" : identifier,
+                                    "attr" : "couchWorkloadDBName", "null" : False}}
 
         # Set defaults for the argument specification
         for arg in arguments:

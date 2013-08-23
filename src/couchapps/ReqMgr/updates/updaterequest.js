@@ -1,9 +1,12 @@
 // update function
 // input: valueKey (what to change), value - new value
-function(doc, req)
-{
-    log(req);
-
+function(doc, req) {
+    
+	if (doc === null) {
+        log("Error: missing doc id - " + req.id);
+        return [null, "ERROR: request not found - " + req.id];
+    }
+    
     function updateTransition() {
         var currentTS =  Math.round((new Date()).getTime() / 1000);
         var statusObj = {"Status": doc.RequestStatus, "UpdateTime": currentTS};

@@ -55,7 +55,6 @@ class StdBase(object):
         self.workloadName = None
         self.multicoreNCores = None
         self.schema = None
-        self.config_cache = {}
 
         return
 

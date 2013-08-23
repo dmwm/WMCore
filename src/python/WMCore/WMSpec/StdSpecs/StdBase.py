@@ -8,7 +8,7 @@ import logging
 
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 from WMCore.Configuration import ConfigSection
-from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname
+from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname, couchurl
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMException import WMException
 from WMCore.WMSpec.WMWorkload import newWorkload
@@ -53,6 +53,7 @@ class StdBase(object):
         # Internal parameters
         self.workloadName = None
         self.multicoreNCores = None
+        self.schema = None
 
         return
 
@@ -64,15 +65,20 @@ class StdBase(object):
         method and pull out any that are setup by this base class.
         """
         self.workloadName = workloadName
+        self.schema = {}
         argumentDefinition = self.getWorkloadArguments()
         for arg in argumentDefinition:
             if arg in arguments:
                 if arguments[arg] is None:
                     setattr(self, argumentDefinition[arg]["attr"], arguments[arg])
                 else:
-                    setattr(self, argumentDefinition[arg]["attr"], argumentDefinition[arg]["type"](arguments[arg]))
+                    value = argumentDefinition[arg]["type"](arguments[arg])
+                    setattr(self, argumentDefinition[arg]["attr"], value)
+                    self.schema[arg] = value
             elif argumentDefinition[arg]["optional"]:
-                setattr(self, argumentDefinition[arg]["attr"], argumentDefinition[arg]["default"])
+                defaultValue = argumentDefinition[arg]["default"]
+                setattr(self, argumentDefinition[arg]["attr"], defaultValue)
+                self.schema[arg] = defaultValue
 
         # Definition of parameters that depend on the value of others
         if hasattr(self, "multicore") and self.multicore:
@@ -730,7 +736,7 @@ class StdBase(object):
         """
         # Validate the arguments according to the workload arguments definition
         argumentDefinition = self.getWorkloadArguments()
-        msg = validateArguments(schema, argumentDefinition)
+        msg = validateArgumentsCreate(schema, argumentDefinition)
         if msg is not None:
             self.raiseValidationException(msg)
         return
@@ -790,6 +796,9 @@ class StdBase(object):
             return outputModuleInfo
 
         return
+    
+    def getSchema(self):
+        return self.schema
 
     @staticmethod
     def getWorkloadArguments():
@@ -826,7 +835,9 @@ class StdBase(object):
 
         self.priority = arguments.get("RequestPriority", 0)
         """
-        arguments = {"RequestPriority": {"default" : 0, "type" : int,
+        arguments = {"RequestType" : {"default" : "unknown", "optional" : False,
+                                      "attr" : "requestType"},
+                     "RequestPriority": {"default" : 0, "type" : int,
                                          "optional" : False, "validate" : lambda x : (x >= 0 and x < 1e6),
                                          "attr" : "priority"},
                      "Requestor": {"default" : "unknown", "optional" : False,

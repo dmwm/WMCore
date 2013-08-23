@@ -88,14 +88,37 @@ def parsePileupConfig(mcPileup, dataPileup):
         pileUpConfig['data'] = [dataPileup]
     return pileUpConfig
 
-def validateArguments(arguments, argumentDefinition):
+def _validateArgument(argument, value, argumentDefinition):
+    validNull = argumentDefinition[argument]["null"]
+    if not validNull and value is None:
+        return "Argument %s can't be None" % argument
+    elif validNull and value is None:
+        return
+    
+    try:
+        argType = argumentDefinition[argument]["type"]
+        argType(value)
+    except Exception:
+        return "Argument %s type is incorrect in schema." % argument
+    validateFunction = argumentDefinition[argument]["validate"]
+    if validateFunction is not None:
+        try:
+            if not validateFunction(argType(value)):
+                raise Exception
+        except:
+            # Some validation functions (e.g. Lexicon) will raise errors instead of returning False
+            return "Argument %s doesn't pass validation." % argument
+    return
+
+def validateArgumentsCreate(arguments, argumentDefinition):
     """
     _validateArguments_
 
     Validate a set of arguments against and argument definition
     as defined in StdBase.getWorkloadArguments. It returns
     an error message if the validation went wrong,
-    otherwise returns None
+    otherwise returns None, this is used for spec creation 
+    checks the whether argument is optional as well as validation
     """
     for argument in argumentDefinition:
         optional = argumentDefinition[argument]["optional"]
@@ -122,3 +145,25 @@ def validateArguments(arguments, argumentDefinition):
                 # Some validation functions (e.g. Lexicon) will raise errors instead of returning False
                 return "Argument %s doesn't pass validation. %s" % (argument, convertedArg)
     return
+
+def setArgumentsNoneValueWithDefault(arguments, argumentDefinition):
+    """
+    sets the default value if arguments value is specified as None
+    """
+    for argument in arguments:
+        if arguments[argument] == None:
+            argumentDefinition[argument]["default"]
+    return
+
+def loadSpecClassByType(specType):        
+    factoryName = "%sWorkloadFactory" % specType
+    mod = __import__("WMCore.WMSpec.StdSpecs.%s" % specType,
+                     globals(), locals(), [factoryName])
+    specClass = getattr(mod, factoryName)
+    
+    return specClass
+
+def loadSpecByType(specType):        
+    specClass = loadSpecClassByType(specType)
+    return specClass()
+

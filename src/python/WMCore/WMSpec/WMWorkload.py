@@ -9,6 +9,8 @@ of related tasks.
 from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop
 from WMCore.WMSpec.Persistency import PersistencyHelper
+from WMCore.WMSpec.WMWorkloadTools import validateArgumentsUpdate, \
+                        loadSpecClassByType, setArgumentsNoneValueWithDefault
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 from WMCore.Lexicon import lfnBase, sanitizeURL
 from WMCore.WMException import WMException
@@ -87,6 +89,12 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data._internal_name = workloadName
         return
 
+    def requestType(self):
+        return self.data.requstType
+    
+    def setRequestType(self, requestType):
+        self.data.requstType = requestType
+        
     def getInitialJobCount(self):
         """
         _getInitialJobCount_
@@ -1624,6 +1632,112 @@ class WMWorkloadHelper(PersistencyHelper):
         for task in self.getTopLevelTask():
             return task.inputLocationFlag()
         return False
+    
+    def validateArgument(self, schema):
+        specClass = loadSpecClassByType(self.requestType())
+        argumentDefinition = specClass.getWorkloadArguments()
+        msg = validateArgumentsUpdate(schema, argumentDefinition)
+        if msg is not None:
+            from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
+            raise WMSpecFactoryException(message = msg)
+        return
+    
+    def _checkKeys(self, kwargs, keys):
+        """
+        check whether list of keys exist in the kwargs 
+        if no keys exist return False
+        if all keys exist return True
+        if partial keys exsit raise Exception
+        """
+        if type(keys) == str:
+            keys = [keys]
+        validKey = 0
+        for key in keys:
+            if kwargs.has_key(key):
+                validKey += 1
+        if validKey == 0:
+            return False
+        elif validKey == len(keys):
+            return True
+        else:
+            #TODO raise proper exception
+            raise Exception("not all the key is specified %s" % keys)
+         
+    def updateArguments(self, kwargs, wildcardSites = {}):
+        """
+        set up all the argument related to assigning request.
+        args are validated before update.
+        assignment is common for all different types spec.
+        """
+        
+        specClass = loadSpecClassByType(self.requestType())
+        argumentDefinition = specClass.getWorkloadArguments()
+        setArgumentsNoneValueWithDefault(kwargs, argumentDefinition)
+        
+        if self._checkKeys(kwargs, ["SiteWhitelist", "SiteBlacklist"]):
+            self.setSiteWildcardsLists(siteWhitelist = kwargs["SiteWhitelist"], 
+                                       siteBlacklist = kwargs["SiteBlacklist"],
+                                       wildcardDict = wildcardSites)
+        # Set ProcessingVersion and AcquisitionEra, which could be json encoded dicts
+        if self._checkKeys(kwargs, "ProcessingVersion"):
+            self.setProcessingVersion(kwargs["ProcessingVersion"])
+        if self._checkKeys(kwargs, "AcquisitionEra"):
+            self.setAcquisitionEra(kwargs["AcquisitionEra"])
+        if self._checkKeys(kwargs, "ProcessingString"):    
+            self.setProcessingString(kwargs["ProcessingString"])
+        
+        #FIXME not validated
+        if self._checkKeys(kwargs, ["MergedLFNBase", "MergedLFNBase"]):
+            self.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
+        
+        if self._checkKeys(kwargs, ["MinMergeSize", "MaxMergeSize", "MaxMergeEvents"]):
+            self.setMergeParameters(int(kwargs["MinMergeSize"]),
+                                    int(kwargs["MaxMergeSize"]),
+                                    int(kwargs["MaxMergeEvents"]))
+        
+        if self._checkKeys(kwargs, ["MaxRSS", "MaxVSize", "SoftTimeout", "GracePeriod"]):              
+            self.setupPerformanceMonitoring(int(kwargs["MaxRSS"]),
+                                          int(kwargs["MaxVSize"]),
+                                          int(kwargs["SoftTimeout"]),
+                                          int(kwargs["GracePeriod"]))
+        
+        # Check whether we should check location for the data
+        if self._checkKeys(kwargs, "useSiteListAsLocation"):
+            self.setLocationDataSourceFlag()
+
+        # Set phedex subscription information
+        
+        if self._checkKeys(kwargs, ["CustodialSites", "NonCustodialSites", 
+                                    "AutoApproveSubscriptionSites", 
+                                    "CustodialSubType", "SubscriptionPriority"]):
+            self.setSubscriptionInformationWildCards(wildcardDict = wildcardSites,
+                                        custodialSites = kwargs["CustodialSites"],
+                                        nonCustodialSites = kwargs["NonCustodialSites"],
+                                        autoApproveSites = kwargs["AutoApproveSubscriptionSites"],
+                                        custodialSubType = kwargs["CustodialSubType"],
+                                        priority = kwargs["SubscriptionPriority"])
+
+        # Block closing information
+        if self._checkKeys(kwargs, ["BlockCloseMaxWaitTime", "BlockCloseMaxFiles", 
+                                    "BlockCloseMaxEvents", "BlockCloseMaxSize"]):
+            self.setBlockCloseSettings(kwargs["BlockCloseMaxWaitTime"],
+                                       kwargs["BlockCloseMaxFiles"],
+                                       kwargs["BlockCloseMaxEvents"], 
+                                       kwargs["BlockCloseMaxSize"])
+
+        if self._checkKeys(kwargs, "DashboardActivity"):
+            self.setDashboardActivity(kwargs["DashboardActivity"])
+        
+
+        return kwargs
+    
+    
+    def loadSpecFromCouch(self, couchurl, requestName):
+        """
+        This depends on PersitencyHelper.py saveCouch (That method better be decomposed)
+        """
+        return self.load("%s/%s/spec" % (couchurl, requestName))
+    
 
 class WMWorkload(ConfigSection):
     """
@@ -1680,6 +1794,10 @@ class WMWorkload(ConfigSection):
         self.section_("tasks")
         self.tasks.tasklist = []
 
+        #  worklaod spec type
+        self.section_("request_type")
+        self.requestType = ""
+        
         self.sandbox = None
         self.initialJobCount = 0
 

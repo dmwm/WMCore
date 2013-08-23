@@ -15,101 +15,59 @@ TODO/NOTE:
         necessary request parameters and not any optional ones.
     
 """
+import time
+import cherrypy
+from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
 
-
-class RequestDataError(Exception):
-    pass
-
-
-
-class Request(dict):
+def initialize_request_args(request, config, clone = False):
     """
-    Data Object representing a request.
-
-    """
-
-    def __init__(self):
-        dict.__init__(self)
+    Request data class request is a dictionary representing
+    a being injected / created request. This method initializes
+    various request fields. This should be the ONLY method to
+    manipulate request arguments upon injection so that various
+    levels or arguments manipulation does not occur accros several
+    modules and across about 7 various methods like in ReqMgr1.
+    
+    request is changed here.
+    
+    """ 
+    
+    #user information for cert. (which is converted to cherry py log in)
+    request["Requestor"] = cherrypy.request.user["login"]
+    request["RequestorDN"] = cherrypy.request.user.get("dn", "unknown")
+    
+    # assign first starting status, should be 'new'
+    request["RequestStatus"] = REQUEST_START_STATE 
+    request["RequestTransition"] = [{"Status": request["RequestStatus"], "UpdateTime": int(time.time())}]
+    request["RequestDate"] = list(time.gmtime()[:6])
+    
+    #TODO: generate this automatically from the spec
+    # generate request name using request
+    generateRequestName(request)
+    
+    if not clone:
+        #update the information from config
+        request["CouchURL"] = config.couch_host
+        request["CouchWorkloadDBName"] = config.couch_reqmgr_db
+        request["CouchDBName"] = config.couch_config_cache_db
+        
+        request.setdefault("SoftwareVersions", [])
+        if request["CMSSWVersion"] and (request["CMSSWVersion"] not in request["SoftwareVersions"]):
+            request["SoftwareVersions"].append(request["CMSSWVersion"])
+            
         # TODO
-        # should discuss if list here all possible request arguments
-        # although some make sense only for certain workloads or
-        # only the common ones ...
-        
-        # these arguments are figured out automatically by ReqMgr,
-        # ReqMgr fails to inject a request specifying any of these
-        # arguments in the user input
-        self.setdefault("RequestName", None)
-        self.setdefault("RequestStatus", None)
-        self.setdefault("Requestor", None)
-        self.setdefault("RequestWorkflow", None)        
-        self.setdefault("RequestDate", None),
-        
-        # TODO
-        # reassess if these CouchDB related details are necessary to be stored
-        # in the request document! ReqMgr1 has all of these 3.
-        self.setdefault("CouchURL", None) 
-        # name of the ConfigCache database in Couch (historicaly misleading naming)
-        self.setdefault("CouchDBName", None)
-        # name of the main ReqMgr CouchDB database
-        self.setdefault("CouchWorkloadDBName", None)
-        self._automatic = self.keys()
-                
-        # normal input request arguments - to be present in the user
-        # request input specification
-        self.setdefault("RequestString", None)        
-        self.setdefault("RequestType", None)
-        self.setdefault("RequestPriority", None)
-        self.setdefault("RequestNumEvents", None)
-        self.setdefault("RequestSizeFiles", None)
-        self.setdefault("Group", None)
-        self.setdefault("OutputDatasets", [])
-        # particular CMSSW version to run on
-        self.setdefault("CMSSWVersion", None)
-        # a list of possible CMSSW versions (both these arguments are necessary)
-        self.setdefault("SoftwareVersions", [])
-        self.setdefault("InputDatasets", [])
-        self.setdefault("InputDatasetTypes", {})
-        self.setdefault("SizePerEvent", 0)
-        self.setdefault("PrepID", None)
-        self.setdefault("ScramArch", None)
-        self.setdefault("GlobalTag", None)
-        self.setdefault("ConfigCacheID", None)
-        self.setdefault("ConfigCacheUrl", None)
-        self.setdefault("RunWhitelist", None)
-        self.setdefault("Team", None)
-        self.setdefault("TotalTime", None)
-        self.setdefault("TimePerEvent", None)
-        self.setdefault("Memory", None)
-        self.setdefault("Campaign", None)
-        # processing scenario, mutually exclusive with ConfigCacheID
-        self.setdefault("Scenario", None)
-        self.setdefault("EnableDQMHarvest", False)
-        self.setdefault("EnableHarvesting", False)
-                    
-        
-    def validate_automatic_args_empty(self):
-        for arg in self._automatic:
-            if self[arg]:
-                msg = "ERROR: Request parameter %s can't be specified by the user." % arg
-                raise RequestDataError(msg)
-                                
-        
-    def lexicon(self, field, validator):
-        if self.get(field, None) != None:
-            try:
-                validator(self[field])
-            except AssertionError:
-                msg = "Request argument validation failed, bad value for %s" % field
-                raise RequestDataError(msg)
+        # do we need InputDataset and InputDatasets? when one is just a list
+        # containing the other? ; could be related to #3743 problem
+        if request.has_key("InputDataset"):
+            request["InputDatasets"] = [request["InputDataset"]]
 
-
-    def __to_json__(self, thunker):
-        """
-        This is here to prevent the serializer from attempting to serialize
-        this object and adding a bunch of keys that couch won't understand.
-        
-        """
-        json_dict = {}
-        for key in self.keys():
-            json_dict[key] = self[key]
-        return json_dict
+def generateRequestName(request):
+    
+    current_time = time.strftime('%y%m%d_%H%M%S', time.localtime(time.time()))
+    seconds = int(10000 * (time.time() % 1.0))
+    request_string = request.get("RequestString", "")
+    if request_string != "":
+        request["RequestName"] = "%s_%s" % (request["Requestor"], request_string)
+    else:
+        request["RequestName"] = request["Requestor"]
+    request["RequestName"] += "_%s_%s" % (current_time, seconds)

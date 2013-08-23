@@ -62,9 +62,8 @@ class RESTBaseUnitTestWithDBBackend(unittest.TestCase):
             self.server = RESTMainTestServer(self.config, os.getcwd(), self._testMethodName)
             CherrypyTestInit.start(self.server)
             self.jsonSender = self.server.jsonSender
-            #TODO: find the way to check the api with the permission
-            #self.adminHeader = self.server.header
-        return
+            # find the way to check the api with the permission
+            self.test_authz_key = self.server.test_authz_key
 
     def tearDown(self):
         if self.initRoot:

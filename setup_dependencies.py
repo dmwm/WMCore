@@ -68,6 +68,7 @@ dependencies = {'wmc-rest':{
                         },
                 'reqmgr2':{
                         'packages': ['WMCore.ReqMgr+',
+                                     'WMCore.Services.Dashboard',
                                     ],
                         'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
                         'statics': ['src/couchapps/ReqMgr+',

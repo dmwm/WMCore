@@ -16,8 +16,8 @@ class TestMonteCarloFactory(MonteCarloWorkloadFactory):
     """Override bits that talk to cmsssw"""
     def __call__(self, workflowName, args):
         workload = MonteCarloWorkloadFactory.__call__(self, workflowName, args)
-        delattr(workload.taskIterator().next().steps().data.application.configuration,
-                'configCacheUrl')
+        #delattr(workload.taskIterator().next().steps().data.application.configuration,
+        #        'configCacheUrl')
         return workload
 
     def determineOutputModules(self, *args, **kwargs):

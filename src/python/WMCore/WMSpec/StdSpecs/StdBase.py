@@ -90,6 +90,9 @@ class StdBase(object):
         Determine the output module names and associated metadata for the
         given config.
         """
+        # set default scenarioArgs to empty dictionary if it is None.
+        scenarioArgs = scenarioArgs or {}
+        
         outputModules = {}
         if configDoc != None and configDoc != "":
             url = configCacheUrl or couchURL
@@ -237,6 +240,9 @@ class StdBase(object):
 
         The seeding and totalEvents parameters are only used for production jobs.
         """
+        # set default scenarioArgs to empty dictionary if it is None
+        scenarioArgs = scenarioArgs or {}
+        
         self.addDashboardMonitoring(procTask)
         procTaskCmssw = procTask.makeStep("cmsRun1")
         procTaskCmssw.setStepType(stepType)

@@ -86,6 +86,14 @@ class LumiBased(JobFactory):
         runWhitelist = kwargs.get('runWhitelist', [])
         runs = kwargs.get('runs', None)
         lumis = kwargs.get('lumis', None)
+        deterministicPileup = kwargs.get('deterministicPileup', False)
+        eventsPerLumiInDataset = 0
+
+        if deterministicPileup and self.package == 'WMCore.WMBS':
+            getJobNumber = self.daoFactory(classname = "Jobs.GetNumberOfJobsPerWorkflow")
+            jobNumber = getJobNumber.execute(workflow = self.subscription.getWorkflow().id)
+            self.nJobs = jobNumber
+
         timePerEvent, sizePerEvent, memoryRequirement = \
                     self.getPerformanceParameters(kwargs.get('performance', {}))
 
@@ -153,6 +161,9 @@ class LumiBased(JobFactory):
                 # Do average event per lumi calculation
                 if f['lumiCount']:
                     f['avgEvtsPerLumi'] = float(f['events']) / f['lumiCount']
+                    if deterministicPileup:
+                        # We assume that all lumis are equal in the dataset
+                        eventsPerLumiInDataset = f['avgEvtsPerLumi']
                 else:
                     # No lumis in the file, ignore it
                     continue
@@ -166,7 +177,6 @@ class LumiBased(JobFactory):
         # EXACTLY lumisPerJob number of lumis (except for maybe the last one)
 
         totalJobs = 0
-        firstRun = None
         lastLumi = None
         firstLumi = None
         stopJob = True
@@ -248,8 +258,10 @@ class LumiBased(JobFactory):
                                 runAddedSize = addedEvents * sizePerEvent
                                 self.currentJob.addResourceEstimates(jobTime = runAddedTime,
                                                                      disk = runAddedSize)
-                            self.newJob(name = self.getJobName(length = totalJobs))
+                            self.newJob(name = self.getJobName())
                             self.currentJob.addResourceEstimates(memory = memoryRequirement)
+                            if deterministicPileup:
+                                self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * lumisPerJob * eventsPerLumiInDataset)
                             firstLumi = lumi
                             lumisInJob = 0
                             totalJobs += 1

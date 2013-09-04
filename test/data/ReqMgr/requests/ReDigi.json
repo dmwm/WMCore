@@ -27,7 +27,9 @@
         "SizePerEvent": 342,
         "DbsUrl": "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet",
         "MCPileup": "/MinBias_TuneZ2star_8TeV-pythia6/Summer12-START50_V13-v3/GEN-SIM",
-        "OpenRunningTimeout" : 0
+        "OpenRunningTimeout" : 0,
+        "SplittingAlgo" : "LumiBased",
+        "LumisPerJob" : 8
 	},
 
 "changeSplitting":

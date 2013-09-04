@@ -27,7 +27,9 @@
         "SkimTimePerEvent1" : 4,
         "SkimSizePerEvent1" : 200,
         "SkimMemory1" : 2394,
-        "OpenRunningTimeout" : 0
+        "OpenRunningTimeout" : 0,
+        "SplittingAlgo" : "EventAwareLumiBased",
+        "EventsPerJob" : 1400
     },
 
 "changeSplitting":

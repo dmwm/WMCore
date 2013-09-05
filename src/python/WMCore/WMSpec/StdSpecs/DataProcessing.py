@@ -32,6 +32,8 @@ class DataProcessing(StdBase):
             self.procJobSplitArgs["lumis_per_job"] = self.lumisPerJob
         elif self.procJobSplitAlgo == "FileBased":
             self.procJobSplitArgs["files_per_job"] = self.filesPerJob
+        elif self.procJobSplitAlgo == "LuminosityBased":
+            self.procJobSplitArgs["targetJobLength"] = 21600
 
         return
 
@@ -69,7 +71,7 @@ class DataProcessing(StdBase):
                                       "optional" : True, "validate" : lambda x: all([int(y) > 0 for y in x]),
                                       "attr" : "runWhitelist", "null" : False},
                     "SplittingAlgo" : {"default" : "EventAwareLumiBased", "type" : str,
-                                       "optional" : True, "validate" : lambda x: x in ["EventBased", "LumiBased",
+                                       "optional" : True, "validate" : lambda x: x in ["EventBased", "LumiBased", "LuminosityBased",
                                                                                        "EventAwareLumiBased", "FileBased"],
                                        "attr" : "procJobSplitAlgo", "null" : False},
                     "EventsPerJob" : {"default" : None, "type" : int,

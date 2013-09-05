@@ -36,6 +36,11 @@ class ReRecoWorkloadFactory(DataProcessing):
                                          OpenRunningTimeout = self.openRunningTimeout)
         procTask = workload.newTask("DataProcessing")
 
+        # Adding Primary Dataset & CMSSW Release to JobSplitArgs, those will be
+        # used in the case of Luminosity Splitting
+        self.procJobSplitArgs["primaryDataset"] = self.inputPrimaryDataset
+        self.procJobSplitArgs["cmsswversion"]   = procTask.getSwVersion() 
+        
         cmsswStepType = "CMSSW"
         taskType = "Processing"
         if self.multicore:

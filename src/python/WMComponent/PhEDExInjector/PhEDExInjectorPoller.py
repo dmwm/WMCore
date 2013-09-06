@@ -8,6 +8,7 @@ Poll the DBSBuffer database and inject files as they are created.
 import threading
 import logging
 import traceback
+from httplib import HTTPException
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 

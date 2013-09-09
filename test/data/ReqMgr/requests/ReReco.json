@@ -17,7 +17,7 @@
 		"PrepID": "RERECOTEST-0001",
 		"Group": "DATAOPS",
         "TimePerEvent": 12,
-		"Memory": 2394,
+		"Memory": 2000,
         "SizePerEvent":500,
 		"InputDataset": "InputDataset-OVERRIDE-ME",
         "nskims": 1,
@@ -26,7 +26,7 @@
         "Skim1ConfigCacheID": "7559cf7a427be20436483f82fd109301",
         "SkimTimePerEvent1" : 4,
         "SkimSizePerEvent1" : 200,
-        "SkimMemory1" : 2394,
+        "SkimMemory1" : 2000,
         "OpenRunningTimeout" : 0,
         "SplittingAlgo" : "EventAwareLumiBased",
         "EventsPerJob" : 1400

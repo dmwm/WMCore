@@ -62,6 +62,8 @@ class WorkQueueTest(unittest.TestCase):
         self.assertTrue(globalQ.queueWork(specUrl, "RerecoSpec", "teamA") > 0)
 
         wqApi = WorkQueueDS(self.testInit.couchUrl, 'workqueue_t')
+        #overwrite default - can't test with stale view
+        wqApi.defaultOptions =  {'reduce' : True, 'group' : True}
         #This only checks minimum client call not exactly correctness of return
         # values.
         self.assertEqual(wqApi.getTopLevelJobsByRequest(),
@@ -93,6 +95,8 @@ class WorkQueueTest(unittest.TestCase):
         # Try a full chain of priority update and propagation
         self.assertTrue(globalQ.queueWork(specUrl, "RerecoSpec", "teamA") > 0)
         globalApi = WorkQueueDS(self.testInit.couchUrl, 'workqueue_t')
+        #overwrite default - can't test with stale view
+        globalApi.defaultOptions =  {'reduce' : True, 'group' : True}
         globalApi.updatePriority(specName, 100)
         self.assertEqual(globalQ.backend.getWMSpec(specName).priority(), 100)
         storedElements = globalQ.backend.getElementsForWorkflow(specName)
@@ -104,6 +108,8 @@ class WorkQueueTest(unittest.TestCase):
         for element in storedElements:
             self.assertEqual(element['Priority'], 100)
         localApi = WorkQueueDS(self.testInit.couchUrl, 'local_workqueue_t')
+        #overwrite default - can't test with stale view
+        localApi.defaultOptions =  {'reduce' : True, 'group' : True}
         localApi.updatePriority(specName, 500)
         self.assertEqual(localQ.backend.getWMSpec(specName).priority(), 500)
         storedElements = localQ.backend.getElementsForWorkflow(specName)

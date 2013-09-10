@@ -17,37 +17,35 @@ class WorkQueue(object):
         self.hostWithAuth = couchURL
         self.server = CouchServer(couchURL)
         self.db = self.server.connectDatabase(dbName, create = False)
+        self.defaultOptions = {'stale': "update_after", 'reduce' : True, 'group' : True}
 
     def getTopLevelJobsByRequest(self):
         """Get data items we have work in the queue for"""
-        data = self.db.loadView('WorkQueue', 'jobsByRequest',
-                                {'reduce' : True, 'group' : True})
+    
+        data = self.db.loadView('WorkQueue', 'jobsByRequest', self.defaultOptions)
         return [{'request_name' : x['key'],
                  'total_jobs' : x['value']} for x in data.get('rows', [])]
 
     def getChildQueues(self):
         """Get data items we have work in the queue for"""
-        data = self.db.loadView('WorkQueue', 'childQueues',
-                                {'reduce' : True, 'group' : True})
+        data = self.db.loadView('WorkQueue', 'childQueues', self.defaultOptions)
         return [x['key'] for x in data.get('rows', [])]
 
     def getChildQueuesByRequest(self):
         """Get data items we have work in the queue for"""
         data = self.db.loadView('WorkQueue', 'childQueuesByRequest',
-                                {'reduce' : True, 'group' : True})
+                                self.defaultOptions)
         return [{'request_name' : x['key'][0],
                  'local_queue' : x['key'][1]} for x in data.get('rows', [])]
 
     def getWMBSUrl(self):
         """Get data items we have work in the queue for"""
-        data = self.db.loadView('WorkQueue', 'wmbsUrl',
-                                {'reduce' : True, 'group' : True})
+        data = self.db.loadView('WorkQueue', 'wmbsUrl', self.defaultOptions)
         return [x['key'] for x in data.get('rows', [])]
 
     def getWMBSUrlByRequest(self):
         """Get data items we have work in the queue for"""
-        data = self.db.loadView('WorkQueue', 'wmbsUrlByRequest',
-                                {'reduce' : True, 'group' : True})
+        data = self.db.loadView('WorkQueue', 'wmbsUrlByRequest', self.defaultOptions)
         return [{'request_name' : x['key'][0],
                  'wmbs_url' : x['key'][1]} for x in data.get('rows', [])]
 
@@ -56,7 +54,7 @@ class WorkQueue(object):
         This service only provided by global queue
         """
         data = self.db.loadView('WorkQueue', 'jobStatusByRequest',
-                                {'reduce' : True, 'group' : True})
+                                self.defaultOptions)
         return [{'request_name' : x['key'][0], 'status': x['key'][1],
                  'jobs' : x['value']} for x in data.get('rows', [])]
 
@@ -65,7 +63,7 @@ class WorkQueue(object):
         This service only provided by global queue
         """
         data = self.db.loadView('WorkQueue', 'jobInjectStatusByRequest',
-                                {'reduce' : True, 'group' : True})
+                                self.defaultOptions)
         return [{'request_name' : x['key'][0], x['key'][1]: x['value']}
                 for x in data.get('rows', [])]
 
@@ -74,7 +72,7 @@ class WorkQueue(object):
         This getInject status and input dataset from workqueue
         """
         results = self.db.loadView('WorkQueue', 'jobInjectStatusByRequest',
-                                {'reduce' : True, 'group' : True})
+                                   self.defaultOptions)
         statusByRequest = {}
         for x in results.get('rows', []):
             statusByRequest.setdefault(x['key'][0], {})
@@ -87,7 +85,7 @@ class WorkQueue(object):
         This service only provided by global queue
         """
         data = self.db.loadView('WorkQueue', 'siteWhitelistByRequest',
-                                {'reduce' : True, 'group' : True})
+                                self.defaultOptions)
         return [{'request_name' : x['key'][0], 'site_whitelist': x['key'][1]}
                 for x in data.get('rows', [])]
 
@@ -111,7 +109,7 @@ class WorkQueue(object):
         """Get the workflows that have all their elements
            available in the workqueue"""
         data = self.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
-                                {'reduce' : False})
+                                {'reduce' : False, 'stale': 'update_after'})
         availableSet = set((x['value']['RequestName'], x['value']['Priority']) for x in data.get('rows', []) if x['key'][1] == 'Available')
         notAvailableSet = set((x['value']['RequestName'], x['value']['Priority']) for x in data.get('rows', []) if x['key'][1] != 'Available')
         return availableSet - notAvailableSet

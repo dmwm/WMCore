@@ -70,11 +70,11 @@ class CondorPluginTest(BossAirTest):
             tmpJob['cache_dir']   = self.testDir
             tmpJob['retry_count'] = 0
             tmpJob['plugin']      = 'CondorPlugin'
-            tmpJob['owner']       = 'tapas'
+            tmpJob['owner']       = self.user
             tmpJob['packageDir']  = self.testDir
             tmpJob['sandbox']     = sandbox
             tmpJob['priority']    = None
-            tmpJob['usergroup']   = "wheel"
+            tmpJob['usergroup']   = self.user
             tmpJob['userrole']    = 'cmsuser'
             jobList.append(tmpJob)
 
@@ -397,17 +397,10 @@ class CondorPluginTest(BossAirTest):
         self.assertEqual(nRunning, nSubs * nJobs)
 
         baAPI.track()
-        idleJobs = baAPI._loadByStatus(status = 'Idle')
-        sn = "T2_US_UCSD"
-
-        # Test the Site Info has been updated. Make Sure T2_US_UCSD is not in the sitelist
-        # in BossAir_t.py
-        baAPI.updateSiteInformation(idleJobs, sn, True)
-
         # Now kill 'em manually
-        #        command = ['condor_rm', self.user]
-        #        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-        #        pipe.communicate()
+        command = ['condor_rm', self.user]
+        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
+        pipe.communicate()
         
         del jobSubmitter
 
@@ -415,25 +408,75 @@ class CondorPluginTest(BossAirTest):
 
 
     @attr('integration')
-    def testT_updateJobInfo(self):
+    def testG_updateSiteInfo(self):
         """
-        _updateJobInfo_
+        _updateSiteInfo_
 
         Test the updateSiteInformation method from CondorPlugin.py
         """
 
         nRunning = getCondorRunningJobs(self.user)
-        
+        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
+
+        # Get the config and set the removal time to -10 for testing
         config = self.getConfig()
         config.BossAir.pluginName = 'CondorPlugin'
+        config.BossAir.removeTime = -10.0
+
+        nJobs = 10
+
+        jobDummies = self.createDummyJobs(nJobs = nJobs)
+
         baAPI  = BossAirAPI(config = config)
+
+        print self.testDir
+
+        jobPackage = os.path.join(self.testDir, 'JobPackage.pkl')
+        f = open(jobPackage, 'w')
+        f.write(' ')
+        f.close()
+
+        sandbox = os.path.join(self.testDir, 'sandbox.box')
+        f = open(sandbox, 'w')
+        f.write(' ')
+        f.close()
+
+        jobList = []
+        for j in jobDummies:
+            tmpJob = {'id': j['id']}
+            tmpJob['custom']      = {'location': 'T2_US_Florida'}
+            tmpJob['name']        = j['name']
+            tmpJob['cache_dir']   = self.testDir
+            tmpJob['retry_count'] = 0
+            tmpJob['plugin']      = 'CondorPlugin'
+            tmpJob['owner']       = self.user
+            tmpJob['packageDir']  = self.testDir
+            tmpJob['sandbox']     = sandbox
+            tmpJob['priority']    = None
+            tmpJob['usergroup']   = self.user
+            tmpJob['userrole']    = 'cmsuser'
+            jobList.append(tmpJob)
+
+
+        info = {}
+        #info['packageDir'] = self.testDir
+        info['index']      = 0
+        info['sandbox']    = sandbox
+        baAPI.submit(jobs = jobList, info = info)
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, nJobs)
+        newJobs = baAPI._loadByStatus(status = 'New')
         baAPI.track()
-        idleJobs = baAPI._loadByStatus(status = 'Idle')
-        print idleJobs
-        for job in idleJobs :
-            print job['id']
-        baAPI.updateSiteInformation(idleJobs, info = None)
-        
+
+        jobaction = self.daoFactory(classname = "Jobs.ListByState")
+        jobIds = jobaction.execute(state = 'new')
+        jobkill = baAPI.updateSiteInformation(jobIds, "T2_US_Florida", True)
+        if len(jobkill) > 1:
+            command = ['condor_rm', self.user]
+            pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
+            pipe.communicate()
+            
+
         return
 
 

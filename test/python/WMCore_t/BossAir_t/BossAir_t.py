@@ -132,6 +132,7 @@ class BossAirTest(unittest.TestCase):
 
         # Change this to the working dir to keep track of error and log files from condor
         self.testInit.generateWorkDir()
+        self.testDir  = self.testInit.testDir
 
         # Set heartbeat
         componentName = 'test'

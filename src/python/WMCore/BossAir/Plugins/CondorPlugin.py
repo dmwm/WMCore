@@ -714,12 +714,15 @@ class CondorPlugin(BasePlugin):
         jobInfo = self.getClassAds()
         jobtokill=[]
         for job in jobs:
-            jobID = job['jobid']
+            if "jobid" in job:
+                jobID = job['jobid']
+            else :
+                jobID = job['id']
+            
             jobAd = jobInfo.get(jobID)
             if excludeSite :
                 if siteName in jobAd.get('DESIRED_Sites') and siteName in jobAd.get('ExtDESIRED_Sites') :
                     usi = jobAd.get('DESIRED_Sites').split(', ')
-                    print len(usi)
                     if len(usi) > 1 :
                         usi.remove(siteName)
                         usi = usi.__str__().lstrip('[').rstrip(']')

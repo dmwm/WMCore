@@ -148,17 +148,25 @@ class CreateWMBSBase(DBCreator):
         self.create["07wmbs_workflow"] = \
           """CREATE TABLE wmbs_workflow (
              id           INTEGER          PRIMARY KEY AUTO_INCREMENT,
-             spec         VARCHAR(550)     NOT NULL,
-             name         VARCHAR(255)     NOT NULL,
-             task         VARCHAR(550)     NOT NULL,
+             spec         VARCHAR(700)     NOT NULL,
+             name         VARCHAR(700)     NOT NULL,
+             task         VARCHAR(700)     NOT NULL,
              type         VARCHAR(255),
              owner        INTEGER          NOT NULL,
              alt_fs_close INT(1)           NOT NULL,
              injected     INT(1)           DEFAULT 0,
-             priority     INTEGER UNSIGNED DEFAULT 0,
-             UNIQUE(name, task),
-             FOREIGN KEY(owner)    REFERENCES wmbs_users(id)
-               ON DELETE CASCADE)"""
+             priority     INTEGER UNSIGNED DEFAULT 0
+             ) %s""" % tablespaceTable
+
+
+        self.indexes["03_pk_wmbs_workflow"] = \
+          """ALTER TABLE wmbs_workflow ADD
+               (CONSTRAINT wmbs_workflow_unique UNIQUE (name, spec, task) %s)""" % tablespaceIndex
+
+        self.constraints["01_fk_wmbs_workflow"] = \
+          """ALTER TABLE wmbs_workflow ADD
+               (CONSTRAINT fk_workflow_users FOREIGN KEY (owner)
+                  REFERENCES wmbs_users(id) ON DELETE CASCADE)"""
 
         self.create["08wmbs_workflow_output"] = \
           """CREATE TABLE wmbs_workflow_output (
@@ -190,12 +198,12 @@ class CreateWMBSBase(DBCreator):
              subtype     INTEGER      NOT NULL,
              last_update INTEGER      NOT NULL,
              finished    INT(1)       DEFAULT 0,
-             FOREIGN KEY(fileset)  REFERENCES wmbs_fileset(id)
-               ON DELETE CASCADE,
-             FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
-               ON DELETE CASCADE,
-             FOREIGN KEY(subtype) REFERENCES wmbs_sub_types(id)
-               ON DELETE CASCADE)"""
+             FOREIGN KEY(fileset)
+             REFERENCES wmbs_fileset(id) ON DELETE CASCADE,
+             FOREIGN KEY(workflow)
+             REFERENCES wmbs_workflow(id) ON DELETE CASCADE,
+             FOREIGN KEY(subtype)
+             REFERENCES wmbs_sub_types(id) ON DELETE CASCADE)"""
 
         self.create["10wmbs_subscription_validation"] = \
           """CREATE TABLE wmbs_subscription_validation (
@@ -281,12 +289,26 @@ class CreateWMBSBase(DBCreator):
              location     INTEGER,
              outcome      INTEGER       DEFAULT 0,
              cache_dir    VARCHAR(500)  DEFAULT 'None',
-             fwjr_path    VARCHAR(500),
-             UNIQUE (name),
-             FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
-               ON DELETE CASCADE,
-             FOREIGN KEY (state) REFERENCES wmbs_job_state(id),
-             FOREIGN KEY (location) REFERENCES wmbs_location(id))"""
+             fwjr_path    VARCHAR(500)
+             ) %s """ % tablespaceTable
+
+        self.indexes["03_pk_wmbs_job"] = \
+          """ALTER TABLE wmbs_job ADD
+               (CONSTRAINT wmbs_job_unique UNIQUE (name, cache_dir, fwjr_path) %s)""" % tablespaceIndex
+
+        self.constraints["01_fk_wmbs_job"] = \
+          """ALTER TABLE wmbs_job ADD
+               (CONSTRAINT fk_wmbs_job_group FOREIGN KEY (jobgroup)
+                  REFERENCES wmbs_jobgroup(id) ON DELETE CASCADE)"""
+
+        self.constraints["02_fk_wmbs_job"] = \
+          """ALTER TABLE wmbs_job ADD
+               (CONSTRAINT fk_wmbs_job_state FOREIGN KEY (state) REFERENCES wmbs_job_state(id))"""
+
+        self.constraints["03_fk_wmbs_job"] = \
+          """ALTER TABLE wmbs_job ADD
+               (CONSTRAINT fk_wmbs_job_location FOREIGN KEY (location) REFERENCES wmbs_location(id))"""
+
 
         self.create["16wmbs_job_assoc"] = \
           """CREATE TABLE wmbs_job_assoc (

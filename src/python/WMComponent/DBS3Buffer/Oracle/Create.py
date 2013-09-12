@@ -253,8 +253,8 @@ class Create(DBCreator):
         self.create["13dbsbuffer_workflow"] = \
           """CREATE TABLE dbsbuffer_workflow (
                id                           INTEGER,
-               name                         VARCHAR2(255),
-               task                         VARCHAR2(550),
+               name                         VARCHAR2(700),
+               task                         VARCHAR2(700),
                block_close_max_wait_time    INTEGER,
                block_close_max_files        INTEGER,
                block_close_max_events       INTEGER,

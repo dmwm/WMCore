@@ -1,0 +1,66 @@
+{ 
+"createRequest":
+    {		 
+    "Requestor": "Requestor-OVERRIDE-ME",
+    "CMSSWVersion": "CMSSW_5_3_11_patch2",
+    "GlobalTag": "START53_V7C::All",
+    "Campaign": "Campaign-OVERRIDE-ME",
+    "RequestString": "RequestString-OVERRIDE-ME",
+    "RequestPriority": 100000,
+    "FilterEfficiency": 1.0,
+    "ScramArch": "slc5_amd64_gcc462",
+    "RequestType": "MonteCarlo",
+    "RequestNumEvents": 100000,
+    "ConfigCacheID": "3aace33e941e6f98842901bcc93a4b9a",
+    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+    "PrimaryDataset": "GluGluToHTohhTo4B_mH-350_mh-125_8TeV-pythia6-tauola",
+    "PrepID": "HIG-Summer12-01637",
+    "Group": "DATAOPS",
+    "TotalTime": 28800, 
+    "TimePerEvent": 70,
+    "Memory": 2300,
+    "SizePerEvent": 1058,
+    "LheInputFiles": "False",
+    "EventsPerJob": 300,
+    "EventsPerLumi": 100
+    }, 
+
+"changeSplitting":
+    {
+    "Production" :
+        {
+        "SplittingAlgo" : "EventBased",
+        "EventsPerJob" : 400,
+        "include_parents" : "False"
+        }
+    },
+
+"assignRequest":
+    {
+    "SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
+    "SiteBlacklist": [],
+    "MergedLFNBase": "/store/mc",
+    "UnmergedLFNBase": "/store/unmerged",
+    "MinMergeSize": 2147483648,
+    "MaxMergeSize": 4294967296,
+    "MaxMergeEvents": 50000,
+    "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
+    "ProcessingVersion": 1,
+    "ProcessingString" : "ProcessingString-OVERRIDE-ME",
+    "maxRSS": 4294967296,
+    "maxVSize": 4294967296,
+    "SoftTimeout": 129600,
+    "GracePeriod": 300,
+    "dashboard": "test",
+    "Team": "Team--OVERRIDE-ME",
+    "CustodialSites": [],
+    "NonCustodialSites": [],
+    "AutoApproveSubscriptionSites": [],
+    "SubscriptionPriority": "Low",
+    "CustodialSubType" : "Move",
+    "BlockCloseMaxWaitTime" : 28800,
+    "BlockCloseMaxFiles" : 500,
+    "BlockCloseMaxEvents" : 25000000,
+    "BlockCloseMaxSize" : 5000000000000
+    }
+}

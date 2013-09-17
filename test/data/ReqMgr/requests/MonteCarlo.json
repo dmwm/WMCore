@@ -17,8 +17,10 @@
 		"Group": "DATAOPS",
         "TotalTime": 14400, 
         "TimePerEvent": 40,
-		"Memory": 2394,
-		"SizePerEvent": 512
+		"Memory": 2000,
+		"SizePerEvent": 512,
+		"SplittingAlgo" : "EventBased",
+        "EventsPerJob" : 1400
 	}, 
 
 "changeSplitting":

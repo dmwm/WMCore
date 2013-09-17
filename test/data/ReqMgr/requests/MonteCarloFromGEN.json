@@ -14,15 +14,17 @@
 		"PrepID": "MCTEST-LHE-0001",
 		"Group": "DATAOPS",
 		"TotalTime": 28800,
-        "TimePerEvent": 12,
-        "Memory": 2394,
+		"TimePerEvent": 12,
+        "Memory": 2000,
         "SizePerEvent": 512,
         "InputDataset": "InputDataset-OVERRIDE-ME",
         "RunWhitelist": [],
         "RunBlacklist": [],
         "BlockWhitelist": [],
         "BlockBlacklist": [],
-        "OpenRunningTimeout" : 0
+        "OpenRunningTimeout" : 0,
+        "SplittingAlgo" : "LumiBased",
+        "LumisPerJob" : 1400
 	}, 
 
 "changeSplitting":

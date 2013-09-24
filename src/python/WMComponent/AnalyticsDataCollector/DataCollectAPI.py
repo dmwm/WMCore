@@ -440,7 +440,8 @@ def _getCouchACDCHtmlBase(acdcCouchURL):
 
     return '%s/_design/ACDC/collections.html' % sanitizeURL(acdcCouchURL)['url']
 
-def isDrainMode():
-    configPath = os.getenv('WMAGENT_CONFIG')
-    config = loadConfigurationFile(configPath)
+def isDrainMode(config):
+    """
+    config is loaded WMAgentCofig 
+    """
     return config.WorkQueueManager.queueParams.get('DrainMode', False)

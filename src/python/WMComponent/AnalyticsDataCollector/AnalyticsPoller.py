@@ -145,7 +145,7 @@ class AnalyticsPoller(BaseWorkerThread):
             couchInfo['name'] = "CouchServer"
             agentInfo['down_component_detail'].append(couchInfo)
         
-        if isDrainMode():
+        if isDrainMode(self.config):
             logging.info("Agent is in DrainMode")
             agentInfo['drain_mode'] = True
             agentInfo['status'] = "warning"

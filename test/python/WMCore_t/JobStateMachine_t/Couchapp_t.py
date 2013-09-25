@@ -156,7 +156,8 @@ class CouchappTest(unittest.TestCase):
         for job in testJobGroup.jobs:
             job['fwjr'] = report
         self.changeState.propagate(testJobGroup.jobs, 'jobfailed', 'complete')
-        self.changeState.propagate(testJobGroup.jobs, 'exhausted', 'jobfailed')
+        self.changeState.propagate(testJobGroup.jobs, 'retrydone', 'jobfailed')
+        self.changeState.propagate(testJobGroup.jobs, 'exhausted', 'retrydone')
         self.changeState.propagate(testJobGroup.jobs, 'cleanout', 'exhausted')
 
         testSubscription.completeFiles([testFileA, testFileB])

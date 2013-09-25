@@ -278,6 +278,10 @@ class LexiconTest(unittest.TestCase):
 
         Test the LFN checker in several modes, including user LFNs
         """
+        lfnA = '/store/mc/Fall10/DYToMuMu_M-20_TuneZ2_7TeV-pythia6/AODSIM/START38_V12-v1/0003/C0F3344F-6EC8-DF11-8ED6-E41F13181020.root'
+        lfn(lfnA)
+        lfnA = '/store/mc/2008/2/21/FastSim-CSA07Electron-1203615548/0009/B6E531DD-99E1-DC11-9FEC-001617E30D4A.root'
+        lfn(lfnA)
         lfnA = '/store/temp/user/ewv/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
         lfn(lfnA)
         lfnA = '/store/temp/user/cinquilli.nocern/Higgs-123/PrivateSample/v1/1000/a_X-2.root'
@@ -369,6 +373,8 @@ class LexiconTest(unittest.TestCase):
         lfnA = '/store/temp/user/ewv/Higgs-123/Private;Sample/v1/a_X-2.root'
         self.assertRaises(AssertionError, lfn, lfnA)
         lfnA = '/store/temp/user/ewv/Higgs-123/PrivateSample/v1;/a_X-2.root'
+        self.assertRaises(AssertionError, lfn, lfnA)
+        lfnA = '/store/mc/2008/2/FastSim-CSA07Electron-1203615548/B6E531DD-99E1-DC11-9FEC-001617E30D4A.root'
         self.assertRaises(AssertionError, lfn, lfnA)
 
         lfnA = '/store/Results/qcd/QCD_Pt80/StoreResults-Summer09-MC_31X_V3_7TeV-Jet30U-JetAODSkim-0a98be42532eba1f0545cc9b086ec3c3/QCD_Pt80/USER/StoreResults-Summer09-MC_31X_V3_7TeV-Jet30U-JetAODSkim-0a98be42532eba1f0545cc9b086ec3c3/0000/C44630AC-C0C7-DE11-AD4E-0019B9CAC0F8.root'

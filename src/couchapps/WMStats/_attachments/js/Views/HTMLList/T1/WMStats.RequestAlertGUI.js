@@ -9,10 +9,22 @@ WMStats.RequestAlertGUI = function (requestData, containerDiv) {
             for (var i in errorArray) {
                 var workflow = errorArray[i].getName();
                 var summary = errorArray[i].getSummary();
-                var cooloff = summary.getTotalCooloff()
+                var running = summary.getRunning();
+                var pending = summary.getPending();
+                var cooloff = summary.getTotalCooloff();
                 var failure =summary.getTotalFailure();
                 var success = summary.getJobStatus("success");
-                htmlList += ('<li> <a class="requestAlert">' + workflow + "</a>: status:" + errorArray[i].getLastState() + ", cooloff " + cooloff + " failure:" + failure + " success:" + success + '</li>');
+                var lastState = errorArray[i].getLastStateAndTime();
+                var lastStatus = "N/A";
+                var lastUpdate = "N/A";
+                if (lastState !== null) {
+                	lastStatus = lastState.status;
+                	lastUpdate = WMStats.Utils.utcClock(new Date(lastState.update_time * 1000));
+                } 
+                htmlList += ('<li> <a class="requestAlert">' + workflow + "</a>: status:" + 
+                             lastStatus + " (" + lastUpdate + "), cooloff " + cooloff + 
+                             " failure:" + failure + " success:" + success +
+                             " running:" + running + " pending:" + pending + '</li>');
             }
             htmlList += "</ul></div></fieldset>";
             
@@ -25,14 +37,19 @@ WMStats.RequestAlertGUI = function (requestData, containerDiv) {
     var configError = alertRequests.configError;
     var siteError = alertRequests.siteError;
     var failed = alertRequests.failed;
+    var assignedStall = notPulledRequests.assignedStall;
+    var statusStall = notPulledRequests.statusStall;
     var errorFlag = false;
-    var numError = configError.length + siteError.length + failed.length;
+    var numError = (configError.length + siteError.length + failed.length + 
+                    assignedStall.length + statusStall.length);
     var htmlList = "";
     
+    displayAlert(assignedStall, "assigned > 2h");
+    displayAlert(statusStall, "stautus stall > 2 days");
     displayAlert(configError, "Config Error");
     displayAlert(siteError, "Site Error");
     displayAlert(failed, "failed");
-
+    
     $(containerDiv).addClass("request_error_box");
     if (errorFlag) {
         $(containerDiv).removeClass("stable warning").addClass("error").html(htmlList);

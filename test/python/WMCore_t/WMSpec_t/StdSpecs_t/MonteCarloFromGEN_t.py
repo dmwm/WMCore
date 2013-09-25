@@ -7,17 +7,15 @@ Unit tests for the MonteCarloFromGEN workflow.
 
 import unittest
 import os
-import threading
 
+from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-
+from WMCore.WMSpec.StdSpecs.MonteCarloFromGEN import MonteCarloFromGENWorkloadFactory
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
-from WMCore.WMSpec.StdSpecs.MonteCarloFromGEN import getTestArguments, monteCarloFromGENWorkload
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
-from WMCore.Database.CMSCouch import CouchServer, Document
 
 class MonteCarloFromGENTest(unittest.TestCase):
     def setUp(self):
@@ -62,7 +60,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
         newConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
         newConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
         newConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
-        newConfig["pset_tweak_details"] ={"process": {"outputModules_": ["outputRECORECO", "outputALCARECOALCARECO"],
+        newConfig["pset_tweak_details"] = {"process": {"outputModules_": ["outputRECORECO", "outputALCARECOALCARECO"],
                                                       "outputRECORECO": {"dataset": {"filterName": "FilterRECO",
                                                                                      "dataTier": "RECO"}},
                                                       "outputALCARECOALCARECO": {"dataset": {"filterName": "FilterALCARECO",
@@ -77,17 +75,18 @@ class MonteCarloFromGENTest(unittest.TestCase):
         Create a MonteCarloFromGEN workflow and verify it installs into WMBS
         correctly.
         """
-        arguments = getTestArguments()
+        arguments = MonteCarloFromGENWorkloadFactory.getTestArguments()
         arguments["ConfigCacheID"] = self.injectConfig()
         arguments["CouchDBName"] = "mclhe_t"
         arguments["PrimaryDataset"] = "WaitThisIsNotMinimumBias"
-        testWorkload = monteCarloFromGENWorkload("TestWorkload", arguments)
-        testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DMWM")
+
+        factory = MonteCarloFromGENWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", arguments)
 
         self.assertEqual(len(testWorkload.listOutputDatasets()), 2)
-        self.assertTrue("/WaitThisIsNotMinimumBias/WMAgentCommissioning10-FilterRECO-v2/RECO" in testWorkload.listOutputDatasets())
-        self.assertTrue("/WaitThisIsNotMinimumBias/WMAgentCommissioning10-FilterALCARECO-v2/ALCARECO" in testWorkload.listOutputDatasets())
+        print testWorkload.listOutputDatasets()
+        self.assertTrue("/WaitThisIsNotMinimumBias/None-FilterRECO-v0/RECO" in testWorkload.listOutputDatasets())
+        self.assertTrue("/WaitThisIsNotMinimumBias/None-FilterALCARECO-v0/ALCARECO" in testWorkload.listOutputDatasets())
 
         testWMBSHelper = WMBSHelper(testWorkload, "MonteCarloFromGEN", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
@@ -99,7 +98,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
 
         self.assertEqual(len(procWorkflow.outputMap.keys()), 3,
                          "Error: Wrong number of WF outputs.")
-        self.assertEqual(procWorkflow.wfType, 'lheproduction')
+        self.assertEqual(procWorkflow.wfType, 'production')
 
         goldenOutputMods = ["outputRECORECO", "outputALCARECOALCARECO"]
         for goldenOutputMod in goldenOutputMods:
@@ -161,7 +160,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
 
         self.assertEqual(procSubscription["type"], "Production",
                          "Error: Wrong subscription type: %s" % procSubscription["type"])
-        self.assertEqual(procSubscription["split_algo"], "LumiBased",
+        self.assertEqual(procSubscription["split_algo"], "EventAwareLumiBased",
                          "Error: Wrong split algo.")
 
         unmergedReco = Fileset(name = "/TestWorkload/MonteCarloFromGEN/unmerged-outputRECORECO")

@@ -17,14 +17,10 @@ class RequestSchema(dict):
         self.setdefault("RequestType", None)
         self.setdefault("RequestName", None)
         self.setdefault("RequestPriority", 0)
-        self.setdefault("RequestNumEvents", None)
         self.setdefault("RequestSizeFiles", None)
-        self.setdefault("AcquisitionEra", None)
         self.setdefault("Group", None)
         self.setdefault("Requestor", None)
-        self.setdefault("ScramArch", "slc5_amd64_gcc434")
         self.setdefault("RequestDate", list(time.gmtime()[:6]))
-        self.setdefault("SizePerEvent", 0)
         self.basicFields = self.keys()
         self.validateFields = []
 

@@ -8,7 +8,6 @@
 		"RequestPriority": 1000,
 		"ScramArch": "slc5_amd64_gcc434",
 		"RequestType": "ReReco",
-		"Requestor": "Requestor-OVERRIDE-ME",
 		"RunWhitelist": [],
         "RunBlacklist": [],
         "BlockWhitelist": [],
@@ -18,20 +17,19 @@
 		"PrepID": "RERECOTEST-0001",
 		"Group": "DATAOPS",
         "TimePerEvent": 12,
-		"Memory": 2394,
+		"Memory": 2000,
         "SizePerEvent":500,
 		"InputDataset": "InputDataset-OVERRIDE-ME",
-        "DbsUrl": "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet",
-        "inputMode": "couchDB",
-        "Scenario": "pp",          
         "nskims": 1,
         "SkimName1": "2011B_442p2_DataReprocessingBTagSkim",
         "SkimInput1": "RECOoutput",
         "Skim1ConfigCacheID": "7559cf7a427be20436483f82fd109301",
         "SkimTimePerEvent1" : 4,
         "SkimSizePerEvent1" : 200,
-        "SkimMemory1" : 2394,
-        "OpenRunningTimeout" : 0
+        "SkimMemory1" : 2000,
+        "OpenRunningTimeout" : 0,
+        "SplittingAlgo" : "EventAwareLumiBased",
+        "EventsPerJob" : 1400
     },
 
 "changeSplitting":

@@ -50,6 +50,7 @@ class CondorPluginTest(BossAirTest):
 
         baAPI  = BossAirAPI(config = config)
 
+        print self.testDir
 
         jobPackage = os.path.join(self.testDir, 'JobPackage.pkl')
         f = open(jobPackage, 'w')
@@ -69,12 +70,12 @@ class CondorPluginTest(BossAirTest):
             tmpJob['cache_dir']   = self.testDir
             tmpJob['retry_count'] = 0
             tmpJob['plugin']      = 'CondorPlugin'
-            tmpJob['owner']       = 'mnorman'
+            tmpJob['owner']       = 'tapas'
             tmpJob['packageDir']  = self.testDir
             tmpJob['sandbox']     = sandbox
             tmpJob['priority']    = None
-            tmpJob['usergroup']   = "phgroup"
-            tmpJob['userrole']    = 'cmsrole'
+            tmpJob['usergroup']   = "wheel"
+            tmpJob['userrole']    = 'cmsuser'
             jobList.append(tmpJob)
 
 
@@ -82,8 +83,6 @@ class CondorPluginTest(BossAirTest):
         #info['packageDir'] = self.testDir
         info['index']      = 0
         info['sandbox']    = sandbox
-
-
 
         baAPI.submit(jobs = jobList, info = info)
 
@@ -111,7 +110,6 @@ class CondorPluginTest(BossAirTest):
 
         newJobs = baAPI._loadByStatus(status = 'Idle')
         self.assertEqual(len(newJobs), nJobs)
-
 
         baAPI.kill(jobs = jobList)
 
@@ -398,15 +396,45 @@ class CondorPluginTest(BossAirTest):
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, nSubs * nJobs)
 
-        # Now kill 'em manually
-        command = ['condor_rm', self.user]
-        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-        pipe.communicate()
+        baAPI.track()
+        idleJobs = baAPI._loadByStatus(status = 'Idle')
+        sn = "T2_US_UCSD"
 
+        # Test the Site Info has been updated. Make Sure T2_US_UCSD is not in the sitelist
+        # in BossAir_t.py
+        baAPI.updateSiteInformation(idleJobs, sn, True)
+
+        # Now kill 'em manually
+        #        command = ['condor_rm', self.user]
+        #        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
+        #        pipe.communicate()
+        
         del jobSubmitter
 
         return
 
+
+    @attr('integration')
+    def testT_updateJobInfo(self):
+        """
+        _updateJobInfo_
+
+        Test the updateSiteInformation method from CondorPlugin.py
+        """
+
+        nRunning = getCondorRunningJobs(self.user)
+        
+        config = self.getConfig()
+        config.BossAir.pluginName = 'CondorPlugin'
+        baAPI  = BossAirAPI(config = config)
+        baAPI.track()
+        idleJobs = baAPI._loadByStatus(status = 'Idle')
+        print idleJobs
+        for job in idleJobs :
+            print job['id']
+        baAPI.updateSiteInformation(idleJobs, info = None)
+        
+        return
 
 
 if __name__ == '__main__':

@@ -1,0 +1,23 @@
+{ 
+"createRequest":
+	{		 
+		"RequestType": "StoreResults",
+        "UnmergedLFNBase": "/store/temp/WMAgent/unmerged",
+        "MergedLFNBase": "/store/results",
+        "MinMergeSize": 1073741824,
+        "MaxMergeSize": 3221225472,
+        "MaxMergeEvents": 100000,
+        "DataTier": "USER",
+        "InputDataset": "/MinimumBias/Run2010A-Dec22ReReco_v1/USER",
+        "CMSSWVersion": "CMSSW_4_1_8",
+        "ScramArch": "slc5_amd64_gcc434",
+        "ProcessingVersion": 1,
+        "GlobalTag": "GR10_P_v4::All",
+        "TimePerEvent": 40,
+        "Memory": 2394,
+        "Group": "DATAOPS",
+        "DbsUrl": "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet",
+        "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
+        "CmsPath": "/uscmst1/prod/sw/cms"               
+	} 
+}

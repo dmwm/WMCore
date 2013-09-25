@@ -106,3 +106,13 @@ class BasePlugin:
         are passed through the kwargs
         """
         pass
+
+    def updateSiteInformation(self, jobs, siteName, excludeSite) :
+        """
+        _updateSiteInformation_
+
+        Update Site Information
+        """
+        pass
+
+    

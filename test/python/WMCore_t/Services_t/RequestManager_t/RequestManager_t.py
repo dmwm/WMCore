@@ -1,15 +1,13 @@
 import os
 import unittest
-import tempfile
-import shutil
 import logging
 from nose.plugins.attrib import attr
 
+from WMCore.Cache.WMConfigCache import ConfigCache
 from WMCore.Services.Requests import JSONRequests
 from WMCore.Services.RequestManager.RequestManager import RequestManager as RequestManagerDS
 
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
-from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 
 from WMCore_t.RequestManager_t.ReqMgr_t import RequestManagerConfig
 from WMCore_t.RequestManager_t import utils
@@ -58,20 +56,43 @@ class RequestManagerTest(RESTBaseUnitTest):
         schema = utils.getAndSetupSchema(self,
                                          userName = userName,
                                          groupName = groupName,
-                                         teamName = teamName)                
+                                         teamName = teamName)
+        schema['ConfigCacheID'] = self.createConfig()
+        schema['CouchDBName'] = self.couchDBName
         try:
-            r = self.jsonSender.put('request/' + schema['RequestName'], schema)                             
+            r = self.jsonSender.put('request/' + schema['RequestName'], schema)
+            self.requestName = r[0]['RequestName']
         except Exception, ex:
             print "Exception during set up, reason: %s" % ex
-            return
-        self.requestName = r[0]['RequestName'] 
-        
-    
+            raise ex
+
     def tearDown(self):
         self.config.deleteWorkloadCache()
         RESTBaseUnitTest.tearDown(self)
         self.testInit.tearDownCouch()
 
+    def createConfig(self, bad = False):
+        """
+        _createConfig_
+
+        Create a config of some sort that we can load out of ConfigCache
+        """
+        PSetTweak = {'process': {'outputModules_': ['ThisIsAName'],
+                                 'ThisIsAName': {'dataset': {'dataTier': 'RECO',
+                                                             'filterName': 'Filter'}}}}
+        BadTweak  = {'process': {'outputModules_': ['ThisIsAName1', 'ThisIsAName2'],
+                                 'ThisIsAName1': {'dataset': {'dataTier': 'RECO',
+                                                             'filterName': 'Filter'}},
+                                 'ThisIsAName2': {'dataset': {'dataTier': 'RECO',
+                                                             'filterName': 'Filter'}}}}
+        configCache = ConfigCache(os.environ["COUCHURL"], couchDBName = self.couchDBName)
+        configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
+        if bad:
+            configCache.setPSetTweaks(PSetTweak = BadTweak)
+        else:
+            configCache.setPSetTweaks(PSetTweak = PSetTweak)
+        configCache.save()
+        return configCache.getCouchID()
 
     @attr("integration")
     def testA_RequestManagerService(self):

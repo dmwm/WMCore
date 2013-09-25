@@ -3,23 +3,20 @@
 _MonteCarlo_t_
 
 Unit tests for the Monte Carlo workflow.
-
 """
 
 import unittest
 import os
-import threading
 
+from WMCore.Database.CMSCouch import CouchServer, Document
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-
+from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
-from WMCore.WMSpec.StdSpecs.MonteCarlo import getTestArguments, monteCarloWorkload
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
-from WMCore.Database.CMSCouch import CouchServer, Document
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
 
 class MonteCarloTest(unittest.TestCase):
     def setUp(self):
@@ -27,28 +24,25 @@ class MonteCarloTest(unittest.TestCase):
         _setUp_
 
         Initialize the database and couch.
-
         """
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setupCouch("montecarlo_t", "ConfigCache")
+        self.testInit.setupCouch("mc_configcache", "ConfigCache")
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.testInit.generateWorkDir()
 
         couchServer = CouchServer(os.environ["COUCHURL"])
-        self.configDatabase = couchServer.connectDatabase("rereco_t")
+        self.configDatabase = couchServer.connectDatabase("mc_configcache")
         EmulatorHelper.setEmulators(dbs = True)
         return
-
 
     def tearDown(self):
         """
         _tearDown_
 
         Clear out the database.
-
         """
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
@@ -56,14 +50,12 @@ class MonteCarloTest(unittest.TestCase):
         EmulatorHelper.resetEmulators()
         return
 
-
     def injectMonteCarloConfig(self):
         """
         _injectMonteCarlo_
 
         Create a bogus config cache document for the montecarlo generation and
         inject it into couch.  Return the ID of the document.
-
         """
         newConfig = Document()
         newConfig["info"] = None
@@ -71,7 +63,7 @@ class MonteCarloTest(unittest.TestCase):
         newConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
         newConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
         newConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
-        newConfig["pset_tweak_details"] ={"process": {"outputModules_": ["OutputA", "OutputB"],
+        newConfig["pset_tweak_details"] = {"process": {"outputModules_": ["OutputA", "OutputB"],
                                                       "OutputA": {"dataset": {"filterName": "OutputAFilter",
                                                                               "dataTier": "RECO"}},
                                                       "OutputB": {"dataset": {"filterName": "OutputBFilter",
@@ -79,11 +71,9 @@ class MonteCarloTest(unittest.TestCase):
         result = self.configDatabase.commitOne(newConfig)
         return result[0]["id"]
 
-
     def _commonMonteCarloTest(self):
         """
         Retrieve the workload from WMBS and test all its properties.
-
         """
         prodWorkflow = Workflow(name = "TestWorkload",
                                 task = "/TestWorkload/Production")
@@ -210,22 +200,20 @@ class MonteCarloTest(unittest.TestCase):
             self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
                              "Error: Wrong split algo.")
 
-
     def testMonteCarlo(self):
         """
+        _testMonteCarlo_
+
         Create a Monte Carlo workflow and verify that it is injected correctly
         into WMBS and invoke its detailed test.
-
         """
-        defaultArguments = getTestArguments()
+        defaultArguments = MonteCarloWorkloadFactory.getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
-        defaultArguments["CouchDBName"] = "rereco_t"
         defaultArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
 
-        testWorkload = monteCarloWorkload("TestWorkload", defaultArguments)
-        testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
-        
+        factory = MonteCarloWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
+
         testWMBSHelper = WMBSHelper(testWorkload, "Production", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
@@ -236,27 +224,22 @@ class MonteCarloTest(unittest.TestCase):
 
     def testMonteCarloExtension(self):
         """
+        _testMonteCarloExtension_
+
         Create a Monte Carlo workflow and verify that it is injected correctly
         into WMBS and invoke its detailed test. This uses a non-zero first
-        event and lumi. Check that the splitting arguments are correctly
+        lumi. Check that the splitting arguments are correctly
         set for the lfn counter.
-
         """
-        defaultArguments = getTestArguments()
+        defaultArguments = MonteCarloWorkloadFactory.getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
-        defaultArguments["CouchDBName"] = "rereco_t"
         defaultArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
-        defaultArguments["FirstEvent"] = 3571428573
-        defaultArguments["FirstLumi"] = 26042
-        defaultArguments["TimePerEvent"] = 15
-        defaultArguments["FilterEfficiency"] = 0.014
-        defaultArguments["TotalTime"] = 28800
+        defaultArguments["FirstLumi"] = 10000
 
-        initial_lfn_counter = 26042 # Same as the previous number of jobs + 1 which is the same value of the first lumi
+        initial_lfn_counter = 10000 # EventsPerJob == EventsPerLumi, then the number of previous jobs is equal to the number of the initial lumi
 
-        testWorkload = monteCarloWorkload("TestWorkload", defaultArguments)
-        testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
+        factory = MonteCarloWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
 
         testWMBSHelper = WMBSHelper(testWorkload, "Production", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
@@ -279,23 +262,53 @@ class MonteCarloTest(unittest.TestCase):
 
     def testMCWithPileup(self):
         """
+        _testMCWithPileup_
+
         Create a Monte Carlo workflow and verify that it is injected correctly
         into WMBS and invoke its detailed test.
         The input configuration includes pileup input files.
-
         """
-        defaultArguments = getTestArguments()
+        defaultArguments = MonteCarloWorkloadFactory.getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
-        defaultArguments["CouchDBName"] = "rereco_t"
         defaultArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
 
-        # add pile up configuration
-        defaultArguments["PileupConfig"] = {"mc": ["/some/cosmics/dataset1", "/some/cosmics/dataset2"],
-                                            "data": ["/some/minbias/dataset3"]}
+        # Add pileup inputs
+        defaultArguments["MCPileup"] = "/some/cosmics/dataset1"
+        defaultArguments["DataPileup"] = "/some/minbias/dataset1"
 
-        testWorkload = monteCarloWorkload("TestWorkload", defaultArguments)
-        testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
+        factory = MonteCarloWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
+
+        testWMBSHelper = WMBSHelper(testWorkload, "Production", "SomeBlock", cachepath = self.testInit.testDir)
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+
+        self._commonMonteCarloTest()
+        productionTask = testWorkload.getTaskByPath('/TestWorkload/Production')
+        cmsRunStep = productionTask.getStep("cmsRun1").getTypeHelper()
+        pileupData = cmsRunStep.getPileup()
+        self.assertEqual(pileupData.data.dataset, ["/some/minbias/dataset1"])
+        self.assertEqual(pileupData.mc.dataset, ["/some/cosmics/dataset1"])
+
+        return
+
+    def testMCWithLHE(self):
+        """
+        _testMCWithLHE_
+
+        Create a MonteCarlo workflow with a variation on the type of work
+        done, this refers to the previous LHEStepZero where the input
+        can be .lhe files and there is more than one lumi per job.
+        """
+        defaultArguments = MonteCarloWorkloadFactory.getTestArguments()
+        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
+        defaultArguments["LheInputFiles"] = "True"
+        defaultArguments["EventsPerJob"] = 200
+        defaultArguments["EventsPerLumi"] = 50
+
+        factory = MonteCarloWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
 
         testWMBSHelper = WMBSHelper(testWorkload, "Production", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
@@ -303,8 +316,13 @@ class MonteCarloTest(unittest.TestCase):
 
         self._commonMonteCarloTest()
 
-        return
+        productionTask = testWorkload.getTaskByPath('/TestWorkload/Production')
+        splitting = productionTask.jobSplittingParameters()
+        self.assertEqual(splitting["events_per_job"], 200)
+        self.assertEqual(splitting["events_per_lumi"], 50)
+        self.assertEqual(splitting["lheInputFiles"], True)
 
+        return
 
 if __name__ == '__main__':
     unittest.main()

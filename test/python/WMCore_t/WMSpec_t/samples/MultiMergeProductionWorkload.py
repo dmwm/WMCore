@@ -27,7 +27,7 @@ workload.setEndPolicy('SingleShot')
 production = workload.newTask("Production")
 #WARNING: this is arbitrary task type (wmbs schema only supprot "Processing", "Merge", "Harvest") - maybe add "MCProduction"
 production.setTaskType("Merge")
-production.addProduction(totalevents = 1000)
+production.addProduction(totalEvents = 1000)
 prodCmssw = production.makeStep("cmsRun1")
 prodCmssw.setStepType("CMSSW")
 prodStageOut = prodCmssw.addStep("stageOut1")

@@ -19,13 +19,14 @@ class ListForJobUpdater(DBFormatter):
     """
     sql = """SELECT wmbs_workflow.name, wmbs_workflow.task,
                     wmbs_workflow.priority AS workflow_priority,
-                    wmbs_sub_types.priority AS task_priority
+                    MIN(wmbs_sub_types.priority) AS task_priority
              FROM wmbs_workflow
              INNER JOIN wmbs_subscription ON
                wmbs_workflow.id = wmbs_subscription.workflow
              INNER JOIN wmbs_sub_types ON
                wmbs_subscription.subtype = wmbs_sub_types.id
-             GROUP BY wmbs_workflow.name, wmbs_workflow.task"""
+             GROUP BY wmbs_workflow.name, wmbs_workflow.task,
+                      wmbs_workflow.priority"""
 
     def execute(self, conn = None, transaction = False):
         result = self.dbi.processData(self.sql,

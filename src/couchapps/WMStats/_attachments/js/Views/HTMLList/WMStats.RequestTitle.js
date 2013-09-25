@@ -9,7 +9,7 @@ WMStats.namespace('WMStats.RequestTitle');
         } else {
             workflow = data.getData().workflow;
             dataType = 1;
-        }
+        };
         var requestInfo = WMStats.ActiveRequestModel.getData().getData(workflow);
 
         var htmlstr = "";
@@ -19,15 +19,15 @@ WMStats.namespace('WMStats.RequestTitle');
         htmlstr += "<li><b>" + workflow + "</b></li>";
         if (dataType == 1) {
             htmlstr += "<li><b>agent: </b>" + requestInfo.agent_url + "</li>";
-        }
+        };
         htmlstr += "</ul>";
         htmlstr += "</div>";
         return htmlstr;
-    }
+    };
     
     WMStats.RequestTitle = function (data, containerDiv) {
         if (typeof data === "string" || (typeof data === "object" && data.getData().workflow !== undefined)) {
             $(containerDiv).html(format(data));
-        }
-    }
+        };
+    };
 })();

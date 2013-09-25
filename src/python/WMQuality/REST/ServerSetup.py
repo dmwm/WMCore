@@ -7,9 +7,8 @@ from WMCore.REST.Main import RESTMain
 from WMCore.REST.Test import fake_authz_headers, fake_authz_key_file
 from WMCore.Services.Requests import JSONRequests
 
-
-
 class RESTMainTestServer(object):
+
     def __init__(self, cfg, statedir, testName):
         self.server = RESTMain(cfg, statedir)
         self.testName = testName
@@ -22,11 +21,9 @@ class RESTMainTestServer(object):
         #self.header = fake_authz_headers(test_authz_key.data, roles = {"Global Admin": {'group': ['global']}})        
         self.jsonSender = JSONRequests(self.serverUrl)
         
-        
     def getLastTest(self):
         global lastTest
         return lastTest
-    
 
     def setLastTest(self):
         global lastTest
@@ -53,7 +50,6 @@ class RESTMainTestServer(object):
     def stop(self):
         """
         Stop the server
-        
         """
         cherrypy.engine.exit()
         cherrypy.engine.stop()

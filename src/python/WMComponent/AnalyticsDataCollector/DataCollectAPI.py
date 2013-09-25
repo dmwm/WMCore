@@ -8,12 +8,9 @@ JobInfoByID
 Retrieve information about a job from couch and format it nicely.
 """
 
-import sys
-import datetime
 import os
 import time
-import re
-import urllib
+from WMCore.Configuration import loadConfigurationFile
 import logging
 from WMCore.Agent.Daemon.Details import Details
 from WMCore.Database.CMSCouch import CouchServer
@@ -143,6 +140,9 @@ class LocalCouchDBData():
             data[x['key'][0]].setdefault('tasks', {})
             data[x['key'][0]]['tasks'].setdefault(x['key'][1], {}) 
             data[x['key'][0]]['tasks'][x['key'][1]].setdefault('sites', {})
+            if x['key'][2] == {}:
+                logging.warning("site information is missing (ignore and continue - investigate): %s" % x)
+                continue
             data[x['key'][0]]['tasks'][x['key'][1]]['sites'][x['key'][2]] = x['value']
             data[x['key'][0]]['tasks'][x['key'][1]]['sites'][x['key'][2]].setdefault('dataset', {})
             if x['key'][3]:
@@ -225,7 +225,6 @@ class WMAgentDBData():
 
         results = self.componentStatusAction.execute()
         currentTime = time.time()
-        agentStatus = "ok";
         agentInfo = {}
         agentInfo['down_components'] = []
 
@@ -273,6 +272,7 @@ class WMAgentDBData():
         agentInfo['down_components'] = list(agentInfo['down_components'])
         return agentInfo
         
+    
     def getBatchJobInfo(self):
         return self.batchJobAction.execute()
 
@@ -351,6 +351,8 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
 
         doc['timestamp'] = uploadTime
         #doc['output_progress'] = fwjrInfo.get(request, [])
+        #if task is not specified set default
+        doc.setdefault('tasks', {})
         if request in fwjrInfo:
             doc['tasks'] = combineAnalyticsData(doc['tasks'], fwjrInfo[request]['tasks'])
         if request in finishedTasks:
@@ -437,3 +439,18 @@ def _getCouchACDCHtmlBase(acdcCouchURL):
 
 
     return '%s/_design/ACDC/collections.html' % sanitizeURL(acdcCouchURL)['url']
+
+def isDrainMode(config):
+    """
+    config is loaded WMAgentCofig 
+    """
+    return config.WorkQueueManager.queueParams.get('DrainMode', False)
+
+def initAgentInfo(config):
+    
+    agentInfo = {}
+    agentInfo['agent_team'] = config.Agent.teamName
+    agentInfo['agent'] = config.Agent.agentName
+    # temporarly add port for the split test
+    agentInfo['agent_url'] = ("%s:%s" % (config.Agent.hostName, config.WMBSService.Webtools.port))
+    return agentInfo

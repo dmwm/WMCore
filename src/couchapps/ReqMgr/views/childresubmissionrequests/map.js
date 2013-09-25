@@ -4,7 +4,7 @@
  * @author Diego Ballesteros
  */
 function(doc){
-    if(doc["OriginalRequestName"]){
-        emit(doc["OriginalRequestName"], null);
+    if(doc.InitialTaskPath){
+        emit(doc.InitialTaskPath.split("/")[1], null);
     }
 }

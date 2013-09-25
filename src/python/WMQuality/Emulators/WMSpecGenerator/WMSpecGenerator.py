@@ -2,23 +2,18 @@
 """
     WorkQueue tests
 """
-
-
-
-
-import unittest
 import os
 import shutil
 import tempfile
 
-from WMCore.WMSpec.StdSpecs.ReReco \
-    import rerecoWorkload as TestReRecoWorkload, getTestArguments
+from WMCore.WMSpec.StdSpecs.ReReco  import ReRecoWorkloadFactory
 from Samples.TestMonteCarloWorkload \
     import monteCarloWorkload as TestMCWorkload, getMCArgs
 from Samples.BasicProductionWorkload \
     import createWorkload as BasicProductionWorkload
 from Samples.BasicProcessingWorkload \
     import createWorkload as BasicProcessingWorkload
+from WMCore.Cache.WMConfigCache import ConfigCache
 
 #from Samples.MultiTaskProcessingWorkload import createWorkload as MultiTaskProcessingWorkload
 #from Samples.MultiTaskProductionWorkload import createWorkload as MultiTaskProductionWorkload
@@ -66,9 +61,11 @@ class WMSpecGenerator(object):
     def createReRecoSpec(self, specName, returnType="spec", splitter = None,
                          inputDataset = None, dbsUrl = None, **additionalArgs):
         # update args, then reset them
-        args = getTestArguments()
+        args = ReRecoWorkloadFactory.getTestArguments()
         args.update(additionalArgs)
-        spec =  TestReRecoWorkload(specName, args)
+        args["ConfigCacheID"] = createConfig(args["CouchDBName"])
+        factory = ReRecoWorkloadFactory()
+        spec =  factory.factoryWorkloadConstruction(specName, args)
         if inputDataset != None:
             spec.taskIterator().next().data.input.dataset.primary = inputDataset
         if dbsUrl != None:
@@ -93,3 +90,24 @@ class WMSpecGenerator(object):
         #TODO: needs a smarter way to clean up the spec files.
         # avoid accidently deleting other codes
         shutil.rmtree(self.dir)
+
+def createConfig(couchDBName):
+    """
+    _createConfig_
+
+    Create a config of some sort that we can load out of ConfigCache
+    """
+    
+    PSetTweak = {'process': {'outputModules_': ['RECOoutput', 'ALCARECOoutput'],
+                             'RECOoutput': {'dataset': {'dataTier': 'RECO',
+                                                         'filterName': 'Filter'}},
+                             'ALCARECOoutput': {'dataset': {'dataTier': 'ALCARECO',
+                                                            'filterName': 'AlcaFilter'}}}}
+
+    configCache = ConfigCache(os.environ["COUCHURL"], couchDBName = couchDBName)
+    configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
+    configCache.setPSetTweaks(PSetTweak = PSetTweak)
+    configCache.save()
+
+    return configCache.getCouchID()
+

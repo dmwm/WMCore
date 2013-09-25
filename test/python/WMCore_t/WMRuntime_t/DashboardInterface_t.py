@@ -15,10 +15,11 @@ from WMQuality.TestInit import TestInit
 from WMCore.DataStructs.Job  import Job
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run  import Run
-from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, getTestArguments
 from WMCore.FwkJobReport.Report     import Report
 from WMCore.WMRuntime.DashboardInterface import DashboardInfo, getUserProxyDN
 from WMCore.WMBase import getTestBase
+
+from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 
 from nose.plugins.attrib import attr
 
@@ -61,8 +62,8 @@ class DashboardInterfaceTest(unittest.TestCase):
         Create a workload in order to test things
 
         """
-        workload = rerecoWorkload("Tier1ReReco", getTestArguments())
-        rereco = workload.getTask("DataProcessing")
+        generator = WMSpecGenerator()
+        workload = generator.createReRecoSpec("Tier1ReReco")
         return workload
 
     def createTestJob(self):

@@ -377,7 +377,7 @@ class ConfigCache(WMObject):
             except KeyError:
                 msg = "Could not find outputModule %s in psetTweaks['process']" % outputModuleName
                 logging.error(msg)
-                raise ConfigCacheExcpetion(msg)
+                raise ConfigCacheException(msg)
             dataset = outModule.get("dataset", None)
             if dataset:
                 results[outputModuleName] = {"dataTier": outModule["dataset"]["dataTier"],

@@ -24,7 +24,7 @@ class RESTBaseUnitTest(unittest.TestCase):
             from WMQuality.TestInitCouchApp import TestInitCouchApp
             self.testInit = TestInitCouchApp(__file__)
             self.testInit.setLogging() # logLevel = logging.SQLDEBUG
-            self.testInit.setDatabaseConnection()
+            self.testInit.setDatabaseConnection( destroyAllDatabase = True )
             self.testInit.setSchema(customModules = self.schemaModules,
                                     useDefault = False)
             # Now pull the dbURL from the factory

@@ -1,15 +1,13 @@
 {
 "createRequest":
     {
-        "AcquisitionEra": {},
         "CMSSWVersion": "CMSSW_6_1_2",
         "Campaign": "Campaign-OVERRIDE-ME",
         "ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
         "DQMConfigCacheID": "fcd00e29ab6cfb3b94e098241a1b828f",
         "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
-        "EnableDQMHarvest": 1,
+        "EnableHarvesting": "True",
         "GlobalTag": "PRE_61_V1::All",
-        "Requestor": "Requestor-OVERRIDE-ME",
         "Group": "DATAOPS",
         "ProcessingVersion": 1,
         "RequestString": "RV612_TEST_TaskChain_RunMET2012A",
@@ -28,8 +26,8 @@
             "AcquisitionEra": "CMSSW_6_1_2",
             "ProcessingString": "PRE_P61_V1_TEST_bed_RelVal_met2012A",
             "GlobalTag": "PRE_P61_V1::All",
-            "SplittingArguments": {"lumis_per_job": 6},
-            "SplittingAlgorithm": "LumiBased",
+            "LumisPerJob": 6,
+            "SplittingAlgo": "LumiBased",
             "ConfigCacheID": "fcd00e29ab6cfb3b94e098241a1b5b18",
             "TaskName": "HLTD"},
         "Task2": {
@@ -39,8 +37,8 @@
             "GlobalTag": "PRE_61_V1::All",
             "InputFromOutputModule": "RAWoutput",
             "InputTask": "HLTD",
-            "SplittingArguments": {"lumis_per_job": 3},
-            "SplittingAlgorithm": "LumiBased",
+            "LumisPerJob": 3,
+            "SplittingAlgo": "LumiBased",
             "ConfigCacheID": "fcd00e29ab6cfb3b94e098241a1b643e",
             "TaskName": "RECODreHLT"},
         "TaskChain": 2,

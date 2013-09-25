@@ -446,10 +446,18 @@ class SetupCMSSWPset(ScriptInterface):
                 if pileupType == requestedPileupType:
                     # not all blocks may be stored on the local SE, loop over
                     # all blocks and consider only files stored locally
-                    for blockDict in pileupDict[pileupType].values():
+                    eventsAvailable = 0
+                    for blockName in sorted(pileupDict[pileupType].keys()):
+                        blockDict = pileupDict[pileupType][blockName]
                         if seLocalName in blockDict["StorageElementNames"]:
+                            eventsAvailable += int(blockDict.get('NumberOfEvents', 0))
                             for fileLFN in blockDict["FileList"]:
                                 inputTypeAttrib.fileNames.append(str(fileLFN))
+                    if requestedPileupType == 'data':
+                        baggage = self.job.getBaggage()
+                        if getattr(baggage, 'skipPileupEvents', None) is not None:
+                            inputTypeAttrib.skipEvents = cms.untracked.uint32(int(baggage.skipPileupEvents) % eventsAvailable)
+                            inputTypeAttrib.sequential = cms.untracked.bool(True)
 
     def _getPileupMixingModules(self):
         """

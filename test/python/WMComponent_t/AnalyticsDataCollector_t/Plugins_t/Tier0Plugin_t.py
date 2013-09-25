@@ -18,7 +18,7 @@ from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.StdSpecs.PromptReco import getTestArguments, promptrecoWorkload
+from WMCore.WMSpec.StdSpecs.PromptReco import PromptRecoWorkloadFactory
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
@@ -198,10 +198,13 @@ class Tier0PluginTest(unittest.TestCase):
         """
 
         # Populate disk and WMBS
-        testArguments = getTestArguments()
+        testArguments = PromptRecoWorkloadFactory.getTestArguments()
 
         workflowName = 'PromptReco_Run195360_Cosmics'
-        workload = promptrecoWorkload(workflowName, testArguments)
+        factory = PromptRecoWorkloadFactory()
+        testArguments["EnableHarvesting"] = True
+        testArguments["CouchURL"] = os.environ["COUCHURL"]
+        workload = factory.factoryWorkloadConstruction(workflowName, testArguments)
 
         wmbsHelper = WMBSHelper(workload, 'Reco', 'SomeBlock', cachepath = self.testDir)
         wmbsHelper.createTopLevelFileset()

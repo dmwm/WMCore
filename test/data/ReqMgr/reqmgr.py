@@ -395,8 +395,8 @@ class ReqMgrClient(RESTClient):
                                  "TimePerEvent": origMCRequestArgs["TimePerEvent"],
                                  "Memory": origMCRequestArgs["Memory"],
                                  "SizePerEvent": origMCRequestArgs["SizePerEvent"],
-                                 "ACDCServer": "",
-                                 "ACDCDatabase": "",
+                                 "ACDCServer": "https://cmsweb-testbed.cern.ch/couchdb",
+                                 "ACDCDatabase": "acdcserver",
                                  "Requestor": origMCRequestArgs["Requestor"],
                                  "Group": origMCRequestArgs["Group"]
                                 }
@@ -668,8 +668,8 @@ class ReqMgrClient(RESTClient):
                (newPriority, clonedRequest["RequestPriority"]))
         assert newPriority == clonedRequest["RequestPriority"], msg
         msg = ("DbsUrl don't match: original request %s cloned request: %s" %
-               (testRequestData["DbsUrl"], clonedRequest["DbsUrl"]))
-        assert testRequestData["DbsUrl"] == clonedRequest["DbsUrl"], msg
+               (testRequestData.get("DbsUrl"), clonedRequest.get("DbsUrl")))
+        assert testRequestData.get("DbsUrl") == clonedRequest.get("DbsUrl"), msg
         
         # test Resubmission request, only if we have MonteCarlo request template in input
         if config.requestArgs["createRequest"]["RequestType"] == "MonteCarlo":

@@ -14,7 +14,7 @@ import WMCore.WMSpec.WMTask as WMTask
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.WMRuntime.SandboxCreator import SandboxCreator
-from WMCore.WMSpec.StdSpecs.MonteCarlo import getTestArguments, monteCarloWorkload
+from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
 from WMCore.WMSpec.Steps.Fetchers.PileupFetcher import PileupFetcher
 from WMCore.Wrappers.JsonWrapper import JSONDecoder
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
@@ -148,16 +148,15 @@ class PileupFetcherTest(unittest.TestCase):
                 self._queryAndCompareWithDBS(pileupDict, defaultArguments, helper.data.dbsUrl)
 
     def testPileupFetcherOnMC(self):
-        pileupMcArgs = getTestArguments()
+        pileupMcArgs = MonteCarloWorkloadFactory.getTestArguments()
         pileupMcArgs["PileupConfig"] = {"cosmics": ["/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"],
                                         "minbias": ["/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"]}
         pileupMcArgs["CouchURL"] = os.environ["COUCHURL"]
         pileupMcArgs["CouchDBName"] = "pileupfetcher_t"
         pileupMcArgs["ConfigCacheID"] = self.injectGenerationConfig()
 
-        testWorkload = monteCarloWorkload("TestWorkload", pileupMcArgs)
-        testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DWMWM")
+        factory = MonteCarloWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", pileupMcArgs)
 
         # Since this is test of the fetcher - The loading from WMBS isn't
         # really necessary because the fetching happens before the workflow

@@ -242,9 +242,9 @@ class Create(CreateWMBSBase):
           """ALTER TABLE wmbs_workflow ADD
                (CONSTRAINT wmbs_workflow_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
 
-        self.indexes["02_pk_wmbs_workflow"] = \
+        self.indexes["uniquewfname"] = \
           """ALTER TABLE wmbs_workflow ADD
-               (CONSTRAINT wmbs_workflow_unique UNIQUE (name, task) %s)""" % tablespaceIndex
+               (CONSTRAINT uniq_wf_name UNIQUE (name, task) %s)""" % tablespaceIndex
 
         self.indexes["02_fk_wmbs_workflow"] = \
           """ALTER TABLE wmbs_workflow ADD

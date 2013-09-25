@@ -3,6 +3,8 @@
 _GlobalWorkQueueConfig_
 
 Global WorkQueue config.
+WARNING: This config is only used for wmagent all-in-one test. Will be deplicated.
+Doesn't replex the current workqueue config which is under deployment
 """
 
 import os
@@ -69,6 +71,5 @@ config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
 config.WorkQueueManager.level = "GlobalQueue"
 config.WorkQueueManager.pollInterval = 600
 config.WorkQueueManager.queueParams = {'WMStatsCouchUrl': "%s/%s" % (config.WorkQueueManager.couchurl.rstrip(), config.WorkQueueManager.wmstatDBName)}
-config.WorkQueueManager.queueParams['Config'] = config
 config.WorkQueueManager.reqMgrConfig = {'teamName' : config.Agent.teamName,
                                         'endpoint': "%s/reqMgr/" % reqMgrUrl}

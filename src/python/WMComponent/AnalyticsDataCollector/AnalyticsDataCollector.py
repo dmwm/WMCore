@@ -12,6 +12,7 @@ import threading
 
 from WMCore.Agent.Harness import Harness
 from WMComponent.AnalyticsDataCollector.AnalyticsPoller import AnalyticsPoller
+from WMComponent.AnalyticsDataCollector.AgentStatusPoller import AgentStatusPoller
 
 class AnalyticsDataCollector(Harness):
     def __init__(self, config):
@@ -20,6 +21,9 @@ class AnalyticsDataCollector(Harness):
 
     def preInitialization(self):
         pollInterval = self.config.AnalyticsDataCollector.pollInterval
+        agentPollInterval =self.config.AnalyticsDataCollector.agentPollInterval
         myThread = threading.currentThread()
+        myThread.workerThreadManager.addWorker(AgentStatusPoller(self.config),
+                                               agentPollInterval)
         myThread.workerThreadManager.addWorker(AnalyticsPoller(self.config),
                                                pollInterval)

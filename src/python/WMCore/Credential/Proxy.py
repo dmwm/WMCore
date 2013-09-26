@@ -108,7 +108,7 @@ def myProxyEnvironment(userDN, serverCert, serverKey, myproxySrv, proxyDir, logg
         os.environ = originalEnvironment
 
 def cmd_exists(cmd):
-    return subprocess.call("type " +  cmd, shell=True, 
+    return subprocess.call("type " +  cmd, shell=True,
         stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0
 
 class Proxy(Credential):
@@ -295,16 +295,16 @@ class Proxy(Credential):
             myproxyDelegCmd = 'X509_USER_PROXY=%s ; myproxy-init -d -n -s %s' % (credential, self.myproxyServer)
 
             if nokey is True:
-                credname = sha1(self.serverDN+self.userDN).hexdigest()
-                myproxyDelegCmd = 'X509_USER_PROXY=%s ; myproxy-init -s %s -x -Z \'%s\' --voms cms -l \'%s\' -t 168:00 -c %s' \
-                                  % (credential, self.myproxyServer, self.serverDN, credname, self.myproxyValidity)
+                credname = sha1(self.userDN).hexdigest()
+                myproxyDelegCmd = 'X509_USER_PROXY=%s ; myproxy-init -d -n -s %s -x -R \'%s\' -x -Z \'%s\' --voms cms -l \'%s\' -t 168:00 -c %s' \
+                                  % (credential, self.myproxyServer, self.serverDN, self.serverDN, credname, self.myproxyValidity)
             elif serverRenewer and len( self.serverDN.strip() ) > 0:
                 serverCredName = sha1(self.serverDN).hexdigest()
                 myproxyDelegCmd += ' -x -R \'%s\' -Z \'%s\' -k %s -t 168:00 -c %s ' \
                                    % (self.serverDN, self.serverDN, serverCredName, self.myproxyValidity )
             _, stderr, _ = execute_command( self.setUI() +  myproxyDelegCmd, self.logger, self.commandTimeout )
-            if stderr.find('proxy will expire') > -1: 
-                raise CredentialException('Your certificate is shorter than %s ' % self.myproxyValidity) 
+            if stderr.find('proxy will expire') > -1:
+                raise CredentialException('Your certificate is shorter than %s ' % self.myproxyValidity)
         else:
             self.logger.error( "myproxy server not set for the proxy %s" % credential )
 
@@ -321,7 +321,7 @@ class Proxy(Credential):
         if self.myproxyServer:
 
             if nokey is True and serverRenewer is True:
-                credname = sha1(self.serverDN+self.userDN).hexdigest()
+                credname = sha1(self.userDN).hexdigest()
                 checkMyProxyCmd = 'myproxy-info -l %s -s %s' %(credname, self.myproxyServer)
                 output, _, retcode = execute_command(self.setUI() +  checkMyProxyCmd, self.logger, self.commandTimeout )
                 if retcode > 0 or not output:
@@ -474,14 +474,6 @@ class Proxy(Credential):
             attribute = self.getProxyDetails( )
         voAttribute = self.prepareAttForVomsRenewal( attribute )
 
-        # get the credential name for this retriever
-        if not credServerName:
-            subject = self.getSubjectFromCert( self.serverCert )
-            if subject:
-                credServerName = sha1(subject).hexdigest()
-            else:
-                self.logger.error("Unable to to get the subject from the cert for user %s" % (self.userDN))
-                return proxyFilename
 
         # compose the delegation or renewal commands
         # with the regeneration of Voms extensions
@@ -493,8 +485,8 @@ class Proxy(Credential):
 
         ## get a new delegated proxy
         proxyFilename = os.path.join( self.credServerPath, sha1( self.userDN + self.vo + self.group + self.role ).hexdigest() )
-        cmdList.append('myproxy-logon -d -n -s %s -o %s -l \"%s\" -k %s -t 168:00'
-                       % (self.myproxyServer, proxyFilename, self.userDN, credServerName) )
+        cmdList.append('myproxy-logon -d -n -s %s -o %s -l \"%s\" -t 168:00'
+                       % (self.myproxyServer, proxyFilename, sha1(self.userDN).hexdigest() ))
         logonCmd = ' '.join(cmdList)
         msg, _, retcode = execute_command(self.setUI() + logonCmd, self.logger, self.commandTimeout)
 

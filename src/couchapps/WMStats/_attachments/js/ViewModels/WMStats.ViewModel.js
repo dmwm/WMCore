@@ -94,13 +94,13 @@ WMStats.ViewModel = (function (){
 // create WMStats.ViewModel properties
 (function(vm) {
     
-    vm.Registry  ={}
+    vm.Registry  ={};
 
     vm.ActiveRequestPage = (function (){
         var properties = {view: null,
                           filter: {},
                           filteredStats: null,
-                          refreshCount: 0}
+                          refreshCount: 0};
         var requestPage = new WMStats._ViewModelBase(properties);
         
         requestPage.propagateUpdate = function() {
@@ -155,7 +155,7 @@ WMStats.ViewModel = (function (){
         /*
          * keys contain {searchCategory: blah, searchValue: blah}
          */
-        var properties = {keys: null}
+        var properties = {keys: null};
         searchPage = new WMStats._ViewModelBase(properties);
         
         searchPage.retrieveData = function(keys) {
@@ -181,17 +181,17 @@ WMStats.ViewModel = (function (){
                 var endDate = $('input[name="dateRange2"]').val().split("/");
                 options.startkey = [Number(beginDate[0]), Number(beginDate[1]), Number(beginDate[2])];
                 options.endkey = [Number(endDate[0]), Number(endDate[1]), Number(endDate[2]), {}];
-            }
+            };
             
             WMStats.RequestSearchModel.retrieveData(view, options);
-        }
+        };
         return searchPage;
     })();
     
     vm.CategoryView = (function (){
         
         var properties = {category: null,
-                          detailView: null}
+                          detailView: null};
                           
         var categoryView = new WMStats._ViewModelBase(properties);
         
@@ -225,7 +225,7 @@ WMStats.ViewModel = (function (){
         
         var properties = {categoryKey: "all", 
                           format: null, 
-                          detailView: null}
+                          detailView: null};
         
         var requestView = new WMStats._ViewModelBase(properties);
         
@@ -245,6 +245,26 @@ WMStats.ViewModel = (function (){
         //TODO: hack for assigning for category map
         requestView.categoryName = "requests";
         return requestView;
+    })();
+    
+    vm.TaskView = (function (){
+        /*
+         * TODO: not done need to replace in TaskSummary Table.
+         */
+        
+        var properties = {requestName: null};
+        
+        var taskView = new WMStats._ViewModelBase(properties);
+        
+        taskView.propagateUpdate = function() {
+            if (taskView.requestName()) {
+                taskView.data(WMStats.ActiveRequestModel.getData().getTasks(taskView.requestName()));
+                return false;
+            } else {
+                return false;
+            }
+        };
+        return taskView;
     })();
     
     function createJobSummaryView(){
@@ -268,7 +288,7 @@ WMStats.ViewModel = (function (){
         };
         
         jobView.updateDataAndChild = function(data) {
-            if (data) {jobView.data(data)} ;
+            if (data) {jobView.data(data);}
             if (jobView.detail().propagateUpdate) {
                 jobView.detail().propagateUpdate();
                 return true;
@@ -310,21 +330,21 @@ WMStats.ViewModel = (function (){
     
     /* request view job detail */
     vm.CategoryDetail = (function (){
-        var properties = {categoryKey: null}
+        var properties = {categoryKey: null};
         var categoryDetail = new WMStats._ViewModelBase(properties);
         
         categoryDetail.propagateUpdate = function() {
             if (categoryDetail.categoryKey()) {
-                var allData = vm.CategoryView.data()
+                var allData = vm.CategoryView.data();
                 categoryDetail.data(allData.getData(categoryDetail.categoryKey()));
             }
-        }
+        };
         return categoryDetail;
     })();
     
    
     vm.RequestDetail = (function (){
-        var properties = {requestName: null}
+        var properties = {requestName: null};
         var requestDetail = new WMStats._ViewModelBase(properties);
         requestDetail.open = false;
         return requestDetail;
@@ -380,15 +400,15 @@ WMStats.ViewModel = (function (){
                 summary.ACDCDatabase = acdcServiceUrl.couchdb;
             }
             
-            requestInfo = reqMgrRequest.getData()
+            requestInfo = reqMgrRequest.getData();
             //from passing request info
             summary.Memory = requestInfo.Memory;
             summary.SizePerEvent = requestInfo.SizePerEvent;
             summary.TimePerEvent = requestInfo.TimePerEvent;
             summary.DbsUrl = requestInfo.DbsUrl || "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet";
             summary.Group = requestInfo.Group;
-            summary.RequestPriority = requestInfo.RequestPriority
-            summary.RequestString = WMStats.Utils.acdcRequestSting(summary.OriginalRequestName, requestInfo.Requestor)
+            summary.RequestPriority = requestInfo.RequestPriority;
+            summary.RequestString = WMStats.Utils.acdcRequestSting(summary.OriginalRequestName, requestInfo.Requestor);
             summary.PrepID = requestInfo.PrepID;
             
             /*
@@ -399,7 +419,7 @@ WMStats.ViewModel = (function (){
             summary.RequestType = "Resubmission";
             
             return summary;
-        }
+        };
         
         resubmission.propagateUpdate = function() {
             if (resubmission.keys() !== null) {

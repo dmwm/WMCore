@@ -281,6 +281,11 @@ clear: both
     font-size: 1em;
 }
 
+#job_view .task_summary{ 
+    position: relative;
+    padding: 10px 10px 30px;
+}
+
 #job_view .summary_data{ 
     position: relative;
     padding: 10px 10px 30px;

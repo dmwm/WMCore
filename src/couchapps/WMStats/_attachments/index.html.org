@@ -49,6 +49,7 @@
                     </div>
                     <div id="job_view">
                         <div id="request_title"></div>
+                        <div class="task_summary"></div>
                         <div class="summary_data"></div>
                         <div class="detail_data"></div>
                         <div id="acdc_submission" class="hideDiv draggable"></div>

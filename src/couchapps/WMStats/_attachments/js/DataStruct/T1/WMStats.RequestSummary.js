@@ -10,19 +10,19 @@ WMStats.RequestsSummary = function() {
         var summary = WMStats.RequestsSummary();
         summary.summaryStruct.totalEvents = Number(this._get(doc, "input_events", 0));
         summary.summaryStruct.processedEvents = this._get(doc, "output_progress.0.events", 0);
-        summary.summaryStruct.progress = this.getAvgProgressSummary(doc)
+        summary.summaryStruct.progress = this.getAvgProgressSummary(doc);
         summary.summaryStruct.length = 1;
-        summary.jobStatus = this._get(doc, 'status', {})
+        summary.jobStatus = this._get(doc, 'status', {});
         //support legacy code which had cooloff jobs instead cooloff.create, cooloff.submit
         //cooloff.job
         if ((typeof summary.jobStatus.cooloff) === "number") {
-            summary.jobStatus.cooloff = {create: 0, submit: 0, job: summary.jobStatus.cooloff}
+            summary.jobStatus.cooloff = {create: 0, submit: 0, job: summary.jobStatus.cooloff};
         }
         return summary;
     };
 
     return requestSummary;
-}
+};
 
 WMStats.Requests = function(noFilterFlag) {
     var tier1Requests = new WMStats.GenericRequests(noFilterFlag);
@@ -46,7 +46,7 @@ WMStats.Requests = function(noFilterFlag) {
         "announced": 16,
         "aborted": 17,
         "rejected": 18
-    }
+    };
  
     tier1Requests.estimateCompletionTime = function(request) {
         //TODO need to improve the algo

@@ -6,7 +6,7 @@ WMStats.Alerts = function (couchData) {
     
     alertData.convertCouchData =   function(data) {
                                         var dataRows = data.rows;
-                                        var rows =[]
+                                        var rows =[];
                                         for (var i in dataRows) {
                                             var tableRow = {};
                                             tableRow.workflow = dataRows[i].key;
@@ -14,8 +14,8 @@ WMStats.Alerts = function (couchData) {
                                             rows.push(tableRow)
                                         }
                                         return rows;
-                                    }
+                                   };
     if (couchData) alertData.setData(couchData);
     
     return alertData
-}
+};

@@ -1,3 +1,42 @@
+0.9.79 to 0.9.80:
+  - Merge pull request #4794 from ticoann/wmstats_task_summary
+  - add task summary table
+  - Merge pull request #4789 from spigad/master
+  - get rid of -k option in myproxy-logon  and remove the server DN from my  myproxy credential name (now is only sha1(self.userDN).hexdigest())
+  - Merge pull request #4778 from ticoann/test_config
+  - Merge pull request #4783 from hufnagel/oracle-constraints
+  - Merge pull request #4788 from lucacopa/test_analytics
+  - Improve AnalyticsDataCollector reporting WMAgentConfig
+  - Merge pull request #4785 from lucacopa/test_analytics
+  - Improve AnalyticsDataCollector reporting
+  - Merge pull request #4784 from ticoann/drain_mode_monitor_fix
+  - don't use WMAGENT_CONFIG env
+  - change Oracle constraints
+  - support for all in one test
+  - Merge pull request #4774 from tsarangi/issuenumber4618
+  - Merge pull request #4773 from ticoann/update_request_splitting
+  - Merge pull request #4777 from amaltaro/hg1309-reqmgr-templates
+  - added two json templates for reqmgr client, for hg1309
+  - Fixes # 4618 : Remove tableSpaces and FK Constraints
+  - Merge branch 'master' of https://github.com/dmwm/WMCore into update_request_splitting
+  - Merge pull request #4775 from ticoann/couch_view_default_stale
+  - set default stale for wq calls
+  - update the creation time job splitting samples
+  - Merge pull request #4770 from ticoann/httpexception_fix
+  - fix to import HTTPException
+  - Merge pull request #4766 from hufnagel/cleanup-retryalgos
+  - remove obsolete retry algorithm code
+  - Merge pull request #4637 from cinquo/master
+  - Merge pull request #4752 from dballesteros7/deterministic-pu-wmagent
+  - Merge pull request #4739 from dballesteros7/cnaf-disk
+  - Merge pull request #4761 from ticoann/workqueue_test_fix
+  - fix WorkQueue unittest
+  - Merge pull request #4757 from ticoann/reqmgr2_dashboard_dep
+  - Add dashboard dependency to reqmgr2.
+  - Implement deterministic pileup support
+  - Configure T1 disk sites overrride
+  - Updating dependencies for crabserver, crabclient and aso
+
 0.9.78 to 0.9.79:
   - add drain mode, handle replication error, filter stalled request, fix agent error nummber update. pull request #4751 
   - Properly validate processed dataset. Pull request #4733

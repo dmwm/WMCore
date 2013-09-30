@@ -1,44 +1,24 @@
-0.9.79 to 0.9.80:
-  - Merge pull request #4794 from ticoann/wmstats_task_summary
-  - add task summary table
-  - Merge pull request #4789 from spigad/master
-  - get rid of -k option in myproxy-logon  and remove the server DN from my  myproxy credential name (now is only sha1(self.userDN).hexdigest())
-  - Merge pull request #4778 from ticoann/test_config
-  - Merge pull request #4783 from hufnagel/oracle-constraints
-  - Merge pull request #4788 from lucacopa/test_analytics
-  - Improve AnalyticsDataCollector reporting WMAgentConfig
-  - Merge pull request #4785 from lucacopa/test_analytics
-  - Improve AnalyticsDataCollector reporting
-  - Merge pull request #4784 from ticoann/drain_mode_monitor_fix
-  - don't use WMAGENT_CONFIG env
-  - change Oracle constraints
-  - support for all in one test
-  - Merge pull request #4774 from tsarangi/issuenumber4618
-  - Merge pull request #4773 from ticoann/update_request_splitting
-  - Merge pull request #4777 from amaltaro/hg1309-reqmgr-templates
-  - added two json templates for reqmgr client, for hg1309
-  - Fixes # 4618 : Remove tableSpaces and FK Constraints
-  - Merge branch 'master' of https://github.com/dmwm/WMCore into update_request_splitting
-  - Merge pull request #4775 from ticoann/couch_view_default_stale
-  - set default stale for wq calls
-  - update the creation time job splitting samples
-  - Merge pull request #4770 from ticoann/httpexception_fix
-  - fix to import HTTPException
-  - Merge pull request #4766 from hufnagel/cleanup-retryalgos
-  - remove obsolete retry algorithm code
-  - Merge pull request #4637 from cinquo/master
-  - Merge pull request #4752 from dballesteros7/deterministic-pu-wmagent
-  - Merge pull request #4739 from dballesteros7/cnaf-disk
-  - Merge pull request #4761 from ticoann/workqueue_test_fix
-  - fix WorkQueue unittest
-  - Merge pull request #4757 from ticoann/reqmgr2_dashboard_dep
-  - Add dashboard dependency to reqmgr2.
-  - Implement deterministic pileup support
-  - Configure T1 disk sites overrride
-  - Updating dependencies for crabserver, crabclient and aso
+0.9.79 to 0.9.81:
+  - add task summary table.  Pull request #4794
+  - get rid of -k option in myproxy-logon  and remove the server DN from my  myproxy credential name (now is only sha1(self.userDN).hexdigest()). Pull request #4789
+  - Improve AnalyticsDataCollector reporting WMAgentConfig. Pull requests #4788, #4785
+  - don't use WMAGENT_CONFIG env. Pull request #4784
+  - change Oracle constraints. Pull request #4783
+  - support for all in one test. Pull request #4778
+  - added two json templates for reqmgr client, for hg1309. Pull request #4777
+  - Fixes # 4618 : Remove tableSpaces and FK Constraints. Pull request #4774
+  - set default state for wq calls. Pull request #4775
+  - update the creation time job splitting samples. Pull request #4773
+  - fix to import HTTPException. Pull request #4770
+  - remove obsolete retry algorithm code. Pull request #4766
+  - fix WorkQueue unittest. Pull request #4761
+  - Add dashboard dependency to reqmgr2. Pull request #4757
+  - Implement deterministic pileup support. Pull request #4752
+  - Configure T1 disk sites overrride. Pull request #4739
+  - Updating dependencies for crabserver, crabclient and aso. Pull request #4637
 
 0.9.78 to 0.9.79:
-  - add drain mode, handle replication error, filter stalled request, fix agent error nummber update. pull request #4751 
+  - add drain mode, handle replication error, filter stalled request, fix agent error nummber update. pull request #4751
   - Properly validate processed dataset. Pull request #4733
   - Undo the column sizes to the older values. DB complains about limitation. Need to figure out how to change default DB settings. Pull request #4732
   - Added wildcard support cmsnameToS(C)E for CRAB 2. Pull request #4731
@@ -56,7 +36,7 @@
   - reqmgr2 get implementation and test (initial version). Pull request #4713
   - Workload validation refactoring. Pull request #4705
   - Fix query outdated in Oracle. Pull request #4710
-  - temp fix for when site information is missing from fwjr. need to find why information is missing. Pull request 4708. 
+  - temp fix for when site information is missing from fwjr. need to find why information is missing. Pull request 4708.
   - Fixes for DBS3 duplicate insertions. Pull request #4709
   - Improve the JobAccountant logging. pull request #4738
   - refactor ErrorHandler code. Pull request #4641
@@ -88,7 +68,7 @@
 
 0.9.75 to 0.9.76:
   - Configuration defaults for 0.9.69a. Pull request #4676.
-  - Use stale views in the TaskArchiver. Pull request #4675. 
+  - Use stale views in the TaskArchiver. Pull request #4675.
   - fix acdc resubmission. Pull request #4668.
   - Fix bug in WMBSHelper when no subs are present. Pull request #4663.
   - increase default request timeout to 2 min. Pull request #4660
@@ -193,7 +173,7 @@
 
 0.9.57 to 0.9.58:
   - Catch empty lumi runs.  Pull request #4537.
-  - Include performance estimates in Condor JDLs.  Pull request #4536. 
+  - Include performance estimates in Condor JDLs.  Pull request #4536.
   - Avoid re-running performance killed jobs.  Pull request #4538.
   - Fix the resource control call to load all T1s and T2s which was broken by
     the migration to SiteDB V2.  Pull request #4532.
@@ -227,17 +207,17 @@
   - Start tracking the location of pileup data in the WorkQueue.  Pull request
     #4507.
   - Add a validation function for the ReqMgr CouchApp.  Pull request #4505.
-  - Fix the job splitting page in ReqMgr to work in Firefox.  Pull request #4503. 
-  - Allow ACDC requests to use xrootd.  Pull request #4502. 
+  - Fix the job splitting page in ReqMgr to work in Firefox.  Pull request #4503.
+  - Allow ACDC requests to use xrootd.  Pull request #4502.
   - Fix the ReqMgr GetRequest DAO so that it fetches all request information.  Pull request
     #4501.
   - Second round of ReqMgr CouchDB values fixes.  Pull request #4500.
   - First round of ReqMgr CouchDB values fixes.  Pull request #4499.
   - Updates to ReqMgr Oracle/CouchDB consistency tools.  Pull request #4497.
   - Further remove per user and group priorities in the ReqMgr.  Fix links to broken
-    pages.  Pull request #4495. 
+    pages.  Pull request #4495.
   - Vastly simplify request priorities by removing per user and group priorities.  Pull
-    request #4494. 
+    request #4494.
   - Properly display the ScramArch on the request details page and fix links to the
     original config and tweak.  Pull request #4492.
   - Add support for changing the job splitting parameters for a request from the ReqMgr
@@ -253,7 +233,7 @@
   - Fixes automatic testing of TaskChain requests. Pull request #4489.
   - Fix most unit tests. Pull request #4487.
   - Merge pull request #4485 from dballesteros7/FixUnitTests
-  - Restore the T2_XX_SiteA/B/C sites, SEs and CEs  
+  - Restore the T2_XX_SiteA/B/C sites, SEs and CEs
   - Merge pull request #4484 from giffels/sitedbv2-unittest-fix
   - Fix broken unittest caused SiteDBv2 emulator. Pull request #4418.
   - ReqMgr2 - CouchDB request docs null fields. Pull request #4466.
@@ -285,8 +265,8 @@
   - Improve site states functionality.  Pull request #4444.
   - Fix diagnostics for when CMSSW segfaults.  Pull request #4445.
   - Fix ACDC for MonteCarlo workflows.  Pull request #4452.
-  - Remove the check for the local wmc-dist-patch script as it is not 
-    shipped with the project source code. It gets included only during 
+  - Remove the check for the local wmc-dist-patch script as it is not
+    shipped with the project source code. It gets included only during
     RPM build time.  Pull request #4446.
   - Include task type priority in LSF jobs.  Pull request #4447.
   - Fix file deletion in the CERN stageout plugin.  Pull request #4412.
@@ -326,18 +306,18 @@
     * Fix the lumiMissingByWorkflow view in the WorkloadSummary.
     * Expose AutoApprove sites to ReqMgr.
   - Add the ability to create open requests that will pickup new data as it
-    is added to DBS.  Pull request #4425. 
-  - Fix document deletion in CouchDB.  Pull request #4424, #4404, #4396. 
+    is added to DBS.  Pull request #4425.
+  - Fix document deletion in CouchDB.  Pull request #4424, #4404, #4396.
   - When deleting a request in the ReqMgr delete it from CouchDB and Oracle.
-    Pull request #4423.  
-  - Delete the dead code in the Processing and Production directories for the 
+    Pull request #4423.
+  - Delete the dead code in the Processing and Production directories for the
     ReqMgr.  Pull request #4421.
   - Fix a number of ReqMgr issues, pull request #4419:
     * Change the SoftTimeout default parameters value.
     * Add access control when deleting requests.
     * Add a state transition from completed to aborted.
     * Display all possible LFNs for all requests.
-    * Fixes for ACDC resubmission. 
+    * Fixes for ACDC resubmission.
   - Fixes for DBS3 upload only mode.  Pull request #4415.
   - Archive rejected workflows and disable tracking in WMStats.  Pull request
     #4414.
@@ -349,12 +329,12 @@
     request #4397.
   - Fix a typo in the CouchCoucPoller.  Pull request #4393.
   - Add suport for stageout from the HLT Cloud at CERN.  Pull request #4401.
-  - Support ReqMgr localhost testing/running.  Pull request #4395. 
+  - Support ReqMgr localhost testing/running.  Pull request #4395.
 
 0.9.39 to 0.9.40:
   - Fixes from the testing of DBS3 upload.  Pull request #4391.
   - add script to unregister agent when agent is retired or inactive.
-    Pull request #4389. 
+    Pull request #4389.
   - check components are alive using pid and also thread status.  Pull
      request #4381.
   - Fix unit tests breakage due to Specs_t.  Pull request #4387.
@@ -369,7 +349,7 @@
   - Fix the cmsRun configuration for DQM harvesting jobs.  Pull request #4371.
 
 0.9.37 to 0.9.38:
-  - Fix accounting of lumis when a run black/white list is specified for a 
+  - Fix accounting of lumis when a run black/white list is specified for a
     request.  Pull request #4369.
   - Add a column to the job table in WMStats to display the number of queued
     jobs.  Pull request #4370.
@@ -390,7 +370,7 @@
     SQLite code in DBSBuffer and DBS3Buffer.  Pull request #4358.
 
 0.9.35 to 0.9.36:
-  - Minor ReqMgr fixes.  Pull request #4357: 
+  - Minor ReqMgr fixes.  Pull request #4357:
     * Cloned requests will beging in the assignment-approved state instead
       of new.
     * PhEDEx subscriptions arguments have been added into the JSON request
@@ -404,10 +384,10 @@
   - Fix a bug with the handling of requests with the running-open and running-closed
     status in WMStats.  Pull request #4353.
   - WMStats updates - Add the ability to search by date and Prep ID,
-    improve the request detail view, add a couch status monitor, fix a 
-    bug when filtering and data is being refreshed.  Pull request #4352. 
+    improve the request detail view, add a couch status monitor, fix a
+    bug when filtering and data is being refreshed.  Pull request #4352.
   - ReqMgr2 - Oracle, CouchDB database cleanup.  Pull request #4351.
-  - Update the ALCAHarvest runtime code to support the new dropbox 
+  - Update the ALCAHarvest runtime code to support the new dropbox
     format.  Pull request #4950.
   - Fix EOS StageIn at CERN.  Pull request #4349.
   - Fix the DQM Harvesting job splitter so that it properly handles sites
@@ -433,7 +413,7 @@
     includes a timestamp of the last state transition.  Pull request #4328.
   - Remove dead code from the ConfigCache and clean up views.  Pull request
     #4324.
-  - Fix WMStats so that it functions correctly when there are no jobs in a 
+  - Fix WMStats so that it functions correctly when there are no jobs in a
     request.  Pull request #4326.
   - Deploy WorkloadSummary with reqmon instead of ReqMgr.  Pull request #4232.
   - Add a merged flag to the FWJR so that it's possible to calculat lumi information
@@ -460,7 +440,7 @@
   - Added basic http(s) url validation for DBS3.  Pull request #4306.
 
 0.9.30 to 0.9.31:
-  - Improve the WorkloadSummary.  Add histograms for failing jobs per site and per 
+  - Improve the WorkloadSummary.  Add histograms for failing jobs per site and per
     step.  Add a routine the determine missing lumis in a request.  Finally, improve
     the unit test in the TaskArchiver for the WorkloadSummary.  Pull request #4298.
   - Fix the WorkloadSummary unit tests.  Pull request #4304.
@@ -472,22 +452,22 @@
   - Allow the use of configs from the ConfigCache for DQM harvesting.  Pull request #4295.
   - Allow the user to determine the config cache database to use when making request.
     Add a handful of improvements to the ReqMgr Ops script.  Pull request #4293.
-  - Adds a real LogCollect fwjr to the TaskArchiver test and changes to support it better. 
+  - Adds a real LogCollect fwjr to the TaskArchiver test and changes to support it better.
     Changes in the summary document.  Pull request #4291.
   - Remove restriction of autoapprove on custodial subscriptions.  Pull request #4288.
   - Fix the resource control script which had the pending and running slots swapped.
     Pull request #4283.
   - Check for null auth in the Workload Summary cuchapp and all it.  Pull request #4284.
-  - Propagate output dataset information to WMStats.  Pull request #4279. 
-  - Fix the resource control class to correctly insert job types.  Pull request #4277. 
+  - Propagate output dataset information to WMStats.  Pull request #4279.
+  - Fix the resource control class to correctly insert job types.  Pull request #4277.
   - Check that files contains at least one good lumi before adding them to WMBS. Pull
     request #4285.
-  - Make component sleeping more configurable.  Pull request #4246. 
-  - Add support for veryinf an adler32 checksum in the LCG module.  Pull request #4222. 
+  - Make component sleeping more configurable.  Pull request #4246.
+  - Add support for veryinf an adler32 checksum in the LCG module.  Pull request #4222.
   - Remove the auto increment check in the JobCreator as it caused more problems than it
     solved.  Improve the ChangeState code to handle update conflicts as a more reasonable
     work around.  Pull request #4147.
-  - Catch any exceptions that occur when attempting to overwrite a FWJR file.  This solves a 
+  - Catch any exceptions that occur when attempting to overwrite a FWJR file.  This solves a
     problems where permissions may be set incorrectly on FWJR files.  Pull request #4164.
 
 0.9.29 to 0.9.30:
@@ -507,10 +487,10 @@
     collection names.  Pull request #4242.
   - Display all errors correctly in the workload summary.  Pull request #4244.
   - Clean up ConfigCache parameter naming.  Pull request #4223.
-  - Delete job summary data for requests that are announced or 
+  - Delete job summary data for requests that are announced or
     aborted.  Pull request #4227.
   - Add support for overriding the location for files injected into
-    PhEDEx.  Pull request #4260. 
+    PhEDEx.  Pull request #4260.
 
 0.9.27 to 0.9.28:
   - ONEOFF build for Zdenek to revert his previous patch
@@ -531,7 +511,7 @@
   - Make maxRetries flexible between job types.  Pull request #4137.
   - Implement alternative fileset closing policy.  Pull request #4209.
   - Add t0wmstats dependency.  Pul request #4203.
-  - ReqMgr unittests fixes, removing hardcoded CMSSW version in tests, 
+  - ReqMgr unittests fixes, removing hardcoded CMSSW version in tests,
     tests cleanup.  Pull request #4202.
   - Fixing giant log files/memory leaks.  Pull request #4196.
   - A large amount of whitespace fixes.  Pull request #4150.
@@ -540,7 +520,7 @@
   - Change acdc integration test to look at all previous requests for one
     to resubmit
   - Test inject script fixed, unittests fixed, some improved logging and
-    exception handling  
+    exception handling
 
 0.9.23 to 0.9.24:
   - Add the ability to ignore select output modules in ACDC requests.  Pull request #4099.
@@ -570,13 +550,13 @@
   - Include the jobType in all jobs run through ChangeState.  Pull request #4169.
   - Change the monitor status when assignRequest is called directly.  Pull request #4166.
   - Include the JobSubmmary link to the WMStats job summary.  Pull request #4168.
-  - Fix alerts not sent in StatusPoller, wrong usage of getattr, and print the stacktrace 
+  - Fix alerts not sent in StatusPoller, wrong usage of getattr, and print the stacktrace
     of the generic Exception thrown.  Pull request #4161.
 
 0.9.19 to 0.9.20:
   - Improvements to the WMStats monitor layout.  Add support for running without a
     ReqMgr to support the Tier0 and Analysis.  Pul request #4157.
-  - Combine the TaskArchiver and CleanupManager to handle cases where the 
+  - Combine the TaskArchiver and CleanupManager to handle cases where the
     ReqMgr is not used.  Pull request #4142.
   - Upload the toPublish.json with the user's credentials. Fixes #4135
   - Fix RequestManager unittests.  Pull request #3958.
@@ -594,10 +574,10 @@
 
 0.9.18 to 0.9.19:
   - Write the CMSSW configuration as a binary pickle file to avoid issues
-    with non-binary pickled configs.  Pull request #4109. 
+    with non-binary pickled configs.  Pull request #4109.
   - Make LogCollect optional for PromptReco.  Pull request #4068.
   - Make teams optional for the Global WorkQueue.
-  - Set several move parameters for AsyncStageout in 
+  - Set several move parameters for AsyncStageout in
     wmagent-mod-config.  Pull request #4106.
   - Remove unneeded parameters in the Async Stageout inputAsyncStageOut
     view.  Pull request #4101.
@@ -609,7 +589,7 @@
   - Propagate job state changes to WMStats in the RetryManager's PauseAlgo.
     Pull request #4096.
   - Bug fixes for AlcaHarvesting.  Pull request #4105.
-  - Put the LumiMask in the spec instead of pulling from ACDC.  Fixes #3968. 
+  - Put the LumiMask in the spec instead of pulling from ACDC.  Fixes #3968.
   - Improve the TaskArchiver so that it pulls run and lumi information from
     WMBS instead of the JobDump.  Improve the queries used to find finished
     subscriptions.  Pull request #4073.
@@ -838,7 +818,7 @@
 
 8.50 to 0.9.0:
   - Massive monitoring rewrite.
-  - Improve the performance of the ErrorHandler when loading jobs that have 
+  - Improve the performance of the ErrorHandler when loading jobs that have
     input files with large numbers of lumi sections.  Fixes #3925.
   - Make loading parentage information when loading files in a fileset optional.  Fixes #3919.
   - Load the task name in the LoadFromIDWithWorkflow DAO.  Fixes #3922.
@@ -861,7 +841,7 @@
   - Improve logging in the bootstrapping code.  Fixes #3898.
   - Ensure that CouchDB URLs do not end in a '/'.  Fixes #3899.
   - Modified analysis WMSpec: it does not send a logcollect job if saveLog=False. Fixes #3855
-  - Modify the ParentlessMergeBySize and SiblingProcessingBased subscriptions so that 
+  - Modify the ParentlessMergeBySize and SiblingProcessingBased subscriptions so that
     they work correctly with files available at multiple sites. Fixes #3906.
   - Handle some issue with the ConfigSection stuff with nested containers and nested ConfigSections.  Fixes #3891.
   - Add DBSPublisher.couch_instance to wmagent-couchapp-init and wmagent-mod-config, fixes #3892
@@ -977,12 +957,12 @@
   - Add the workflow type to the GetWorkflowTask DAO.  Fixes #3643.
 
 0.8.38a to 0.8.41:
-  - Fix several problems found during TaskChain commissioning (#3598):   
-     o Make dependent tasks run over the output of the merge task instead     
-       of the processing task.   
-     o Include TaskChain task parameters in the schema section of the workload   
+  - Fix several problems found during TaskChain commissioning (#3598):
+     o Make dependent tasks run over the output of the merge task instead
+       of the processing task.
+     o Include TaskChain task parameters in the schema section of the workload
      o Don't add more events to a job than there are in the input file.
-  - For chained workflows with pileup, configure each chained step to use the pileup 
+  - For chained workflows with pileup, configure each chained step to use the pileup
     dataset.  Don't fail if there isn't a pileup section in the config.  Fixes #3628.
   - fixing retrymanager unittests. Fixes #3613
   - Have the WorkQueue guard against negative slice sizes.
@@ -1168,7 +1148,7 @@
   - The Condor plugin should check glexec/myproxy config settings.  Fixes #3312.
   - Fix the data cache unit test.  Fixes #2955.
   - Fix Alerts couch database installation.  Fixes #3322.
-  - Adding support to slice the unittest suite into mutually-exclusive lists of test cases. Needed 
+  - Adding support to slice the unittest suite into mutually-exclusive lists of test cases. Needed
     to have jenkins to testing really really fast
   - Change the ordering of the retriesByTask parameter to what Samir origianlly had.  From #3313.
   - Add a view that summarizes retry information for a task.  From #3313.
@@ -1201,8 +1181,8 @@
   - ReqMgr - OpsClipboard minor design and menu improvement.  Fixes #3242.
   - Don't run ProcessPool tests on Jenkins.  Fixes #3233.
   - A few fixes to the LSF BossAir plugin.  Fixes #3172.
-  - Modify StdBase so that it doesn't assume that all workflows have only run 
-    over a single primary dataset.  Modify the addMergeTask() method to support error 
+  - Modify StdBase so that it doesn't assume that all workflows have only run
+    over a single primary dataset.  Modify the addMergeTask() method to support error
     datasets.  Minor cleanup in the other specs.  Fixes #1796.
 
 0.8.26pre3 to 0.8.26pre4:
@@ -1273,7 +1253,7 @@
   - Add a script to delete workflows from the couch database.  Fixes #2991.
   - Remove duplicate stepSuccessful() methods from the report class.  Fixes #2840.
   - Add a GetUnsubscribedFilesets DAO.  Fixes #2533.
-  - Hardcode the workload summary URL to point at the cmsweb couch as that is  where everything 
+  - Hardcode the workload summary URL to point at the cmsweb couch as that is  where everything
     goes now.  Remove the option to changed this at deployment  time, it never worked correctly anyway.  Fixes #3144.
   - Retrieve lumi information for child files when handling two-file-read workflows.  Fixes #3140.
   - Make WorkQueue warn if it is given a site name not in sitedb
@@ -1331,7 +1311,7 @@
 
 0.8.18 to 0.8.19:
   - Improve logging for ScriptInvoke errors (3038).
-  - Only closeout and cleanup subscriptions/filesets that are 
+  - Only closeout and cleanup subscriptions/filesets that are
     fully injected (3039).
   - Inject into PhEDEx in strict mode and log the result (3028).
   - Don't fail if a task doesn't have an ACDC section (2980).
@@ -1348,9 +1328,9 @@
   - Add patch build option and build sphinx documentation for WMCore.
   - Allow changing multicore splitting parameters (3016).
   - Bug on tracking many jobs fixed here (2977).
-  - Make sure the AcquisitionEra and ProcessingVersion parameters are returned 
+  - Make sure the AcquisitionEra and ProcessingVersion parameters are returned
     from the ReqMgr (2857).
-  - Initial support for producing the topublish.json file (2865).  Off by 
+  - Initial support for producing the topublish.json file (2865).  Off by
     default.
   - Add Oracle support for wmagent-mod-config.
   - Save the campaign in the spec when it's updated (2938).
@@ -1376,14 +1356,14 @@
   - Support outputs with different primary datasets (2947).
   - Associate workflows with output data in DBSBuffer (2931).
   - Speed up the getElements() call in WorkQueueBackend (2926).
-  - Include the merged/unmerged LFNs bases in the get request call in 
+  - Include the merged/unmerged LFNs bases in the get request call in
     the ReqMgr (2862).
   - Print stderr too when certs are not found (2932).
   - Add a spec-based override to disable direct-to-merge (2927).
   - Improve JobSubmitter handling of package directories (2919).
 
 0.8.17 to 0.8.18:
-  - Store file locations in couch as the CMS site name instead of the SE 
+  - Store file locations in couch as the CMS site name instead of the SE
     name (2817).
   - Fix the couch views to work with multicore performance information (2887).
   - Fix the bad join in the DAO used by the ParentlessMergeBySize job splitting
@@ -1448,7 +1428,7 @@
   - Don't auto approve PhEDEx subscriptions.
   - Include step name in error messages (1868).
   - Restore the RequestOverview config.
-  
+
 From 0.7.9b to 0.7.10:
   - Myproxy configuration coherence for glite plugin (1762).
   - Make sure that the numCores parameter is an int (1776).
@@ -1484,7 +1464,7 @@ From 0.7.8b to 0.7.9:
   - Encase BossAir calls in transactions (1701).
   - ReqMgr admin page needs trailing slashes in links (1708).
   - Don't change the cache size for CMSSW, the default is fine (1704).
-  - Fix SiblingProcessingBased splitting dealing with large numbers of 
+  - Fix SiblingProcessingBased splitting dealing with large numbers of
     files (1678).
   - Better handle integrity errors when refreshing CMSSW versions (1671).
   - Increase the length of the name field in wmbs_fileset (1700).
@@ -1509,7 +1489,7 @@ From 0.7.7 to 0.7.8:
     deployment issues (1655).
   - Merge SecureRequests, BasicAuthJsonRequest into Requests (1585).
   - Cleanup error handling and other things in the Services class (1622).
-  - Initial support for cooloff/successful/failed jobs in the Request 
+  - Initial support for cooloff/successful/failed jobs in the Request
     Overvew (1539).
 
 From 0.7.6a to 0.7.7:
@@ -1520,10 +1500,10 @@ From 0.7.6a to 0.7.7:
   - Fixup automatic MSS subscriptions in the PhEDExInjector (1561).
   - Fix a problem where the site a job is assigned to never made it into couch.
   - Add a ReqMgr couchapp (1610).
-  - Move the PhEDEx import in the Analysis stdspec so that it's only pulled in 
+  - Move the PhEDEx import in the Analysis stdspec so that it's only pulled in
     when necessary.
   - Fix agent monitor for multiple agents (1523).
-  - Add back in the TwoFileBased splitting algo so newer agents can work with 
+  - Add back in the TwoFileBased splitting algo so newer agents can work with
     older ReqMgr.
 
 From 0.7.6 to 0.7.6a:
@@ -1582,7 +1562,7 @@ From 0.7.5 to 0.7.6:
   - Fix LFN parsing for /store/users (1330).
   - Fix output LFNs for Analysis jobs (1383).
   - Fix the credential unit tests (1480).
-  - Allow sandbox to be a URL insted of a file. Add unit test for unpacking 
+  - Allow sandbox to be a URL insted of a file. Add unit test for unpacking
     tarball.
   - Reduce the default lumis_per_job to 8 and allow the use of the TwoFileBased
     splitting algorithm (1475).
@@ -1594,7 +1574,7 @@ From 0.7.5 to 0.7.6:
   - Make the RelValMC workflow more flexible (1579).
 
 From 0.7.4 to 0.7.5:
- - Fixes to ACDC and WMSpec to allow dependent (not top level) tasks to be 
+ - Fixes to ACDC and WMSpec to allow dependent (not top level) tasks to be
    resubmitted (1453).
  - Display file sizes in KB/MB/GB/TB instead of KiB/MiB/GiB/TiB (1454).
  - Change the timing setting for cmsRun (1450).

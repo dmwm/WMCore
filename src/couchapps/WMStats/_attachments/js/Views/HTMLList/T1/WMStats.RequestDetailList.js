@@ -22,7 +22,7 @@ WMStats.namespace('RequestDetailList');
          
             htmlstr +=  dataArray;
          } else {
-            htmlstr += "<details> <summary>" + summaryStr +"</summary><ul>"  
+            htmlstr += "<details> <summary>" + summaryStr +"</summary><ul>";  
             for (var i in dataArray) {
                 htmlstr += "<li>" + dataArray[i] + "</li>";
             }
@@ -54,7 +54,7 @@ WMStats.namespace('RequestDetailList');
         var reqDoc = requestStruct.requests[requestStruct.key];
         var reqSummary = requestStruct.summary;
         
-        htmlstr += "<div class='requestDetailBox'>"
+        htmlstr += "<div class='requestDetailBox'>";
         htmlstr += "<ul>";
         if (reqDoc) {
             htmlstr += "<li><b>campaign:</b> " + reqDoc.campaign + "</li>";
@@ -88,12 +88,12 @@ WMStats.namespace('RequestDetailList');
             htmlstr += "<li><b>success:</b> " + reqSummary.getJobStatus("success", 0) + "</li>";
         }
         if (reqDoc.sites) {
-            htmlstr += "<li>" + WMStats.Utils.expandFormat(reqDoc.sites, "Sites", siteStatusFormat) + "</li>"
+            htmlstr += "<li>" + WMStats.Utils.expandFormat(reqDoc.sites, "Sites", siteStatusFormat) + "</li>";
         }
         htmlstr += "</ul>";
         htmlstr += "</div>";
         return htmlstr;
-    }
+    };
     
     WMStats.RequestDetailList = function (workflow, containerDiv) {
          var allRequests = vm.ActiveRequestPage.data();

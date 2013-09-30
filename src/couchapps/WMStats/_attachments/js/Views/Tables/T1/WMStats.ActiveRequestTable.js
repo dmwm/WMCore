@@ -46,7 +46,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
               "sTitle": "queue injection",  
               "fnRender": function ( o, val ) {
                               var result = _activePageData.getKeyValue(o.aData.workflow, "status.inWMBS",  0) / 
-                                          _activePageData.getKeyValue(o.aData.workflow, 'total_jobs', 1) * 100
+                                          _activePageData.getKeyValue(o.aData.workflow, 'total_jobs', 1) * 100;
                               return (result.toFixed(1) + '%');
                         }
             },
@@ -56,7 +56,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
                             var reqSummary = requestData.getSummary(o.aData.workflow);
                             var totalJobs = reqSummary.getWMBSTotalJobs() || 1;
                             var result = (reqSummary.getJobStatus("success") + reqSummary.getTotalFailure()) /
-                                     totalJobs * 100
+                                     totalJobs * 100;
                             return  (result.toFixed(1) + "%");
                           }
             },
@@ -66,7 +66,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
                            //TODO this might not needed since input_events should be number not string. (for the legacy record)
                            var inputEvents =Number(_activePageData.getKeyValue(o.aData.workflow, "input_events", 1)) || 1;
                            var outputEvents = requestData.getSummary(o.aData.workflow).getAvgEvents();
-                           var result = (outputEvents / inputEvents) * 100
+                           var result = (outputEvents / inputEvents) * 100;
                            return (result.toFixed(1) + "%");
                           }
             },
@@ -75,7 +75,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
               "fnRender": function ( o, val ) {
                            var inputLumis =Number(_activePageData.getKeyValue(o.aData.workflow, "input_lumis", 1)) || 1;
                            var outputLumis = requestData.getSummary(o.aData.workflow).getAvgLumis();
-                           var result = (outputLumis / inputLumis) * 100
+                           var result = (outputLumis / inputLumis) * 100;
                            return (result.toFixed(1) + "%");
                           }
             },
@@ -84,7 +84,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
               "fnRender": function ( o, val ) {
                            var reqSummary = requestData.getSummary(o.aData.workflow);
                            var totalFailure = reqSummary.getTotalFailure();
-                           var totalJobs = (reqSummary.getJobStatus("success") + totalFailure) || 1
+                           var totalJobs = (reqSummary.getJobStatus("success") + totalFailure) || 1;
                            var result = totalFailure / totalJobs * 100;
                            return (result.toFixed(1)  + "%");
                           }
@@ -112,7 +112,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
             */
             //TODO add more data (consult dataops)
         ]
-    }
+    };
     
     var filterConfig = {}
     

@@ -10,6 +10,7 @@ Retrieve information about a job from couch and format it nicely.
 
 import os
 import time
+import subprocess
 from WMCore.Configuration import loadConfigurationFile
 import logging
 from WMCore.Agent.Daemon.Details import Details
@@ -454,3 +455,53 @@ def initAgentInfo(config):
     # temporarly add port for the split test
     agentInfo['agent_url'] = ("%s:%s" % (config.Agent.hostName, config.WMBSService.Webtools.port))
     return agentInfo
+
+def diskUse():
+    """
+    This returns the % use of each disk partition
+    """
+    diskPercent=[]
+    df = subprocess.Popen(["df", "-kl"], stdout=subprocess.PIPE)
+    output = df.communicate()[0].split("\n")
+    for x in output:
+        split = x.split()
+        if split != [] and split[0] != 'Filesystem':
+            diskPercent.append({'mounted':split[5],'percent':split[4]})
+
+    return diskPercent
+
+def numberCouchProcess():
+    """
+    This returns the number of couch process
+    """
+    ps = subprocess.Popen(["ps", "-ef"], stdout=subprocess.PIPE)
+    process = ps.communicate()[0].count('couchjs')
+    
+    return process
+
+class DataUploadTime():
+    """
+    Cache class to storage the last time when data was uploaded
+    If data could not be updated, it storages the error message.
+    """
+    data_last_update = 0
+    data_error = ""
+    
+    @staticmethod
+    def setInfo(self, time, message):
+        """
+        Set the time and message  
+        """
+        if time:
+            DataUploadTime.data_last_update = time
+        DataUploadTime.data_error = message
+    
+    @staticmethod            
+    def getInfo(self):
+        """
+        Returns the last time when data was uploaded and the error message (if any)
+        """
+        answer = {}
+        answer['data_last_update'] = DataUploadTime.data_last_update
+        answer['data_error'] = DataUploadTime.data_error
+        return answer

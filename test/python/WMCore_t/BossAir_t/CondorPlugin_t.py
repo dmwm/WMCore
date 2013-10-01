@@ -415,62 +415,56 @@ class CondorPluginTest(BossAirTest):
         Test the updateSiteInformation method from CondorPlugin.py
         """
 
+
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
 
-        # Get the config and set the removal time to -10 for testing
         config = self.getConfig()
         config.BossAir.pluginName = 'CondorPlugin'
-        config.BossAir.removeTime = -10.0
-
-        nJobs = 10
-
-        jobDummies = self.createDummyJobs(nJobs = nJobs)
+        config.BossAir.submitWMSMode = True
 
         baAPI  = BossAirAPI(config = config)
 
-        print self.testDir
+        workload = self.createTestWorkload()
 
-        jobPackage = os.path.join(self.testDir, 'JobPackage.pkl')
-        f = open(jobPackage, 'w')
-        f.write(' ')
-        f.close()
+        workloadName = "basicWorkload"
 
-        sandbox = os.path.join(self.testDir, 'sandbox.box')
-        f = open(sandbox, 'w')
-        f.write(' ')
-        f.close()
+        changeState = ChangeState(config)
 
-        jobList = []
-        for j in jobDummies:
-            tmpJob = {'id': j['id']}
-            tmpJob['custom']      = {'location': 'T2_US_Florida'}
-            tmpJob['name']        = j['name']
-            tmpJob['cache_dir']   = self.testDir
-            tmpJob['retry_count'] = 0
-            tmpJob['plugin']      = 'CondorPlugin'
-            tmpJob['owner']       = self.user
-            tmpJob['packageDir']  = self.testDir
-            tmpJob['sandbox']     = sandbox
-            tmpJob['priority']    = None
-            tmpJob['usergroup']   = self.user
-            tmpJob['userrole']    = 'cmsuser'
-            jobList.append(tmpJob)
+        nSubs = 5
+        nJobs = 10
 
+        cacheDir = os.path.join(self.testDir, 'CacheDir')
 
-        info = {}
-        #info['packageDir'] = self.testDir
-        info['index']      = 0
-        info['sandbox']    = sandbox
-        baAPI.submit(jobs = jobList, info = info)
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir,
+                                                                        'workloadTest',
+                                                                        workloadName),
+                                            site = None)
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+            
+
+        jobSubmitter = JobSubmitterPoller(config = config)
+
+        jobSubmitter.algorithm()
+
         nRunning = getCondorRunningJobs(self.user)
-        self.assertEqual(nRunning, nJobs)
-        newJobs = baAPI._loadByStatus(status = 'New')
+        self.assertEqual(nRunning, nSubs * nJobs)
+
         baAPI.track()
 
         jobaction = self.daoFactory(classname = "Jobs.ListByState")
         jobIds = jobaction.execute(state = 'new')
-        jobkill = baAPI.updateSiteInformation(jobIds, "T2_US_Florida", True)
+
+        listJob=[]
+        for  job in jobIds:
+            listJob.append({'jobid': job['id']})
+            
+        #jobkill = baAPI.updateSiteInformation(listJob, "T2_US_UCSD", 0)
+        jobkill = baAPI.updateSiteInformation(listJob, "T2_US_Florida", True)
+
         if len(jobkill) > 1:
             command = ['condor_rm', self.user]
             pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)

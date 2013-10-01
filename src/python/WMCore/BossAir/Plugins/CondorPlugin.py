@@ -714,11 +714,7 @@ class CondorPlugin(BasePlugin):
         jobInfo = self.getClassAds()
         jobtokill=[]
         for job in jobs:
-            if "jobid" in job:
-                jobID = job['jobid']
-            else :
-                jobID = job['id']
-            
+            jobID = job['jobid']
             jobAd = jobInfo.get(jobID)
             if excludeSite :
                 if siteName in jobAd.get('DESIRED_Sites') and siteName in jobAd.get('ExtDESIRED_Sites') :

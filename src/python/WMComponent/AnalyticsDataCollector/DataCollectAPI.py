@@ -454,3 +454,40 @@ def initAgentInfo(config):
     # temporarly add port for the split test
     agentInfo['agent_url'] = ("%s:%s" % (config.Agent.hostName, config.WMBSService.Webtools.port))
     return agentInfo
+
+class DataUploadTime():
+    """
+    Cache class to storage the last time when data was uploaded
+    If data could not be updated, it storages the error message.
+    """
+    def __init__(self):
+        # Set the storing variables
+        self.uploadTime = 0
+        self.lastTime = 0
+        self.message = "First data update pending"
+    
+    def setInfo(self, time, message):
+        """
+        Set the time and message (error or success) in the storing variables
+        """
+        self.uploadTime = time
+        if self.uploadTime == 0:
+            if self.lastTime == 0:
+                self.message = "Data could not be updated for first time. This is the error message: %s" % (message)
+            else:
+                self.message = "Last time data was updated at: %s The last error message: %s" % (lastTime, message)
+        else:
+            self.uploadTime = time
+            self.lastTime = time
+            self.message = message
+                    
+    def getInfo(self):
+        """
+        Returns the last time when data was uploaded
+        If uploadTime is 0, it means that uplading was not succesful
+        Then returns the error message
+        """
+        if self.uploadTime == 0:
+            return self.message
+        else:
+            return self.uploadTime

@@ -23,13 +23,14 @@ class AgentStatusPoller(BaseWorkerThread):
     Gether the summary data for request (workflow) from local queue,
     local job couchdb, wmbs/boss air and populate summary db for monitoring
     """
-    def __init__(self, config):
+    def __init__(self, config, timer):
         """
         initialize properties specified from config
         """
         BaseWorkerThread.__init__(self)
         # set the workqueue service for REST call
         self.config = config
+        self.timer = timer
         # need to get campaign, user, owner info
         self.agentInfo = initAgentInfo(self.config)
         self.summaryLevel = (config.AnalyticsDataCollector.summaryLevel).lower()
@@ -95,6 +96,7 @@ class AgentStatusPoller(BaseWorkerThread):
         else:
             agentInfo['drain_mode'] = False
             
+        agentInfo['update_info'] = self.timer.getInfo()
         return agentInfo
 
     def uploadAgentInfoToCentralWMStats(self, agentInfo, uploadTime):

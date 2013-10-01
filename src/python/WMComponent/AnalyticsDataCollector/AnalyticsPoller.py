@@ -23,13 +23,14 @@ class AnalyticsPoller(BaseWorkerThread):
     Gether the summary data for request (workflow) from local queue,
     local job couchdb, wmbs/boss air and populate summary db for monitoring
     """
-    def __init__(self, config):
+    def __init__(self, config, timer):
         """
         initialize properties specified from config
         """
         BaseWorkerThread.__init__(self)
         # set the workqueue service for REST call
         self.config = config
+        self.timer = timer
         # need to get campaign, user, owner info
         self.agentInfo = initAgentInfo(self.config)
         self.summaryLevel = (config.AnalyticsDataCollector.summaryLevel).lower()
@@ -112,9 +113,10 @@ class AnalyticsPoller(BaseWorkerThread):
 
             self.localSummaryCouchDB.uploadData(requestDocs)
             logging.info("Request data upload success\n %s request, \nsleep for next cycle" % len(requestDocs))
+            self.timer.setInfo(uploadTime,"Data upload was successful")
 
         except Exception, ex:
             logging.error("Error occurred, will retry later:")
             logging.error(str(ex))
+            self.timer.setInfo(0,str(ex))
             logging.error("Trace back: \n%s" % traceback.format_exc())
- 

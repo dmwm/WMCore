@@ -31,7 +31,7 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
             },
             { "mDataProp": function (source, type, val) { 
                               var requestInfo = _activePageData.getData(source.workflow);
-                              return requestInfo.request_status[requestInfo.request_status.length -1].status
+                              return requestInfo.request_status[requestInfo.request_status.length -1].status;
                            }, "sTitle": "status",
               "fnRender": function ( o, val ) {
                             var requestInfo = _activePageData.getData(o.aData.workflow);
@@ -144,9 +144,9 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
                               }
             }
         ]
-    }
+    };
     
-    var filterConfig = {}
+    var filterConfig = {};
     
     tableConfig.aaData = requestData.getList();
     

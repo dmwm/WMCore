@@ -475,9 +475,8 @@ class DataUploadTime():
             if self.lastTime == 0:
                 self.message = "Data could not be updated for first time. This is the error message: %s" % (message)
             else:
-                self.message = "Last time data was updated at: %s The last error message: %s" % (lastTime, message)
+                self.message = "Data could not be updated this cycle. The last error message is: %s" % (message)
         else:
-            self.uploadTime = time
             self.lastTime = time
             self.message = message
                     
@@ -487,7 +486,12 @@ class DataUploadTime():
         If uploadTime is 0, it means that uplading was not succesful
         Then returns the error message
         """
+        answer = {}
+        answer['message'] = self.message
+        
         if self.uploadTime == 0:
-            return self.message
+            answer['last_time'] = self.lastTime
         else:
-            return self.uploadTime
+            answer['last_time'] = self.uploadTime
+            
+        return answer

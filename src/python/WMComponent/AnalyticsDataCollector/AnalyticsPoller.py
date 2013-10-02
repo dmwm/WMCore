@@ -114,7 +114,7 @@ class AnalyticsPoller(BaseWorkerThread):
             self.localSummaryCouchDB.uploadData(requestDocs)
             logging.info("Request data upload success\n %s request, \nsleep for next cycle" % len(requestDocs))
             self.timer.setInfo(uploadTime,"Data upload was successful")
-
+            
         except Exception, ex:
             logging.error("Error occurred, will retry later:")
             logging.error(str(ex))

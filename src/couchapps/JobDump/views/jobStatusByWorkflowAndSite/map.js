@@ -1,4 +1,24 @@
 function(doc) {
+	
+  function retrydoneStatusHandler(stateIndex) {
+      var status;
+      if (doc['states'][stateIndex].oldstate == 'jobfailed' ||
+          doc['states'][stateIndex].oldstate == 'jobcooloff' ||
+          doc['states'][stateIndex].oldstate == 'jobpaused') {
+          status = 'failure_exception';
+	  } else if (doc['states'][stateIndex].oldstate == 'submitfailed' ||
+	      doc['states'][stateIndex].oldstate == 'submitcooloff' ||
+	      doc['states'][stateIndex].oldstate == 'submitpaused') {
+	      status = 'failure_submit';
+	  } else if (doc['states'][stateIndex].oldstate == 'createfailed' ||
+	      doc['states'][stateIndex].oldstate == 'createcooloff' ||
+	      doc['states'][stateIndex].oldstate == 'createpaused') {
+	      status = 'failure_create';
+	  } else {
+	      throw "not valid transition";
+	  };
+	  return status;
+  }
     
   function statusMap(){
       var status;
@@ -55,13 +75,13 @@ function(doc) {
           case 'success':
               status = 'success';
               break;
+          case 'retrydone':
+              status = retrydoneStatusHandler(lastStateIndex);
+              break;
+          // this case can be removed but in case of state transition update failure 
           case 'exhausted':
-              if (doc['states'][lastStateIndex].oldstate == 'jobfailed') {
-                  status = 'failure_exception';
-              } else if (doc['states'][lastStateIndex].oldstate == 'submitfailed') {
-                  status = 'failure_submit';
-              } else if (doc['states'][lastStateIndex].oldstate == 'createfailed') {
-                  status = 'failure_create';
+              if (doc['states'][lastStateIndex].oldstate == 'retrydone') {
+                  status = retrydoneStatusHandler(lastStateIndex - 1);
               } else {
                   throw "not valid transition";
               };
@@ -74,14 +94,10 @@ function(doc) {
               if (doc['states'][lastStateIndex].oldstate == 'success') {
                   status = 'success';
               } else if (doc['states'][lastStateIndex].oldstate == 'killed') {
-                  status = 'canceled'
+                  status = 'canceled';
               } else if (doc['states'][lastStateIndex].oldstate == 'exhausted') {
-                  if (doc['states'][lastStateIndex - 1].oldstate == 'jobfailed') {
-                      status = 'failure_exception';
-                  } else if (doc['states'][lastStateIndex - 1].oldstate == 'submitfailed') {
-                      status = 'failure_submit';
-                  } else if (doc['states'][lastStateIndex - 1].oldstate == 'createfailed') {
-                      status = 'failure_create';
+                  if (doc['states'][lastStateIndex - 1].oldstate == 'retrydone') {
+                  	  status = retrydoneStatusHandler(lastStateIndex - 2);
                   } else {
                       throw "not valid transition";
                   };
@@ -97,7 +113,7 @@ function(doc) {
   
   if (doc['type'] == 'job') {
       var tmpSite = null;
-      var siteLocation = null
+      var siteLocation = null;
       var lastStateIndex = 0;
       //var lastStateIndex = doc['states'].length - 1
       //search from last state. 
@@ -107,9 +123,9 @@ function(doc) {
       //TODO need to get the last number by comparing the i. 11 might come first then 2
       // Is it depend on the interpreter? Otherwise this can be outside the loop
       for (var lastStateIndex in doc['states']) {
-          tmpSite = doc['states'][lastStateIndex ].location
+          tmpSite = doc['states'][lastStateIndex].location;
           if (tmpSite !== "Agent") {
-              siteLocation  = tmpSite
+              siteLocation  = tmpSite;
           };
       };
       if (siteLocation == null) {
@@ -117,7 +133,7 @@ function(doc) {
           siteLocation = tmpSite;
       };
       
-      emit([doc['workflow'], doc['task'], statusMap(), siteLocation], 1)
+      emit([doc['workflow'], doc['task'], statusMap(), siteLocation], 1);
   };
 }
 

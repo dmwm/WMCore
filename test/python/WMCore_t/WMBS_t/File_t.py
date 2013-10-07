@@ -906,8 +906,7 @@ class FileTest(unittest.TestCase):
         testJobA.associateFiles()
         testSubscription.acquireFiles()
         testJobA.completeInputFiles()
-
-
+        
         parentAction = self.daofactory(classname = "Files.SetParentageByJob")
         parentAction.execute(binds = {'jobid': testJobA.exists(), 'child': testFileA['lfn']})
 
@@ -923,7 +922,133 @@ class FileTest(unittest.TestCase):
 
         self.assertEqual(len(goldenFiles), 0,
                          "ERROR: Some parents are missing")
+        
+        
+        testFileC = File(lfn = "/this/is/c/lfn", size = 1024, events = 10,
+                         checksums = {'cksum':1})
+        testFileC.addRun(Run( 1, *[46]))
+        testFileC.create()
+        
+        testJobC = Job()
+        testJobC["outcome"] = 'failure'
+        testJobC.create(group = testJobGroup)
+        testJobC.addFile(testFileParentA)
+        testJobC.associateFiles()
+        testSubscription.acquireFiles()
+        testJobC.failInputFiles()
+        
+        parentAction.execute(binds = {'jobid': testJobC.exists(), 'child': testFileC['lfn']})
+        
+        testFileB = File(id = testFileA["id"])
+        testFileB.loadData(parentage = 1)
+        
+        goldenFiles = [testFileParentA, testFileParentB]
+        for parentFile in testFileB["parents"]:
+            self.assertEqual(parentFile in goldenFiles, True,
+                   "ERROR: Unknown parent file")
+        
+        testFileC_1 = File(id = testFileC["id"])
+        testFileC_1.loadData(parentage = 1)
+        
+        goldenFiles = [testFileParentA]
+        for parentFile in testFileC_1["parents"]:
+            self.assertEqual(parentFile in goldenFiles, True,
+                   "ERROR: Unknown parent file")
+                  
+    
+    def testParentageByMergeJob(self):
+        """
+        _testParentageByJob_
 
+        Tests the DAO that assigns parentage by Job
+        """
+
+        testWorkflow = Workflow(spec = 'hello', owner = "mnorman",
+                                name = "wf001", task="basicWorkload/Production")
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        testSubscription = Subscription(fileset = testFileset, workflow = testWorkflow, type = "Processing", split_algo = "FileBased")
+        testSubscription.create()
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+
+        testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
+                              events = 20, checksums = {'cksum': 1},
+                              locations = set(['se1.cern.ch', 'se1.fnal.gov']))
+        testFileParentA.addRun(Run( 1, *[45]))
+        testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
+                              events = 20, checksums = {'cksum': 1},
+                              locations = set(['se1.cern.ch', 'se1.fnal.gov']))
+        testFileParentB.addRun(Run( 1, *[45]))
+        testFileParentA.create()
+        testFileParentB.create()
+        testFileset.addFile(testFileParentA)
+        testFileset.addFile(testFileParentB)
+        testFileset.commit()
+
+        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                         checksums = {'cksum':1})
+        testFileA.addRun(Run( 1, *[45]))
+        testFileA.create()
+
+        testJobA = Job()
+        testJobA["outcome"] = 'success'
+        testJobA.create(group = testJobGroup)
+        testJobA.addFile(testFileParentA)
+        testJobA.addFile(testFileParentB)
+        testJobA.associateFiles()
+        testSubscription.acquireFiles()
+        testJobA.completeInputFiles()
+
+
+        parentAction = self.daofactory(classname = "Files.SetParentageByMergeJob")
+        parentAction.execute(binds = {'jobid': testJobA.exists(), 'child': testFileA['lfn']})
+
+
+        testFileB = File(id = testFileA["id"])
+        testFileB.loadData(parentage = 1)
+
+        goldenFiles = [testFileParentA, testFileParentB]
+        for parentFile in testFileB["parents"]:
+            self.assertEqual(parentFile in goldenFiles, True,
+                   "ERROR: Unknown parent file")
+            goldenFiles.remove(parentFile)
+
+        self.assertEqual(len(goldenFiles), 0,
+                         "ERROR: Some parents are missing")
+
+        testFileC = File(lfn = "/this/is/c/lfn", size = 1024, events = 10,
+                         checksums = {'cksum':1})
+        testFileC.addRun(Run( 1, *[46]))
+        testFileC.create()
+        
+        testJobC = Job()
+        testJobC["outcome"] = 'failure'
+        testJobC.create(group = testJobGroup)
+        testJobC.addFile(testFileParentA)
+        testJobC.associateFiles()
+        testSubscription.acquireFiles()
+        testJobC.failInputFiles()
+        
+        parentAction.execute(binds = {'jobid': testJobC.exists(), 'child': testFileC['lfn']})
+
+        testFileB = File(id = testFileA["id"])
+        testFileB.loadData(parentage = 1)
+        
+        goldenFiles = [testFileParentA]
+        for parentFile in testFileB["parents"]:
+            self.assertEqual(parentFile in goldenFiles, False,
+                   "ERROR: Unknown parent file")
+        
+        testFileC_1 = File(id = testFileC["id"])
+        testFileC_1.loadData(parentage = 1)
+        
+        goldenFiles = [testFileParentA]
+        for parentFile in testFileC_1["parents"]:
+            self.assertEqual(parentFile in goldenFiles, False,
+                   "ERROR: Unknown parent file")
+             
 
     def testAddChecksumsByLFN(self):
         """

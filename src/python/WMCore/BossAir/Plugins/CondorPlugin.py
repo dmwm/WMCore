@@ -234,7 +234,7 @@ class CondorPlugin(BasePlugin):
             self.proxy = self.setupMyProxy()
 
         # Build a request string
-        self.reqStr = "(Memory >= 1 && OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\") && stringListMember(GLIDEIN_CMSSite, DESIRED_Sites) && (GLIDEIN_REQUIRED_OS==REQUIRED_OS)"
+        self.reqStr = "(Memory >= 1 && OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\") && stringListMember(GLIDEIN_CMSSite, DESIRED_Sites) && ((REQUIRED_OS==\"any\") || (GLIDEIN_REQUIRED_OS==REQUIRED_OS))"
         if hasattr(config.BossAir, 'condorRequirementsString'):
             self.reqStr = config.BossAir.condorRequirementsString
 
@@ -1002,7 +1002,7 @@ class CondorPlugin(BasePlugin):
             jdl.append('request_disk = %d\n' % int(job['estimatedDiskUsage']))
 
         #Add OS requirements for jobs
-        if job.get('scramArch') is not None and job.get('scramArch').startswith("sl6_") :
+        if job.get('scramArch') is not None and job.get('scramArch').startswith("slc6_") :
             jdl.append('+REQUIRED_OS = "rhel6"\n')
         else : 
             jdl.append('+REQUIRED_OS = "any"\n')

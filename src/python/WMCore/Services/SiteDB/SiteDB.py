@@ -222,8 +222,9 @@ class SiteDBJSON(Service):
         # first strip special endings and check with cmsNametoPhEDExNode
         # if this fails (to my knowledge no node does fail) do a full lookup
         name = node.replace('_MSS',
-                            '').replace('_Buffer',
-                                        '').replace('_Export', '')
+                            '').replace('_Disk',
+                                '').replace('_Buffer',
+                                    '').replace('_Export', '')
 
         return name
         # Disable cross-check until following bug fixed.

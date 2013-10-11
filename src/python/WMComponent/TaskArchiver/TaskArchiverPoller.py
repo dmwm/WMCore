@@ -366,7 +366,10 @@ class TaskArchiverPoller(BaseWorkerThread):
                         self.centralCouchDBWriter.updateRequestStatus(workflow, newState);
                         # update reqmgr workload document only request mgr is installed
                         if not self.useReqMgrForCompletionCheck:
-                            self.reqmgrSvc.updateRequestStatus(workflow, newState); 
+                            # commented out untill all the agent is updated so every request have new state
+                            # TODO: agent should be able to right reqmgr db diretly add the right group in
+                            # reqmgr
+                            #self.reqmgrSvc.updateRequestStatus(workflow, newState); 
                             logging.info("status updated to %s : %s" % (newState, workflow))
     
                     wfsToDelete[workflow] = {"spec" : spec, "workflows": finishedwfs[workflow]["workflows"]}

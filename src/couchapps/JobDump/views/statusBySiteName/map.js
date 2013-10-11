@@ -25,32 +25,15 @@ function(doc) {
       }
     }
 
-    if(lastTransition['oldstate'] == 'jobfailed' &&
-              lastTransition['newstate'] == 'jobcooloff') {
+    if(lastTransition['newstate'] == 'jobcooloff') {
       emit([lastLocation, 'cooloff'], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'complete' &&
-               lastTransition['newstate'] == 'success') {
+    } else if (lastTransition['newstate'] == 'success') {
       emit([lastLocation, 'success'], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'jobfailed' &&
-               lastTransition['newstate'] == 'exhausted') {
+    } else if (lastTransition['newstate'] == 'retrydone') {
       emit([lastLocation, 'failure'], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'submitfailed' &&
-               lastTransition['newstate'] == 'exhausted') {
+    } else if (lastTransition['newstate'] == 'exhausted') {
       emit([lastLocation, 'failure'], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'createfailed' &&
-               lastTransition['newstate'] == 'exhausted') {
-      emit([lastLocation, 'failure'], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'new' &&
-               lastTransition['newstate'] == 'killed') {
-      emit([lastLocation, 'failure'], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'created' &&
-               lastTransition['newstate'] == 'killed') {
-      emit([lastLocation, 'failure'], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'executing' &&
-               lastTransition['newstate'] == 'killed') {
-      emit([lastLocation, 'failure'], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'killed' &&
-               lastTransition['newstate'] == 'killed') {
+    } else if (lastTransition['newstate'] == 'killed') {
       emit([lastLocation, 'failure'], doc['jobid']);
     } else if (lastTransition['oldstate'] == 'exhausted' &&
                lastTransition['newstate'] == 'cleanout') {

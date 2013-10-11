@@ -8,7 +8,7 @@ function(doc) {
         //emit(doc['states'][0].location, 1)
         var i; //index
         for (i in doc['states']) {
-            tempSite = doc['states'][i].location
+            tempSite = doc['states'][i].location;
             if (tempSite != "Agent") {
                 site = tempSite;
             }
@@ -26,9 +26,11 @@ function(doc) {
                     else {
                         state = oldstate;
                     }
+                } else if (state == "retrydone") {
+                	state = "jobfailed";
                 }
-                emit([site, state], 1)
+                emit([site, state], 1);
             }
         }
     }
-}
+};

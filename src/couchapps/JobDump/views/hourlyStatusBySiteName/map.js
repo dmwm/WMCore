@@ -1,4 +1,7 @@
 function(doc) {
+  /* this is used for WMBSService and OLD GlobalMonitor.
+   * need to be deplicated
+   */
   function stateSort(a, b) {
     if (a['timestamp'] > b['timestamp']) {
       return 1;
@@ -26,40 +29,28 @@ function(doc) {
     }
 
     var lastHour = lastTransition['timestamp'] - (lastTransition['timestamp'] % 3600);
-
-    if(lastTransition['oldstate'] == 'jobfailed' &&
-              lastTransition['newstate'] == 'jobcooloff') {
+    
+    // cooloff state
+    if (lastTransition['newstate'] == 'jobcooloff') {
       emit([lastHour, lastLocation, 'cooloff'], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'complete' &&
-               lastTransition['newstate'] == 'success') {
+    } 
+    // success state
+    else if (lastTransition['newstate'] == 'success') {
       emit([lastHour, lastLocation, 'success'], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'jobfailed' &&
-               lastTransition['newstate'] == 'exhausted') {
-      emit([lastHour, lastLocation, 'failure'], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'submitfailed' &&
-               lastTransition['newstate'] == 'exhausted') {
-      emit([lastHour, lastLocation, 'failure'], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'createfailed' &&
-               lastTransition['newstate'] == 'exhausted') {
-      emit([lastHour, lastLocation, 'failure'], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'new' &&
-               lastTransition['newstate'] == 'killed') {
-      emit([lastHour, lastLocation, 'failure'], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'created' &&
-               lastTransition['newstate'] == 'killed') {
-      emit([lastHour, lastLocation, 'failure'], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'executing' &&
-               lastTransition['newstate'] == 'killed') {
-      emit([lastHour, lastLocation, 'failure'], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'killed' &&
-               lastTransition['newstate'] == 'killed') {
+	} else if (lastTransition['oldstate'] == 'success' &&
+               lastTransition['newstate'] == 'cleanout') {
+      emit([lastHour, lastLocation, 'success'], doc['jobid']);
+    } 
+    // failure state
+    else if (lastTransition['newstate'] == 'exhausted') {
       emit([lastHour, lastLocation, 'failure'], doc['jobid']);
     } else if (lastTransition['oldstate'] == 'exhausted' &&
                lastTransition['newstate'] == 'cleanout') {
       emit([lastHour, lastLocation, 'failure'], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'success' &&
-               lastTransition['newstate'] == 'cleanout') {
-      emit([lastHour, lastLocation, 'success'], doc['jobid']);
+    } else if (lastTransition['newstate'] == 'retrydone') {
+      emit([lastHour, lastLocation, 'failure'], doc['jobid']);
+    } else if (lastTransition['newstate'] == 'killed') {
+      emit([lastHour, lastLocation, 'failure'], doc['jobid']);
     }
   }
 }

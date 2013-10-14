@@ -1,3 +1,22 @@
+0.9.81 to 0.9.82:
+  - Merge pull request #4812 from ticoann/resource_control_fix
+  - fix changeSiteState function
+  - Merge pull request #4811 from ticoann/filter_success_from_wmstats
+  - Merge pull request #4803 from ticoann/fix_job_reporting
+  - Merge pull request #4806 from ticoann/merge_parentage_fix
+  - Merge pull request #4804 from pkonst/fix-os-requirement
+  - Merge pull request #4808 from ticoann/disk_postfix_fix
+  - Merge pull request #4809 from ticoann/need_permission_to_access_reqmgr
+  - Merge pull request #4810 from ticoann/fix_couchapp_init_script
+  - fix couchapp init script
+  - comment out reqmgr archive state update directly
+  - fix Disk prefix filter
+  - add unittest
+  - filter successful jobs propagating to central wmstats
+  - fix parentage for non merge job
+  - fix local job couch view due transition change
+  - Fixed job OS requirement in the JDL
+
 0.9.79 to 0.9.81:
   - add task summary table.  Pull request #4794
   - get rid of -k option in myproxy-logon  and remove the server DN from my  myproxy credential name (now is only sha1(self.userDN).hexdigest()). Pull request #4789

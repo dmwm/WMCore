@@ -58,7 +58,10 @@ class ResourceControl(WMConnectionBase):
                                transaction = self.existingTransaction())
 
         executingJobs = self.wmbsDAOFactory(classname = "Jobs.ListByState")
-        jobIds = executingJobs.execute(state = 'executing')
+        jobInfo = executingJobs.execute(state = 'executing')
+        jobIds = []
+        for job in jobInfo:
+            jobIds.append({'jobid': job[id]})
         bossAir = BossAirAPI(self.config, noSetup = True)
         jobtokill = bossAir.updateSiteInformation(jobIds, siteName, state in ("Aborted","Draining","Down"))
 

@@ -7,6 +7,7 @@ Created on Oct 12, 2012
 
 import os
 import threading
+import time
 import unittest
 
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
@@ -177,10 +178,10 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
                                    dbinterface = myThread.dbi)
         createBlock = uploadFactory(classname = "SetBlockStatus")
 
-        self.blockAName = self.testDatasetA + "#" + makeUUID()
-        self.blockBName = self.testDatasetB + "#" + makeUUID()
-        createBlock.execute(block = self.blockAName, locations = ["srm-cms.cern.ch"], open_status = 'Closed')
-        createBlock.execute(block = self.blockBName, locations = ["srm-cms.cern.ch"], open_status = 'Closed')
+        self.blockAName = self.testDatasetA + "#1"
+        self.blockBName = self.testDatasetB + "#2"
+        createBlock.execute(block = self.blockAName, locations = ["srm-cms.cern.ch"], open_status = 'Closed', time = time.time())
+        createBlock.execute(block = self.blockBName, locations = ["srm-cms.cern.ch"], open_status = 'Closed', time = time.time())
 
         bufferFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
                                    logger = myThread.logger,
@@ -363,8 +364,8 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         """
         _testTier0ModeSubscriptions_
 
-        Tests that we can make custodial/non-custodial subscriptions on
-        tier0 operation mode, custodial moves are made on block level.
+        Tests that we can make block deletions on
+        tier0 operation mode.
         """
 
         self.stuffDatabase(tier0Mode = True)
@@ -384,16 +385,10 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         # Priority is normal
         self.assertTrue(self.testDatasetA in subscriptions, "Dataset A was not subscribed")
         subInfoA = subscriptions[self.testDatasetA]
-        self.assertEqual(len(subInfoA), 4, "Dataset A was not subscribed to all sites")
+        self.assertEqual(len(subInfoA), 3, "Dataset A was not subscribed to all sites")
         for subInfo in subInfoA:
             site = subInfo["node"]
-            if subInfo['level'] == 'block':
-                self.assertEqual(subInfo["custodial"], "y", "Wrong custodiality for dataset A at %s" % subInfo["node"])
-                self.assertEqual(subInfo["request_only"], "n", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
-                self.assertEqual(subInfo["move"], "y", "Wrong subscription type for dataset A at %s" % subInfo["node"])
-                self.assertEqual(subInfo["node"], "T0_CH_CERN_MSS", "Wrong node for dataset A, block subscription.")
-                self.assertEqual(subInfo["priority"], "high", "Wrong priority for subscription")
-            elif site == "T0_CH_CERN_MSS":
+            if site == "T0_CH_CERN_MSS":
                 self.assertEqual(subInfo["custodial"], "y", "Wrong custodiality for dataset A at %s" % subInfo["node"])
                 self.assertEqual(subInfo["request_only"], "n", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
                 self.assertEqual(subInfo["move"], "n", "Wrong subscription type for dataset A at %s" % subInfo["node"])
@@ -413,7 +408,6 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
                 self.assertEqual(subInfo["priority"], "normal", "Wrong priority for subscription")
             else:
                 self.fail("Dataset A was subscribed  to a wrong site %s" % site)
-        self.assertEqual(len([x for x in subInfoA if x['level'] == 'block']), 1)
 
         # Now check /BogusPrimary/CRUZET11-v1/RAW
         # According to the spec, custodial to T0_CH_CERN_MSS and T1_UK_RAL_MSS
@@ -439,10 +433,15 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         # Delete the wmbs entries
         myThread.dbi.processData("DELETE FROM wmbs_workflow")
         subscriber.algorithm({})
-        self.assertEqual(len(subscriptions[self.testDatasetA]), 5)
+        self.assertEqual(len(subscriptions[self.testDatasetA]), 3)
         self.assertTrue(self.testDatasetB in subscriptions)
-        self.assertEqual(len(subscriptions[self.testDatasetB]), 3)
-        self.assertEqual(len([x for x in subscriptions[self.testDatasetB] if x['level'] == 'block']), 1)
+        self.assertEqual(len(subscriptions[self.testDatasetB]), 2)
+
+        # Check the deletion request in "PhEDEx"
+        self.assertEqual(len(subscriber.phedex.deletionRequests), 2)
+        for dataset in subscriber.phedex.deletionRequests:
+            for request in subscriber.phedex.deletionRequests[dataset]:
+                self.assertTrue(request['approved'])
 
         return
 

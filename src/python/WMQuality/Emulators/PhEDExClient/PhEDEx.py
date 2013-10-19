@@ -30,6 +30,8 @@ class PhEDEx(dict):
         self['endpoint'] = "phedex_emulator"
         self.dataBlocks = DataBlockGenerator()
         self.subRequests = {}
+        self.deletionRequests = {}
+        self.deletionRequestId = 0
 
     def injectBlocks(self, node, xmlData, verbose = 0, strict = 1):
 
@@ -68,9 +70,47 @@ class PhEDEx(dict):
                 args['custodial'] = subscription.custodial
                 args['group'] = subscription.group
                 args['request_only'] = subscription.request_only
+                args['suspended'] = 'n'
                 self.subRequests[datasetName].append(args)
 
         return
+
+    def delete(self, deletion, xmlData):
+        """
+        Store the deletion request in main memory
+        """
+        self.deletionRequestId += 1
+        for datasetPath in deletion.datasetPaths:
+            if datasetPath not in self.deletionRequests:
+                self.deletionRequests[datasetPath] = []
+            args = {}
+            args['comments'] = deletion.comments
+            args['level'] = deletion.level
+            args['rm_subscriptions'] = deletion.subscriptions
+            args['approved'] = False
+            args['requestId'] = self.deletionRequestId
+            for node in deletion.nodes:
+                args['node'] = node
+                self.deletionRequests[datasetPath].append(args)
+        return {'phedex' : {'request_created' : [{'id' : self.deletionRequestId}]}}
+
+    def updateRequest(self, requestId, decision, nodes):
+        """
+        _updateRequest_
+
+        Update a request approving/disapproving it.
+        Currently only works on deletion requests.
+        """
+        if type(nodes) == str:
+            nodes = [nodes]
+        for dataset in self.deletionRequests:
+            for request in self.deletionRequests[dataset]:
+                if request['node'] in nodes and \
+                    request['requestId'] == requestId:
+                    if decision == 'approve':
+                        request['approved'] = True
+                    else:
+                        request['approved'] = False
 
     def getReplicaInfoForFiles(self, **args):
         """
@@ -174,6 +214,8 @@ class PhEDEx(dict):
         data = {"phedex":{"request_timestamp":1254762796.13538, "block" : []}}
         if 'dataset' in args:
             args['block'] = []
+            if type(args['dataset']) != type([]):
+                args['dataset'] = [args['dataset']]
             for dataset in args['dataset']:
                 args['block'].extend(self.dataBlocks._blockGenerator(dataset))
             args['block'] = [x['Name'] for x in args['block']]

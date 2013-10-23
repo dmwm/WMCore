@@ -25,7 +25,7 @@ class AnalyticsDataCollector(Harness):
         agentPollInterval =self.config.AnalyticsDataCollector.agentPollInterval
         self.timer = DataUploadTime()
         myThread = threading.currentThread()
-        myThread.workerThreadManager.addWorker(AgentStatusPoller(self.config, self.timer),
+        myThread.workerThreadManager.addWorker(AgentStatusPoller(self.config),
                                                agentPollInterval)
-        myThread.workerThreadManager.addWorker(AnalyticsPoller(self.config, self.timer),
+        myThread.workerThreadManager.addWorker(AnalyticsPoller(self.config),
                                                pollInterval)

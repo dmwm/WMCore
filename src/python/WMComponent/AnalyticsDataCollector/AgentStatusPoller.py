@@ -15,7 +15,7 @@ from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import LocalCouchDBData, \
      WMAgentDBData, combineAnalyticsData, convertToRequestCouchDoc, \
-     convertToAgentCouchDoc, isDrainMode, initAgentInfo
+     convertToAgentCouchDoc, isDrainMode, initAgentInfo, DataUploadTime
 from WMCore.WMFactory import WMFactory
 
 class AgentStatusPoller(BaseWorkerThread):
@@ -23,14 +23,13 @@ class AgentStatusPoller(BaseWorkerThread):
     Gether the summary data for request (workflow) from local queue,
     local job couchdb, wmbs/boss air and populate summary db for monitoring
     """
-    def __init__(self, config, timer):
+    def __init__(self, config):
         """
         initialize properties specified from config
         """
         BaseWorkerThread.__init__(self)
         # set the workqueue service for REST call
         self.config = config
-        self.timer = timer
         # need to get campaign, user, owner info
         self.agentInfo = initAgentInfo(self.config)
         self.summaryLevel = (config.AnalyticsDataCollector.summaryLevel).lower()
@@ -95,8 +94,13 @@ class AgentStatusPoller(BaseWorkerThread):
             agentInfo['status'] = "warning"
         else:
             agentInfo['drain_mode'] = False
-            
-        agentInfo['update_info'] = self.timer.getInfo()
+        
+        # This adds the last time and message when data was updated to agentInfo
+        lastDataUpload = DataUploadTime.getInfo(self)
+        if lastDataUpload['data_last_update']!=0:
+            agentInfo['data_last_update'] = lastDataUpload['data_last_update']
+        if lastDataUpload['data_error']!="":
+            agentInfo['data_error'] = lastDataUpload['data_error']
         return agentInfo
 
     def uploadAgentInfoToCentralWMStats(self, agentInfo, uploadTime):

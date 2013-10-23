@@ -460,38 +460,24 @@ class DataUploadTime():
     Cache class to storage the last time when data was uploaded
     If data could not be updated, it storages the error message.
     """
-    def __init__(self):
-        # Set the storing variables
-        self.uploadTime = 0
-        self.lastTime = 0
-        self.message = "First data update pending"
+    data_last_update = 0
+    data_error = ""
     
+    @staticmethod
     def setInfo(self, time, message):
         """
-        Set the time and message (error or success) in the storing variables
+        Set the time and message  
         """
-        self.uploadTime = time
-        if self.uploadTime == 0:
-            if self.lastTime == 0:
-                self.message = "Data could not be updated for first time. This is the error message: %s" % (message)
-            else:
-                self.message = "Data could not be updated this cycle. The last error message is: %s" % (message)
-        else:
-            self.lastTime = time
-            self.message = message
-                    
+        if time:
+            DataUploadTime.data_last_update = time
+        DataUploadTime.data_error = message
+    
+    @staticmethod            
     def getInfo(self):
         """
-        Returns the last time when data was uploaded
-        If uploadTime is 0, it means that uplading was not succesful
-        Then returns the error message
+        Returns the last time when data was uploaded and the error message (if any)
         """
         answer = {}
-        answer['message'] = self.message
-        
-        if self.uploadTime == 0:
-            answer['last_time'] = self.lastTime
-        else:
-            answer['last_time'] = self.uploadTime
-            
+        answer['data_last_update'] = DataUploadTime.data_last_update
+        answer['data_error'] = DataUploadTime.data_error
         return answer

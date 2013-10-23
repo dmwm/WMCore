@@ -15,7 +15,7 @@ from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import LocalCouchDBData, \
      WMAgentDBData, combineAnalyticsData, convertToRequestCouchDoc, \
-     convertToAgentCouchDoc, isDrainMode, initAgentInfo
+     convertToAgentCouchDoc, isDrainMode, initAgentInfo, DataUploadTime
 from WMCore.WMFactory import WMFactory
 
 class AnalyticsPoller(BaseWorkerThread):
@@ -23,14 +23,13 @@ class AnalyticsPoller(BaseWorkerThread):
     Gether the summary data for request (workflow) from local queue,
     local job couchdb, wmbs/boss air and populate summary db for monitoring
     """
-    def __init__(self, config, timer):
+    def __init__(self, config):
         """
         initialize properties specified from config
         """
         BaseWorkerThread.__init__(self)
         # set the workqueue service for REST call
         self.config = config
-        self.timer = timer
         # need to get campaign, user, owner info
         self.agentInfo = initAgentInfo(self.config)
         self.summaryLevel = (config.AnalyticsDataCollector.summaryLevel).lower()
@@ -113,10 +112,10 @@ class AnalyticsPoller(BaseWorkerThread):
 
             self.localSummaryCouchDB.uploadData(requestDocs)
             logging.info("Request data upload success\n %s request, \nsleep for next cycle" % len(requestDocs))
-            self.timer.setInfo(uploadTime,"Data upload was successful")
+            DataUploadTime.setInfo(self, uploadTime, "ok")
             
         except Exception, ex:
             logging.error("Error occurred, will retry later:")
             logging.error(str(ex))
-            self.timer.setInfo(0,str(ex))
+            DataUploadTime.setInfo(self, False, str(ex))
             logging.error("Trace back: \n%s" % traceback.format_exc())

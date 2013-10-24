@@ -1,3 +1,7 @@
+0.9.82 to 0.9.83:
+  - Merge pull request #4824 from yuyiguo/hidata2
+  - update Lexicon.py to handle 3 or 4 count of /store/hidata/... lfn by YG
+
 0.9.81 to 0.9.82:
   - Merge pull request #4812 from ticoann/resource_control_fix
   - fix changeSiteState function

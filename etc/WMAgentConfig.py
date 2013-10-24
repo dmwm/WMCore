@@ -134,7 +134,7 @@ config.DBS3Upload.componentDir = config.General.workDir + "/DBS3Upload"
 config.DBS3Upload.logLevel = globalLogLevel
 config.DBS3Upload.workerThreads = 1
 config.DBS3Upload.pollInterval = 100
-config.DBS3Upload.dbsUrl = "https://cmsweb-testbed.cern.ch/dbs/prod/global/DBSWriter"
+config.DBS3Upload.dbsUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSWriter"
 config.DBS3Upload.dbs3UploadOnly = True
 
 config.section_("DBSInterface")

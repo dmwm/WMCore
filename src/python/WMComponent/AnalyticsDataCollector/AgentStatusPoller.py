@@ -15,7 +15,7 @@ from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import LocalCouchDBData, \
      WMAgentDBData, combineAnalyticsData, convertToRequestCouchDoc, \
-     convertToAgentCouchDoc, isDrainMode, initAgentInfo
+     convertToAgentCouchDoc, isDrainMode, initAgentInfo, DataUploadTime
 from WMCore.WMFactory import WMFactory
 
 class AgentStatusPoller(BaseWorkerThread):
@@ -94,7 +94,13 @@ class AgentStatusPoller(BaseWorkerThread):
             agentInfo['status'] = "warning"
         else:
             agentInfo['drain_mode'] = False
-            
+        
+        # This adds the last time and message when data was updated to agentInfo
+        lastDataUpload = DataUploadTime.getInfo(self)
+        if lastDataUpload['data_last_update']!=0:
+            agentInfo['data_last_update'] = lastDataUpload['data_last_update']
+        if lastDataUpload['data_error']!="":
+            agentInfo['data_error'] = lastDataUpload['data_error']
         return agentInfo
 
     def uploadAgentInfoToCentralWMStats(self, agentInfo, uploadTime):

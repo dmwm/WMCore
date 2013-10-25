@@ -391,7 +391,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                        loadedJob.get("estimatedDiskUsage", None),
                        loadedJob.get("estimatedMemoryUsage", None),
                        newJob['task_name'],
-                       frozenset(potentialLocations),)
+                       frozenset(potentialLocations))
 
             self.jobDataCache[workflowName][jobID] = jobInfo
 

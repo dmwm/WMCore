@@ -162,7 +162,7 @@ class AnalysisWorkloadFactory(StdBase):
                     "CouchURL" : {"default" : "http://localhost:5984", "type" : str,
                                   "optional" : False, "validate" : couchurl,
                                   "attr" : "couchURL", "null" : False},
-                    "CouchDBName" : {"default" : "wmagent_configcache", "type" : str,
+                    "CouchDBName" : {"default" : "analysis_reqmgr_config_cache", "type" : str,
                                      "optional" : False, "validate" : identifier,
                                      "attr" : "couchDBName", "null" : False},
                     "AnalysisConfigCacheDoc" : {"default" : None, "type" : str,

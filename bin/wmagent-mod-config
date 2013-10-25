@@ -183,7 +183,6 @@ def modifyConfiguration(config, **args):
         config.reqmgr.Webtools.host = args["reqmgr_hostname"]
         config.reqmgr.Webtools.port = int(args["reqmgr_port"])
         config.reqmgr.couchUrl = args["couch_url"]
-        config.reqmgr.configDBName = "wmagent_configcache"
         config.reqmgr.views.active.create.requestor = "cmsdataops"
         config.reqmgr.admin = "gutsche@fnal.gov"
         config.reqmgr.views.active.reqMgr.model.couchUrl = args["couch_url"]

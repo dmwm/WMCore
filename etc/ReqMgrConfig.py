@@ -37,7 +37,7 @@ userEmail = "OPERATOR EMAIL"
 # database.  The JobDump couchapp needs to be installed into the jobdump
 # database.
 couchURL = "http://USERNAMEPASSWORD@COUCHSERVER:5984"
-configCacheDBName = "wmagent_configcache"
+configCacheDBName = "reqmgr_config_cache"
 reqMgrDBName = "reqmgrdb"
 wmstatDBName = "wmstats"
 

@@ -306,7 +306,7 @@ class Service(dict):
                 if hasattr(he, 'status') and hasattr(he, 'reason'):
                     msg += ' is unavailable - it returned %s because %s\n' % (he.status,
                                                                               he.reason)
-                    if hasattr(he, result):
+                    if hasattr(he, 'result'):
                         msg += ' with result: %s\n' % he.result
                 else:
                     msg += ' raised a %s when accessed' % he.__repr__()

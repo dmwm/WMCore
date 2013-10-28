@@ -217,7 +217,12 @@ class PromptRecoWorkloadFactory(StdBase):
             for outputModuleName in outputMods.keys():
                 self.addMergeTask(skimTask, self.skimJobSplitAlgo, outputModuleName,
                                   doLogCollect = self.doLogCollect)
-        
+
+        workload.setBlockCloseSettings(self.blockCloseDelay,
+                                       workload.getBlockCloseMaxFiles(),
+                                       workload.getBlockCloseMaxEvents(),
+                                       workload.getBlockCloseMaxSize())
+
         # setting the parameters which need to be set for all the tasks
         # sets acquisitionEra, processingVersion, processingString
         workload.setTaskPropertiesFromWorkload()
@@ -348,7 +353,10 @@ class PromptRecoWorkloadFactory(StdBase):
                                          "attr" : "skimLumisPerJob", "null" : False},
                     "SkimFilesPerJob" : {"default" : 1, "type" : int,
                                          "optional" : True, "validate" : lambda x : x > 0,
-                                         "attr" : "skimFilesPerJob", "null" : False}
+                                         "attr" : "skimFilesPerJob", "null" : False},
+                    "BlockCloseDelay" : {"default" : 86400, "type" : int,
+                                         "optional" : True, "validate" : lambda x : x > 0,
+                                         "attr" : "blockCloseDelay", "null" : False}
                     }
         baseArgs.update(specArgs)
         return baseArgs

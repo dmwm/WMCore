@@ -275,7 +275,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             if not os.path.isfile(pickledJobPath):
                 # Then we have a problem - there's no file
                 logging.error("Could not find pickled jobObject %s" % pickledJobPath)
-                badJobs[601103].append(newJob)
+                badJobs[61103].append(newJob)
                 continue
             try:
                 jobHandle = open(pickledJobPath, "r")

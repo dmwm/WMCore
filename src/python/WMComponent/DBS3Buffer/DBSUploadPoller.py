@@ -197,6 +197,7 @@ class DBSUploadPoller(BaseWorkerThread):
         self.dbs3UploadOnly = getattr(self.config.DBS3Upload, "dbs3UploadOnly", False)
         self.physicsGroup   = getattr(self.config.DBS3Upload, "physicsGroup", "NoGroup")
         self.datasetType    = getattr(self.config.DBS3Upload, "datasetType", "PRODUCTION")
+        self.primaryDatasetType = getattr(self.config.DBS3Upload, "primaryDatasetType", "mc")
         self.blockCount     = 0
         self.dbsApi = DbsApi(url = self.dbsUrl)
 
@@ -382,8 +383,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
             # Add the loaded files to the block
             for file in files:
-                file["datasetType"] = self.datasetType
-                block.addFile(file)
+                block.addFile(file, self.datasetType, self.primaryDatasetType)
 
             # Add to the cache
             self.addNewBlock(block = block)
@@ -461,8 +461,7 @@ class DBSUploadPoller(BaseWorkerThread):
                         currentBlock.setProcessingVer(procVer = dasInfo['ProcessingVer'])
 
                     # Now deal with the file
-                    newFile["datasetType"] = self.datasetType
-                    currentBlock.addFile(dbsFile = newFile)
+                    currentBlock.addFile(newFile, self.datasetType, self.primaryDatasetType)
                     self.filesToUpdate.append({'filelfn': newFile['lfn'],
                                                'block': currentBlock.getName()})
                 # Done with the location
@@ -658,7 +657,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 # Then we have to fix the dataset
                 dbsFile = block.files[0]
                 block.setDataset(datasetName  = dbsFile['datasetPath'],
-                                 primaryType  = dbsFile.get('primaryType', 'DATA'),
+                                 primaryType  = self.primaryDatasetType,
                                  datasetType  = self.datasetType,
                                  physicsGroup = dbsFile.get('physicsGroup', None))
             logging.debug("Found block %s in blocks" % block.getName())

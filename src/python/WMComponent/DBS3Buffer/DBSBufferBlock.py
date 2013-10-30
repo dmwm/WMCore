@@ -10,8 +10,8 @@ This is a block object which will be uploaded to DBS
 import time
 import logging
 
+from WMCore import Lexicon
 from WMCore.Services.Requests import JSONRequests
-
 from WMCore.WMException import WMException
 
 
@@ -92,7 +92,7 @@ class DBSBlock:
 
 
 
-    def addFile(self, dbsFile):
+    def addFile(self, dbsFile, datasetType, primaryDatasetType):
         """
         _addFile_
 
@@ -180,8 +180,8 @@ class DBSBlock:
 
         # Take care of the dataset
         self.setDataset(datasetName  = dbsFile['datasetPath'],
-                        primaryType  = dbsFile.get('primaryType', 'DATA'),
-                        datasetType  = dbsFile.get('datasetType', 'PRODUCTION'),
+                        primaryType  = primaryDatasetType, 
+                        datasetType  = datasetType,
                         physicsGroup = dbsFile.get('physicsGroup', None))
 
         return
@@ -273,11 +273,8 @@ class DBSBlock:
             # Do nothing, we already have a dataset
             return
 
-        if not primaryType in ['MC', 'DATA', 'TEST']:
-            msg = "Invalid primaryDatasetType %s\n" % primaryType
-            logging.error(msg)
-            raise DBSBlockException(msg)
-
+        Lexicon.primaryDatasetType(primaryType)
+        
         if not datasetType in ['VALID', 'PRODUCTION', 'INVALID', 'DEPRECATED', 'DELETED']:
             msg = "Invalid processedDatasetType %s\n" % datasetType
             logging.error(msg)

@@ -462,3 +462,10 @@ def splitCouchServiceURL(serviceURL):
 
     splitedURL = serviceURL.rstrip('/').rsplit('/', 1)
     return splitedURL[0], splitedURL[1]
+
+def primaryDatasetType(candidate):
+    pDatasetTypes = ["mc", "data", "cosmic", "test"]
+    if candidate in pDatasetTypes:
+        return True
+    # to sync with the check() exception when it doesn't match
+    raise AssertionError("Invalid primary dataset type : %s should be 'mc' or 'data' or 'test'" % candidate)

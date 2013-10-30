@@ -24,23 +24,44 @@ WMStats.Agents = function (couchData) {
         
         function getStatus(agentInfo) {
             var lastUpdatedDuration = currentTime - agentInfo.timestamp;
+            var dataUpdateDuration = -1; 
+            if (agentInfo.data_last_update) {
+            	var dataUpdateDuration = currentTime - agentInfo.data_last_update; 
+            }
+            var report = {};
             if (lastUpdatedDuration > agentPollingCycle * 2) {
                 agentData.agentNumber.error += 1;
-                return {status: "agent_down", 
-                        message: WMStats.Utils.foramtDuration(lastUpdatedDuration)};
+                report = {status: "error", 
+                          message: "Data is not updated: AnalyticsDataCollector Down"};
             } else if (agentInfo.down_components.length > 0) {
-                agentData.agentNumber.error += 1;
-                return {status: "component_down",
-                        message: agentInfo.down_components};
+				agentData.agentNumber.error += 1;
+                report = {status: "error",
+                          message:"Components or Thread down"};
             } else if (agentInfo.drain_mode) {
                 agentData.agentNumber.error += 1;
-                return {status: "drain_mode",
-                        message: "Drain Mode"};
+                report = {status: "error",
+                          message: "Draining Agent"};
+            } else if (agentInfo.data_error && (agentInfo.data_error !== "ok")) {
+            	agentData.agentNumber.error += 1;
+            	report = {status: "error",
+                          message: "Data collect error"};
+            } else if (agentInfo.disk_warning && (agentInfo.disk_warning.length > 0)) {
+            	agentData.agentNumber.error += 1;
+            	report = {status: "error",
+                          message: "disk is almost full" };
+            } else if (agentInfo.couch_process_warning) {
+            	agentData.agentNumber.error += 1;
+            	report = {status: "error",
+                          message: "couchdb process maxed out: " + agentInfo.couch_process_warning};
             } else {
                 agentData.agentNumber.stable += 1;
-                return {status: "ok", 
-                        message: WMStats.Utils.foramtDuration(lastUpdatedDuration)};
+                report = {status: "ok", 
+                          message: "OK"};
             };
+            
+            report["agent_update"] =  WMStats.Utils.foramtDuration(lastUpdatedDuration);
+            report["data_update"] = WMStats.Utils.foramtDuration(dataUpdateDuration);
+            return report;
         };
         
         for (var index in dataList) {

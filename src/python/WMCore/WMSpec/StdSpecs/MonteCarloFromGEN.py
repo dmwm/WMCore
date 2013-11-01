@@ -60,6 +60,9 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
             self.addMergeTask(procTask, self.procJobSplitAlgo,
                               outputModuleName)
 
+        # setting the parameters which need to be set for all the tasks
+        # sets acquisitionEra, processingVersion, processingString
+        workload.setTaskPropertiesFromWorkload()
         return workload
 
     def __call__(self, workloadName, arguments):

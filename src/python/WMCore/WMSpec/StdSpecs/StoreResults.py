@@ -89,6 +89,9 @@ class StoreResultsWorkloadFactory(StdBase):
                                              dataTier = self.dataTier,
                                              lfnBase = mergedLFN)
 
+        # setting the parameters which need to be set for all the tasks
+        # sets acquisitionEra, processingVersion, processingString
+        workload.setTaskPropertiesFromWorkload()
         return workload
 
     @staticmethod

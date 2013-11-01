@@ -110,6 +110,9 @@ class AnalysisWorkloadFactory(StdBase):
                                               userSandbox = self.userSandbox, userFiles = self.userFiles)
 
         self.setUserOutput(analysisTask)
+        # setting the parameters which need to be set for all the tasks
+        # sets acquisitionEra, processingVersion, processingString
+        self.workload.setTaskPropertiesFromWorkload()
         return self.workload
 
     def __call__(self, workloadName, arguments):

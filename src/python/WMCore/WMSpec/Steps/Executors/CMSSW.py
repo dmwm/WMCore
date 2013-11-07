@@ -211,10 +211,9 @@ class CMSSW(Executor):
         logging.info("RUNNING SCRAM SCRIPTS")
         for script in self.step.runtime.scramPreScripts:
             #invoke scripts with scram()
-            invokeCommand = "%s -m WMCore.WMRuntime.ScriptInvoke %s %s \n" % (
-                sys.executable,
-                stepModule,
-                script)
+            invokeCommand = self.step.runtime.invokeCommand if hasattr(self.step.runtime, 'invokeCommand') else\
+                                "%s -m WMCore.WMRuntime.ScriptInvoke %s" % (sys.executable, stepModule)
+            invokeCommand += " %s \n" % script
             logging.info("    Invoking command: %s" % invokeCommand)
             retCode = scram(invokeCommand)
             if retCode > 0:

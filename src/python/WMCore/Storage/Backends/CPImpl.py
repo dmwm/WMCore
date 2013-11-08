@@ -52,7 +52,7 @@ class CPImpl(StageOutImpl):
             pass
 
         if checkdirexitCode:
-            mkdircmd = "/bin/mkdir -m 775 -p %s" % targetdir
+            mkdircmd = "umask 002 ; /bin/mkdir -p %s" % targetdir
             print "=> creating the dir : %s" %mkdircmd
             try:
                 self.run(mkdircmd)

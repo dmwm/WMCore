@@ -311,7 +311,6 @@ class JobSubmitterPoller(BaseWorkerThread):
                 else:
                     for siteName in self.siteKeys[loc]:
                         possibleLocations.add(siteName)
-                        potentialLocations.add(siteName)
 
             if len(loadedJob["siteWhitelist"]) > 0:
                 whiteList = []

@@ -71,7 +71,9 @@ class ReRecoWorkloadFactory(DataProcessing):
                 self.addCleanupTask(procTask, outputModuleName)
 
         self.addSkims(workload)
-
+        # setting the parameters which need to be set for all the tasks
+        # sets acquisitionEra, processingVersion, processingString
+        workload.setTaskPropertiesFromWorkload()
         return workload
 
     def addSkims(self, workload):

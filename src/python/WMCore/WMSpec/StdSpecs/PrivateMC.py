@@ -59,7 +59,10 @@ class PrivateMCWorkloadFactory(AnalysisWorkloadFactory):
         # Pile up support
         if self.pileupConfig:
             self.setupPileup(prodTask, self.pileupConfig)
-
+        
+        # setting the parameters which need to be set for all the tasks
+        # sets acquisitionEra, processingVersion, processingString
+        self.workload.setTaskPropertiesFromWorkload()
         return self.workload
 
     @staticmethod

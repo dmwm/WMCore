@@ -217,6 +217,10 @@ class PromptRecoWorkloadFactory(StdBase):
             for outputModuleName in outputMods.keys():
                 self.addMergeTask(skimTask, self.skimJobSplitAlgo, outputModuleName,
                                   doLogCollect = self.doLogCollect)
+        
+        # setting the parameters which need to be set for all the tasks
+        # sets acquisitionEra, processingVersion, processingString
+        workload.setTaskPropertiesFromWorkload()
 
         return workload
 

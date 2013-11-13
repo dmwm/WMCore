@@ -262,6 +262,10 @@ class TaskChainWorkloadFactory(StdBase):
             self.taskMapping[task.name()] = taskConf
 
         self.workload.ignoreOutputModules(self.ignoredOutputModules)
+        
+        # setting the parameters which need to be set for all the tasks
+        # sets acquisitionEra, processingVersion, processingString
+        self.workload.setTaskPropertiesFromWorkload()
         return self.workload  
 
             

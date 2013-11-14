@@ -118,7 +118,8 @@ dependencies = {'wmc-rest':{
                         },
                 'crabserver':{
                         'packages': ['WMCore.Credential', 'WMCore.Services.SiteDB+',
-                                     'WMCore.Services.JSONParser+', 'WMCore.Services.PhEDEx+'],
+                                     'WMCore.Services.JSONParser+', 'WMCore.Services.PhEDEx+',
+                                     'WMCore.WMSpec+'],
                         'systems': ['wmc-rest', 'wmc-database'],
                         },
                 'crabclient':{

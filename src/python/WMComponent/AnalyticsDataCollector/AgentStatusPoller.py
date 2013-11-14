@@ -127,8 +127,8 @@ class AgentStatusPoller(BaseWorkerThread):
                 agentInfo['status'] = "warning"
                 
         if agentInfo['status'] == 'ok' or agentInfo['status'] == 'warning':
-             if agentInfo['data_error'] != 'ok' or agentInfo['couch_process_warning'] != 0:
-                 agentInfo['status'] = "error"
+            if agentInfo['data_error'] != 'ok' or agentInfo['couch_process_warning'] != 0:
+                agentInfo['status'] = "error"
 
         return agentInfo
 

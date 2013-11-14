@@ -1,3 +1,41 @@
+0.9.83 to 0.9.84:
+  - Merge pull request #4838 from ticoann/error_handler
+  - Merge pull request #4850 from ticoann/fix_indent_error
+  - Merge pull request #4848 from ticoann/site_matching_fix
+  - fix indentation
+  - Merge pull request #4849 from PerilousApricot/bugfix/crabserver-rpm-fix
+  - Merge pull request #4847 from mmascher/arbitrary-prescript-CMSSW
+  - Adding WMCore.WMSpec to crabserver
+  - Merge pull request #4842 from ticoann/tier0_acqera_fix
+  - Improve Scram runtime wrapper: allow to use an arbitrary file (even stdout)
+  - fix potential location list
+  - Merge pull request #4845 from mmascher/arbitrary-prescript-CMSSW
+  - Merge pull request #4839 from ticoann/fix_resource_control_unit_test
+  - Allow the execution of arbitrary scramPreScripts in the CMSSW executor
+  - fix acquisionEra, processingVersion, processingString set when it is assigned initialization
+  - Merge pull request #4836 from ticoann/wmagent_monitor_improvement
+  - Merge pull request #4840 from ticoann/fix_bad_jobcode
+  - fix bad job code
+  - fix updateSiteInformation function
+  - fixes #4832
+  - Merge pull request #4826 from lucacopa/alarming_improvements
+  - This Fixes #4820 and #4786 This combine patch includes:
+  - wmstats disk couch process warning
+  - Merge pull request #4835 from hufnagel/fixtypo-4822
+  - fix typo in 4822 merged pull request
+  - Merge pull request #4822 from hufnagel/http-debug
+  - Merge pull request #4829 from ticoann/change_default_config_cache
+  - Merge pull request #4830 from ticoann/add_wmstats_script
+  - Merge pull request #4831 from ticoann/fix_job_submitter_typo
+  - fix typo
+  - add wmstats status change script
+  - set default config cache name sync with production name
+  - Merge pull request #4606 from hufnagel/removeiooverrides
+  - Merge pull request #4828 from lucacopa/dbsUrl_configFile_fix
+  - Fixes #4827
+  - print out returned content from http errors
+  - remove IO overrides
+
 0.9.82 to 0.9.83:
   - Merge pull request #4824 from yuyiguo/hidata2
   - update Lexicon.py to handle 3 or 4 count of /store/hidata/... lfn by YG

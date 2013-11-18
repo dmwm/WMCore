@@ -19,7 +19,9 @@ from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
 _CheckExitCodeOption = True
 checkPathsCount = 5
 checkPaths = ['/lustre/unmerged/', '/lustre/temp/', '/store/unmerged/', '/store/temp/','/store/user/meloam/lustre']
-checkPathsReplace = ['/lustre/unmerged/', '/lustre/temp/', '/lustre/unmerged/', '/lustre/temp/','/uscms_data/d3/meloam/wmagent-lustre']
+checkPathsReplace = ['root://cmseos.fnal.gov//lustre/unmerged/', 'root://cmseos.fnal.gov//lustre/temp/', 
+                     'root://cmseos.fnal.gov//lustre/unmerged/', 'root://cmseos.fnal.gov//lustre/temp/',
+                     'root://cmseos.fnal.gov//eos/uscms/store/user/meloam/wmagent-lustre/']
 srmPaths = ['/store/temp/user/', '/store/user/']
 dccpPaths = ['/store/user/meloam/t4/']
 
@@ -143,6 +145,20 @@ class FNALImpl(StageOutImplV2):
         if not os.path.exists( directory ):
             os.makedirs( directory )
 
+
+    def createOutputDirectoryEOS(self, targetPFN):
+        logging.info("createOutputDirectoryEOS called on %s" % targetPFN)
+        # only create dir on remote storage
+        if targetPFN.find('root://cmseos.fnal.gov') == -1:
+            return
+
+        filePath = targetPFN.split("root://cmseos.fnal.gov/", 1)[1]
+        directory = os.path.dirname(filePath)
+        logging.info("Creating path: %s" % directory)
+        if not os.path.exists( directory ):
+            os.makedirs( directory )
+
+
     def createSourceName(self, protocol, pfn):
         """
         createTargetName
@@ -194,7 +210,10 @@ class FNALImpl(StageOutImplV2):
                 os.unlink( filePath )
         elif method == 'lustre':
             pfnToRemove = self.substituteLustrePath( pfnToRemove )
-            return self.cpImpl.doDelete(pfnToRemove, seName, command, options, protocol)
+            filePath = pfnToRemove.split("root://cmseos/fnal.gov/",1 )[1]
+            if os.path.exists( filePath ):
+                logging.info( "Removing file: " + filePath )
+                os.unlink( filePath )
         else:
             raise RuntimeError, "Unsupported storage method in doDelete: %s" % method
 
@@ -217,25 +236,58 @@ class FNALImpl(StageOutImplV2):
             however, because sometimes you want to pass different command line args
         """
         if stageOut:
-            localPFN = sourcePFN
-            remotePFN = targetPFN
+            localPFN = fromPfn
+            remotePFN = toPfn
         else:
-            localPFN = targetPFN
-            remotePFN = sourcePFN
+            localPFN = toPfn
+            remotePFN = fromPfn
 
         method = self.storageMethod( remotePFN )
         sourceMethod = self.storageMethod( localPFN )
 
         if method == 'srm' or sourceMethod == 'srm':
-            return self.srmImpl.doTransfer( sourcePFN, targetPFN, stageOut,\
-                                           seName, command, options, protocol, checksums )
+            return self.srmImpl.doTransfer( fromPfn, toPfn, stageOut,\
+                                           seName, command, options, protocol, checksum)
 
         # transfer with lustre
         elif method == 'lustre':
-            sourcePFN = self.substituteLustrePath( sourcePFN )
-            targetPFN = self.substituteLustrePath( targetPFN )
-            return self.cpImpl.doTransfer( sourcePFN, targetPFN, stageOut,\
-                                           seName, command, options, protocol, checksums )
+            sourcePFN = self.substituteLustrePath( fromPfn )
+            targetPFN = self.substituteLustrePath( toPfn )
+
+        # there is no xrd module yet ...
+            if stageOut:
+                self.createOutputDirectoryEOS( targetPFN )
+            else:
+                self.createOutputDirectoryEOS( sourcePFN )
+
+            optionsStr = ""
+            if options != None:
+                optionsStr = str(options)
+
+            original_size = os.stat(sourcePFN)[6]
+            useChecksum = (checksum != None and checksum.has_key('adler32') and not self.stageIn)
+            if useChecksum:    
+                checksum['adler32'] = "%08x" % int(checksum['adler32'], 16)
+
+                # non-functional in 3.3.1 xrootd clients due to bug
+                #result += "-ODeos.targetsize=$LOCAL_SIZE\&eos.checksum=%s " % checksums['adler32']
+
+                # therefor embed information into target URL
+                targetPFN += "\?eos.targetsize=%s\&eos.checksum=%s" % (original_size, checksum['adler32'])
+                
+            result = "#!/bin/sh\n"
+            result += "xrdcp -d 0 %s %s %s\n" % (optionsStr, sourcePFN, targetPFN)
+            try:
+                self.runCommandFailOnNonZero( result )
+            except:
+                logging.info("dccp failed, removing failed file")
+                if not stageOut and os.path.exists( pnfsPfn2(targetPFN) ):
+                    logging.info("unlinking %s" % pnfsPfn2(targetPFN))
+                    os.unlink( pnfsPfn2(targetPFN) )
+                else:
+                    self.doDelete( targetPFN, seName, command, options, protocol )
+                raise
+
 
         elif method == 'dccp':
             if stageOut:

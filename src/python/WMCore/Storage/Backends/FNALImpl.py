@@ -15,7 +15,8 @@ from WMCore.Storage.Backends.LCGImpl import LCGImpl
 _CheckExitCodeOption = True
 checkPathsCount=4
 checkPaths = ['/lustre/unmerged/', '/lustre/temp/', '/store/unmerged/', '/store/temp/']
-checkPathsReplace = ['/lustre/unmerged/', '/lustre/temp/', '/lustre/unmerged/', '/lustre/temp/']
+checkPathsReplace = ['root://cmseos.fnal.gov//lustre/unmerged/', 'root://cmseos.fnal.gov//lustre/temp/', 
+                     'root://cmseos.fnal.gov//lustre/unmerged/', 'root://cmseos.fnal.gov//lustre/temp/']
 srmPaths = ['/store/temp/user/', '/store/user/']
 
 
@@ -249,14 +250,27 @@ fi
             return result
 
         else:
+                
             original_size = os.stat(sourcePFN)[6]
             print "Local File Size is: %s" % original_size
-            result = "/bin/cp "
+            
+            useChecksum = (checksums != None and checksums.has_key('adler32') and not self.stageIn)
+            if useChecksum:    
+                checksums['adler32'] = "%08x" % int(checksums['adler32'], 16)
+
+                # non-functional in 3.3.1 xrootd clients due to bug
+                #result += "-ODeos.targetsize=$LOCAL_SIZE\&eos.checksum=%s " % checksums['adler32']
+
+                # therefor embed information into target URL
+                targetPFN += "\?eos.targetsize=%s\&eos.checksum=%s" % (original_size, checksums['adler32'])
+                print "Local File Checksum is: %s\"\n" % checksums['adler32']
+                
+            result = "/usr/bin/xrdcp -d 0 "
             if options != None:
                 result += " %s " % options
             result += " %s " % sourcePFN
             result += " %s " % targetPFN
-            result += "; sync; DEST_SIZE=`/bin/ls -l %s | /bin/awk '{print $5}'` ; if [ $DEST_SIZE ] && [ '%s' == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (targetPFN,original_size)
+            result += "; if [ $? -eq 0 ] ; then exit 0; else echo \"Error: xrdcp exited with $?\"; exit 60311 ; fi " 
             return result
 
 
@@ -337,12 +351,12 @@ fi
                     filePath = "%s%s" % (checkPathsReplace[i],pfnSplit)
             original_size = os.stat(filePath)[6]
             print "Local File Size is: %s" % original_size
-            result = "/bin/cp "
+            result = "/usr/bin/xrdcp -d 0 "
             if options != None:
                 result += " %s " % options
             result += " %s " % filePath
             result += " %s " % targetPFN
-            result += "; sync; DEST_SIZE=`/bin/ls -l %s | /bin/awk '{print $5}'` ; if [ $DEST_SIZE ] && [ '%s' == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (targetPFN,original_size)
+            result += "; if [ $? -eq 0 ] ; then exit 0; else echo \"Error: xrdcp exited with $?\"; exit 60311 ; fi "
             return result
 
 

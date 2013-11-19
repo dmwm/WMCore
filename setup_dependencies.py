@@ -130,7 +130,7 @@ dependencies = {'wmc-rest':{
                         },
                 'crabtaskworker':{
                         'packages':['WMCore..WorkQueue', 'WMCore.Credential', 'WMCore.Algorithms+', 'WMCore.WMSpec+',
-                                     'WMCore.JobSplitting', 'WMCore.Services.SiteDB+', 'WMCore.Services.DBS+'],
+                                     'WMCore.JobSplitting', 'WMCore.Services.SiteDB+', 'WMCore.Services.DBS+', 'WMCore.Services.UserFileCache+'],
                         'modules': ['WMCore.WMBS.File', 'WMCore.WMBS.WMBSBase', 'WMCore.WMBS.__init__'],
                         'systems': ['wmc-database'],
                         },

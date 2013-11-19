@@ -104,8 +104,43 @@ class PhEDEx(Service):
         args['group'] = subscription.group
         args['request_only'] = subscription.request_only
 
-        return self._getResult(callname, args = args, verb="POST")
+        return self._getResult(callname, args = args, verb = "POST")
 
+    def delete(self, deletion, xmlData):
+        """
+        _delete_
+
+        xmlData = XMLDrop.makePhEDExXMLForDatasets(dbsUrl, subscription.getDatasetPaths())
+        Deletion is a PhEDEX deletion structure
+        """
+
+        callname = 'delete'
+        args = {}
+
+        args['node'] = []
+        for node in deletion.nodes:
+            args['node'].append(node)
+
+        args['data'] = xmlData
+        args['level'] = deletion.level
+        args['rm_subscriptions'] = deletion.subscriptions
+        args['comments'] = deletion.comments
+
+        return self._getResult(callname, args = args, verb = "POST")
+
+    def updateRequest(self, requestId, decision, nodes):
+        """
+        _updateRequest_
+
+        Update a request approving/disapproving it.
+        """
+        callname = 'updaterequest'
+        args = {}
+        args['decision'] = decision.lower()
+        args['request'] = requestId
+        args['node'] = nodes
+
+        return self._getResult(callname, args = args, verb = "POST")
 
     def getReplicaInfoForBlocks(self, **kwargs):
         """

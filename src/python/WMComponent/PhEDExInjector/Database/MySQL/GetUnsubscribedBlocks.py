@@ -39,7 +39,7 @@ class GetUnsubscribedBlocks(DBFormatter):
                  dbsbuffer_file.workflow = dbsbuffer_workflow.id
                LEFT OUTER JOIN wmbs_workflow ON
                  wmbs_workflow.name = dbsbuffer_workflow.name
-             WHERE dbsbuffer_file.status = 'GLOBAL' AND
+             WHERE (dbsbuffer_file.status = 'GLOBAL' OR dbsbuffer_file.status = 'InDBS') AND
                    dbsbuffer_file.in_phedex = 1 AND
                    dbsbuffer_dataset.path != 'bogus' AND
                    wmbs_workflow.id is NULL AND

@@ -222,6 +222,9 @@ class PromptRecoWorkloadFactory(StdBase):
         # sets acquisitionEra, processingVersion, processingString
         workload.setTaskPropertiesFromWorkload()
 
+        # set the LFN bases (normally done by request manager)
+        workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase)
+
         return workload
 
     def __call__(self, workloadName, arguments):

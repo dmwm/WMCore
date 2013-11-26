@@ -70,16 +70,7 @@ class ChangeState(WMObject, WMConnectionBase):
         else:
             self.dbname = couchDbName
 
-        try:
-            self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
-            self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname, size = 250)
-            self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % self.dbname, size = 250)
-            self.jsumdatabase = self.couchdb.connectDatabase( getattr(self.config.JobStateMachine, 'jobSummaryDBName'), size = 250 )
-        except Exception, ex:
-            logging.error("Error connecting to couch: %s" % str(ex))
-            self.jobsdatabase = None
-            self.fwjrdatabase = None
-            self.jsumdatabase = None
+        self._connectDatabases()
 
         try:
             self.dashboardReporter = DashboardReporter(config)
@@ -96,6 +87,18 @@ class ChangeState(WMObject, WMConnectionBase):
 
         self.maxUploadedInputFiles = getattr(self.config.JobStateMachine, 'maxFWJRInputFiles', 1000)
         return
+
+    def _connectDatabases(self):
+        try:
+            self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
+            self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname, size = 250)
+            self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % self.dbname, size = 250)
+            self.jsumdatabase = self.couchdb.connectDatabase( getattr(self.config.JobStateMachine, 'jobSummaryDBName'), size = 250 )
+        except Exception, ex:
+            logging.error("Error connecting to couch: %s" % str(ex))
+            self.jobsdatabase = None
+            self.fwjrdatabase = None
+            self.jsumdatabase = None
 
     def propagate(self, jobs, newstate, oldstate, updatesummary = False):
         """
@@ -156,6 +159,11 @@ class ChangeState(WMObject, WMConnectionBase):
         in couch it will be saved as a seperate document.  If the job has a FWJR
         attached that will be saved as a seperate document.
         """
+        if self.jobsdatabase is None and \
+                self.fwjrdatabase is None and \
+                self.jsumdatabase is None:
+            self._connectDatabases()
+           
         if not self.jobsdatabase or not self.fwjrdatabase:
             return
 
@@ -504,6 +512,11 @@ class ChangeState(WMObject, WMConnectionBase):
         jobid and location keys which represent
         the job id in WMBS and new location respectively.
         """
+        if self.jobsdatabase is None and \
+                self.fwjrdatabase is None and \
+                self.jsumdatabase is None:
+            self._connectDatabases()
+
         # First update safely in WMBS
         self.updateLocationDAO.execute(jobs, conn = self.getDBConn(),
                                        transaction = self.existingTransaction())

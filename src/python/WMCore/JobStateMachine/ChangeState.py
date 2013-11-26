@@ -72,11 +72,7 @@ class ChangeState(WMObject, WMConnectionBase):
 
         self._connectDatabases()
 
-        try:
-            self.dashboardReporter = DashboardReporter(config)
-        except Exception, ex:
-            logging.error("Error setting up the \
-                          dashboard reporter: %s" % str(ex))
+        self._connectDashboard()
 
         self.getCouchDAO = self.daofactory("Jobs.GetCouchID")
         self.setCouchDAO = self.daofactory("Jobs.SetCouchID")
@@ -102,6 +98,16 @@ class ChangeState(WMObject, WMConnectionBase):
             self.jobsdatabase = None
             self.fwjrdatabase = None
             self.jsumdatabase = None
+    
+    def _connectDashboard(self):
+        """
+        Try connecting to the dashboard reporter
+        """
+        try:
+            self.dashboardReporter = DashboardReporter(self.config)
+        except Exception, ex:
+            logging.error("Error setting up the \
+                          dashboard reporter: %s" % str(ex))
 
     def propagate(self, jobs, newstate, oldstate, updatesummary = False):
         """
@@ -414,6 +420,8 @@ class ChangeState(WMObject, WMConnectionBase):
         with any additional information needed
         """
 
+        if not hasattr(self, 'dashboardReporter'):
+            self._connectDashboard()
         #If the new state is created it possible came from 3 locations:
         #JobCreator in that case it comes with all the needed info
         #ErrorHandler comes with the standard information of a WMBSJob

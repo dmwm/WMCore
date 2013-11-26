@@ -89,6 +89,9 @@ class ChangeState(WMObject, WMConnectionBase):
         return
 
     def _connectDatabases(self):
+        """
+        Try connecting to the couchdbs
+        """
         try:
             self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
             self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname, size = 250)

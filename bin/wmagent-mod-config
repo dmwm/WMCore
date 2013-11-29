@@ -144,21 +144,25 @@ def modifyConfiguration(config, **args):
         config.AsyncTransfer.serverDN = args["host_dn"]
         config.AsyncTransfer.couch_user_monitoring_instance = args["couch_url"]
         config.AsyncTransfer.opsProxy = args["ops_proxy"]
+        config.AsyncTransfer.config_couch_instance = args["couch_url"]
 
     if hasattr(config,"Analytics"):
         config.Analytics.couch_user_monitoring_instance = args["couch_url"]
         config.Analytics.amq_auth_file = args["amq_auth_file"]
         config.Analytics.couch_instance = args["couch_url"]
+        config.Analytics.config_couch_instance = args["couch_url"]
 
     if hasattr(config,"Statistics"):
         config.Statistics.couch_statinstance = args["couch_url"]
         config.Statistics.couch_instance = args["couch_url"]
+        config.Statistics.config_couch_instance = args["couch_url"]
 
     if hasattr(config,"DBSPublisher"):
         config.DBSPublisher.couch_instance = args["couch_url"]
         config.DBSPublisher.serverDN = args["host_dn"]
         config.DBSPublisher.cache_area = args["ufc_service_url"]
         config.DBSPublisher.opsProxy = args["ops_proxy"]
+        config.DBSPublisher.config_couch_instance = args["couch_url"]
 
     if hasattr(config,"CRABInterface"):
         config.CRABInterface.Webtools.host = args["cs_hostname"]

@@ -602,7 +602,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def updateLFNsAndDatasets(self, initialTask = None):
+    def updateLFNsAndDatasets(self, initialTask = None, runNumber = None):
         """
         _updateLFNsAndDatasets_
 
@@ -650,6 +650,15 @@ class WMWorkloadHelper(PersistencyHelper):
                                                         getattr(outputModule, "primaryDataset"),
                                                         getattr(outputModule, "dataTier"),
                                                         processingString)
+
+                        if runNumber != None:
+                            runString = str(runNumber).zfill(9)
+                            lfnSuffix = "/%s/%s/%s" % (runString[0:3],
+                                                       runString[3:6],
+                                                       runString[6:9])
+                            unmergedLFN += lfnSuffix
+                            mergedLFN += lfnSuffix
+
                         lfnBase(unmergedLFN)
                         lfnBase(mergedLFN)
                         setattr(outputModule, "processedDataset", processedDataset)
@@ -672,7 +681,7 @@ class WMWorkloadHelper(PersistencyHelper):
                             setattr(outputModule, "mergedLFNBase", mergedLFN)
 
             task.setTaskLogBaseLFN(self.data.properties.unmergedLFNBase)
-            self.updateLFNsAndDatasets(task)
+            self.updateLFNsAndDatasets(task, runNumber = runNumber)
 
         return
 
@@ -863,7 +872,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return getattr(self.data.properties, 'campaign', None)
 
-    def setLFNBase(self, mergedLFNBase, unmergedLFNBase):
+    def setLFNBase(self, mergedLFNBase, unmergedLFNBase, runNumber = None):
         """
         _setLFNBase_
 
@@ -872,7 +881,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data.properties.mergedLFNBase = mergedLFNBase
         self.data.properties.unmergedLFNBase = unmergedLFNBase
-        self.updateLFNsAndDatasets()
+        self.updateLFNsAndDatasets(runNumber = runNumber)
         return
 
     def setMergeParameters(self, minSize, maxSize, maxEvents,

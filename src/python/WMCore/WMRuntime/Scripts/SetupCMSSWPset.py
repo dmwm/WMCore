@@ -601,7 +601,8 @@ class SetupCMSSWPset(ScriptInterface):
             applyTweak(self.process, outTweak, self.fixupDict)
 
         # revlimiter for testing
-        #self.process.maxEvents.input = 2
+        if getattr(self.step.data.application.command, "oneEventMode", False):
+            self.process.maxEvents.input = 1
 
         # check for random seeds and the method of seeding which is in the job baggage
         self.handleSeeding()

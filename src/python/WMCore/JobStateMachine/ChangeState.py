@@ -70,6 +70,7 @@ class ChangeState(WMObject, WMConnectionBase):
         else:
             self.dbname = couchDbName
 
+        self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
         self._connectDatabases()
 
         self._connectDashboard()
@@ -88,26 +89,46 @@ class ChangeState(WMObject, WMConnectionBase):
         """
         Try connecting to the couchdbs
         """
-        try:
-            self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
-            self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname, size = 250)
-            self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % self.dbname, size = 250)
-            self.jsumdatabase = self.couchdb.connectDatabase( getattr(self.config.JobStateMachine, 'jobSummaryDBName'), size = 250 )
-        except Exception, ex:
-            logging.error("Error connecting to couch: %s" % str(ex))
-            self.jobsdatabase = None
-            self.fwjrdatabase = None
-            self.jsumdatabase = None
+        if not hasattr(self, 'jobsdatabase') or self.jobsdatabase is None:
+            try:
+                self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname, size = 250)
+            except Exception, ex:
+                logging.error("Error connecting to couch db '%s/jobs': %s" % (self.dbname, str(ex)))
+                self.jobsdatabase = None
+                return False
+
+        if not hasattr(self, 'fwjrdatabase') or self.fwjrdatabase is None:
+            try:
+                self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % self.dbname, size = 250)
+            except Exception, ex:
+                logging.error("Error connecting to couch db '%s/fwjrs': %s" % (self.dbname, str(ex)))
+                self.fwjrdatabase = None
+                return False
+
+        if not hasattr(self, 'jsumdatabase') or self.jsumdatabase is None:
+            dbname = getattr(self.config.JobStateMachine, 'jobSummaryDBName')
+            try:
+                self.jsumdatabase = self.couchdb.connectDatabase( dbname, size = 250 )
+            except Exception, ex:
+                logging.error("Error connecting to couch db '%s': %s" % (dbname, str(ex)))
+                self.jsumdatabase = None
+                return False
+
+        return True
     
     def _connectDashboard(self):
         """
         Try connecting to the dashboard reporter
         """
-        try:
-            self.dashboardReporter = DashboardReporter(self.config)
-        except Exception, ex:
-            logging.error("Error setting up the \
-                          dashboard reporter: %s" % str(ex))
+        if not hasattr(self, 'dashboardReporter') or self.dashboardReporter is None:
+            try:
+                self.dashboardReporter = DashboardReporter(self.config)
+            except Exception, ex:
+                logging.error("Error setting up the \
+                              dashboard reporter: %s" % str(ex))
+                self.dashboardReporter = None
+                return False
+        return True
 
     def propagate(self, jobs, newstate, oldstate, updatesummary = False):
         """
@@ -168,12 +189,8 @@ class ChangeState(WMObject, WMConnectionBase):
         in couch it will be saved as a seperate document.  If the job has a FWJR
         attached that will be saved as a seperate document.
         """
-        if self.jobsdatabase is None and \
-                self.fwjrdatabase is None and \
-                self.jsumdatabase is None:
-            self._connectDatabases()
-           
-        if not self.jobsdatabase or not self.fwjrdatabase:
+        if not self._connectDatabases():
+            logging.error('Databases not connected properly')
             return
 
         timestamp = int(time.time())
@@ -420,8 +437,9 @@ class ChangeState(WMObject, WMConnectionBase):
         with any additional information needed
         """
 
-        if not hasattr(self, 'dashboardReporter'):
-            self._connectDashboard()
+        if not self._connectDashboard():
+            logging.error('Dashboardreporter not set up properly')
+            return
         #If the new state is created it possible came from 3 locations:
         #JobCreator in that case it comes with all the needed info
         #ErrorHandler comes with the standard information of a WMBSJob
@@ -523,10 +541,9 @@ class ChangeState(WMObject, WMConnectionBase):
         jobid and location keys which represent
         the job id in WMBS and new location respectively.
         """
-        if self.jobsdatabase is None and \
-                self.fwjrdatabase is None and \
-                self.jsumdatabase is None:
-            self._connectDatabases()
+        if not self._connectDatabases():
+            logging.error('Databases not connected properly')
+            return
 
         # First update safely in WMBS
         self.updateLocationDAO.execute(jobs, conn = self.getDBConn(),

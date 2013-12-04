@@ -123,7 +123,7 @@ dependencies = {'wmc-rest':{
                         'systems': ['wmc-rest', 'wmc-database'],
                         },
                 'crabclient':{
-                        'packages': ['WMCore.Wrappers+', 'WMCore.Credential', 'PSetTweaks'],
+                        'packages': ['WMCore.Wrappers+', 'WMCore.Credential', 'PSetTweaks', 'WMCore.Services.UserFileCache+'],
                         'systems': ['wmc-base'],
                         'modules': ['WMCore.FwkJobReport.FileInfo', 'WMCore.Services.Requests',
                                     'WMCore.Services.Service', 'WMCore.Services.pycurl_manager'],

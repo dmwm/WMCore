@@ -1,3 +1,14 @@
+0.9.84 to 0.9.85:
+  - Add UFC as a dependency to CRABClient. pull request #4868 from bbockelm
+  - Get rid of --voms cms when doing myproxy-init. pull request #4867 from mmascher
+  - Add config_couch_instance to ASO config for CMSWEB deployment. pull request #4862 from HassenRiahi
+  - Updating oneEventMode for WMCore. pull request #4859 from PerilousApricot
+  - Move DB imports out of module-level. pull request #4858 from PerilousApricot
+  - add option for Tier0 specific LFNs. pull request #4861 from hufnagel
+  - Add WMCore.Services.UserFileCache dependency for crabstaskworker. pull request #4854 from mmascher
+  - fix phedex injection for dbs3. pull request #4853 from ticoann
+  - fix cp stageout to always create 775 directories. pull request #4846 from hufnagel
+
 0.9.83 to 0.9.84:
   - Merge pull request #4838 from ticoann/error_handler
   - Merge pull request #4850 from ticoann/fix_indent_error

@@ -296,7 +296,7 @@ class Proxy(Credential):
 
             if nokey is True:
                 credname = sha1(self.userDN).hexdigest()
-                myproxyDelegCmd = 'X509_USER_PROXY=%s ; myproxy-init -d -n -s %s -x -R \'%s\' -x -Z \'%s\' --voms cms -l \'%s\' -t 168:00 -c %s' \
+                myproxyDelegCmd = 'X509_USER_PROXY=%s ; myproxy-init -d -n -s %s -x -R \'%s\' -x -Z \'%s\' -l \'%s\' -t 168:00 -c %s' \
                                   % (credential, self.myproxyServer, self.serverDN, self.serverDN, credname, self.myproxyValidity)
             elif serverRenewer and len( self.serverDN.strip() ) > 0:
                 serverCredName = sha1(self.serverDN).hexdigest()

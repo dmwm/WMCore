@@ -1209,6 +1209,7 @@ class DBConnectionPool(Thread):
         self.queue = []
         self.idle = []
         self.inuse = []
+        if dbspec['type'].__name__ == 'MySQLdb': dbspec['dsn'] = dbspec['db']
         self.dbspec = dbspec
         self.id = id
         engine.subscribe("start", self.start, 100)
@@ -1475,8 +1476,14 @@ class DBConnectionPool(Thread):
     def _new(self, s, trace):
         """Helper function to create a new connection with `trace` identifier."""
         trace and cherrypy.log("%s instantiating a new connection" % trace)
-        return { "pool": self, "trace": trace, "type": s["type"], "connection":
-                 s["type"].connect(s["user"], s["password"], s["dsn"], threaded=True) }
+        ret = { "pool": self, "trace": trace, "type": s["type"] }
+        if s['type'].__name__ == 'MySQLdb':
+            ret.update( { "connection": s["type"].connect(s['host'], s["user"], 
+                                 s["password"], s["db"], int(s["port"])) } )
+        else: 
+            ret.update( { "connection": s["type"].connect(s["user"], s["password"], 
+                              	 s["dsn"], threaded=True) } )
+        return ret   
 
     def _test(self, s, prevtrace, trace, req, dbh):
         """Helper function to prepare and test an existing connection object."""
@@ -1487,12 +1494,17 @@ class DBConnectionPool(Thread):
         # Emit log message to identify this connection object. If it was
         # previously used for something else, log that too for detailed
         # debugging involving problems with connection reuse.
-        client_version = ".".join(str(x) for x in s["type"].clientversion())
+        if s['type'].__name__ == 'MySQLdb':
+            client_version = s["type"].get_client_info()
+            version = ".".join(str(x) for x in s["type"].version_info)
+        else: 
+            client_version = ".".join(str(x) for x in s["type"].clientversion())
+            version = c.version
         prevtrace = ((prevtrace and prevtrace != trace and
                       " (previously %s)" % prevtrace.split(":")[1]) or "")
         trace and cherrypy.log("%s%s connected, client: %s, server: %s, stmtcache: %d"
                                % (trace, prevtrace, client_version,
-                                  c.version, c.stmtcachesize))
+                                  version, c.stmtcachesize))
 
         # Set the target schema and identification attributes on this one.
         c.current_schema = s["schema"]
@@ -1987,6 +1999,8 @@ class DatabaseRESTApi(RESTApi):
         request.db["last_sql"] = logsql
         trace and cherrypy.log("%s prepare [%s]" % (trace, logsql))
         c = request.db["handle"]["connection"].cursor()
+        if request.db['type'].__name__ == 'MySQLdb':
+            return c
         c.prepare(sql)
         return c
 
@@ -2019,6 +2033,8 @@ class DatabaseRESTApi(RESTApi):
         trace = request.db["handle"]["trace"]
         request.db["last_bind"] = (binds, kwbinds)
         trace and cherrypy.log("%s execute: %s %s" % (trace, binds, kwbinds))
+        if request.db['type'].__name__ == 'MySQLdb':                                                
+            return c, c.execute(sql, kwbinds)
         return c, c.execute(None, *binds, **kwbinds)
 
     def executemany(self, sql, *binds, **kwbinds):
@@ -2035,6 +2051,8 @@ class DatabaseRESTApi(RESTApi):
         trace = request.db["handle"]["trace"]
         request.db["last_bind"] = (binds, kwbinds)
         trace and cherrypy.log("%s executemany: %s %s" % (trace, binds, kwbinds))
+        if request.db['type'].__name__ == 'MySQLdb':                                                  
+            return c, c.executemany(sql, binds[0])
         return c, c.executemany(None, *binds, **kwbinds)
 
     def query(self, match, select, sql, *binds, **kwbinds):

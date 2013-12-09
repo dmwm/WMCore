@@ -324,6 +324,10 @@ class LexiconTest(unittest.TestCase):
         lfn(lfnA)
         lfnA = '/store/results/qcd/QCD_Pt80/StoreResults-Summer09-MC_31X_V3_7TeV-Jet30U-JetAODSkim-0a98be42532eba1f0545cc9b086ec3c3/QCD_Pt80/USER/StoreResults-Summer09-MC_31X_V3_7TeV-Jet30U-JetAODSkim-0a98be42532eba1f0545cc9b086ec3c3/0000/C44630AC-C0C7-DE11-AD4E-0019B9CAC0F8.root'
         lfn(lfnA)
+        lfnA = '/store/user/fanzago/RelValZMM/FanzagoTutGrid/f30a6bb13f516198b2814e83414acca1/outfile_10_2_tw4.root'
+        lfn(lfnA)
+        lfnA = '/store/group/higgs/SDMu9_Zmumu/Zmumu/OctX_HZZ3lepSkim_SDMu9/1eb161a436e69f7af28d18145e4ce909/3lepSkim_SDMu9_1.root'
+        lfn(lfnA)
 
         # All these cases should fail
         lfnA = '/storeA/temp/lustre/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
@@ -368,8 +372,6 @@ class LexiconTest(unittest.TestCase):
         lfnA = '/store/temp/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X;-2.root'
         self.assertRaises(AssertionError, lfn, lfnA)
 
-        lfnA = '/store/temp/user/ewv/Higgs-123/PrivateSample/USER/v1/a_X-2.root'
-        self.assertRaises(AssertionError, lfn, lfnA)
         lfnA = '/store/temp/user/ewv/Higgs;123/PrivateSample/v1/a_X-2.root'
         self.assertRaises(AssertionError, lfn, lfnA)
         lfnA = '/store/temp/user/ewv/Higgs-123/Private;Sample/v1/a_X-2.root'

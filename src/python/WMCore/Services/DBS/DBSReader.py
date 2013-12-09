@@ -25,6 +25,7 @@ def DBSReader(endpoint, **kwargs):
     elif endpoint_components.hostname == DBS2HOST:
         return _getDBS2Reader(endpoint, **kwargs)
 
+    msg = ''
     # try with a dbs2 instance, if that fails try dbs3
     try:
         dbs = _getDBS2Reader(endpoint, **kwargs)
@@ -34,7 +35,6 @@ def DBSReader(endpoint, **kwargs):
     except Exception, ex:
         msg += 'Instantiating DBS2Reader failed with %s\n' % str(ex)
 
-    msg = ''
     try:
         dbs = _getDBS3Reader(endpoint, **kwargs)
         # if this doesn't throw endpoint is dbs3

@@ -1209,6 +1209,8 @@ class DBConnectionPool(Thread):
         self.queue = []
         self.idle = []
         self.inuse = []
+        if type in dbspec and dbspec['type'].__name__ == 'MySQLdb':
+            dbspec['dsn'] = dbspec['db']
         self.dbspec = dbspec
         self.id = id
         engine.subscribe("start", self.start, 100)
@@ -1475,8 +1477,14 @@ class DBConnectionPool(Thread):
     def _new(self, s, trace):
         """Helper function to create a new connection with `trace` identifier."""
         trace and cherrypy.log("%s instantiating a new connection" % trace)
-        return { "pool": self, "trace": trace, "type": s["type"], "connection":
-                 s["type"].connect(s["user"], s["password"], s["dsn"], threaded=True) }
+        ret = { "pool": self, "trace": trace, "type": s["type"] }
+        if s['type'].__name__ == 'MySQLdb':
+            ret.update( { "connection": s["type"].connect(s['host'], s["user"], 
+                                 s["password"], s["db"], int(s["port"])) } )
+        else: 
+            ret.update( { "connection": s["type"].connect(s["user"], s["password"], 
+                              	 s["dsn"], threaded=True) } )
+        return ret   
 
     def _test(self, s, prevtrace, trace, req, dbh):
         """Helper function to prepare and test an existing connection object."""
@@ -1487,12 +1495,17 @@ class DBConnectionPool(Thread):
         # Emit log message to identify this connection object. If it was
         # previously used for something else, log that too for detailed
         # debugging involving problems with connection reuse.
-        client_version = ".".join(str(x) for x in s["type"].clientversion())
+        if s['type'].__name__ == 'MySQLdb':
+            client_version = s["type"].get_client_info()
+            version = ".".join(str(x) for x in s["type"].version_info)
+        else: 
+            client_version = ".".join(str(x) for x in s["type"].clientversion())
+            version = c.version
         prevtrace = ((prevtrace and prevtrace != trace and
                       " (previously %s)" % prevtrace.split(":")[1]) or "")
         trace and cherrypy.log("%s%s connected, client: %s, server: %s, stmtcache: %d"
                                % (trace, prevtrace, client_version,
-                                  c.version, c.stmtcachesize))
+                                  version, c.stmtcachesize))
 
         # Set the target schema and identification attributes on this one.
         c.current_schema = s["schema"]
@@ -1749,6 +1762,10 @@ class DatabaseRESTApi(RESTApi):
         # If that fails, force drop the connection. We ignore errors from
         # this since we are attempting to report another earlier error.
         db["handle"] and db["pool"].put(db["handle"], True)
+
+        # Set the db backend
+        DB_BACKEND = db['type'].__name__
+
         del request.db
         del db
 
@@ -1759,16 +1776,22 @@ class DatabaseRESTApi(RESTApi):
         if inconnect:
             raise DatabaseUnavailable(**dberrinfo)
         elif isinstance(errobj, type.IntegrityError):
-            if errobj.args[0].code in (1, 2292):
+            errorcode = errobj[0] if DB_BACKEND == 'MySQLdb' else errobj.args[0].code
+            if errorcode in {'cx_Oracle' : (1, 2292), 'MySQLdb' : (1062,)}[DB_BACKEND]:
                 # ORA-00001: unique constraint (x) violated
                 # ORA-02292: integrity constraint (x) violated - child record found
+                # MySQL: 1062, Duplicate entry 'x' for key 'y'
+                # MySQL: Both unique and integrity constraint falls into 1062 error
                 raise ObjectAlreadyExists(**errinfo)
-            elif errobj.args[0].code in (1400, 2290):
+            elif errorcode in {'cx_Oracle' : (1400, 2290), 'MySQLdb' : (1048,)}[DB_BACKEND]:
                 # ORA-01400: cannot insert null into (x)
                 # ORA-02290: check constraint (x) violated
+                # MySQL: 1048, Column (x) cannot be null
+                # There are no check constraint in MySQL. Oracle 2290 equivalent does not exist
                 raise InvalidParameter(**errinfo)
-            elif errobj.args[0].code == 2291:
+            elif errorcode == {'cx_Oracle' : 2291, 'MySQLdb' : 1452}[DB_BACKEND]:
                 # ORA-02291: integrity constraint (x) violated - parent key not found
+                # MySQL: 1452, Cannot add or update a child row: a foreign key constraint fails
                 raise MissingObject(**errinfo)
             else:
                 raise DatabaseExecutionError(**dberrinfo)
@@ -1987,6 +2010,8 @@ class DatabaseRESTApi(RESTApi):
         request.db["last_sql"] = logsql
         trace and cherrypy.log("%s prepare [%s]" % (trace, logsql))
         c = request.db["handle"]["connection"].cursor()
+        if request.db['type'].__name__ == 'MySQLdb':
+            return c
         c.prepare(sql)
         return c
 
@@ -2019,6 +2044,8 @@ class DatabaseRESTApi(RESTApi):
         trace = request.db["handle"]["trace"]
         request.db["last_bind"] = (binds, kwbinds)
         trace and cherrypy.log("%s execute: %s %s" % (trace, binds, kwbinds))
+        if request.db['type'].__name__ == 'MySQLdb':
+            return c, c.execute(sql, kwbinds)
         return c, c.execute(None, *binds, **kwbinds)
 
     def executemany(self, sql, *binds, **kwbinds):
@@ -2035,6 +2062,8 @@ class DatabaseRESTApi(RESTApi):
         trace = request.db["handle"]["trace"]
         request.db["last_bind"] = (binds, kwbinds)
         trace and cherrypy.log("%s executemany: %s %s" % (trace, binds, kwbinds))
+        if request.db['type'].__name__ == 'MySQLdb':
+            return c, c.executemany(sql, binds[0])
         return c, c.executemany(None, *binds, **kwbinds)
 
     def query(self, match, select, sql, *binds, **kwbinds):

@@ -1209,7 +1209,8 @@ class DBConnectionPool(Thread):
         self.queue = []
         self.idle = []
         self.inuse = []
-        if dbspec['type'].__name__ == 'MySQLdb': dbspec['dsn'] = dbspec['db']
+        if dbspec['type'].__name__ == 'MySQLdb':
+	    dbspec['dsn'] = dbspec['db']
         self.dbspec = dbspec
         self.id = id
         engine.subscribe("start", self.start, 100)

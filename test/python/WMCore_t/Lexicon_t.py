@@ -694,6 +694,13 @@ class LexiconTest(unittest.TestCase):
                     'http://.www.google.com',
                     'http://[2001:0db8:85a3:08d3:1319:8a2z:0370:7344]/',]:
             self.assertRaises(AssertionError, validateUrl, url)
+            
+    def testPrimaryDatasetType(self):
+        self.assertRaises(AssertionError, primaryDatasetType, "MC")
+        self.assertTrue(primaryDatasetType("mc"), "mc should be allowed")
+        self.assertTrue(primaryDatasetType("data"), "data should be allowed")
+        self.assertTrue(primaryDatasetType("cosmic"), "data should be allowed")
+        self.assertTrue(primaryDatasetType("test"), "test should be allowed")
 
 if __name__ == "__main__":
     unittest.main()

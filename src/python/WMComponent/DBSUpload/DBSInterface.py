@@ -20,7 +20,7 @@ import collections
 from DBSAPI.dbsApi            import DbsApi
 from DBSAPI.dbsException      import DbsException
 
-
+from WMCore import Lexicon
 from WMComponent.DBSUpload.DBSErrors import DBSInterfaceError, formatEx
 
 # For creating algorithms
@@ -49,6 +49,9 @@ def createPrimaryDataset(primaryName, primaryDatasetType = 'mc', apiRef = None):
     """
     logging.debug("Inserting PrimaryDataset %s with Type %s" \
                   % (primaryName, primaryDatasetType))
+    
+    Lexicon.primaryDatasetType(primaryDatasetType)
+    
     primary = DbsPrimaryDataset(Name = primaryName,
                                 Type = primaryDatasetType)
 
@@ -617,8 +620,9 @@ class DBSInterface:
             # Then this whole thing is already in DBS
             dbsRef = None
 
-        primary = createPrimaryDataset(apiRef = dbsRef,
-                                       primaryName = dataset['PrimaryDataset'])
+        primary = createPrimaryDataset(primaryName = dataset['PrimaryDataset'], 
+                                       primaryDatasetType = self.config.primaryDatasetType,
+                                       apiRef = dbsRef)
 
         processed = createProcessedDataset(apiRef = dbsRef,
                                            algorithm = dbsAlgo,

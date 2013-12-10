@@ -136,6 +136,7 @@ config.DBS3Upload.workerThreads = 1
 config.DBS3Upload.pollInterval = 100
 config.DBS3Upload.dbsUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSWriter"
 config.DBS3Upload.dbs3UploadOnly = True
+config.DBS3Upload.primaryDatasetType = "mc"
 
 config.section_("DBSInterface")
 #config.DBSInterface.DBSUrl = localDBSUrl
@@ -145,6 +146,7 @@ config.DBSInterface.globalDBSUrl = globalDBSUrl
 config.DBSInterface.globalDBSVersion = globalDBSVersion
 config.DBSInterface.MaxFilesToCommit = 200
 config.DBSInterface.doGlobalMigration = False
+config.DBSInterface.primaryDatasetType = "mc"
 
 config.component_("PhEDExInjector")
 config.PhEDExInjector.namespace = "WMComponent.PhEDExInjector.PhEDExInjector"

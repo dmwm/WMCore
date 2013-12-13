@@ -223,7 +223,9 @@ class PromptRecoWorkloadFactory(StdBase):
         workload.setTaskPropertiesFromWorkload()
 
         # set the LFN bases (normally done by request manager)
-        workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase)
+        # also pass runNumber (workload evaluates it)
+        workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
+                            runNumber = self.runNumber)
 
         return workload
 

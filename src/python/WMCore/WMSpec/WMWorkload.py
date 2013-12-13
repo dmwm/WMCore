@@ -651,7 +651,7 @@ class WMWorkloadHelper(PersistencyHelper):
                                                         getattr(outputModule, "dataTier"),
                                                         processingString)
 
-                        if runNumber != None:
+                        if runNumber != None and runNumber > 0:
                             runString = str(runNumber).zfill(9)
                             lfnSuffix = "/%s/%s/%s" % (runString[0:3],
                                                        runString[3:6],

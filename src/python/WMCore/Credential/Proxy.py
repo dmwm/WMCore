@@ -9,6 +9,7 @@ import contextlib
 import copy
 import os, subprocess
 import re
+from datetime import datetime
 from WMCore.Credential.Credential import Credential
 from WMCore.WMException import WMException
 import time
@@ -158,6 +159,19 @@ class Proxy(Credential):
             ui += 'source ' + self.uisource + ' && '
 
         return ui
+
+    def getUserCertEnddate(self):
+        """
+        Return the number of days until the expiration of the user cern in .globus/usercert.pem
+        """
+        out, _, retcode = execute_command('grid-cert-info -enddate', self.logger, self.commandTimeout)
+        if retcode == 0:
+            exptime = datetime.strptime(out[:-1], '%b  %d  %I:%M:%S %Y %Z')
+            daystoexp = (exptime - datetime.utcnow()).days
+        else:
+            raise CredentialException('Cannot get user certificate remaining time with "grid-cert-info -enddate"')
+
+        return daystoexp
 
     def getProxyDetails(self):
         """

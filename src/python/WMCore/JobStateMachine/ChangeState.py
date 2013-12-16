@@ -73,7 +73,12 @@ class ChangeState(WMObject, WMConnectionBase):
         self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
         self._connectDatabases()
 
-        self._connectDashboard()
+        try:
+            self.dashboardReporter = DashboardReporter(config)
+        except Exception, ex:
+            logging.error("Error setting up the \
+-                          dashboard reporter: %s" % str(ex))
+            raise
 
         self.getCouchDAO = self.daofactory("Jobs.GetCouchID")
         self.setCouchDAO = self.daofactory("Jobs.SetCouchID")
@@ -116,20 +121,6 @@ class ChangeState(WMObject, WMConnectionBase):
 
         return True
     
-    def _connectDashboard(self):
-        """
-        Try connecting to the dashboard reporter
-        """
-        if not hasattr(self, 'dashboardReporter') or self.dashboardReporter is None:
-            try:
-                self.dashboardReporter = DashboardReporter(self.config)
-            except Exception, ex:
-                logging.error("Error setting up the \
-                              dashboard reporter: %s" % str(ex))
-                self.dashboardReporter = None
-                return False
-        return True
-
     def propagate(self, jobs, newstate, oldstate, updatesummary = False):
         """
         Move the job from a state to another. Book keep the change to CouchDB.
@@ -437,9 +428,6 @@ class ChangeState(WMObject, WMConnectionBase):
         with any additional information needed
         """
 
-        if not self._connectDashboard():
-            logging.error('Dashboardreporter not set up properly')
-            return
         #If the new state is created it possible came from 3 locations:
         #JobCreator in that case it comes with all the needed info
         #ErrorHandler comes with the standard information of a WMBSJob

@@ -102,11 +102,24 @@ class LexiconTest(unittest.TestCase):
         assert procdataset('CMSSW_3_0_0_pre3_IDEAL_30X-v1'), 'valid procdataset not validated'
         assert procdataset('CMSSW_3_0_0_pre3_IDEAL_30X-my_filter-my_string-v1'), 'valid procdataset not validated'
 
-    def testBadProcataset(self):
-        # Check that invalid Procataset raise an exception
+    def testBadProcdataset(self):
+        # Check that invalid Procdataset raise an exception
         self.assertRaises(AssertionError, procdataset, 'Drop Table')
         self.assertRaises(AssertionError, procdataset, 'Alter Table')
         self.assertRaises(AssertionError, procdataset, 'CMSSW_3_0_0_pre3_IDEAL_30X_v1')
+
+    def testGoodUserProcDataset(self):
+        dsList = ['weinberg-StealthSusy_mm16_RECO_AOD_Z2-689dc471cdaaa10be587d0cc7c95f00f',
+                  'tracker-pog-Summer09-MC_31X_V3_SD_ZeroBias-v1_Full_v0CandProducerPAT-6b5c47aa1f79fc09d5b81a20702e3621']
+        for ds in dsList:
+            self.assertTrue(userprocdataset(ds))
+
+    def testBadUserProcDataset(self):
+        dsList = ['weinberg-StealthSusy_mm16_RECO_AOD_Z2-689dc471cdaaa10be587d0cc7c95z00f',
+                  'weinberg-StealthSusy_mm16_RECO_AOD_Z2-689dc471cdaaa10be587d0cc7c95z00f1'
+                  'tracker-pog-Summer09-MC_31X_V3_SD_ZeroBias-v1_Full_v0#CandProducerPAT-6b5c47aa1f79fc09d5b81a20702e3621']
+        for ds in dsList:
+            self.assertRaises(AssertionError, userprocdataset, ds)
 
     def testGoodPrimdataset(self):
         # Check that valid Primdataset work

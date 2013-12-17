@@ -28,6 +28,12 @@ lfnParts = {
     'physics_group' : '([a-zA-Z\-_]+)',
 }
 
+userProcDSParts = {
+    'groupuser'     : '([a-zA-Z0-9\.\-_])+',
+    'publishdataname': '([a-zA-Z0-9\.\-_])+',
+    'psethash'       : '([a-f0-9]){32}'
+}
+
 def DBSUser(candidate):
     """
     create_by and last_modified_by in DBS are in several formats. The major ones are: 
@@ -141,6 +147,15 @@ def procdataset(candidate):
     if candidate == '' or not candidate:
         return candidate
     return check(r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+){0,2}-v[0-9]*$', candidate)
+
+def userprocdataset(candidate):
+    """
+    Check for processed dataset name of users.
+    letters, numbers, dashes, underscores.
+    """
+    if candidate == '' or not candidate:
+        return candidate
+    return check(r'%(groupuser)s-%(publishdataname)s-%(psethash)s' % userProcDSParts, candidate)
 
 def procversion(candidate):
     """ Integers """

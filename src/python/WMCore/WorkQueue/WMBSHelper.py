@@ -626,7 +626,10 @@ class WMBSHelper(WMConnectionBase):
                         locations = set(storageElements))
 
         for lumi in dbsFile['LumiList']:
-            run = Run(lumi['RunNumber'], lumi['LumiSectionNumber'])
+            if type(lumi['LumiSectionNumber']) == list:
+                run = Run(lumi['RunNumber'], *lumi['LumiSectionNumber'])
+            else:
+                run = Run(lumi['RunNumber'], lumi['LumiSectionNumber'])
             wmbsFile.addRun(run)
 
         self._addToDBSBuffer(dbsFile, checksums, storageElements)

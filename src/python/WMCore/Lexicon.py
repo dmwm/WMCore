@@ -14,18 +14,24 @@ import urlparse
 from WMCore.WMException import WMException
 
 lfnParts = {
-    'era'           : '([a-zA-Z0-9\-_]+)',
-    'primDS'        : '([a-zA-Z0-9\-_]+)',
-    'tier'          : '([A-Z\-_]+)',
-    'version'       : '([a-zA-Z0-9\-_]+)',
-    'secondary'     : '([a-zA-Z0-9\-_]+)',
-    'counter'       : '([0-9]+)',
-    'root'          : '([a-zA-Z0-9\-_]+).root',
-    'hnName'        : '([a-zA-Z0-9\.]+)',
-    'subdir'        : '([a-zA-Z0-9\-_]+)',
-    'file'          : '([a-zA-Z0-9\-\._]+)',
-    'workflow'      : '([a-zA-Z0-9\-_]+)',
-    'physics_group' : '([a-zA-Z\-_]+)',
+    'era': '([a-zA-Z0-9\-_]+)',
+    'primDS': '([a-zA-Z0-9\-_]+)',
+    'tier': '([A-Z\-_]+)',
+    'version': '([a-zA-Z0-9\-_]+)',
+    'secondary': '([a-zA-Z0-9\-_]+)',
+    'counter': '([0-9]+)',
+    'root': '([a-zA-Z0-9\-_]+).root',
+    'hnName': '([a-zA-Z0-9\.]+)',
+    'subdir': '([a-zA-Z0-9\-_]+)',
+    'file': '([a-zA-Z0-9\-\._]+)',
+    'workflow': '([a-zA-Z0-9\-_]+)',
+    'physics_group': '([a-zA-Z\-_]+)'
+}
+
+userProcDSParts = {
+    'groupuser': '([a-zA-Z0-9\.\-_])+',
+    'publishdataname': '([a-zA-Z0-9\.\-_])+',
+    'psethash': '([a-f0-9]){32}'
 }
 
 def DBSUser(candidate):
@@ -141,6 +147,15 @@ def procdataset(candidate):
     if candidate == '' or not candidate:
         return candidate
     return check(r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+){0,2}-v[0-9]*$', candidate)
+
+def userprocdataset(candidate):
+    """
+    Check for processed dataset name of users.
+    letters, numbers, dashes, underscores.
+    """
+    if candidate == '' or not candidate:
+        return candidate
+    return check(r'%(groupuser)s-%(publishdataname)s-%(psethash)s' % userProcDSParts, candidate)
 
 def procversion(candidate):
     """ Integers """

@@ -1,3 +1,13 @@
+0.9.85 to 0.9.86:
+  - fix DBS3 Reader test. pull request #4888 from ticoann
+  - sync created job number with running and pending. pull request #4887 from ticoann
+  - Add CRAB2 processing dataset names to Lexicon.py. pull request #4885 from giffels
+  - Add CRAB2 lfns to Lexicon.py. pull request #4884 from giffels
+  - fix promptreco lfn. pull request #4882 from hufnagel
+  - Add a method to retrieve the number of days left in the user certificate. pull request #4881 from mmascher
+  - fix assigning variable before definition bug. pull request #4874 from ticoann
+  - fix the dbs primary dataset type. pull request #4841 from ticoann
+
 0.9.84 to 0.9.85:
   - Add UFC as a dependency to CRABClient. pull request #4868 from bbockelm
   - Get rid of --voms cms when doing myproxy-init. pull request #4867 from mmascher

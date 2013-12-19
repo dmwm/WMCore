@@ -70,22 +70,15 @@ class ChangeState(WMObject, WMConnectionBase):
         else:
             self.dbname = couchDbName
 
-        try:
-            self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
-            self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname, size = 250)
-            self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % self.dbname, size = 250)
-            self.jsumdatabase = self.couchdb.connectDatabase( getattr(self.config.JobStateMachine, 'jobSummaryDBName'), size = 250 )
-        except Exception, ex:
-            logging.error("Error connecting to couch: %s" % str(ex))
-            self.jobsdatabase = None
-            self.fwjrdatabase = None
-            self.jsumdatabase = None
+        self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
+        self._connectDatabases()
 
         try:
             self.dashboardReporter = DashboardReporter(config)
         except Exception, ex:
             logging.error("Error setting up the \
-                          dashboard reporter: %s" % str(ex))
+-                          dashboard reporter: %s" % str(ex))
+            raise
 
         self.getCouchDAO = self.daofactory("Jobs.GetCouchID")
         self.setCouchDAO = self.daofactory("Jobs.SetCouchID")
@@ -97,6 +90,37 @@ class ChangeState(WMObject, WMConnectionBase):
         self.maxUploadedInputFiles = getattr(self.config.JobStateMachine, 'maxFWJRInputFiles', 1000)
         return
 
+    def _connectDatabases(self):
+        """
+        Try connecting to the couchdbs
+        """
+        if not hasattr(self, 'jobsdatabase') or self.jobsdatabase is None:
+            try:
+                self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname, size = 250)
+            except Exception, ex:
+                logging.error("Error connecting to couch db '%s/jobs': %s" % (self.dbname, str(ex)))
+                self.jobsdatabase = None
+                return False
+
+        if not hasattr(self, 'fwjrdatabase') or self.fwjrdatabase is None:
+            try:
+                self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % self.dbname, size = 250)
+            except Exception, ex:
+                logging.error("Error connecting to couch db '%s/fwjrs': %s" % (self.dbname, str(ex)))
+                self.fwjrdatabase = None
+                return False
+
+        if not hasattr(self, 'jsumdatabase') or self.jsumdatabase is None:
+            dbname = getattr(self.config.JobStateMachine, 'jobSummaryDBName')
+            try:
+                self.jsumdatabase = self.couchdb.connectDatabase( dbname, size = 250 )
+            except Exception, ex:
+                logging.error("Error connecting to couch db '%s': %s" % (dbname, str(ex)))
+                self.jsumdatabase = None
+                return False
+
+        return True
+    
     def propagate(self, jobs, newstate, oldstate, updatesummary = False):
         """
         Move the job from a state to another. Book keep the change to CouchDB.
@@ -156,7 +180,8 @@ class ChangeState(WMObject, WMConnectionBase):
         in couch it will be saved as a seperate document.  If the job has a FWJR
         attached that will be saved as a seperate document.
         """
-        if not self.jobsdatabase or not self.fwjrdatabase:
+        if not self._connectDatabases():
+            logging.error('Databases not connected properly')
             return
 
         timestamp = int(time.time())
@@ -504,6 +529,10 @@ class ChangeState(WMObject, WMConnectionBase):
         jobid and location keys which represent
         the job id in WMBS and new location respectively.
         """
+        if not self._connectDatabases():
+            logging.error('Databases not connected properly')
+            return
+
         # First update safely in WMBS
         self.updateLocationDAO.execute(jobs, conn = self.getDBConn(),
                                        transaction = self.existingTransaction())

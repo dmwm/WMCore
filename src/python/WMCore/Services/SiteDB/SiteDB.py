@@ -99,9 +99,22 @@ class SiteDBJSON(Service):
             userinfo = filter(lambda x: x['dn']==dn, self._people())[0]
             username = userinfo['username']
         except (KeyError, IndexError):
-            userinfo = filter(lambda x: x['dn']==dn, self._people())[0]
+            userinfo = filter(lambda x: x['dn']==dn, self._people(clearCache=True))[0]
             username = userinfo['username']
         return username
+
+    def userNameDn(self, username):
+        """
+        Convert Hypernews name to DN. Clear cache between trys
+        in case user just registered or fixed an issue with SiteDB
+        """
+        try:
+            userinfo = filter(lambda x: x['username']==username, self._people())[0]
+            userdn = userinfo['dn']
+        except (KeyError, IndexError):
+            userinfo = filter(lambda x: x['username']==username, self._people(clearCache=True))[0]
+            userdn = userinfo['dn']
+        return userdn
 
     def cmsNametoCE(self, cmsName):
         """

@@ -166,7 +166,11 @@ class Proxy(Credential):
         """
         out, _, retcode = execute_command('grid-cert-info -enddate', self.logger, self.commandTimeout)
         if retcode == 0:
-            exptime = datetime.strptime(out[:-1], '%b  %d  %I:%M:%S %Y %Z')
+            try:
+                exptime = datetime.strptime(out[:-1], '%b  %d  %H:%M:%S %Y %Z')
+            except ValueError:
+                #This ValueError should not happen, but just in case I want a meaningful message
+                raise CredentialException('Cannot decode "grid-cert-info -enddate" date format. Please contact a developer')
             daystoexp = (exptime - datetime.utcnow()).days
         else:
             raise CredentialException('Cannot get user certificate remaining time with "grid-cert-info -enddate"')

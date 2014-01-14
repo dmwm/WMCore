@@ -108,7 +108,7 @@ dependencies = {'wmc-rest':{
                         },
                 'asyncstageout':{
                         'packages': ['WMCore.Agent+', 'WMCore.Storage+', 'WMComponent.DBSUpload',
-                                     'WMCore.Credential', 'WMCore.WorkerThreads',
+                                     'WMCore.Credential', 'WMCore.WorkerThreads', 'WMCore.Services.SiteDB+',
                                      'WMCore.Services.PhEDEx+', 'WMCore.ACDC', 'WMCore.Alerts+',
                                      'WMCore.Services.UserFileCache'],
                         'modules': ['WMQuality.TestInitCouchApp', 'WMCore.Services.Service',

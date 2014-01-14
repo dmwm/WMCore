@@ -216,6 +216,8 @@ class DBSUploadPoller(BaseWorkerThread):
         self.produceCopy = getattr(self.config.DBS3Upload, 'copyBlock', False)
         self.copyPath    = getattr(self.config.DBS3Upload, 'copyBlockPath',
                                    '/data/mnorman/block.json')
+        
+        self.timeoutWaiver = 1
 
         return
 
@@ -713,8 +715,15 @@ class DBSUploadPoller(BaseWorkerThread):
             if emptyCount > self.nTries:
                 # Then we've been waiting for a long time.
                 # Raise an error
-                msg = "Exceeded max number of waits while waiting for DBS to finish"
-                raise DBSUploadException(msg)
+                # When timeoutWaiver is 0 raise error. 
+                # It could take long time to get upload data to DBS if there are a lot of them
+                # in first try but second try should be faster,
+                if self.timeoutWaiver == 0:
+                    msg = "Exceeded max number of waits while waiting for DBS to finish"
+                    raise DBSUploadException(msg)
+                else:
+                    self.timeoutWaiver = 0
+                    return
             try:
                 # Get stuff out of the queue with a ridiculously
                 # short wait time

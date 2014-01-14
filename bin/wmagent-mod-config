@@ -16,7 +16,7 @@ import os
 
 from WMCore.Configuration import saveConfigurationFile
 from WMCore.Configuration import Configuration
-from WMCore.Lexicon import sanitizeURL
+from WMCore.Lexicon import sanitizeURL, splitCouchServiceURL
 
 help_message = '''
 The help message goes here.
@@ -136,6 +136,11 @@ def modifyConfiguration(config, **args):
         # t0 agent doesn't have reqmgr_url
         if args.has_key("reqmgr_url"):
             config.TaskArchiver.ReqMgrServiceURL = args["reqmgr_url"]
+
+    if hasattr(config, "ACDC"):
+        # t0 agent may not have acdc_url
+        if args.has_key("acdc_url"):
+            config.ACDC.couchurl, config.ACDC.database = splitCouchServiceURL(args["acdc_url"])
 
     if hasattr(config,"AsyncTransfer"):
         config.CoreDatabase.connectUrl = '%s/asynctransfer_agent' % args["couch_url"]
@@ -279,7 +284,7 @@ def main(argv=None):
              "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=",
              "ufc_service_url=", "ufc_cachedir=", "client_mapping=", "wmbs_service_port=",
              "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=", "reqmgr_url=",
-             "amq_auth_file="])
+             "acdc_url=", "amq_auth_file="])
 
         except getopt.error, msg:
             raise Usage(msg)
@@ -299,7 +304,7 @@ def main(argv=None):
                           '--sb_hostname', '--sb_port', '--sb_basepath', '--ufc_hostname',
                           '--ufc_port', '--ufc_service_url', '--ufc_cachedir',
                           '--client_mapping', '--wmbs_service_port', '--workload_summary_url',
-                          '--wmstats_url', '--ops_proxy', '--reqmgr_url', '--amq_auth_file'):
+                          '--wmstats_url', '--ops_proxy', '--reqmgr_url', '--acdc_url', '--amq_auth_file'):
 
                 parameters[option[2:]] = value
 

@@ -417,3 +417,24 @@ class PhEDEx(Service):
         # This is a dummy function to use in unittests to make sure the right class is
         # instantiated
         pass
+    
+    def getInjectedFiles(self, blockFileDict):
+        """
+        take dict of the input
+        {'block_name1': [file_lfn1, file_lfn2, ....],
+         'block_name2': [file_lfn1, file_lfn2, ....],           
+        }
+        and returns
+        list of file injected
+        """
+        injectedFiles = []
+        for block in blockFileDict:
+            result = self._getResult('data', args = {'block' : block}, verb = 'GET')
+            for dbs in result['phedex']['dbs']:
+                for dataset in dbs['dataset']:
+                    blockChunk = dataset['block']
+                    for blockInfo in blockChunk:
+                        for fileInfo in blockInfo['file']:
+                            if fileInfo['lfn'] in blockFileDict[block]:
+                                injectedFiles.append(fileInfo['lfn'])
+        return injectedFiles

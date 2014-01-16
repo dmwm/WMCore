@@ -1,3 +1,11 @@
+0.9.87 to 0.9.88:
+  - Merge pull request #4903 from mmascher/master
+  - Merge pull request #4901 from mmascher/mysql
+  - Merge pull request #4909 from ticoann/dbs3_datastruct_fix
+  - Squashed commit of the following:
+  - Adjust crbserver dependencies
+  - Fix regex for decoding grid-cert-info -enddate output in Credential/Proxy.py
+
 0.9.86 to 0.9.87:
   - Merge pull request #4910 from hufnagel/promptreco-blockclose
   - Merge pull request #4908 from HassenRiahi/FixASODeps

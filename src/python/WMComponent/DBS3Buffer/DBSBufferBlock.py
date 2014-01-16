@@ -9,6 +9,7 @@ This is a block object which will be uploaded to DBS
 
 import time
 import logging
+import copy
 
 from WMCore import Lexicon
 from WMCore.Services.Requests import JSONRequests
@@ -447,3 +448,38 @@ class DBSBlock:
             if key == "DatasetAlgo":
                 continue
             self.data['block'][key] = blockInfo.get(key)
+            
+    def convertToDBSBlock(self):
+        """
+        convert to DBSBlock structure to upload to dbs
+        """
+        block = {}
+        
+        keyToRemove = ['insertedFiles', 'newFiles', 'DatasetAlgo', 'file_count',
+                       'block_size', 'origin_site_name', 'creation_date', 'open',
+                       'Name', 'close_settings']
+        
+        nestedKeyToRemove = ['block.block_events']
+        
+        dbsBufferToDBSBlockKey = {'block_size': 'BlockSize',
+                                  'creation_date': 'CreationDate', 
+                                  'file_count': 'NumberOfFiles',
+                                  'origin_site_name': 'location'}
+        
+        # clone the new DBSBlock dict after filtering out the data.
+        for key in self.data:
+            if key in keyToRemove:
+                continue
+            elif key in dbsBufferToDBSBlockKey.keys():
+                block[dbsBufferToDBSBlockKey[key]] = copy.deepcopy(self.data[key])
+            else:
+                block[key] = copy.deepcopy(self.data[key])
+        
+        # delete nested key dictionary
+        for nestedKey in nestedKeyToRemove:
+            firstkey, subkey = nestedKey.split('.', 1)
+            del block[firstkey][subkey]
+                
+        return block
+                    
+                    

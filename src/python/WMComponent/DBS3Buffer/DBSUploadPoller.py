@@ -192,7 +192,7 @@ class DBSUploadPoller(BaseWorkerThread):
         self.input  = None
         self.result = None
         self.nProc  = getattr(self.config.DBS3Upload, 'nProcesses', 4)
-        self.wait   = getattr(self.config.DBS3Upload, 'dbsWaitTime', 1)
+        self.wait   = getattr(self.config.DBS3Upload, 'dbsWaitTime', 2)
         self.nTries = getattr(self.config.DBS3Upload, 'dbsNTries', 300)
         self.dbs3UploadOnly = getattr(self.config.DBS3Upload, "dbs3UploadOnly", False)
         self.physicsGroup   = getattr(self.config.DBS3Upload, "physicsGroup", "NoGroup")
@@ -216,6 +216,8 @@ class DBSUploadPoller(BaseWorkerThread):
         self.produceCopy = getattr(self.config.DBS3Upload, 'copyBlock', False)
         self.copyPath    = getattr(self.config.DBS3Upload, 'copyBlockPath',
                                    '/data/mnorman/block.json')
+        
+        self.timeoutWaiver = 1
 
         return
 
@@ -662,26 +664,8 @@ class DBSUploadPoller(BaseWorkerThread):
                                  physicsGroup = dbsFile.get('physicsGroup', None))
             logging.debug("Found block %s in blocks" % block.getName())
             block.setPhysicsGroup(group = self.physicsGroup)
-            def replaceKeys(block, oldKey, newKey):
-                if oldKey in block.data.keys():
-                    block.data[newKey] = block.data[oldKey]
-                    del block.data[oldKey]
-                return
-            replaceKeys(block, 'BlockSize', 'block_size')
-            replaceKeys(block, 'CreationDate', 'creation_date')
-            replaceKeys(block, 'NumberOfFiles', 'file_count')
-            replaceKeys(block, 'location', 'origin_site_name')
-            for key in ['insertedFiles', 'newFiles', 'DatasetAlgo', 'file_count',
-                        'block_size', 'origin_site_name', 'creation_date', 'open', 'Name',
-                        'block.block_events', 'close_settings']:
-                if '.' in key:
-                    firstkey, subkey = key.split('.', 1)
-                    if firstkey in block.data and subkey in block.data[firstkey]:
-                        del block.data[firstkey][subkey]
-                if key in block.data.keys():
-                    del block.data[key]
-
-            encodedBlock = block.data
+            
+            encodedBlock = block.convertToDBSBlock()
             logging.info("About to insert block %s" % block.getName())
             self.input.put({'name': block.getName(), 'block': encodedBlock})
             self.blockCount += 1
@@ -711,10 +695,22 @@ class DBSUploadPoller(BaseWorkerThread):
         emptyCount    = 0
         while self.blockCount > 0:
             if emptyCount > self.nTries:
-                # Then we've been waiting for a long time.
-                # Raise an error
-                msg = "Exceeded max number of waits while waiting for DBS to finish"
-                raise DBSUploadException(msg)
+                
+                # When timeoutWaiver is 0 raise error. 
+                # It could take long time to get upload data to DBS 
+                # if there are a lot of files are cumulated in the buffer.
+                # in first try but second try should be faster.
+                # timeoutWaiver is set as component variable - only resets when component restarted.
+                # The reason for that is only back log will occur when component is down 
+                # for a long time while other component still running and feeding the data to 
+                # dbsbuffer
+        
+                if self.timeoutWaiver == 0:
+                    msg = "Exceeded max number of waits while waiting for DBS to finish"
+                    raise DBSUploadException(msg)
+                else:
+                    self.timeoutWaiver = 0
+                    return
             try:
                 # Get stuff out of the queue with a ridiculously
                 # short wait time
@@ -724,7 +720,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 logging.debug("Got a block to close")
             except Queue.Empty:
                 # This means the queue has no current results
-                time.sleep(1)
+                time.sleep(2)
                 emptyCount += 1
                 continue
 

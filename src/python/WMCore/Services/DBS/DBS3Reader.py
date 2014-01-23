@@ -158,16 +158,24 @@ class DBS3Reader:
         """
         try:
             if block:
-                results = self.dbs.listRuns(block = block)
+                results = self.dbs.listRuns(block_name = block)
             else:
                 results = self.dbs.listRuns(dataset = dataset)
         except DbsException, ex:
             msg = "Error in DBSReader.listRuns(%s, %s)\n" % (dataset, block)
             msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
-
-        return dict((x["run_num"], x["num_lumi"])
-                    for x in results)
+        
+        # send runDict format as result, this format is for sync with dbs2 call 
+        # which has {run_number: num_lumis} but dbs3 call doesn't return num Lumis
+        # So it returns {run_number: None}
+        # TODO: After DBS2 is completely removed change the return format more sensible one
+        
+        runDict = {}
+        for x in results:
+            for runNumber in x["run_num"]:
+                runDict[runNumber] = None
+        return runDict
 
     def listProcessedDatasets(self, primary, dataTier = '*'):
         """
@@ -443,12 +451,12 @@ class DBS3Reader:
                 raise DBSReaderError(msg)
 
             lumiDict = {}
-            for lumis in lumiLists:
-                lumiDict.setdefault(lumis['logical_file_name'], [])
+            for lumisItem in lumiLists:
+                lumiDict.setdefault(lumisItem['logical_file_name'], [])
                 item = {}
-                item["RunNumber"] = lumis['run_num']
-                item['LumiSectionNumber'] = lumis['lumi_section_num']
-                lumiDict[lumis['logical_file_name']].append(item)
+                item["RunNumber"] = lumisItem['run_num']
+                item['LumiSectionNumber'] = lumisItem['lumi_section_num']
+                lumiDict[lumisItem['logical_file_name']].append(item)
 
         result = []
         for file in files:

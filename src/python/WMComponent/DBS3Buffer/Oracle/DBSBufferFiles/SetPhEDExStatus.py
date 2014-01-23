@@ -5,7 +5,8 @@ _SetPhEDExStatus_
 Oracle implementation of DBSBufferFiles.SetPhEDExStatus
 """
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.SetPhEDExStatus import SetPhEDExStatus as MySQLSetPhEDExStatus
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.SetPhEDExStatus \
+      import SetPhEDExStatus as MySQLSetPhEDExStatus
 
 class SetPhEDExStatus(MySQLSetPhEDExStatus):
     """

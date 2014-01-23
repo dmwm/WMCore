@@ -225,7 +225,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.dqmUrl         = getattr(config.TaskArchiver, "dqmUrl", 'https://cmsweb.cern.ch/dqm/dev/')        
         self.perfDashBoardMinLumi = getattr(config.TaskArchiver, "perfDashBoardMinLumi", 50)
         self.perfDashBoardMaxLumi = getattr(config.TaskArchiver, "perfDashBoardMaxLumi", 9000)
-        self.dashBoardUrl = getattr(config.TaskArchiver, "dashBoardUrl", 'http://dashboard43.cern.ch/dashboard/request.py/putluminositydata')
+        self.dashBoardUrl = getattr(config.TaskArchiver, "dashBoardUrl", None)
         
         if not self.useReqMgrForCompletionCheck:
             #sets the local monitor summary couch db
@@ -366,8 +366,9 @@ class TaskArchiverPoller(BaseWorkerThread):
                     self.archiveWorkflowSummary(spec = spec)
                     
                     #Send Reconstruciton performance information to DashBoard
-                    self.publishRecoPerfToDashBoard(spec)
-    
+                    if self.dashBoardUrl != None:
+                        self.publishRecoPerfToDashBoard(spec)
+
                     #Notify the WorkQueue, if there is one
                     if self.workQueue != None:
                         subList = []

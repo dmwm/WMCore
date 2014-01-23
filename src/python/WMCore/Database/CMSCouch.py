@@ -82,6 +82,7 @@ class CouchDBRequests(JSONRequests):
         """
         JSONRequests.__init__(self, url, {"cachepath" : None, "pycurl" : usePYCurl, "key" : ckey, "cert" : cert, "capath" : capath})
         self.accept_type = "application/json"
+        self["timeout"] = 600
 
     def move(self, uri=None, data=None):
         """

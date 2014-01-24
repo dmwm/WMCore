@@ -14,11 +14,14 @@ from WMCore.Storage.Backends.LCGImpl import LCGImpl
 
 _CheckExitCodeOption = True
 checkPathsCount=4
+eosPrefix = 'root://cmseos.fnal.gov/'
 checkPaths = ['/lustre/unmerged/', '/lustre/temp/', '/store/unmerged/', '/store/temp/']
-checkPathsReplace = ['root://cmseos.fnal.gov//lustre/unmerged/', 'root://cmseos.fnal.gov//lustre/temp/', 
-                     'root://cmseos.fnal.gov//lustre/unmerged/', 'root://cmseos.fnal.gov//lustre/temp/']
+checkPathsReplace = ['%s/lustre/unmerged/' % eosPrefix, '%s/lustre/temp/' % eosPrefix, 
+                     '%s/lustre/unmerged/'% eosPrefix, '%s/lustre/temp/' % eosPrefix]
 srmPaths = ['/store/temp/user/', '/store/user/']
 
+def stripEosPrefix(filePath):
+    return filePath.replace(eosPrefix, '', 1)
 
 def pnfsPfn2(pfn):
     """
@@ -125,7 +128,7 @@ class FNALImpl(StageOutImpl):
                 if targetPFN.find(checkPaths[i]) != -1:
                     pfnSplit = targetPFN.split(checkPaths[i], 1)[1]
                     filePath = "%s%s" % (checkPathsReplace[i],pfnSplit)
-                    targetdir= os.path.dirname(filePath)
+                    targetdir= os.path.dirname(stripEosPrefix(filePath))
                     # checkdircmd="/bin/ls %s > /dev/null " % targetdir
                     # print "Check dir existence : %s" %checkdircmd
                     # checkdirexitCode = 0
@@ -382,7 +385,7 @@ fi
                 if pfnToRemove.find(checkPaths[i]) != -1:
                     pfnSplit = pfnToRemove.split(checkPaths[i], 1)[1]
                     pfnToRemove = "%s%s" % (checkPathsReplace[i],pfnSplit)
-            command = "/bin/rm %s" % pfnToRemove
+            command = "/bin/rm %s" % stripEosPrefix(pfnToRemove)
             self.executeCommand(command)
 
 

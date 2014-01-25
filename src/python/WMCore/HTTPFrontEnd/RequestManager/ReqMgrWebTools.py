@@ -67,7 +67,7 @@ def allScramArchsAndVersions():
     """
     result = {}
     try:
-        f = urllib.urlopen("https://cmstags.cern.ch/tc/ReleasesXML/?anytype=1")
+        f = urllib.urlopen("https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype=1")
         domDoc   = parseDOM(f)
     except ExpatError, ex:
         logging.error("Could not connect to tag collector!")
@@ -114,7 +114,7 @@ def updateScramArchsAndCMSSWVersions():
 def allSoftwareVersions():
     """ Downloads a list of all software versions from the tag collector """
     result = []
-    f = urllib.urlopen("https://cmstags.cern.ch/tc/ReleasesXML/?anytype=1")
+    f = urllib.urlopen("https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype=1")
     for line in f:
         for tok in line.split():
             if tok.startswith("label="):

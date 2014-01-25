@@ -65,7 +65,7 @@ class DBSBlock:
 
         self.data['block']['block_name']       = name
         self.data['block']['origin_site_name'] = location
-        self.data['block']['open_for_writing'] = 0
+        self.data['block']['open_for_writing'] = 1
 
         self.data['block']['create_by'] = "WMAgent"
         self.data['block']['creation_date'] = int(time.time())

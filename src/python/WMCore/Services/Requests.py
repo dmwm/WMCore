@@ -92,7 +92,7 @@ class Requests(dict):
                         idict.get('service_name')))
             self["cachepath"] = cache_dir
             self["req_cache_path"] = os.path.join(cache_dir, '.cache')
-        self.setdefault("timeout", 30)
+        self.setdefault("timeout", 300)
         self.setdefault("logger", logging)
 
         check_server_url(self['host'])

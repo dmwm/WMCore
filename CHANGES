@@ -1,3 +1,19 @@
+0.9.88 to 0.9.89:
+  - Merge pull request #4929 from ticoann/stage_out_fix
+  - Merge pull request #4930 from ticoann/phexdex_close_fix
+  - Merge pull request #4925 from ticoann/dbs3_listRuns_fix
+  - Merge pull request #4931 from ticoann/tag_url_fix
+  - fix url change
+  - fix dbs3 listRuns call - wrong parameter, also fix the Dataset spliting to handle dbs3 call
+  - Merge pull request #4922 from ticoann/request_timeout
+  - fix PhEDEx uploader closing block
+  - fix FNAL stage out plugin for removal
+  - increase timeout for couch call to 10 min and general call to 5 min
+  - Merge pull request #4895 from hufnagel/taskarchiver-dashboardupload
+  - make TasArchiver Reco performance upload optional
+  - Merge pull request #4914 from ticoann/phedex_injector_recovery
+  - add PhEDEx recovery code in PhEDExInjector
+
 0.9.87 to 0.9.88:
   - Merge pull request #4903 from mmascher/master
   - Merge pull request #4901 from mmascher/mysql

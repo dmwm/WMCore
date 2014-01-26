@@ -210,7 +210,7 @@ class FNALImpl(StageOutImplV2):
                 os.unlink( filePath )
         elif method == 'lustre':
             pfnToRemove = self.substituteLustrePath( pfnToRemove )
-            filePath = pfnToRemove.split("root://cmseos/fnal.gov/",1 )[1]
+            filePath = pfnToRemove.split("root://cmseos.fnal.gov/",1 )[1]
             if os.path.exists( filePath ):
                 logging.info( "Removing file: " + filePath )
                 os.unlink( filePath )

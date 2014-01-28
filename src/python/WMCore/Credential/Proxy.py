@@ -128,6 +128,7 @@ class Proxy(Credential):
         self.proxyValidity = args.get( "proxyValidity", '') #lenght of the proxy
         self.myproxyValidity = args.get( "myproxyValidity", '168:00') #lenght of the myproxy
         self.myproxyMinTime = args.get( "myproxyMinTime", 4) #threshold used in checkProxy
+        self.myproxyAccount = args.get( "myproxyAccount", "") #to be used when computing myproxy account (-l option)
 
         # User vo paramaters
         self.vo = 'cms'
@@ -319,7 +320,8 @@ class Proxy(Credential):
             myproxyDelegCmd = 'X509_USER_PROXY=%s ; myproxy-init -d -n -s %s' % (credential, self.myproxyServer)
 
             if nokey is True:
-                credname = sha1(self.userDN).hexdigest()
+                self.logger.debug("Calculating hash of %s for credential name" % (self.userDN+"_"+self.myproxyAccount))
+                credname = sha1(self.userDN+"_"+self.myproxyAccount).hexdigest()
                 myproxyDelegCmd = 'X509_USER_PROXY=%s ; myproxy-init -d -n -s %s -x -R \'%s\' -x -Z \'%s\' -l \'%s\' -t 168:00 -c %s' \
                                   % (credential, self.myproxyServer, self.serverDN, self.serverDN, credname, self.myproxyValidity)
             elif serverRenewer and len( self.serverDN.strip() ) > 0:
@@ -343,11 +345,19 @@ class Proxy(Credential):
         proxyTimeleft = -1
         if self.myproxyServer:
             if nokey is True and serverRenewer is True:
-                credname = sha1(self.userDN).hexdigest()
+                self.logger.debug("Calculating hash of %s for credential name" % (self.userDN+"_"+self.myproxyAccount))
+                credname = sha1(self.userDN+"_"+self.myproxyAccount).hexdigest()
                 checkMyProxyCmd = 'myproxy-info -l %s -s %s' %(credname, self.myproxyServer)
                 output, _, retcode = execute_command(self.setUI() +  checkMyProxyCmd, self.logger, self.commandTimeout )
                 if retcode > 0 or not output:
                     return proxyTimeleft
+
+                trustedRetrList = re.compile('trusted retrieval policy: (.*)').findall(output)
+                if len(trustedRetrList) > 1 or len(trustedRetrList) == 0:
+                    raise CredentialException("Unexpected result while decoding trusted retrievers list: " + str(trustedRetrList))
+                else:
+                    self.trustedRetrievers = trustedRetrList[0]
+
                 timeleftList = re.compile("timeleft: (?P<hours>[\\d]*):(?P<minutes>[\\d]*):(?P<seconds>[\\d]*)").findall(output)
                 if len(timeleftList) > 1 or len(timeleftList) == 0:
                     raise CredentialException(str(timeleftList))

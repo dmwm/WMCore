@@ -108,9 +108,6 @@ def myProxyEnvironment(userDN, serverCert, serverKey, myproxySrv, proxyDir, logg
     finally:
         os.environ = originalEnvironment
 
-def cmd_exists(cmd):
-    return subprocess.call("type " +  cmd, shell=True,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0
 
 class Proxy(Credential):
     """
@@ -145,7 +142,7 @@ class Proxy(Credential):
 
         ## adding credential path
         self.credServerPath = args.get("credServerPath", '/tmp')
-        if not cmd_exists('voms-proxy-info'):
+        if not self.cmd_exists('voms-proxy-info'):
             raise CredentialException('voms-proxy-info command not found')
 
     def setUI(self):
@@ -159,6 +156,10 @@ class Proxy(Credential):
             ui += 'source ' + self.uisource + ' && '
 
         return ui
+
+    def cmd_exists(self, cmd):
+        return subprocess.call(self.setUI() + "type " +  cmd, shell=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0
 
     def getUserCertEnddate(self):
         """

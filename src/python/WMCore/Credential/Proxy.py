@@ -167,9 +167,14 @@ class Proxy(Credential):
         """
         out, _, retcode = execute_command('grid-cert-info -enddate', self.logger, self.commandTimeout)
         if retcode == 0:
-            try:
-                exptime = datetime.strptime(out[:-1], '%b  %d  %H:%M:%S %Y %Z')
-            except ValueError:
+            possibleFormats = ['%b  %d  %H:%M:%S %Y %Z', '%b %d %H:%M:%S %Y %Z']
+            exptime = None
+            for frmt in possibleFormats:
+                try:
+                    exptime = datetime.strptime(out[:-1], frmt)
+                except ValueError:
+                    pass
+            if not exptime:
                 #This ValueError should not happen, but just in case I want a meaningful message
                 raise CredentialException('Cannot decode "grid-cert-info -enddate" date format. Please contact a developer')
             daystoexp = (exptime - datetime.utcnow()).days
@@ -336,9 +341,7 @@ class Proxy(Credential):
         to a server.
         """
         proxyTimeleft = -1
-
         if self.myproxyServer:
-
             if nokey is True and serverRenewer is True:
                 credname = sha1(self.userDN).hexdigest()
                 checkMyProxyCmd = 'myproxy-info -l %s -s %s' %(credname, self.myproxyServer)

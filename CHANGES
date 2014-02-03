@@ -1,3 +1,11 @@
+0.9.89 to 0.9.90:
+  - Merge pull request #4893 from alexanderrichards/changestate_couchdb_connection_fix
+  - Merge pull request #4934 from ticoann/add_more_config
+  - Merge pull request #4943 from ticoann/lexicon_dbs3_yuyi
+  - block length and processed DS length YG
+  - add some urls in secrete file
+  - patching for reconnection to couchdb if failed the first time
+
 0.9.88 to 0.9.89:
   - Merge pull request #4929 from ticoann/stage_out_fix
   - Merge pull request #4930 from ticoann/phexdex_close_fix

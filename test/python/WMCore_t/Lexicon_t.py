@@ -110,7 +110,8 @@ class LexiconTest(unittest.TestCase):
 
     def testGoodUserProcDataset(self):
         dsList = ['weinberg-StealthSusy_mm16_RECO_AOD_Z2-689dc471cdaaa10be587d0cc7c95f00f',
-                  'tracker-pog-Summer09-MC_31X_V3_SD_ZeroBias-v1_Full_v0CandProducerPAT-6b5c47aa1f79fc09d5b81a20702e3621']
+                  'tracker-pog-Summer09-MC_31X_V3_SD_ZeroBias-v1_Full_v0CandProducerPAT-6b5c47aa1f79fc09d5b81a20702e3621',
+                  'StoreResults-Summer12_DR53X-PU_S10_START53_V7A-v1_TLBSM_53x_v3_bugfix_v1-99bd99199697666ff01397dad5652e9e']
         for ds in dsList:
             self.assertTrue(userprocdataset(ds))
 
@@ -120,6 +121,13 @@ class LexiconTest(unittest.TestCase):
                   'tracker-pog-Summer09-MC_31X_V3_SD_ZeroBias-v1_Full_v0#CandProducerPAT-6b5c47aa1f79fc09d5b81a20702e3621']
         for ds in dsList:
             self.assertRaises(AssertionError, userprocdataset, ds)
+
+    def testBlock(self):
+        bList = \
+        ["/ZPrimeToTTJets_M500GeV_W5GeV_TuneZ2star_8TeV-madgraph-tauola/StoreResults-Summer12_DR53X-PU_S10_START53_V7A-v1_TLBSM_53x_v3_bugfix_v1-99bd99199697666ff01397dad5652e9e/USER#620a38a9-29ba-4af4-b650-e2ba07d133f3",
+        "/DoubleMu/aburgmei-Run2012A_22Jan2013_v1_RHembedded_trans1_tau121_ptelec1_17elec2_8_v4-f456bdbb960236e5c696adfe9b04eaae/USER#1f1eee22-cdee-0f1b-271b-77a7f559e7dd"]
+        for bk in bList:
+            self.assertTrue(block(bk))
 
     def testGoodPrimdataset(self):
         # Check that valid Primdataset work

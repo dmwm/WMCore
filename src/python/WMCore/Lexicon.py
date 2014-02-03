@@ -63,7 +63,7 @@ def searchblock(candidate):
     A block name with a * wildcard one or more times in it.
     """
     #regexp = r"^/(\*|[a-zA-Z][a-zA-Z0-9_\*]{0,100})/(\*|[a-zA-Z0-9_\.\-\*]{1,100})/(\*|[A-Z\-]{3,20})#(\*|[a-zA-Z0-9\.\-_\*]{1,100})$"
-    regexp = r"^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,100})){0,1}(/(\*|[A-Z\-\*]{1,50})(#(\*|[a-zA-Z0-9\.\-_\*]){0,100}){0,1}){0,1}$"
+    regexp = r"^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,200})){0,1}(/(\*|[A-Z\-\*]{1,50})(#(\*|[a-zA-Z0-9\.\-_\*]){0,100}){0,1}){0,1}$"
     return check(regexp, candidate)
 
 def searchdataset(candidate):
@@ -125,7 +125,8 @@ def countrycode(candidate):
 
 def block(candidate):
     """assert if not a valid block name"""
-    return check(r"^(/[a-zA-Z0-9\.\-_]{1,100}){3}#[a-zA-Z0-9\.\-_]{1,100}$", candidate)
+    #return check(r"^(/[a-zA-Z0-9\.\-_]{1,100}){3}#[a-zA-Z0-9\.\-_]{1,100}$", candidate)
+    return check(r"^/[a-zA-Z0-9\.\-_]{1,100}/[a-zA-Z0-9\.\-_]{1,200}/[a-zA-Z0-9\.\-_]{1,100}#[a-zA-Z0-9\.\-_]{1,100}$", candidate)
 
 def identifier(candidate):
     """ letters, numbers, whitespace, periods, dashes, underscores """
@@ -146,6 +147,7 @@ def procdataset(candidate):
     """
     if candidate == '' or not candidate:
         return candidate
+    assert len(candidate) > 199, "'%s' exceed the maximum length 199. " %candidate
     return check(r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+){0,2}-v[0-9]*$', candidate)
 
 def userprocdataset(candidate):
@@ -155,6 +157,7 @@ def userprocdataset(candidate):
     """
     if candidate == '' or not candidate:
         return candidate
+    assert len(candidate) > 199, "'%s' exceed the maximum length 199. " %candidate
     return check(r'%(groupuser)s-%(publishdataname)s-%(psethash)s' % userProcDSParts, candidate)
 
 def procversion(candidate):

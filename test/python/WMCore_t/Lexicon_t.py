@@ -101,18 +101,25 @@ class LexiconTest(unittest.TestCase):
         assert procdataset('Summer11-PU_S4_START42_V11-v1'), 'valid procdataset not validated'
         assert procdataset('CMSSW_3_0_0_pre3_IDEAL_30X-v1'), 'valid procdataset not validated'
         assert procdataset('CMSSW_3_0_0_pre3_IDEAL_30X-my_filter-my_string-v1'), 'valid procdataset not validated'
-
+        longStr = 'a' * 99 + "-" + 'b' * 96 + "-v1"
+        assert procdataset(longStr), 'valid procdataset %s length fail' % len(longStr)
+        
     def testBadProcdataset(self):
         # Check that invalid Procdataset raise an exception
         self.assertRaises(AssertionError, procdataset, 'Drop Table')
         self.assertRaises(AssertionError, procdataset, 'Alter Table')
         self.assertRaises(AssertionError, procdataset, 'CMSSW_3_0_0_pre3_IDEAL_30X_v1')
+        longStr = 'a' * 100 + "-" + 'b' * 96 + "-v1"
+        self.assertRaises(AssertionError, procdataset, longStr)
 
     def testGoodUserProcDataset(self):
         dsList = ['weinberg-StealthSusy_mm16_RECO_AOD_Z2-689dc471cdaaa10be587d0cc7c95f00f',
-                  'tracker-pog-Summer09-MC_31X_V3_SD_ZeroBias-v1_Full_v0CandProducerPAT-6b5c47aa1f79fc09d5b81a20702e3621']
+                  'tracker-pog-Summer09-MC_31X_V3_SD_ZeroBias-v1_Full_v0CandProducerPAT-6b5c47aa1f79fc09d5b81a20702e3621',
+                  'StoreResults-Summer12_DR53X-PU_S10_START53_V7A-v1_TLBSM_53x_v3_bugfix_v1-99bd99199697666ff01397dad5652e9e']
         for ds in dsList:
             self.assertTrue(userprocdataset(ds))
+        longStr = 'a' * 99 + '-' + 'b' * 66 + '-' +'c'* 32
+        assert userprocdataset(longStr), 'valid userdataset %s length fail' % len(longStr)
 
     def testBadUserProcDataset(self):
         dsList = ['weinberg-StealthSusy_mm16_RECO_AOD_Z2-689dc471cdaaa10be587d0cc7c95z00f',
@@ -120,13 +127,43 @@ class LexiconTest(unittest.TestCase):
                   'tracker-pog-Summer09-MC_31X_V3_SD_ZeroBias-v1_Full_v0#CandProducerPAT-6b5c47aa1f79fc09d5b81a20702e3621']
         for ds in dsList:
             self.assertRaises(AssertionError, userprocdataset, ds)
+        #201 length
+        longStr = 'a' * 100 + '-' + 'b' * 66 + '-' +'c'* 32
+        self.assertRaises(AssertionError, userprocdataset, longStr)
 
     def testGoodPrimdataset(self):
         # Check that valid Primdataset work
         assert primdataset('qqH125-2tau'), 'valid primdataset not validated'
         assert primdataset('RelVal124QCD_pt120_170'), 'valid primdataset not validated'
         assert primdataset('RelVal160pre14SingleMuMinusPt10'), 'valid primdataset not validated'
+        longStr = 'a' * 99
+        assert primdataset(longStr), 'valid primdataset %s length failed' % len(longStr)
+        
+    def testBadPrimdataset(self):
+        # Check that invalid Primdataset raise an exception
+        self.assertRaises(AssertionError, primdataset, 'Drop Table')
+        self.assertRaises(AssertionError, primdataset, 'Alter Table')
+        longStr = 'a' * 100
+        self.assertRaises(AssertionError, primdataset, longStr)
+        
+    def testGoodBlock(self):
+        
+        bList = ["/ZPrimeToTTJets_M500GeV_W5GeV_TuneZ2star_8TeV-madgraph-tauola/StoreResults-Summer12_DR53X-PU_S10_START53_V7A-v1_TLBSM_53x_v3_bugfix_v1-99bd99199697666ff01397dad5652e9e/USER#620a38a9-29ba-4af4-b650-e2ba07d133f3",
+                 "/DoubleMu/aburgmei-Run2012A_22Jan2013_v1_RHembedded_trans1_tau121_ptelec1_17elec2_8_v4-f456bdbb960236e5c696adfe9b04eaae/USER#1f1eee22-cdee-0f1b-271b-77a7f559e7dd"]
+        for bk in bList:
+            assert block(bk), "validation failed"
+        longStr = "/" + 'a' * 99 + "/" + 'a' * 199 + "/" + 'a' * 99 + "#" + 'a' * 99
+        assert block(longStr), 'valid block %s length failed' % len(longStr)
 
+    def testBadBlock(self):
+        
+        bList = ["/ZPrimeToTTJets/StoreResults-Summer12_DR53X-P",
+                 "/DoubleMu/aburgme/USER1f1eee22-cdee-0f1b-271b-77a7f559e7dd"]
+        for bk in bList:
+            self.assertRaises(AssertionError, block, bk)
+        longStr = "/" + 'a' * 100 + "/" + 'a' * 200 + "/" + 'a' * 99 + "#" + 'a' * 99
+        self.assertRaises(AssertionError, block, longStr)
+        
     def testProcVersion(self):
         """
         _testProcVersion_
@@ -151,12 +188,6 @@ class LexiconTest(unittest.TestCase):
         self.assertTrue(acqname('a22'))
         self.assertTrue(acqname('aForReals'))
         return
-
-    def testBadPrimdataset(self):
-        # Check that invalid Primdataset raise an exception
-        self.assertRaises(AssertionError, primdataset, 'Drop Table')
-        self.assertRaises(AssertionError, primdataset, 'Alter Table')
-
 
     def testGoodSearchstr(self):
         # Check that valid searchstr work

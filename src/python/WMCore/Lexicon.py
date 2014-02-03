@@ -63,14 +63,14 @@ def searchblock(candidate):
     A block name with a * wildcard one or more times in it.
     """
     #regexp = r"^/(\*|[a-zA-Z][a-zA-Z0-9_\*]{0,100})/(\*|[a-zA-Z0-9_\.\-\*]{1,100})/(\*|[A-Z\-]{3,20})#(\*|[a-zA-Z0-9\.\-_\*]{1,100})$"
-    regexp = r"^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,100})){0,1}(/(\*|[A-Z\-\*]{1,50})(#(\*|[a-zA-Z0-9\.\-_\*]){0,100}){0,1}){0,1}$"
+    regexp = r"^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,199})){0,1}(/(\*|[A-Z\-\*]{1,50})(#(\*|[a-zA-Z0-9\.\-_\*]){0,100}){0,1}){0,1}$"
     return check(regexp, candidate)
 
 def searchdataset(candidate):
     """
     A dataset name with a * wildcard one or more times in it. Only the first '/' is mandatory to use.
     """
-    regexp = r"^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*\-]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,100})){0,1}(/(\*|[A-Z\-\*]{1,50})){0,1}$"
+    regexp = r"^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*\-]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,199})){0,1}(/(\*|[A-Z\-\*]{1,50})){0,1}$"
     return check(regexp, candidate)
 
 def searchstr(candidate):
@@ -125,7 +125,8 @@ def countrycode(candidate):
 
 def block(candidate):
     """assert if not a valid block name"""
-    return check(r"^(/[a-zA-Z0-9\.\-_]{1,100}){3}#[a-zA-Z0-9\.\-_]{1,100}$", candidate)
+    #return check(r"^(/[a-zA-Z0-9\.\-_]{1,100}){3}#[a-zA-Z0-9\.\-_]{1,100}$", candidate)
+    return check(r"^/[a-zA-Z0-9\.\-_]{1,99}/[a-zA-Z0-9\.\-_]{1,199}/[a-zA-Z0-9\.\-_]{1,99}#[a-zA-Z0-9\.\-_]{1,99}$", candidate)
 
 def identifier(candidate):
     """ letters, numbers, whitespace, periods, dashes, underscores """
@@ -137,7 +138,7 @@ def globalTag(candidate):
 
 def dataset(candidate):
     """ A slash followed by an identifier,x3 """
-    return check(r'(/[a-zA-Z0-9\.\-_]{1,700}){3}$', candidate)
+    return check(r"^/[a-zA-Z0-9\.\-_]{1,99}/[a-zA-Z0-9\.\-_]{1,199}/[a-zA-Z0-9\.\-_]{1,99}$", candidate)
 
 def procdataset(candidate):
     """
@@ -146,7 +147,7 @@ def procdataset(candidate):
     """
     if candidate == '' or not candidate:
         return candidate
-    return check(r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+){0,2}-v[0-9]*$', candidate)
+    return check(r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+){0,2}-v[0-9]*$', candidate, 199)
 
 def userprocdataset(candidate):
     """
@@ -155,7 +156,7 @@ def userprocdataset(candidate):
     """
     if candidate == '' or not candidate:
         return candidate
-    return check(r'%(groupuser)s-%(publishdataname)s-%(psethash)s' % userProcDSParts, candidate)
+    return check(r'%(groupuser)s-%(publishdataname)s-%(psethash)s' % userProcDSParts, candidate, 199)
 
 def procversion(candidate):
     """ Integers """
@@ -181,7 +182,7 @@ def primdataset(candidate):
     """
     if candidate =='' or not candidate :
         return candidate
-    return check(r'^[a-zA-Z][a-zA-Z0-9\-_]*$', candidate)
+    return check(r'^[a-zA-Z][a-zA-Z0-9\-_]*$', candidate, 99)
 
 
 def hnName(candidate):
@@ -315,7 +316,10 @@ def validateUrl(candidate):
     regex_url = r'%s(%s|%s|%s|%s)%s%s' % (protocol, domain, localhost, ipv4, ipv6, port, path)
     return check(regex_url, candidate)
 
-def check(regexp, candidate):
+def check(regexp, candidate, maxLength = None):
+    if maxLength != None:
+        assert len(candidate) <= maxLength, \
+             "%s is longer then max length (%s) allowed" % (candidate, maxLength)
     assert re.compile(regexp).match(candidate) != None , \
               "'%s' does not match regular expression %s" % (candidate, regexp)
     return True

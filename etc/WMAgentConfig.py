@@ -101,6 +101,7 @@ config.BossAir.pluginDir = "WMCore.BossAir.Plugins"
 config.BossAir.pluginNames = bossAirPlugins
 config.BossAir.nCondorProcesses = 1
 config.BossAir.multicoreTaskTypes = ["MultiProcessing", "MultiProduction"]
+config.BossAir.submitWMSMode = True
 
 config.section_("CoreDatabase")
 config.CoreDatabase.connectUrl = databaseUrl
@@ -127,7 +128,8 @@ config.DBS3Upload.componentDir = config.General.workDir + "/DBS3Upload"
 config.DBS3Upload.logLevel = globalLogLevel
 config.DBS3Upload.workerThreads = 1
 config.DBS3Upload.pollInterval = 100
-config.DBS3Upload.dbsUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSWriter"
+#"https://cmsweb.cern.ch/dbs/prod/global/DBSWriter" - production one
+config.DBS3Upload.dbsUrl = "OVER_WRITE_BY_SECETES" 
 config.DBS3Upload.dbs3UploadOnly = False
 config.DBS3Upload.primaryDatasetType = "mc"
 
@@ -148,9 +150,11 @@ config.PhEDExInjector.logLevel = globalLogLevel
 config.PhEDExInjector.maxThreads = 1
 config.PhEDExInjector.subscribeDatasets = True
 config.PhEDExInjector.safeMode = False
-config.PhEDExInjector.phedexurl = "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
+#phedex address "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
+config.PhEDExInjector.phedexurl = "OVER_WRITE_BY_SECETES" 
 config.PhEDExInjector.pollInterval = 100
 config.PhEDExInjector.subscribeInterval = 43200
+config.PhEDExInjector.diskSites = []
 
 config.component_("JobAccountant")
 config.JobAccountant.namespace = "WMComponent.JobAccountant.JobAccountant"
@@ -202,7 +206,8 @@ config.JobUpdater.namespace = "WMComponent.JobUpdater.JobUpdater"
 config.JobUpdater.componentDir = config.General.workDir + "/JobUpdater"
 config.JobUpdater.logLevel = globalLogLevel
 config.JobUpdater.pollInterval = 120
-config.JobUpdater.reqMgrUrl = 'https://cmsweb.cern.ch/reqmgr/reqMgr'
+#reqmgr url 'https://cmsweb.cern.ch/reqmgr/reqMgr'
+config.JobUpdater.reqMgrUrl = "OVER_WRITE_BY_SECETES"
 
 config.component_("ErrorHandler")
 config.ErrorHandler.namespace = "WMComponent.ErrorHandler.ErrorHandler"
@@ -248,7 +253,8 @@ config.TaskArchiver.histogramKeys = ["PeakValueRss", "PeakValueVsize", "TotalJob
 config.TaskArchiver.perfPrimaryDatasets = ['SingleMu', 'MuHad', 'MinimumBias']
 config.TaskArchiver.perfDashBoardMinLumi = 50
 config.TaskArchiver.perfDashBoardMaxLumi = 9000
-config.TaskArchiver.dqmUrl = 'https://cmsweb.cern.ch/dqm/dev/'
+#dqm address -'https://cmsweb.cern.ch/dqm/dev/'
+config.TaskArchiver.dqmUrl = "OVER_WRITE_BY_SECETES"
 config.TaskArchiver.requireCouch  = True
 config.TaskArchiver.uploadPublishInfo = False
 config.TaskArchiver.uploadPublishDir  = None

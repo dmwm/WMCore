@@ -482,4 +482,9 @@ class DBSBlock:
                 
         return block
                     
-                    
+    def setPendingAndCloseBlock(self):
+        "set the block status as Pending for upload as well as closed"
+        # Pending means ready to upload
+        self.status = "Pending"
+        # close block on DBS3 status
+        self.data['block']['open_for_writing'] = 0

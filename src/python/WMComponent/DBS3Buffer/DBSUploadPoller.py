@@ -454,7 +454,7 @@ class DBSUploadPoller(BaseWorkerThread):
                     if not self.isBlockOpen(newFile = newFile,
                                             block = currentBlock):
                         # Then we have to close the block and get a new one
-                        currentBlock.status = 'Pending'
+                        currentBlock.setPendingAndCloseBlock()
                         readyBlocks.append(currentBlock)
                         currentBlock = self.getBlock(newFile = newFile,
                                                      location = location,
@@ -484,7 +484,7 @@ class DBSUploadPoller(BaseWorkerThread):
         """
         for block in self.blockCache.values():
             if block.status == "Open" and block.getTime() > block.getMaxBlockTime():
-                block.status = "Pending"
+                block.setPendingAndCloseBlock()
                 self.blockCache[block.getName()] = block
 
     def addNewBlock(self, block):
@@ -551,7 +551,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 if not self.isBlockOpen(newFile = newFile, block = block) and not skipOpenCheck:
                     # Block isn't open anymore.  Mark it as pending so that it gets
                     # uploaded.
-                    block.status = 'Pending'
+                    block.setPendingAndCloseBlock()
                     self.blockCache[blockName] = block
                 else:
                     return block

@@ -129,6 +129,7 @@ class Proxy(Credential):
         self.myproxyValidity = args.get( "myproxyValidity", '168:00') #lenght of the myproxy
         self.myproxyMinTime = args.get( "myproxyMinTime", 4) #threshold used in checkProxy
         self.myproxyAccount = args.get( "myproxyAccount", "") #to be used when computing myproxy account (-l option)
+        self.rfcCompliant = args.get( "rfcCompliant", True) #to be used when computing myproxy account (-l option)
 
         # User vo paramaters
         self.vo = 'cms'
@@ -282,7 +283,7 @@ class Proxy(Credential):
         """
         Proxy creation.
         """
-        createCmd = 'voms-proxy-init -voms %s:%s -valid %s' % (self.vo, self.getProxyDetails( ), self.proxyValidity )
+        createCmd = 'voms-proxy-init -voms %s:%s -valid %s %s' % (self.vo, self.getProxyDetails( ), self.proxyValidity, '-rfc' if self.rfcCompliant else '' )
         execute_command(self.setUI() +  createCmd, self.logger, self.commandTimeout )
 
         return
@@ -317,13 +318,14 @@ class Proxy(Credential):
             credential = self.getProxyFilename( serverRenewer )
 
         if self.myproxyServer:
-            myproxyDelegCmd = 'X509_USER_PROXY=%s ; myproxy-init -d -n -s %s' % (credential, self.myproxyServer)
+            myproxyDelegCmd = 'export GT_PROXY_MODE=%s ; myproxy-init -d -n -s %s' % ('rfc' if self.rfcCompliant else 'old', self.myproxyServer)
 
             if nokey is True:
                 self.logger.debug("Calculating hash of %s for credential name" % (self.userDN+"_"+self.myproxyAccount))
                 credname = sha1(self.userDN+"_"+self.myproxyAccount).hexdigest()
-                myproxyDelegCmd = 'X509_USER_PROXY=%s ; myproxy-init -d -n -s %s -x -R \'%s\' -x -Z \'%s\' -l \'%s\' -t 168:00 -c %s' \
-                                  % (credential, self.myproxyServer, self.serverDN, self.serverDN, credname, self.myproxyValidity)
+                myproxyDelegCmd = 'export GT_PROXY_MODE=%s ; myproxy-init -d -n -s %s -x -R \'%s\' -x -Z \'%s\' -l \'%s\' -t 168:00 -c %s' \
+                                  % ('rfc' if self.rfcCompliant else 'old', self.myproxyServer, self.serverDN, \
+                                   self.serverDN, credname, self.myproxyValidity)
             elif serverRenewer and len( self.serverDN.strip() ) > 0:
                 serverCredName = sha1(self.serverDN).hexdigest()
                 myproxyDelegCmd += ' -x -R \'%s\' -Z \'%s\' -k %s -t 168:00 -c %s ' \
@@ -518,7 +520,7 @@ class Proxy(Credential):
         ## get a new delegated proxy
         proxyFilename = os.path.join( self.credServerPath, sha1( self.userDN + self.vo + self.group + self.role ).hexdigest() )
         cmdList.append('myproxy-logon -d -n -s %s -o %s -l \"%s\" -t 168:00'
-                       % (self.myproxyServer, proxyFilename, sha1(self.userDN).hexdigest() ))
+                       % (self.myproxyServer, proxyFilename, sha1(self.userDN+"_"+self.myproxyAccount).hexdigest() ))
         logonCmd = ' '.join(cmdList)
         msg, _, retcode = execute_command(self.setUI() + logonCmd, self.logger, self.commandTimeout)
 
@@ -564,12 +566,17 @@ class Proxy(Credential):
 
         self.logger.debug( 'Requested voms validity: %s' % vomsValid )
 
+        msg, _, retcode = execute_command(self.setUI() + 'voms-proxy-info -type -file %s' % proxy, self.logger, self.commandTimeout)
+        if retcode > 0:
+            self.logger.error('Cannot get proxy type' % msg )
+            return
+        isRFC = msg == 'RFC compliant proxy\n'
         ## set environ and add voms extensions
         cmdList = []
         cmdList.append('env')
         cmdList.append('X509_USER_PROXY=%s' %proxy)
-        cmdList.append('voms-proxy-init -noregen -voms %s -out %s -bits 1024 -valid %s'
-                       % (voAttribute, proxy, vomsValid) )
+        cmdList.append('voms-proxy-init -noregen -voms %s -out %s -bits 1024 -valid %s %s'
+                       % (voAttribute, proxy, vomsValid,  '-rfc' if isRFC  else '') )
         cmd = ' '.join(cmdList)
         msg, _, retcode = execute_command(self.setUI() + cmd, self.logger, self.commandTimeout)
 

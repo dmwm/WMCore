@@ -5,9 +5,6 @@ _DBSReader_
 Readonly DBS Interface
 
 """
-import dlsClient
-from dlsApi import DlsApiError
-
 from dbs.apis.dbsClient import DbsApi
 from dbs.exceptions.dbsClientException import *
 
@@ -55,21 +52,6 @@ class DBS3Reader:
             msg = "Error in DBSReader with DbsApi\n"
             msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
-
-        # setup DLS api
-        dlsType = 'DLS_TYPE_PHEDEX'
-        dlsUrl = 'https://cmsweb.cern.ch/phedex/datasvc/xml/prod'
-        try:
-            self.dls = dlsClient.getDlsApi(dls_type = dlsType, dls_endpoint = dlsUrl, version = '')
-        except DlsApiError, ex:
-            msg = "Error in DBSReader with DlsApi\n"
-            msg += "%s\n" % str(ex)
-            raise DBSReaderError(msg)
-        except DbsException, ex:
-            msg = "Error in DBSReader with DbsApi\n"
-            msg += "%s\n" % formatEx(ex)
-            raise DBSReaderError(msg)
-
 
     def listPrimaryDatasets(self, match = '*'):
         """
@@ -522,21 +504,22 @@ class DBS3Reader:
         """
         _listFileBlockLocation_
 
-        Get a list of fileblock locations
+        Get origin_site_name of a block
 
         """
         self.checkBlockName(fileBlockName)
         try:
-            entryList = self.dls.getLocations([fileBlockName], showProd = True)
-        except DlsApiError, ex:
-            msg = "DLS Error in listFileBlockLocation() for %s" % fileBlockName
-            msg += "\n%s\n" % str(ex)
+            blockInfo = self.dbs.listBlocks(block_name=fileBlockName,detail=True)
+        except DbsException, ex:
+            msg = "Error in DBSReader: dbsApi.listBlocks(block_name=%s)\n" % fileBlockName
+            msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
-        ses = set()
-        for block in entryList:
-            ses.update([str(location.host) for location in block.locations])
-        return list(ses)
-
+        
+        # TODO: How to look for different locations than origin site name
+        location = set()
+        location.update([blockInfo[0]['origin_site_name']])
+        
+        return list(location)
 
     def getFileBlock(self, fileBlockName):
         """
@@ -667,26 +650,25 @@ class DBS3Reader:
         pathname = blocks[-1].get('dataset', None)
         return pathname
 
-    def listDatasetLocation(self, dataset):
+    def listDatasetLocation(self, datasetName):
         """
         _listDatasetLocation_
 
-        List the SEs where there is at least a block of the given
+        List the origin SEs where there is at least a block of the given
         dataset.
         """
-        self.checkDatasetPath(dataset)
-        args = {'dataset' : dataset, 'detail' : False}
+        self.checkDatasetPath(datasetName)
         try:
-            blocks = self.dbs.listBlocks(**args)
+            blocksInfo = self.dbs.listBlocks(dataset=datasetName,detail=True)
         except DbsException, ex:
-            msg = "Error in DBSReader.listFileBlocks(%s)\n" % dataset
+            msg = "Error in DBSReader: dbsApi.listBlocks(dataset=%s)\n" % datasetName
             msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
-
-        blockNames = [ x['block_name'] for x in blocks ]
+        
+        # TODO: How to look for different locations than origin site name        
         locations = set()
-        for blockName in blockNames:
-            locations |= set(self.listFileBlockLocation(blockName))
+        for blockInfo in blocksInfo:
+            locations.update([blockInfo['origin_site_name']])
 
         return list(locations)
 

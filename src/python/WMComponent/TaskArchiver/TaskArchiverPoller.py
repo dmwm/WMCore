@@ -352,8 +352,8 @@ class TaskArchiverPoller(BaseWorkerThread):
             #abortedWorkflows = self.reqmgrCouchDBWriter.workflowsByStatus(["aborted"], format = "dict");
             abortedWorkflows = self.centralCouchDBWriter.workflowsByStatus(["aborted"], format = "dict");
         except Exception, ex:
-           centralCouchAlive = False
-           logging.error("we will try again when remote couch server comes back\n%s" % str(ex))
+            centralCouchAlive = False
+            logging.error("we will try again when remote couch server comes back\n%s" % str(ex))
         
         if centralCouchAlive:
             wfsToDelete = {}

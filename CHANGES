@@ -1,3 +1,9 @@
+0.9.90 to 0.9.91:
+  - Merge pull request #4946 from ticoann/taskarichvier_indent_fix
+  - fix indentation
+  - Merge pull request #4944 from ticoann/fix_dbs3_closing
+  - fix dbs block closing.
+
 0.9.89 to 0.9.90:
   - Merge pull request #4893 from alexanderrichards/changestate_couchdb_connection_fix
   - Merge pull request #4934 from ticoann/add_more_config

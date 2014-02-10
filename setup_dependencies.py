@@ -28,7 +28,7 @@ dependencies = {'wmc-rest':{
                         'systems':['wmc-base']
                         },
                 'wmc-runtime':{
-                        'packages': ['WMCore.WMRuntime', 'WMCore.WMSpec+', 'PSetTweaks', 'WMCore.FwkJobReport', 'WMCore.Storage+'],
+                        'packages': ['WMCore.WMRuntime+', 'WMCore.WMSpec+', 'PSetTweaks', 'WMCore.FwkJobReport', 'WMCore.Storage+'],
                         'modules' : ['WMCore.Algorithms.ParseXMLFile'],
                         'systems':['wmc-base']
                         },
@@ -128,11 +128,11 @@ dependencies = {'wmc-rest':{
                                     'WMCore.Services.Service', 'WMCore.Services.pycurl_manager'],
                         },
                 'crabtaskworker':{
-                        'packages':['WMCore..WorkQueue', 'WMCore.Credential', 'WMCore.Algorithms+', 'WMCore.WMSpec+',
-                                    'WMCore.JobSplitting', 'WMCore.Services.SiteDB+', 'WMCore.Services.DBS+', 'WMCore.Services.UserFileCache+',
-                                    'WMCore.Services.PhEDEx+',],
+                        'packages':['WMCore.WorkQueue', 'WMCore.Credential', 'WMCore.Algorithms+', 'WMCore.WMSpec+',
+                                    'WMCore.JobSplitting', 'WMCore.Services.SiteDB+', 'WMCore.Services.DBS+', 
+                                    'WMCore.Services.UserFileCache+', 'WMCore.Services.PhEDEx+'],
                         'modules': ['WMCore.WMBS.File', 'WMCore.WMBS.WMBSBase', 'WMCore.WMBS.__init__'],
-                        'systems': ['wmc-database'],
+                        'systems': ['wmc-database', 'wmc-runtime'],
                         },
                 'wmclient':{
                         'systems': ['wmc-runtime', 'wmc-database']

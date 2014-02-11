@@ -33,6 +33,7 @@ from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
 from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 
+TAG_COLLECTOR_URL = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype=1"
 
 def addSiteWildcards(wildcardKeys, sites, wildcardSites):
     """
@@ -114,7 +115,7 @@ def updateScramArchsAndCMSSWVersions():
 def allSoftwareVersions():
     """ Downloads a list of all software versions from the tag collector """
     result = []
-    f = urllib.urlopen("https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype=1")
+    f = urllib.urlopen(TAG_COLLECTOR_URL)
     for line in f:
         for tok in line.split():
             if tok.startswith("label="):

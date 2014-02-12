@@ -152,10 +152,10 @@ class TrivialFileCatalog(dict):
         result = ""
         for mapping in ['lfn-to-pfn', 'pfn-to-lfn']:
             for item in self[mapping]:
-                result += "%s: %s %s %s" % (
+                result += "\t%s: protocol=%s path-match-re=%s result=%s" % (
                     mapping,
                     item['protocol'],
-                    item['path-match-expr'],
+                    item['path-match-expr'].pattern,
                     item['result'])
                 if item['chain'] != None:
                     result += " chain=%s" % item['chain']

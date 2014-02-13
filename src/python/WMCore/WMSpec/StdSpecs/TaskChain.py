@@ -493,6 +493,9 @@ class TaskChainWorkloadFactory(StdBase):
                     "FirstLumi" : {"default" : 1, "type" : int,
                                     "optional" : True, "validate" : lambda x : x > 0,
                                     "attr" : "firstLumi", "null" : False},
+                    "EventsPerLumi" : {"default" : None, "type" : int,
+                                       "optional" : True, "validate" : lambda x : x > 0,
+                                       "attr" : "eventsPerLumi", "null" : True},
                     "LheInputFiles" : {"default" : False, "type" : strToBool,
                                        "optional" : True, "validate" : None,
                                        "attr" : "lheInputFiles", "null" : False}

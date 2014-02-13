@@ -1,3 +1,19 @@
+0.9.91 to 0.9.92:
+  - Merge pull request #4958 from giffels/dbs3-lexicon-fixes
+  - Allow _ and numbers in physics group names
+  - Merge pull request #4952 from bbockelm/crab3_improve_stageout_debugging1
+  - Merge pull request #4955 from mmascher/master
+  - Refactor TAG_COLLECTOR_URL variable
+  - Fix the setup_dependencies for the CRAB3 TaskWorker
+  - Merge pull request #4915 from mmascher/setproxyUI
+  - Merge pull request #4951 from bbockelm/crab3_phedex_dep
+  - Small improvements to the logging of the site-local-config for stageout.
+  - Update crab taskworker dependencies to include PhEDEx client API.
+  - Use RFC compliant proxies
+  - Save the list of trusted retrievers in a variable for later use and include the myproxyAccount variable in the credname hash computation
+  - Different format for grid-cert-info on OSG. Fixes #4921
+  -  Source the UI with the script provided before checking if voms-proxy-âinit exists
+
 0.9.90 to 0.9.91:
   - Merge pull request #4946 from ticoann/taskarichvier_indent_fix
   - fix indentation

@@ -190,6 +190,7 @@ class FNALImpl(StageOutImpl):
                 if pfn.find(checkPaths[i]) != -1:
                     pfnSplit = pfn.split(checkPaths[i], 1)[1]
                     pfn = "%s%s" % (checkPathsReplace[i],pfnSplit)
+            print "Created Target PFN: %s\n with lustre" % pfn
         return pfn
 
 
@@ -352,8 +353,6 @@ fi
                 if sourcePFN.find(checkPaths[i]) != -1:
                     pfnSplit = sourcePFN.split(checkPaths[i], 1)[1]
                     filePath = "%s%s" % (checkPathsReplace[i],pfnSplit)
-            original_size = os.stat(filePath)[6]
-            print "Local File Size is: %s" % original_size
             result = "/usr/bin/xrdcp -d 0 "
             if options != None:
                 result += " %s " % options

@@ -25,7 +25,7 @@ lfnParts = {
     'subdir': '([a-zA-Z0-9\-_]+)',
     'file': '([a-zA-Z0-9\-\._]+)',
     'workflow': '([a-zA-Z0-9\-_]+)',
-    'physics_group': '([a-zA-Z\-_]+)'
+    'physics_group': '([a-zA-Z0-9\-_]+)'
 }
 
 userProcDSParts = {
@@ -206,8 +206,8 @@ def lfn(candidate):
     """
     regexp1 = '/([a-z]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}/([0-9]+)/([a-zA-Z0-9\-_]+).root'
     regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}/([0-9]+)/([a-zA-Z0-9\-_]+).root'
-    regexp3 = '/store/(temp/)*(user|group)/%(hnName)s/%(primDS)s/%(secondary)s/%(version)s/%(counter)s/%(root)s' % lfnParts
-    regexp4 = '/store/(temp/)*(user|group)/%(hnName)s/%(primDS)s/(%(subdir)s/)+%(root)s' % lfnParts
+    regexp3 = '/store/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(primDS)s/%(secondary)s/%(version)s/%(counter)s/%(root)s' % lfnParts
+    regexp4 = '/store/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(primDS)s/(%(subdir)s/)+%(root)s' % lfnParts
 
     oldStyleTier0LFN = '/store/data/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s/%(root)s' % lfnParts
     tier0LFN = '/store/(backfill/[0-9]/){0,1}(t0temp/){0,1}(data|express|hidata)/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s(/%(counter)s)?/%(root)s' % lfnParts
@@ -258,7 +258,7 @@ def lfnBase(candidate):
     """
     regexp1 = '/([a-z]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)'
     regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}'
-    regexp3 = '/(store)/(temp/)*(user|group)/%(hnName)s/%(primDS)s/%(secondary)s/%(version)s' % lfnParts
+    regexp3 = '/(store)/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(primDS)s/%(secondary)s/%(version)s' % lfnParts
 
     tier0LFN = '/store/(backfill/[0-9]/){0,1}(t0temp/){0,1}(data|express|hidata)/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s' % lfnParts
 
@@ -281,14 +281,14 @@ def userLfn(candidate):
     """
     Check LFNs in /store/{temp}/user that are not EDM data
     """
-    regexp = '/store/(temp/)*(user|group)/%(hnName)s/%(subdir)s/%(workflow)s/%(subdir)s/%(file)s' % lfnParts
+    regexp = '/store/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(subdir)s/%(workflow)s/%(subdir)s/%(file)s' % lfnParts
     return check(regexp, candidate)
 
 def userLfnBase(candidate):
     """
     As above but for the base part of the file
     """
-    regexp = '/store/(temp/)*(user|group)/%(hnName)s/%(subdir)s/%(workflow)s/%(subdir)s' % lfnParts
+    regexp = '/store/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(subdir)s/%(workflow)s/%(subdir)s' % lfnParts
     return check(regexp, candidate)
 
 def cmsswversion(candidate):

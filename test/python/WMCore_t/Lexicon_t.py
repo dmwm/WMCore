@@ -372,6 +372,12 @@ class LexiconTest(unittest.TestCase):
         lfn(lfnA)
         lfnA = '/store/group/higgs/SDMu9_Zmumu/Zmumu/OctX_HZZ3lepSkim_SDMu9/1eb161a436e69f7af28d18145e4ce909/3lepSkim_SDMu9_1.root'
         lfn(lfnA)
+        lfnA = '/store/group/e-gamma_ecal/SDMu9_Zmumu/Zmumu/OctX_HZZ3lepSkim_SDMu9/1eb161a436e69f7af28d18145e4ce909/3lepSkim_SDMu9_1.root'
+        lfn(lfnA)
+        lfnA = '/store/group/B2G/SDMu9_Zmumu/Zmumu/OctX_HZZ3lepSkim_SDMu9/1eb161a436e69f7af28d18145e4ce909/3lepSkim_SDMu9_1.root'
+        lfn(lfnA)
+        lfnA = '/store/group/phys_higgs/meridian/HGGProd/GluGluToHToGG_M-125_8TeV-powheg-pythia6-Summer12-START53_V7D-v2/meridian/GluGlu_HToGG_M-125_8TeV-powheg-LHE_v1/GluGluToHToGG_M-125_8TeV-powheg-pythia6-Summer12-START53_V7D-v2/fb576e5b6a5810681def50b608ec31ad/Hadronizer_TuneZ2star_8TeV_Powheg_pythia_tauola_cff_py_GEN_SIM_DIGI_L1_DIGI2RAW_RAW2DIGI_L1Reco_RECO_PU_1_1_ukQ.root'
+        lfn(lfnA)
 
         # All these cases should fail
         lfnA = '/storeA/temp/lustre/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'

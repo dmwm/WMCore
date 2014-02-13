@@ -492,7 +492,11 @@ class TaskChainWorkloadFactory(StdBase):
                                     "attr" : "firstEvent", "null" : False},
                     "FirstLumi" : {"default" : 1, "type" : int,
                                     "optional" : True, "validate" : lambda x : x > 0,
-                                    "attr" : "firstLumi", "null" : False}}
+                                    "attr" : "firstLumi", "null" : False},
+                    "LheInputFiles" : {"default" : False, "type" : strToBool,
+                                       "optional" : True, "validate" : None,
+                                       "attr" : "lheInputFiles", "null" : False}
+                    }
         baseArgs.update(specArgs)
         return baseArgs
 

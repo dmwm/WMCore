@@ -472,7 +472,6 @@ class Requests(dict):
             c.setopt(pycurl.CUSTOMREQUEST, 'PUT')
         else:
             raise HTTPException("Verb %s not sopported for upload." % verb)
-        print url
         c.setopt(c.URL, url)
         fullParams = [(fieldName, (c.FORM_FILE, fileName))]
         fullParams.extend(params)

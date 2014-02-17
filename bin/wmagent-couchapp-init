@@ -304,7 +304,7 @@ if __name__ == "__main__":
                         wmagentConfig.JobStateMachine.configCacheDBName, "ConfigCache")
         installCouchApp(wmagentConfig.JobStateMachine.couchurl,
                         wmagentConfig.JobStateMachine.configCacheDBName, "GroupUser")
-    
+
     if hasattr(wmagentConfig, "WorkQueueManager"):
         installWorkQueueCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname)
         installWorkQueueCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.inboxDatabase)
@@ -324,7 +324,6 @@ if __name__ == "__main__":
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "AsyncTransfer", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "monitor", basePath)
         installCouchApp(wmagentConfig.Statistics.couch_statinstance, wmagentConfig.Statistics.statitics_database, "stat", basePath)
-        installCouchApp(wmagentConfig.Analytics.couch_user_monitoring_instance, wmagentConfig.Analytics.user_monitoring_db, "UserMonitoring", basePath)
         installCouchApp(wmagentConfig.DBSPublisher.couch_instance, wmagentConfig.DBSPublisher.files_database, "DBSPublisher", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.jobs_database, "Jobs", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.config_database, "config", basePath)
@@ -332,8 +331,12 @@ if __name__ == "__main__":
         if options.cron:
             setupCronCompaction(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database)
             setupCronCompaction(wmagentConfig.Statistics.couch_statinstance, wmagentConfig.Statistics.statitics_database)
-            setupCronCompaction(wmagentConfig.Analytics.couch_user_monitoring_instance, wmagentConfig.Analytics.user_monitoring_db)
             setupCronCompaction(agent_instance, agent_database)
+
+    if hasattr(wmagentConfig, "Analytics"):
+        installCouchApp(wmagentConfig.Analytics.couch_user_monitoring_instance, wmagentConfig.Analytics.user_monitoring_db, "UserMonitoring", basePath)
+        if options.cron:
+            setupCronCompaction(wmagentConfig.Analytics.couch_user_monitoring_instance, wmagentConfig.Analytics.user_monitoring_db)
 
     if hasattr(wmagentConfig, "ACDC") and hasattr(wmagentConfig, "ACDCLocal") and wmagentConfig.ACDCLocal:
         installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "ACDC")

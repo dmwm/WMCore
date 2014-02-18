@@ -52,7 +52,7 @@ bossAirPlugins = ["CondorPlugin"]
 # DBS Information.
 localDBSUrl = "https://cmst0dbs.cern.ch:8443/cms_dbs_prod_tier0_writer/servlet/DBSServlet"
 localDBSVersion = "DBS_2_0_8"
-globalDBSUrl = "https://cmsdbsprod.cern.ch:8443/cms_dbs_prod_global_writer/servlet/DBSServlet"
+globalDBSUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
 globalDBSVersion = "DBS_2_0_8"
 
 # Job retry information.  This includes the number of times a job will tried and

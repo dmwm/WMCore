@@ -1,3 +1,15 @@
+0.9.92 to 0.9.93pre1:
+  - Merge pull request #4973 from ticoann/lexicon_refactor2
+  - refactor Lexicon to reduce the redundant regular expression definition Also add tight constraint for user data
+  - Merge pull request #4959 from ticoann/temp_test_lex
+  - Merge pull request #4968 from ticoann/phedexinjector_config_fix
+  - Merge pull request #4970 from hufnagel/remove-afs-alert
+  - skip AFS cache dir in disk space check
+  - fix dbs url used by PhEDEx
+  - Merge pull request #4960 from bbockelm/suppress_print
+  - Do not print to stdout when uploading files.
+  - fix stage in bug
+
 0.9.91 to 0.9.92:
   - Merge pull request #4958 from giffels/dbs3-lexicon-fixes
   - Allow _ and numbers in physics group names

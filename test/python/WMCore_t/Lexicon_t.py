@@ -94,6 +94,12 @@ class LexiconTest(unittest.TestCase):
 
         for test_ds in [ds1, ds2, ds3, ds4, ds5]:
             self.assertRaises(AssertionError, searchblock, test_ds)
+            
+    def testPublishdatasetname(self):
+        assert publishdatasetname('pog-Summer09-MC_31X_V3_SD_ZeroBias-v1_Full_v0CandProducerPAT'), \
+                  'valid publishdatasetname not validated'
+        # shouldn't contain .
+        self.assertRaises(AssertionError, publishdatasetname, 'withdot.pre3_IDEAL_30X_v1')
 
     def testGoodProcdataset(self):
         # Check that valid procdataset work
@@ -152,7 +158,7 @@ class LexiconTest(unittest.TestCase):
                  "/DoubleMu/aburgmei-Run2012A_22Jan2013_v1_RHembedded_trans1_tau121_ptelec1_17elec2_8_v4-f456bdbb960236e5c696adfe9b04eaae/USER#1f1eee22-cdee-0f1b-271b-77a7f559e7dd"]
         for bk in bList:
             assert block(bk), "validation failed"
-        longStr = "/" + 'a' * 99 + "/" + 'a' * 199 + "/" + 'a' * 99 + "#" + 'a' * 99
+        longStr = "/" + 'a' * 99 + "/" + 'a' * 199 + "/" + 'A' * 99 + "#" + 'a' * 99
         assert block(longStr), 'valid block %s length failed' % len(longStr)
 
     def testBadBlock(self):

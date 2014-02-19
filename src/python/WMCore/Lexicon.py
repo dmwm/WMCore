@@ -13,10 +13,18 @@ import urlparse
 
 from WMCore.WMException import WMException
 
+#restriction enforced by DBS. for different types blocks. 
+#It could have a strict restriction
+# i.e production should end with v[number]
+PRIMARY_DS = {'re': '[a-zA-Z0-9\.\-_]+', 'maxLength': 99}
+PROCESSED_DS = {'re': '[a-zA-Z0-9\.\-_]+', 'maxLength': 199}
+TIER = {'re': '[A-Z\-_]+', 'maxLength': 99}
+BLOCK_STR = {'re': '#[a-zA-Z0-9\.\-_]+', 'maxLength': 100}
+
 lfnParts = {
     'era': '([a-zA-Z0-9\-_]+)',
-    'primDS': '([a-zA-Z0-9\-_]+)',
-    'tier': '([A-Z\-_]+)',
+    'primDS': '(%(re)s)' % PRIMARY_DS,
+    'tier': '(%(re)s)' % TIER,
     'version': '([a-zA-Z0-9\-_]+)',
     'secondary': '([a-zA-Z0-9\-_]+)',
     'counter': '([0-9]+)',
@@ -30,7 +38,7 @@ lfnParts = {
 
 userProcDSParts = {
     'groupuser': '([a-zA-Z0-9\.\-_])+',
-    'publishdataname': '([a-zA-Z0-9\.\-_])+',
+    'publishdataname': '([a-zA-Z0-9\-_])+',
     'psethash': '([a-f0-9]){32}'
 }
 
@@ -62,8 +70,7 @@ def searchblock(candidate):
     """
     A block name with a * wildcard one or more times in it.
     """
-    #regexp = r"^/(\*|[a-zA-Z][a-zA-Z0-9_\*]{0,100})/(\*|[a-zA-Z0-9_\.\-\*]{1,100})/(\*|[A-Z\-]{3,20})#(\*|[a-zA-Z0-9\.\-_\*]{1,100})$"
-    regexp = r"^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,199})){0,1}(/(\*|[A-Z\-\*]{1,50})(#(\*|[a-zA-Z0-9\.\-_\*]){0,100}){0,1}){0,1}$"
+    regexp = r"^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,199})){0,1}(/(\*|[A-Z\-\*]{1,99})(#(\*|[a-zA-Z0-9\.\-_\*]){0,100}){0,1}){0,1}$"
     return check(regexp, candidate)
 
 def searchdataset(candidate):
@@ -81,7 +88,7 @@ def searchstr(candidate):
     letters, numbers, periods, dashes, underscores
 
     """
-    if candidate =='' :
+    if candidate == '':
         return candidate
     return check(r'^[a-zA-Z0-9/%*][a-zA-Z0-9/\.\-_%*/#]*$', candidate)
 
@@ -123,11 +130,30 @@ def countrycode(candidate):
     #TODO: do properly with a look up table
     return check("^[A-Z]{2}$", candidate)
 
+def _blockStructCheck(candidate):
+    """
+    Basic block structure check 
+    /primary/process/tier#uuid
+    """
+    assert candidate.count('/') == 3, "need to have / between the 3 parts which construct block name"
+    parts = candidate.split('/')
+    assert parts[3].count('#') == 1, "need to have # in the last parts of block"
+    #should be empty string for the first part
+    check(r"", parts[0])
+    return parts
+    
 def block(candidate):
     """assert if not a valid block name"""
-    #return check(r"^(/[a-zA-Z0-9\.\-_]{1,100}){3}#[a-zA-Z0-9\.\-_]{1,100}$", candidate)
-    return check(r"^/[a-zA-Z0-9\.\-_]{1,99}/[a-zA-Z0-9\.\-_]{1,199}/[a-zA-Z0-9\.\-_]{1,99}#[a-zA-Z0-9\.\-_]{1,99}$", candidate)
-
+    
+    parts = _blockStructCheck(candidate)
+    
+    primDSCheck = check(r"%s" % PRIMARY_DS['re'], parts[1], PRIMARY_DS['maxLength'])
+    procDSCheck = check(r"%s" % PROCESSED_DS['re'], parts[2], PROCESSED_DS['maxLength'])
+    lastParts = parts[3].split("#")
+    tierCheck = check(r"%s" % TIER['re'], lastParts[0], TIER['maxLength'])
+    blockCheck = check(r"%s" % BLOCK_STR['re'], "#%s" % lastParts[1], BLOCK_STR['maxLength'])
+    return (primDSCheck and procDSCheck and tierCheck and blockCheck)
+                
 def identifier(candidate):
     """ letters, numbers, whitespace, periods, dashes, underscores """
     return check(r'[a-zA-Z0-9\s\.\-_]{1,100}$', candidate)
@@ -147,7 +173,15 @@ def procdataset(candidate):
     """
     if candidate == '' or not candidate:
         return candidate
-    return check(r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+){0,2}-v[0-9]*$', candidate, 199)
+
+    commonCheck = check(r"%s" % PROCESSED_DS['re'], candidate, PROCESSED_DS['maxLength'])
+    prodCheck = check(r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+){0,2}-v[0-9]*$', candidate)
+    return (commonCheck and prodCheck)
+
+def publishdatasetname(candidate):
+    if candidate == '' or not candidate:
+        return candidate
+    return check(r'%(publishdataname)s$' % userProcDSParts, candidate, 100)
 
 def userprocdataset(candidate):
     """
@@ -156,7 +190,10 @@ def userprocdataset(candidate):
     """
     if candidate == '' or not candidate:
         return candidate
-    return check(r'%(groupuser)s-%(publishdataname)s-%(psethash)s' % userProcDSParts, candidate, 199)
+
+    commonCheck = check(r"%s" % PROCESSED_DS['re'], candidate, PROCESSED_DS['maxLength'])
+    anlaysisCheck = check(r'%(groupuser)s-%(publishdataname)s-%(psethash)s$' % userProcDSParts, candidate)
+    return (commonCheck and anlaysisCheck)
 
 def procversion(candidate):
     """ Integers """
@@ -182,7 +219,8 @@ def primdataset(candidate):
     """
     if candidate =='' or not candidate :
         return candidate
-    return check(r'^[a-zA-Z][a-zA-Z0-9\-_]*$', candidate, 99)
+    return (check(r"%s" % PRIMARY_DS['re'], candidate, PRIMARY_DS['maxLength']) and 
+            check(r'^[a-zA-Z][a-zA-Z0-9\-_]*$', candidate))
 
 
 def hnName(candidate):
@@ -319,7 +357,7 @@ def validateUrl(candidate):
 def check(regexp, candidate, maxLength = None):
     if maxLength != None:
         assert len(candidate) <= maxLength, \
-             "%s is longer then max length (%s) allowed" % (candidate, maxLength)
+            "%s is longer then max length (%s) allowed" % (candidate, maxLength)
     assert re.compile(regexp).match(candidate) != None , \
               "'%s' does not match regular expression %s" % (candidate, regexp)
     return True

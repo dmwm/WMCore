@@ -247,7 +247,7 @@ class DBSBufferUtil(WMConnectionBase):
 
     def loadBlocks(self, blocknames, dbs3UploadOnly):
         """
-        _loadBlocksByDAS_
+        _loadBlocks_
 
         Given a list of names, load the
         blocks with those names
@@ -431,3 +431,21 @@ class DBSBufferUtil(WMConnectionBase):
         self.commitTransaction(existingTransaction)
 
         return dbsFiles
+    
+    
+    def getCompletedWorkflows(self):
+        """
+        _getCompletedWorkflows_
+
+        """
+
+        myThread = threading.currentThread()
+        existingTransaction = self.beginTransaction()
+
+        wfCompletedDAO = self.daoFactory(classname = "GetCompletedWorkflows")
+        result  = wfCompletedDAO.execute(conn = self.getDBConn(),
+                                            transaction=self.existingTransaction())
+
+        self.commitTransaction(existingTransaction)
+
+        return result

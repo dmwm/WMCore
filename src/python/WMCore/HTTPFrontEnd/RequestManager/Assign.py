@@ -55,6 +55,27 @@ class Assign(WebAPI):
                 raise
         else:
             self.sites = []
+        
+        #store result lfn base with all Physics group
+        storeResultLFNBase = ["/store/results/analysisops",
+                              "/store/results/b_physics",
+                              "/store/results/b_tagging",
+                              "/store/results/b2g",
+                              "/store/results/e_gamma_ecal",
+                              "/store/results/ewk",
+                              "/store/results/exotica",
+                              "/store/results/forward",
+                              "/store/results/heavy_ions",
+                              "/store/results/higgs",
+                              "/store/results/jets_met_hcal",
+                              "/store/results/muon",
+                              "/store/results/qcd",
+                              "/store/results/susy",
+                              "/store/results/tau_pflow",
+                              "/store/results/top",
+                              "/store/results/tracker_dpg",
+                              "/store/results/tracker_pog",
+                              "/store/results/trigger"]  
         # yet 0.9.40 had also another self.mergedLFNBases which was differentiating
         # list of mergedLFNBases based on type of request, removed and all bases
         # will be displayed regardless of the request type (discussion with Edgar) 
@@ -67,6 +88,9 @@ class Assign(WebAPI):
             "/store/relval",
             "/store/hidata",
             "/store/himc"]
+        
+        self.allMergedLFNBases.extend(storeResultLFNBase)
+        
         self.allUnmergedLFNBases = ["/store/unmerged", "/store/temp"]
 
         self.yuiroot = config.yuiroot

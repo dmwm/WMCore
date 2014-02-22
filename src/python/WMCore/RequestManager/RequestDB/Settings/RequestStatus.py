@@ -34,14 +34,14 @@ StatusList = [
     ]
 
 NextStatus = {
- "new" : ["new", "testing-approved", "assignment-approved", "rejected", "failed", "aborted"],
+ "new" : ["new", "testing-approved", "assignment-approved", "rejected"],
  "testing-approved" : ["testing-approved", "testing", "test-failed", "aborted"],
  "testing" : ["testing", "tested", "test-failed", "aborted"],
  "tested" : ["tested", "assignment-approved","failed", "rejected", "aborted"],
  "test-failed" : ["test-failed", "testing-approved", "rejected", "aborted"],
- "assignment-approved" : ["assignment-approved", "assigned", "rejected", "aborted"],
- "assigned" : ["assigned", "negotiating", "acquired", "aborted", "rejected", "failed"],
- "negotiating" : ["acquired", "assigned", "rejected", "aborted", "failed", "negotiating"],
+ "assignment-approved" : ["assignment-approved", "assigned", "rejected"],
+ "assigned" : ["assigned", "negotiating", "acquired", "aborted", "failed"],
+ "negotiating" : ["acquired", "assigned", "aborted", "failed", "negotiating"],
  "acquired" : ["running-open", "failed", "completed", "acquired", "aborted"],
  "running" : ["completed", "aborted", "failed", "epic-FAILED"],
  "running-open" : ["running-closed", "aborted", "failed", "epic-FAILED"],

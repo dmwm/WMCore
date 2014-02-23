@@ -35,10 +35,13 @@ class StoreResultsWorkloadFactory(StdBase):
         (self.inputPrimaryDataset, self.inputProcessedDataset, self.inputDataTier) = \
                                    self.inputDataset[1:].split("/")
 
-        processedDatasetName = "%s-%s" % (self.acquisitionEra,
-                                          self.processingVersion)
-
         workload = self.createWorkload()
+        
+        # Set StoreResults Base LFN
+        workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase)
+        # Set StoreResults Merge parameters from request
+        workload.setMergeParameters(self.minMergeSize, self.maxMergeSize, self.maxMergeEvents)
+        
         workload.setDashboardActivity("StoreResults")
         self.reportWorkflowToDashboard(workload.getDashboardActivity())
 
@@ -50,12 +53,19 @@ class StoreResultsWorkloadFactory(StdBase):
 
         mergeTaskStageOut = mergeTaskCmssw.addStep("stageOut1")
         mergeTaskStageOut.setStepType("StageOut")
+        
         mergeTaskLogArch = mergeTaskCmssw.addStep("logArch1")
         mergeTaskLogArch.setStepType("LogArchive")
-        self.addLogCollectTask(mergeTask,
-                               taskName = "StoreResultsLogCollect")
+        
         mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
+        
+        mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
+        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion,
+                                        softwareEnvironment = "",
+                                        scramArch = self.scramArch)
+        mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
+
         mergeTask.addInputDataset(primary = self.inputPrimaryDataset,
                                   processed = self.inputProcessedDataset,
                                   tier = self.inputDataTier,
@@ -72,26 +82,25 @@ class StoreResultsWorkloadFactory(StdBase):
                                         max_merge_events = self.maxMergeEvents,
                                         siteWhitelist = self.siteWhitelist,
                                         siteBlacklist = self.siteBlacklist)
-
-        mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
-        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion,
-                                        softwareEnvironment = "",
-                                        scramArch = self.scramArch)
+        
         mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge")
-
-        mergedLFN = "%s/%s/%s/%s/%s" % (self.mergedLFNBase, self.acquisitionEra,
+        mergedLFN = "%s/%s/%s/%s/%s/%s" % (self.mergedLFNBase, self.acquisitionEra,
                                         self.inputPrimaryDataset, self.dataTier,
-                                        self.processingVersion)
-
+                                        self.processingString, self.processingVersion)
         mergeTaskCmsswHelper.addOutputModule("Merged",
                                              primaryDataset = self.inputPrimaryDataset,
-                                             processedDataset = processedDatasetName,
+                                             processedDataset = self.processingString,
                                              dataTier = self.dataTier,
-                                             lfnBase = mergedLFN)
+                                             lfnBase = mergedLFN,
+                                             mergedLFNBase = mergedLFN)
+        
+        self.addLogCollectTask(mergeTask,
+                               taskName = "StoreResultsLogCollect")
 
         # setting the parameters which need to be set for all the tasks
         # sets acquisitionEra, processingVersion, processingString
         workload.setTaskPropertiesFromWorkload()
+        
         return workload
 
     @staticmethod
@@ -110,6 +119,21 @@ class StoreResultsWorkloadFactory(StdBase):
                     "DataTier" : {"default" : "USER", "type" : str,
                                   "optional" : True, "validate" : None,
                                   "attr" : "dataTier", "null" : False},
+                    "UnmergedLFNBase" : {"default" : "/store/unmerged", "type" : str,
+                                         "optional" : True, "validate" : None,
+                                         "attr" : "unmergedLFNBase", "null" : False},
+                    "MergedLFNBase" : {"default" : "/store/results", "type" : str,
+                                       "optional" : True, "validate" : None,
+                                       "attr" : "mergedLFNBase", "null" : False},
+                    "MinMergeSize" : {"default" : 2 * 1024 * 1024 * 1024, "type" : int,
+                                      "optional" : True, "validate" : lambda x : x > 0,
+                                      "attr" : "minMergeSize", "null" : False},
+                    "MaxMergeSize" : {"default" : 4 * 1024 * 1024 * 1024, "type" : int,
+                                      "optional" : True, "validate" : lambda x : x > 0,
+                                      "attr" : "maxMergeSize", "null" : False},
+                    "MaxMergeEvents" : {"default" : 100000, "type" : int,
+                                        "optional" : True, "validate" : lambda x : x > 0,
+                                        "attr" : "maxMergeEvents", "null" : False},
                     "BlockBlacklist" : {"default" : [], "type" : makeList,
                                         "optional" : True, "validate" : lambda x: all([block(y) for y in x]),
                                         "attr" : "blockBlacklist", "null" : False},

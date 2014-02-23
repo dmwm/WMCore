@@ -74,21 +74,20 @@ class DataLocationMapper():
         dataByDbs = self.organiseByDbs(dataItems)
 
         for dbs, dataItems in dataByDbs.items():
-            # if global use phedex (not dls yet), else use dbs
+            # if global use phedex, else use dbs            
             if isGlobalDBS(dbs):
                 output, fullResync = self.locationsFromPhEDEx(dataItems, fullResync,
                                                               datasetSearch)
+                
             else:
                 output, fullResync = self.locationsFromDBS(dbs, dataItems,
                                                            datasetSearch)
-
             result[dbs] = output
         if fullResync:
             self.lastFullResync = now
 
         return result, fullResync
-
-
+    
     def locationsFromPhEDEx(self, dataItems, fullResync = False,
                             datasetSearch = False):
         """Get data location from phedex"""
@@ -127,16 +126,11 @@ class DataLocationMapper():
 
         return result, fullResync
 
-
     def locationsFromDBS(self, dbs, dataItems,
                          datasetSearch = False):
         """Get data location from dbs"""
         result = defaultdict(set)
         for item in dataItems:
-            # TODO: need to speed up dbs call somehow. it takes ~0.5 sec per call
-            # or use generator to allow partial result to be updated.
-            # However this is not the normal path and will be deprecated if it is
-            # replaced by dbs 3
             try:
                 if datasetSearch:
                     seNames = dbs.listDatasetLocation(item)
@@ -145,7 +139,7 @@ class DataLocationMapper():
                 for se in seNames:
                     result[item].update(self.sitedb.seToCMSName(se))
             except Exception, ex:
-                logging.error('Erro getting block location from dbs for %s: %s' % (item, str(ex)))
+                logging.error('Error getting block location from dbs for %s: %s' % (item, str(ex)))
 
         # convert the sets to lists
         for name, nodes in result.items():

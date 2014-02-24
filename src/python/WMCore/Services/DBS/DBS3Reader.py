@@ -509,7 +509,7 @@ class DBS3Reader:
         """
         self.checkBlockName(fileBlockName)
         try:
-            blockInfo = self.dbs.listBlocks(block_name=fileBlockName,detail=True)
+            blockInfo = self.dbs.listBlockOrigin(block_name = fileBlockName)
         except DbsException, ex:
             msg = "Error in DBSReader: dbsApi.listBlocks(block_name=%s)\n" % fileBlockName
             msg += "%s\n" % formatEx(ex)
@@ -659,7 +659,7 @@ class DBS3Reader:
         """
         self.checkDatasetPath(datasetName)
         try:
-            blocksInfo = self.dbs.listBlocks(dataset=datasetName,detail=True)
+            blocksInfo = self.dbs.listBlockOrigin(dataset = datasetName)
         except DbsException, ex:
             msg = "Error in DBSReader: dbsApi.listBlocks(dataset=%s)\n" % datasetName
             msg += "%s\n" % formatEx(ex)

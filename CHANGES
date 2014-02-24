@@ -1,3 +1,7 @@
+0.9.93 to 0.9.94:
+  - Merge pull request #4986 from ticoann/dbs3_location_call_change
+  - fix getting local and prod instance for Datamapper, also change to new api to get location effiently
+
 0.9.92 to 0.9.93:
   - Merge pull request #4983 from lucacopa/storeResults
   - Merge pull request #4982 from ticoann/add_merge_lfn_for_storeresult

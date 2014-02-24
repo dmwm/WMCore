@@ -1,3 +1,29 @@
+0.9.92 to 0.9.93:
+  - Merge pull request #4983 from lucacopa/storeResults
+  - Merge pull request #4982 from ticoann/add_merge_lfn_for_storeresult
+  - Specs changes for StoreResults, DBS3 origin block location for DataLocationMapper
+  - add store result merged lfn option in reqmgr webpage
+  - Merge pull request #4976 from ticoann/change_transition
+  - Merge pull request #4977 from alexanderrichards/timestamp_sorting
+  - Merge pull request #4978 from alexanderrichards/LheInputFiles
+  - Merge pull request #4954 from ticoann/workloadsummary_install_fix
+  - don't allow rejected when workflow is assigned
+  - 0.9.93pre1
+  - Merge pull request #4973 from ticoann/lexicon_refactor2
+  - refactor Lexicon to reduce the redundant regular expression definition Also add tight constraint for user data
+  - don't install workloadsummary unless it is test mode
+  - Merge pull request #4959 from ticoann/temp_test_lex
+  - Merge pull request #4968 from ticoann/phedexinjector_config_fix
+  - Merge pull request #4970 from hufnagel/remove-afs-alert
+  - skip AFS cache dir in disk space check
+  - fix dbs url used by PhEDEx
+  - Merge pull request #4960 from bbockelm/suppress_print
+  - Do not print to stdout when uploading files.
+  - fix stage in bug
+  - adding EventsPerLumi to the TaskChain Workload
+  - Added LheInputFiles option to the TaskChain Workload
+  - sorting workqueue elements by timestamp
+
 0.9.92 to 0.9.93pre1:
   - Merge pull request #4973 from ticoann/lexicon_refactor2
   - refactor Lexicon to reduce the redundant regular expression definition Also add tight constraint for user data

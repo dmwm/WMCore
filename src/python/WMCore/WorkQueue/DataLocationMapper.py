@@ -32,7 +32,15 @@ def isGlobalDBS(dbs):
     except Exception, ex:
         # determin whether this is dbs3
         dbs.dbs.serverinfo()
-        return True
+        
+        # hacky way to check whether it is global or local dbs.
+        # issue is created, when it is resolved. use serverinfo() for that.
+        # https://github.com/dmwm/DBS/issues/355
+        url = dbs.dbs.url
+        if url.find("/global") != -1:
+            return True
+        else:
+            return False
 
 def timeFloor(number, interval = UPDATE_INTERVAL_COARSENESS):
     """Get numerical floor of time to given interval"""

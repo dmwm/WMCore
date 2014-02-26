@@ -330,7 +330,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 continue
             else :
                 non_abort_sites = [x for x in possibleLocations if x not in self.abortSites]
-                if non_abort_sites: # if there is at least a non aborted site then run there, otherwise fail the job
+                if non_abort_sites: # if there is at least a non aborted/down site then run there, otherwise fail the job
                     possibleLocations = non_abort_sites
                 else:
                     newJob['name'] = loadedJob['name']
@@ -339,13 +339,15 @@ class JobSubmitterPoller(BaseWorkerThread):
 
             # try to remove draining sites if possible, this is needed to stop
             # jobs that could run anywhere blocking draining sites
-            non_draining_sites = [x for x in possibleLocations if x not in self.drainSites]
-            if non_draining_sites: # if >1 viable non-draining site remove draining ones
-                possibleLocations = non_draining_sites
-            else:
-                newJob['name'] = loadedJob['name']
-                badJobs[61104].append(newJob)
-                continue
+            # if the job type is Merge, LogCollect or Cleanup this is skipped
+            if newJob['type'] not in ('LogCollect','Merge','Cleanup','Harvesting'):
+                non_draining_sites = [x for x in possibleLocations if x not in self.drainSites]
+                if non_draining_sites: # if >1 viable non-draining site remove draining ones
+                    possibleLocations = non_draining_sites
+                else:
+                    newJob['name'] = loadedJob['name']
+                    badJobs[61104].append(newJob)
+                    continue
 
             batchDir = self.addJobsToPackage(loadedJob)
             self.cachedJobIDs.add(jobID)
@@ -474,9 +476,9 @@ class JobSubmitterPoller(BaseWorkerThread):
                 self.cmsNames[cmsName] = []
             if not siteName in self.cmsNames[cmsName]:
                 self.cmsNames[cmsName].append(siteName)
-            if state in ["Down", "Draining"]:
+            if state == "Draining":
                 newDrainSites.add(siteName)
-            if state == "Aborted":
+            if state in ["Down", "Aborted"]:
                 newAbortSites.add(siteName)
 
             for seName in rcThresholds[siteName]["se_names"]:

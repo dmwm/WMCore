@@ -41,7 +41,7 @@ WMJobErrorCodes = {50660 :
                    "No sites are available to submit the job because the location of its input(s)"
                    "do not pass the site whitelist/blacklist restrictions",
                    61102 :
-                   "The job can only run at a site that is currently in Aborted state",
+                   "The job can only run at a site that is currently in Down/Aborted state",
                    61103 :
                    "The JobSubmitter component could not load the job pickle",
                    61104 :

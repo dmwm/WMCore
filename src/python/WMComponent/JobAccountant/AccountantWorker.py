@@ -124,7 +124,7 @@ class AccountantWorker(WMConnectionBase):
         self.count = 0
         self.datasetAlgoID     = collections.deque(maxlen = 1000)
         self.datasetAlgoPaths  = collections.deque(maxlen = 1000)
-        self.dbsLocations      = collections.deque(maxlen = 1000)
+        self.dbsLocations      = set()
         self.workflowIDs       = collections.deque(maxlen = 1000)
         self.workflowPaths     = collections.deque(maxlen = 1000)
 
@@ -611,11 +611,11 @@ class AccountantWorker(WMConnectionBase):
             return
 
         dbsFileTuples = []
-        dbsLocations  = []
         dbsFileLoc    = []
         dbsCksumBinds = []
         runLumiBinds  = []
         selfChecksums = None
+        jobLocations  = set()
 
         for dbsFile in self.dbsFilesToCreate:
             # Append a tuple in the format specified by DBSBufferFiles.Add
@@ -676,7 +676,7 @@ class AccountantWorker(WMConnectionBase):
             lfn           = dbsFile['lfn']
             selfChecksums = dbsFile['checksums']
             jobLocation   = dbsFile.getLocations()[0]
-
+            jobLocations.add(jobLocation)
             dbsFileTuples.append((lfn, dbsFile['size'],
                                   dbsFile['events'], assocID,
                                   dbsFile['status'], workflowID))
@@ -693,12 +693,14 @@ class AccountantWorker(WMConnectionBase):
                                           'cktype' : entry})
 
         try:
+            
+            diffLocation = jobLocations.difference(self.dbsLocations)
 
-            if not jobLocation in self.dbsLocations:
+            for jobLocation in diffLocation:
                 self.dbsInsertLocation.execute(siteName = jobLocation,
                                                conn = self.getDBConn(),
                                                transaction = self.existingTransaction())
-                self.dbsLocations.append(jobLocation)
+                self.dbsLocations.add(jobLocation)
 
             self.dbsCreateFiles.execute(files = dbsFileTuples,
                                         conn = self.getDBConn(),

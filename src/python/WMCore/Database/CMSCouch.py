@@ -154,8 +154,7 @@ class Database(CouchDBRequests):
     TODO: implement COPY and MOVE calls.
     TODO: remove leading whitespace when committing a view
     """
-    def __init__(self, dbname = 'database',
-                  url = 'http://localhost:5984', size = 1000):
+    def __init__(self, dbname = 'database', url = 'http://localhost:5984', size = 1000, ckey = None, cert = None):
         """
         A set of queries against a CouchDB database
         """
@@ -163,7 +162,7 @@ class Database(CouchDBRequests):
 
         self.name = urllib.quote_plus(dbname)
 
-        CouchDBRequests.__init__(self, url)
+        CouchDBRequests.__init__(self, url = url, ckey = ckey, cert = cert)
         self._reset_queue()
 
         self._queue_size = size
@@ -795,19 +794,21 @@ class CouchServer(CouchDBRequests):
     More info http://wiki.apache.org/couchdb/HTTP_database_API
     """
 
-    def __init__(self, dburl='http://localhost:5984', usePYCurl = False, ckey = None, cert = None, capath = None):
+    def __init__(self, dburl = 'http://localhost:5984', usePYCurl = False, ckey = None, cert = None, capath = None):
         """
         Set up a connection to the CouchDB server
         """
         check_server_url(dburl)
-        CouchDBRequests.__init__(self, dburl, usePYCurl=usePYCurl, ckey=ckey, cert=cert, capath=capath)
+        CouchDBRequests.__init__(self, url = dburl, usePYCurl = usePYCurl, ckey = ckey, cert = cert, capath = capath)
         self.url = dburl
+        self.ckey = ckey
+        self.cert = cert
 
     def listDatabases(self):
         "List all the databases the server hosts"
         return self.get('/_all_dbs')
 
-    def createDatabase(self, dbname):
+    def createDatabase(self, dbname, size = 1000):
         """
         A database must be named with all lowercase characters (a-z),
         digits (0-9), or any of the _$()+-/ characters and must end with a slash
@@ -818,7 +819,7 @@ class CouchServer(CouchDBRequests):
         self.put("/%s" % urllib.quote_plus(dbname))
         # Pass the Database constructor the unquoted name - the constructor will
         # quote it for us.
-        return Database(dbname, self.url)
+        return Database(dbname = dbname, url = self.url, size = size, ckey = self.ckey, cert = self.cert)
 
     def deleteDatabase(self, dbname):
         "Delete a database from the server"
@@ -834,7 +835,7 @@ class CouchServer(CouchDBRequests):
         check_name(dbname)
         if create and dbname not in self.listDatabases():
             return self.createDatabase(dbname)
-        return Database(dbname, self.url, size)
+        return Database(dbname = dbname, url = self.url, size = size, ckey = self.ckey, cert = self.cert)
 
     def replicate(self, source, destination, continuous = False,
                   create_target = False, cancel = False, doc_ids=False,

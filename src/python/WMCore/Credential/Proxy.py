@@ -165,24 +165,14 @@ class Proxy(Credential):
 
     def getUserCertEnddate(self):
         """
-        Return the number of days until the expiration of the user cern in .globus/usercert.pem
+        Return the number of days until the expiration of the user cert in .globus/usercert.pem
         """
-        out, _, retcode = execute_command('grid-cert-info -enddate', self.logger, self.commandTimeout)
-        if retcode == 0:
-            possibleFormats = ['%b  %d  %H:%M:%S %Y %Z', '%b %d %H:%M:%S %Y %Z']
-            exptime = None
-            for frmt in possibleFormats:
-                try:
-                    exptime = datetime.strptime(out[:-1], frmt)
-                except ValueError:
-                    pass
-            if not exptime:
-                #This ValueError should not happen, but just in case I want a meaningful message
-                raise CredentialException('Cannot decode "grid-cert-info -enddate" date format. Please contact a developer')
-            daystoexp = (exptime - datetime.utcnow()).days
-        else:
-            raise CredentialException('Cannot get user certificate remaining time with "grid-cert-info -enddate"')
+        certLocation = '~/.globus/usercert.pem' if 'X509_USER_CERT' not in os.environ else os.environ['X509_USER_CERT']
+        timeleft = self.getTimeLeft(proxy = certLocation, checkVomsLife = False)
+        if self.retcode:
+            raise CredentialException('Cannot get user certificate remaining time with "voms-proxy-info"')
 
+        daystoexp = int (timeleft / (60 * 60 * 24))
         return daystoexp
 
     def getProxyDetails(self):
@@ -596,7 +586,7 @@ class Proxy(Credential):
         return
 
 ##################### Check timeleft
-    def getTimeLeft( self, proxy = None ):
+    def getTimeLeft( self, proxy = None, checkVomsLife = True ):
         """
         Get proxy timeleft. Validate the proxy timeleft
         with the voms life.
@@ -606,9 +596,9 @@ class Proxy(Credential):
             proxy = self.getProxyFilename()
 
         timeLeftCmd = 'voms-proxy-info -file '+proxy+' -timeleft'
-        timeLeftLocal, _, retcode = execute_command(self.setUI() + timeLeftCmd, self.logger, self.commandTimeout)
+        timeLeftLocal, _, self.retcode = execute_command(self.setUI() + timeLeftCmd, self.logger, self.commandTimeout)
 
-        if retcode != 0:
+        if self.retcode != 0:
             self.logger.error( "Error while checking proxy timeleft for %s" % proxy )
             return timeLeft
         try:
@@ -616,7 +606,7 @@ class Proxy(Credential):
         except ValueError:
             timeLeft = sum(int(x) * 60 ** i for i,x in enumerate(reversed(timeLeftLocal.strip().split(":"))))
 
-        if timeLeft > 0:
+        if checkVomsLife and timeLeft > 0:
             ACTimeLeftLocal = self.getVomsLife(proxy)
             if ACTimeLeftLocal > 0:
                 timeLeft = self.checkLifeTimes(timeLeft, ACTimeLeftLocal, proxy)

@@ -1,3 +1,11 @@
+0.9.94 to 0.9.94a:
+  - Merge pull request #4956 from AndresTanasijczuk/master
+  - Merge pull request #4985 from mmascher/master
+  - Merge pull request #4987 from ticoann/reqmgr2_index_page_fix
+  - temp fix for reqmgr index page
+  - Use voms-proxy-info instead of grid-cert-info. Fixes #4924
+  - Add cert and ckey arguments in Database constructor and pass them to CouchDBRequests. Add ckey and cert attributes in CouchServer and use them when connecting/creating a Database.
+
 0.9.93 to 0.9.94:
   - Merge pull request #4986 from ticoann/dbs3_location_call_change
   - fix getting local and prod instance for Datamapper, also change to new api to get location effiently

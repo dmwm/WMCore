@@ -988,7 +988,11 @@ class CouchMonitor(object):
                     doc = {}
                     doc["_id"]  = j['id']
                     doc["_rev"] = j['value']['rev']
-                    doc["_replication_state"] = j["doc"]["_replication_state"]
+                    if doc.has_key("_replication_state"):
+                        doc["_replication_state"] = j["doc"]["_replication_state"]
+                    else:
+                        logging.error("""replication failed from %s to %s 
+                                         couch server manually need to be restarted""" % (source, target))
                     filteredDocs.append(doc)
         return filteredDocs
     

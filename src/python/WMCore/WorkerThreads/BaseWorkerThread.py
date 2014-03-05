@@ -17,6 +17,8 @@ import traceback
 import sys
 
 from WMCore.Database.Transaction import Transaction
+from WMCore.Database.CMSCouch import CouchError
+from WMCore.Database.CouchUtils import CouchConnectionError
 from WMCore.WMFactory import WMFactory
 
 from WMCore.Alerts import API as alertAPI
@@ -154,21 +156,27 @@ class BaseWorkerThread:
                     if not self.notifyTerminate.isSet():
                         # Do some work!
                         try:
-                            # heartbeat needed to be called after self.initInThread
-                            # to get the right name
-                            if hasattr(self.component.config, "Agent"):
-                                if getattr(self.component.config.Agent, "useHeartbeat", True):
-                                    self.heartbeatAPI.updateWorkerHeartbeat(
-                                        myThread.getName(), "Running")
-                            self.algorithm(parameters)
-
-                            # Catch if someone forgets to commit/rollback
-                            if myThread.transaction.transaction is not None:
-                                msg = """ Thread %s:  Transaction reached
-                                          end of poll loop.""" % myThread.getName()
-                                msg += " Raise a bug against me. Rollback."
+                            try:
+                                # heartbeat needed to be called after self.initInThread
+                                # to get the right name
+                                if hasattr(self.component.config, "Agent"):
+                                    if getattr(self.component.config.Agent, "useHeartbeat", True):
+                                        self.heartbeatAPI.updateWorkerHeartbeat(
+                                            myThread.getName(), "Running")
+                            except (CouchError, CouchConnectionError), ex:
+                                msg  = " Failed to update heartbeat for worker %s" % str(self)
+                                msg += ":\n %s" % str(ex)
+                                msg += "\n Skipping worker algorithm!"
                                 logging.error(msg)
-                                myThread.transaction.rollback()
+                            else:
+                                self.algorithm(parameters)
+                                # Catch if someone forgets to commit/rollback
+                                if myThread.transaction.transaction is not None:
+                                    msg = """ Thread %s:  Transaction reached
+                                              end of poll loop.""" % myThread.getName()
+                                    msg += " Raise a bug against me. Rollback."
+                                    logging.error(msg)
+                                    myThread.transaction.rollback()
                         except Exception, ex:
                             if myThread.transaction.transaction is not None:
                                 myThread.transaction.rollback()
@@ -177,14 +185,12 @@ class BaseWorkerThread:
                             stackTrace = traceback.format_tb(sys.exc_info()[2], None)
                             for stackFrame in stackTrace:
                                 msg += stackFrame
-
                             logging.error(msg)
                             # force entire component to terminate
                             try:
                                 self.component.prepareToStop()
                             except Exception, ex:
                                 logging.error("Failed to halt component after worker crash: %s" % str(ex))
-
                             if hasattr(self.component.config, "Agent"):
                                 if getattr(self.component.config.Agent, "useHeartbeat", True):
                                     self.heartbeatAPI.updateWorkerError(

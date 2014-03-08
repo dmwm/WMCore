@@ -42,6 +42,8 @@ userProcDSParts = {
     'psethash': '([a-f0-9]){32}'
 }
 
+STORE_RESULTS_LFN = '/store/results/%(physics_group)s/%(era)s/%(primDS)s/%(tier)s/%(secondary)s' % lfnParts
+
 def DBSUser(candidate):
     """
     create_by and last_modified_by in DBS are in several formats. The major ones are: 
@@ -252,8 +254,11 @@ def lfn(candidate):
 
     storeMcLFN = '/store/mc/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)(/([a-zA-Z0-9\-_]+))*/([a-zA-Z0-9\-_]+).root'
 
-    storeResultsLFN = '/store/results/%(physics_group)s/%(primDS)s/%(secondary)s/%(primDS)s/%(tier)s/%(secondary)s/%(counter)s/%(root)s' % lfnParts
+    storeResults2LFN = '/store/results/%(physics_group)s/%(primDS)s/%(secondary)s/%(primDS)s/%(tier)s/%(secondary)s/%(counter)s/%(root)s' % lfnParts
 
+    storeResultRootPart = '%(counter)s/%(root)s' % lfnParts
+    storeResultsLFN = "%s/%s" % (STORE_RESULTS_LFN, storeResultRootPart)
+    
     try:
         return check(regexp1, candidate)
     except AssertionError:
@@ -287,6 +292,11 @@ def lfn(candidate):
     try:
         return check(storeMcLFN, candidate)
     except AssertionError:
+        pass
+    
+    try:
+        return check(storeResults2LFN, candidate)
+    except AssertionError:
         return check(storeResultsLFN, candidate)
 
 def lfnBase(candidate):
@@ -313,7 +323,12 @@ def lfnBase(candidate):
     try:
         return check(regexp3, candidate)
     except AssertionError:
+        pass
+    
+    try:
         return check(tier0LFN, candidate)
+    except AssertionError:
+        return check(STORE_RESULTS_LFN, candidate)
 
 def userLfn(candidate):
     """

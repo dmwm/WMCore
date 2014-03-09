@@ -73,6 +73,8 @@ class WorkQueueElement(dict):
         self.setdefault('TimestampFoundNewData', 0)
         # Should we check the location of the inputs, or trust the initial values?
         self.setdefault('NoLocationUpdate', False)
+        # set the creation time for wq element, need for sorting
+        self.setdefault('CreationTime', 0)
         # set to true when updated from a WorkQueueElementResult
         self.modified = False
 

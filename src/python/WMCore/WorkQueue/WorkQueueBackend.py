@@ -376,7 +376,7 @@ class WorkQueueBackend(object):
                 siteJobCounts[site][prio] = siteJobCounts[site].setdefault(prio, 0) + element['Jobs']
 
         # sort elements to get them in timestamp order
-        elements = sorted(elements, key=lambda element: element['timestamp'])
+        elements = sorted(elements, key=lambda element: element['CreationTime'])
         return elements, thresholds, siteJobCounts
 
     def getActiveData(self):

@@ -185,10 +185,14 @@ class Block(StartPolicyInterface):
             else:
                 self.data[block['block']] = sitesFromStorageEelements(dbs.listFileBlockLocation(block['block']))
 
+            # TODO: need to decide what to do when location is no find.
+            # There could be case for network problem (no connection to dbs, phedex)
+            # or DBS se is not recorded (This will be retried anyway by location mapper)         
             if not self.data[block['block']]:
-                # No sites for this block, move it to rejected
-                self.rejectedWork.append(blockName)
-                continue
+                self.data[block['block']] = ["NoInitialSite"]
+            #    # No sites for this block, move it to rejected
+            #    self.rejectedWork.append(blockName)
+            #    continue
 
             validBlocks.append(block)
         return validBlocks

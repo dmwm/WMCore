@@ -86,7 +86,9 @@ class Create(DBCreator):
                block_close_max_wait_time    INTEGER UNSIGNED,
                block_close_max_files        INTEGER UNSIGNED,
                block_close_max_events       INTEGER UNSIGNED,
-               block_close_max_size         BIGINT UNSIGNED ) ENGINE = InnoDB"""
+               block_close_max_size         BIGINT UNSIGNED,
+               completed                    INTEGER DEFAULT 0
+               ) ENGINE = InnoDB"""
 
 
         self.constraints["01_pk_dbsbuffer_workflow"] = \

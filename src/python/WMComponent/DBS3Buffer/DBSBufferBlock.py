@@ -33,7 +33,7 @@ class DBSBlock:
     Class for holding all the necessary equipment for a DBSBlock
     """
 
-    def __init__(self, name, location, das):
+    def __init__(self, name, location, das, workflow):
         """
         Just the necessary objects
 
@@ -62,7 +62,8 @@ class DBSBlock:
         self.name      = name
         self.location  = location
         self.das       = das
-
+        self.workflow = workflow
+        
         self.data['block']['block_name']       = name
         self.data['block']['origin_site_name'] = location
         self.data['block']['open_for_writing'] = 1

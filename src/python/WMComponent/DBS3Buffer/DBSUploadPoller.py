@@ -321,6 +321,7 @@ class DBSUploadPoller(BaseWorkerThread):
             if not self.dbs3UploadOnly:
                 self.loadFiles()
                 self.checkTimeout()
+                self.checkCompleted()
 
             self.inputBlocks() 
             self.retrieveBlocks()
@@ -365,8 +366,9 @@ class DBSUploadPoller(BaseWorkerThread):
         for blockInfo in loadedBlocks:
             das  = blockInfo['DatasetAlgo']
             loc  = blockInfo['origin_site_name']
+            workflow =  blockInfo['workflow']
             block = DBSBlock(name = blockInfo['block_name'],
-                             location = loc, das = das)
+                             location = loc, das = das, workflow = workflow)
             block.FillFromDBSBuffer(blockInfo)
             blockname = block.getName()
 
@@ -486,6 +488,19 @@ class DBSUploadPoller(BaseWorkerThread):
             if block.status == "Open" and block.getTime() > block.getMaxBlockTime():
                 block.setPendingAndCloseBlock()
                 self.blockCache[block.getName()] = block
+    
+    def checkCompleted(self):
+        """
+        _checkTimeout_
+
+        Loop all Open blocks and mark them as Pending if they have timed out.
+        """
+        completedWorkflows = self.dbsUtil.getCompletedWorkflows()
+        for block in self.blockCache.values():
+            if block.status == "Open":
+                if block.workflow in completedWorkflows:
+                    block.setPendingAndCloseBlock()
+                    self.blockCache[block.getName()] = block
 
     def addNewBlock(self, block):
         """
@@ -525,8 +540,6 @@ class DBSUploadPoller(BaseWorkerThread):
         if block.status != 'Open':
             # Then somebody has dumped this already
             return False
-        if block.getTime() > block.getMaxBlockTime() and doTime:
-            return False
         if block.getSize() + newFile['size'] > block.getMaxBlockSize():
             return False
         if block.getNumEvents() + newFile['events'] > block.getMaxBlockNumEvents():
@@ -534,6 +547,8 @@ class DBSUploadPoller(BaseWorkerThread):
         if block.getNFiles() >= block.getMaxBlockFiles():
             # Then we have to dump it because this file
             # will put it over the limit.
+            return False
+        if block.getTime() > block.getMaxBlockTime() and doTime:
             return False
 
         return True
@@ -558,7 +573,8 @@ class DBSUploadPoller(BaseWorkerThread):
 
         # A suitable open block does not exist.  Create a new one.
         blockname = "%s#%s" % (newFile["datasetPath"], makeUUID())
-        newBlock = DBSBlock(name = blockname, location = location, das = das)
+        newBlock = DBSBlock(name = blockname, location = location, 
+                            das = das, workflow = newFile["workflow"])
         self.addNewBlock(block = newBlock)
         return newBlock
 

@@ -1,3 +1,38 @@
+0.9.94 to 0.9.94c:
+  - Merge pull request #4979 from ticoann/set_close_block_with_complete
+  - Merge pull request #5017 from ticoann/hack_couch_error_acdc
+  - Merge pull request #5002 from ticoann/phexed_inject_open_block
+  - Merge pull request #5001 from ticoann/fix_analytics_data_collector_bug
+  - Merge pull request #4995 from hufnagel/t0temp-unmerged
+  - hack when couch error occurs.
+  - 0.9.94b
+  - Merge pull request #5016 from ticoann/fix_store_result_lfn
+  - add store result lfn test
+  - Lexicon validation missing for storeResults mergedLFN
+  - Merge pull request #5015 from ticoann/fix_workqueue_element_sorting
+  - Merge pull request #5009 from ticoann/fix_lhe_event_lumi
+  - Merge pull request #5013 from ticoann/fix_location_none_case
+  - fix workqueue creation time setting
+  - let the location mapper retry when data location is not set first time
+  - fix lhe input file and event per lumi option
+  - inject PhEDEx blocks when block is open
+  - Merge pull request #4999 from lucacopa/component_crash
+  - This is a temporary fix to #4793
+  - fix AnalyticsDataCollector reporting
+  - Merge pull request #4990 from lucacopa/jobs_to_drain_sites
+  - Merge pull request #4988 from ticoann/fix_dbs_buffer_se
+  - This fixes #4898
+  - allow unmerged in LFN for Tier0 files
+  - 0.9.94a
+  - Merge pull request #4956 from AndresTanasijczuk/master
+  - Merge pull request #4985 from mmascher/master
+  - Merge pull request #4987 from ticoann/reqmgr2_index_page_fix
+  - fix dbsbuffer not associating file to se
+  - temp fix for reqmgr index page
+  - close block when workflow is completed
+  - Use voms-proxy-info instead of grid-cert-info. Fixes #4924
+  - Add cert and ckey arguments in Database constructor and pass them to CouchDBRequests. Add ckey and cert attributes in CouchServer and use them when connecting/creating a Database.
+
 0.9.94 to 0.9.94b:
   - Merge pull request #5016 from ticoann/fix_store_result_lfn
   - add store result lfn test

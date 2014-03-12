@@ -32,23 +32,17 @@ class StoreResultsWorkloadFactory(StdBase):
         """
         StdBase.__call__(self, workloadName, arguments)
 
-        (self.inputPrimaryDataset, self.inputProcessedDataset, self.inputDataTier) = \
-                                   self.inputDataset[1:].split("/")
+        (self.inputPrimaryDataset, self.inputProcessedDataset, self.inputDataTier) = self.inputDataset[1:].split("/")
 
         workload = self.createWorkload()
         
-        # Set StoreResults Base LFN
         workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase)
-        # Set StoreResults Merge parameters from request
-        workload.setMergeParameters(self.minMergeSize, self.maxMergeSize, self.maxMergeEvents)
-        
         workload.setDashboardActivity("StoreResults")
         self.reportWorkflowToDashboard(workload.getDashboardActivity())
 
         mergeTask = workload.newTask("StoreResults")
         self.addDashboardMonitoring(mergeTask)
         mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
-
         mergeTaskCmssw.setStepType("CMSSW")
 
         mergeTaskStageOut = mergeTaskCmssw.addStep("stageOut1")
@@ -57,15 +51,12 @@ class StoreResultsWorkloadFactory(StdBase):
         mergeTaskLogArch = mergeTaskCmssw.addStep("logArch1")
         mergeTaskLogArch.setStepType("LogArchive")
         
+        self.addLogCollectTask(mergeTask,
+                               taskName = "StoreResultsLogCollect")
+        
         mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
         
-        mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
-        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion,
-                                        softwareEnvironment = "",
-                                        scramArch = self.scramArch)
-        mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
-
         mergeTask.addInputDataset(primary = self.inputPrimaryDataset,
                                   processed = self.inputProcessedDataset,
                                   tier = self.inputDataTier,
@@ -83,19 +74,16 @@ class StoreResultsWorkloadFactory(StdBase):
                                         siteWhitelist = self.siteWhitelist,
                                         siteBlacklist = self.siteBlacklist)
         
-        mergeTaskCmsswHelper.setDataProcessingConfig("cosmics", "merge")
-        mergedLFN = "%s/%s/%s/%s/%s/%s" % (self.mergedLFNBase, self.acquisitionEra,
-                                        self.inputPrimaryDataset, self.dataTier,
-                                        self.processingString, self.processingVersion)
-        mergeTaskCmsswHelper.addOutputModule("Merged",
-                                             primaryDataset = self.inputPrimaryDataset,
-                                             processedDataset = self.processingString,
-                                             dataTier = self.dataTier,
-                                             lfnBase = mergedLFN,
-                                             mergedLFNBase = mergedLFN)
+        mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
+        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
+                                        scramArch = self.scramArch)
+        mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
+        mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge")
         
-        self.addLogCollectTask(mergeTask,
-                               taskName = "StoreResultsLogCollect")
+        self.addOutputModule(mergeTask, "Merged",
+                             primaryDataset = self.inputPrimaryDataset,
+                             dataTier = self.dataTier,
+                             filterName = None)
 
         # setting the parameters which need to be set for all the tasks
         # sets acquisitionEra, processingVersion, processingString

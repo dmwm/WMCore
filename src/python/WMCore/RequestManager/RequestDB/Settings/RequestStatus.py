@@ -46,7 +46,7 @@ NextStatus = {
  "running" : ["completed", "aborted", "failed", "epic-FAILED"],
  "running-open" : ["running-closed", "aborted", "failed", "epic-FAILED"],
  "running-closed" : ["completed", "aborted", "failed", "epic-FAILED"],
- "failed" : ["failed", "testing-approved", "assigned"],
+ "failed" : ["failed", "testing-approved", "assigned", "rejected"],
  "epic-FAILED" : ["epic-FAILED"],
  "completed" : ["completed", "closed-out", "rejected"],
  "closed-out" : ["announced"],

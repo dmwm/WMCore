@@ -20,7 +20,7 @@ class GetOpenBlocks(DBFormatter):
                        dbsbuffer_file_parent.parent = dbsbuffer_file_parent_detail.id
                     LEFT OUTER JOIN dbsbuffer_block dbsbuffer_block_parent ON
                       dbsbuffer_file_parent_detail.block_id = dbsbuffer_block_parent.id
-                    WHERE dbsbuffer_block_parent.status3 = 'Pending'
+                    WHERE dbsbuffer_block_parent.status = 'Open' OR dbsbuffer_block_parent.status = 'Pending'
                     GROUP BY dbsbuffer_block.id) pending_parents ON
                    dbsbuffer_block.id = pending_parents.block_id
              WHERE dbsbuffer_block.status = 'Open' OR dbsbuffer_block.status = 'Pending' AND

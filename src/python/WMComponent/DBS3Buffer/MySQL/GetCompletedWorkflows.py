@@ -18,5 +18,7 @@ class GetCompletedWorkflows(DBFormatter):
         """
         result = self.dbi.processData(self.sql, conn = conn,
                                           transaction = transaction)
-
-        return self.formatDict(result).values()
+        workflowList = []
+        for row in self.format(result):
+            workflowList.append(row[0])
+        return workflowList

@@ -964,7 +964,11 @@ class CouchForbidden(CouchError):
 class CouchMonitor(object):
     
     def __init__(self, couchURL):
-        self.couchServer = CouchServer(couchURL)
+        if isinstance(couchURL, CouchServer):
+            self.couchServer = couchURL
+        else:
+            self.couchServer = CouchServer(couchURL)
+            
         self.replicatorDB = self.couchServer.connectDatabase('_replicator', False)
         # this is set {source: {taget: update_sequence}}
         self.previousUpdateSequence  = {}
@@ -1003,23 +1007,31 @@ class CouchMonitor(object):
     def setPreviousUpdateSequence(self, source, target, updateSeq):
         self.previousUpdateSequence[source][target] = updateSeq
         
-    def recoverReplicationErrors(self, source, target):
+    def recoverReplicationErrors(self, source, target, filter = False, 
+                                 query_params = False,
+                                 checkUpdateSeq = True,
+                                 continuous = True):
         previousUpdateNum = self.getPreviousUpdateSequence(source, target)
         
-        couchInfo = self.checkCouchServerStatus(source, target, previousUpdateNum)
+        couchInfo = self.checkCouchServerStatus(source, target, previousUpdateNum, 
+                                                checkUpdateSeq)
         if (couchInfo['status'] == 'error'):
             logging.info("Deleting the replicator documents ...")
             self.deleteReplicatorDocs(source, target)
             logging.info("Setting the replication to central monitor ...")
-            self.couchServer.replicate(source, target, continuous = True,
-                                   filter = 'WMStats/repfilter', useReplicator = True)
-            couchInfo = self.checkCouchServerStatus(source, target, previousUpdateNum)
+            self.couchServer.replicate(source, target, filter = filter, 
+                                           query_params = query_params,
+                                           continuous = continuous,
+                                           useReplicator = True)
+            
+            couchInfo = self.checkCouchServerStatus(source, target, previousUpdateNum,
+                                                    checkUpdateSeq)
         #if (couchInfo['status'] != 'down'):
         #    restart couch server
         return couchInfo
 
     
-    def checkCouchServerStatus(self, source, target, previousUpdateNum):
+    def checkCouchServerStatus(self, source, target, previousUpdateNum, checkUpdateSeq):
         try:
             dbInfo =  self.couchServer.get("/%s" % source)
             activeTasks = self.couchServer.get("/_active_tasks")
@@ -1030,7 +1042,8 @@ class CouchMonitor(object):
                 if activeStatus["type"] == "Replication":
                     if passwdStrippedURL in activeStatus["task"]:
                         replicationFlag = self.checkReplicationStatus(activeStatus, 
-                                                    dbInfo, source, target, previousUpdateNum)
+                                                    dbInfo, source, target, 
+                                                    previousUpdateNum, checkUpdateSeq)
                         break
             
             if replicationFlag:
@@ -1043,7 +1056,8 @@ class CouchMonitor(object):
             logging.debug(msg)
             return {'status':'down', 'error_message': str(ex)}
     
-    def checkReplicationStatus(self, activeStatus, dbInfo, source, target, previousUpdateNum):
+    def checkReplicationStatus(self, activeStatus, dbInfo, source, target, 
+                               previousUpdateNum, checkUpdateSeq):
         """
         adhog way to check the replication
         """
@@ -1055,7 +1069,11 @@ class CouchMonitor(object):
         elif "update" in activeStatus["status"]:
             updateNum = int(activeStatus["status"].split('#')[-1])
             self.setPreviousUpdateSequence(source, target, updateNum)
-            if updateNum == dbInfo["update_seq"] or updateNum > previousUpdateNum:
+            if (not checkUpdateSeq) and  updateNum <= previousUpdateNum:
+                logging.warning("Need to check replication from %s to %s" % (source, target))
+                return True
+            elif updateNum == dbInfo["update_seq"] or updateNum > previousUpdateNum:
                 logging.info("update upto date: ok")
                 return True
-        return False
+            else:
+                return False

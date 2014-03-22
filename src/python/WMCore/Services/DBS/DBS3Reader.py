@@ -14,6 +14,8 @@ from DBSAPI.dbsApiException import *
 from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx
 from WMCore.Services.EmulatorSwitch import emulatorHook
 
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+
 def remapDBS3Keys(data, stringify = False, **others):
     """Fields have been renamed between DBS2 and 3, take fields from DBS3
     and map to DBS2 values
@@ -52,6 +54,9 @@ class DBS3Reader:
             msg = "Error in DBSReader with DbsApi\n"
             msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
+        
+        # connection to PhEDEx (Use default endpoint url)
+        self.phedex = PhEDEx(responseType = "json") 
 
     def listPrimaryDatasets(self, match = '*'):
         """
@@ -500,7 +505,7 @@ class DBS3Reader:
         return [x['logical_file_name'] for x in files]
 
 
-    def listFileBlockLocation(self, fileBlockName):
+    def listFileBlockLocation(self, fileBlockName, dbsOnly = False):
         """
         _listFileBlockLocation_
 
@@ -508,17 +513,37 @@ class DBS3Reader:
 
         """
         self.checkBlockName(fileBlockName)
-        try:
-            blockInfo = self.dbs.listBlockOrigin(block_name = fileBlockName)
-        except DbsException, ex:
-            msg = "Error in DBSReader: dbsApi.listBlocks(block_name=%s)\n" % fileBlockName
-            msg += "%s\n" % formatEx(ex)
-            raise DBSReaderError(msg)
         
-        # TODO: How to look for different locations than origin site name
-        location = set()
-        location.update([blockInfo[0]['origin_site_name']])
+        if not dbsOnly:
+            try:
+                blockInfo = self.phedex.getReplicaSEForBlocks(block=[blockname],complete='y')
+            except Exception, ex:
+                msg = "Error while getting block location from PhEDEx for block_name=%s)\n" % fileBlockName
+                msg += "%s\n" % formatEx(ex)
+                raise DBSReaderError(msg)
+            
+            if not blockInfo: # if we couldnt get data location from PhEDEx, try to look into origin site location from dbs
+                dbsOnly = True
+            else:
+                location = set()
+                location.update(blockInfo[fileBlockName])
         
+        if dbsOnly:
+            try:
+                blockInfo = self.dbs.listBlockOrigin(block_name = fileBlockName)
+            except DbsException, ex:
+                msg = "Error in DBSReader: dbsApi.listBlocks(block_name=%s)\n" % fileBlockName
+                msg += "%s\n" % formatEx(ex)
+                raise DBSReaderError(msg)
+            
+            if not blockInfo: # no data location from dbs
+                return list()
+            
+            location = set()
+            location.update([blockInfo[0]['origin_site_name']])
+            
+            location.difference_update(['UNKNOWN']) # remove entry when SE name is 'UNKNOWN'
+             
         return list(location)
 
     def getFileBlock(self, fileBlockName):
@@ -650,7 +675,7 @@ class DBS3Reader:
         pathname = blocks[-1].get('dataset', None)
         return pathname
 
-    def listDatasetLocation(self, datasetName):
+    def listDatasetLocation(self, datasetName, dbsOnly = False):
         """
         _listDatasetLocation_
 
@@ -658,18 +683,39 @@ class DBS3Reader:
         dataset.
         """
         self.checkDatasetPath(datasetName)
-        try:
-            blocksInfo = self.dbs.listBlockOrigin(dataset = datasetName)
-        except DbsException, ex:
-            msg = "Error in DBSReader: dbsApi.listBlocks(dataset=%s)\n" % datasetName
-            msg += "%s\n" % formatEx(ex)
-            raise DBSReaderError(msg)
         
-        # TODO: How to look for different locations than origin site name        
-        locations = set()
-        for blockInfo in blocksInfo:
-            locations.update([blockInfo['origin_site_name']])
-
+        if not dbsOnly:
+            try:
+                blocksInfo = self.phedex.getReplicaSEForBlocks(dataset=[datasetName],complete='y')
+            except Exception, ex:
+                msg = "Error while getting block location from PhEDEx for dataset=%s)\n" % datasetName
+                msg += "%s\n" % formatEx(ex)
+                raise DBSReaderError(msg)
+            
+            if not blocksInfo: # if we couldnt get data location from PhEDEx, try to look into origin site location from dbs
+                dbsOnly = True
+            else:
+                locations = set(blocksInfo.values()[0])
+                for blockSites in blocksInfo.values():
+                    locations.intersection_update(blockSites)
+        
+        if dbsOnly:
+            try:
+                blocksInfo = self.dbs.listBlockOrigin(dataset = datasetName)
+            except DbsException, ex:
+                msg = "Error in DBSReader: dbsApi.listBlocks(dataset=%s)\n" % datasetName
+                msg += "%s\n" % formatEx(ex)
+                raise DBSReaderError(msg)
+            
+            if not blocksInfo: # no data location from dbs
+                return list()
+            
+            locations = set()
+            for blockInfo in blocksInfo:
+                locations.update([blockInfo['origin_site_name']])
+            
+            locations.difference_update(['UNKNOWN']) # remove entry when SE name is 'UNKNOWN'
+        
         return list(locations)
 
     def checkDatasetPath(self, pathName):

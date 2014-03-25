@@ -466,7 +466,7 @@ class SetupCMSSWPset(ScriptInterface):
         prodsAndFilters.update(self.process.producers)
         prodsAndFilters.update(self.process.filters)
         for key, value in prodsAndFilters.items():
-            if value.type_() == "MixingModule":
+            if value.type_() in [ "MixingModule", "DataMixingModule"] :
                 mixModules.append(value)
             if value.type_() == "DataMixingModule":
                 dataMixModules.append(value)

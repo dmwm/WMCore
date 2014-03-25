@@ -131,9 +131,7 @@ class CMSSW(Executor):
         # set any global environment variables
         #
         try:
-            os.environ['FRONTIER_ID'] = 'wmagent_%i_%s_%s_%s' % (self.job['id'], self.task.name(),
-                                                                 self.job['retry_count'],
-                                                                 cmsswVersion)
+            os.environ['FRONTIER_ID'] = 'wmagent_%s' % (self.report.data.workload)
         except Exception, ex:
             logging.error('Have critical error in setting FRONTIER_ID: %s' % str(ex))
             logging.error('Continuing, as this is not a critical function yet.')

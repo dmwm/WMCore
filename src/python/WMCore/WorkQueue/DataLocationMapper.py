@@ -141,9 +141,9 @@ class DataLocationMapper():
         for item in dataItems:
             try:
                 if datasetSearch:
-                    seNames = dbs.listDatasetLocation(item)
+                    seNames = dbs.listDatasetLocation(item, dbsOnly = True)
                 else:
-                    seNames = dbs.listFileBlockLocation(item)
+                    seNames = dbs.listFileBlockLocation(item, dbsOnly = True)
                 for se in seNames:
                     result[item].update(self.sitedb.seToCMSName(se))
             except Exception, ex:

@@ -333,10 +333,6 @@ if __name__ == "__main__":
             setupCronCompaction(wmagentConfig.Analytics.couch_user_monitoring_instance, wmagentConfig.Analytics.user_monitoring_db)
             setupCronCompaction(agent_instance, agent_database)
 
-    if hasattr(wmagentConfig, "ACDC") and hasattr(wmagentConfig, "ACDCLocal") and wmagentConfig.ACDCLocal:
-        installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "ACDC")
-        installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")
-
     if hasattr(wmagentConfig, "reqmgr"):
         installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName, "ReqMgr")
         # wmstatDBName is set to use specfic client {'wmstats': 'tier1', 'tier0_wmstats': 'tier0', 'analysis_wmstats': 'analysis' }
@@ -348,11 +344,20 @@ if __name__ == "__main__":
         # set up  workload summary for test
         if hasattr(wmagentConfig, "WorkloadSummary"):
             installCouchApp(wmagentConfig.WorkloadSummary.couchurl, wmagentConfig.WorkloadSummary.database, "WorkloadSummary")
+            
+        if hasattr(wmagentConfig, "ACDC"):
+            installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "ACDC")
+            installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")
+        
     else:
         # in case reqmgr is not set but still worklaad Summary need to be initialized (Tier0 test mode case)
         # hacky way to check - assuming production url always use https protocal
         if hasattr(wmagentConfig, "WorkloadSummary") and \
            urlsplit(wmagentConfig.WorkloadSummary.couchurl).scheme == 'http':
             installCouchApp(wmagentConfig.WorkloadSummary.couchurl, wmagentConfig.WorkloadSummary.database, "WorkloadSummary")
+        if hasattr(wmagentConfig, "ACDC") and \
+           urlsplit(wmagentConfig.WorkloadSummary.couchurl).scheme == 'http':
+            installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "ACDC")
+            installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")
     
     sys.exit(0)

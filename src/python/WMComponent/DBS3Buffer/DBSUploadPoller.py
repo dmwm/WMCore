@@ -484,10 +484,11 @@ class DBSUploadPoller(BaseWorkerThread):
 
         Loop all Open blocks and mark them as Pending if they have timed out.
         """
-        for block in self.blockCache.values():
-            if block.status == "Open" and block.getTime() > block.getMaxBlockTime():
-                block.setPendingAndCloseBlock()
-                self.blockCache[block.getName()] = block
+        if self.blockCache:
+            for block in self.blockCache.values():
+                if block.status == "Open" and block.getTime() > block.getMaxBlockTime():
+                    block.setPendingAndCloseBlock()
+                    self.blockCache[block.getName()] = block
     
     def checkCompleted(self):
         """
@@ -496,11 +497,12 @@ class DBSUploadPoller(BaseWorkerThread):
         Loop all Open blocks and mark them as Pending if they have timed out.
         """
         completedWorkflows = self.dbsUtil.getCompletedWorkflows()
-        for block in self.blockCache.values():
-            if block.status == "Open":
-                if block.workflow in completedWorkflows:
-                    block.setPendingAndCloseBlock()
-                    self.blockCache[block.getName()] = block
+        if self.blockCache:
+            for block in self.blockCache.values():
+                if block.status == "Open":
+                    if block.workflow in completedWorkflows:
+                        block.setPendingAndCloseBlock()
+                        self.blockCache[block.getName()] = block
 
     def addNewBlock(self, block):
         """
@@ -601,24 +603,25 @@ class DBSUploadPoller(BaseWorkerThread):
         createInDBS = []
         createInDBSBuffer = []
         updateInDBSBuffer = []
-        for block in self.blockCache.values():
-            if block.getName() in self.queuedBlocks:
-                # Block is already being dealt with by another process.  We'll
-                # ignore it here.
-                continue
-            if block.status == 'Pending':
-                # All pending blocks need to be injected into DBS.
-                createInDBS.append(block)
+        if self.blockCache:
+            for block in self.blockCache.values():
+                if block.getName() in self.queuedBlocks:
+                    # Block is already being dealt with by another process.  We'll
+                    # ignore it here.
+                    continue
+                if block.status == 'Pending':
+                    # All pending blocks need to be injected into DBS.
+                    createInDBS.append(block)
 
-                # If this is a new block it needs to be added to DBSBuffer
-                # otherwise it just needs to be updated in DBSBuffer.
-                if not block.inBuff:
+                    # If this is a new block it needs to be added to DBSBuffer
+                    # otherwise it just needs to be updated in DBSBuffer.
+                    if not block.inBuff:
+                        createInDBSBuffer.append(block)
+                    else:
+                        updateInDBSBuffer.append(block)
+                if block.status == 'Open' and not block.inBuff:
+                    # New block that needs to be added to DBSBuffer.
                     createInDBSBuffer.append(block)
-                else:
-                    updateInDBSBuffer.append(block)
-            if block.status == 'Open' and not block.inBuff:
-                # New block that needs to be added to DBSBuffer.
-                createInDBSBuffer.append(block)
 
         # Build the pool if it was closed
         if len(self.pool) == 0:

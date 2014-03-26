@@ -460,6 +460,7 @@ class TaskChainWorkloadFactory(StdBase):
                 taskConf["SplittingArguments"]["max_events_per_lumi"] = 20000
             else:
                 taskConf["SplittingArguments"]["events_per_lumi"] = taskConf["EventsPerLumi"]
+            taskConf["SplittingArguments"]["lheInputFiles"] = taskConf["LheInputFiles"]
         elif taskConf["SplittingAlgo"] == "LumiBased":
             taskConf["SplittingArguments"]["lumis_per_job"] = taskConf["LumisPerJob"]
         elif taskConf["SplittingAlgo"] == "FileBased":

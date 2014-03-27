@@ -558,7 +558,7 @@ class Proxy(Credential):
 
         msg, _, retcode = execute_command(self.setUI() + 'voms-proxy-info -type -file %s' % proxy, self.logger, self.commandTimeout)
         if retcode > 0:
-            self.logger.error('Cannot get proxy type' % msg )
+            self.logger.error('Cannot get proxy type %s' % msg )
             return
         isRFC = msg == 'RFC compliant proxy\n'
         ## set environ and add voms extensions

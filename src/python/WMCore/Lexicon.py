@@ -75,12 +75,12 @@ def searchblock(candidate):
     regexp = r"^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,199})){0,1}(/(\*|[A-Z\-\*]{1,99})(#(\*|[a-zA-Z0-9\.\-_\*]){0,100}){0,1}){0,1}$"
     return check(regexp, candidate)
 
+SEARCHDATASET_RE = r'^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*\-]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,199})){0,1}(/(\*|[A-Z\-\*]{1,50})){0,1}$'
 def searchdataset(candidate):
     """
     A dataset name with a * wildcard one or more times in it. Only the first '/' is mandatory to use.
     """
-    regexp = r"^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*\-]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,199})){0,1}(/(\*|[A-Z\-\*]{1,50})){0,1}$"
-    return check(regexp, candidate)
+    return check(SEARCHDATASET_RE, candidate)
 
 def searchstr(candidate):
     """
@@ -164,10 +164,12 @@ def globalTag(candidate):
     """ Identifier plus colons """
     return check(r'[a-zA-Z0-9\s\.\-_:]{1,100}$', candidate)
 
+DATASET_RE = r'^/[a-zA-Z0-9\.\-_]{1,99}/[a-zA-Z0-9\.\-_]{1,199}/[a-zA-Z0-9\.\-_]{1,99}$'
 def dataset(candidate):
     """ A slash followed by an identifier,x3 """
-    return check(r"^/[a-zA-Z0-9\.\-_]{1,99}/[a-zA-Z0-9\.\-_]{1,199}/[a-zA-Z0-9\.\-_]{1,99}$", candidate)
+    return check(DATASET_RE, candidate)
 
+PROCDATASET_RE = r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+){0,2}-v[0-9]*$'
 def procdataset(candidate):
     """
     Check for processed dataset name.
@@ -177,7 +179,7 @@ def procdataset(candidate):
         return candidate
 
     commonCheck = check(r"%s" % PROCESSED_DS['re'], candidate, PROCESSED_DS['maxLength'])
-    prodCheck = check(r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+){0,2}-v[0-9]*$', candidate)
+    prodCheck = check(PROCDATASET_RE, candidate)
     return (commonCheck and prodCheck)
 
 def publishdatasetname(candidate):
@@ -185,6 +187,7 @@ def publishdatasetname(candidate):
         return candidate
     return check(r'%(publishdataname)s$' % userProcDSParts, candidate, 100)
 
+USERPROCDATASET_RE = r'%(groupuser)s-%(publishdataname)s-%(psethash)s$' % userProcDSParts
 def userprocdataset(candidate):
     """
     Check for processed dataset name of users.
@@ -194,7 +197,7 @@ def userprocdataset(candidate):
         return candidate
 
     commonCheck = check(r"%s" % PROCESSED_DS['re'], candidate, PROCESSED_DS['maxLength'])
-    anlaysisCheck = check(r'%(groupuser)s-%(publishdataname)s-%(psethash)s$' % userProcDSParts, candidate)
+    anlaysisCheck = check(USERPROCDATASET_RE, candidate)
     return (commonCheck and anlaysisCheck)
 
 def procversion(candidate):
@@ -221,7 +224,7 @@ def primdataset(candidate):
     """
     if candidate =='' or not candidate :
         return candidate
-    return (check(r"%s" % PRIMARY_DS['re'], candidate, PRIMARY_DS['maxLength']) and 
+    return (check(r"%s" % PRIMARY_DS['re'], candidate, PRIMARY_DS['maxLength']) and
             check(r'^[a-zA-Z][a-zA-Z0-9\-_]*$', candidate))
 
 

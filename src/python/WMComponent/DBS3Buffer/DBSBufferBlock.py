@@ -456,11 +456,13 @@ class DBSBlock:
         """
         block = {}
         
+        #TODO: instead of using key to remove need to change to keyToKeep
+        # Ask dbs team to publish the list (API)
         keyToRemove = ['insertedFiles', 'newFiles', 'DatasetAlgo', 'file_count',
                        'block_size', 'origin_site_name', 'creation_date', 'open',
                        'Name', 'close_settings']
         
-        nestedKeyToRemove = ['block.block_events']
+        nestedKeyToRemove = ['block.block_events', 'block.workflow']
         
         dbsBufferToDBSBlockKey = {'block_size': 'BlockSize',
                                   'creation_date': 'CreationDate', 

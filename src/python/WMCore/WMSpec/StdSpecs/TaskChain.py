@@ -298,7 +298,7 @@ class TaskChainWorkloadFactory(StdBase):
         keepOutput = taskConf["KeepOutput"]
         transientModules = taskConf["TransientOutputModules"]
         forceUnmerged = (not keepOutput) or (len(transientModules) > 0)
-
+        eventsPerLumi = splitArguments["events_per_lumi"]
         self.inputPrimaryDataset = taskConf['PrimaryDataset']
         outputMods = self.setupProcessingTask(task, "Production",
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
@@ -307,7 +307,7 @@ class TaskChainWorkloadFactory(StdBase):
                                               splitArgs = splitArguments, stepType = cmsswStepType,
                                               seeding = taskConf['Seeding'], totalEvents = taskConf['RequestNumEvents'],
                                               forceUnmerged = forceUnmerged, timePerEvent = self.timePerEvent,
-                                              memoryReq = self.memory, sizePerEvent = self.sizePerEvent)
+                                              memoryReq = self.memory, sizePerEvent = self.sizePerEvent, eventsPerLumi = eventsPerLumi)
 
         if taskConf["PileupConfig"]:
             self.setupPileup(task, taskConf['PileupConfig'])

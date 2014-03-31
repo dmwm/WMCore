@@ -298,7 +298,9 @@ class TaskChainWorkloadFactory(StdBase):
         keepOutput = taskConf["KeepOutput"]
         transientModules = taskConf["TransientOutputModules"]
         forceUnmerged = (not keepOutput) or (len(transientModules) > 0)
-
+        eventsPerLumi = None
+        if "events_per_lumi" in splitArguments:
+            eventsPerLumi = splitArguments["events_per_lumi"]
         self.inputPrimaryDataset = taskConf['PrimaryDataset']
         outputMods = self.setupProcessingTask(task, "Production",
                                               couchURL = self.couchURL, couchDBName = self.couchDBName,
@@ -307,7 +309,7 @@ class TaskChainWorkloadFactory(StdBase):
                                               splitArgs = splitArguments, stepType = cmsswStepType,
                                               seeding = taskConf['Seeding'], totalEvents = taskConf['RequestNumEvents'],
                                               forceUnmerged = forceUnmerged, timePerEvent = self.timePerEvent,
-                                              memoryReq = self.memory, sizePerEvent = self.sizePerEvent)
+                                              memoryReq = self.memory, sizePerEvent = self.sizePerEvent, eventsPerLumi = eventsPerLumi)
 
         if taskConf["PileupConfig"]:
             self.setupPileup(task, taskConf['PileupConfig'])
@@ -336,7 +338,10 @@ class TaskChainWorkloadFactory(StdBase):
         keepOutput     = taskConf["KeepOutput"]
         transientModules = taskConf["TransientOutputModules"]
         forceUnmerged = (not keepOutput) or (len(transientModules) > 0)
-
+        eventsPerLumi = None
+        if "events_per_lumi" in splitArguments:
+            eventsPerLumi = splitArguments["events_per_lumi"]
+            
         # in case the initial task is a processing task, we have an input dataset, otherwise
         # we look up the parent task and step
         inputDataset = taskConf["InputDataset"]
@@ -385,7 +390,8 @@ class TaskChainWorkloadFactory(StdBase):
                                               forceUnmerged = forceUnmerged,
                                               timePerEvent = self.timePerEvent,
                                               memoryReq = self.memory,
-                                              sizePerEvent = self.sizePerEvent)
+                                              sizePerEvent = self.sizePerEvent,
+                                              eventsPerLumi = eventsPerLumi)
 
 
         if taskConf["PileupConfig"]:
@@ -458,6 +464,9 @@ class TaskChainWorkloadFactory(StdBase):
             taskConf["SplittingArguments"]["events_per_job"] = taskConf["EventsPerJob"]
             if taskConf["SplittingAlgo"] == "EventAwareLumiBased":
                 taskConf["SplittingArguments"]["max_events_per_lumi"] = 20000
+            else:
+                taskConf["SplittingArguments"]["events_per_lumi"] = taskConf["EventsPerLumi"]
+            taskConf["SplittingArguments"]["lheInputFiles"] = taskConf["LheInputFiles"]
         elif taskConf["SplittingAlgo"] == "LumiBased":
             taskConf["SplittingArguments"]["lumis_per_job"] = taskConf["LumisPerJob"]
         elif taskConf["SplittingAlgo"] == "FileBased":

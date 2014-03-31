@@ -157,14 +157,12 @@ def modifyConfiguration(config, **args):
     if hasattr(config,"AsyncTransfer"):
         config.CoreDatabase.connectUrl = '%s/asynctransfer_agent' % args["couch_url"]
         config.AsyncTransfer.couch_instance = args["files_db"]
-        #config.AsyncTransfer.couch_instance = args["couch_url"]
         config.AsyncTransfer.data_source = args["couch_url"]
         config.AsyncTransfer.serverDN = args["host_dn"]
         config.AsyncTransfer.couch_user_monitoring_instance = args["couch_url"]
         config.AsyncTransfer.opsProxy = args["ops_proxy"]
         config.AsyncTransfer.config_couch_instance = args["couch_url"]
         config.AsyncTransfer.cache_area = args["ufc_service_url"]
-        #config.AsyncTransfer.config_couch_instance = args["files_db"]        
 
     if hasattr(config,"Analytics"):
         config.Analytics.couch_user_monitoring_instance = args["couch_url"]

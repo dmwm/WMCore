@@ -317,6 +317,9 @@ class StdBase(object):
 
         procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                        scramArch = self.scramArch)
+        
+        if newSplitArgs.has_key("events_per_lumi"):
+            eventsPerLumi = newSplitArgs["events_per_lumi"]  
         procTaskCmsswHelper.setEventsPerLumi(eventsPerLumi)
 
         configOutput = self.determineOutputModules(scenarioFunc, scenarioArgs,

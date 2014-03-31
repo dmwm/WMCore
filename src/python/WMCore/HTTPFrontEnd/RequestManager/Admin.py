@@ -44,8 +44,8 @@ class Admin(WebAPI):
         else:
             try:
                 WMCore.Lexicon.identifier(v)
-            except AssertionError:
-                raise cherrypy.HTTPError(400, "Bad input %s" % name)
+            except AssertionError, ex:
+                raise cherrypy.HTTPError(400, "Bad input: %s" % str(ex))
         return v
 
     @cherrypy.expose

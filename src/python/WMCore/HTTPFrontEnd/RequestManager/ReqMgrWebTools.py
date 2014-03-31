@@ -363,7 +363,7 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
         request = buildWorkloadForRequest(typename = reqSchema["RequestType"], 
                                           schema = reqSchema)
     except WMSpecFactoryException, ex:
-        raise HTTPError(400, "Error in Workload Validation: %s" % ex._message)
+        raise HTTPError(400, "Error in Workload Validation: %s" % str(ex))
     
     helper = WMWorkloadHelper(request['WorkloadSpec'])
     
@@ -398,8 +398,7 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
     try:
         CheckIn.checkIn(request, reqSchema['RequestType'])
     except CheckIn.RequestCheckInError, ex:
-        msg = ex._message
-        raise HTTPError(400, "Error in Request check-in: %s" % msg)
+        raise HTTPError(400, "Error in Request check-in: %s" % str(ex))
         
     # Inconsistent request parameters between Oracle and Couch (#4380, #4388)
     # metadata above is what is saved into couch to represent a request document.

@@ -10,6 +10,7 @@ Pull work out of the work queue.
 
 import time
 import random
+import traceback
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -64,10 +65,10 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         try:
             if self.retrieveCondition():
                 work = self.queue.pullWork()
-        except IOError, (value, message):
-            self.queue.logger.error("Error %s opening connection to work queue: %s" % (value, message))
+        except IOError, ex:
+            self.queue.logger.error("Error opening connection to work queue: %s \n%s" % 
+                                    (str(ex), traceback.format_exc()))
         except StandardError, ex:
-            import traceback
             self.queue.logger.error("Unable to pull work from parent Error: %s\n%s"
                                     % (str(ex), traceback.format_exc()))
         self.queue.logger.info("Obtained %s unit(s) of work" % work)

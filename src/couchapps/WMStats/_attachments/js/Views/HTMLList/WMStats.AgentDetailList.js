@@ -2,19 +2,6 @@ WMStats.namespace("AgentDetailList");
 
 (function () {
     
-    var statusInterpretator = function(alertStatus) {
-        if (alertStatus == "agent_down") {
-            message = "Data is not updated: AnalyticsDataCollector Down";
-        } else if (alertStatus == "component_down") {
-            message = "Components or Thread down";
-        } else if (alertStatus == "drain_mode") {
-            message = "Draining Agent";
-        } else {
-            message = "OK";
-        };
-        return message;
-    };
-    
     var componentFormat = function(componentList) {
         var formatStr = "";
         for (var i in componentList) {
@@ -31,21 +18,52 @@ WMStats.namespace("AgentDetailList");
         return formatStr;
     };
     
+    var diskFullFormat = function(diskList) {
+        var formatStr = "<details> <summary> disk list</summary> <ul>";
+        for (var i in diskList) {
+            formatStr += "<li><b>" + diskList[i].mounted +"</b>:" + diskList[i].percent +"</li>";
+        }
+        formatStr += "</ul></details>";
+        return formatStr;
+    };
+    
     var agentErrorFormat = function (agentInfo) {
         var htmlstr = '';
         htmlstr += "<div class='error agent_detail_box'>";
         htmlstr += "<ul>";
         if (agentInfo) {
             htmlstr += "<li><b>agent:</b> " + agentInfo.agent_url + "</li>";
-            htmlstr += "<li><b>last_updated:</b> " + WMStats.Utils.utcClock(new Date(agentInfo.timestamp * 1000)) +" : " + 
-                              agentInfo.alert.message  + "</li>";
-            htmlstr += "<li><b>status:</b> " + statusInterpretator(agentInfo.alert.status) + "</li>";
+            htmlstr += "<li><b>agent last updated:</b> " + WMStats.Utils.utcClock(new Date(agentInfo.timestamp * 1000)) +" : " + 
+                              agentInfo.alert.agent_update  + "</li>";
+            htmlstr += "<li><b>data last updated:</b> " + agentInfo.alert.data_update  + "</li>";
+            htmlstr += "<li><b>status:</b> " + agentInfo.alert.message + "</li>";
             htmlstr += "<li><b>team:</b> " + agentInfo.agent_team+ "</li>";
         };
         var detailInfo = agentInfo.down_component_detail;
         if (detailInfo && (detailInfo.length > 0)) {
             htmlstr += "<li><b>component errors:</b> ";
             htmlstr += componentFormat(detailInfo);
+            htmlstr +="</li>";
+           };
+           
+        var diskInfo = agentInfo.disk_warning;
+        if (diskInfo && (diskInfo.length > 0)) {
+            htmlstr += "<li><b>disk warning:</b> ";
+            htmlstr += diskFullFormat(diskInfo);
+            htmlstr +="</li>";
+           };
+           
+        var dataError = agentInfo.data_error;
+        if (dataError !== 'ok') {
+            htmlstr += "<li><b>data collect error:</b> ";
+            htmlstr += dataError;
+            htmlstr +="</li>";
+           };
+        
+        var couchProcess = agentInfo.couch_process_warning;
+        if (couchProcess > 0) {
+            htmlstr += "<li><b>Couch Process maxed:</b> ";
+            htmlstr += couchProcess;
             htmlstr +="</li>";
            };
         
@@ -60,8 +78,9 @@ WMStats.namespace("AgentDetailList");
         htmlstr += "<ul>";
         if (agentInfo) {
             htmlstr += "<li><b>agent:</b> " + agentInfo.agent_url + "</li>";
-            htmlstr += "<li><b>last_updated:</b> " + agentInfo.alert.message  + "</li>";
-            htmlstr += "<li><b>status:</b> " + statusInterpretator(agentInfo.alert.status) + "</li>";
+            htmlstr += "<li><b>agent last updated:</b> " + agentInfo.alert.agent_update  + "</li>";
+            htmlstr += "<li><b>data last updated:</b> " + agentInfo.alert.data_update  + "</li>";
+            htmlstr += "<li><b>status:</b> " + agentInfo.alert.status + "</li>";
             htmlstr += "<li><b>team</b> " + agentInfo.agent_team+ "</li>";
         }
         htmlstr += "</ul>";

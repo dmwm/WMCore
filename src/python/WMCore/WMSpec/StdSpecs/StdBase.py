@@ -52,7 +52,6 @@ class StdBase(object):
 
         # Internal parameters
         self.workloadName = None
-        self.multicoreNCores = None
 
         return
 
@@ -73,11 +72,6 @@ class StdBase(object):
                     setattr(self, argumentDefinition[arg]["attr"], argumentDefinition[arg]["type"](arguments[arg]))
             elif argumentDefinition[arg]["optional"]:
                 setattr(self, argumentDefinition[arg]["attr"], argumentDefinition[arg]["default"])
-
-        # Definition of parameters that depend on the value of others
-        if hasattr(self, "multicore") and self.multicore:
-            self.multicore = True
-            self.multicoreNCores = self.multicore
 
         return
 
@@ -317,6 +311,9 @@ class StdBase(object):
 
         procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                        scramArch = self.scramArch)
+        
+        if newSplitArgs.has_key("events_per_lumi"):
+            eventsPerLumi = newSplitArgs["events_per_lumi"]  
         procTaskCmsswHelper.setEventsPerLumi(eventsPerLumi)
 
         configOutput = self.determineOutputModules(scenarioFunc, scenarioArgs,
@@ -836,12 +833,15 @@ class StdBase(object):
                                 "attr" : "group"},
                      "VoGroup" : {"default" : "DEFAULT", "attr" : "owner_vogroup"},
                      "VoRole" : {"default" : "DEFAULT", "attr" : "owner_vorole"},
-                     "AcquisitionEra" : {"default" : "None", "validate" : acqname},
+                     "AcquisitionEra" : {"default" : "None",  "attr" : "acquisitionEra", 
+                                         "validate" : acqname},
                      "CMSSWVersion" : {"default" : "CMSSW_5_3_7", "validate" : cmsswversion,
                                        "optional" : False, "attr" : "frameworkVersion"},
                      "ScramArch" : {"default" : "slc5_amd64_gcc462", "optional" : False},
-                     "ProcessingVersion" : {"default" : 0, "type" : int},
-                     "ProcessingString" : {"default" : None, "null" : True},
+                     "ProcessingVersion" : {"default" : 0, "attr" : "processingVersion",
+                                            "type" : int},
+                     "ProcessingString" : {"default" : None, "attr" : "processingString",
+                                           "null" : True},
                      "SiteBlacklist" : {"default" : [], "type" : makeList,
                                         "validate" : lambda x: all([cmsname(y) for y in x])},
                      "SiteWhitelist" : {"default" : [], "type" : makeList,
@@ -882,8 +882,9 @@ class StdBase(object):
                      "EnableHarvesting" : {"default" : False, "type" : strToBool},
                      "EnableNewStageout" : {"default" : False, "type" : strToBool},
                      "IncludeParents" : {"default" : False,  "type" : strToBool},
-                     "Multicore" : {"default" : None, "null" : True,
-                                    "validate" : lambda x : x == "auto" or (int(x) > 0)}}
+                     "Multicore" : {"default" : False, "type" : strToBool},
+                     "MulticoreNCores" : {"default" : 1, "type" : int,
+                                          "validate" : lambda x : int(x) > 0}}
 
         # Set defaults for the argument specification
         for arg in arguments:

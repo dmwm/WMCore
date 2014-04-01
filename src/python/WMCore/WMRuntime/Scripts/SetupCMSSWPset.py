@@ -124,16 +124,9 @@ def fixupFileNames(process):
     """
     _fixupFileNames_
 
-    Make sure that the process has a fileNames parameter.  This will also
-    configure lazy download for the process.
+    Make sure that the process has a fileNames parameter.
 
     """
-    # Old style lazy download enable that is overridden by the sites local config.
-    if not process.services.has_key("AdaptorConfig"):
-        process.add_(cms.Service("AdaptorConfig"))
-    process.services["AdaptorConfig"].cacheHint = cms.untracked.string("lazy-download")
-    process.services["AdaptorConfig"].readHint = cms.untracked.string("auto-detect")
-
     if not hasattr(process.source, "fileNames"):
         process.source.fileNames = cms.untracked.vstring()
 
@@ -276,8 +269,7 @@ class SetupCMSSWPset(ScriptInterface):
         """
          _fixupLazyDownload_
 
-         Activate lazy download for all files (TBD if this is correct, but it is the current behanviour)
-         but disable for multicore jobs because it is very inefficient.
+        Disable lazy download for multicore jobs because it is very inefficient.
         """
 
         if not hasattr(self.process.source, "fileNames"):
@@ -287,8 +279,9 @@ class SetupCMSSWPset(ScriptInterface):
         numberOfCores = 1
         if hasattr(self.step.data.application, "multicore"):
             numberOfCores = self.step.data.application.multicore.numberOfCores
-        if numberOfCores != 1:  # job is multicore
-            #override lazy download to be off despite what the site wants
+        if numberOfCores != 1:
+            # job is multicore
+            # disable lazy download despite what the site wants
             self.process.add_(
                 cms.Service("SiteLocalConfigService",
                 overrideSourceCacheHintDir = cms.untracked.string("application-only")
@@ -608,7 +601,8 @@ class SetupCMSSWPset(ScriptInterface):
             applyTweak(self.process, outTweak, self.fixupDict)
 
         # revlimiter for testing
-        #self.process.maxEvents.input = 2
+        if getattr(self.step.data.application.command, "oneEventMode", False):
+            self.process.maxEvents.input = 1
 
         # check for random seeds and the method of seeding which is in the job baggage
         self.handleSeeding()

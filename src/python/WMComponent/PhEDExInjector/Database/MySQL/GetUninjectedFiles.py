@@ -34,8 +34,7 @@ class GetUninjectedFiles(DBFormatter):
                  dbsbuffer_file.id = dbsbuffer_file_location.filename
                INNER JOIN dbsbuffer_location ON
                  dbsbuffer_file_location.location = dbsbuffer_location.id
-             WHERE dbsbuffer_file.in_phedex = 0 AND
-               (dbsbuffer_file.status = 'LOCAL' OR dbsbuffer_file.status = 'GLOBAL')"""
+             WHERE dbsbuffer_file.in_phedex = 0"""
 
     def format(self, result):
         """

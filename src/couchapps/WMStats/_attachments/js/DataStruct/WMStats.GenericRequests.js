@@ -98,7 +98,8 @@ WMStats.GenericRequestsSummary.prototype = {
                 this.getTotalCooloff() +
                 this.getTotalPaused() +
                 this.getTotalQueued() +
-                this.getTotalSubmitted());
+                this.getRunning() +
+                this.getPending());
     },
     
     getTotalFailure: function() {

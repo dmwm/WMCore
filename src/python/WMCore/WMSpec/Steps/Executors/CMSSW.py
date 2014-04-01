@@ -131,9 +131,7 @@ class CMSSW(Executor):
         # set any global environment variables
         #
         try:
-            os.environ['FRONTIER_ID'] = 'wmagent_%i_%s_%s_%s' % (self.job['id'], self.task.name(),
-                                                                 self.job['retry_count'],
-                                                                 cmsswVersion)
+            os.environ['FRONTIER_ID'] = 'wmagent_%s' % (self.report.data.workload)
         except Exception, ex:
             logging.error('Have critical error in setting FRONTIER_ID: %s' % str(ex))
             logging.error('Continuing, as this is not a critical function yet.')
@@ -211,10 +209,9 @@ class CMSSW(Executor):
         logging.info("RUNNING SCRAM SCRIPTS")
         for script in self.step.runtime.scramPreScripts:
             #invoke scripts with scram()
-            invokeCommand = "%s -m WMCore.WMRuntime.ScriptInvoke %s %s \n" % (
-                sys.executable,
-                stepModule,
-                script)
+            invokeCommand = self.step.runtime.invokeCommand if hasattr(self.step.runtime, 'invokeCommand') else\
+                                "%s -m WMCore.WMRuntime.ScriptInvoke %s" % (sys.executable, stepModule)
+            invokeCommand += " %s \n" % script
             logging.info("    Invoking command: %s" % invokeCommand)
             retCode = scram(invokeCommand)
             if retCode > 0:

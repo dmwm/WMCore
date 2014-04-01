@@ -29,7 +29,7 @@ class GetUnsubscribedDatasets(DBFormatter):
                INNER JOIN dbsbuffer_file ON
                  dbsbuffer_algo_dataset_assoc.id = dbsbuffer_file.dataset_algo
              WHERE dbsbuffer_dataset_subscription.subscribed = 0 AND
-                   dbsbuffer_file.status = 'GLOBAL' AND
+                   (dbsbuffer_file.status = 'GLOBAL' OR dbsbuffer_file.status = 'InDBS') AND
                    dbsbuffer_file.in_phedex = 1 AND
                    dbsbuffer_dataset.path != 'bogus'"""
 

@@ -70,22 +70,15 @@ class ChangeState(WMObject, WMConnectionBase):
         else:
             self.dbname = couchDbName
 
-        try:
-            self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
-            self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname, size = 250)
-            self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % self.dbname, size = 250)
-            self.jsumdatabase = self.couchdb.connectDatabase( getattr(self.config.JobStateMachine, 'jobSummaryDBName'), size = 250 )
-        except Exception, ex:
-            logging.error("Error connecting to couch: %s" % str(ex))
-            self.jobsdatabase = None
-            self.fwjrdatabase = None
-            self.jsumdatabase = None
+        self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
+        self._connectDatabases()
 
         try:
             self.dashboardReporter = DashboardReporter(config)
         except Exception, ex:
             logging.error("Error setting up the \
-                          dashboard reporter: %s" % str(ex))
+-                          dashboard reporter: %s" % str(ex))
+            raise
 
         self.getCouchDAO = self.daofactory("Jobs.GetCouchID")
         self.setCouchDAO = self.daofactory("Jobs.SetCouchID")
@@ -97,6 +90,37 @@ class ChangeState(WMObject, WMConnectionBase):
         self.maxUploadedInputFiles = getattr(self.config.JobStateMachine, 'maxFWJRInputFiles', 1000)
         return
 
+    def _connectDatabases(self):
+        """
+        Try connecting to the couchdbs
+        """
+        if not hasattr(self, 'jobsdatabase') or self.jobsdatabase is None:
+            try:
+                self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname, size = 250)
+            except Exception, ex:
+                logging.error("Error connecting to couch db '%s/jobs': %s" % (self.dbname, str(ex)))
+                self.jobsdatabase = None
+                return False
+
+        if not hasattr(self, 'fwjrdatabase') or self.fwjrdatabase is None:
+            try:
+                self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % self.dbname, size = 250)
+            except Exception, ex:
+                logging.error("Error connecting to couch db '%s/fwjrs': %s" % (self.dbname, str(ex)))
+                self.fwjrdatabase = None
+                return False
+
+        if not hasattr(self, 'jsumdatabase') or self.jsumdatabase is None:
+            dbname = getattr(self.config.JobStateMachine, 'jobSummaryDBName')
+            try:
+                self.jsumdatabase = self.couchdb.connectDatabase( dbname, size = 250 )
+            except Exception, ex:
+                logging.error("Error connecting to couch db '%s': %s" % (dbname, str(ex)))
+                self.jsumdatabase = None
+                return False
+
+        return True
+    
     def propagate(self, jobs, newstate, oldstate, updatesummary = False):
         """
         Move the job from a state to another. Book keep the change to CouchDB.
@@ -156,7 +180,8 @@ class ChangeState(WMObject, WMConnectionBase):
         in couch it will be saved as a seperate document.  If the job has a FWJR
         attached that will be saved as a seperate document.
         """
-        if not self.jobsdatabase or not self.fwjrdatabase:
+        if not self._connectDatabases():
+            logging.error('Databases not connected properly')
             return
 
         timestamp = int(time.time())
@@ -243,13 +268,18 @@ class ChangeState(WMObject, WMConnectionBase):
             if updatesummary:
                 jobSummaryId = job["name"]
                 updateUri = "/" + self.jsumdatabase.name + "/_design/WMStats/_update/jobSummaryState/" + jobSummaryId
-                updateUri += "?newstate=%s&timestamp=%s" % (newstate, timestamp)
+                # map retrydone state to jobfailed state for monitoring
+                if newstate == "retrydone":
+                    monitorState = "jobfailed"
+                else:
+                    monitorState = newstate
+                updateUri += "?newstate=%s&timestamp=%s" % (monitorState, timestamp)
                 self.jsumdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
                 logging.debug("Updated job summary status for job %s" % jobSummaryId)
                 
                 updateUri = "/" + self.jsumdatabase.name + "/_design/WMStats/_update/jobStateTransition/" + jobSummaryId
                 updateUri += "?oldstate=%s&newstate=%s&location=%s&timestamp=%s" % (oldstate,
-                                                                                    newstate,
+                                                                                    monitorState,
                                                                                     job["location"],
                                                                                     timestamp)
                 self.jsumdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
@@ -277,68 +307,86 @@ class ChangeState(WMObject, WMConnectionBase):
                                 "type": "fwjr"}
                 self.fwjrdatabase.queue(fwjrDocument, timestamp = True, callback = discardConflictingDocument)
 
-                jobSummaryId = job["name"]
-                # building a summary of fwjr
-                logging.debug("Pushing job summary for job %s" % jobSummaryId)
-                errmsgs = {}
-                inputs = []
-                if "steps" in fwjrDocument["fwjr"]:
-                    for step in fwjrDocument["fwjr"]["steps"]:
-                        if "errors" in fwjrDocument["fwjr"]["steps"][step]:
-                            errmsgs[step] = [error for error in fwjrDocument["fwjr"]["steps"][step]["errors"]]
-                        if "input" in fwjrDocument["fwjr"]["steps"][step] and "source" in fwjrDocument["fwjr"]["steps"][step]["input"]:
-                            inputs.extend( [source["runs"] for source in fwjrDocument["fwjr"]['steps'][step]["input"]["source"] if "runs" in source] )
-
-                outputs = []
-                outputDataset = None
-                for singlestep in job["fwjr"].listSteps():
-                    for singlefile in job["fwjr"].getAllFilesFromStep(step=singlestep):
-                        if singlefile:
-                            outputs.append({'type': 'output' if CMSSTEP.match(singlestep) else singlefile.get('module_label', None),
-                                            'lfn': singlefile.get('lfn', None),
-                                            'location': list(singlefile.get('locations', set([]))) if len(singlefile.get('locations', set([]))) > 1
-                                                                                                   else singlefile['locations'].pop(),
-                                            'checksums': singlefile.get('checksums', {}),
-                                            'size': singlefile.get('size', None) })
-                            #it should have one output dataset for all the files
-                            outputDataset = singlefile.get('dataset', None) if not outputDataset else outputDataset
-                inputFiles = []
-                for inputFileStruct in job["fwjr"].getAllInputFiles():
-                    # check if inputFileSummary needs to be extended
-                    inputFileSummary = {}
-                    inputFileSummary["lfn"] = inputFileStruct["lfn"]
-                    inputFileSummary["input_type"] = inputFileStruct["input_type"]
-                    inputFiles.append(inputFileSummary)
+                #TODO: can add config switch to swich on and off
+                # if self.config.JobSateMachine.propagateSuccessJobs or (job["retry_count"] > 0) or (newstate != 'success'):
+                if (job["retry_count"] > 0) or (newstate != 'success'):
+                    jobSummaryId = job["name"]
+                    # building a summary of fwjr
+                    logging.debug("Pushing job summary for job %s" % jobSummaryId)
+                    errmsgs = {}
+                    inputs = []
+                    if "steps" in fwjrDocument["fwjr"]:
+                        for step in fwjrDocument["fwjr"]["steps"]:
+                            if "errors" in fwjrDocument["fwjr"]["steps"][step]:
+                                errmsgs[step] = [error for error in fwjrDocument["fwjr"]["steps"][step]["errors"]]
+                            if "input" in fwjrDocument["fwjr"]["steps"][step] and "source" in fwjrDocument["fwjr"]["steps"][step]["input"]:
+                                inputs.extend( [source["runs"] for source in fwjrDocument["fwjr"]['steps'][step]["input"]["source"] if "runs" in source] )
+    
+                    outputs = []
+                    outputDataset = None
+                    for singlestep in job["fwjr"].listSteps():
+                        for singlefile in job["fwjr"].getAllFilesFromStep(step=singlestep):
+                            if singlefile:
+                                outputs.append({'type': 'output' if CMSSTEP.match(singlestep) else singlefile.get('module_label', None),
+                                                'lfn': singlefile.get('lfn', None),
+                                                'location': list(singlefile.get('locations', set([]))) if len(singlefile.get('locations', set([]))) > 1
+                                                                                                       else singlefile['locations'].pop(),
+                                                'checksums': singlefile.get('checksums', {}),
+                                                'size': singlefile.get('size', None) })
+                                #it should have one output dataset for all the files
+                                outputDataset = singlefile.get('dataset', None) if not outputDataset else outputDataset
+                    inputFiles = []
+                    for inputFileStruct in job["fwjr"].getAllInputFiles():
+                        # check if inputFileSummary needs to be extended
+                        inputFileSummary = {}
+                        inputFileSummary["lfn"] = inputFileStruct["lfn"]
+                        inputFileSummary["input_type"] = inputFileStruct["input_type"]
+                        inputFiles.append(inputFileSummary)
                     
-                jobSummary = {"_id": jobSummaryId,
-                              "wmbsid": job["id"],
-                              "type": "jobsummary",
-                              "retrycount": job["retry_count"],
-                              "workflow": job["workflow"],
-                              "task": job["task"],
-                              "jobtype": job["jobType"],
-                              "state": newstate,
-                              "site": job.get("location", None),
-                              "cms_location": job["fwjr"].getSiteName(),
-                              "exitcode": job["fwjr"].getExitCode(),
-                              "errors": errmsgs,
-                              "lumis": inputs,
-                              "outputdataset": outputDataset,
-                              "inputfiles": inputFiles,
-                              "acdc_url": "%s/%s" % (sanitizeURL(self.config.ACDC.couchurl)['url'], self.config.ACDC.database),
-                              "agent_name": self.config.Agent.hostName,
-                              "output": outputs }
-                if couchDocID is not None:
-                    try:
-                        currentJobDoc = self.jsumdatabase.document(id = jobSummaryId)
-                        jobSummary['_rev'] = currentJobDoc['_rev']
-                        jobSummary['state_history'] = currentJobDoc.get('state_history', [])
-                        noEmptyList = ["inputfiles", "lumis"]
-                        for prop in noEmptyList:
-                            jobSummary[prop] = jobSummary[prop] if jobSummary[prop] else currentJobDoc.get(prop, [])
-                    except CouchNotFoundError:
-                        pass
-                self.jsumdatabase.queue(jobSummary, timestamp = True)
+                    # Don't record intermediate jobfailed status in the jobsummary
+                    # change to jobcooloff which will be overwritten by error handler anyway
+                    if (job["retry_count"] > 0) and (newstate == 'jobfailed'):
+                        summarystate = 'jobcooloff'
+                    else:
+                        summarystate = newstate
+                           
+                    jobSummary = {"_id": jobSummaryId,
+                                  "wmbsid": job["id"],
+                                  "type": "jobsummary",
+                                  "retrycount": job["retry_count"],
+                                  "workflow": job["workflow"],
+                                  "task": job["task"],
+                                  "jobtype": job["jobType"],
+                                  "state": summarystate,
+                                  "site": job.get("location", None),
+                                  "cms_location": job["fwjr"].getSiteName(),
+                                  "exitcode": job["fwjr"].getExitCode(),
+                                  "errors": errmsgs,
+                                  "lumis": inputs,
+                                  "outputdataset": outputDataset,
+                                  "inputfiles": inputFiles,
+                                  "acdc_url": "%s/%s" % (sanitizeURL(self.config.ACDC.couchurl)['url'], self.config.ACDC.database),
+                                  "agent_name": self.config.Agent.hostName,
+                                  "output": outputs }
+                    if couchDocID is not None:
+                        try:
+                            currentJobDoc = self.jsumdatabase.document(id = jobSummaryId)
+                            jobSummary['_rev'] = currentJobDoc['_rev']
+                            jobSummary['state_history'] = currentJobDoc.get('state_history', [])
+                            # record final status transition
+                            if newstate == 'success':
+                                finalStateDict = {'oldstate': oldstate,
+                                                  'newstate': newstate,
+                                                  'location': job["location"],
+                                                  'timestamp': timestamp}
+                                jobSummary['state_history'].append(finalStateDict)
+                                
+                            noEmptyList = ["inputfiles", "lumis"]
+                            for prop in noEmptyList:
+                                jobSummary[prop] = jobSummary[prop] if jobSummary[prop] else currentJobDoc.get(prop, [])
+                        except CouchNotFoundError:
+                            pass
+                    self.jsumdatabase.queue(jobSummary, timestamp = True)
 
         if len(couchRecordsToUpdate) > 0:
             self.setCouchDAO.execute(bulkList = couchRecordsToUpdate,
@@ -481,6 +529,10 @@ class ChangeState(WMObject, WMConnectionBase):
         jobid and location keys which represent
         the job id in WMBS and new location respectively.
         """
+        if not self._connectDatabases():
+            logging.error('Databases not connected properly')
+            return
+
         # First update safely in WMBS
         self.updateLocationDAO.execute(jobs, conn = self.getDBConn(),
                                        transaction = self.existingTransaction())

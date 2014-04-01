@@ -28,7 +28,7 @@ dependencies = {'wmc-rest':{
                         'systems':['wmc-base']
                         },
                 'wmc-runtime':{
-                        'packages': ['WMCore.WMRuntime', 'WMCore.WMSpec+', 'PSetTweaks', 'WMCore.FwkJobReport', 'WMCore.Storage+'],
+                        'packages': ['WMCore.WMRuntime+', 'WMCore.WMSpec+', 'PSetTweaks', 'WMCore.FwkJobReport', 'WMCore.Storage+'],
                         'modules' : ['WMCore.Algorithms.ParseXMLFile'],
                         'systems':['wmc-base']
                         },
@@ -108,7 +108,7 @@ dependencies = {'wmc-rest':{
                         },
                 'asyncstageout':{
                         'packages': ['WMCore.Agent+', 'WMCore.Storage+', 'WMComponent.DBSUpload',
-                                     'WMCore.Credential', 'WMCore.WorkerThreads',
+                                     'WMCore.Credential', 'WMCore.WorkerThreads', 'WMCore.Services.SiteDB+',
                                      'WMCore.Services.PhEDEx+', 'WMCore.ACDC', 'WMCore.Alerts+',
                                      'WMCore.Services.UserFileCache'],
                         'modules': ['WMQuality.TestInitCouchApp', 'WMCore.Services.Service',
@@ -116,22 +116,26 @@ dependencies = {'wmc-rest':{
                         'systems': ['wmc-database'],
                         'statics': ['src/couchapps/Agent+'],
                         },
+                'crabcache':{
+                        'systems': ['wmc-rest'],
+                        },
                 'crabserver':{
-                        'packages': ['WMCore.Credential', 'WMCore.Services.SiteDB+',
-                                     'WMCore.Services.JSONParser+', 'WMCore.Services.PhEDEx+'],
+                        'packages': ['WMCore.Credential', 'WMCore.Services+', 'WMCore.RequestManager+',
+                                     'WMCore.WMSpec+', 'WMCore.HTTPFrontEnd+', 'WMCore.ACDC'],
                         'systems': ['wmc-rest', 'wmc-database'],
                         },
                 'crabclient':{
-                        'packages': ['WMCore.Wrappers+', 'WMCore.Credential', 'PSetTweaks'],
+                        'packages': ['WMCore.Wrappers+', 'WMCore.Credential', 'PSetTweaks', 'WMCore.Services.UserFileCache+'],
                         'systems': ['wmc-base'],
                         'modules': ['WMCore.FwkJobReport.FileInfo', 'WMCore.Services.Requests',
                                     'WMCore.Services.Service', 'WMCore.Services.pycurl_manager'],
                         },
                 'crabtaskworker':{
-                        'packages':['WMCore..WorkQueue', 'WMCore.Credential', 'WMCore.Algorithms+', 'WMCore.WMSpec+',
-                                     'WMCore.JobSplitting', 'WMCore.Services.SiteDB+', 'WMCore.Services.DBS+'],
+                        'packages':['WMCore.WorkQueue', 'WMCore.Credential', 'WMCore.Algorithms+', 'WMCore.WMSpec+',
+                                    'WMCore.JobSplitting', 'WMCore.Services.SiteDB+', 'WMCore.Services.DBS+', 
+                                    'WMCore.Services.UserFileCache+', 'WMCore.Services.PhEDEx+'],
                         'modules': ['WMCore.WMBS.File', 'WMCore.WMBS.WMBSBase', 'WMCore.WMBS.__init__'],
-                        'systems': ['wmc-database'],
+                        'systems': ['wmc-database', 'wmc-runtime'],
                         },
                 'wmclient':{
                         'systems': ['wmc-runtime', 'wmc-database']

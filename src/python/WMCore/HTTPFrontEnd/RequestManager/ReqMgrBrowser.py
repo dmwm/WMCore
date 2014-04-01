@@ -85,8 +85,8 @@ class ReqMgrBrowser(WebAPI):
         """ Checks if alphanumeric, tolerating spaces """
         try:
             WMCore.Lexicon.identifier(v)
-        except AssertionError:
-            raise cherrypy.HTTPError(400, "Bad input %s" % name)
+        except AssertionError, ex:
+            raise cherrypy.HTTPError(400, "Bad input: %s" % str(ex))
         return v
 
     @cherrypy.expose
@@ -270,7 +270,7 @@ class ReqMgrBrowser(WebAPI):
         try:
             request = GetRequest.getRequestByName(requestName)
         except (Exception, RuntimeError) as ex:
-            raise cherrypy.HTTPError(400, "Invalid request.")
+            raise cherrypy.HTTPError(400, "Invalid request. %s" % str(ex))
 
         request = Utilities.prepareForTable(request)
         helper = Utilities.loadWorkload(request)

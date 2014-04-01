@@ -140,7 +140,20 @@ class CouchFileset(Fileset):
 
         commitInfo = self.couchdb.commitOne(document)
         document['_id'] = commitInfo[0]['id']
-        document['_rev'] = commitInfo[0]['rev']
+        if commitInfo[0].has_key('rev'):
+            document['_rev'] = commitInfo[0]['rev']
+        else:
+            if commitInfo[0]['reason'].find('{exit_status,0}') != -1:
+                #TODO: in this case actually insert succeeded but return error
+                # due to the bug
+                # https://issues.apache.org/jira/browse/COUCHDB-893
+                # if rev is needed to proceed need to get by 
+                # self.couchdb.documentExist(document['_id'])
+                # but that function need to be changed to return _rev
+                document['_rev'] = "NeedToGet"
+            else:
+                msg = "Unable to insert document: check acdc server doc id: %s" % document['_id']
+                raise RuntimeError, msg
         return document
 
     @connectToCouch

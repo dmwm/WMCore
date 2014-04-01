@@ -58,9 +58,9 @@ class ResourceControl(WMConnectionBase):
                                transaction = self.existingTransaction())
 
         executingJobs = self.wmbsDAOFactory(classname = "Jobs.ListByState")
-        jobIds = executingJobs.execute(state = 'executing')
+        jobInfo = executingJobs.execute(state = 'executing')
         bossAir = BossAirAPI(self.config, noSetup = True)
-        jobtokill = bossAir.updateSiteInformation(jobIds, siteName, state in ("Aborted","Draining","Down"))
+        jobtokill = bossAir.updateSiteInformation(jobInfo, siteName, state in ("Aborted","Draining","Down"))
 
         if state == "Aborted" :    ercode=61301
         elif state == "Draining" : ercode=61302

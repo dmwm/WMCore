@@ -86,6 +86,10 @@ class TaskArchiverTest(unittest.TestCase):
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
         
+        self.dbsDaoFactory = DAOFactory(package="WMComponent.DBS3Buffer",
+                                        logger=myThread.logger,
+                                        dbinterface=myThread.dbi)
+        
         self.getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
         self.inject  = self.daofactory(classname = "Workflow.MarkInjectedWorkflows")
 
@@ -839,10 +843,7 @@ class TaskArchiverTest(unittest.TestCase):
     def testDQMRecoPerformanceToDashBoard(self):
         
         myThread = threading.currentThread()
-        
-        self.dbsDaoFactory = DAOFactory(package="WMComponent.DBS3Buffer",
-                                        logger=myThread.logger,
-                                        dbinterface=myThread.dbi)
+
         listRunsWorkflow = self.dbsDaoFactory(classname="ListRunsWorkflow")
     
         # Didn't like to have done that, but the test doesn't provide all info I need in the system, so faking it:

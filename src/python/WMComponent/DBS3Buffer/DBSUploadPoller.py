@@ -154,6 +154,7 @@ def uploadWorker(input, results, dbsUrl):
                 msg += exString
                 logging.error(msg)
                 logging.error(str(traceback.format_exc()))
+                logging.debug("block: %s \n" % block)
                 results.put({'name': name, 'success': "error", 'error': msg})
 
     return
@@ -192,11 +193,12 @@ class DBSUploadPoller(BaseWorkerThread):
         self.input  = None
         self.result = None
         self.nProc  = getattr(self.config.DBS3Upload, 'nProcesses', 4)
-        self.wait   = getattr(self.config.DBS3Upload, 'dbsWaitTime', 1)
+        self.wait   = getattr(self.config.DBS3Upload, 'dbsWaitTime', 2)
         self.nTries = getattr(self.config.DBS3Upload, 'dbsNTries', 300)
         self.dbs3UploadOnly = getattr(self.config.DBS3Upload, "dbs3UploadOnly", False)
         self.physicsGroup   = getattr(self.config.DBS3Upload, "physicsGroup", "NoGroup")
         self.datasetType    = getattr(self.config.DBS3Upload, "datasetType", "PRODUCTION")
+        self.primaryDatasetType = getattr(self.config.DBS3Upload, "primaryDatasetType", "mc")
         self.blockCount     = 0
         self.dbsApi = DbsApi(url = self.dbsUrl)
 
@@ -215,6 +217,8 @@ class DBSUploadPoller(BaseWorkerThread):
         self.produceCopy = getattr(self.config.DBS3Upload, 'copyBlock', False)
         self.copyPath    = getattr(self.config.DBS3Upload, 'copyBlockPath',
                                    '/data/mnorman/block.json')
+        
+        self.timeoutWaiver = 1
 
         return
 
@@ -318,6 +322,7 @@ class DBSUploadPoller(BaseWorkerThread):
             if not self.dbs3UploadOnly:
                 self.loadFiles()
                 self.checkTimeout()
+                self.checkCompleted()
 
             self.inputBlocks() 
             self.retrieveBlocks()
@@ -362,8 +367,9 @@ class DBSUploadPoller(BaseWorkerThread):
         for blockInfo in loadedBlocks:
             das  = blockInfo['DatasetAlgo']
             loc  = blockInfo['origin_site_name']
+            workflow =  blockInfo['workflow']
             block = DBSBlock(name = blockInfo['block_name'],
-                             location = loc, das = das)
+                             location = loc, das = das, workflow = workflow)
             block.FillFromDBSBuffer(blockInfo)
             blockname = block.getName()
 
@@ -382,8 +388,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
             # Add the loaded files to the block
             for file in files:
-                file["datasetType"] = self.datasetType
-                block.addFile(file)
+                block.addFile(file, self.datasetType, self.primaryDatasetType)
 
             # Add to the cache
             self.addNewBlock(block = block)
@@ -452,7 +457,7 @@ class DBSUploadPoller(BaseWorkerThread):
                     if not self.isBlockOpen(newFile = newFile,
                                             block = currentBlock):
                         # Then we have to close the block and get a new one
-                        currentBlock.status = 'Pending'
+                        currentBlock.setPendingAndCloseBlock()
                         readyBlocks.append(currentBlock)
                         currentBlock = self.getBlock(newFile = newFile,
                                                      location = location,
@@ -461,8 +466,7 @@ class DBSUploadPoller(BaseWorkerThread):
                         currentBlock.setProcessingVer(procVer = dasInfo['ProcessingVer'])
 
                     # Now deal with the file
-                    newFile["datasetType"] = self.datasetType
-                    currentBlock.addFile(dbsFile = newFile)
+                    currentBlock.addFile(newFile, self.datasetType, self.primaryDatasetType)
                     self.filesToUpdate.append({'filelfn': newFile['lfn'],
                                                'block': currentBlock.getName()})
                 # Done with the location
@@ -483,8 +487,21 @@ class DBSUploadPoller(BaseWorkerThread):
         """
         for block in self.blockCache.values():
             if block.status == "Open" and block.getTime() > block.getMaxBlockTime():
-                block.status = "Pending"
+                block.setPendingAndCloseBlock()
                 self.blockCache[block.getName()] = block
+    
+    def checkCompleted(self):
+        """
+        _checkTimeout_
+
+        Loop all Open blocks and mark them as Pending if they have timed out.
+        """
+        completedWorkflows = self.dbsUtil.getCompletedWorkflows()
+        for block in self.blockCache.values():
+            if block.status == "Open":
+                if block.workflow in completedWorkflows:
+                    block.setPendingAndCloseBlock()
+                    self.blockCache[block.getName()] = block
 
     def addNewBlock(self, block):
         """
@@ -524,8 +541,6 @@ class DBSUploadPoller(BaseWorkerThread):
         if block.status != 'Open':
             # Then somebody has dumped this already
             return False
-        if block.getTime() > block.getMaxBlockTime() and doTime:
-            return False
         if block.getSize() + newFile['size'] > block.getMaxBlockSize():
             return False
         if block.getNumEvents() + newFile['events'] > block.getMaxBlockNumEvents():
@@ -533,6 +548,8 @@ class DBSUploadPoller(BaseWorkerThread):
         if block.getNFiles() >= block.getMaxBlockFiles():
             # Then we have to dump it because this file
             # will put it over the limit.
+            return False
+        if block.getTime() > block.getMaxBlockTime() and doTime:
             return False
 
         return True
@@ -550,14 +567,15 @@ class DBSUploadPoller(BaseWorkerThread):
                 if not self.isBlockOpen(newFile = newFile, block = block) and not skipOpenCheck:
                     # Block isn't open anymore.  Mark it as pending so that it gets
                     # uploaded.
-                    block.status = 'Pending'
+                    block.setPendingAndCloseBlock()
                     self.blockCache[blockName] = block
                 else:
                     return block
 
         # A suitable open block does not exist.  Create a new one.
         blockname = "%s#%s" % (newFile["datasetPath"], makeUUID())
-        newBlock = DBSBlock(name = blockname, location = location, das = das)
+        newBlock = DBSBlock(name = blockname, location = location, 
+                            das = das, workflow = newFile["workflow"])
         self.addNewBlock(block = newBlock)
         return newBlock
 
@@ -658,31 +676,13 @@ class DBSUploadPoller(BaseWorkerThread):
                 # Then we have to fix the dataset
                 dbsFile = block.files[0]
                 block.setDataset(datasetName  = dbsFile['datasetPath'],
-                                 primaryType  = dbsFile.get('primaryType', 'DATA'),
+                                 primaryType  = self.primaryDatasetType,
                                  datasetType  = self.datasetType,
                                  physicsGroup = dbsFile.get('physicsGroup', None))
             logging.debug("Found block %s in blocks" % block.getName())
             block.setPhysicsGroup(group = self.physicsGroup)
-            def replaceKeys(block, oldKey, newKey):
-                if oldKey in block.data.keys():
-                    block.data[newKey] = block.data[oldKey]
-                    del block.data[oldKey]
-                return
-            replaceKeys(block, 'BlockSize', 'block_size')
-            replaceKeys(block, 'CreationDate', 'creation_date')
-            replaceKeys(block, 'NumberOfFiles', 'file_count')
-            replaceKeys(block, 'location', 'origin_site_name')
-            for key in ['insertedFiles', 'newFiles', 'DatasetAlgo', 'file_count',
-                        'block_size', 'origin_site_name', 'creation_date', 'open', 'Name',
-                        'block.block_events', 'close_settings']:
-                if '.' in key:
-                    firstkey, subkey = key.split('.', 1)
-                    if firstkey in block.data and subkey in block.data[firstkey]:
-                        del block.data[firstkey][subkey]
-                if key in block.data.keys():
-                    del block.data[key]
-
-            encodedBlock = block.data
+            
+            encodedBlock = block.convertToDBSBlock()
             logging.info("About to insert block %s" % block.getName())
             self.input.put({'name': block.getName(), 'block': encodedBlock})
             self.blockCount += 1
@@ -712,10 +712,22 @@ class DBSUploadPoller(BaseWorkerThread):
         emptyCount    = 0
         while self.blockCount > 0:
             if emptyCount > self.nTries:
-                # Then we've been waiting for a long time.
-                # Raise an error
-                msg = "Exceeded max number of waits while waiting for DBS to finish"
-                raise DBSUploadException(msg)
+                
+                # When timeoutWaiver is 0 raise error. 
+                # It could take long time to get upload data to DBS 
+                # if there are a lot of files are cumulated in the buffer.
+                # in first try but second try should be faster.
+                # timeoutWaiver is set as component variable - only resets when component restarted.
+                # The reason for that is only back log will occur when component is down 
+                # for a long time while other component still running and feeding the data to 
+                # dbsbuffer
+        
+                if self.timeoutWaiver == 0:
+                    msg = "Exceeded max number of waits while waiting for DBS to finish"
+                    raise DBSUploadException(msg)
+                else:
+                    self.timeoutWaiver = 0
+                    return
             try:
                 # Get stuff out of the queue with a ridiculously
                 # short wait time
@@ -725,7 +737,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 logging.debug("Got a block to close")
             except Queue.Empty:
                 # This means the queue has no current results
-                time.sleep(1)
+                time.sleep(2)
                 emptyCount += 1
                 continue
 

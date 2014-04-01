@@ -52,7 +52,7 @@ bossAirPlugins = ["CondorPlugin"]
 # DBS Information.
 localDBSUrl = "https://cmst0dbs.cern.ch:8443/cms_dbs_prod_tier0_writer/servlet/DBSServlet"
 localDBSVersion = "DBS_2_0_8"
-globalDBSUrl = "https://cmsdbsprod.cern.ch:8443/cms_dbs_prod_global_writer/servlet/DBSServlet"
+globalDBSUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
 globalDBSVersion = "DBS_2_0_8"
 
 # Job retry information.  This includes the number of times a job will tried and
@@ -101,6 +101,7 @@ config.BossAir.pluginDir = "WMCore.BossAir.Plugins"
 config.BossAir.pluginNames = bossAirPlugins
 config.BossAir.nCondorProcesses = 1
 config.BossAir.multicoreTaskTypes = ["MultiProcessing", "MultiProduction"]
+config.BossAir.submitWMSMode = True
 
 config.section_("CoreDatabase")
 config.CoreDatabase.connectUrl = databaseUrl
@@ -121,21 +122,16 @@ config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
 config.WorkQueueManager.queueParams = {}
 config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cern.ch/couchdb/workqueue"
 
-config.component_("DBSUpload")
-config.DBSUpload.namespace = "WMComponent.DBSUpload.DBSUpload"
-config.DBSUpload.componentDir = config.General.workDir + "/DBSUpload"
-config.DBSUpload.logLevel = globalLogLevel
-config.DBSUpload.workerThreads = 1
-config.DBSUpload.pollInterval = 100
-
 config.component_("DBS3Upload")
 config.DBS3Upload.namespace = "WMComponent.DBS3Buffer.DBS3Upload"
 config.DBS3Upload.componentDir = config.General.workDir + "/DBS3Upload"
 config.DBS3Upload.logLevel = globalLogLevel
 config.DBS3Upload.workerThreads = 1
 config.DBS3Upload.pollInterval = 100
-config.DBS3Upload.dbsUrl = "https://cmsweb-testbed.cern.ch/dbs/prod/global/DBSWriter"
-config.DBS3Upload.dbs3UploadOnly = True
+#"https://cmsweb.cern.ch/dbs/prod/global/DBSWriter" - production one
+config.DBS3Upload.dbsUrl = "OVER_WRITE_BY_SECETES" 
+config.DBS3Upload.dbs3UploadOnly = False
+config.DBS3Upload.primaryDatasetType = "mc"
 
 config.section_("DBSInterface")
 #config.DBSInterface.DBSUrl = localDBSUrl
@@ -145,6 +141,7 @@ config.DBSInterface.globalDBSUrl = globalDBSUrl
 config.DBSInterface.globalDBSVersion = globalDBSVersion
 config.DBSInterface.MaxFilesToCommit = 200
 config.DBSInterface.doGlobalMigration = False
+config.DBSInterface.primaryDatasetType = "mc"
 
 config.component_("PhEDExInjector")
 config.PhEDExInjector.namespace = "WMComponent.PhEDExInjector.PhEDExInjector"
@@ -153,9 +150,11 @@ config.PhEDExInjector.logLevel = globalLogLevel
 config.PhEDExInjector.maxThreads = 1
 config.PhEDExInjector.subscribeDatasets = True
 config.PhEDExInjector.safeMode = False
-config.PhEDExInjector.phedexurl = "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
+#phedex address "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
+config.PhEDExInjector.phedexurl = "OVER_WRITE_BY_SECETES" 
 config.PhEDExInjector.pollInterval = 100
 config.PhEDExInjector.subscribeInterval = 43200
+config.PhEDExInjector.diskSites = []
 
 config.component_("JobAccountant")
 config.JobAccountant.namespace = "WMComponent.JobAccountant.JobAccountant"
@@ -207,7 +206,8 @@ config.JobUpdater.namespace = "WMComponent.JobUpdater.JobUpdater"
 config.JobUpdater.componentDir = config.General.workDir + "/JobUpdater"
 config.JobUpdater.logLevel = globalLogLevel
 config.JobUpdater.pollInterval = 120
-config.JobUpdater.reqMgrUrl = 'https://cmsweb.cern.ch/reqmgr/reqMgr'
+#reqmgr url 'https://cmsweb.cern.ch/reqmgr/reqMgr'
+config.JobUpdater.reqMgrUrl = "OVER_WRITE_BY_SECETES"
 
 config.component_("ErrorHandler")
 config.ErrorHandler.namespace = "WMComponent.ErrorHandler.ErrorHandler"
@@ -216,7 +216,7 @@ config.ErrorHandler.logLevel = globalLogLevel
 config.ErrorHandler.maxRetries = maxJobRetries
 config.ErrorHandler.pollInterval = 240
 config.ErrorHandler.readFWJR = True
-config.ErrorHandler.failureExitCodes = [50660, 50661, 50664, 134]
+config.ErrorHandler.failureExitCodes = [50660, 50661, 50664]
 config.ErrorHandler.maxFailTime = 120000
 
 config.component_("RetryManager")
@@ -253,7 +253,8 @@ config.TaskArchiver.histogramKeys = ["PeakValueRss", "PeakValueVsize", "TotalJob
 config.TaskArchiver.perfPrimaryDatasets = ['SingleMu', 'MuHad', 'MinimumBias']
 config.TaskArchiver.perfDashBoardMinLumi = 50
 config.TaskArchiver.perfDashBoardMaxLumi = 9000
-config.TaskArchiver.dqmUrl = 'https://cmsweb.cern.ch/dqm/dev/'
+#dqm address -'https://cmsweb.cern.ch/dqm/dev/'
+config.TaskArchiver.dqmUrl = "OVER_WRITE_BY_SECETES"
 config.TaskArchiver.requireCouch  = True
 config.TaskArchiver.uploadPublishInfo = False
 config.TaskArchiver.uploadPublishDir  = None
@@ -483,11 +484,6 @@ config.AlertGenerator.couchErrorsPoller.pollInterval = 600 # [second]
 # mysql*Poller sections were made optional and are defined in the
 # wmagent-mod-config file
 
-# alerts-related stuff associated with components, these values shall later
-# be moved into respective configuration sections 
-# e.g. next item(s) will be from WorkQueueManager when a special necessary view is implemented
-config.DBSUpload.alertUploadQueueSize = 2000
-
 config.component_("AnalyticsDataCollector")
 config.AnalyticsDataCollector.namespace = "WMComponent.AnalyticsDataCollector.AnalyticsDataCollector"
 config.AnalyticsDataCollector.componentDir  = config.General.workDir + "/AnalyticsDataCollector"
@@ -499,5 +495,7 @@ config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager
 config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 config.AnalyticsDataCollector.centralWMStatsURL = "Central WMStats URL"
 config.AnalyticsDataCollector.summaryLevel = "task"
+config.AnalyticsDataCollector.diskUseThreshold = 85
+config.AnalyticsDataCollector.couchProcessThreshold = 25
 config.AnalyticsDataCollector.pluginName = None
 

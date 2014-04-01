@@ -68,6 +68,7 @@ class AccountantWorker(WMConnectionBase):
         self.getJobTypeAction        = self.daofactory(classname = "Jobs.GetType")
         self.getParentInfoAction     = self.daofactory(classname = "Files.GetParentInfo")
         self.setParentageByJob       = self.daofactory(classname = "Files.SetParentageByJob")
+        self.setParentageByMergeJob  = self.daofactory(classname = "Files.SetParentageByMergeJob")
         self.setFileRunLumi          = self.daofactory(classname = "Files.AddRunLumi")
         self.setFileLocation         = self.daofactory(classname = "Files.SetLocationByLFN")
         self.setFileAddChecksum      = self.daofactory(classname = "Files.AddChecksumByLFN")
@@ -111,17 +112,19 @@ class AccountantWorker(WMConnectionBase):
         # Hold data for later commital
         self.dbsFilesToCreate  = []
         self.wmbsFilesToBuild  = []
+        self.wmbsMergeFilesToBuild  = []
         self.fileLocation      = None
         self.mergedOutputFiles = []
         self.listOfJobsToSave  = []
         self.listOfJobsToFail  = []
         self.filesetAssoc      = []
         self.parentageBinds    = []
+        self.parentageBindsForMerge    = []
         self.jobsWithSkippedFiles = {}
         self.count = 0
         self.datasetAlgoID     = collections.deque(maxlen = 1000)
         self.datasetAlgoPaths  = collections.deque(maxlen = 1000)
-        self.dbsLocations      = collections.deque(maxlen = 1000)
+        self.dbsLocations      = set()
         self.workflowIDs       = collections.deque(maxlen = 1000)
         self.workflowPaths     = collections.deque(maxlen = 1000)
 
@@ -139,12 +142,14 @@ class AccountantWorker(WMConnectionBase):
         """
         self.dbsFilesToCreate  = []
         self.wmbsFilesToBuild  = []
+        self.wmbsMergeFilesToBuild  = []
         self.fileLocation      = None
         self.mergedOutputFiles = []
         self.listOfJobsToSave  = []
         self.listOfJobsToFail  = []
         self.filesetAssoc      = []
         self.parentageBinds    = []
+        self.parentageBindsForMerge = []
         self.jobsWithSkippedFiles = {}
         gc.collect()
         return
@@ -250,8 +255,12 @@ class AccountantWorker(WMConnectionBase):
 
         # Now things done at the end of the job
         # Do what we can with WMBS files
-        self.handleWMBSFiles()
-
+        self.handleWMBSFiles(self.wmbsFilesToBuild, self.parentageBinds)
+        
+        # handle merge files separately since parentage need to set 
+        # separately to support robust merge
+        self.handleWMBSFiles(self.wmbsMergeFilesToBuild, self.parentageBindsForMerge)
+        
         # Create DBSBufferFiles
         self.createFilesInDBSBuffer()
 
@@ -286,6 +295,10 @@ class AccountantWorker(WMConnectionBase):
         # Arrange WMBS parentage
         if len(self.parentageBinds) > 0:
             self.setParentageByJob.execute(binds = self.parentageBinds,
+                                           conn = self.getDBConn(),
+                                           transaction = self.existingTransaction())
+        if len(self.parentageBindsForMerge) > 0:
+            self.setParentageByMergeJob.execute(binds = self.parentageBindsForMerge,
                                            conn = self.getDBConn(),
                                            transaction = self.existingTransaction())
 
@@ -413,7 +426,12 @@ class AccountantWorker(WMConnectionBase):
             fwjrFile["merged"] = True
 
         wmbsFile = self.createFileFromDataStructsFile(file = fwjrFile, jobID = jobID)
-
+        
+        if jobType == "Merge":
+            self.wmbsMergeFilesToBuild.append(wmbsFile)
+        else:
+            self.wmbsFilesToBuild.append(wmbsFile)
+            
         if fwjrFile["merged"]:
             self.addFileToDBS(fwjrFile, task)
 
@@ -593,11 +611,11 @@ class AccountantWorker(WMConnectionBase):
             return
 
         dbsFileTuples = []
-        dbsLocations  = []
         dbsFileLoc    = []
         dbsCksumBinds = []
         runLumiBinds  = []
         selfChecksums = None
+        jobLocations  = set()
 
         for dbsFile in self.dbsFilesToCreate:
             # Append a tuple in the format specified by DBSBufferFiles.Add
@@ -658,7 +676,7 @@ class AccountantWorker(WMConnectionBase):
             lfn           = dbsFile['lfn']
             selfChecksums = dbsFile['checksums']
             jobLocation   = dbsFile.getLocations()[0]
-
+            jobLocations.add(jobLocation)
             dbsFileTuples.append((lfn, dbsFile['size'],
                                   dbsFile['events'], assocID,
                                   dbsFile['status'], workflowID))
@@ -675,12 +693,14 @@ class AccountantWorker(WMConnectionBase):
                                           'cktype' : entry})
 
         try:
+            
+            diffLocation = jobLocations.difference(self.dbsLocations)
 
-            if not jobLocation in self.dbsLocations:
+            for jobLocation in diffLocation:
                 self.dbsInsertLocation.execute(siteName = jobLocation,
                                                conn = self.getDBConn(),
                                                transaction = self.existingTransaction())
-                self.dbsLocations.append(jobLocation)
+                self.dbsLocations.add(jobLocation)
 
             self.dbsCreateFiles.execute(files = dbsFileTuples,
                                         conn = self.getDBConn(),
@@ -718,13 +738,13 @@ class AccountantWorker(WMConnectionBase):
         return
 
 
-    def handleWMBSFiles(self):
+    def handleWMBSFiles(self, wmbsFilesToBuild, parentageBinds):
         """
         _handleWMBSFiles_
 
         Do what can be done in bulk in bulk
         """
-        if len(self.wmbsFilesToBuild) == 0:
+        if len(wmbsFilesToBuild) == 0:
             # Nothing to do
             return
 
@@ -733,13 +753,17 @@ class AccountantWorker(WMConnectionBase):
         fileLocations  = []
         fileCreate     = []
 
-        for wmbsFile in self.wmbsFilesToBuild:
+        for wmbsFile in wmbsFilesToBuild:
             lfn           = wmbsFile['lfn']
             if lfn == None:
                 continue
 
             selfChecksums = wmbsFile['checksums']
-            self.parentageBinds.append({'child': lfn, 'jobid': wmbsFile['jid']})
+            # by jobType add to different parentage relation
+            # if it is the merge job, don't include the parentage on failed input files.
+            # otherwise parentage is set for all input files.
+            parentageBinds.append({'child': lfn, 'jobid': wmbsFile['jid']})
+                
             if wmbsFile['runs']:
                 runLumiBinds.append({'lfn': lfn, 'runs': wmbsFile['runs']})
 
@@ -798,7 +822,7 @@ class AccountantWorker(WMConnectionBase):
             raise AccountantWorkerException(msg)
 
         # Clear out finished files
-        self.wmbsFilesToBuild = []
+        wmbsFilesToBuild = []
         return
 
     def createFileFromDataStructsFile(self, file, jobID):
@@ -825,8 +849,7 @@ class AccountantWorker(WMConnectionBase):
         if seName != None:
             wmbsFile.setLocation(se = seName, immediateSave = False)
         wmbsFile['jid'] = jobID
-        self.wmbsFilesToBuild.append(wmbsFile)
-
+        
         return wmbsFile
 
     def handleDBSBufferParentage(self):

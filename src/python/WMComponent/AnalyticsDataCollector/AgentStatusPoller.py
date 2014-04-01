@@ -15,7 +15,8 @@ from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import LocalCouchDBData, \
      WMAgentDBData, combineAnalyticsData, convertToRequestCouchDoc, \
-     convertToAgentCouchDoc, isDrainMode, initAgentInfo
+     convertToAgentCouchDoc, isDrainMode, initAgentInfo, DataUploadTime, \
+     diskUse, numberCouchProcess
 from WMCore.WMFactory import WMFactory
 
 class AgentStatusPoller(BaseWorkerThread):
@@ -82,19 +83,54 @@ class AgentStatusPoller(BaseWorkerThread):
         agentInfo = self.wmagentDB.getComponentStatus(self.config)
         agentInfo.update(self.agentInfo)
         
+        if isDrainMode(self.config):
+            logging.info("Agent is in DrainMode")
+            agentInfo['drain_mode'] = True
+            agentInfo['status'] = "warning"
+        
+        else:
+            agentInfo['drain_mode'] = False
+        
         if (couchInfo['status'] != 'ok'):
             agentInfo['down_components'].append("CouchServer")
             agentInfo['status'] = couchInfo['status']
             couchInfo['name'] = "CouchServer"
             agentInfo['down_component_detail'].append(couchInfo)
         
-        if isDrainMode(self.config):
-            logging.info("Agent is in DrainMode")
-            agentInfo['drain_mode'] = True
-            agentInfo['status'] = "warning"
+        
+        # Disk space warning   
+        diskUseList = diskUse()
+        diskUseThreshold = float(self.config.AnalyticsDataCollector.diskUseThreshold)
+        agentInfo['disk_warning'] = []
+        for disk in diskUseList:
+            if float(disk['percent'].strip('%')) >= diskUseThreshold:
+                agentInfo['disk_warning'].append(disk)
+        
+        # Couch process warning
+        couchProc = numberCouchProcess()
+        couchProcessThreshold = float(self.config.AnalyticsDataCollector.couchProcessThreshold)
+        if couchProc >= couchProcessThreshold:
+            agentInfo['couch_process_warning'] = couchProc
         else:
-            agentInfo['drain_mode'] = False
-            
+            agentInfo['couch_process_warning'] = 0
+        
+        # This adds the last time and message when data was updated to agentInfo
+        lastDataUpload = DataUploadTime.getInfo(self)
+        if lastDataUpload['data_last_update']!=0:
+            agentInfo['data_last_update'] = lastDataUpload['data_last_update']
+        if lastDataUpload['data_error']!="":
+            agentInfo['data_error'] = lastDataUpload['data_error']
+        
+        # Change status if there is data_error, couch process maxed out or disk full problems.
+        if agentInfo['status'] == 'ok':
+            if agentInfo['disk_warning'] != []:
+                agentInfo['status'] = "warning"
+                
+        if agentInfo['status'] == 'ok' or agentInfo['status'] == 'warning':
+            if (agentInfo.has_key('data_error') and agentInfo['data_error'] != 'ok') or \
+               (agentInfo.has_key('couch_process_warning') and agentInfo['couch_process_warning'] != 0):
+                agentInfo['status'] = "error"
+
         return agentInfo
 
     def uploadAgentInfoToCentralWMStats(self, agentInfo, uploadTime):

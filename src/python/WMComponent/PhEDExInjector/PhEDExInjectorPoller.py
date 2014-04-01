@@ -8,6 +8,7 @@ Poll the DBSBuffer database and inject files as they are created.
 import threading
 import logging
 import traceback
+from collections import defaultdict
 from httplib import HTTPException
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
@@ -63,6 +64,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         #    self.sendAlert will be then be available
         self.initAlerts(compName = "PhEDExInjector")
 
+        self.filesToRecover = None
 
     def setup(self, parameters):
         """
@@ -79,7 +81,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         self.getUninjected = daofactory(classname = "GetUninjectedFiles")
         self.getMigrated = daofactory(classname = "GetMigratedBlocks")
 
-        daofactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+        daofactory = DAOFactory(package = "WMComponent.DBS3Buffer",
                                 logger = self.logger,
                                 dbinterface = myThread.dbi)
         self.setStatus = daofactory(classname = "DBSBufferFiles.SetPhEDExStatus")
@@ -104,7 +106,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         """
         _createInjectionSpec_
 
-        Trasform the data structure returned from the database into an XML
+        Transform the data structure returned from the database into an XML
         string for the PhEDEx Data Service.  The injectionData parameter must be
         a dictionary keyed by dataset path.  Each dataset path will map to a
         list of blocks, each block being a dict.  The block dicts will have
@@ -132,6 +134,32 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         return injectionSpec.save()
 
+    def createRecoveryFileFormat(self, unInjectedData):
+        """
+        _createRecoveryFileFormat_
+
+        Transform the data structure returned from database in to the dict format
+        for the PhEDEx Data Service.  The injectionData parameter must be
+        a dictionary keyed by dataset path.  
+        
+        unInjectedData format
+        {"dataset1":
+          {"block1": {"is-open": "y", "files":
+            [{"lfn": "lfn1", "size": 10, "checksum": {"cksum": "1234"}},
+             {"lfn": "lfn2", "size": 20, "checksum": {"cksum": "4321"}}]}}}
+        
+        returns
+        {"block1": set(["lfn1", "lfn2"])}
+        """
+        sortedBlocks = defaultdict(set)
+        for datasetPath in unInjectedData:
+            
+            for fileBlockName, fileBlock in unInjectedData[datasetPath].iteritems():
+                for fileDict in fileBlock["files"]:
+                    sortedBlocks[fileBlockName].add(fileDict["lfn"])
+                    
+        return sortedBlocks
+    
     def injectFiles(self):
         """
         _injectFiles_
@@ -182,6 +210,15 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             xmlData = self.createInjectionSpec(uninjectedFiles[siteName])
             try:
                 injectRes = self.phedex.injectBlocks(location, xmlData)
+            except HTTPException, ex:
+                # If we get an HTTPException of certain types, raise it as an error
+                if ex.status == 400:
+                    # assume it is duplicate injection error. but if that is not the case
+                    # needs to be investigated
+                    self.filesToRecover = self.createRecoveryFileFormat(uninjectedFiles[siteName])
+                
+                msg = "PhEDEx injection failed with %s error: %s" % (ex.status, ex.result)
+                raise PhEDExInjectorPassableError(msg)
             except Exception, ex:
                 # If we get an error here, assume that it's temporary (it usually is)
                 # log it, and ignore it in the algorithm() loop
@@ -189,6 +226,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 msg += str(ex)
                 logging.error(msg)
                 logging.debug("Traceback: %s" % str(traceback.format_exc()))
+                
                 raise PhEDExInjectorPassableError(msg)
             logging.info("Injection result: %s" % injectRes)
 
@@ -290,6 +328,27 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             myThread.transaction.commit()
         return
 
+    def recoverInjectedFiles(self):
+        """
+        When PhEDEx inject call timed out, run this function.
+        Since there are 3 min reponse time out in cmsweb, some times 
+        PhEDEx injection call times out even though the call succeeded
+        In that case run the recovery mode
+        1. first check whether files which injection status = 0 are in the PhEDEx.
+        2. if those file exist set the in_phedex status to 1
+        3. set self.filesToRecover = None
+        """
+        myThread = threading.currentThread()
+        
+        injectedFiles = self.phedex.getInjectedFiles(self.filesToRecover)
+        
+        myThread.transaction.begin()
+        self.setStatus.execute(injectedFiles, 1)
+        myThread.transaction.commit()
+        # when files are recovered set the self.file 
+        self.filesToRecover = None
+        return injectedFiles
+        
     def algorithm(self, parameters):
         """
         _algorithm_
@@ -299,6 +358,13 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         """
         myThread = threading.currentThread()
         try:
+            if self.filesToRecover != None:
+                logging.info(""" Running PhEDExInjector Recovery: 
+                                 previous injection call failed, 
+                                 check if files were injected to PhEDEx anyway""")
+                recoveredFiles = self.recoverInjectedFiles()
+                logging.info("%s files already injected: changed status in dbsbuffer db" % len(recoveredFiles))
+                        
             self.injectFiles()
             self.closeBlocks()
         except PhEDExInjectorPassableError, ex:

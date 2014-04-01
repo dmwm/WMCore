@@ -1,3 +1,401 @@
+0.9.94 to 0.9.95pre1:
+  - Merge pull request #4961 from juztas/master
+  - Merge pull request #5035 from alexanderrichards/multicore_fix
+  - Merge pull request #5055 from mmascher/master
+  - Merge pull request #5058 from ticoann/wmstats_state_transition
+  - Merge pull request #5057 from ticoann/reqmgr_400_error_verbose
+  - add announced as allowed transition from completed
+  - add verbose message for 400 error. Need to check this doesn't reveal any secrete informaiton
+  - Merge pull request #5056 from ticoann/lhe_event_fix
+  - Add dependency for crabcache in setup script
+  - fix lhe eventperlumi in task chain
+  - 0.9.94d
+  - Merge pull request #5024 from ticoann/reqmgr_fail_transiton
+  - Merge pull request #5045 from ticoann/dbs_reader_fix
+  - Merge pull request #5039 from mmascher/master
+  - Merge pull request #5050 from ticoann/another_dbs_upload_fix
+  - only delete the key when exist. Not sure why different block has different key
+  - Merge pull request #5046 from ticoann/dbs_input_fix
+  - add workflow to key to remove.
+  - Refactor lexicon: extract regexp strings from methods. Needed for CRAB3
+  - Use PhEDEx to locate blocks/dataset instead of dbs
+  - Merge pull request #5025 from ticoann/fix_acdc_for_testsetupwq
+  - Merge pull request #5029 from ticoann/fix_dbsbuffer_complete_check_query
+  - Merge pull request #5038 from amaltaro/updt_FrontierID
+  - Merge pull request #5041 from ticoann/block_completion_fix
+  - fix missing workflow retrieval
+  - Remove obsolete name parameter in UFC
+  - set FRONTIER_ID variable to the requestName
+  - fixing issue #4992
+  - fix return format of the GetCompletedWorkflows
+  - Merge pull request #5027 from hufnagel/dbs_workflow_complete
+  - fix bug in dbs workflow completion query
+  - fix ACDC installation for test mode
+  - Merge pull request #5022 from juztas/master
+  - Merge pull request #5023 from ticoann/dbs3_open_block_query
+  - allow failed -> rejected transition
+  - fix open block query
+  - New ReDigi workflow for testing
+  - 0.9.94c
+  - Merge pull request #4979 from ticoann/set_close_block_with_complete
+  - Merge pull request #5017 from ticoann/hack_couch_error_acdc
+  - Merge pull request #5002 from ticoann/phexed_inject_open_block
+  - Merge pull request #5001 from ticoann/fix_analytics_data_collector_bug
+  - Merge pull request #4995 from hufnagel/t0temp-unmerged
+  - hack when couch error occurs.
+  - 0.9.94b
+  - Merge pull request #5016 from ticoann/fix_store_result_lfn
+  - add store result lfn test
+  - Lexicon validation missing for storeResults mergedLFN
+  - Merge pull request #5015 from ticoann/fix_workqueue_element_sorting
+  - Merge pull request #5009 from ticoann/fix_lhe_event_lumi
+  - Merge pull request #5013 from ticoann/fix_location_none_case
+  - fix workqueue creation time setting
+  - let the location mapper retry when data location is not set first time
+  - fix lhe input file and event per lumi option
+  - inject PhEDEx blocks when block is open
+  - Merge pull request #4999 from lucacopa/component_crash
+  - This is a temporary fix to #4793
+  - fix AnalyticsDataCollector reporting
+  - Merge pull request #4990 from lucacopa/jobs_to_drain_sites
+  - Merge pull request #4988 from ticoann/fix_dbs_buffer_se
+  - This fixes #4898
+  - allow unmerged in LFN for Tier0 files
+  - 0.9.94a
+  - Merge pull request #4956 from AndresTanasijczuk/master
+  - Merge pull request #4985 from mmascher/master
+  - Merge pull request #4987 from ticoann/reqmgr2_index_page_fix
+  - fix dbsbuffer not associating file to se
+  - temp fix for reqmgr index page
+  - close block when workflow is completed
+  - Use voms-proxy-info instead of grid-cert-info. Fixes #4924
+  - Update TrivialFileCatalog for ASO
+  - Add cert and ckey arguments in Database constructor and pass them to CouchDBRequests. Add ckey and cert attributes in CouchServer and use them when connecting/creating a Database.
+
+0.9.94 to 0.9.94d:
+  - Merge pull request #5024 from ticoann/reqmgr_fail_transiton
+  - Merge pull request #5045 from ticoann/dbs_reader_fix
+  - Merge pull request #5039 from mmascher/master
+  - Merge pull request #5050 from ticoann/another_dbs_upload_fix
+  - only delete the key when exist. Not sure why different block has different key
+  - Merge pull request #5046 from ticoann/dbs_input_fix
+  - add workflow to key to remove.
+  - Refactor lexicon: extract regexp strings from methods. Needed for CRAB3
+  - Use PhEDEx to locate blocks/dataset instead of dbs
+  - Merge pull request #5025 from ticoann/fix_acdc_for_testsetupwq
+  - Merge pull request #5029 from ticoann/fix_dbsbuffer_complete_check_query
+  - Merge pull request #5038 from amaltaro/updt_FrontierID
+  - Merge pull request #5041 from ticoann/block_completion_fix
+  - fix missing workflow retrieval
+  - Remove obsolete name parameter in UFC
+  - set FRONTIER_ID variable to the requestName
+  - fix return format of the GetCompletedWorkflows
+  - Merge pull request #5027 from hufnagel/dbs_workflow_complete
+  - fix bug in dbs workflow completion query
+  - fix ACDC installation for test mode
+  - Merge pull request #5022 from juztas/master
+  - Merge pull request #5023 from ticoann/dbs3_open_block_query
+  - allow failed -> rejected transition
+  - fix open block query
+  - New ReDigi workflow for testing
+  - 0.9.94c
+  - Merge pull request #4979 from ticoann/set_close_block_with_complete
+  - Merge pull request #5017 from ticoann/hack_couch_error_acdc
+  - Merge pull request #5002 from ticoann/phexed_inject_open_block
+  - Merge pull request #5001 from ticoann/fix_analytics_data_collector_bug
+  - Merge pull request #4995 from hufnagel/t0temp-unmerged
+  - hack when couch error occurs.
+  - 0.9.94b
+  - Merge pull request #5016 from ticoann/fix_store_result_lfn
+  - add store result lfn test
+  - Lexicon validation missing for storeResults mergedLFN
+  - Merge pull request #5015 from ticoann/fix_workqueue_element_sorting
+  - Merge pull request #5009 from ticoann/fix_lhe_event_lumi
+  - Merge pull request #5013 from ticoann/fix_location_none_case
+  - fix workqueue creation time setting
+  - let the location mapper retry when data location is not set first time
+  - fix lhe input file and event per lumi option
+  - inject PhEDEx blocks when block is open
+  - Merge pull request #4999 from lucacopa/component_crash
+  - This is a temporary fix to #4793
+  - fix AnalyticsDataCollector reporting
+  - Merge pull request #4990 from lucacopa/jobs_to_drain_sites
+  - Merge pull request #4988 from ticoann/fix_dbs_buffer_se
+  - This fixes #4898
+  - allow unmerged in LFN for Tier0 files
+  - 0.9.94a
+  - Merge pull request #4956 from AndresTanasijczuk/master
+  - Merge pull request #4985 from mmascher/master
+  - Merge pull request #4987 from ticoann/reqmgr2_index_page_fix
+  - fix dbsbuffer not associating file to se
+  - temp fix for reqmgr index page
+  - close block when workflow is completed
+  - Use voms-proxy-info instead of grid-cert-info. Fixes #4924
+  - Add cert and ckey arguments in Database constructor and pass them to CouchDBRequests. Add ckey and cert attributes in CouchServer and use them when connecting/creating a Database.
+
+0.9.94 to 0.9.94c:
+  - Merge pull request #4979 from ticoann/set_close_block_with_complete
+  - Merge pull request #5017 from ticoann/hack_couch_error_acdc
+  - Merge pull request #5002 from ticoann/phexed_inject_open_block
+  - Merge pull request #5001 from ticoann/fix_analytics_data_collector_bug
+  - Merge pull request #4995 from hufnagel/t0temp-unmerged
+  - hack when couch error occurs.
+  - 0.9.94b
+  - Merge pull request #5016 from ticoann/fix_store_result_lfn
+  - add store result lfn test
+  - Lexicon validation missing for storeResults mergedLFN
+  - Merge pull request #5015 from ticoann/fix_workqueue_element_sorting
+  - Merge pull request #5009 from ticoann/fix_lhe_event_lumi
+  - Merge pull request #5013 from ticoann/fix_location_none_case
+  - fix workqueue creation time setting
+  - let the location mapper retry when data location is not set first time
+  - fix lhe input file and event per lumi option
+  - inject PhEDEx blocks when block is open
+  - Merge pull request #4999 from lucacopa/component_crash
+  - This is a temporary fix to #4793
+  - fix AnalyticsDataCollector reporting
+  - Merge pull request #4990 from lucacopa/jobs_to_drain_sites
+  - Merge pull request #4988 from ticoann/fix_dbs_buffer_se
+  - This fixes #4898
+  - allow unmerged in LFN for Tier0 files
+  - 0.9.94a
+  - Merge pull request #4956 from AndresTanasijczuk/master
+  - Merge pull request #4985 from mmascher/master
+  - Merge pull request #4987 from ticoann/reqmgr2_index_page_fix
+  - fix dbsbuffer not associating file to se
+  - temp fix for reqmgr index page
+  - close block when workflow is completed
+  - Use voms-proxy-info instead of grid-cert-info. Fixes #4924
+  - Add cert and ckey arguments in Database constructor and pass them to CouchDBRequests. Add ckey and cert attributes in CouchServer and use them when connecting/creating a Database.
+
+0.9.94 to 0.9.94b:
+  - Merge pull request #5016 from ticoann/fix_store_result_lfn
+  - add store result lfn test
+  - Lexicon validation missing for storeResults mergedLFN
+  - Merge pull request #5015 from ticoann/fix_workqueue_element_sorting
+  - Merge pull request #5009 from ticoann/fix_lhe_event_lumi
+  - Merge pull request #5013 from ticoann/fix_location_none_case
+  - fix workqueue creation time setting
+  - let the location mapper retry when data location is not set first time
+  - fix lhe input file and event per lumi option
+  - Merge pull request #4999 from lucacopa/component_crash
+  - This is a temporary fix to #4793
+  - Merge pull request #4990 from lucacopa/jobs_to_drain_sites
+  - Merge pull request #4988 from ticoann/fix_dbs_buffer_se
+  - This fixes #4898
+  - 0.9.94a
+  - Merge pull request #4956 from AndresTanasijczuk/master
+  - Merge pull request #4985 from mmascher/master
+  - Merge pull request #4987 from ticoann/reqmgr2_index_page_fix
+  - fix dbsbuffer not associating file to se
+  - temp fix for reqmgr index page
+  - Use voms-proxy-info instead of grid-cert-info. Fixes #4924
+  - Add cert and ckey arguments in Database constructor and pass them to CouchDBRequests. Add ckey and cert attributes in CouchServer and use them when connecting/creating a Database.
+
+0.9.94 to 0.9.94a:
+  - Merge pull request #4956 from AndresTanasijczuk/master
+  - Merge pull request #4985 from mmascher/master
+  - Merge pull request #4987 from ticoann/reqmgr2_index_page_fix
+  - temp fix for reqmgr index page
+  - Use voms-proxy-info instead of grid-cert-info. Fixes #4924
+  - Add cert and ckey arguments in Database constructor and pass them to CouchDBRequests. Add ckey and cert attributes in CouchServer and use them when connecting/creating a Database.
+
+0.9.93 to 0.9.94:
+  - Merge pull request #4986 from ticoann/dbs3_location_call_change
+  - fix getting local and prod instance for Datamapper, also change to new api to get location effiently
+
+0.9.92 to 0.9.93:
+  - Merge pull request #4983 from lucacopa/storeResults
+  - Merge pull request #4982 from ticoann/add_merge_lfn_for_storeresult
+  - Specs changes for StoreResults, DBS3 origin block location for DataLocationMapper
+  - add store result merged lfn option in reqmgr webpage
+  - Merge pull request #4976 from ticoann/change_transition
+  - Merge pull request #4977 from alexanderrichards/timestamp_sorting
+  - Merge pull request #4978 from alexanderrichards/LheInputFiles
+  - Merge pull request #4954 from ticoann/workloadsummary_install_fix
+  - don't allow rejected when workflow is assigned
+  - 0.9.93pre1
+  - Merge pull request #4973 from ticoann/lexicon_refactor2
+  - refactor Lexicon to reduce the redundant regular expression definition Also add tight constraint for user data
+  - don't install workloadsummary unless it is test mode
+  - Merge pull request #4959 from ticoann/temp_test_lex
+  - Merge pull request #4968 from ticoann/phedexinjector_config_fix
+  - Merge pull request #4970 from hufnagel/remove-afs-alert
+  - skip AFS cache dir in disk space check
+  - fix dbs url used by PhEDEx
+  - Merge pull request #4960 from bbockelm/suppress_print
+  - Do not print to stdout when uploading files.
+  - fix stage in bug
+  - adding EventsPerLumi to the TaskChain Workload
+  - Added LheInputFiles option to the TaskChain Workload
+  - sorting workqueue elements by timestamp
+
+0.9.92 to 0.9.93pre1:
+  - Merge pull request #4973 from ticoann/lexicon_refactor2
+  - refactor Lexicon to reduce the redundant regular expression definition Also add tight constraint for user data
+  - Merge pull request #4959 from ticoann/temp_test_lex
+  - Merge pull request #4968 from ticoann/phedexinjector_config_fix
+  - Merge pull request #4970 from hufnagel/remove-afs-alert
+  - skip AFS cache dir in disk space check
+  - fix dbs url used by PhEDEx
+  - Merge pull request #4960 from bbockelm/suppress_print
+  - Do not print to stdout when uploading files.
+  - fix stage in bug
+
+0.9.91 to 0.9.92:
+  - Merge pull request #4958 from giffels/dbs3-lexicon-fixes
+  - Allow _ and numbers in physics group names
+  - Merge pull request #4952 from bbockelm/crab3_improve_stageout_debugging1
+  - Merge pull request #4955 from mmascher/master
+  - Refactor TAG_COLLECTOR_URL variable
+  - Fix the setup_dependencies for the CRAB3 TaskWorker
+  - Merge pull request #4915 from mmascher/setproxyUI
+  - Merge pull request #4951 from bbockelm/crab3_phedex_dep
+  - Small improvements to the logging of the site-local-config for stageout.
+  - Update crab taskworker dependencies to include PhEDEx client API.
+  - Use RFC compliant proxies
+  - Save the list of trusted retrievers in a variable for later use and include the myproxyAccount variable in the credname hash computation
+  - Different format for grid-cert-info on OSG. Fixes #4921
+  -  Source the UI with the script provided before checking if voms-proxy-âinit exists
+
+0.9.90 to 0.9.91:
+  - Merge pull request #4946 from ticoann/taskarichvier_indent_fix
+  - fix indentation
+  - Merge pull request #4944 from ticoann/fix_dbs3_closing
+  - fix dbs block closing.
+
+0.9.89 to 0.9.90:
+  - Merge pull request #4893 from alexanderrichards/changestate_couchdb_connection_fix
+  - Merge pull request #4934 from ticoann/add_more_config
+  - Merge pull request #4943 from ticoann/lexicon_dbs3_yuyi
+  - block length and processed DS length YG
+  - add some urls in secrete file
+  - patching for reconnection to couchdb if failed the first time
+
+0.9.88 to 0.9.89:
+  - Merge pull request #4929 from ticoann/stage_out_fix
+  - Merge pull request #4930 from ticoann/phexdex_close_fix
+  - Merge pull request #4925 from ticoann/dbs3_listRuns_fix
+  - Merge pull request #4931 from ticoann/tag_url_fix
+  - fix url change
+  - fix dbs3 listRuns call - wrong parameter, also fix the Dataset spliting to handle dbs3 call
+  - Merge pull request #4922 from ticoann/request_timeout
+  - fix PhEDEx uploader closing block
+  - fix FNAL stage out plugin for removal
+  - increase timeout for couch call to 10 min and general call to 5 min
+  - Merge pull request #4895 from hufnagel/taskarchiver-dashboardupload
+  - make TasArchiver Reco performance upload optional
+  - Merge pull request #4914 from ticoann/phedex_injector_recovery
+  - add PhEDEx recovery code in PhEDExInjector
+
+0.9.87 to 0.9.88:
+  - Merge pull request #4903 from mmascher/master
+  - Merge pull request #4901 from mmascher/mysql
+  - Merge pull request #4909 from ticoann/dbs3_datastruct_fix
+  - Squashed commit of the following:
+  - Adjust crbserver dependencies
+  - Fix regex for decoding grid-cert-info -enddate output in Credential/Proxy.py
+
+0.9.86 to 0.9.87:
+  - Merge pull request #4910 from hufnagel/promptreco-blockclose
+  - Merge pull request #4908 from HassenRiahi/FixASODeps
+  - Merge pull request #4900 from HassenRiahi/AdduserNameDnMethod_1
+  - Update ASO dependencies.
+  - Merge pull request #4905 from ticoann/dbs3_only_config
+  - change to use only DBS3Uploader
+  - Merge pull request #4857 from ticoann/fnal_eos_fix
+  - Merge pull request #4860 from alexanderrichards/acdc_modconfig_fix
+  - make promptreco block closing configurable
+  - Add userNameDN method clearing the cache.
+  - Merge pull request #4894 from mmascher/mysql
+  - add MySQL compatibility
+  - Merge pull request #4724 from samircury/lumi-perf-dashboard-report
+  - use xrdcp
+  - fix for acdc
+  - Adds Reconstruction performance reporting to DashBoard, fixes #4329
+
+0.9.85 to 0.9.86:
+  - fix DBS3 Reader test. pull request #4888 from ticoann
+  - sync created job number with running and pending. pull request #4887 from ticoann
+  - Add CRAB2 processing dataset names to Lexicon.py. pull request #4885 from giffels
+  - Add CRAB2 lfns to Lexicon.py. pull request #4884 from giffels
+  - fix promptreco lfn. pull request #4882 from hufnagel
+  - Add a method to retrieve the number of days left in the user certificate. pull request #4881 from mmascher
+  - fix assigning variable before definition bug. pull request #4874 from ticoann
+  - fix the dbs primary dataset type. pull request #4841 from ticoann
+
+0.9.84 to 0.9.85:
+  - Add UFC as a dependency to CRABClient. pull request #4868 from bbockelm
+  - Get rid of --voms cms when doing myproxy-init. pull request #4867 from mmascher
+  - Add config_couch_instance to ASO config for CMSWEB deployment. pull request #4862 from HassenRiahi
+  - Updating oneEventMode for WMCore. pull request #4859 from PerilousApricot
+  - Move DB imports out of module-level. pull request #4858 from PerilousApricot
+  - add option for Tier0 specific LFNs. pull request #4861 from hufnagel
+  - Add WMCore.Services.UserFileCache dependency for crabstaskworker. pull request #4854 from mmascher
+  - fix phedex injection for dbs3. pull request #4853 from ticoann
+  - fix cp stageout to always create 775 directories. pull request #4846 from hufnagel
+
+0.9.83 to 0.9.84:
+  - Merge pull request #4838 from ticoann/error_handler
+  - Merge pull request #4850 from ticoann/fix_indent_error
+  - Merge pull request #4848 from ticoann/site_matching_fix
+  - fix indentation
+  - Merge pull request #4849 from PerilousApricot/bugfix/crabserver-rpm-fix
+  - Merge pull request #4847 from mmascher/arbitrary-prescript-CMSSW
+  - Adding WMCore.WMSpec to crabserver
+  - Merge pull request #4842 from ticoann/tier0_acqera_fix
+  - Improve Scram runtime wrapper: allow to use an arbitrary file (even stdout)
+  - fix potential location list
+  - Merge pull request #4845 from mmascher/arbitrary-prescript-CMSSW
+  - Merge pull request #4839 from ticoann/fix_resource_control_unit_test
+  - Allow the execution of arbitrary scramPreScripts in the CMSSW executor
+  - fix acquisionEra, processingVersion, processingString set when it is assigned initialization
+  - Merge pull request #4836 from ticoann/wmagent_monitor_improvement
+  - Merge pull request #4840 from ticoann/fix_bad_jobcode
+  - fix bad job code
+  - fix updateSiteInformation function
+  - fixes #4832
+  - Merge pull request #4826 from lucacopa/alarming_improvements
+  - This Fixes #4820 and #4786 This combine patch includes:
+  - wmstats disk couch process warning
+  - Merge pull request #4835 from hufnagel/fixtypo-4822
+  - fix typo in 4822 merged pull request
+  - Merge pull request #4822 from hufnagel/http-debug
+  - Merge pull request #4829 from ticoann/change_default_config_cache
+  - Merge pull request #4830 from ticoann/add_wmstats_script
+  - Merge pull request #4831 from ticoann/fix_job_submitter_typo
+  - fix typo
+  - add wmstats status change script
+  - set default config cache name sync with production name
+  - Merge pull request #4606 from hufnagel/removeiooverrides
+  - Merge pull request #4828 from lucacopa/dbsUrl_configFile_fix
+  - Fixes #4827
+  - print out returned content from http errors
+  - remove IO overrides
+
+0.9.82 to 0.9.83:
+  - Merge pull request #4824 from yuyiguo/hidata2
+  - update Lexicon.py to handle 3 or 4 count of /store/hidata/... lfn by YG
+
+0.9.81 to 0.9.82:
+  - Merge pull request #4812 from ticoann/resource_control_fix
+  - fix changeSiteState function
+  - Merge pull request #4811 from ticoann/filter_success_from_wmstats
+  - Merge pull request #4803 from ticoann/fix_job_reporting
+  - Merge pull request #4806 from ticoann/merge_parentage_fix
+  - Merge pull request #4804 from pkonst/fix-os-requirement
+  - Merge pull request #4808 from ticoann/disk_postfix_fix
+  - Merge pull request #4809 from ticoann/need_permission_to_access_reqmgr
+  - Merge pull request #4810 from ticoann/fix_couchapp_init_script
+  - fix couchapp init script
+  - comment out reqmgr archive state update directly
+  - fix Disk prefix filter
+  - add unittest
+  - filter successful jobs propagating to central wmstats
+  - fix parentage for non merge job
+  - fix local job couch view due transition change
+  - Fixed job OS requirement in the JDL
+
 0.9.79 to 0.9.81:
   - add task summary table.  Pull request #4794
   - get rid of -k option in myproxy-logon  and remove the server DN from my  myproxy credential name (now is only sha1(self.userDN).hexdigest()). Pull request #4789

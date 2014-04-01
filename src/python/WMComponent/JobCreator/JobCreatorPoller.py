@@ -405,9 +405,14 @@ class JobCreatorPoller(BaseWorkerThread):
             myThread = threading.currentThread()
             if getattr(myThread, 'transaction', False) \
                    and getattr(myThread.transaction, 'transaction', False):
-                myThread.transaction.rollback()
-            msg = "Failed to execute JobCreator \n%s\n" % (ex)
-            raise JobCreatorException(msg)
+                myThread.transaction.rollback()            
+            # Handle temporary connection problems (Temporary)
+            if "This Connection is closed" not in str(ex):
+                msg = "Failed to execute JobCreator \n%s\n\n%s" % (ex,traceback.format_exc())
+                logging.error(msg)
+                raise JobCreatorException(msg)
+            else:
+                logging.error('There was a connection problem during the JobCreator algorithm, I will try again next cycle')
 
     def terminate(self, params):
         """

@@ -55,6 +55,27 @@ class Assign(WebAPI):
                 raise
         else:
             self.sites = []
+        
+        #store result lfn base with all Physics group
+        storeResultLFNBase = ["/store/results/analysisops",
+                              "/store/results/b_physics",
+                              "/store/results/b_tagging",
+                              "/store/results/b2g",
+                              "/store/results/e_gamma_ecal",
+                              "/store/results/ewk",
+                              "/store/results/exotica",
+                              "/store/results/forward",
+                              "/store/results/heavy_ions",
+                              "/store/results/higgs",
+                              "/store/results/jets_met_hcal",
+                              "/store/results/muon",
+                              "/store/results/qcd",
+                              "/store/results/susy",
+                              "/store/results/tau_pflow",
+                              "/store/results/top",
+                              "/store/results/tracker_dpg",
+                              "/store/results/tracker_pog",
+                              "/store/results/trigger"]  
         # yet 0.9.40 had also another self.mergedLFNBases which was differentiating
         # list of mergedLFNBases based on type of request, removed and all bases
         # will be displayed regardless of the request type (discussion with Edgar) 
@@ -67,6 +88,9 @@ class Assign(WebAPI):
             "/store/relval",
             "/store/hidata",
             "/store/himc"]
+        
+        self.allMergedLFNBases.extend(storeResultLFNBase)
+        
         self.allUnmergedLFNBases = ["/store/unmerged", "/store/temp"]
 
         self.yuiroot = config.yuiroot
@@ -104,8 +128,8 @@ class Assign(WebAPI):
                 WMCore.Lexicon.procstring(strValue)
             else:
                 WMCore.Lexicon.identifier(strValue)
-        except AssertionError:
-            raise cherrypy.HTTPError(400, "Bad input %s" % name)
+        except AssertionError, ex:
+            raise cherrypy.HTTPError(400, "Bad input: %s" % str(ex))
         return v
 
     @cherrypy.expose
@@ -300,8 +324,10 @@ class Assign(WebAPI):
             procds = tokens[2]
             try:
                 WMCore.Lexicon.procdataset(procds)
-            except AssertionError:
-                raise cherrypy.HTTPError(400, "Bad output dataset name, check the processed dataset.")
+            except AssertionError, ex:
+                raise cherrypy.HTTPError(400, 
+                            "Bad output dataset name, check the processed dataset.\n %s" % 
+                            str(ex))
 
         #FIXME not validated
         helper.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
@@ -323,10 +349,10 @@ class Assign(WebAPI):
         autoApproveList = kwargs.get("AutoApproveSubscriptionSites", [])
         subscriptionPriority = kwargs.get("SubscriptionPriority", "Low")
         if subscriptionPriority not in ["Low", "Normal", "High"]:
-            raise cherrypy.HTTPError(400, "Invalid subscription priority")
+            raise cherrypy.HTTPError(400, "Invalid subscription priority %s" % subscriptionPriority)
         subscriptionType = kwargs.get("CustodialSubType", "Move")
         if subscriptionType not in ["Move", "Replica"]:
-            raise cherrypy.HTTPError(400, "Invalid custodial subscription type")
+            raise cherrypy.HTTPError(400, "Invalid custodial subscription type %s" % subscriptionType)
 
         helper.setSubscriptionInformationWildCards(wildcardDict = self.wildcardSites,
                                                    custodialSites = custodialList,

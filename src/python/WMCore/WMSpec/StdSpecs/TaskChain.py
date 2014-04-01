@@ -262,6 +262,10 @@ class TaskChainWorkloadFactory(StdBase):
             self.taskMapping[task.name()] = taskConf
 
         self.workload.ignoreOutputModules(self.ignoredOutputModules)
+        
+        # setting the parameters which need to be set for all the tasks
+        # sets acquisitionEra, processingVersion, processingString
+        self.workload.setTaskPropertiesFromWorkload()
         return self.workload  
 
             
@@ -454,6 +458,9 @@ class TaskChainWorkloadFactory(StdBase):
             taskConf["SplittingArguments"]["events_per_job"] = taskConf["EventsPerJob"]
             if taskConf["SplittingAlgo"] == "EventAwareLumiBased":
                 taskConf["SplittingArguments"]["max_events_per_lumi"] = 20000
+            else:
+                taskConf["SplittingArguments"]["events_per_lumi"] = taskConf["EventsPerLumi"]
+            taskConf["SplittingArguments"]["lheInputFiles"] = taskConf["LheInputFiles"]
         elif taskConf["SplittingAlgo"] == "LumiBased":
             taskConf["SplittingArguments"]["lumis_per_job"] = taskConf["LumisPerJob"]
         elif taskConf["SplittingAlgo"] == "FileBased":
@@ -488,7 +495,8 @@ class TaskChainWorkloadFactory(StdBase):
                                     "attr" : "firstEvent", "null" : False},
                     "FirstLumi" : {"default" : 1, "type" : int,
                                     "optional" : True, "validate" : lambda x : x > 0,
-                                    "attr" : "firstLumi", "null" : False}}
+                                    "attr" : "firstLumi", "null" : False}
+                    }
         baseArgs.update(specArgs)
         return baseArgs
 
@@ -562,7 +570,13 @@ class TaskChainWorkloadFactory(StdBase):
                                      "null" : False},
                     "FilesPerJob" : {"default" : 1, "type" : int,
                                      "optional" : True, "validate" : lambda x : x > 0,
-                                     "null" : False}
+                                     "null" : False},
+                    "EventsPerLumi" : {"default" : None, "type" : int,
+                                       "optional" : True, "validate" : lambda x : x > 0,
+                                       "attr" : "eventsPerLumi", "null" : True},
+                    "LheInputFiles" : {"default" : False, "type" : strToBool,
+                                       "optional" : True, "validate" : None,
+                                       "attr" : "lheInputFiles", "null" : False}
                     }
         return specArgs
 

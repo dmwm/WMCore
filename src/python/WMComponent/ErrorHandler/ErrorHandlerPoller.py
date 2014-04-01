@@ -168,7 +168,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         logging.debug("About to propagate jobs")
         if len(retrydoneJobs) > 0:
             self.changeState.propagate(retrydoneJobs, 'retrydone',
-                                       '%sfailed' % state)
+                                       '%sfailed' % state, updatesummary = True)
         if len(cooloffJobs) > 0:
             self.changeState.propagate(cooloffJobs, '%scooloff' % state,
                                        '%sfailed' % state, updatesummary = True)

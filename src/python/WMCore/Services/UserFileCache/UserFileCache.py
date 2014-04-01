@@ -28,29 +28,23 @@ class UserFileCache(Service):
             self['logger'].warning('The UserFileCache proxyfilename parameter has been replace with the more'
                                    ' general (ckey/cert) pair.')
 
-    def download(self, hashkey=None, name=None, output=None):
+    def download(self, hashkey, output):
         """
         Download file. If hashkey is provided use it. Otherwise use filename. At least one
         of them should be provided.
         """
-        # FIXME: option for temp file if output=None
-        if hashkey:
-            url = self['endpoint'] + 'file?hashkey=%s' % hashkey
-        else:
-            url = self['endpoint'] + 'file?inputfilename=%s' % name
+        url = self['endpoint'] + 'file?hashkey=%s' % hashkey
 
         self['logger'].info('Fetching URL %s' % url)
         fileName, header = self['requests'].downloadFile(output, str(url)) #unicode broke pycurl.setopt
         self['logger'].debug('Wrote %s' % fileName)
         return fileName
 
-    def upload(self, fileName, name=None):
+    def upload(self, fileName):
         """
         Upload the file
         """
         params = [('hashkey', self.checksum(fileName))]
-        if name:
-            params.append(('inputfilename', name))
 
         resString = self["requests"].uploadFile(fileName=fileName, fieldName='inputfile',
                                                 url=self['endpoint'] + 'file',

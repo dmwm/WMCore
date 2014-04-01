@@ -92,7 +92,7 @@ class Requests(dict):
                         idict.get('service_name')))
             self["cachepath"] = cache_dir
             self["req_cache_path"] = os.path.join(cache_dir, '.cache')
-        self.setdefault("timeout", 30)
+        self.setdefault("timeout", 300)
         self.setdefault("logger", logging)
 
         check_server_url(self['host'])
@@ -472,7 +472,6 @@ class Requests(dict):
             c.setopt(pycurl.CUSTOMREQUEST, 'PUT')
         else:
             raise HTTPException("Verb %s not sopported for upload." % verb)
-        print url
         c.setopt(c.URL, url)
         fullParams = [(fieldName, (c.FORM_FILE, fileName))]
         fullParams.extend(params)

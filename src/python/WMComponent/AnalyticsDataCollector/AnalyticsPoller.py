@@ -15,7 +15,7 @@ from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import LocalCouchDBData, \
      WMAgentDBData, combineAnalyticsData, convertToRequestCouchDoc, \
-     convertToAgentCouchDoc, isDrainMode, initAgentInfo
+     convertToAgentCouchDoc, isDrainMode, initAgentInfo, DataUploadTime
 from WMCore.WMFactory import WMFactory
 
 class AnalyticsPoller(BaseWorkerThread):
@@ -112,9 +112,10 @@ class AnalyticsPoller(BaseWorkerThread):
 
             self.localSummaryCouchDB.uploadData(requestDocs)
             logging.info("Request data upload success\n %s request, \nsleep for next cycle" % len(requestDocs))
-
+            DataUploadTime.setInfo(self, uploadTime, "ok")
+            
         except Exception, ex:
             logging.error("Error occurred, will retry later:")
             logging.error(str(ex))
+            DataUploadTime.setInfo(self, False, str(ex))
             logging.error("Trace back: \n%s" % traceback.format_exc())
- 

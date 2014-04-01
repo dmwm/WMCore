@@ -10,6 +10,7 @@ import sys
 import urllib
 import optparse
 import shutil
+from urlparse import urlsplit
 
 from couchapp.commands import push as couchapppush
 from couchapp.config import Config
@@ -304,20 +305,13 @@ if __name__ == "__main__":
                         wmagentConfig.JobStateMachine.configCacheDBName, "ConfigCache")
         installCouchApp(wmagentConfig.JobStateMachine.couchurl,
                         wmagentConfig.JobStateMachine.configCacheDBName, "GroupUser")
-
-    if hasattr(wmagentConfig, "ACDC"):
-        installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "ACDC")
-        installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")
-
+    
     if hasattr(wmagentConfig, "WorkQueueManager"):
         installWorkQueueCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname)
         installWorkQueueCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.inboxDatabase)
         if options.cron:
             setupCronCompaction(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname)
             setupCronCompaction(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.inboxDatabase)
-
-    if hasattr(wmagentConfig, "WorkloadSummary"):
-        installCouchApp(wmagentConfig.WorkloadSummary.couchurl, wmagentConfig.WorkloadSummary.database, "WorkloadSummary")
 
     if hasattr(wmagentConfig, "AsyncTransfer"):
         basePath = "%s/couchapp" % os.environ['ASYNC_ROOT']
@@ -346,6 +340,24 @@ if __name__ == "__main__":
         installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.wmstatDBName, "WMStats")
         if options.cron:
             setupCronCompaction(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName)
-
-
+        # this means test mode  in wmagent it won't depoly reqmgr with it in production
+        # set up  workload summary for test
+        if hasattr(wmagentConfig, "WorkloadSummary"):
+            installCouchApp(wmagentConfig.WorkloadSummary.couchurl, wmagentConfig.WorkloadSummary.database, "WorkloadSummary")
+            
+        if hasattr(wmagentConfig, "ACDC"):
+            installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "ACDC")
+            installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")
+        
+    else:
+        # in case reqmgr is not set but still worklaad Summary need to be initialized (Tier0 test mode case)
+        # hacky way to check - assuming production url always use https protocal
+        if hasattr(wmagentConfig, "WorkloadSummary") and \
+           urlsplit(wmagentConfig.WorkloadSummary.couchurl).scheme == 'http':
+            installCouchApp(wmagentConfig.WorkloadSummary.couchurl, wmagentConfig.WorkloadSummary.database, "WorkloadSummary")
+        if hasattr(wmagentConfig, "ACDC") and \
+           urlsplit(wmagentConfig.WorkloadSummary.couchurl).scheme == 'http':
+            installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "ACDC")
+            installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")
+    
     sys.exit(0)

@@ -882,7 +882,7 @@ class StdBase(object):
                      "EnableHarvesting" : {"default" : False, "type" : strToBool},
                      "EnableNewStageout" : {"default" : False, "type" : strToBool},
                      "IncludeParents" : {"default" : False,  "type" : strToBool},
-                     "Multicore" : {"default" : True, "type" : strToBool},
+                     "Multicore" : {"default" : False, "type" : strToBool},
                      "MulticoreNCores" : {"default" : 1, "type" : int,
                                           "validate" : lambda x : int(x) > 0}}
 

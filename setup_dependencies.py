@@ -116,6 +116,9 @@ dependencies = {'wmc-rest':{
                         'systems': ['wmc-database'],
                         'statics': ['src/couchapps/Agent+'],
                         },
+                'crabcache':{
+                        'systems': ['wmc-rest'],
+                        },
                 'crabserver':{
                         'packages': ['WMCore.Credential', 'WMCore.Services+', 'WMCore.RequestManager+',
                                      'WMCore.WMSpec+', 'WMCore.HTTPFrontEnd+', 'WMCore.ACDC'],

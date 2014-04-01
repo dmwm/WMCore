@@ -67,7 +67,7 @@ class TrivialFileCatalog(dict):
         self[mapping_type].append(entry)
 
 
-    def _doMatch(self, protocol, path, style, caller):
+    def _doMatch(self, protocol, path, style, caller, follow_chain=True):
         """
         Generalised way of building up the mappings.
         caller is the method from there this method was called, it's used
@@ -80,7 +80,7 @@ class TrivialFileCatalog(dict):
             if mapping['protocol'] != protocol:
                 continue
             if mapping['path-match-expr'].match(path):
-                if mapping["chain"] != None:
+                if mapping["chain"] != None and follow_chain:
                     path = caller(mapping["chain"], path)
                     if not path:
                         continue
@@ -94,7 +94,7 @@ class TrivialFileCatalog(dict):
         return None
 
 
-    def matchLFN(self, protocol, lfn):
+    def matchLFN(self, protocol, lfn, style="lfn-to-pfn", follow_chain=True):
         """
         _matchLFN_
 
@@ -104,7 +104,7 @@ class TrivialFileCatalog(dict):
         Return None if no match
 
         """
-        result = self._doMatch(protocol, lfn, "lfn-to-pfn", self.matchLFN)
+        result = self._doMatch(protocol, lfn, style, self.matchLFN, follow_chain)
         return result
 
 

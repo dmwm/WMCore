@@ -495,7 +495,19 @@ config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager
 config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 config.AnalyticsDataCollector.centralWMStatsURL = "Central WMStats URL"
 config.AnalyticsDataCollector.summaryLevel = "task"
-config.AnalyticsDataCollector.diskUseThreshold = 85
+config.AnalyticsDataCollector.diskUseThreshold = 80
 config.AnalyticsDataCollector.couchProcessThreshold = 25
 config.AnalyticsDataCollector.pluginName = None
 
+
+config.component_("ResourceHandling")
+config.ResourceHandling.namespace = "WMComponent.ResourceHandling.ResourceHandling"
+config.ResourceHandling.componentDir  = config.General.workDir + "/ResourceHandling"
+config.ResourceHandling.logLevel = globalLogLevel
+config.ResourceHandling.resourcesPollInterval = 3600
+config.ResourceHandling.siteStatusMetric = 158
+config.ResourceHandling.cpuBoundMetric = 160
+config.ResourceHandling.ioBoundMetric = 161
+config.ResourceHandling.dashboard = "http://dashb-ssb.cern.ch/dashboard"
+config.ResourceHandling.pendingSlotsSitePercent = 40
+config.ResourceHandling.pendingSlotsTaskPercent = 30

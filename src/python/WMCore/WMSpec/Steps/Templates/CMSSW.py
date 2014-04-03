@@ -438,6 +438,7 @@ class CMSSW(Template):
         step.user.script = None
         step.user.outputFiles = []
         step.user.userFiles = []
+        step.user.lfnBase = None
 
         step.section_("monitoring")
 

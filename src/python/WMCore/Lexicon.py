@@ -246,6 +246,8 @@ def lfn(candidate):
     NOTE:Because of the way we do lustre, we have to have two separate checks for this:
     /store/data
     /store/data/lustre
+
+    Add for LHE files: /data/lhe/...
     """
     regexp1 = '/([a-z]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}/([0-9]+)/([a-zA-Z0-9\-_]+).root'
     regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}/([0-9]+)/([a-zA-Z0-9\-_]+).root'
@@ -261,7 +263,11 @@ def lfn(candidate):
 
     storeResultRootPart = '%(counter)s/%(root)s' % lfnParts
     storeResultsLFN = "%s/%s" % (STORE_RESULTS_LFN, storeResultRootPart)
-    
+
+    lheLFN1 = '/store/lhe/([0-9]+)/([a-zA-Z0-9\-_]+).lhe(.xz){0,1}'
+    #This is for future lhe LFN structure. Need to be tested. 
+    lheLFN2= '/store/lhe/%(primDS)s/%(secondary)s/([0-9]+)/([a-zA-Z0-9\-_]+).lhe(.xz){0,1}' % lfnParts
+
     try:
         return check(regexp1, candidate)
     except AssertionError:
@@ -296,7 +302,17 @@ def lfn(candidate):
         return check(storeMcLFN, candidate)
     except AssertionError:
         pass
-    
+   
+    try:
+        return check(lheLFN1, candidate)
+    except AssertionError:
+        pass
+
+    try:
+        return check(lheLFN2, candidate)
+    except AssertionError:
+        pass
+ 
     try:
         return check(storeResults2LFN, candidate)
     except AssertionError:

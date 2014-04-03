@@ -1,3 +1,84 @@
+0.9.94 to 0.9.95pre2:
+  - Merge pull request #5061 from yuyiguo/LHE
+  - update Lexicon.py and Lexicon_t.py for LHE data.
+  - Merge pull request #5006 from AndresTanasijczuk/HandleCISEExceptInBWT
+  - Merge pull request #5059 from alexanderrichards/multicore_fix_patch
+  - patch to default multicore to false
+  - 0.9.95pre1
+  - Merge pull request #4961 from juztas/master
+  - Merge pull request #5035 from alexanderrichards/multicore_fix
+  - Merge pull request #5055 from mmascher/master
+  - Merge pull request #5058 from ticoann/wmstats_state_transition
+  - Merge pull request #5057 from ticoann/reqmgr_400_error_verbose
+  - add announced as allowed transition from completed
+  - add verbose message for 400 error. Need to check this doesn't reveal any secrete informaiton
+  - Merge pull request #5056 from ticoann/lhe_event_fix
+  - Add dependency for crabcache in setup script
+  - fix lhe eventperlumi in task chain
+  - 0.9.94d
+  - Merge pull request #5024 from ticoann/reqmgr_fail_transiton
+  - Merge pull request #5045 from ticoann/dbs_reader_fix
+  - Merge pull request #5039 from mmascher/master
+  - Merge pull request #5050 from ticoann/another_dbs_upload_fix
+  - only delete the key when exist. Not sure why different block has different key
+  - Merge pull request #5046 from ticoann/dbs_input_fix
+  - add workflow to key to remove.
+  - Refactor lexicon: extract regexp strings from methods. Needed for CRAB3
+  - Use PhEDEx to locate blocks/dataset instead of dbs
+  - Merge pull request #5025 from ticoann/fix_acdc_for_testsetupwq
+  - Merge pull request #5029 from ticoann/fix_dbsbuffer_complete_check_query
+  - Merge pull request #5038 from amaltaro/updt_FrontierID
+  - Merge pull request #5041 from ticoann/block_completion_fix
+  - fix missing workflow retrieval
+  - Remove obsolete name parameter in UFC
+  - set FRONTIER_ID variable to the requestName
+  - fixing issue #4992
+  - fix return format of the GetCompletedWorkflows
+  - Merge pull request #5027 from hufnagel/dbs_workflow_complete
+  - fix bug in dbs workflow completion query
+  - fix ACDC installation for test mode
+  - Merge pull request #5022 from juztas/master
+  - Merge pull request #5023 from ticoann/dbs3_open_block_query
+  - allow failed -> rejected transition
+  - fix open block query
+  - New ReDigi workflow for testing
+  - Handle all the CouchError exceptions plus the CouchConnectionError exception when calling HeartbeatAPI.updateWorkerHeartbeat() in event loop.
+  - 0.9.94c
+  - Merge pull request #4979 from ticoann/set_close_block_with_complete
+  - Merge pull request #5017 from ticoann/hack_couch_error_acdc
+  - Merge pull request #5002 from ticoann/phexed_inject_open_block
+  - Merge pull request #5001 from ticoann/fix_analytics_data_collector_bug
+  - Merge pull request #4995 from hufnagel/t0temp-unmerged
+  - hack when couch error occurs.
+  - 0.9.94b
+  - Merge pull request #5016 from ticoann/fix_store_result_lfn
+  - add store result lfn test
+  - Lexicon validation missing for storeResults mergedLFN
+  - Merge pull request #5015 from ticoann/fix_workqueue_element_sorting
+  - Merge pull request #5009 from ticoann/fix_lhe_event_lumi
+  - Merge pull request #5013 from ticoann/fix_location_none_case
+  - fix workqueue creation time setting
+  - let the location mapper retry when data location is not set first time
+  - fix lhe input file and event per lumi option
+  - inject PhEDEx blocks when block is open
+  - Merge pull request #4999 from lucacopa/component_crash
+  - This is a temporary fix to #4793
+  - fix AnalyticsDataCollector reporting
+  - Merge pull request #4990 from lucacopa/jobs_to_drain_sites
+  - Merge pull request #4988 from ticoann/fix_dbs_buffer_se
+  - This fixes #4898
+  - allow unmerged in LFN for Tier0 files
+  - 0.9.94a
+  - Merge pull request #4956 from AndresTanasijczuk/master
+  - Merge pull request #4985 from mmascher/master
+  - Merge pull request #4987 from ticoann/reqmgr2_index_page_fix
+  - fix dbsbuffer not associating file to se
+  - temp fix for reqmgr index page
+  - close block when workflow is completed
+  - Use voms-proxy-info instead of grid-cert-info. Fixes #4924
+  - Update TrivialFileCatalog for ASO
+  - Add cert and ckey arguments in Database constructor and pass them to CouchDBRequests. Add ckey and cert attributes in CouchServer and use them when connecting/creating a Database.
+
 0.9.94 to 0.9.95pre1:
   - Merge pull request #4961 from juztas/master
   - Merge pull request #5035 from alexanderrichards/multicore_fix

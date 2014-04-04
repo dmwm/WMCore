@@ -128,6 +128,9 @@ function generateProcessing(splitAlgo, splitParams) {
 
   procStr += ">Event Based</input></td>\n";
   procStr += generateInput("Events per job:", "events_per_job", splitParams);
+  if ("events_per_lumi" in splitParams) {
+    procStr += generateInputRow("Events per lumi:", "events_per_lumi", splitParams);
+  }
   procStr += "<td></td></tr>\n"
 
   procStr += '<tr><td>Include parents: <select name="include_parents">';

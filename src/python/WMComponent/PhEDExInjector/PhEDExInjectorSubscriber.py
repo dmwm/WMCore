@@ -203,23 +203,18 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
         for subInfo in unsubscribedDatasets:
             site = subInfo['site']
 
-            # Get the phedex node
-            if site not in self.cmsToPhedexMap:
-                msg = "Site %s doesn't appear to be valid to PhEDEx, " % site
-                msg += "skipping subscription: %s" % subInfo['id']
-                logging.error(msg)
-                self.sendAlert(7, msg = msg)
-                continue
-            isMSS = "MSS" in self.cmsToPhedexMap[site]
-            phedexNode = self.cmsToPhedexMap[site].get("MSS") \
-                            or self.cmsToPhedexMap[site]["Disk"]
+            # Get the phedex node from CMS site
+            if site in self.cmsToPhedexMap:
+                isMSS = "MSS" in self.cmsToPhedexMap[site]
+                subInfo['site'] = self.cmsToPhedexMap[site].get("MSS") \
+                                     or self.cmsToPhedexMap[site]["Disk"]
 
-            # Avoid custodial subscriptions to disk nodes
-            if not isMSS: subInfo['custodial'] = 'n'
-            # Avoid move subscriptions and replica
-            if subInfo['custodial'] == 'n': subInfo['move'] = 'n'
-
-            phedexSub = PhEDExSubscription(subInfo['path'], phedexNode,
+                # Avoid custodial subscriptions to disk nodes
+                if not isMSS: subInfo['custodial'] = 'n'
+                # Avoid move subscriptions and replica
+                if subInfo['custodial'] == 'n': subInfo['move'] = 'n'
+           
+            phedexSub = PhEDExSubscription(subInfo['path'], subInfo['site'],
                                            self.group, priority = subInfo['priority'],
                                            move = subInfo['move'], custodial = subInfo['custodial'],
                                            request_only = subInfo['request_only'], subscriptionId = subInfo['id'])

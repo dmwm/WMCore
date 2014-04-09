@@ -117,7 +117,7 @@ class StdBase(object):
             elif scenarioFunc == "alcaSkim":
                 for alcaSkim in scenarioArgs.get('skims',[]):
                     moduleLabel = "ALCARECOStream%s" % alcaSkim
-                    if alcaSkim == "PromptCalibProd":
+                    if alcaSkim.startswith("PromptCalibProd"):
                         dataTier = "ALCAPROMPT"
                     else:
                         dataTier = "ALCARECO"

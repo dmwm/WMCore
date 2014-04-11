@@ -509,8 +509,11 @@ class Proxy(Credential):
 
         ## get a new delegated proxy
         proxyFilename = os.path.join( self.credServerPath, sha1( self.userDN + self.vo + self.group + self.role ).hexdigest() )
+        # Note that this is saved in a temporary file with the pid appended to the filename. This way we will avoid adding many
+        # signatures later on with vomsExtensionRenewal in case of multiple processing running at the same time
+        tmpProxyFilename = proxyFilename + '.' + str(os.getpid())
         cmdList.append('myproxy-logon -d -n -s %s -o %s -l \"%s\" -t 168:00'
-                       % (self.myproxyServer, proxyFilename, sha1(self.userDN+"_"+self.myproxyAccount).hexdigest() ))
+                       % (self.myproxyServer, tmpProxyFilename, sha1(self.userDN+"_"+self.myproxyAccount).hexdigest() ))
         logonCmd = ' '.join(cmdList)
         msg, _, retcode = execute_command(self.setUI() + logonCmd, self.logger, self.commandTimeout)
 
@@ -519,7 +522,8 @@ class Proxy(Credential):
 	                      % (self.userDN, retcode, msg) )
             return proxyFilename
 
-        self.vomsExtensionRenewal(proxyFilename, voAttribute)
+        self.vomsExtensionRenewal(tmpProxyFilename, voAttribute)
+        os.rename(tmpProxyFilename, proxyFilename)
 
         return proxyFilename
 

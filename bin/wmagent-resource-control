@@ -90,6 +90,8 @@ def createOptionParser():
                            const = 'Normal', help = "Normal operation for the site.")
     myOptParser.add_option("--emulator", dest = "emulator", default= False, action = "store_true",
                            help = "Use SiteDB emulator for unittests")
+    myOptParser.add_option("--no-disk", dest = "noDisk", default = False, action = "store_true",
+                           help = "Do not add T1s _Disk endpoint to resource control.")
 
     return myOptParser
 
@@ -111,6 +113,12 @@ def getCMSSiteInfo(pattern):
                 nameSEMapping[cmsName].append(seName)
             else:
                 nameSEMapping[cmsName] = [seName]
+
+    if options.noDisk:
+        nameSEMapping = dict((k, list(set(v))) for k, v in nameSEMapping.iteritems()
+                        if not k.endswith("_Disk"))
+    else:
+        nameSEMapping = dict((k, list(set(v))) for k, v in nameSEMapping.iteritems())
 
     return nameSEMapping
 

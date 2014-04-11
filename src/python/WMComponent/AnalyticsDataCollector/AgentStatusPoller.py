@@ -103,7 +103,7 @@ class AgentStatusPoller(BaseWorkerThread):
         diskUseThreshold = float(self.config.AnalyticsDataCollector.diskUseThreshold)
         agentInfo['disk_warning'] = []
         for disk in diskUseList:
-            if float(disk['percent'].strip('%')) >= diskUseThreshold:
+            if float(disk['percent'].strip('%')) >= diskUseThreshold and disk['mounted'] not in self.config.AnalyticsDataCollector.ignoreDisk:
                 agentInfo['disk_warning'].append(disk)
         
         # Couch process warning

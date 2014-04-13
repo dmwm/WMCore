@@ -948,9 +948,10 @@ class TaskArchiverPoller(BaseWorkerThread):
             worthPoints = {}
             for run in runList :
                 responseJSON = self.getPerformanceFromDQM(self.dqmUrl, dataset, run)
-                worthPoints.update(self.filterInterestingPerfPoints(responseJSON,
-                                                                     self.perfDashBoardMinLumi,
-                                                                     self.perfDashBoardMaxLumi))
+                if responseJSON:                
+                    worthPoints.update(self.filterInterestingPerfPoints(responseJSON,
+                                                                         self.perfDashBoardMinLumi,
+                                                                         self.perfDashBoardMaxLumi))
                             
             # Publish dataset performance to DashBoard.
             if self.publishPerformanceDashBoard(self.dashBoardUrl, PD, release, worthPoints) == False:
@@ -976,16 +977,28 @@ class TaskArchiverPoller(BaseWorkerThread):
         dqmPath = regExpResult.group(2)
         
         connection = httplib.HTTPSConnection(dqmHost, 443, hostKey, hostCert)
-        connection.request('GET', dqmPath)
-        response = connection.getresponse()
-        responseData = response.read()
-        responseJSON = json.loads(responseData)
-        if not responseJSON["hist"]["bins"].has_key("content") :
-            logging.info("Actually got a JSON from DQM perf in for %s run %d  , but content was bad, Bailing out"
+        try:
+            connection.request('GET', dqmPath)
+            response = connection.getresponse()
+            responseData = response.read()
+            responseJSON = json.loads(responseData)
+            if response.status != 200 :
+                logging.info("Something went wrong while fetching Reco performance from DQM, response code %d " % response.code)
+                return False
+        except Exception, ex:
+            logging.error('Couldnt fetch DQM Performance data for dataset %s , Run %s' % (dataset, run))
+            logging.exception(ex) #Let's print the stacktrace with generic Exception
+            return False     
+
+        try:
+            if responseJSON["hist"]["bins"].has_key("content"):
+                return responseJSON
+        except Exception, ex:                    
+            logging.info("Actually got a JSON from DQM perf in for %s run %d , but content was bad, Bailing out"
                          % (dataset, run))
             return False
-        logging.debug("We have the performance curve")
-        return responseJSON
+        # If it gets here before returning False or responseJSON, it went wrong    
+        return False
     
     def filterInterestingPerfPoints(self, responseJSON, minLumi, maxLumi):
         worthPoints = {}
@@ -1023,14 +1036,18 @@ class TaskArchiverPoller(BaseWorkerThread):
         
         logging.debug("Going to upload this payload %s" % data)
         
-        request = urllib2.Request(dashBoardUrl, data, headers)
-        response = urllib2.urlopen(request)
-        
-        if response.code != 200 :
-            logging.info("Something went wrong while uploading to DashBoard, response code %d " % response.code)
-            return False
-        logging.debug("Uploaded it successfully, apparently")
-        
+        try:
+            request = urllib2.Request(dashBoardUrl, data, headers)
+            response = urllib2.urlopen(request)
+            if response.code != 200 :
+                logging.info("Something went wrong while uploading to DashBoard, response code %d " % response.code)
+                return False
+        except Exception, ex:
+            logging.error('Performance data : DashBoard upload failed for PD %s Release %s' % (PD, release))
+            logging.exception(ex) #Let's print the stacktrace with generic Exception
+            return False        
+
+        logging.debug("Uploaded it successfully, apparently")        
         return True
 
     def createAndUploadPublish(self, workflow):

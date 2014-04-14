@@ -130,6 +130,7 @@ class Proxy(Credential):
         self.myproxyMinTime = args.get( "myproxyMinTime", 4) #threshold used in checkProxy
         self.myproxyAccount = args.get( "myproxyAccount", "") #to be used when computing myproxy account (-l option)
         self.rfcCompliant = args.get( "rfcCompliant", True) #to be used when computing myproxy account (-l option)
+        self.trustedRetrievers = None
 
         # User vo paramaters
         self.vo = 'cms'

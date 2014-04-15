@@ -123,7 +123,8 @@ class FNALImpl(StageOutImpl):
         if method == 'xrdcp':
             original_size = os.stat(sourcePFN)[6]
             print "Local File Size is: %s" % original_size
-
+            pfnWithoutChecksum = stripPrefixTOUNIX(targetPFN)
+            
             useChecksum = (checksums != None and checksums.has_key('adler32') and not self.stageIn)
             if useChecksum:
                 checksums['adler32'] = "%08x" % int(checksums['adler32'], 16)
@@ -133,8 +134,11 @@ class FNALImpl(StageOutImpl):
                 # therefor embed information into target URL
                 targetPFN += "\?eos.targetsize=%s\&eos.checksum=%s" % (original_size, checksums['adler32'])
                 print "Local File Checksum is: %s\"\n" % checksums['adler32']
-
-            result = "/usr/bin/xrdcp -d 0 "
+            
+            # remove the file first befor it writes. 
+            # there is eos bug when disk partition is full.
+            result = "/bin/rm -f %s" % pfnWithoutChecksum
+            result += "; /usr/bin/xrdcp -d 0 "
             if options != None:
                 result += " %s " % options
             result += " %s " % sourcePFN

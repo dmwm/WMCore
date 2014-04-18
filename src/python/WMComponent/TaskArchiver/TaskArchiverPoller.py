@@ -324,6 +324,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         logging.info("Polling for finished subscriptions")
         finishedSubscriptions = self.daoFactory(classname = "Subscriptions.GetAndMarkNewFinishedSubscriptions")
         finishedSubscriptions.execute(self.stateID, timeOut = self.timeout)
+        logging.info("Finished subscriptions updated")
 
         myThread.transaction.commit()
 

@@ -24,6 +24,7 @@ class FindDASToUpload(DBFormatter):
                              dbsbuffer_dataset.acquisition_era AS AcquisitionEra,
                              dbsbuffer_dataset.processing_ver AS ProcessingVer,
                              dbsbuffer_dataset.global_tag AS global_tag,
+                             dbsbuffer_dataset.prep_id AS prep_id,
                              dbsbuffer_algo.app_name AS ApplicationName,
                              dbsbuffer_algo.app_ver AS ApplicationVersion,
                              dbsbuffer_algo.app_fam AS ApplicationFamily,
@@ -79,6 +80,7 @@ class FindDASToUpload(DBFormatter):
                 entry['ProcessingVer']      = r['processingver']
                 
             entry['GlobalTag']          = r['global_tag']
+            entry['prep_id']          = r['prep_id']
             ret.append(entry)
 
         return ret

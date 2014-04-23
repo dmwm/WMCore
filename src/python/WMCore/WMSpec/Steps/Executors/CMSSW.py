@@ -301,10 +301,12 @@ class CMSSW(Executor):
         validStatus    = self.workload.getValidStatus()
         inputPath      = self.task.getInputDatasetPath()
         globalTag      = typeHelper.getGlobalTag()
+        prepID        = self.workload.getPrepID()
         cacheUrl, cacheDB, configID = stepHelper.getConfigInfo()
 
         self.report.setValidStatus(validStatus = validStatus)
         self.report.setGlobalTag(globalTag = globalTag)
+        self.report.setPrepID(prepID)
         self.report.setInputDataset(inputPath = inputPath)
         self.report.setAcquisitionProcessing(acquisitionEra = acquisitionEra,
                                              processingVer = processingVer,

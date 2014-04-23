@@ -678,7 +678,8 @@ class DBSUploadPoller(BaseWorkerThread):
                 block.setDataset(datasetName  = dbsFile['datasetPath'],
                                  primaryType  = self.primaryDatasetType,
                                  datasetType  = self.datasetType,
-                                 physicsGroup = dbsFile.get('physicsGroup', None))
+                                 physicsGroup = dbsFile.get('physicsGroup', None),
+                                 prep_id = dbsFile.get('prep_id', None))
             logging.debug("Found block %s in blocks" % block.getName())
             block.setPhysicsGroup(group = self.physicsGroup)
             

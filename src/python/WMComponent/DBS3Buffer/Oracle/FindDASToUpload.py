@@ -24,6 +24,7 @@ class FindDASToUpload(MySQLFindDASToUpload):
                ds.acquisition_era AS AcquisitionEra,
                ds.processing_ver AS ProcessingVer,
                ds.global_tag AS global_tag,
+               ds.prep_id AS prep_id,
                da.app_name AS ApplicationName,
                da.app_ver AS ApplicationVersion,
                da.app_fam AS ApplicationFamily,

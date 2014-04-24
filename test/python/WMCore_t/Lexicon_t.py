@@ -390,6 +390,15 @@ class LexiconTest(unittest.TestCase):
         lfn(lfnA)
         lfnA = '/store/group/phys_higgs/meridian/HGGProd/GluGluToHToGG_M-125_8TeV-powheg-pythia6-Summer12-START53_V7D-v2/meridian/GluGlu_HToGG_M-125_8TeV-powheg-LHE_v1/GluGluToHToGG_M-125_8TeV-powheg-pythia6-Summer12-START53_V7D-v2/fb576e5b6a5810681def50b608ec31ad/Hadronizer_TuneZ2star_8TeV_Powheg_pythia_tauola_cff_py_GEN_SIM_DIGI_L1_DIGI2RAW_RAW2DIGI_L1Reco_RECO_PU_1_1_ukQ.root'
         lfn(lfnA)
+        lfnA = '/store/lhe/7365/TprimeTprimeToTHTH_M-400_TuneZ2star_8TeV-madgraph_50219221.lhe'
+        lfn(lfnA)
+        lfnA = '/store/lhe/10860/LQToUE_BetaHalf_vector_YM-MLQ300LG0KG0.lhe.xz'
+        lfn(lfnA)
+        lfnA = '/store/lhe/7365/mysecondary/0001/TprimeTprimeToTHTH_M-400_TuneZ2star_8TeV-madgraph_50219221.lhe'
+        lfn(lfnA)
+        lfnA = '/store/lhe/10860/mysecondary/0001/LQToUE_BetaHalf_vector_YM-MLQ300LG0KG0.lhe.xz'
+        lfn(lfnA)
+
 
         # All these cases should fail
         lfnA = '/storeA/temp/lustre/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
@@ -449,7 +458,10 @@ class LexiconTest(unittest.TestCase):
         self.assertRaises(AssertionError, lfn, lfnA)
         lfnA = '/store/results/qcd/QCD_Pt80/StoreResults-Summer09-MC_31X_V3_7TeV-Jet30U-JetAODSkim-0a98be42532eba1f0545cc9b086ec3c3/QCD_Pt80/USER/StoreResults-Summer09-MC_31X_V3_7TeV-Jet30U-JetAODSkim-0a98be42532eba1f0545cc9b086ec3c3/0000a/C44630AC-C0C7-DE11-AD4E-0019B9CAC0F8.root'
         self.assertRaises(AssertionError, lfn, lfnA)
-
+        lfnA = '/store/lhe/10860/11%11/1111/LQToUE_BetaHalf_vector_YM-MLQ300LG0KG0.lhe.xz'
+        self.assertRaises(AssertionError, lfn, lfnA)
+        lfnA = '/store/lhe/TprimeTprimeToTHTH_M-400_TuneZ2star_8TeV-madgraph_50219221.lhe'
+        self.assertRaises(AssertionError, lfn, lfnA)
         return
 
     def testLFNBase(self):

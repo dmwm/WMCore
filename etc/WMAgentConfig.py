@@ -495,6 +495,7 @@ config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager
 config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 config.AnalyticsDataCollector.centralWMStatsURL = "Central WMStats URL"
 config.AnalyticsDataCollector.summaryLevel = "task"
+config.AnalyticsDataCollector.ignoreDisk = ["/lustre/unmerged"]
 config.AnalyticsDataCollector.diskUseThreshold = 85
 config.AnalyticsDataCollector.couchProcessThreshold = 25
 config.AnalyticsDataCollector.pluginName = None

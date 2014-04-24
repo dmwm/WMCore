@@ -451,6 +451,8 @@ class TaskChainWorkloadFactory(StdBase):
                 taskConf[argument] = baseArguments[argument]["type"](taskConf[argument])
         if taskConf["EventsPerJob"] is None:
             taskConf["EventsPerJob"] = (8.0 * 3600.0)/(taskConf.get("TimePerEvent", self.timePerEvent))
+        if taskConf["EventsPerLumi"] is None:
+            taskConf["EventsPerLumi"] = taskConf["EventsPerJob"]
         if generator:
             taskConf["SplittingAlgo"] = "EventBased"
         taskConf["SplittingArguments"] = {}

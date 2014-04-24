@@ -52,6 +52,7 @@ class StdBase(object):
 
         # Internal parameters
         self.workloadName = None
+        self.multicoreNCores = None
 
         return
 
@@ -72,6 +73,11 @@ class StdBase(object):
                     setattr(self, argumentDefinition[arg]["attr"], argumentDefinition[arg]["type"](arguments[arg]))
             elif argumentDefinition[arg]["optional"]:
                 setattr(self, argumentDefinition[arg]["attr"], argumentDefinition[arg]["default"])
+
+        # Definition of parameters that depend on the value of others
+        if hasattr(self, "multicore") and self.multicore:
+            self.multicore = True
+            self.multicoreNCores = self.multicore
 
         return
 
@@ -111,7 +117,7 @@ class StdBase(object):
             elif scenarioFunc == "alcaSkim":
                 for alcaSkim in scenarioArgs.get('skims',[]):
                     moduleLabel = "ALCARECOStream%s" % alcaSkim
-                    if alcaSkim == "PromptCalibProd":
+                    if alcaSkim.startswith("PromptCalibProd"):
                         dataTier = "ALCAPROMPT"
                     else:
                         dataTier = "ALCARECO"
@@ -882,9 +888,8 @@ class StdBase(object):
                      "EnableHarvesting" : {"default" : False, "type" : strToBool},
                      "EnableNewStageout" : {"default" : False, "type" : strToBool},
                      "IncludeParents" : {"default" : False,  "type" : strToBool},
-                     "Multicore" : {"default" : False, "type" : strToBool},
-                     "MulticoreNCores" : {"default" : 1, "type" : int,
-                                          "validate" : lambda x : int(x) > 0}}
+                     "Multicore" : {"default" : None, "null" : True,
+                                    "validate" : lambda x : x == "auto" or (int(x) > 0)}}
 
         # Set defaults for the argument specification
         for arg in arguments:

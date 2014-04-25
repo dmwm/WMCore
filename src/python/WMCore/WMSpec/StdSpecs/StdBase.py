@@ -863,7 +863,7 @@ class StdBase(object):
                      "MaxMergeEvents" : {"default" : 100000, "type" : int,
                                          "validate" : lambda x : x > 0},
                      "ValidStatus" : {"default" : "PRODUCTION"},
-                     "DbsUrl" : {"default" : "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"},
+                     "DbsUrl" : {"default" : "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"},
                      "DashboardHost" : {"default" : "cms-wmagent-job.cern.ch"},
                      "DashboardPort" : {"default" : 8884, "type" : int,
                                         "validate" : lambda x : x > 0},
@@ -921,5 +921,9 @@ class StdBase(object):
                 schema[arg] = "127.0.0.1"
             elif not workloadDefinition[arg]["optional"]:
                 schema[arg] = workloadDefinition[arg]["default"]
+            
+            if arg == "CouchURL":
+                import os
+                schema[arg] = os.environ["COUCHURL"]
 
         return schema

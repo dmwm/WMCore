@@ -512,39 +512,47 @@ class DBS3Reader:
         Get origin_site_name of a block
 
         """
-        self.checkBlockName(fileBlockName)
-        
+        blockNames = [fileBlockName] if isinstance(fileBlockName, basestring) else fileBlockName
+        for block in blockNames:
+            self.checkBlockName(block)
+
+        blockInfo = {}
         if not dbsOnly:
             try:
-                blockInfo = self.phedex.getReplicaSEForBlocks(block=[fileBlockName],complete='y')
+                blockInfo = self.phedex.getReplicaSEForBlocks(block=blockNames,complete='y')
             except Exception, ex:
                 msg = "Error while getting block location from PhEDEx for block_name=%s)\n" % fileBlockName
                 msg += "%s\n" % str(ex)
                 raise Exception(msg)
-            
-            if not blockInfo: # if we couldnt get data location from PhEDEx, try to look into origin site location from dbs
+
+            if not blockInfo or len(blockInfo) != len(blockNames): #if we couldnt get data location from PhEDEx, try to look into origin site location from dbs
                 dbsOnly = True
-            else:
-                location = set()
-                location.update(blockInfo[fileBlockName])
-        
+                blockNames = set(blockNames) - set(blockInfo) #get the blocks we did not find information in phedex
+
         if dbsOnly:
             try:
-                blockInfo = self.dbs.listBlockOrigin(block_name = fileBlockName)
+                for block in blockNames:
+                    res = self.dbs.listBlockOrigin(block_name = block)
+                    if res:
+                        blockInfo[block] = [res[0]['origin_site_name']]
             except DbsException, ex:
-                msg = "Error in DBSReader: dbsApi.listBlocks(block_name=%s)\n" % fileBlockName
+                msg = "Error in DBS3Reader: self.dbs.listBlockOrigin(block_name=%s)\n" % fileBlockName
                 msg += "%s\n" % formatEx(ex)
                 raise DBSReaderError(msg)
-            
-            if not blockInfo: # no data location from dbs
+
+            if not any(blockInfo.values()): # no data location from dbs
                 return list()
-            
-            location = set()
-            location.update([blockInfo[0]['origin_site_name']])
-            
-            location.difference_update(['UNKNOWN']) # remove entry when SE name is 'UNKNOWN'
-             
-        return list(location)
+
+        #removing duplicates and 'UNKNOWN entries
+        locations = {}
+        for block in blockInfo:
+            locations[block] = list( set(blockInfo[block]) - set(['UNKNOWN']) )
+
+        #returning single list if a single block is passed
+        if isinstance(fileBlockName, basestring):
+            locations = locations[fileBlockName]
+
+        return locations
 
     def getFileBlock(self, fileBlockName):
         """

@@ -203,7 +203,8 @@ class DBS3Reader:
               'Lumis': {173658: [8, 12, 9, 14, 19, 109, 105]},
               'Parents': [],
               'Checksums': {'Checksum': '22218315', 'Adler32': 'a41a1446', 'Md5': 'NOTSET'},
-              'Size': 286021145
+              'Size': 286021145,
+              'ValidFile' : 1
             }
 
         """
@@ -219,6 +220,7 @@ class DBS3Reader:
                 "Lumis" : {},
                 "Parents" : [],
                 "Size" : f['file_size'],
+                "ValidFile" : f['is_file_valid'],
                 "Checksums" : {'Adler32': f['adler32'], 'Checksum': f['check_sum'], 'Md5': f['md5']}
             }
 

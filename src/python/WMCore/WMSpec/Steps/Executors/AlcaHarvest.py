@@ -11,6 +11,7 @@ import stat
 import shutil
 import tarfile
 import logging
+import subprocess
 
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.FwkJobReport.Report import Report
@@ -106,33 +107,31 @@ class AlcaHarvest(Executor):
                     files2copy.append(filenameDB)
                     files2copy.append(filenameTXT)
 
-            # check and create target directory
-            if not os.path.isdir(self.step.condition.dir):
-                msg = 'Conditions copy failed with response:\n'
-                msg += 'The target dir %s does not exist or is not a directory\n'
-                logging.error(msg)
-                raise WMExecutionFailure(60319, "AlcaHarvestFailure", msg)
-
             # copy files out and fake the job report
             logging.info("Copy out conditions files to %s" % self.step.condition.dir)
             for file2copy in files2copy:
 
                 logging.info("==> copy %s" % file2copy)
 
-                targetFile = os.path.join(self.step.condition.dir, file2copy)
+                targetLFN = os.path.join(self.step.condition.dir, file2copy)
+                targetPFN = "root://eoscms//eos/cms%s" % targetLFN
 
-                try:
-                    shutil.copy2(file2copy, targetFile)
-                except Exception, ex:
-                    msg = 'Conditions copy failed with response:\n'
-                    msg += 'Error: %s\n' % str(ex)
+                command = "xrdcp -s -f %s %s" % (file2copy, targetPFN)
+
+                p = subprocess.Popen(command, shell = True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.STDOUT)
+                output = p.communicate()[0]
+                if p.returncode > 0:
+                    msg = 'Failure during copy to EOS:\n'
+                    msg += '   %s\n' % output
                     logging.error(msg)
                     raise WMExecutionFailure(60319, "AlcaHarvestFailure", msg)
 
                 # add fake output file to job report
                 stepReport.addOutputFile(self.step.condition.outLabel,
-                                         file = { 'lfn' : targetFile,
-                                                  'pfn' : targetFile,
+                                         file = { 'lfn' : targetLFN,
+                                                  'pfn' : targetPFN,
                                                   'module_label' : self.step.condition.outLabel })
 
             if len(files2copy) == 0:

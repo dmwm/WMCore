@@ -1,6 +1,9 @@
 // Set the dbname below to the same name you used when pushing the couchapp.
 // This can only be determined during deployment time
 dbname = "__fill_dbname_here__";
+// Set the ddname (name of the design document) below. 
+// Do not include "_design/" in the name.
+ddname = "__fill_ddname_here__";
 
 // Work around different mount points of couchdb
 // so that it can run behind the frontend, with

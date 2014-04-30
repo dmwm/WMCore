@@ -924,6 +924,6 @@ class StdBase(object):
             
             if arg == "CouchURL":
                 import os
-                schema[arg] = os.environ["COUCHURL"]
+                schema[arg] = os.environ.get('COUCHURL', None)
 
         return schema

@@ -1,46 +1,38 @@
 { 
 "createRequest":
 	{		 
-	"CMSSWVersion": "CMSSW_4_4_2_patch2",
-	"GlobalTag": "FT_R_44_V11::All",
-	"Campaign": "Campaign-OVERRIDE-ME",		
+	"CMSSWVersion": "CMSSW_4_1_8",
+	"GlobalTag": "START311_V2::All",
+	"Campaign": "Campaign-OVERRIDE-ME",
 	"RequestString": "RequestString-OVERRIDE-ME",
 	"RequestPriority": 1000,
+	"FilterEfficiency": 0.5,
+	"TransientOutputModules" : "RECOSIMoutput",
 	"ScramArch": "slc5_amd64_gcc434",
-	"RequestType": "ReReco",
-	"RunWhitelist": [175866, 176933, 180250],
-	"FilterEfficiency": 1,
-	"RunBlacklist": [],
-	"BlockWhitelist": [],
-	"BlockBlacklist": [],		
+	"RequestType": "MonteCarlo",
+	"RequestNumEvents": 2000,
+	"ConfigCacheID": "4029c9cd130f25d65bdced2311536c52",
 	"ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
-	"ConfigCacheID": "7559cf7a427be20436483f82fd108936",
-	"PrepID": "RERECOTEST-0001",
+	"PrimaryDataset": "BdToMuMu_2MuPtFilter_7TeV-pythia6-evtgen",
+	"PrepID": "MCTEST-GEN-0001",
 	"Group": "DATAOPS",
-	"SplittingAlgo": "LumiBased",
-	"LumisPerJob": 8,
-	"TimePerEvent": 60,
-	"Memory": 2394,
-	"SizePerEvent":500,
-	"InputDataset": "/BTag/Run2011B-v1/RAW",
-	"DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
-	"inputMode": "couchDB",
-	"Scenario": "pp",	  
-	"OpenRunningTimeout" : 0
-    },
-
+	"TimePerEvent": 40,
+	"SplittingAlgo": "EventBased",
+	"EventsPerJob": 9972,
+	"Memory": 2000,
+	"SizePerEvent": 512,
+	"FirstEvent": 1,
+	"FirstLumi": 1
+	}, 
 "changeSplitting":
-    {
-	"DataProcessing" :
-	    {
-	    "SplittingAlgo" : "EventAwareLumiBased",
-	    "avg_events_per_job" : 1400,
-	    "max_events_per_lumi" : 20000,
-	    "halt_job_on_file_boundaries_event_aware" : "True",
-	    "include_parents" : "False"
-	    }
-    },
-
+	{
+	"Production" :
+		{
+		"SplittingAlgo" : "EventBased",
+		"events_per_job" : 1400,
+		"include_parents" : "False"
+		}
+	},
 "assignRequest":
 	{
 	"SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
@@ -66,7 +58,7 @@
 	"CustodialSubType" : "Move",
 	"BlockCloseMaxWaitTime" : 66400,
 	"BlockCloseMaxFiles" : 500,
-	"BlockCloseMaxEvents" : 250000000,
+	"BlockCloseMaxEvents" : 25000000,
 	"BlockCloseMaxSize" : 5000000000000
 	}
 }

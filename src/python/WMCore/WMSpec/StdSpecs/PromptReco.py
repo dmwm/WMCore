@@ -299,7 +299,7 @@ class PromptRecoWorkloadFactory(StdBase):
                                   "optional" : False, "validate" : couchurl,
                                   "attr" : "couchURL", "null" : False},
                     "CouchDBName" : {"default" : "promptreco_t", "type" : str,
-                                     "optional" : False, "validate" : identifier,
+                                     "optional" : True, "validate" : identifier,
                                      "attr" : "couchDBName", "null" : False},
                     "ConfigCacheUrl" : {"default" : None, "type" : str,
                                         "optional" : True, "validate" : couchurl,

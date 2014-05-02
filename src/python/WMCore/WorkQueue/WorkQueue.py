@@ -687,7 +687,9 @@ class WorkQueue(WorkQueueBase):
         left_over = self.parent_queue.getElements('Negotiating', returnIdOnly = True,
                                                   ChildQueueUrl = self.params['QueueURL'])
         if left_over:
-            self.logger.info('Not pulling more work. Still replicating %d previous units' % len(left_over))
+            self.logger.info('Not pulling more work. Still replicating %d previous units, ids:\n%s' % (
+                                                                        len(left_over), left_over))
+
             return 0
 
         still_processing = self.backend.getInboxElements('Negotiating', returnIdOnly = True)
@@ -1034,3 +1036,4 @@ class WorkQueue(WorkQueueBase):
             return self.parent_queue.getWMBSInjectStatus(workflowName)
         else:
             return self.backend.getWMBSInjectStatus(workflowName)
+        

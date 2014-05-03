@@ -54,13 +54,9 @@ class FNALImpl(StageOutImpl):
         Return xrdcp or srm
         """
 
-        method = 'xrdcp'
-        
-        # Over ride a few paths for srm
-        for path in srmPaths:
-            if PFN.find(path) != -1:
-                method = 'srm'
-        
+        method = 'srm'
+        if PFN.startswith("root://"):
+            method = 'xrdcp'
         print "Using method:", method
         return method
 

@@ -58,10 +58,4 @@ NextStatus = {
  "aborted-archived":[],
  "rejected-archived":[]
 }
-
-def previousStatusList(nextStatus):
-    previousList = []
-    for key, nextStatusList in NextStatus.items():
-        if nextStatus in nextStatusList:
-            previousList.append(key)
-    return previousList       
+  

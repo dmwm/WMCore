@@ -205,6 +205,7 @@ class StdBase(object):
         workload.setProcessingString(processingStrings = self.processingString)
         workload.setValidStatus(validStatus = self.validStatus)
         workload.setPriority(self.priority)
+        workload.setPrepID(self.prepID)
         return workload
 
     def setupProcessingTask(self, procTask, taskType, inputDataset = None, inputStep = None,
@@ -889,18 +890,24 @@ class StdBase(object):
                      "EnableNewStageout" : {"default" : False, "type" : strToBool},
                      "IncludeParents" : {"default" : False,  "type" : strToBool},
                      "Multicore" : {"default" : None, "null" : True,
-                                    "validate" : lambda x : x == "auto" or (int(x) > 0)}}
+                                    "validate" : lambda x : x == "auto" or (int(x) > 0)},
+                     "PrepID": {"default" : None, "null" : True}}
 
         # Set defaults for the argument specification
+        StdBase.setDefaultArgumentsProperty(arguments)
+
+        return arguments
+    
+    @staticmethod
+    def setDefaultArgumentsProperty(arguments):
         for arg in arguments:
             arguments[arg].setdefault("type", str)
             arguments[arg].setdefault("optional", True)
             arguments[arg].setdefault("null", False)
             arguments[arg].setdefault("validate", None)
             arguments[arg].setdefault("attr", arg[:1].lower() + arg[1:])
-
-        return arguments
-
+        return
+    
     @classmethod
     def getTestArguments(cls):
         """

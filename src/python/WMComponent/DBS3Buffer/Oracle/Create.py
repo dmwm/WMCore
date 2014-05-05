@@ -38,7 +38,8 @@ class Create(DBCreator):
                  acquisition_era   VARCHAR2(255),
                  valid_status      VARCHAR2(20),
                  global_tag        VARCHAR2(255),
-                 parent            VARCHAR2(500)
+                 parent            VARCHAR2(500),
+                 prep_id         VARCHAR(255)
                )"""
         self.create["01dbsbuffer_dataset_seq"] = \
           """CREATE SEQUENCE dbsbuffer_dataset_seq

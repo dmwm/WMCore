@@ -31,6 +31,7 @@ class Create(DBCreator):
                            valid_status    VARCHAR(20),
                            global_tag      VARCHAR(255),
                            parent          VARCHAR(500),
+                           prep_id         VARCHAR(255),
                            primary key(id)
                         ) ENGINE=InnoDB"""
 

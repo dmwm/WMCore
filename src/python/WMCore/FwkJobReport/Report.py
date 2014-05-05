@@ -731,6 +731,7 @@ class Report:
         newFile["processingVer"]  = getattr(fileRef, 'processingVer', None)
         newFile["validStatus"]    = getattr(fileRef, 'validStatus', None)
         newFile["globalTag"]      = getattr(fileRef, 'globalTag', None)
+        newFile["prep_id"]        = getattr(fileRef, 'prep_id', None)
         newFile['configURL']      = getattr(fileRef, 'configURL', None)
         newFile['inputPath']      = getattr(fileRef, 'inputPath', None)
         newFile["outputModule"]   = outputModule
@@ -1231,6 +1232,22 @@ class Report:
         # Should now have all the fileRefs
         for f in fileRefs:
             f.globalTag = globalTag
+
+        return
+    
+    def setPrepID(self, prep_id):
+        """
+        _setGlobalTag_
+
+        Set the global Tag from the spec on the WN
+        ONLY run this after all the files have been attached
+        """
+
+        fileRefs = self.getAllFileRefs()
+
+        # Should now have all the fileRefs
+        for f in fileRefs:
+            f.prep_id = prep_id
 
         return
 

@@ -61,7 +61,7 @@ NextStatus = {
 
 def previousStatusList(nextStatus):
     previousList = []
-    for key, nextStatusList in NextStatus.item():
+    for key, nextStatusList in NextStatus.items():
         if nextStatus in nextStatusList:
             previousList.append(key)
     return previousList       

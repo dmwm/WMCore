@@ -41,19 +41,21 @@ class CouchappTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.databaseName = "couchapp_t_0"
-        self.testInit.setupCouch(self.databaseName, "WorkloadSummary")
-        self.testInit.setupCouch("%s/jobs" % self.databaseName, "JobDump")
-        self.testInit.setupCouch("%s/fwjrs" % self.databaseName, "FWJRDump")
+        
 
         # Setup config for couch connections
         config = self.testInit.getConfiguration()
-        config.section_("JobStateMachine")
-        config.JobStateMachine.couchDBName  = self.databaseName
-
+        
+        self.testInit.setupCouch(self.databaseName, "WorkloadSummary")
+        self.testInit.setupCouch("%s/jobs" % config.JobStateMachine.couchDBName, "JobDump")
+        self.testInit.setupCouch("%s/fwjrs" % config.JobStateMachine.couchDBName, "FWJRDump")
+        self.testInit.setupCouch(config.JobStateMachine.summaryStatsDBName, "SummaryStats")
+                                 
         # Create couch server and connect to databases
         self.couchdb      = CouchServer(config.JobStateMachine.couchurl)
         self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % config.JobStateMachine.couchDBName)
         self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % config.JobStateMachine.couchDBName)
+        self.statsumdatabase = self.couchdb.connectDatabase(config.JobStateMachine.summaryStatsDBName)
 
         # Create changeState
         self.changeState = ChangeState(config)
@@ -67,6 +69,7 @@ class CouchappTest(unittest.TestCase):
     def tearDown(self):
 
         self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
+        self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
         #self.testInit.tearDownCouch()
         return

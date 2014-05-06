@@ -22,12 +22,14 @@ from WMComponent.AnalyticsDataCollector.DataCollectorEmulatorSwitch import emula
 @emulatorHook
 class LocalCouchDBData():
 
-    def __init__(self, couchURL, summaryLevel):
+    def __init__(self, couchURL, statSummaryDB, summaryLevel):
         # set the connection for local couchDB call
         self.couchURL = couchURL
         self.couchURLBase, self.dbName = splitCouchServiceURL(couchURL)
         self.jobCouchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/jobs", False)
         self.fwjrsCouchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/fwjrs", False)
+        #TODO: remove the hard coded name (wma_summarydb)
+        self.summaryStatsDB = CouchServer(self.couchURLBase).connectDatabase(statSummaryDB, False)
         self.summaryLevel = summaryLevel
 
     def getJobSummaryByWorkflowAndSite(self):
@@ -152,6 +154,16 @@ class LocalCouchDBData():
                 
         return data
     
+    def getJobPerformanceByTaskAndSiteFromSummaryDB(self):
+        
+        options = {"include_docs": True}
+        results = self.summaryStatsDB.allDocs(options)
+        data = {}
+        for row in results['rows']:
+            if not row['id'].startswith("_"):
+                data[row['id']] = {}
+                data[row['id']]['tasks'] = row['doc']['tasks']
+        return data
     
     def getEventSummaryByWorkflow(self):
         """

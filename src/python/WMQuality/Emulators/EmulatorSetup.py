@@ -28,6 +28,7 @@ def _wmAgentConfig(configFile):
     config.JobStateMachine.couchurl = os.getenv("COUCHURL")
     config.JobStateMachine.couchDBName = os.getenv("COUCHDB")
     config.JobStateMachine.jobSummaryDBName = "wmagent_summary_test"
+    config.JobStateMachine.summaryStatsDBName = "stat_summary_test"
     
     config.section_("Agent")
     # User specific parameter

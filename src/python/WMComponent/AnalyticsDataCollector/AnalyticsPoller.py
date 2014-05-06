@@ -44,7 +44,9 @@ class AnalyticsPoller(BaseWorkerThread):
         self.localQueue = WorkQueueService(self.config.AnalyticsDataCollector.localQueueURL)
 
         # set the connection for local couchDB call
-        self.localCouchDB = LocalCouchDBData(self.config.AnalyticsDataCollector.localCouchURL, self.summaryLevel)
+        self.localCouchDB = LocalCouchDBData(self.config.AnalyticsDataCollector.localCouchURL, 
+                                             self.config.JobStateMachine.summaryStatsDBName,
+                                             self.summaryLevel)
 
         # interface to WMBS/BossAir db
         myThread = threading.currentThread()
@@ -73,8 +75,10 @@ class AnalyticsPoller(BaseWorkerThread):
             #fwjr per request info
             logging.info("Getting FWJRJob Couch Data ...")
 
-            #fwjrInfoFromCouch = self.localCouchDB.getEventSummaryByWorkflow()
-            fwjrInfoFromCouch = self.localCouchDB.getJobPerformanceByTaskAndSite()
+            #TODO: commented out for now if summary db works correctly, remove completed.
+            #fwjrInfoFromCouch = self.localCouchDB.getJobPerformanceByTaskAndSite()
+            
+            fwjrInfoFromCouch = self.localCouchDB.getJobPerformanceByTaskAndSiteFromSummaryDB()
             
             logging.info("Getting Batch Job Data ...")
             batchJobInfo = self.wmagentDB.getBatchJobInfo()

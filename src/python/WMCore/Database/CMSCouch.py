@@ -311,7 +311,6 @@ class Database(CouchDBRequests):
         else:
             updateUri = '/%s/_design/%s/_update/%s/%s' % \
                 (self.name, design, update_func, doc_id)
-    
             return self.put(uri=updateUri, data=fields, decode=False)
 
     def documentExists(self, id, rev = None):
@@ -333,7 +332,7 @@ class Database(CouchDBRequests):
         """
         doc = self.document(id, rev)
         doc.delete()
-        self.commitOne(doc)
+        return self.commitOne(doc)
 
     def compact(self, views=[], blocking=False, blocking_poll=5, callback=False):
         """
@@ -866,6 +865,10 @@ class CouchServer(CouchDBRequests):
                 check_name(destination)
             else:
                 check_server_url(destination)
+        if not destination.startswith("http"):
+            destination = '%s/%s' % (self.url, destination)
+        if not source.startswith("http"):
+            source = '%s/%s' % (self.url, source)
         data={"source":source,"target":destination}
         #There must be a nicer way to do this, but I've not had coffee yet...
         if continuous: data["continuous"] = continuous

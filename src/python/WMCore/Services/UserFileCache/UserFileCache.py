@@ -39,10 +39,12 @@ class UserFileCache(Service):
         self['logger'].debug('Wrote %s' % output)
         return fileName
 
-    def uploadLog(self, fileName):
+    def uploadLog(self, fileName, uploadName=None):
         """
         """
-        params = [('name', os.path.split(fileName)[1])]
+        if not uploadName:
+            uploadName = os.path.split(fileName)[1]
+        params = [('name', uploadName)]
 
         resString = self["requests"].uploadFile(fileName=fileName, fieldName='inputfile',
                                                 url=self['endpoint'] + 'logfile',

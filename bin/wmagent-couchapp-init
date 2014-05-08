@@ -305,7 +305,7 @@ if __name__ == "__main__":
                         wmagentConfig.JobStateMachine.configCacheDBName, "ConfigCache")
         installCouchApp(wmagentConfig.JobStateMachine.couchurl,
                         wmagentConfig.JobStateMachine.configCacheDBName, "GroupUser")
-    
+
     if hasattr(wmagentConfig, "WorkQueueManager"):
         installWorkQueueCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname)
         installWorkQueueCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.inboxDatabase)
@@ -322,7 +322,6 @@ if __name__ == "__main__":
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "AsyncTransfer", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "monitor", basePath)
         installCouchApp(wmagentConfig.Statistics.couch_statinstance, wmagentConfig.Statistics.statitics_database, "stat", basePath)
-        installCouchApp(wmagentConfig.Analytics.couch_user_monitoring_instance, wmagentConfig.Analytics.user_monitoring_db, "UserMonitoring", basePath)
         installCouchApp(wmagentConfig.DBSPublisher.couch_instance, wmagentConfig.DBSPublisher.files_database, "DBSPublisher", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.jobs_database, "Jobs", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.config_database, "config", basePath)
@@ -330,8 +329,12 @@ if __name__ == "__main__":
         if options.cron:
             setupCronCompaction(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database)
             setupCronCompaction(wmagentConfig.Statistics.couch_statinstance, wmagentConfig.Statistics.statitics_database)
-            setupCronCompaction(wmagentConfig.Analytics.couch_user_monitoring_instance, wmagentConfig.Analytics.user_monitoring_db)
             setupCronCompaction(agent_instance, agent_database)
+
+    if hasattr(wmagentConfig, "Analytics"):
+        installCouchApp(wmagentConfig.Analytics.couch_user_monitoring_instance, wmagentConfig.Analytics.user_monitoring_db, "UserMonitoring", basePath)
+        if options.cron:
+            setupCronCompaction(wmagentConfig.Analytics.couch_user_monitoring_instance, wmagentConfig.Analytics.user_monitoring_db)
 
     if hasattr(wmagentConfig, "reqmgr"):
         installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName, "ReqMgr")
@@ -344,11 +347,11 @@ if __name__ == "__main__":
         # set up  workload summary for test
         if hasattr(wmagentConfig, "WorkloadSummary"):
             installCouchApp(wmagentConfig.WorkloadSummary.couchurl, wmagentConfig.WorkloadSummary.database, "WorkloadSummary")
-            
+
         if hasattr(wmagentConfig, "ACDC"):
             installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "ACDC")
             installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")
-        
+
     else:
         # in case reqmgr is not set but still worklaad Summary need to be initialized (Tier0 test mode case)
         # hacky way to check - assuming production url always use https protocal
@@ -359,5 +362,5 @@ if __name__ == "__main__":
            urlsplit(wmagentConfig.WorkloadSummary.couchurl).scheme == 'http':
             installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "ACDC")
             installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")
-    
+
     sys.exit(0)

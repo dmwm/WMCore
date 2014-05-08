@@ -671,7 +671,7 @@ class WMWorkloadHelper(PersistencyHelper):
                             setattr(outputModule, "lfnBase", mergedLFN)
                             setattr(outputModule, "mergedLFNBase", mergedLFN)
 
-                            if getattr(outputModule, "dataTier") in ["DQM", "DQMROOT"]:
+                            if getattr(outputModule, "dataTier") in ["DQM", "DQMIO"]:
                                 datasetName = "/%s/%s/%s" % (getattr(outputModule, "primaryDataset"),
                                                              processedDataset,
                                                              getattr(outputModule, "dataTier"))

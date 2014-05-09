@@ -532,7 +532,7 @@ class StdBase(object):
                                         siteBlacklist = self.siteBlacklist,
                                         initial_lfn_counter = lfn_counter)
 
-        if getattr(parentOutputModule, "dataTier") == "DQMROOT":
+        if getattr(parentOutputModule, "dataTier") == "DQMIO":
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge",
                                                          newDQMIO = True)
         else:
@@ -547,7 +547,7 @@ class StdBase(object):
                              forceMerged = True)
 
         self.addCleanupTask(parentTask, parentOutputModuleName)
-        if self.enableHarvesting and getattr(parentOutputModule, "dataTier") in ["DQMROOT", "DQM"]:
+        if self.enableHarvesting and getattr(parentOutputModule, "dataTier") in ["DQMIO", "DQM"]:
             self.addDQMHarvestTask(mergeTask, "Merged",
                                    uploadProxy = self.dqmUploadProxy,
                                    periodic_harvest_interval= self.periodicHarvestInterval,
@@ -637,7 +637,7 @@ class StdBase(object):
                 harvestTaskCmsswHelper.setConfigCache(self.couchURL, self.dqmConfigCacheID, self.couchDBName)
             harvestTaskCmsswHelper.setDatasetName(datasetName)
         else:
-            if getattr(parentOutputModule, "dataTier") == "DQMROOT":
+            if getattr(parentOutputModule, "dataTier") == "DQMIO":
                 harvestTaskCmsswHelper.setDataProcessingConfig(self.procScenario, "dqmHarvesting",
                                                                globalTag = self.globalTag,
                                                                datasetName = datasetName,

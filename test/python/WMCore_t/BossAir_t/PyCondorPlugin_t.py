@@ -1,9 +1,9 @@
 #!/usr/bin/python
 
 """
-_CondorPlugin_t_
+_PyCondorPlugin_t_
 
-CondorPlugin unittests
+PyCondorPlugin unittests
 """
 import time
 import os.path
@@ -21,9 +21,9 @@ from WMComponent.JobTracker.JobTrackerPoller     import JobTrackerPoller
 
 from WMCore_t.BossAir_t.BossAir_t import BossAirTest, getNArcJobs, getCondorRunningJobs
 
-class CondorPluginTest(BossAirTest):
+class PyCondorPluginTest(BossAirTest):
     """
-    _CondorPluginTest_
+    _PyCondorPluginTest_
 
     Inherit everything from BossAir
     """
@@ -34,7 +34,7 @@ class CondorPluginTest(BossAirTest):
         """
         _CondorTest_
 
-        This test works on the CondorPlugin, checking all of
+        This test works on the PyCondorPlugin, checking all of
         its functions with a single set of jobs
         """
         nRunning = getCondorRunningJobs(self.user)
@@ -50,7 +50,6 @@ class CondorPluginTest(BossAirTest):
 
         baAPI  = BossAirAPI(config = config)
 
-        print self.testDir
 
         jobPackage = os.path.join(self.testDir, 'JobPackage.pkl')
         f = open(jobPackage, 'w')
@@ -69,7 +68,7 @@ class CondorPluginTest(BossAirTest):
             tmpJob['name']        = j['name']
             tmpJob['cache_dir']   = self.testDir
             tmpJob['retry_count'] = 0
-            tmpJob['plugin']      = 'CondorPlugin'
+            tmpJob['plugin']      = 'PyCondorPlugin'
             tmpJob['owner']       = 'tapas'
             tmpJob['packageDir']  = self.testDir
             tmpJob['sandbox']     = sandbox
@@ -177,7 +176,7 @@ class CondorPluginTest(BossAirTest):
 
 
         config = self.getConfig()
-        config.BossAir.pluginName = 'CondorPlugin'
+        config.BossAir.pluginName = 'PyCondorPlugin'
 
         baAPI  = BossAirAPI(config = config)
 
@@ -295,7 +294,7 @@ class CondorPluginTest(BossAirTest):
 
 
         config = self.getConfig()
-        config.BossAir.pluginName = 'CondorPlugin'
+        config.BossAir.pluginName = 'PyCondorPlugin'
 
         baAPI  = BossAirAPI(config = config)
 
@@ -363,7 +362,7 @@ class CondorPluginTest(BossAirTest):
         self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
 
         config = self.getConfig()
-        config.BossAir.pluginName = 'CondorPlugin'
+        config.BossAir.pluginName = 'PyCondorPlugin'
         config.BossAir.submitWMSMode = True
 
         baAPI  = BossAirAPI(config = config)
@@ -398,17 +397,9 @@ class CondorPluginTest(BossAirTest):
 
         baAPI.track()
         idleJobs = baAPI._loadByStatus(status = 'Idle')
-        sn = "T2_US_UCSD"
 
-        # Test the Site Info has been updated. Make Sure T2_US_UCSD is not in the sitelist
-        # in BossAir_t.py
-        baAPI.updateSiteInformation(idleJobs, sn, True)
+        baAPI.kill(jobs = idleJobs)
 
-        # Now kill 'em manually
-        #        command = ['condor_rm', self.user]
-        #        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-        #        pipe.communicate()
-        
         del jobSubmitter
 
         return
@@ -419,14 +410,14 @@ class CondorPluginTest(BossAirTest):
         """
         _updateJobInfo_
 
-        Test the updateSiteInformation method from CondorPlugin.py
+        Test the updateSiteInformation method from PyCondorPlugin.py
         """
 
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
         
         config = self.getConfig()
-        config.BossAir.pluginName = 'CondorPlugin'
+        config.BossAir.pluginName = 'PyCondorPlugin'
         config.BossAir.submitWMSMode = True
 
         baAPI  = BossAirAPI(config = config)

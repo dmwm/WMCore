@@ -14,24 +14,10 @@ from WMCore.Storage.Backends.LCGImpl import LCGImpl
 
 
 _CheckExitCodeOption = True
-srmPaths = ['/store/temp/user/', '/store/user/']
 
 
 def stripPrefixTOUNIX(filePath):
     return filePath.split(".fnal.gov/", 1)[1]
-
-
-def pnfsPfn2(pfn):
-    """
-    _pnfsPfn2_
-    
-    Convert a dcap PFN to a PNFS PFN
-    
-    """
-    return pfn
-    # handle lustre location
-
-
 
 class FNALImpl(StageOutImpl):
     """
@@ -54,10 +40,12 @@ class FNALImpl(StageOutImpl):
         Return xrdcp or srm
         """
 
-        method = 'srm'
+        method = 'local' # default
         if PFN.startswith("root://"):
             method = 'xrdcp'
-        print "Using method:", method
+        if PFN.startswith("srm://"):
+            method = 'srm'
+        print "Using method %s for PFN %s", (method, PFN)
         return method
 
 
@@ -93,8 +81,6 @@ class FNALImpl(StageOutImpl):
 
         if method == 'srm':
             return self.srmImpl.createSourceName(protocol, pfn)
-        elif method == 'xrdcp':
-            print "Translated PFN: %s\n To use xrdcp" % pfn
         return pfn
 
 
@@ -107,16 +93,23 @@ class FNALImpl(StageOutImpl):
         
         """
 
+        if getattr(self, 'stageIn', False):
+            return self.buildStageInCommand(sourcePFN, targetPFN, options)
+
         method = self.storageMethod(targetPFN)
         sourceMethod = self.storageMethod(sourcePFN)
+
+        if ((method == 'srm' and sourceMethod == 'xrdcp') or
+            (method == 'xrdcp' and sourceMethod == 'srm')):
+            print "Incompatible methods for source and target"
+            print "\tSource: method %s for PFN %s" % (sourceMethod, sourcePFN)
+            print "\tTarget: method %s for PFN %s" % (method, targetPFN)
+            return 1
 
         if method == 'srm' or sourceMethod == 'srm':
             return self.srmImpl.createStageOutCommand(sourcePFN, targetPFN, options)
 
-        if getattr(self, 'stageIn', False):
-            return self.buildStageInCommand(sourcePFN, targetPFN, options)
-
-        if method == 'xrdcp':
+        if method == 'xrdcp' or sourceMethod == 'xrdcp':
             original_size = os.stat(sourcePFN)[6]
             print "Local File Size is: %s" % original_size
             pfnWithoutChecksum = stripPrefixTOUNIX(targetPFN)
@@ -148,14 +141,9 @@ class FNALImpl(StageOutImpl):
         """
         _buildStageInCommand_
         
-        Create normal dccp commad for staging in files.
+        Create normal xrdcp commad for staging in files.
         """
 
-        # Even if matched above, some paths are not lustre
-        for path in srmPaths:
-            if sourcePFN.find(path) != -1:
-                dcapLocation = 0
-        
         result = "/usr/bin/xrdcp -d 0 "
         if options != None:
             result += " %s " % options
@@ -176,7 +164,7 @@ class FNALImpl(StageOutImpl):
 
         if method == 'srm':
             return self.srmImpl.removeFile(pfnToRemove)
-        elif method == 'xrdcp':
+        else:
             command = "/bin/rm %s" % stripPrefixTOUNIX(pfnToRemove)
             self.executeCommand(command)
 

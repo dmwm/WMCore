@@ -565,7 +565,7 @@ class Proxy(Credential):
         if retcode > 0:
             self.logger.error('Cannot get proxy type %s' % msg )
             return
-        isRFC = msg == 'RFC compliant proxy\n'
+        isRFC = msg.startswith('RFC') #can be 'RFC3820 compliant impersonation proxy' or 'RFC compliant proxy'
         ## set environ and add voms extensions
         cmdList = []
         cmdList.append('env')

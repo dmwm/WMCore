@@ -21,6 +21,7 @@ from WMComponent.RetryManager.RetryManagerPoller import RetryManagerPoller
 import WMCore.WMBase
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators import EmulatorSetup
 #from WMQuality.TestInit   import TestInit
 from WMCore.DAOFactory    import DAOFactory
 from WMCore.Services.UUID import makeUUID
@@ -62,6 +63,7 @@ class RetryManagerTest(unittest.TestCase):
         self.setJobTime = self.daofactory(classname = "Jobs.SetStateTime")
         self.increaseRetry = self.daofactory(classname = "Jobs.IncrementRetry")
         self.testDir = self.testInit.generateWorkDir()
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
         self.nJobs = 10
         return
 
@@ -72,6 +74,7 @@ class RetryManagerTest(unittest.TestCase):
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
+        EmulatorSetup.deleteConfig(self.configFile)
         return
 
     def getConfig(self):
@@ -79,7 +82,8 @@ class RetryManagerTest(unittest.TestCase):
         _getConfig_
 
         """
-        config = Configuration()
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
 
         # First the general stuff
         config.section_("General")

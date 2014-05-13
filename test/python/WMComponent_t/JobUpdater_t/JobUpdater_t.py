@@ -21,6 +21,7 @@ from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators import EmulatorSetup
 
 class JobUpdaterTest(unittest.TestCase):
     """
@@ -52,6 +53,7 @@ class JobUpdaterTest(unittest.TestCase):
                                      logger = logging,
                                      dbinterface = myThread.dbi)
         self.listWorkflows = self.daoFactory(classname = "Workflow.ListForSubmitter")
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
 
     def tearDown(self):
         """
@@ -63,6 +65,7 @@ class JobUpdaterTest(unittest.TestCase):
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
         EmulatorHelper.resetEmulators()
+        EmulatorSetup.deleteConfig(self.configFile)
 
     def getConfig(self):
         """
@@ -71,7 +74,8 @@ class JobUpdaterTest(unittest.TestCase):
         Get a test configuration for
         the JobUpdater tests
         """
-        config = Configuration()
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
 
         config.section_('Agent')
         config.Agent.agentName = 'testAgent'

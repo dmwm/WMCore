@@ -13,6 +13,7 @@ from WMComponent.ErrorHandler.ErrorHandlerPoller import ErrorHandlerPoller
 
 import WMCore.WMBase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
+from WMQuality.Emulators import EmulatorSetup
 from WMCore.DAOFactory          import DAOFactory
 from WMCore.Services.UUID       import makeUUID
 
@@ -63,6 +64,7 @@ class ErrorHandlerTest(unittest.TestCase):
         locationAction = self.daofactory(classname = "Locations.New")
         locationAction.execute(siteName = "malpaquet", seName = "malpaquet")
         self.testDir = self.testInit.generateWorkDir()
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
         self.nJobs = 10
 
         self.dataCS = DataCollectionService(url = self.testInit.couchUrl,
@@ -77,6 +79,7 @@ class ErrorHandlerTest(unittest.TestCase):
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
+        EmulatorSetup.deleteConfig(self.configFile)
         return
 
     def getConfig(self):
@@ -84,7 +87,8 @@ class ErrorHandlerTest(unittest.TestCase):
         _getConfig_
 
         """
-        config = Configuration()
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
 
         # First the general stuff
         config.section_("General")

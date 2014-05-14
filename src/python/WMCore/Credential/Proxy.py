@@ -164,11 +164,34 @@ class Proxy(Credential):
         return subprocess.call(self.setUI() + "type " +  cmd, shell=True,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0
 
-    def getUserCertEnddate(self):
+    def getUserCertEnddate(self, openSSL=True):
         """
-        Return the number of days until the expiration of the user cert in .globus/usercert.pem
+        Return the number of days until the expiration of the user cert in .globus/usercert.pem or $X509_USER_CERT if set
+        Uses openssl by default and fallback to voms-proxy-info in case of problems
         """
         certLocation = '~/.globus/usercert.pem' if 'X509_USER_CERT' not in os.environ else os.environ['X509_USER_CERT']
+        if openSSL:
+            out, _, retcode = execute_command('openssl x509 -noout -in %s -dates' % certLocation, self.logger, self.commandTimeout)
+            if retcode == 0:
+                out = out.split('notAfter=')[1]
+                if out[-1]=='\n':
+                    out = out[:-1]
+                possibleFormats = ['%b  %d  %H:%M:%S %Y %Z', '%b %d %H:%M:%S %Y %Z']
+                exptime = None
+                for frmt in possibleFormats:
+                    try:
+                        exptime = datetime.strptime(out, frmt)
+                    except ValueError:
+                        pass #try next format
+                if not exptime:
+                    #If we cannot decode the output in any way print a message and fallback to voms-proxy-info command
+                    self.logger.warning('Cannot decode "openssl x509 -noout -in %s -dates" date format. Falling back to voms-proxy-info' % certLocation)
+                else:
+                    #if everything is fine then we are ready to return!!
+                    daystoexp = (exptime - datetime.utcnow()).days
+                    return daystoexp
+
+        #uses this as a fallback
         timeleft = self.getTimeLeft(proxy = certLocation, checkVomsLife = False)
         if self.retcode:
             raise CredentialException('Cannot get user certificate remaining time with "voms-proxy-info"')
@@ -565,7 +588,7 @@ class Proxy(Credential):
         if retcode > 0:
             self.logger.error('Cannot get proxy type %s' % msg )
             return
-        isRFC = msg == 'RFC compliant proxy\n'
+        isRFC = msg.startswith('RFC') #can be 'RFC3820 compliant impersonation proxy' or 'RFC compliant proxy'
         ## set environ and add voms extensions
         cmdList = []
         cmdList.append('env')

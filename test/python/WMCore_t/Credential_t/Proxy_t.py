@@ -89,7 +89,9 @@ class ProxyTest(unittest.TestCase):
         Test if getTimeLeft method returns correctly the proxy time left.
         """
         daysleft = self.proxy.getUserCertEnddate()
-        self.assertEqual(daysleft, 29) #set this as the number of days left in .globus/usercert.pem
+        self.assertEqual(daysleft, 58) #set this as the number of days left in .globus/usercert.pem
+        daysleft = self.proxy.getUserCertEnddate(openSSL=False)
+        self.assertEqual(daysleft, 58) #set this as the number of days left in .globus/usercert.pem
 
     @attr("integration")
     def testAAACreateProxy( self ):

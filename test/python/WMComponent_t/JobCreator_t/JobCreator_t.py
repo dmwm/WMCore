@@ -18,6 +18,7 @@ import pstats
 import cPickle
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators import EmulatorSetup
 from WMCore.DAOFactory import DAOFactory
 
 
@@ -70,6 +71,7 @@ class JobCreatorTest(unittest.TestCase):
         self.couchdbname = "jobcreator_t"
         self.testInit.setupCouch("%s/jobs" % self.couchdbname, "JobDump")
         self.testInit.setupCouch("%s/fwjrs" % self.couchdbname, "FWJRDump")
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
 
 
         myThread = threading.currentThread()
@@ -121,6 +123,7 @@ class JobCreatorTest(unittest.TestCase):
         self._teardown = True
 
         self.testInit.tearDownCouch()
+        EmulatorSetup.deleteConfig(self.configFile)
 
 
         return
@@ -197,7 +200,8 @@ class JobCreatorTest(unittest.TestCase):
 
         myThread = threading.currentThread()
 
-        config = Configuration()
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
 
         #First the general stuff
         config.section_("General")

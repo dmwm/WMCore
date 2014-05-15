@@ -14,6 +14,7 @@ import threading
 
 from WMCore.Services.UUID       import makeUUID
 from WMQuality.TestInit         import TestInit
+from WMQuality.Emulators        import EmulatorSetup
 from WMCore.Agent.Configuration import Configuration
 from WMCore.DAOFactory          import DAOFactory
 from WMCore.DataStructs.Run     import Run
@@ -42,6 +43,7 @@ class scaleTestFiller:
         self.testInit.setDatabaseConnection(destroyAllDatabase = True)
         self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer"],
                                 useDefault = False)
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
 
         myThread = threading.currentThread()
         self.bufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
@@ -102,7 +104,8 @@ class scaleTestFiller:
         """
 
 
-        config = Configuration()
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
 
         #First the general stuff
         config.section_("General")

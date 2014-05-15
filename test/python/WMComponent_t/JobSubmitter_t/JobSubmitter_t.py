@@ -32,6 +32,7 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 from WMCore_t.WMSpec_t.TestSpec import testWorkload
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators import EmulatorSetup
 
 class JobSubmitterTest(unittest.TestCase):
     """
@@ -68,6 +69,7 @@ class JobSubmitterTest(unittest.TestCase):
         self.componentName = 'JobSubmitter'
         self.heartbeatAPI = HeartbeatAPI(self.componentName)
         self.heartbeatAPI.registerComponent()
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
 
         return
 
@@ -80,6 +82,7 @@ class JobSubmitterTest(unittest.TestCase):
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
+        EmulatorSetup.deleteConfig(self.configFile)
         return
 
     def setResourceThresholds(self, site, **options):
@@ -218,7 +221,8 @@ class JobSubmitterTest(unittest.TestCase):
         Gets a basic config from default location
         """
 
-        config = Configuration()
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
 
         config.component_("Agent")
         config.Agent.WMSpecDirectory = self.testDir

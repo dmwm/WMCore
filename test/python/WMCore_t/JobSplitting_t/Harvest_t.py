@@ -25,6 +25,7 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMQuality.TestInit import TestInit
+from WMQuality.Emulators import EmulatorSetup
 
 
 class HarvestTest(unittest.TestCase):
@@ -80,6 +81,7 @@ class HarvestTest(unittest.TestCase):
                                            type = "Harvesting")
 
         self.subscription1.create()
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
 
         return
 
@@ -89,6 +91,7 @@ class HarvestTest(unittest.TestCase):
 
         """
         self.testInit.clearDatabase()
+        EmulatorSetup.deleteConfig(self.configFile)
 
         return
 
@@ -97,7 +100,8 @@ class HarvestTest(unittest.TestCase):
         _getConfig_
 
         """
-        config = Configuration()
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
 
         config.section_("CoreDatabase")
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")

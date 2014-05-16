@@ -77,7 +77,8 @@ class AgentStatusPoller(BaseWorkerThread):
         # always checks couch first
         source = self.config.JobStateMachine.jobSummaryDBName
         target = self.config.AnalyticsDataCollector.centralWMStatsURL
-        couchInfo = self.localCouchServer.recoverReplicationErrors(source, target)
+        couchInfo = self.localCouchServer.recoverReplicationErrors(source, target, 
+                                                                   filter = "WMStats/repfilter")
         logging.info("getting couchdb replication status: %s" % couchInfo)
         
         agentInfo = self.wmagentDB.getComponentStatus(self.config)

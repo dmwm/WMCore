@@ -17,6 +17,8 @@ _CheckExitCodeOption = True
 
 
 def stripPrefixTOUNIX(filePath):
+    if ".fnal.gov/" not in filePath:
+        return filePath
     return filePath.split(".fnal.gov/", 1)[1]
 
 class FNALImpl(StageOutImpl):
@@ -62,8 +64,10 @@ class FNALImpl(StageOutImpl):
         if method == 'srm':
             self.srmImpl.createOutputDirectory(targetPFN)
         else:
-            pfnSplit = stripPrefixTOUNIX(targetPFN)
-            targetdir= os.path.dirname(pfnSplit)
+            if method != 'local':
+                targetPFN = stripPrefixTOUNIX(targetPFN)
+
+            targetdir= os.path.dirname(targetPFN)
             command = "#!/bin/sh\n"
             command += "if [ ! -e \"%s\" ]; then\n" % targetdir
             command += " mkdir -p %s\n" % targetdir

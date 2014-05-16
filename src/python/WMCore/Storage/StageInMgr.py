@@ -178,7 +178,7 @@ class StageInMgr:
                     msg = "===> Local Stage Out Failure for file:\n"
                     msg += "======>  %s\n" % fileToStage['LFN']
                     msg += str(ex)
-
+                    print msg
             #  //
             # // Still here => override start using the fallback stage outs
             #//  If override is set, then that will be the only fallback available

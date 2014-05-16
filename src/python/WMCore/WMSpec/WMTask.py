@@ -20,46 +20,47 @@ import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from WMCore.WMSpec.Steps.BuildMaster import BuildMaster
 from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
 import WMCore.WMSpec.Utilities as SpecUtils
+from WMCore.DataStructs.LumiList import LumiList
 from WMCore.DataStructs.Workflow import Workflow as DataStructsWorkflow
 
 def getTaskFromStep(stepRef):
     """
     _getTaskFromStep_
-    
+
     Traverse up the step tree until finding the first WMTask entry,
     return it wrapped in a WMTaskHelper
-    
+
     """
     nodeData = stepRef
     if isinstance(stepRef, WMStepHelper):
         nodeData = stepRef.data
-    
+
     taskNode = SpecUtils.findTaskAboveNode(nodeData)
     if taskNode == None:
         msg = "Unable to find Task containing step\n"
         #TODO: Replace with real exception class
         raise RuntimeError, msg
-    
+
     return WMTaskHelper(taskNode)
 
 
 def buildLumiMask(runs, lumis):
     """
         Runs are saved in the spec as a list of integers.
-        The lumi mask associated to eac run is saved as a list of strings
+        The lumi mask associated to each run is saved as a list of strings
         where each string is in a format like '1,4,23,45'
 
         The method convert these parameters in the corresponding lumiMask,
         e.g.:  runs=['3','4'], lumis=['1,4,23,45', '5,84,234,445'] => lumiMask = {'3':[[1,4],[23,45]],'4':[[5,84],[234,445]]}
     """
-    
+
     if len(runs) != len(lumis):
-        raise ValueError("runs and lumis must have same lenght")
+        raise ValueError("runs and lumis must have same length")
     for lumi in lumis:
         if len(lumi.split(',')) % 2:
             raise ValueError("Needs an even number of lumi in each element of lumis list")
-            
-            
+
+
     lumiLists = [map(list, zip([int(y) for y in x.split(',')][::2], [int(y) for y in x.split(',')][1::2])) for x in lumis]
     lumiMask = dict(zip(runs, lumiLists))
     return lumiMask
@@ -68,36 +69,36 @@ def buildLumiMask(runs, lumis):
 class WMTaskHelper(TreeHelper):
     """
     _WMTaskHelper_
-    
+
     Util wrapper containing tools & methods for manipulating the WMTask
-    data object.    
+    data object.
     """
     def __init__(self, wmTask):
         TreeHelper.__init__(self, wmTask)
         self.startTime = None
         self.endTime   = None
 
-    
+
     def addTask(self, taskName):
         """
         _addTask_
-        
+
         Add a new task as a subtask with the name provided and
         return it wrapped in a TaskHelper
-        
+
         """
         node = WMTaskHelper(WMTask(taskName))
         self.addNode(node)
         pName = "%s/%s" % (self.getPathName(), taskName)
         node.setPathName(pName)
         return node
-    
+
     def taskIterator(self):
         """
         _taskIterator_
-        
+
         return output of nodeIterator(self) wrapped in TaskHelper instance
-        
+
         """
         for x in self.nodeIterator():
             yield WMTaskHelper(x)
@@ -110,25 +111,25 @@ class WMTaskHelper(TreeHelper):
         """
         for x in self.firstGenNodeChildIterator():
             yield WMTaskHelper(x)
-    
-    
+
+
     def setPathName(self, pathName):
         """
         _setPathName_
-        
+
         Set the path name of the task within the workload
         Used internally when addin tasks to workloads or subtasks
-        
+
         """
         self.data.pathName = pathName
-    
+
     def getPathName(self):
         """
         _getPathName_
-        
+
         get the path name of this task reflecting its
         structure within the workload and task tree
-        
+
         """
         return self.data.pathName
 
@@ -143,15 +144,15 @@ class WMTaskHelper(TreeHelper):
     def listPathNames(self):
         """
         _listPathNames
-        
+
         """
         for t in self.taskIterator():
             yield t.getPathName()
-    
+
     def listNames(self):
         """
         _listPathNames
-        
+
         """
         for t in self.taskIterator():
             yield t.name()
@@ -159,10 +160,10 @@ class WMTaskHelper(TreeHelper):
     def makeWorkflow(self):
         """
         _makeWorkflow_
-        
+
         Create a WMBS compatible Workflow structure that represents this
         task and the information contained within it
-        
+
         """
         workflow = DataStructsWorkflow()
         workflow.task = self.getPathName()
@@ -182,7 +183,7 @@ class WMTaskHelper(TreeHelper):
         Retrieve the name of the top step.
         """
         return self.data.steps.topStepName
-    
+
     def setStep(self, wmStep):
         """set topStep to be the step instance provided"""
         stepData = wmStep
@@ -191,7 +192,7 @@ class WMTaskHelper(TreeHelper):
             stepHelper = wmStep
         else:
             stepHelper = WMStepHelper(wmStep)
-        
+
         stepName = stepHelper.name()
         stepHelper.setTopOfTree()
         setattr(self.data.steps, stepName, stepData)
@@ -201,56 +202,56 @@ class WMTaskHelper(TreeHelper):
     def listAllStepNames(self):
         """
         _listAllStepNames_
-        
-        Get a list of all the step names contained in this task.        
+
+        Get a list of all the step names contained in this task.
         """
         step = self.steps()
         if step:
             return step.allNodeNames()
         else:
             return []
-    
+
     def getStep(self, stepName):
         """get a particular step from the workflow"""
         if self.data.steps.topStepName == None:
             return None
         topStep = self.steps()
         return topStep.getStep(stepName)
-    
+
     def makeStep(self, stepName):
         """
         _makeStep_
-        
+
         create a new WMStep instance, install it as the top step and
         return the reference to the new step wrapped in a StepHelper
-        
+
         """
         newStep = WMStep(stepName)
         self.setStep(newStep)
         return WMStepHelper(newStep)
 
-    
+
     def applyTemplates(self):
         """
         _applyTemplates_
-        
+
         For each step, load the appropriate template and install the default structure
-        
+
         TODO: Exception handling
-        
+
         """
         for step in self.steps().nodeIterator():
             stepType = step.stepType
             template = StepFactory.getStepTemplate(stepType)
             template(step)
-    
+
     def getStepHelper(self, stepName):
         """
         _getStepHelper_
-        
+
         Get the named step, look up its type specific helper and retrieve
         the step wrapped in the type based helper.
-        
+
         """
         step = self.getStep(stepName)
         stepType = step.stepType()
@@ -269,7 +270,7 @@ class WMTaskHelper(TreeHelper):
             outputModules.append(self.getOutputModulesForStep(stepName))
 
         return outputModules
-    
+
     def getOutputModulesForStep(self, stepName):
         """
         _getOutputModulesForStep_
@@ -283,22 +284,22 @@ class WMTaskHelper(TreeHelper):
                 return step.data.output.modules
 
         return ConfigSection()
-    
+
     def build(self, workingDir):
         """
         _build_
-        
+
         Invoke the build process to create the job in the working dir provided
-        
+
         """
         master = BuildMaster(workingDir)
         master(self)
         return
-    
+
     def setupEnvironment(self):
         """
         _setupEnvironment_
-        
+
         I don't know if this should go here.
         Setup the environment variables mandated in the WMTask
         """
@@ -306,7 +307,7 @@ class WMTaskHelper(TreeHelper):
         if not hasattr(self.data, 'environment'):
             #No environment to setup, pass
             return
-        
+
         envDict = self.data.environment.dictionary_()
 
         for key in envDict.keys():
@@ -316,17 +317,17 @@ class WMTaskHelper(TreeHelper):
                 continue
             else:
                 os.environ[key] = envDict[key]
-        
+
         return
-    
+
     def execute(self, wmbsJob, emulator = None):
         """
         _execute_
-        
+
         Invoke execution of the steps using an optional Emulator
-        
+
         TODO: emulator is now deprecated, remove from API
-        
+
         """
         self.startTime = time.time()
         self.setupEnvironment()
@@ -335,17 +336,17 @@ class WMTaskHelper(TreeHelper):
         self.endTime   = time.time()
         return
 
-    
+
     def setInputReference(self, stepRef, **extras):
         """
         _setInputReference_
-        
+
         Add details to the input reference for the task providing
         input to this task.
         The reference is the step in the input task, plus
         any extra information.
 
-        
+
         """
         stepId = SpecUtils.stepIdentifier(stepRef)
         setattr(self.data.input, "inputStep", stepId)
@@ -370,13 +371,13 @@ class WMTaskHelper(TreeHelper):
         Retrieve the name of the input step, if there is one.
         """
         return getattr(self.data.input, "inputStep", None)
-    
+
     def inputReference(self):
         """
         _inputReference_
-        
+
         Get information about the input reference for this task.
-        
+
         """
         return self.data.input
 
@@ -420,7 +421,7 @@ class WMTaskHelper(TreeHelper):
         _setSplittingParameters_
 
         Set the job splitting parameters.
-        """        
+        """
         [setattr(self.data.input.splitting, key, val)
          for key, val in params.items() ]
         return
@@ -428,7 +429,7 @@ class WMTaskHelper(TreeHelper):
     def setSplittingAlgorithm(self, algoName, **params):
         """
         _setSplittingAlgorithm_
-        
+
         Set the splitting algorithm name and arguments.  Clear out any old
         splitting parameters while preserving the parameters for ACDC
         resubmission which are:
@@ -460,7 +461,7 @@ class WMTaskHelper(TreeHelper):
                 preservedParams[paramName] = getattr(self.data.input.splitting,
                                                      paramName)
         performanceConfig = getattr(self.data.input.splitting, "performance", None)
-        
+
         delattr(self.data.input, "splitting")
         self.data.input.section_("splitting")
         self.data.input.splitting.section_("performance")
@@ -476,11 +477,11 @@ class WMTaskHelper(TreeHelper):
     def jobSplittingAlgorithm(self):
         """
         _jobSplittingAlgorithm_
-        
+
         Retrieve the job splitting algorithm name.
         """
         return getattr(self.data.input.splitting, "algorithm", None)
-    
+
     def jobSplittingParameters(self, performance = True):
         """
         _jobSplittingParameters_
@@ -528,17 +529,17 @@ class WMTaskHelper(TreeHelper):
         """
         _addGenerator_
 
-        
+
         """
         if not 'generators' in self.data.listSections_():
             self.data.section_('generators')
         if not generatorName in self.data.generators.listSections_():
             self.data.generators.section_(generatorName)
 
-        
+
         helper = TreeHelper(getattr(self.data.generators, generatorName))
         helper.addValue(settings)
-        
+
         return
 
     def listGenerators(self):
@@ -563,7 +564,7 @@ class WMTaskHelper(TreeHelper):
         generator = getattr(generators, generatorName, None)
         if generator == None:
             return {}
-        
+
         confValues = TreeHelper(generator)
         args = {}
         tempArgs = confValues.pythoniseDict(sections = False)
@@ -598,26 +599,26 @@ class WMTaskHelper(TreeHelper):
                 "collection": self.data.input.acdc.collection,
                 "fileset": self.data.input.acdc.fileset,
                 "database": self.data.input.acdc.database}
-    
+
     def addInputDataset(self, **options):
         """
         _addInputDataset_
-        
+
         Add details of an input dataset to this Task.
         This dataset will be used as input for the first step
         in the task
-        
+
         options should contain at least:
           - primary - primary dataset name
           - processed - processed dataset name
           - tier - data tier name
-        
+
         optional args:
           - dbsurl - dbs url if not global
           - block_whitelist - list of whitelisted fileblocks
           - block_blacklist - list of blacklisted fileblocks
           - run_whitelist - list of whitelist runs
-          - run_blacklist - list of blacklist runs        
+          - run_blacklist - list of blacklist runs
         """
         self.data.input.section_("dataset")
         self.data.input.dataset.dbsurl = None
@@ -627,15 +628,15 @@ class WMTaskHelper(TreeHelper):
         self.data.input.dataset.section_("runs")
         self.data.input.dataset.runs.whitelist = []
         self.data.input.dataset.runs.blacklist = []
-        
+
         primary = options.get("primary", None)
         processed = options.get("processed", None)
         tier = options.get("tier", None)
-        
+
         if primary == None or processed == None or tier == None:
             msg = "Primary, Processed and Tier must be set"
             raise RuntimeError, msg
-        
+
         self.data.input.dataset.primary = primary
         self.data.input.dataset.processed = processed
         self.data.input.dataset.tier = tier
@@ -655,7 +656,7 @@ class WMTaskHelper(TreeHelper):
                 self.setInputRunBlacklist(arg)
             else:
                 setattr(self.data.input.dataset, opt, arg)
-        
+
         return
 
     def inputDatasetDBSURL(self):
@@ -692,7 +693,7 @@ class WMTaskHelper(TreeHelper):
     def setInputBlockBlacklist(self, blockBlacklist):
         """
         _setInputBlockBlacklist_
-        
+
         Set the block black list for the input dataset.  This must be called
         after setInputDataset().
         """
@@ -730,7 +731,7 @@ class WMTaskHelper(TreeHelper):
         if hasattr(self.data.input, "dataset"):
             return self.data.input.dataset.runs.whitelist
         return None
-    
+
     def setInputRunBlacklist(self, runBlacklist):
         """
         _setInputRunBlacklist_
@@ -751,31 +752,31 @@ class WMTaskHelper(TreeHelper):
         if hasattr(self.data.input, "dataset"):
             return self.data.input.dataset.runs.blacklist
         return None
-    
+
     def addProduction(self, **options):
         """
         _addProduction_
-        
+
         Add details of production job related information.
-        
+
         options should contain at least:
         TODO: Not sure what is necessary data ask Dave
         optional
         - totalevents - total events in dataset
-        
+
         """
         if not hasattr(self.data, "production"):
             self.data.section_("production")
-        
+
         for opt, arg in options.items():
             setattr(self.data.production, opt, arg)
-    
+
     def inputDataset(self):
         """
         _inputDataset_
-        
+
         Get the input.dataset structure from this task
-        
+
         """
         return getattr(self.data.input, "dataset", None)
 
@@ -790,13 +791,13 @@ class WMTaskHelper(TreeHelper):
             ds = getattr(self.data.input, 'dataset')
             return '/%s/%s/%s' % (ds.primary, ds.processed, ds.tier)
         return None
-    
+
     def siteWhitelist(self):
         """
         _siteWhitelist_
-        
+
         Accessor for the site white list for the task.
-        """        
+        """
         return self.data.constraints.sites.whitelist
 
     def setSiteWhitelist(self, siteWhitelist):
@@ -807,11 +808,11 @@ class WMTaskHelper(TreeHelper):
         """
         self.data.constraints.sites.whitelist = siteWhitelist
         return
-    
+
     def siteBlacklist(self):
         """
         _siteBlacklist_
-        
+
         Accessor for the site white list for the task.
         """
         return self.data.constraints.sites.blacklist
@@ -959,21 +960,21 @@ class WMTaskHelper(TreeHelper):
     def parentProcessingFlag(self):
         """
         _parentProcessingFlag_
-        
+
         accessor for parentProcessing information (two file input)
         """
         return self.jobSplittingParameters().get("include_parents", False)
-    
+
     def totalEvents(self):
         """
         _totalEvents_
-        
+
         accessor for total events in the given dataset
         """
         #TODO: save the total events for  the production job
         return int(self.data.production.totalEvents)
         #return self.data.input.dataset.totalEvents
-    
+
     def dbsUrl(self):
         """
         _dbsUrl_
@@ -984,12 +985,12 @@ class WMTaskHelper(TreeHelper):
             return getattr(self.data.input.dataset, "dbsurl", None)
         else:
             return None
-    
-    
+
+
     def setTaskType(self, taskType):
         """
         _setTaskType_
-        
+
         Set the type field of this task
         """
         self.data.taskType = taskType
@@ -998,7 +999,7 @@ class WMTaskHelper(TreeHelper):
     def taskType(self):
         """
         _taskType_
-        
+
         Get the task Type setting
         """
         return self.data.taskType
@@ -1032,7 +1033,7 @@ class WMTaskHelper(TreeHelper):
                 # This should raise an alarm bell, as per Steve's request
                 # TODO: Change error code
                 finalReport.addStep(reportname = taskStep, status = 1)
-                finalReport.addError(stepName = taskStep, exitCode = 99999, errorType = "ReportManipulatingError", 
+                finalReport.addError(stepName = taskStep, exitCode = 99999, errorType = "ReportManipulatingError",
                                      errorDetails = "Could not find report file for step %s!" % taskStep)
 
         finalReport.data.completed = True
@@ -1052,7 +1053,7 @@ class WMTaskHelper(TreeHelper):
     def setTaskLogBaseLFN(self, logBaseLFN):
         """
         _setTaskLogBaseLFN_
-        
+
         Set the base LFN for the task's log archive file.
         """
         self.data.logBaseLFN = logBaseLFN
@@ -1213,6 +1214,21 @@ class WMTaskHelper(TreeHelper):
         """
         return getattr(self.data.parameters, 'acquisitionEra', None)
 
+    def setLumiMask(self, lumiMask = LumiList()):
+        compactList = lumiMask.getCompactList()
+        runs = []
+        lumis = []
+        for run, runLumis in compactList.items():
+            runs.append(int(run))
+            lumiList = []
+            for lumi in runLumis:
+                lumiList.extend([str(l) for l in lumi])
+            lumis.append(','.join(lumiList))
+
+        self.data.input.splitting.runs = runs
+        self.data.input.splitting.lumis = lumis
+        return
+
     def getLumiMask(self):
         """
             return the lumi mask
@@ -1256,11 +1272,11 @@ class WMTaskHelper(TreeHelper):
 class WMTask(ConfigSectionTree):
     """
     _WMTask_
-    
+
     workload management task.
     Allow a set of processing job specifications that are interdependent
     to be modelled as a tree structure.
-    
+
     """
     def __init__(self, name):
         ConfigSectionTree.__init__(self, name)
@@ -1291,10 +1307,10 @@ class WMTask(ConfigSectionTree):
 def makeWMTask(taskName):
     """
     _makeWMTask_
-    
+
     Convienience method to instantiate a new WMTask with the name
     provided and wrap it in a helper
-    
+
     """
     return WMTaskHelper(WMTask(taskName))
 

@@ -182,7 +182,7 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         createBlock.execute(block = self.blockAName, locations = ["srm-cms.cern.ch"], open_status = 'Closed')
         createBlock.execute(block = self.blockBName, locations = ["srm-cms.cern.ch"], open_status = 'Closed')
 
-        bufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+        bufferFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
                                    logger = myThread.logger,
                                    dbinterface = myThread.dbi)
 

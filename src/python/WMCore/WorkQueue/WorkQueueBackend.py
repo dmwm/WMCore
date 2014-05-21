@@ -531,11 +531,15 @@ class WorkQueueBackend(object):
         expectedReplicationCount = 2 # GQ -> LQ-Inbox & LQ-Inbox -> GQ
         # Remove the protocol frm the sanitized url
         inboxUrl = sanitizeURL('%s/%s' % (self.server.url, self.inbox.name))['url'].split('/', 2)[2]
-
         try:
+            # backward compatibility:
+            # Couch 1.1.0 - Replication, task
+            # Couch 1.1.5 - replication, target, source
             for activeTasks in status['active_tasks']:
-                if activeTasks['type'] == 'replication':
-                    if (inboxUrl in activeTasks['target']) or (inboxUrl in activeTasks['source']):
+                if activeTasks['type'].lower() == 'replication':
+                    if (inboxUrl in activeTasks.get('task', '')) or \
+                       (inboxUrl in activeTasks.get('target', '')) or \
+                       (inboxUrl in activeTasks.get('source', '')):
                         replicationCount += 1
             if replicationCount < expectedReplicationCount:
                 replicationError = True

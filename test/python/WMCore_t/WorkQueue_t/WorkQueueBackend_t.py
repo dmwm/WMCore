@@ -58,6 +58,10 @@ class WorkQueueBackendTest(unittest.TestCase):
                                     WMSpec = self.processingSpec,
                                     Status = 'Available',
                                     Jobs = 10, Priority = 1)
+        element3 = WorkQueueElement(RequestName = 'backend_test_3',
+                                    WMSpec = self.processingSpec,
+                                    Status = 'Available',
+                                    Jobs = 10, Priority = 1)
         lowprielement = WorkQueueElement(RequestName = 'backend_test_low',
                                          WMSpec = self.processingSpec,
                                          Status = 'Available',
@@ -69,11 +73,14 @@ class WorkQueueBackendTest(unittest.TestCase):
         time.sleep(1)
         self.backend.insertElements([lowprielement, element2, highprielement])
         self.backend.availableWork({'place' : 1000}, {})
+        time.sleep(1)
+        self.backend.insertElements([element3])
         work = self.backend.availableWork({'place' : 1000}, {})
         # order should be high to low, with the standard elements in the order
         # they were queueud
         self.assertEqual([x['RequestName'] for x in work[0]],
-                         ['backend_test_high', 'backend_test', 'backend_test_2', 'backend_test_low'])
+                         ['backend_test_high', 'backend_test', 'backend_test_2', 
+                          'backend_test_3','backend_test_low'])
 
 
     def testDuplicateInsertion(self):

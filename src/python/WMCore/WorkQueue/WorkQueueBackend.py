@@ -36,13 +36,17 @@ class WorkQueueBackend(object):
     Represents persistent storage for WorkQueue
     """
     def __init__(self, db_url, db_name = 'workqueue',
-                 inbox_name = 'workqueue_inbox', parentQueue = None,
+                 inbox_name = None, parentQueue = None,
                  queueUrl = None, logger = None):
         if logger:
             self.logger = logger
         else:
             import logging
             self.logger = logging
+        
+        if inbox_name == None:
+            inbox_name = "%s_inbox" % db_name
+            
         self.server = CouchServer(db_url)
         self.parentCouchUrlWithAuth = parentQueue
         if parentQueue:
@@ -375,8 +379,10 @@ class WorkQueueBackend(object):
                     siteJobCounts[site] = {}
                 siteJobCounts[site][prio] = siteJobCounts[site].setdefault(prio, 0) + element['Jobs']
 
-        # sort elements to get them in timestamp order
-        elements = sorted(elements, key=lambda element: element['CreationTime'])
+        # sort elements to get them in priority first and timestamp order
+        elements.sort(key=lambda element: element['CreationTime'])
+        elements.sort(key = lambda x: x['Priority'], reverse = True)
+        
         return elements, thresholds, siteJobCounts
 
     def getActiveData(self):
@@ -525,10 +531,11 @@ class WorkQueueBackend(object):
         expectedReplicationCount = 2 # GQ -> LQ-Inbox & LQ-Inbox -> GQ
         # Remove the protocol frm the sanitized url
         inboxUrl = sanitizeURL('%s/%s' % (self.server.url, self.inbox.name))['url'].split('/', 2)[2]
+
         try:
             for activeTasks in status['active_tasks']:
-                if activeTasks['type'] == 'Replication':
-                    if inboxUrl in activeTasks['task']:
+                if activeTasks['type'] == 'replication':
+                    if (inboxUrl in activeTasks['target']) or (inboxUrl in activeTasks['source']):
                         replicationCount += 1
             if replicationCount < expectedReplicationCount:
                 replicationError = True

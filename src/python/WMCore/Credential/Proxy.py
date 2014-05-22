@@ -15,19 +15,22 @@ from WMCore.WMException import WMException
 import time
 from hashlib import sha1
 
-def execute_command( command, logger, timeout ):
+def execute_command( command, logger, timeout, redirect = True ):
     """
     _execute_command_
     Funtion to manage commands.
     """
 
     stdout, stderr, rc = None, None, 99999
-    proc = subprocess.Popen(
-            command, shell=True, cwd=os.environ['PWD'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            stdin=subprocess.PIPE,
-    )
+    if redirect:
+        proc = subprocess.Popen(
+                command, shell=True, cwd=os.environ['PWD'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+        )
+    else:
+        proc = subprocess.Popen( command, shell=True, cwd=os.environ['PWD'] )
 
     t_beginning = time.time()
     seconds_passed = 0
@@ -298,7 +301,7 @@ class Proxy(Credential):
         Proxy creation.
         """
         createCmd = 'voms-proxy-init -voms %s:%s -valid %s %s' % (self.vo, self.getProxyDetails( ), self.proxyValidity, '-rfc' if self.rfcCompliant else '' )
-        execute_command(self.setUI() +  createCmd, self.logger, self.commandTimeout )
+        execute_command(self.setUI() +  createCmd, self.logger, self.commandTimeout, redirect = False )
 
         return
 
@@ -344,7 +347,7 @@ class Proxy(Credential):
                 serverCredName = sha1(self.serverDN).hexdigest()
                 myproxyDelegCmd += ' -x -R \'%s\' -Z \'%s\' -k %s -t 168:00 -c %s ' \
                                    % (self.serverDN, self.serverDN, serverCredName, self.myproxyValidity )
-            _, stderr, _ = execute_command( self.setUI() +  myproxyDelegCmd, self.logger, self.commandTimeout )
+            _, stderr, _ = execute_command( self.setUI() +  myproxyDelegCmd, self.logger, self.commandTimeout)
             if stderr.find('proxy will expire') > -1:
                 raise CredentialException('Your certificate is shorter than %s ' % self.myproxyValidity)
         else:

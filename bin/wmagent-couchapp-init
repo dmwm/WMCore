@@ -323,7 +323,6 @@ if __name__ == "__main__":
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "monitor", basePath)
         installCouchApp(wmagentConfig.Statistics.couch_statinstance, wmagentConfig.Statistics.statitics_database, "stat", basePath)
         installCouchApp(wmagentConfig.DBSPublisher.couch_instance, wmagentConfig.DBSPublisher.files_database, "DBSPublisher", basePath)
-        installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.jobs_database, "Jobs", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.config_database, "config", basePath)
         installCouchApp(agent_instance, agent_database, "Agent", baseWMCorePath)
         if options.cron:

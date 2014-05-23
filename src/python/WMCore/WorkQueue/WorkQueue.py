@@ -661,6 +661,12 @@ class WorkQueue(WorkQueueBase):
         If resources passed in get work for them, if not available resources
         from get from wmbs.
         """
+        
+        # do this whether we have work or not - other events i.e. cancel may have happened
+        replicationFlag = self.backend.checkReplicationStatus(continuous = continuousReplication)
+        if replicationFlag:
+            self.logger.info("Replication is set for LocalQueue")
+        
         if not self.params['ParentQueueCouchUrl']:
             msg = 'Unable to pull work from parent, ParentQueueCouchUrl not provided'
             self.logger.warning(msg)
@@ -706,8 +712,6 @@ class WorkQueue(WorkQueueBase):
             return 0
         work = self._assignToChildQueue(self.params['QueueURL'], *work)
 
-        # do this whether we have work or not - other events i.e. cancel may have happened
-        self.backend.pullFromParent(continuous = continuousReplication)
         return len(work)
 
     def closeWork(self, *workflows):
@@ -798,9 +802,6 @@ class WorkQueue(WorkQueueBase):
 
         if self.params['LocalQueueFlag']:
             self.backend.checkReplicationStatus() # Check any replication error and fix it.
-
-        self.backend.pullFromParent() # Check we are upto date with inbound changes
-        if self.params['LocalQueueFlag']:
             self.backend.fixConflicts() # before doing anything fix any conflicts
 
         wf_to_cancel = [] # record what we did for task_activity
@@ -870,7 +871,7 @@ class WorkQueue(WorkQueueBase):
                                                                             for x in finished_elements]),
                                                                  ', '.join(wf_to_cancel))
         self.backend.recordTaskActivity('housekeeping', msg)
-        self.backend.sendToParent() # update parent queue with new status's
+        self.backend.checkReplicationStatus() # update parent queue with new status's
 
     def _splitWork(self, wmspec, parentQueueId = None,
                    data = None, mask = None, team = None,
@@ -931,6 +932,7 @@ class WorkQueue(WorkQueueBase):
         If request passed then only process that request
         """
         if self.params['LocalQueueFlag']:
+            self.logger.info("fixing conflict...")
             self.backend.fixConflicts() # db should be consistent
 
         result = []

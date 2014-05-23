@@ -68,7 +68,7 @@ def allScramArchsAndVersions():
     """
     result = {}
     try:
-        f = urllib.urlopen("https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype=1")
+        f = urllib.urlopen(TAG_COLLECTOR_URL)
         domDoc   = parseDOM(f)
     except ExpatError, ex:
         logging.error("Could not connect to tag collector!")

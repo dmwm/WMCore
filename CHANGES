@@ -1,3 +1,29 @@
+0.9.95 to 0.9.95a:
+  - Merge pull request #5147 from ticoann/test_0.9.95a
+  - make replication checking backward compatible
+  - Merge pull request #5145 from ticoann/fix_all_in_one_test
+  - fix inbox setting for workqueue, replication check and ordering priority
+  - Merge pull request #5132 from ericvaandering/lumilist_and_dbs3
+  - Merge pull request #5134 from ticoann/jenkins_unittest_fix
+  - Merge pull request #5136 from holzman/fnal-srmcp-only-for-srm
+  - FNAL staging: fix mkdir for local staging
+  - Merge pull request #5130 from alexanderrichards/sandboxfixing
+  - Merge pull request #5135 from ericvaandering/lumi_setter
+  - implementing unittest for fix of issue #5130
+  - Add and test lumimask setter function
+  - fixes PhEDEx Subscribe test
+  - fix unittest
+  - Simple emulator for DBS3. Incomplete. Adapt to full lumi list returned in maskedBlocks New tests for lumi masks, remove existing which fails with DBS2 emulator Switch to real DBS, not emulator. Switch to a smaller RAW dataset Update DBS3Reader Map
+  - Merge pull request #5121 from mmascher/master
+  - Merge pull request #5125 from ticoann/fix_jenkins_unittest
+  - more fix for unittest
+  - Merge pull request #5123 from ticoann/fix_retry_unittest
+  - fix retry manager unittest
+  - Use openssl to get user cert enddate instead of voms-proxy-info (kept as fallback)
+  - Fix detection of RFC proxies
+  - Update dependencies for the client
+  - Fixing Sandbox creation problem
+
 0.9.94 to 0.9.95:
   - Merge pull request #5118 from holzman/fnal-srmcp-only-for-srm
   - Merge pull request #5115 from hufnagel/updatedataset-prepid

@@ -54,7 +54,7 @@ class CouchService(Service):
         List the owners in the DB
 
         """
-        result = self.couchdb.loadView("GroupUser", 'name_map', {}, [])
+        result = self.couchdb.loadView("GroupUser", 'name_map', {'stale': "update_after"}, [])
         users = []
         for row in result[u'rows']:
             group = row[u'key'][0]
@@ -116,8 +116,7 @@ class CouchService(Service):
         result = self.couchdb.loadView("ACDC", "byCollectionName", keys = [collectionName])
         for entry in result["rows"]:
             self.couchdb.queueDelete(entry["value"])
-        self.couchdb.commit()
-        return
+        return self.couchdb.commit()
 
     @CouchUtils.connectToCouch
     def removeOldFilesets(self, expirationDays):

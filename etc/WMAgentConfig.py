@@ -32,6 +32,7 @@ databaseSocket = "/opt/MySQL-5.1/var/lib/mysql/mysql.sock"
 couchURL = "http://USERNAME:PASSWORD@COUCHSERVER:5984"
 jobDumpDBName = "wmagent_jobdump"
 jobSummaryDBName = "wmagent_summary"
+summaryStatsDBName = "stat_summary"
 acdcDBName = "acdcserver"
 workqueueDBName = 'workqueue'
 workqueueInboxDbName = 'workqueue_inbox'
@@ -87,6 +88,7 @@ config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = couchURL
 config.JobStateMachine.couchDBName = jobDumpDBName
 config.JobStateMachine.jobSummaryDBName = jobSummaryDBName
+config.JobStateMachine.summaryStatsDBName = summaryStatsDBName
 
 config.section_("ACDC")
 config.ACDC.couchurl = "https://cmsweb.cern.ch/couchdb"

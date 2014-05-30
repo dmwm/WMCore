@@ -55,6 +55,9 @@ class CleanCouchPoller(BaseWorkerThread):
         self.jobCouchdb  = CouchServer(jobDBurl)
         self.jobsdatabase = self.jobCouchdb.connectDatabase("%s/jobs" % jobDBName)
         self.fwjrdatabase = self.jobCouchdb.connectDatabase("%s/fwjrs" % jobDBName)
+        
+        statSummaryDBName = self.config.JobStateMachine.summaryStatsDBName
+        self.statsumdatabase = self.jobCouchdb.connectDatabase(statSummaryDBName)
 
     def algorithm(self, parameters):
         """
@@ -81,20 +84,6 @@ class CleanCouchPoller(BaseWorkerThread):
             logging.info("Ready to archive rejected %s workflows" % len(rejectedWorkflows))
             numUpdated = self.archiveWorkflows(rejectedWorkflows, "rejected-archived")
             logging.info("archive rejected %s workflows" % numUpdated)
-            
-            #TODO: following code is temproraly - remove after production archived data is cleaned 
-            removableWorkflows = self.centralCouchDBReader.workflowsByStatus(["archived"])
-            
-            logging.info("Ready to delete %s from wmagent_summary" % removableWorkflows)     
-            for workflowName in removableWorkflows:
-                logging.info("Deleting %s from WMAgent Summary Couch" % workflowName)
-                report = self.deleteWorkflowFromJobCouch(workflowName, "WMStats")
-                logging.warning("%s legacy docs deleted from wmagent_summary" % report)
-                # only updatet he status when delete is successful
-                # TODO: need to handle the case when there are multiple agent running the same request.
-                if report["status"] == "ok":
-                    self.centralCouchDBWriter.updateRequestStatus(workflowName, "normal-archived")
-                    logging.warning("legacy status updated to normal-archived from archived (this is temp solution for production) %s" % workflowName)
 
         except Exception, ex:
             logging.error(str(ex))
@@ -128,24 +117,30 @@ class CleanCouchPoller(BaseWorkerThread):
         elif (db == "FWJRDump"):
             couchDB = self.fwjrdatabase
             view = "fwjrsByWorkflowName"
+        elif (db == "SummaryStats"):
+            couchDB = self.statsumdatabase
+            view = None
         elif (db == "WMStats"):
             couchDB = self.wmstatsCouchDB.getDBInstance()
             view = "jobsByStatusWorkflow"
-            
-        options = {"startkey": [workflowName], "endkey": [workflowName, {}], "reduce": False}
-        try:
-            jobs = couchDB.loadView(db, view, options = options)['rows']
-        except Exception, ex:
-            errorMsg = "Error on loading jobs for %s" % workflowName
-            logging.warning("%s/n%s" % (str(ex), errorMsg))
-            return {'status': 'error', 'message': errorMsg}
         
-        for j in jobs:
-            doc = {}
-            doc["_id"]  = j['value']['id']
-            doc["_rev"] = j['value']['rev']
-            couchDB.queueDelete(doc)
-        committed = couchDB.commit()
+        if view == None:
+            committed = couchDB.delete_doc(workflowName)
+        else:
+            options = {"startkey": [workflowName], "endkey": [workflowName, {}], "reduce": False}
+            try:
+                jobs = couchDB.loadView(db, view, options = options)['rows']
+            except Exception, ex:
+                errorMsg = "Error on loading jobs for %s" % workflowName
+                logging.warning("%s/n%s" % (str(ex), errorMsg))
+                return {'status': 'error', 'message': errorMsg}
+            
+            for j in jobs:
+                doc = {}
+                doc["_id"]  = j['value']['id']
+                doc["_rev"] = j['value']['rev']
+                couchDB.queueDelete(doc)
+            committed = couchDB.commit()
         
         if committed:
             #create the error report
@@ -172,6 +167,9 @@ class CleanCouchPoller(BaseWorkerThread):
         
         fwjrReport = self.deleteWorkflowFromJobCouch(workflowName, "FWJRDump")
         logging.debug("%s docs deleted from FWJRDump" % fwjrReport)
+        
+        summaryReport = self.deleteWorkflowFromJobCouch(workflowName, "SummaryStats")
+        logging.debug("%s docs deleted from SummaryStats" % summaryReport)
         
         wmstatsReport = self.deleteWorkflowFromJobCouch(workflowName, "WMStats")
         logging.debug("%s docs deleted from wmagent_summary" % wmstatsReport)

@@ -88,7 +88,7 @@ class WTLogger(LogManager):
              'H': self.host,
              'h': remote.name or remote.ip,
              'r': request.request_line,
-             's': response.status.split(" ", 1)[0],
+             's': response.status,
              'b': outheaders.get('Content-Length', '') or "-",
              'T': (time.time() - request.start_time)*1e6,
              'AS': inheaders.get("CMS-Auth-Status", "-"),

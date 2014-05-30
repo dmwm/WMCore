@@ -9,6 +9,7 @@ from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMStatsDocGenerator import *
 from WMCore.WMSpec.WMWorkload import newWorkload
+from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfoCollection
 class WMStatsTest(unittest.TestCase):
     """
     """
@@ -23,8 +24,11 @@ class WMStatsTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = self.schema,
                                 useDefault = False)
-        self.testInit.setupCouch('wmstats_t', *self.couchApps)
-        self.wmstatsWriter = WMStatsWriter(self.testInit.couchUrl, 'wmstats_t');
+        dbName = 'wmstats_t'
+        self.testInit.setupCouch(dbName, *self.couchApps)
+        self.wmstatsWriter = WMStatsWriter(self.testInit.couchUrl, dbName)
+        self.wmstatsReader = WMStatsReader(self.testInit.couchUrl, dbName)
+        self.wmstatsReader.defaultStale = {}
         return
 
     def tearDown(self):
@@ -60,6 +64,19 @@ class WMStatsTest(unittest.TestCase):
         production.setTaskType("Merge")
         self.assertEquals(self.wmstatsWriter.updateFromWMSpec(spec2),
                           'ERROR: request not found - not_exist_schema')
+
+        requests = self.wmstatsReader.getRequestByStatus(["failed"], jobInfoFlag = False)
+        self.assertEquals(requests.keys(), [schema[0]['RequestName']])
+        
+        requestCollection = RequestInfoCollection(requests)
+        result = requestCollection.getJSONData()
+        self.assertEquals(result.keys(), [schema[0]['RequestName']])
+        
+        requests = self.wmstatsReader.getActiveData()
+        self.assertEquals(requests.keys(), [schema[0]['RequestName']])
+        requests = self.wmstatsReader.workflowsByStatus(["failed"])
+        self.assertEquals(requests, [schema[0]['RequestName']])
+        
 
 if __name__ == '__main__':
 

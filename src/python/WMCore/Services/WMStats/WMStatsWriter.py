@@ -50,6 +50,7 @@ class WMStatsWriter(WMStatsReader):
         self.couchServer = CouchServer(self.couchURL)
         self.couchDB = self.couchServer.connectDatabase(self.dbName, False)
         self.replicatorDB = self.couchServer.connectDatabase('_replicator', False)
+        self.couchapp = "WMStats"
 
     def uploadData(self, docs):
         """
@@ -68,7 +69,7 @@ class WMStatsWriter(WMStatsReader):
         return self.insertGenericRequest(doc)
 
     def insertGenericRequest(self, doc):
-        result = self.couchDB.updateDocument(doc['_id'], 'WMStats',
+        result = self.couchDB.updateDocument(doc['_id'], self.couchapp,
                                     'insertRequest',
                                     fields={'doc': JSONEncoder().encode(doc)})
         self.updateRequestStatus(doc['_id'], "new")
@@ -76,18 +77,18 @@ class WMStatsWriter(WMStatsReader):
 
     def updateRequestStatus(self, request, status):
         statusTime = {'status': status, 'update_time': int(time.time())}
-        return self.couchDB.updateDocument(request, 'WMStats', 'requestStatus',
+        return self.couchDB.updateDocument(request, self.couchapp, 'requestStatus',
                     fields={'request_status': JSONEncoder().encode(statusTime)})
 
     def updateTeam(self, request, team):
-        return self.couchDB.updateDocument(request, 'WMStats', 'team',
+        return self.couchDB.updateDocument(request, self.couchapp, 'team',
                                          fields={'team': team})
 
     def insertTotalStats(self, request, totalStats):
         """
         update the total stats of given workflow (total_jobs, input_events, input_lumis, input_num_files)
         """
-        return self.couchDB.updateDocument(request, 'WMStats', 'totalStats',
+        return self.couchDB.updateDocument(request, self.couchapp, 'totalStats',
                                          fields=totalStats)
 
     def updateFromWMSpec(self, spec):
@@ -98,7 +99,7 @@ class WMStatsWriter(WMStatsReader):
         fields = {'priority': spec.priority(),
                   'site_white_list': spec.getTopLevelTask()[0].siteWhitelist(),
                   'outputdatasets': spec.listOutputDatasets()}
-        return self.couchDB.updateDocument(spec.name(), 'WMStats',
+        return self.couchDB.updateDocument(spec.name(), self.couchapp,
                     'generalFields',
                     fields={'general_fields': JSONEncoder().encode(fields)})
 
@@ -109,19 +110,19 @@ class WMStatsWriter(WMStatsReader):
         """
         for doc in docs:
             del doc['type']
-            self.couchDB.updateDocument(doc['workflow'], 'WMStats',
+            self.couchDB.updateDocument(doc['workflow'], self.couchapp,
                         'generalFields',
                         fields={'general_fields': JSONEncoder().encode(doc)})
 
     def updateAgentInfo(self, agentInfo):
-        return self.couchDB.updateDocument(agentInfo['_id'], 'WMStats',
+        return self.couchDB.updateDocument(agentInfo['_id'], self.couchapp,
                         'agentInfo',
                         {'agent_info': JSONEncoder().encode(agentInfo)},
                         useBody=True)
    
     def updateLogArchiveLFN(self, jobNames, logArchiveLFN):
         for jobName in jobNames:
-            self.couchDB.updateDocument(jobName, 'WMStats',
+            self.couchDB.updateDocument(jobName, self.couchapp,
                         'jobLogArchiveLocation',
                         fields={'logArchiveLFN': logArchiveLFN}) 
 
@@ -133,7 +134,7 @@ class WMStatsWriter(WMStatsReader):
         threshold = int(time.time()) - sec
         options = {"startkey": threshold, "descending": True,
                    "stale": "update_after"}
-        result = self.couchDB.loadView("WMStats", "time", options)
+        result = self.couchDB.loadView(self.couchapp, "time", options)
 
         for row in result['rows']:
             doc = {}
@@ -188,3 +189,23 @@ class WMStatsWriter(WMStatsReader):
             self.couchDB.queueDelete(doc)
         committed = self.couchDB.commit()
         return committed
+        
+    def replaceRequestTransitionFromReqMgr(self, docs):
+        """
+        bulk update for request documents.
+        TODO: change to bulk update handler when it gets supported
+        """
+        
+        for doc in docs:
+            requestName = doc["RequestName"]
+            requestTransition = {}
+            requestTransition['request_status'] = []
+            for r in doc["RequestTransition"]:
+                newR = {}
+                newR['status'] = r['Status']
+                newR['update_time'] = r['UpdateTime']
+                requestTransition['request_status'].append(newR)
+
+            self.couchDB.updateDocument(requestName, self.couchapp,
+                        'generalFields',
+                        fields={'general_fields': JSONEncoder().encode(requestTransition)})

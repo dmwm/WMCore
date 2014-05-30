@@ -90,6 +90,7 @@ class Dataset(StartPolicyInterface):
         blockBlackList = task.inputBlockBlacklist()
         runWhiteList = task.inputRunWhitelist()
         runBlackList = task.inputRunBlacklist()
+        siteWhiteList = task.siteWhitelist()
 
         for blockName in dbs.listFileBlocks(datasetPath):
             block = dbs.getDBSSummaryInfo(datasetPath, block = blockName)
@@ -163,6 +164,9 @@ class Dataset(StartPolicyInterface):
                 locations = set(sitesFromStorageEelements(dbs.listFileBlockLocation(block['block'])))
             else:
                 locations = locations.intersection(set(sitesFromStorageEelements(dbs.listFileBlockLocation(block['block']))))
+            
+            if self.wmspec.locationDataSourceFlag():
+                locations = locations.union(siteWhiteList)
 
         # all needed blocks present at these sites
         if locations:

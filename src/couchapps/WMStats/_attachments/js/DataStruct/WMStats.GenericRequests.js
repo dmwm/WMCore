@@ -278,6 +278,12 @@ WMStats.GenericRequests.prototype = {
     },
 
     _requestDateSort: function(a, b) {
+    	
+    	// this is tempory protection if request data not defined 
+    	// that means there is missing docs 
+    	if (!(b.request_date && a.request_date)) {
+    		return 0;
+    	}
         for (var i in a.request_date) { 
             if (b.request_date[i] != a.request_date[i]) {
                 return (Number(b.request_date[i]) - Number(a.request_date[i]));
@@ -460,7 +466,13 @@ WMStats.GenericRequests.prototype = {
     
     getRequestStatusAndTime: function(workflowName) {
         var workflowData = this._dataByWorkflow[workflowName];
-        return  workflowData["request_status"][workflowData["request_status"].length - 1];
+        // This should always have values. If not it means there is missing doc
+        if (workflowData["request_status"]) {
+        	return  workflowData["request_status"][workflowData["request_status"].length - 1];
+        } else {
+        	return "N/A";
+        }
+        
     },
     
     getTasks: function(workflowName) {

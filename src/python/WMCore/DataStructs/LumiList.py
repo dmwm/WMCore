@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-This is a direct copy of code in cmssw/FWCore/PythonUtilities/python/LumiList.py 
+This is a direct copy of code in cmssw/FWCore/PythonUtilities/python/LumiList.py
 It can be removed if we ever have a core set of code shared between DMWM and CMSSW
 
 Handle lists of lumi sections. Constuct in several different formats and filter
@@ -287,6 +287,22 @@ class LumiList(object):
             if self.compactList.has_key (run):
                 del self.compactList[run]
 
+        return
+
+
+    def selectRuns (self, runList):
+        '''
+        Selects only runs from runList in collection
+        '''
+        runsToDelete = []
+        for run in self.compactList.keys():
+            if int(run) not in runList and run not in runList:
+                runsToDelete.append(run)
+
+        for run in runsToDelete:
+            del self.compactList[run]
+
+        return
 
     def contains (self, run, lumiSection = None):
         '''

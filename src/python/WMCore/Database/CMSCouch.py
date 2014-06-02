@@ -1109,7 +1109,8 @@ class CouchMonitor(object):
             updateNum = int(activeStatus["source_seq"])
             self.setPreviousUpdateSequence(source, target, updateNum)
             if not checkUpdateSeq:
-                logging.warning("Need to check replication from %s to %s" % (source, target))
+                logging.warning("Need to check replication from %s to %s" % (
+                                replaceToSantizeURL(source), replaceToSantizeURL(target)))
                 return True
             elif updateNum == dbInfo["update_seq"] or updateNum > previousUpdateNum:
                 logging.info("update upto date: ok")

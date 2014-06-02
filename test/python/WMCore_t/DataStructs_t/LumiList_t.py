@@ -261,6 +261,11 @@ class LumiListTest(unittest.TestCase):
         self.assertTrue(sel.getCMSSWString() == res.getCMSSWString())
         self.assertTrue(sel.getCMSSWString() == rem.getCMSSWString())
 
+    def testURL(self):
+        URL = 'https://cms-service-dqm.web.cern.ch/cms-service-dqm/CAF/certification/Collisions12/8TeV/Reprocessing/Cert_190456-195530_8TeV_08Jun2012ReReco_Collisions12_JSON.txt'
+        ll = LumiList(url=URL)
+        self.assertTrue(len(ll) > 0)
+
     def testWrite(self):
         alumis = {'1' : range(2,20) + range(31,39) + range(45,49),
                   '2' : range(6,20) + range (30,40),

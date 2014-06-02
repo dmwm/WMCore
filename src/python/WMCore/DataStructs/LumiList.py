@@ -15,6 +15,7 @@ This code began life in COMP/CRAB/python/LumiList.py
 
 import json
 import re
+import urllib2
 
 class LumiList(object):
     """
@@ -43,7 +44,7 @@ class LumiList(object):
     """
 
 
-    def __init__(self, filename = None, lumis = None, runsAndLumis = None, runs = None, compactList = None):
+    def __init__(self, filename = None, url = None, lumis = None, runsAndLumis = None, runs = None, compactList = None):
         """
         Constructor takes filename (JSON), a list of run/lumi pairs,
         or a dict with run #'s as the keys and a list of lumis as the values, or just a list of runs
@@ -52,6 +53,10 @@ class LumiList(object):
         if filename:
             self.filename = filename
             jsonFile = open(self.filename,'r')
+            self.compactList = json.load(jsonFile)
+        elif url:
+            self.url = url
+            jsonFile = urllib2.urlopen(url)
             self.compactList = json.load(jsonFile)
         elif lumis:
             runsAndLumis = {}

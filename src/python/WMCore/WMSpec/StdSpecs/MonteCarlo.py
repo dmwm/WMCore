@@ -11,6 +11,7 @@ pile up section defined in the configuration, the generation task
 fetches from DBS the information about pileup input.
 """
 
+import math
 from WMCore.Lexicon import primdataset, couchurl, identifier, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import strToBool, parsePileupConfig
@@ -114,8 +115,7 @@ class MonteCarloWorkloadFactory(StdBase):
         # need to move the initial lfn counter
         self.previousJobCount = 0
         if self.firstLumi > 1:
-            lumisPerJob = int(float(self.eventsPerJob) / self.eventsPerLumi)
-            self.previousJobCount = self.firstLumi / lumisPerJob
+            self.previousJobCount = math.ceil((self.firstEvent - 1) / self.eventsPerJob)
             self.prodJobSplitArgs["initial_lfn_counter"] = self.previousJobCount
 
         return self.buildWorkload()

@@ -208,13 +208,13 @@ def ownsRequest(request):
     return cherrypy.request.user['login'] == request['Requestor']
 
 def security_roles():
-    return ['Developer', 'Admin',  'Data Manager', 'developer', 'admin', 'data-manager']
+    return ['developer', 'admin', 'data-manager', 'production-operator']
 
 def security_groups():
     """
     A list of groups which have security access
     """
-    return ['ReqMgr', 'reqmgr']
+    return ['reqmgr', "dataops"]
 
 def privileged():
     """ whether this user has roles that overlap with security_roles """

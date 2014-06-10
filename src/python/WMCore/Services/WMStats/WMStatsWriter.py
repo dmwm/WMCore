@@ -42,15 +42,8 @@ class WMStatsWriter(WMStatsReader):
 
     def __init__(self, couchURL, dbName = None):
         # set the connection for local couchDB call
-        if dbName:
-            self.couchURL = couchURL
-            self.dbName = dbName
-        else:
-            self.couchURL, self.dbName = splitCouchServiceURL(couchURL)
-        self.couchServer = CouchServer(self.couchURL)
-        self.couchDB = self.couchServer.connectDatabase(self.dbName, False)
-        self.replicatorDB = self.couchServer.connectDatabase('_replicator', False)
-        self.couchapp = "WMStats"
+        # inherited from WMStatsReader
+        self._commonInit(couchURL, dbName)
 
     def uploadData(self, docs):
         """

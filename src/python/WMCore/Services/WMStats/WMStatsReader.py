@@ -26,6 +26,13 @@ class WMStatsReader():
     def __init__(self, couchURL, dbName = None):
         couchURL = sanitizeURL(couchURL)['url']
         # set the connection for local couchDB call
+        self._commonInit(couchURL, dbName)
+        
+    def _commonInit(self, couchURL, dbName):
+        """
+        setting up comon variables for inherited class.
+        inherited class should call this in their init function
+        """
         if dbName:
             self.couchURL = couchURL
             self.dbName = dbName
@@ -35,6 +42,7 @@ class WMStatsReader():
         self.couchDB = self.couchServer.connectDatabase(self.dbName, False)
         self.couchapp = "WMStats"
         self.defaultStale = {"stale": "update_after"}
+        
     
     def setDefaultStaleOptions(self, options):
         if not options:

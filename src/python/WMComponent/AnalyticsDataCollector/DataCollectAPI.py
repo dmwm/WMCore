@@ -473,11 +473,11 @@ def diskUse():
     This returns the % use of each disk partition
     """
     diskPercent=[]
-    df = subprocess.Popen(["df", "-kl"], stdout=subprocess.PIPE)
+    df = subprocess.Popen(["df", "-klP"], stdout=subprocess.PIPE)
     output = df.communicate()[0].split("\n")
     for x in output:
         split = x.split()
-        if split != [] and split[0] != 'Filesystem' and len(split) == 6:
+        if split != [] and split[0] != 'Filesystem':
             diskPercent.append({'mounted':split[5],'percent':split[4]})
 
     return diskPercent

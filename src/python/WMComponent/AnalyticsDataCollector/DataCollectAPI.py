@@ -477,7 +477,7 @@ def diskUse():
     output = df.communicate()[0].split("\n")
     for x in output:
         split = x.split()
-        if split != [] and split[0] != 'Filesystem':
+        if split != [] and split[0] != 'Filesystem' and len(split) == 6:
             diskPercent.append({'mounted':split[5],'percent':split[4]})
 
     return diskPercent

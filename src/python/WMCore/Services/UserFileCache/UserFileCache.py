@@ -23,6 +23,7 @@ class UserFileCache(Service):
     def __init__(self, dict={}):
         dict['endpoint'] =  dict.get('endpoint', 'https://cmsweb.cern.ch/crabcache/')
         Service.__init__(self, dict)
+        self['requests']['accept_type'] = 'application/json'
 
         if dict.has_key('proxyfilename'):
             #in case there is some code I have not updated in ticket #3780. Should not be required... but...
@@ -51,6 +52,11 @@ class UserFileCache(Service):
                                                 params=params, verb='PUT')
 
         return json.loads(resString)['result'][0]
+
+    def removeFile(self, haskey):
+
+        result=self['requests'].makeRequest(uri = 'info', data = {'subresource':'fileremove', 'hashkey': haskey})
+        return result[0]['result'][0]
 
     def download(self, hashkey, output):
         """

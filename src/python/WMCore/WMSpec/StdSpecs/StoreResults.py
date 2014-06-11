@@ -78,12 +78,14 @@ class StoreResultsWorkloadFactory(StdBase):
         mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                         scramArch = self.scramArch)
         mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
+        mergeTaskCmsswHelper.setSkipBadFiles(True)
         mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge")
         
         self.addOutputModule(mergeTask, "Merged",
                              primaryDataset = self.inputPrimaryDataset,
                              dataTier = self.dataTier,
-                             filterName = None)
+                             filterName = None,
+                             forceMerged = True)
 
         # setting the parameters which need to be set for all the tasks
         # sets acquisitionEra, processingVersion, processingString

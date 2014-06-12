@@ -208,6 +208,13 @@ class LumiListTest(unittest.TestCase):
         self.assertTrue((a|b).getCMSSWString() == (b|a).getCMSSWString())
         self.assertTrue((a|b).getCMSSWString() == (a+b).getCMSSWString())
 
+        # Test list constuction (faster)
+
+        multiple = [alumis, blumis, clumis]
+        easy = LumiList(runsAndLumis = multiple)
+        hard = a + b
+        hard += c
+        self.assertTrue(hard.getCMSSWString() == easy.getCMSSWString())
 
     def testAnd(self):
         """

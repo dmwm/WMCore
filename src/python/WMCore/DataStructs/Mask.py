@@ -13,6 +13,7 @@ job in two ways:
 import logging
 
 from WMCore.DataStructs.Run import Run
+from WMCore.DataStructs.LumiList import LumiList
 
 class Mask(dict):
     """

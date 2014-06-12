@@ -288,4 +288,61 @@ class LumiBased(JobFactory):
                         firstLumi = None
                         lastLumi = None
 
+            # We now have a list of jobs in a job group.  We will now iterate through them
+            # to verify we have no single lumi processed by multiple jobs.
+            jobs = self.currentGroup.getJobs()
+            for idx1 in xrange(len(jobs)):
+                for idx2 in xrange(idx1+1, len(jobs)):
+                    job1 = jobs[idx1]
+                    job2 = jobs[idx2]
+                    self.lumiCorrection(job1, job2, locationDict[location])
+
         return
+
+    def lumiCorrection(job1, job2, locations):
+        """
+        Due to error in processing (in particular, the Run I Tier-0), some
+        lumi sections may be spread across multiple jobs.  Where possible:
+         - Remove a lumi from job2 if it is in both job1 and job2
+         - If the lumi is in multiple files and it spanned multiple jobs,
+           make sure that all those files are processed by job1.
+
+        NOTE: This will not help in the case where a lumi is split across
+        multiple blocks.
+        """
+        lumis1 = LumiList(compactList=job1['mask'].getRunAndLumis())
+        lumis2= LumiList(compactList=job2['mask'].getRunAndLumis())
+        ilumis = lumis1 and lumis2
+        lumiPairs = ilumis.getLumis()
+        if not lumiPairs:
+            return
+        logging.warning("%d lumis appear in multiple jobs: %s" % (len(lumiPairs), str(ilumis)))
+        jobs2['mask'].removeLumiList(ilumis)
+        for fileObj in locations:
+            lastRun = -1
+            # NOTE: we rely on the fact that the (run, lumi) pairs are
+            # lexicographical order
+            for run, lumi in lumiPairs:
+                fileHasRun = False
+                fileInJob = False
+                if lastRun == run:
+                    if not fileHasRun:
+                        continue
+                else:
+                    lastRunObj = None
+                if not lastRunObj:
+                    for runObj in fileObj['runs']:
+                        if runObj.run != run:
+                            continue
+                        fileHasRun = True
+                        lastRunObj = runObj
+                        break
+                if fileHasRun:
+                    if lumi in lastRunObj.lumis:
+                        if fileObj not in job1['input_files']:
+                            logging.warning("Adding file %d to job input files so it will process all of a lumi section." % fileObj['lfn'])
+                            job1.addFile(fileObj)
+                        fileInJob = True
+                if fileInJob:
+                    break
+                lastRun = run

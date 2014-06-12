@@ -150,6 +150,17 @@ class Mask(dict):
 
         return
 
+    def removeLumiList(self, lumiList):
+        """
+        Remove a lumi list from this data structure
+
+        This requires conversion to LumiList to do the lumi algebra an
+        may be computationally expensive for a large number of lumis.
+        """
+        myLumis = LumiList(compactList=self['runAndLumis'])
+        myLumis = myLumis - lumiList
+        self['runAndLumis'] = myLumis.getCompactList()
+
     def getRunAndLumis(self):
         """
         _getRunAndLumis_

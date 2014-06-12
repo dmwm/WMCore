@@ -293,13 +293,15 @@ class LumiBased(JobFactory):
             # to verify we have no single lumi processed by multiple jobs.
             jobs = self.currentGroup.newjobs
             overlap = 0
+            lumicount = 0
             logging.debug("Current job group has %d jobs." % len(jobs))
             for idx1 in xrange(len(jobs)):
+                job1 = jobs[idx1]
+                lumicount += len(set(LumiList(compactList=job1['mask'].getRunAndLumis()).getLumis()))
                 for idx2 in xrange(idx1+1, len(jobs)):
-                    job1 = jobs[idx1]
                     job2 = jobs[idx2]
                     overlap += self.lumiCorrection(job1, job2, locationDict[location])
-            logging.info("There were %d overlapping lumis." % overlap)
+            logging.info("There were %d overlapping lumis and %d total lumis." % (overlap, lumicount))
 
         return
 
@@ -324,33 +326,17 @@ class LumiBased(JobFactory):
             return 0
         logging.warning("%d lumis appear in multiple jobs: %s" % (len(lumiPairs), str(ilumis)))
         job2['mask'].removeLumiList(ilumis)
-        for fileObj in locations:
-            lastRun = -1
-            # NOTE: we rely on the fact that the (run, lumi) pairs are
-            # lexicographical order
-            for run, lumi in lumiPairs:
-                fileHasRun = False
-                fileInJob = False
-                if lastRun == run:
-                    if not fileHasRun:
-                        continue
-                else:
-                    lastRunObj = None
-                if not lastRunObj:
-                    for runObj in fileObj['runs']:
-                        if runObj.run != run:
-                            continue
-                        fileHasRun = True
-                        lastRunObj = runObj
-                        break
-                if fileHasRun:
-                    if lumi in lastRunObj.lumis:
-                        if fileObj not in job1['input_files']:
-                            logging.warning("Adding file %s to job input files so it will process all of a lumi section." % fileObj['lfn'])
-                            job1.addFile(fileObj)
-                        fileInJob = True
-                if fileInJob:
-                    break
-                lastRun = run
+
+        for run, lumi in lumiPairs:
+            for fileObj in locations:
+                if fileObj in job1['input_files']:
+                    continue
+                for runObj in fileObj['runs']:
+                    if run == runObj.run:
+                        if lumi in runObj.lumis:
+                            if fileObj not in job1['input_files']:
+                                logging.warning("Adding file %s to job input files so it will process all of a lumi section." % fileObj['lfn'])
+                                job1.addFile(fileObj)
+                                break
 
         return len(lumiPairs)

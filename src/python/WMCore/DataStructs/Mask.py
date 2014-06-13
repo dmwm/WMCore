@@ -139,6 +139,10 @@ class Mask(dict):
         TODO: The name of this function is a little misleading. If you pass a list of lumis
               it ignores the content of the list and adds a range based on the max/min in
               the list. Missing lumis in the list are ignored.
+
+        NOTE: If the new run/lumi range overlaps with the pre-existing lumi ranges in the
+              mask, no attempt is made to merge these together.  This can result in a mask
+              with duplicate lumis.
         """
 
         if not type(lumis) == list:

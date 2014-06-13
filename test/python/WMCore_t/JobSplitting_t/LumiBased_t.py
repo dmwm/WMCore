@@ -213,5 +213,44 @@ class LumiBasedTest(unittest.TestCase):
         return
 
 
+    def testC_LumiCorrections(self):
+        """
+        _LumiCorrections_
+
+        Test the splitting algorithm can handle lumis which
+        cross multiple files.
+        """
+        splitter = SplitterFactory()
+        testSubscription = self.createSubscription(nFiles = 2, lumisPerFile = 2, twoSites = False)
+        files = testSubscription.getFileset().getFiles()
+        self.assertEqual(len(files), 2)
+        for runObj in files[0]['runs']:
+            if runObj.run != 0:
+                continue
+            runObj.lumis.append(42)
+        for runObj in files[1]['runs']:
+            if runObj.run != 1:
+                continue
+            runObj.run = 0
+            runObj.lumis.append(42)
+        files[1]['locations'] = set(['blenheim'])
+
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = testSubscription)
+        
+        jobGroups = jobFactory(lumis_per_job = 3,
+                               halt_job_on_file_boundaries = False,
+                               splitOnRun = False,
+                               performance = self.performanceParams)
+
+        self.assertEqual(len(jobGroups), 1)
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 2)
+
+        self.assertEqual(len(jobs[0]['input_files']), 2)
+        self.assertEqual(len(jobs[1]['input_files']), 1)
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0L, 1L], [42L, 42L]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {'0': [[100L, 101L]]})
+
 if __name__ == '__main__':
     unittest.main()

@@ -123,9 +123,12 @@ class WMStatsReader():
            "type":"agent_request"}}
         """
         for row in jobData["rows"]:
-            jobInfo = requestData[row["doc"]["workflow"]]
-            jobInfo.setdefault("AgentJobInfo", {}) 
-            jobInfo["AgentJobInfo"][row["doc"]["agent_url"]] = row["doc"]
+            # condition checks if documents are deleted between calls.
+            # just ignore in that case
+            if row["doc"]:
+                jobInfo = requestData[row["doc"]["workflow"]]
+                jobInfo.setdefault("AgentJobInfo", {}) 
+                jobInfo["AgentJobInfo"][row["doc"]["agent_url"]] = row["doc"]
     
             
     def _getRequestByNames(self, requestNames, detail = True):

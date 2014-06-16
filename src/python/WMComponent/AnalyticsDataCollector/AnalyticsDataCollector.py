@@ -15,13 +15,28 @@ from WMComponent.AnalyticsDataCollector.AnalyticsPoller import AnalyticsPoller
 from WMComponent.AnalyticsDataCollector.AgentStatusPoller import AgentStatusPoller
 
 class AnalyticsDataCollector(Harness):
+    """
+    Component class for AnalyticsDataCollector module
+    """
+    
     def __init__(self, config):
+        """
+        __init__
+
+        Initialize the Harness
+        """
         Harness.__init__(self, config)
         return
 
     def preInitialization(self):
+        """
+        _preInitialization_
+
+        Sets up the workers threads
+        """
         pollInterval = self.config.AnalyticsDataCollector.pollInterval
-        agentPollInterval =self.config.AnalyticsDataCollector.agentPollInterval
+        agentPollInterval = self.config.AnalyticsDataCollector.agentPollInterval
+        
         myThread = threading.currentThread()
         myThread.workerThreadManager.addWorker(AgentStatusPoller(self.config),
                                                agentPollInterval)

@@ -498,7 +498,7 @@ config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachin
 config.AnalyticsDataCollector.centralWMStatsURL = "Central WMStats URL"
 config.AnalyticsDataCollector.summaryLevel = "task"
 config.AnalyticsDataCollector.ignoreDisk = ["/lustre/unmerged"]
-config.AnalyticsDataCollector.diskUseThreshold = 85
+config.AnalyticsDataCollector.diskUseThreshold = 60
 config.AnalyticsDataCollector.couchProcessThreshold = 25
 config.AnalyticsDataCollector.pluginName = None
 

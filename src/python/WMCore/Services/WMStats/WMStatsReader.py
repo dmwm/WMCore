@@ -187,6 +187,36 @@ class WMStatsReader():
         
         return result
 
+    def _getAgentInfo(self):
+        """
+        returns all the agents status on wmstats
+        """
+        options = {}
+        result = self._getCouchView("agentInfo", options)
+        
+        return result
+    
+    def agentsByTeam(self, ignoreDrain = True):
+        """
+        return a dictionary like {team:#agents,...}
+        """
+        result = self._getAgentInfo()
+        response = dict()
+        for agentInfo in result["rows"]:
+            
+            teams = agentInfo['value']['agent_team'].split(',')
+            for team in teams:
+                if team not in response.keys():
+                    response[team] = 0
+            if ignoreDrain:
+                if not agentInfo['value']['drain_mode']:
+                    for team in teams:
+                        response[team] += 1
+            else:
+                for team in teams:
+                    response[team] += 1
+        return response
+    
     def workflowsByStatus(self, statusList, format = "list"):
         """
         just return the workflow name for the given status

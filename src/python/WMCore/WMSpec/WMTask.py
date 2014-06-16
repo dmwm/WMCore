@@ -1214,11 +1214,18 @@ class WMTaskHelper(TreeHelper):
         """
         return getattr(self.data.parameters, 'acquisitionEra', None)
 
-    def setLumiMask(self, lumiMask = LumiList()):
-        compactList = lumiMask.getCompactList()
+    def setLumiMask(self, lumiMask = {}):
+        """
+        Attach the given LumiMask to the task
+        At this point the lumi mask is just the compactList dict not the LumiList object
+        """
+
+        if not lumiMask:
+            return
+
         runs = []
         lumis = []
-        for run, runLumis in compactList.items():
+        for run, runLumis in lumiMask.items():
             runs.append(int(run))
             lumiList = []
             for lumi in runLumis:

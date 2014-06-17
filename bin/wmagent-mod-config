@@ -287,6 +287,11 @@ def modifyConfiguration(config, **args):
         config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
         config.AnalyticsDataCollector.centralWMStatsURL = args["wmstats_url"]
 
+    # custom AgentStatusWatcher
+    if hasattr(config, "AgentStatusWatcher"):
+        config.AgentStatusWatcher.centralWMStatsURL = args["wmstats_url"]
+        config.AgentStatusWatcher.dashboard = args["dashboard_url"]
+
     return config
 
 def main(argv=None):
@@ -306,7 +311,7 @@ def main(argv=None):
              "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=",
              "ufc_service_url=", "ufc_cachedir=", "client_mapping=", "wmbs_service_port=",
              "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=", "reqmgr_url=",
-             "acdc_url=", "amq_auth_file=", "dbs3_url=", "phedex_url=", "dqm_url="])
+             "acdc_url=", "amq_auth_file=", "dbs3_url=", "phedex_url=", "dqm_url=", "dashboard_url="])
 
         except getopt.error, msg:
             raise Usage(msg)
@@ -327,7 +332,7 @@ def main(argv=None):
                           '--ufc_port', '--ufc_service_url', '--ufc_cachedir',
                           '--client_mapping', '--wmbs_service_port', '--workload_summary_url',
                           '--wmstats_url', '--ops_proxy', '--reqmgr_url', '--acdc_url',
-                          '--amq_auth_file', '--dbs3_url', '--phedex_url', '--dqm_url'):
+                          '--amq_auth_file', '--dbs3_url', '--phedex_url', '--dqm_url', '--dashboard_url'):
 
                 parameters[option[2:]] = value
 

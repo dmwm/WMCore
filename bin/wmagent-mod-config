@@ -188,8 +188,12 @@ def modifyConfiguration(config, **args):
         config.DBSPublisher.config_couch_instance = args["couch_url"]
 
     if hasattr(config,"RetryManager"):
-        config.RetryManager.couch_instance = args["couch_url"]
-        config.RetryManager.opsProxy = args["ops_proxy"]
+        # only needed for CRAB instance
+        if args.has_key("couch_url"):
+            config.RetryManager.couch_instance = args["couch_url"]
+        # only needed for CRAB instance
+        if args.has_key("ops_proxy"):
+            config.RetryManager.opsProxy = args["ops_proxy"]
 
     if hasattr(config,"CRABInterface"):
         config.CRABInterface.Webtools.host = args["cs_hostname"]

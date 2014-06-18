@@ -78,8 +78,7 @@ class ResourceControlUpdater(BaseWorkerThread):
         Sites from SSB are validated with PhEDEx node names
         """
         try:
-            # load config every polling cycle
-            self.config = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
+            # set variables every polling cycle
             self.setVariables(self.config)
             
             # Get sites in Resource Control

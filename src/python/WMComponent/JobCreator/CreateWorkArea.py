@@ -294,14 +294,15 @@ class CreateWorkArea:
         nameDictList = []
 
 
+        jobCollectionModulo = 5000
         #Now actually start to do things
         for job in self.jobGroup.jobs:
             jid = job['id']
 
-            if jobCounter % 1000 == 0:
+            if jobCounter % jobCollectionModulo == 0:
                 #Create a new jobCollection
                 #Increment jobCreator if there's already something there
-                jobCounter += self.createJobCollection(jobCounter, taskDir)
+                jobCounter += self.createJobCollection(jobCounter, taskDir, modulo=jobCollectionModulo)
 
             jobCounter = jobCounter + 1
 
@@ -326,13 +327,13 @@ class CreateWorkArea:
 
 
 
-    def createJobCollection(self, jobCounter, taskDir):
+    def createJobCollection(self, jobCounter, taskDir, modulo=1000):
         """
 
         Create a sub-directory to allow storage of large jobs
         """
 
-        value = jobCounter/1000
+        value = jobCounter/modulo
         jobCollDir = '%s/JobCollection_%i_%i' % (taskDir, self.jobGroup.id, value)
         #Set this to a global variable
         self.collectionDir = jobCollDir

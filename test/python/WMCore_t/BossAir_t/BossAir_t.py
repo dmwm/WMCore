@@ -87,7 +87,7 @@ class BossAirTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
         self.tearDown()
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"],
                                 useDefault = False)
@@ -132,6 +132,7 @@ class BossAirTest(unittest.TestCase):
 
         # Change this to the working dir to keep track of error and log files from condor
         self.testInit.generateWorkDir()
+        self.testDir  = self.testInit.testDir
 
         # Set heartbeat
         componentName = 'test'

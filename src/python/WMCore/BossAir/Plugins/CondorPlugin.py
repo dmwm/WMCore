@@ -719,7 +719,6 @@ class CondorPlugin(BasePlugin):
             if excludeSite :
                 if siteName in jobAd.get('DESIRED_Sites') and siteName in jobAd.get('ExtDESIRED_Sites') :
                     usi = jobAd.get('DESIRED_Sites').split(', ')
-                    print len(usi)
                     if len(usi) > 1 :
                         usi.remove(siteName)
                         usi = usi.__str__().lstrip('[').rstrip(']')

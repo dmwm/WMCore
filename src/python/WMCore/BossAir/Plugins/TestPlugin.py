@@ -61,3 +61,10 @@ class TestPlugin(BasePlugin):
         """
 
         return [], [], jobs
+
+
+    def updateSiteInformation(self, jobs, sitename, excludeSite):
+        """
+        Update Site Information using condor classAd
+        """
+        return []

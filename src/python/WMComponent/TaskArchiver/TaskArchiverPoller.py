@@ -359,7 +359,10 @@ class TaskArchiverPoller(BaseWorkerThread):
         try:
             #TODO: need to enable when reqmgr2 -wmstats is ready
             #abortedWorkflows = self.reqmgrCouchDBWriter.workflowsByStatus(["aborted"], format = "dict");
-            abortedWorkflows = self.centralCouchDBWriter.workflowsByStatus(["aborted"], format = "dict");
+            abortedWorkflows = self.centralCouchDBWriter.workflowsByStatus(["aborted"], format = "dict")
+            forceCompleteWorkflows = self.centralCouchDBWriter.workflowsByStatus(["force-complete"], 
+                                                                                 format = "dict");
+            
         except Exception, ex:
             centralCouchAlive = False
             logging.error("we will try again when remote couch server comes back\n%s" % str(ex))
@@ -393,14 +396,20 @@ class TaskArchiverPoller(BaseWorkerThread):
                     if workflow in abortedWorkflows:
                         #TODO: remove when reqmgr2-wmstats deployed
                         newState =  "aborted-completed"
-                        self.centralCouchDBWriter.updateRequestStatus(workflow, newState);
+                    elif workflow in forceCompleteWorkflows:
+                        newState =  "completed"
+                    else:
+                        newState = None
+                        
+                    if newState != None:
+                        self.reqmgrSvc.updateRequestStatus(workflow, newState)
                         # update reqmgr workload document only request mgr is installed
                         if not self.useReqMgrForCompletionCheck:
                             # commented out untill all the agent is updated so every request have new state
-                            # TODO: agent should be able to right reqmgr db diretly add the right group in
+                            # TODO: agent should be able to write reqmgr db diretly add the right group in
                             # reqmgr
-                            #self.reqmgrSvc.updateRequestStatus(workflow, newState); 
-                            logging.info("status updated to %s : %s" % (newState, workflow))
+                            self.centralCouchDBWriter.updateRequestStatus(workflow, newState) 
+                        logging.info("status updated to %s : %s" % (newState, workflow))
     
                     wfsToDelete[workflow] = {"spec" : spec, "workflows": finishedwfs[workflow]["workflows"]}
     

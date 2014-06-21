@@ -250,10 +250,10 @@ def changeStatus(requestName, status, wmstatUrl, acdcUrl):
         raise RuntimeError, "Cannot change status from %s to %s.  Allowed values are %s" % (
            oldStatus, status,  RequestStatus.NextStatus[oldStatus])
 
-    if status == 'aborted':
+    if status == 'aborted' or status == 'force-complete':
         # delete from the workqueue
         if not privileged() and not ownsRequest(request):
-            raise cherrypy.HTTPError(403, "You are not allowed to abort this request")
+            raise cherrypy.HTTPError(403, "You are not allowed to %s this request" % status)
         elif not privileged():
             raise cherrypy.HTTPError(403, "You are not allowed to change the state for this request")
         # delete from the workqueue if it's been assigned to one

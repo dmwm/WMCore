@@ -736,7 +736,7 @@ class CondorPlugin(BasePlugin):
                         else:
                             jobtokill.append(job)
                     else :
-                        logging.error("Cannot find siteName %s in the sitelist" % siteName)
+                        logging.debug("Cannot find siteName %s in the sitelist" % siteName)
                 else :
                     if siteName in desiredSites and siteName not in extDesiredSites:
                         usi = desiredSites
@@ -748,7 +748,7 @@ class CondorPlugin(BasePlugin):
                                                 stdout = subprocess.PIPE, shell = True)
                         out, err = proc.communicate()
                     else :
-                        logging.error("Cannot find siteName %s in the sitelist" % siteName)
+                        logging.debug("Cannot find siteName %s in the sitelist" % siteName)
         
         return jobtokill
 

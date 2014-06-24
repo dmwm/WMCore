@@ -294,8 +294,11 @@ def validateUrl(candidate):
     regex_url = r'%s(%s|%s|%s|%s)%s%s' % (protocol, domain, localhost, ipv4, ipv6, port, path)
     return check(regex_url, candidate)
 
+REGEX_CACHE = {}
 def check(regexp, candidate):
-    assert re.compile(regexp).match(candidate) != None , \
+    if  regexp not in REGEX_CACHE:
+        REGEX_CACHE[regexp] = re.compile(regexp)
+    assert REGEX_CACHE[regexp].match(candidate) != None, \
               "'%s' does not match regular expression %s" % (candidate, regexp)
     return True
 

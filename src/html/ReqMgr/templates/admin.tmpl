@@ -1,0 +1,190 @@
+<header class="group">
+    <nav class="navbar navbar-left">
+    <h2>Admin interface</h2>
+    </nav>
+    <nav class="navbar navbar-right">
+        <ul>
+        <li><button class="btn btn-active" id="btn-actions" onclick="activateActions()">Actions</button></li>
+        <li><button class="btn" id="btn-accounts" onclick="activateAccounts()">Accounts</button></li>
+        <li><button class="btn" id="btn-teams" onclick="activateTeams()">Teams</button></li>
+        </ul>
+    </nav>
+</header>
+<hr/>
+
+<div id="admin-actions">
+
+<h4>Team management</h4>
+<form method="post" action="$base/add_team" class="forms">
+<fieldset>
+<!-- <legend>Team data</legend> -->
+<label>Team name
+    <input type="text" name="team-name" class="width-50" />
+</label>
+<label>Team description
+    <textarea name="team-description" class="width-50" rows="3"></textarea>
+</label>
+<p>
+    <input type="submit" class="btn btn-green" value="Add" />
+</p>
+</fieldset>
+</form>
+
+
+<!--
+<hr />
+
+<h4>Group management</h4>
+<form method="post" action="$base/add_group" class="forms">
+<div class="units-row">
+    <div class="unit-30">
+        <p class="input-groups">
+            <input type="text" name="addgroup" placeholder="Add group" />
+            <span class="btn-append">
+                <button class="btn btn-blue">Add</button>
+            </span>
+        </p>
+    </div>
+    <div class="unit-30">
+        <span class="forms-desc">Group will be associated with the following team</span>
+    </div>
+    <div class="unit-20">
+        <select>
+            <option>cmsdataops</option>
+        </select>
+    </div>
+</div>
+</form>
+
+<hr />
+-->
+
+<h4>User management</h4>
+<form method="post" action="$base/add_user" class="forms">
+<div class="units-row">
+    <div class="unit-30">
+        <p class="input-groups">
+            <input type="text" name="adduser" placeholder="New user name" />
+            <span class="btn-append">
+                <button class="btn btn-green">Add</button>
+            </span>
+        </p>
+    </div>
+    <div class="unit-60">
+        <span class="forms-desc">The roles will be assigned according with user DN registered in SiteDB</span>
+    </div>
+</div>
+</form>
+<form method="post" action="$base/delete_user" class="forms">
+<div class="units-row">
+    <div class="unit-30">
+        <p class="input-groups">
+            <input type="text" name="deleteuser" placeholder="User name to delete" />
+            <span class="btn-append">
+                <button class="btn btn-red">Delete</button>
+            </span>
+        </p>
+    </div>
+    <div class="unit-60">
+        <span class="forms-desc">Upon this request given user name will be deleted from ReqMgr</span>
+    </div>
+</div>
+</form>
+
+</div> <!-- end of actions -->
+
+<!-- Accounts -->
+
+<div id="admin-accounts" class="hide">
+
+<h4>Existing accounts</h4>
+<div class="table-container">
+    <table class="table-bordered width-100">
+    <thead>
+        <tr>
+            <th>Users</th>
+            <th>Roles</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>User 1</td>
+            <td>Role 1</td>
+        </tr>
+        <tr>
+            <td>User 2</td>
+            <td>Role 2</td>
+        </tr>
+        <tr>
+            <td>User 3</td>
+            <td>Role 3</td>
+        </tr>
+    </tbody>
+    </table>
+</div>
+
+</div> <!-- end of accounts -->
+
+<!-- teams -->
+
+<div id="admin-teams" class="hide">
+
+<h4>Existing teams</h4>
+<div>
+<b>Team 1:</b> some description
+</div>
+
+<hr />
+
+<div>
+<b>Team 2:</b> some description
+</div>
+
+<hr />
+
+<div>
+<b>Team 3:</b> some description
+</div>
+
+<hr />
+
+</div> <!-- end of teams -->
+
+<script>
+function activateActions() {
+    id = document.getElementById('btn-accounts');
+    id.className="btn";
+    HideTag('admin-accounts');
+    id = document.getElementById('btn-teams');
+    id.className="btn";
+    HideTag('admin-teams');
+    // show active button
+    var id = document.getElementById('btn-actions');
+    id.className="btn btn-active";
+    ShowTag('admin-actions');
+}
+function activateAccounts() {
+    id = document.getElementById('btn-actions');
+    id.className="btn";
+    HideTag('admin-actions');
+    id = document.getElementById('btn-teams');
+    id.className="btn";
+    HideTag('admin-teams');
+    // show active button
+    var id = document.getElementById('btn-accounts');
+    id.className="btn btn-active";
+    ShowTag('admin-accounts');
+}
+function activateTeams() {
+    id = document.getElementById('btn-actions');
+    id.className="btn";
+    HideTag('admin-actions');
+    id = document.getElementById('btn-accounts');
+    id.className="btn";
+    HideTag('admin-accounts');
+    // show active button
+    var id = document.getElementById('btn-teams');
+    id.className="btn btn-active";
+    ShowTag('admin-teams');
+}
+</script>

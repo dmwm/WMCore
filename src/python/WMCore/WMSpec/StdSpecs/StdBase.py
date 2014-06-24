@@ -54,6 +54,7 @@ class StdBase(object):
         self.workloadName = None
         self.multicoreNCores = None
         self.schema = None
+        self.config_cache = {}
 
         return
 
@@ -102,8 +103,12 @@ class StdBase(object):
         outputModules = {}
         if configDoc != None and configDoc != "":
             url = configCacheUrl or couchURL
-            configCache = ConfigCache(url, couchDBName)
-            configCache.loadByID(configDoc)
+            if  (url, couchDBName) in self.config_cache:
+                configCache = self.config_cache[(url, couchDBName)]
+            else:
+                configCache = ConfigCache(url, couchDBName)
+                self.config_cache[(url, couchDBName)] = configCache
+            configCache.loadDocument(configDoc)
             outputModules = configCache.getOutputModuleInfo()
         else:
             if 'outputs' in scenarioArgs and scenarioFunc in [ "promptReco", "expressProcessing", "repack" ]:
@@ -706,6 +711,41 @@ class StdBase(object):
         """
         pass
 
+    def factoryWorkloadConstruction4docs(self, docs):
+        """
+        _factoryWorkloadConstruction_
+
+        Build workloads from given list of of request documents.
+        Provided list of docs should have similar parameters, such as
+        request type, couch url/db, etc.
+        """
+        if len(set([d['RequestType'] for d in docs])) != 1:
+            raise Exception('Provided list of docs has different request type')
+        ids = set()
+        for doc in docs:
+            for key, val in doc.iteritems():
+                if  key.endswith('ConfigCacheID'):
+                    ids.add(val)
+        ids = list(ids)
+        couchURL = docs[0]['CouchURL']
+        couchDBName = docs[0]['CouchDBName']
+        if  (couchURL, couchDBName) in self.config_cache:
+            configCache = self.config_cache[(couchURL, couchDBName)]
+        else:
+            configCache = ConfigCache(dbURL=couchURL, couchDBName=couchDBName)
+            self.config_cache[(couchURL, couchDBName)] = configCache
+        configCache.docs_cache.prefetch(ids)
+        workloads = []
+        for doc in docs:
+            workloadName = doc['RequestName']
+            self.masterValidation(schema=doc)
+            self.validateSchema(schema=doc)
+            workload = self.__call__(workloadName=workloadName, arguments=doc)
+            self.validateWorkload(workload)
+            workloads.append(workload)
+        configCache.docs_cache.cleanup(ids)
+        return workloads
+
     def factoryWorkloadConstruction(self, workloadName, arguments):
         """
         _factoryWorkloadConstruction_
@@ -763,10 +803,15 @@ class StdBase(object):
         if configID == '' or configID == ' ':
             self.raiseValidationException(msg = "ConfigCacheID is invalid and cannot be loaded")
 
-        configCache = ConfigCache(dbURL = couchURL, couchDBName = couchDBName,
-                                  id = configID)
+        if  (couchURL, couchDBName) in self.config_cache:
+            configCache = self.config_cache[(couchURL, couchDBName)]
+            configCache.document['_id'] = configID
+        else:
+            configCache = ConfigCache(dbURL = couchURL, couchDBName = couchDBName,
+                                      id = configID)
+            self.config_cache[(couchURL, couchDBName)] = configCache
         try:
-            configCache.loadByID(configID = configID)
+            configCache.loadDocument(configID = configID)
         except ConfigCacheException:
             self.raiseValidationException(msg = "Failure to load ConfigCache while validating workload")
 

@@ -1716,11 +1716,11 @@ class WMWorkloadHelper(PersistencyHelper):
         if all keys exist return True
         if partial keys exsit raise Exception
         """
-        if type(keys) == str:
+        if  isinstance(keys, basestring):
             keys = [keys]
         validKey = 0
         for key in keys:
-            if kwargs.has_key(key):
+            if  key in kwargs:
                 validKey += 1
         if validKey == 0:
             return False
@@ -1745,22 +1745,23 @@ class WMWorkloadHelper(PersistencyHelper):
             self.setSiteWildcardsLists(siteWhitelist = kwargs["SiteWhitelist"], 
                                        siteBlacklist = kwargs["SiteBlacklist"],
                                        wildcardDict = wildcardSites)
-        # Set ProcessingVersion and AcquisitionEra, which could be json encoded dicts
-        if self._checkKeys(kwargs, "ProcessingVersion"):
-            self.setProcessingVersion(kwargs["ProcessingVersion"])
-        if self._checkKeys(kwargs, "AcquisitionEra"):
-            self.setAcquisitionEra(kwargs["AcquisitionEra"])
-        if self._checkKeys(kwargs, "ProcessingString"):    
-            self.setProcessingString(kwargs["ProcessingString"])
-        
         #FIXME not validated
-        if self._checkKeys(kwargs, ["MergedLFNBase", "MergedLFNBase"]):
+        if self._checkKeys(kwargs, ["MergedLFNBase", "UnmergedLFNBase"]):
             self.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
         
         if self._checkKeys(kwargs, ["MinMergeSize", "MaxMergeSize", "MaxMergeEvents"]):
             self.setMergeParameters(int(kwargs["MinMergeSize"]),
                                     int(kwargs["MaxMergeSize"]),
                                     int(kwargs["MaxMergeEvents"]))
+        
+        # Set ProcessingVersion and AcquisitionEra, which could be json encoded dicts
+        # it should be processed once LFNBase are set
+        if self._checkKeys(kwargs, "ProcessingVersion"):
+            self.setProcessingVersion(kwargs["ProcessingVersion"])
+        if self._checkKeys(kwargs, "AcquisitionEra"):
+            self.setAcquisitionEra(kwargs["AcquisitionEra"])
+        if self._checkKeys(kwargs, "ProcessingString"):    
+            self.setProcessingString(kwargs["ProcessingString"])
         
         if self._checkKeys(kwargs, ["MaxRSS", "MaxVSize", "SoftTimeout", "GracePeriod"]):              
             self.setupPerformanceMonitoring(int(kwargs["MaxRSS"]),

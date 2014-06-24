@@ -1,0 +1,337 @@
+<header class="group">
+    <nav class="navbar navbar-left">
+        <h2>Assign interface</h2>
+    </nav>
+    <nav class="navbar navbar-right">
+        <ul>
+        <li><button class="btn btn-active" id="btn-requests" onclick="activateRequests()">Requests</button></li>
+        <li><button class="btn" id="btn-manage" onclick="activateManage()">Settings</button></li>
+        </ul>
+    </nav>
+</header>
+<hr/>
+
+<div id="requests">
+<form method="post" action="$base/confirm_action" class="forms">
+<input type="hidden" name="action" value="assign" />
+
+<header class="group">
+    <nav class="navbar navbar-left">
+        <ul>
+            <li>Sort by:</li>
+            <li class="menu-item active underline"><a href="#" onclick="ChangeMenuItem('menu-item', this);">Status</a></li>
+            <li class="menu-item"><a href="#" onclick="ChangeMenuItem('menu-item', this);">Date</a></li>
+            <li class="menu-item"><a href="#" onclick="ChangeMenuItem('menu-item', this);">Id</a></li>
+            <li class="menu-item"><a href="#" onclick="ChangeMenuItem('menu-item', this);">Group</a></li>
+        </ul>
+    </nav>
+    <nav class="navbar navbar-right">
+        <button class="btn btn-green">Assign</button>
+    </nav>
+</header>
+
+<div class="table-container">
+    <table class="table-bordered width-100">
+    <thead>
+        <tr>
+            <th class="width-10">
+                <input type="checkbox" name="request-all" id="request-all" onclick="CheckAll(this)"/>
+                Select
+            </th>
+            <th>Requests</th>
+            <th>Users</th>
+            <th>Groups</th>
+            <th>Dates</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+    #for doc in $requests
+    #set id=$doc['RequestName']
+        <tr>
+            <td>
+               <input type="checkbox" name="request-$id" id="request-$id"/>
+            </td>
+            <td><a href="$base/fetch?rid=$id">$id</a></td>
+            <td>$doc['Requestor']</td>
+            <td>$doc['Group']</td>
+            <td>$doc['RequestDate']</td>
+            <td>$doc['RequestStatus']</td>
+        </tr>
+    #end for
+    </tbody>
+    </table>
+</div>
+</div> <!-- end of requests section -->
+
+<div id="manage" class="hide">
+<h4>Assign settings</h4>
+
+<h5>Site lists</h5>
+<ul class="blocks-3">
+    <li>Whitelist<br/>
+        <select name="SiteWhitelist" class="width-50" multiple="multiple" size="10">
+        #for site in $sites
+        #if $site in $site_white_list
+        <option value="$site" selected="selected">$site</option>
+        #else
+        <option value="$site">$site</option>
+        #end if
+        #end for
+        </select>
+    </li>
+    <li>Blacklist<br/>
+        <select name="SiteBlacklist" class="width-50" multiple="multiple" size="10">
+        #for site in $sites
+        #if $site in $site_black_list
+        <option value="$site" selected="selected">$site</option>
+        #else
+        <option value="$site">$site</option>
+        #end if
+        #end for
+        </select>
+    </li>
+</ul>
+
+<hr/>
+
+<h5>PhEDEx subscription</h5>
+<ul class="blocks-3">
+    <li>Custodial sites<br/>
+        <select name="CustodialSites" class="width-50" multiple="multiple" size="10">
+        #for site in $sites
+        #if $site in $cust_sites
+        <option value="$site" selected="selected">$site</option>
+        #else
+        <option value="$site">$site</option>
+        #end if
+        #end for
+        </select>
+    </li>
+    <li>Non-Custodial sites<br/>
+        <select name="NonCustodialSites" class="width-50" multiple="multiple" size="10">
+        #for site in $sites
+        #if $site in $non_cust_sites
+        <option value="$site" selected="selected">$site</option>
+        #else
+        <option value="$site">$site</option>
+        #end if
+        #end for
+        </select>
+    </li>
+    <li>Auto-Approve subscription sites<br/>
+        <select name="AutoApproveSubscriptionSites" class="width-50" multiple="multiple" size="10">
+        #for site in $sites
+        #if $site in $auto_approve_sites
+        <option value="$site" selected="selected">$site</option>
+        #else
+        <option value="$site">$site</option>
+        #end if
+        #end for
+        </select>
+    </li>
+</ul>
+
+<hr/>
+
+<h5>Misc Options</h5>
+<div class="table-container">
+<table class="table-bordered width-100">
+
+#*
+<tr>
+<td>CMSSW version</td>
+<td>
+<select name="cmsswVersion">
+#for ver in $cmssw_versions
+<option value="$ver">$ver</option>
+#end for
+</select>
+</td>
+</tr>
+
+<tr>
+<td>SCRAM architecture</td>
+<td>
+<select name="scramArch">
+#for arch in $scram_arch
+<option value="$arch">$arch</option>
+#end for
+</select>
+</td>
+</tr>
+
+<tr>
+<td>Global Tag</td>
+<td><input name="globalTag" value="" /></td>
+</tr>
+
+<tr>
+<td>Campaign</td>
+<td><input name="campaign" value="" /></td>
+</tr>
+*#
+
+<tr>
+<td>Subscription Priority</td>
+<td>
+<select name="SubscriptionPriority">
+<option value="Low">Low</option>
+<option value="Normal">Normal</option>
+<option value="High">High</option>
+</select>
+</td>
+</tr>
+
+<tr>
+<td>Custodial Subscription Type</td>
+<td>
+<select name="CustodialSubType">
+<option value="Move">Move</option>
+<option value="Replica">Replica</option>
+</select>
+</td>
+</tr>
+
+<tr>
+<td>Merged LFN Base</td>
+<td>
+<select name="MergedLFNBase">
+#for base in $lfn_bases
+<option value="$base">$base</option>
+#end for
+</select>
+</td>
+</tr>
+
+<tr>
+<td>Unmerged LFN Base</td>
+<td>
+<select name="UnmergedLFNBase">
+#for base in $lfn_unmerged_bases
+<option value="$base">$base</option>
+#end for
+</select>
+</td>
+</tr>
+
+<tr>
+<td>Min Merge Size</td>
+<td><input name="MinMergeSize" value="2147483648" /></td>
+</tr>
+<tr>
+<td>Max Merge Size</td>
+<td><input name="MaxMergeSize" value="4294967296" /></td>
+</tr>
+<tr>
+<td>Max Merge Events</td>
+<td><input name="MaxMergeEvents" value="50000" /></td>
+</tr>
+<tr>
+<td>Memory limit RSS (KiBytes)</td>
+<td><input name="MaxRSS" value="20411724" /></td>
+</tr>
+<tr>
+<td>Memory limit VSS (KiBytes)</td>
+<td><input name="MaxVSize" value="20411724" /></td>
+</tr>
+<tr>
+<td>Timeout (Seconds)</td>
+<td><input name="SoftTimeout" value="129600" /></td>
+</tr>
+<tr>
+<td>GracePeriod (Seconds)</td>
+<td><input name="GracePeriod" value="300" /></td>
+</tr>
+<tr>
+<td>Block close timeout (Seconds)</td>
+<td><input name="BlockCloseMaxWaitTime" value="66400" /></td>
+</tr>
+<tr>
+<td>Block close max number of files</td>
+<td><input name="BlockCloseMaxFiles" value="500" /></td>
+</tr>
+<tr>
+<td>Block close max number of events</td>
+<td><input name="BlockCloseMaxEvents" value="250000000" /></td>
+</tr>
+<tr>
+<td>Block close max block size (Bytes)</td>
+<td><input name="BlockCloseMaxSize" value="5000000000000" /></td>
+</tr>
+#*
+<tr>
+<td>Acquisition Era:</td>
+<td><input name="AcquisitionEra" /></td>
+</tr>
+*#
+<tr>
+<td>Processing Version:</td>
+<td><input name="ProcessingVersion" value="1" /></td>
+</tr>
+<tr>
+<td>Processing String:</td>
+<td><input name="ProcessingString"/></td>
+</tr>
+<tr>
+<td>Dashboard Activity:</td>
+<td>
+<select name="DashboardActivity">
+<option>integration</option>
+<option>reprocessing</option>
+<option>production</option>
+<option>relval</option>
+<option>test</option>
+<option>analysis</option>
+</select>
+</td>
+</tr>
+
+<tr>
+<td>Group name</td>
+<td>
+<input type="hidden" name="Name" value="$user" />
+<select name="Group">
+    <option>SomeGroupName</option>
+    <option>SomeGroupName</option>
+    <option>SomeGroupName</option>
+</select>
+</td>
+</tr>
+
+</table>
+</div> <!-- end of table-container -->
+
+
+
+</div> <!-- end of manage section -->
+
+#*
+<div class="units-row">
+    <div class="unit-push-right">
+        <button class="btn btn-green">Assign</button>
+    </div>
+</div>
+*#
+</form>
+
+<script>
+function activateRequests() {
+    id = document.getElementById('btn-manage');
+    id.className="btn";
+    HideTag('manage');
+    // show active button
+    var id = document.getElementById('btn-requests');
+    id.className="btn btn-active";
+    ShowTag('requests');
+}
+function activateManage() {
+    id = document.getElementById('btn-requests');
+    id.className="btn";
+    HideTag('requests');
+    // show active button
+    var id = document.getElementById('btn-manage');
+    id.className="btn btn-active";
+    ShowTag('manage');
+}
+</script>

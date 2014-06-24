@@ -146,7 +146,7 @@ class Request(RESTEntity):
         if not options:
             options = {}
         options.setdefault("include_docs", True)
-        if type(keys) == str:
+        if isinstance(keys, basestring):
             keys = [keys]
         result = couchdb.loadView(couchapp, view, options, keys)
         
@@ -160,9 +160,9 @@ class Request(RESTEntity):
     
     #TODO move this out of this class
     def filterCouchInfo(self, couchInfo):
-        del couchInfo["_rev"]
-        del couchInfo["_id"]
-        del couchInfo["_attachments"]
+        for key in ['_rev', '_attachments']:
+            if  key in couchInfo:
+                del couchInfo[key]
                 
     def get_reqmgr_view(self, view, options, keys):
         return self._get_couch_view(self.reqmgr_db, "ReqMgr", view,

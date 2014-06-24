@@ -1,0 +1,35 @@
+<h2>Requests</h2>
+<hr/>
+<header class="group">
+<nav class="navbar navbar-left">
+    <strong>
+    This form will list request which user made
+    </strong>
+</nav>
+<nav class="navbar navbar-right">
+    <ul>
+        <li>Sort by:</li>
+        <li class="menu-item active underline"><a href="#" onclick="ChangeMenuItem('menu-item', this);">Status</a></li>
+        <li class="menu-item"><a href="#" onclick="ChangeMenuItem('menu-item', this);">Date</a></li>
+        <li class="menu-item"><a href="#" onclick="ChangeMenuItem('menu-item', this);">Id</a></li>
+        <li class="menu-item"><a href="#" onclick="ChangeMenuItem('menu-item', this);">Group</a></li>
+    </ul>
+</nav>
+</header>
+<hr/>
+
+#for rdict in $requests
+<header class="group">
+<nav class="navbar navbar-left">
+#for key, val in $rdict.items()
+#if $key.lower()=="date" or $key.lower()=="requestdate"
+#set val="<kbd>%s</kbd>"%$val
+#elif $key.lower()=="_id"
+#set val='&nbsp;<span class="ticket"><a href="%s/fetch?rid=%s">%s</a></span>&nbsp;'%($base,$val,$val)
+#end if
+    <strong>$key.capitalize():</strong>&nbsp;$val
+#end for
+</nav>
+</header>
+<hr/>
+#end for

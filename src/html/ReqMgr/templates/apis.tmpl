@@ -1,0 +1,36 @@
+<h3>ReqMgr web UI mock-up</h3>
+<hr/>
+This is a prototype web UI interface. All menus are click-able
+but their actions are fakes. Please take a few minutes to
+explore and provide your feedback. Thank you.
+
+<br/>
+<br/>
+
+<h5>ReqMgr APIs</h5>
+<hr/>
+This section will contain information about public APIs. We believe that
+web UI will fully utilize those APIs.
+
+<nav class="nav">
+<ul>
+#for key, val in $apis.items()
+<li><strong>$key:</strong> $val</li>
+#end for
+</ul>
+</nav>
+<br/>
+
+<h5>ReqMgr scripts</h5>
+<hr/>
+This section will provide information about various scripts used by data-ops.
+We think that sharing this information in one common place is beneficials for
+everyone.
+
+<nav class="nav">
+<ul>
+#for key, val in $scripts.items()
+<li><strong>$key:</strong> $val</li>
+#end for
+</ul>
+</nav>

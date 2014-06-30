@@ -36,8 +36,52 @@ class ConfigCacheException(WMException):
 
     """
 
+class Singleton(type):
+    """Implementation of Singleton class"""
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = \
+                    super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
 
+class DocumentCache(object):
+    """DocumentCache holds config ids. Use this class as singleton"""
+    __metaclass__ = Singleton
+    def __init__(self, database):
+        super(DocumentCache, self).__init__()
+        self.cache = {}
+        self.database = database
 
+    def __getitem__(self, configID):
+        """
+        Internal get method to fetch document based on provided ID
+        """
+        if  configID not in self.cache:
+            self.prefetch([configID])
+        return self.cache[configID]
+
+    def cleanup(self, ids):
+        """
+        _cleanup_
+
+        Clean-up given ids from local cache
+        """
+        for rid in ids:
+            if  rid in self.cache:
+                del self.cache[rid]
+
+    def prefetch(self, keys):
+        """
+        _fetch_
+
+        Pre-fetch given list of documents from CouchDB
+        """
+        options = {'include_docs':True}
+        result = self.database.allDocs(options=options, keys=keys)
+        for row in result['rows']:
+            doc = row['doc']
+            self.cache[doc['_id']] = doc
 
 class ConfigCache(WMObject):
     """
@@ -61,6 +105,9 @@ class ConfigCache(WMObject):
             msg += str(traceback.format_exc())
             logging.error(msg)
             raise ConfigCacheException(message = msg)
+
+        # local cache
+        self.docs_cache = DocumentCache(self.database)
 
         # UserGroup variables
         self.group = None
@@ -211,6 +258,14 @@ class ConfigCache(WMObject):
 
         return
 
+
+    def loadDocument(self, configID):
+        """
+        _loadDocumentID_
+
+        Load a document from the document cache given its couchID
+        """
+        self.document = self.docs_cache.cache[configID]
 
     def loadByID(self, configID):
         """

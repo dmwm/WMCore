@@ -47,7 +47,7 @@ class FNALImpl(StageOutImpl):
             method = 'xrdcp'
         if PFN.startswith("srm://"):
             method = 'srm'
-        print "Using method %s for PFN %s", (method, PFN)
+        print "Using method %s for PFN %s" % (method, PFN)
         return method
 
 
@@ -61,12 +61,11 @@ class FNALImpl(StageOutImpl):
         """
         method = self.storageMethod(targetPFN)
 
-        if method == 'srm':
+        if method == 'xrdcp': # xrdcp autocreates parent directories
+            return
+        elif method == 'srm':
             self.srmImpl.createOutputDirectory(targetPFN)
-        else:
-            if method != 'local':
-                targetPFN = stripPrefixTOUNIX(targetPFN)
-
+        elif method == 'local':
             targetdir= os.path.dirname(targetPFN)
             command = "#!/bin/sh\n"
             command += "if [ ! -e \"%s\" ]; then\n" % targetdir

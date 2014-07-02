@@ -122,17 +122,18 @@ dependencies = {'wmc-rest':{
                 'crabserver':{
                         'packages': ['WMCore.Credential', 'WMCore.Services+', 'WMCore.RequestManager+',
                                      'WMCore.WMSpec+', 'WMCore.HTTPFrontEnd+', 'WMCore.ACDC'],
-                        'systems': ['wmc-rest', 'wmc-database'],
+                        'modules' : ['WMCore.DataStructs.LumiList'],
+                        'systems' : ['wmc-rest', 'wmc-database'],
                         },
                 'crabclient':{
                         'packages': ['WMCore.Wrappers+', 'WMCore.Credential', 'PSetTweaks', 'WMCore.Services.UserFileCache+', 'WMCore.Services.SiteDB+', 'WMCore.Services.PhEDEx+'],
                         'systems': ['wmc-base'],
-                        'modules': ['WMCore.FwkJobReport.FileInfo', 'WMCore.Services.Requests',
+                        'modules': ['WMCore.FwkJobReport.FileInfo', 'WMCore.Services.Requests', 'WMCore.DataStructs.LumiList',
                                     'WMCore.Services.Service', 'WMCore.Services.pycurl_manager', 'WMCore.Services.EmulatorSwitch'],
                         },
                 'crabtaskworker':{
                         'packages':['WMCore.WorkQueue', 'WMCore.Credential', 'WMCore.Algorithms+', 'WMCore.WMSpec+',
-                                    'WMCore.JobSplitting', 'WMCore.Services.SiteDB+', 'WMCore.Services.DBS+', 
+                                    'WMCore.JobSplitting', 'WMCore.Services.SiteDB+', 'WMCore.Services.DBS+',
                                     'WMCore.Services.UserFileCache+', 'WMCore.Services.PhEDEx+'],
                         'modules': ['WMCore.WMBS.File', 'WMCore.WMBS.WMBSBase', 'WMCore.WMBS.__init__'],
                         'systems': ['wmc-database', 'wmc-runtime'],

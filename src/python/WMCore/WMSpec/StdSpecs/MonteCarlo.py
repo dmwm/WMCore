@@ -115,7 +115,7 @@ class MonteCarloWorkloadFactory(StdBase):
         # need to move the initial lfn counter
         self.previousJobCount = 0
         if self.firstLumi > 1:
-            self.previousJobCount = math.ceil((self.firstEvent - 1) / self.eventsPerJob)
+            self.previousJobCount = int(math.ceil((self.firstEvent - 1) / self.eventsPerJob))
             self.prodJobSplitArgs["initial_lfn_counter"] = self.previousJobCount
 
         return self.buildWorkload()

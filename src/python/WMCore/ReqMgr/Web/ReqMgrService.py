@@ -199,7 +199,7 @@ class ReqMgrService(TemplatedPage):
     """
     Request Manager web service class
     """
-    def __init__(self, config=None):
+    def __init__(self, app, config, mount):
         print "\n### Configuration:"
         print config
         self.base = config.base
@@ -233,14 +233,6 @@ class ReqMgrService(TemplatedPage):
                            'tools.gzip.mime_types': mime_types,
                           })
         self._cache    = {}
-
-        # TODO:
-        # for time being use development environment
-        # this part will be removed in production when we enable
-        # proper authentication
-        cherrypy.server.environment = 'development'
-        cherrypy.server.socket_host = '127.0.0.1'
-        authz_fake()
 
         # initialize rest API
         statedir = '/tmp'

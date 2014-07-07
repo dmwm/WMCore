@@ -505,7 +505,7 @@ class DBS3Reader:
         return [x['logical_file_name'] for x in files]
 
 
-    def listFileBlockLocation(self, fileBlockName, dbsOnly = False):
+    def listFileBlockLocation(self, fileBlockName, dbsOnly = False, phedex_node=False):
         """
         _listFileBlockLocation_
 
@@ -544,6 +544,8 @@ class DBS3Reader:
             
             location.difference_update(['UNKNOWN']) # remove entry when SE name is 'UNKNOWN'
              
+        if phedex_node:
+            return [self.phedex.getNodeNames(l) for l in location]
         return list(location)
 
     def getFileBlock(self, fileBlockName):

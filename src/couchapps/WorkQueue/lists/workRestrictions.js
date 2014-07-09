@@ -55,24 +55,20 @@ function(head, req) {
 
             // check work is for a team in the request
             if (teams.length && ele["TeamName"] && teams.indexOf(ele["TeamName"]) === -1) {
-            	log("team name doesn't match: should be " + ele["TeamName"]);
                 continue;
             }
 
             // skip if we only want work from certain wf's which don't include this one.
             if (wfs.length && wfs.indexOf(ele["RequestName"]) == -1) {
-                log("workflow not match: element workflow " + ele["RequestName"]);
                 break;
             }
 
             // skip if in blacklist
             if (ele["SiteBlacklist"].indexOf(site) != -1) {
-            	log("site is in black list: " + site);
                 continue;
             }
             //skip if not in whitelist
             if (ele["SiteWhitelist"].length != 0 && ele["SiteWhitelist"].indexOf(site) === -1) {
-            	log("site is not in white list: " + site);
                 continue;
             }
             //skip if parent processing flag is set and parent block is not in the site.
@@ -87,7 +83,6 @@ function(head, req) {
                 }
             }
             if (noParentSite) {
-            	log("Parent data is not in the site: " + site);
                 continue;
             }
 
@@ -102,7 +97,6 @@ function(head, req) {
                 }
             }
             if(noPileupSite){
-            	log("Pileup data is not in the site: " + site);
                 continue;
             }
 
@@ -116,7 +110,6 @@ function(head, req) {
                 }
             }
             if (hasData === false) {
-            	log("Input data is not in the site: " + site);
                 continue; // skip to next site
             }
 

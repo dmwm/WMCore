@@ -5,6 +5,7 @@ _DBSReader_
 Readonly DBS Interface
 
 """
+import re
 from dbs.apis.dbsClient import DbsApi
 from dbs.exceptions.dbsClientException import *
 
@@ -539,8 +540,13 @@ class DBS3Reader:
             if not blockInfo: # no data location from dbs
                 return list()
             
-            location = set()
-            location.update([blockInfo[0]['origin_site_name']])
+            site = blockInfo[0]['origin_site_name']
+            location = set([site])
+            if re.search('[^A-Za-z0-9_]', site) is None: ## not SE i.e. phedexNode
+                if not phedex_nodes:
+                    location = set([self.phedex.getNodeSE(site)]) ## convert to SE
+            elif phedex_nodes: ## is SE want phedexNode
+                location = set(self.phedex.getNodeNames(site)) ## convert to phexedNode
             
             location.difference_update(['UNKNOWN']) # remove entry when SE name is 'UNKNOWN'
              

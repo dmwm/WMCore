@@ -505,7 +505,7 @@ class DBS3Reader:
         return [x['logical_file_name'] for x in files]
 
 
-    def listFileBlockLocation(self, fileBlockName, dbsOnly = False, phedex_node=False):
+    def listFileBlockLocation(self, fileBlockName, dbsOnly = False, phedex_nodes=False):
         """
         _listFileBlockLocation_
 
@@ -516,7 +516,7 @@ class DBS3Reader:
         
         if not dbsOnly:
             try:
-                blockInfo = self.phedex.getReplicaSEForBlocks(block=[fileBlockName],complete='y')
+                blockInfo = self.phedex.getReplicaSEForBlocks(phedex_nodes=phedex_nodes, block=[fileBlockName],complete='y')
             except Exception, ex:
                 msg = "Error while getting block location from PhEDEx for block_name=%s)\n" % fileBlockName
                 msg += "%s\n" % str(ex)
@@ -544,8 +544,6 @@ class DBS3Reader:
             
             location.difference_update(['UNKNOWN']) # remove entry when SE name is 'UNKNOWN'
              
-        if phedex_node:
-            return [self.phedex.getNodeNames(l) for l in location]
         return list(location)
 
     def getFileBlock(self, fileBlockName):

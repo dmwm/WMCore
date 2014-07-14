@@ -5,7 +5,6 @@ _DBSReader_
 Readonly DBS Interface
 
 """
-import re
 from dbs.apis.dbsClient import DbsApi
 from dbs.exceptions.dbsClientException import *
 
@@ -16,6 +15,7 @@ from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx
 from WMCore.Services.EmulatorSwitch import emulatorHook
 
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMcore.Lexicon import cmsname
 
 def remapDBS3Keys(data, stringify = False, **others):
     """Fields have been renamed between DBS2 and 3, take fields from DBS3
@@ -542,12 +542,14 @@ class DBS3Reader:
             
             site = blockInfo[0]['origin_site_name']
             location = set([site])
-            if re.search('[^A-Za-z0-9_]', site) is None: ## not SE i.e. phedexNode
+            try:
+                cmsname(site)
+            except AssertionError: ## is SE
+                if phedex_nodes: ## want phedexNode
+                    location = set(self.phedex.getNodeNames(site)) ## convert to phexedNode
+            else:  ## not SE i.e. phedexNode
                 if not phedex_nodes:
                     location = set([self.phedex.getNodeSE(site)]) ## convert to SE
-            elif phedex_nodes: ## is SE want phedexNode
-                location = set(self.phedex.getNodeNames(site)) ## convert to phexedNode
-            
             location.difference_update(['UNKNOWN']) # remove entry when SE name is 'UNKNOWN'
              
         return list(location)

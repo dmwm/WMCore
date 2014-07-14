@@ -1000,7 +1000,9 @@ class CouchMonitor(object):
                         doc["_replication_state"] = j["doc"]["_replication_state"]
                     else:
                         logging.error("""replication failed from %s to %s 
-                                         couch server manually need to be restarted""" % (source, target))
+                                         couch server manually need to be restarted""" % (
+                                         replaceToSantizeURL(source), 
+                                         replaceToSantizeURL(target)))
                     filteredDocs.append(doc)
         return filteredDocs
     

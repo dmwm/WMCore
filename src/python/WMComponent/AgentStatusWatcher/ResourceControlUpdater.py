@@ -87,6 +87,10 @@ class ResourceControlUpdater(BaseWorkerThread):
             logging.debug("Starting algorithm, getting site info from SSB")
             stateBySite, slotsCPU, slotsIO = self.getInfoFromSSB()
             
+            if not stateBySite or not slotsCPU or not slotsIO:
+                logging.error("One or more of the SSB metrics is down. Please contact the Dashboard team.")
+                return
+            
             logging.debug("Setting status and thresholds for all sites, site pending: %s%%, task pending: %s%%" % 
                           (str(self.pendingSlotsSitePercent), str(self.pendingSlotsTaskPercent))) 
             

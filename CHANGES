@@ -1,3 +1,417 @@
+0.9.95 to 0.9.95f:
+  - Merge pull request #5205 from yuyiguo/RESTV2
+  - Merge pull request #5210 from ticoann/fix_extention_wf
+  - fix extending workflow
+  - Merge pull request #5208 from mmascher/master
+  - setup_dependencies.py: add LumiList dependency for CRABServer and CRABClient
+  - Modify validate num and realnum to accept not only string but also int/float inputs.
+  - Merge pull request #5202 from tsarangi/issue5201
+  - Change to debug logging
+  - 0.9.95e
+  - Merge pull request #5200 from ticoann/add_update_reqmgr
+  - add migraterequest function for wmstats reqmgr migration
+  - Merge pull request #5199 from lucacopa/condor_plugin_bug_sitename
+  - This fixes a bug in the condor plugin
+  - Merge pull request #5198 from tsarangi/issue5197
+  - Fix #5197. Add check for non-existing jobAd
+  - Merge pull request #5196 from juztas/DiskCheck
+  - Merge pull request #5195 from juztas/MatchLFN
+  - additional disk usage check for Openstack
+  - Match LFN fix. Previuos merged wrong
+  - 0.9.95d
+  - Merge pull request #5190 from lucacopa/mod_agent_watchet_fix
+  - Merge pull request #5192 from bbockelm/split-lumis-v2
+  - Note a shortcoming of the Mask class.
+  - Add a test case for the LumiBased splitting algorithm's handling of lumis split across multiple files.
+  - Within a job group, do not split a lumi across multiple jobs.  #5181
+  - Merge pull request #5191 from lucacopa/fix_resourceUpdater_config_load
+  - Get dashboard url from secrets
+  - Dont load config every polling cycle
+  - 0.9.95c
+  - Merge pull request #5189 from ticoann/fix_mod_config
+  - fix mod config when opsProxy is not set
+  - Merge pull request #5188 from ericvaandering/lumi_workload
+  - Revise unit test
+  - Merge pull request #5187 from ticoann/fix_lfnbase_dashboard_enabled
+  - initialize user lfnBase when dqm is enabled
+  - Merge pull request #5074 from lucacopa/submitting_fail_sites
+  - Merge pull request #5174 from ticoann/reqmgr_role_add
+  - Merge pull request #5177 from lucacopa/thresholds_component
+  - This creates a new general purpose component
+  - Merge pull request #5178 from lucacopa/analytics_data_disk_threshold
+  - Merge pull request #5182 from ericvaandering/More_LumiList_improvements
+  - Merge pull request #5185 from ticoann/wmstats_fix
+  - fix WMStats reader when document is deleted between calls
+  - Fix a bug, add faster construction
+  - Merge pull request #5165 from qunox/cachefileremove
+  - Merge pull request #5179 from HassenRiahi/AddASORetryManagerParam
+  - Merge pull request #5180 from HassenRiahi/RemoveOldCouchApp1
+  - This changes the threshold for disk alarm
+  - Merge pull request #5173 from lucacopa/specs_storeR_bug
+  - Merge pull request #5176 from ticoann/fix_wmstats_writer
+  - fix WMStatsWriter initilization
+  - add role and group so agent can update the status
+  - Add lumi list to StdBase, unit tests, and code to copy from Workload property to task property.
+  - My bad, I added this bug when changing to standard output module.
+  - Merge pull request #5164 from ticoann/extended_fix
+  - Merge pull request #5161 from ticoann/move_wmstat_svc
+  - Merge pull request #5151 from ericvaandering/add_WMDataMining
+  - Add stats gatherer to WMCore
+  - Add couch views for WMDataMining
+  - some update for crabclient purge
+  - port wmstats script to WMCore codebase
+  - Merge pull request #5080 from samircury/exceptions-reco-reporting
+  - Merge pull request #5160 from ericvaandering/Add_selectRuns_to_LumiList
+  - fix job number caculation for extended workflow
+  - Merge pull request #5162 from lucacopa/trusSiteList_join_siteWhitelist
+  - Merge pull request #5163 from ticoann/fix_couch1.5_log
+  - sanitize url for couch1.5
+  - This add the site whitelist locations to Input dataset locations when a WorkQueueElement is created at the GWQ level When xrootd is enable (trustSiteList=True), this should be done. Otherwise WorkQueueElement are not pulled to wmagent
+  - Merge pull request #5158 from lucacopa/store_results_patch
+  - Read from URL
+  - Merge pull request #5159 from ticoann/fix_webtool_access_log
+  - Merge pull request #5157 from ericvaandering/Add_selectRuns_to_LumiList
+  - fix access log function
+  - This patch uses standard addOutputModule for storeResults Other fixes in stageOut I added standard json to requests in test
+  - Add a new method to LumiList, add a test for select and remove runs
+  - Merge pull request #5149 from mmascher/master
+  - 0.9.95b
+  - Merge pull request #5133 from ticoann/valentin_summary
+  - New file to deal with summary db
+  - Merge pull request #5155 from ticoann/acdc_cleanup
+  - Merge pull request #5152 from ticoann/make_couch15_compatablewq
+  - add couch1.5 compatible code
+  - add reduce for collection name
+  - Merge pull request #5153 from amaltaro/new-reqmgr-templates
+  - Removed old TaskChain templates; Created new ones for standard, pileup and LHE types
+  - 0.9.95a
+  - Use TAG_COLLECTOR_URL variable and not the ling when getting releases list
+  - Do not redirect std* for voms-proxy-create. See https://github.com/dmwm/CRABClient/issues/4054
+  - Remove old ASO couchapps.
+  - Add ASO RetryManager module.
+  - Merge pull request #5147 from ticoann/test_0.9.95a
+  - make replication checking backward compatible
+  - Merge pull request #5145 from ticoann/fix_all_in_one_test
+  - fix inbox setting for workqueue, replication check and ordering priority
+  - Merge pull request #5132 from ericvaandering/lumilist_and_dbs3
+  - Merge pull request #5134 from ticoann/jenkins_unittest_fix
+  - Merge pull request #5136 from holzman/fnal-srmcp-only-for-srm
+  - FNAL staging: fix mkdir for local staging
+  - Merge pull request #5130 from alexanderrichards/sandboxfixing
+  - Merge pull request #5135 from ericvaandering/lumi_setter
+  - implementing unittest for fix of issue #5130
+  - Add and test lumimask setter function
+  - fixes PhEDEx Subscribe test
+  - fix unittest
+  - Simple emulator for DBS3. Incomplete. Adapt to full lumi list returned in maskedBlocks New tests for lumi masks, remove existing which fails with DBS2 emulator Switch to real DBS, not emulator. Switch to a smaller RAW dataset Update DBS3Reader Map
+  - Merge pull request #5121 from mmascher/master
+  - Merge pull request #5125 from ticoann/fix_jenkins_unittest
+  - more fix for unittest
+  - Merge pull request #5123 from ticoann/fix_retry_unittest
+  - fix retry manager unittest
+  - Use openssl to get user cert enddate instead of voms-proxy-info (kept as fallback)
+  - Fix detection of RFC proxies
+  - Update dependencies for the client
+  - Fixing Sandbox creation problem
+  - Catching exceptions for Reco reporting HTTP requests
+  - Add site when submit fails due to site in down/drain
+
+0.9.95 to 0.9.95e:
+  - Merge pull request #5200 from ticoann/add_update_reqmgr
+  - add migraterequest function for wmstats reqmgr migration
+  - Merge pull request #5199 from lucacopa/condor_plugin_bug_sitename
+  - This fixes a bug in the condor plugin
+  - Merge pull request #5198 from tsarangi/issue5197
+  - Fix #5197. Add check for non-existing jobAd
+  - Merge pull request #5196 from juztas/DiskCheck
+  - Merge pull request #5195 from juztas/MatchLFN
+  - additional disk usage check for Openstack
+  - Match LFN fix. Previuos merged wrong
+  - 0.9.95d
+  - Merge pull request #5190 from lucacopa/mod_agent_watchet_fix
+  - Merge pull request #5192 from bbockelm/split-lumis-v2
+  - Note a shortcoming of the Mask class.
+  - Add a test case for the LumiBased splitting algorithm's handling of lumis split across multiple files.
+  - Within a job group, do not split a lumi across multiple jobs.  #5181
+  - Merge pull request #5191 from lucacopa/fix_resourceUpdater_config_load
+  - Get dashboard url from secrets
+  - Dont load config every polling cycle
+  - 0.9.95c
+  - Merge pull request #5189 from ticoann/fix_mod_config
+  - fix mod config when opsProxy is not set
+  - Merge pull request #5188 from ericvaandering/lumi_workload
+  - Revise unit test
+  - Merge pull request #5187 from ticoann/fix_lfnbase_dashboard_enabled
+  - initialize user lfnBase when dqm is enabled
+  - Merge pull request #5074 from lucacopa/submitting_fail_sites
+  - Merge pull request #5174 from ticoann/reqmgr_role_add
+  - Merge pull request #5177 from lucacopa/thresholds_component
+  - This creates a new general purpose component
+  - Merge pull request #5178 from lucacopa/analytics_data_disk_threshold
+  - Merge pull request #5182 from ericvaandering/More_LumiList_improvements
+  - Merge pull request #5185 from ticoann/wmstats_fix
+  - fix WMStats reader when document is deleted between calls
+  - Fix a bug, add faster construction
+  - Merge pull request #5165 from qunox/cachefileremove
+  - Merge pull request #5179 from HassenRiahi/AddASORetryManagerParam
+  - Merge pull request #5180 from HassenRiahi/RemoveOldCouchApp1
+  - This changes the threshold for disk alarm
+  - Merge pull request #5173 from lucacopa/specs_storeR_bug
+  - Merge pull request #5176 from ticoann/fix_wmstats_writer
+  - fix WMStatsWriter initilization
+  - add role and group so agent can update the status
+  - Add lumi list to StdBase, unit tests, and code to copy from Workload property to task property.
+  - My bad, I added this bug when changing to standard output module.
+  - Merge pull request #5164 from ticoann/extended_fix
+  - Merge pull request #5161 from ticoann/move_wmstat_svc
+  - Merge pull request #5151 from ericvaandering/add_WMDataMining
+  - Add stats gatherer to WMCore
+  - Add couch views for WMDataMining
+  - some update for crabclient purge
+  - port wmstats script to WMCore codebase
+  - Merge pull request #5080 from samircury/exceptions-reco-reporting
+  - Merge pull request #5160 from ericvaandering/Add_selectRuns_to_LumiList
+  - fix job number caculation for extended workflow
+  - Merge pull request #5162 from lucacopa/trusSiteList_join_siteWhitelist
+  - Merge pull request #5163 from ticoann/fix_couch1.5_log
+  - sanitize url for couch1.5
+  - This add the site whitelist locations to Input dataset locations when a WorkQueueElement is created at the GWQ level When xrootd is enable (trustSiteList=True), this should be done. Otherwise WorkQueueElement are not pulled to wmagent
+  - Merge pull request #5158 from lucacopa/store_results_patch
+  - Read from URL
+  - Merge pull request #5159 from ticoann/fix_webtool_access_log
+  - Merge pull request #5157 from ericvaandering/Add_selectRuns_to_LumiList
+  - fix access log function
+  - This patch uses standard addOutputModule for storeResults Other fixes in stageOut I added standard json to requests in test
+  - Add a new method to LumiList, add a test for select and remove runs
+  - Merge pull request #5149 from mmascher/master
+  - 0.9.95b
+  - Merge pull request #5133 from ticoann/valentin_summary
+  - New file to deal with summary db
+  - Merge pull request #5155 from ticoann/acdc_cleanup
+  - Merge pull request #5152 from ticoann/make_couch15_compatablewq
+  - add couch1.5 compatible code
+  - add reduce for collection name
+  - Merge pull request #5153 from amaltaro/new-reqmgr-templates
+  - Removed old TaskChain templates; Created new ones for standard, pileup and LHE types
+  - 0.9.95a
+  - Use TAG_COLLECTOR_URL variable and not the ling when getting releases list
+  - Do not redirect std* for voms-proxy-create. See https://github.com/dmwm/CRABClient/issues/4054
+  - Remove old ASO couchapps.
+  - Add ASO RetryManager module.
+  - Merge pull request #5147 from ticoann/test_0.9.95a
+  - make replication checking backward compatible
+  - Merge pull request #5145 from ticoann/fix_all_in_one_test
+  - fix inbox setting for workqueue, replication check and ordering priority
+  - Merge pull request #5132 from ericvaandering/lumilist_and_dbs3
+  - Merge pull request #5134 from ticoann/jenkins_unittest_fix
+  - Merge pull request #5136 from holzman/fnal-srmcp-only-for-srm
+  - FNAL staging: fix mkdir for local staging
+  - Merge pull request #5130 from alexanderrichards/sandboxfixing
+  - Merge pull request #5135 from ericvaandering/lumi_setter
+  - implementing unittest for fix of issue #5130
+  - Add and test lumimask setter function
+  - fixes PhEDEx Subscribe test
+  - fix unittest
+  - Simple emulator for DBS3. Incomplete. Adapt to full lumi list returned in maskedBlocks New tests for lumi masks, remove existing which fails with DBS2 emulator Switch to real DBS, not emulator. Switch to a smaller RAW dataset Update DBS3Reader Map
+  - Merge pull request #5121 from mmascher/master
+  - Merge pull request #5125 from ticoann/fix_jenkins_unittest
+  - more fix for unittest
+  - Merge pull request #5123 from ticoann/fix_retry_unittest
+  - fix retry manager unittest
+  - Use openssl to get user cert enddate instead of voms-proxy-info (kept as fallback)
+  - Fix detection of RFC proxies
+  - Update dependencies for the client
+  - Fixing Sandbox creation problem
+  - Catching exceptions for Reco reporting HTTP requests
+  - Add site when submit fails due to site in down/drain
+
+0.9.95 to 0.9.95d:
+  - Merge pull request #5190 from lucacopa/mod_agent_watchet_fix
+  - Merge pull request #5192 from bbockelm/split-lumis-v2
+  - Note a shortcoming of the Mask class.
+  - Add a test case for the LumiBased splitting algorithm's handling of lumis split across multiple files.
+  - Within a job group, do not split a lumi across multiple jobs.  #5181
+  - Merge pull request #5191 from lucacopa/fix_resourceUpdater_config_load
+  - Get dashboard url from secrets
+  - Dont load config every polling cycle
+  - 0.9.95c
+  - Merge pull request #5189 from ticoann/fix_mod_config
+  - fix mod config when opsProxy is not set
+  - Merge pull request #5188 from ericvaandering/lumi_workload
+  - Revise unit test
+  - Merge pull request #5187 from ticoann/fix_lfnbase_dashboard_enabled
+  - initialize user lfnBase when dqm is enabled
+  - Merge pull request #5074 from lucacopa/submitting_fail_sites
+  - Merge pull request #5174 from ticoann/reqmgr_role_add
+  - Merge pull request #5177 from lucacopa/thresholds_component
+  - This creates a new general purpose component
+  - Merge pull request #5178 from lucacopa/analytics_data_disk_threshold
+  - Merge pull request #5182 from ericvaandering/More_LumiList_improvements
+  - Merge pull request #5185 from ticoann/wmstats_fix
+  - fix WMStats reader when document is deleted between calls
+  - Fix a bug, add faster construction
+  - Merge pull request #5165 from qunox/cachefileremove
+  - Merge pull request #5179 from HassenRiahi/AddASORetryManagerParam
+  - Merge pull request #5180 from HassenRiahi/RemoveOldCouchApp1
+  - This changes the threshold for disk alarm
+  - Merge pull request #5173 from lucacopa/specs_storeR_bug
+  - Merge pull request #5176 from ticoann/fix_wmstats_writer
+  - fix WMStatsWriter initilization
+  - add role and group so agent can update the status
+  - Add lumi list to StdBase, unit tests, and code to copy from Workload property to task property.
+  - My bad, I added this bug when changing to standard output module.
+  - Merge pull request #5164 from ticoann/extended_fix
+  - Merge pull request #5161 from ticoann/move_wmstat_svc
+  - Merge pull request #5151 from ericvaandering/add_WMDataMining
+  - Add stats gatherer to WMCore
+  - Add couch views for WMDataMining
+  - some update for crabclient purge
+  - port wmstats script to WMCore codebase
+  - Merge pull request #5080 from samircury/exceptions-reco-reporting
+  - Merge pull request #5160 from ericvaandering/Add_selectRuns_to_LumiList
+  - fix job number caculation for extended workflow
+  - Merge pull request #5162 from lucacopa/trusSiteList_join_siteWhitelist
+  - Merge pull request #5163 from ticoann/fix_couch1.5_log
+  - sanitize url for couch1.5
+  - This add the site whitelist locations to Input dataset locations when a WorkQueueElement is created at the GWQ level When xrootd is enable (trustSiteList=True), this should be done. Otherwise WorkQueueElement are not pulled to wmagent
+  - Merge pull request #5158 from lucacopa/store_results_patch
+  - Read from URL
+  - Merge pull request #5159 from ticoann/fix_webtool_access_log
+  - Merge pull request #5157 from ericvaandering/Add_selectRuns_to_LumiList
+  - fix access log function
+  - This patch uses standard addOutputModule for storeResults Other fixes in stageOut I added standard json to requests in test
+  - Add a new method to LumiList, add a test for select and remove runs
+  - Merge pull request #5149 from mmascher/master
+  - 0.9.95b
+  - Merge pull request #5133 from ticoann/valentin_summary
+  - New file to deal with summary db
+  - Merge pull request #5155 from ticoann/acdc_cleanup
+  - Merge pull request #5152 from ticoann/make_couch15_compatablewq
+  - add couch1.5 compatible code
+  - add reduce for collection name
+  - Merge pull request #5153 from amaltaro/new-reqmgr-templates
+  - Removed old TaskChain templates; Created new ones for standard, pileup and LHE types
+  - 0.9.95a
+  - Use TAG_COLLECTOR_URL variable and not the ling when getting releases list
+  - Do not redirect std* for voms-proxy-create. See https://github.com/dmwm/CRABClient/issues/4054
+  - Remove old ASO couchapps.
+  - Add ASO RetryManager module.
+  - Merge pull request #5147 from ticoann/test_0.9.95a
+  - make replication checking backward compatible
+  - Merge pull request #5145 from ticoann/fix_all_in_one_test
+  - fix inbox setting for workqueue, replication check and ordering priority
+  - Merge pull request #5132 from ericvaandering/lumilist_and_dbs3
+  - Merge pull request #5134 from ticoann/jenkins_unittest_fix
+  - Merge pull request #5136 from holzman/fnal-srmcp-only-for-srm
+  - FNAL staging: fix mkdir for local staging
+  - Merge pull request #5130 from alexanderrichards/sandboxfixing
+  - Merge pull request #5135 from ericvaandering/lumi_setter
+  - implementing unittest for fix of issue #5130
+  - Add and test lumimask setter function
+  - fixes PhEDEx Subscribe test
+  - fix unittest
+  - Simple emulator for DBS3. Incomplete. Adapt to full lumi list returned in maskedBlocks New tests for lumi masks, remove existing which fails with DBS2 emulator Switch to real DBS, not emulator. Switch to a smaller RAW dataset Update DBS3Reader Map
+  - Merge pull request #5121 from mmascher/master
+  - Merge pull request #5125 from ticoann/fix_jenkins_unittest
+  - more fix for unittest
+  - Merge pull request #5123 from ticoann/fix_retry_unittest
+  - fix retry manager unittest
+  - Use openssl to get user cert enddate instead of voms-proxy-info (kept as fallback)
+  - Fix detection of RFC proxies
+  - Update dependencies for the client
+  - Fixing Sandbox creation problem
+  - Catching exceptions for Reco reporting HTTP requests
+  - Add site when submit fails due to site in down/drain
+
+0.9.95 to 0.9.95c:
+  - Merge pull request #5189 from ticoann/fix_mod_config
+  - fix mod config when opsProxy is not set
+  - Merge pull request #5188 from ericvaandering/lumi_workload
+  - Revise unit test
+  - Merge pull request #5187 from ticoann/fix_lfnbase_dashboard_enabled
+  - initialize user lfnBase when dqm is enabled
+  - Merge pull request #5074 from lucacopa/submitting_fail_sites
+  - Merge pull request #5174 from ticoann/reqmgr_role_add
+  - Merge pull request #5177 from lucacopa/thresholds_component
+  - This creates a new general purpose component
+  - Merge pull request #5178 from lucacopa/analytics_data_disk_threshold
+  - Merge pull request #5182 from ericvaandering/More_LumiList_improvements
+  - Merge pull request #5185 from ticoann/wmstats_fix
+  - fix WMStats reader when document is deleted between calls
+  - Fix a bug, add faster construction
+  - Merge pull request #5165 from qunox/cachefileremove
+  - Merge pull request #5179 from HassenRiahi/AddASORetryManagerParam
+  - Merge pull request #5180 from HassenRiahi/RemoveOldCouchApp1
+  - This changes the threshold for disk alarm
+  - Merge pull request #5173 from lucacopa/specs_storeR_bug
+  - Merge pull request #5176 from ticoann/fix_wmstats_writer
+  - fix WMStatsWriter initilization
+  - add role and group so agent can update the status
+  - Add lumi list to StdBase, unit tests, and code to copy from Workload property to task property.
+  - My bad, I added this bug when changing to standard output module.
+  - Merge pull request #5164 from ticoann/extended_fix
+  - Merge pull request #5161 from ticoann/move_wmstat_svc
+  - Merge pull request #5151 from ericvaandering/add_WMDataMining
+  - Add stats gatherer to WMCore
+  - Add couch views for WMDataMining
+  - some update for crabclient purge
+  - port wmstats script to WMCore codebase
+  - Merge pull request #5080 from samircury/exceptions-reco-reporting
+  - Merge pull request #5160 from ericvaandering/Add_selectRuns_to_LumiList
+  - fix job number caculation for extended workflow
+  - Merge pull request #5162 from lucacopa/trusSiteList_join_siteWhitelist
+  - Merge pull request #5163 from ticoann/fix_couch1.5_log
+  - sanitize url for couch1.5
+  - This add the site whitelist locations to Input dataset locations when a WorkQueueElement is created at the GWQ level When xrootd is enable (trustSiteList=True), this should be done. Otherwise WorkQueueElement are not pulled to wmagent
+  - Merge pull request #5158 from lucacopa/store_results_patch
+  - Read from URL
+  - Merge pull request #5159 from ticoann/fix_webtool_access_log
+  - Merge pull request #5157 from ericvaandering/Add_selectRuns_to_LumiList
+  - fix access log function
+  - This patch uses standard addOutputModule for storeResults Other fixes in stageOut I added standard json to requests in test
+  - Add a new method to LumiList, add a test for select and remove runs
+  - Merge pull request #5149 from mmascher/master
+  - 0.9.95b
+  - Merge pull request #5133 from ticoann/valentin_summary
+  - New file to deal with summary db
+  - Merge pull request #5155 from ticoann/acdc_cleanup
+  - Merge pull request #5152 from ticoann/make_couch15_compatablewq
+  - add couch1.5 compatible code
+  - add reduce for collection name
+  - Merge pull request #5153 from amaltaro/new-reqmgr-templates
+  - Removed old TaskChain templates; Created new ones for standard, pileup and LHE types
+  - 0.9.95a
+  - Use TAG_COLLECTOR_URL variable and not the ling when getting releases list
+  - Do not redirect std* for voms-proxy-create. See https://github.com/dmwm/CRABClient/issues/4054
+  - Remove old ASO couchapps.
+  - Add ASO RetryManager module.
+  - Merge pull request #5147 from ticoann/test_0.9.95a
+  - make replication checking backward compatible
+  - Merge pull request #5145 from ticoann/fix_all_in_one_test
+  - fix inbox setting for workqueue, replication check and ordering priority
+  - Merge pull request #5132 from ericvaandering/lumilist_and_dbs3
+  - Merge pull request #5134 from ticoann/jenkins_unittest_fix
+  - Merge pull request #5136 from holzman/fnal-srmcp-only-for-srm
+  - FNAL staging: fix mkdir for local staging
+  - Merge pull request #5130 from alexanderrichards/sandboxfixing
+  - Merge pull request #5135 from ericvaandering/lumi_setter
+  - implementing unittest for fix of issue #5130
+  - Add and test lumimask setter function
+  - fixes PhEDEx Subscribe test
+  - fix unittest
+  - Simple emulator for DBS3. Incomplete. Adapt to full lumi list returned in maskedBlocks New tests for lumi masks, remove existing which fails with DBS2 emulator Switch to real DBS, not emulator. Switch to a smaller RAW dataset Update DBS3Reader Map
+  - Merge pull request #5121 from mmascher/master
+  - Merge pull request #5125 from ticoann/fix_jenkins_unittest
+  - more fix for unittest
+  - Merge pull request #5123 from ticoann/fix_retry_unittest
+  - fix retry manager unittest
+  - Use openssl to get user cert enddate instead of voms-proxy-info (kept as fallback)
+  - Fix detection of RFC proxies
+  - Update dependencies for the client
+  - Fixing Sandbox creation problem
+  - Catching exceptions for Reco reporting HTTP requests
+  - Add site when submit fails due to site in down/drain
+
 0.9.95 to 0.9.95b:
   - Merge pull request #5133 from ticoann/valentin_summary
   - New file to deal with summary db

@@ -1000,7 +1000,9 @@ class CouchMonitor(object):
                         doc["_replication_state"] = j["doc"]["_replication_state"]
                     else:
                         logging.error("""replication failed from %s to %s 
-                                         couch server manually need to be restarted""" % (source, target))
+                                         couch server manually need to be restarted""" % (
+                                         replaceToSantizeURL(source), 
+                                         replaceToSantizeURL(target)))
                     filteredDocs.append(doc)
         return filteredDocs
     
@@ -1109,7 +1111,8 @@ class CouchMonitor(object):
             updateNum = int(activeStatus["source_seq"])
             self.setPreviousUpdateSequence(source, target, updateNum)
             if not checkUpdateSeq:
-                logging.warning("Need to check replication from %s to %s" % (source, target))
+                logging.warning("Need to check replication from %s to %s" % (
+                                replaceToSantizeURL(source), replaceToSantizeURL(target)))
                 return True
             elif updateNum == dbInfo["update_seq"] or updateNum > previousUpdateNum:
                 logging.info("update upto date: ok")

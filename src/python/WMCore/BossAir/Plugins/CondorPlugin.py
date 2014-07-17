@@ -716,34 +716,39 @@ class CondorPlugin(BasePlugin):
         for job in jobs:
             jobID = job['id']
             jobAd = jobInfo.get(jobID)
-            if excludeSite :
-                if siteName in jobAd.get('DESIRED_Sites') and siteName in jobAd.get('ExtDESIRED_Sites') :
-                    usi = jobAd.get('DESIRED_Sites').split(', ')
-                    print len(usi)
-                    if len(usi) > 1 :
-                        usi.remove(siteName)
+
+            if not jobAd :
+                logging.error("No jobAd received for jobID %i"%jobID)
+            else :
+                desiredSites = jobAd.get('DESIRED_Sites').split(', ')
+                extDesiredSites = jobAd.get('ExtDESIRED_Sites').split(', ')
+                if excludeSite :
+                    if siteName in desiredSites and siteName in extDesiredSites:
+                        usi = desiredSites
+                        if len(usi) > 1 :
+                            usi.remove(siteName)
+                            usi = usi.__str__().lstrip('[').rstrip(']')
+                            usi = filter(lambda c: c not in "\'", usi)
+                            command = 'condor_qedit  -constraint \'WMAgent_JobID==%i\' DESIRED_Sites \'"%s"\'' %(jobID, usi)
+                            proc = subprocess.Popen(command, stderr = subprocess.PIPE,
+                                                    stdout = subprocess.PIPE, shell = True)
+                            out, err = proc.communicate()
+                        else:
+                            jobtokill.append(job)
+                    else :
+                        logging.debug("Cannot find siteName %s in the sitelist" % siteName)
+                else :
+                    if siteName in desiredSites and siteName not in extDesiredSites:
+                        usi = desiredSites
+                        usi.append(siteName)
                         usi = usi.__str__().lstrip('[').rstrip(']')
                         usi = filter(lambda c: c not in "\'", usi)
                         command = 'condor_qedit  -constraint \'WMAgent_JobID==%i\' DESIRED_Sites \'"%s"\'' %(jobID, usi)
                         proc = subprocess.Popen(command, stderr = subprocess.PIPE,
                                                 stdout = subprocess.PIPE, shell = True)
                         out, err = proc.communicate()
-                    else:
-                        jobtokill.append(job)
-                else :
-                    logging.error("Cannot find siteName %s in the sitelist" % siteName)
-            else :
-                if siteName in jobAd.get('ExtDESIRED_Sites') and siteName not in jobAd.get('DESIRED_Sites') :
-                    usi = jobAd.get('DESIRED_Sites').split(', ')
-                    usi.append(siteName)
-                    usi = usi.__str__().lstrip('[').rstrip(']')
-                    usi = filter(lambda c: c not in "\'", usi)
-                    command = 'condor_qedit  -constraint \'WMAgent_JobID==%i\' DESIRED_Sites \'"%s"\'' %(jobID, usi)
-                    proc = subprocess.Popen(command, stderr = subprocess.PIPE,
-                                            stdout = subprocess.PIPE, shell = True)
-                    out, err = proc.communicate()
-                else :
-                    logging.error("Cannot find siteName %s in the sitelist" % siteName)
+                    else :
+                        logging.debug("Cannot find siteName %s in the sitelist" % siteName)
         
         return jobtokill
 

@@ -334,6 +334,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                     possibleLocations = non_abort_sites
                 else:
                     newJob['name'] = loadedJob['name']
+                    newJob['possibleLocations'] = possibleLocations
                     badJobs[61102].append(newJob)
                     continue
 
@@ -346,6 +347,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                     possibleLocations = non_draining_sites
                 else:
                     newJob['name'] = loadedJob['name']
+                    newJob['possibleLocations'] = possibleLocations
                     badJobs[61104].append(newJob)
                     continue
 
@@ -441,7 +443,10 @@ class JobSubmitterPoller(BaseWorkerThread):
         for job in badJobs:
             job['couch_record'] = None
             job['fwjr'] = Report()
-            job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WMJobErrorCodes[exitCode])
+            if exitCode in (61102, 61104):
+                job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WMJobErrorCodes[exitCode] + ', '.join(job['possibleLocations']))
+            else:
+                job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WMJobErrorCodes[exitCode] )
             fwjrPath = os.path.join(job['cache_dir'],
                                     'Report.%d.pkl' % int(job['retry_count']))
             job['fwjr'].setJobID(job['id'])

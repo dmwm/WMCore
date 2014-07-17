@@ -498,7 +498,23 @@ config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachin
 config.AnalyticsDataCollector.centralWMStatsURL = "Central WMStats URL"
 config.AnalyticsDataCollector.summaryLevel = "task"
 config.AnalyticsDataCollector.ignoreDisk = ["/lustre/unmerged"]
-config.AnalyticsDataCollector.diskUseThreshold = 85
+config.AnalyticsDataCollector.diskUseThreshold = 60
 config.AnalyticsDataCollector.couchProcessThreshold = 25
 config.AnalyticsDataCollector.pluginName = None
 
+config.component_("AgentStatusWatcher")
+config.AgentStatusWatcher.namespace = "WMComponent.AgentStatusWatcher.AgentStatusWatcher"
+config.AgentStatusWatcher.componentDir = config.General.workDir + "/AgentStatusWatcher"
+config.AgentStatusWatcher.logLevel = globalLogLevel
+config.AgentStatusWatcher.resourceUpdaterPollInterval = 900 # [second]
+config.AgentStatusWatcher.siteStatusMetric = 158 # [column number in SSB] The source of the information in SSB for Site status
+config.AgentStatusWatcher.cpuBoundMetric = 160 # [column number in SSB] The source of the information in SSB for CPUBound
+config.AgentStatusWatcher.ioBoundMetric = 161 # [column number in SSB] The source of the information in SSB for IOBound
+config.AgentStatusWatcher.dashboard = "Dashboard URL"
+config.AgentStatusWatcher.centralWMStatsURL = "Central WMStats URL"
+config.AgentStatusWatcher.pendingSlotsSitePercent = 40 # [percent] Pending slots percent over site max running for a site
+config.AgentStatusWatcher.pendingSlotsTaskPercent = 30 # [percent] Pending slots percent over task max running for tasks
+config.AgentStatusWatcher.runningExpressPercentCPUBound = 50 # [percent] Only used for tier0 agent
+config.AgentStatusWatcher.runningRepackPercentIOBound = 200 # [percent] Only used for tier0 agent
+config.AgentStatusWatcher.forcedSiteList = [] # [site list] List sites to force Resource Control
+config.AgentStatusWatcher.onlySSB = True # Set thresholds for sites only in SSB (Force all other to zero/down)

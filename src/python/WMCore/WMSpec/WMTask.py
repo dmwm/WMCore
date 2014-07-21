@@ -62,7 +62,8 @@ def buildLumiMask(runs, lumis):
 
 
     lumiLists = [map(list, zip([int(y) for y in x.split(',')][::2], [int(y) for y in x.split(',')][1::2])) for x in lumis]
-    lumiMask = dict(zip(runs, lumiLists))
+    strRuns = [str(run) for run in runs]
+    lumiMask = dict(zip(strRuns, lumiLists))
     return lumiMask
 
 

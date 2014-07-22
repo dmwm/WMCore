@@ -53,8 +53,8 @@ def DBSUser(candidate):
     """
     if candidate =='' or not candidate :
         return candidate
-    r1 = r'^/[a-zA-Z][a-zA-Z0-9/\=\s()]*\=[a-zA-Z0-9/\.\-_/#:\s]*$'
-    r2 = r'^[a-zA-Z0-9/][a-zA-Z0-9/\.\-_]*$'
+    r1 = r'^/[a-zA-Z][a-zA-Z0-9/\=\s()]*\=[a-zA-Z0-9/\=\.\-_/#:\s]*$'
+    r2 = r'^[a-zA-Z0-9/][a-zA-Z0-9/\.\-_\']*$'
     r3 = r'^[a-zA-Z0-9/][a-zA-Z0-9/\.\-_]*@[a-zA-Z0-9/][a-zA-Z0-9/\.\-_]*$'
 
     try:

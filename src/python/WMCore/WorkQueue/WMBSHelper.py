@@ -9,6 +9,7 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
+import copy
 import logging
 import threading
 from collections import defaultdict
@@ -17,6 +18,7 @@ from WMCore.WMRuntime.SandboxCreator import SandboxCreator
 
 from WMCore.WMBS.File import File
 from WMCore.DataStructs.File import File as DatastructFile
+from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
@@ -700,35 +702,52 @@ class WMBSHelper(WMConnectionBase):
 
 
     def validFiles(self, files):
-        """Apply run white/black list and return valid files"""
+        """
+        Apply lumi mask and or run white/black list and return files which have
+        one or more of the requested lumis
+        """
         runWhiteList = self.topLevelTask.inputRunWhitelist()
         runBlackList = self.topLevelTask.inputRunBlacklist()
+        taskLumiMask = self.topLevelTask.getLumiMask()
+
+        blackMask = None
+        if taskLumiMask:       # We have a lumiMask, so use it and modify with run white/black list
+            if isinstance(taskLumiMask, LumiList):  # For a possible future where we use LumiList more prevalently
+                lumiMask = copy.deepcopy(taskLumiMask)
+            else:
+                lumiMask = LumiList(compactList = taskLumiMask)
+            if runWhiteList:
+                lumiMask.selectRuns(runWhiteList)
+            if runBlackList:
+                lumiMask.removeRuns(runBlackList)
+        elif runWhiteList:    # We have a run whitelist, subtract off blacklist
+            lumiMask = LumiList(runs = runWhiteList)
+            if runBlackList:  # We only have a blacklist, so make a black mask out of it instead
+                lumiMask.removeRuns(runBlackList)
+        else:
+            lumiMask = None
+            if runBlackList:
+                blackMask = LumiList(runs = runWhiteList)
 
         results = []
         for f in files:
             if type(f) == type("") or not f.has_key("LumiList"):
                 results.append(f)
                 continue
-            runs = set([x['RunNumber'] for x in f['LumiList']])
-            if runWhiteList or runBlackList:
-                # apply blacklist
-                runs = runs.difference(runBlackList)
-                # if whitelist only accept listed runs
-                if runWhiteList:
-                    runs = runs.intersection(runWhiteList)
-                # any runs left are ones we will run on, if none ignore file
-                if not runs:
-                    continue
-            #if we have a lumi mask we have to check that at least one lumi in the file is valid
-            hasGoodLumi = False
-            for lumi in f['LumiList']:
-                #consider the runs after applying the run white/black lists
-                if lumi['RunNumber'] in runs and \
-                    isGoodLumi(self.topLevelTask.getLumiMask(), lumi['RunNumber'], lumi['LumiSectionNumber']):
-                        hasGoodLumi = True
-                        break
-            #if no good lumi is found continue
-            if not hasGoodLumi:
-                continue
-            results.append(f)
+
+            # Create a LumiList from the WMBS info
+            fileRunsAndLumis = {}
+            for x in f['LumiList']:
+                fileRunsAndLumis.update({str(x['RunNumber']): x['LumiSectionNumber']})
+            fileLumiList = LumiList(runsAndLumis = fileRunsAndLumis)
+
+            if lumiMask:
+                if fileLumiList & lumiMask:  # At least one lumi from file is in lumiMask
+                    results.append(f)
+            elif blackMask:
+                if fileLumiList - blackMask: # At least one lumi from file is not in blackMask
+                    results.append(f)
+            else:                            # There is effectively no mask
+                results.append(f)
+
         return results

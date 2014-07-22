@@ -88,9 +88,9 @@ def fwjr_parser(doc):
                 for row in vvv:
                     if  row.get('merged', False):
                         prim = row['dataset']['primaryDataset']
-                        proc = row['dataset']['primaryDataset']
-                        tier = row['dataset']['primaryDataset']
-                        dataset = '/'.join([prim, proc, tier])
+                        proc = row['dataset']['processedDataset']
+                        tier = row['dataset']['dataTier']
+                        dataset = '/%s/%s/%s' % (prim, proc, tier)
                         totalLumis = sum([len(r) for r in row['runs'].values()])
                         dataset_summary = \
                                 dict(size=row['size'], events=row['events'], totalLumis=totalLumis)

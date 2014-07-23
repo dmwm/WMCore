@@ -23,8 +23,7 @@ class WMWorkloadToolsException(WMException):
 
 def makeLumiList(lumiString):
     try:
-        compactList = json.loads(lumiString)
-        ll = LumiList(compactList = compactList)
+        ll = LumiList(compactList = lumiString)
         return ll.getCompactList()
     except:
         raise WMWorkloadToolsException("Could not parse LumiList")

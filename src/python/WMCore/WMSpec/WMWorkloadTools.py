@@ -21,10 +21,9 @@ class WMWorkloadToolsException(WMException):
     """
     pass
 
-def makeLumiList(lumiString):
+def makeLumiList(lumiDict):
     try:
-        compactList = json.loads(lumiString)
-        ll = LumiList(compactList = compactList)
+        ll = LumiList(compactList = lumiDict)
         return ll.getCompactList()
     except:
         raise WMWorkloadToolsException("Could not parse LumiList")

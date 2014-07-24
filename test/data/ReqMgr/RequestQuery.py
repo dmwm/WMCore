@@ -457,6 +457,9 @@ class RequestQuery:
                     infoDict["ProcessingVersion"] = dataset_version                    
                     infoDict["SiteWhitelist"] = list(sites)
                     
+                    # Create request string
+                    infoDict["RequestString"] = 'StoreResults_'+task+'_v'+dataset_version
+                    
                     # Create report for Migration2Global
                     report = {}
                     

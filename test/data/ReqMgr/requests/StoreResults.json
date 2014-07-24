@@ -23,5 +23,6 @@
         "SizePerEvent": 512.0,
         "TimePerEvent": 40,
         "UnmergedLFNBase": "/store/unmerged"
+        "RequestString": "StoreResults_50914_v1"
     }
 }

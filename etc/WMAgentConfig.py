@@ -51,7 +51,7 @@ agentNumber = 0
 bossAirPlugins = ["CondorPlugin"]
 
 ## Plugin with Condor-Python API ...
-bossAirPlugins = ["PyCondorPlugin"]
+bossAirPlugins = ["PyCondorPlugin", "CondorPlugin"]
 
 # DBS Information.
 localDBSUrl = "https://cmst0dbs.cern.ch:8443/cms_dbs_prod_tier0_writer/servlet/DBSServlet"

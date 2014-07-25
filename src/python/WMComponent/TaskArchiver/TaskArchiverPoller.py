@@ -645,6 +645,7 @@ class TaskArchiverPoller(BaseWorkerThread):
 
             loadJobs = self.daoFactory(classname = "Jobs.LoadForTaskArchiver")
             jobList = loadJobs.execute(chunkList)
+            logging.info("Processing %d jobs," % len(jobList))
             for job in jobList:
                 lastRegisteredRetry = None
                 errorCouch = self.fwjrdatabase.loadView("FWJRDump", "errorsByJobID",
@@ -661,7 +662,8 @@ class TaskArchiverPoller(BaseWorkerThread):
                 # Get rid of runs that aren't in the mask
                 mask = job['mask']
                 runs = mask.filterRunLumisByMask(runs = runs)
-
+                
+                logging.info("Processing %d errors, for job id %s" % (len(errorCouch), job['id']))
                 for err in errorCouch:
                     task   = err['value']['task']
                     step   = err['value']['step']
@@ -709,9 +711,14 @@ class TaskArchiverPoller(BaseWorkerThread):
                         for run in runs:
                             if not str(run.run) in stepFailures[exitCode]['runs'].keys():
                                 stepFailures[exitCode]['runs'][str(run.run)] = []
-                            for l in run.lumis:
-                                if not l in stepFailures[exitCode]['runs'][str(run.run)]:
-                                    stepFailures[exitCode]['runs'][str(run.run)].append(l)
+                            logging.debug("number of lumis failed: %s" % len(run.lumis))    
+                            if len(run.lumis) > 10000:
+                                logging.warning("too many lumis: %s in job id: %s inputfiles: %s" % (
+                                                len(run.lumis), job['id'], inputLFNs))
+                                continue
+                            nodupLumis = set(run.lumis)    
+                            for l in nodupLumis:
+                                stepFailures[exitCode]['runs'][str(run.run)].append(l)
                         for log in logs:
                             if not log in stepFailures[exitCode]["logs"]:
                                 stepFailures[exitCode]["logs"].append(log)
@@ -739,10 +746,10 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         # Now we have the workflowData in the right format
         # Time to send them on
-        logging.debug("About to commit workflow summary to couch")
+        logging.info("About to commit workflow summary to couch")
         self.workdatabase.commitOne(workflowData)
 
-        logging.debug("Finished committing workflow summary to couch")
+        logging.info("Finished committing workflow summary to couch")
 
         return
     def getLogArchives(self, spec):

@@ -66,6 +66,9 @@ class ResourceControlUpdater(BaseWorkerThread):
         
         # wmstats connection 
         self.centralCouchDBReader = WMStatsReader(self.config.AgentStatusWatcher.centralWMStatsURL)
+        
+        # init variables
+        self.agentsByTeam = {}
 
     def algorithm(self, parameters):
         """
@@ -101,15 +104,20 @@ class ResourceControlUpdater(BaseWorkerThread):
             else:
                 # get number of agents working in the same team (not in DrainMode)
                 agentsByTeam = self.centralCouchDBReader.agentsByTeam()
-                teams = self.teamNames.split(',')
-                agentsCount = []
-                for team in teams:
-                    if agentsByTeam[team] == 0:
-                        agentsCount.append(1)
-                    else:
-                        agentsCount.append(agentsByTeam[team])
-                agentsNum = min(agentsCount) # If agent is in several teams, we choose the team with less agents
-                logging.debug("Number of agents not in DrainMode running in the same team: %s" % str(agentsNum))
+                if not agentsByTeam:
+                    agentsNum = 1
+                    logging.debug("agentInfo couch view is not available, don't divide pending thresholds")
+                else:
+                    self.agentsByTeam = agentsByTeam
+                    teams = self.teamNames.split(',')
+                    agentsCount = []
+                    for team in teams:
+                        if self.agentsByTeam[team] == 0:
+                            agentsCount.append(1)
+                        else:
+                            agentsCount.append(self.agentsByTeam[team])
+                    agentsNum = min(agentsCount) # If agent is in several teams, we choose the team with less agents
+                    logging.debug("Number of agents not in DrainMode running in the same team: %s" % str(agentsNum))
             
             # set site status and thresholds
             listSites = stateBySite.keys()

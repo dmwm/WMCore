@@ -1,3 +1,30 @@
+0.9.96 to 0.9.96a:
+  - Merge pull request #5193 from lucacopa/fix_wmstats_not_available
+  - Merge pull request #5246 from ticoann/wmstats_output_dataset_number
+  - Merge pull request #5220 from mmascher/master
+  - Merge pull request #5248 from ericvaandering/fallback_fjr
+  - Merge pull request #5217 from ticoann/temp_fix_lumi_update_ws
+  - Add skipped files to JSON and xrootd fallback files to Report and JSON
+  - Merge pull request #5247 from ticoann/pycondor_condor_plugin_config
+  - support both pycondor and condor plugin
+  - change where wmstats get output dataset number.
+  - Merge pull request #5245 from bbockelm/fallback_example
+  - Add an example of a FJR where fallback was invoked.
+  - Merge pull request #5127 from tsarangi/pythoncondorAPI
+  - Update all failing tests
+  - Merge pull request #5240 from yuyiguo/Lexicon-DBSUser-2
+  - add special character ' in DN too.
+  - Merge pull request #5239 from ericvaandering/fix_taskchain_test
+  - Change parameter name
+  - Adjust that lumi list is not specified as string, but dict and that keys are converted to strings, not ints
+  - fix lumi data format
+  - Merge pull request #5237 from ticoann/fix_wmstats_lumi_cal
+  - fix dataset name in summary db
+  - temp fix for lumi report on workloadsummary
+  - Python Condor API Include PyCondorPlugin Check Schedd and Classad for jobs on the submit host Progate bugfix from CondorPlugin to PyCondorPlugin Change Unittest to test updateSiteInformation method Add Profiler for Condor Plugin performance comparison
+  - Allow the possibility to set the runtimeDir for scram pre scripts in the CMSSW executor. Related to https://github.com/dmwm/CRABClient/issues/4177
+  - Dont divide threholds when wmstats is not available
+
 0.9.95 to 0.9.96:
   - Merge pull request #5234 from yuyiguo/lexicon-DBSuser
   - update DBSUser to accept DN, such as /DC=com/DC=DigiCert-Grid/O=Open Science Grid/OU=People/CN=Bockjoo Kim 118811 and O'Reilly

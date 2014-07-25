@@ -218,6 +218,8 @@ class Report:
         jsonReport = {}
         jsonReport["task"] = self.getTaskName()
         jsonReport["steps"] = {}
+        jsonReport["skippedFiles"] = self.getAllSkippedFiles()
+        jsonReport["fallbackFiles"] = self.getAllFallbackFiles()
 
         for stepName in self.listSteps():
             reportStep = self.retrieveStep(stepName)
@@ -580,6 +582,21 @@ class Report:
         self.report.skipped.files.fileCount += 1
         return
 
+    def addFallbackFile(self, lfn, pfn):
+        """
+        _addFallbackFile_
+
+        Report a fallback attempt for input file
+        """
+        count = self.report.fallback.files.fileCount
+        entry = "file%s" % count
+        self.report.fallback.files.section_(entry)
+        fallbackSect = getattr(self.report.fallback.files, entry)
+        fallbackSect.PhysicalFileName = pfn
+        fallbackSect.LogicalFileName = lfn
+        self.report.fallback.files.fileCount += 1
+        return
+
     def addSkippedEvent(self, run, event):
         """
         _addSkippedEvent_
@@ -621,6 +638,7 @@ class Report:
         self.report.section_("analysis")
         self.report.section_("errors")
         self.report.section_("skipped")
+        self.report.section_("fallback")
         self.report.section_("parameters")
         self.report.section_("logs")
         self.report.section_("cleanup")
@@ -629,7 +647,9 @@ class Report:
         self.report.cleanup.section_("unremoved")
         self.report.skipped.section_("events")
         self.report.skipped.section_("files")
+        self.report.fallback.section_("files")
         self.report.skipped.files.fileCount = 0
+        self.report.fallback.files.fileCount = 0
         self.report.analysis.files.fileCount = 0
         self.report.cleanup.removed.fileCount = 0
 
@@ -893,6 +913,21 @@ class Report:
 
         return listOfFiles
 
+    def getAllFallbackFiles(self):
+        """
+        _getAllFallbackFiles_
+
+        Get a list of LFNs for all the input files
+        listed as fallback attempt on the report
+        """
+        listOfFiles = []
+        for step in self.data.steps:
+            tmp = self.getFallbackFilesFromStep(stepName = step)
+            if tmp:
+                listOfFiles.extend(tmp)
+
+        return listOfFiles
+
     def getSkippedFilesFromStep(self, stepName):
         """
         _getSkippedFilesFromStep_
@@ -915,6 +950,31 @@ class Report:
                 logging.error("Found no LFN in file %s" % str(fileSection))
 
         return skippedFiles
+
+    def getFallbackFilesFromStep(self, stepName):
+        """
+        _getFallbackFilesFromStep_
+
+        Get a list of LFNs which triggered a fallback in the given step
+        """
+        fallbackFiles = []
+
+        step = self.retrieveStep(stepName)
+        try:
+            filesSection = step.fallback.files
+        except AttributeError:
+            return fallbackFiles
+        fileCount = getattr(filesSection, "fileCount", 0)
+
+        for fileNum in range(fileCount):
+            fileSection = getattr(filesSection, "file%d" % fileNum)
+            lfn = getattr(fileSection, "LogicalFileName", None)
+            if lfn is not None:
+                fallbackFiles.append(lfn)
+            else:
+                logging.error("Found no LFN in file %s" % str(fileSection))
+
+        return fallbackFiles
 
     def getStepErrors(self, stepName):
         """
@@ -1234,7 +1294,7 @@ class Report:
             f.globalTag = globalTag
 
         return
-    
+
     def setPrepID(self, prep_id):
         """
         _setGlobalTag_

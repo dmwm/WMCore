@@ -72,7 +72,8 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
 
         # We will map node names to CMS names, that what the spec will have.
         # If a CMS name is associated to many PhEDEx node then choose the MSS option
-        self.cmsToPhedexMap = {}
+        self.cmsToPhedexMap = {}        
+        self.phedexNodes = {'MSS':[], 'Disk':[]}
 
         # initialize the alert framework (if available - config.Alert present)
         #    self.sendAlert will be then be available
@@ -106,6 +107,8 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
             logging.info("Loaded PhEDEx node %s for site %s" % (node["name"], cmsName))
             if node["kind"] not in self.cmsToPhedexMap[cmsName]:
                 self.cmsToPhedexMap[cmsName][node["kind"]] = node["name"]
+
+            self.phedexNodes.setdefault(node['kind'], []).append(node['name'])
 
         return
 
@@ -203,18 +206,24 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
         for subInfo in unsubscribedDatasets:
             site = subInfo['site']
 
-            # Get the phedex node from CMS site
-            if site in self.cmsToPhedexMap:
-                isMSS = "MSS" in self.cmsToPhedexMap[site]
-                subInfo['site'] = self.cmsToPhedexMap[site].get("MSS") \
-                                     or self.cmsToPhedexMap[site]["Disk"]
+            if site not in self.phedexNodes['MSS'] and site not in self.phedexNodes['Disk']:
 
-                # Avoid custodial subscriptions to disk nodes
-                if not isMSS: subInfo['custodial'] = 'n'
-                # Avoid move subscriptions and replica
-                if subInfo['custodial'] == 'n': subInfo['move'] = 'n'
+                if site not in self.cmsToPhedexMap:
+                    msg = "Site %s doesn't appear to be valid to PhEDEx, " % site
+                    msg += "skipping subscription: %s" % subInfo['id']
+                    logging.error(msg)
+                    self.sendAlert(7, msg = msg)
+                    continue
+
+                # Get the phedex node from CMS site
+                site = self.cmsToPhedexMap[site].get("MSS") or self.cmsToPhedexMap[site]["Disk"] 
+
+            # Avoid custodial subscriptions to disk nodes
+            if site not in self.phedexNodes['MSS']: subInfo['custodial'] = 'n'
+            # Avoid move subscriptions and replica
+            if subInfo['custodial'] == 'n': subInfo['move'] = 'n'
            
-            phedexSub = PhEDExSubscription(subInfo['path'], subInfo['site'],
+            phedexSub = PhEDExSubscription(subInfo['path'], site,
                                            self.group, priority = subInfo['priority'],
                                            move = subInfo['move'], custodial = subInfo['custodial'],
                                            request_only = subInfo['request_only'], subscriptionId = subInfo['id'])

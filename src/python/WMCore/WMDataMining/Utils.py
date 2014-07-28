@@ -1,39 +1,35 @@
+#!/usr/bin/env python
 from __future__ import division
 
 import cjson
 import copy
 import pprint
 import time
+import logging
 
-from optparse import OptionParser
-
+from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Database.CMSCouch import Document as CouchDoc
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfoCollection
 
 
-if __name__ == "__main__":
-    parser = OptionParser()
-    parser.add_option("-s", "--server", dest="server",
-                    help="CouchDB server to write results to", )
-    parser.add_option("-d", "--database", dest="database", default='latency_analytics',
-                    help="CouchDB database for results")
-    parser.add_option("-a", "--archived",
-                  action="store_true", dest="archived", default=False,
-                  help="Request info on archived workflows instead")
-
-    (options, args) = parser.parse_args()
-
-    analyticsServer = CouchServer(options.server)
-    couchdb = analyticsServer.connectDatabase(options.database)
+def getherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmminigUrl, archived = False):
+    
+    server, database = splitCouchServiceURL(wmminigUrl)
+    analyticsServer = CouchServer(server)
+    couchdb = analyticsServer.connectDatabase(database)
 
     url = "https://cmsweb.cern.ch/couchdb/wmstats"
-    WMStats = WMStatsReader(url)
-    reqMgr = CouchServer('https://cmsweb.cern.ch/couchdb/').connectDatabase('reqmgr_workload_cache', False)
-    print "Getting job information from %s. Please wait." % url
+    WMStats = WMStatsReader(wmstatsUrl)
+    
+    reqMgrServer, reqMgrDB = splitCouchServiceURL(reqmgrUrl)
+    
+    reqMgr = CouchServer(reqMgrServer).connectDatabase(reqMgrDB, False)
+    
+    logging.info("Getting job information from %s. Please wait." % url)
 
-    if options.archived:
+    if archived:
         checkStates = ['normal-archived', 'rejected-archived', 'aborted-archived']
         jobInfoFlag = False
     else:
@@ -44,7 +40,7 @@ if __name__ == "__main__":
     requestCollection = RequestInfoCollection(requests)
     result = requestCollection.getJSONData()
     requestsDict = requestCollection.getData()
-    print "Total %s requests retrieved\n" % len(result)
+    logging.info("Total %s requests retrieved\n" % len(result))
 
     report = {}
     for wf in result.keys():
@@ -66,7 +62,7 @@ if __name__ == "__main__":
             runWhiteList = []
             filterEfficiency = None
             try:
-                print "Looking up %s in ReqMgr" % wf
+                logging.debug("Looking up %s in ReqMgr" % wf)
                 rmDoc = reqMgr.document(wf)
                 runWhiteList = rmDoc.get('RunWhiteList', [])
                 filterEfficiency = rmDoc.get('FilterEfficiency', None)
@@ -95,7 +91,7 @@ if __name__ == "__main__":
         try:
             outputTiers = [ds.split('/')[-1] for ds in outputdatasets]
         except:
-            print "Could not decode outputdatasets" # Sometimes is a list of lists, not just a list. Bail
+            logging.debug("Could not decode outputdatasets") # Sometimes is a list of lists, not just a list. Bail
         if inputdataset:
             inputTier = inputdataset.split('/')[-1]
             if inputTier in ['GEN']:
@@ -173,21 +169,21 @@ if __name__ == "__main__":
         requestDate = None
         for status in requests[wf]['request_status']:
             finalStatus = status['status']
-            if status['status']	== 'new':
+            if status['status'] == 'new':
                 newTime = status['update_time']
-            if status['status']	== 'assignment-approved':
+            if status['status'] == 'assignment-approved':
                 approvedTime = status['update_time']
-            if status['status']	== 'assigned':
+            if status['status'] == 'assigned':
                 assignedTime = status['update_time']
             if status['status'] == 'completed':
                 completedTime = status['update_time']
             if status['status'] == 'acquired':
                 acquireTime = status['update_time']
-            if status['status']	== 'closed-out':
+            if status['status'] == 'closed-out':
                 closeoutTime = status['update_time']
-            if status['status']	== 'announced':
+            if status['status'] == 'announced':
                 announcedTime = status['update_time']
-            if status['status']	== 'normal-archived':
+            if status['status'] == 'normal-archived':
                 archivedTime = status['update_time']
 
         # Build or modify the report dictionary for the WF
@@ -247,9 +243,9 @@ if __name__ == "__main__":
         # Queue the updated document for addition if it's changed.
         if ancientCouchDoc != newCouchDoc:
             if wfExists:
-                print "Workflow updated: ", wf
+                logging.debug("Workflow updated: %s" % wf)
             else:
-                print "Workflow created: ", wf
+                logging.debug("Workflow created: %s" % wf)
 
             try:
                 newCouchDoc['updateTime'] = int(time.time())
@@ -257,8 +253,7 @@ if __name__ == "__main__":
                 cjson.encode(newCouchDoc) # Make sure it encodes before trying to queue
                 couchdb.queue(newCouchDoc)
             except:
-                print "Failed to queue document:\n", pprint.pprint(newCouchDoc)
+                logging.error("Failed to queue document:%s \n" % pprint.pprint(newCouchDoc))
 
     # Commit all changes to CouchDB
     couchdb.commit()
-

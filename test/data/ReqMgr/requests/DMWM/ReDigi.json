@@ -1,0 +1,70 @@
+{ 
+"createRequest":
+{         
+    "Campaign": "Campaign-OVERRIDE-ME",        
+    "RequestString": "RequestString-OVERRIDE-ME",
+    "CMSSWVersion": "CMSSW_7_0_6_patch1",
+    "GlobalTag": "PLS170_V7AN1::All",
+    "RequestPriority": 90000,
+    "ScramArch": "slc6_amd64_gcc481",
+    "RequestType": "ReDigi",
+    "RunWhitelist": [],
+    "RunBlacklist": [],
+    "BlockWhitelist": ["/LambdaBToLambdaMumuToPPiMuMu_EtaPtFilter_13TeV-pythia6-evtgen/Spring14dr-PU20bx25_POSTLS170_V5-v2/AODSIM#487bbbae-c9aa-11e3-bfe2-0024e83ef644"],
+    "BlockBlacklist": [],
+    "PrimaryDataset": "LambdaBToLambdaMumuToPPiMuMu_EtaPtFilter_13TeV-pythia6-evtgen",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+    "MCPileup": "/MinBias_TuneZ2star_8TeV-pythia6/Summer12-START50_V13-v3/GEN-SIM",
+    "InputDataset": "/LambdaBToLambdaMumuToPPiMuMu_EtaPtFilter_13TeV-pythia6-evtgen/Spring14dr-PU20bx25_POSTLS170_V5-v2/AODSIM",
+    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+    "StepOneConfigCacheID": "5e331f921723ff91e11687f3a68c7cd2",
+    "KeepStepOneOutput" : "True",
+    "PrepID": "BPH-Spring14miniaod-00004",            
+    "Group": "DATAOPS",
+    "SplittingAlgo": "LumiBased",
+    "RequestNumEvents": 23036,
+    "LumisPerJob": 10,
+    "TimePerEvent": 5.0,
+    "Memory": 2300,
+    "SizePerEvent": 100,
+    "OpenRunningTimeout" : 0
+},
+"changeSplitting":
+{
+    "StepOneProc" :
+    {
+        "SplittingAlgo" : "LumiBased",
+        "lumis_per_job" : 8,
+        "halt_job_on_file_boundaries" : "True",
+        "include_parents" : "False"
+    }
+},
+"assignRequest":
+{
+    "SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
+    "Team": "Team--OVERRIDE-ME",
+    "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
+    "ProcessingString" : "ProcessingString-OVERRIDE-ME",
+    "dashboard": "dashboard-OVERRIDE-ME",
+    "SiteBlacklist": [],
+    "MergedLFNBase": "/store/backfill/1",
+    "UnmergedLFNBase": "/store/unmerged",
+    "MinMergeSize": 2147483648,
+    "MaxMergeSize": 4294967296,
+    "MaxMergeEvents": 50000,
+    "ProcessingVersion": 1,
+    "maxRSS": 2352000,
+    "maxVSize": 20294967,
+    "SoftTimeout": 129600,
+    "GracePeriod": 300,
+    "CustodialSites": [],
+    "NonCustodialSites": [],
+    "AutoApproveSubscriptionSites": [],
+    "SubscriptionPriority": "Low",
+    "CustodialSubType" : "Move",
+    "BlockCloseMaxWaitTime" : 14400,
+    "BlockCloseMaxFiles" : 500,
+    "BlockCloseMaxEvents" : 200000000,
+    "BlockCloseMaxSize" : 5000000000000
+}
+}

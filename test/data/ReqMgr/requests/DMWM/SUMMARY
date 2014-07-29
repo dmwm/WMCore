@@ -1,0 +1,11 @@
+Summary for the request templates.
+Template                Site_(*)                    Suggested_ReqString         Suggested_AcqEra    Total_Prod_Jobs Length_Prod_Jobs (secs)
+MonteCarlo_LHE.json     T2_CH_CERN                  SUS-Summer12pLHE-00144      Summer12pLHE        20              1000 - 4000
+MonteCarlo.json         T*                          TOP-Summer11LegwmLHE-00006  Summer11LegwmLHE    10              500  - 1600
+MonteCarlo_eff.json     T*                          FSQ-ppSpring2014-00007      ppSpring2014        148             200  - 2500
+MonteCarloFromGEN.json  T2_CH_CERN,T1_US_FNAL       B2G-Summer12-00736          Summer12            100             3000 - 7000
+ReDigi.json             T1_DE_KIT,T2_AT_Vienna      BPH-Spring14miniaod-00004   Spring14            37              50   - 300
+ReDigi_cmsRun2.json     T1_FR_CCIN2P3,T1_RU_JINR    B2G-Summer12DR53X-00743     Summer12DR53X       51              1500 - 2500 (2 cmsRuns)
+ReReco.json             T1_US_FNAL                  ObjID2012DDoubleElectron    Run2012D            89              200  - 11000
+
+(*) T*: means anywhere (there is no input dataset)

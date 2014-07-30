@@ -1,0 +1,66 @@
+{ 
+"createRequest":
+{         
+    "Campaign": "Campaign-OVERRIDE-ME",
+    "RequestString": "RequestString-OVERRIDE-ME",
+    "CMSSWVersion": "CMSSW_5_3_19",
+    "GlobalTag": "START53_LV4::All",
+    "RequestPriority": 80000,
+    "FilterEfficiency": 1.0,
+    "ScramArch": "slc6_amd64_gcc472",
+    "RequestType": "MonteCarlo",
+    "RequestNumEvents": 10000,
+    "ConfigCacheID": "c9e000c71f90818cafc2ea88b2e92143",
+    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+    "PrimaryDataset": "TTJets_MSDecays_matchingup_7TeV-madgraph",
+    "PrepID": "TOP-Summer11LegwmLHE-00006",
+    "Group": "DATAOPS",
+    "TimePerEvent": 0.98694,
+    "SplittingAlgo": "EventBased",
+    "LheInputFiles": "False",
+    "EventsPerJob": 1000,
+    "EventsPerLumi": 100,
+    "Memory": 2300,
+    "SizePerEvent": 1,
+    "FirstEvent": 1,
+    "FirstLumi": 1
+}, 
+"changeSplitting":
+{
+    "Production" :
+    {
+        "SplittingAlgo" : "EventBased",
+        "events_per_job" : 500,
+        "include_parents" : "False"
+    }
+},
+"assignRequest":
+{
+    "SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
+    "Team": "Team-OVERRIDE-ME",
+    "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
+    "ProcessingString": "ProcessingString-OVERRIDE-ME",
+    "dashboard": "dashboard-OVERRIDE-ME",
+    "SiteBlacklist": [],
+    "MergedLFNBase": "/store/backfill/1",
+    "UnmergedLFNBase": "/store/unmerged",
+    "MinMergeSize": 2147483648,
+    "MaxMergeSize": 4294967296,
+    "MaxMergeEvents": 50000,
+    "ProcessingVersion": 1,
+    "maxRSS": 2352000,
+    "maxVSize": 20294967,
+    "SoftTimeout": 129600,
+    "GracePeriod": 300,
+    "CustodialSites": [],
+    "NonCustodialSites": [],
+    "AutoApproveSubscriptionSites": [],
+    "SubscriptionPriority": "Low",
+    "CustodialSubType" : "Move",
+    "BlockCloseMaxWaitTime" : 14400,
+    "BlockCloseMaxFiles" : 500,
+    "BlockCloseMaxEvents" : 20000000,
+    "BlockCloseMaxSize" : 5000000000000
+}
+}

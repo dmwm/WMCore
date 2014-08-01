@@ -11,6 +11,7 @@ WMStats.ActiveRequestModel = function() {
                             "running",
                             "running-open",
                             "running-closed",
+                            "force-complete",
                             "failed",
                             "epic-FAILED",
                             "completed",

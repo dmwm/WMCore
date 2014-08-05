@@ -134,8 +134,8 @@ class StageOutImpl:
         """
         return the command to delete a file after a failed copy
         """
-        if pfn.startswith("/"):
-            return "/bin/rm -f %s" % pfn
+        if os.path.isfile(pfn):
+            return "/bin/rm -f %s" % os.path.abspath(pfn)
         else:
             return ""
 

@@ -472,6 +472,7 @@ class TaskChainTests(unittest.TestCase):
         """
         processorDocs = makeProcessingConfigs(self.configDatabase)
         testArguments = TaskChainWorkloadFactory.getTestArguments()
+        lumiDict = {"1":[[2,4], [8,50]], "2":[[100,200], [210,210]]}
         arguments = {
             "AcquisitionEra": "ReleaseValidation",
             "Requestor": "sfoulkes@fnal.gov",
@@ -479,6 +480,7 @@ class TaskChainTests(unittest.TestCase):
             "ScramArch": "slc5_ia32_gcc434",
             "ProcessingVersion": 1,
             "GlobalTag": "DefaultGlobalTag",
+            "LumiList": lumiDict,
             "CouchURL": self.testInit.couchUrl,
             "CouchDBName": self.testInit.couchDbName,
             "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],
@@ -545,18 +547,21 @@ class TaskChainTests(unittest.TestCase):
                         arguments['Task4'], arguments)
 
         digi = self.workload.getTaskByPath("/YankingTheChain/DigiHLT")
+        self.assertEqual(lumiDict, digi.getLumiMask())
         digiStep = digi.getStepHelper("cmsRun1")
         self.assertEqual(digiStep.getGlobalTag(), arguments['GlobalTag'])
         self.assertEqual(digiStep.getCMSSWVersion(), arguments['CMSSWVersion'])
         self.assertEqual(digiStep.getScramArch(), arguments['ScramArch'])
 
         reco = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco")
+        self.assertEqual(lumiDict, reco.getLumiMask())
         recoStep = reco.getStepHelper("cmsRun1")
         self.assertEqual(recoStep.getGlobalTag(), arguments['Task2']['GlobalTag'])
         self.assertEqual(recoStep.getCMSSWVersion(), arguments['Task2']['CMSSWVersion'])
         self.assertEqual(recoStep.getScramArch(), arguments['Task2']['ScramArch'])
 
         alca = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco")
+        self.assertEqual(lumiDict, alca.getLumiMask())
         alcaStep = alca.getStepHelper("cmsRun1")
         self.assertEqual(alcaStep.getGlobalTag(), arguments['Task3']['GlobalTag'])
         self.assertEqual(alcaStep.getCMSSWVersion(), arguments['Task3']['CMSSWVersion'])

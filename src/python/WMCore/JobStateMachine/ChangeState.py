@@ -17,6 +17,7 @@ from WMCore.JobStateMachine.Transitions import Transitions
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMConnectionBase import WMConnectionBase
 from WMCore.Lexicon import sanitizeURL
+from WMCore.JobStateMachine.SummaryDB import updateSummaryDB
 
 CMSSTEP = re.compile(r'^cmsRun[0-9]+$')
 
@@ -113,7 +114,16 @@ class ChangeState(WMObject, WMConnectionBase):
         if not hasattr(self, 'jsumdatabase') or self.jsumdatabase is None:
             dbname = getattr(self.config.JobStateMachine, 'jobSummaryDBName')
             try:
-                self.jsumdatabase = self.couchdb.connectDatabase( dbname, size = 250 )
+                self.jsumdatabase = self.couchdb.connectDatabase(dbname, size = 250 )
+            except Exception, ex:
+                logging.error("Error connecting to couch db '%s': %s" % (dbname, str(ex)))
+                self.jsumdatabase = None
+                return False
+        
+        if not hasattr(self, 'statsumdatabase') or self.statsumdatabase is None:
+            dbname = getattr(self.config.JobStateMachine, 'summaryStatsDBName')
+            try:
+                self.statsumdatabase = self.couchdb.connectDatabase(dbname, size = 250 )
             except Exception, ex:
                 logging.error("Error connecting to couch db '%s': %s" % (dbname, str(ex)))
                 self.jsumdatabase = None
@@ -306,6 +316,7 @@ class ChangeState(WMObject, WMConnectionBase):
                                 "fwjr": job["fwjr"].__to_json__(None),
                                 "type": "fwjr"}
                 self.fwjrdatabase.queue(fwjrDocument, timestamp = True, callback = discardConflictingDocument)
+                updateSummaryDB(self.statsumdatabase, job)
 
                 #TODO: can add config switch to swich on and off
                 # if self.config.JobSateMachine.propagateSuccessJobs or (job["retry_count"] > 0) or (newstate != 'success'):

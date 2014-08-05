@@ -8,7 +8,9 @@ Created on Jun 13, 2013
 
 @author: dballest
 """
+import json
 
+from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMException import WMException
 
 class WMWorkloadToolsException(WMException):
@@ -18,6 +20,13 @@ class WMWorkloadToolsException(WMException):
     Exception thrown by the utilities in this module
     """
     pass
+
+def makeLumiList(lumiDict):
+    try:
+        ll = LumiList(compactList = lumiDict)
+        return ll.getCompactList()
+    except:
+        raise WMWorkloadToolsException("Could not parse LumiList")
 
 def makeList(stringList):
     """

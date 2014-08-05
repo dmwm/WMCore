@@ -1,0 +1,64 @@
+{ 
+"createRequest":
+	{		 
+	"CMSSWVersion": "CMSSW_4_1_8",
+	"GlobalTag": "START311_V2::All",
+	"Campaign": "Campaign-OVERRIDE-ME",
+	"RequestString": "RequestString-OVERRIDE-ME",
+	"RequestPriority": 1000,
+	"FilterEfficiency": 1,
+	"TransientOutputModules" : "RECOSIMoutput",
+	"ScramArch": "slc5_amd64_gcc434",
+	"RequestType": "MonteCarlo",
+	"RequestNumEvents": 2000,
+	"ConfigCacheID": "4029c9cd130f25d65bdced2311536c52",
+	"ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
+	"PrimaryDataset": "BdToMuMu_2MuPtFilter_7TeV-pythia6-evtgen",
+	"PrepID": "MCTEST-GEN-0001",
+	"Group": "DATAOPS",
+	"TimePerEvent": 40,
+	"SplittingAlgo": "EventBased",
+	"EventsPerJob": 9972,
+	"Memory": 2000,
+	"SizePerEvent": 512,
+	"FirstEvent": 1,
+	"FirstLumi": 1
+	}, 
+"changeSplitting":
+	{
+	"Production" :
+		{
+		"SplittingAlgo" : "EventBased",
+		"events_per_job" : 1400,
+		"include_parents" : "False"
+	   	}
+	},
+"assignRequest":
+	{
+	"SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
+	"SiteBlacklist": [],
+	"MergedLFNBase": "/store/backfill/1",
+	"UnmergedLFNBase": "/store/unmerged",
+	"MinMergeSize": 2147483648,
+	"MaxMergeSize": 4294967296,
+	"MaxMergeEvents": 50000,
+	"AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
+	"ProcessingVersion": 1,
+	"ProcessingString" : "ProcessingString-OVERRIDE-ME",
+	"maxRSS": 4294967296,
+	"maxVSize": 4294967296,
+	"SoftTimeout": 129600,
+	"GracePeriod": 300,
+	"dashboard": "dashboard-OVERRIDE-ME",
+	"Team": "Team--OVERRIDE-ME",
+	"CustodialSites": [],
+	"NonCustodialSites": [],
+	"AutoApproveSubscriptionSites": [],
+	"SubscriptionPriority": "Low",
+	"CustodialSubType" : "Move",
+	"BlockCloseMaxWaitTime" : 66400,
+	"BlockCloseMaxFiles" : 500,
+	"BlockCloseMaxEvents" : 25000000,
+	"BlockCloseMaxSize" : 5000000000000
+	}
+}

@@ -43,7 +43,6 @@ class SiblingProcessingBasedTest(unittest.TestCase):
 
         locationAction = daofactory(classname = "Locations.New")
         locationAction.execute("site1", seName = "somese.cern.ch")
-        locationAction.execute("site1", seName = "somese3.cern.ch")
         locationAction.execute("site2", seName = "somese2.cern.ch")
 
         self.testFilesetA = Fileset(name = "FilesetA")

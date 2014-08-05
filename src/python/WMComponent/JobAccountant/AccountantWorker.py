@@ -361,6 +361,8 @@ class AccountantWorker(WMConnectionBase):
         dbsFile.setProcessingVer(ver = jobReportFile.get('processingVer', None))
         dbsFile.setAcquisitionEra(era = jobReportFile.get('acquisitionEra', None))
         dbsFile.setGlobalTag(globalTag = jobReportFile.get('globalTag', None))
+        #TODO need to find where to get the prep id
+        dbsFile.setPrepID(prep_id = jobReportFile.get('prep_id', None))
         dbsFile['task'] = task
 
         for run in jobReportFile["runs"]:

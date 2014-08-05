@@ -11,5 +11,7 @@ couchapp_load([
   "vendor/couchapp/path.js",
   "vendor/couchapp/jquery.couch.js",
   "vendor/couchapp/jquery.couch.app.js",
-  "vendor/couchapp/jquery.couch.app.util.js"
+  "vendor/couchapp/jquery.couch.app.util.js",
+  "vendor/couchapp/jquery.mustache.js",
+  "vendor/couchapp/jquery.evently.js"
 ]);

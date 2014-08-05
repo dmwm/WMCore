@@ -324,6 +324,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         logging.info("Polling for finished subscriptions")
         finishedSubscriptions = self.daoFactory(classname = "Subscriptions.GetAndMarkNewFinishedSubscriptions")
         finishedSubscriptions.execute(self.stateID, timeOut = self.timeout)
+        logging.info("Finished subscriptions updated")
 
         myThread.transaction.commit()
 
@@ -644,6 +645,7 @@ class TaskArchiverPoller(BaseWorkerThread):
 
             loadJobs = self.daoFactory(classname = "Jobs.LoadForTaskArchiver")
             jobList = loadJobs.execute(chunkList)
+            logging.info("Processing %d jobs," % len(jobList))
             for job in jobList:
                 lastRegisteredRetry = None
                 errorCouch = self.fwjrdatabase.loadView("FWJRDump", "errorsByJobID",
@@ -660,7 +662,8 @@ class TaskArchiverPoller(BaseWorkerThread):
                 # Get rid of runs that aren't in the mask
                 mask = job['mask']
                 runs = mask.filterRunLumisByMask(runs = runs)
-
+                
+                logging.info("Processing %d errors, for job id %s" % (len(errorCouch), job['id']))
                 for err in errorCouch:
                     task   = err['value']['task']
                     step   = err['value']['step']
@@ -708,9 +711,14 @@ class TaskArchiverPoller(BaseWorkerThread):
                         for run in runs:
                             if not str(run.run) in stepFailures[exitCode]['runs'].keys():
                                 stepFailures[exitCode]['runs'][str(run.run)] = []
-                            for l in run.lumis:
-                                if not l in stepFailures[exitCode]['runs'][str(run.run)]:
-                                    stepFailures[exitCode]['runs'][str(run.run)].append(l)
+                            logging.debug("number of lumis failed: %s" % len(run.lumis))    
+                            if len(run.lumis) > 10000:
+                                logging.warning("too many lumis: %s in job id: %s inputfiles: %s" % (
+                                                len(run.lumis), job['id'], inputLFNs))
+                                continue
+                            nodupLumis = set(run.lumis)    
+                            for l in nodupLumis:
+                                stepFailures[exitCode]['runs'][str(run.run)].append(l)
                         for log in logs:
                             if not log in stepFailures[exitCode]["logs"]:
                                 stepFailures[exitCode]["logs"].append(log)
@@ -738,10 +746,10 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         # Now we have the workflowData in the right format
         # Time to send them on
-        logging.debug("About to commit workflow summary to couch")
+        logging.info("About to commit workflow summary to couch")
         self.workdatabase.commitOne(workflowData)
 
-        logging.debug("Finished committing workflow summary to couch")
+        logging.info("Finished committing workflow summary to couch")
 
         return
     def getLogArchives(self, spec):
@@ -948,9 +956,10 @@ class TaskArchiverPoller(BaseWorkerThread):
             worthPoints = {}
             for run in runList :
                 responseJSON = self.getPerformanceFromDQM(self.dqmUrl, dataset, run)
-                worthPoints.update(self.filterInterestingPerfPoints(responseJSON,
-                                                                     self.perfDashBoardMinLumi,
-                                                                     self.perfDashBoardMaxLumi))
+                if responseJSON:                
+                    worthPoints.update(self.filterInterestingPerfPoints(responseJSON,
+                                                                         self.perfDashBoardMinLumi,
+                                                                         self.perfDashBoardMaxLumi))
                             
             # Publish dataset performance to DashBoard.
             if self.publishPerformanceDashBoard(self.dashBoardUrl, PD, release, worthPoints) == False:
@@ -976,16 +985,28 @@ class TaskArchiverPoller(BaseWorkerThread):
         dqmPath = regExpResult.group(2)
         
         connection = httplib.HTTPSConnection(dqmHost, 443, hostKey, hostCert)
-        connection.request('GET', dqmPath)
-        response = connection.getresponse()
-        responseData = response.read()
-        responseJSON = json.loads(responseData)
-        if not responseJSON["hist"]["bins"].has_key("content") :
-            logging.info("Actually got a JSON from DQM perf in for %s run %d  , but content was bad, Bailing out"
+        try:
+            connection.request('GET', dqmPath)
+            response = connection.getresponse()
+            responseData = response.read()
+            responseJSON = json.loads(responseData)
+            if response.status != 200 :
+                logging.info("Something went wrong while fetching Reco performance from DQM, response code %d " % response.code)
+                return False
+        except Exception, ex:
+            logging.error('Couldnt fetch DQM Performance data for dataset %s , Run %s' % (dataset, run))
+            logging.exception(ex) #Let's print the stacktrace with generic Exception
+            return False     
+
+        try:
+            if responseJSON["hist"]["bins"].has_key("content"):
+                return responseJSON
+        except Exception, ex:                    
+            logging.info("Actually got a JSON from DQM perf in for %s run %d , but content was bad, Bailing out"
                          % (dataset, run))
             return False
-        logging.debug("We have the performance curve")
-        return responseJSON
+        # If it gets here before returning False or responseJSON, it went wrong    
+        return False
     
     def filterInterestingPerfPoints(self, responseJSON, minLumi, maxLumi):
         worthPoints = {}
@@ -1023,14 +1044,18 @@ class TaskArchiverPoller(BaseWorkerThread):
         
         logging.debug("Going to upload this payload %s" % data)
         
-        request = urllib2.Request(dashBoardUrl, data, headers)
-        response = urllib2.urlopen(request)
-        
-        if response.code != 200 :
-            logging.info("Something went wrong while uploading to DashBoard, response code %d " % response.code)
-            return False
-        logging.debug("Uploaded it successfully, apparently")
-        
+        try:
+            request = urllib2.Request(dashBoardUrl, data, headers)
+            response = urllib2.urlopen(request)
+            if response.code != 200 :
+                logging.info("Something went wrong while uploading to DashBoard, response code %d " % response.code)
+                return False
+        except Exception, ex:
+            logging.error('Performance data : DashBoard upload failed for PD %s Release %s' % (PD, release))
+            logging.exception(ex) #Let's print the stacktrace with generic Exception
+            return False        
+
+        logging.debug("Uploaded it successfully, apparently")        
         return True
 
     def createAndUploadPublish(self, workflow):

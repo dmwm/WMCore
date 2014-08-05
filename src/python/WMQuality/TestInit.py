@@ -275,7 +275,9 @@ class TestInit:
         
         config.component_("JobStateMachine")
         config.JobStateMachine.couchurl = couchurl
+        config.JobStateMachine.couchDBName = "wmagent_job_test"
         config.JobStateMachine.jobSummaryDBName = "job_summary"
+        config.JobStateMachine.summaryStatsDBName = "stat_summary_test"
         
         config.component_("JobAccountant")
         config.JobAccountant.pollInterval = 60

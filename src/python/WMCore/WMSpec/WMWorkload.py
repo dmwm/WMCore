@@ -671,7 +671,7 @@ class WMWorkloadHelper(PersistencyHelper):
                             setattr(outputModule, "lfnBase", mergedLFN)
                             setattr(outputModule, "mergedLFNBase", mergedLFN)
 
-                            if getattr(outputModule, "dataTier") in ["DQM", "DQMROOT"]:
+                            if getattr(outputModule, "dataTier") in ["DQM", "DQMIO"]:
                                 datasetName = "/%s/%s/%s" % (getattr(outputModule, "primaryDataset"),
                                                              processedDataset,
                                                              getattr(outputModule, "dataTier"))
@@ -712,7 +712,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Change the acquisition era for all tasks in the spec and then update
         all of the output LFNs and datasets to use the new acquisition era.
         """
-        
+
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
@@ -793,6 +793,28 @@ class WMWorkloadHelper(PersistencyHelper):
         self.processingString = processingStrings
         return
 
+    def setLumiList(self, lumiLists, initialTask = None,
+                          parentLumiList = None):
+        """
+        _setLumiList_
+
+        Change the lumi mask for all tasks in the spec
+        """
+
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            task.setLumiMask(lumiLists)
+            self.setLumiList(lumiLists, task)
+
+        #set lumiList for workload (need to refactor)
+        self.lumiList = lumiLists
+        return
+
+
     def getAcquisitionEra(self):
         """
         _getAcquisitionEra_
@@ -816,7 +838,7 @@ class WMWorkloadHelper(PersistencyHelper):
             return None
         if not getattr(self.data.request, "schema", None):
             return None
-        
+
         return getattr(self.data.request.schema, "RequestType", None)
 
     def getProcessingVersion(self):
@@ -864,6 +886,25 @@ class WMWorkloadHelper(PersistencyHelper):
         """
 
         return getattr(self.data.properties, 'validStatus', None)
+
+    def setPrepID(self, prepID):
+        """
+        _setCampaign_
+
+        Set the campaign to which this workflow belongs
+        Optional
+        """
+        self.data.properties.prepID = prepID
+        return
+
+
+    def getPrepID(self):
+        """
+        _getCampaign_
+
+        Get the campaign for the workflow
+        """
+        return getattr(self.data.properties, 'prepID', None)
 
     def setCampaign(self, campaign):
         """
@@ -1650,7 +1691,7 @@ class WMWorkloadHelper(PersistencyHelper):
         for task in self.getTopLevelTask():
             return task.inputLocationFlag()
         return False
-    
+
     def setTaskPropertiesFromWorkload(self):
         """
         set task properties inherits from workload properties
@@ -1658,13 +1699,14 @@ class WMWorkloadHelper(PersistencyHelper):
         after all the tasks are added.
         It sets acquisitionEra, processingVersion, processingString,
         since those values are needed to be set for all the tasks in the workload
-        TODO: need to force to call this function after task is added instead of 
-              rely on coder's won't forget to call this at the end of 
+        TODO: need to force to call this function after task is added instead of
+              rely on coder's won't forget to call this at the end of
               self.buildWorkload()
         """
         self.setAcquisitionEra(self.acquisitionEra)
         self.setProcessingVersion(self.processingVersion)
         self.setProcessingString(self.processingString)
+        self.setLumiList(self.lumiList)
         return
 
 class WMWorkload(ConfigSection):
@@ -1712,6 +1754,7 @@ class WMWorkload(ConfigSection):
         self.properties.blockCloseMaxSize = 5000000000000
         self.properties.blockCloseMaxFiles = 500
         self.properties.blockCloseMaxEvents = 250000000
+        self.properties.prepID = None
 
         # Overrides for this workload
         self.section_("overrides")

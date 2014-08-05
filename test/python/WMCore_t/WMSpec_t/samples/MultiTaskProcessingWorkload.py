@@ -10,6 +10,7 @@ from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMStep import makeWMStep
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 
+DBSURL = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
 
 #  //
 # // Set up the basic workload task and step structure
@@ -33,9 +34,9 @@ rereco.applyTemplates()
 rereco.setSplittingAlgorithm("FileBased", files_per_job = 1)
 rereco.addInputDataset(
     primary = "Cosmics",
-    processed = "CRAFT09-PromptReco-v1",
+    processed = "ComissioningHI-PromptReco-v1",
     tier = "RECO",
-    dbsurl = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
+    dbsurl = DBSURL)
 
 #  //
 # // rereco cmssw step
@@ -60,9 +61,8 @@ rerecoCmsswHelper.addOutputModule(
     processedDataset = "Processed",
     dataTier = "RECO")
 
-pileupConfig = {"data" : ["/mixing/pileup/dataset"]}
-rerecoCmsswHelper.setupPileup(pileupConfig,
-                              "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
+pileupConfig = {"data" : ["/MinBias_TuneZ2_7TeV-pythia6/Fall10-START38_V12-v1/GEN-SIM-RAW"]}
+rerecoCmsswHelper.setupPileup(pileupConfig, DBSURL)
 
 #Add a stageOut step
 skimStageOutHelper = skimStageOut.getTypeHelper()
@@ -84,10 +84,10 @@ skimLogArch.setStepType("LogArchive")
 rereco.applyTemplates()
 rereco.setSplittingAlgorithm("FileBased", files_per_job = 1)
 rereco.addInputDataset(
-    primary = "BeamHollow",
-    processed = "CRAFT09-PromptReco-v1",
+    primary = "Cosmics",
+    processed = "ComissioningHI-PromptReco-v1",
     tier = "RECO",
-    dbsurl = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
+    dbsurl = DBSURL)
 
 #  //
 # // rereco cmssw step

@@ -32,6 +32,7 @@ databaseSocket = "/opt/MySQL-5.1/var/lib/mysql/mysql.sock"
 couchURL = "http://USERNAME:PASSWORD@COUCHSERVER:5984"
 jobDumpDBName = "wmagent_jobdump"
 jobSummaryDBName = "wmagent_summary"
+summaryStatsDBName = "stat_summary"
 acdcDBName = "acdcserver"
 workqueueDBName = 'workqueue'
 workqueueInboxDbName = 'workqueue_inbox'
@@ -48,6 +49,9 @@ agentNumber = 0
 
 # List of BossAir plugins that this agent will use.
 bossAirPlugins = ["CondorPlugin"]
+
+## Plugin with Condor-Python API ...
+bossAirPlugins = ["PyCondorPlugin", "CondorPlugin"]
 
 # DBS Information.
 localDBSUrl = "https://cmst0dbs.cern.ch:8443/cms_dbs_prod_tier0_writer/servlet/DBSServlet"
@@ -87,6 +91,7 @@ config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = couchURL
 config.JobStateMachine.couchDBName = jobDumpDBName
 config.JobStateMachine.jobSummaryDBName = jobSummaryDBName
+config.JobStateMachine.summaryStatsDBName = summaryStatsDBName
 
 config.section_("ACDC")
 config.ACDC.couchurl = "https://cmsweb.cern.ch/couchdb"
@@ -495,7 +500,24 @@ config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager
 config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 config.AnalyticsDataCollector.centralWMStatsURL = "Central WMStats URL"
 config.AnalyticsDataCollector.summaryLevel = "task"
-config.AnalyticsDataCollector.diskUseThreshold = 85
+config.AnalyticsDataCollector.ignoreDisk = ["/lustre/unmerged"]
+config.AnalyticsDataCollector.diskUseThreshold = 60
 config.AnalyticsDataCollector.couchProcessThreshold = 25
 config.AnalyticsDataCollector.pluginName = None
 
+config.component_("AgentStatusWatcher")
+config.AgentStatusWatcher.namespace = "WMComponent.AgentStatusWatcher.AgentStatusWatcher"
+config.AgentStatusWatcher.componentDir = config.General.workDir + "/AgentStatusWatcher"
+config.AgentStatusWatcher.logLevel = globalLogLevel
+config.AgentStatusWatcher.resourceUpdaterPollInterval = 900 # [second]
+config.AgentStatusWatcher.siteStatusMetric = 158 # [column number in SSB] The source of the information in SSB for Site status
+config.AgentStatusWatcher.cpuBoundMetric = 160 # [column number in SSB] The source of the information in SSB for CPUBound
+config.AgentStatusWatcher.ioBoundMetric = 161 # [column number in SSB] The source of the information in SSB for IOBound
+config.AgentStatusWatcher.dashboard = "Dashboard URL"
+config.AgentStatusWatcher.centralWMStatsURL = "Central WMStats URL"
+config.AgentStatusWatcher.pendingSlotsSitePercent = 40 # [percent] Pending slots percent over site max running for a site
+config.AgentStatusWatcher.pendingSlotsTaskPercent = 30 # [percent] Pending slots percent over task max running for tasks
+config.AgentStatusWatcher.runningExpressPercentCPUBound = 50 # [percent] Only used for tier0 agent
+config.AgentStatusWatcher.runningRepackPercentIOBound = 200 # [percent] Only used for tier0 agent
+config.AgentStatusWatcher.forcedSiteList = [] # [site list] List sites to force Resource Control
+config.AgentStatusWatcher.onlySSB = True # Set thresholds for sites only in SSB (Force all other to zero/down)

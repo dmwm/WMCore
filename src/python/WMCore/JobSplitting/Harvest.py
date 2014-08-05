@@ -94,10 +94,6 @@ class Harvest(JobFactory):
                             break
                     self.currentJob.addFile(f)
 
-                #Check for proxy and ship it in the job if available
-                if 'X509_USER_PROXY' in os.environ:
-                    self.currentJob['proxyPath'] = os.environ['X509_USER_PROXY']
-
                 if endOfRun:
                     self.currentJob.addBaggageParameter("runIsComplete", True)
 

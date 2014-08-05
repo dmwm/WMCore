@@ -19,7 +19,7 @@ class DBSBufferDataset(WMConnectionBase, dict):
 
     def __init__(self, path, id = -1,
                  processingVer = None, acquisitionEra = None, validStatus = None,
-                 globalTag = None, parent = None):
+                 globalTag = None, parent = None, prep_id = None):
         """
         Initialize the stored attributes and
         database connection.
@@ -34,6 +34,7 @@ class DBSBufferDataset(WMConnectionBase, dict):
         self['validStatus'] = validStatus
         self['globalTag'] = globalTag
         self['parent'] = parent
+        self['prep_id'] = prep_id
         self['subscriptions'] = []
 
     def exists(self):
@@ -69,6 +70,7 @@ class DBSBufferDataset(WMConnectionBase, dict):
                            validStatus = self['validStatus'],
                            globalTag = self['globalTag'],
                            parent = self['parent'],
+                           prep_id = self['prep_id'],
                            conn = self.getDBConn(), transaction = self.existingTransaction())
         return self.exists()
 
@@ -107,6 +109,7 @@ class DBSBufferDataset(WMConnectionBase, dict):
                        validStatus = self['validStatus'],
                        globalTag = self['globalTag'],
                        parent = self['parent'],
+                       prep_id = self['prep_id'],
                        conn = self.getDBConn(), transaction = self.existingTransaction())
         return
 

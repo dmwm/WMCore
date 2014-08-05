@@ -34,15 +34,22 @@ WMStats.GenericRequestsSummary.prototype = {
     
     getAvgProgressSummary: function (doc) {
         
-        var progressStat = {};
+		var progressStat = {};
         var datasets = {};
         var numDataset = 0;
+        if (doc.outputdatasets) {
+        	numDataset = doc.outputdatasets.length;	
+        }
+        
         for (var task in doc.tasks) {
             for(var site in doc.tasks[task].sites) {
                 for (var outputDS in doc.tasks[task].sites[site].dataset) {
                     if (datasets[outputDS] === undefined) {
-                         numDataset += 1;
-                         datasets[outputDS] = true;
+                        if (!doc.outputdatasets) {
+                        	//if outputdatasets is not defined calcuate from frwj
+                        	numDataset += 1;
+                        }
+                        datasets[outputDS] = true;
                     }
                     WMStats.Utils.updateObj(progressStat, doc.tasks[task].sites[site].dataset[outputDS]);
                 }

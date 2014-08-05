@@ -209,11 +209,12 @@ class CMSSW(Executor):
         logging.info("RUNNING SCRAM SCRIPTS")
         for script in self.step.runtime.scramPreScripts:
             #invoke scripts with scram()
+            runtimeDir = getattr(self.step.runtime, 'scramPreDir', None)
             invokeCommand = self.step.runtime.invokeCommand if hasattr(self.step.runtime, 'invokeCommand') else\
                                 "%s -m WMCore.WMRuntime.ScriptInvoke %s" % (sys.executable, stepModule)
             invokeCommand += " %s \n" % script
             logging.info("    Invoking command: %s" % invokeCommand)
-            retCode = scram(invokeCommand)
+            retCode = scram(invokeCommand, runtimeDir=runtimeDir)
             if retCode > 0:
                 msg = "Error running command\n%s\n" % invokeCommand
                 msg += "%s\n " % retCode
@@ -301,10 +302,12 @@ class CMSSW(Executor):
         validStatus    = self.workload.getValidStatus()
         inputPath      = self.task.getInputDatasetPath()
         globalTag      = typeHelper.getGlobalTag()
+        prepID        = self.workload.getPrepID()
         cacheUrl, cacheDB, configID = stepHelper.getConfigInfo()
 
         self.report.setValidStatus(validStatus = validStatus)
         self.report.setGlobalTag(globalTag = globalTag)
+        self.report.setPrepID(prepID)
         self.report.setInputDataset(inputPath = inputPath)
         self.report.setAcquisitionProcessing(acquisitionEra = acquisitionEra,
                                              processingVer = processingVer,

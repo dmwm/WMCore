@@ -15,6 +15,7 @@ import WMCore.WMSpec.WMStep as WMStep
 import urllib
 import urlparse
 import zipfile
+import shutil
 
 import WMCore
 import PSetTweaks
@@ -83,7 +84,8 @@ class SandboxCreator:
         if os.path.exists(archivePath) and os.path.exists(workloadFile):
             workload.setSpecUrl(workloadFile) # point to sandbox spec
             return archivePath
-
+        if os.path.exists(path):
+            shutil.rmtree(path)
         #  //
         # // Set up Fetcher plugins, use default list for maintaining
         #//  compatibility

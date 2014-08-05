@@ -1,3 +1,1038 @@
+0.9.96 to 0.9.96a:
+  - Merge pull request #5193 from lucacopa/fix_wmstats_not_available
+  - Merge pull request #5246 from ticoann/wmstats_output_dataset_number
+  - Merge pull request #5220 from mmascher/master
+  - Merge pull request #5248 from ericvaandering/fallback_fjr
+  - Merge pull request #5217 from ticoann/temp_fix_lumi_update_ws
+  - Add skipped files to JSON and xrootd fallback files to Report and JSON
+  - Merge pull request #5247 from ticoann/pycondor_condor_plugin_config
+  - support both pycondor and condor plugin
+  - change where wmstats get output dataset number.
+  - Merge pull request #5245 from bbockelm/fallback_example
+  - Add an example of a FJR where fallback was invoked.
+  - Merge pull request #5127 from tsarangi/pythoncondorAPI
+  - Update all failing tests
+  - Merge pull request #5240 from yuyiguo/Lexicon-DBSUser-2
+  - add special character ' in DN too.
+  - Merge pull request #5239 from ericvaandering/fix_taskchain_test
+  - Change parameter name
+  - Adjust that lumi list is not specified as string, but dict and that keys are converted to strings, not ints
+  - fix lumi data format
+  - Merge pull request #5237 from ticoann/fix_wmstats_lumi_cal
+  - fix dataset name in summary db
+  - temp fix for lumi report on workloadsummary
+  - Python Condor API Include PyCondorPlugin Check Schedd and Classad for jobs on the submit host Progate bugfix from CondorPlugin to PyCondorPlugin Change Unittest to test updateSiteInformation method Add Profiler for Condor Plugin performance comparison
+  - Allow the possibility to set the runtimeDir for scram pre scripts in the CMSSW executor. Related to https://github.com/dmwm/CRABClient/issues/4177
+  - Dont divide threholds when wmstats is not available
+
+0.9.95 to 0.9.96:
+  - Merge pull request #5234 from yuyiguo/lexicon-DBSuser
+  - update DBSUser to accept DN, such as /DC=com/DC=DigiCert-Grid/O=Open Science Grid/OU=People/CN=Bockjoo Kim 118811 and O'Reilly
+  - Merge pull request #5233 from ericvaandering/lumi_wmbshelper
+  - Force the return of string keys
+  - Merge pull request #5230 from lucacopa/metrics_down_bug
+  - Fix validFiles to work with all combinations of run lists and lumi mask
+  - When one or more of the metrics of SSB is down/not available, thresholds and site status shouldnt be updated until the problem in Dashboard get fixed.
+  - Merge pull request #5227 from ticoann/hide_unsecure_info_from_log
+  - sanitize url
+  - Merge pull request #5218 from ticoann/remove_wq_log
+  - remove the log messages
+  - Merge pull request #5214 from amaltaro/fix-permission
+  - makes wmagent-unregister-wmstats executable
+  - Merge pull request #5207 from holzman/master
+  - 0.9.95f
+  - Merge pull request #5205 from yuyiguo/RESTV2
+  - Merge pull request #5210 from ticoann/fix_extention_wf
+  - fix extending workflow
+  - Merge pull request #5208 from mmascher/master
+  - setup_dependencies.py: add LumiList dependency for CRABServer and CRABClient
+  - Modify validate num and realnum to accept not only string but also int/float inputs.
+  - FNAL staging: do not invoke mkdir for xrootd
+  - Merge pull request #5202 from tsarangi/issue5201
+  - Change to debug logging
+  - 0.9.95e
+  - Merge pull request #5200 from ticoann/add_update_reqmgr
+  - add migraterequest function for wmstats reqmgr migration
+  - Merge pull request #5199 from lucacopa/condor_plugin_bug_sitename
+  - This fixes a bug in the condor plugin
+  - Merge pull request #5198 from tsarangi/issue5197
+  - Fix #5197. Add check for non-existing jobAd
+  - Merge pull request #5196 from juztas/DiskCheck
+  - Merge pull request #5195 from juztas/MatchLFN
+  - additional disk usage check for Openstack
+  - Match LFN fix. Previuos merged wrong
+  - 0.9.95d
+  - Merge pull request #5190 from lucacopa/mod_agent_watchet_fix
+  - Merge pull request #5192 from bbockelm/split-lumis-v2
+  - Note a shortcoming of the Mask class.
+  - Add a test case for the LumiBased splitting algorithm's handling of lumis split across multiple files.
+  - Within a job group, do not split a lumi across multiple jobs.  #5181
+  - Merge pull request #5191 from lucacopa/fix_resourceUpdater_config_load
+  - Get dashboard url from secrets
+  - Dont load config every polling cycle
+  - 0.9.95c
+  - Merge pull request #5189 from ticoann/fix_mod_config
+  - fix mod config when opsProxy is not set
+  - Merge pull request #5188 from ericvaandering/lumi_workload
+  - Revise unit test
+  - Merge pull request #5187 from ticoann/fix_lfnbase_dashboard_enabled
+  - initialize user lfnBase when dqm is enabled
+  - Merge pull request #5074 from lucacopa/submitting_fail_sites
+  - Merge pull request #5174 from ticoann/reqmgr_role_add
+  - Merge pull request #5177 from lucacopa/thresholds_component
+  - This creates a new general purpose component
+  - Merge pull request #5178 from lucacopa/analytics_data_disk_threshold
+  - Merge pull request #5182 from ericvaandering/More_LumiList_improvements
+  - Merge pull request #5185 from ticoann/wmstats_fix
+  - fix WMStats reader when document is deleted between calls
+  - Fix a bug, add faster construction
+  - Merge pull request #5165 from qunox/cachefileremove
+  - Merge pull request #5179 from HassenRiahi/AddASORetryManagerParam
+  - Merge pull request #5180 from HassenRiahi/RemoveOldCouchApp1
+  - This changes the threshold for disk alarm
+  - Merge pull request #5173 from lucacopa/specs_storeR_bug
+  - Merge pull request #5176 from ticoann/fix_wmstats_writer
+  - fix WMStatsWriter initilization
+  - add role and group so agent can update the status
+  - Add lumi list to StdBase, unit tests, and code to copy from Workload property to task property.
+  - My bad, I added this bug when changing to standard output module.
+  - Merge pull request #5164 from ticoann/extended_fix
+  - Merge pull request #5161 from ticoann/move_wmstat_svc
+  - Merge pull request #5151 from ericvaandering/add_WMDataMining
+  - Add stats gatherer to WMCore
+  - Add couch views for WMDataMining
+  - some update for crabclient purge
+  - port wmstats script to WMCore codebase
+  - Merge pull request #5080 from samircury/exceptions-reco-reporting
+  - Merge pull request #5160 from ericvaandering/Add_selectRuns_to_LumiList
+  - fix job number caculation for extended workflow
+  - Merge pull request #5162 from lucacopa/trusSiteList_join_siteWhitelist
+  - Merge pull request #5163 from ticoann/fix_couch1.5_log
+  - sanitize url for couch1.5
+  - This add the site whitelist locations to Input dataset locations when a WorkQueueElement is created at the GWQ level When xrootd is enable (trustSiteList=True), this should be done. Otherwise WorkQueueElement are not pulled to wmagent
+  - Merge pull request #5158 from lucacopa/store_results_patch
+  - Read from URL
+  - Merge pull request #5159 from ticoann/fix_webtool_access_log
+  - Merge pull request #5157 from ericvaandering/Add_selectRuns_to_LumiList
+  - fix access log function
+  - This patch uses standard addOutputModule for storeResults Other fixes in stageOut I added standard json to requests in test
+  - Add a new method to LumiList, add a test for select and remove runs
+  - Merge pull request #5149 from mmascher/master
+  - 0.9.95b
+  - Merge pull request #5133 from ticoann/valentin_summary
+  - New file to deal with summary db
+  - Merge pull request #5155 from ticoann/acdc_cleanup
+  - Merge pull request #5152 from ticoann/make_couch15_compatablewq
+  - add couch1.5 compatible code
+  - add reduce for collection name
+  - Merge pull request #5153 from amaltaro/new-reqmgr-templates
+  - Removed old TaskChain templates; Created new ones for standard, pileup and LHE types
+  - 0.9.95a
+  - Use TAG_COLLECTOR_URL variable and not the ling when getting releases list
+  - Do not redirect std* for voms-proxy-create. See https://github.com/dmwm/CRABClient/issues/4054
+  - Remove old ASO couchapps.
+  - Add ASO RetryManager module.
+  - Merge pull request #5147 from ticoann/test_0.9.95a
+  - make replication checking backward compatible
+  - Merge pull request #5145 from ticoann/fix_all_in_one_test
+  - fix inbox setting for workqueue, replication check and ordering priority
+  - Merge pull request #5132 from ericvaandering/lumilist_and_dbs3
+  - Merge pull request #5134 from ticoann/jenkins_unittest_fix
+  - Merge pull request #5136 from holzman/fnal-srmcp-only-for-srm
+  - FNAL staging: fix mkdir for local staging
+  - Merge pull request #5130 from alexanderrichards/sandboxfixing
+  - Merge pull request #5135 from ericvaandering/lumi_setter
+  - implementing unittest for fix of issue #5130
+  - Add and test lumimask setter function
+  - fixes PhEDEx Subscribe test
+  - fix unittest
+  - Simple emulator for DBS3. Incomplete. Adapt to full lumi list returned in maskedBlocks New tests for lumi masks, remove existing which fails with DBS2 emulator Switch to real DBS, not emulator. Switch to a smaller RAW dataset Update DBS3Reader Map
+  - Merge pull request #5121 from mmascher/master
+  - Merge pull request #5125 from ticoann/fix_jenkins_unittest
+  - more fix for unittest
+  - Merge pull request #5123 from ticoann/fix_retry_unittest
+  - fix retry manager unittest
+  - Use openssl to get user cert enddate instead of voms-proxy-info (kept as fallback)
+  - Fix detection of RFC proxies
+  - Update dependencies for the client
+  - Fixing Sandbox creation problem
+  - Catching exceptions for Reco reporting HTTP requests
+  - Add site when submit fails due to site in down/drain
+
+0.9.95 to 0.9.95f:
+  - Merge pull request #5205 from yuyiguo/RESTV2
+  - Merge pull request #5210 from ticoann/fix_extention_wf
+  - fix extending workflow
+  - Merge pull request #5208 from mmascher/master
+  - setup_dependencies.py: add LumiList dependency for CRABServer and CRABClient
+  - Modify validate num and realnum to accept not only string but also int/float inputs.
+  - Merge pull request #5202 from tsarangi/issue5201
+  - Change to debug logging
+  - 0.9.95e
+  - Merge pull request #5200 from ticoann/add_update_reqmgr
+  - add migraterequest function for wmstats reqmgr migration
+  - Merge pull request #5199 from lucacopa/condor_plugin_bug_sitename
+  - This fixes a bug in the condor plugin
+  - Merge pull request #5198 from tsarangi/issue5197
+  - Fix #5197. Add check for non-existing jobAd
+  - Merge pull request #5196 from juztas/DiskCheck
+  - Merge pull request #5195 from juztas/MatchLFN
+  - additional disk usage check for Openstack
+  - Match LFN fix. Previuos merged wrong
+  - 0.9.95d
+  - Merge pull request #5190 from lucacopa/mod_agent_watchet_fix
+  - Merge pull request #5192 from bbockelm/split-lumis-v2
+  - Note a shortcoming of the Mask class.
+  - Add a test case for the LumiBased splitting algorithm's handling of lumis split across multiple files.
+  - Within a job group, do not split a lumi across multiple jobs.  #5181
+  - Merge pull request #5191 from lucacopa/fix_resourceUpdater_config_load
+  - Get dashboard url from secrets
+  - Dont load config every polling cycle
+  - 0.9.95c
+  - Merge pull request #5189 from ticoann/fix_mod_config
+  - fix mod config when opsProxy is not set
+  - Merge pull request #5188 from ericvaandering/lumi_workload
+  - Revise unit test
+  - Merge pull request #5187 from ticoann/fix_lfnbase_dashboard_enabled
+  - initialize user lfnBase when dqm is enabled
+  - Merge pull request #5074 from lucacopa/submitting_fail_sites
+  - Merge pull request #5174 from ticoann/reqmgr_role_add
+  - Merge pull request #5177 from lucacopa/thresholds_component
+  - This creates a new general purpose component
+  - Merge pull request #5178 from lucacopa/analytics_data_disk_threshold
+  - Merge pull request #5182 from ericvaandering/More_LumiList_improvements
+  - Merge pull request #5185 from ticoann/wmstats_fix
+  - fix WMStats reader when document is deleted between calls
+  - Fix a bug, add faster construction
+  - Merge pull request #5165 from qunox/cachefileremove
+  - Merge pull request #5179 from HassenRiahi/AddASORetryManagerParam
+  - Merge pull request #5180 from HassenRiahi/RemoveOldCouchApp1
+  - This changes the threshold for disk alarm
+  - Merge pull request #5173 from lucacopa/specs_storeR_bug
+  - Merge pull request #5176 from ticoann/fix_wmstats_writer
+  - fix WMStatsWriter initilization
+  - add role and group so agent can update the status
+  - Add lumi list to StdBase, unit tests, and code to copy from Workload property to task property.
+  - My bad, I added this bug when changing to standard output module.
+  - Merge pull request #5164 from ticoann/extended_fix
+  - Merge pull request #5161 from ticoann/move_wmstat_svc
+  - Merge pull request #5151 from ericvaandering/add_WMDataMining
+  - Add stats gatherer to WMCore
+  - Add couch views for WMDataMining
+  - some update for crabclient purge
+  - port wmstats script to WMCore codebase
+  - Merge pull request #5080 from samircury/exceptions-reco-reporting
+  - Merge pull request #5160 from ericvaandering/Add_selectRuns_to_LumiList
+  - fix job number caculation for extended workflow
+  - Merge pull request #5162 from lucacopa/trusSiteList_join_siteWhitelist
+  - Merge pull request #5163 from ticoann/fix_couch1.5_log
+  - sanitize url for couch1.5
+  - This add the site whitelist locations to Input dataset locations when a WorkQueueElement is created at the GWQ level When xrootd is enable (trustSiteList=True), this should be done. Otherwise WorkQueueElement are not pulled to wmagent
+  - Merge pull request #5158 from lucacopa/store_results_patch
+  - Read from URL
+  - Merge pull request #5159 from ticoann/fix_webtool_access_log
+  - Merge pull request #5157 from ericvaandering/Add_selectRuns_to_LumiList
+  - fix access log function
+  - This patch uses standard addOutputModule for storeResults Other fixes in stageOut I added standard json to requests in test
+  - Add a new method to LumiList, add a test for select and remove runs
+  - Merge pull request #5149 from mmascher/master
+  - 0.9.95b
+  - Merge pull request #5133 from ticoann/valentin_summary
+  - New file to deal with summary db
+  - Merge pull request #5155 from ticoann/acdc_cleanup
+  - Merge pull request #5152 from ticoann/make_couch15_compatablewq
+  - add couch1.5 compatible code
+  - add reduce for collection name
+  - Merge pull request #5153 from amaltaro/new-reqmgr-templates
+  - Removed old TaskChain templates; Created new ones for standard, pileup and LHE types
+  - 0.9.95a
+  - Use TAG_COLLECTOR_URL variable and not the ling when getting releases list
+  - Do not redirect std* for voms-proxy-create. See https://github.com/dmwm/CRABClient/issues/4054
+  - Remove old ASO couchapps.
+  - Add ASO RetryManager module.
+  - Merge pull request #5147 from ticoann/test_0.9.95a
+  - make replication checking backward compatible
+  - Merge pull request #5145 from ticoann/fix_all_in_one_test
+  - fix inbox setting for workqueue, replication check and ordering priority
+  - Merge pull request #5132 from ericvaandering/lumilist_and_dbs3
+  - Merge pull request #5134 from ticoann/jenkins_unittest_fix
+  - Merge pull request #5136 from holzman/fnal-srmcp-only-for-srm
+  - FNAL staging: fix mkdir for local staging
+  - Merge pull request #5130 from alexanderrichards/sandboxfixing
+  - Merge pull request #5135 from ericvaandering/lumi_setter
+  - implementing unittest for fix of issue #5130
+  - Add and test lumimask setter function
+  - fixes PhEDEx Subscribe test
+  - fix unittest
+  - Simple emulator for DBS3. Incomplete. Adapt to full lumi list returned in maskedBlocks New tests for lumi masks, remove existing which fails with DBS2 emulator Switch to real DBS, not emulator. Switch to a smaller RAW dataset Update DBS3Reader Map
+  - Merge pull request #5121 from mmascher/master
+  - Merge pull request #5125 from ticoann/fix_jenkins_unittest
+  - more fix for unittest
+  - Merge pull request #5123 from ticoann/fix_retry_unittest
+  - fix retry manager unittest
+  - Use openssl to get user cert enddate instead of voms-proxy-info (kept as fallback)
+  - Fix detection of RFC proxies
+  - Update dependencies for the client
+  - Fixing Sandbox creation problem
+  - Catching exceptions for Reco reporting HTTP requests
+  - Add site when submit fails due to site in down/drain
+
+0.9.95 to 0.9.95e:
+  - Merge pull request #5200 from ticoann/add_update_reqmgr
+  - add migraterequest function for wmstats reqmgr migration
+  - Merge pull request #5199 from lucacopa/condor_plugin_bug_sitename
+  - This fixes a bug in the condor plugin
+  - Merge pull request #5198 from tsarangi/issue5197
+  - Fix #5197. Add check for non-existing jobAd
+  - Merge pull request #5196 from juztas/DiskCheck
+  - Merge pull request #5195 from juztas/MatchLFN
+  - additional disk usage check for Openstack
+  - Match LFN fix. Previuos merged wrong
+  - 0.9.95d
+  - Merge pull request #5190 from lucacopa/mod_agent_watchet_fix
+  - Merge pull request #5192 from bbockelm/split-lumis-v2
+  - Note a shortcoming of the Mask class.
+  - Add a test case for the LumiBased splitting algorithm's handling of lumis split across multiple files.
+  - Within a job group, do not split a lumi across multiple jobs.  #5181
+  - Merge pull request #5191 from lucacopa/fix_resourceUpdater_config_load
+  - Get dashboard url from secrets
+  - Dont load config every polling cycle
+  - 0.9.95c
+  - Merge pull request #5189 from ticoann/fix_mod_config
+  - fix mod config when opsProxy is not set
+  - Merge pull request #5188 from ericvaandering/lumi_workload
+  - Revise unit test
+  - Merge pull request #5187 from ticoann/fix_lfnbase_dashboard_enabled
+  - initialize user lfnBase when dqm is enabled
+  - Merge pull request #5074 from lucacopa/submitting_fail_sites
+  - Merge pull request #5174 from ticoann/reqmgr_role_add
+  - Merge pull request #5177 from lucacopa/thresholds_component
+  - This creates a new general purpose component
+  - Merge pull request #5178 from lucacopa/analytics_data_disk_threshold
+  - Merge pull request #5182 from ericvaandering/More_LumiList_improvements
+  - Merge pull request #5185 from ticoann/wmstats_fix
+  - fix WMStats reader when document is deleted between calls
+  - Fix a bug, add faster construction
+  - Merge pull request #5165 from qunox/cachefileremove
+  - Merge pull request #5179 from HassenRiahi/AddASORetryManagerParam
+  - Merge pull request #5180 from HassenRiahi/RemoveOldCouchApp1
+  - This changes the threshold for disk alarm
+  - Merge pull request #5173 from lucacopa/specs_storeR_bug
+  - Merge pull request #5176 from ticoann/fix_wmstats_writer
+  - fix WMStatsWriter initilization
+  - add role and group so agent can update the status
+  - Add lumi list to StdBase, unit tests, and code to copy from Workload property to task property.
+  - My bad, I added this bug when changing to standard output module.
+  - Merge pull request #5164 from ticoann/extended_fix
+  - Merge pull request #5161 from ticoann/move_wmstat_svc
+  - Merge pull request #5151 from ericvaandering/add_WMDataMining
+  - Add stats gatherer to WMCore
+  - Add couch views for WMDataMining
+  - some update for crabclient purge
+  - port wmstats script to WMCore codebase
+  - Merge pull request #5080 from samircury/exceptions-reco-reporting
+  - Merge pull request #5160 from ericvaandering/Add_selectRuns_to_LumiList
+  - fix job number caculation for extended workflow
+  - Merge pull request #5162 from lucacopa/trusSiteList_join_siteWhitelist
+  - Merge pull request #5163 from ticoann/fix_couch1.5_log
+  - sanitize url for couch1.5
+  - This add the site whitelist locations to Input dataset locations when a WorkQueueElement is created at the GWQ level When xrootd is enable (trustSiteList=True), this should be done. Otherwise WorkQueueElement are not pulled to wmagent
+  - Merge pull request #5158 from lucacopa/store_results_patch
+  - Read from URL
+  - Merge pull request #5159 from ticoann/fix_webtool_access_log
+  - Merge pull request #5157 from ericvaandering/Add_selectRuns_to_LumiList
+  - fix access log function
+  - This patch uses standard addOutputModule for storeResults Other fixes in stageOut I added standard json to requests in test
+  - Add a new method to LumiList, add a test for select and remove runs
+  - Merge pull request #5149 from mmascher/master
+  - 0.9.95b
+  - Merge pull request #5133 from ticoann/valentin_summary
+  - New file to deal with summary db
+  - Merge pull request #5155 from ticoann/acdc_cleanup
+  - Merge pull request #5152 from ticoann/make_couch15_compatablewq
+  - add couch1.5 compatible code
+  - add reduce for collection name
+  - Merge pull request #5153 from amaltaro/new-reqmgr-templates
+  - Removed old TaskChain templates; Created new ones for standard, pileup and LHE types
+  - 0.9.95a
+  - Use TAG_COLLECTOR_URL variable and not the ling when getting releases list
+  - Do not redirect std* for voms-proxy-create. See https://github.com/dmwm/CRABClient/issues/4054
+  - Remove old ASO couchapps.
+  - Add ASO RetryManager module.
+  - Merge pull request #5147 from ticoann/test_0.9.95a
+  - make replication checking backward compatible
+  - Merge pull request #5145 from ticoann/fix_all_in_one_test
+  - fix inbox setting for workqueue, replication check and ordering priority
+  - Merge pull request #5132 from ericvaandering/lumilist_and_dbs3
+  - Merge pull request #5134 from ticoann/jenkins_unittest_fix
+  - Merge pull request #5136 from holzman/fnal-srmcp-only-for-srm
+  - FNAL staging: fix mkdir for local staging
+  - Merge pull request #5130 from alexanderrichards/sandboxfixing
+  - Merge pull request #5135 from ericvaandering/lumi_setter
+  - implementing unittest for fix of issue #5130
+  - Add and test lumimask setter function
+  - fixes PhEDEx Subscribe test
+  - fix unittest
+  - Simple emulator for DBS3. Incomplete. Adapt to full lumi list returned in maskedBlocks New tests for lumi masks, remove existing which fails with DBS2 emulator Switch to real DBS, not emulator. Switch to a smaller RAW dataset Update DBS3Reader Map
+  - Merge pull request #5121 from mmascher/master
+  - Merge pull request #5125 from ticoann/fix_jenkins_unittest
+  - more fix for unittest
+  - Merge pull request #5123 from ticoann/fix_retry_unittest
+  - fix retry manager unittest
+  - Use openssl to get user cert enddate instead of voms-proxy-info (kept as fallback)
+  - Fix detection of RFC proxies
+  - Update dependencies for the client
+  - Fixing Sandbox creation problem
+  - Catching exceptions for Reco reporting HTTP requests
+  - Add site when submit fails due to site in down/drain
+
+0.9.95 to 0.9.95d:
+  - Merge pull request #5190 from lucacopa/mod_agent_watchet_fix
+  - Merge pull request #5192 from bbockelm/split-lumis-v2
+  - Note a shortcoming of the Mask class.
+  - Add a test case for the LumiBased splitting algorithm's handling of lumis split across multiple files.
+  - Within a job group, do not split a lumi across multiple jobs.  #5181
+  - Merge pull request #5191 from lucacopa/fix_resourceUpdater_config_load
+  - Get dashboard url from secrets
+  - Dont load config every polling cycle
+  - 0.9.95c
+  - Merge pull request #5189 from ticoann/fix_mod_config
+  - fix mod config when opsProxy is not set
+  - Merge pull request #5188 from ericvaandering/lumi_workload
+  - Revise unit test
+  - Merge pull request #5187 from ticoann/fix_lfnbase_dashboard_enabled
+  - initialize user lfnBase when dqm is enabled
+  - Merge pull request #5074 from lucacopa/submitting_fail_sites
+  - Merge pull request #5174 from ticoann/reqmgr_role_add
+  - Merge pull request #5177 from lucacopa/thresholds_component
+  - This creates a new general purpose component
+  - Merge pull request #5178 from lucacopa/analytics_data_disk_threshold
+  - Merge pull request #5182 from ericvaandering/More_LumiList_improvements
+  - Merge pull request #5185 from ticoann/wmstats_fix
+  - fix WMStats reader when document is deleted between calls
+  - Fix a bug, add faster construction
+  - Merge pull request #5165 from qunox/cachefileremove
+  - Merge pull request #5179 from HassenRiahi/AddASORetryManagerParam
+  - Merge pull request #5180 from HassenRiahi/RemoveOldCouchApp1
+  - This changes the threshold for disk alarm
+  - Merge pull request #5173 from lucacopa/specs_storeR_bug
+  - Merge pull request #5176 from ticoann/fix_wmstats_writer
+  - fix WMStatsWriter initilization
+  - add role and group so agent can update the status
+  - Add lumi list to StdBase, unit tests, and code to copy from Workload property to task property.
+  - My bad, I added this bug when changing to standard output module.
+  - Merge pull request #5164 from ticoann/extended_fix
+  - Merge pull request #5161 from ticoann/move_wmstat_svc
+  - Merge pull request #5151 from ericvaandering/add_WMDataMining
+  - Add stats gatherer to WMCore
+  - Add couch views for WMDataMining
+  - some update for crabclient purge
+  - port wmstats script to WMCore codebase
+  - Merge pull request #5080 from samircury/exceptions-reco-reporting
+  - Merge pull request #5160 from ericvaandering/Add_selectRuns_to_LumiList
+  - fix job number caculation for extended workflow
+  - Merge pull request #5162 from lucacopa/trusSiteList_join_siteWhitelist
+  - Merge pull request #5163 from ticoann/fix_couch1.5_log
+  - sanitize url for couch1.5
+  - This add the site whitelist locations to Input dataset locations when a WorkQueueElement is created at the GWQ level When xrootd is enable (trustSiteList=True), this should be done. Otherwise WorkQueueElement are not pulled to wmagent
+  - Merge pull request #5158 from lucacopa/store_results_patch
+  - Read from URL
+  - Merge pull request #5159 from ticoann/fix_webtool_access_log
+  - Merge pull request #5157 from ericvaandering/Add_selectRuns_to_LumiList
+  - fix access log function
+  - This patch uses standard addOutputModule for storeResults Other fixes in stageOut I added standard json to requests in test
+  - Add a new method to LumiList, add a test for select and remove runs
+  - Merge pull request #5149 from mmascher/master
+  - 0.9.95b
+  - Merge pull request #5133 from ticoann/valentin_summary
+  - New file to deal with summary db
+  - Merge pull request #5155 from ticoann/acdc_cleanup
+  - Merge pull request #5152 from ticoann/make_couch15_compatablewq
+  - add couch1.5 compatible code
+  - add reduce for collection name
+  - Merge pull request #5153 from amaltaro/new-reqmgr-templates
+  - Removed old TaskChain templates; Created new ones for standard, pileup and LHE types
+  - 0.9.95a
+  - Use TAG_COLLECTOR_URL variable and not the ling when getting releases list
+  - Do not redirect std* for voms-proxy-create. See https://github.com/dmwm/CRABClient/issues/4054
+  - Remove old ASO couchapps.
+  - Add ASO RetryManager module.
+  - Merge pull request #5147 from ticoann/test_0.9.95a
+  - make replication checking backward compatible
+  - Merge pull request #5145 from ticoann/fix_all_in_one_test
+  - fix inbox setting for workqueue, replication check and ordering priority
+  - Merge pull request #5132 from ericvaandering/lumilist_and_dbs3
+  - Merge pull request #5134 from ticoann/jenkins_unittest_fix
+  - Merge pull request #5136 from holzman/fnal-srmcp-only-for-srm
+  - FNAL staging: fix mkdir for local staging
+  - Merge pull request #5130 from alexanderrichards/sandboxfixing
+  - Merge pull request #5135 from ericvaandering/lumi_setter
+  - implementing unittest for fix of issue #5130
+  - Add and test lumimask setter function
+  - fixes PhEDEx Subscribe test
+  - fix unittest
+  - Simple emulator for DBS3. Incomplete. Adapt to full lumi list returned in maskedBlocks New tests for lumi masks, remove existing which fails with DBS2 emulator Switch to real DBS, not emulator. Switch to a smaller RAW dataset Update DBS3Reader Map
+  - Merge pull request #5121 from mmascher/master
+  - Merge pull request #5125 from ticoann/fix_jenkins_unittest
+  - more fix for unittest
+  - Merge pull request #5123 from ticoann/fix_retry_unittest
+  - fix retry manager unittest
+  - Use openssl to get user cert enddate instead of voms-proxy-info (kept as fallback)
+  - Fix detection of RFC proxies
+  - Update dependencies for the client
+  - Fixing Sandbox creation problem
+  - Catching exceptions for Reco reporting HTTP requests
+  - Add site when submit fails due to site in down/drain
+
+0.9.95 to 0.9.95c:
+  - Merge pull request #5189 from ticoann/fix_mod_config
+  - fix mod config when opsProxy is not set
+  - Merge pull request #5188 from ericvaandering/lumi_workload
+  - Revise unit test
+  - Merge pull request #5187 from ticoann/fix_lfnbase_dashboard_enabled
+  - initialize user lfnBase when dqm is enabled
+  - Merge pull request #5074 from lucacopa/submitting_fail_sites
+  - Merge pull request #5174 from ticoann/reqmgr_role_add
+  - Merge pull request #5177 from lucacopa/thresholds_component
+  - This creates a new general purpose component
+  - Merge pull request #5178 from lucacopa/analytics_data_disk_threshold
+  - Merge pull request #5182 from ericvaandering/More_LumiList_improvements
+  - Merge pull request #5185 from ticoann/wmstats_fix
+  - fix WMStats reader when document is deleted between calls
+  - Fix a bug, add faster construction
+  - Merge pull request #5165 from qunox/cachefileremove
+  - Merge pull request #5179 from HassenRiahi/AddASORetryManagerParam
+  - Merge pull request #5180 from HassenRiahi/RemoveOldCouchApp1
+  - This changes the threshold for disk alarm
+  - Merge pull request #5173 from lucacopa/specs_storeR_bug
+  - Merge pull request #5176 from ticoann/fix_wmstats_writer
+  - fix WMStatsWriter initilization
+  - add role and group so agent can update the status
+  - Add lumi list to StdBase, unit tests, and code to copy from Workload property to task property.
+  - My bad, I added this bug when changing to standard output module.
+  - Merge pull request #5164 from ticoann/extended_fix
+  - Merge pull request #5161 from ticoann/move_wmstat_svc
+  - Merge pull request #5151 from ericvaandering/add_WMDataMining
+  - Add stats gatherer to WMCore
+  - Add couch views for WMDataMining
+  - some update for crabclient purge
+  - port wmstats script to WMCore codebase
+  - Merge pull request #5080 from samircury/exceptions-reco-reporting
+  - Merge pull request #5160 from ericvaandering/Add_selectRuns_to_LumiList
+  - fix job number caculation for extended workflow
+  - Merge pull request #5162 from lucacopa/trusSiteList_join_siteWhitelist
+  - Merge pull request #5163 from ticoann/fix_couch1.5_log
+  - sanitize url for couch1.5
+  - This add the site whitelist locations to Input dataset locations when a WorkQueueElement is created at the GWQ level When xrootd is enable (trustSiteList=True), this should be done. Otherwise WorkQueueElement are not pulled to wmagent
+  - Merge pull request #5158 from lucacopa/store_results_patch
+  - Read from URL
+  - Merge pull request #5159 from ticoann/fix_webtool_access_log
+  - Merge pull request #5157 from ericvaandering/Add_selectRuns_to_LumiList
+  - fix access log function
+  - This patch uses standard addOutputModule for storeResults Other fixes in stageOut I added standard json to requests in test
+  - Add a new method to LumiList, add a test for select and remove runs
+  - Merge pull request #5149 from mmascher/master
+  - 0.9.95b
+  - Merge pull request #5133 from ticoann/valentin_summary
+  - New file to deal with summary db
+  - Merge pull request #5155 from ticoann/acdc_cleanup
+  - Merge pull request #5152 from ticoann/make_couch15_compatablewq
+  - add couch1.5 compatible code
+  - add reduce for collection name
+  - Merge pull request #5153 from amaltaro/new-reqmgr-templates
+  - Removed old TaskChain templates; Created new ones for standard, pileup and LHE types
+  - 0.9.95a
+  - Use TAG_COLLECTOR_URL variable and not the ling when getting releases list
+  - Do not redirect std* for voms-proxy-create. See https://github.com/dmwm/CRABClient/issues/4054
+  - Remove old ASO couchapps.
+  - Add ASO RetryManager module.
+  - Merge pull request #5147 from ticoann/test_0.9.95a
+  - make replication checking backward compatible
+  - Merge pull request #5145 from ticoann/fix_all_in_one_test
+  - fix inbox setting for workqueue, replication check and ordering priority
+  - Merge pull request #5132 from ericvaandering/lumilist_and_dbs3
+  - Merge pull request #5134 from ticoann/jenkins_unittest_fix
+  - Merge pull request #5136 from holzman/fnal-srmcp-only-for-srm
+  - FNAL staging: fix mkdir for local staging
+  - Merge pull request #5130 from alexanderrichards/sandboxfixing
+  - Merge pull request #5135 from ericvaandering/lumi_setter
+  - implementing unittest for fix of issue #5130
+  - Add and test lumimask setter function
+  - fixes PhEDEx Subscribe test
+  - fix unittest
+  - Simple emulator for DBS3. Incomplete. Adapt to full lumi list returned in maskedBlocks New tests for lumi masks, remove existing which fails with DBS2 emulator Switch to real DBS, not emulator. Switch to a smaller RAW dataset Update DBS3Reader Map
+  - Merge pull request #5121 from mmascher/master
+  - Merge pull request #5125 from ticoann/fix_jenkins_unittest
+  - more fix for unittest
+  - Merge pull request #5123 from ticoann/fix_retry_unittest
+  - fix retry manager unittest
+  - Use openssl to get user cert enddate instead of voms-proxy-info (kept as fallback)
+  - Fix detection of RFC proxies
+  - Update dependencies for the client
+  - Fixing Sandbox creation problem
+  - Catching exceptions for Reco reporting HTTP requests
+  - Add site when submit fails due to site in down/drain
+
+0.9.95 to 0.9.95b:
+  - Merge pull request #5133 from ticoann/valentin_summary
+  - New file to deal with summary db
+  - Merge pull request #5155 from ticoann/acdc_cleanup
+  - Merge pull request #5152 from ticoann/make_couch15_compatablewq
+  - add couch1.5 compatible code
+  - add reduce for collection name
+  - Merge pull request #5153 from amaltaro/new-reqmgr-templates
+  - Removed old TaskChain templates; Created new ones for standard, pileup and LHE types
+  - 0.9.95a
+  - Merge pull request #5147 from ticoann/test_0.9.95a
+  - make replication checking backward compatible
+  - Merge pull request #5145 from ticoann/fix_all_in_one_test
+  - fix inbox setting for workqueue, replication check and ordering priority
+  - Merge pull request #5132 from ericvaandering/lumilist_and_dbs3
+  - Merge pull request #5134 from ticoann/jenkins_unittest_fix
+  - Merge pull request #5136 from holzman/fnal-srmcp-only-for-srm
+  - FNAL staging: fix mkdir for local staging
+  - Merge pull request #5130 from alexanderrichards/sandboxfixing
+  - Merge pull request #5135 from ericvaandering/lumi_setter
+  - implementing unittest for fix of issue #5130
+  - Add and test lumimask setter function
+  - fixes PhEDEx Subscribe test
+  - fix unittest
+  - Simple emulator for DBS3. Incomplete. Adapt to full lumi list returned in maskedBlocks New tests for lumi masks, remove existing which fails with DBS2 emulator Switch to real DBS, not emulator. Switch to a smaller RAW dataset Update DBS3Reader Map
+  - Merge pull request #5121 from mmascher/master
+  - Merge pull request #5125 from ticoann/fix_jenkins_unittest
+  - more fix for unittest
+  - Merge pull request #5123 from ticoann/fix_retry_unittest
+  - fix retry manager unittest
+  - Use openssl to get user cert enddate instead of voms-proxy-info (kept as fallback)
+  - Fix detection of RFC proxies
+  - Update dependencies for the client
+  - Fixing Sandbox creation problem
+
+0.9.95 to 0.9.95a:
+  - Merge pull request #5147 from ticoann/test_0.9.95a
+  - make replication checking backward compatible
+  - Merge pull request #5145 from ticoann/fix_all_in_one_test
+  - fix inbox setting for workqueue, replication check and ordering priority
+  - Merge pull request #5132 from ericvaandering/lumilist_and_dbs3
+  - Merge pull request #5134 from ticoann/jenkins_unittest_fix
+  - Merge pull request #5136 from holzman/fnal-srmcp-only-for-srm
+  - FNAL staging: fix mkdir for local staging
+  - Merge pull request #5130 from alexanderrichards/sandboxfixing
+  - Merge pull request #5135 from ericvaandering/lumi_setter
+  - implementing unittest for fix of issue #5130
+  - Add and test lumimask setter function
+  - fixes PhEDEx Subscribe test
+  - fix unittest
+  - Simple emulator for DBS3. Incomplete. Adapt to full lumi list returned in maskedBlocks New tests for lumi masks, remove existing which fails with DBS2 emulator Switch to real DBS, not emulator. Switch to a smaller RAW dataset Update DBS3Reader Map
+  - Merge pull request #5121 from mmascher/master
+  - Merge pull request #5125 from ticoann/fix_jenkins_unittest
+  - more fix for unittest
+  - Merge pull request #5123 from ticoann/fix_retry_unittest
+  - fix retry manager unittest
+  - Use openssl to get user cert enddate instead of voms-proxy-info (kept as fallback)
+  - Fix detection of RFC proxies
+  - Update dependencies for the client
+  - Fixing Sandbox creation problem
+
+0.9.94 to 0.9.95:
+  - Merge pull request #5118 from holzman/fnal-srmcp-only-for-srm
+  - Merge pull request #5115 from hufnagel/updatedataset-prepid
+  - Merge pull request #5116 from HassenRiahi/FixASODeployment_1
+  - Merge pull request #5117 from franzoni/WMCore_deguio_franzoni_DQMIO
+  - Revise the FNAL plugin for better protocol enforcement
+  - DQMIO in place of DQMROOT (see: https://hypernews.cern.ch/HyperNews/CMS/get/comp-ops/1592.html and https://hypernews.cern.ch/HyperNews/CMS/get/comp-ops/1587/1/2/2/1/2/2/1/1/2.html )
+  - Fix ASO deployment using wmagent scripts.
+  - use new prep_id in UpdateDataset DAO
+  - Merge pull request #5109 from ticoann/improve_state_search
+  - Merge pull request #5112 from qunox/updateUserFileCache
+  - update UserFileCache.py for CRAB3 Client upload log
+  - 0.9.95pre5
+  - Merge pull request #5089 from ticoann/prep_id_add
+  - Merge pull request #5110 from ticoann/premixing_fetch
+  - allow MC workflows to contains a DataMixingModule and still be using MCPileup parameter to set the input dataset
+  - change cheking the status for simpler way
+  - Merge pull request #5108 from ticoann/fix
+  - fix previous status function
+  - Merge pull request #5107 from holzman/fnal-srmcp-only-for-srm
+  - Merge pull request #5103 from ticoann/add_wq_delete_function
+  - Merge pull request #5104 from ticoann/wmbs_helper_unittest_fix
+  - fixes WMBSHelper_t
+  - add delete in workqueue script
+  - Merge pull request #4711 from hufnagel/cvmfs-stageout
+  - Merge pull request #4468 from hufnagel/optimizesibling
+  - Merge pull request #5101 from hufnagel/spec-defaults
+  - optimize sibgling subscription DAO
+  - make couchdbname parameter optional for PromptReco spec
+  - modify lcg-cp stageout code to support grid UI from cvmfs
+  - Only use SRM stageout for srm:// URLs for FNAL stageout
+  - Merge pull request #5095 from mmascher/master
+  - Merge pull request #5097 from juztas/master
+  - Update test json files
+  - Merge pull request #5096 from mmascher/invalidFiles
+  - Add invalid file flag to DBS3Reader.listDatasetFileDetails API
+  - Merge pull request #4993 from hufnagel/harvest-noafs
+  - Merge pull request #5052 from AndresTanasijczuk/couchskelfix
+  - Add the possibility to upload logfiles to the crabcache
+  - Merge pull request #5072 from mmascher/listfileblocklocations
+  - Merge pull request #5083 from ticoann/fix_stageout_fnal
+  - Merge pull request #5093 from ericvaandering/new_lumi
+  - Merge pull request #5088 from ticoann/improve_taskarchiver_query
+  - Add CMSSW LumiList to WMCore
+  - Merge pull request #5090 from ticoann/fix_couchdb_url_unittest
+  - fix couch url for unittest - getting it from env
+  - improve task archiver query performance
+  - add PrepID in dbs
+  - Merge pull request #5084 from hufnagel/multiple-promptcalibprod
+  - rm file before stage out saftey net for eos bug
+  - Merge pull request #5082 from amaltaro/patch-addDisk
+  - Do not add Disk endpoints by default, but provide a new option for it; removed duplicated SEs
+  - Merge pull request #5081 from mmascher/master
+  - Initialize trustedRetrievers variable in WMCore.proxy
+  - Use temporary (process dependant) proxy name in Proxy.logonRenewMyProxy to avoid concurrency issues
+  - 0.9.95pre4
+  - Merge pull request #5079 from ticoann/event_lumi_taskchain
+  - fix aborted fail from assignment
+  - set the default value for event per lumi
+  - Merge pull request #5077 from lucacopa/filter_disk_warnings
+  - This fixes the alarm for /lustre/unmerged in FNAL machines
+  - Merge pull request #5026 from ticoann/refactor_fnal_stageout
+  - support multiple PromptCalibprod
+  - bulk phedex call in listFileBlockLocation
+  - Merge pull request #5070 from tsarangi/submitsh
+  - Include proper conditional checks for CVMFS detection Minor change in the error message
+  - real patch for disk stageout FNAL
+  - 0.9.95pre3
+  - Merge pull request #5068 from ticoann/add_event_per_lumi_gui
+  - Merge pull request #5065 from ticoann/fix_multi_core
+  - add event per lumi option is the html page
+  - Revert "fixing issue #4992"
+  - Merge pull request #4996 from lucacopa/storeResults_scripts
+  - 0.9.95pre2
+  - Merge pull request #5061 from yuyiguo/LHE
+  - update Lexicon.py and Lexicon_t.py for LHE data.
+  - Merge pull request #5006 from AndresTanasijczuk/HandleCISEExceptInBWT
+  - Scripts for StoreResults
+  - Add files jquery.evently.js and jquery.mustache.js to couchskel, plus two fixes that seem to be needed when using evently (hardcode design document name and add a rewrite rule).
+  - Merge pull request #5059 from alexanderrichards/multicore_fix_patch
+  - patch to default multicore to false
+  - 0.9.95pre1
+  - Merge pull request #4961 from juztas/master
+  - Merge pull request #5035 from alexanderrichards/multicore_fix
+  - Merge pull request #5055 from mmascher/master
+  - Merge pull request #5058 from ticoann/wmstats_state_transition
+  - Merge pull request #5057 from ticoann/reqmgr_400_error_verbose
+  - add announced as allowed transition from completed
+  - add verbose message for 400 error. Need to check this doesn't reveal any secrete informaiton
+  - Merge pull request #5056 from ticoann/lhe_event_fix
+  - Add dependency for crabcache in setup script
+  - fix lhe eventperlumi in task chain
+  - 0.9.94d
+  - Merge pull request #5024 from ticoann/reqmgr_fail_transiton
+  - Merge pull request #5045 from ticoann/dbs_reader_fix
+  - Merge pull request #5039 from mmascher/master
+  - Merge pull request #5050 from ticoann/another_dbs_upload_fix
+  - only delete the key when exist. Not sure why different block has different key
+  - Merge pull request #5046 from ticoann/dbs_input_fix
+  - add workflow to key to remove.
+  - Refactor lexicon: extract regexp strings from methods. Needed for CRAB3
+  - Use PhEDEx to locate blocks/dataset instead of dbs
+  - Merge pull request #5025 from ticoann/fix_acdc_for_testsetupwq
+  - Merge pull request #5029 from ticoann/fix_dbsbuffer_complete_check_query
+  - Merge pull request #5038 from amaltaro/updt_FrontierID
+  - Merge pull request #5041 from ticoann/block_completion_fix
+  - fix missing workflow retrieval
+  - Remove obsolete name parameter in UFC
+  - set FRONTIER_ID variable to the requestName
+  - fixing issue #4992
+  - fix return format of the GetCompletedWorkflows
+  - Merge pull request #5027 from hufnagel/dbs_workflow_complete
+  - fix bug in dbs workflow completion query
+  - fix ACDC installation for test mode
+  - Merge pull request #5022 from juztas/master
+  - Merge pull request #5023 from ticoann/dbs3_open_block_query
+  - allow failed -> rejected transition
+  - fix open block query
+  - New ReDigi workflow for testing
+  - Handle all the CouchError exceptions plus the CouchConnectionError exception when calling HeartbeatAPI.updateWorkerHeartbeat() in event loop.
+  - 0.9.94c
+  - Merge pull request #4979 from ticoann/set_close_block_with_complete
+  - Merge pull request #5017 from ticoann/hack_couch_error_acdc
+  - Merge pull request #5002 from ticoann/phexed_inject_open_block
+  - Merge pull request #5001 from ticoann/fix_analytics_data_collector_bug
+  - Merge pull request #4995 from hufnagel/t0temp-unmerged
+  - hack when couch error occurs.
+  - 0.9.94b
+  - Merge pull request #5016 from ticoann/fix_store_result_lfn
+  - add store result lfn test
+  - Lexicon validation missing for storeResults mergedLFN
+  - Merge pull request #5015 from ticoann/fix_workqueue_element_sorting
+  - Merge pull request #5009 from ticoann/fix_lhe_event_lumi
+  - Merge pull request #5013 from ticoann/fix_location_none_case
+  - fix workqueue creation time setting
+  - let the location mapper retry when data location is not set first time
+  - fix lhe input file and event per lumi option
+  - inject PhEDEx blocks when block is open
+  - Merge pull request #4999 from lucacopa/component_crash
+  - This is a temporary fix to #4793
+  - fix AnalyticsDataCollector reporting
+  - Merge pull request #4990 from lucacopa/jobs_to_drain_sites
+  - Merge pull request #4988 from ticoann/fix_dbs_buffer_se
+  - This fixes #4898
+  - allow unmerged in LFN for Tier0 files
+  - 0.9.94a
+  - Merge pull request #4956 from AndresTanasijczuk/master
+  - Merge pull request #4985 from mmascher/master
+  - support dqm and alca harvesting on AI nodes without AFS
+  - Merge pull request #4987 from ticoann/reqmgr2_index_page_fix
+  - fix dbsbuffer not associating file to se
+  - temp fix for reqmgr index page
+  - close block when workflow is completed
+  - Use voms-proxy-info instead of grid-cert-info. Fixes #4924
+  - Update TrivialFileCatalog for ASO
+  - Add cert and ckey arguments in Database constructor and pass them to CouchDBRequests. Add ckey and cert attributes in CouchServer and use them when connecting/creating a Database.
+
+0.9.94 to 0.9.95pre5:
+  - Merge pull request #5089 from ticoann/prep_id_add
+  - Merge pull request #5110 from ticoann/premixing_fetch
+  - allow MC workflows to contains a DataMixingModule and still be using MCPileup parameter to set the input dataset
+  - Merge pull request #5108 from ticoann/fix
+  - fix previous status function
+  - Merge pull request #5107 from holzman/fnal-srmcp-only-for-srm
+  - Merge pull request #5103 from ticoann/add_wq_delete_function
+  - Merge pull request #5104 from ticoann/wmbs_helper_unittest_fix
+  - fixes WMBSHelper_t
+  - add delete in workqueue script
+  - Merge pull request #4711 from hufnagel/cvmfs-stageout
+  - Merge pull request #4468 from hufnagel/optimizesibling
+  - Merge pull request #5101 from hufnagel/spec-defaults
+  - optimize sibgling subscription DAO
+  - make couchdbname parameter optional for PromptReco spec
+  - modify lcg-cp stageout code to support grid UI from cvmfs
+  - Only use SRM stageout for srm:// URLs for FNAL stageout
+  - Merge pull request #5095 from mmascher/master
+  - Merge pull request #5097 from juztas/master
+  - Update test json files
+  - Merge pull request #5096 from mmascher/invalidFiles
+  - Add invalid file flag to DBS3Reader.listDatasetFileDetails API
+  - Merge pull request #4993 from hufnagel/harvest-noafs
+  - Merge pull request #5052 from AndresTanasijczuk/couchskelfix
+  - Add the possibility to upload logfiles to the crabcache
+  - Merge pull request #5072 from mmascher/listfileblocklocations
+  - Merge pull request #5083 from ticoann/fix_stageout_fnal
+  - Merge pull request #5093 from ericvaandering/new_lumi
+  - Merge pull request #5088 from ticoann/improve_taskarchiver_query
+  - Add CMSSW LumiList to WMCore
+  - Merge pull request #5090 from ticoann/fix_couchdb_url_unittest
+  - fix couch url for unittest - getting it from env
+  - improve task archiver query performance
+  - add PrepID in dbs
+  - Merge pull request #5084 from hufnagel/multiple-promptcalibprod
+  - rm file before stage out saftey net for eos bug
+  - Merge pull request #5082 from amaltaro/patch-addDisk
+  - Do not add Disk endpoints by default, but provide a new option for it; removed duplicated SEs
+  - Merge pull request #5081 from mmascher/master
+  - Initialize trustedRetrievers variable in WMCore.proxy
+  - Use temporary (process dependant) proxy name in Proxy.logonRenewMyProxy to avoid concurrency issues
+  - 0.9.95pre4
+  - Merge pull request #5079 from ticoann/event_lumi_taskchain
+  - fix aborted fail from assignment
+  - set the default value for event per lumi
+  - Merge pull request #5077 from lucacopa/filter_disk_warnings
+  - This fixes the alarm for /lustre/unmerged in FNAL machines
+  - Merge pull request #5026 from ticoann/refactor_fnal_stageout
+  - support multiple PromptCalibprod
+  - bulk phedex call in listFileBlockLocation
+  - Merge pull request #5070 from tsarangi/submitsh
+  - Include proper conditional checks for CVMFS detection Minor change in the error message
+  - real patch for disk stageout FNAL
+  - 0.9.95pre3
+  - Merge pull request #5068 from ticoann/add_event_per_lumi_gui
+  - Merge pull request #5065 from ticoann/fix_multi_core
+  - add event per lumi option is the html page
+  - Revert "fixing issue #4992"
+  - Merge pull request #4996 from lucacopa/storeResults_scripts
+  - 0.9.95pre2
+  - Merge pull request #5061 from yuyiguo/LHE
+  - update Lexicon.py and Lexicon_t.py for LHE data.
+  - Merge pull request #5006 from AndresTanasijczuk/HandleCISEExceptInBWT
+  - Scripts for StoreResults
+  - Add files jquery.evently.js and jquery.mustache.js to couchskel, plus two fixes that seem to be needed when using evently (hardcode design document name and add a rewrite rule).
+  - Merge pull request #5059 from alexanderrichards/multicore_fix_patch
+  - patch to default multicore to false
+  - 0.9.95pre1
+  - Merge pull request #4961 from juztas/master
+  - Merge pull request #5035 from alexanderrichards/multicore_fix
+  - Merge pull request #5055 from mmascher/master
+  - Merge pull request #5058 from ticoann/wmstats_state_transition
+  - Merge pull request #5057 from ticoann/reqmgr_400_error_verbose
+  - add announced as allowed transition from completed
+  - add verbose message for 400 error. Need to check this doesn't reveal any secrete informaiton
+  - Merge pull request #5056 from ticoann/lhe_event_fix
+  - Add dependency for crabcache in setup script
+  - fix lhe eventperlumi in task chain
+  - 0.9.94d
+  - Merge pull request #5024 from ticoann/reqmgr_fail_transiton
+  - Merge pull request #5045 from ticoann/dbs_reader_fix
+  - Merge pull request #5039 from mmascher/master
+  - Merge pull request #5050 from ticoann/another_dbs_upload_fix
+  - only delete the key when exist. Not sure why different block has different key
+  - Merge pull request #5046 from ticoann/dbs_input_fix
+  - add workflow to key to remove.
+  - Refactor lexicon: extract regexp strings from methods. Needed for CRAB3
+  - Use PhEDEx to locate blocks/dataset instead of dbs
+  - Merge pull request #5025 from ticoann/fix_acdc_for_testsetupwq
+  - Merge pull request #5029 from ticoann/fix_dbsbuffer_complete_check_query
+  - Merge pull request #5038 from amaltaro/updt_FrontierID
+  - Merge pull request #5041 from ticoann/block_completion_fix
+  - fix missing workflow retrieval
+  - Remove obsolete name parameter in UFC
+  - set FRONTIER_ID variable to the requestName
+  - fixing issue #4992
+  - fix return format of the GetCompletedWorkflows
+  - Merge pull request #5027 from hufnagel/dbs_workflow_complete
+  - fix bug in dbs workflow completion query
+  - fix ACDC installation for test mode
+  - Merge pull request #5022 from juztas/master
+  - Merge pull request #5023 from ticoann/dbs3_open_block_query
+  - allow failed -> rejected transition
+  - fix open block query
+  - New ReDigi workflow for testing
+  - Handle all the CouchError exceptions plus the CouchConnectionError exception when calling HeartbeatAPI.updateWorkerHeartbeat() in event loop.
+  - 0.9.94c
+  - Merge pull request #4979 from ticoann/set_close_block_with_complete
+  - Merge pull request #5017 from ticoann/hack_couch_error_acdc
+  - Merge pull request #5002 from ticoann/phexed_inject_open_block
+  - Merge pull request #5001 from ticoann/fix_analytics_data_collector_bug
+  - Merge pull request #4995 from hufnagel/t0temp-unmerged
+  - hack when couch error occurs.
+  - 0.9.94b
+  - Merge pull request #5016 from ticoann/fix_store_result_lfn
+  - add store result lfn test
+  - Lexicon validation missing for storeResults mergedLFN
+  - Merge pull request #5015 from ticoann/fix_workqueue_element_sorting
+  - Merge pull request #5009 from ticoann/fix_lhe_event_lumi
+  - Merge pull request #5013 from ticoann/fix_location_none_case
+  - fix workqueue creation time setting
+  - let the location mapper retry when data location is not set first time
+  - fix lhe input file and event per lumi option
+  - inject PhEDEx blocks when block is open
+  - Merge pull request #4999 from lucacopa/component_crash
+  - This is a temporary fix to #4793
+  - fix AnalyticsDataCollector reporting
+  - Merge pull request #4990 from lucacopa/jobs_to_drain_sites
+  - Merge pull request #4988 from ticoann/fix_dbs_buffer_se
+  - This fixes #4898
+  - allow unmerged in LFN for Tier0 files
+  - 0.9.94a
+  - Merge pull request #4956 from AndresTanasijczuk/master
+  - Merge pull request #4985 from mmascher/master
+  - support dqm and alca harvesting on AI nodes without AFS
+  - Merge pull request #4987 from ticoann/reqmgr2_index_page_fix
+  - fix dbsbuffer not associating file to se
+  - temp fix for reqmgr index page
+  - close block when workflow is completed
+  - Use voms-proxy-info instead of grid-cert-info. Fixes #4924
+  - Update TrivialFileCatalog for ASO
+  - Add cert and ckey arguments in Database constructor and pass them to CouchDBRequests. Add ckey and cert attributes in CouchServer and use them when connecting/creating a Database.
+
+0.9.94 to 0.9.95pre4:
+  - Merge pull request #5079 from ticoann/event_lumi_taskchain
+  - fix aborted fail from assignment
+  - set the default value for event per lumi
+  - Merge pull request #5077 from lucacopa/filter_disk_warnings
+  - This fixes the alarm for /lustre/unmerged in FNAL machines
+  - Merge pull request #5026 from ticoann/refactor_fnal_stageout
+  - Merge pull request #5070 from tsarangi/submitsh
+  - Include proper conditional checks for CVMFS detection Minor change in the error message
+  - real patch for disk stageout FNAL
+  - 0.9.95pre3
+  - Merge pull request #5068 from ticoann/add_event_per_lumi_gui
+  - Merge pull request #5065 from ticoann/fix_multi_core
+  - add event per lumi option is the html page
+  - Revert "fixing issue #4992"
+  - Merge pull request #4996 from lucacopa/storeResults_scripts
+  - 0.9.95pre2
+  - Merge pull request #5061 from yuyiguo/LHE
+  - update Lexicon.py and Lexicon_t.py for LHE data.
+  - Merge pull request #5006 from AndresTanasijczuk/HandleCISEExceptInBWT
+  - Scripts for StoreResults
+  - Merge pull request #5059 from alexanderrichards/multicore_fix_patch
+  - patch to default multicore to false
+  - 0.9.95pre1
+  - Merge pull request #4961 from juztas/master
+  - Merge pull request #5035 from alexanderrichards/multicore_fix
+  - Merge pull request #5055 from mmascher/master
+  - Merge pull request #5058 from ticoann/wmstats_state_transition
+  - Merge pull request #5057 from ticoann/reqmgr_400_error_verbose
+  - add announced as allowed transition from completed
+  - add verbose message for 400 error. Need to check this doesn't reveal any secrete informaiton
+  - Merge pull request #5056 from ticoann/lhe_event_fix
+  - Add dependency for crabcache in setup script
+  - fix lhe eventperlumi in task chain
+  - 0.9.94d
+  - Merge pull request #5024 from ticoann/reqmgr_fail_transiton
+  - Merge pull request #5045 from ticoann/dbs_reader_fix
+  - Merge pull request #5039 from mmascher/master
+  - Merge pull request #5050 from ticoann/another_dbs_upload_fix
+  - only delete the key when exist. Not sure why different block has different key
+  - Merge pull request #5046 from ticoann/dbs_input_fix
+  - add workflow to key to remove.
+  - Refactor lexicon: extract regexp strings from methods. Needed for CRAB3
+  - Use PhEDEx to locate blocks/dataset instead of dbs
+  - Merge pull request #5025 from ticoann/fix_acdc_for_testsetupwq
+  - Merge pull request #5029 from ticoann/fix_dbsbuffer_complete_check_query
+  - Merge pull request #5038 from amaltaro/updt_FrontierID
+  - Merge pull request #5041 from ticoann/block_completion_fix
+  - fix missing workflow retrieval
+  - Remove obsolete name parameter in UFC
+  - set FRONTIER_ID variable to the requestName
+  - fixing issue #4992
+  - fix return format of the GetCompletedWorkflows
+  - Merge pull request #5027 from hufnagel/dbs_workflow_complete
+  - fix bug in dbs workflow completion query
+  - fix ACDC installation for test mode
+  - Merge pull request #5022 from juztas/master
+  - Merge pull request #5023 from ticoann/dbs3_open_block_query
+  - allow failed -> rejected transition
+  - fix open block query
+  - New ReDigi workflow for testing
+  - Handle all the CouchError exceptions plus the CouchConnectionError exception when calling HeartbeatAPI.updateWorkerHeartbeat() in event loop.
+  - 0.9.94c
+  - Merge pull request #4979 from ticoann/set_close_block_with_complete
+  - Merge pull request #5017 from ticoann/hack_couch_error_acdc
+  - Merge pull request #5002 from ticoann/phexed_inject_open_block
+  - Merge pull request #5001 from ticoann/fix_analytics_data_collector_bug
+  - Merge pull request #4995 from hufnagel/t0temp-unmerged
+  - hack when couch error occurs.
+  - 0.9.94b
+  - Merge pull request #5016 from ticoann/fix_store_result_lfn
+  - add store result lfn test
+  - Lexicon validation missing for storeResults mergedLFN
+  - Merge pull request #5015 from ticoann/fix_workqueue_element_sorting
+  - Merge pull request #5009 from ticoann/fix_lhe_event_lumi
+  - Merge pull request #5013 from ticoann/fix_location_none_case
+  - fix workqueue creation time setting
+  - let the location mapper retry when data location is not set first time
+  - fix lhe input file and event per lumi option
+  - inject PhEDEx blocks when block is open
+  - Merge pull request #4999 from lucacopa/component_crash
+  - This is a temporary fix to #4793
+  - fix AnalyticsDataCollector reporting
+  - Merge pull request #4990 from lucacopa/jobs_to_drain_sites
+  - Merge pull request #4988 from ticoann/fix_dbs_buffer_se
+  - This fixes #4898
+  - allow unmerged in LFN for Tier0 files
+  - 0.9.94a
+  - Merge pull request #4956 from AndresTanasijczuk/master
+  - Merge pull request #4985 from mmascher/master
+  - Merge pull request #4987 from ticoann/reqmgr2_index_page_fix
+  - fix dbsbuffer not associating file to se
+  - temp fix for reqmgr index page
+  - close block when workflow is completed
+  - Use voms-proxy-info instead of grid-cert-info. Fixes #4924
+  - Update TrivialFileCatalog for ASO
+  - Add cert and ckey arguments in Database constructor and pass them to CouchDBRequests. Add ckey and cert attributes in CouchServer and use them when connecting/creating a Database.
+
 0.9.94 to 0.9.95pre3:
   - Merge pull request #5068 from ticoann/add_event_per_lumi_gui
   - Merge pull request #5065 from ticoann/fix_multi_core

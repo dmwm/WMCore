@@ -55,7 +55,13 @@ def createOptionParser():
     myOptParser.add_option("--reqmgr", dest = "requestmanager",
                            default = False, action = "store_true",
                            help = "Synchronize with RequestManager")
-
+    myOptParser.add_option("--deleteCascade", dest = "deleteCascade",
+                           default = False, action = "store_true",
+                           help = "delete LQ GQ.")
+    myOptParser.add_option("--resetGQ", dest = "resetGQ",
+                           default = False, action = "store_true",
+                           help = "Reset GQ elements status.")
+                           
     group = OptionGroup(myOptParser, "WorkQueue elements selection.",
                     "Use these to select which elements to perform  "
                     "the desired operation on.")
@@ -85,6 +91,34 @@ def createWorkQueue(config):
                                      socketLoc = socket)
     return queueFromConfig(config)
 
+
+def _deleteWorkflowFromWQ(wqDB, workflow):
+    """
+    _deleteWorkflowFromCouch_
+
+    If we are asked to delete the workflow from couch, delete it
+    to clear up some space.
+
+    Load the document IDs and revisions out of couch by workflowName,
+    then order a delete on them.
+    """
+
+    elements = wqDB.loadView('WorkQueue', 'elementsByWorkflow',
+                                        {'key' : workflow, 'reduce' : False})['rows']
+    for j in elements:
+        id  = j['id']
+        wqDB.delete_doc(id = id)
+    try:
+    	wqDB.delete_doc(workflow)
+    except Exception, ex:
+        print "%s : %s" % (workflow, str(ex))
+    return len(elements)
+    
+def deleteWorkflowFromWQ(workqueue, workflowName):
+    print "LQ deleted: %s" % _deleteWorkflowFromWQ(workqueue.backend.db, workflowName)
+    print "LQ inbox deleted: %s" % _deleteWorkflowFromWQ(workqueue.backend.inbox, workflowName)
+    print "GQ deleted: %s" % _deleteWorkflowFromWQ(workqueue.parent_queue.db, workflowName)
+    print "GQ inbox deleted: %s" % _deleteWorkflowFromWQ(workqueue.parent_queue.inbox, workflowName)
 
 def main():
     myOptParser = createOptionParser()
@@ -130,6 +164,12 @@ def main():
         reqMgrInt(workqueue)
     elif options.cancelWork:
         workqueue.cancelWork(WorkflowName = options.workflow)
+    elif options.deleteCascade:
+        deleteWorkflowFromWQ(workqueue, workflowName = options.workflow)
+    elif options.resetGQ:
+        ids = options.id.split(",")
+        workqueue.parent_queue.updateElements(*ids, Status = 'Available',
+                                           ChildQueueUrl = None, WMBSUrl = None)
 
 if __name__ == '__main__':
 	main()

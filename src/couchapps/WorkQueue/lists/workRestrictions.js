@@ -16,7 +16,7 @@ function(head, req) {
     try {
         var resources = JSON.parse(req.query.resources);
     } catch (ex) {
-        send('"Error parsing resources"');
+        send('"Error parsing resources" ' +  req.query.resources);
         return;
     }
   
@@ -25,7 +25,7 @@ function(head, req) {
         try {
             teams = JSON.parse(req.query.teams);
         } catch (ex) {
-            send('"Error parsing teams"');
+            send('"Error parsing teams" ' + req.query.teams);
             return;
         }
     }
@@ -34,7 +34,7 @@ function(head, req) {
         try {
             wfs = JSON.parse(req.query.wfs);
         } catch (ex) {
-            send('"Error parsing wfs"');
+            send('"Error parsing wfs" ' + req.query.wfs);
             return;
         }
     }

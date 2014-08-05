@@ -184,7 +184,8 @@ class DBSBlock:
         self.setDataset(datasetName  = dbsFile['datasetPath'],
                         primaryType  = primaryDatasetType, 
                         datasetType  = datasetType,
-                        physicsGroup = dbsFile.get('physicsGroup', None))
+                        physicsGroup = dbsFile.get('physicsGroup', None),
+                        prep_id = dbsFile.get('prep_id', None))
 
         return
 
@@ -264,7 +265,8 @@ class DBSBlock:
         return self.data['dataset'].get('dataset', False)
 
     def setDataset(self, datasetName, primaryType,
-                   datasetType, physicsGroup = None, overwrite = False, valid = 1):
+                   datasetType, physicsGroup = None, 
+                   prep_id  = None, overwrite = False, valid = 1):
         """
         _setDataset_
 
@@ -304,7 +306,7 @@ class DBSBlock:
         self.data['dataset']['data_tier_name']      = tier
         self.data['dataset']['dataset_access_type'] = datasetType
         self.data['dataset']['dataset']             = datasetName
-
+        self.data['dataset']['prep_id'] = prep_id
         # Add misc meta data.
         self.data['dataset']['create_by'] = "WMAgent"
         self.data['dataset']['last_modified_by'] = "WMAgent"

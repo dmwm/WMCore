@@ -1,6 +1,6 @@
 from WMCore.REST.Error import *
 import math, re
-
+import numbers 
 def _arglist(argname, kwargs):
     val = kwargs.get(argname, None)
     if val == None:
@@ -33,7 +33,7 @@ def _check_ustr(argname, val, rx):
     return val
 
 def _check_num(argname, val, bare, minval, maxval):
-    if not isinstance(val, str) or (bare and not val.isdigit()):
+    if not isinstance(val, numbers.Integral) and (not isinstance(val, str) or (bare and not val.isdigit())):
         raise InvalidParameter("Incorrect '%s' parameter" % argname)
     try:
         n = int(val)
@@ -46,7 +46,7 @@ def _check_num(argname, val, bare, minval, maxval):
         raise InvalidParameter("Invalid '%s' parameter" % argname)
 
 def _check_real(argname, val, special, minval, maxval):
-    if not isinstance(val, str):
+    if not isinstance(val, numbers.Number) and not isinstance(val, str):
         raise InvalidParameter("Incorrect '%s' parameter" % argname)
     try:
         n = float(val)
@@ -128,15 +128,15 @@ def validate_num(argname, param, safe, optional = False,
     """Validates that an argument is a valid integer number.
 
     Checks that an argument named `argname` exists in `param.kwargs`,
-    and it is a string convertible to a valid number. If successful
+    and it is an int or a string convertible to a valid number. If successful
     the integer value (not the string) is copied into `safe.kwargs`
-    and the string value is removed from `param.kwargs`.
+    and the original int/string value is removed from `param.kwargs`.
 
     If `optional` is True, the argument is not required to exist in
     `param.kwargs`; None is then inserted into `safe.kwargs`. Otherwise
     a missing value raises an exception.
 
-    If `bare` is True, the number is required to be a pure digit sequence.
+    If `bare` is True, the number is required to be a pure digit sequence if it is a string.
     Otherwise anything accepted by `int(val)` is acceted, including for
     example leading white space or sign. Note that either way arbitrarily
     large values are accepted; if you want to prevent abuse against big
@@ -152,9 +152,9 @@ def validate_real(argname, param, safe, optional = False,
     """Validates that an argument is a valid real number.
 
     Checks that an argument named `argname` exists in `param.kwargs`,
-    and it is a string convertible to a valid number. If successful
+    and it is float number or a string convertible to a valid number. If successful
     the float value (not the string) is copied into `safe.kwargs`
-    and the string value is removed from `param.kwargs`.
+    and the original float/string value is removed from `param.kwargs`.
 
     If `optional` is True, the argument is not required to exist in
     `param.kwargs`; None is then inserted into `safe.kwargs`. Otherwise
@@ -223,8 +223,8 @@ def validate_numlist(argname, param, safe, bare=False, minval=None, maxval=None)
     """Validates that an argument is an array of integers, as checked by
     `validate_num()`.
 
-    Checks that an argument named `argname` is either a single string or
-    an array of strings, each of which validates with `validate_num` and
+    Checks that an argument named `argname` is either a single string/int or
+    an array of strings/int, each of which validates with `validate_num` and
     `bare`, `minval` and `maxval` arguments.  If successful the array is
     copied into `safe.kwargs` and the value is removed from `param.kwargs`.
     The value always becomes an array in `kwsafe`, even if no or only one
@@ -238,8 +238,8 @@ def validate_reallist(argname, param, safe, special=False, minval=None, maxval=N
     """Validates that an argument is an array of integers, as checked by
     `validate_real()`.
 
-    Checks that an argument named `argname` is either a single string or
-    an array of strings, each of which validates with `validate_real` and
+    Checks that an argument named `argname` is either a single string/float or
+    an array of strings/floats, each of which validates with `validate_real` and
     `special`, `minval` and `maxval` arguments.  If successful the array is
     copied into `safe.kwargs` and the value is removed from `param.kwargs`.
     The value always becomes an array in `safe.kwargs`, even if no or only

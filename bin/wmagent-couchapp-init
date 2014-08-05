@@ -73,16 +73,19 @@ def installWorkQueueCouchApp(couchUrl, couchDBName):
     finally:
         shutil.rmtree(tempDir, ignore_errors = True)
 
-def createCronEntires(crontabLines):
+def createCronEntries(crontabLines):
     tempDir = tempfile.mkdtemp()
-    os.system("crontab -l > %s/crontab" % tempDir)
-    cronTab = open("%s/crontab" % tempDir, "a")
-    [cronTab.write(line) for line in crontabLines]
-    cronTab.close()
-    os.system("crontab %s/crontab" % tempDir)
-    os.remove("%s/crontab" % tempDir)
+    cname = '%s/crontab' % tempDir
+    os.system("crontab -l > %s" % cname)
+    entries = [l.replace('\n', '').strip() for l in open(cname, 'r').readlines()]
+    with open(cname, 'a') as astream:
+        for line in crontabLines:
+            line = line.strip()
+            if  line not in entries:
+                astream.write(line + '\n')
+    os.system("crontab %s" % cname)
+    os.remove(cname)
     os.rmdir(tempDir)
-
 
 def setupCron(couchUrl, couchDBName):
     """
@@ -107,28 +110,19 @@ def setupCron(couchUrl, couchDBName):
     compactCmd = "echo %s | sed -e 's|\\\\||g' | xargs curl -s -H 'Content-Type: application/json' -X POST > /dev/null"
 
     crontabLines = []
-    crontabLines.append("* * * * * %s\n" % (indexCmd % indexJobsUrl))
-    crontabLines.append("* * * * * %s\n" % (indexCmd % indexFwjrUrl))
-    crontabLines.append("0 0 * * * %s\n" % (compactCmd % compactViewUrl))
-    crontabLines.append("0 0 * * * %s\n" % (compactCmd % compactDBUrl))
-    createCronEntires(crontabLines)
+    crontabLines.append("* * * * * %s" % (indexCmd % indexJobsUrl))
+    crontabLines.append("* * * * * %s" % (indexCmd % indexFwjrUrl))
+    crontabLines.append("0 0 * * * %s" % (compactCmd % compactViewUrl))
+    crontabLines.append("0 0 * * * %s" % (compactCmd % compactDBUrl))
+    createCronEntries(crontabLines)
 
 
 def setupCronCompaction(couchUrl, couchDbName):
     """Add a simple couch compaction"""
     compactUrl = "%s/%s/_compact" % (couchUrl, couchDbName)
     compactCmd = "curl -s -H 'Content-Type: application/json' -X POST '%s' > /dev/null"
-
-    tempDir = tempfile.mkdtemp()
-    os.system("crontab -l > %s/crontab" % tempDir)
-    cronTab = open("%s/crontab" % tempDir, "a")
-    cronTab.write("0 1 * * * %s\n" % (compactCmd % compactUrl))
-    cronTab.close()
-
-    os.system("crontab %s/crontab" % tempDir)
-    os.remove("%s/crontab" % tempDir)
-    os.rmdir(tempDir)
-
+    cronLine = "0 1 * * * %s" % (compactCmd % compactUrl)
+    createCronEntries([cronLine])
 
 files_needed_from_yui = [
 'build/animation/animation-min.js',
@@ -296,6 +290,7 @@ if __name__ == "__main__":
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, fwjrDumpName, "FWJRDump")
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, jobDumpName, "JobDump")
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.JobStateMachine.jobSummaryDBName, "WMStats")
+        installCouchApp(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.JobStateMachine.summaryStatsDBName, "SummaryStats")
         if options.cron:
             setupCron(wmagentConfig.JobStateMachine.couchurl,
                       wmagentConfig.JobStateMachine.couchDBName)
@@ -305,7 +300,7 @@ if __name__ == "__main__":
                         wmagentConfig.JobStateMachine.configCacheDBName, "ConfigCache")
         installCouchApp(wmagentConfig.JobStateMachine.couchurl,
                         wmagentConfig.JobStateMachine.configCacheDBName, "GroupUser")
-    
+
     if hasattr(wmagentConfig, "WorkQueueManager"):
         installWorkQueueCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname)
         installWorkQueueCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.inboxDatabase)
@@ -322,16 +317,18 @@ if __name__ == "__main__":
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "AsyncTransfer", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "monitor", basePath)
         installCouchApp(wmagentConfig.Statistics.couch_statinstance, wmagentConfig.Statistics.statitics_database, "stat", basePath)
-        installCouchApp(wmagentConfig.Analytics.couch_user_monitoring_instance, wmagentConfig.Analytics.user_monitoring_db, "UserMonitoring", basePath)
         installCouchApp(wmagentConfig.DBSPublisher.couch_instance, wmagentConfig.DBSPublisher.files_database, "DBSPublisher", basePath)
-        installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.jobs_database, "Jobs", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.config_database, "config", basePath)
         installCouchApp(agent_instance, agent_database, "Agent", baseWMCorePath)
         if options.cron:
             setupCronCompaction(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database)
             setupCronCompaction(wmagentConfig.Statistics.couch_statinstance, wmagentConfig.Statistics.statitics_database)
-            setupCronCompaction(wmagentConfig.Analytics.couch_user_monitoring_instance, wmagentConfig.Analytics.user_monitoring_db)
             setupCronCompaction(agent_instance, agent_database)
+
+    if hasattr(wmagentConfig, "Analytics"):
+        installCouchApp(wmagentConfig.Analytics.couch_user_monitoring_instance, wmagentConfig.Analytics.user_monitoring_db, "UserMonitoring", basePath)
+        if options.cron:
+            setupCronCompaction(wmagentConfig.Analytics.couch_user_monitoring_instance, wmagentConfig.Analytics.user_monitoring_db)
 
     if hasattr(wmagentConfig, "reqmgr"):
         installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName, "ReqMgr")
@@ -344,11 +341,11 @@ if __name__ == "__main__":
         # set up  workload summary for test
         if hasattr(wmagentConfig, "WorkloadSummary"):
             installCouchApp(wmagentConfig.WorkloadSummary.couchurl, wmagentConfig.WorkloadSummary.database, "WorkloadSummary")
-            
+
         if hasattr(wmagentConfig, "ACDC"):
             installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "ACDC")
             installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")
-        
+
     else:
         # in case reqmgr is not set but still worklaad Summary need to be initialized (Tier0 test mode case)
         # hacky way to check - assuming production url always use https protocal
@@ -359,5 +356,5 @@ if __name__ == "__main__":
            urlsplit(wmagentConfig.WorkloadSummary.couchurl).scheme == 'http':
             installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "ACDC")
             installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")
-    
+
     sys.exit(0)

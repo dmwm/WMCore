@@ -142,17 +142,17 @@ def modifyConfiguration(config, **args):
         # t0 agent may not have acdc_url
         if args.has_key("acdc_url"):
             config.ACDC.couchurl, config.ACDC.database = splitCouchServiceURL(args["acdc_url"])
-    
-    if hasattr(config, "JobUpdater"):   
+
+    if hasattr(config, "JobUpdater"):
         # t0 agent doesn't have reqmgr_url
-        if args.has_key("reqmgr_url"):    
+        if args.has_key("reqmgr_url"):
             config.JobUpdater.reqMgrUrl = args["reqmgr_url"]
-    
+
     if hasattr(config, "DBS3Upload"):
         config.DBS3Upload.dbsUrl = args["dbs3_url"]
-    
-    if hasattr(config, "PhEDExInjector"):   
-        config.PhEDExInjector.phedexurl = args["phedex_url"]    
+
+    if hasattr(config, "PhEDExInjector"):
+        config.PhEDExInjector.phedexurl = args["phedex_url"]
 
     if hasattr(config,"AsyncTransfer"):
         config.CoreDatabase.connectUrl = '%s/asynctransfer_agent' % args["couch_url"]
@@ -162,12 +162,18 @@ def modifyConfiguration(config, **args):
         config.AsyncTransfer.couch_user_monitoring_instance = args["couch_url"]
         config.AsyncTransfer.opsProxy = args["ops_proxy"]
         config.AsyncTransfer.config_couch_instance = args["couch_url"]
+        config.AsyncTransfer.cache_area = args["ufc_service_url"]
 
     if hasattr(config,"Analytics"):
         config.Analytics.couch_user_monitoring_instance = args["couch_url"]
         config.Analytics.amq_auth_file = args["amq_auth_file"]
         config.Analytics.couch_instance = args["couch_url"]
         config.Analytics.config_couch_instance = args["couch_url"]
+
+    if hasattr(config,"FilesCleaner"):
+        config.FilesCleaner.couch_instance = args["couch_url"]
+        config.FilesCleaner.config_couch_instance = args["couch_url"]
+        config.FilesCleaner.opsProxy = args["ops_proxy"]
 
     if hasattr(config,"Statistics"):
         config.Statistics.couch_statinstance = args["couch_url"]
@@ -180,6 +186,14 @@ def modifyConfiguration(config, **args):
         config.DBSPublisher.cache_area = args["ufc_service_url"]
         config.DBSPublisher.opsProxy = args["ops_proxy"]
         config.DBSPublisher.config_couch_instance = args["couch_url"]
+
+    if hasattr(config,"RetryManager"):
+        # only needed for CRAB instance
+        if args.has_key("couch_url"):
+            config.RetryManager.couch_instance = args["couch_url"]
+        # only needed for CRAB instance
+        if args.has_key("ops_proxy"):
+            config.RetryManager.opsProxy = args["ops_proxy"]
 
     if hasattr(config,"CRABInterface"):
         config.CRABInterface.Webtools.host = args["cs_hostname"]
@@ -277,6 +291,11 @@ def modifyConfiguration(config, **args):
         config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
         config.AnalyticsDataCollector.centralWMStatsURL = args["wmstats_url"]
 
+    # custom AgentStatusWatcher
+    if hasattr(config, "AgentStatusWatcher"):
+        config.AgentStatusWatcher.centralWMStatsURL = args["wmstats_url"]
+        config.AgentStatusWatcher.dashboard = args["dashboard_url"]
+
     return config
 
 def main(argv=None):
@@ -296,7 +315,7 @@ def main(argv=None):
              "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=",
              "ufc_service_url=", "ufc_cachedir=", "client_mapping=", "wmbs_service_port=",
              "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=", "reqmgr_url=",
-             "acdc_url=", "amq_auth_file=", "dbs3_url=", "phedex_url=", "dqm_url="])
+             "acdc_url=", "amq_auth_file=", "dbs3_url=", "phedex_url=", "dqm_url=", "dashboard_url="])
 
         except getopt.error, msg:
             raise Usage(msg)
@@ -316,8 +335,8 @@ def main(argv=None):
                           '--sb_hostname', '--sb_port', '--sb_basepath', '--ufc_hostname',
                           '--ufc_port', '--ufc_service_url', '--ufc_cachedir',
                           '--client_mapping', '--wmbs_service_port', '--workload_summary_url',
-                          '--wmstats_url', '--ops_proxy', '--reqmgr_url', '--acdc_url', 
-                          '--amq_auth_file', '--dbs3_url', '--phedex_url', '--dqm_url'):
+                          '--wmstats_url', '--ops_proxy', '--reqmgr_url', '--acdc_url',
+                          '--amq_auth_file', '--dbs3_url', '--phedex_url', '--dqm_url', '--dashboard_url'):
 
                 parameters[option[2:]] = value
 

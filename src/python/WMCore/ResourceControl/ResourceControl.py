@@ -70,6 +70,17 @@ class ResourceControl(WMConnectionBase):
         
         return
 
+    def listCurrentSites(self):
+        """
+        _listCurrentSites_
+        
+        List all the sites currently in Resource Control
+        """
+        listAction = self.daofactory(classname = "ListCurrentSites")
+        sitesArray = listAction.execute(conn = self.getDBConn(),
+                                  transaction = self.existingTransaction())
+        return [entry['site'] for entry in sitesArray]
+    
     def listSiteInfo(self, siteName):
         """
         _listSiteInfo_

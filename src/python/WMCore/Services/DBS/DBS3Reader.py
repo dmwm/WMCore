@@ -15,6 +15,7 @@ from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx
 from WMCore.Services.EmulatorSwitch import emulatorHook
 
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMcore.Lexicon import cmsname
 
 def remapDBS3Keys(data, stringify = False, **others):
     """Fields have been renamed between DBS2 and 3, take fields from DBS3
@@ -507,7 +508,7 @@ class DBS3Reader:
         return [x['logical_file_name'] for x in files]
 
 
-    def listFileBlockLocation(self, fileBlockName, dbsOnly = False):
+    def listFileBlockLocation(self, fileBlockName, dbsOnly = False, phedexNodes=False):
         """
         _listFileBlockLocation_
 
@@ -521,7 +522,7 @@ class DBS3Reader:
         blockInfo = {}
         if not dbsOnly:
             try:
-                blockInfo = self.phedex.getReplicaSEForBlocks(block=blockNames,complete='y')
+                blockInfo = self.phedex.getReplicaSEForBlocks(phedexNodes=phedexNodes, block=blockNames, complete='y')
             except Exception, ex:
                 msg = "Error while getting block location from PhEDEx for block_name=%s)\n" % fileBlockName
                 msg += "%s\n" % str(ex)
@@ -547,8 +548,19 @@ class DBS3Reader:
 
         #removing duplicates and 'UNKNOWN entries
         locations = {}
-        for block in blockInfo:
-            locations[block] = list( set(blockInfo[block]) - set(['UNKNOWN']) )
+        for name, nodes in blockInfo.iteritems():
+            final_nodes = set()
+            for n in nodes:
+                try:
+                    cmsname(n)
+                except AssertionError: ## is SE
+                    if phedexNodes:
+                        n = self.phedex.getNodeNames(n) ## convert to phedexNodes
+                else:  ## not SE i.e. phedexNode
+                    if not phedexNodes: 
+                        n = [self.phedex.getNodeSE(n)] ## convert to SE
+                final_nodes.add(n)
+            locations[name] = list( set(final_nodes) - set(['UNKNOWN']) )
 
         #returning single list if a single block is passed
         if isinstance(fileBlockName, basestring):

@@ -83,12 +83,19 @@ class SiteDBJSON(Service):
         file = 'site-names.json'
         sitenames = self.getJSON('site-names', file=file, clearCache=clearCache)
         if sitename:
-            sitenames = filter(lambda x: x['site_name'] == sitename, sitenames)
+            sitenames = filter(lambda x: x[u'site_name'] == sitename, sitenames)
         return sitenames
 
     def _siteresources(self, clearCache=False):
         file = 'site-resources.json'
         return self.getJSON('site-resources', file=file)
+
+    def _dataProcessing(self, pnn=None, clearCache=False):
+        file = 'data-processing.json'
+        psnMap = self.getJSON('data-processing', file=file, clearCache=clearCache)
+        if pnn:
+            psnMap = filter(lambda x: x['phedex_name'] == pnn, psnMap)
+        return psnMap
 
     def dnUserName(self, dn):
         """
@@ -120,7 +127,8 @@ class SiteDBJSON(Service):
         """
         Convert CMS name (also pattern) to list of CEs
         """
-        return self.cmsNametoList(cmsName, 'CE')
+        raise NotImplementedError
+        #return self.cmsNametoList(cmsName, 'CE')
 
     def cmsNametoSE(self, cmsName):
         """
@@ -160,7 +168,7 @@ class SiteDBJSON(Service):
         This will allow us to add them in resourceControl at once
         """
         sitenames = self._sitenames()
-        cmsnames = filter(lambda x: x['type']=='cms', sitenames)
+        cmsnames = filter(lambda x: x['type']=='psn', sitenames)
         cmsnames = map(lambda x: x['alias'], cmsnames)
         return cmsnames
 
@@ -173,7 +181,7 @@ class SiteDBJSON(Service):
         cmsname_pattern = cmsname_pattern.replace('%','.*')
         cmsname_pattern = re.compile(cmsname_pattern)
 
-        sitenames = filter(lambda x: x['type']=='cms' and cmsname_pattern.match(x['alias']),
+        sitenames = filter(lambda x: x[u'type']=='psn' and cmsname_pattern.match(x[u'alias']),
                            self._sitenames())
         sitenames = set(map(lambda x: x['site_name'], sitenames))
         siteresources = filter(lambda x: x['site_name'] in sitenames, self._siteresources())
@@ -249,3 +257,16 @@ class SiteDBJSON(Service):
 #        # need to call CMSNametoPhEDExNode?cms_name= but can't find a way to do
 #        # that. So simply raise an error
 #        raise ValueError, "Unable to find CMS name for \'%s\'" % node
+
+    def PNNtoPSN(self, pnn):
+        """
+        Convert PhEDEx node name to Processing Site Name(s)
+        """
+
+        psnMap = self._dataProcessing()
+        try:
+            reducedMap = filter(lambda x: x[u'phedex_name']==pnn, psnMap)
+            psns = [x[u'psn_name'] for x in reducedMap]
+        except IndexError:
+            return None
+        return psns

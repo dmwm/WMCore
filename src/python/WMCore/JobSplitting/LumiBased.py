@@ -79,6 +79,7 @@ class LumiBased(JobFactory):
         myThread = threading.currentThread()
 
         lumisPerJob = int(kwargs.get('lumis_per_job', 1))
+        totalLumis = int(kwargs.get('total_lumis', 0))
         splitOnFile = bool(kwargs.get('halt_job_on_file_boundaries', True))
         ignoreACDC = bool(kwargs.get('ignore_acdc_except', False))
         collectionName = kwargs.get('collectionName', None)
@@ -181,8 +182,10 @@ class LumiBased(JobFactory):
         lastLumi = None
         firstLumi = None
         stopJob = True
+        stopTask = False
         lastRun = None
         lumisInJob = 0
+        lumisInTask = 0
         for location in locationDict.keys():
 
             # For each location, we need a new jobGroup
@@ -271,12 +274,17 @@ class LumiBased(JobFactory):
                             self.currentJob.addFile(f)
 
                         lumisInJob += 1
+                        lumisInTask += 1
                         lastLumi = lumi
                         stopJob = False
                         lastRun = run.run
 
                         if self.currentJob and not f in self.currentJob['input_files']:
                             self.currentJob.addFile(f)
+
+                        if totalLumis > 0 and lumisInTask >= totalLumis:
+                            stopTask = True
+                            break
 
                     if firstLumi != None and lastLumi != None:
                         # Add this run to the mask
@@ -288,6 +296,12 @@ class LumiBased(JobFactory):
                         self.currentJob.addResourceEstimates(jobTime = runAddedTime, disk = runAddedSize)
                         firstLumi = None
                         lastLumi = None
+
+                    if stopTask:
+                        break
+
+                if stopTask:
+                    break
 
             # We now have a list of jobs in a job group.  We will now iterate through them
             # to verify we have no single lumi processed by multiple jobs.
@@ -302,6 +316,9 @@ class LumiBased(JobFactory):
                     job2 = jobs[idx2]
                     overlap += self.lumiCorrection(job1, job2, locationDict[location])
             logging.info("There were %d overlapping lumis and %d total lumis." % (overlap, lumicount))
+
+            if stopTask:
+                break
 
         return
 

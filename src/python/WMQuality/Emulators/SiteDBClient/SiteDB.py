@@ -24,32 +24,48 @@ class SiteDBJSON(object):
                        {u'site_name': u'T2_XX_SiteB', u'type': u'cms', u'alias': u'T2_XX_SiteB'},
                        {u'site_name': u'T2_XX_SiteC', u'type': u'cms', u'alias': u'T2_XX_SiteC'},
                        {u'site_name': u'CERN Tier-2', u'type': u'cms', u'alias': u'T2_CH_CERN'},
+                       {u'site_name': u'CERN AI', u'type': u'cms', u'alias': u'T2_CH_CERN_AI'},
+                       {u'site_name': u'CERN Tier-0', u'type': u'cms', u'alias': u'T2_CH_CERN_T0'},
                        {u'site_name': u'CERN Tier-2 HLT', u'type': u'cms', u'alias': u'T2_CH_CERN_HLT'}]
 
-    _siteresources_data = [{u'type': u'CE', u'site_name': u'RAL', u'fqdn': u'lcgce11.gridpp.rl.ac.uk', u'is_primary': u'n'},
-                           {u'type': u'CE', u'site_name': u'RAL', u'fqdn': u'lcgce10.gridpp.rl.ac.uk', u'is_primary': u'n'},
+    _siteresources_data = [
+                           # Site resources no longer returns CE data
+                           #{u'type': u'CE', u'site_name': u'RAL', u'fqdn': u'lcgce11.gridpp.rl.ac.uk', u'is_primary': u'n'},
+                           #{u'type': u'CE', u'site_name': u'RAL', u'fqdn': u'lcgce10.gridpp.rl.ac.uk', u'is_primary': u'n'},
                            {u'type': u'SE', u'site_name': u'RAL', u'fqdn': u'srm-cms.gridpp.rl.ac.uk', u'is_primary': u'n'},
-                           {u'type': u'CE', u'site_name': u'RAL', u'fqdn': u'lcgce02.gridpp.rl.ac.uk', u'is_primary': u'n'},
-                           {u'type': u'CE', u'site_name': u'FNAL', u'fqdn': u'cmsosgce2.fnal.gov', u'is_primary': u'n'},
-                           {u'type': u'CE', u'site_name': u'FNAL', u'fqdn': u'cmsosgce4.fnal.gov', u'is_primary': u'n'},
-                           {u'type': u'CE', u'site_name': u'FNAL', u'fqdn': u'cmsosgce.fnal.gov', u'is_primary': u'n'},
+                           {u'type': u'SE', u'site_name': u'RAL', u'fqdn': u'srm-cms-disk.gridpp.rl.ac.uk', u'is_primary': u'n'},
+                           #{u'type': u'CE', u'site_name': u'RAL', u'fqdn': u'lcgce02.gridpp.rl.ac.uk', u'is_primary': u'n'},
+                           #{u'type': u'CE', u'site_name': u'FNAL', u'fqdn': u'cmsosgce2.fnal.gov', u'is_primary': u'n'},
+                           #{u'type': u'CE', u'site_name': u'FNAL', u'fqdn': u'cmsosgce4.fnal.gov', u'is_primary': u'n'},
+                           #{u'type': u'CE', u'site_name': u'FNAL', u'fqdn': u'cmsosgce.fnal.gov', u'is_primary': u'n'},
                            {u'type': u'SE', u'site_name': u'FNAL', u'fqdn': u'cmssrm.fnal.gov', u'is_primary': u'n'},
-                           {u'type': u'CE', u'site_name': u'Nebraska', u'fqdn': u'red.unl.edu', u'is_primary': u'n'},
-                           {u'type': u'CE', u'site_name': u'Nebraska', u'fqdn': u'red-gw1.unl.edu', u'is_primary': u'n'},
-                           {u'type': u'CE', u'site_name': u'Nebraska', u'fqdn': u'red-gw2.unl.edu', u'is_primary': u'n'},
-                           {u'type': u'CE', u'site_name': u'Nebraska', u'fqdn': u'ff-grid.unl.edu', u'is_primary': u'n'},
+                           #{u'type': u'CE', u'site_name': u'Nebraska', u'fqdn': u'red.unl.edu', u'is_primary': u'n'},
+                           #{u'type': u'CE', u'site_name': u'Nebraska', u'fqdn': u'red-gw1.unl.edu', u'is_primary': u'n'},
+                           #{u'type': u'CE', u'site_name': u'Nebraska', u'fqdn': u'red-gw2.unl.edu', u'is_primary': u'n'},
+                           #{u'type': u'CE', u'site_name': u'Nebraska', u'fqdn': u'ff-grid.unl.edu', u'is_primary': u'n'},
                            {u'type': u'SE', u'site_name': u'Nebraska', u'fqdn': u'red-srm1.unl.edu', u'is_primary': u'n'},
                            {u'type': u'SE', u'site_name': u'Nebraska', u'fqdn': u'srm.unl.edu', u'is_primary': u'n'},
                            {u'type': u'SE', u'site_name': u'Nebraska', u'fqdn': u'dcache07.unl.edu', u'is_primary': u'n'},
-                           {u'type': u'CE', u'site_name': u'T2_XX_SiteA', u'fqdn': u'T2_XX_SiteA', u'is_primary' : u'n'},
-                           {u'type': u'CE', u'site_name': u'T2_XX_SiteB', u'fqdn': u'T2_XX_SiteB', u'is_primary' : u'n'},
-                           {u'type': u'CE', u'site_name': u'T2_XX_SiteC', u'fqdn': u'T2_XX_SiteC', u'is_primary' : u'n'},
+                           #{u'type': u'CE', u'site_name': u'T2_XX_SiteA', u'fqdn': u'T2_XX_SiteA', u'is_primary' : u'n'},
+                           #{u'type': u'CE', u'site_name': u'T2_XX_SiteB', u'fqdn': u'T2_XX_SiteB', u'is_primary' : u'n'},
+                           #{u'type': u'CE', u'site_name': u'T2_XX_SiteC', u'fqdn': u'T2_XX_SiteC', u'is_primary' : u'n'},
                            {u'type': u'SE', u'site_name': u'T2_XX_SiteA', u'fqdn': u'T2_XX_SiteA', u'is_primary' : u'n'},
                            {u'type': u'SE', u'site_name': u'T2_XX_SiteB', u'fqdn': u'T2_XX_SiteB', u'is_primary' : u'n'},
                            {u'type': u'SE', u'site_name': u'T2_XX_SiteC', u'fqdn': u'T2_XX_SiteC', u'is_primary' : u'n'},
                            {u'type': u'SE', u'site_name': u'CERN Tier-2', u'fqdn': u'srm-eoscms.cern.ch', u'is_primary' : u'n'},
-                           {u'type': u'CE', u'site_name': u'CERN Tier-2', u'fqdn': u'ce207.cern.ch', u'is_primary' : u'n'},
+                           {u'type': u'SE', u'site_name': u'CERN Tier-0', u'fqdn': u'srm-eoscms.cern.ch', u'is_primary' : u'n'},
+                           {u'type': u'SE', u'site_name': u'CERN AI', u'fqdn': u'srm-eoscms.cern.ch', u'is_primary' : u'n'},
+                           #{u'type': u'CE', u'site_name': u'CERN Tier-2', u'fqdn': u'ce207.cern.ch', u'is_primary' : u'n'},
                            {u'type': u'SE', u'site_name': u'CERN Tier-2 HLT', u'fqdn': u'srm-eoscms.cern.ch', u'is_primary' : u'n'}]
+
+    _dataProcessing_data = [{u'phedex_name': u'T2_CH_CERN',  u'psn_name': u'T2_CH_CERN',  u'site_name': u'CERN-PROD'},
+                            {u'phedex_name': u'T1_DE_KIT_Disk',  u'psn_name': u'T1_DE_KIT',  u'site_name': u'FZK-LCG2'},
+                            {u'phedex_name': u'T3_US_Omaha',  u'psn_name': u'T3_US_Omaha',  u'site_name': u'Firefly'},
+                            {u'phedex_name': u'T2_US_Nebraska',  u'psn_name': u'T2_US_Nebraska',  u'site_name': u'Nebraska'},
+                            {u'phedex_name': u'T1_UK_RAL_Disk',  u'psn_name': u'T1_UK_RAL',  u'site_name': u'RAL-LCG2-DISK'},
+                            {u'phedex_name': u'T1_US_FNAL_Disk',  u'psn_name': u'T1_US_FNAL',  u'site_name': u'USCMS-FNAL-WC1-DISK'},
+                            {u'phedex_name': u'T2_UK_London_IC',  u'psn_name': u'T2_UK_London_IC',  u'site_name': u'UKI-LT2-IC-HEP'},
+                           ]
 
     def __init__(self, config={}):
         pass
@@ -69,6 +85,9 @@ class SiteDBJSON(object):
     def _siteresources(self, clearCache=False):
         return self._siteresources_data
 
+    def _dataProcessing(self, clearCache=False):
+        return self._dataProcessing_data
+
     def dnUserName(self, dn):
         """
         Convert DN to Hypernews name. Clear cache between trys
@@ -86,7 +105,8 @@ class SiteDBJSON(object):
         """
         Convert CMS name (also pattern) to list of CEs
         """
-        return self.cmsNametoList(cmsName, 'CE')
+        raise NotImplementedError
+        #return self.cmsNametoList(cmsName, 'CE')
 
     def cmsNametoSE(self, cmsName):
         """
@@ -202,3 +222,16 @@ class SiteDBJSON(object):
                                         '').replace('_Export', '')
 
         return name
+
+    def PNNtoPSN(self, pnn):
+        """
+        Emulator to convert PhEDEx node name to Processing Site Name(s)
+        """
+
+        psnMap = self._dataProcessing()
+        try:
+            reducedMap = filter(lambda x: x[u'phedex_name']==pnn, psnMap)
+            psns = [x[u'psn_name'] for x in reducedMap]
+        except IndexError:
+            return None
+        return psns

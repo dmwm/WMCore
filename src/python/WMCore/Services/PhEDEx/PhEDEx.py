@@ -439,7 +439,7 @@ class PhEDEx(Service):
                                 injectedFiles.append(fileInfo['lfn'])
         return injectedFiles
     
-    def getReplicaSEForBlocks(self, **kwargs):
+    def getReplicaSEForBlocks(self, phedexNodes=False, **kwargs):
         """
         _blockreplicasSE_
 
@@ -468,17 +468,23 @@ class PhEDEx(Service):
         response = self._getResult(callname, args = kwargs)
         
         blockSE = dict()
-        
+        blockNodes = dict()
+
         blocksInfo = response['phedex']['block']
         if not blocksInfo:
             return {}
         
         for blockInfo in blocksInfo:
             se = set()
+            nodes = set()
             for replica in blockInfo['replica']:
+                nodes.add(replica['node'])
                 se.add(replica['se'])
+            blockNodes[blockInfo['name']] = list(nodes)
             blockSE[blockInfo['name']] = list(se)
         
+        if phedexNodes:
+            return blockNodes
         return blockSE
             
             

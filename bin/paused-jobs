@@ -54,20 +54,24 @@ class PausedTool:
         myOptParser.add_option('-t', '--task-type', dest = 'taskType',
                                help = 'Only jobs of TYPE will be resumed/failed',
                                default = None)
+        myOptParser.add_option('-j', '--job-id', dest = 'jobId',
+                               help = 'Only the pointed job will be resumed/failed',
+                               default = None)
         myOptParser.add_option('-d', '--dry-run', dest = 'dryRun',
                                help = "Don't make any changes, just print out what will happen",
                                default = False, action = 'store_true')
 
         (options, _) = myOptParser.parse_args()
 
-        if not (options.workflow or options.site or options.taskType):
-            myOptParser.error('At least a workflow, site or type must be specified')
+        if not (options.workflow or options.site or options.taskType or options.jobId):
+            myOptParser.error('At least a workflow, site, type or job-id must be specified')
 
         self.workflow = options.workflow
         self.action = options.action
         self.site = options.site
         self.dryRun = options.dryRun
         self.taskType = options.taskType
+        self.jobId = options.jobId
         return
 
     def getPaused(self):
@@ -88,6 +92,10 @@ class PausedTool:
         if self.workflow:
             for jobID in jobs:
                 if (re.match('.*' + self.workflow + '.*' , jobs[jobID])):
+                    matchedJobs.append(jobID)
+        elif self.jobId:
+            for jobID in jobs:
+                if self.jobId == str(jobID):
                     matchedJobs.append(jobID)
         else:
             matchedJobs = jobs.keys()

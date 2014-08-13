@@ -8,6 +8,10 @@ from functools import wraps
 from WMCore.REST.Error import *
 from WMCore.REST.Format import *
 from WMCore.REST.Validation import validate_no_more_input
+try:
+  from cherrypy.lib import httputil
+except:
+  from cherrypy.lib import http as httputil
 
 #: List of HTTP methods for which it's possible to register a REST handler.
 _METHODS = ('GET', 'HEAD', 'POST', 'PUT', 'DELETE')
@@ -294,7 +298,7 @@ class RESTFrontPage:
 
         # Build final response + headers.
         response.headers['Content-Type'] = ctype
-        response.headers['Last-Modified'] = cherrypy.lib.http.HTTPDate(mtime)
+        response.headers['Last-Modified'] = httputil.HTTPDate(mtime)
         response.headers['Cache-Control'] = "public, max-age=%d" % 86400
         response.headers['ETag'] = '"%s"' % hashlib.sha1(result).hexdigest()
         cherrypy.lib.cptools.validate_since()

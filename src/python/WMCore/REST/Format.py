@@ -1,6 +1,10 @@
 import re, cherrypy, cjson, types, hashlib, xml.sax.saxutils, zlib
 from WMCore.REST.Error import RESTError, ExecutionError, report_rest_error
 from traceback import format_exc
+try:
+  from cherrypy.lib import httputil
+except:
+  from cherrypy.lib import http as httputil
 
 def vary_by(header):
     """Add 'Vary' header for `header`."""
@@ -392,7 +396,7 @@ def _etag_match(status, etagval, match, nomatch):
     # as they need to be handled as request pre-condition, not in the
     # streaming out part here.
     if cherrypy.request.method in ('GET', 'HEAD'):
-        status, reason, msg = cherrypy.lib.http.valid_status(status)
+        status, reason, msg = httputil.valid_status(status)
         if status >= 200 and status <= 299:
             if match and ("*" in match or etagval in match):
                 raise cherrypy.HTTPError(412, "Precondition on ETag %s failed" % etagval)

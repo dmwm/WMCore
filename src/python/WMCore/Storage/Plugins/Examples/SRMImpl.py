@@ -33,8 +33,8 @@ class SRMImpl(StageOutImplV2):
         SRM uses file:/// urls
 
         """
-        if os.path.isfile(pfn):
-            return "file:///%s" % os.path.abspath(pfn)
+        if pfn.startswith('/'):
+            return "file:///%s" % pfn
         else:
             return pfn
 
@@ -93,8 +93,8 @@ class SRMImpl(StageOutImplV2):
             self.runCommandWarnOnNonZero(["srm-advisory-delete", pfn])
         elif pfn.startswith("file:"):
             self.runCommandWarnOnNonZero(["/bin/rm", "-f", pfn.replace("file://", "", 1)])
-        elif os.path.isfile(pfn)
-            self.runCommandWarnOnNonZero(["/bin/rm", "-f", os.path.abspath(pfn)])
+        elif pfn.startswith('/'):
+            self.runCommandWarnOnNonZero(["/bin/rm", "-f", pfn])
         else:
             logging.info("Tried to delete, but nothing knew how")
             logging.info("pfn: %s" % pfn)

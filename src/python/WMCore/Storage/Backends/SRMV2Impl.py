@@ -38,8 +38,8 @@ class SRMV2Impl(StageOutImpl):
         SRM uses file:/// urls
 
         """
-        if os.path.isfile(pfn):
-            return "file:///%s" % os.path.abspath(pfn)
+        if pfn.startswith('/'):
+            return "file:///%s" % pfn
         else:
             return pfn
 

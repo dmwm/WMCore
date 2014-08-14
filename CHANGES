@@ -1,3 +1,60 @@
+0.9.96 to 0.9.97.pre4:
+  - Merge pull request #5272 from hufnagel/fix-typo
+  - fix typo in recent commit
+  - 0.9.97.pre3
+  - Merge pull request #5265 from juztas/localtransfer
+  - 0.9.97.pre2
+  - Merge pull request #5267 from ericvaandering/sitedb_psn
+  - Merge pull request #5263 from alexanderrichards/listFileBlockLocation_Fix
+  - Merge pull request #5269 from lucacopa/fail_single_job
+  - This add the flag to fail a single job from the paused-jobs script
+  - Add PSN API for SiteDB, fix unit tests for real data and emulator
+  - Merge pull request #5260 from AndresTanasijczuk/totalunits_in_lumibased
+  - Accept total_lumis in LumiBased splitting.
+  - Merge pull request #5266 from amaltaro/more-dmwm-templates
+  - added more short request templates for taskchain and extension MC
+  - Checking if file exists and always use abspath
+  - Merge pull request #5256 from AndresTanasijczuk/totalunits
+  - adding phedex nodes to the listFileBlockLocation
+  - Accept totalunits in FileBased splitting.
+  - Merge pull request #5259 from juztas/master
+  - StageOutImplV2 plugin: improve detection of local files. Fixes #5255
+  - 0.9.97_pre1
+  - Merge pull request #5142 from alexanderrichards/disk_subscription
+  - Merge pull request #5249 from ticoann/force_complete3
+  - Fix for subscribing non-custodial T1 data to DISK endpoint, issue #5066
+  - Merge pull request #5252 from amaltaro/small-reqmgr-templates
+  - added short reqmgr templates for Dev/DMWM tests; still missing taskchain
+  - Merge pull request #5250 from ericvaandering/example_fwjson
+  - Examples JSON files of reports
+  - 0.9.96a
+  - Merge pull request #5193 from lucacopa/fix_wmstats_not_available
+  - force complete - work in progress
+  - Merge pull request #5246 from ticoann/wmstats_output_dataset_number
+  - Merge pull request #5220 from mmascher/master
+  - Merge pull request #5248 from ericvaandering/fallback_fjr
+  - Merge pull request #5217 from ticoann/temp_fix_lumi_update_ws
+  - Add skipped files to JSON and xrootd fallback files to Report and JSON
+  - Merge pull request #5247 from ticoann/pycondor_condor_plugin_config
+  - support both pycondor and condor plugin
+  - change where wmstats get output dataset number.
+  - Merge pull request #5245 from bbockelm/fallback_example
+  - Add an example of a FJR where fallback was invoked.
+  - Merge pull request #5127 from tsarangi/pythoncondorAPI
+  - Update all failing tests
+  - Merge pull request #5240 from yuyiguo/Lexicon-DBSUser-2
+  - add special character ' in DN too.
+  - Merge pull request #5239 from ericvaandering/fix_taskchain_test
+  - Change parameter name
+  - Adjust that lumi list is not specified as string, but dict and that keys are converted to strings, not ints
+  - fix lumi data format
+  - Merge pull request #5237 from ticoann/fix_wmstats_lumi_cal
+  - fix dataset name in summary db
+  - temp fix for lumi report on workloadsummary
+  - Python Condor API Include PyCondorPlugin Check Schedd and Classad for jobs on the submit host Progate bugfix from CondorPlugin to PyCondorPlugin Change Unittest to test updateSiteInformation method Add Profiler for Condor Plugin performance comparison
+  - Allow the possibility to set the runtimeDir for scram pre scripts in the CMSSW executor. Related to https://github.com/dmwm/CRABClient/issues/4177
+  - Dont divide threholds when wmstats is not available
+
 0.9.96 to 0.9.97.pre3:
   - Merge pull request #5265 from juztas/localtransfer
   - 0.9.97.pre2

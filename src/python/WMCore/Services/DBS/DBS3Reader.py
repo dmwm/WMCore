@@ -548,7 +548,7 @@ class DBS3Reader:
         #removing duplicates and 'UNKNOWN entries
         locations = {}
         for block in blockInfo:
-            locations[block] = list( set(blockInfo[block]) - set(['UNKNOWN']) )
+            locations[block] = list( set(blockInfo[block]) - set(['UNKNOWN', None]) )
 
         #returning single list if a single block is passed
         if isinstance(fileBlockName, basestring):

@@ -548,9 +548,13 @@ class DBS3Reader:
 
         #removing duplicates and 'UNKNOWN entries
         locations = {}
+        node_filter_list = set(['UNKNOWN', None])
         for name, nodes in blockInfo.iteritems():
             final_nodes = set()
+            
             for n in nodes:
+                if n in node_filter_list:
+                    continue
                 try:
                     cmsname(n)
                 except AssertionError: ## is SE
@@ -559,8 +563,8 @@ class DBS3Reader:
                 else:  ## not SE i.e. phedexNode
                     if not phedexNodes: 
                         n = [self.phedex.getNodeSE(n)] ## convert to SE
-                final_nodes.add(n)
-            locations[name] = list( set(final_nodes) - set(['UNKNOWN']) )
+                final_nodes = final_nodes.union(n)
+            locations[name] = list(final_nodes - node_filter_list)
 
         #returning single list if a single block is passed
         if isinstance(fileBlockName, basestring):

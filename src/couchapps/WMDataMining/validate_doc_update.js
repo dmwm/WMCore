@@ -18,7 +18,7 @@ function(newDoc, oldDoc, userCtx) {
             return []; // Request comes from other handlers (i.e. host auth)
       }
       return null;
-   }
+   };
 
    // Function to check if user has the role for a given group or site
    var matchesRole = function(role, grpsite) {
@@ -27,13 +27,14 @@ function(newDoc, oldDoc, userCtx) {
          if (grpsite === "" || r.indexOf(grpsite) != -1)
             return true;
       return false;
-   }
+   };
 
    // Gets whether the user is a global admin
    // name=null means requests coming from the local replicator, so we must allow
    // (the cms couch auth does not allow name=null, so it affects only internal
    // replication requests)
    var isGlobalAdm = (userCtx.name === null)
+                     || matchesRole("admin","")
                      || matchesRole("_admin","")
                      || matchesRole("-admin","group:couchdb");
 
@@ -48,4 +49,4 @@ function(newDoc, oldDoc, userCtx) {
       log(toJSON(userCtx));
       throw {forbidden: "User not authorized for action."};
    }
-}
+};

@@ -980,8 +980,8 @@ class TaskArchiverPoller(BaseWorkerThread):
     def getPerformanceFromDQM(self, dqmUrl, dataset, run):
         
         # Get the proxy, as CMSWEB doesn't allow us to use plain HTTP
-        hostCert = os.getenv("X509_USER_PROXY")
-        hostKey  = hostCert
+        hostCert = os.getenv("X509_HOST_CERT")
+        hostKey  = os.getenv("X509_HOST_KEY")
         # it seems that curl -k works, but as we already have everything, I will just provide it
         
         # Make function to fetch this from DQM. Returning Null or False if it fails

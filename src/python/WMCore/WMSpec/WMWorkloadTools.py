@@ -12,6 +12,7 @@ import json
 
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMException import WMException
+from WMCore.Services.DBS.DBS3Reader import DBS3Reader
 
 class WMWorkloadToolsException(WMException):
     """
@@ -62,7 +63,16 @@ def strToBool(string):
         return False
     else:
         raise WMWorkloadToolsException()
-
+    
+def checkDBSUrl(dbsUrl):
+    if dbsUrl:
+        try:
+            DBS3Reader(dbsUrl).dbs.serverinfo()
+        except:
+            raise WMWorkloadToolsException("DBS is not responding: %s" % dbsUrl)
+    
+    return True
+    
 def parsePileupConfig(mcPileup, dataPileup):
     """
     _parsePileupConfig_
@@ -100,15 +110,15 @@ def validateArguments(arguments, argumentDefinition):
             continue
         try:
             argType = argumentDefinition[argument]["type"]
-            argType(arguments[argument])
+            convertedArg = argType(arguments[argument])
         except Exception:
             return "Argument %s type is incorrect in schema." % argument
         validateFunction = argumentDefinition[argument]["validate"]
         if validateFunction is not None:
             try:
-                if not validateFunction(argType(arguments[argument])):
+                if not validateFunction(convertedArg):
                     raise Exception
             except:
                 # Some validation functions (e.g. Lexicon) will raise errors instead of returning False
-                return "Argument %s doesn't pass validation." % argument
+                return "Argument %s doesn't pass validation. %s" % (argument, convertedArg)
     return

@@ -12,7 +12,7 @@ from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMException import WMException
 from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMWorkloadTools import makeList, makeLumiList, strToBool, validateArguments
+from WMCore.WMSpec.WMWorkloadTools import makeList, makeLumiList, strToBool, validateArguments, checkDBSUrl
 
 analysisTaskTypes = ['Analysis', 'PrivateMC']
 
@@ -868,7 +868,8 @@ class StdBase(object):
                      "MaxMergeEvents" : {"default" : 100000, "type" : int,
                                          "validate" : lambda x : x > 0},
                      "ValidStatus" : {"default" : "PRODUCTION"},
-                     "DbsUrl" : {"default" : "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"},
+                     "DbsUrl" : {"default" : "https://cmsweb.cern.ch/dbs/prod/global/DBSReader",
+                                 "null" : True, "validate" : checkDBSUrl},
                      "DashboardHost" : {"default" : "cms-wmagent-job.cern.ch"},
                      "DashboardPort" : {"default" : 8884, "type" : int,
                                         "validate" : lambda x : x > 0},

@@ -193,9 +193,10 @@ def abortRequest(requestName):
     if response == [] or response[0] == None or response[0] == "":
         msg =  "Cannot find ProdMgr for request %s\n " % requestName
         msg += "Request may not be known to WorkQueue.  If aborted immediately after assignment, ignore this."
-        raise cherrypy.HTTPError(400, msg)
-    workqueue = WorkQueue.WorkQueue(response[0])
-    workqueue.cancelWorkflow(requestName)
+        logging.warning(msg)
+    else:
+        workqueue = WorkQueue.WorkQueue(response[0])
+        workqueue.cancelWorkflow(requestName)
     return
 
 def insecure():

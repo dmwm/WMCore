@@ -16,6 +16,15 @@ def formatEx(excepInst):
                         )
     return msg
 
+def formatEx3(excepInst):
+    """
+    _formatEx_
+
+    given a DbdException instance, generate a simple message from it
+    """
+    msg = "%s:%s" % (excepInst.__class__.__name__, str(excepInst))
+    return msg
+
 
 
 class DataMgmtError(ProdException):

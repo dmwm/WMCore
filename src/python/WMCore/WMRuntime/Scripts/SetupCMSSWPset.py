@@ -265,31 +265,6 @@ class SetupCMSSWPset(ScriptInterface):
         return
 
 
-    def fixupLazyDownload(self):
-        """
-         _fixupLazyDownload_
-
-        Disable lazy download for multicore jobs because it is very inefficient.
-        """
-
-        if not hasattr(self.process.source, "fileNames"):
-            # no source fileNames means no reading data => Irrelevant
-            return
-
-        numberOfCores = 1
-        if hasattr(self.step.data.application, "multicore"):
-            numberOfCores = self.step.data.application.multicore.numberOfCores
-        if numberOfCores != 1:
-            # job is multicore
-            # disable lazy download despite what the site wants
-            self.process.add_(
-                cms.Service("SiteLocalConfigService",
-                overrideSourceCacheHintDir = cms.untracked.string("application-only")
-                )
-            )
-        return
-
-
     def applyTweak(self, psetTweak):
         """
         _applyTweak_
@@ -565,7 +540,27 @@ class SetupCMSSWPset(ScriptInterface):
                 raise ex
 
         self.fixupProcess()
-        self.fixupLazyDownload()
+
+        # This is probably overly complex since enabled and numberOfCores > 1 both convey the same thing
+        if self.step.data.application.multicore.enabled:
+            numCores = self.step.data.application.multicore.numberOfCores
+        else:
+            numCores = 1
+
+        if numCores == "auto": # This should never happen
+            raise NotImplementedError("We no longer support automatic detection of the number of cores.")
+        else:
+            numCores = int(numCores)
+
+        if numCores > 1:
+            options = getattr(self.process, "options", None)
+            if options == None:
+                pset.options = cms.untracked.PSet()
+                options = getattr(pset, "options")
+
+
+            options.numberOfThreads = cms.untracked.uint32(numCores)
+            options.numberOfStreams = cms.untracked.uint32(0)        # For now, same as numCores
 
         psetTweak = getattr(self.step.data.application.command, "psetTweak", None)
         if psetTweak != None:

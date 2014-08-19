@@ -1505,6 +1505,7 @@ def addFiles(file1, file2):
 
     Combine two files. Used for multicore report building
 
+    # This is almost certainly not used anymore (for forked CMSSW)
     #ToDo: parents & locations.
     """
     file1['events'] += file2['events']

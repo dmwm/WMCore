@@ -548,18 +548,15 @@ class DBS3Reader:
         node_filter_list = set(['UNKNOWN', None])
         for name, nodes in blockInfo.iteritems():
             final_nodes = set()
-            
             for n in nodes:
                 if n in node_filter_list:
                     continue
                 try:
                     cmsname(n)
                 except AssertionError: ## is SE
-                    if phedexNodes:
-                        n = self.phedex.getNodeNames(n) ## convert to phedexNodes
+                    n = self.phedex.getNodeNames(n) if phedexNodes else [n]
                 else:  ## not SE i.e. phedexNode
-                    if not phedexNodes: 
-                        n = [self.phedex.getNodeSE(n)] ## convert to SE
+                    n = [self.phedex.getNodeSE(n)] if not phedexNodes else [n]
                 final_nodes = final_nodes.union(n)
             locations[name] = list(final_nodes - node_filter_list)
 

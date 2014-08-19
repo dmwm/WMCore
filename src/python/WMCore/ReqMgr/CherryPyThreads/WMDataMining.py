@@ -3,7 +3,7 @@ Created on Aug 13, 2014
 
 @author: sryu
 '''
-from WMCore.ReqMgr.CherryPyThreads.CherryPyPeriodicTask import SequentialTaskBase, CherryPyPeriodicTask, Hello
+from WMCore.ReqMgr.CherryPyThreads.CherryPyPeriodicTask import SequentialTaskBase, CherryPyPeriodicTask
 from WMCore.WMDataMining.Utils import getherWMDataMiningStats
 
 class WMDataMining(CherryPyPeriodicTask):

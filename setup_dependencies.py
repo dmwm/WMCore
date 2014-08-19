@@ -56,6 +56,7 @@ dependencies = {'wmc-rest':{
                                      'WMCore.Services.WMStats',
                                      'WMCore.Services.SiteDB+',
                                      'WMCore.Services.DBS+',
+                                     'WMCore.Services.PhEDEx+',
                                      'WMCore.ACDC'],
 
                         'systems':['wmc-web', 'wmc-runtime'],
@@ -72,6 +73,7 @@ dependencies = {'wmc-rest':{
                                      'WMCore.WMDataMining+',
                                      'WMCore.Services.Dashboard+',
                                      'WMCore.Services.DBS+',
+                                     'WMCore.Services.PhEDEx+',
                                      'WMCore.Services.WMStats+'
                                     ],
                         'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],

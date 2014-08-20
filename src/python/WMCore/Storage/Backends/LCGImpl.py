@@ -53,6 +53,8 @@ class LCGImpl(StageOutImpl):
         """
         if pfn.startswith('/'):
             return "file:%s" % pfn
+        elif os.path.isfile(pfn):
+            return "file:%s" % os.path.abspath(pfn)
         else:
             return pfn
 

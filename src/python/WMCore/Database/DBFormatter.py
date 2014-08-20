@@ -48,9 +48,7 @@ class DBFormatter(WMObject):
                 for j in i:
                     row.append(j)
                 out.append(row)
-
             r.close()
-
         return out
 
     def formatOne(self, result):
@@ -59,8 +57,6 @@ class DBFormatter(WMObject):
         """
         out = []
         for r in result:
-            if r.rowcount == 0:
-                return []
             for i in r.fetchone():
                 out.append(i)
         return out

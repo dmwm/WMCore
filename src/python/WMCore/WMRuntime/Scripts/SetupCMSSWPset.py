@@ -337,9 +337,9 @@ class SetupCMSSWPset(ScriptInterface):
 
         # include the default performance report services
         self.process.add_(PSetConfig.Service("SimpleMemoryCheck"))
+        self.process.add_(PSetConfig.Service("CPU"))
         self.process.add_(PSetConfig.Service("Timing"))
         self.process.Timing.summaryOnly = PSetConfig.untracked(PSetConfig.bool(True))
-
 
     def _handleChainedProcessing(self):
         """
@@ -347,7 +347,6 @@ class SetupCMSSWPset(ScriptInterface):
         output of one step/task (nomenclature ambiguous) to another.
         This method creates particular mapping in a working Trivial
         File Catalog (TFC).
-
         """
         # first, create an instance of TrivialFileCatalog to override
         tfc = TrivialFileCatalog()

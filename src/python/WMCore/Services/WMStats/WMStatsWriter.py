@@ -174,6 +174,12 @@ class WMStatsWriter(WMStatsReader):
         return self.replicatorDB.commit()
 
     def deleteDocsByIDs(self, ids):
+        
+        if not ids:
+            # if ids is empty don't run this
+            # it will delete all the docs
+            return None
+        
         docs = self.couchDB.allDocs(keys=ids)['rows']
         for j in docs:
             doc = {}

@@ -3,7 +3,7 @@ Created on Aug 13, 2014
 
 @author: sryu
 '''
-from WMCore.ReqMgr.CherryPyThreads.CherryPyPeriodicTask import SequentialTaskBase, CherryPyPeriodicTask
+from WMCore.ReqMgr.CherryPyThreads.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.WMDataMining.Utils import getherWMDataMiningStats
 
 class WMDataMining(CherryPyPeriodicTask):
@@ -12,12 +12,12 @@ class WMDataMining(CherryPyPeriodicTask):
         
         CherryPyPeriodicTask.__init__(self, config)
         
-    def setConcurrentTasks(self):
+    def setConcurrentTasks(self, config):
         """
         sets the list of functions which 
         """
-        self.concurrentTasks = [self.getherActiveDataStats, 
-                                self.getherArchivedDataStats] 
+        self.concurrentTasks = [{'func': self.getherActiveDataStats, 'duration': config.activeDuration}, 
+                                {'func': self.getherArchivedDataStats, 'duration': config.archiveDuration}] 
         
     def getherActiveDataStats(self, config):
         """

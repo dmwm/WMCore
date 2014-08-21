@@ -20,14 +20,14 @@ def getherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmminigUrl, archived = False)
     analyticsServer = CouchServer(server)
     couchdb = analyticsServer.connectDatabase(database)
 
-    url = "https://cmsweb.cern.ch/couchdb/wmstats"
     WMStats = WMStatsReader(wmstatsUrl)
     
     reqMgrServer, reqMgrDB = splitCouchServiceURL(reqmgrUrl)
     
     reqMgr = CouchServer(reqMgrServer).connectDatabase(reqMgrDB, False)
     
-    logging.info("Getting job information from %s. Please wait." % url)
+    logging.info("Getting job information from %s and %s. Please wait." % (
+                  wmstatsUrl, reqmgrUrl))
 
     if archived:
         checkStates = ['normal-archived', 'rejected-archived', 'aborted-archived']

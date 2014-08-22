@@ -578,7 +578,10 @@ class CondorPlugin(BasePlugin):
                     completeList.append(job)
             else:
                 jobAd     = jobInfo.get(job['jobid'])
-                jobStatus = int(jobAd.get('JobStatus', 0))
+                try:
+                    jobStatus = int(jobAd.get('JobStatus', 0))
+                except ValueError, ex:
+                    jobStatus = 0  # unknown
                 statName  = 'Unknown'
                 if jobStatus == 1:
                     # Job is Idle, waiting for something to happen
@@ -599,7 +602,7 @@ class CondorPlugin(BasePlugin):
                     statName = 'Complete'
                 else:
                     # What state are we in?
-                    logging.info("Job in unknown state %i" % jobStatus)
+                    logging.warning("Job in unknown state %i" % jobStatus)
 
                 # Get the global state
                 job['globalState'] = CondorPlugin.stateMap()[statName]
@@ -612,15 +615,24 @@ class CondorPlugin(BasePlugin):
                 #Check if we have a valid status time
                 if not job['status_time']:
                     if job['status'] == 'Running':
-                        job['status_time'] = int(jobAd.get('runningTime', 0))
+                        try:
+                            job['status_time'] = int(jobAd.get('runningTime', 0))
+                        except ValueError, ex:
+                            job['status_time'] = 0
                         # If we transitioned to running then check the site we are running at
                         job['location'] = jobAd.get('runningCMSSite', None)
                         if job['location'] is None:
                             logging.debug('Something is not right here, a job (%s) is running with no CMS site' % str(jobAd))
                     elif job['status'] == 'Idle':
-                        job['status_time'] = int(jobAd.get('submitTime', 0))
+                        try:
+                            job['status_time'] = int(jobAd.get('submitTime', 0))
+                        except ValueError, ex:
+                            job['status_time'] = 0
                     else:
-                        job['status_time'] = int(jobAd.get('stateTime', 0))
+                        try:
+                            job['status_time'] = int(jobAd.get('stateTime', 0))
+                        except ValueError, ex:
+                            job['status_time'] = 0
                     changeList.append(job)
 
                 runningList.append(job)

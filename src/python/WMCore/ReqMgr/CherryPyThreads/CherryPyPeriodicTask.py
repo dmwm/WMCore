@@ -21,25 +21,25 @@ class CherryPyPeriodicTask(object):
         :arg config  WMCore.Configuration object. which need to contain in duration attr.
         TODO: add validation for config.duration
         """
-        self.setConcurrentTasks()
+        self.setConcurrentTasks(config)
         for task in self.concurrentTasks:
-            PeriodicWorker(task, config)
+            PeriodicWorker(task['func'], config, task['duration'])
         
-    def setConcurrentTasks(self):
+    def setConcurrentTasks(self, config):
         """
         sets the list of function reference for concurrent tasks, 
         sub class should implement this
         
         each function in the list should have the same signature with
-        2 arguments (self, config)
+        3 arguments (self, config, duration)
         config is WMCore.Configuration object
         """
-        self.concurrentTasks = []
+        self.concurrentTasks = {'func': None, 'duration': None}
         raise NotImplementedError("need to implement setSequencialTas assign self._callSequence")
 
 class PeriodicWorker(Thread):
     
-    def __init__(self, func, config):
+    def __init__(self, func, config, duration = 600):
         # use default RLock from condition
         # Lock wan't be shared between the instance used  only for wait
         # func : function or callable object pointer
@@ -47,7 +47,7 @@ class PeriodicWorker(Thread):
         self.stopFlag = False
         self.taskFunc = func
         self.config = config
-        self.duration = config.duration
+        self.duration = duration
         try: 
             name = func.__class__.__name__
             print name

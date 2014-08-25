@@ -288,7 +288,10 @@ class RequestQuery:
         self.isLoggedIn = self.login2Savannah()
         
         if self.isLoggedIn:
-            self.selectQueryForm(**kargs)
+            if not kargs:
+                self.selectQueryForm(approval_status='1',task_status='0')
+            else:
+                self.selectQueryForm(**kargs)
             self.createValueDicts()
         
             self.br.select_form(name="bug_form")

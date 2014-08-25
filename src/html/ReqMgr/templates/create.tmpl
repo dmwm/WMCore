@@ -52,11 +52,34 @@ $jsondata
 You can place your python snippet below to either update given JSON
 template or generate out of it multiple JSON objects. To do so, please
 use <strong>jsondict</strong> object as your starting point.
+</br>
+</br>
+You may also choose your favorite snippet from existing data-ops scripts:
+<select onChange="javascript:SelectScript()" id="snippets">
+<option value="default">default</option>
+<option value="mcm">add MCM fields</option>
+</select>
+
+<script>
+// Function to handle data-ops code snippets
+// I can pass them here as any other parameters of this template
+// for example via dict {"default":"Default code snippet", "mcm": "MCM code snippet"}
+function SelectScript() {
+    var cid=document.getElementById('code');
+    var val=document.getElementById('snippets').value;
+    if (val=="default") {
+        cid.value="Here I will insert default code snippet";
+    } else if(val=="mcm") {
+        cid.value="Here I will insert code snippet with MCM";
+    }
+}
+</script>
+
 <form method="post" action="$base/generate_objs" class="forms">
 <textarea style="display:none;" name="jsondict">
 $jsondata
 </textarea>
-<textarea class="editor height-200" name="code">
+<textarea class="editor height-200" name="code" id="code">
 def genobjs(jsondict):
     for item in xrange(10):
         mydict = dict(jsondict)

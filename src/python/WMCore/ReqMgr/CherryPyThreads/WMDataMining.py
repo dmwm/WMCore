@@ -3,8 +3,9 @@ Created on Aug 13, 2014
 
 @author: sryu
 '''
+import cherrypy
 from WMCore.ReqMgr.CherryPyThreads.CherryPyPeriodicTask import CherryPyPeriodicTask
-from WMCore.WMDataMining.Utils import getherWMDataMiningStats
+from WMCore.WMDataMining.Utils import gatherWMDataMiningStats
 
 class WMDataMining(CherryPyPeriodicTask):
     
@@ -16,22 +17,22 @@ class WMDataMining(CherryPyPeriodicTask):
         """
         sets the list of functions which 
         """
-        self.concurrentTasks = [{'func': self.getherActiveDataStats, 'duration': config.activeDuration}, 
-                                {'func': self.getherArchivedDataStats, 'duration': config.archiveDuration}] 
+        self.concurrentTasks = [{'func': self.gatherActiveDataStats, 'duration': config.activeDuration}, 
+                                {'func': self.gatherArchivedDataStats, 'duration': config.archiveDuration}] 
         
-    def getherActiveDataStats(self, config):
+    def gatherActiveDataStats(self, config):
         """
-        gether active data statistics
+        gather active data statistics
         """
-        getherWMDataMiningStats(config.wmstats_url, config.reqmgrdb_url, 
-                                       config.wmdatamining_url)
+        gatherWMDataMiningStats(config.wmstats_url, config.reqmgrdb_url, 
+                                       config.wmdatamining_url, False, log = cherrypy.log)
         return
     
-    def getherArchivedDataStats(self, config):
+    def gatherArchivedDataStats(self, config):
         """
-        gether archived data statistics
+        gather archived data statistics
         """
-        getherWMDataMiningStats(config.wmstats_url, config.reqmgrdb_url, 
-                                       config.wmdatamining_url, True)
+        gatherWMDataMiningStats(config.wmstats_url, config.reqmgrdb_url, 
+                                       config.wmdatamining_url, True, log = cherrypy.log)
         return
     

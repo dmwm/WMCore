@@ -14,7 +14,7 @@ from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfoCollection
 
 
-def getherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmminigUrl, archived = False):
+def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmminigUrl, archived = False, log = logging.info):
     
     server, database = splitCouchServiceURL(wmminigUrl)
     analyticsServer = CouchServer(server)
@@ -26,8 +26,13 @@ def getherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmminigUrl, archived = False)
     
     reqMgr = CouchServer(reqMgrServer).connectDatabase(reqMgrDB, False)
     
-    logging.info("Getting job information from %s and %s. Please wait." % (
-                  wmstatsUrl, reqmgrUrl))
+    if archived:
+        funcName = "Archived Requests"
+    else:
+        funcName = "Active Requests"
+    
+    log("INFO: %s: Getting job information from %s and %s. Please wait." % (
+                  funcName, wmstatsUrl, reqmgrUrl))
 
     if archived:
         checkStates = ['normal-archived', 'rejected-archived', 'aborted-archived']
@@ -40,7 +45,7 @@ def getherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmminigUrl, archived = False)
     requestCollection = RequestInfoCollection(requests)
     result = requestCollection.getJSONData()
     requestsDict = requestCollection.getData()
-    logging.info("Total %s requests retrieved\n" % len(result))
+    log("INFO: %s: Total %s requests retrieved\n" % (funcName, len(result)))
 
     report = {}
     for wf in result.keys():
@@ -62,7 +67,7 @@ def getherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmminigUrl, archived = False)
             runWhiteList = []
             filterEfficiency = None
             try:
-                logging.debug("Looking up %s in ReqMgr" % wf)
+                #log("DEBUG: Looking up %s in ReqMgr" % wf)
                 rmDoc = reqMgr.document(wf)
                 runWhiteList = rmDoc.get('RunWhiteList', [])
                 filterEfficiency = rmDoc.get('FilterEfficiency', None)
@@ -91,7 +96,7 @@ def getherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmminigUrl, archived = False)
         try:
             outputTiers = [ds.split('/')[-1] for ds in outputdatasets]
         except:
-            logging.debug("Could not decode outputdatasets") # Sometimes is a list of lists, not just a list. Bail
+            log("ERROR: Could not decode outputdatasets: %s" % outputdatasets) # Sometimes is a list of lists, not just a list. Bail
         if inputdataset:
             inputTier = inputdataset.split('/')[-1]
             if inputTier in ['GEN']:
@@ -243,9 +248,11 @@ def getherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmminigUrl, archived = False)
         # Queue the updated document for addition if it's changed.
         if ancientCouchDoc != newCouchDoc:
             if wfExists:
-                logging.debug("Workflow updated: %s" % wf)
+                #log("DEBUG: Workflow updated: %s" % wf)
+                pass
             else:
-                logging.debug("Workflow created: %s" % wf)
+                #log("DEBUG Workflow created: %s" % wf)
+                pass
 
             try:
                 newCouchDoc['updateTime'] = int(time.time())
@@ -253,7 +260,8 @@ def getherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmminigUrl, archived = False)
                 cjson.encode(newCouchDoc) # Make sure it encodes before trying to queue
                 couchdb.queue(newCouchDoc)
             except:
-                logging.error("Failed to queue document:%s \n" % pprint.pprint(newCouchDoc))
+                log("ERROR: Failed to queue document:%s \n" % pprint.pprint(newCouchDoc))
 
+    log("INFO: %s: Finished getting job. wait for the next Cycle" % funcName)
     # Commit all changes to CouchDB
     couchdb.commit()

@@ -55,25 +55,11 @@ use <strong>jsondict</strong> object as your starting point.
 </br>
 </br>
 You may also choose your favorite snippet from existing data-ops scripts:
-<select onChange="javascript:SelectScript()" id="snippets">
-<option value="default">default</option>
-<option value="mcm">add MCM fields</option>
+<select onChange="javascript:ajaxScript('$base')" id="snippets">
+#for item in $scripts
+<option value="$item">$item script</option>
+#end for
 </select>
-
-<script>
-// Function to handle data-ops code snippets
-// I can pass them here as any other parameters of this template
-// for example via dict {"default":"Default code snippet", "mcm": "MCM code snippet"}
-function SelectScript() {
-    var cid=document.getElementById('code');
-    var val=document.getElementById('snippets').value;
-    if (val=="default") {
-        cid.value="Here I will insert default code snippet";
-    } else if(val=="mcm") {
-        cid.value="Here I will insert code snippet with MCM";
-    }
-}
-</script>
 
 <form method="post" action="$base/generate_objs" class="forms">
 <textarea style="display:none;" name="jsondict">

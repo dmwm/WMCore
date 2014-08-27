@@ -217,6 +217,12 @@ class ReqMgrService(TemplatedPage):
         self.jsdir = web_config.get('jsdir', jsdir)
         yuidir = os.environ.get('YUI_ROOT', os.getcwd()+'/yui')
         self.yuidir = web_config.get('yuidir', yuidir)
+        # read scripts area and initialize data-ops scripts
+        sdir = os.environ.get('RM_SCRIPTS', os.getcwd()+'/scripts')
+        self.sdict = {} # placeholder for data-ops scripts
+        for item in os.listdir(sdir):
+            with open(os.path.join(sdir, item), 'r') as istream:
+                self.sdict[item.split('.')[0]] = istream.read()
 
         # To be filled at run time
         self.cssmap = {}
@@ -436,8 +442,25 @@ class ReqMgrService(TemplatedPage):
 
         # create templatized page out of provided forms
         content = self.templatepage('create', table=json2table(jsondata, web_ui_names()),
-                jsondata=json.dumps(jsondata, indent=2), name=req_form)
+                jsondata=json.dumps(jsondata, indent=2), name=req_form,
+                scripts=self.sdict.keys())
         return self.abs_page('generic', content)
+
+    @expose
+    def scripts(self, name):
+        """
+        Return script for given name, all scripts should be placed in
+        RM_SCRIPTS area. We use self.sdict look-up for given name,
+        otherwise use default script example"""
+        default = """
+def genobjs(jsondict):
+    for item in xrange(10):
+        mydict = dict(jsondict)
+        mydict.update({'myfield': item})
+        yield mydict
+"""
+        value = self.sdict.get(name, default)
+        return value
 
     @expose
     def confirm_action(self, **kwds):

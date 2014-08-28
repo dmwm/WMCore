@@ -5,6 +5,7 @@ Created on Jul 31, 2014
 '''
 import cherrypy
 import logging
+import traceback
 from threading import Thread, Condition
 
 class CherryPyPeriodicTask(object):
@@ -69,7 +70,15 @@ class PeriodicWorker(Thread):
         
         while not self.stopFlag:
             self.wakeUp.acquire()
-            self.taskFunc(self.config)
+            try:
+                self.taskFunc(self.config)
+            except Exception, e:
+                cherrypy.log("Periodic Thread ERROR %s.%s %s"
+                % (getattr(e, "__module__", "__builtins__"),
+                e.__class__.__name__, str(e)))
+                for line in traceback.format_exc().rstrip().split("\n"):
+                    cherrypy.log(" " + line)
+                
             self.wakeUp.wait(self.duration)
             self.wakeUp.release()
 

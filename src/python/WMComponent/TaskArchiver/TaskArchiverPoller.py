@@ -359,7 +359,10 @@ class TaskArchiverPoller(BaseWorkerThread):
         try:
             #TODO: need to enable when reqmgr2 -wmstats is ready
             #abortedWorkflows = self.reqmgrCouchDBWriter.workflowsByStatus(["aborted"], format = "dict");
-            abortedWorkflows = self.centralCouchDBWriter.workflowsByStatus(["aborted"], format = "dict");
+            abortedWorkflows = self.centralCouchDBWriter.workflowsByStatus(["aborted"], format = "dict")
+            forceCompleteWorkflows = self.centralCouchDBWriter.workflowsByStatus(["force-complete"], 
+                                                                                 format = "dict");
+            
         except Exception, ex:
             centralCouchAlive = False
             logging.error("we will try again when remote couch server comes back\n%s" % str(ex))
@@ -393,14 +396,20 @@ class TaskArchiverPoller(BaseWorkerThread):
                     if workflow in abortedWorkflows:
                         #TODO: remove when reqmgr2-wmstats deployed
                         newState =  "aborted-completed"
-                        self.centralCouchDBWriter.updateRequestStatus(workflow, newState);
+                    elif workflow in forceCompleteWorkflows:
+                        newState =  "completed"
+                    else:
+                        newState = None
+                        
+                    if newState != None:
+                        self.reqmgrSvc.updateRequestStatus(workflow, newState)
                         # update reqmgr workload document only request mgr is installed
                         if not self.useReqMgrForCompletionCheck:
                             # commented out untill all the agent is updated so every request have new state
-                            # TODO: agent should be able to right reqmgr db diretly add the right group in
+                            # TODO: agent should be able to write reqmgr db diretly add the right group in
                             # reqmgr
-                            #self.reqmgrSvc.updateRequestStatus(workflow, newState); 
-                            logging.info("status updated to %s : %s" % (newState, workflow))
+                            self.centralCouchDBWriter.updateRequestStatus(workflow, newState) 
+                        logging.info("status updated to %s : %s" % (newState, workflow))
     
                     wfsToDelete[workflow] = {"spec" : spec, "workflows": finishedwfs[workflow]["workflows"]}
     
@@ -956,9 +965,10 @@ class TaskArchiverPoller(BaseWorkerThread):
             worthPoints = {}
             for run in runList :
                 responseJSON = self.getPerformanceFromDQM(self.dqmUrl, dataset, run)
-                worthPoints.update(self.filterInterestingPerfPoints(responseJSON,
-                                                                     self.perfDashBoardMinLumi,
-                                                                     self.perfDashBoardMaxLumi))
+                if responseJSON:                
+                    worthPoints.update(self.filterInterestingPerfPoints(responseJSON,
+                                                                         self.perfDashBoardMinLumi,
+                                                                         self.perfDashBoardMaxLumi))
                             
             # Publish dataset performance to DashBoard.
             if self.publishPerformanceDashBoard(self.dashBoardUrl, PD, release, worthPoints) == False:
@@ -970,8 +980,8 @@ class TaskArchiverPoller(BaseWorkerThread):
     def getPerformanceFromDQM(self, dqmUrl, dataset, run):
         
         # Get the proxy, as CMSWEB doesn't allow us to use plain HTTP
-        hostCert = os.getenv("X509_USER_PROXY")
-        hostKey  = hostCert
+        hostCert = os.getenv("X509_HOST_CERT")
+        hostKey  = os.getenv("X509_HOST_KEY")
         # it seems that curl -k works, but as we already have everything, I will just provide it
         
         # Make function to fetch this from DQM. Returning Null or False if it fails
@@ -984,16 +994,28 @@ class TaskArchiverPoller(BaseWorkerThread):
         dqmPath = regExpResult.group(2)
         
         connection = httplib.HTTPSConnection(dqmHost, 443, hostKey, hostCert)
-        connection.request('GET', dqmPath)
-        response = connection.getresponse()
-        responseData = response.read()
-        responseJSON = json.loads(responseData)
-        if not responseJSON["hist"]["bins"].has_key("content") :
-            logging.info("Actually got a JSON from DQM perf in for %s run %d  , but content was bad, Bailing out"
+        try:
+            connection.request('GET', dqmPath)
+            response = connection.getresponse()
+            responseData = response.read()
+            responseJSON = json.loads(responseData)
+            if response.status != 200 :
+                logging.info("Something went wrong while fetching Reco performance from DQM, response code %d " % response.code)
+                return False
+        except Exception, ex:
+            logging.error('Couldnt fetch DQM Performance data for dataset %s , Run %s' % (dataset, run))
+            logging.exception(ex) #Let's print the stacktrace with generic Exception
+            return False     
+
+        try:
+            if responseJSON["hist"]["bins"].has_key("content"):
+                return responseJSON
+        except Exception, ex:                    
+            logging.info("Actually got a JSON from DQM perf in for %s run %d , but content was bad, Bailing out"
                          % (dataset, run))
             return False
-        logging.debug("We have the performance curve")
-        return responseJSON
+        # If it gets here before returning False or responseJSON, it went wrong    
+        return False
     
     def filterInterestingPerfPoints(self, responseJSON, minLumi, maxLumi):
         worthPoints = {}
@@ -1031,14 +1053,18 @@ class TaskArchiverPoller(BaseWorkerThread):
         
         logging.debug("Going to upload this payload %s" % data)
         
-        request = urllib2.Request(dashBoardUrl, data, headers)
-        response = urllib2.urlopen(request)
-        
-        if response.code != 200 :
-            logging.info("Something went wrong while uploading to DashBoard, response code %d " % response.code)
-            return False
-        logging.debug("Uploaded it successfully, apparently")
-        
+        try:
+            request = urllib2.Request(dashBoardUrl, data, headers)
+            response = urllib2.urlopen(request)
+            if response.code != 200 :
+                logging.info("Something went wrong while uploading to DashBoard, response code %d " % response.code)
+                return False
+        except Exception, ex:
+            logging.error('Performance data : DashBoard upload failed for PD %s Release %s' % (PD, release))
+            logging.exception(ex) #Let's print the stacktrace with generic Exception
+            return False        
+
+        logging.debug("Uploaded it successfully, apparently")        
         return True
 
     def createAndUploadPublish(self, workflow):

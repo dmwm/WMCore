@@ -94,7 +94,12 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmminigUrl, archived = False,
 
         outputTier = 'Unknown'
         try:
-            outputTiers = [ds.split('/')[-1] for ds in outputdatasets]
+            outputTiers = []
+            for ds in outputdatasets:
+                if type(ds) == list:
+                    outputTiers.append(ds[0].split('/')[-1])
+                else:
+                    outputTiers.append(ds.split('/')[-1])
         except:
             log("ERROR: Could not decode outputdatasets: %s" % outputdatasets) # Sometimes is a list of lists, not just a list. Bail
         if inputdataset:

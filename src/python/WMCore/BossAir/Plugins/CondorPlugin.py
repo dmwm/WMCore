@@ -710,6 +710,8 @@ class CondorPlugin(BasePlugin):
 
         Modify condor classAd for all Idle jobs for a site if it has gone Down, Draining or Aborted.
         Kill all jobs if the site is the only site for the job.
+        This expects:    excludeSite = False when moving to Normal
+                         excludeSite = True when moving to Down, Draining or Aborted
         """
         jobInfo = self.getClassAds()
         jobtokill=[]
@@ -723,6 +725,7 @@ class CondorPlugin(BasePlugin):
                 desiredSites = jobAd.get('DESIRED_Sites').split(', ')
                 extDesiredSites = jobAd.get('ExtDESIRED_Sites').split(', ')
                 if excludeSite :
+                    #Remove siteName from DESIRED_Sites if job has it
                     if siteName in desiredSites and siteName in extDesiredSites:
                         usi = desiredSites
                         if len(usi) > 1 :
@@ -736,9 +739,11 @@ class CondorPlugin(BasePlugin):
                         else:
                             jobtokill.append(job)
                     else :
+                        #If job doesn't have the siteName in the siteList, just ignore it
                         logging.debug("Cannot find siteName %s in the sitelist" % siteName)
                 else :
-                    if siteName in desiredSites and siteName not in extDesiredSites:
+                    #Add siteName to DESIRED_Sites if ExtDESIRED_Sites has it (moving back to Normal)
+                    if siteName not in desiredSites and siteName in extDesiredSites:
                         usi = desiredSites
                         usi.append(siteName)
                         usi = usi.__str__().lstrip('[').rstrip(']')
@@ -748,6 +753,7 @@ class CondorPlugin(BasePlugin):
                                                 stdout = subprocess.PIPE, shell = True)
                         out, err = proc.communicate()
                     else :
+                        #If job doesn't have the siteName in the siteList, just ignore it
                         logging.debug("Cannot find siteName %s in the sitelist" % siteName)
         
         return jobtokill

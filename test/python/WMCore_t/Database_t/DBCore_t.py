@@ -12,7 +12,6 @@ import unittest
 import logging
 import threading
 
-from sqlalchemy.exceptions import OperationalError
 from WMQuality.TestInit import TestInit
 
 class DBCoreTest(unittest.TestCase):

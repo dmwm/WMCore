@@ -448,9 +448,6 @@ class CMSSW(Template):
         step.application.section_("multicore")
         step.application.multicore.enabled =  False
         step.application.multicore.numberOfCores = 1
-        step.application.multicore.inputfilelist = "input.filelist"
-        step.application.multicore.inputmanifest = "manifest.json"
-        step.application.multicore.edmFileUtil = "edmFileUtil --JSON -F input.filelist > manifest.json"
 
 
     def helper(self, step):

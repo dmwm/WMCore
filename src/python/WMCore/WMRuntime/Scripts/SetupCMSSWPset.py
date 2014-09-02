@@ -631,15 +631,6 @@ class SetupCMSSWPset(ScriptInterface):
             self.process.source.overrideCatalog = \
                 cms.untracked.string(self.step.data.application.overrideCatalog)
 
-        # If we're running on a FNAL worker node override the TFC so we can
-        # test lustre.
-        hostname = socket.gethostname()
-        if hostname.endswith("fnal.gov"):
-            for inputFile in self.job["input_files"]:
-                if inputFile["lfn"].find("unmerged") != -1:
-                    self.process.source.overrideCatalog = \
-                        cms.untracked.string("trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage-test.xml?protocol=dcap")
-
         configFile = self.step.data.application.command.configuration
         configPickle = getattr(self.step.data.application.command, "configurationPickle", "PSet.pkl")
         workingDir = self.stepSpace.location

@@ -39,8 +39,8 @@ class ResourceControlUpdater(BaseWorkerThread):
         # set pending percentages from config
         self.pendingSlotsSitePercent = config.AgentStatusWatcher.pendingSlotsSitePercent
         self.pendingSlotsTaskPercent = config.AgentStatusWatcher.pendingSlotsTaskPercent
-        self.runningExpressPercentCPUBound = config.AgentStatusWatcher.runningExpressPercentCPUBound
-        self.runningRepackPercentIOBound = config.AgentStatusWatcher.runningRepackPercentIOBound
+        self.runningExpressPercent = config.AgentStatusWatcher.runningExpressPercent
+        self.runningRepackPercent = config.AgentStatusWatcher.runningRepackPercent
         
         # forced site list
         self.forcedSiteList = config.AgentStatusWatcher.forcedSiteList
@@ -54,6 +54,7 @@ class ResourceControlUpdater(BaseWorkerThread):
         
         # tier mode
         self.tier0Mode = hasattr(config, "Tier0Feeder")
+        self.t1SitesCores = config.AgentStatusWatcher.t1SitesCores
         
     def setup(self, parameters):
         """
@@ -103,7 +104,7 @@ class ResourceControlUpdater(BaseWorkerThread):
                 
             else:
                 # get number of agents working in the same team (not in DrainMode)
-                agentsByTeam = self.centralCouchDBReader.agentsByTeam()
+                agentsByTeam = self.getAgentsByTeam()
                 if not agentsByTeam:
                     agentsNum = 1
                     logging.debug("agentInfo couch view is not available, don't divide pending thresholds")
@@ -162,6 +163,20 @@ class ResourceControlUpdater(BaseWorkerThread):
             logging.error("Error occurred, will retry later:")
             logging.error(str(ex))
             logging.error("Trace back: \n%s" % traceback.format_exc())
+
+    def getAgentsByTeam(self):
+        """
+        _getAgentsByTeam_
+        
+        Get the WMStats view about agents and teams
+        """
+        agentsByTeam = []
+        try:
+            agentsByTeam = self.centralCouchDBReader.agentsByTeam()
+            return agentsByTeam
+        except Exception, ex:
+            logging.error("WMStats is not available or is unresponsive. Don't divide thresholds by team")
+            return agentsByTeam
 
     def getInfoFromSSB(self):
         """
@@ -269,6 +284,11 @@ class ResourceControlUpdater(BaseWorkerThread):
         # set site state:
         self.resourceControl.changeSiteState(siteName, state)
         
+        # tier0 T1 cores utilization
+        if self.tier0Mode and 'T1_' in siteName:
+            CPUBound = CPUBound*self.t1SitesCores/100
+            IOBound = IOBound*self.t1SitesCores/100
+        
         # Thresholds:
         sitePending = int(CPUBound/agentsNum*self.pendingSlotsSitePercent/100)
         taskCPUPending = int(CPUBound/agentsNum*self.pendingSlotsTaskPercent/100)
@@ -299,11 +319,11 @@ class ResourceControlUpdater(BaseWorkerThread):
         
         if self.tier0Mode:
             # Set thresholds for tier0 task types
-            expressSlots = int(CPUBound*self.runningExpressPercentCPUBound/100)
+            expressSlots = int(CPUBound*self.runningExpressPercent/100)
             pendingExpress = int(expressSlots*self.pendingSlotsTaskPercent/100)
             self.resourceControl.insertThreshold(siteName = siteName, taskType = 'Express',
                                                  maxSlots = expressSlots, pendingSlots = pendingExpress)
-            repackSlots = int(IOBound*self.runningRepackPercentIOBound/100)
+            repackSlots = int(CPUBound*self.runningRepackPercent/100)
             pendingRepack = int(repackSlots*self.pendingSlotsTaskPercent/100)
             self.resourceControl.insertThreshold(siteName = siteName, taskType = 'Repack',
                                                  maxSlots = repackSlots, pendingSlots = pendingRepack)

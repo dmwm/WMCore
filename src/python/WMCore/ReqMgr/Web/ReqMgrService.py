@@ -218,11 +218,10 @@ class ReqMgrService(TemplatedPage):
         yuidir = os.environ.get('YUI_ROOT', os.getcwd()+'/yui')
         self.yuidir = web_config.get('yuidir', yuidir)
         # read scripts area and initialize data-ops scripts
-        sdir = os.environ.get('RM_SCRIPTS', os.getcwd()+'/scripts')
-        self.sdict = {} # placeholder for data-ops scripts
-        for item in os.listdir(sdir):
-            with open(os.path.join(sdir, item), 'r') as istream:
-                self.sdict[item.split('.')[0]] = istream.read()
+        self.sdir = os.environ.get('RM_SCRIPTS', os.getcwd()+'/scripts')
+        self.sdict_thr = web_config.get('sdict_thr', 60) # put reasonable 10 min interval
+        self.sdict = {'ts':time.time()} # placeholder for data-ops scripts
+        self.update_scripts(force=True)
 
         # To be filled at run time
         self.cssmap = {}
@@ -268,6 +267,14 @@ class ReqMgrService(TemplatedPage):
         This method should implement fetching user DN
         """
         return '/CN/bla/foo/'
+
+    def update_scripts(self, force=False):
+        "Update scripts dict"
+        if  force or abs(time.time()-self.sdict['ts']) > self.sdict_thr:
+            for item in os.listdir(self.sdir):
+                with open(os.path.join(self.sdir, item), 'r') as istream:
+                    self.sdict[item.split('.')[0]] = istream.read()
+            self.sdict['ts'] = time.time()
 
     def abs_page(self, tmpl, content):
         """generate abstract page"""
@@ -441,9 +448,10 @@ class ReqMgrService(TemplatedPage):
             return self.error(msg)
 
         # create templatized page out of provided forms
+        self.update_scripts()
         content = self.templatepage('create', table=json2table(jsondata, web_ui_names()),
                 jsondata=json.dumps(jsondata, indent=2), name=req_form,
-                scripts=self.sdict.keys())
+                scripts=[s for s in self.sdict.keys() if s!='ts'])
         return self.abs_page('generic', content)
 
     @expose
@@ -459,6 +467,7 @@ def genobjs(jsondict):
         mydict.update({'myfield': item})
         yield mydict
 """
+        self.update_scripts()
         value = self.sdict.get(name, default)
         return value
 

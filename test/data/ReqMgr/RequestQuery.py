@@ -8,7 +8,7 @@ the Request Interface, creation of the JSON steering file and
 providing information for the bookeeping database
 
 """
-import os, re
+import os, re, traceback
 from dbs.apis.dbsClient import DbsApi
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx 
 from mechanize import Browser
@@ -303,8 +303,9 @@ class RequestQuery:
             self.nodeMappings = self.phedex.getNodeMap()
             
             for link in self.br.links(text_regex="#[0-9]+"):
-                    response = self.br.follow_link(link)
-    
+                response = self.br.follow_link(link)
+                
+                try:
                     ## Get Information
                     self.br.select_form(name="item_form")
 
@@ -426,64 +427,71 @@ class RequestQuery:
                     else:
                         stripped_dataset = input_processed_dataset.split("-")[1:]
                         new_dataset = '_'.join(stripped_dataset)
-                
+                    
+                except Exception, ex:
                     self.br.back()
+                    print "There is a problem with this ticket %s, please have a look to the error:" % task
+                    print str(ex)
+                    print traceback.format_exc()
+                    continue
+                
+                self.br.back()
+                
+                # Get dataset site info:
+                phedex_map, se_names = self.getDatasetOriginSites(dbs_url,input_dataset)
+                sites = self.phEDExNodetocmsName(phedex_map)
+                
+                infoDict = {}
+                # Build store results json
+                # First add all the defaults values
+                infoDict["RequestType"] = "StoreResults"
+                infoDict["UnmergedLFNBase"] = "/store/unmerged" 
+                infoDict["MergedLFNBase"] = "/store/results/" + self.GroupByValueDict[group_id].replace("-","_").lower()
+                infoDict["MinMergeSize"] = 1500000000
+                infoDict["MaxMergeSize"] = 5000000000
+                infoDict["MaxMergeEvents"] = 100000
+                infoDict["TimePerEvent"] = 40
+                infoDict["SizePerEvent"] = 512.0
+                infoDict["Memory"] = 2394
+                infoDict["CmsPath"] = "/uscmst1/prod/sw/cms"                                        
+                infoDict["Group"] = "DATAOPS"
+                infoDict["DbsUrl"] = dbs_url
+                
+                # Add all the information pulled from Savannah
+                infoDict["AcquisitionEra"] = acquisitionEra
+                infoDict["GlobalTag"] = self.setGlobalTagFromOrigin(dbs_url,input_dataset)
+                infoDict["DataTier"] = data_tier
+                infoDict["InputDataset"] = input_dataset
+                infoDict["ProcessingString"] = new_dataset
+                infoDict["CMSSWVersion"] = release
+                infoDict["ScramArch"] = scram_arch
+                infoDict["ProcessingVersion"] = dataset_version                    
+                infoDict["SiteWhitelist"] = list(sites)
+                
+                # Create report for Migration2Global
+                report = {}
+                 
+                #Fill json file, if status is done
+                if self.StatusByValueDict[status_id[0]]=='Done' and RequestStatusByValueDict[request_status_id[0]] != "Closed":
+                    self.writeJSONFile(task, infoDict)
+                    report["json"] = 'y'
+                else:
+                    report["json"] = 'n'
                     
-                    # Get dataset site info:
-                    phedex_map, se_names = self.getDatasetOriginSites(dbs_url,input_dataset)
-                    sites = self.phEDExNodetocmsName(phedex_map)
-                    
-                    infoDict = {}
-                    # Build store results json
-                    # First add all the defaults values
-                    infoDict["RequestType"] = "StoreResults"
-                    infoDict["UnmergedLFNBase"] = "/store/unmerged" 
-                    infoDict["MergedLFNBase"] = "/store/results/" + self.GroupByValueDict[group_id].replace("-","_").lower()
-                    infoDict["MinMergeSize"] = 1500000000
-                    infoDict["MaxMergeSize"] = 5000000000
-                    infoDict["MaxMergeEvents"] = 100000
-                    infoDict["TimePerEvent"] = 40
-                    infoDict["SizePerEvent"] = 512.0
-                    infoDict["Memory"] = 2394
-                    infoDict["CmsPath"] = "/uscmst1/prod/sw/cms"                                        
-                    infoDict["Group"] = "DATAOPS"
-                    infoDict["DbsUrl"] = dbs_url
-                    
-                    # Add all the information pulled from Savannah
-                    infoDict["AcquisitionEra"] = acquisitionEra
-                    infoDict["GlobalTag"] = self.setGlobalTagFromOrigin(dbs_url,input_dataset)
-                    infoDict["DataTier"] = data_tier
-                    infoDict["InputDataset"] = input_dataset
-                    infoDict["ProcessingString"] = new_dataset
-                    infoDict["CMSSWVersion"] = release
-                    infoDict["ScramArch"] = scram_arch
-                    infoDict["ProcessingVersion"] = dataset_version                    
-                    infoDict["SiteWhitelist"] = list(sites)
-                    
-                    # Create report for Migration2Global
-                    report = {}
-                    
-                    #Fill json file, if status is done
-                    if self.StatusByValueDict[status_id[0]]=='Done' and RequestStatusByValueDict[request_status_id[0]] != "Closed":
-                        self.writeJSONFile(task, infoDict)
-                        report["json"] = 'y'
-                    else:
-                        report["json"] = 'n'
+                report["task"] = int(task)
+                report["InputDataset"] = input_dataset
+                report["ProcessingString"] = new_dataset
+                report["ticketStatus"] = self.StatusByValueDict[status_id[0]]
+                report["assignedTo"] = AssignedToByValueDict[assignedTo_id[0]]
+                report["localUrl"] = dbs_url
+                report["sites"] = list(sites)
+                report["se_names"] = list(se_names)
 
-                    report["task"] = int(task)
-                    report["InputDataset"] = input_dataset
-                    report["ProcessingString"] = new_dataset
-                    report["ticketStatus"] = self.StatusByValueDict[status_id[0]]
-                    report["assignedTo"] = AssignedToByValueDict[assignedTo_id[0]]
-                    report["localUrl"] = dbs_url
-                    report["sites"] = list(sites)
-                    report["se_names"] = list(se_names)
+                # if the request is closed, change the item status to report to Closed
+                if report["ticketStatus"] == "Done" and RequestStatusByValueDict[request_status_id[0]] == "Closed":
+                    report["ticketStatus"] = "Closed"
 
-                    # if the request is closed, change the item status to report to Closed
-                    if report["ticketStatus"] == "Done" and RequestStatusByValueDict[request_status_id[0]] == "Closed":
-                        report["ticketStatus"] = "Closed"
-
-                    requests.append(report)
+                requests.append(report)
                     
             # Print out report
             self.printReport(requests)

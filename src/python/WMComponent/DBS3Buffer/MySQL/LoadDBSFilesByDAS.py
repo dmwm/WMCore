@@ -106,9 +106,6 @@ class LoadDBSFilesByDAS(DBFormatter):
 
             resultDict["globalTag"] = resultDict['global_tag']
             del resultDict['global_tag']
-            
-            resultDict["prep_id"] = resultDict['prep_id']
-            del resultDict['prep_id']
 
         return resultList
 

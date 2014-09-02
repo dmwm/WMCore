@@ -219,7 +219,7 @@ class ReqMgrService(TemplatedPage):
         self.yuidir = web_config.get('yuidir', yuidir)
         # read scripts area and initialize data-ops scripts
         self.sdir = os.environ.get('RM_SCRIPTS', os.getcwd()+'/scripts')
-        self.sdict_thr = web_config.get('sdict_thr', 60) # put reasonable 10 min interval
+        self.sdict_thr = web_config.get('sdict_thr', 600) # put reasonable 10 min interval
         self.sdict = {'ts':time.time()} # placeholder for data-ops scripts
         self.update_scripts(force=True)
 

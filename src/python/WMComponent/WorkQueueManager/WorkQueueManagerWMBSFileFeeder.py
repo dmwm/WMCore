@@ -9,6 +9,7 @@ __all__ = []
 
 import time
 import random
+import exceptions
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WorkQueue.WMBSHelper import freeSlots

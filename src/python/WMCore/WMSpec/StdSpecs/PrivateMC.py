@@ -63,6 +63,12 @@ class PrivateMCWorkloadFactory(AnalysisWorkloadFactory):
         # setting the parameters which need to be set for all the tasks
         # sets acquisitionEra, processingVersion, processingString
         self.workload.setTaskPropertiesFromWorkload()
+
+        # set the LFN bases (normally done by request manager)
+        # also pass runNumber (workload evaluates it)
+        workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
+                            runNumber = self.runNumber)
+
         return self.workload
 
     @staticmethod

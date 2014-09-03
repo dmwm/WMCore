@@ -1,3 +1,29 @@
+0.9.97 to 0.9.98.pre1:
+  - Merge pull request #4869 from bbockelm/crab3_runtime_env
+  - Merge pull request #5156 from alexanderrichards/buildWorkload_LFN
+  - Merge pull request #5318 from ticoann/new_sqlarchemy
+  - Merge pull request #5285 from ericvaandering/support_multithreaded_cmssw
+  - Merge pull request #5307 from mmascher/master
+  - clean up sqlalchemy exception code
+  - Merge pull request #5309 from lucacopa/agent_watcher_wmstats_down
+  - Merge pull request #5310 from lucacopa/try_insideLoop_requestQuery
+  - Merge pull request #5299 from hufnagel/sqlalchemy-exceptions
+  - Merge pull request #5305 from lucacopa/change_state_bug
+  - Merge pull request #5306 from ticoann/fix_prep_id_upload
+  - Merge pull request #5311 from ticoann/force_complete_fix
+  - Merge pull request #5292 from lucacopa/fix_dcapReference_PSet
+  - Dont crash AgentSatusWatcher when there is not WMStats Other fixes for tier0 thresholds configuration
+  - if there are elements left in GQ, delete them when force-complete
+  - Update SR script by Ops request
+  - Add the possibility to clean the environment bevore running Proxy.py commands
+  - fix prep_id upload
+  - This fixes a bug in the Condor Plugin Also add some comments and change error logging information (It is debugging instead, not really an error)
+  - cleanup use of sqlalchemy exceptions
+  - Delete a TFC override that uses the old dcap at FNAL. We have to test this though
+  - Remove old Multicore files, switch to CMSSW 7+ way of running multithreaded, remove test code
+  - adding workload.setLFNBase into the buildWorkload method of all Spec files as requested in issue #4864
+  - Improve handling of environment to correctly parse 'unset' and not choke on invalid lines.
+
 0.9.96 to 0.9.97:
   - 0.9.97.pre10
   - Merge pull request #5304 from ticoann/wmmining_fix2

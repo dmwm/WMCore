@@ -199,8 +199,14 @@ class Scram:
             for l in self.stdout.split(";\n"):
                 if l.strip() == "":
                     continue
+                if l.strip().startswith('unset'):
+                    continue
                 l = l.replace("export ", "")
-                var, val = l.split("=", 1)
+                try:
+                    var, val = l.split("=", 1)
+                except ValueError, ex:
+                    raise ValueError, "Couldn't split line: %s" % l
+
                 self.runtimeEnv[var] = val
         if self.test_mode:
             # ensure that runtime env isnt empty in test mode

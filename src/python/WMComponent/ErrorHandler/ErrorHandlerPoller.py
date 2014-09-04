@@ -45,6 +45,7 @@ from WMCore.ACDC.DataCollectionService  import DataCollectionService
 from WMCore.WMException                 import WMException
 from WMCore.FwkJobReport.Report         import Report
 from WMCore.WMExceptions                import WMJobPermanentSystemErrors
+from WMCore.Database.CouchUtils import CouchConnectionError
 
 class ErrorHandlerException(WMException):
     """
@@ -380,6 +381,11 @@ class ErrorHandlerPoller(BaseWorkerThread):
             except:
                 pass
             raise
+        except CouchConnectionError, ex:
+            msg = "Caught CouchConnectionError exception in ErrorHandler\n"
+            msg += "transactions postponed until the next polling cycle\n"
+            msg += str(ex)
+            logging.exception(msg)
         except Exception, ex:
             msg = "Caught exception in ErrorHandler\n"
             msg += str(ex)

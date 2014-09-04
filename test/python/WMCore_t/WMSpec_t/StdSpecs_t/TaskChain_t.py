@@ -473,6 +473,7 @@ class TaskChainTests(unittest.TestCase):
         processorDocs = makeProcessingConfigs(self.configDatabase)
         testArguments = TaskChainWorkloadFactory.getTestArguments()
         lumiDict = {"1":[[2,4], [8,50]], "2":[[100,200], [210,210]]}
+        lumiDict2 = {"1":[[2,4], [8,40]], "2":[[100,150], [210,210]]}
         arguments = {
             "AcquisitionEra": "ReleaseValidation",
             "Requestor": "sfoulkes@fnal.gov",
@@ -503,6 +504,7 @@ class TaskChainTests(unittest.TestCase):
                 "CMSSWVersion" : "CMSSW_3_1_2",
                 "ScramArch" : "CompatibleRECOArch",
                 "PrimaryDataset" : "ZeroBias",
+                "LumiList": lumiDict2,
             },
             "Task3" : {
                 "TaskName" : "ALCAReco",
@@ -553,8 +555,9 @@ class TaskChainTests(unittest.TestCase):
         self.assertEqual(digiStep.getCMSSWVersion(), arguments['CMSSWVersion'])
         self.assertEqual(digiStep.getScramArch(), arguments['ScramArch'])
 
+        # Make sure this task has a different lumilist than the global one
         reco = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco")
-        self.assertEqual(lumiDict, reco.getLumiMask())
+        self.assertEqual(lumiDict2, reco.getLumiMask())
         recoStep = reco.getStepHelper("cmsRun1")
         self.assertEqual(recoStep.getGlobalTag(), arguments['Task2']['GlobalTag'])
         self.assertEqual(recoStep.getCMSSWVersion(), arguments['Task2']['CMSSWVersion'])

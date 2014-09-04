@@ -1215,13 +1215,18 @@ class WMTaskHelper(TreeHelper):
         """
         return getattr(self.data.parameters, 'acquisitionEra', None)
 
-    def setLumiMask(self, lumiMask = {}):
+    def setLumiMask(self, lumiMask = {}, override = True):
         """
         Attach the given LumiMask to the task
         At this point the lumi mask is just the compactList dict not the LumiList object
         """
 
         if not lumiMask:
+            return
+
+        runs = getattr(self.data.input.splitting, 'runs', None)
+        lumis = getattr(self.data.input.splitting, 'lumis', None)
+        if not override and runs and lumis: # Unless instructed, don't overwrite runs and lumis which may be there from a task already
             return
 
         runs = []

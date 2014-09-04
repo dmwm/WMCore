@@ -74,9 +74,6 @@ class AnalyticsPoller(BaseWorkerThread):
 
             #fwjr per request info
             logging.info("Getting FWJRJob Couch Data ...")
-
-            #TODO: commented out for now if summary db works correctly, remove completed.
-            #fwjrInfoFromCouch = self.localCouchDB.getJobPerformanceByTaskAndSite()
             
             fwjrInfoFromCouch = self.localCouchDB.getJobPerformanceByTaskAndSiteFromSummaryDB()
             

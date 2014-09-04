@@ -13,6 +13,7 @@ import imp
 import socket
 import traceback
 import os
+from urlparse import urlparse
 
 from WMCore.Configuration import saveConfigurationFile
 from WMCore.Configuration import Configuration
@@ -260,6 +261,13 @@ def modifyConfiguration(config, **args):
 
     # custom global workqueue
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'GlobalQueue':
+        urlObj = urlparse(config.WorkQueueManager.couchurl)
+        if urlObj.port:
+            couchPort = ":%s" % urlObj.port
+        else:
+            couchPort = ""
+        config.WorkQueueManager.queueParams["QueueURL"] = "%s://%s%s" % (urlObj.scheme, 
+                                                    config.Agent.hostName, urlObj.port)
         if args.get('workqueue_db_name'):
             config.WorkQueueManager.dbname = args['workqueue_db_name']
             config.WorkQueueManager.inboxDatabase = config.WorkQueueManager.dbname + '_inbox'
@@ -270,6 +278,15 @@ def modifyConfiguration(config, **args):
 
     # Custom Local WorkQueue
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'LocalQueue':
+        # set QueueURL param - this need to be unique between local WQs
+        urlObj = urlparse(config.WorkQueueManager.couchurl)
+        if urlObj.port:
+            couchPort = ":%s" % urlObj.port
+        else:
+            couchPort = ""
+        config.WorkQueueManager.queueParams["QueueURL"] = "%s://%s%s" % (urlObj.scheme, 
+                                                    config.Agent.hostName, urlObj.port)
+        
         if args.get("global_workqueue_url", None):
             config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = args["global_workqueue_url"]
 

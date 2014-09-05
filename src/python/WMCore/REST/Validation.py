@@ -1,6 +1,7 @@
 from WMCore.REST.Error import *
 import math, re
 import numbers 
+
 def _arglist(argname, kwargs):
     val = kwargs.get(argname, None)
     if val == None:
@@ -11,7 +12,7 @@ def _arglist(argname, kwargs):
         return val
 
 def _check_rx(argname, val):
-    if not isinstance(val, str):
+    if not isinstance(val, basestring):
         raise InvalidParameter("Incorrect '%s' parameter" % argname)
     try:
         return re.compile(val)
@@ -19,21 +20,24 @@ def _check_rx(argname, val):
         raise InvalidParameter("Invalid '%s' parameter" % argname)
 
 def _check_str(argname, val, rx):
-    if not isinstance(val, str) or not rx.match(val):
+    if isinstance(val, unicode):
+        val = str(val)
+    if not isinstance(val, basestring) or not rx.match(val):
         raise InvalidParameter("Incorrect '%s' parameter" % argname)
     return val
 
 def _check_ustr(argname, val, rx):
-    try:
-        val = unicode(val, "utf-8")
-    except:
-        raise InvalidParameter("Incorrect '%s' parameter" % argname)
+    if isinstance(val, str):
+        try:
+            val = unicode(val, "utf-8")
+        except:
+            raise InvalidParameter("Incorrect '%s' parameter" % argname)
     if not isinstance(val, basestring) or not rx.match(val):
         raise InvalidParameter("Incorrect '%s' parameter" % argname)
     return val
 
 def _check_num(argname, val, bare, minval, maxval):
-    if not isinstance(val, numbers.Integral) and (not isinstance(val, str) or (bare and not val.isdigit())):
+    if not isinstance(val, numbers.Integral) and (not isinstance(val, basestring) or (bare and not val.isdigit())):
         raise InvalidParameter("Incorrect '%s' parameter" % argname)
     try:
         n = int(val)
@@ -46,7 +50,7 @@ def _check_num(argname, val, bare, minval, maxval):
         raise InvalidParameter("Invalid '%s' parameter" % argname)
 
 def _check_real(argname, val, special, minval, maxval):
-    if not isinstance(val, numbers.Number) and not isinstance(val, str):
+    if not isinstance(val, numbers.Number) and not isinstance(val, basestring):
         raise InvalidParameter("Incorrect '%s' parameter" % argname)
     try:
         n = float(val)

@@ -1,4 +1,4 @@
-WMStats.namespace("HistoryModel")
+WMStats.namespace("HistoryModel");
 
 WMStats.HistoryModel = new WMStats._ModelBase('requestHistory', {}, WMStats.History);
 

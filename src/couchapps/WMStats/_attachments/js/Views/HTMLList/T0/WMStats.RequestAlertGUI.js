@@ -21,10 +21,10 @@ WMStats.RequestAlertGUI = function (requestData, containerDiv) {
         var bRun = b.requests[b.key].run;
         if (aRun == bRun) {
             var aType = mapType(a.key);
-            var bType = mapType(b.key)
+            var bType = mapType(b.key);
             if ( aType == bType){
                 var aJobs = a.summary.getTotalPaused() + a.summary.getTotalCooloff();
-                var bJobs = b.summary.getTotalPaused() + b.summary.getTotalCooloff()
+                var bJobs = b.summary.getTotalPaused() + b.summary.getTotalCooloff();
                 return bJobs - aJobs;
             } else {
                 return aType - bType;
@@ -42,7 +42,7 @@ WMStats.RequestAlertGUI = function (requestData, containerDiv) {
         for (var i in alertRequests) {
             var key = alertRequests[i].key;
             var summary = alertRequests[i].summary;
-            var jobs = summary.getTotalPaused() + summary.getTotalCooloff()
+            var jobs = summary.getTotalPaused() + summary.getTotalCooloff();
             //var reqDoc = alertRequests[i].requests[key];
             htmlList += ('<li> <a class="requestAlert">' + key + "</a>:" + jobs + '</li>');
         }

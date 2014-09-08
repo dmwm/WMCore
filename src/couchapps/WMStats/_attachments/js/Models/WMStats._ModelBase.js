@@ -1,15 +1,15 @@
-WMStats.namespace("_ModelBase")
+WMStats.namespace("_ModelBase");
 
 WMStats._ModelBase = function(initView, options, dataStruct) {
 
     this._initialView = initView;
     this._options = options;
-    this._dataStruct = dataStruct;
+	this._dataStruct = dataStruct;
     this._trigger = null;
     this._data = null;
     // default _dbSource is wmstats database
     this._dbSource = WMStats.Couch;
-}
+};
 
 WMStats._ModelBase.prototype = {
 
@@ -25,10 +25,10 @@ WMStats._ModelBase.prototype = {
         this._data = this._dataStruct(data);
         if (this._trigger instanceof Array){
             for (var i in this._trigger) {
-                jQuery(WMStats.Globals.Event).triggerHandler(this._trigger[i], this._data)
+                jQuery(WMStats.Globals.Event).triggerHandler(this._trigger[i], this._data);
             }
         }else{
-            jQuery(WMStats.Globals.Event).triggerHandler(this._trigger, this._data)
+            jQuery(WMStats.Globals.Event).triggerHandler(this._trigger, this._data);
         }
         
     },
@@ -56,11 +56,11 @@ WMStats._ModelBase.prototype = {
         if (options === undefined){
             var options = this._options;
         }
-        return this._dbSource.allDocs(options, jQuery.proxy(this.callback, this))
+        return this._dbSource.allDocs(options, jQuery.proxy(this.callback, this));
     },
     
     retrieveDoc: function (docID) {
-        return this._dbSource.openDoc(docID, jQuery.proxy(this.callback, this))
+        return this._dbSource.openDoc(docID, jQuery.proxy(this.callback, this));
     },
     
     setDBSource: function(dbSource) {

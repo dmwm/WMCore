@@ -11,9 +11,9 @@ WMStats.WorkloadSummary = function (couchData) {
                                          workloadSummary.push(dataRows[i].doc);
                                      }
                                      return workloadSummary;
-                                  }
+                                 };
     
     if (couchData) workloadSummaryData.setData(couchData);
     
-    return workloadSummaryData
-}
+    return workloadSummaryData;
+};

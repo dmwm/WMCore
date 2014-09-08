@@ -55,7 +55,7 @@ WMStats.RunSummary = function() {
         } else {
             baseObj[field] += additionObj[field];
         }
-    }
+    };
 
     runSummary.createSummaryFromRequestDoc = function(doc) {
         var summary = WMStats.RunSummary();

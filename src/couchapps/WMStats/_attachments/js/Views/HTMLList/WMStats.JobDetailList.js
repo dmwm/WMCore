@@ -47,7 +47,7 @@ WMStats.namespace('JobDetailList');
     
     var logArchiveFormat = function(archiveObj, key) {
         return key;
-    }
+    };
     
     var format = function (data) {
         var jobDetails = data.getData();
@@ -57,9 +57,9 @@ WMStats.namespace('JobDetailList');
         for (var index in jobDetails) {
             var buttonNumber = Number(index) + 1;
             if (buttonNumber == 1) {
-                htmlstr += '<li><a href="#' + jobDivIDPrefix + index + '" class="pageButton button-selected">' + buttonNumber +' </a></li>'
+                htmlstr += '<li><a href="#' + jobDivIDPrefix + index + '" class="pageButton button-selected">' + buttonNumber +' </a></li>';
             } else {
-                htmlstr += '<li><a href="#' + jobDivIDPrefix + index + '" class="pageButton button-unselected">' + buttonNumber +' </a></li>'
+                htmlstr += '<li><a href="#' + jobDivIDPrefix + index + '" class="pageButton button-unselected">' + buttonNumber +' </a></li>';
             }
         }
         htmlstr += '</nav></ul></div>';
@@ -82,12 +82,12 @@ WMStats.namespace('JobDetailList');
             } else {
                 htmlstr += "<li><b>Site:</b> " + jobDoc.site + "</li>";
             }
-            htmlstr += "<li><b>Agent:</b> " + jobDoc.agent_name + "</li>"
-            htmlstr += "<li><b>ACDC URL:</b> " + jobDoc.acdc_url + "</li>"
-            htmlstr += "<li>" + WMStats.Utils.expandFormat(jobDoc.state_history, "State Transition", stateTransitionFormat) + "</li>"
+            htmlstr += "<li><b>Agent:</b> " + jobDoc.agent_name + "</li>";
+            htmlstr += "<li><b>ACDC URL:</b> " + jobDoc.acdc_url + "</li>";
+            htmlstr += "<li>" + WMStats.Utils.expandFormat(jobDoc.state_history, "State Transition", stateTransitionFormat) + "</li>";
             htmlstr += "<li><b>Exit code:</b> " + jobDoc.exitcode + "</li>";
             htmlstr += "<li><b>Retry count:</b> " + jobDoc.retrycount + "</li>";
-            htmlstr += "<li><b>Errors:</b> " 
+            htmlstr += "<li><b>Errors:</b> "; 
             for (var errorType in jobDoc.errors) {
                 htmlstr += "<ul>";
                 htmlstr += "<li><b>" + errorType + "</b></li>";
@@ -106,10 +106,10 @@ WMStats.namespace('JobDetailList');
             htmlstr += "<li>" + WMStats.Utils.expandFormat(jobDoc.inputfiles, "Input files", inputFileFormat) + "</li>";
             htmlstr += "<li>" + WMStats.Utils.expandFormat(lumiFormat(jobDoc.lumis), "Lumis") + "</li>";
             
-            htmlstr += "<li><b>Output:</b> " 
+            htmlstr += "<li><b>Output:</b> "; 
             for (var i in jobDoc.output) {
                 htmlstr += "<ul>";
-                htmlstr += "<li><b>" + jobDoc.output[i].type + "</b></li>";
+				htmlstr += "<li><b>" + jobDoc.output[i].type + "</b></li>";
                 htmlstr += "<ul>";
                 htmlstr += "<li><b>lfn:</b> " + jobDoc.output[i].lfn +"</li>";
                 
@@ -136,12 +136,12 @@ WMStats.namespace('JobDetailList');
             htmlstr += "</div>";
         }
         return htmlstr;
-    }
+    };
     
     
     WMStats.JobDetailList = function (data, containerDiv) {
          $(containerDiv).html(format(data));
-    }
+    };
     
     // control job Detail
     
@@ -163,10 +163,10 @@ WMStats.namespace('JobDetailList');
         $("#jobDetailNav li a").removeClass("button-selected").addClass("button-unselected");
         $(this).removeClass("button-unselected").addClass("button-selected");
         event.preventDefault();
-    })
+    });
     
     $(WMStats.Globals.Event).on(WMStats.CustomEvents.PHEDEX_PFN_SUCCESS, 
         function(event, requestName) {
-            $('#acdc_submission div.requestDetailBox').append(WMStats.Utils.formatReqDetailUrl(requestName))
-    })
+            $('#acdc_submission div.requestDetailBox').append(WMStats.Utils.formatReqDetailUrl(requestName));
+    });
 })();

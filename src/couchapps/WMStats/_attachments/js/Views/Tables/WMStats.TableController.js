@@ -18,14 +18,14 @@
     TableEventHandler.highlightRow = function(selector, currenElement) {
                                         $(selector).removeClass('mouseclickRow');
                                         $(currenElement).addClass('mouseclickRow');
-                                    }
+                                   };
 
     TableEventHandler.prototype = { 
         constructor: TableEventHandler,
         
         tableRowBind: function(bind, parentSelector, func) {
             var currentObj = this;
-            var selector =  parentSelector + " table tbody tr"
+            var selector =  parentSelector + " table tbody tr";
             $(document).on(bind, selector, function () {
                 TableEventHandler.highlightRow(selector, this);
                 currentObj[func](this);
@@ -82,7 +82,7 @@
             // need to get the workflow name with out depending on the selector
             summary.workflow = $("#job_view div.summary_data").data("workflow");
             //summary.task = $(nTds[0]).text();
-            var currentRow = $(currentElement).closest("tr")[0]
+            var currentRow = $(currentElement).closest("tr")[0];
             var currentRowData = WMStats.JobSummaryTable.data.fnGetData(currentElement);
             summary.task = currentRowData.task;
             summary.status = currentRowData.status;
@@ -90,7 +90,7 @@
             if (summary.site ==="{}"){
                 summary.site = {};
             }
-            summary.acdcURL = currentRowData.acdcURL
+            summary.acdcURL = currentRowData.acdcURL;
             summary.exitCode = currentRowData.exitCode;
             
             vm.JobDetail.keys(summary);
@@ -128,11 +128,11 @@
     // actual event binding codes
     // row mouse over/ mouse out events
     $(document).on('mouseover', 'tr', function(event) {
-        $(this).addClass('mouseoverRow')
+        $(this).addClass('mouseoverRow');
     });
     
     $(document).on('mouseout', 'tr', function(event) { 
-        $(this).removeClass('mouseoverRow')
+        $(this).removeClass('mouseoverRow');
     });
 
 })(jQuery);

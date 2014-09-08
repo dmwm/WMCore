@@ -3,5 +3,5 @@ WMStats.Globals.importScripts([
     "js/Controller/WMStats.ActiveRequestController.js",
     "js/Controller/WMStats.TableController.js",
     "js/Controller/WMStats.WorkloadSummaryController.js"
-])
+]);
 

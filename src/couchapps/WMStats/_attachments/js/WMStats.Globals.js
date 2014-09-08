@@ -3,10 +3,10 @@
  * TODO: This will contain configuration result for Tier0, Tier1, 
  * PromptScheme specific config
  */
-WMStats.namespace("Globals")
+WMStats.namespace("Globals");
 
 WMStats.Globals = function($){
-    var _dbVariants = {'wmstats': 'tier1', 'tier0_wmstats': 'tier0'}
+    var _dbVariants = {'wmstats': 'tier1', 'tier0_wmstats': 'tier0'};
 
     function getReqDetailPrefix () {
         if (_dbVariants[dbname] == "tier1") {
@@ -20,7 +20,7 @@ WMStats.Globals = function($){
     };
     
     function getAlertCollectorLink() {
-        return "/couchdb/alertscollector/_design/AlertsCollector/index.html"
+        return "/couchdb/alertscollector/_design/AlertsCollector/index.html";
     };
     
     function getWorkloadSummaryPrefix () {
@@ -34,7 +34,7 @@ WMStats.Globals = function($){
     
     function getLQLink(agentURLs, request){
     	if (agentURLs.constructor.name === "String"){
-            agentURL = agentURLs
+            agentURL = agentURLs;
         } else if (agentURLs.length && (agentURLs[0].constructor.name === "String")){
             //TODO: need to handle properly multiple agent
             agentURL = agentURLs[0];
@@ -63,12 +63,12 @@ WMStats.Globals = function($){
     function formatJobLink(jobNumber, agentURLs, workflow, status) {
             if (jobNumber !== 0) {
                 if (agentURLs.constructor.name === "String"){
-                    agentURL = agentURLs
+                    agentURL = agentURLs;
                 } else if (agentURLs.length && (agentURLs[0].constructor.name === "String")){
                     //TODO: need to handle properly multiple agent
                     agentURL = agentURLs[0];
                 } else {
-                    return jobNumber
+                    return jobNumber;
                 }
                 return "<a href='" + getAgentUrlForJobs(agentURL, workflow, status) +
                         "' target='_blank'>" + jobNumber + "</a>";
@@ -81,31 +81,31 @@ WMStats.Globals = function($){
     return {
         REQ_DETAIL_URL_PREFIX: getReqDetailPrefix(),
         WORKLOAD_SUMMARY_URL_PREFIX: getWorkloadSummaryPrefix(),
-        AJAX_LOADING_STATUS: {beforeSend: function(){$('#loading_page').addClass('front').show()}, 
-                              complete: function(){$('#loading_page').hide()}},
+        AJAX_LOADING_STATUS: {beforeSend: function(){$('#loading_page').addClass('front').show();}, 
+                              complete: function(){$('#loading_page').hide();}},
         COUCHDB_NAME: dbname,
         WORKLOAD_SUMMARY_COUCHDB_NAME:  getWorkloadSummaryDB(), 
         REQMGR_COUCHDB_NAME: "reqmgr_workload_cache", //TODO: need to be configurable"reqmgrdb"
         VARIANT: _dbVariants[dbname],
         COUCHAPP_DESIGN: "WMStats",
         WORKLOAD_SUMMARY_COUCHAPP_DESIGN: "WorkloadSummary",
-        REQMGR_COUCHAPP_DESIGN: "ReqMgr",
+		REQMGR_COUCHAPP_DESIGN: "ReqMgr",
         ALERT_COLLECTOR_LINK: getAlertCollectorLink(),
         CONFIG: null, //this will be set when WMStats.Couch.loadConfig is called. just place holder or have default config
         loadScript: function (url, success) {
-                        $.ajax({async: false, url: url, dataType: 'script', success: success})
+                        $.ajax({async: false, url: url, dataType: 'script', success: success});
             },
         importScripts: function (scripts) {
                         for (var i=0; i < scripts.length; i++) {
-                                document.write('<script src="'+scripts[i]+'"><\/script>')
+                                document.write('<script src="'+scripts[i]+'"><\/script>');
                                  }
               },
         Event: {}, // name space for Global Custom event
         formatJobLink: formatJobLink,
         getGQLink: getGQLink,
         getLQLink: getLQLink
-        }
-}(jQuery)
+       };
+}(jQuery);
 
 WMStats.namespace("CustomEvents");
 

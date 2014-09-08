@@ -19,7 +19,7 @@ WMStats.TimeBucket = function() {
         } else if (_bucket[index]) {
             updateFlag = true;
         } else {
-            _bucket[index] = {}
+            _bucket[index] = {};
             _bucket[index][couchDoc.agent_url] = {};
             _bucket[index][couchDoc.agent_url].requests = {};
             updateFlag = true;
@@ -32,7 +32,7 @@ WMStats.TimeBucket = function() {
     }
     
     function addHistory(couchData) {
-        var dataRows = couchData.rows
+        var dataRows = couchData.rows;
         var currentTime = Math.round((new Date()).getTime() / 1000);
         for (var i in dataRows) {
             addRow(currentTime, dataRows[i]);
@@ -57,8 +57,8 @@ WMStats.TimeBucket = function() {
     return {
         addHistory: addHistory,
         getData: getData
-    }
-}
+    };
+};
 
 WMStats.History = function (couchData) {
     var _data;
@@ -67,9 +67,9 @@ WMStats.History = function (couchData) {
     
     historyData.convertCouchData = function(data) {
         var bucket = WMStats.TimeBucket();
-        bucket.addHistory(data)
-        return bucket.getData()
-    }
+        bucket.addHistory(data);
+        return bucket.getData();
+    };
     
     
     if (couchData) historyData.setData(couchData);

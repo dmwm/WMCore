@@ -27,7 +27,7 @@ WMStats.AgentRequestSummaryTable = function (data, containerDiv) {
                             var agentRequestSummary = source.summary;
                             var totalJobs = agentRequestSummary.getWMBSTotalJobs() || 1;
                             var result = (agentRequestSummary.getJobStatus("success") + agentRequestSummary.getTotalFailure()) /
-                                     totalJobs * 100
+                                     totalJobs * 100;
                             return  (result.toFixed(1) + "%");
                           }
             },
@@ -56,7 +56,7 @@ WMStats.AgentRequestSummaryTable = function (data, containerDiv) {
               "mDataProp": function (source, type, val) { 
                            var agentRequestSummary = source.summary;
                            var totalFailure = agentRequestSummary.getTotalFailure();
-                           var totalJobs = (agentRequestSummary.getJobStatus("success") + totalFailure) || 1
+                           var totalJobs = (agentRequestSummary.getJobStatus("success") + totalFailure) || 1;
                            var result = totalFailure / totalJobs * 100;
                            return (result.toFixed(1)  + "%");
                           }
@@ -69,7 +69,7 @@ WMStats.AgentRequestSummaryTable = function (data, containerDiv) {
                           }
             }
         ]
-    }
+    };
     tableConfig.aaData = data.getList();
     
     var filterConfig = {};

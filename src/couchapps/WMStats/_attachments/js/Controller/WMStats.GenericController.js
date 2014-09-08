@@ -25,7 +25,7 @@ WMStats.namespace("GenericController");
             closeRequestDetail();
             event.preventDefault();
         }
-    })
+    });
     
     
     WMStats.GenericController.switchDiv = function (showSelector, hideSelectors) {

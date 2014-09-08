@@ -54,7 +54,7 @@ WMStats.SiteSummaryTable = function (data, containerDiv) {
                           }
             }
         ]
-    }
+    };
     tableConfig.aaData = data.getList();
     
     var filterConfig = {};

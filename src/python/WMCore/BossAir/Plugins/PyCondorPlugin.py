@@ -1021,43 +1021,34 @@ class PyCondorPlugin(BasePlugin):
 
         This looks at the schedd running on the
         Submit-Host and edit/remove jobs 
-        
         """
 
         jobInfo = {}
-        coll = condor.Collector("%s"%os.getenv("HOSTNAME"))
-        scheddAd = coll.locate(condor.DaemonTypes.Schedd)
+        schedd = condor.Schedd()
         results=[]
-        
-        if not scheddAd :
-            logging.error("condor schedd NOT found")
-            return jobInfo, scheddAd
-        else :
-            schedd = condor.Schedd(scheddAd)
-            if not schedd :
-                logging.error('Couldnt get classAd for condor schedd')
+ 
+        if not schedd:
+            return jobInfo, None
+        else:
+            results = schedd.query('WMAgent_JobID =!= "UNDEFINED" && WMAgent_AgentName == "%s"' % self.agent,
+                                   ["JobStatus", "EnteredCurrentStatus", "JobStartDate", "QDate", "DESIRED_Sites",
+                                    "ExtDESIRED_Sites", "MATCH_EXP_JOBGLIDEIN_CMSSite", "WMAgent_JobID"]
+                                   )
+            if not results:
+                logging.error("Not able to find WMAgent jobs")
                 return jobInfo, schedd
-            else :
-                results = schedd.query('WMAgent_JobID =!= "UNDEFINED" && WMAgent_AgentName == "%s"' % self.agent,
-                                       ["JobStatus", "EnteredCurrentStatus", "JobStartDate", "QDate", "DESIRED_Sites",
-                                        "ExtDESIRED_Sites", "MATCH_EXP_JOBGLIDEIN_CMSSite", "WMAgent_JobID"]
-                                       )
-                if not results :
-                    logging.error("Not able to find WMAgent jobs")
-                    return jobInfo, schedd
-                else :
-                    for i in range(0, len(results)) :
-                        tmpDict={}
-                        tmpDict["JobStatus"]=int(results[i].get("JobStatus"))
-                        tmpDict["stateTime"]=int(results[i].get("EnteredCurrentStatus"))
-                        tmpDict["runningTime"]=results[i].get("JobStartDate")
-                        tmpDict["submitTime"]=int(results[i].get("QDate"))
-                        tmpDict["DESIRED_Sites"]=results[i].get("DESIRED_Sites")
-                        tmpDict["ExtDESIRED_Sites"]=results[i].get("ExtDESIRED_Sites")
-                        tmpDict["runningCMSSite"]=results[i].get("MATCH_EXP_JOBGLIDEIN_CMSSite")
-                        tmpDict["WMAgentID"]=int(results[i].get("WMAgent_JobID"))
-                        jobInfo[int(results[i].get("WMAgent_JobID"))] = tmpDict
-                
-                    logging.info("Retrieved %i classAds" % len(jobInfo))
-                    return jobInfo, schedd
+            else:
+                for i in range(0, len(results)):
+                    tmpDict={}
+                    tmpDict["JobStatus"]=int(results[i].get("JobStatus"))
+                    tmpDict["stateTime"]=int(results[i].get("EnteredCurrentStatus"))
+                    tmpDict["runningTime"]=results[i].get("JobStartDate")
+                    tmpDict["submitTime"]=int(results[i].get("QDate"))
+                    tmpDict["DESIRED_Sites"]=results[i].get("DESIRED_Sites")
+                    tmpDict["ExtDESIRED_Sites"]=results[i].get("ExtDESIRED_Sites")
+                    tmpDict["runningCMSSite"]=results[i].get("MATCH_EXP_JOBGLIDEIN_CMSSite")
+                    tmpDict["WMAgentID"]=int(results[i].get("WMAgent_JobID"))
+                    jobInfo[int(results[i].get("WMAgent_JobID"))] = tmpDict
 
+                logging.info("Retrieved %i classAds" % len(jobInfo))
+                return jobInfo, schedd

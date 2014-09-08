@@ -31,7 +31,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
             },
             { "mDataProp": function (source, type, val) {
                               var requestInfo = _activePageData.getData(source.workflow);
-                              return requestInfo.getLastState()
+                              return requestInfo.getLastState();
                            }, "sTitle": "status",
               "fnRender": function ( o, val ) {
                             var requestInfo = _activePageData.getData(o.aData.workflow);
@@ -114,7 +114,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
         ]
     };
     
-    var filterConfig = {}
+    var filterConfig = {};
     
     tableConfig.aaData = requestData.getList();
     

@@ -32,7 +32,7 @@ WMStats.WorkloadSummaryTable = function (data, containerDiv) {
               "bUseRendered": false, "sWidth": "150px"
             },
             { "mDataProp": function (source, type, val) { 
-                              return source.request_status[source.request_status.length -1].status
+                              return source.request_status[source.request_status.length -1].status;
                            }, "sTitle": "status",
               "fnRender": function ( o, val ) {
                             return formatWorkloadSummarylUrl(o.aData._id, 
@@ -44,9 +44,9 @@ WMStats.WorkloadSummaryTable = function (data, containerDiv) {
             { "mDataProp": "priority", "sTitle": "priority", "sDefaultContent": 0},
             { "mDataProp": "campaign", "sTitle": "campaign", "sDefaultContent": ""}
         ]
-    }
+    };
     
-    var filterConfig = {}
+    var filterConfig = {};
     
     tableConfig.aaData = data.getData();
     

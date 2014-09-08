@@ -7,7 +7,7 @@ WMStats._ViewModelBase = function (observableObj) {
     // special observable property holding represented data
     this.data = this.observable('data', null);
     if (observableObj !== undefined) {
-        this._createObservableProperty(observableObj)
+        this._createObservableProperty(observableObj);
     };
     this._selector = null;
     this._data = null;
@@ -56,7 +56,7 @@ WMStats._ViewModelBase.prototype = {
             eventName = this._eventObjName;
         }
         
-        $(this._eventObj).on(eventName, callback)
+        $(this._eventObj).on(eventName, callback);
     },
     
     id: function(selector) {

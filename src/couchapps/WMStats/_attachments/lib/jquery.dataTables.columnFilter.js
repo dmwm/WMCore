@@ -320,7 +320,7 @@
             for (j = 0; j < iLen; j++) {
                 if (typeof (aData[j]) != 'object') {
                     var selected = '';
-                    if (escape(aData[j]) == currentFilter) selected = 'selected '
+                    if (escape(aData[j]) == currentFilter) selected = 'selected ';
                     r += '<option ' + selected + ' value="' + escape(aData[j]) + '">' + aData[j] + '</option>';
                 }
                 else {
@@ -685,8 +685,8 @@
                 //var index = aiCustomSearch_Indexes[j];
                 var fnSearch_ = function () {
                     var id = oTable.attr("id");
-                    return $("#" + id + "_range_from_" + aiCustomSearch_Indexes[j]).val() + properties.sRangeSeparator + $("#" + id + "_range_to_" + aiCustomSearch_Indexes[j]).val()
-                }
+                    return $("#" + id + "_range_from_" + aiCustomSearch_Indexes[j]).val() + properties.sRangeSeparator + $("#" + id + "_range_to_" + aiCustomSearch_Indexes[j]).val();
+                };
                 afnSearch_.push(fnSearch_);
             }
 
@@ -715,7 +715,7 @@
                     }
                     else {
                         $.getJSON(sSource, aoData, function (json) {
-                            fnCallback(json)
+                            fnCallback(json);
                         });
                     }
                 };

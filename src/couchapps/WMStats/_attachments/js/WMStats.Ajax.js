@@ -14,7 +14,7 @@ WMStats.Ajax = (function($){
                     processData: false,
                     success: function(data, textStatus, jqXHR) {
                             var requestName = data["WMCore.RequestManager.DataStructs.Request.Request"].RequestName;
-                            $(WMStats.Globals.Event).triggerHandler(WMStats.CustomEvents.RESUBMISSION_SUCCESS, requestName)
+                            $(WMStats.Globals.Event).triggerHandler(WMStats.CustomEvents.RESUBMISSION_SUCCESS, requestName);
                             },
                     error: function(jqXHR, textStatus, errorThrown){
                             alert(jqXHR.responseText);
@@ -22,7 +22,7 @@ WMStats.Ajax = (function($){
                     });
             
         }
-    }
+   };
     
     var phedexFuncs = {
         getPFN: function(location, lfn) {
@@ -55,17 +55,17 @@ WMStats.Ajax = (function($){
                                 for (var i in mappedData) {
                                     pfns.push(mappedData[i].pfn);
                                 }
-                                $(WMStats.Globals.Event).triggerHandler(WMStats.CustomEvents.PHEDEX_PFN_SUCCESS, pfns)
+                                $(WMStats.Globals.Event).triggerHandler(WMStats.CustomEvents.PHEDEX_PFN_SUCCESS, pfns);
                             },
                     error: function(jqXHR, textStatus, errorThrown){
                             alert(jqXHR.responseText);
                         }
                     });
         }
-    }
+    };
     
     return {
         requestMgr: reqMgrFuncs,
         phedex: phedexFuncs
-    }
-})(jQuery)
+    };
+})(jQuery);

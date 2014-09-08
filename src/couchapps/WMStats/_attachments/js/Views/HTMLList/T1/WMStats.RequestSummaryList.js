@@ -2,7 +2,7 @@ WMStats.namespace('RequestSummaryList');
 (function() { 
     var numFormat = WMStats.Utils.largeNumberFormat;
     var format = function (summary) {
-        var summaryStruct = summary.summaryStruct
+        var summaryStruct = summary.summaryStruct;
         var htmlstr = "";
         htmlstr += "<legend>filtered stats</legend>";
         htmlstr += "<div class='requestSummaryBox'>";
@@ -20,16 +20,16 @@ WMStats.namespace('RequestSummaryList');
         htmlstr += "</ul>";
         htmlstr += "</div>";
         return htmlstr;
-    }
+    };
     
     WMStats.RequestSummaryList = function (data, containerDiv) {
          $(containerDiv).html(format(data));
-    }
+    };
     
     var vm = WMStats.ViewModel;
     
     vm.ActiveRequestPage.subscribe("data", function() {
             var filteredData = vm.ActiveRequestPage.data();
             WMStats.RequestSummaryList(filteredData.getSummary(), "#filter_summary");
-        })
+       });
 })();

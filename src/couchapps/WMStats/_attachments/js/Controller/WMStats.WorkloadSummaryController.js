@@ -7,6 +7,6 @@ WMStats.namespace("WorkloadSummaryController");
         function(event, data) {
             var data = WMStats.RequestSearchModel.getData();
             vm.SearchPage.data(data);
-        })
+        });
 
 })(jQuery);

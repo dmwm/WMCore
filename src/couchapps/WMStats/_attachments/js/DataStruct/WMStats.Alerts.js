@@ -11,11 +11,11 @@ WMStats.Alerts = function (couchData) {
                                             var tableRow = {};
                                             tableRow.workflow = dataRows[i].key;
                                             tableRow.count = dataRows[i].value;
-                                            rows.push(tableRow)
+                                            rows.push(tableRow);
                                         }
                                         return rows;
                                    };
     if (couchData) alertData.setData(couchData);
     
-    return alertData
+    return alertData;
 };

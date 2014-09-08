@@ -11,9 +11,9 @@ WMStats.JobDetails = function (couchData) {
                                          jobDetails.push(dataRows[i].doc);
                                      }
                                      return jobDetails;
-                                  }
+                                 };
     
     if (couchData) jobDetailData.setData(couchData);
     
-    return jobDetailData
-}
+    return jobDetailData;
+};

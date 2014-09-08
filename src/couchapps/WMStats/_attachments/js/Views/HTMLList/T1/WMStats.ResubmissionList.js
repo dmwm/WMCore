@@ -4,7 +4,7 @@ WMStats.namespace('ResubmissionList');
         var htmlstr = "";
         htmlstr += "<legend>Resubmission</legend>";
         htmlstr = '<div class="closingButton">X</div>';
-        htmlstr += "<div class='requestDetailBox'>"
+        htmlstr += "<div class='requestDetailBox'>";
         htmlstr += "<ul>";
         htmlstr += "<li><b>Request String: :</b><input type='text' name='RequestString' size=30 value='" + summary.RequestString + "'/></li>";
         htmlstr += "<li><b>Original Request Name: :</b>" + summary.OriginalRequestName + "</li>";
@@ -36,12 +36,12 @@ WMStats.namespace('ResubmissionList');
         
         
         return htmlstr;
-    }
+    };
     
     WMStats.ResubmissionList = function (data, containerDiv) {
          $(containerDiv).html(format(data));
          $(containerDiv).show("slide", {}, 500);
-    }
+    };
     
     var vm = WMStats.ViewModel;
     vm.Resubmission.subscribe("data", function() {
@@ -50,21 +50,21 @@ WMStats.namespace('ResubmissionList');
 
     $(document).on('click', "#acdc_submission button", function(event){
         var resubmissionData = WMStats.ViewModel.Resubmission.data();
-        resubmissionData.RequestString = $('#acdc_submission input[name="RequestString"]').val()
+        resubmissionData.RequestString = $('#acdc_submission input[name="RequestString"]').val();
         if (resubmissionData.ACDCServer === undefined) {
-            resubmissionData.ACDCServer = $('#acdc_submission input[name="ACDCServer"]').val()
+            resubmissionData.ACDCServer = $('#acdc_submission input[name="ACDCServer"]').val();
         }
         if (resubmissionData.ACDCDatabase === undefined) {
-            resubmissionData.ACDCDatabase = $('#acdc_submission input[name="ACDCDatabase"]').val()
+            resubmissionData.ACDCDatabase = $('#acdc_submission input[name="ACDCDatabase"]').val();
         }
         //WMStats.ViewModel.Resubmission.Requestor = $('#acdc_submission input[name="Requestor"]').val()
         WMStats.Ajax.requestMgr.putRequest(resubmissionData);
         event.preventDefault();
-        })
+       });
      
      $(WMStats.Globals.Event).on(WMStats.CustomEvents.RESUBMISSION_SUCCESS, 
         function(event, requestName) {
-            $('#acdc_submission div.requestDetailBox').append(WMStats.Utils.formatReqDetailUrl(requestName))
-    })
+            $('#acdc_submission div.requestDetailBox').append(WMStats.Utils.formatReqDetailUrl(requestName));
+    });
 
 })();

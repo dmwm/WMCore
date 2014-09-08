@@ -167,7 +167,7 @@ WMStats.Utils.largeNumberFormat = function(number) {
 
 WMStats.Utils.splitCouchServiceURL = function(url) {
     var urlArray = url.split('/');
-    return {'couchUrl': urlArray.slice(0, -1).join('/'), 'couchdb': urlArray[urlArray.length - 1]}
+    return {'couchUrl': urlArray.slice(0, -1).join('/'), 'couchdb': urlArray[urlArray.length - 1]};
 };
 
 

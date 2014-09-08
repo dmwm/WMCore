@@ -51,7 +51,7 @@ WMStats.Controls = function($){
     function setTabs(selector) {
         var tabs = '<ul><li class="first"><a href="#category_view">Run</a></li>\
                     <li><a href="#request_view">&#187 Requests</a></li>\
-                    <li><a href="#job_view">&#187 Jobs</a></li></ul>'
+                    <li><a href="#job_view">&#187 Jobs</a></li></ul>';
         $(selector).append(tabs).addClass("tabs");
         $(selector + " ul").addClass("tabs-nav");
     };
@@ -67,5 +67,5 @@ WMStats.Controls = function($){
         requests: "requests",
         sites: "sites",
         run: "run"
-    }
+    };
 }(jQuery);

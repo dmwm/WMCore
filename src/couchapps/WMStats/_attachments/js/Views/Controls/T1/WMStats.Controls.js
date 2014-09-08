@@ -24,7 +24,7 @@ WMStats.Controls = function($){
                     //change the view model filter value
                     WMStats.ViewModel.ActiveRequestPage.filter(WMStats.Utils.createInputFilter(_filterSelector));
                     
-                })
+                });
     };
 
     function setCategoryButton(selector) {
@@ -82,7 +82,7 @@ WMStats.Controls = function($){
             $("#view_switch_button li a").removeClass("nav-button-selected").addClass("button-unselected");
             $(this).addClass("nav-button-selected");
             event.preventDefault();
-        })
+        });
         
     };
     
@@ -97,7 +97,7 @@ WMStats.Controls = function($){
         $(document).on('click', "#all_requests li a", function(event){
             vm.RequestView.categoryKey("all");
             event.preventDefault();
-            })
+           });
         
         vm.RequestView.subscribe("categoryKey", function(){
             var buttonSelector = "#all_requests li a";
@@ -106,14 +106,14 @@ WMStats.Controls = function($){
             } else {
                 $(buttonSelector).removeClass("nav-button-selected").addClass("button-unselected");
             }
-        })    
+        });    
     };
 
     /* set the view tab and control*/
     function setTabs(selector) {
         var tabs = '<ul><li class="first"><a href="#category_view">Category</a></li>\
                     <li><a href="#request_view">&#187 Requests</a></li>\
-                    <li><a href="#job_view">&#187 Jobs</a></li></ul>'
+                    <li><a href="#job_view">&#187 Jobs</a></li></ul>';
         $(selector).append(tabs).addClass("tabs");
         $(selector + " ul").addClass("tabs-nav");
         
@@ -153,5 +153,5 @@ WMStats.Controls = function($){
         sites: "sites",
         campaign: "campaign",
         cmssw: "cmssw"
-    }
+    };
 }(jQuery);

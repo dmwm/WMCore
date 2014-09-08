@@ -39,7 +39,7 @@ WMStats.RunSummaryTable = function (data, containerDiv) {
                             var totalJobs = source.summary.getWMBSTotalJobs() || 1;
                             var result = (source.summary.getJobStatus("success") + 
                                           source.summary.getTotalFailure()) /
-                                          totalJobs * 100
+                                          totalJobs * 100;
                             if (type === 'display') {
                                 return result.toFixed(1) + "%";
                             }
@@ -63,7 +63,7 @@ WMStats.RunSummaryTable = function (data, containerDiv) {
                            }, "sTitle": "paused", "sDefaultContent": 0, 
             }
         ]
-    }
+    };
     
     function runNumerDesc(a, b) {
         return (Number(b.key) - Number(a.key));

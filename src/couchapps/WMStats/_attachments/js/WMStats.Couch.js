@@ -2,10 +2,10 @@
  * Define Global values for couch db and couch db function
  * this has dependency on jquery.js and jquery.couch.js
  */
-WMStats.namespace("CouchBase")
-WMStats.namespace("Couch")
-WMStats.namespace("WorkloadSummaryCouch")
-WMStats.namespace("ReqMgrCouch")
+WMStats.namespace("CouchBase");
+WMStats.namespace("Couch");
+WMStats.namespace("WorkloadSummaryCouch");
+WMStats.namespace("ReqMgrCouch");
 
 WMStats.CouchBase = function(dbName, designName){
     // couchapp name
@@ -26,8 +26,8 @@ WMStats.CouchBase = function(dbName, designName){
                 options[opt] = ajaxOptions[opt];
             }
         }
-        return options
-    }
+        return options;
+    };
 
     function loadConfig(func) {
         function callback(data) {
@@ -44,7 +44,7 @@ WMStats.CouchBase = function(dbName, designName){
             func();
         }
         _couchDB.view(_Design +"/config", 
-                      _combineOption({"include_docs": true}, callback))
+                      _combineOption({"include_docs": true}, callback));
         
     }
 
@@ -52,7 +52,7 @@ WMStats.CouchBase = function(dbName, designName){
         //make all the view stale options update_after
         var options = options || {};
         if (options.stale === undefined) {
-            options.stale = "update_after"
+            options.stale = "update_after";
         }
         return _couchDB.view(_Design +"/" + name, 
                              _combineOption(options, callback, ajaxOptions));
@@ -68,7 +68,7 @@ WMStats.CouchBase = function(dbName, designName){
 
     return {'loadConfig': loadConfig, 'view': view, "allDocs": allDocs,
             'openDoc': openDoc};
-}
+};
 
 WMStats.Couch = WMStats.CouchBase(WMStats.Globals.COUCHDB_NAME, WMStats.Globals.COUCHAPP_DESIGN);
 WMStats.WorkloadSummaryCouch = WMStats.CouchBase(WMStats.Globals.WORKLOAD_SUMMARY_COUCHDB_NAME,

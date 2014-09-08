@@ -1,2 +1,2 @@
 //import common scripts
-WMStats.Globals.importScripts(["js/ViewModels/WMStats.ViewModel.js"])
+WMStats.Globals.importScripts(["js/ViewModels/WMStats.ViewModel.js"]);

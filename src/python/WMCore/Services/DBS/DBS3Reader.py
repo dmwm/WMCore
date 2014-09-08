@@ -21,11 +21,11 @@ def remapDBS3Keys(data, stringify = False, **others):
     and map to DBS2 values
     """
     mapping = {'num_file' : 'NumberOfFiles', 'num_files' : 'NumberOfFiles', 'num_event' : 'NumberOfEvents',
-                   'num_block' : 'NumberOfBlocks', 'num_lumi' : 'NumberOfLumis',
-                   'event_count' : 'NumberOfEvents', 'run_num' : 'RunNumber',
-                   'file_size' : 'FileSize', 'block_size' : 'BlockSize',
-                   'file_count' : 'NumberOfFiles', 'open_for_writing' : 'OpenForWriting',
-                   'logical_file_name' : 'LogicalFileName'}
+               'num_block' : 'NumberOfBlocks', 'num_lumi' : 'NumberOfLumis',
+               'event_count' : 'NumberOfEvents', 'run_num' : 'RunNumber',
+               'file_size' : 'FileSize', 'block_size' : 'BlockSize',
+               'file_count' : 'NumberOfFiles', 'open_for_writing' : 'OpenForWriting',
+               'logical_file_name' : 'LogicalFileName'}
     mapping.update(others)
     format = lambda x: str(x) if stringify and type(x) == unicode else x
     for name, newname in mapping.iteritems():
@@ -42,8 +42,6 @@ class DBS3Reader:
     _DBSReader_
 
     General API for reading data from DBS
-
-
     """
     def __init__(self, url, **contact):
 
@@ -170,7 +168,6 @@ class DBS3Reader:
 
         return a list of Processed datasets for the primary and optional
         data tier value
-
         """
         try:
             result = self.dbs.listDatasets(primary_ds_name = primary, data_tier_name = dataTier)
@@ -188,7 +185,6 @@ class DBS3Reader:
         _listDatasetFiles_
 
         Get list of files for dataset
-
         """
         return [ x['logical_file_name'] for x in self.dbs.listFiles(dataset = datasetPath)]
 
@@ -206,7 +202,6 @@ class DBS3Reader:
               'Size': 286021145,
               'ValidFile' : 1
             }
-
         """
         fileDetails = self.dbs.listFiles(dataset=datasetPath, detail=True)
         blocks = set() #the set of blocks of the dataset
@@ -300,6 +295,7 @@ class DBS3Reader:
     def getFileBlocksInfo(self, dataset, onlyClosedBlocks = False,
                           blockName = None, locations = True):
         """
+        TODO: should add something here 
         """
         self.checkDatasetPath(dataset)
         args = {'dataset' : dataset, 'detail' : True}
@@ -378,7 +374,6 @@ class DBS3Reader:
             x['block_name'] for x in blocks \
             if str(x['open_for_writing']) == "1"
         ]
-
 
         return result
 
@@ -484,7 +479,6 @@ class DBS3Reader:
                            })
         return result
 
-
     def lfnsInBlock(self, fileBlockName):
         """
         _lfnsInBlock_
@@ -505,7 +499,6 @@ class DBS3Reader:
             raise DBSReaderError(msg)
 
         return [x['logical_file_name'] for x in files]
-
 
     def listFileBlockLocation(self, fileBlockName, dbsOnly = False):
         """
@@ -567,7 +560,6 @@ class DBS3Reader:
              }
         }
 
-
         """
         if not self.blockExists(fileBlockName):
             msg = "DBSReader.getFileBlock(%s): No matching data"
@@ -609,8 +601,6 @@ class DBS3Reader:
                    }
         return result
 
-
-
     def getFiles(self, dataset, onlyClosedBlocks = False):
         """
         _getFiles_
@@ -627,7 +617,6 @@ class DBS3Reader:
 
         return result
 
-
     def listBlockParents(self, blockName):
         """Get parent blocks for block"""
         result = []
@@ -638,7 +627,6 @@ class DBS3Reader:
             toreturn['StorageElementList'] = self.listFileBlockLocation(toreturn['Name'])
             result.append(toreturn)
         return result
-
 
     def blockIsOpen(self, blockName):
         """
@@ -657,8 +645,6 @@ class DBS3Reader:
         if isOpen == 0:
             return False
         return True
-
-
 
     def blockToDatasetPath(self, blockName):
         """

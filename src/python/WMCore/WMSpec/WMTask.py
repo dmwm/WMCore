@@ -62,7 +62,8 @@ def buildLumiMask(runs, lumis):
 
 
     lumiLists = [map(list, zip([int(y) for y in x.split(',')][::2], [int(y) for y in x.split(',')][1::2])) for x in lumis]
-    lumiMask = dict(zip(runs, lumiLists))
+    strRuns = [str(run) for run in runs]
+    lumiMask = dict(zip(strRuns, lumiLists))
     return lumiMask
 
 
@@ -1214,11 +1215,23 @@ class WMTaskHelper(TreeHelper):
         """
         return getattr(self.data.parameters, 'acquisitionEra', None)
 
-    def setLumiMask(self, lumiMask = LumiList()):
-        compactList = lumiMask.getCompactList()
+    def setLumiMask(self, lumiMask = {}, override = True):
+        """
+        Attach the given LumiMask to the task
+        At this point the lumi mask is just the compactList dict not the LumiList object
+        """
+
+        if not lumiMask:
+            return
+
+        runs = getattr(self.data.input.splitting, 'runs', None)
+        lumis = getattr(self.data.input.splitting, 'lumis', None)
+        if not override and runs and lumis: # Unless instructed, don't overwrite runs and lumis which may be there from a task already
+            return
+
         runs = []
         lumis = []
-        for run, runLumis in compactList.items():
+        for run, runLumis in lumiMask.items():
             runs.append(int(run))
             lumiList = []
             for lumi in runLumis:

@@ -807,7 +807,7 @@ class WMWorkloadHelper(PersistencyHelper):
             taskIterator = self.taskIterator()
 
         for task in taskIterator:
-            task.setLumiMask(lumiLists)
+            task.setLumiMask(lumiLists, override=False)
             self.setLumiList(lumiLists, task)
 
         #set lumiList for workload (need to refactor)

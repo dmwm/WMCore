@@ -164,7 +164,7 @@ def globalTag(candidate):
     """ Identifier plus colons """
     return check(r'[a-zA-Z0-9\s\.\-_:]{1,100}$', candidate)
 
-DATASET_RE = r'^/[a-zA-Z0-9\.\-_]{1,99}/[a-zA-Z0-9\.\-_]{1,199}/[a-zA-Z0-9\.\-_]{1,99}$'
+DATASET_RE = r'^/[a-zA-Z0-9\-_]{1,99}/[a-zA-Z0-9\.\-_]{1,199}/[a-zA-Z0-9\.\-_]{1,99}$'
 def dataset(candidate):
     """ A slash followed by an identifier,x3 """
     return check(DATASET_RE, candidate)

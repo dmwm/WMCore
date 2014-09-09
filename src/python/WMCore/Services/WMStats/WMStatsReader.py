@@ -7,6 +7,7 @@ from WMCore.Wrappers.JsonWrapper import JSONEncoder
 class WMStatsReader():
     
     #TODO need to get this from reqmgr api
+    #Closed is needed for tier0
     ACTIVE_STATUS = ["new",
                     "assignment-approved",
                     "assigned",
@@ -21,7 +22,8 @@ class WMStatsReader():
                     "closed-out",
                     "announced",
                     "aborted",
-                    "rejected"]
+                    "rejected",
+                    "Closed"]
 
     def __init__(self, couchURL, dbName = None):
         couchURL = sanitizeURL(couchURL)['url']

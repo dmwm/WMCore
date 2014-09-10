@@ -126,6 +126,8 @@ config.WorkQueueManager.dbname = workqueueDBName
 config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
 config.WorkQueueManager.queueParams = {}
 config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cern.ch/couchdb/workqueue"
+# this has to be unique for different work queue. This is just place holder 
+config.WorkQueueManager.queueParams["QueueURL"] = "http://%s:5984" % (config.Agent.hostName)
 
 config.component_("DBS3Upload")
 config.DBS3Upload.namespace = "WMComponent.DBS3Buffer.DBS3Upload"

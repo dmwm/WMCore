@@ -267,7 +267,7 @@ def modifyConfiguration(config, **args):
         else:
             couchPort = ""
         config.WorkQueueManager.queueParams["QueueURL"] = "%s://%s%s" % (urlObj.scheme, 
-                                                    config.Agent.hostName, urlObj.port)
+                                                    config.Agent.hostName, couchPort)
         if args.get('workqueue_db_name'):
             config.WorkQueueManager.dbname = args['workqueue_db_name']
             config.WorkQueueManager.inboxDatabase = config.WorkQueueManager.dbname + '_inbox'
@@ -285,7 +285,7 @@ def modifyConfiguration(config, **args):
         else:
             couchPort = ""
         config.WorkQueueManager.queueParams["QueueURL"] = "%s://%s%s" % (urlObj.scheme, 
-                                                    config.Agent.hostName, urlObj.port)
+                                                    config.Agent.hostName, couchPort)
         
         if args.get("global_workqueue_url", None):
             config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = args["global_workqueue_url"]

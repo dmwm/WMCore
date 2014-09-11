@@ -581,4 +581,5 @@ class TempDirectory():
         self.dir = idir
 
     def __del__(self):
-        shutil.rmtree(self.dir, ignore_errors = True)
+        if shutil:
+            shutil.rmtree(self.dir, ignore_errors = True)

@@ -12,7 +12,7 @@ from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMException import WMException
 from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool, validateArguments
+from WMCore.WMSpec.WMWorkloadTools import makeList, makeLumiList, strToBool, validateArguments
 
 analysisTaskTypes = ['Analysis', 'PrivateMC']
 
@@ -92,7 +92,7 @@ class StdBase(object):
         """
         # set default scenarioArgs to empty dictionary if it is None.
         scenarioArgs = scenarioArgs or {}
-        
+
         outputModules = {}
         if configDoc != None and configDoc != "":
             url = configCacheUrl or couchURL
@@ -204,6 +204,7 @@ class StdBase(object):
         workload.setProcessingVersion(processingVersions = self.processingVersion)
         workload.setProcessingString(processingStrings = self.processingString)
         workload.setValidStatus(validStatus = self.validStatus)
+        workload.setLumiList(lumiLists = self.lumiList)
         workload.setPriority(self.priority)
         workload.setPrepID(self.prepID)
         return workload
@@ -237,13 +238,13 @@ class StdBase(object):
           configDoc empty - Use a Configuration.DataProcessing config.  The
             scenarioName, scenarioFunc and scenarioArgs parameters must not be
             empty.
-          if configCacheUrl is not empty, use that plus couchDBName + configDoc if not empty  
+          if configCacheUrl is not empty, use that plus couchDBName + configDoc if not empty
 
         The seeding and totalEvents parameters are only used for production jobs.
         """
         # set default scenarioArgs to empty dictionary if it is None
         scenarioArgs = scenarioArgs or {}
-        
+
         self.addDashboardMonitoring(procTask)
         procTaskCmssw = procTask.makeStep("cmsRun1")
         procTaskCmssw.setStepType(stepType)
@@ -256,7 +257,7 @@ class StdBase(object):
         procTaskLogArch = procTaskCmssw.addStep("logArch1")
         procTaskLogArch.setStepType("LogArchive")
         procTaskLogArch.setNewStageoutOverride(self.enableNewStageout)
-        
+
         procTask.applyTemplates()
 
         procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
@@ -318,9 +319,9 @@ class StdBase(object):
 
         procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                        scramArch = self.scramArch)
-        
+
         if newSplitArgs.has_key("events_per_lumi"):
-            eventsPerLumi = newSplitArgs["events_per_lumi"]  
+            eventsPerLumi = newSplitArgs["events_per_lumi"]
         procTaskCmsswHelper.setEventsPerLumi(eventsPerLumi)
 
         configOutput = self.determineOutputModules(scenarioFunc, scenarioArgs,
@@ -800,7 +801,7 @@ class StdBase(object):
         _getWorkloadArguments_
 
         This represents the authorative list of request arguments that are
-        interpreted by the current spec class. 
+        interpreted by the current spec class.
         The list is formatted as a 2-level dictionary, the keys in the first level
         are the identifiers for the arguments processed by the current spec.
         The second level dictionary contains the information about that argument for
@@ -809,7 +810,7 @@ class StdBase(object):
         - default: Gives a default value if not provided,
                    this default value usually is good enough for a standard workflow. If the argument is not optional
                    and a default value is provided, this is only meant for test purposes.
-        - type: A function that verifies the type of the argument, it may also cast it into the appropiate python type.    
+        - type: A function that verifies the type of the argument, it may also cast it into the appropiate python type.
                 If the input is not compatible with the expected type, this method must throw an exception.
         - optional: This boolean value indicates if the value must be provided or not
         - validate: A function which validates the input after type casting,
@@ -840,7 +841,7 @@ class StdBase(object):
                                 "attr" : "group"},
                      "VoGroup" : {"default" : "DEFAULT", "attr" : "owner_vogroup"},
                      "VoRole" : {"default" : "DEFAULT", "attr" : "owner_vorole"},
-                     "AcquisitionEra" : {"default" : "None",  "attr" : "acquisitionEra", 
+                     "AcquisitionEra" : {"default" : "None",  "attr" : "acquisitionEra",
                                          "validate" : acqname},
                      "CMSSWVersion" : {"default" : "CMSSW_5_3_7", "validate" : cmsswversion,
                                        "optional" : False, "attr" : "frameworkVersion"},
@@ -849,6 +850,9 @@ class StdBase(object):
                                             "type" : int},
                      "ProcessingString" : {"default" : None, "attr" : "processingString",
                                            "null" : True},
+                     "LumiList" : {"default" : [], "type" : makeLumiList,
+                                      "optional" : True, "validate" : None,
+                                      "attr" : "lumiList", "null" : False},
                      "SiteBlacklist" : {"default" : [], "type" : makeList,
                                         "validate" : lambda x: all([cmsname(y) for y in x])},
                      "SiteWhitelist" : {"default" : [], "type" : makeList,
@@ -897,7 +901,7 @@ class StdBase(object):
         StdBase.setDefaultArgumentsProperty(arguments)
 
         return arguments
-    
+
     @staticmethod
     def setDefaultArgumentsProperty(arguments):
         for arg in arguments:
@@ -907,7 +911,7 @@ class StdBase(object):
             arguments[arg].setdefault("validate", None)
             arguments[arg].setdefault("attr", arg[:1].lower() + arg[1:])
         return
-    
+
     @classmethod
     def getTestArguments(cls):
         """
@@ -928,7 +932,7 @@ class StdBase(object):
                 schema[arg] = "127.0.0.1"
             elif not workloadDefinition[arg]["optional"]:
                 schema[arg] = workloadDefinition[arg]["default"]
-            
+
             if arg == "CouchURL":
                 import os
                 schema[arg] = os.environ["COUCHURL"]

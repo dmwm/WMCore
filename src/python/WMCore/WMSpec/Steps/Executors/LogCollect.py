@@ -5,11 +5,12 @@ _Step.Executor.LogCollect_
 Implementation of an Executor for a StageOut step.
 """
 
-import os.path
+import os
 import logging
 import signal
 import tarfile
 import datetime
+import socket
 
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 
@@ -226,7 +227,8 @@ class LogCollect(Executor):
         Creates a tarball archive for log files
         """
         taskName = self.report.getTaskName().split('/')[-1]
-        tarName         = '%s-%s-%i-logs.tar' % (self.report.data.workload, taskName, self.job["counter"])
+        host = socket.gethostname().split('.')[0]
+        tarName         = '%s-%s-%s-%i-logs.tar' % (self.report.data.workload, taskName, host , self.job["counter"])
         tarBallLocation = os.path.join(self.stepSpace.location, tarName)
         tarBall         = tarfile.open(tarBallLocation, 'w:')
         for f in fileList:

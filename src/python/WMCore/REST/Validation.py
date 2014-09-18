@@ -20,8 +20,15 @@ def _check_rx(argname, val):
         raise InvalidParameter("Invalid '%s' parameter" % argname)
 
 def _check_str(argname, val, rx):
+    """
+    convert unicode to str first to support cherrypy 3.2.2
+    This is not really check val is ASCII.
+    """
     if isinstance(val, unicode):
-        val = str(val)
+        try:
+            val = str(val)
+        except:
+            raise InvalidParameter("Invalid '%s' parameter" % argname)
     if not isinstance(val, basestring) or not rx.match(val):
         raise InvalidParameter("Incorrect '%s' parameter" % argname)
     return val

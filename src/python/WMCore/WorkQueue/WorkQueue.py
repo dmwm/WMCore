@@ -14,6 +14,7 @@ from collections import defaultdict
 import os
 import threading
 import time
+import traceback
 from httplib import HTTPException
 
 from WMCore.Alerts import API as alertAPI
@@ -42,6 +43,8 @@ from WMCore.Database.CMSCouch import CouchNotFoundError, CouchInternalServerErro
 from WMCore import Lexicon
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Services.ReqMgr.ReqMgr         import ReqMgr
+from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
+
 #  //
 # // Convenience constructor functions
 #//
@@ -202,6 +205,16 @@ class WorkQueue(WorkQueueBase):
                                                               requireBlocksSubscribed = not self.params['ReleaseIncompleteBlocks'],
                                                               fullRefreshInterval = self.params['FullLocationRefreshInterval'],
                                                               updateIntervalCoarseness = self.params['LocationRefreshInterval'])
+        
+        # used for only global WQ
+        if self.params.get('ReqMgrServiceURL'):
+            self.reqmgrSvc = ReqMgr(self.params['ReqMgrServiceURL'])
+        
+        if self.params.get('RequestDBURL'):
+            # This is need for getting post call
+            # TODO: Change ReqMgr api to accept post for for retrieving the data and remove this
+            self.requestDB = RequestDBReader(self.params['RequestDBURL'])
+        
 
         # initialize alerts sending client (self.sendAlert() method)
         # usage: self.sendAlert(levelNum, msg = msg) ; level - integer 1 .. 10
@@ -495,9 +508,7 @@ class WorkQueue(WorkQueueBase):
 
             # Don't update as fails sometimes due to conflicts (#3856)
             [x.load().__setitem__('Status', 'Canceled') for x in inbox_elements if x['Status'] != 'Canceled']
-            updated_inbox_ids = [x.id for x in self.backend.saveElements(*inbox_elements)]
-            # delete elements - no longer need them
-            self.backend.deleteElements(*[x for x in elements if x['ParentQueueId'] in updated_inbox_ids])
+            self.backend.saveElements(*inbox_elements)
 
         # if global queue, update non-acquired to Canceled, update parent to CancelRequested
         else:
@@ -805,7 +816,24 @@ class WorkQueue(WorkQueueBase):
 
         return workflowsToClose
 
-    def performQueueCleanupActions(self, skipWMBS = False):
+    def deleteCompletedWFElements(self):
+        """
+        deletes Workflow when workflow is in finished status
+        """
+        deletableStates = ["completed", "closed-out", "failed", 
+                           "announced", "aborted-completed", "rejected", 
+                           "normal-archived", "aborted-archived", "rejected-archived"]
+     
+        reqNames = self.backend.getWorkflows(includeInbox = True, includeSpecs = True)
+        requestsInfo = self.requestDB.getRequestByNames(reqNames)
+        deleteRequests = []
+        for key, value in requestsInfo.items():
+            if ((value["RequestStatus"] == None) or (value["RequestStatus"] in deletableStates)):
+                deleteRequests.append(key)
+        return  self.backend.deleteWQElementsByWorkflow(deleteRequests)    
+       
+
+    def performSyncAndCancelAction(self, skipWMBS):
         """
         Apply end policies to determine work status & cleanup finished work
         """
@@ -828,19 +856,7 @@ class WorkQueue(WorkQueueBase):
                 elements = self.status(RequestName = wf, syncWithWMBS = useWMBS)
                 parents = self.backend.getInboxElements(RequestName = wf)
 
-                # check for left overs from past work where cleanup needed
-                if elements and not parents:
-                    self.logger.info("Removing orphaned elements for %s" % wf)
-                    self.backend.deleteElements(*elements)
-                    continue
-                if not elements and not parents:
-                    self.logger.info("Removing orphaned workflow %s" % wf)
-                    try:
-                        self.backend.db.delete_doc(wf)
-                    except CouchNotFoundError:
-                        pass
-                    continue
-
+                
                 self.logger.debug("Queue status follows:")
                 results = endPolicy(elements, parents, self.params['EndPolicySettings'])
                 for result in results:
@@ -863,7 +879,6 @@ class WorkQueue(WorkQueueBase):
                     if result.inEndState():
                         if elements:
                             self.logger.info("Request %s finished (%s)" % (result['RequestName'], parent.statusMetrics()))
-                            self.backend.deleteElements(*result['Elements'])
                             finished_elements.extend(result['Elements'])
                         else:
                             self.logger.info('Waiting for parent queue to delete "%s"' % result['RequestName'])
@@ -873,7 +888,7 @@ class WorkQueue(WorkQueueBase):
 
                     updated_elements = [x for x in result['Elements'] if x.modified]
                     for x in updated_elements:
-                        self.logger.debug("Updating progress %s (%s): %s" % (x['RequsetName'], x.id, x.statusMetrics()))
+                        self.logger.debug("Updating progress %s (%s): %s" % (x['RequestName'], x.id, x.statusMetrics()))
                     if not updated_elements and (float(parent.updatetime) + self.params['stuckElementAlertTime']) < time.time():
                         self.sendAlert(5, msg = 'Element for %s stuck for 24 hours.' % wf)
                     [self.backend.updateElements(x.id, **x.statusMetrics()) for x in updated_elements]
@@ -885,6 +900,20 @@ class WorkQueue(WorkQueueBase):
                                                                  ', '.join(wf_to_cancel))
         self.backend.recordTaskActivity('housekeeping', msg)
         self.backend.checkReplicationStatus() # update parent queue with new status's
+        
+    def performQueueCleanupActions(self, skipWMBS = False):
+        
+        try:
+            self.deleteCompletedWFElements()
+        except Exception as ex:
+            msg = traceback.format_exc()
+            self.logger.error('Error deleting wq elements  "%s": %s' % (str(ex), msg))
+        
+        try:
+            self.performSyncAndCancelAction(skipWMBS)
+        except Exception as ex:
+            msg = traceback.format_exc()
+            self.logger.error('Error canceling wq elements  "%s": %s' % (str(ex), msg))
 
     def _splitWork(self, wmspec, parentQueueId = None,
                    data = None, mask = None, team = None,

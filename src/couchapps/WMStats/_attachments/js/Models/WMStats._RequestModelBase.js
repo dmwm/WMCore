@@ -6,6 +6,7 @@ WMStats._RequestModelBase = function(initView, options) {
     this._options = options || {'include_docs': true};
     this._data = null;
     this._trigger = "requestReady";
+    this._dbSource = WMStats.Couch;
 };
 //Class method
 WMStats._RequestModelBase.keysFromIDs = function(data) {
@@ -41,8 +42,16 @@ WMStats._RequestModelBase.requestAgentUrlKeys = function(requestList, requestAge
 
 WMStats._RequestModelBase.prototype = {
     
+    setInitView: function(initView) {
+        this._initialView  = initView;
+    },
+    
     setTrigger: function(triggerName) {
         this._trigger = triggerName;
+    },
+    
+    setDBSource: function(dbSource) {
+        this._dbSource = dbSource;
     },
     
     // deprecated
@@ -103,11 +112,11 @@ WMStats._RequestModelBase.prototype = {
         if (!options) {options = WMStats.Utils.cloneObj(this._options);}
         var objPtr = this;
         if (viewName == "allDocs") {
-            WMStats.Couch.allDocs(options, function (overviewData) {
+            this._dbSource.allDocs(options, function (overviewData) {
                 objPtr._getLatestRequestIDsAndCreateTable(overviewData, objPtr);
             });
         } else {
-            WMStats.Couch.view(viewName, options,  function (overviewData) {
+            this._dbSource.view(viewName, options,  function (overviewData) {
                 objPtr._getLatestRequestIDsAndCreateTable(overviewData, objPtr);
             });
         }

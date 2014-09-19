@@ -87,12 +87,12 @@ WMStats.Controls = function($){
     };
     
     function setAllRequestButton(selector) {
-        var requestBottons = 
+        var requestButtons = 
         '<nav id="all_requests" class="button-group">\
             <ul><li><a href="#" class="nav-button"> all requests </a></li></ul>\
         </nav>';
         
-        $(selector).append(requestBottons).addClass("button-group");
+        $(selector).append(requestButtons).addClass("button-group");
         
         $(document).on('click', "#all_requests li a", function(event){
             vm.RequestView.categoryKey("all");
@@ -107,6 +107,30 @@ WMStats.Controls = function($){
                 $(buttonSelector).removeClass("nav-button-selected").addClass("button-unselected");
             }
         });    
+    };
+    
+    
+    function setDBSourcetButton(selector) {
+        var dbSourceButton = 
+        '<nav id="db_source" class="button-group">\
+            <ul><li><a href="#" class="nav-button"> wmstats db </a></li></ul>\
+        </nav>';
+        
+        $(selector).append(dbSourceButton).addClass("button-group");
+        
+        $(document).on('click', "#db_source li a", function(event){
+            var buttonSelector = "#db_source li a";
+            if (WMStats.Globals.INIT_DB === "WMStats") {
+            	WMStats.Globals.INIT_DB = "ReqMgr";
+            	$(buttonSelector).text("reqmgr db");
+        	} else if (WMStats.Globals.INIT_DB === "ReqMgr") {
+        		WMStats.Globals.INIT_DB = "WMStats";
+        		$(buttonSelector).text("wmstats db");
+        	}
+        	jQuery(WMStats.Globals.Event).triggerHandler(WMStats.CustomEvents.SWITCH_DB);
+            event.preventDefault();
+           });
+        
     };
 
     /* set the view tab and control*/
@@ -149,6 +173,7 @@ WMStats.Controls = function($){
         setAllRequestButton: setAllRequestButton,
         setViewSwitchButton: setViewSwitchButton,
         setExternalLink: setExternalLink,
+        setDBSourcetButton: setDBSourcetButton,
         requests: "requests",
         sites: "sites",
         campaign: "campaign",

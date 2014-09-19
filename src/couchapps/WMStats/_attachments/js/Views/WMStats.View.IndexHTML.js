@@ -18,7 +18,8 @@ WMStats.View.IndexHTML = function(){
         $('#loading_page').addClass("front").show();
         //applyTemplate();
         WMStats.CommonControls.setLinkTabs("#link_tabs");
-        WMStats.Controls.setExternalLink("#external_link");
+        //WMStats.Controls.setExternalLink("#external_link");
+        WMStats.Controls.setDBSourcetButton("#external_link");
         WMStats.CommonControls.setUTCClock("#clock");
         WMStats.CommonControls.setWorkloadSummarySearch("#search_option_board");
         WMStats.Controls.setFilter("#filter_board");

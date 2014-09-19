@@ -340,6 +340,7 @@ WMStats.GenericRequests.prototype = {
         /*
          * 
          */
+        var doc = WMStats.Globals.convertRequestDocToWMStatsFormat(doc);
         var workflow = doc.workflow;
         var agentURL = doc.agent_url;
         

@@ -42,7 +42,7 @@ WMStats.Utils.updateObj = function (baseObj, additionObj, createFlag, updateFunc
         }
     } 
 };
-    
+
 WMStats.Utils.getOrDefault= function (baseObj, objList, val) {
     
     if (baseObj[objList[0]]) { 
@@ -205,3 +205,12 @@ WMStats.Utils.addToSet = function(array, value) {
         return false;
     }
 };
+
+WMStats.Utils.delay =  (function(){
+  	var timer = 0;
+  	return function(callback, ms){
+    	var ms = ms || 1000;     	// default 1 sec delay 
+    	clearTimeout (timer);
+    	timer = setTimeout(callback, ms);
+  	};
+})();

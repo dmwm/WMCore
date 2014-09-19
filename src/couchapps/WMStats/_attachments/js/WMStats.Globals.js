@@ -7,7 +7,61 @@ WMStats.namespace("Globals");
 
 WMStats.Globals = function($){
     var _dbVariants = {'wmstats': 'tier1', 'tier0_wmstats': 'tier0'};
+    
+    var reqPropertyMap = {
+		   "_id": "_id",
+		   "InputDataset": "inputdataset",
+		   "PrepID": "prep_id",
+		   "Group": "group",
+		   "RequestDate": "request_date",
+		   "Campaign": "campaign",
+		   "RequestName": "workflow",
+		   "RequestorDN": "user_dn",
+		   "Priority": "priority",
+		   "Requestor": "requestor",
+		   "RequestType": "request_type",
+		   "DbsUrl": "dbs_url",
+		   "SoftWareVersions": "cmssw",
+		   "Outputdatasets": "outputdatasets",
+		   "RequestTransition": "request_status", // Status: status,  UpdateTime: update_time
+		   "SiteWhitelist": "site_white_list",
+		   "Teams": "teams",
+		   "TotalEstimatedJobs": "total_jobs",
+		   "TotalInputEvents": "input_events",
+		   "TotalInputLumis": "input_lumis",
+		   "TotalInputFiles": "input_num_files"
+		};
 
+    function convertRequestDocToWMStatsFormat(doc) {
+    	// check document type whether it is reqmgr doc
+    	// this is hacky way to check  - need better checking 
+    	if (doc.RequestName == undefined) {
+    		return doc;
+    	};
+    	
+    	// this is temporary hack to identify missing RequestTransition property
+    	// all the workflows which has missing info need to be manually updated
+    	if (doc.RequestTransition == undefined || doc.RequestTransition.length == 0) {
+    		doc.RequestTransition = [{"Status": "N/A", "UpdateTime": 0}];
+    	}
+    	var wmstatsReq = {};
+    	for (var key in doc) {
+    		if (reqPropertyMap[key]) {
+    			if (key == "RequestTransition") {
+    				wmstatsReq[reqPropertyMap[key]] = [];
+    				for (var index = 0; index < doc[key].length; index++) {
+    					wmstatsReq[reqPropertyMap[key]][index] = {"status": doc[key][index]["Status"], 
+    															  "update_time": doc[key][index]["UpdateTime"]};
+    				}
+    			} else {
+    				wmstatsReq[reqPropertyMap[key]] = doc[key];
+    			}
+    			
+    		}	
+    	}
+    	return wmstatsReq;
+    };
+    
     function getReqDetailPrefix () {
         if (_dbVariants[dbname] == "tier1") {
             return "/reqmgr/view/details/";
@@ -92,6 +146,7 @@ WMStats.Globals = function($){
 		REQMGR_COUCHAPP_DESIGN: "ReqMgr",
         ALERT_COLLECTOR_LINK: getAlertCollectorLink(),
         CONFIG: null, //this will be set when WMStats.Couch.loadConfig is called. just place holder or have default config
+        INIT_DB: "WMStats",
         loadScript: function (url, success) {
                         $.ajax({async: false, url: url, dataType: 'script', success: success});
             },
@@ -103,7 +158,8 @@ WMStats.Globals = function($){
         Event: {}, // name space for Global Custom event
         formatJobLink: formatJobLink,
         getGQLink: getGQLink,
-        getLQLink: getLQLink
+        getLQLink: getLQLink,
+        convertRequestDocToWMStatsFormat: convertRequestDocToWMStatsFormat
        };
 }(jQuery);
 
@@ -132,6 +188,9 @@ WMStats.CustomEvents.RESUBMISSION_SUCCESS = "C_14";
 
 //workload summary page event
 WMStats.CustomEvents.WORKLOAD_SUMMARY_READY = "W_1";
+
+//workload summary page event
+WMStats.CustomEvents.SWITCH_DB = "S_1";
 
 //view model (need to move to proper location)
 WMStats.namespace("ViewModel");

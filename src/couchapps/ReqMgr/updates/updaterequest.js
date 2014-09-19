@@ -20,7 +20,16 @@ function(doc, req)
     var newValues = req.query;
     for (key in newValues)
     {   
-        doc[key] = newValues[key];
+        if (key == "RequestTransition" ||
+            key == "SiteWhitelist" ||
+            key == "SiteBlacklist" ||
+            key == "Teams") {
+    		
+    		doc[key] = JSON.parse(newValues[key]);
+    	} else {
+    		doc[key] = newValues[key];
+    	}
+       
         if (key == "RequestStatus") {
         	updateTransition();
         }

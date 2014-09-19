@@ -280,6 +280,7 @@ class Assign(WebAPI):
                 assignments = GetRequest.getAssignmentsByName(requestName)
                 if teams == [] and assignments == []:
                     raise cherrypy.HTTPError(400, "Must assign to one or more teams")
+                kwargs["Teams"] = teams
                 self.assignWorkload(requestName, kwargs)
                 for team in teams:
                     if not team in assignments:
@@ -310,6 +311,10 @@ class Assign(WebAPI):
         # Set white list and black list
         whiteList = kwargs.get("SiteWhitelist", [])
         blackList = kwargs.get("SiteBlacklist", [])
+        if type(whiteList) != list:
+            whiteList = [whiteList]
+        if type(blackList) != list:
+            blackList = [blackList]
         helper.setSiteWildcardsLists(siteWhitelist = whiteList, siteBlacklist = blackList,
                                      wildcardDict = self.wildcardSites)
         # Set ProcessingVersion and AcquisitionEra, which could be json encoded dicts
@@ -379,4 +384,7 @@ class Assign(WebAPI):
         reqDetails = Utilities.requestDetails(request["RequestName"])
         couchDb = Database(reqDetails["CouchWorkloadDBName"], reqDetails["CouchURL"])
         couchDb.updateDocument(request["RequestName"], "ReqMgr", "updaterequest",
-                               fields={"AcquisitionEra": reqDetails["AcquisitionEra"]})
+                               fields={"AcquisitionEra": reqDetails["AcquisitionEra"],
+                                       "Teams": JsonWrapper.JSONEncoder().encode(kwargs["Teams"]),
+                                       "SiteWhitelist": JsonWrapper.JSONEncoder().encode(whiteList),
+                                       "SiteBlacklist": JsonWrapper.JSONEncoder().encode(blackList)})

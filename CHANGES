@@ -1,3 +1,123 @@
+0.9.97 to 1.0.0.pre2:
+  - Merge pull request #5354 from ticoann/wmstats_reqmgr_combine
+  - Merge pull request #5352 from ticoann/add_team_site
+  - use reqmgr db instread of wmstats
+  - add team and site white and black list
+  - Merge pull request #5353 from ticoann/handle_unicode_str
+  - handle when unicode which can't be converted to string
+  - 1.0.0.pre1
+  - Merge pull request #5332 from mmascher/master
+  - Merge pull request #5335 from lucacopa/fix_bug_logcollect
+  - Fix duplicate logCollect tar name
+  - Merge pull request #5338 from amaltaro/fix-queueUrl
+  - fix QueueURL for WorkQueueManager
+  - Merge pull request #5323 from ticoann/fix_lq_url
+  - Merge pull request #5324 from ericvaandering/mask_for_taskchain
+  - Merge pull request #5325 from juztas/validation_fix
+  - Merge pull request #5329 from amaltaro/fix-pycondor-schedd
+  - Merge pull request #5333 from yuyiguo/Lexicon-primaryDS
+  - remove the dot in the 1st part of dataset defination.
+  - Check if shutil is not None in Requests.py. Fixes #5331
+  - Merge pull request #5330 from ticoann/wmstats_reqmgr_combine
+  - add ; for jslint rule
+  - Do not query collector to get the schedd address in PyCondorPlugin
+  - Validation fix. Fixes #5322
+  - Add a test case for LumiList just for one task, make it work
+  - fix LQ pulling down other agent work
+  - Merge pull request #5288 from juztas/master
+  - Merge pull request #5313 from alexanderrichards/ErrorHandlerCouch_fix
+  - Merge pull request #5286 from hufnagel/rowcount-cleanup
+  - Merge pull request #5320 from ticoann/clean_up_performance_summary
+  - clean up views and functions which moved to summary db
+  - Fix to try again in next polling cycle if Couch is down.
+  - 0.9.98.pre1
+  - Merge pull request #4869 from bbockelm/crab3_runtime_env
+  - Merge pull request #5156 from alexanderrichards/buildWorkload_LFN
+  - Merge pull request #5318 from ticoann/new_sqlarchemy
+  - Merge pull request #5285 from ericvaandering/support_multithreaded_cmssw
+  - Merge pull request #5307 from mmascher/master
+  - clean up sqlalchemy exception code
+  - Merge pull request #5309 from lucacopa/agent_watcher_wmstats_down
+  - Merge pull request #5310 from lucacopa/try_insideLoop_requestQuery
+  - Merge pull request #5299 from hufnagel/sqlalchemy-exceptions
+  - Merge pull request #5305 from lucacopa/change_state_bug
+  - Merge pull request #5306 from ticoann/fix_prep_id_upload
+  - Merge pull request #5311 from ticoann/force_complete_fix
+  - Merge pull request #5292 from lucacopa/fix_dcapReference_PSet
+  - Dont crash AgentSatusWatcher when there is not WMStats Other fixes for tier0 thresholds configuration
+  - if there are elements left in GQ, delete them when force-complete
+  - Update SR script by Ops request
+  - Add the possibility to clean the environment bevore running Proxy.py commands
+  - fix prep_id upload
+  - This fixes a bug in the Condor Plugin Also add some comments and change error logging information (It is debugging instead, not really an error)
+  - cleanup use of sqlalchemy exceptions
+  - cleanup of the use of rowcount
+  - Delete a TFC override that uses the old dcap at FNAL. We have to test this though
+  - Use abspath if file exists. Required for CRAB3 Signed-off-by: Justas Balcas <juztas@gmail.com>
+  - Remove old Multicore files, switch to CMSSW 7+ way of running multithreaded, remove test code
+  - adding workload.setLFNBase into the buildWorkload method of all Spec files as requested in issue #4864
+  - Improve handling of environment to correctly parse 'unset' and not choke on invalid lines.
+
+0.9.97 to 1.0.0.pre2:
+  - Merge pull request #5354 from ticoann/wmstats_reqmgr_combine
+  - Merge pull request #5352 from ticoann/add_team_site
+  - use reqmgr db instread of wmstats
+  - add team and site white and black list
+  - Merge pull request #5353 from ticoann/handle_unicode_str
+  - handle when unicode which can't be converted to string
+  - 1.0.0.pre1
+  - Merge pull request #5332 from mmascher/master
+  - Merge pull request #5335 from lucacopa/fix_bug_logcollect
+  - Fix duplicate logCollect tar name
+  - Merge pull request #5338 from amaltaro/fix-queueUrl
+  - fix QueueURL for WorkQueueManager
+  - Merge pull request #5323 from ticoann/fix_lq_url
+  - Merge pull request #5324 from ericvaandering/mask_for_taskchain
+  - Merge pull request #5325 from juztas/validation_fix
+  - Merge pull request #5329 from amaltaro/fix-pycondor-schedd
+  - Merge pull request #5333 from yuyiguo/Lexicon-primaryDS
+  - remove the dot in the 1st part of dataset defination.
+  - Check if shutil is not None in Requests.py. Fixes #5331
+  - Merge pull request #5330 from ticoann/wmstats_reqmgr_combine
+  - add ; for jslint rule
+  - Do not query collector to get the schedd address in PyCondorPlugin
+  - Validation fix. Fixes #5322
+  - Add a test case for LumiList just for one task, make it work
+  - fix LQ pulling down other agent work
+  - Merge pull request #5288 from juztas/master
+  - Merge pull request #5313 from alexanderrichards/ErrorHandlerCouch_fix
+  - Merge pull request #5286 from hufnagel/rowcount-cleanup
+  - Merge pull request #5320 from ticoann/clean_up_performance_summary
+  - clean up views and functions which moved to summary db
+  - Fix to try again in next polling cycle if Couch is down.
+  - 0.9.98.pre1
+  - Merge pull request #4869 from bbockelm/crab3_runtime_env
+  - Merge pull request #5156 from alexanderrichards/buildWorkload_LFN
+  - Merge pull request #5318 from ticoann/new_sqlarchemy
+  - Merge pull request #5285 from ericvaandering/support_multithreaded_cmssw
+  - Merge pull request #5307 from mmascher/master
+  - clean up sqlalchemy exception code
+  - Merge pull request #5309 from lucacopa/agent_watcher_wmstats_down
+  - Merge pull request #5310 from lucacopa/try_insideLoop_requestQuery
+  - Merge pull request #5299 from hufnagel/sqlalchemy-exceptions
+  - Merge pull request #5305 from lucacopa/change_state_bug
+  - Merge pull request #5306 from ticoann/fix_prep_id_upload
+  - Merge pull request #5311 from ticoann/force_complete_fix
+  - Merge pull request #5292 from lucacopa/fix_dcapReference_PSet
+  - Dont crash AgentSatusWatcher when there is not WMStats Other fixes for tier0 thresholds configuration
+  - if there are elements left in GQ, delete them when force-complete
+  - Update SR script by Ops request
+  - Add the possibility to clean the environment bevore running Proxy.py commands
+  - fix prep_id upload
+  - This fixes a bug in the Condor Plugin Also add some comments and change error logging information (It is debugging instead, not really an error)
+  - cleanup use of sqlalchemy exceptions
+  - cleanup of the use of rowcount
+  - Delete a TFC override that uses the old dcap at FNAL. We have to test this though
+  - Use abspath if file exists. Required for CRAB3 Signed-off-by: Justas Balcas <juztas@gmail.com>
+  - Remove old Multicore files, switch to CMSSW 7+ way of running multithreaded, remove test code
+  - adding workload.setLFNBase into the buildWorkload method of all Spec files as requested in issue #4864
+  - Improve handling of environment to correctly parse 'unset' and not choke on invalid lines.
+
 0.9.97 to 1.0.0.pre1:
   - Merge pull request #5332 from mmascher/master
   - Merge pull request #5335 from lucacopa/fix_bug_logcollect

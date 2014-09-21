@@ -150,8 +150,8 @@ class TaskArchiverTest(unittest.TestCase):
         config.TaskArchiver.histogramBins   = 5
         config.TaskArchiver.histogramLimit  = 5
         config.TaskArchiver.perfPrimaryDatasets        = ['SingleMu', 'MuHad', 'MinimumBias']
-        config.TaskArchiver.perfDashBoardMinLumi = 50
-        config.TaskArchiver.perfDashBoardMaxLumi = 9000
+        config.TaskArchiver.perfDashBoardMinLumi = 5e+31 # 50 in DashBoard units
+        config.TaskArchiver.perfDashBoardMaxLumi = 9e+33 # 9000 in DashBoard units
         config.TaskArchiver.dqmUrl = 'https://cmsweb.cern.ch/dqm/dev/'
         config.TaskArchiver.dashBoardUrl = 'http://dashboard43.cern.ch/dashboard/request.py/putluminositydata'
         config.TaskArchiver.workloadSummaryCouchDBName = "%s/workloadsummary" % self.databaseName
@@ -436,7 +436,8 @@ class TaskArchiverTest(unittest.TestCase):
                     timePerEvent = points[i]
 
                     if instLuminosity > minLumi and instLuminosity <  maxLumi :
-                        worthPoints[instLuminosity] = timePerEvent
+                        # Dividing by 1e+30 as DashBoard assumes that scale to simplify
+                        worthPoints[instLuminosity/1e+30] = timePerEvent
         return worthPoints
 
     def publishPerformanceDashBoard(self, dashBoardUrl, PD, release, worthPoints):
@@ -456,7 +457,7 @@ class TaskArchiverTest(unittest.TestCase):
         testDashBoardPayload = testDashBoardPayloadFile.read()
         testDashBoardPayloadFile.close()
 
-        self.assertEquals(data, testDashBoardPayload)
+        self.assertEquals(data + "\n", testDashBoardPayload)
 
         return True
 

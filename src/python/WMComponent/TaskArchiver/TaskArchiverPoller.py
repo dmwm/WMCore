@@ -223,8 +223,8 @@ class TaskArchiverPoller(BaseWorkerThread):
         # Set defaults for reco performance reporting
         self.interestingPDs = getattr(config.TaskArchiver, "perfPrimaryDatasets", ['SingleMu', 'MuHad'])
         self.dqmUrl         = getattr(config.TaskArchiver, "dqmUrl", 'https://cmsweb.cern.ch/dqm/dev/')        
-        self.perfDashBoardMinLumi = getattr(config.TaskArchiver, "perfDashBoardMinLumi", 50)
-        self.perfDashBoardMaxLumi = getattr(config.TaskArchiver, "perfDashBoardMaxLumi", 9000)
+        self.perfDashBoardMinLumi = getattr(config.TaskArchiver, "perfDashBoardMinLumi", 5e+31)
+        self.perfDashBoardMaxLumi = getattr(config.TaskArchiver, "perfDashBoardMaxLumi", 9e+33)
         self.dashBoardUrl = getattr(config.TaskArchiver, "dashBoardUrl", None)
         
         if not self.useReqMgrForCompletionCheck:
@@ -1034,7 +1034,8 @@ class TaskArchiverPoller(BaseWorkerThread):
                     timePerEvent = points[i]
                     
                     if instLuminosity > minLumi and instLuminosity <  maxLumi :
-                        worthPoints[instLuminosity] = timePerEvent
+                        # Dividing by 1e+30 as DashBoard assumes that scale to simplify
+                        worthPoints[instLuminosity/1e+30] = timePerEvent
         logging.debug("Got %d worthwhile performance points" % len(worthPoints.keys()))
         
         return worthPoints

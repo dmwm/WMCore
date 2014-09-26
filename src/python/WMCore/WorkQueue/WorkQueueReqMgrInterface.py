@@ -252,6 +252,7 @@ class WorkQueueReqMgrInterface():
                          'running-closed': ['Running'],
                          'failed': ['Failed'],
                          'aborted': ['Canceled', 'CancelRequested'],
+                         'force-complete': ['Canceled', 'CancelRequested'],
                          'completed': ['Done']}
         if status in statusMapping:
             return statusMapping[status]

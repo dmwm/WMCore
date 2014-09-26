@@ -14,6 +14,7 @@ from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import sanitizeURL
+from WMCore.Database.CMSCouch import CouchNotFoundError
 
 class CleanCouchPoller(BaseWorkerThread):
     """
@@ -125,7 +126,10 @@ class CleanCouchPoller(BaseWorkerThread):
             view = "jobsByStatusWorkflow"
         
         if view == None:
-            committed = couchDB.delete_doc(workflowName)
+            try:
+                committed = couchDB.delete_doc(workflowName)
+            except CouchNotFoundError, ex:
+                return {'status': 'warning', 'message': "%s: %s" % (workflowName, str(ex))}
         else:
             options = {"startkey": [workflowName], "endkey": [workflowName, {}], "reduce": False}
             try:

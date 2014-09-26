@@ -140,12 +140,16 @@ class WMStatsReader():
         result = self.couchDB.allDocs(options, requestNames)
         return result
         
-    def _getRequestByStatus(self, statusList, detail = True):
+    def _getRequestByStatus(self, statusList, detail = True, limit = None, skip = None):
         """
         'status': list of the status
         """
         options = {}
         options["include_docs"] = detail
+        if limit != None:
+            options["limit"] = limit
+        if limit != None:
+            options["skip"] = skip
         keys = statusList or WMStatsReader.ACTIVE_STATUS
         return self._getCouchView("requestByStatus", options, keys)
     
@@ -257,9 +261,9 @@ class WMStatsReader():
         
         return self.getRequestByStatus(WMStatsReader.ACTIVE_STATUS, jobInfoFlag)
     
-    def getRequestByStatus(self, statusList, jobInfoFlag = False):
+    def getRequestByStatus(self, statusList, jobInfoFlag = False, limit = None, skip = None):
         
-        data = self._getRequestByStatus(statusList, True)
+        data = self._getRequestByStatus(statusList, True, limit, skip)
         requestInfo = self._formatCouchData(data)
 
         if jobInfoFlag:

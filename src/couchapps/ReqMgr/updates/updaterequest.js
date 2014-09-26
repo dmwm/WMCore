@@ -23,6 +23,11 @@ function(doc, req)
         if (key == "RequestTransition" ||
             key == "SiteWhitelist" ||
             key == "SiteBlacklist" ||
+            key == "BlockWhitelist" ||
+            key == "SoftwareVersions" ||
+            key == "InputDatasetTypes" ||
+            key == "InputDatasets" ||
+            key == "OutputDatasets" ||
             key == "Teams") {
     		
     		doc[key] = JSON.parse(newValues[key]);

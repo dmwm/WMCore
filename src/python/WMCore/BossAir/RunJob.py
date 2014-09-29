@@ -29,7 +29,9 @@ class RunJob(dict):
                  scram_arch = None, siteName = None, jobName = None,
                  proxyPath = None, requestName = None, jobTime = None,
                  diskUsage = None, memoryUsage = None, taskPriority = None,
-                 taskName = None, potentialSites = None):
+                 taskName = None, potentialSites = None, multicoreEnabled = False,
+                 numberOfCores = 1,
+                ):
         """
         Just make sure you init the dictionary fields.
 
@@ -66,6 +68,8 @@ class RunJob(dict):
         self.setdefault('estimatedJobTime', jobTime)
         self.setdefault('estimatedDiskUsage', diskUsage)
         self.setdefault('estimatedMemoryUsage', memoryUsage)
+        self.setdefault('multicoreEnabled', multicoreEnabled)
+        self.setdefault('numberOfCores', numberOfCores)
         self.setdefault('taskPriority', taskPriority)
         self.setdefault('taskName', taskName)
         self.setdefault('potentialSites', potentialSites)

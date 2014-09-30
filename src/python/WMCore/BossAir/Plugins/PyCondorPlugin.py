@@ -188,7 +188,6 @@ class PyCondorPlugin(BasePlugin):
         self.scriptFile    = None
         self.submitDir     = None
         self.removeTime    = getattr(config.BossAir, 'removeTime', 60)
-        self.multiTasks    = getattr(config.BossAir, 'multicoreTaskTypes', [])
         self.useGSite      = getattr(config.BossAir, 'useGLIDEINSites', False)
         self.submitWMSMode = getattr(config.BossAir, 'submitWMSMode', False)
         self.errorThreshold= getattr(config.BossAir, 'submitErrorThreshold', 10)
@@ -753,7 +752,7 @@ class PyCondorPlugin(BasePlugin):
                     else :
                         #If job doesn't have the siteName in the siteList, just ignore it
                         logging.debug("Cannot find siteName %s in the sitelist" % siteName)
-        
+
         return jobtokill
 
 
@@ -788,7 +787,7 @@ class PyCondorPlugin(BasePlugin):
             priority = (int(kwargs['requestPriority']) + int(kwargs['taskPriority'])*self.maxTaskPriority)
             sd.edit('WMAgent_JobID =!= UNDEFINED && WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"'% (task,workflow),
                     "JobPrio", classad.ExprTree('"%s"'% priority))
-                
+
         return
 
     # Start with submit functions
@@ -869,12 +868,6 @@ class PyCondorPlugin(BasePlugin):
         jdl = []
         jdl.append('+DESIRED_Archs = \"INTEL,X86_64\"\n')
         jdl.append('+REQUIRES_LOCAL_DATA = True\n')
-
-        # Check for multicore
-        if jobList and jobList[0].get('taskType', None) in self.multiTasks:
-            jdl.append('+DESIRES_HTPC = True\n')
-        else:
-            jdl.append('+DESIRES_HTPC = False\n')
 
         return jdl
 
@@ -993,10 +986,19 @@ class PyCondorPlugin(BasePlugin):
         if job.get('estimatedDiskUsage', None):
             jdl.append('request_disk = %d\n' % int(job['estimatedDiskUsage']))
 
+        # Set up JDL for multithreaded jobs
+        # In the future hope to remove Desires HTPC and multicoreEnabled setting and just key off of nCores
+        if job.get('multicoreEnabled', False) or job.get('numberOfCores', 1) > 1:
+            jdl.append('+DESIRES_HTPC = True\n')
+            jdl.append('machine_count = 1\n')
+            jdl.append('request_cpus = %s\n' % job.get('numberOfCores', 1))
+        else:
+            jdl.append('+DESIRES_HTPC = False\n')
+
         #Add OS requirements for jobs
         if job.get('scramArch') is not None and job.get('scramArch').startswith("slc6_") :
             jdl.append('+REQUIRED_OS = "rhel6"\n')
-        else : 
+        else:
             jdl.append('+REQUIRED_OS = "any"\n')
 
         return jdl
@@ -1020,13 +1022,13 @@ class PyCondorPlugin(BasePlugin):
         Grab CONDOR classAds using CONDOR-PYTHON
 
         This looks at the schedd running on the
-        Submit-Host and edit/remove jobs 
+        Submit-Host and edit/remove jobs
         """
 
         jobInfo = {}
         schedd = condor.Schedd()
         results=[]
- 
+
         if not schedd:
             return jobInfo, None
         else:

@@ -99,7 +99,7 @@ class DBSReaderTest(unittest.TestCase):
     def testlistDatasetFileDetails(self):
         """testlistDatasetFilesDetails returns lumis, events, and parents of a dataset"""
         TESTFILE = '/store/data/Run2011A/HighPileUp/RAW/v1/000/173/658/56484BAB-CBCB-E011-AF00-BCAEC518FF56.root'
-        for endpoint in [self.endpoint, 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet']:
+        for endpoint in [self.endpoint, 'test/python/WMCore_t/Services_t/DBS_t/DBSReader_t.py:']:
             self.dbs = DBSReader(endpoint)
             details = self.dbs.listDatasetFileDetails(DATASET)
             self.assertEqual(len(details), 49)

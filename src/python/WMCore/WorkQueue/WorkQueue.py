@@ -113,7 +113,7 @@ class WorkQueue(WorkQueueBase):
             self.params['ParentQueueCouchUrl'] = self.parent_queue.queueUrl
 
         self.params.setdefault("GlobalDBS",
-                               "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
+                               "https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
         self.params.setdefault('QueueDepth', 0.5) # when less than this locally
         self.params.setdefault('LocationRefreshInterval', 600)
         self.params.setdefault('FullLocationRefreshInterval', 7200)

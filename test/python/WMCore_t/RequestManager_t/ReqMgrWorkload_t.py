@@ -470,7 +470,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
                                                groupName = groupName,
                                                teamName = teamName)
         schema['RequestType'] = "MonteCarlo"
-        schema['DbsUrl'] = 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet'
+        schema['DbsUrl'] = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
 
         # Set some versions
         schema['ProcessingVersion'] = '2012'

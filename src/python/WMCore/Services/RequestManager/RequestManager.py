@@ -148,8 +148,8 @@ class RequestManager(Service):
                                contentType = 'application/json')
 
     def makeRequest(self, ScramArch = 'slc5_amd64_gcc434',
-                    DbsUrl = 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet',
-                    TimePerEvent = 60, Memory = 2147483648, SizePerEvent = 512000,
+                    DbsUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader',
+                    TimePerEvent = 60, Memory = 2147, SizePerEvent = 512,
                     **kwargs):
         """Submit parameters to reqmgr and create request
         See WMCore/HTTPFrontEnd/RequestManager/ReqMgrWebTools.py:makeRequest

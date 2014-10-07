@@ -544,21 +544,22 @@ class BossAirAPI(WMConnectionBase):
                 jobsToReturn.extend(localRunning)
                 jobsToChange.extend(localChanges)
                 jobsToComplete.extend(localCompletes)
-                logging.debug("Changing/completing %i/%i jobs in plugin %s.\n" % (len(localChanges),
-                                                                                  len(localCompletes),
-                                                                                  plugin))
+                logging.info("Running/changing/completing %i/%i/%i jobs in plugin %s.\n" % (len(localRunning),
+                                                                                            len(localChanges),
+                                                                                            len(localCompletes),
+                                                                                            plugin))
             except WMException:
                 raise
             except Exception, ex:
-                msg =  "Unhandled Exception while tracking jobs for plugin %s!\n" % plugin
+                msg =  "Unhandled exception while tracking jobs for plugin %s!\n" % plugin
                 msg += str(ex)
                 logging.error(msg)
                 logging.debug("JobsToTrack: %s" % (jobsToTrack[plugin]))
                 raise BossAirException(msg)
 
-        logging.info("About to change %i jobs\n" % len(jobsToChange))
+        logging.info("About to change %i jobs" % len(jobsToChange))
         logging.debug("JobsToChange: %s" % jobsToChange)
-        logging.info("About to complete %i jobs\n" % len(jobsToComplete))
+        logging.info("About to complete %i jobs" % len(jobsToComplete))
         logging.debug("JobsToComplete: %s" % jobsToComplete)
 
         self._updateJobs(jobs = jobsToChange)

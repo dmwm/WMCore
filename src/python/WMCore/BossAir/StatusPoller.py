@@ -60,23 +60,7 @@ class StatusPoller(BaseWorkerThread):
 
         Handle any exceptions with the actual code
         """
-        myThread = threading.currentThread()
-        try:
-            self.checkStatus()
-        except WMException, ex:
-            if getattr(myThread.transaction, None):
-                myThread.transaction.rollbackForError()
-            self.sendAlert(6, msg = str(ex))
-            raise
-        except Exception, ex:
-            msg =  "Unhandled error in statusPoller"
-            msg += str(ex)
-            logging.exception(msg)
-            self.sendAlert(6, msg = msg)
-            if getattr(myThread, 'transaction', None):
-                myThread.transaction.rollbackForError()
-            raise StatusPollerException(msg)
-
+        self.checkStatus()
         return
 
     def checkStatus(self):
@@ -120,11 +104,22 @@ class StatusPoller(BaseWorkerThread):
         # We need to show that the jobs are in state timeout
         # and then kill them.
         myThread = threading.currentThread()
-        myThread.transaction.begin()
-        self.bossAir.update(jobs = jobsToKill)
-        self.bossAir.kill(jobs = jobsToKill, killMsg = "Job killed due to timeout")
-        myThread.transaction.commit()
-
+        try:
+            myThread.transaction.begin()
+            self.bossAir.update(jobs = jobsToKill)
+            self.bossAir.kill(jobs = jobsToKill, killMsg = "Job killed due to timeout")
+        except WMException, ex:
+            myThread.transaction.rollbackForError()
+            self.sendAlert(6, msg = str(ex))
+            raise
+        except Exception, ex:
+            msg =  "Unhandled error in statusPoller" + str(ex)
+            logging.exception(msg)
+            self.sendAlert(6, msg = msg)
+            myThread.transaction.rollbackForError()
+            raise StatusPollerException(msg)
+        else:
+            myThread.transaction.commit()
 
         return
 

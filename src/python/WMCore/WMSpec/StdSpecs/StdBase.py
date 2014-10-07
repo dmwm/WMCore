@@ -529,8 +529,6 @@ class StdBase(object):
                                         min_merge_size = self.minMergeSize,
                                         max_merge_events = self.maxMergeEvents,
                                         max_wait_time = self.maxWaitTime,
-                                        siteWhitelist = self.siteWhitelist,
-                                        siteBlacklist = self.siteBlacklist,
                                         initial_lfn_counter = lfn_counter)
 
         if getattr(parentOutputModule, "dataTier") == "DQMIO":

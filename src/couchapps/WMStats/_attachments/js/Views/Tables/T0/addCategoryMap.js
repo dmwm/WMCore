@@ -5,6 +5,6 @@
     
     WMStats.CategoryTableMap.add(vm.RequestView.categoryName, 
                                 {'progress': WMStats.ActiveRequestTable});
-    WMStats.CategorySummaryMap.add(WMStats.Controls.run, WMStats.RunSummary);
-    WMStats.CategoryTableMap.add(WMStats.Controls.run, WMStats.RunSummaryTable);
+    WMStats.CategorySummaryMap.add(vm.RunCategory.name(), WMStats.RunSummary);
+    WMStats.CategoryTableMap.add(vm.RunCategory.name(), WMStats.RunSummaryTable);
 })(WMStats.ViewModel);

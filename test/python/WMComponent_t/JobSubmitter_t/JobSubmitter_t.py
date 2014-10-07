@@ -202,6 +202,8 @@ class JobSubmitterTest(unittest.TestCase):
             testJob["siteBlacklist"] = bl
             testJob["siteWhitelist"] = wl
             testJob['priority'] = 101
+            testJob['multicoreEnabled'] = False
+            testJob['numberOfCores'] = 1
             jobCache = os.path.join(cacheDir, 'Sub_%i' % (sub), 'Job_%i' % (index))
             os.makedirs(jobCache)
             testJob.create(jobGroup)
@@ -253,7 +255,7 @@ class JobSubmitterTest(unittest.TestCase):
                                                          'WMComponent_t/JobSubmitter_t',
                                                          "submit.sh")
 
-        
+
         # JobSubmitter configuration
         config.component_("JobSubmitter")
         config.JobSubmitter.logLevel      = 'DEBUG'
@@ -412,7 +414,7 @@ class JobSubmitterTest(unittest.TestCase):
 
         jobSubmitter.algorithm()
 
-        # Check that jobs are in the right state, 
+        # Check that jobs are in the right state,
         # here we are limited by the pending threshold for the Processing task (45)
         result = getJobsAction.execute(state = 'Created', jobType = "Processing")
         self.assertEqual(len(result), 5)

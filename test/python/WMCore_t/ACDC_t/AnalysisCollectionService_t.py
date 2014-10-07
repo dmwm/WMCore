@@ -18,7 +18,7 @@ class AnalysisCollectionService_t(unittest.TestCase):
 
     def setUp(self):
         """Set up test couch instance"""
-        self.dbsURL  = 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet'
+        self.dbsURL  = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
         self.dataset = '/RelValProdTTbar/JobRobot-MC_3XY_V24_JobRobot-v1/GEN-SIM-DIGI-RECO'
 
         """Set up couch test environment"""

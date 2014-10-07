@@ -136,7 +136,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     """
     print "injecting files from %s into %s, please wait..." % (datasetPath, inputFileset.name)
     args={}
-    args["url"] = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+    args["url"] = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
     args["version"] = "DBS_2_0_9"
     args["mode"] = "GET"
     dbsApi = DbsApi(args)

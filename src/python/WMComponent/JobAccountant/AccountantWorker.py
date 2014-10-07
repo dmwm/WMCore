@@ -655,9 +655,10 @@ class AccountantWorker(WMConnectionBase):
                     raise AccountantWorkerException(msg)
 
             # Associate the workflow to the file using the taskPath and the requestName
-            taskPath     = str(dbsFile.get('task'))
+            # TODO: debug why it happens and then drop/recover these cases automatically
+            taskPath = dbsFile.get('task')
             if not taskPath:
-                msg = "Can't do workflow association, this is not acceptable.\n"
+                msg = "Can't do workflow association, report this error to a developer.\n"
                 msg += "DbsFile : %s" % str(dbsFile)
                 raise AccountantWorkerException(msg)
             workflowName = taskPath.split('/')[1]

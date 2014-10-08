@@ -40,10 +40,14 @@ WMStats.View.IndexHTML = function(){
         vm.JobView.id('#job_view');
         
         // Category summary view
+        //TODO: Tier1 Category - move this some other place which belongs Tier1
         vm.CampaignCategory.id('#category_view div.summary_data');
         vm.SiteCategory.id('#category_view div.summary_data');
         vm.CMSSWCategory.id('#category_view div.summary_data');
         vm.AgentCategory.id('#category_view div.summary_data');
+        
+        //TODO: Tier0 Category - move this some other place which belongs Tier0
+        vm.RunCategory.id('#category_view div.summary_data');
         
         // Request summary view
         vm.RequestProgress.id('#request_view div.summary_data');

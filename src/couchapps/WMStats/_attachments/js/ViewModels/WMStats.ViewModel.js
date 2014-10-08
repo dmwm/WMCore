@@ -319,6 +319,10 @@ WMStats.ViewModel = (function (){
         return new WMStats._ViewModelBase({name: "agent"});
     })();
     
+    vm.RunCategory = (function (){
+        return new WMStats._ViewModelBase({name: "run"});
+    })();
+    
     /* request view summary format */
     vm.RequestProgress = (function (){
         return new WMStats._ViewModelBase({name: "progress"});

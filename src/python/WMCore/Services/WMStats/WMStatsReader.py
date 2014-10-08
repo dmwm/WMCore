@@ -72,7 +72,10 @@ class WMStatsReader():
         for row in data['rows']:
             if row.has_key('error'):
                 continue
-            result[row[key]] = row["doc"]
+            if row.has_key("doc"):
+                result[row[key]] = row["doc"]
+            else:
+                result[row[key]] = None
         return result
     
     def _combineRequestAndJobData(self, requestData, jobData):
@@ -185,6 +188,8 @@ class WMStatsReader():
         keys is [id, ....]
         returns document
         """
+        if len(ids) == 0:
+            return None
         options = {}
         options["include_docs"] =  include_docs
         result = self.couchDB.allDocs(options, ids)

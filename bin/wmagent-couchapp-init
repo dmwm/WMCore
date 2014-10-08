@@ -356,5 +356,8 @@ if __name__ == "__main__":
            urlsplit(wmagentConfig.WorkloadSummary.couchurl).scheme == 'http':
             installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "ACDC")
             installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")
+    
+    if hasattr(wmagentConfig, "Tier0Feeder"):
+        installCouchApp(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.Tier0Feeder.requestDBName, "T0Request")
 
     sys.exit(0)

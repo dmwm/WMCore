@@ -102,6 +102,11 @@ WMStats.Utils.createInputFilter = function (selector) {
     // create the object which key value
     var a=$(selector).serializeArray(), filter={};
     $.each(a, function(i, obj){
+    		if (isNaN(obj.value)) {
+    			filter[obj.name] = obj.value;
+    		} else{
+    			filter[obj.name] = parseInt(obj.value);
+    		}
             filter[obj.name] = obj.value;
         });
     return filter;

@@ -7,8 +7,8 @@ WMStats.namespace("Globals");
 
 WMStats.Globals = function($){
     var _dbVariants = {'wmstats': 'tier1', 'tier0_wmstats': 'tier0'};
-    
-    var reqPropertyMap = {
+
+	var reqPropertyMap = {
 		   "_id": "_id",
 		   "InputDataset": "inputdataset",
 		   "PrepID": "prep_id",
@@ -29,7 +29,8 @@ WMStats.Globals = function($){
 		   "TotalEstimatedJobs": "total_jobs",
 		   "TotalInputEvents": "input_events",
 		   "TotalInputLumis": "input_lumis",
-		   "TotalInputFiles": "input_num_files"
+		   "TotalInputFiles": "input_num_files",
+		   "Run": "run"
 		};
 
     function convertRequestDocToWMStatsFormat(doc) {
@@ -126,7 +127,6 @@ WMStats.Globals = function($){
                 }
                 return "<a href='" + getAgentUrlForJobs(agentURL, workflow, status) +
                         "' target='_blank'>" + jobNumber + "</a>";
-                                     
             } else {
                 return jobNumber;
             };
@@ -145,6 +145,8 @@ WMStats.Globals = function($){
         WORKLOAD_SUMMARY_COUCHAPP_DESIGN: "WorkloadSummary",
 		REQMGR_COUCHAPP_DESIGN: "ReqMgr",
         ALERT_COLLECTOR_LINK: getAlertCollectorLink(),
+        T0_COUCHAPP_DESIGN: "T0Request",
+        T0_COUCHDB_NAME: "t0_request",
         CONFIG: null, //this will be set when WMStats.Couch.loadConfig is called. just place holder or have default config
         INIT_DB: "WMStats",
         loadScript: function (url, success) {

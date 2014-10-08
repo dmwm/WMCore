@@ -58,6 +58,7 @@ from WMComponent.JobCreator.CreateWorkArea       import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller     import retrieveWMSpec
 from WMCore.Services.WMStats.WMStatsWriter       import WMStatsWriter
 from WMCore.Services.RequestManager.RequestManager import RequestManager
+from WMCore.Services.RequestDB.RequestDBWriter   import RequestDBWriter
 
 from WMCore.DataStructs.MathStructs.DiscreteSummaryHistogram import DiscreteSummaryHistogram
 from WMCore.DataStructs.MathStructs.ContinuousSummaryHistogram import ContinuousSummaryHistogram
@@ -229,10 +230,11 @@ class TaskArchiverPoller(BaseWorkerThread):
         
         if not self.useReqMgrForCompletionCheck:
             #sets the local monitor summary couch db
-            self.wmstatsCouchDB = WMStatsWriter(self.config.TaskArchiver.localWMStatsURL)
-            self.centralCouchDBWriter = self.wmstatsCouchDB;
+            self.requestLocalCouchDB = RequestDBWriter(self.config.AnalyticsDataCollector.localT0RequestDBURL, 
+                                                   couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
+            self.centralCouchDBWriter = self.requestLocalCouchDB;
         else:
-            self.centralCouchDBWriter = WMStatsWriter(self.config.TaskArchiver.centralWMStatsURL)
+            self.requestLocalCouchDB = WMStatsWriter(self.config.TaskArchiver.centralWMStatsURL)
             self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
         # Start a couch server for getting job info
         # from the FWJRs for committal to archive
@@ -359,9 +361,8 @@ class TaskArchiverPoller(BaseWorkerThread):
         try:
             #TODO: need to enable when reqmgr2 -wmstats is ready
             #abortedWorkflows = self.reqmgrCouchDBWriter.workflowsByStatus(["aborted"], format = "dict");
-            abortedWorkflows = self.centralCouchDBWriter.workflowsByStatus(["aborted"], format = "dict")
-            forceCompleteWorkflows = self.centralCouchDBWriter.workflowsByStatus(["force-complete"], 
-                                                                                 format = "dict");
+            abortedWorkflows = self.centralCouchDBWriter.getRequestByStatus(["aborted"])
+            forceCompleteWorkflows = self.centralCouchDBWriter.getRequestByStatus(["force-complete"]);
             
         except Exception, ex:
             centralCouchAlive = False
@@ -390,7 +391,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                     
                     #Now we now the workflow as a whole is gone, we can delete the information from couch
                     if not self.useReqMgrForCompletionCheck:
-                        self.wmstatsCouchDB.updateRequestStatus(workflow, "completed")
+                        self.requestLocalCouchDB.updateRequestStatus(workflow, "completed")
                         logging.info("status updated to completed %s" % workflow)
     
                     if workflow in abortedWorkflows:
@@ -402,13 +403,14 @@ class TaskArchiverPoller(BaseWorkerThread):
                         newState = None
                         
                     if newState != None:
-                        self.reqmgrSvc.updateRequestStatus(workflow, newState)
                         # update reqmgr workload document only request mgr is installed
                         if not self.useReqMgrForCompletionCheck:
                             # commented out untill all the agent is updated so every request have new state
                             # TODO: agent should be able to write reqmgr db diretly add the right group in
                             # reqmgr
-                            self.centralCouchDBWriter.updateRequestStatus(workflow, newState) 
+                            self.requestLocalCouchDB.updateRequestStatus(workflow, newState)
+                        else:
+                            self.reqmgrSvc.updateRequestStatus(workflow, newState) 
                         logging.info("status updated to %s : %s" % (newState, workflow))
     
                     wfsToDelete[workflow] = {"spec" : spec, "workflows": finishedwfs[workflow]["workflows"]}

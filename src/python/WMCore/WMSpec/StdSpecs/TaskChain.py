@@ -452,12 +452,20 @@ class TaskChainWorkloadFactory(StdBase):
         for argument in baseArguments:
             if argument in taskConf:
                 taskConf[argument] = baseArguments[argument]["type"](taskConf[argument])
+
+        if generator:
+            taskConf["SplittingAlgo"] = "EventBased"
+            # Adjust totalEvents according to the filter efficiency
+            taskConf["RequestNumEvents"] = int(taskConf.get("RequestNumEvents", 0) / \
+                                               taskConf.get("FilterEfficiency"))
+            taskConf["SizePerEvent"] = taskConf.get("SizePerEvent", self.sizePerEvent) * \
+                                       taskConf.get("FilterEfficiency")
+
         if taskConf["EventsPerJob"] is None:
             taskConf["EventsPerJob"] = (8.0 * 3600.0)/(taskConf.get("TimePerEvent", self.timePerEvent))
         if taskConf["EventsPerLumi"] is None:
             taskConf["EventsPerLumi"] = taskConf["EventsPerJob"]
-        if generator:
-            taskConf["SplittingAlgo"] = "EventBased"
+
         taskConf["SplittingArguments"] = {}
         if taskConf["SplittingAlgo"] == "EventBased" or taskConf["SplittingAlgo"] == "EventAwareLumiBased":
             taskConf["SplittingArguments"]["events_per_job"] = taskConf["EventsPerJob"]
@@ -579,6 +587,9 @@ class TaskChainWorkloadFactory(StdBase):
                     "EventsPerLumi" : {"default" : None, "type" : int,
                                        "optional" : True, "validate" : lambda x : x > 0,
                                        "attr" : "eventsPerLumi", "null" : True},
+                    "FilterEfficiency" : {"default" : 1.0, "type" : float,
+                                          "optional" : True, "validate" : lambda x : x > 0.0,
+                                          "attr" : "filterEfficiency", "null" : False},
                     "LheInputFiles" : {"default" : False, "type" : strToBool,
                                        "optional" : True, "validate" : None,
                                        "attr" : "lheInputFiles", "null" : False}

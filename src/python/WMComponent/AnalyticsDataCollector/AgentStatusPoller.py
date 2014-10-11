@@ -11,13 +11,10 @@ import time
 import traceback
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Database.CMSCouch import CouchMonitor
-from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
-from WMComponent.AnalyticsDataCollector.DataCollectAPI import LocalCouchDBData, \
-     WMAgentDBData, combineAnalyticsData, convertToRequestCouchDoc, \
+from WMComponent.AnalyticsDataCollector.DataCollectAPI import WMAgentDBData, \
      convertToAgentCouchDoc, isDrainMode, initAgentInfo, DataUploadTime, \
      diskUse, numberCouchProcess
-from WMCore.WMFactory import WMFactory
 
 class AgentStatusPoller(BaseWorkerThread):
     """
@@ -75,12 +72,23 @@ class AgentStatusPoller(BaseWorkerThread):
     def collectAgentInfo(self):
         #TODO: agent info (need to include job Slots for the sites)
         # always checks couch first
+        # Replication checking part need to be moved AgentWatcher
         source = self.config.JobStateMachine.jobSummaryDBName
         target = self.config.AnalyticsDataCollector.centralWMStatsURL
+        
+        #TODO: tier0 specific code - need to make it generic 
+        if hasattr(self.config, "Tier0Feeder"):
+            t0Source = self.config.Tier0Feeder.requestDBName
+            t0Target = self.config.AnalyticsDataCollector.centralRequestDBURL
+            self.localCouchServer.recoverReplicationErrors(t0Source, t0Target, 
+                                                            filter = "T0Request/repfilter")
+            
         couchInfo = self.localCouchServer.recoverReplicationErrors(source, target, 
                                                                    filter = "WMStats/repfilter")
         logging.info("getting couchdb replication status: %s" % couchInfo)
         
+        
+            
         agentInfo = self.wmagentDB.getComponentStatus(self.config)
         agentInfo.update(self.agentInfo)
         

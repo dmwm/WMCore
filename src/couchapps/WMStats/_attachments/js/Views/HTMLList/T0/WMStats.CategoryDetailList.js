@@ -29,4 +29,10 @@ WMStats.namespace('CategoryDetailList');
     WMStats.CategoryDetailList = function (data, containerDiv) {
          $(containerDiv).html(format(data));
     };
+    
+    var vm = WMStats.ViewModel;
+    
+    vm.CategoryDetail.subscribe("data", function() {
+        WMStats.CategoryDetailList(vm.CategoryDetail.data(), vm.CategoryDetail.id());
+    });
 })();

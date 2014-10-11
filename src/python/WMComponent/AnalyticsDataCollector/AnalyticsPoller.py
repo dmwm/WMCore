@@ -13,9 +13,10 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Database.CMSCouch import CouchMonitor
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import LocalCouchDBData, \
      WMAgentDBData, combineAnalyticsData, convertToRequestCouchDoc, \
-     convertToAgentCouchDoc, isDrainMode, initAgentInfo, DataUploadTime
+     initAgentInfo, DataUploadTime
 from WMCore.WMFactory import WMFactory
 
 class AnalyticsPoller(BaseWorkerThread):
@@ -54,7 +55,15 @@ class AnalyticsPoller(BaseWorkerThread):
         self.wmagentDB = WMAgentDBData(self.summaryLevel, myThread.dbi, myThread.logger)
         # set the connection for local couchDB call
         self.localSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL)
-        self.centralWMStatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.centralWMStatsURL)
+        
+        if hasattr(self.config, "Tier0Feeder"):
+            #use local db for tier0
+            centralRequestCouchDBURL = self.config.AnalyticsDataCollector.localT0RequestDBURL
+        else:
+            centralRequestCouchDBURL = self.config.AnalyticsDataCollector.centralRequestDBURL
+        
+        self.centralRequestCouchDB = RequestDBWriter(centralRequestCouchDBURL, 
+                                                   couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
         #TODO: change the config to hold couch url
         self.localCouchServer = CouchMonitor(self.config.JobStateMachine.couchurl)
         
@@ -109,7 +118,7 @@ class AnalyticsPoller(BaseWorkerThread):
 
 
             if self.plugin != None:
-                self.plugin(requestDocs, self.localSummaryCouchDB, self.centralWMStatsCouchDB)
+                self.plugin(requestDocs, self.localSummaryCouchDB, self.centralRequestCouchDB)
 
             self.localSummaryCouchDB.uploadData(requestDocs)
             logging.info("Request data upload success\n %s request, \nsleep for next cycle" % len(requestDocs))

@@ -75,3 +75,5 @@ WMStats.WorkloadSummaryCouch = WMStats.CouchBase(WMStats.Globals.WORKLOAD_SUMMAR
                                                  WMStats.Globals.WORKLOAD_SUMMARY_COUCHAPP_DESIGN);
 WMStats.ReqMgrCouch = WMStats.CouchBase(WMStats.Globals.REQMGR_COUCHDB_NAME,
                                                  WMStats.Globals.REQMGR_COUCHAPP_DESIGN);
+WMStats.T0Couch = WMStats.CouchBase(WMStats.Globals.T0_COUCHDB_NAME,
+                                                 WMStats.Globals.T0_COUCHAPP_DESIGN);

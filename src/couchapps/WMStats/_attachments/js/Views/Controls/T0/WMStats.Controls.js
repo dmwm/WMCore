@@ -25,26 +25,6 @@ WMStats.Controls = function($){
     function setCategoryButton(selector) {
 
         vm.CategoryView.category(vm.RunCategory);
-        /*
-        var categoryBottons = 
-        '<nav id="category_button" class="button-group">\
-            <ul><li><a href="#run" class="nav-button nav-button-selected"> Run </a></li>\
-         </nav>';
-        
-        $(selector).append(categoryBottons);
-        
-        $(document).on('click', selector + " li a", function(event){
-            var category = this.hash.substring(1);
-            var vmCategory;
-            if (category === "run") {
-                vmCategory = vm.RunCategory;
-            } 
-            vm.CategoryView.category(vmCategory);
-            $(selector + " li a").removeClass("nav-button-selected").addClass("button-unselected");
-            $(this).addClass("nav-button-selected");
-            event.preventDefault();
-        });
-        */
     };
     
     function setViewSwitchButton(selector) {
@@ -129,13 +109,14 @@ WMStats.Controls = function($){
             <ul><li><a href="#" class="nav-button"> wmstats db </a></li></ul>\
         </nav>';
         
+        WMStats.Globals.INIT_DB = "T0Request";
         $(selector).append(dbSourceButton).addClass("button-group");
         
         $(document).on('click', "#db_source li a", function(event){
             var buttonSelector = "#db_source li a";
             if (WMStats.Globals.INIT_DB === "WMStats") {
-            	$(buttonSelector).text("future db");
-        	} else if (WMStats.Globals.INIT_DB === "ReqMgr") {
+            	$(buttonSelector).text("wmstats db");
+        	} else if (WMStats.Globals.INIT_DB === "T0Request") {
         		$(buttonSelector).text("t0 wmstats db");
         	}          
         });

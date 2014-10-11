@@ -127,7 +127,7 @@ class Tier0Plugin(PluginInterface):
                 self.tier0Regex[workflowType].append(compiledRegex)
         return
 
-    def __call__(self, requestDocs, localSummaryCouchDB, centralWMStatsCouchDB):
+    def __call__(self, requestDocs, localSummaryCouchDB, centralRequestCouchDB):
         """
         __call__
 
@@ -144,7 +144,7 @@ class Tier0Plugin(PluginInterface):
                                                                        pattern = '%Repack%')
         self.logger.debug("Found %d finished Repack tasks" % len(finishedTasksNoInjection))
         # Get workflows which are not closed yet or completed
-        notClosedWorkflows = centralWMStatsCouchDB.workflowsByStatus(['new'])
+        notClosedWorkflows = centralRequestCouchDB.getRequestByStatus(['new'])
 
         # Aggregate results by workflow name
         finishedTasks.extend(finishedTasksNoInjection)

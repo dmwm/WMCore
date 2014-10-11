@@ -62,6 +62,9 @@ WMStats.namespace("ActiveRequestController");
         	} else if (WMStats.Globals.INIT_DB === "ReqMgr") {
         		initView = 'bystatus';
         	 	dbSource = WMStats.ReqMgrCouch;
+        	} else if (WMStats.Globals.INIT_DB === "T0Request") {
+        		initView = 'bystatus';
+        	 	dbSource = WMStats.T0Couch;
         	}
             WMStats.ActiveRequestModel.setInitView(initView);
             WMStats.ActiveRequestModel.setDBSource(dbSource);

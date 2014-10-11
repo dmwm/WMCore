@@ -53,5 +53,13 @@ WMStats.namespace('RequestDetailList');
         requests[workflow] = reqDoc;
         var data = {key: workflow, requests: requests, summary: reqSummary};
         $(containerDiv).html(format(data));
+        $(containerDiv).show("slide", {}, 500);
+        vm.RequestDetail.open = true;
     };
+    
+    var vm = WMStats.ViewModel;
+
+    vm.RequestDetail.subscribe("requestName", function() {
+        WMStats.RequestDetailList(vm.RequestDetail.requestName(), vm.RequestDetail.id());
+    });
 })();

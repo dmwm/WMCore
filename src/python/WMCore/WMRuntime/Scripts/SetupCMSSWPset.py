@@ -554,8 +554,8 @@ class SetupCMSSWPset(ScriptInterface):
         if numCores > 1:
             options = getattr(self.process, "options", None)
             if options == None:
-                pset.options = cms.untracked.PSet()
-                options = getattr(pset, "options")
+                self.process.options = cms.untracked.PSet()
+                options = getattr(self.process, "options")
 
 
             options.numberOfThreads = cms.untracked.uint32(numCores)

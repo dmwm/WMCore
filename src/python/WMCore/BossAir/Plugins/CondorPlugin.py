@@ -1006,13 +1006,10 @@ class CondorPlugin(BasePlugin):
             jdl.append('request_disk = %d\n' % int(job['estimatedDiskUsage']))
 
         # Set up JDL for multithreaded jobs
-        # In the future hope to remove Desires HTPC and multicoreEnabled setting and just key off of nCores
+        # In the future hope to remove multicoreEnabled setting and just key off of nCores
         if job.get('multicoreEnabled', False) or job.get('numberOfCores', 1) > 1:
-            jdl.append('+DESIRES_HTPC = True\n')
             jdl.append('machine_count = 1\n')
             jdl.append('request_cpus = %s\n' % job.get('numberOfCores', 1))
-        else:
-            jdl.append('+DESIRES_HTPC = False\n')
 
         #Add OS requirements for jobs
         if job.get('scramArch') is not None and job.get('scramArch').startswith("slc6_") :

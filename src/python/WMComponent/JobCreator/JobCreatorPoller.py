@@ -105,7 +105,7 @@ def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
             owner = None, ownerDN = None,
             ownerGroup = '', ownerRole = '',
             scramArch = None, swVersion = None, agentNumber = 0,
-            multicoreEnabled = False, numberOfCores = 1 ):
+            multicoreEnabled = False, numberOfCores = 1):
     """
     _saveJob_
 
@@ -199,7 +199,9 @@ def creatorProcess(work, jobCacheDir):
                     ownerRole = ownerRole,
                     scramArch = scramArch,
                     swVersion = swVersion,
-                    agentNumber = agentNumber)
+                    agentNumber = agentNumber,
+                    multicoreEnabled = multicoreEnabled,
+                    numberOfCores = numberOfCores)
 
     except Exception, ex:
         # Register as failure; move on

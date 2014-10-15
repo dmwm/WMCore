@@ -76,8 +76,8 @@ class StdBase(object):
 
         # Definition of parameters that depend on the value of others
         if hasattr(self, "multicore") and self.multicore:
+            self.multicoreNCores = int(self.multicore)
             self.multicore = True
-            self.multicoreNCores = self.multicore
 
         return
 

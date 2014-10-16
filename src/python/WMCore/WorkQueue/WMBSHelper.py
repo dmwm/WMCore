@@ -439,7 +439,7 @@ class WMBSHelper(WMConnectionBase):
         else:
             self.isDBS = True
             for dbsFile in self.validFiles(block['Files']):
-                self._addDBSFileToWMBSFile(dbsFile, block['StorageElements'])
+                self._addDBSFileToWMBSFile(dbsFile, block['PhEDExNodeNames'])
 
 
         # Add files to WMBS

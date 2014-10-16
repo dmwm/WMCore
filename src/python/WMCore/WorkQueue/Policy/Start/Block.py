@@ -44,7 +44,7 @@ class Block(StartPolicyInterface):
                     if self.initialTask.inputLocationFlag():
                         parentList[dbsBlock["Name"]] = self.sites
                     else:
-                        parentList[dbsBlock["Name"]] = sitesFromStorageEelements(dbsBlock['StorageElementList'])
+                        parentList[dbsBlock["Name"]] = sitesFromStorageEelements(dbsBlock['PhEDExNodeList'])
 
             self.newQueueElement(Inputs = {block['block'] : self.data.get(block['block'], [])},
                                  ParentFlag = parentFlag,
@@ -185,7 +185,7 @@ class Block(StartPolicyInterface):
             if task.inputLocationFlag():
                 self.data[block['block']] = self.sites
             else:
-                self.data[block['block']] = sitesFromStorageEelements(dbs.listFileBlockLocation(block['block']))
+                self.data[block['block']] = dbs.listFileBlockLocation(block['block'])
 
             # TODO: need to decide what to do when location is no find.
             # There could be case for network problem (no connection to dbs, phedex)

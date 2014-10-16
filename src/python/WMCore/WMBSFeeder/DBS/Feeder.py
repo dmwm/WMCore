@@ -30,8 +30,7 @@ class Feeder(FeederImpl):
     feeder implementation
     """
 
-    def __init__(self, dbsUrl = \
-         "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"):
+    def __init__(self, dbsUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"):
         """
         Configure the feeder
         """

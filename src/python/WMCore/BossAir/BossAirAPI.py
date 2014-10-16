@@ -822,7 +822,7 @@ class BossAirAPI(WMConnectionBase):
                 raise BossAirException(msg)
         return jobkill
 
-            
+
 
 
     def _buildRunningJobsFromRunJobs(self, runJobs):

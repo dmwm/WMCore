@@ -215,6 +215,14 @@ class AccountantWorker(WMConnectionBase):
 
         return True
 
+    def isTaskExistInFWJR(self, jobReport):
+        """
+        TODO: fix it, if it doesn't exist
+        """
+        if not jobReport.getTaskName():
+            msg = "Report to developers, Investigate currupted fwjr for job id %s" % jobReport.getJobID()
+            raise AccountantWorkerException(msg)
+        
     def __call__(self, parameters):
         """
         __call__
@@ -232,6 +240,8 @@ class AccountantWorker(WMConnectionBase):
             fwkJobReport = self.loadJobReport(job)
             fwkJobReport.setJobID(job['id'])
             jobSuccess = None
+            
+            self.isTaskExistInFWJR(fwkJobReport)
 
             if not self.didJobSucceed(fwkJobReport):
                 logging.error("I have a bad jobReport for %i" %(job['id']))
@@ -655,9 +665,10 @@ class AccountantWorker(WMConnectionBase):
                     raise AccountantWorkerException(msg)
 
             # Associate the workflow to the file using the taskPath and the requestName
-            taskPath     = str(dbsFile.get('task'))
+            # TODO: debug why it happens and then drop/recover these cases automatically
+            taskPath = dbsFile.get('task')
             if not taskPath:
-                msg = "Can't do workflow association, this is not acceptable.\n"
+                msg = "Can't do workflow association, report this error to a developer.\n"
                 msg += "DbsFile : %s" % str(dbsFile)
                 raise AccountantWorkerException(msg)
             workflowName = taskPath.split('/')[1]

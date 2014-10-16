@@ -104,7 +104,8 @@ def runSplitter(jobFactory, splitParams):
 def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
             owner = None, ownerDN = None,
             ownerGroup = '', ownerRole = '',
-            scramArch = None, swVersion = None, agentNumber = 0 ):
+            scramArch = None, swVersion = None, agentNumber = 0,
+            multicoreEnabled = False, numberOfCores = 1):
     """
     _saveJob_
 
@@ -128,6 +129,8 @@ def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
     job['ownerRole']   = ownerRole
     job['scramArch'] = scramArch
     job['swVersion'] = swVersion
+    job['multicoreEnabled'] = multicoreEnabled
+    job['numberOfCores'] = numberOfCores
     output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
     cPickle.dump(job, output, cPickle.HIGHEST_PROTOCOL)
     output.close()
@@ -157,6 +160,8 @@ def creatorProcess(work, jobCacheDir):
         scramArch    = work.get('scramArch', None)
         swVersion    = work.get('swVersion', None)
         agentNumber  = work.get('agentNumber', 0)
+        numberOfCores = work.get('numberOfCores', 1)
+        multicoreEnabled = work.get('multicoreEnabled', False)
 
         if ownerDN == None:
             ownerDN = owner
@@ -194,7 +199,9 @@ def creatorProcess(work, jobCacheDir):
                     ownerRole = ownerRole,
                     scramArch = scramArch,
                     swVersion = swVersion,
-                    agentNumber = agentNumber)
+                    agentNumber = agentNumber,
+                    multicoreEnabled = multicoreEnabled,
+                    numberOfCores = numberOfCores)
 
     except Exception, ex:
         # Register as failure; move on
@@ -405,7 +412,7 @@ class JobCreatorPoller(BaseWorkerThread):
             myThread = threading.currentThread()
             if getattr(myThread, 'transaction', False) \
                    and getattr(myThread.transaction, 'transaction', False):
-                myThread.transaction.rollback()            
+                myThread.transaction.rollback()
             # Handle temporary connection problems (Temporary)
             if "This Connection is closed" not in str(ex):
                 msg = "Failed to execute JobCreator \n%s\n\n%s" % (ex,traceback.format_exc())
@@ -550,6 +557,12 @@ class JobCreatorPoller(BaseWorkerThread):
                                'ownerDN': wmWorkload.getOwner().get('dn', None),
                                'ownerGroup': wmWorkload.getOwner().get('vogroup', ''),
                                'ownerRole': wmWorkload.getOwner().get('vorole', '')}
+                try:
+                    multicore = wmTask.steps().applicationSection().multicore
+                    processDict.update({'numberOfCores' : multicore.numberOfCores,
+                                        'multicoreEnabled' : multicore.enabled})
+                except AttributeError:
+                    logging.info("Failed to read multicore settings from task %s" % wmTask.getPathName())
 
                 tempSubscription = Subscription(id = wmbsSubscription['id'])
 

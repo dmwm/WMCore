@@ -363,19 +363,19 @@ class CMSSWStepHelper(CoreHelper):
         testing
         """
         self.data.application.multicore.numberOfCores = ncores
-        self.data.application.multicore.enabled = True
+        self.data.application.multicore.enabled = True if ncores > 1 else False
 
-    def numberOfCores(self):
+    def getNumberOfCores(self):
         """
-        _numberOfCores_
+        _getNumberOfCores_
 
         Get number of cores
         """
         return self.data.application.multicore.numberOfCores
 
-    def multicoreEnabled(self):
+    def getMulticoreEnabled(self):
         """
-        _multicoreEnabled_
+        _getMulticoreEnabled_
 
         True/False flag to determine wether multicore is enabled
         """

@@ -363,7 +363,7 @@ class CMSSWStepHelper(CoreHelper):
         testing
         """
         self.data.application.multicore.numberOfCores = ncores
-        self.data.application.multicore.enabled = True
+        self.data.application.multicore.enabled = True if ncores > 1 else False
 
     def getNumberOfCores(self):
         """

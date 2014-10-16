@@ -36,7 +36,7 @@ def fixupGlobalTag(process):
     if hasattr(process, "GlobalTag"):
         if not hasattr(process.GlobalTag, "globaltag"):
             process.GlobalTag.globaltag = cms.string("")
-
+    return
 
 def fixupGlobalTagTransaction(process):
     """
@@ -52,7 +52,7 @@ def fixupGlobalTagTransaction(process):
     if hasattr(process, "GlobalTag"):
         if not hasattr(process.GlobalTag.DBParameters, "transactionId"):
             process.GlobalTag.DBParameters.transactionId = cms.untracked.string("")
-
+    return
 
 def fixupFirstRun(process):
     """
@@ -63,7 +63,7 @@ def fixupFirstRun(process):
     """
     if not hasattr(process.source, "firstRun"):
         process.source.firstRun = cms.untracked.uint32(0)
-
+    return
 
 def fixupLastRun(process):
     """
@@ -74,7 +74,7 @@ def fixupLastRun(process):
     """
     if not hasattr(process.source, "lastRun"):
         process.source.lastRun = cms.untracked.uint32(0)
-
+    return
 
 def fixupLumisToProcess(process):
     """
@@ -85,7 +85,7 @@ def fixupLumisToProcess(process):
     """
     if not hasattr(process.source, "lumisToProcess"):
         process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange()
-
+    return
 
 def fixupSkipEvents(process):
     """
@@ -96,6 +96,7 @@ def fixupSkipEvents(process):
     """
     if not hasattr(process.source, "skipEvents"):
         process.source.skipEvents = cms.untracked.uint32(0)
+    return
 
 def fixupFirstEvent(process):
     """
@@ -106,7 +107,7 @@ def fixupFirstEvent(process):
     """
     if not hasattr(process.source, "firstEvent"):
         process.source.firstEvent = cms.untracked.uint32(0)
-
+    return
 
 def fixupMaxEvents(process):
     """
@@ -119,7 +120,7 @@ def fixupMaxEvents(process):
         process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
     if not hasattr(process.maxEvents, "input"):
         process.maxEvents.input = cms.untracked.int32(-1)
-
+    return
 
 def fixupFileNames(process):
     """
@@ -130,6 +131,7 @@ def fixupFileNames(process):
     """
     if not hasattr(process.source, "fileNames"):
         process.source.fileNames = cms.untracked.vstring()
+    return
 
 def fixupSecondaryFileNames(process):
     """
@@ -140,6 +142,7 @@ def fixupSecondaryFileNames(process):
     """
     if not hasattr(process.source, "secondaryFileNames"):
         process.source.secondaryFileNames = cms.untracked.vstring()
+    return
 
 def fixupFirstLumi(process):
     """
@@ -149,6 +152,7 @@ def fixupFirstLumi(process):
     """
     if not hasattr(process.source, "firstLuminosityBlock"):
         process.source.firstLuminosityBlock = cms.untracked.uint32(1)
+    return
 
 class SetupCMSSWPset(ScriptInterface):
     """
@@ -271,7 +275,6 @@ class SetupCMSSWPset(ScriptInterface):
         _applyTweak_
 
         Apply a tweak to the process.
-
         """
         tweak = PSetTweak()
         tweak.unpersist(psetTweak)
@@ -284,7 +287,6 @@ class SetupCMSSWPset(ScriptInterface):
         _handleSeeding_
 
         Handle Random Seed settings for the job
-
         """
         baggage = self.job.getBaggage()
         seeding = getattr(baggage, "seeding", None)
@@ -295,13 +297,12 @@ class SetupCMSSWPset(ScriptInterface):
                 parameter = "process.RandomNumberGeneratorService.%s.initialSeed" % x._internal_name
                 tweak.addParameter(parameter, x.initialSeed)
             applyTweak(self.process, tweak, self.fixupDict)
-            return
         else:
             if hasattr(self.process, "RandomNumberGeneratorService"):
                 from IOMC.RandomEngine.RandomServiceHelper import RandomNumberServiceHelper
                 helper = RandomNumberServiceHelper(self.process.RandomNumberGeneratorService)
                 helper.populate()
-            return
+        return
 
     def handlePerformanceSettings(self):
         """
@@ -321,8 +322,12 @@ class SetupCMSSWPset(ScriptInterface):
         self.process.add_(PSetConfig.Service("Timing"))
         self.process.Timing.summaryOnly = PSetConfig.untracked(PSetConfig.bool(True))
 
-    def _handleChainedProcessing(self):
+        return
+
+    def handleChainedProcessing(self):
         """
+        _handleChainedProcessing_
+
         In order to handle chained processing it's necessary to feed
         output of one step/task (nomenclature ambiguous) to another.
         This method creates particular mapping in a working Trivial
@@ -353,11 +358,13 @@ class SetupCMSSWPset(ScriptInterface):
         tfcFile.close()
         self.step.data.application.overrideCatalog = "trivialcatalog_file:" +tfcPath + "?protocol=direct"
 
+        return
 
-    def _handlePileup(self):
+    def handlePileup(self):
         """
-        Handle pileup settings.
+        _handlePileup_
 
+        Handle pileup settings.
         """
         # find out local site SE name
         siteConfig = loadSiteLocalConfig()
@@ -384,9 +391,9 @@ class SetupCMSSWPset(ScriptInterface):
         self._processPileupMixingModules(pileupDict, seLocalName, dataMixModules, "data")
         self._processPileupMixingModules(pileupDict, seLocalName, mixModules, "mc")
 
+        return
 
-    def _processPileupMixingModules(self, pileupDict, seLocalName, modules,
-                                    requestedPileupType):
+    def _processPileupMixingModules(self, pileupDict, seLocalName, modules, requestedPileupType):
         """
         Iterates over all modules and over all pileup configuration types.
         The only considered types are "data" and "mc" (input to this method).
@@ -405,7 +412,6 @@ class SetupCMSSWPset(ScriptInterface):
         WMCore_t/WMRuntime_t/Scripts_t/WMTaskSpace/cmsRun1/PSet.py
         each type of modules instances can have either "secsource"
         or "input" attribute, so need to probe both, one shall succeed.
-
         """
         for m in modules:
             for pileupType in self.step.data.pileup.listSections_():
@@ -436,6 +442,7 @@ class SetupCMSSWPset(ScriptInterface):
                     else:
                         # Prevent each worker at a site from requesting the same file to find products
                         random.shuffle(inputTypeAttrib.fileNames)
+        return
 
     def _getPileupMixingModules(self):
         """
@@ -456,7 +463,6 @@ class SetupCMSSWPset(ScriptInterface):
             if value.type_() == "DataMixingModule":
                 dataMixModules.append(value)
         return mixModules, dataMixModules
-
 
     def _getPileupConfigFromJson(self):
         """
@@ -518,6 +524,47 @@ class SetupCMSSWPset(ScriptInterface):
                     self.process.dqmSaver.workflow = cms.untracked.string(datasetName)
         return
 
+    def handleRepackSettings(self):
+        """
+        _handleRepackSettings_
+
+        Disable lazy-download for repacking (no benefit on streamer files).
+        """
+        print "Hardcoding read/cache strategies for repack"
+        self.process.add_(
+            cms.Service("SiteLocalConfigService",
+                        overrideSourceCacheHintDir = cms.untracked.string("storage-only"),
+                        overrideSourceReadHint = cms.untracked.string("read-ahead-buffered"),
+                        overrideSourceTTreeCacheSize = cms.untracked.uint32(20*1024*1024)
+                        )
+            )
+        return
+
+    def handleSpecialCERNMergeSettings(self, funcName):
+        """
+        _handleSpecialCERNMergeSettings_
+
+        CERN has a 30ms latency between Meyrin and Wigner, which kills merge performance
+        Enable lazy-download for fastCloning for all CMSSW_7_5 jobs (currently off)
+        Enable lazy-download for all merge jobs
+        """
+        cmsswVersion = os.environ['CMSSW_VERSION']
+        if cmsswVersion.startswith("CMSSW_7_5") and False:
+            print "Using fastCloning/lazydownload"
+            self.process.add_(
+                cms.Service("SiteLocalConfigService",
+                            overrideSourceCloneCacheHintDir=cms.untracked.string("lazy-download")
+                            )
+                )
+        elif funcName == "merge":
+            print "Using lazydownload"
+            self.process.add_(
+                cms.Service("SiteLocalConfigService",
+                            overrideSourceCacheHintDir=cms.untracked.string("lazy-download")
+                            )
+                )
+        return
+
     def __call__(self):
         """
         _call_
@@ -541,6 +588,13 @@ class SetupCMSSWPset(ScriptInterface):
                 print "Error creating process for Config/DataProcessing:"
                 print traceback.format_exc()
                 raise ex
+
+            if funcName == "repack":
+                self.handleRepackSettings()
+
+            if socket.getfqdn().endswith("cern.ch"):
+                self.handleSpecialCERNMergeSettings(funcName)
+
         else:
             try:
                 self.loadPSet()
@@ -550,17 +604,6 @@ class SetupCMSSWPset(ScriptInterface):
                 raise ex
 
         self.fixupProcess()
-
-        # repack is only run at CERN and has a streaming format as input that should never use lazy-download
-        if funcName == "repack":
-            print "Hardcoding read/cache strategies for repack"
-            self.process.add_(
-                cms.Service("SiteLocalConfigService",
-                            overrideSourceCacheHintDir = cms.untracked.string("storage-only"),
-                            overrideSourceReadHint = cms.untracked.string("read-ahead-buffered"),
-                            overrideSourceTTreeCacheSize = cms.untracked.uint32(20*1024*1024)
-                            )
-                )
 
         try:
             if int(self.step.data.application.multicore.numberOfCores) > 1:
@@ -588,7 +631,7 @@ class SetupCMSSWPset(ScriptInterface):
         # If so - create an override TFC (like done in PA) and then modify thePSet accordingly
         if (hasattr(self.step.data.input, "chainedProcessing") and
             self.step.data.input.chainedProcessing):
-            self._handleChainedProcessing()
+            self.handleChainedProcessing()
         else:
             # Apply per job PSet Tweaks
             jobTweak = makeJobTweak(self.job)
@@ -597,7 +640,7 @@ class SetupCMSSWPset(ScriptInterface):
         # check for pileup settings presence, pileup support implementation
         # and if enabled, process pileup configuration / settings
         if hasattr(self.step.data, "pileup"):
-            self._handlePileup()
+            self.handlePileup()
 
         # Apply per output module PSet Tweaks
         cmsswStep = self.step.getTypeHelper()

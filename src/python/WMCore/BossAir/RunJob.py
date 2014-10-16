@@ -30,7 +30,7 @@ class RunJob(dict):
                  proxyPath = None, requestName = None, jobTime = None,
                  diskUsage = None, memoryUsage = None, taskPriority = None,
                  taskName = None, taskID = None, potentialSites = None,
-                 numberOfCores = 1,
+                 numberOfCores = 1, inputDataset = None, inputDatasetLocations = None
                 ):
         """
         Just make sure you init the dictionary fields.
@@ -73,6 +73,8 @@ class RunJob(dict):
         self.setdefault('taskName', taskName)
         self.setdefault('taskID', taskID)
         self.setdefault('potentialSites', potentialSites)
+        self.setdefault('inputDataset', inputDataset)
+        self.setdefault('inputDatasetLocations', inputDatasetLocations)
 
         return
 

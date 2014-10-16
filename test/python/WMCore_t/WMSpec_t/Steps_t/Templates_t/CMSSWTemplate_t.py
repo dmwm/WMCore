@@ -104,6 +104,9 @@ class CMSSWTemplateTest(unittest.TestCase):
 
 
         self.assertEqual(helper.getMulticoreEnabled(), False)
+        helper.setMulticoreCores(1)
+        self.assertEqual(helper.getNumberOfCores(), 1)
+        self.assertEqual(helper.getMulticoreEnabled(), False)
         helper.setMulticoreCores(8)
         self.assertEqual(helper.getNumberOfCores(), 8)
         self.assertEqual(helper.getMulticoreEnabled(), True)

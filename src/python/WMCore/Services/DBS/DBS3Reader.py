@@ -532,7 +532,7 @@ class DBS3Reader:
                 raise Exception(msg)
 
             for name, nodes in blocksInfo.iteritems():
-                valid_nodes = set(nodes) -= node_filter
+                valid_nodes = set(nodes) - node_filter
                 if valid_nodes:  # dont add if only 'UNKNOWN' or None then get with dbs
                     locations[name] = list(valid_nodes)
 
@@ -544,7 +544,8 @@ class DBS3Reader:
             blocksInfo = {}
             try:
                 for block in fileBlockNames:
-                    blocksInfo.update( {block: blockInfo[0]['origin_site_name'] for blockInfo in self.dbs.listBlockOrigin(block_name = block) if blockInfo} )
+                    for blockInfo in self.dbs.listBlockOrigin(block_name = block):
+                        blocksInfo.update( { block : blockInfo[0]['origin_site_name'] } )
             except dbsClientException, ex:
                 msg = "Error in DBS3Reader: self.dbs.listBlockOrigin(block_name=%s)\n" % fileBlockNames
                 msg += "%s\n" % formatEx3(ex)
@@ -561,7 +562,7 @@ class DBS3Reader:
                 else:
                     n = [node] if phedexNodes else [self.phedex.getNodeSE(node)]
 
-                valid_nodes = set(n) -= node_filter
+                valid_nodes = set(n) - node_filter
                 if valid_nodes:  # dont add if only 'UNKNOWN' or None
                     locations[name] = list(valid_nodes)
 

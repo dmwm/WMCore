@@ -49,7 +49,7 @@ class AddToBuffer(WMConnectionBase):
 
         if bufferFile.exists() == False:
             bufferFile.create()
-            bufferFile.setLocation(pnn=file['locations'], immediateSave = True)
+            bufferFile.setLocation(se=file['SEName'], immediateSave = True)
         else:
             bufferFile.load()
         # Lets add the file to DBS Buffer as well

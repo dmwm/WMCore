@@ -81,8 +81,8 @@ class File(WMObject, dict):
         """
         pass
 
-    def setLocation(self, pnn):
-        self['locations'] = self['locations'] | set(self.makelist(pnn))
+    def setLocation(self, se):
+        self['locations'] = self['locations'] | set(self.makelist(se))
 
     def __cmp__(self, rhs):
         """

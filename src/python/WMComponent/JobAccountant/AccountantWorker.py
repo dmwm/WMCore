@@ -381,7 +381,7 @@ class AccountantWorker(WMConnectionBase):
             dbsFile.addRun(newRun)
 
 
-        dbsFile.setLocation(pnn = list(jobReportFile["locations"])[0], immediateSave = False)
+        dbsFile.setLocation(se = list(jobReportFile["locations"])[0], immediateSave = False)
         self.dbsFilesToCreate.append(dbsFile)
         return
 
@@ -848,19 +848,19 @@ class AccountantWorker(WMConnectionBase):
         wmbsFile.update(file)
 
         if type(file["locations"]) == set:
-            pnn = list(file["locations"])[0]
+            seName = list(file["locations"])[0]
         elif type(file["locations"]) == list:
             if len(file['locations']) > 1:
                 logging.error("Have more then one location for a file in job %i" % (jobID))
                 logging.error("Choosing location %s" % (file['locations'][0]))
-            pnn = file["locations"][0]
+            seName = file["locations"][0]
         else:
-            pnn = file["locations"]
+            seName = file["locations"]
 
         wmbsFile["locations"] = set()
 
-        if pnn != None:
-            wmbsFile.setLocation(pnn = pnn, immediateSave = False)
+        if seName != None:
+            wmbsFile.setLocation(se = seName, immediateSave = False)
         wmbsFile['jid'] = jobID
         
         return wmbsFile

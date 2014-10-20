@@ -24,7 +24,6 @@ from WMCore.DataStructs.Run import Run
 from WMCore.FwkJobReport.FileInfo import FileInfo
 from WMCore.WMException           import WMException
 from WMCore.WMExceptions import WMJobErrorCodes
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 
 
 class FwkJobReportException(WMException):
@@ -439,15 +438,7 @@ class Report:
             fileRef.location = list(file["locations"])
             keyList.remove('locations')
         elif file.has_key("SEName"):
-            sename = file["SEName"]
-            locations = set()
-            if isinstance(sename, list):
-                phedex = PhEDEx()
-                for se in sename:
-                    locations.update(phedex.getNodeNames(se))
-            elif isinstance(sename, basestring):
-                locations.update(phedex.getNodeNames(sename))
-            fileRef.location = list(locations)
+            fileRef.location = [file["SEName"]]
 
         if file.has_key("LFN"):
             fileRef.lfn = file["LFN"]

@@ -111,8 +111,6 @@ class PromptRecoWorkloadFactory(StdBase):
 
         cmsswStepType = "CMSSW"
         taskType = "Processing"
-        if self.multicore:
-            taskType = "MultiProcessing"
 
         recoOutputs = []
         for dataTier in self.writeTiers:
@@ -156,7 +154,8 @@ class PromptRecoWorkloadFactory(StdBase):
                                                        splitArgs = {"max_merge_size": self.maxMergeSize,
                                                                     "min_merge_size": self.minMergeSize,
                                                                     "max_merge_events": self.maxMergeEvents},
-                                                       stepType = cmsswStepType)
+                                                       stepType = cmsswStepType,
+                                                       useMulticore = False)
                 if self.doLogCollect:
                     self.addLogCollectTask(alcaTask, taskName = "AlcaSkimLogCollect")
                 self.addCleanupTask(recoTask, recoOutLabel)
@@ -210,7 +209,7 @@ class PromptRecoWorkloadFactory(StdBase):
                                                   couchURL = self.couchURL, couchDBName = self.couchDBName,
                                                   configCacheUrl = self.configCacheUrl,
                                                   configDoc = configCacheID, splitAlgo = self.skimJobSplitAlgo,
-                                                  splitArgs = self.skimJobSplitArgs)
+                                                  splitArgs = self.skimJobSplitArgs, useMulticore = False)
             if self.doLogCollect:
                 self.addLogCollectTask(skimTask, taskName = "%sLogCollect" % promptSkim.SkimName)
 

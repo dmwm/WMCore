@@ -478,7 +478,7 @@ class DBS2Reader:
 
         return a dictionary:
         { blockName: {
-             "PhEDExNodeNames" : [<pnn list>],
+             "StorageElements" : [<se list>],
              "Files" : { LFN : Events },
              }
         }
@@ -486,7 +486,7 @@ class DBS2Reader:
 
         """
         result = { fileBlockName: {
-            "PhEDExNodeNames" : self.listFileBlockLocation(fileBlockName),
+            "StorageElements" : self.listFileBlockLocation(fileBlockName),
             "Files" : self.listFilesInBlock(fileBlockName),
             "IsOpen" : self.blockIsOpen(fileBlockName),
 
@@ -500,7 +500,7 @@ class DBS2Reader:
 
         return a dictionary:
         { blockName: {
-             "PhEDExNodeNames" : [<pnn list>],
+             "StorageElements" : [<se list>],
              "Files" : dictionaries representing each file
              }
         }
@@ -524,7 +524,7 @@ class DBS2Reader:
                 blockFile['ParentList'][idx] = parentFiles[parentFile['LogicalFileName']]
 
         result = { fileBlockName: {
-            "PhEDExNodeNames" : self.listFileBlockLocation(fileBlockName),
+            "StorageElements" : self.listFileBlockLocation(fileBlockName),
             "Files" : blockFiles,
             "IsOpen" : self.blockIsOpen(fileBlockName),
             }
@@ -538,7 +538,7 @@ class DBS2Reader:
         _getFiles_
 
         Returns a dictionary of block names for the dataset where
-        each block constists of a dictionary containing the PhEDExNodeNames
+        each block constists of a dictionary containing the StorageElements
         for that block and the files in that block by LFN mapped to NEvents
 
         """
@@ -557,7 +557,7 @@ class DBS2Reader:
         # api appears broken as doesn't return locations, as dbs2 lifetime limited
         # lookup locations here
         for block in blocks:
-            block['PhEDExNodeList'] = self.listFileBlockLocation(block['Name'])
+            block['StorageElementList'] = self.listFileBlockLocation(block['Name'])
         return blocks
 
 
@@ -596,7 +596,7 @@ class DBS2Reader:
 
         result = set()
         for block in blocks:
-            result |= set([x['Name'] for x in block['PhEDExNodeList']])
+            result |= set([x['Name'] for x in block['StorageElementList']])
 
         return list(result)
 

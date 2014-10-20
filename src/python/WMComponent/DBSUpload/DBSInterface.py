@@ -555,7 +555,7 @@ class DBSInterface:
                                  seName = block['location'])
 
             block['Path']               = dataset['Path']
-            block['PhEDExNodeList'] = block['location']
+            block['StorageElementList'] = block['location']
 
 
             # Now assemble the files

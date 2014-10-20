@@ -416,7 +416,7 @@ class SetupCMSSWPset(ScriptInterface):
                     eventsAvailable = 0
                     for blockName in sorted(pileupDict[pileupType].keys()):
                         blockDict = pileupDict[pileupType][blockName]
-                        if seLocalName in blockDict["PhEDExNodeNames"]:
+                        if seLocalName in blockDict["StorageElementNames"]:
                             eventsAvailable += int(blockDict.get('NumberOfEvents', 0))
                             for fileLFN in blockDict["FileList"]:
                                 inputTypeAttrib.fileNames.append(str(fileLFN))

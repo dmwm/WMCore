@@ -105,7 +105,7 @@ class DBS2Interface():
                                        seName = block['location'])
 
             block['Path'] = dataset['Path']
-            block['PhEDExNodeList'] = block['location']
+            block['StorageElementList'] = block['location']
 
             # Now assemble the files
             block['readyFiles'] = block['newFiles']

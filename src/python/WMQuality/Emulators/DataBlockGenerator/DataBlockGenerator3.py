@@ -49,7 +49,7 @@ class DataBlockGenerator3(object):
                            'NumberOfFiles' : GlobalParams.numOfFilesPerBlock(),
                            'NumberOfLumis' : GlobalParams.numOfLumisPerBlock(),
                            'Size' : size,
-                           'PhEDExNodeList' : self.getLocation(blockName),
+                           'StorageElementList' : self.getLocation(blockName),
                            'Parents' : ()}
                            )
         return blocks

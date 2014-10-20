@@ -119,7 +119,7 @@ class Feeder(FeederImpl):
         # process all file blocks
         for fileBlock in blockList:
 
-            seList = blocks[fileBlock]['PhEDExNodeNames']
+            seList = blocks[fileBlock]['StorageElements']
 
             # add files for non blocked SE
             if seList is None or seList == []:

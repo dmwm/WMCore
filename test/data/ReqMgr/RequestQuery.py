@@ -10,7 +10,7 @@ providing information for the bookeeping database
 """
 import os, re, traceback
 from dbs.apis.dbsClient import DbsApi
-from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx 
 from mechanize import Browser
 from bs4 import BeautifulSoup
 
@@ -30,7 +30,7 @@ class RequestQuery:
         self.config = config
         
         # Initialise connections
-        self.mySiteDB = SiteDBJSON()
+        self.phedex = PhEDEx({"endpoint":"https://cmsweb.cern.ch/phedex/datasvc/json/prod/"}, "json")
         self.dbsPhys01 = DbsApi(url = dbs_base_url+"phys01/DBSReader/")
         self.dbsPhys02 = DbsApi(url = dbs_base_url+"phys02/DBSReader/")
         self.dbsPhys03 = DbsApi(url = dbs_base_url+"phys03/DBSReader/")
@@ -198,6 +198,20 @@ class RequestQuery:
                 siteNames.append(node['name']) 
         
         return siteNames, seList
+    
+    def phEDExNodetocmsName(self, nodeList):
+        """
+        Convert PhEDEx node name list to cms names list 
+        """
+        names = []
+        for node in nodeList:
+            name = node.replace('_MSS',
+                                '').replace('_Disk',
+                                    '').replace('_Buffer',
+                                        '').replace('_Export', '')
+            if name not in names:
+                names.append(name)
+        return names
     
     def setGlobalTagFromOrigin(self, dbs_url,input_dataset):
         """
@@ -425,8 +439,8 @@ class RequestQuery:
                 
                 # Get dataset site info:
                 phedex_map, se_names = self.getDatasetOriginSites(dbs_url,input_dataset)
-                sites = set([self.mySiteDB.PNNtoPSN(node) for node in phedex_map])
-
+                sites = self.phEDExNodetocmsName(phedex_map)
+                
                 infoDict = {}
                 # Build store results json
                 # First add all the defaults values

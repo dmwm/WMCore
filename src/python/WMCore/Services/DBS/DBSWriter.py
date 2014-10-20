@@ -564,10 +564,10 @@ class DBSWriter:
             # // Convert each file into a DBS File object
             #//
             seName = None
-            if outFile.has_key("locations"):
-                if outFile['locations'] :
-                    pnn = outFile['locations']
-                    logging.debug("PNN associated to file is: %s"%pnn)
+            if outFile.has_key("SEName"):
+                if outFile['SEName'] :
+                    seName = outFile['SEName']
+                    logging.debug("SEname associated to file is: %s"%seName)
 ## remove the fallback to site se-name if no SE is associated to File
 ## because it's likely that there is some stage out problem if there
 ## is no SEName associated to the file.
@@ -578,7 +578,7 @@ class DBSWriter:
 #                   logging.debug("site SEname: %s"%seName)
             if not seName:
                 msg = "Error in DBSWriter.insertFiles\n"
-                msg += "No PNN associated to files in FrameWorkJobReport for "
+                msg += "No SEname associated to files in FrameWorkJobReport for "
 #                msg += "No SEname found in FrameWorkJobReport for "
                 msg += "==> JobSpecId: %s"%fwkJobRep.jobSpecId
                 msg += " Workflow: %s"%fwkJobRep.workflowSpecId

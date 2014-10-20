@@ -397,7 +397,7 @@ class File(WMBSBase, WMFile):
         self.commitTransaction(existingTransaction)
         return
 
-    def setLocation(self, pnn, immediateSave = True):
+    def setLocation(self, se, immediateSave = True):
         """
         Sets the location of a file. If immediateSave is True, commit change to
         the DB immediately, otherwise queue for addition when save() is called.
@@ -405,12 +405,12 @@ class File(WMBSBase, WMFile):
         locations could be added - confusing when file requires locations on its
         first creation (breaks transaction model in Fileset commits etc)
         """
-        if isinstance(pnn, str):
-            self['newlocations'].add(pnn)
-            self['locations'].add(pnn)
+        if isinstance(se, str):
+            self['newlocations'].add(se)
+            self['locations'].add(se)
         else:
-            self['newlocations'].update(pnn)
-            self['locations'].update(pnn)
+            self['newlocations'].update(se)
+            self['locations'].update(se)
 
         if immediateSave:
             self.updateLocations()
@@ -472,13 +472,13 @@ class File(WMBSBase, WMFile):
 
         if type(file["locations"]) == set:
             s = file["locations"].copy()
-            pnn = s.pop()
+            seName = s.pop()
         elif type(file["locations"]) == list:
-            pnn = file["locations"][0]
+            seName = file["locations"][0]
         else:
-            pnn = file["locations"]
+            seName = file["locations"]
 
-        self.setLocation(pnn = pnn, immediateSave = False)
+        self.setLocation(se = seName, immediateSave = False)
 
         self.create()
 
@@ -507,7 +507,7 @@ class File(WMBSBase, WMFile):
             file.addRun(run)
 
         for location in self['locations']:
-            file.setLocation(pnn = location)
+            file.setLocation(se = location)
 
         return file
 

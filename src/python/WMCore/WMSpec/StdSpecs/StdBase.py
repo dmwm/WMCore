@@ -220,7 +220,7 @@ class StdBase(object):
                             userSandbox = None, userFiles = [], primarySubType = None,
                             forceMerged = False, forceUnmerged = False,
                             configCacheUrl = None, timePerEvent = None, memoryReq = None,
-                            sizePerEvent = None):
+                            sizePerEvent = None, useMulticore = True):
         """
         _setupProcessingTask_
 
@@ -300,7 +300,7 @@ class StdBase(object):
         procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
         procTaskStageHelper = procTaskStageOut.getTypeHelper()
 
-        if self.multicore:
+        if self.multicore and useMulticore:
             # if multicore, poke in the number of cores setting
             procTaskCmsswHelper.setMulticoreCores(self.multicoreNCores)
 

@@ -215,12 +215,12 @@ class AccountantWorker(WMConnectionBase):
 
         return True
 
-    def isTaskExistInFWJR(self, jobReport):
+    def isTaskExistInFWJR(self, jobReport, jobStatus):
         """
         TODO: fix it, if it doesn't exist
         """
         if not jobReport.getTaskName():
-            msg = "Report to developers, Investigate currupted fwjr for job id %s" % jobReport.getJobID()
+            msg = "Report to developers, Investigate currupted fwjr for %s job id %s" % (jobStatus, jobReport.getJobID())
             raise AccountantWorkerException(msg)
         
     def __call__(self, parameters):
@@ -241,14 +241,13 @@ class AccountantWorker(WMConnectionBase):
             fwkJobReport.setJobID(job['id'])
             jobSuccess = None
             
-            self.isTaskExistInFWJR(fwkJobReport)
-
             if not self.didJobSucceed(fwkJobReport):
                 logging.error("I have a bad jobReport for %i" %(job['id']))
                 self.handleFailed(jobID = job["id"],
                                   fwkJobReport = fwkJobReport)
                 jobSuccess = False
             else:
+                self.isTaskExistInFWJR(fwkJobReport, "success")
                 self.handleSuccessful(jobID = job["id"],
                                       fwkJobReport = fwkJobReport,
                                       fwkJobReportPath = job['fwjr_path'])
@@ -578,7 +577,11 @@ class AccountantWorker(WMConnectionBase):
                                                 transaction = self.existingTransaction())
 
         fileList = fwkJobReport.getAllFilesFromStep(step = 'logArch1')
-
+        
+        if len(fileList) > 0:
+            # Need task name info to proceed
+            self.isTaskExistInFWJR(fwkJobReport, "failed")
+            
         for fwjrFile in fileList:
             wmbsFile = self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"],
                                           jobID = jobID, task = fwkJobReport.getTaskName())

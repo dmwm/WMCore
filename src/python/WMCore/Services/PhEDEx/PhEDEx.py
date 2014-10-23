@@ -475,7 +475,7 @@ class PhEDEx(Service):
                                 injectedFiles.append(fileInfo['lfn'])
         return injectedFiles
     
-    def getReplicaSEForBlocks(self, phedexNodes=False, **kwargs):
+    def getReplicaSEForBlocks(self, phedexNodes=True, **kwargs):
         """
         _blockreplicasSE_
 

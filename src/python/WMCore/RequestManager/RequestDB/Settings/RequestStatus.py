@@ -60,4 +60,15 @@ NextStatus = {
  "aborted-archived":[],
  "rejected-archived":[]
 }
-  
+
+ACTIVE_STATUS = ["assignment-approved",
+                 "assigned",
+                 "ops-hold",
+                 "negotiating",
+                 "acquired",
+                 "running",
+                 "running-open",
+                 "running-closed",
+                 "failed",
+                 "completed",
+                 "closed-out"]

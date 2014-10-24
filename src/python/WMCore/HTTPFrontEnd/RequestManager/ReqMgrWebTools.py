@@ -289,7 +289,7 @@ def prepareForTable(request):
     return request
 
 def requestsWithStatus(status):
-    requestIds = theseIds = ListRequests.listRequestsByStatus(status).values()
+    requestIds = ListRequests.listRequestsByStatus(status).values()
     requests = []
     for requestId in requestIds:
         request = GetRequest.getRequest(requestId)

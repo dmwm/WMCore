@@ -193,43 +193,43 @@ class Assign(WebAPI):
         procString = ""
         dashboardActivity = None
         badRequestNames = []
-        goodRequests = []
+        goodRequests = allRequests
         reqMergedBase = None
         reqUnmergedBase = None
         blockCloseMaxWaitTime = 66400
         blockCloseMaxFiles = 500
         blockCloseMaxEvents = 250000000
         blockCloseMaxSize = 5000000000000
-        for request in allRequests:
-            # make sure there's a workload attached
-            try:
-                helper = Utilities.loadWorkload(request)
-            except Exception, ex:
-                logging.error("Assign error: %s " % str(ex))
-                badRequestNames.append(request["RequestName"])
-            else:
-                # get defaults from the first good one
-                if not goodRequests:
-                    # forget it if it fails.
-                    try:
-                        if helper.getAcquisitionEra() != None:
-                            acqEra = helper.getAcquisitionEra()
-                        if helper.getProcessingVersion() != None:
-                            procVer = helper.getProcessingVersion()
-                        if helper.getProcessingString() != None:
-                            procString = helper.getProcessingString()
-                        blockCloseMaxWaitTime = helper.getBlockCloseMaxWaitTime()
-                        blockCloseMaxFiles = helper.getBlockCloseMaxFiles()
-                        blockCloseMaxEvents = helper.getBlockCloseMaxEvents()
-                        blockCloseMaxSize = helper.getBlockCloseMaxSize()
-                        (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
-                        dashboardActivity = helper.getDashboardActivity()
-                        goodRequests.append(request)
-                    except Exception, ex:
-                        logging.error("Assign error: %s " % str(ex))
-                        badRequestNames.append(request["RequestName"])
-                else:
-                    goodRequests.append(request)
+#         for request in allRequests:
+#             # make sure there's a workload attached
+#             try:
+#                 helper = Utilities.loadWorkload(request)
+#             except Exception, ex:
+#                 logging.error("Assign error: %s " % str(ex))
+#                 badRequestNames.append(request["RequestName"])
+#             else:
+#                 # get defaults from the first good one
+#                 if not goodRequests:
+#                     # forget it if it fails.
+#                     try:
+#                         if helper.getAcquisitionEra() != None:
+#                             acqEra = helper.getAcquisitionEra()
+#                         if helper.getProcessingVersion() != None:
+#                             procVer = helper.getProcessingVersion()
+#                         if helper.getProcessingString() != None:
+#                             procString = helper.getProcessingString()
+#                         blockCloseMaxWaitTime = helper.getBlockCloseMaxWaitTime()
+#                         blockCloseMaxFiles = helper.getBlockCloseMaxFiles()
+#                         blockCloseMaxEvents = helper.getBlockCloseMaxEvents()
+#                         blockCloseMaxSize = helper.getBlockCloseMaxSize()
+#                         (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
+#                         dashboardActivity = helper.getDashboardActivity()
+#                         goodRequests.append(request)
+#                     except Exception, ex:
+#                         logging.error("Assign error: %s " % str(ex))
+#                         badRequestNames.append(request["RequestName"])
+#                 else:
+#                     goodRequests.append(request)
 
         return self.templatepage("Assign", all = all, requests = goodRequests, teams = teams,
                                  assignments = [], sites = self.sites,

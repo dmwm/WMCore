@@ -43,7 +43,7 @@ def biggestUpdate(field, request):
     return "%i%%" % biggest
 
 class ReqMgrBrowser(WebAPI):
-    """ For browsing and modifying requests """
+    """ For browsing and modifying requests: Disabled use WMStats instead """
     def __init__(self, config):
         WebAPI.__init__(self, config)
         # Take a guess
@@ -108,6 +108,7 @@ class ReqMgrBrowser(WebAPI):
     def index(self):
         requests = GetRequest.getRequests()
         tableBody = self.drawRequests(requests)
+        #tableBody = []
         return self.templatepage("ReqMgrBrowser", yuiroot=self.yuiroot,
                                  fields=self.fields, tableBody=tableBody)
         

@@ -103,6 +103,22 @@ REQUEST_STATUS_TRANSITION = [
     },
 ]
 
+ACTIVE_STATUS = ["new",
+                 "assignment-approved",
+                 "assigned",
+                 "ops-hold",
+                 "negotiating",
+                 "acquired",
+                 "running",
+                 "running-open",
+                 "running-closed",
+                 "failed",
+                 "completed",
+                 "closed-out",
+                 "announced",
+                 "aborted",
+                 "rejected"]
+
 # each item from STATUS_TRANSITION is a dictionary with 1 item, the key
 # is name of the status
 REQUEST_STATUS_LIST = [s.keys()[0] for s in REQUEST_STATUS_TRANSITION]

@@ -486,8 +486,7 @@ class SetupCMSSWPset(ScriptInterface):
         producers.update(self.process.producers)
         for producer in producers:
             if hasattr(producers[producer], "nEvents"):
-                producers[producer].nEvents = cms.uint32(
-                                        self.process.maxEvents.input.value())
+                producers[producer].nEvents = self.process.maxEvents.input.value()
 
     def handleDQMFileSaver(self):
         """

@@ -5,6 +5,7 @@ Unittest for ReqMgr utilities
 
 import unittest
 from WMCore.HTTPFrontEnd.RequestManager import ReqMgrWebTools 
+from WMCore.RequestManager.RequestMaker.CheckIn import RequestCheckInError
 
 
 class ReqMgrWebToolsTest(unittest.TestCase):
@@ -54,7 +55,15 @@ class ReqMgrWebToolsTest(unittest.TestCase):
         for ver in result:
             self.assertTrue('CMSSW' in ver)
 
-
-
+    def testCheckinRaiseError(self):
+        
+        try:
+            try:
+                raise RequestCheckInError("Error in Request check-in: blah")
+            except RequestCheckInError, ex:
+                raise ex
+        except RequestCheckInError, ex:
+            print str(ex)
+            
 if __name__=='__main__':
     unittest.main()

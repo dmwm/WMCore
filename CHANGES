@@ -1,3 +1,77 @@
+1.0.0 to 1.0.1.pre3:
+  - Merge pull request #5430 from ticoann/apply_erl_patch
+  - apply erlang patch
+  - 1.0.1.pre2
+  - Merge pull request #5429 from ticoann/fix_when_workflow_missing_in_stat_summary
+  - Merge pull request #5427 from ticoann/fix_http400_error
+  - report 400 error
+  - Merge pull request #5423 from ticoann/fix_reqmgr_query
+  - Merge pull request #5425 from amaltaro/nEvents-noType
+  - Merge pull request #5422 from ticoann/ignore_failed_job_missing_record
+  - change to get only active request
+  - do not enforce data type for producer nEvents
+  - check task field more finely
+  - Merge pull request #5419 from hufnagel/multicore-optional
+  - make multicore in setupProcessingTask optional
+  - Merge pull request #5418 from dmwm/revert-5358-listFileBlockLocation_phedex_migration
+  - Merge pull request #5417 from dmwm/revert-5359-sitedb_pnn2psn_api
+  - Merge pull request #5416 from dmwm/revert-5363-remove_phedexnodetocmsname
+  - Merge pull request #5415 from dmwm/revert-5379-FillPNNinFWJR
+  - Revert "move listFileBlockLocation to using phedex node names by default"
+  - Revert "migrate from phEDExNodetocmsName to PNNtoPSN"
+  - Revert "Remove phedexnodetocmsname"
+  - Merge pull request #5414 from dmwm/revert-5413-db3reader-typo
+  - Revert "fix problems in DBS3Reader, fixed #5412"
+  - Revert "filling FWJR with PNN"
+  - Merge pull request #5413 from hufnagel/db3reader-typo
+  - fix problems in DBS3Reader, fixed #5412
+  - Merge pull request #5379 from alexanderrichards/FillPNNinFWJR
+  - Merge pull request #5363 from alexanderrichards/remove_phedexnodetocmsname
+  - Merge pull request #5359 from alexanderrichards/sitedb_pnn2psn_api
+  - Merge pull request #5388 from ericvaandering/mcm_datamining
+  - Merge pull request #5358 from alexanderrichards/listFileBlockLocation_phedex_migration
+  - Merge pull request #5400 from ericvaandering/fix_psetvfariable
+  - Merge pull request #5404 from ericvaandering/mcm_view
+  - Merge pull request #5392 from yuyiguo/DBFormatter
+  - handle different cursors for SQLAlchemy 0.5.* and 0.9.6
+  - Merge pull request #5407 from ticoann/add_unittest_multicore
+  - add unittest
+  - Merge pull request #5406 from amaltaro/multi-condition
+  - change multicore condition - take 2
+  - Merge pull request #5397 from amaltaro/feff-takchain
+  - move listFileBlockLocation to using phedex node names by default
+  - Merge pull request #5405 from amaltaro/fix-numberOfCores
+  - fix number of cores for multicore
+  - Add McM summary view for McM request date, # of events
+  - Change pset to self.process
+  - Merge pull request #5394 from ticoann/tier0_monitor
+  - fix unittest for T0_Feeder
+  - separate tier0 request db and temporary db
+  - fixes filterEfficiency for TaskChain requests
+  - Merge pull request #5389 from ticoann/tier0_monitor
+  - tier0 monitor upgrade
+  - Add McM service calls and config to data mining
+  - Merge pull request #5361 from ericvaandering/mcm_service
+  - Merge pull request #5362 from hufnagel/merge-no-sitelists
+  - Merge pull request #5376 from ericvaandering/jdl_mt_settings
+  - Merge pull request #5375 from ericvaandering/propagate_mt_settings
+  - Merge pull request #5380 from amaltaro/updt-webrequest-tmpl
+  - Merge pull request #5381 from amaltaro/remove-dbs2-url
+  - Merge pull request #5385 from ticoann/fix_missing_task_in_fwjr
+  - Merge pull request #5384 from amaltaro/fix-jobAccou
+  - add function for manual intervention
+  - properly handle None in JobAccountant
+  - clean up of dbs2 urls
+  - Fix typos and dbs url in web request template
+  - filling FWJR with PNN
+  - Modify condor plugins for new multithreaded and move multithreaded JDL to per job customization
+  - Propagate multicore settings to job plugins and add strings to test code
+  - Add an McM service and unit test
+  - This is temp fix for when document is missing
+  - removing phedexNodetocmsName from WMCore including unittests and using PNNtoPSN instead in unittests
+  - don't pass sitelists to merge jobsplitter
+  - migrate from phEDExNodetocmsName to PNNtoPSN
+
 1.0.0 to 1.0.1.pre2:
   - Merge pull request #5429 from ticoann/fix_when_workflow_missing_in_stat_summary
   - Merge pull request #5427 from ticoann/fix_http400_error

@@ -150,6 +150,7 @@ dependencies = {'wmc-rest':{
                         },
                 'reqmon':{
                         'statics': ['src/couchapps/WMStats+',
+                                    'src/couchapps/WMStatsErl+',
                                     'src/couchapps/WorkloadSummary+',
                                     'src/couchapps/T0Request+'],
                         },

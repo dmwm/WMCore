@@ -64,7 +64,7 @@ class StatusPoller(BaseWorkerThread):
         try:
             self.checkStatus()
         except WMException, ex:
-            if getattr(myThread.transaction, None):
+            if getattr(myThread, 'transaction', None):
                 myThread.transaction.rollbackForError()
             self.sendAlert(6, msg = str(ex))
             raise

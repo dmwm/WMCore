@@ -179,7 +179,7 @@ class Tier0Plugin(PluginInterface):
 
                 workflowStatus = self.determineCurrentStatus(workflowName, workflowType, completedTaskList)
                 if workflowStatus is not None:
-                    localSummaryCouchDB.updateRequestStatus(workflowName, workflowStatus)
+                    centralRequestCouchDB.updateRequestStatus(workflowName, workflowStatus)
 
             except Exception, ex:
                 # Plugins are meant to be not-critical

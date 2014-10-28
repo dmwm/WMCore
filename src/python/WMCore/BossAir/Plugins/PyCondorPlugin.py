@@ -735,34 +735,32 @@ class PyCondorPlugin(BasePlugin):
         for job in jobs:
             jobID = job['id']
             jobAd = jobInfo.get(jobID)
-            if not jobAd :
+            if not jobAd:
                 logging.error("No jobAd received for jobID %i"%jobID)
-            else :
+            else:
                 desiredSites = jobAd.get('DESIRED_Sites').split(', ')
                 extDesiredSites = jobAd.get('ExtDESIRED_Sites').split(', ')
-                if excludeSite :
+                if excludeSite:
                     #Remove siteName from DESIRED_Sites if job has it
                     if siteName in desiredSites and siteName in extDesiredSites:
                         usi = desiredSites
-                        if len(usi) > 1 :
+                        if len(usi) > 1:
                             usi.remove(siteName)
-                            usi = usi.__str__().lstrip('[').rstrip(']')
-                            usi = filter(lambda c: c not in "\'", usi)
+                            usi = ','.join(map(str, usi))
                             sd.edit('WMAgent_JobID == %i'%jobID, "DESIRED_Sites", classad.ExprTree('"%s"'% usi))
                         else:
                             jobtokill.append(job)
-                    else :
+                    else:
                         #If job doesn't have the siteName in the siteList, just ignore it
                         logging.debug("Cannot find siteName %s in the sitelist" % siteName)
-                else :
+                else:
                     #Add siteName to DESIRED_Sites if ExtDESIRED_Sites has it (moving back to Normal)
                     if siteName not in desiredSites and siteName in extDesiredSites:
                         usi = desiredSites
                         usi.append(siteName)
-                        usi = usi.__str__().lstrip('[').rstrip(']')
-                        usi = filter(lambda c: c not in "\'", usi)
+                        usi = ','.join(map(str, usi))
                         sd.edit('WMAgent_JobID == %i'%jobID, "DESIRED_Sites", classad.ExprTree('"%s"'% usi))
-                    else :
+                    else:
                         #If job doesn't have the siteName in the siteList, just ignore it
                         logging.debug("Cannot find siteName %s in the sitelist" % siteName)
 
@@ -966,15 +964,13 @@ class PyCondorPlugin(BasePlugin):
         if self.useGSite:
             jdl.append('+GLIDEIN_CMSSite = \"%s\"\n' % (jobCE))
         if self.submitWMSMode and len(job.get('possibleSites', [])) > 0:
-            strg = list(job.get('possibleSites')).__str__().lstrip('[').rstrip(']')
-            strg = filter(lambda c: c not in "\'", strg)
+            strg = ','.join(map(str, job.get('possibleSites')))
             jdl.append('+DESIRED_Sites = \"%s\"\n' % strg)
         else:
             jdl.append('+DESIRED_Sites = \"%s\"\n' %(jobCE))
 
         if self.submitWMSMode and len(job.get('potentialSites', [])) > 0:
-            strg = list(job.get('potentialSites')).__str__().lstrip('[').rstrip(']')
-            strg = filter(lambda c: c not in "\'", strg)
+            strg = ','.join(map(str, job.get('potentialSites')))
             jdl.append('+ExtDESIRED_Sites = \"%s\"\n' % strg)
         else:
             jdl.append('+ExtDESIRED_Sites = \"%s\"\n' %(jobCE))

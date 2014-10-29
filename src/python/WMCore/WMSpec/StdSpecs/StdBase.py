@@ -636,19 +636,17 @@ class StdBase(object):
                 harvestTaskCmsswHelper.setConfigCache(self.couchURL, self.dqmConfigCacheID, self.couchDBName)
             harvestTaskCmsswHelper.setDatasetName(datasetName)
         else:
+            scenarioArgs = { 'globalTag' : self.globalTag,
+                             'datasetName' : datasetName,
+                             'runNumber' : self.runNumber,
+                             'dqmSeq' : self.dqmSequences }
+            if self.globalTagConnect:
+                scenarioArgs['globalTagConnect'] = self.globalTagConnect
             if getattr(parentOutputModule, "dataTier") == "DQMIO":
-                harvestTaskCmsswHelper.setDataProcessingConfig(self.procScenario, "dqmHarvesting",
-                                                               globalTag = self.globalTag,
-                                                               datasetName = datasetName,
-                                                               runNumber = self.runNumber,
-                                                               dqmSeq = self.dqmSequences,
-                                                               newDQMIO = True)
-            else:
-                harvestTaskCmsswHelper.setDataProcessingConfig(self.procScenario, "dqmHarvesting",
-                                                               globalTag = self.globalTag,
-                                                               datasetName = datasetName,
-                                                               runNumber = self.runNumber,
-                                                               dqmSeq = self.dqmSequences)
+                scenarioArgs['newDQMIO'] = True
+            harvestTaskCmsswHelper.setDataProcessingConfig(self.procScenario,
+                                                           "dqmHarvesting",
+                                                           **scenarioArgs)
 
         harvestTaskUploadHelper = harvestTaskUpload.getTypeHelper()
         harvestTaskUploadHelper.setProxyFile(uploadProxy)
@@ -844,6 +842,12 @@ class StdBase(object):
                      "CMSSWVersion" : {"default" : "CMSSW_5_3_7", "validate" : cmsswversion,
                                        "optional" : False, "attr" : "frameworkVersion"},
                      "ScramArch" : {"default" : "slc5_amd64_gcc462", "optional" : False},
+                     "GlobalTag" : {"default" : None, "type" : str,
+                                    "optional" : True, "validate" : None,
+                                    "attr" : "globalTag", "null" : True},
+                     "GlobalTagConnect" : {"default" : None, "type" : str,
+                                           "optional" : True, "validate" : None,
+                                           "attr" : "globalTagConnect", "null" : True},
                      "ProcessingVersion" : {"default" : 0, "attr" : "processingVersion",
                                             "type" : int},
                      "ProcessingString" : {"default" : None, "attr" : "processingString",

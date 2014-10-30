@@ -148,7 +148,7 @@ WMStats.Globals = function($){
         T0_COUCHAPP_DESIGN: "T0Request",
         T0_COUCHDB_NAME: "t0_request",
         CONFIG: null, //this will be set when WMStats.Couch.loadConfig is called. just place holder or have default config
-        INIT_DB: "WMStats",
+        INIT_DB: "ReqMgr",
         loadScript: function (url, success) {
                         $.ajax({async: false, url: url, dataType: 'script', success: success});
             },

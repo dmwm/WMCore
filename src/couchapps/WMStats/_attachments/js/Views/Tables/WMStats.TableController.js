@@ -51,17 +51,9 @@
         },
         
         populateJobSummary: function(currentElement){
-            // empty job detail and resubmission window first
-            vm.JobDetail.keys(null, true);
-            $(vm.JobDetail.id()).empty();
-            $(vm.Resubmission.id()).empty();
             
             var nTds = $('td', currentElement);
             vm.JobView.requestName($(nTds[2]).text());
-            $(WMStats.Globals.Event).triggerHandler(E.AJAX_LOADING_START);
-            /* if job view doesn't need to be refreshed  call
-             * vm.JobView.retrieve() and change vm.JobView.propagate function
-             */
         },
         
         populateRequestDetail: function(currentElement){

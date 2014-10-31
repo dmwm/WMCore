@@ -72,22 +72,25 @@ WMStats.TaskSummaryTable = function (data, containerDiv) {
                               }
             },
             { "sDefaultContent": 0,
-              "sTitle": "event progress", 
+              "sTitle": "paused", 
               "mDataProp": function ( source, type, val ) {
-                           //TODO this might not needed since input_events should be number not string. (for the legacy record)
-                           var inputEvents = Number(_activePageData.getKeyValue(taskData.getWorkflow(), "input_events", 1)) || 1;
+                                var taskSummary = taskData.getSummary(source[0]);
+                                var jobs = taskSummary.getTotalPaused();
+                                return jobs;
+                              }
+            },
+            { "sDefaultContent": 0,
+              "sTitle": "events processed", 
+              "mDataProp": function ( source, type, val ) {
                            var outputEvents = taskData.getSummary(source[0]).getAvgEvents() || 0;
-                           var result = (outputEvents / inputEvents) * 100;
-                           return (result.toFixed(1) + "%");
+                           return outputEvents;
                           }
             },
             { "sDefaultContent": 0,
-              "sTitle": "lumi progress", 
+              "sTitle": "lumi processed", 
               "mDataProp": function ( source, type, val ) {
-                           var inputLumis = Number(_activePageData.getKeyValue(taskData.getWorkflow(), "input_lumis", 1)) || 1;
                            var outputLumis = taskData.getSummary(source[0]).getAvgLumis();
-                           var result = (outputLumis / inputLumis) * 100;
-                           return (result.toFixed(1) + "%");
+                           return outputLumis;
                           }
             }
          ],
@@ -107,12 +110,18 @@ WMStats.TaskSummaryTable = function (data, containerDiv) {
 
 (function() {
     var vm = WMStats.ViewModel;
+    var E = WMStats.CustomEvents;
     
     vm.JobView.subscribe("requestName", function() {
-        // need to create the lower level view
+        // empty job detail and resubmission window first
+        vm.JobDetail.keys(null, true);
+        $(vm.JobDetail.id()).empty();
+        $(vm.Resubmission.id()).empty();
+ 	    // need to create the lower level view
         var divSelector = vm.JobView.id() + " div.task_summary";
         var tasks = WMStats.ActiveRequestModel.getData().getTasks(vm.JobView.requestName());
         WMStats.TaskSummaryTable(tasks, divSelector);
+        $(WMStats.Globals.Event).triggerHandler(E.AJAX_LOADING_START);
     });
     
 })();

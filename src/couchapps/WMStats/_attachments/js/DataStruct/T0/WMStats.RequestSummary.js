@@ -16,7 +16,9 @@ WMStats.Requests = function(noFilterFlag) {
         var alertRequests = {};
         alertRequests['configError'] = [];
         alertRequests['siteError'] = [];
-        alertRequests['paused'] = [];
+        alertRequests['cPaused'] = [];
+        alertRequests['sPaused'] = [];
+        alertRequests['jPaused'] = [];
         var ignoreStatus = ["closed-out",
                             "announced",
                             "aborted",
@@ -29,16 +31,25 @@ WMStats.Requests = function(noFilterFlag) {
             var paused = reqSummary.getTotalPaused();
             var failure = reqSummary.getTotalFailure();
             var success = reqSummary.getJobStatus("success");
-            var totalFailed = cooloff + paused + failure;
-            if ( totalFailed > 0) {
+            var sPaused = reqSummary.getJobStatus("paused.submit");
+            var jPaused = reqSummary.getJobStatus("paused.job");
+            var cPaused = reqSummary.getJobStatus("paused.create");
+            var totalFailed = failure;
+            if (cPaused > 0){
+            	alertRequests['cPaused'].push(this.getData(workflow));
+            } else if (sPaused > 0){
+            	alertRequests['sPaused'].push(this.getData(workflow));
+            } else if (jPaused > 0){
+            	alertRequests['jPaused'].push(this.getData(workflow));
+            }
+            /* 
+            else if ( totalFailed > 0) {
                 if (success === 0) {
                     alertRequests['configError'].push(this.getData(workflow));
                 } else if ((totalFailed / (totalFailed + success)) > 0.85) {
                     alertRequests['siteError'].push(this.getData(workflow));
                 }
-            } else if (paused > 0){
-            	alertRequests['paused'].push(this.getData(workflow));
-            }
+            }*/
         }
         return alertRequests;
     };

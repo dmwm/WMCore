@@ -14,6 +14,9 @@ WMStats.RequestAlertGUI = function (requestData, containerDiv) {
                 var cooloff = summary.getTotalCooloff();
                 var failure =summary.getTotalFailure();
                 var success = summary.getJobStatus("success");
+                var sPaused = summary.getJobStatus("paused.submit");
+                var jPaused = summary.getJobStatus("paused.job");
+                var cPaused = summary.getJobStatus("paused.create");
                 var lastState = errorArray[i].getLastStateAndTime();
                 var lastStatus = "N/A";
                 var lastUpdate = "N/A";
@@ -23,6 +26,8 @@ WMStats.RequestAlertGUI = function (requestData, containerDiv) {
                 } 
                 htmlList += ('<li> <a class="requestAlert">' + workflow + "</a>: status:" + 
                              lastStatus + " (" + lastUpdate + "), cooloff " + cooloff + 
+                             " submit paused:" + sPaused + " job paused:" + jPaused + 
+                             " create paused:" + cPaused + 
                              " failure:" + failure + " success:" + success +
                              " running:" + running + " pending:" + pending + '</li>');
             }
@@ -48,14 +53,14 @@ WMStats.RequestAlertGUI = function (requestData, containerDiv) {
     }
     
     function alertSort(a, b) {
-        var aRun = a.requests[a.key].run;
-        var bRun = b.requests[b.key].run;
+        var aRun = a.run;
+        var bRun = b.run;
         if (aRun == bRun) {
-            var aType = mapType(a.key);
-            var bType = mapType(b.key);
+            var aType = mapType(a.workflow);
+            var bType = mapType(b.workflow);
             if ( aType == bType){
-                var aJobs = a.summary.getTotalPaused() + a.summary.getTotalCooloff();
-                var bJobs = b.summary.getTotalPaused() + b.summary.getTotalCooloff();
+                var aJobs = a.getSummary().getTotalPaused() + a.getSummary().getTotalCooloff();
+                var bJobs = b.getSummary().getTotalPaused() + b.getSummary().getTotalCooloff();
                 return bJobs - aJobs;
             } else {
                 return aType - bType;
@@ -67,18 +72,31 @@ WMStats.RequestAlertGUI = function (requestData, containerDiv) {
     
     var alertRequests = requestData.getRequestAlerts();
     var errorFlag = false;
-    if (alertRequests.length > 0) {
-        alertRequests = alertRequests.sort(alertSort);
-    };    
-    var configError = alertRequests.configError;
-    var siteError = alertRequests.siteError;
-    var paused = alertRequests.paused;
-    
+
     var htmlList = "";
     
-    displayAlert(configError, "Config Error");
-    displayAlert(siteError, "Site Error");
-    displayAlert(paused, "paused");
+    if (alertRequests.cPaused.length > 0) {
+        var paused = alertRequests.cPaused.sort(alertSort);
+        displayAlert(paused, "create paused");
+    };
+    if (alertRequests.sPaused.length > 0) {
+        var paused = alertRequests.sPaused.sort(alertSort);
+        displayAlert(paused, "submit paused");
+    };
+    if (alertRequests.jPaused.length > 0) {
+        var paused = alertRequests.jPaused.sort(alertSort);
+        displayAlert(paused, "job paused");
+    };
+    if (alertRequests.configError.length > 0) {
+        var configError = alertRequests.configError.sort(alertSort);
+        displayAlert(configError, "Config Error");
+    };
+    if (alertRequests.siteError.length > 0) {
+        var siteError = alertRequests.siteError.sort(alertSort);
+        displayAlert(siteError, "Site Error");
+        
+    };    
+
     
     $(containerDiv).addClass("request_error_box");
     if (errorFlag) {
@@ -99,10 +117,11 @@ WMStats.RequestAlertGUI = function (requestData, containerDiv) {
     
      $(document).on('click', 'a.requestAlert', function() {
         var workflow = $(this).text();
-        
+        vm.JobView.requestName(workflow);
+        //TODO: this cause calling one more time for retrieving data
         vm.ActiveRequestPage.view(vm.JobView);
         vm.page(vm.ActiveRequestPage);
-        vm.JobView.requestName(workflow);
+        
         $(this).addClass('reviewed');
     });
 })();

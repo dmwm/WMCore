@@ -732,7 +732,7 @@ class CondorPlugin(BasePlugin):
             jobAd = jobInfo.get(jobID)
 
             if not jobAd:
-                logging.error("No jobAd received for jobID %i"%jobID)
+                logging.debug("No jobAd received for jobID %i"%jobID)
             else:
                 desiredSites = jobAd.get('DESIRED_Sites').split(', ')
                 extDesiredSites = jobAd.get('ExtDESIRED_Sites').split(', ')

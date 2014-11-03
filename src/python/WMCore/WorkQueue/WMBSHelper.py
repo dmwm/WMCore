@@ -365,7 +365,7 @@ class WMBSHelper(WMConnectionBase):
                 self.logger.error('Error getting storage element for "%s": %s' % (site, str(ex)))
         if not locations:
             raise RuntimeError, "No locations to inject Monte Carlo work to, unable to proceed"
-        mcFakeFileName = "MCFakeFile-%s" % self.topLevelFileset.name
+        mcFakeFileName = ("MCFakeFile-%s" % self.topLevelFileset.name).encode('ascii', 'ignore')
         wmbsFile = File(lfn = mcFakeFileName,
                         first_event = self.mask['FirstEvent'],
                         last_event = self.mask['LastEvent'],

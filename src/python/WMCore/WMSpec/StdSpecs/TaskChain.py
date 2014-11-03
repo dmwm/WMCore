@@ -356,13 +356,14 @@ class TaskChainWorkloadFactory(StdBase):
             if not inputTaskConf["KeepOutput"] or len(inputTaskConf["TransientOutputModules"]) > 0:
                 inpMod = taskConf["InputFromOutputModule"]
                 # Check if the splitting has to be changed
-                if inputTaskConf["SplittingAlgo"] == 'EventBased' \
-                   and (('InputDataset' in inputTaskConf) or ('InputTask' in inputTaskConf)):
-                    splitAlgorithm = 'WMBSMergeBySize'
-                    splitArguments = {'max_merge_size'   : self.maxMergeSize,
-                                      'min_merge_size'   : self.minMergeSize,
-                                      'max_merge_events' : self.maxMergeEvents,
-                                      'max_wait_time'    : self.maxWaitTime}
+                # Lines below commented out to fix #5007 (by Alan M. on 03/Nov/2014 
+                #if inputTaskConf["SplittingAlgo"] == 'EventBased' \
+                #   and (('InputDataset' in inputTaskConf) or ('InputTask' in inputTaskConf)):
+                #    splitAlgorithm = 'WMBSMergeBySize'
+                #    splitArguments = {'max_merge_size'   : self.maxMergeSize,
+                #                      'min_merge_size'   : self.minMergeSize,
+                #                      'max_merge_events' : self.maxMergeEvents,
+                #                      'max_wait_time'    : self.maxWaitTime}
             else:
                 inpMod = "Merged"
 

@@ -70,9 +70,11 @@ WMStats.RequestAlertGUI = function (requestData, containerDiv) {
      $(document).on('click', 'a.requestAlert', function() {
         var workflow = $(this).text();
         
+        vm.JobView.requestName(workflow);
+        //TODO: this cause calling one more time for retrieving data
         vm.ActiveRequestPage.view(vm.JobView);
         vm.page(vm.ActiveRequestPage);
-        vm.JobView.requestName(workflow);
+        
         $(this).addClass('reviewed');
     });
 })();

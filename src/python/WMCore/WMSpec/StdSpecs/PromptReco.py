@@ -119,13 +119,18 @@ class PromptRecoWorkloadFactory(StdBase):
                                   'moduleLabel' : "write_%s" % dataTier } )
 
         recoTask = workload.newTask("Reco")
+
+        scenarioArgs = { 'globalTag' : self.globalTag,
+                         'skims' : self.alcaSkims,
+                         'dqmSeq' : self.dqmSequences,
+                         'outputs' : recoOutputs }
+        if self.globalTagConnect:
+            scenarioArgs['globalTagConnect'] = self.globalTagConnect
+
         recoOutMods = self.setupProcessingTask(recoTask, taskType, self.inputDataset,
                                                scenarioName = self.procScenario,
                                                scenarioFunc = "promptReco",
-                                               scenarioArgs = { 'globalTag' : self.globalTag,
-                                                                'skims' : self.alcaSkims,
-                                                                'dqmSeq' : self.dqmSequences,
-                                                                'outputs' : recoOutputs },
+                                               scenarioArgs = scenarioArgs,
                                                splitAlgo = self.procJobSplitAlgo,
                                                splitArgs = self.procJobSplitArgs,
                                                stepType = cmsswStepType,
@@ -142,14 +147,19 @@ class PromptRecoWorkloadFactory(StdBase):
 
             else:
                 alcaTask = recoTask.addTask("AlcaSkim")
+
+                scenarioArgs = { 'globalTag' : self.globalTag,
+                                 'skims' : self.alcaSkims,
+                                 'primaryDataset' : self.inputPrimaryDataset }
+                if self.globalTagConnect:
+                    scenarioArgs['globalTagConnect'] = self.globalTagConnect
+
                 alcaOutMods = self.setupProcessingTask(alcaTask, taskType,
                                                        inputStep = recoTask.getStep("cmsRun1"),
                                                        inputModule = recoOutLabel,
                                                        scenarioName = self.procScenario,
                                                        scenarioFunc = "alcaSkim",
-                                                       scenarioArgs = { 'globalTag' : self.globalTag,
-                                                                        'skims' : self.alcaSkims,
-                                                                        'primaryDataset' : self.inputPrimaryDataset },
+                                                       scenarioArgs = scenarioArgs,
                                                        splitAlgo = "WMBSMergeBySize",
                                                        splitArgs = {"max_merge_size": self.maxMergeSize,
                                                                     "min_merge_size": self.minMergeSize,
@@ -274,10 +284,10 @@ class PromptRecoWorkloadFactory(StdBase):
     @staticmethod
     def getWorkloadArguments():
         baseArgs = StdBase.getWorkloadArguments()
-        specArgs = {"Scenario" : {"default" : "pp", "type" : str,
+        specArgs = {"Scenario" : {"default" : None, "type" : str,
                                   "optional" : False, "validate" : None,
                                   "attr" : "procScenario", "null" : False},
-                    "GlobalTag" : {"default" : "GR_P_V29::All", "type" : str,
+                    "GlobalTag" : {"default" : None, "type" : str,
                                    "optional" : False, "validate" : None,
                                    "attr" : "globalTag", "null" : False},
                     "WriteTiers" : {"default" : ["RECO", "AOD", "DQM", "ALCARECO"],

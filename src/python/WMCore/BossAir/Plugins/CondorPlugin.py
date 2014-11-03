@@ -577,7 +577,11 @@ class CondorPlugin(BasePlugin):
                     completeList.append(job)
             else:
                 jobAd     = jobInfo.get(job['jobid'])
-                jobStatus = int(jobAd.get('JobStatus', 0))
+                try:
+                    # sometimes it returns 'undefined' (probably over high load)
+                    jobStatus = int(jobAd.get('JobStatus', 0))
+                except ValueError, ex:
+                    jobStatus = 0  # unknown
                 statName  = 'Unknown'
                 if jobStatus == 1:
                     # Job is Idle, waiting for something to happen
@@ -611,15 +615,24 @@ class CondorPlugin(BasePlugin):
                 #Check if we have a valid status time
                 if not job['status_time']:
                     if job['status'] == 'Running':
-                        job['status_time'] = int(jobAd.get('runningTime', 0))
+                        try:
+                            job['status_time'] = int(jobAd.get('runningTime', 0))
+                        except ValueError, ex:
+                            job['status_time'] = 0
                         # If we transitioned to running then check the site we are running at
                         job['location'] = jobAd.get('runningCMSSite', None)
                         if job['location'] is None:
                             logging.debug('Something is not right here, a job (%s) is running with no CMS site' % str(jobAd))
                     elif job['status'] == 'Idle':
-                        job['status_time'] = int(jobAd.get('submitTime', 0))
+                        try:
+                            job['status_time'] = int(jobAd.get('submitTime', 0))
+                        except ValueError, ex:
+                            job['status_time'] = 0
                     else:
-                        job['status_time'] = int(jobAd.get('stateTime', 0))
+                        try:
+                            job['status_time'] = int(jobAd.get('stateTime', 0))
+                        except ValueError, ex:
+                            job['status_time'] = 0
                     changeList.append(job)
 
                 runningList.append(job)
@@ -718,35 +731,33 @@ class CondorPlugin(BasePlugin):
             jobID = job['id']
             jobAd = jobInfo.get(jobID)
 
-            if not jobAd :
+            if not jobAd:
                 logging.error("No jobAd received for jobID %i"%jobID)
-            else :
+            else:
                 desiredSites = jobAd.get('DESIRED_Sites').split(', ')
                 extDesiredSites = jobAd.get('ExtDESIRED_Sites').split(', ')
-                if excludeSite :
+                if excludeSite:
                     #Remove siteName from DESIRED_Sites if job has it
                     if siteName in desiredSites and siteName in extDesiredSites:
                         usi = desiredSites
-                        if len(usi) > 1 :
+                        if len(usi) > 1:
                             usi.remove(siteName)
-                            usi = usi.__str__().lstrip('[').rstrip(']')
-                            usi = filter(lambda c: c not in "\'", usi)
+                            usi = ','.join(map(str, usi))
                             command = 'condor_qedit  -constraint \'WMAgent_JobID==%i\' DESIRED_Sites \'"%s"\'' %(jobID, usi)
                             proc = subprocess.Popen(command, stderr = subprocess.PIPE,
                                                     stdout = subprocess.PIPE, shell = True)
                             out, err = proc.communicate()
                         else:
                             jobtokill.append(job)
-                    else :
+                    else:
                         #If job doesn't have the siteName in the siteList, just ignore it
                         logging.debug("Cannot find siteName %s in the sitelist" % siteName)
-                else :
+                else:
                     #Add siteName to DESIRED_Sites if ExtDESIRED_Sites has it (moving back to Normal)
                     if siteName not in desiredSites and siteName in extDesiredSites:
                         usi = desiredSites
                         usi.append(siteName)
-                        usi = usi.__str__().lstrip('[').rstrip(']')
-                        usi = filter(lambda c: c not in "\'", usi)
+                        usi = ','.join(map(str, usi))
                         command = 'condor_qedit  -constraint \'WMAgent_JobID==%i\' DESIRED_Sites \'"%s"\'' %(jobID, usi)
                         proc = subprocess.Popen(command, stderr = subprocess.PIPE,
                                                 stdout = subprocess.PIPE, shell = True)
@@ -972,15 +983,13 @@ class CondorPlugin(BasePlugin):
         if self.useGSite:
             jdl.append('+GLIDEIN_CMSSite = \"%s\"\n' % (jobCE))
         if self.submitWMSMode and len(job.get('possibleSites', [])) > 0:
-            strg = list(job.get('possibleSites')).__str__().lstrip('[').rstrip(']')
-            strg = filter(lambda c: c not in "\'", strg)
+            strg = ','.join(map(str, job.get('possibleSites')))
             jdl.append('+DESIRED_Sites = \"%s\"\n' % strg)
         else:
             jdl.append('+DESIRED_Sites = \"%s\"\n' %(jobCE))
 
         if self.submitWMSMode and len(job.get('potentialSites', [])) > 0:
-            strg = list(job.get('potentialSites')).__str__().lstrip('[').rstrip(']')
-            strg = filter(lambda c: c not in "\'", strg)
+            strg = ','.join(map(str, job.get('potentialSites')))
             jdl.append('+ExtDESIRED_Sites = \"%s\"\n' % strg)
         else:
             jdl.append('+ExtDESIRED_Sites = \"%s\"\n' %(jobCE))

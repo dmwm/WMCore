@@ -111,9 +111,10 @@ WMStats.Controls = function($){
     
     
     function setDBSourcetButton(selector) {
+        	
         var dbSourceButton = 
         '<nav id="db_source" class="button-group">\
-            <ul><li><a href="#" class="nav-button"> wmstats db </a></li></ul>\
+            <ul><li><a href="#" class="nav-button">' + WMStats.Globals.INIT_DB + '</a></li></ul>\
         </nav>';
         
         $(selector).append(dbSourceButton).addClass("button-group");
@@ -121,13 +122,13 @@ WMStats.Controls = function($){
         $(document).on('click', "#db_source li a", function(event){
             var buttonSelector = "#db_source li a";
             if (WMStats.Globals.INIT_DB === "WMStats") {
-            	WMStats.Globals.INIT_DB = "ReqMgr";
-            	$(buttonSelector).text("reqmgr db");
+            	WMStats.Globals.INIT_DB = "ReqMgr";	
         	} else if (WMStats.Globals.INIT_DB === "ReqMgr") {
         		WMStats.Globals.INIT_DB = "WMStats";
-        		$(buttonSelector).text("wmstats db");
         	}
+        	
         	jQuery(WMStats.Globals.Event).triggerHandler(WMStats.CustomEvents.SWITCH_DB);
+        	$(buttonSelector).text(WMStats.Globals.INIT_DB);
             event.preventDefault();
            });
         

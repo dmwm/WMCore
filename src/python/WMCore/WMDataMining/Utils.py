@@ -6,7 +6,7 @@ import copy
 import pprint
 import time
 import logging
-import datetime
+from datetime import datetime
 
 from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.Database.CMSCouch import CouchServer

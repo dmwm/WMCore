@@ -39,6 +39,7 @@ class RequestDBReader():
         Use this only for the unittest
         """        
         self.defaultStale = {}
+        
     def _getCouchView(self, view, options, keys = []):
         
         options = self.setDefaultStaleOptions(options)
@@ -47,14 +48,22 @@ class RequestDBReader():
             keys = [keys]
         return self.couchDB.loadView(self.couchapp, view, options, keys)
             
-        
+    
     def _formatCouchData(self, data, key = "id"):
+        detail = False
         result = {}
         for row in data['rows']:
             if row.has_key('error'):
                 continue
-            result[row[key]] = row["doc"]
-        return result
+            if row.has_key("doc"):
+                result[row[key]] = row["doc"]
+                detail = True
+            else:
+                result[row[key]] = None
+        if detail:
+            return result
+        else:
+            return result.keys()
             
     def _getRequestByNames(self, requestNames, detail = True):
         """
@@ -65,12 +74,17 @@ class RequestDBReader():
         result = self.couchDB.allDocs(options, requestNames)
         return result
         
-    def _getRequestByStatus(self, statusList, detail = True):
+    def _getRequestByStatus(self, statusList, detail, limit, skip):
         """
         'status': list of the status
         """
         options = {}
         options["include_docs"] = detail
+
+        if limit != None:
+            options["limit"] = limit
+        if skip != None:
+            options["skip"] = skip
         keys = statusList
         return self._getCouchView("bystatus", options, keys)
   
@@ -99,13 +113,10 @@ class RequestDBReader():
         requestInfo = self._formatCouchData(data)
         return requestInfo
     
-    def getRequestByStatus(self, statusList):
+    def getRequestByStatus(self, statusList, detail = False, limit = None, skip = None):
         
-        data = self._getRequestByStatus(statusList, False)
-        result = []
-        for row in data['rows']:
-            if row.has_key('error'):
-                continue
-            result.append(row['id'])
-        return result
+        data = self._getRequestByStatus(statusList, detail, limit, skip)
+        requestInfo = self._formatCouchData(data)
+
+        return requestInfo
     

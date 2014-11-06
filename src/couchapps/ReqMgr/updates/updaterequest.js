@@ -2,8 +2,10 @@
 // input: valueKey (what to change), value - new value
 function(doc, req)
 {
-    log(req);
-
+    if (doc === null) {
+    	return [null, "Error: document not found"];
+    };
+    
     function updateTransition() {
         var currentTS =  Math.round((new Date()).getTime() / 1000);
         var statusObj = {"Status": doc.RequestStatus, "UpdateTime": currentTS};

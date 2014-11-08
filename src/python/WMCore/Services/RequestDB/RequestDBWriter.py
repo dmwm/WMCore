@@ -8,7 +8,15 @@ class RequestDBWriter(RequestDBReader):
         # set the connection for local couchDB call
         # inherited from WMStatsReader
         self._commonInit(couchURL, dbName, couchapp)
-
+        self._propertyNeedToBeEncoded = ["RequestTransition",
+                                         "SiteWhitelist",
+                                         "SiteBlacklist",
+                                         "BlockWhitelist",
+                                         "SoftwareVersions",
+                                         "InputDatasetTypes",
+                                         "InputDatasets",
+                                         "OutputDatasets",
+                                         "Teams"]
 
     def insertGenericRequest(self, doc):
         
@@ -21,3 +29,14 @@ class RequestDBWriter(RequestDBReader):
         status = {"RequestStatus": status}
         return self.couchDB.updateDocument(request, self.couchapp, "updaterequest",
                     status)
+
+    def updateRequestProperty(self, request, propDict):
+        encodeProperty = {}
+        for key, value in propDict.items():
+            if key in self._propertyNeedToBeEncoded:
+                encodeProperty[key] = JSONEncoder().encode(value)
+            else:
+                encodeProperty[key] = value
+        
+        return self.couchDB.updateDocument(request, self.couchapp, "updaterequest",
+                    encodeProperty)

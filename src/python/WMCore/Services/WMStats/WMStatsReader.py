@@ -151,7 +151,7 @@ class WMStatsReader():
         options["include_docs"] = detail
         if limit != None:
             options["limit"] = limit
-        if limit != None:
+        if skip != None:
             options["skip"] = skip
         keys = statusList or WMStatsReader.ACTIVE_STATUS
         return self._getCouchView("requestByStatus", options, keys)

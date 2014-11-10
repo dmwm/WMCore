@@ -14,7 +14,15 @@
 
 <div id="admin-actions">
 
-<h4>Team management</h4>
+<nav class="navbar navbar-pills">
+    <ul>
+        <li id="li-user" class="active"><a href="#" onclick="activateUserManager()">User management</a></li>
+        <li id="li-team" class=""><a href="#" onclick="activateTeamManager()">Team management</a></li>
+    </ul>
+</nav>
+
+<div id="team-manager" class="hide">
+<h5>Team management</h5>
 <form method="post" action="$base/add_team" class="forms">
 <fieldset>
 <!-- <legend>Team data</legend> -->
@@ -29,6 +37,7 @@
 </p>
 </fieldset>
 </form>
+</div>
 
 
 <!--
@@ -59,7 +68,8 @@
 <hr />
 -->
 
-<h4>User management</h4>
+<div id="user-manager" class="active">
+<h5>User management</h5>
 <form method="post" action="$base/add_user" class="forms">
 <div class="units-row">
     <div class="unit-30">
@@ -90,6 +100,7 @@
     </div>
 </div>
 </form>
+</div>
 
 </div> <!-- end of actions -->
 
@@ -186,5 +197,21 @@ function activateTeams() {
     var id = document.getElementById('btn-teams');
     id.className="btn btn-active";
     ShowTag('admin-teams');
+}
+function activateTeamManager() {
+    id = document.getElementById('li-user');
+    id.className=""
+    HideTag('user-manager');
+    id = document.getElementById('li-team');
+    id.className="active"
+    ShowTag('team-manager');
+}
+function activateUserManager() {
+    id = document.getElementById('li-team');
+    id.className=""
+    HideTag('team-manager');
+    id = document.getElementById('li-user');
+    id.className="active"
+    ShowTag('user-manager');
 }
 </script>

@@ -277,8 +277,8 @@ class LexiconTest(unittest.TestCase):
             self.assertRaises(AssertionError, identifier, notok)
 
     def testGoodDataset(self):
-        assert dataset('/a/b/c')
-        assert dataset('/m000n/RIII-ver/wider_than_1.0_miles')
+        assert dataset('/a/b/C')
+        assert dataset('/m000n/RIII-ver/WIDER-THAN-MILES')
 
     def testBadDataset(self):
         for notok in ['/Sugar/Sugar', '/Oh/honey/honey!', '/You/are/my/candy/GIIIRRL']:

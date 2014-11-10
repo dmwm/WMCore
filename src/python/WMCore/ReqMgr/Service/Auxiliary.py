@@ -71,10 +71,11 @@ class Info(RESTEntity):
         # from HTTP headers. CMS web frontend puts this information into
         # headers as read from SiteDB (or on private VM from a fake
         # SiteDB file)
-        print "DN: %s" % cherrypy.request.user['dn']
-        print "Requestor/login: %s" % cherrypy.request.user['login']
-        print "cherrypy.request: %s" % cherrypy.request
-        print "cherrypy.request.user: %s" % cherrypy.request.user
+#        print "cherrypy.request", cherrypy.request
+#        print "DN: %s" % cherrypy.request.user['dn']
+#        print "Requestor/login: %s" % cherrypy.request.user['login']
+#        print "cherrypy.request: %s" % cherrypy.request
+#        print "cherrypy.request.user: %s" % cherrypy.request.user
         # from WMCore.REST.Auth import authz_match
         # authz_match(role=["Global Admin"], group=["global"])
         # check SiteDB/DataWhoAmI.py

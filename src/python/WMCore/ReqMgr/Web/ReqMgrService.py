@@ -42,7 +42,7 @@ from WMCore.ReqMgr.Service.Auxiliary import Info, Group, Team, Software
 from WMCore.ReqMgr.Service.Request import Request
 from WMCore.ReqMgr.Service.RestApiHub import RestApiHub
 from WMCore.REST.Main import RESTMain
-from WMCore.REST.Auth import authz_fake
+#from WMCore.REST.Auth import authz_fake
 
 def set_headers(itype, size=0):
     """
@@ -319,7 +319,7 @@ class ReqMgrService(TemplatedPage):
     def admin(self, **kwds):
         """admin page"""
         print "\n### ADMIN PAGE"
-        authz_fake()
+#        authz_fake()
         rows = self.admin_info.get()
         print "rows", [r for r in rows]
 

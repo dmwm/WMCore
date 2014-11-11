@@ -240,10 +240,11 @@ class ResourceControlUpdater(BaseWorkerThread):
                 if not status: 
                     logging.error('Site %s does not have status in SSB' % voname) 
                     continue
-                if not self.getState(str(status)):
+                new_status = self.getState(str(status))
+                if not new_status:
                     logging.error("Unkwown status '%s' for site %s, please check SSB" % (str(status), voname))
                     continue
-                statusBySite[voname] = self.getState(str(status))
+                statusBySite[voname] = new_status
             else:
                 logging.error('I have a duplicated status entry in SSB for %s' % voname) 
         return statusBySite
@@ -258,6 +259,12 @@ class ResourceControlUpdater(BaseWorkerThread):
             return "Normal"
         elif stateFromSSB == "drain":
             return "Draining"
+        elif stateFromSSB == "tier0":
+            logging.debug('There is a site in tier0 status (Tier0Mode is %s)' % self.tier0Mode )
+            if self.tier0Mode: 
+                return "Normal"
+            else:
+                return "Draining"
         elif stateFromSSB == "down":
             return "Down"
         elif stateFromSSB == "skip":

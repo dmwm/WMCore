@@ -78,29 +78,15 @@ REQUEST_STATUS_TRANSITION = [
                    "closed-out",
                    "rejected"]
     },
-    {"closed-out": ["announced"]
-    },
-    {"announced": ["normal-archived"]
-    },
-    {"aborted": ["aborted",
-                 "testing-approved",
-                 "assigned",
-                 "rejected",
-                 "failed",
-                 "aborted-completed"]
-    },
-    {"aborted-completed": ["aborted-archived"]
-    },
-    {"rejected": ["rejected",
-                  "rejected-archived"]
-    },
+    {"closed-out": ["announced"]},
+    {"announced": ["normal-archived"]},
+    {"aborted": ["aborted-completed"]},
+    {"aborted-completed": ["aborted-archived"]},
+    {"rejected": ["rejected-archived"]},
     # final status
-    {"normal-archived": []
-    },
-    {"aborted-archived": []
-    },
-    {"rejected-archived": []
-    },
+    {"normal-archived": []},
+    {"aborted-archived": []},
+    {"rejected-archived": []},
 ]
 
 ACTIVE_STATUS = ["new",

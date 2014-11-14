@@ -430,15 +430,17 @@ def makeJobTweak(job):
         result.addParameter("process.source.fileNames", primaryFiles)
         if len(secondaryFiles) > 0:
             result.addParameter("process.source.secondaryFileNames", secondaryFiles)
-    elif not lheInput:
+    else:
         #First event parameter should be set from whatever the mask says,
         #That should have the added protection of not going over 2^32 - 1
         #If there is nothing in the mask, then we fallback to the counter method
         if job['mask'].get('FirstEvent',None) != None:
             result.addParameter("process.source.firstEvent",
                                 job['mask']['FirstEvent'])
-        else:
+        elif not lheInput:
             #No first event information in the mask, raise and error
+            #
+            #Don't raise an error for LHE backwards compatibility
             raise WMTweakMaskError(job['mask'],
                                    "No first event information provided in the mask")
 

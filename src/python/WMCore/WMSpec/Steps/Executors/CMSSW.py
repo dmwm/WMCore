@@ -283,7 +283,7 @@ class CMSSW(Executor):
         validStatus    = self.workload.getValidStatus()
         inputPath      = self.task.getInputDatasetPath()
         globalTag      = typeHelper.getGlobalTag()
-        prepID        = self.workload.getPrepID()
+        prepID        = self.task.getPrepID()
         cacheUrl, cacheDB, configID = stepHelper.getConfigInfo()
 
         self.report.setValidStatus(validStatus = validStatus)

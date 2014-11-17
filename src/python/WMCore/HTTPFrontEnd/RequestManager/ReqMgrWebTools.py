@@ -379,10 +379,6 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
     # there is a better way to do this (passing helper to request but make sure all the information is there) 
     request["Campaign"] = helper.getCampaign()
 
-    # can't save Request object directly, because it makes it hard to retrieve the _rev
-    metadata = {}
-    metadata.update(request)    
-    
     # Add the output datasets if necessary
     # for some bizarre reason OutpuDatasets is list of lists, when cloning
     # [['/MinimumBias/WMAgentCommissioning10-v2/RECO'], ['/MinimumBias/WMAgentCommissioning10-v2/ALCARECO']]
@@ -391,7 +387,10 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
         for ds in helper.listOutputDatasets():
             if ds not in request['OutputDatasets']:
                 request['OutputDatasets'].append(ds)
-                
+    #TODO: need to update output dataset by Task for task chain requests
+    # can't save Request object directly, because it makes it hard to retrieve the _rev
+    metadata = {}
+    metadata.update(request)            
     # don't want to JSONify the whole workflow
     del metadata['WorkloadSpec']
     workloadUrl = helper.saveCouch(couchUrl, couchDB, metadata=metadata)

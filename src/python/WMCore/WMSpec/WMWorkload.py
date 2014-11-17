@@ -897,20 +897,23 @@ class WMWorkloadHelper(PersistencyHelper):
 
     def setPrepID(self, prepID):
         """
-        _setCampaign_
+        _setPrepID_
 
-        Set the campaign to which this workflow belongs
-        Optional
+        Set the prepID to for all the tasks below
         """
+        
+        taskIterator = self.taskIterator() 
+        for task in taskIterator:
+            task.setPrepID(prepID)
         self.data.properties.prepID = prepID
         return
 
 
     def getPrepID(self):
         """
-        _getCampaign_
+        _getPrepID_
 
-        Get the campaign for the workflow
+        Get the prepID for the workflow
         """
         return getattr(self.data.properties, 'prepID', None)
 
@@ -1822,6 +1825,7 @@ class WMWorkloadHelper(PersistencyHelper):
         self.setProcessingVersion(self.processingVersion)
         self.setProcessingString(self.processingString)
         self.setLumiList(self.lumiList)
+        self.setPrepID(self.getPrepID())
         return
 
 class WMWorkload(ConfigSection):

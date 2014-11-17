@@ -235,12 +235,14 @@ class TaskChainWorkloadFactory(StdBase):
             self.blockWhitelist = taskConf["BlockWhitelist"]
             self.runBlacklist   = taskConf["RunBlacklist"]
             self.runWhitelist   = taskConf["RunWhitelist"]
-
+            
             parentTask = None
             if parent in self.mergeMapping:
                 parentTask = self.mergeMapping[parent][parentTaskModule(taskConf)]
 
             task = self.makeTask(taskConf, parentTask)
+            #sets the prepID for the task (overwrite initial PrepID if it is set by workflow
+            task.setPrepID(taskConf["PrepID"])
             if i == 1:
                 # First task will either be generator or processing
                 self.workload.setDashboardActivity("relval")
@@ -592,7 +594,10 @@ class TaskChainWorkloadFactory(StdBase):
                                           "attr" : "filterEfficiency", "null" : False},
                     "LheInputFiles" : {"default" : False, "type" : strToBool,
                                        "optional" : True, "validate" : None,
-                                       "attr" : "lheInputFiles", "null" : False}
+                                       "attr" : "lheInputFiles", "null" : False},
+                    "PrepID": {"default" : None, "type": str,
+                               "optional" : True, "validate" : None,
+                                "attr" : "prepID",  "null" : True}
                     }
         return specArgs
 

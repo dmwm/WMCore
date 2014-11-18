@@ -224,7 +224,18 @@ class ApMon:
             self.logger.error("Cannot send packet to "+host+":"+str(port)+" "+passwd+": "+str(msg[1]))
         xdrPacker.reset()
         paramsPacker.reset()
-
+    
+    # private method converting unitcode to str
+    def __convertUnicodeToStr(self, blob):
+        if isinstance(blob, unicode) :
+            try:
+                return str(blob)
+            except UnicodeEncodeError:
+                #This contains some unicode outside ascii range
+                return 'unknown'
+        else:
+            return blob
+         
     def __packParameter(self, xdrPacker, name, value):
         if (name is None) or (name is ""):
             self.logger.debug("Undefined parameter name. Ignoring value "+str(value))
@@ -232,6 +243,8 @@ class ApMon:
         if (value is None):
             self.logger.debug("Ignore " + str(name)+ " parameter because of None value")
             return False
+        name = self.__convertUnicodeToStr(name)
+        value = self.__convertUnicodeToStr(value)
         try:
             typeValue = self.__valueTypes[type(value)]
             xdrPacker.pack_string (name)

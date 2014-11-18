@@ -126,10 +126,10 @@ var requestsView =
 	    // 0 - Date, 1 - Name, 2 - Type, 3 - Status, 4 - details
 		for (var i=0; i<data.rows.length; i++) 
 		{
-			var date = data.rows[i].value["RequestDate"];
-	        var name = data.rows[i].value["RequestName"];
-	        var type = data.rows[i].value["RequestType"];
-	        var status = data.rows[i].value["RequestStatus"];
+			var date = data.rows[i].doc["RequestDate"];
+	        var name = data.rows[i].doc["RequestName"];
+	        var type = data.rows[i].doc["RequestType"];
+	        var status = data.rows[i].doc["RequestStatus"];
 	        var details = "n/a";
 	        var rowClass = i % 2 === 0 ? "even" : "odd";
 	        tableRow = tableElem.insertRow(-1);

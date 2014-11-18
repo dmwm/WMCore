@@ -16,6 +16,7 @@ import threading
 import traceback
 
 from WMCore.DataStructs.Run import Run
+from WMCore.DataStructs.LumiList import LumiList
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.WMBS.File               import File
@@ -78,6 +79,7 @@ class LumiBased(JobFactory):
         myThread = threading.currentThread()
 
         lumisPerJob = int(kwargs.get('lumis_per_job', 1))
+        totalLumis = int(kwargs.get('total_lumis', 0))
         splitOnFile = bool(kwargs.get('halt_job_on_file_boundaries', True))
         ignoreACDC = bool(kwargs.get('ignore_acdc_except', False))
         collectionName = kwargs.get('collectionName', None)
@@ -86,6 +88,14 @@ class LumiBased(JobFactory):
         runWhitelist = kwargs.get('runWhitelist', [])
         runs = kwargs.get('runs', None)
         lumis = kwargs.get('lumis', None)
+        deterministicPileup = kwargs.get('deterministicPileup', False)
+        eventsPerLumiInDataset = 0
+
+        if deterministicPileup and self.package == 'WMCore.WMBS':
+            getJobNumber = self.daoFactory(classname = "Jobs.GetNumberOfJobsPerWorkflow")
+            jobNumber = getJobNumber.execute(workflow = self.subscription.getWorkflow().id)
+            self.nJobs = jobNumber
+
         timePerEvent, sizePerEvent, memoryRequirement = \
                     self.getPerformanceParameters(kwargs.get('performance', {}))
 
@@ -153,6 +163,9 @@ class LumiBased(JobFactory):
                 # Do average event per lumi calculation
                 if f['lumiCount']:
                     f['avgEvtsPerLumi'] = float(f['events']) / f['lumiCount']
+                    if deterministicPileup:
+                        # We assume that all lumis are equal in the dataset
+                        eventsPerLumiInDataset = f['avgEvtsPerLumi']
                 else:
                     # No lumis in the file, ignore it
                     continue
@@ -166,12 +179,13 @@ class LumiBased(JobFactory):
         # EXACTLY lumisPerJob number of lumis (except for maybe the last one)
 
         totalJobs = 0
-        firstRun = None
         lastLumi = None
         firstLumi = None
         stopJob = True
+        stopTask = False
         lastRun = None
         lumisInJob = 0
+        lumisInTask = 0
         for location in locationDict.keys():
 
             # For each location, we need a new jobGroup
@@ -248,8 +262,10 @@ class LumiBased(JobFactory):
                                 runAddedSize = addedEvents * sizePerEvent
                                 self.currentJob.addResourceEstimates(jobTime = runAddedTime,
                                                                      disk = runAddedSize)
-                            self.newJob(name = self.getJobName(length = totalJobs))
+                            self.newJob(name = self.getJobName())
                             self.currentJob.addResourceEstimates(memory = memoryRequirement)
+                            if deterministicPileup:
+                                self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * lumisPerJob * eventsPerLumiInDataset)
                             firstLumi = lumi
                             lumisInJob = 0
                             totalJobs += 1
@@ -258,12 +274,17 @@ class LumiBased(JobFactory):
                             self.currentJob.addFile(f)
 
                         lumisInJob += 1
+                        lumisInTask += 1
                         lastLumi = lumi
                         stopJob = False
                         lastRun = run.run
 
                         if self.currentJob and not f in self.currentJob['input_files']:
                             self.currentJob.addFile(f)
+
+                        if totalLumis > 0 and lumisInTask >= totalLumis:
+                            stopTask = True
+                            break
 
                     if firstLumi != None and lastLumi != None:
                         # Add this run to the mask
@@ -276,4 +297,63 @@ class LumiBased(JobFactory):
                         firstLumi = None
                         lastLumi = None
 
+                    if stopTask:
+                        break
+
+                if stopTask:
+                    break
+
+            # We now have a list of jobs in a job group.  We will now iterate through them
+            # to verify we have no single lumi processed by multiple jobs.
+            jobs = self.currentGroup.newjobs
+            overlap = 0
+            lumicount = 0
+            logging.debug("Current job group has %d jobs." % len(jobs))
+            for idx1 in xrange(len(jobs)):
+                job1 = jobs[idx1]
+                lumicount += len(set(LumiList(compactList=job1['mask'].getRunAndLumis()).getLumis()))
+                for idx2 in xrange(idx1+1, len(jobs)):
+                    job2 = jobs[idx2]
+                    overlap += self.lumiCorrection(job1, job2, locationDict[location])
+            logging.info("There were %d overlapping lumis and %d total lumis." % (overlap, lumicount))
+
+            if stopTask:
+                break
+
         return
+
+    def lumiCorrection(self, job1, job2, locations):
+        """
+        Due to error in processing (in particular, the Run I Tier-0), some
+        lumi sections may be spread across multiple jobs.  Where possible:
+         - Remove a lumi from job2 if it is in both job1 and job2
+         - If the lumi is in multiple files and it spanned multiple jobs,
+           make sure that all those files are processed by job1.
+
+        NOTE: This will not help in the case where a lumi is split across
+        multiple blocks.
+
+        Returns the number of affected lumis
+        """
+        lumis1 = LumiList(compactList=job1['mask'].getRunAndLumis())
+        lumis2 = LumiList(compactList=job2['mask'].getRunAndLumis())
+        ilumis = lumis1 & lumis2
+        lumiPairs = ilumis.getLumis()
+        if not lumiPairs:
+            return 0
+        logging.warning("%d lumis appear in multiple jobs: %s" % (len(lumiPairs), str(ilumis)))
+        job2['mask'].removeLumiList(ilumis)
+
+        for run, lumi in lumiPairs:
+            for fileObj in locations:
+                if fileObj in job1['input_files']:
+                    continue
+                for runObj in fileObj['runs']:
+                    if run == runObj.run:
+                        if lumi in runObj.lumis:
+                            if fileObj not in job1['input_files']:
+                                logging.warning("Adding file %s to job input files so it will process all of a lumi section." % fileObj['lfn'])
+                                job1.addFile(fileObj)
+                                break
+
+        return len(lumiPairs)

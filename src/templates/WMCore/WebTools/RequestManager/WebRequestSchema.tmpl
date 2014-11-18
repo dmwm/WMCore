@@ -131,12 +131,13 @@ Campaign: <input type="text" name="Campaign" size=40 id="campaign" />
 #def ioBlock
 Input Dataset: <input type="text" name="InputDataset" size=40 /><br/>
 Open Running Timeout: <input type="text" name="OpenRunningTimeout" size=10 value="0"/><br/>
-DBS: <!--input type="text" name="dbs" value="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet" size=80/><br/-->
+DBS: <!--input type="text" name="dbs" value="https://cmsweb.cern.ch/dbs/prod/global/DBSReader" size=80/><br/-->
 <select name="DbsUrl">
-		<option>http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet</option>
-        <option>http://cmsdbsprod.cern.ch/cms_dbs_ph_analysis_01/servlet/DBSServlet</option>
-        <option>http://cmsdbsprod.cern.ch/cms_dbs_ph_analysis_02/servlet/DBSServlet</option>
-		<option>https://cmsweb-dev.cern.ch/dbs/prod/global/DBSWriter</option>
+	<option>https://cmsweb.cern.ch/dbs/prod/global/DBSReader</option>
+	<option>https://cmsweb.cern.ch/dbs/prod/phys01/DBSReader</option>
+	<option>https://cmsweb.cern.ch/dbs/prod/phys02/DBSReader</option>
+	<option>https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader</option>
+	<option>https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader</option>
 </select><br>
 #end def
 
@@ -275,11 +276,11 @@ Include Parents: <select name="IncludeParents"><option>True</option><option sele
 <br/>
             $scenarioBlock
             $dqmOptions
-Step One CacheCache ID: <input type="text" name="StepOneConfigCacheID" size=80 /><br/>
+Step One ConfigCache ID: <input type="text" name="StepOneConfigCacheID" size=80 /><br/>
 Step One Output Module Name: <input type="text" name="StepOneOutputModuleName" size=20 /><br/>
-Step Two CacheCache ID: <input type="text" name="StepTwoConfigCacheID" size=80 /><br/>
+Step Two ConfigCache ID: <input type="text" name="StepTwoConfigCacheID" size=80 /><br/>
 Step Two Output Module Name: <input type="text" name="StepTwoOutputModuleName" size=20 /><br/>
-Step Three CacheCache ID: <input type="text" name="StepThreeConfigCacheID" size=80 /><br/>
+Step Three ConfigCache ID: <input type="text" name="StepThreeConfigCacheID" size=80 /><br/>
 Keep Step One Output: <select name="KeepStepOneOutput"><option>True</option><option>False</option></select><br/>
 Keep Step Two Output: <select name="KeepStepTwoOutput"><option>True</option><option>False</option></select><br/>
 Global Tag: <input type="text" name="GlobalTag" size=20 value=""/><br/>

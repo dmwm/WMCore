@@ -38,7 +38,7 @@ class DataProcessing(StdBase):
     @staticmethod
     def getWorkloadArguments():
         baseArgs = StdBase.getWorkloadArguments()
-        specArgs = {"InputDataset" : {"default" : "/MinimumBias/Run2012D-v1/RAW", "type" : str,
+        specArgs = {"InputDataset" : {"default" : "/MinimumBias/ComissioningHI-v1/RAW", "type" : str,
                                       "optional" : False, "validate" : dataset,
                                       "attr" : "inputDataset", "null" : False},
                     "GlobalTag" : {"default" : "GT_DP_V1", "type" : str,

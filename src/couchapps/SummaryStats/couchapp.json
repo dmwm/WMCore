@@ -1,0 +1,4 @@
+{
+    "name": "SummaryStats",
+    "description": "JobSummary db for agenet for feeding the data to wmstats"
+}

@@ -417,3 +417,74 @@ class PhEDEx(Service):
         # This is a dummy function to use in unittests to make sure the right class is
         # instantiated
         pass
+    
+    def getInjectedFiles(self, blockFileDict):
+        """
+        take dict of the input
+        {'block_name1': [file_lfn1, file_lfn2, ....],
+         'block_name2': [file_lfn1, file_lfn2, ....],           
+        }
+        and returns
+        list of file injected
+        """
+        injectedFiles = []
+        for block in blockFileDict:
+            result = self._getResult('data', args = {'block' : block}, verb = 'GET')
+            for dbs in result['phedex']['dbs']:
+                for dataset in dbs['dataset']:
+                    blockChunk = dataset['block']
+                    for blockInfo in blockChunk:
+                        for fileInfo in blockInfo['file']:
+                            if fileInfo['lfn'] in blockFileDict[block]:
+                                injectedFiles.append(fileInfo['lfn'])
+        return injectedFiles
+    
+    def getReplicaSEForBlocks(self, phedexNodes=False, **kwargs):
+        """
+        _blockreplicasSE_
+
+        Get replicas SE for given blocks
+        kwargs are options passed through to phedex
+
+        dataset        dataset name, can be multiple (*)
+        block          block name, can be multiple (*)
+        node           node name, can be multiple (*)
+        se             storage element name, can be multiple (*)
+        update_since  unix timestamp, only return replicas updated since this
+                time
+        create_since   unix timestamp, only return replicas created since this
+                time
+        complete       y or n, whether or not to require complete or incomplete
+                blocks. Default is to return either
+        subscribed     y or n, filter for subscription. default is to return either.
+        custodial      y or n. filter for custodial responsibility.  default is
+                to return either.
+        group          group name.  default is to return replicas for any group.
+        
+        Returns a dictionary with se names per block
+        """
+
+        callname = 'blockreplicas'
+        response = self._getResult(callname, args = kwargs)
+        
+        blockSE = dict()
+        blockNodes = dict()
+
+        blocksInfo = response['phedex']['block']
+        if not blocksInfo:
+            return {}
+        
+        for blockInfo in blocksInfo:
+            se = set()
+            nodes = set()
+            for replica in blockInfo['replica']:
+                nodes.add(replica['node'])
+                se.add(replica['se'])
+            blockNodes[blockInfo['name']] = list(nodes)
+            blockSE[blockInfo['name']] = list(se)
+        
+        if phedexNodes:
+            return blockNodes
+        return blockSE
+            
+            

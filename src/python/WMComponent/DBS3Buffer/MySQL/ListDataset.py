@@ -18,11 +18,11 @@ class ListDataset(DBFormatter):
     by the unit tests.
     """
     sql = """SELECT id, path, acquisition_era, processing_ver,
-                    valid_status, global_tag, parent FROM dbsbuffer_dataset
+                    valid_status, global_tag, parent, prep_id FROM dbsbuffer_dataset
                WHERE path = :path"""
 
     sqlID = """SELECT id, path, acquisition_era, processing_ver,
-                    valid_status, global_tag, parent FROM dbsbuffer_dataset
+                    valid_status, global_tag, parent, prep_id FROM dbsbuffer_dataset
                  WHERE id = :id"""
 
     def execute(self, datasetID = None, datasetPath = None, conn = None,

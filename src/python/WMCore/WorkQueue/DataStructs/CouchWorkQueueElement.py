@@ -43,12 +43,13 @@ class CouchWorkQueueElement(WorkQueueElement):
     @classmethod
     def fromDocument(cls, couchDB, doc):
         """Create element from couch document"""
+        elementParams = doc.pop('WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement')
+        elementParams["CreationTime"] = doc.pop('timestamp')
         element = CouchWorkQueueElement(couchDB = couchDB,
                                         id = doc['_id'],
-                                        elementParams = doc.pop('WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement')
-                                        )
+                                        elementParams = elementParams)
         element._document['_rev'] = doc.pop('_rev')
-        element._document['timestamp'] = doc.pop('timestamp')
+        element._document['timestamp'] = elementParams["CreationTime"]
         element._document['updatetime'] = doc.pop('updatetime')
         return element
 

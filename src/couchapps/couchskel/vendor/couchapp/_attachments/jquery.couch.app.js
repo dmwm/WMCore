@@ -31,9 +31,8 @@
   
   $.couch.app = $.couch.app || function(appFun) {
     $(function() {
-      var dname = unescape(document.location.href).split(dbname+'/')[1];
       var db = $.couch.db(dbname);
-      var design = new Design(db, dname);
+      var design = new Design(db, ddname);
       
       // docForm applies CouchDB behavior to HTML forms.
       // todo make this a couch.app plugin
@@ -122,10 +121,10 @@
       var appExports = $.extend({
         showPath : function(funcname, docid) {
           // I wish this was shared with path.js...
-          return '/'+[dbname, '_design', dname, '_show', funcname, docid].join('/')
+          return '/'+[dbname, '_design', ddname, '_show', funcname, docid].join('/')
         },
         listPath : function(funcname, viewname) {
-          return '/'+[dbname, '_design', dname, '_list', funcname, viewname].join('/')
+          return '/'+[dbname, '_design', ddname, '_list', funcname, viewname].join('/')
         },
         slugifyString : function(string) {
           return string.replace(/\W/g,'-').

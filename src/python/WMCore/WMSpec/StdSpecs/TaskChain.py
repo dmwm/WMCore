@@ -10,7 +10,7 @@ Provide support for building arbitrary chains of WMTasks based on a nested dicti
 starting with either a generation (create new MC events) or processing (use an existing input dataset) step, followed
 by a chain of dependent WMTasks that process the subsequent output.
 
-The request is formed as a dictionary where some global parameters are provided as normal, but the 
+The request is formed as a dictionary where some global parameters are provided as normal, but the
 processing tasks are specified as sub dictionaries.
 
 The top level dict should contain the parameter TaskChain and the value is the number of processing tasks to be run.
@@ -25,7 +25,7 @@ CouchDB parameters the main request parameters are:
     "Requestor": "sfoulkes@fnal.gov",                 Person responsible
     "GlobalTag": "GR10_P_v4::All",                    Global Tag
     "CouchURL": "http://couchserver.cern.ch",         URL of CouchDB containing ConfigCache (Used for all sub-tasks)
-    "ConfigCacheUrl": https://cmsweb-testbed.cern.ch/couchdb URL of an alternative CouchDB server containing Config documents     
+    "ConfigCacheUrl": https://cmsweb-testbed.cern.ch/couchdb URL of an alternative CouchDB server containing Config documents
     "CouchDBName": "config_cache",                    Name of Couch Database containing config cache (Used for all sub-tasks)
     "TaskChain" : 4,                                  Define number of tasks in chain.
 }
@@ -92,7 +92,7 @@ from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool,\
 
 #
 # simple utils for data mining the request dictionary
-# 
+#
 isGenerator = lambda args: not args["Task1"].get("InputDataset", None)
 parentTaskModule = lambda args: args.get("InputFromOutputModule", None)
 
@@ -239,14 +239,14 @@ class TaskChainWorkloadFactory(StdBase):
             parentTask = None
             if parent in self.mergeMapping:
                 parentTask = self.mergeMapping[parent][parentTaskModule(taskConf)]
-                
+
             task = self.makeTask(taskConf, parentTask)
             if i == 1:
                 # First task will either be generator or processing
                 self.workload.setDashboardActivity("relval")
                 if isGenerator(arguments):
                     # generate mc events
-                    self.workload.setWorkQueueSplitPolicy("MonteCarlo", taskConf['SplittingAlgo'], 
+                    self.workload.setWorkQueueSplitPolicy("MonteCarlo", taskConf['SplittingAlgo'],
                                                           taskConf['SplittingArguments'])
                     self.workload.setEndPolicy("SingleShot")
                     self.setupGeneratorTask(task, taskConf)
@@ -262,17 +262,21 @@ class TaskChainWorkloadFactory(StdBase):
             self.taskMapping[task.name()] = taskConf
 
         self.workload.ignoreOutputModules(self.ignoredOutputModules)
-        return self.workload  
 
-            
+        # setting the parameters which need to be set for all the tasks
+        # sets acquisitionEra, processingVersion, processingString
+        self.workload.setTaskPropertiesFromWorkload()
+        return self.workload
+
+
     def makeTask(self, taskConf, parentTask = None):
         """
         _makeTask_
-        
-        create new Task and populate it with basic required parameters from the 
-        taskConfig provided, if parentTask is None, the task will be created in 
+
+        create new Task and populate it with basic required parameters from the
+        taskConfig provided, if parentTask is None, the task will be created in
         the workload, else the task will be created as a child of the parent Task
-        
+
         """
         if parentTask == None:
             task = self.workload.newTask(taskConf['TaskName'])
@@ -284,7 +288,7 @@ class TaskChainWorkloadFactory(StdBase):
     def setupGeneratorTask(self, task, taskConf):
         """
         _setupGeneratorTask_
-        
+
         Set up an initial generation task
         """
         cmsswStepType = "CMSSW"
@@ -331,6 +335,7 @@ class TaskChainWorkloadFactory(StdBase):
         splitArguments = taskConf["SplittingArguments"]
         keepOutput     = taskConf["KeepOutput"]
         transientModules = taskConf["TransientOutputModules"]
+        lumiMask = taskConf.get('LumiList', None)
         forceUnmerged = (not keepOutput) or (len(transientModules) > 0)
 
         # in case the initial task is a processing task, we have an input dataset, otherwise
@@ -352,7 +357,7 @@ class TaskChainWorkloadFactory(StdBase):
                 inpMod = taskConf["InputFromOutputModule"]
                 # Check if the splitting has to be changed
                 if inputTaskConf["SplittingAlgo"] == 'EventBased' \
-                   and (('InputDataset' in inputTaskConf) or ('InputTask' in inputTaskConf)):
+                   and (inputTaskConf["InputDataset"] or inputTaskConf["InputTask"]):
                     splitAlgorithm = 'WMBSMergeBySize'
                     splitArguments = {'max_merge_size'   : self.maxMergeSize,
                                       'min_merge_size'   : self.minMergeSize,
@@ -375,8 +380,8 @@ class TaskChainWorkloadFactory(StdBase):
                                               couchDBName = couchDB,
                                               configCacheUrl = self.configCacheUrl,
                                               configDoc = configCacheID,
-                                              splitAlgo = splitAlgorithm,
-                                              splitArgs = splitArguments,
+                                              splitAlgo = taskConf["SplittingAlgo"],
+                                              splitArgs = taskConf["SplittingArguments"],
                                               stepType = cmsswStepType,
                                               forceUnmerged = forceUnmerged,
                                               timePerEvent = self.timePerEvent,
@@ -386,6 +391,8 @@ class TaskChainWorkloadFactory(StdBase):
 
         if taskConf["PileupConfig"]:
             self.setupPileup(task, taskConf['PileupConfig'])
+        if lumiMask:
+            task.setLumiMask(lumiMask)
 
         self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
         self.setUpMergeTasks(task, outputMods, splitAlgorithm,
@@ -445,15 +452,28 @@ class TaskChainWorkloadFactory(StdBase):
         for argument in baseArguments:
             if argument in taskConf:
                 taskConf[argument] = baseArguments[argument]["type"](taskConf[argument])
-        if taskConf["EventsPerJob"] is None:
-            taskConf["EventsPerJob"] = (8.0 * 3600.0)/(taskConf.get("TimePerEvent", self.timePerEvent))
+
         if generator:
             taskConf["SplittingAlgo"] = "EventBased"
+            # Adjust totalEvents according to the filter efficiency
+            taskConf["RequestNumEvents"] = int(taskConf.get("RequestNumEvents", 0) / \
+                                               taskConf.get("FilterEfficiency"))
+            taskConf["SizePerEvent"] = taskConf.get("SizePerEvent", self.sizePerEvent) * \
+                                       taskConf.get("FilterEfficiency")
+
+        if taskConf["EventsPerJob"] is None:
+            taskConf["EventsPerJob"] = (8.0 * 3600.0)/(taskConf.get("TimePerEvent", self.timePerEvent))
+        if taskConf["EventsPerLumi"] is None:
+            taskConf["EventsPerLumi"] = taskConf["EventsPerJob"]
+
         taskConf["SplittingArguments"] = {}
         if taskConf["SplittingAlgo"] == "EventBased" or taskConf["SplittingAlgo"] == "EventAwareLumiBased":
             taskConf["SplittingArguments"]["events_per_job"] = taskConf["EventsPerJob"]
             if taskConf["SplittingAlgo"] == "EventAwareLumiBased":
                 taskConf["SplittingArguments"]["max_events_per_lumi"] = 20000
+            else:
+                taskConf["SplittingArguments"]["events_per_lumi"] = taskConf["EventsPerLumi"]
+            taskConf["SplittingArguments"]["lheInputFiles"] = taskConf["LheInputFiles"]
         elif taskConf["SplittingAlgo"] == "LumiBased":
             taskConf["SplittingArguments"]["lumis_per_job"] = taskConf["LumisPerJob"]
         elif taskConf["SplittingAlgo"] == "FileBased":
@@ -488,7 +508,8 @@ class TaskChainWorkloadFactory(StdBase):
                                     "attr" : "firstEvent", "null" : False},
                     "FirstLumi" : {"default" : 1, "type" : int,
                                     "optional" : True, "validate" : lambda x : x > 0,
-                                    "attr" : "firstLumi", "null" : False}}
+                                    "attr" : "firstLumi", "null" : False}
+                    }
         baseArgs.update(specArgs)
         return baseArgs
 
@@ -562,14 +583,23 @@ class TaskChainWorkloadFactory(StdBase):
                                      "null" : False},
                     "FilesPerJob" : {"default" : 1, "type" : int,
                                      "optional" : True, "validate" : lambda x : x > 0,
-                                     "null" : False}
+                                     "null" : False},
+                    "EventsPerLumi" : {"default" : None, "type" : int,
+                                       "optional" : True, "validate" : lambda x : x > 0,
+                                       "attr" : "eventsPerLumi", "null" : True},
+                    "FilterEfficiency" : {"default" : 1.0, "type" : float,
+                                          "optional" : True, "validate" : lambda x : x > 0.0,
+                                          "attr" : "filterEfficiency", "null" : False},
+                    "LheInputFiles" : {"default" : False, "type" : strToBool,
+                                       "optional" : True, "validate" : None,
+                                       "attr" : "lheInputFiles", "null" : False}
                     }
         return specArgs
 
     def validateSchema(self, schema):
         """
         _validateSchema_
-        
+
         Go over each task and make sure it matches validation
         parameters derived from Dave's requirements.
         """
@@ -627,9 +657,9 @@ class TaskChainWorkloadFactory(StdBase):
         # Change them all to optional for validation
         #TODO: can this just called
         #validateArgumentsUpdate(taskConf, baseArgs)
-        
-        validateArgumentsCreate(taskConf, baseArgs)
         baseArgs = self.getWorkloadArguments()
+        validateArgumentsCreate(taskConf, baseArgs)
+        
         for arg in baseArgs:
             baseArgs[arg]["optional"] = True
         msg = validateArgumentsCreate(taskConf, baseArgs)

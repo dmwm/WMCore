@@ -8,6 +8,7 @@ Unit tests for the WMTask class.
 import unittest
 
 from WMCore.WMSpec.WMTask import WMTask, makeWMTask
+from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMSpec.WMStep import makeWMStep
 
 class WMTaskTest(unittest.TestCase):
@@ -421,6 +422,28 @@ class WMTaskTest(unittest.TestCase):
         runs=['3', '4']
         lumis=['1,4,23,45', '5,84,234']
         self.assertRaises(ValueError, buildLumiMask, runs, lumis)
+
+    def testAddLumiMask(self):
+        """
+        _testAddLumiMask_
+
+        Verify that setting and getting the lumiMask objects for a task works correctly.
+        Do a round trip of a typical lumi mask
+        """
+        testTask = makeWMTask("TestTask")
+
+        lumiMask = LumiList(compactList = {
+                '1': [[1, 33], [35, 35], [37, 47], [49, 75], [77, 130], [133, 136]],
+                '2':[[1,45]],
+                '3':[[1,45],[50,80]],
+            })
+
+        testTask.setLumiMask(lumiMask = lumiMask.getCompactList())
+        outMask =  LumiList(compactList = testTask.getLumiMask())
+        self.assertEqual(lumiMask.getCMSSWString(), outMask.getCMSSWString())
+
+        return
+
 
     def testSubscriptionInformation(self):
         """

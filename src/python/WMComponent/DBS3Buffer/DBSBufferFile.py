@@ -15,7 +15,7 @@ from WMCore.WMBS.WMBSBase import WMBSBase
 class DBSBufferFile(WMBSBase, WMFile):
     def __init__(self, lfn = None, id = -1, size = None,
                  events = None, checksums = {}, parents = None, locations = None,
-                 status = "NOTUPLOADED", workflowId = None):
+                 status = "NOTUPLOADED", workflowId = None, prep_id = None):
         WMBSBase.__init__(self)
         WMFile.__init__(self, lfn = lfn, size = size, events = events,
                         checksums = checksums, parents = parents, merged = True)
@@ -35,6 +35,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         self.setdefault("validStatus", None)
         self.setdefault("globalTag", None)
         self.setdefault("datasetParent", None)
+        self.setdefault("prep_id", None)
 
         if locations == None:
             self.setdefault("newlocations", set())
@@ -160,7 +161,8 @@ class DBSBufferFile(WMBSBase, WMFile):
                                             acquisitionEra = self['acquisitionEra'],
                                             validStatus = self['validStatus'],
                                             globalTag = self.get('globalTag', None),
-                                            parent = self['datasetParent'])
+                                            parent = self['datasetParent'],
+                                            prep_id = self['prep_id'])
 
         if dbsbufferDataset.exists():
             dbsbufferDataset.updateDataset()
@@ -433,6 +435,14 @@ class DBSBufferFile(WMBSBase, WMFile):
 
         return self['globalTag']
 
+    def setPrepID(self, prep_id):
+        
+        self['prep_id'] = prep_id
+        return
+
+    def getPrepID(self):
+        
+        return self['prep_id']
 
     def setDatasetParent(self, datasetParent):
         """

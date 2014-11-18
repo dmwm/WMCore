@@ -11,7 +11,7 @@ class EmulatorSetupTest(unittest.TestCase):
     A test of a emulator set up
     """
     def setUp(self):
-        self.globalDBS = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+        self.globalDBS = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
 
     def testEmulator(self):
 

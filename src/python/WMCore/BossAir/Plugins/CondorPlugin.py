@@ -183,7 +183,6 @@ class CondorPlugin(BasePlugin):
         self.scriptFile    = None
         self.submitDir     = None
         self.removeTime    = getattr(config.BossAir, 'removeTime', 60)
-        self.multiTasks    = getattr(config.BossAir, 'multicoreTaskTypes', [])
         self.useGSite      = getattr(config.BossAir, 'useGLIDEINSites', False)
         self.submitWMSMode = getattr(config.BossAir, 'submitWMSMode', False)
         self.errorThreshold= getattr(config.BossAir, 'submitErrorThreshold', 10)
@@ -234,7 +233,7 @@ class CondorPlugin(BasePlugin):
             self.proxy = self.setupMyProxy()
 
         # Build a request string
-        self.reqStr = "(Memory >= 1 && OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\") && stringListMember(GLIDEIN_CMSSite, DESIRED_Sites) && (GLIDEIN_REQUIRED_OS==REQUIRED_OS)"
+        self.reqStr = "(Memory >= 1 && OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\") && stringListMember(GLIDEIN_CMSSite, DESIRED_Sites) && ((REQUIRED_OS==\"any\") || (GLIDEIN_REQUIRED_OS==REQUIRED_OS))"
         if hasattr(config.BossAir, 'condorRequirementsString'):
             self.reqStr = config.BossAir.condorRequirementsString
 
@@ -578,7 +577,11 @@ class CondorPlugin(BasePlugin):
                     completeList.append(job)
             else:
                 jobAd     = jobInfo.get(job['jobid'])
-                jobStatus = int(jobAd.get('JobStatus', 0))
+                try:
+                    # sometimes it returns 'undefined' (probably over high load)
+                    jobStatus = int(jobAd.get('JobStatus', 0))
+                except ValueError, ex:
+                    jobStatus = 0  # unknown
                 statName  = 'Unknown'
                 if jobStatus == 1:
                     # Job is Idle, waiting for something to happen
@@ -612,15 +615,24 @@ class CondorPlugin(BasePlugin):
                 #Check if we have a valid status time
                 if not job['status_time']:
                     if job['status'] == 'Running':
-                        job['status_time'] = int(jobAd.get('runningTime', 0))
+                        try:
+                            job['status_time'] = int(jobAd.get('runningTime', 0))
+                        except ValueError, ex:
+                            job['status_time'] = 0
                         # If we transitioned to running then check the site we are running at
                         job['location'] = jobAd.get('runningCMSSite', None)
                         if job['location'] is None:
                             logging.debug('Something is not right here, a job (%s) is running with no CMS site' % str(jobAd))
                     elif job['status'] == 'Idle':
-                        job['status_time'] = int(jobAd.get('submitTime', 0))
+                        try:
+                            job['status_time'] = int(jobAd.get('submitTime', 0))
+                        except ValueError, ex:
+                            job['status_time'] = 0
                     else:
-                        job['status_time'] = int(jobAd.get('stateTime', 0))
+                        try:
+                            job['status_time'] = int(jobAd.get('stateTime', 0))
+                        except ValueError, ex:
+                            job['status_time'] = 0
                     changeList.append(job)
 
                 runningList.append(job)
@@ -710,41 +722,50 @@ class CondorPlugin(BasePlugin):
 
         Modify condor classAd for all Idle jobs for a site if it has gone Down, Draining or Aborted.
         Kill all jobs if the site is the only site for the job.
+        This expects:    excludeSite = False when moving to Normal
+                         excludeSite = True when moving to Down, Draining or Aborted
         """
         jobInfo = self.getClassAds()
         jobtokill=[]
         for job in jobs:
-            jobID = job['jobid']
+            jobID = job['id']
             jobAd = jobInfo.get(jobID)
-            if excludeSite :
-                if siteName in jobAd.get('DESIRED_Sites') and siteName in jobAd.get('ExtDESIRED_Sites') :
-                    usi = jobAd.get('DESIRED_Sites').split(', ')
-                    print len(usi)
-                    if len(usi) > 1 :
-                        usi.remove(siteName)
-                        usi = usi.__str__().lstrip('[').rstrip(']')
-                        usi = filter(lambda c: c not in "\'", usi)
+
+            if not jobAd:
+                logging.debug("No jobAd received for jobID %i"%jobID)
+            else:
+                desiredSites = jobAd.get('DESIRED_Sites').split(', ')
+                extDesiredSites = jobAd.get('ExtDESIRED_Sites').split(', ')
+                if excludeSite:
+                    #Remove siteName from DESIRED_Sites if job has it
+                    if siteName in desiredSites and siteName in extDesiredSites:
+                        usi = desiredSites
+                        if len(usi) > 1:
+                            usi.remove(siteName)
+                            usi = ','.join(map(str, usi))
+                            command = 'condor_qedit  -constraint \'WMAgent_JobID==%i\' DESIRED_Sites \'"%s"\'' %(jobID, usi)
+                            proc = subprocess.Popen(command, stderr = subprocess.PIPE,
+                                                    stdout = subprocess.PIPE, shell = True)
+                            out, err = proc.communicate()
+                        else:
+                            jobtokill.append(job)
+                    else:
+                        #If job doesn't have the siteName in the siteList, just ignore it
+                        logging.debug("Cannot find siteName %s in the sitelist" % siteName)
+                else:
+                    #Add siteName to DESIRED_Sites if ExtDESIRED_Sites has it (moving back to Normal)
+                    if siteName not in desiredSites and siteName in extDesiredSites:
+                        usi = desiredSites
+                        usi.append(siteName)
+                        usi = ','.join(map(str, usi))
                         command = 'condor_qedit  -constraint \'WMAgent_JobID==%i\' DESIRED_Sites \'"%s"\'' %(jobID, usi)
                         proc = subprocess.Popen(command, stderr = subprocess.PIPE,
                                                 stdout = subprocess.PIPE, shell = True)
                         out, err = proc.communicate()
-                    else:
-                        jobtokill.append(job)
-                else :
-                    logging.error("Cannot find siteName %s in the sitelist" % siteName)
-            else :
-                if siteName in jobAd.get('ExtDESIRED_Sites') and siteName not in jobAd.get('DESIRED_Sites') :
-                    usi = jobAd.get('DESIRED_Sites').split(', ')
-                    usi.append(siteName)
-                    usi = usi.__str__().lstrip('[').rstrip(']')
-                    usi = filter(lambda c: c not in "\'", usi)
-                    command = 'condor_qedit  -constraint \'WMAgent_JobID==%i\' DESIRED_Sites \'"%s"\'' %(jobID, usi)
-                    proc = subprocess.Popen(command, stderr = subprocess.PIPE,
-                                            stdout = subprocess.PIPE, shell = True)
-                    out, err = proc.communicate()
-                else :
-                    logging.error("Cannot find siteName %s in the sitelist" % siteName)
-        
+                    else :
+                        #If job doesn't have the siteName in the siteList, just ignore it
+                        logging.debug("Cannot find siteName %s in the sitelist" % siteName)
+
         return jobtokill
 
 
@@ -796,7 +817,7 @@ class CondorPlugin(BasePlugin):
                     msg = 'HTCondor edit failed with exit code %d\n'% proc.returncode
                     msg += 'Error was: %s' % stderr
                     raise BossAirPluginException(msg)
-                
+
         return
 
     # Start with submit functions
@@ -877,12 +898,6 @@ class CondorPlugin(BasePlugin):
         jdl = []
         jdl.append('+DESIRED_Archs = \"INTEL,X86_64\"\n')
         jdl.append('+REQUIRES_LOCAL_DATA = True\n')
-
-        # Check for multicore
-        if jobList and jobList[0].get('taskType', None) in self.multiTasks:
-            jdl.append('+DESIRES_HTPC = True\n')
-        else:
-            jdl.append('+DESIRES_HTPC = False\n')
 
         return jdl
 
@@ -968,15 +983,13 @@ class CondorPlugin(BasePlugin):
         if self.useGSite:
             jdl.append('+GLIDEIN_CMSSite = \"%s\"\n' % (jobCE))
         if self.submitWMSMode and len(job.get('possibleSites', [])) > 0:
-            strg = list(job.get('possibleSites')).__str__().lstrip('[').rstrip(']')
-            strg = filter(lambda c: c not in "\'", strg)
+            strg = ','.join(map(str, job.get('possibleSites')))
             jdl.append('+DESIRED_Sites = \"%s\"\n' % strg)
         else:
             jdl.append('+DESIRED_Sites = \"%s\"\n' %(jobCE))
 
         if self.submitWMSMode and len(job.get('potentialSites', [])) > 0:
-            strg = list(job.get('potentialSites')).__str__().lstrip('[').rstrip(']')
-            strg = filter(lambda c: c not in "\'", strg)
+            strg = ','.join(map(str, job.get('potentialSites')))
             jdl.append('+ExtDESIRED_Sites = \"%s\"\n' % strg)
         else:
             jdl.append('+ExtDESIRED_Sites = \"%s\"\n' %(jobCE))
@@ -1001,10 +1014,16 @@ class CondorPlugin(BasePlugin):
         if job.get('estimatedDiskUsage', None):
             jdl.append('request_disk = %d\n' % int(job['estimatedDiskUsage']))
 
+        # Set up JDL for multithreaded jobs
+        # In the future hope to remove multicoreEnabled setting and just key off of nCores
+        if job.get('multicoreEnabled', False) or job.get('numberOfCores', 1) > 1:
+            jdl.append('machine_count = 1\n')
+            jdl.append('request_cpus = %s\n' % job.get('numberOfCores', 1))
+
         #Add OS requirements for jobs
-        if job.get('scramArch') is not None and job.get('scramArch').startswith("sl6_") :
+        if job.get('scramArch') is not None and job.get('scramArch').startswith("slc6_") :
             jdl.append('+REQUIRED_OS = "rhel6"\n')
-        else : 
+        else:
             jdl.append('+REQUIRED_OS = "any"\n')
 
         return jdl
@@ -1036,8 +1055,8 @@ class CondorPlugin(BasePlugin):
                    '-format', '(stateTime:\%s)  ', 'EnteredCurrentStatus',
                    '-format', '(runningTime:\%s)  ', 'JobStartDate',
                    '-format', '(submitTime:\%s)  ', 'QDate',
-                   '-format', '(DESIRED_Sites:\%s)  ', 'DESIRED_Sites',                   
-                   '-format', '(ExtDESIRED_Sites:\%s)  ', 'ExtDESIRED_Sites',                   
+                   '-format', '(DESIRED_Sites:\%s)  ', 'DESIRED_Sites',
+                   '-format', '(ExtDESIRED_Sites:\%s)  ', 'ExtDESIRED_Sites',
                    '-format', '(runningCMSSite:\%s)  ', 'MATCH_EXP_JOBGLIDEIN_CMSSite',
                    '-format', '(WMAgentID:\%d):::',  'WMAgent_JobID']
 

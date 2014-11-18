@@ -9,7 +9,7 @@ WMStats.namespace('RequestDetailList');
          
             htmlstr +=  dataArray;
          } else {
-            htmlstr += "<details> <summary>" + summaryStr +"</summary><ul>"  
+            htmlstr += "<details> <summary>" + summaryStr +"</summary><ul>";  
             for (var i in dataArray) {
                 htmlstr += "<li> <b>" + dataArray[i].status + ":</b> " + WMStats.Utils.utcClock(new Date(dataArray[i].update_time * 1000)) + "</li>";
             }
@@ -23,7 +23,7 @@ WMStats.namespace('RequestDetailList');
         var reqDoc = requestStruct.requests;
         var reqSummary = requestStruct.summary;
         
-        htmlstr += "<div class='requestDetailBox'>"
+        htmlstr += "<div class='requestDetailBox'>";
         htmlstr += "<ul>";
         if (reqDoc) {
             
@@ -34,7 +34,7 @@ WMStats.namespace('RequestDetailList');
             htmlstr += "<li><b>created:</b> " + reqSummary.getWMBSTotalJobs() + "</li>";
             htmlstr += "<li><b>paused jobs:</b> " + reqSummary.getTotalPaused() + "</li>";
             htmlstr += "<li><b>cooloff jobs:</b> " + reqSummary.getTotalCooloff() + "</li>";
-            htmlstr += "<li><b>submitted:</b> " + reqSummary.getTotalSubmitted() + "</li>"
+            htmlstr += "<li><b>submitted:</b> " + reqSummary.getTotalSubmitted() + "</li>";
             htmlstr += "<li><b>pending:</b> " + reqSummary.getJobStatus("submitted.pending", 0) + "</li>";
             htmlstr += "<li><b>running:</b> " + reqSummary.getJobStatus("submitted.running", 0) + "</li>";
             htmlstr += "<li><b>failure:</b> " + reqSummary.getTotalFailure()  + "</li>";
@@ -43,7 +43,7 @@ WMStats.namespace('RequestDetailList');
         htmlstr += "</ul>";
         htmlstr += "</div>";
         return htmlstr;
-    }
+    };
     
     WMStats.RequestDetailList = function (workflow, containerDiv) {
         var allRequests = vm.ActiveRequestPage.data();
@@ -53,5 +53,13 @@ WMStats.namespace('RequestDetailList');
         requests[workflow] = reqDoc;
         var data = {key: workflow, requests: requests, summary: reqSummary};
         $(containerDiv).html(format(data));
-    }
+        $(containerDiv).show("slide", {}, 500);
+        vm.RequestDetail.open = true;
+    };
+    
+    var vm = WMStats.ViewModel;
+
+    vm.RequestDetail.subscribe("requestName", function() {
+        WMStats.RequestDetailList(vm.RequestDetail.requestName(), vm.RequestDetail.id());
+    });
 })();

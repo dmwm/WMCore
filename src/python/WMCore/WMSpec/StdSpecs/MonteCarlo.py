@@ -11,6 +11,7 @@ pile up section defined in the configuration, the generation task
 fetches from DBS the information about pileup input.
 """
 
+import math
 from WMCore.Lexicon import primdataset, couchurl, identifier, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import strToBool, parsePileupConfig
@@ -77,6 +78,15 @@ class MonteCarloWorkloadFactory(StdBase):
                                        workload.getBlockCloseMaxEvents(),
                                        workload.getBlockCloseMaxSize())
 
+        # setting the parameters which need to be set for all the tasks
+        # sets acquisitionEra, processingVersion, processingString
+        workload.setTaskPropertiesFromWorkload()
+
+        # set the LFN bases (normally done by request manager)
+        # also pass runNumber (workload evaluates it)
+        workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
+                            runNumber = self.runNumber)
+
         return workload
 
     def __call__(self, workloadName, arguments):
@@ -111,8 +121,7 @@ class MonteCarloWorkloadFactory(StdBase):
         # need to move the initial lfn counter
         self.previousJobCount = 0
         if self.firstLumi > 1:
-            lumisPerJob = int(float(self.eventsPerJob) / self.eventsPerLumi)
-            self.previousJobCount = self.firstLumi / lumisPerJob
+            self.previousJobCount = int(math.ceil((self.firstEvent - 1) / self.eventsPerJob))
             self.prodJobSplitArgs["initial_lfn_counter"] = self.previousJobCount
 
         return self.buildWorkload()

@@ -33,7 +33,7 @@ def createWorkload(name="BasicProcessing"):
         primary = "Cosmics",
         processed = "CRAFT09-PromptReco-v1",
         tier = "RECO",
-        dbsurl = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
+        dbsurl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
 
     #  //
     # // rereco cmssw step

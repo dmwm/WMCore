@@ -5,8 +5,7 @@ This is the Dashboard API Module for the Worker Node
 """
 
 from WMCore.Services.Dashboard import apmon
-import time
-from types import DictType, StringType, ListType
+from types import DictType, ListType
 
 #
 # Methods for manipulating the apmon instance
@@ -18,6 +17,16 @@ apmonInit = False
 
 # Monalisa configuration
 apmonConf = ["cms-wmagent-job.cern.ch"]
+
+# private function converting unitcode to str
+def __checkAndConvertToStr(value):
+    if not isinstance(value, basestring) :
+        return 'unknown'
+    try:
+        return str(value)
+    except UnicodeEncodeError:
+        #This contains some unicode outside ascii range
+        return 'unknown'
 
 #
 # Method to create a single apmon instance at a time
@@ -59,10 +68,8 @@ def apmonSend(taskid, jobid, params, logr, apmonServer) :
     if apm is not None :
         if not isinstance(params, DictType) and not isinstance(params, ListType) :
             params = {'unknown' : '0'}
-        if not isinstance(taskid, StringType) :
-            taskid = 'unknown'
-        if not isinstance(jobid, StringType) :
-            jobid = 'unknown'
+        taskid = __checkAndConvertToStr(taskid)
+        jobid = __checkAndConvertToStr(jobid)
         try :
             apm.sendParameters(taskid, jobid, params)
             return 0

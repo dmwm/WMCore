@@ -17,6 +17,7 @@ from subprocess import Popen, PIPE
 
 # Imports for testing
 from WMQuality.TestInit import TestInit
+from WMQuality.Emulators import EmulatorSetup
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMInit import getWMBASE
 
@@ -145,8 +146,7 @@ class WMAgentTest(unittest.TestCase):
             heartbeatAPI = HeartbeatAPI(component)
             heartbeatAPI.registerComponent()
 
-
-
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
 
         return
 
@@ -161,6 +161,8 @@ class WMAgentTest(unittest.TestCase):
         self.testInit.clearDatabase()
 
         self.testInit.delWorkDir()
+        
+        EmulatorSetup.deleteConfig(self.configFile)
 
         return
 
@@ -199,7 +201,7 @@ class WMAgentTest(unittest.TestCase):
 
 
 
-        config = Configuration()
+        config = self.testInit.getConfiguration()
 
         config.component_("Agent")
         config.Agent.WMSpecDirectory = self.testDir

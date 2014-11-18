@@ -27,7 +27,9 @@ def _wmAgentConfig(configFile):
     # set the real couchDB information here
     config.JobStateMachine.couchurl = os.getenv("COUCHURL")
     config.JobStateMachine.couchDBName = os.getenv("COUCHDB")
-
+    config.JobStateMachine.jobSummaryDBName = "wmagent_summary_test"
+    config.JobStateMachine.summaryStatsDBName = "stat_summary_test"
+    
     config.section_("Agent")
     # User specific parameter
     config.Agent.hostName = "cmssrv52.fnal.gov"

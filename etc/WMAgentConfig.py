@@ -32,6 +32,7 @@ databaseSocket = "/opt/MySQL-5.1/var/lib/mysql/mysql.sock"
 couchURL = "http://USERNAME:PASSWORD@COUCHSERVER:5984"
 jobDumpDBName = "wmagent_jobdump"
 jobSummaryDBName = "wmagent_summary"
+summaryStatsDBName = "stat_summary"
 acdcDBName = "acdcserver"
 workqueueDBName = 'workqueue'
 workqueueInboxDbName = 'workqueue_inbox'
@@ -49,10 +50,13 @@ agentNumber = 0
 # List of BossAir plugins that this agent will use.
 bossAirPlugins = ["CondorPlugin"]
 
+## Plugin with Condor-Python API ...
+bossAirPlugins = ["PyCondorPlugin", "CondorPlugin"]
+
 # DBS Information.
 localDBSUrl = "https://cmst0dbs.cern.ch:8443/cms_dbs_prod_tier0_writer/servlet/DBSServlet"
 localDBSVersion = "DBS_2_0_8"
-globalDBSUrl = "https://cmsdbsprod.cern.ch:8443/cms_dbs_prod_global_writer/servlet/DBSServlet"
+globalDBSUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
 globalDBSVersion = "DBS_2_0_8"
 
 # Job retry information.  This includes the number of times a job will tried and
@@ -87,6 +91,7 @@ config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = couchURL
 config.JobStateMachine.couchDBName = jobDumpDBName
 config.JobStateMachine.jobSummaryDBName = jobSummaryDBName
+config.JobStateMachine.summaryStatsDBName = summaryStatsDBName
 
 config.section_("ACDC")
 config.ACDC.couchurl = "https://cmsweb.cern.ch/couchdb"
@@ -101,6 +106,7 @@ config.BossAir.pluginDir = "WMCore.BossAir.Plugins"
 config.BossAir.pluginNames = bossAirPlugins
 config.BossAir.nCondorProcesses = 1
 config.BossAir.multicoreTaskTypes = ["MultiProcessing", "MultiProduction"]
+config.BossAir.submitWMSMode = True
 
 config.section_("CoreDatabase")
 config.CoreDatabase.connectUrl = databaseUrl
@@ -120,13 +126,8 @@ config.WorkQueueManager.dbname = workqueueDBName
 config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
 config.WorkQueueManager.queueParams = {}
 config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cern.ch/couchdb/workqueue"
-
-config.component_("DBSUpload")
-config.DBSUpload.namespace = "WMComponent.DBSUpload.DBSUpload"
-config.DBSUpload.componentDir = config.General.workDir + "/DBSUpload"
-config.DBSUpload.logLevel = globalLogLevel
-config.DBSUpload.workerThreads = 1
-config.DBSUpload.pollInterval = 100
+# this has to be unique for different work queue. This is just place holder 
+config.WorkQueueManager.queueParams["QueueURL"] = "http://%s:5984" % (config.Agent.hostName)
 
 config.component_("DBS3Upload")
 config.DBS3Upload.namespace = "WMComponent.DBS3Buffer.DBS3Upload"
@@ -134,8 +135,10 @@ config.DBS3Upload.componentDir = config.General.workDir + "/DBS3Upload"
 config.DBS3Upload.logLevel = globalLogLevel
 config.DBS3Upload.workerThreads = 1
 config.DBS3Upload.pollInterval = 100
-config.DBS3Upload.dbsUrl = "https://cmsweb-testbed.cern.ch/dbs/prod/global/DBSWriter"
-config.DBS3Upload.dbs3UploadOnly = True
+#"https://cmsweb.cern.ch/dbs/prod/global/DBSWriter" - production one
+config.DBS3Upload.dbsUrl = "OVER_WRITE_BY_SECETES" 
+config.DBS3Upload.dbs3UploadOnly = False
+config.DBS3Upload.primaryDatasetType = "mc"
 
 config.section_("DBSInterface")
 #config.DBSInterface.DBSUrl = localDBSUrl
@@ -145,6 +148,7 @@ config.DBSInterface.globalDBSUrl = globalDBSUrl
 config.DBSInterface.globalDBSVersion = globalDBSVersion
 config.DBSInterface.MaxFilesToCommit = 200
 config.DBSInterface.doGlobalMigration = False
+config.DBSInterface.primaryDatasetType = "mc"
 
 config.component_("PhEDExInjector")
 config.PhEDExInjector.namespace = "WMComponent.PhEDExInjector.PhEDExInjector"
@@ -153,9 +157,11 @@ config.PhEDExInjector.logLevel = globalLogLevel
 config.PhEDExInjector.maxThreads = 1
 config.PhEDExInjector.subscribeDatasets = True
 config.PhEDExInjector.safeMode = False
-config.PhEDExInjector.phedexurl = "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
+#phedex address "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
+config.PhEDExInjector.phedexurl = "OVER_WRITE_BY_SECETES" 
 config.PhEDExInjector.pollInterval = 100
 config.PhEDExInjector.subscribeInterval = 43200
+config.PhEDExInjector.diskSites = []
 
 config.component_("JobAccountant")
 config.JobAccountant.namespace = "WMComponent.JobAccountant.JobAccountant"
@@ -207,7 +213,8 @@ config.JobUpdater.namespace = "WMComponent.JobUpdater.JobUpdater"
 config.JobUpdater.componentDir = config.General.workDir + "/JobUpdater"
 config.JobUpdater.logLevel = globalLogLevel
 config.JobUpdater.pollInterval = 120
-config.JobUpdater.reqMgrUrl = 'https://cmsweb.cern.ch/reqmgr/reqMgr'
+#reqmgr url 'https://cmsweb.cern.ch/reqmgr/reqMgr'
+config.JobUpdater.reqMgrUrl = "OVER_WRITE_BY_SECETES"
 
 config.component_("ErrorHandler")
 config.ErrorHandler.namespace = "WMComponent.ErrorHandler.ErrorHandler"
@@ -216,7 +223,7 @@ config.ErrorHandler.logLevel = globalLogLevel
 config.ErrorHandler.maxRetries = maxJobRetries
 config.ErrorHandler.pollInterval = 240
 config.ErrorHandler.readFWJR = True
-config.ErrorHandler.failureExitCodes = [50660, 50661, 50664, 134]
+config.ErrorHandler.failureExitCodes = [50660, 50661, 50664]
 config.ErrorHandler.maxFailTime = 120000
 
 config.component_("RetryManager")
@@ -253,7 +260,8 @@ config.TaskArchiver.histogramKeys = ["PeakValueRss", "PeakValueVsize", "TotalJob
 config.TaskArchiver.perfPrimaryDatasets = ['SingleMu', 'MuHad', 'MinimumBias']
 config.TaskArchiver.perfDashBoardMinLumi = 50
 config.TaskArchiver.perfDashBoardMaxLumi = 9000
-config.TaskArchiver.dqmUrl = 'https://cmsweb.cern.ch/dqm/dev/'
+#dqm address -'https://cmsweb.cern.ch/dqm/dev/'
+config.TaskArchiver.dqmUrl = "OVER_WRITE_BY_SECETES"
 config.TaskArchiver.requireCouch  = True
 config.TaskArchiver.uploadPublishInfo = False
 config.TaskArchiver.uploadPublishDir  = None
@@ -483,20 +491,36 @@ config.AlertGenerator.couchErrorsPoller.pollInterval = 600 # [second]
 # mysql*Poller sections were made optional and are defined in the
 # wmagent-mod-config file
 
-# alerts-related stuff associated with components, these values shall later
-# be moved into respective configuration sections 
-# e.g. next item(s) will be from WorkQueueManager when a special necessary view is implemented
-config.DBSUpload.alertUploadQueueSize = 2000
-
 config.component_("AnalyticsDataCollector")
 config.AnalyticsDataCollector.namespace = "WMComponent.AnalyticsDataCollector.AnalyticsDataCollector"
 config.AnalyticsDataCollector.componentDir  = config.General.workDir + "/AnalyticsDataCollector"
 config.AnalyticsDataCollector.logLevel = globalLogLevel
 config.AnalyticsDataCollector.pollInterval = 600
+config.AnalyticsDataCollector.agentPollInterval = 300
 config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl,  config.JobStateMachine.couchDBName)
 config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
 config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 config.AnalyticsDataCollector.centralWMStatsURL = "Central WMStats URL"
 config.AnalyticsDataCollector.summaryLevel = "task"
+config.AnalyticsDataCollector.ignoreDisk = ["/lustre/unmerged"]
+config.AnalyticsDataCollector.diskUseThreshold = 60
+config.AnalyticsDataCollector.couchProcessThreshold = 25
 config.AnalyticsDataCollector.pluginName = None
 
+config.component_("AgentStatusWatcher")
+config.AgentStatusWatcher.namespace = "WMComponent.AgentStatusWatcher.AgentStatusWatcher"
+config.AgentStatusWatcher.componentDir = config.General.workDir + "/AgentStatusWatcher"
+config.AgentStatusWatcher.logLevel = globalLogLevel
+config.AgentStatusWatcher.resourceUpdaterPollInterval = 900 # [second]
+config.AgentStatusWatcher.siteStatusMetric = 158 # [column number in SSB] The source of the information in SSB for Site status
+config.AgentStatusWatcher.cpuBoundMetric = 160 # [column number in SSB] The source of the information in SSB for CPUBound
+config.AgentStatusWatcher.ioBoundMetric = 161 # [column number in SSB] The source of the information in SSB for IOBound
+config.AgentStatusWatcher.dashboard = "Dashboard URL"
+config.AgentStatusWatcher.centralWMStatsURL = "Central WMStats URL"
+config.AgentStatusWatcher.pendingSlotsSitePercent = 40 # [percent] Pending slots percent over site max running for a site
+config.AgentStatusWatcher.pendingSlotsTaskPercent = 30 # [percent] Pending slots percent over task max running for tasks
+config.AgentStatusWatcher.runningExpressPercent = 30 # [percent] Only used for tier0 agent
+config.AgentStatusWatcher.runningRepackPercent = 10 # [percent] Only used for tier0 agent
+config.AgentStatusWatcher.t1SitesCores = 30 # [percent] Only used for tier0 agent
+config.AgentStatusWatcher.forcedSiteList = [] # [site list] List sites to force Resource Control
+config.AgentStatusWatcher.onlySSB = True # Set thresholds for sites only in SSB (Force all other to zero/down)

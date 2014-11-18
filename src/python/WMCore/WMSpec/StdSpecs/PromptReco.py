@@ -111,8 +111,6 @@ class PromptRecoWorkloadFactory(StdBase):
 
         cmsswStepType = "CMSSW"
         taskType = "Processing"
-        if self.multicore:
-            taskType = "MultiProcessing"
 
         recoOutputs = []
         for dataTier in self.writeTiers:
@@ -121,13 +119,18 @@ class PromptRecoWorkloadFactory(StdBase):
                                   'moduleLabel' : "write_%s" % dataTier } )
 
         recoTask = workload.newTask("Reco")
+
+        scenarioArgs = { 'globalTag' : self.globalTag,
+                         'skims' : self.alcaSkims,
+                         'dqmSeq' : self.dqmSequences,
+                         'outputs' : recoOutputs }
+        if self.globalTagConnect:
+            scenarioArgs['globalTagConnect'] = self.globalTagConnect
+
         recoOutMods = self.setupProcessingTask(recoTask, taskType, self.inputDataset,
                                                scenarioName = self.procScenario,
                                                scenarioFunc = "promptReco",
-                                               scenarioArgs = { 'globalTag' : self.globalTag,
-                                                                'skims' : self.alcaSkims,
-                                                                'dqmSeq' : self.dqmSequences,
-                                                                'outputs' : recoOutputs },
+                                               scenarioArgs = scenarioArgs,
                                                splitAlgo = self.procJobSplitAlgo,
                                                splitArgs = self.procJobSplitArgs,
                                                stepType = cmsswStepType,
@@ -144,19 +147,25 @@ class PromptRecoWorkloadFactory(StdBase):
 
             else:
                 alcaTask = recoTask.addTask("AlcaSkim")
+
+                scenarioArgs = { 'globalTag' : self.globalTag,
+                                 'skims' : self.alcaSkims,
+                                 'primaryDataset' : self.inputPrimaryDataset }
+                if self.globalTagConnect:
+                    scenarioArgs['globalTagConnect'] = self.globalTagConnect
+
                 alcaOutMods = self.setupProcessingTask(alcaTask, taskType,
                                                        inputStep = recoTask.getStep("cmsRun1"),
                                                        inputModule = recoOutLabel,
                                                        scenarioName = self.procScenario,
                                                        scenarioFunc = "alcaSkim",
-                                                       scenarioArgs = { 'globalTag' : self.globalTag,
-                                                                        'skims' : self.alcaSkims,
-                                                                        'primaryDataset' : self.inputPrimaryDataset },
+                                                       scenarioArgs = scenarioArgs,
                                                        splitAlgo = "WMBSMergeBySize",
                                                        splitArgs = {"max_merge_size": self.maxMergeSize,
                                                                     "min_merge_size": self.minMergeSize,
                                                                     "max_merge_events": self.maxMergeEvents},
-                                                       stepType = cmsswStepType)
+                                                       stepType = cmsswStepType,
+                                                       useMulticore = False)
                 if self.doLogCollect:
                     self.addLogCollectTask(alcaTask, taskName = "AlcaSkimLogCollect")
                 self.addCleanupTask(recoTask, recoOutLabel)
@@ -210,13 +219,27 @@ class PromptRecoWorkloadFactory(StdBase):
                                                   couchURL = self.couchURL, couchDBName = self.couchDBName,
                                                   configCacheUrl = self.configCacheUrl,
                                                   configDoc = configCacheID, splitAlgo = self.skimJobSplitAlgo,
-                                                  splitArgs = self.skimJobSplitArgs)
+                                                  splitArgs = self.skimJobSplitArgs, useMulticore = False)
             if self.doLogCollect:
                 self.addLogCollectTask(skimTask, taskName = "%sLogCollect" % promptSkim.SkimName)
 
             for outputModuleName in outputMods.keys():
                 self.addMergeTask(skimTask, self.skimJobSplitAlgo, outputModuleName,
                                   doLogCollect = self.doLogCollect)
+
+        workload.setBlockCloseSettings(self.blockCloseDelay,
+                                       workload.getBlockCloseMaxFiles(),
+                                       workload.getBlockCloseMaxEvents(),
+                                       workload.getBlockCloseMaxSize())
+
+        # setting the parameters which need to be set for all the tasks
+        # sets acquisitionEra, processingVersion, processingString
+        workload.setTaskPropertiesFromWorkload()
+
+        # set the LFN bases (normally done by request manager)
+        # also pass runNumber (workload evaluates it)
+        workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
+                            runNumber = self.runNumber)
 
         return workload
 
@@ -261,10 +284,10 @@ class PromptRecoWorkloadFactory(StdBase):
     @staticmethod
     def getWorkloadArguments():
         baseArgs = StdBase.getWorkloadArguments()
-        specArgs = {"Scenario" : {"default" : "pp", "type" : str,
+        specArgs = {"Scenario" : {"default" : None, "type" : str,
                                   "optional" : False, "validate" : None,
                                   "attr" : "procScenario", "null" : False},
-                    "GlobalTag" : {"default" : "GR_P_V29::All", "type" : str,
+                    "GlobalTag" : {"default" : None, "type" : str,
                                    "optional" : False, "validate" : None,
                                    "attr" : "globalTag", "null" : False},
                     "WriteTiers" : {"default" : ["RECO", "AOD", "DQM", "ALCARECO"],
@@ -285,7 +308,7 @@ class PromptRecoWorkloadFactory(StdBase):
                                   "optional" : False, "validate" : couchurl,
                                   "attr" : "couchURL", "null" : False},
                     "CouchDBName" : {"default" : "promptreco_t", "type" : str,
-                                     "optional" : False, "validate" : identifier,
+                                     "optional" : True, "validate" : identifier,
                                      "attr" : "couchDBName", "null" : False},
                     "ConfigCacheUrl" : {"default" : None, "type" : str,
                                         "optional" : True, "validate" : couchurl,
@@ -339,7 +362,10 @@ class PromptRecoWorkloadFactory(StdBase):
                                          "attr" : "skimLumisPerJob", "null" : False},
                     "SkimFilesPerJob" : {"default" : 1, "type" : int,
                                          "optional" : True, "validate" : lambda x : x > 0,
-                                         "attr" : "skimFilesPerJob", "null" : False}
+                                         "attr" : "skimFilesPerJob", "null" : False},
+                    "BlockCloseDelay" : {"default" : 86400, "type" : int,
+                                         "optional" : True, "validate" : lambda x : x > 0,
+                                         "attr" : "blockCloseDelay", "null" : False}
                     }
         baseArgs.update(specArgs)
         return baseArgs

@@ -240,6 +240,15 @@ class ReDigiWorkloadFactory(DataProcessing):
         if self.pileupConfig:
             self.setupPileup(stepOneTask, self.pileupConfig)
 
+        # setting the parameters which need to be set for all the tasks
+        # sets acquisitionEra, processingVersion, processingString
+        workload.setTaskPropertiesFromWorkload()
+
+        # set the LFN bases (normally done by request manager)
+        # also pass runNumber (workload evaluates it)
+        workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
+                            runNumber = self.runNumber)
+
         return workload
 
     def __call__(self, workloadName, arguments):

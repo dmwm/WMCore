@@ -363,19 +363,19 @@ class CMSSWStepHelper(CoreHelper):
         testing
         """
         self.data.application.multicore.numberOfCores = ncores
-        self.data.application.multicore.enabled = True
+        self.data.application.multicore.enabled = True if ncores > 1 else False
 
-    def numberOfCores(self):
+    def getNumberOfCores(self):
         """
-        _numberOfCores_
+        _getNumberOfCores_
 
         Get number of cores
         """
         return self.data.application.multicore.numberOfCores
 
-    def multicoreEnabled(self):
+    def getMulticoreEnabled(self):
         """
-        _multicoreEnabled_
+        _getMulticoreEnabled_
 
         True/False flag to determine wether multicore is enabled
         """
@@ -438,6 +438,7 @@ class CMSSW(Template):
         step.user.script = None
         step.user.outputFiles = []
         step.user.userFiles = []
+        step.user.lfnBase = None
 
         step.section_("monitoring")
 
@@ -447,9 +448,6 @@ class CMSSW(Template):
         step.application.section_("multicore")
         step.application.multicore.enabled =  False
         step.application.multicore.numberOfCores = 1
-        step.application.multicore.inputfilelist = "input.filelist"
-        step.application.multicore.inputmanifest = "manifest.json"
-        step.application.multicore.edmFileUtil = "edmFileUtil --JSON -F input.filelist > manifest.json"
 
 
     def helper(self, step):

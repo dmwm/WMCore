@@ -1,5 +1,4 @@
-WMStats.namespace("Table")
-
+WMStats.namespace("Table");
 WMStats.Table = function(config, tableSetting) {
 
     var tableSetting = tableSetting || '<table cellpadding="0" cellspacing="0" border="0.5" class="display" width="100%"></table>';
@@ -40,7 +39,7 @@ WMStats.Table = function(config, tableSetting) {
     function create(selector, filterConfig) {
         $(selector).empty();
         $(selector).html(tableSetting);
-        var oTable = $(selector + " table").dataTable(tableConfig)
+        var oTable = $(selector + " table").dataTable(tableConfig);
         if ( oTable.length > 0 ) {
             oTable.fnAdjustColumnSizing();
         }
@@ -51,14 +50,14 @@ WMStats.Table = function(config, tableSetting) {
             //oTable.append(_footer());
             return oTable.columnFilter(filterConfig);
         } else {
-            return oTable
+            return oTable;
         }
     }
     
-    if (config) {updateConfig(config)}
+    if (config) {updateConfig(config);}
     
     return {'config': tableConfig,
             'updateConfig': updateConfig,
             'create': create
-            }
+           };
 };

@@ -13,9 +13,10 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Database.CMSCouch import CouchMonitor
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import LocalCouchDBData, \
      WMAgentDBData, combineAnalyticsData, convertToRequestCouchDoc, \
-     convertToAgentCouchDoc, isDrainMode
+     initAgentInfo, DataUploadTime
 from WMCore.WMFactory import WMFactory
 
 class AnalyticsPoller(BaseWorkerThread):
@@ -30,18 +31,12 @@ class AnalyticsPoller(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         # set the workqueue service for REST call
         self.config = config
-        self.agentInfo = {}
-        self.agentInfo['agent_team'] = config.Agent.teamName
-        self.agentInfo['agent'] = config.Agent.agentName
-        # temporarly add port for the split test
-        self.agentInfo['agent_url'] = ("%s:%s" % (config.Agent.hostName, config.WMBSService.Webtools.port))
         # need to get campaign, user, owner info
-        self.agentDocID = "agent+hostname"
+        self.agentInfo = initAgentInfo(self.config)
         self.summaryLevel = (config.AnalyticsDataCollector.summaryLevel).lower()
         self.pluginName = getattr(config.AnalyticsDataCollector, "pluginName", None)
         self.plugin = None
-        
-            
+                    
     def setup(self, parameters):
         """
         set db connection(couchdb, wmbs) to prepare to gather information
@@ -50,7 +45,9 @@ class AnalyticsPoller(BaseWorkerThread):
         self.localQueue = WorkQueueService(self.config.AnalyticsDataCollector.localQueueURL)
 
         # set the connection for local couchDB call
-        self.localCouchDB = LocalCouchDBData(self.config.AnalyticsDataCollector.localCouchURL, self.summaryLevel)
+        self.localCouchDB = LocalCouchDBData(self.config.AnalyticsDataCollector.localCouchURL, 
+                                             self.config.JobStateMachine.summaryStatsDBName,
+                                             self.summaryLevel)
 
         # interface to WMBS/BossAir db
         myThread = threading.currentThread()
@@ -58,7 +55,15 @@ class AnalyticsPoller(BaseWorkerThread):
         self.wmagentDB = WMAgentDBData(self.summaryLevel, myThread.dbi, myThread.logger)
         # set the connection for local couchDB call
         self.localSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL)
-        self.centralWMStatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.centralWMStatsURL)
+        
+        if hasattr(self.config, "Tier0Feeder"):
+            #use local db for tier0
+            centralRequestCouchDBURL = self.config.AnalyticsDataCollector.localT0RequestDBURL
+        else:
+            centralRequestCouchDBURL = self.config.AnalyticsDataCollector.centralRequestDBURL
+        
+        self.centralRequestCouchDB = RequestDBWriter(centralRequestCouchDBURL, 
+                                                   couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
         #TODO: change the config to hold couch url
         self.localCouchServer = CouchMonitor(self.config.JobStateMachine.couchurl)
         
@@ -71,8 +76,6 @@ class AnalyticsPoller(BaseWorkerThread):
         get information from wmbs, workqueue and local couch
         """
         try:
-            logging.info("Getting Agent info ...")
-            agentInfo = self.collectAgentInfo()
             
             #jobs per request info
             logging.info("Getting Job Couch Data ...")
@@ -80,9 +83,8 @@ class AnalyticsPoller(BaseWorkerThread):
 
             #fwjr per request info
             logging.info("Getting FWJRJob Couch Data ...")
-
-            #fwjrInfoFromCouch = self.localCouchDB.getEventSummaryByWorkflow()
-            fwjrInfoFromCouch = self.localCouchDB.getJobPerformanceByTaskAndSite()
+            
+            fwjrInfoFromCouch = self.localCouchDB.getJobPerformanceByTaskAndSiteFromSummaryDB()
             
             logging.info("Getting Batch Job Data ...")
             batchJobInfo = self.wmagentDB.getBatchJobInfo()
@@ -110,53 +112,20 @@ class AnalyticsPoller(BaseWorkerThread):
             #set the uploadTime - should be the same for all docs
             uploadTime = int(time.time())
             
-            self.uploadAgentInfoToCentralWMStats(agentInfo, uploadTime)
-            
             logging.info("%s requests Data combined,\n uploading request data..." % len(combinedRequests))
             requestDocs = convertToRequestCouchDoc(combinedRequests, fwjrInfoFromCouch, finishedTasks,
                                                    self.agentInfo, uploadTime, self.summaryLevel)
 
 
             if self.plugin != None:
-                self.plugin(requestDocs, self.localSummaryCouchDB, self.centralWMStatsCouchDB)
+                self.plugin(requestDocs, self.localSummaryCouchDB, self.centralRequestCouchDB)
 
             self.localSummaryCouchDB.uploadData(requestDocs)
             logging.info("Request data upload success\n %s request, \nsleep for next cycle" % len(requestDocs))
-
+            DataUploadTime.setInfo(self, uploadTime, "ok")
+            
         except Exception, ex:
             logging.error("Error occurred, will retry later:")
             logging.error(str(ex))
+            DataUploadTime.setInfo(self, False, str(ex))
             logging.error("Trace back: \n%s" % traceback.format_exc())
-    
-    def collectAgentInfo(self):
-        #TODO: agent info (need to include job Slots for the sites)
-        # always checks couch first
-        source = self.config.JobStateMachine.jobSummaryDBName
-        target = self.config.AnalyticsDataCollector.centralWMStatsURL
-        couchInfo = self.localCouchServer.recoverReplicationErrors(source, target)
-        logging.info("getting couchdb replication status: %s" % couchInfo)
-        
-        agentInfo = self.wmagentDB.getComponentStatus(self.config)
-        agentInfo.update(self.agentInfo)
-        
-        if (couchInfo['status'] != 'ok'):
-            agentInfo['down_components'].append("CouchServer")
-            agentInfo['status'] = couchInfo['status']
-            couchInfo['name'] = "CouchServer"
-            agentInfo['down_component_detail'].append(couchInfo)
-        
-        if isDrainMode():
-            logging.info("Agent is in DrainMode")
-            agentInfo['drain_mode'] = True
-            agentInfo['status'] = "warning"
-        else:
-            agentInfo['drain_mode'] = False
-            
-        return agentInfo
-
-    def uploadAgentInfoToCentralWMStats(self, agentInfo, uploadTime):
-        #direct data upload to the remote to prevent data conflict when agent is cleaned up and redeployed
-        agentDocs = convertToAgentCouchDoc(agentInfo, self.config.ACDC, uploadTime)
-        self.centralWMStatsCouchDB.updateAgentInfo(agentDocs)
-        logging.info("Agent data direct upload success\n %s request" % len(agentDocs))
-

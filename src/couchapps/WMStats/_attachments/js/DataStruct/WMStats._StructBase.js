@@ -1,8 +1,8 @@
-WMStats.namespace("_StructBase")
+WMStats.namespace("_StructBase");
 
 WMStats._StructBase = function() {
     this._data = null;
-}
+};
 
 WMStats._StructBase.prototype = {
 
@@ -11,11 +11,11 @@ WMStats._StructBase.prototype = {
     },
     
     setData: function(couchData) {
-        this._data = this.convertCouchData(couchData)
+        this._data = this.convertCouchData(couchData);
     },
     
     getDataByKey: function(key, combineFunc) {
-        var data = {}
+        var data = {};
         var dataList = this._data;
         for (var i in dataList) {
             if (data[dataList[i][key]] === undefined) {
@@ -23,7 +23,7 @@ WMStats._StructBase.prototype = {
             } else if (combineFuc === undefined) {
                 data[dataList[i][key]] = dataList[i];
             } else {
-                data[dataList[i][key]] = combineFunc(data[dataList[i][key]], dataList[i])
+                data[dataList[i][key]] = combineFunc(data[dataList[i][key]], dataList[i]);
             }
             
         }

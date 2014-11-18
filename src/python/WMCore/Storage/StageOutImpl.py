@@ -136,6 +136,8 @@ class StageOutImpl:
         """
         if pfn.startswith("/"):
             return "/bin/rm -f %s" % pfn
+        elif os.path.isfile(pfn):
+            return "/bin/rm -f %s" % os.path.abspath(pfn)
         else:
             return ""
 

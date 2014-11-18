@@ -79,14 +79,16 @@ class TrivialFileCatalog(dict):
         for mapping in self[style]:
             if mapping['protocol'] != protocol:
                 continue
-            if mapping['path-match-expr'].match(path):
+            if mapping['path-match-expr'].match(path) or mapping["chain"] != None:
                 if mapping["chain"] != None:
+                    oldpath = path
                     path = caller(mapping["chain"], path)
                     if not path:
                         continue
                 try:
                     splitPath = mapping['path-match-expr'].split(path, 1)[1]
                 except IndexError:
+                    path = oldpath
                     continue
                 result = mapping['result'].replace("$1", splitPath)
                 return result
@@ -152,10 +154,10 @@ class TrivialFileCatalog(dict):
         result = ""
         for mapping in ['lfn-to-pfn', 'pfn-to-lfn']:
             for item in self[mapping]:
-                result += "%s: %s %s %s" % (
+                result += "\t%s: protocol=%s path-match-re=%s result=%s" % (
                     mapping,
                     item['protocol'],
-                    item['path-match-expr'],
+                    item['path-match-expr'].pattern,
                     item['result'])
                 if item['chain'] != None:
                     result += " chain=%s" % item['chain']

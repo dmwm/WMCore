@@ -275,7 +275,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             if not os.path.isfile(pickledJobPath):
                 # Then we have a problem - there's no file
                 logging.error("Could not find pickled jobObject %s" % pickledJobPath)
-                badJobs[601103].append(newJob)
+                badJobs[61103].append(newJob)
                 continue
             try:
                 jobHandle = open(pickledJobPath, "r")
@@ -311,7 +311,6 @@ class JobSubmitterPoller(BaseWorkerThread):
                 else:
                     for siteName in self.siteKeys[loc]:
                         possibleLocations.add(siteName)
-                        potentialLocations.add(siteName)
 
             if len(loadedJob["siteWhitelist"]) > 0:
                 whiteList = []
@@ -331,22 +330,26 @@ class JobSubmitterPoller(BaseWorkerThread):
                 continue
             else :
                 non_abort_sites = [x for x in possibleLocations if x not in self.abortSites]
-                if non_abort_sites: # if there is at least a non aborted site then run there, otherwise fail the job
+                if non_abort_sites: # if there is at least a non aborted/down site then run there, otherwise fail the job
                     possibleLocations = non_abort_sites
                 else:
                     newJob['name'] = loadedJob['name']
+                    newJob['possibleLocations'] = possibleLocations
                     badJobs[61102].append(newJob)
                     continue
 
             # try to remove draining sites if possible, this is needed to stop
             # jobs that could run anywhere blocking draining sites
-            non_draining_sites = [x for x in possibleLocations if x not in self.drainSites]
-            if non_draining_sites: # if >1 viable non-draining site remove draining ones
-                possibleLocations = non_draining_sites
-            else:
-                newJob['name'] = loadedJob['name']
-                badJobs[61104].append(newJob)
-                continue
+            # if the job type is Merge, LogCollect or Cleanup this is skipped
+            if newJob['type'] not in ('LogCollect','Merge','Cleanup','Harvesting'):
+                non_draining_sites = [x for x in possibleLocations if x not in self.drainSites]
+                if non_draining_sites: # if >1 viable non-draining site remove draining ones
+                    possibleLocations = non_draining_sites
+                else:
+                    newJob['name'] = loadedJob['name']
+                    newJob['possibleLocations'] = possibleLocations
+                    badJobs[61104].append(newJob)
+                    continue
 
             batchDir = self.addJobsToPackage(loadedJob)
             self.cachedJobIDs.add(jobID)
@@ -391,7 +394,10 @@ class JobSubmitterPoller(BaseWorkerThread):
                        loadedJob.get("estimatedDiskUsage", None),
                        loadedJob.get("estimatedMemoryUsage", None),
                        newJob['task_name'],
-                       frozenset(potentialLocations),)
+                       frozenset(potentialLocations),
+                       loadedJob.get("multicoreEnabled", False),
+                       loadedJob.get("numberOfCores", 1),
+                      )
 
             self.jobDataCache[workflowName][jobID] = jobInfo
 
@@ -440,7 +446,10 @@ class JobSubmitterPoller(BaseWorkerThread):
         for job in badJobs:
             job['couch_record'] = None
             job['fwjr'] = Report()
-            job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WMJobErrorCodes[exitCode])
+            if exitCode in (61102, 61104):
+                job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WMJobErrorCodes[exitCode] + ', '.join(job['possibleLocations']))
+            else:
+                job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WMJobErrorCodes[exitCode] )
             fwjrPath = os.path.join(job['cache_dir'],
                                     'Report.%d.pkl' % int(job['retry_count']))
             job['fwjr'].setJobID(job['id'])
@@ -475,9 +484,9 @@ class JobSubmitterPoller(BaseWorkerThread):
                 self.cmsNames[cmsName] = []
             if not siteName in self.cmsNames[cmsName]:
                 self.cmsNames[cmsName].append(siteName)
-            if state in ["Down", "Draining"]:
+            if state == "Draining":
                 newDrainSites.add(siteName)
-            if state == "Aborted":
+            if state in ["Down", "Aborted"]:
                 newAbortSites.add(siteName)
 
             for seName in rcThresholds[siteName]["se_names"]:
@@ -695,6 +704,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'estimatedMemoryUsage' : cachedJob[16],
                                'taskPriority' : self.workflowPrios[workflow],
                                'taskName' : cachedJob[17],
+                               'multicoreEnabled' : cachedJob[19],
+                               'numberOfCores' : cachedJob[20],
                                'potentialSites' : potentialSites}
 
                     # Add to jobsToSubmit

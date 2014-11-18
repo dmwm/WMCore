@@ -14,6 +14,7 @@ import pickle
 import shutil
 import sys
 import copy
+import os
 
 
 import WMCore_t.WMSpec_t.TestWorkloads as TestWorkloads
@@ -26,6 +27,8 @@ class SandboxCreator_t(unittest.TestCase):
         creator  = SandboxCreator.SandboxCreator()
         workload = TestWorkloads.twoTaskTree()
         tempdir  = tempfile.mkdtemp()
+        # test that the existing path is deleted else it will crash as in issue #5130
+        os.makedirs('%s/%s/WMSandbox' % (tempdir, workload.name()))
         boxpath  = creator.makeSandbox(tempdir, workload)
 
         # extract our sandbox to test it

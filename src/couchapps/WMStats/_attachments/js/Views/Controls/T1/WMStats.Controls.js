@@ -24,7 +24,7 @@ WMStats.Controls = function($){
                     //change the view model filter value
                     WMStats.ViewModel.ActiveRequestPage.filter(WMStats.Utils.createInputFilter(_filterSelector));
                     
-                })
+                });
     };
 
     function setCategoryButton(selector) {
@@ -82,22 +82,22 @@ WMStats.Controls = function($){
             $("#view_switch_button li a").removeClass("nav-button-selected").addClass("button-unselected");
             $(this).addClass("nav-button-selected");
             event.preventDefault();
-        })
+        });
         
     };
     
     function setAllRequestButton(selector) {
-        var requestBottons = 
+        var requestButtons = 
         '<nav id="all_requests" class="button-group">\
             <ul><li><a href="#" class="nav-button"> all requests </a></li></ul>\
         </nav>';
         
-        $(selector).append(requestBottons).addClass("button-group");
+        $(selector).append(requestButtons).addClass("button-group");
         
         $(document).on('click', "#all_requests li a", function(event){
             vm.RequestView.categoryKey("all");
             event.preventDefault();
-            })
+           });
         
         vm.RequestView.subscribe("categoryKey", function(){
             var buttonSelector = "#all_requests li a";
@@ -106,14 +106,39 @@ WMStats.Controls = function($){
             } else {
                 $(buttonSelector).removeClass("nav-button-selected").addClass("button-unselected");
             }
-        })    
+        });    
+    };
+    
+    
+    function setDBSourcetButton(selector) {
+        	
+        var dbSourceButton = 
+        '<nav id="db_source" class="button-group">\
+            <ul><li><a href="#" class="nav-button">' + WMStats.Globals.INIT_DB + '</a></li></ul>\
+        </nav>';
+        
+        $(selector).append(dbSourceButton).addClass("button-group");
+        
+        $(document).on('click', "#db_source li a", function(event){
+            var buttonSelector = "#db_source li a";
+            if (WMStats.Globals.INIT_DB === "WMStats") {
+            	WMStats.Globals.INIT_DB = "ReqMgr";	
+        	} else if (WMStats.Globals.INIT_DB === "ReqMgr") {
+        		WMStats.Globals.INIT_DB = "WMStats";
+        	}
+        	
+        	jQuery(WMStats.Globals.Event).triggerHandler(WMStats.CustomEvents.SWITCH_DB);
+        	$(buttonSelector).text(WMStats.Globals.INIT_DB);
+            event.preventDefault();
+           });
+        
     };
 
     /* set the view tab and control*/
     function setTabs(selector) {
         var tabs = '<ul><li class="first"><a href="#category_view">Category</a></li>\
                     <li><a href="#request_view">&#187 Requests</a></li>\
-                    <li><a href="#job_view">&#187 Jobs</a></li></ul>'
+                    <li><a href="#job_view">&#187 Jobs</a></li></ul>';
         $(selector).append(tabs).addClass("tabs");
         $(selector + " ul").addClass("tabs-nav");
         
@@ -149,9 +174,10 @@ WMStats.Controls = function($){
         setAllRequestButton: setAllRequestButton,
         setViewSwitchButton: setViewSwitchButton,
         setExternalLink: setExternalLink,
+        setDBSourcetButton: setDBSourcetButton,
         requests: "requests",
         sites: "sites",
         campaign: "campaign",
         cmssw: "cmssw"
-    }
+    };
 }(jQuery);

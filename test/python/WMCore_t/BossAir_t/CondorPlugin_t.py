@@ -423,17 +423,46 @@ class CondorPluginTest(BossAirTest):
         """
 
         nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
         
         config = self.getConfig()
         config.BossAir.pluginName = 'CondorPlugin'
+        config.BossAir.submitWMSMode = True
+
         baAPI  = BossAirAPI(config = config)
+        workload = self.createTestWorkload()
+        workloadName = "basicWorkload"
+        changeState = ChangeState(config)
+
+        nSubs = 1
+        nJobs = 2
+        cacheDir = os.path.join(self.testDir, 'CacheDir')
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir,
+                                                                        'workloadTest',
+                                                                        workloadName),
+                                            site="se.T2_US_UCSD")
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+        jobSubmitter = JobSubmitterPoller(config = config)
+        jobSubmitter.algorithm()
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, nSubs * nJobs)
+
         baAPI.track()
         idleJobs = baAPI._loadByStatus(status = 'Idle')
-        print idleJobs
-        for job in idleJobs :
-            print job['id']
-        baAPI.updateSiteInformation(idleJobs, info = None)
-        
+
+        ##
+        # Make one of the sites in the sitelist to be True for ABORTED/DRAINING/DOWN 
+        # updateSiteInformation() method should edit the classAd for all the jobs
+        # that are bound for the site
+        # Check the Q manually using condor_q -l <job id>
+        #
+        jtok = baAPI.updateSiteInformation(idleJobs, "T2_US_UCSD", True)
+        if jtok != None :
+            baAPI.kill(jtok, errorCode=61301)  # errorCode can be either 61301/61302/61303 (Aborted/Draining/Down)
+
         return
 
 

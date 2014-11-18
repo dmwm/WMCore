@@ -124,16 +124,9 @@ def fixupFileNames(process):
     """
     _fixupFileNames_
 
-    Make sure that the process has a fileNames parameter.  This will also
-    configure lazy download for the process.
+    Make sure that the process has a fileNames parameter.
 
     """
-    # Old style lazy download enable that is overridden by the sites local config.
-    if not process.services.has_key("AdaptorConfig"):
-        process.add_(cms.Service("AdaptorConfig"))
-    process.services["AdaptorConfig"].cacheHint = cms.untracked.string("lazy-download")
-    process.services["AdaptorConfig"].readHint = cms.untracked.string("auto-detect")
-
     if not hasattr(process.source, "fileNames"):
         process.source.fileNames = cms.untracked.vstring()
 
@@ -272,31 +265,6 @@ class SetupCMSSWPset(ScriptInterface):
         return
 
 
-    def fixupLazyDownload(self):
-        """
-         _fixupLazyDownload_
-
-         Activate lazy download for all files (TBD if this is correct, but it is the current behanviour)
-         but disable for multicore jobs because it is very inefficient.
-        """
-
-        if not hasattr(self.process.source, "fileNames"):
-            # no source fileNames means no reading data => Irrelevant
-            return
-
-        numberOfCores = 1
-        if hasattr(self.step.data.application, "multicore"):
-            numberOfCores = self.step.data.application.multicore.numberOfCores
-        if numberOfCores != 1:  # job is multicore
-            #override lazy download to be off despite what the site wants
-            self.process.add_(
-                cms.Service("SiteLocalConfigService",
-                overrideSourceCacheHintDir = cms.untracked.string("application-only")
-                )
-            )
-        return
-
-
     def applyTweak(self, psetTweak):
         """
         _applyTweak_
@@ -344,9 +312,9 @@ class SetupCMSSWPset(ScriptInterface):
 
         # include the default performance report services
         self.process.add_(PSetConfig.Service("SimpleMemoryCheck"))
+        self.process.add_(PSetConfig.Service("CPU"))
         self.process.add_(PSetConfig.Service("Timing"))
         self.process.Timing.summaryOnly = PSetConfig.untracked(PSetConfig.bool(True))
-
 
     def _handleChainedProcessing(self):
         """
@@ -354,7 +322,6 @@ class SetupCMSSWPset(ScriptInterface):
         output of one step/task (nomenclature ambiguous) to another.
         This method creates particular mapping in a working Trivial
         File Catalog (TFC).
-
         """
         # first, create an instance of TrivialFileCatalog to override
         tfc = TrivialFileCatalog()
@@ -446,10 +413,18 @@ class SetupCMSSWPset(ScriptInterface):
                 if pileupType == requestedPileupType:
                     # not all blocks may be stored on the local SE, loop over
                     # all blocks and consider only files stored locally
-                    for blockDict in pileupDict[pileupType].values():
+                    eventsAvailable = 0
+                    for blockName in sorted(pileupDict[pileupType].keys()):
+                        blockDict = pileupDict[pileupType][blockName]
                         if seLocalName in blockDict["StorageElementNames"]:
+                            eventsAvailable += int(blockDict.get('NumberOfEvents', 0))
                             for fileLFN in blockDict["FileList"]:
                                 inputTypeAttrib.fileNames.append(str(fileLFN))
+                    if requestedPileupType == 'data':
+                        baggage = self.job.getBaggage()
+                        if getattr(baggage, 'skipPileupEvents', None) is not None:
+                            inputTypeAttrib.skipEvents = cms.untracked.uint32(int(baggage.skipPileupEvents) % eventsAvailable)
+                            inputTypeAttrib.sequential = cms.untracked.bool(True)
 
     def _getPileupMixingModules(self):
         """
@@ -465,7 +440,7 @@ class SetupCMSSWPset(ScriptInterface):
         prodsAndFilters.update(self.process.producers)
         prodsAndFilters.update(self.process.filters)
         for key, value in prodsAndFilters.items():
-            if value.type_() == "MixingModule":
+            if value.type_() in [ "MixingModule", "DataMixingModule"] :
                 mixModules.append(value)
             if value.type_() == "DataMixingModule":
                 dataMixModules.append(value)
@@ -511,8 +486,7 @@ class SetupCMSSWPset(ScriptInterface):
         producers.update(self.process.producers)
         for producer in producers:
             if hasattr(producers[producer], "nEvents"):
-                producers[producer].nEvents = cms.uint32(
-                                        self.process.maxEvents.input.value())
+                producers[producer].nEvents = self.process.maxEvents.input.value()
 
     def handleDQMFileSaver(self):
         """
@@ -564,7 +538,27 @@ class SetupCMSSWPset(ScriptInterface):
                 raise ex
 
         self.fixupProcess()
-        self.fixupLazyDownload()
+
+        # This is probably overly complex since enabled and numberOfCores > 1 both convey the same thing
+        if self.step.data.application.multicore.enabled:
+            numCores = self.step.data.application.multicore.numberOfCores
+        else:
+            numCores = 1
+
+        if numCores == "auto": # This should never happen
+            raise NotImplementedError("We no longer support automatic detection of the number of cores.")
+        else:
+            numCores = int(numCores)
+
+        if numCores > 1:
+            options = getattr(self.process, "options", None)
+            if options == None:
+                self.process.options = cms.untracked.PSet()
+                options = getattr(self.process, "options")
+
+
+            options.numberOfThreads = cms.untracked.uint32(numCores)
+            options.numberOfStreams = cms.untracked.uint32(0)        # For now, same as numCores
 
         psetTweak = getattr(self.step.data.application.command, "psetTweak", None)
         if psetTweak != None:
@@ -600,7 +594,8 @@ class SetupCMSSWPset(ScriptInterface):
             applyTweak(self.process, outTweak, self.fixupDict)
 
         # revlimiter for testing
-        #self.process.maxEvents.input = 2
+        if getattr(self.step.data.application.command, "oneEventMode", False):
+            self.process.maxEvents.input = 1
 
         # check for random seeds and the method of seeding which is in the job baggage
         self.handleSeeding()
@@ -629,15 +624,6 @@ class SetupCMSSWPset(ScriptInterface):
             print "Found a TFC override: %s" % self.step.data.application.overrideCatalog
             self.process.source.overrideCatalog = \
                 cms.untracked.string(self.step.data.application.overrideCatalog)
-
-        # If we're running on a FNAL worker node override the TFC so we can
-        # test lustre.
-        hostname = socket.gethostname()
-        if hostname.endswith("fnal.gov"):
-            for inputFile in self.job["input_files"]:
-                if inputFile["lfn"].find("unmerged") != -1:
-                    self.process.source.overrideCatalog = \
-                        cms.untracked.string("trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage-test.xml?protocol=dcap")
 
         configFile = self.step.data.application.command.configuration
         configPickle = getattr(self.step.data.application.command, "configurationPickle", "PSet.pkl")

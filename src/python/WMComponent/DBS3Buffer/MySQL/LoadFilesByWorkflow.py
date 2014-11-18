@@ -21,7 +21,8 @@ class LoadFilesByWorkflow(MySQLLoadDBSFilesByDAS):
                     dbsbuffer_algo.config_content, dbsbuffer_dataset.path AS dataset_path,
                     dbsbuffer_dataset.acquisition_era AS acquisition_era,
                     dbsbuffer_dataset.processing_ver AS processing_ver,
-                    dbsbuffer_dataset.global_tag AS global_tag
+                    dbsbuffer_dataset.global_tag AS global_tag,
+                    dbsbuffer_dataset.prep_id AS prep_id
              FROM dbsbuffer_file files
              INNER JOIN dbsbuffer_algo_dataset_assoc ON
                files.dataset_algo = dbsbuffer_algo_dataset_assoc.id

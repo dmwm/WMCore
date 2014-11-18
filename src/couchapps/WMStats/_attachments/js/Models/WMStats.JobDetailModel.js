@@ -1,4 +1,4 @@
-WMStats.namespace("JobDetailModel")
+WMStats.namespace("JobDetailModel");
 
 WMStats.JobDetailModel = new WMStats._ModelBase('jobsByStatusWorkflow', {}, 
                                     WMStats.JobDetails);
@@ -6,11 +6,11 @@ WMStats.JobDetailModel = new WMStats._ModelBase('jobsByStatusWorkflow', {},
 WMStats.JobDetailModel.setOptions = function(summary) {
     var startkey = null;
     if ((typeof summary.site) == "object") {
-        startkey = [summary.workflow, summary.task, summary.status, summary.exitCode]
+        startkey = [summary.workflow, summary.task, summary.status, summary.exitCode];
     } else if (!summary.acdcURL) {
-        startkey = [summary.workflow, summary.task, summary.status, summary.exitCode, summary.site]
+        startkey = [summary.workflow, summary.task, summary.status, summary.exitCode, summary.site];
     } else {
-        startkey = [summary.workflow, summary.task, summary.status, summary.exitCode, summary.site, summary.acdcURL]
+        startkey = [summary.workflow, summary.task, summary.status, summary.exitCode, summary.site, summary.acdcURL];
     }
     this._options= {'include_docs': true, 'reduce': false, 
               'startkey': startkey,

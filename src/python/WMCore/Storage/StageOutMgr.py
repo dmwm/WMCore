@@ -121,9 +121,11 @@ class StageOutMgr:
 
         msg += "There are %s fallback stage out definitions.\n" % len(self.fallbacks)
         for item in self.fallbacks:
-            msg += "Fallback to : %s using: %s \n" % (item['se-name'], item['command'])
+            msg += "\tFallback to : %s using: %s \n" % (item['se-name'], item['command'])
 
+        print "==== Stageout configuration start ===="
         print msg
+        print "==== Stageout configuration finish ===="
         return
 
 

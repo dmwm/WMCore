@@ -5,7 +5,7 @@ WMStats.namespace('CategoryDetailList');
         var reqDoc = requestStruct.requests;
         var reqSummary = requestStruct.summary;
         
-        htmlstr += "<div class='requestDetailBox'>"
+        htmlstr += "<div class='requestDetailBox'>";
         htmlstr += "<ul>";
         if (reqDoc) {
             
@@ -15,7 +15,7 @@ WMStats.namespace('CategoryDetailList');
             htmlstr += "<li><b>created:</b> " + reqSummary.getWMBSTotalJobs() + "</li>";
             htmlstr += "<li><b>paused jobs:</b> " + reqSummary.getTotalPaused() + "</li>";
             htmlstr += "<li><b>cooloff jobs:</b> " + reqSummary.getTotalCooloff() + "</li>";
-            htmlstr += "<li><b>submitted:</b> " + reqSummary.getTotalSubmitted() + "</li>"
+            htmlstr += "<li><b>submitted:</b> " + reqSummary.getTotalSubmitted() + "</li>";
             htmlstr += "<li><b>pending:</b> " + reqSummary.getJobStatus("submitted.pending", 0) + "</li>";
             htmlstr += "<li><b>running:</b> " + reqSummary.getJobStatus("submitted.running", 0) + "</li>";
             htmlstr += "<li><b>failure:</b> " + reqSummary.getTotalFailure()  + "</li>";
@@ -24,9 +24,15 @@ WMStats.namespace('CategoryDetailList');
         htmlstr += "</ul>";
         htmlstr += "</div>";
         return htmlstr;
-    }
+    };
     
     WMStats.CategoryDetailList = function (data, containerDiv) {
          $(containerDiv).html(format(data));
-    }
+    };
+    
+    var vm = WMStats.ViewModel;
+    
+    vm.CategoryDetail.subscribe("data", function() {
+        WMStats.CategoryDetailList(vm.CategoryDetail.data(), vm.CategoryDetail.id());
+    });
 })();

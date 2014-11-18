@@ -30,6 +30,7 @@ function(newDoc, oldDoc, userCtx) {
    // (the cms couch auth does not allow name=null, so it affects only internal
    // replication requests)
    var isGlobalAdm = (userCtx.name === null)
+                     || matchesRole("admin", "")
                      || matchesRole("_admin", "")
                      || matchesRole("-admin", "group:couchdb");
 

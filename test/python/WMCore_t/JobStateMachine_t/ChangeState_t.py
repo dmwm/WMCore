@@ -60,6 +60,7 @@ class TestChangeState(unittest.TestCase):
         couchurl = os.getenv("COUCHURL")
         self.couchServer = CouchServer(dburl = couchurl)
         self.config = self.testInit.getConfiguration()
+        self.taskName = "/TestWorkflow/Task"
         return
 
     def tearDown(self):
@@ -102,7 +103,7 @@ class TestChangeState(unittest.TestCase):
         locationAction.execute("site1", seName = "somese.cern.ch")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
@@ -240,7 +241,7 @@ class TestChangeState(unittest.TestCase):
         locationAction.execute("site1", seName = "somese.cern.ch")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
@@ -285,7 +286,7 @@ class TestChangeState(unittest.TestCase):
         locationAction.execute("site1", seName = "somese.cern.ch")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
@@ -355,7 +356,7 @@ class TestChangeState(unittest.TestCase):
         locationAction.execute("site1", seName = "somese.cern.ch")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
@@ -428,7 +429,7 @@ class TestChangeState(unittest.TestCase):
         locationAction.execute("site1", seName = "somese.cern.ch")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
@@ -508,7 +509,7 @@ class TestChangeState(unittest.TestCase):
         locationAction.execute("site1", seName = "somese.cern.ch")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
@@ -571,7 +572,7 @@ class TestChangeState(unittest.TestCase):
         locationAction.execute("site1", seName = "somese.cern.ch")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
@@ -645,7 +646,7 @@ class TestChangeState(unittest.TestCase):
         locationAction.execute("site1", seName = "somese.cern.ch")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
@@ -719,7 +720,7 @@ class TestChangeState(unittest.TestCase):
         locationAction.execute("site1", seName = "somese.cern.ch")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
@@ -756,9 +757,9 @@ class TestChangeState(unittest.TestCase):
         testJobA["fwjr"] = myReport
         change.propagate([testJobA], 'jobfailed', 'executing')
 
-        changeStateDB = self.couchServer.connectDatabase(dbname = "job_summary")
+        changeStateDB = self.couchServer.connectDatabase(dbname = self.config.JobStateMachine.jobSummaryDBName)
         allDocs = changeStateDB.document("_all_docs")
-
+        
         self.assertEqual(len(allDocs["rows"]), 2,
                          "Error: Wrong number of documents")
 
@@ -791,7 +792,7 @@ class TestChangeState(unittest.TestCase):
         locationAction.execute("site1", seName = "somese.cern.ch")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
@@ -831,7 +832,7 @@ class TestChangeState(unittest.TestCase):
         jobDoc = jobdatabase.document("1")
         fwjrDoc = fwjrdatabase.document("1-0")
         self.assertEqual(jobDoc["workflow"], "wf001", "Wrong workflow in couch job document")
-        self.assertEqual(fwjrDoc["fwjr"]["task"], "Test", "Wrong task in fwjr couch document")
+        self.assertEqual(fwjrDoc["fwjr"]["task"], self.taskName, "Wrong task in fwjr couch document")
 
         testJobA.delete()
 
@@ -839,7 +840,7 @@ class TestChangeState(unittest.TestCase):
         myThread.dbi.processData("ALTER TABLE wmbs_job AUTO_INCREMENT = 1")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf002", task = "Test2")
+                                name = "wf002", task = "/TestWorkflow/Test2")
         testWorkflow.create()
         testFileset = Fileset(name = "TestFilesetB")
         testFileset.create()
@@ -868,7 +869,7 @@ class TestChangeState(unittest.TestCase):
         jobDoc = jobdatabase.document("1")
         fwjrDoc = fwjrdatabase.document("1-0")
         self.assertEqual(jobDoc["workflow"], "wf002", "Job document was not overwritten")
-        self.assertEqual(fwjrDoc["fwjr"]["task"], "Test2", "FWJR document was not overwritten")
+        self.assertEqual(fwjrDoc["fwjr"]["task"], "/TestWorkflow/Test2", "FWJR document was not overwritten")
 
         return
 
@@ -886,7 +887,7 @@ class TestChangeState(unittest.TestCase):
         locationAction.execute("site2", seName = "somese2.cern.ch")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()

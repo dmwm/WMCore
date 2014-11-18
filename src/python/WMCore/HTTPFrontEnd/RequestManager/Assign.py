@@ -55,6 +55,27 @@ class Assign(WebAPI):
                 raise
         else:
             self.sites = []
+        
+        #store result lfn base with all Physics group
+        storeResultLFNBase = ["/store/results/analysisops",
+                              "/store/results/b_physics",
+                              "/store/results/b_tagging",
+                              "/store/results/b2g",
+                              "/store/results/e_gamma_ecal",
+                              "/store/results/ewk",
+                              "/store/results/exotica",
+                              "/store/results/forward",
+                              "/store/results/heavy_ions",
+                              "/store/results/higgs",
+                              "/store/results/jets_met_hcal",
+                              "/store/results/muon",
+                              "/store/results/qcd",
+                              "/store/results/susy",
+                              "/store/results/tau_pflow",
+                              "/store/results/top",
+                              "/store/results/tracker_dpg",
+                              "/store/results/tracker_pog",
+                              "/store/results/trigger"]  
         # yet 0.9.40 had also another self.mergedLFNBases which was differentiating
         # list of mergedLFNBases based on type of request, removed and all bases
         # will be displayed regardless of the request type (discussion with Edgar) 
@@ -67,6 +88,9 @@ class Assign(WebAPI):
             "/store/relval",
             "/store/hidata",
             "/store/himc"]
+        
+        self.allMergedLFNBases.extend(storeResultLFNBase)
+        
         self.allUnmergedLFNBases = ["/store/unmerged", "/store/temp"]
 
         self.yuiroot = config.yuiroot
@@ -104,8 +128,8 @@ class Assign(WebAPI):
                 WMCore.Lexicon.procstring(strValue)
             else:
                 WMCore.Lexicon.identifier(strValue)
-        except AssertionError:
-            raise cherrypy.HTTPError(400, "Bad input %s" % name)
+        except AssertionError, ex:
+            raise cherrypy.HTTPError(400, "Bad input: %s" % str(ex))
         return v
 
     @cherrypy.expose
@@ -169,43 +193,43 @@ class Assign(WebAPI):
         procString = ""
         dashboardActivity = None
         badRequestNames = []
-        goodRequests = []
+        goodRequests = allRequests
         reqMergedBase = None
         reqUnmergedBase = None
         blockCloseMaxWaitTime = 66400
         blockCloseMaxFiles = 500
         blockCloseMaxEvents = 250000000
         blockCloseMaxSize = 5000000000000
-        for request in allRequests:
-            # make sure there's a workload attached
-            try:
-                helper = Utilities.loadWorkload(request)
-            except Exception, ex:
-                logging.error("Assign error: %s " % str(ex))
-                badRequestNames.append(request["RequestName"])
-            else:
-                # get defaults from the first good one
-                if not goodRequests:
-                    # forget it if it fails.
-                    try:
-                        if helper.getAcquisitionEra() != None:
-                            acqEra = helper.getAcquisitionEra()
-                        if helper.getProcessingVersion() != None:
-                            procVer = helper.getProcessingVersion()
-                        if helper.getProcessingString() != None:
-                            procString = helper.getProcessingString()
-                        blockCloseMaxWaitTime = helper.getBlockCloseMaxWaitTime()
-                        blockCloseMaxFiles = helper.getBlockCloseMaxFiles()
-                        blockCloseMaxEvents = helper.getBlockCloseMaxEvents()
-                        blockCloseMaxSize = helper.getBlockCloseMaxSize()
-                        (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
-                        dashboardActivity = helper.getDashboardActivity()
-                        goodRequests.append(request)
-                    except Exception, ex:
-                        logging.error("Assign error: %s " % str(ex))
-                        badRequestNames.append(request["RequestName"])
-                else:
-                    goodRequests.append(request)
+#         for request in allRequests:
+#             # make sure there's a workload attached
+#             try:
+#                 helper = Utilities.loadWorkload(request)
+#             except Exception, ex:
+#                 logging.error("Assign error: %s " % str(ex))
+#                 badRequestNames.append(request["RequestName"])
+#             else:
+#                 # get defaults from the first good one
+#                 if not goodRequests:
+#                     # forget it if it fails.
+#                     try:
+#                         if helper.getAcquisitionEra() != None:
+#                             acqEra = helper.getAcquisitionEra()
+#                         if helper.getProcessingVersion() != None:
+#                             procVer = helper.getProcessingVersion()
+#                         if helper.getProcessingString() != None:
+#                             procString = helper.getProcessingString()
+#                         blockCloseMaxWaitTime = helper.getBlockCloseMaxWaitTime()
+#                         blockCloseMaxFiles = helper.getBlockCloseMaxFiles()
+#                         blockCloseMaxEvents = helper.getBlockCloseMaxEvents()
+#                         blockCloseMaxSize = helper.getBlockCloseMaxSize()
+#                         (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
+#                         dashboardActivity = helper.getDashboardActivity()
+#                         goodRequests.append(request)
+#                     except Exception, ex:
+#                         logging.error("Assign error: %s " % str(ex))
+#                         badRequestNames.append(request["RequestName"])
+#                 else:
+#                     goodRequests.append(request)
 
         return self.templatepage("Assign", all = all, requests = goodRequests, teams = teams,
                                  assignments = [], sites = self.sites,
@@ -256,6 +280,7 @@ class Assign(WebAPI):
                 assignments = GetRequest.getAssignmentsByName(requestName)
                 if teams == [] and assignments == []:
                     raise cherrypy.HTTPError(400, "Must assign to one or more teams")
+                kwargs["Teams"] = teams
                 self.assignWorkload(requestName, kwargs)
                 for team in teams:
                     if not team in assignments:
@@ -286,6 +311,10 @@ class Assign(WebAPI):
         # Set white list and black list
         whiteList = kwargs.get("SiteWhitelist", [])
         blackList = kwargs.get("SiteBlacklist", [])
+        if type(whiteList) != list:
+            whiteList = [whiteList]
+        if type(blackList) != list:
+            blackList = [blackList]
         helper.setSiteWildcardsLists(siteWhitelist = whiteList, siteBlacklist = blackList,
                                      wildcardDict = self.wildcardSites)
         # Set ProcessingVersion and AcquisitionEra, which could be json encoded dicts
@@ -300,8 +329,10 @@ class Assign(WebAPI):
             procds = tokens[2]
             try:
                 WMCore.Lexicon.procdataset(procds)
-            except AssertionError:
-                raise cherrypy.HTTPError(400, "Bad output dataset name, check the processed dataset.")
+            except AssertionError, ex:
+                raise cherrypy.HTTPError(400, 
+                            "Bad output dataset name, check the processed dataset.\n %s" % 
+                            str(ex))
 
         #FIXME not validated
         helper.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
@@ -323,10 +354,10 @@ class Assign(WebAPI):
         autoApproveList = kwargs.get("AutoApproveSubscriptionSites", [])
         subscriptionPriority = kwargs.get("SubscriptionPriority", "Low")
         if subscriptionPriority not in ["Low", "Normal", "High"]:
-            raise cherrypy.HTTPError(400, "Invalid subscription priority")
+            raise cherrypy.HTTPError(400, "Invalid subscription priority %s" % subscriptionPriority)
         subscriptionType = kwargs.get("CustodialSubType", "Move")
         if subscriptionType not in ["Move", "Replica"]:
-            raise cherrypy.HTTPError(400, "Invalid custodial subscription type")
+            raise cherrypy.HTTPError(400, "Invalid custodial subscription type %s" % subscriptionType)
 
         helper.setSubscriptionInformationWildCards(wildcardDict = self.wildcardSites,
                                                    custodialSites = custodialList,
@@ -353,4 +384,7 @@ class Assign(WebAPI):
         reqDetails = Utilities.requestDetails(request["RequestName"])
         couchDb = Database(reqDetails["CouchWorkloadDBName"], reqDetails["CouchURL"])
         couchDb.updateDocument(request["RequestName"], "ReqMgr", "updaterequest",
-                               fields={"AcquisitionEra": reqDetails["AcquisitionEra"]})
+                               fields={"AcquisitionEra": reqDetails["AcquisitionEra"],
+                                       "Teams": JsonWrapper.JSONEncoder().encode(kwargs["Teams"]),
+                                       "SiteWhitelist": JsonWrapper.JSONEncoder().encode(whiteList),
+                                       "SiteBlacklist": JsonWrapper.JSONEncoder().encode(blackList)})

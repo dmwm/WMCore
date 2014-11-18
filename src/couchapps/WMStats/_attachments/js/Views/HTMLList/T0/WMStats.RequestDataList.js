@@ -1,9 +1,9 @@
 WMStats.namespace('RequestDataList');
 (function() { 
     var format = function (summary) {
-        var summaryStruct = summary.summaryStruct
+        var summaryStruct = summary.summaryStruct;
         var htmlstr = "";
-        htmlstr += "<div class='requestSummaryBox'>"
+        htmlstr += "<div class='requestSummaryBox'>";
         htmlstr += "<ul>";
         htmlstr += "<li> requests: " + summary.summaryStruct.length + "</li>";
         htmlstr += "<li> total created: " + summary.getWMBSTotalJobs() + "</li>";
@@ -17,9 +17,9 @@ WMStats.namespace('RequestDataList');
         htmlstr += "</ul>";
         htmlstr += "</div>";
         return htmlstr;
-    }
+    };
     
     WMStats.RequestDataList = function (data, containerDiv) {
          $(containerDiv).html(format(data));
-    }
+    };
 })();

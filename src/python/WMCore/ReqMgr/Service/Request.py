@@ -170,6 +170,20 @@ class Request(RESTEntity):
                                                     clone_args)
         return (workload, clone_args)
     
+#             
+#             permittedParams = ["statusList", "names", "type", "prepID", "inputDataset", 
+#                                "outputDataset", "dateRange", "campaign", "workqueue", "team"]
+#             validate_strlist("statusList", param, safe, '*')
+#             validate_strlist("names", param, safe, rx.RX_REQUEST_NAME)
+#             validate_str("type", param, safe, "*", optional=True)
+#             validate_str("prepID", param, safe, "*", optional=True)
+#             validate_str("inputDataset", param, safe, rx.RX_REQUEST_NAME, optional=True)
+#             validate_str("outputDataset", param, safe, rx.RX_REQUEST_NAME, optional=True)
+#             validate_strlist("dateRagne", param, safe, rx.RX_REQUEST_NAME)
+#             validate_str("campaign", param, safe, "*", optional=True)
+#             validate_str("workqueue", param, safe, "*", optional=True)
+#             validate_str("team", param, safe, "*", optional=True)
+
     @restcall
     def get(self, **kwargs):
         """
@@ -185,6 +199,12 @@ class Request(RESTEntity):
             _rev: 4-c6ceb2737793aaeac3f1cdf591593da4        
 
         """
+        if len(kwargs) == 0:
+            kwargs['status'] = "running"
+            options = {"descending": True, 'include_docs': True, 'limit': 200}
+            request_docs = self.reqmgr_db.loadView("ReqMgr", "bystatus", options)
+            return rows([request_docs])
+            
         # list of status
         status = kwargs.get("status", False)
         # list of request names

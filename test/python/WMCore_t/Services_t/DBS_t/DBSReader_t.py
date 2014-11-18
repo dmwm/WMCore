@@ -99,7 +99,7 @@ class DBSReaderTest(unittest.TestCase):
     def testlistDatasetFileDetails(self):
         """testlistDatasetFilesDetails returns lumis, events, and parents of a dataset"""
         TESTFILE = '/store/data/Run2011A/HighPileUp/RAW/v1/000/173/658/56484BAB-CBCB-E011-AF00-BCAEC518FF56.root'
-        for endpoint in [self.endpoint, 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet']:
+        for endpoint in [self.endpoint, 'test/python/WMCore_t/Services_t/DBS_t/DBSReader_t.py:']:
             self.dbs = DBSReader(endpoint)
             details = self.dbs.listDatasetFileDetails(DATASET)
             self.assertEqual(len(details), 49)
@@ -220,12 +220,31 @@ class DBSReaderTest(unittest.TestCase):
     @attr("integration")
     def testListFileBlockLocation(self):
         """listFileBlockLocation returns block location"""
-        self.dbs = DBSReader(self.endpoint)
+        WRONG_BLOCK = BLOCK[:-4]+'abcd'
+        BLOCK2 = '/HighPileUp/Run2011A-v1/RAW#6021175e-cbfb-11e0-80a9-003048caaace'
+        DBS_BLOCK = '/GenericTTbar/hernan-140317_231446_crab_JH_ASO_test_T2_ES_CIEMAT_5000_100_140318_0014-'+\
+                                    'ea0972193530f531086947d06eb0f121/USER#fb978442-a61b-413a-b4f4-526e6cdb142e'
+        DBS_BLOCK2 = '/GenericTTbar/hernan-140317_231446_crab_JH_ASO_test_T2_ES_CIEMAT_5000_100_140318_0014-'+\
+                                    'ea0972193530f531086947d06eb0f121/USER#0b04d417-d734-4ef2-88b0-392c48254dab'
+        self.dbs = DBSReader('https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader/')
         # assume one site is cern
-        sites = [x for x in self.dbs.listFileBlockLocation(BLOCK) if x.find('cern.ch') > -1]
+        sites = [x for x in self.dbs.listFileBlockLocation(BLOCK) if x and x.find('cern.ch') > -1]
         self.assertTrue(sites)
+        #This block is only found on DBS
+        self.assertTrue(self.dbs.listFileBlockLocation(DBS_BLOCK))
         # doesn't raise on non-existant block
-        self.assertFalse(self.dbs.listFileBlockLocation(BLOCK + 'blah'))
+        self.assertFalse(self.dbs.listFileBlockLocation(WRONG_BLOCK))
+        #test bulk call:
+        ## two blocks in phedex
+        self.assertEqual(2, len(self.dbs.listFileBlockLocation([BLOCK, BLOCK2])))
+        ## one block in phedex one does not exist
+        self.assertEqual(1, len(self.dbs.listFileBlockLocation([BLOCK, WRONG_BLOCK])))
+        ## one in phedex one in dbs
+        self.assertEqual(2, len(self.dbs.listFileBlockLocation([BLOCK, DBS_BLOCK])))
+        ## two in dbs
+        self.assertEqual(2, len(self.dbs.listFileBlockLocation([DBS_BLOCK, DBS_BLOCK2])))
+        ## one in DBS and one does not exist
+        self.assertEqual(1, len(self.dbs.listFileBlockLocation([DBS_BLOCK, WRONG_BLOCK])))
 
     @attr("integration")
     def testGetFileBlock(self):

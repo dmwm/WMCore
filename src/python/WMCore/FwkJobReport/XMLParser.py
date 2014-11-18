@@ -55,6 +55,8 @@ def reportDispatcher(targets):
                 targets['FrameworkError'].send( (report, subnode) )
             elif subnode.name == "SkippedFile":
                 targets['SkippedFile'].send( (report, subnode) )
+            elif subnode.name == "FallbackAttempt":
+                targets['FallbackAttempt'].send( (report, subnode) )
             elif subnode.name == "SkippedEvent":
                 targets['SkippedEvent'].send( (report, subnode) )
             else:
@@ -180,6 +182,13 @@ def skippedFileHandler():
         pfn = node.attrs.get("Pfn", None)
         report.addSkippedFile(lfn, pfn)
 
+@coroutine
+def fallbackAttemptHandler():
+    while True:
+        report, node = (yield)
+        lfn = node.attrs.get("Lfn", None)
+        pfn = node.attrs.get("Pfn", None)
+        report.addFallbackFile(lfn, pfn)
 
 @coroutine
 def skippedEventHandler():
@@ -507,6 +516,7 @@ def xmlToJobReport(reportInstance, xmlFile):
         "AnalysisFile" : analysisFileHandler(fileDispatchers),
         "FrameworkError" : errorHandler(),
         "SkippedFile" : skippedFileHandler(),
+        "FallbackAttempt" : fallbackAttemptHandler(),
         "SkippedEvent" : skippedEventHandler(),
         }
 

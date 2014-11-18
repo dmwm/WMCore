@@ -33,6 +33,7 @@ from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
 from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 
+TAG_COLLECTOR_URL = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype=1"
 
 def addSiteWildcards(wildcardKeys, sites, wildcardSites):
     """
@@ -67,7 +68,7 @@ def allScramArchsAndVersions():
     """
     result = {}
     try:
-        f = urllib.urlopen("https://cmstags.cern.ch/tc/ReleasesXML/?anytype=1")
+        f = urllib.urlopen(TAG_COLLECTOR_URL)
         domDoc   = parseDOM(f)
     except ExpatError, ex:
         logging.error("Could not connect to tag collector!")
@@ -114,7 +115,7 @@ def updateScramArchsAndCMSSWVersions():
 def allSoftwareVersions():
     """ Downloads a list of all software versions from the tag collector """
     result = []
-    f = urllib.urlopen("https://cmstags.cern.ch/tc/ReleasesXML/?anytype=1")
+    f = urllib.urlopen(TAG_COLLECTOR_URL)
     for line in f:
         for tok in line.split():
             if tok.startswith("label="):
@@ -192,9 +193,10 @@ def abortRequest(requestName):
     if response == [] or response[0] == None or response[0] == "":
         msg =  "Cannot find ProdMgr for request %s\n " % requestName
         msg += "Request may not be known to WorkQueue.  If aborted immediately after assignment, ignore this."
-        raise cherrypy.HTTPError(400, msg)
-    workqueue = WorkQueue.WorkQueue(response[0])
-    workqueue.cancelWorkflow(requestName)
+        logging.warning(msg)
+    else:
+        workqueue = WorkQueue.WorkQueue(response[0])
+        workqueue.cancelWorkflow(requestName)
     return
 
 def insecure():
@@ -207,13 +209,13 @@ def ownsRequest(request):
     return cherrypy.request.user['login'] == request['Requestor']
 
 def security_roles():
-    return ['Developer', 'Admin',  'Data Manager', 'developer', 'admin', 'data-manager']
+    return ['developer', 'admin', 'data-manager', 'production-operator']
 
 def security_groups():
     """
     A list of groups which have security access
     """
-    return ['ReqMgr', 'reqmgr']
+    return ['reqmgr', "dataops"]
 
 def privileged():
     """ whether this user has roles that overlap with security_roles """
@@ -249,14 +251,14 @@ def changeStatus(requestName, status, wmstatUrl, acdcUrl):
         raise RuntimeError, "Cannot change status from %s to %s.  Allowed values are %s" % (
            oldStatus, status,  RequestStatus.NextStatus[oldStatus])
 
-    if status == 'aborted':
+    if status == 'aborted' or status == 'force-complete':
         # delete from the workqueue
         if not privileged() and not ownsRequest(request):
-            raise cherrypy.HTTPError(403, "You are not allowed to abort this request")
+            raise cherrypy.HTTPError(403, "You are not allowed to %s this request" % status)
         elif not privileged():
             raise cherrypy.HTTPError(403, "You are not allowed to change the state for this request")
         # delete from the workqueue if it's been assigned to one
-        if oldStatus in ["acquired", "running", "running-closed", "running-open"]:
+        if status in RequestStatus.NextStatus[oldStatus]:
             abortRequest(requestName)
         else:
             raise cherrypy.HTTPError(400, "You cannot abort a request in state %s" % oldStatus)
@@ -287,7 +289,7 @@ def prepareForTable(request):
     return request
 
 def requestsWithStatus(status):
-    requestIds = theseIds = ListRequests.listRequestsByStatus(status).values()
+    requestIds = ListRequests.listRequestsByStatus(status).values()
     requests = []
     for requestId in requestIds:
         request = GetRequest.getRequest(requestId)
@@ -362,7 +364,7 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
         request = buildWorkloadForRequest(typename = reqSchema["RequestType"], 
                                           schema = reqSchema)
     except WMSpecFactoryException, ex:
-        raise HTTPError(400, "Error in Workload Validation: %s" % ex._message)
+        raise HTTPError(400, "Error in Workload Validation: %s" % str(ex))
     
     helper = WMWorkloadHelper(request['WorkloadSpec'])
     
@@ -397,8 +399,7 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
     try:
         CheckIn.checkIn(request, reqSchema['RequestType'])
     except CheckIn.RequestCheckInError, ex:
-        msg = ex._message
-        raise HTTPError(400, "Error in Request check-in: %s" % msg)
+        raise HTTPError(400, "Error in Request check-in: %s" % str(ex))
         
     # Inconsistent request parameters between Oracle and Couch (#4380, #4388)
     # metadata above is what is saved into couch to represent a request document.

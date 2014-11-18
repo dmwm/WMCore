@@ -22,6 +22,7 @@ class LoadFilesByBlock(MySQLLoadDBSFilesByDAS):
                     dbsbuffer_dataset.acquisition_era AS acquisition_era,
                     dbsbuffer_dataset.processing_ver AS processing_ver,
                     dbsbuffer_dataset.global_tag AS global_tag,
+                    dbsbuffer_dataset.prep_id AS prep_id,
                     dbsbuffer_workflow.block_close_max_wait_time,
                     dbsbuffer_workflow.block_close_max_files,
                     dbsbuffer_workflow.block_close_max_events,

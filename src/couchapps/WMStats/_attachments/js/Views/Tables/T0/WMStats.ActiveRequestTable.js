@@ -45,7 +45,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
                           }
             },*/
             { "mDataProp": function (source, type, val) { 
-                              return source.request_status[source.request_status.length -1].status
+                              return source.request_status[source.request_status.length -1].status;
                            }, "sTitle": "status",
               "fnRender": function ( o, val ) {
                             return formatWorkloadSummarylUrl(o.aData.workflow, 
@@ -54,12 +54,12 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
               "bUseRendered": false
             },
             { "mDataProp": function (source, type, val) { 
-                              return source.request_status[source.request_status.length -1].update_time
+                              return source.request_status[source.request_status.length -1].update_time;
                            }, "sTitle": "duration",
               "fnRender": function ( o, val ) {
                             var currentTime = Math.round(new Date().getTime() / 1000);
-                            var startTime = o.aData.request_status[o.aData.request_status.length -1].update_time
-                            return WMStats.Utils.foramtDuration(currentTime - startTime)
+                            var startTime = o.aData.request_status[o.aData.request_status.length -1].update_time;
+                            return WMStats.Utils.foramtDuration(currentTime - startTime);
                           },
               "bUseRendered": false
             },
@@ -69,7 +69,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
                             var reqSummary = requestData.getSummary(o.aData.workflow);
                             var totalJobs = reqSummary.getWMBSTotalJobs() || 1;
                             var result = (reqSummary.getJobStatus("success") + reqSummary.getTotalFailure()) /
-                                     totalJobs * 100
+                                     totalJobs * 100;
                             return  (result.toFixed(1) + "%");
                           }
             },
@@ -78,21 +78,21 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
               "fnRender": function ( o, val ) {
                            var result = requestData.getKeyValue(o.aData.workflow, "status.submitted.first", 0);
                            result += requestData.getKeyValue(o.aData.workflow, "status.submitted.retry", 0);
-                           return result
+                           return result;
                           }
             },
-            { "sDefaultContent": 0,
+			{ "sDefaultContent": 0,
               "sTitle": "pending", 
               "fnRender": function ( o, val ) {
                            var result = requestData.getKeyValue(o.aData.workflow, "status.submitted.pending", 0);
-                           return result
+                           return result;
                           }
             },
             { "sDefaultContent": 0,
               "sTitle": "running", 
               "fnRender": function ( o, val ) {
                            var result = requestData.getKeyValue(o.aData.workflow, "status.submitted.running", 0);
-                           return result
+                           return result;
                           }
             },
             { "sDefaultContent": 0,
@@ -117,7 +117,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
             }
             //TODO add more data (consult dataops)
         ]
-    }
+    };
     
     function runNumerDesc(a, b) {
         return (Number(b.run) - Number(a.run));

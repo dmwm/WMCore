@@ -41,8 +41,8 @@ WMStats.Utils.updateObj = function (baseObj, additionObj, createFlag, updateFunc
             }
         }
     } 
-}
-    
+};
+
 WMStats.Utils.getOrDefault= function (baseObj, objList, val) {
     
     if (baseObj[objList[0]]) { 
@@ -55,7 +55,7 @@ WMStats.Utils.getOrDefault= function (baseObj, objList, val) {
     } else {
         return val;
     } 
-}
+};
 
 WMStats.Utils.get = function (baseObj, objStr, val) {
     if (baseObj === undefined) {
@@ -63,12 +63,12 @@ WMStats.Utils.get = function (baseObj, objStr, val) {
     }
     objList = objStr.split('.');
     return WMStats.Utils.getOrDefault(baseObj, objList, val); 
-}
+};
 
 WMStats.Utils.formatReqDetailUrl = function (request) {
     return '<a href="' + WMStats.Globals.REQ_DETAIL_URL_PREFIX + 
             encodeURIComponent(request) + '" target="requestDetailFrame">' + request + '</a>';
-}
+};
 
 WMStats.Utils.formatWorkloadSummarylUrl = function (request, status) {
     if (status === undefined) {
@@ -81,13 +81,13 @@ WMStats.Utils.formatWorkloadSummarylUrl = function (request, status) {
     } else {
         return status;
     }
-}
+};
 
 WMStats.Utils.formatDate = function (timestamp) {
     var date = new Date(timestamp * 1000);
     return (date.getFullYear() + "-" + date.getMonth() + "-" + date.getDate() + 
            " " + date.getHours() + ":" + date.getMinutes());
-}
+};
 
 WMStats.Utils.foramtDuration = function (timestamp) {
     if (timestamp == -1) return "N/A";
@@ -95,21 +95,26 @@ WMStats.Utils.foramtDuration = function (timestamp) {
     var hours = Math.floor(totalMin / 60);
     var min = totalMin % 60;
     return (hours + " h " + min + " m");
-}
+};
 
 WMStats.Utils.createInputFilter = function (selector) {
     // collects the data from input tag  and 
     // create the object which key value
     var a=$(selector).serializeArray(), filter={};
     $.each(a, function(i, obj){
+    		if (isNaN(obj.value)) {
+    			filter[obj.name] = obj.value;
+    		} else{
+    			filter[obj.name] = parseInt(obj.value);
+    		}
             filter[obj.name] = obj.value;
         });
     return filter;
-}
+};
 
 WMStats.Utils.formatDetailButton = function (name) {
     return '<div class="detailButton" name="'+ name + '"></div>';
-}
+};
 
 
 WMStats.Utils.utcClock = function(date) {
@@ -150,7 +155,7 @@ WMStats.Utils.expandFormat = function(dataArray, summaryStr, formatFunc) {
         htmlstr += "</ul></details>";
     }
     return htmlstr;
-}
+};
 
 
 WMStats.Utils.largeNumberFormat = function(number) {
@@ -163,18 +168,18 @@ WMStats.Utils.largeNumberFormat = function(number) {
     } else {
         return (number/giga).toFixed(1) + " G";
     }
-}
+};
 
 WMStats.Utils.splitCouchServiceURL = function(url) {
     var urlArray = url.split('/');
-    return {'couchUrl': urlArray.slice(0, -1).join('/'), 'couchdb': urlArray[urlArray.length - 1]}
-}
+    return {'couchUrl': urlArray.slice(0, -1).join('/'), 'couchdb': urlArray[urlArray.length - 1]};
+};
 
 
 WMStats.Utils.acdcRequestSting = function(originalRequest, requestor) {
     var stripRequestor = originalRequest.replace(new RegExp('^'+ requestor), "ACDC");
     return stripRequestor.replace(/_\d+_\d+_\d+$/, "");
-}
+};
 
 WMStats.Utils.contains = function(value, container) {
     //container is object or array
@@ -195,7 +200,7 @@ WMStats.Utils.contains = function(value, container) {
         }
         return -1;
     }
-}
+};
 
 WMStats.Utils.addToSet = function(array, value) {
     if (WMStats.Utils.contains(value, array) === -1) {
@@ -204,4 +209,13 @@ WMStats.Utils.addToSet = function(array, value) {
     } else {
         return false;
     }
-}
+};
+
+WMStats.Utils.delay =  (function(){
+  	var timer = 0;
+  	return function(callback, ms){
+    	var ms = ms || 1000;     	// default 1 sec delay 
+    	clearTimeout (timer);
+    	timer = setTimeout(callback, ms);
+  	};
+})();

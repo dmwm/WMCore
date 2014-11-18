@@ -28,11 +28,14 @@ histogramLimit: Limit in terms of number of standard deviations from the
 """
 __all__ = []
 
+import re
 import json
 import logging
 import os.path
 import shutil
 import tarfile
+import httplib
+import urllib2
 import threading
 import traceback
 
@@ -55,6 +58,7 @@ from WMComponent.JobCreator.CreateWorkArea       import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller     import retrieveWMSpec
 from WMCore.Services.WMStats.WMStatsWriter       import WMStatsWriter
 from WMCore.Services.RequestManager.RequestManager import RequestManager
+from WMCore.Services.RequestDB.RequestDBWriter   import RequestDBWriter
 
 from WMCore.DataStructs.MathStructs.DiscreteSummaryHistogram import DiscreteSummaryHistogram
 from WMCore.DataStructs.MathStructs.ContinuousSummaryHistogram import ContinuousSummaryHistogram
@@ -129,7 +133,9 @@ def uploadPublishWorkflow(config, workflow, ufcEndpoint, workDir):
     myThread = threading.currentThread()
 
     dbsDaoFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
-                                logger = myThread.logger, dbinterface = myThread.dbi)
+                                     logger = myThread.logger, 
+                                     dbinterface = myThread.dbi)
+    
     findFiles = dbsDaoFactory(classname = "LoadFilesByWorkflow")
 
     # Fetch and filter the files to the ones we actually need
@@ -184,6 +190,10 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
+        
+        self.dbsDaoFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
+                                     logger = myThread.logger, 
+                                     dbinterface = myThread.dbi)
 
         self.config      = config
         self.jobCacheDir = self.config.JobCreator.jobCacheDir
@@ -211,12 +221,20 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.histogramBins  = getattr(self.config.TaskArchiver, "histogramBins", 10)
         self.histogramLimit = getattr(self.config.TaskArchiver, "histogramLimit", 5.0)
         
+        # Set defaults for reco performance reporting
+        self.interestingPDs = getattr(config.TaskArchiver, "perfPrimaryDatasets", ['SingleMu', 'MuHad'])
+        self.dqmUrl         = getattr(config.TaskArchiver, "dqmUrl", 'https://cmsweb.cern.ch/dqm/dev/')        
+        self.perfDashBoardMinLumi = getattr(config.TaskArchiver, "perfDashBoardMinLumi", 50)
+        self.perfDashBoardMaxLumi = getattr(config.TaskArchiver, "perfDashBoardMaxLumi", 9000)
+        self.dashBoardUrl = getattr(config.TaskArchiver, "dashBoardUrl", None)
+        
         if not self.useReqMgrForCompletionCheck:
             #sets the local monitor summary couch db
-            self.wmstatsCouchDB = WMStatsWriter(self.config.TaskArchiver.localWMStatsURL)
-            self.centralCouchDBWriter = self.wmstatsCouchDB;
+            self.requestLocalCouchDB = RequestDBWriter(self.config.AnalyticsDataCollector.localT0RequestDBURL, 
+                                                   couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
+            self.centralCouchDBWriter = self.requestLocalCouchDB;
         else:
-            self.centralCouchDBWriter = WMStatsWriter(self.config.TaskArchiver.centralWMStatsURL)
+            self.requestLocalCouchDB = WMStatsWriter(self.config.TaskArchiver.centralWMStatsURL)
             self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
         # Start a couch server for getting job info
         # from the FWJRs for committal to archive
@@ -308,6 +326,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         logging.info("Polling for finished subscriptions")
         finishedSubscriptions = self.daoFactory(classname = "Subscriptions.GetAndMarkNewFinishedSubscriptions")
         finishedSubscriptions.execute(self.stateID, timeOut = self.timeout)
+        logging.info("Finished subscriptions updated")
 
         myThread.transaction.commit()
 
@@ -320,8 +339,9 @@ class TaskArchiverPoller(BaseWorkerThread):
         This method will call several auxiliary methods to do the following:
         1. Get finished workflows (a finished workflow is defined in Workflow.GetFinishedWorkflows)
         2. Gather the summary information from each workflow/task and upload it to couch
-        3. Notify the WorkQueue about finished subscriptions
-        4. If all succeeds, delete all information about the workflow from couch and WMBS
+        3. Publish to DashBoard Reconstruction performance information
+        4. Notify the WorkQueue about finished subscriptions
+        5. If all succeeds, delete all information about the workflow from couch and WMBS
         """
         #Get the finished workflows, in descending order
         finishedWorkflowsDAO = self.daoFactory(classname = "Workflow.GetFinishedWorkflows")
@@ -329,14 +349,24 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         #Only delete those where the upload and notification succeeded
         logging.info("Found %d candidate workflows for deletion" % len(finishedwfs))
+        # update the completed flag in dbsbuffer_workflow table so blocks can be closed
+        # create updateDBSBufferWorkflowComplete DAO
+        if len(finishedwfs) ==0:
+            return
+        
+        completedWorkflowsDAO = self.dbsDaoFactory(classname = "UpdateWorkflowsToCompleted")
+        completedWorkflowsDAO.execute(finishedwfs.keys())
+        
         centralCouchAlive = True
         try:
             #TODO: need to enable when reqmgr2 -wmstats is ready
             #abortedWorkflows = self.reqmgrCouchDBWriter.workflowsByStatus(["aborted"], format = "dict");
-            abortedWorkflows = self.centralCouchDBWriter.workflowsByStatus(["aborted"], format = "dict");
+            abortedWorkflows = self.centralCouchDBWriter.getRequestByStatus(["aborted"])
+            forceCompleteWorkflows = self.centralCouchDBWriter.getRequestByStatus(["force-complete"]);
+            
         except Exception, ex:
-           centralCouchAlive = False
-           logging.error("we will try again when remote couch server comes back\n%s" % str(ex))
+            centralCouchAlive = False
+            logging.error("we will try again when remote couch server comes back\n%s" % str(ex))
         
         if centralCouchAlive:
             wfsToDelete = {}
@@ -347,7 +377,11 @@ class TaskArchiverPoller(BaseWorkerThread):
                     if not spec:
                         raise Exception(msg = "Couldn't load spec from %s" % workflow[1])
                     self.archiveWorkflowSummary(spec = spec)
-    
+                    
+                    #Send Reconstruciton performance information to DashBoard
+                    if self.dashBoardUrl != None:
+                        self.publishRecoPerfToDashBoard(spec)
+
                     #Notify the WorkQueue, if there is one
                     if self.workQueue != None:
                         subList = []
@@ -357,17 +391,27 @@ class TaskArchiverPoller(BaseWorkerThread):
                     
                     #Now we now the workflow as a whole is gone, we can delete the information from couch
                     if not self.useReqMgrForCompletionCheck:
-                        self.wmstatsCouchDB.updateRequestStatus(workflow, "completed")
+                        self.requestLocalCouchDB.updateRequestStatus(workflow, "completed")
                         logging.info("status updated to completed %s" % workflow)
     
                     if workflow in abortedWorkflows:
                         #TODO: remove when reqmgr2-wmstats deployed
                         newState =  "aborted-completed"
-                        self.centralCouchDBWriter.updateRequestStatus(workflow, newState);
+                    elif workflow in forceCompleteWorkflows:
+                        newState =  "completed"
+                    else:
+                        newState = None
+                        
+                    if newState != None:
                         # update reqmgr workload document only request mgr is installed
                         if not self.useReqMgrForCompletionCheck:
-                            self.reqmgrSvc.updateRequestStatus(workflow, newState); 
-                            logging.info("status updated to %s : %s" % (newState, workflow))
+                            # commented out untill all the agent is updated so every request have new state
+                            # TODO: agent should be able to write reqmgr db diretly add the right group in
+                            # reqmgr
+                            self.requestLocalCouchDB.updateRequestStatus(workflow, newState)
+                        else:
+                            self.reqmgrSvc.updateRequestStatus(workflow, newState) 
+                        logging.info("status updated to %s : %s" % (newState, workflow))
     
                     wfsToDelete[workflow] = {"spec" : spec, "workflows": finishedwfs[workflow]["workflows"]}
     
@@ -612,6 +656,7 @@ class TaskArchiverPoller(BaseWorkerThread):
 
             loadJobs = self.daoFactory(classname = "Jobs.LoadForTaskArchiver")
             jobList = loadJobs.execute(chunkList)
+            logging.info("Processing %d jobs," % len(jobList))
             for job in jobList:
                 lastRegisteredRetry = None
                 errorCouch = self.fwjrdatabase.loadView("FWJRDump", "errorsByJobID",
@@ -628,7 +673,8 @@ class TaskArchiverPoller(BaseWorkerThread):
                 # Get rid of runs that aren't in the mask
                 mask = job['mask']
                 runs = mask.filterRunLumisByMask(runs = runs)
-
+                
+                logging.info("Processing %d errors, for job id %s" % (len(errorCouch), job['id']))
                 for err in errorCouch:
                     task   = err['value']['task']
                     step   = err['value']['step']
@@ -676,9 +722,14 @@ class TaskArchiverPoller(BaseWorkerThread):
                         for run in runs:
                             if not str(run.run) in stepFailures[exitCode]['runs'].keys():
                                 stepFailures[exitCode]['runs'][str(run.run)] = []
-                            for l in run.lumis:
-                                if not l in stepFailures[exitCode]['runs'][str(run.run)]:
-                                    stepFailures[exitCode]['runs'][str(run.run)].append(l)
+                            logging.debug("number of lumis failed: %s" % len(run.lumis))    
+                            if len(run.lumis) > 10000:
+                                logging.warning("too many lumis: %s in job id: %s inputfiles: %s" % (
+                                                len(run.lumis), job['id'], inputLFNs))
+                                continue
+                            nodupLumis = set(run.lumis)    
+                            for l in nodupLumis:
+                                stepFailures[exitCode]['runs'][str(run.run)].append(l)
                         for log in logs:
                             if not log in stepFailures[exitCode]["logs"]:
                                 stepFailures[exitCode]["logs"].append(log)
@@ -706,10 +757,10 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         # Now we have the workflowData in the right format
         # Time to send them on
-        logging.debug("About to commit workflow summary to couch")
+        logging.info("About to commit workflow summary to couch")
         self.workdatabase.commitOne(workflowData)
 
-        logging.debug("Finished committing workflow summary to couch")
+        logging.info("Finished committing workflow summary to couch")
 
         return
     def getLogArchives(self, spec):
@@ -871,6 +922,152 @@ class TaskArchiverPoller(BaseWorkerThread):
                 failedJobs.append(jobId)
                 
         return failedJobs
+
+    def publishRecoPerfToDashBoard(self, workload):
+
+        listRunsWorkflow = self.dbsDaoFactory(classname = "ListRunsWorkflow")
+        
+        interestingPDs = self.interestingPDs 
+        interestingDatasets = []
+        # Are the datasets from this request interesting? Do they have DQM output? One might ask afterwards if they have harvest
+        for dataset in workload.listOutputDatasets():
+            (nothing, PD, procDataSet, dataTier) = dataset.split('/')
+            if PD in interestingPDs and dataTier == "DQM":
+                interestingDatasets.append(dataset)
+        # We should have found 1 interesting dataset at least
+        logging.debug("Those datasets are interesting %s" % str(interestingDatasets))
+        if len(interestingDatasets) == 0 :
+            return
+        # Request will be only interesting for performance if it's a ReReco or PromptReco
+        (isReReco, isPromptReco) = (False, False)
+        if workload.getRequestType() == 'ReReco':
+            isReReco=True
+        # Yes, few people like magic strings, but have a look at :
+        # https://github.com/dmwm/T0/blob/master/src/python/T0/RunConfig/RunConfigAPI.py#L718
+        # Might be safe enough
+        # FIXME: in TaskArchiver, add a test to make sure that the dataset makes sense (procDataset ~= /a/ERA-PromptReco-vVERSON/DQM)
+        if re.search('PromptReco_', workload.name()):
+            isPromptReco = True 
+        if not (isReReco or isPromptReco):
+            return        
+        # We are not interested if it's not a PromptReco or a ReReco
+        if (isReReco or isPromptReco) == False:
+            return
+        logging.info("%s has interesting performance information, trying to publish to DashBoard" % workload.name())
+        release = workload.getCMSSWVersions()[0]
+        if not release :
+            logging.info("no release for %s, bailing out" % workload.name())
+
+        
+        # If all is true, get the run numbers processed by this worklfow        
+        runList = listRunsWorkflow.execute(workflow = workload.name())
+        # GO to DQM GUI, get what you want 
+        for dataset in interestingDatasets :
+            (nothing, PD, procDataSet, dataTier) = dataset.split('/')
+            worthPoints = {}
+            for run in runList :
+                responseJSON = self.getPerformanceFromDQM(self.dqmUrl, dataset, run)
+                if responseJSON:                
+                    worthPoints.update(self.filterInterestingPerfPoints(responseJSON,
+                                                                         self.perfDashBoardMinLumi,
+                                                                         self.perfDashBoardMaxLumi))
+                            
+            # Publish dataset performance to DashBoard.
+            if self.publishPerformanceDashBoard(self.dashBoardUrl, PD, release, worthPoints) == False:
+                logging.info("something went wrong when publishing dataset %s to DashBoard" % dataset)
+                
+        return 
+
+    
+    def getPerformanceFromDQM(self, dqmUrl, dataset, run):
+        
+        # Get the proxy, as CMSWEB doesn't allow us to use plain HTTP
+        hostCert = os.getenv("X509_HOST_CERT")
+        hostKey  = os.getenv("X509_HOST_KEY")
+        # it seems that curl -k works, but as we already have everything, I will just provide it
+        
+        # Make function to fetch this from DQM. Returning Null or False if it fails
+        getUrl = "%sjsonfairy/archive/%s%s/DQM/TimerService/event_byluminosity" % (dqmUrl, run, dataset)
+        logging.debug("Requesting performance information from %s" % getUrl)
+        
+        regExp=re.compile('https://(.*)(/dqm.+)')
+        regExpResult = regExp.match(getUrl)
+        dqmHost = regExpResult.group(1)
+        dqmPath = regExpResult.group(2)
+        
+        connection = httplib.HTTPSConnection(dqmHost, 443, hostKey, hostCert)
+        try:
+            connection.request('GET', dqmPath)
+            response = connection.getresponse()
+            responseData = response.read()
+            responseJSON = json.loads(responseData)
+            if response.status != 200 :
+                logging.info("Something went wrong while fetching Reco performance from DQM, response code %d " % response.code)
+                return False
+        except Exception, ex:
+            logging.error('Couldnt fetch DQM Performance data for dataset %s , Run %s' % (dataset, run))
+            logging.exception(ex) #Let's print the stacktrace with generic Exception
+            return False     
+
+        try:
+            if responseJSON["hist"]["bins"].has_key("content"):
+                return responseJSON
+        except Exception, ex:                    
+            logging.info("Actually got a JSON from DQM perf in for %s run %d , but content was bad, Bailing out"
+                         % (dataset, run))
+            return False
+        # If it gets here before returning False or responseJSON, it went wrong    
+        return False
+    
+    def filterInterestingPerfPoints(self, responseJSON, minLumi, maxLumi):
+        worthPoints = {}
+        points = responseJSON["hist"]["bins"]["content"]
+        for i in range(responseJSON["hist"]["xaxis"]["first"]["id"], responseJSON["hist"]["xaxis"]["last"]["id"]):
+                    # is the point worth it? if yes add to interesting points dictionary. 
+                    # 1 - non 0
+                    # 2 - between minimum and maximum expected luminosity
+                    # FIXME : 3 - population in dashboard for the bin interval < 100
+                    # Those should come from the config :
+                    if points[i] == 0:
+                        continue
+                    binSize = responseJSON["hist"]["xaxis"]["last"]["value"]/responseJSON["hist"]["xaxis"]["last"]["id"]
+                    # Fetching the important values
+                    instLuminosity = i*binSize 
+                    timePerEvent = points[i]
+                    
+                    if instLuminosity > minLumi and instLuminosity <  maxLumi :
+                        worthPoints[instLuminosity] = timePerEvent
+        logging.debug("Got %d worthwhile performance points" % len(worthPoints.keys()))
+        
+        return worthPoints
+
+    def publishPerformanceDashBoard(self, dashBoardUrl, PD, release, worthPoints):
+        dashboardPayload = []
+        for instLuminosity in worthPoints :
+            timePerEvent = int(worthPoints[instLuminosity])
+            dashboardPayload.append({"primaryDataset" : PD, 
+                                     "release" : release, 
+                                     "integratedLuminosity" : instLuminosity,
+                                     "timePerEvent" : timePerEvent})
+            
+        data = "{\"data\":%s}" % str(dashboardPayload).replace("\'","\"")
+        headers={"Accept":"application/json"}
+        
+        logging.debug("Going to upload this payload %s" % data)
+        
+        try:
+            request = urllib2.Request(dashBoardUrl, data, headers)
+            response = urllib2.urlopen(request)
+            if response.code != 200 :
+                logging.info("Something went wrong while uploading to DashBoard, response code %d " % response.code)
+                return False
+        except Exception, ex:
+            logging.error('Performance data : DashBoard upload failed for PD %s Release %s' % (PD, release))
+            logging.exception(ex) #Let's print the stacktrace with generic Exception
+            return False        
+
+        logging.debug("Uploaded it successfully, apparently")        
+        return True
 
     def createAndUploadPublish(self, workflow):
         """

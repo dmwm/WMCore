@@ -610,7 +610,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def updateLFNsAndDatasets(self, initialTask = None):
+    def updateLFNsAndDatasets(self, initialTask = None, runNumber = None):
         """
         _updateLFNsAndDatasets_
 
@@ -658,6 +658,15 @@ class WMWorkloadHelper(PersistencyHelper):
                                                         getattr(outputModule, "primaryDataset"),
                                                         getattr(outputModule, "dataTier"),
                                                         processingString)
+
+                        if runNumber != None and runNumber > 0:
+                            runString = str(runNumber).zfill(9)
+                            lfnSuffix = "/%s/%s/%s" % (runString[0:3],
+                                                       runString[3:6],
+                                                       runString[6:9])
+                            unmergedLFN += lfnSuffix
+                            mergedLFN += lfnSuffix
+
                         lfnBase(unmergedLFN)
                         lfnBase(mergedLFN)
                         setattr(outputModule, "processedDataset", processedDataset)
@@ -670,7 +679,7 @@ class WMWorkloadHelper(PersistencyHelper):
                             setattr(outputModule, "lfnBase", mergedLFN)
                             setattr(outputModule, "mergedLFNBase", mergedLFN)
 
-                            if getattr(outputModule, "dataTier") in ["DQM", "DQMROOT"]:
+                            if getattr(outputModule, "dataTier") in ["DQM", "DQMIO"]:
                                 datasetName = "/%s/%s/%s" % (getattr(outputModule, "primaryDataset"),
                                                              processedDataset,
                                                              getattr(outputModule, "dataTier"))
@@ -680,7 +689,7 @@ class WMWorkloadHelper(PersistencyHelper):
                             setattr(outputModule, "mergedLFNBase", mergedLFN)
 
             task.setTaskLogBaseLFN(self.data.properties.unmergedLFNBase)
-            self.updateLFNsAndDatasets(task)
+            self.updateLFNsAndDatasets(task, runNumber = runNumber)
 
         return
 
@@ -711,6 +720,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Change the acquisition era for all tasks in the spec and then update
         all of the output LFNs and datasets to use the new acquisition era.
         """
+
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
@@ -729,6 +739,8 @@ class WMWorkloadHelper(PersistencyHelper):
 
         if not initialTask:
             self.updateLFNsAndDatasets()
+        #set acquistionEra for workload (need to refactor)
+        self.acquisitionEra = acquisitionEras
         return
 
     def setProcessingVersion(self, processingVersions, initialTask = None,
@@ -757,6 +769,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         if not initialTask:
             self.updateLFNsAndDatasets()
+        self.processingVersion = processingVersions
         return
 
     def setProcessingString(self, processingStrings, initialTask = None,
@@ -785,7 +798,30 @@ class WMWorkloadHelper(PersistencyHelper):
 
         if not initialTask:
             self.updateLFNsAndDatasets()
+        self.processingString = processingStrings
         return
+
+    def setLumiList(self, lumiLists, initialTask = None,
+                          parentLumiList = None):
+        """
+        _setLumiList_
+
+        Change the lumi mask for all tasks in the spec
+        """
+
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            task.setLumiMask(lumiLists, override=False)
+            self.setLumiList(lumiLists, task)
+
+        #set lumiList for workload (need to refactor)
+        self.lumiList = lumiLists
+        return
+
 
     def getAcquisitionEra(self):
         """
@@ -800,6 +836,18 @@ class WMWorkloadHelper(PersistencyHelper):
             return topTasks[0].getAcquisitionEra()
 
         return None
+    def getRequestType(self):
+        """
+        _getRequestType_
+
+        Get the Request type (ReReco, ReDigi, etc)
+        """
+        if not getattr(self.data, "request", None):
+            return None
+        if not getattr(self.data.request, "schema", None):
+            return None
+
+        return getattr(self.data.request.schema, "RequestType", None)
 
     def getProcessingVersion(self):
         """
@@ -847,6 +895,25 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return getattr(self.data.properties, 'validStatus', None)
 
+    def setPrepID(self, prepID):
+        """
+        _setCampaign_
+
+        Set the campaign to which this workflow belongs
+        Optional
+        """
+        self.data.properties.prepID = prepID
+        return
+
+
+    def getPrepID(self):
+        """
+        _getCampaign_
+
+        Get the campaign for the workflow
+        """
+        return getattr(self.data.properties, 'prepID', None)
+
     def setCampaign(self, campaign):
         """
         _setCampaign_
@@ -866,7 +933,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return getattr(self.data.properties, 'campaign', None)
 
-    def setLFNBase(self, mergedLFNBase, unmergedLFNBase):
+    def setLFNBase(self, mergedLFNBase, unmergedLFNBase, runNumber = None):
         """
         _setLFNBase_
 
@@ -875,7 +942,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data.properties.mergedLFNBase = mergedLFNBase
         self.data.properties.unmergedLFNBase = unmergedLFNBase
-        self.updateLFNsAndDatasets()
+        self.updateLFNsAndDatasets(runNumber = runNumber)
         return
 
     def setMergeParameters(self, minSize, maxSize, maxEvents,
@@ -1740,6 +1807,23 @@ class WMWorkloadHelper(PersistencyHelper):
         return self.load("%s/%s/spec" % (couchurl, requestName))
     
 
+    def setTaskPropertiesFromWorkload(self):
+        """
+        set task properties inherits from workload properties
+        This is need to be called at the end of the buildWorkload function
+        after all the tasks are added.
+        It sets acquisitionEra, processingVersion, processingString,
+        since those values are needed to be set for all the tasks in the workload
+        TODO: need to force to call this function after task is added instead of
+              rely on coder's won't forget to call this at the end of
+              self.buildWorkload()
+        """
+        self.setAcquisitionEra(self.acquisitionEra)
+        self.setProcessingVersion(self.processingVersion)
+        self.setProcessingString(self.processingString)
+        self.setLumiList(self.lumiList)
+        return
+
 class WMWorkload(ConfigSection):
     """
     _WMWorkload_
@@ -1785,6 +1869,7 @@ class WMWorkload(ConfigSection):
         self.properties.blockCloseMaxSize = 5000000000000
         self.properties.blockCloseMaxFiles = 500
         self.properties.blockCloseMaxEvents = 250000000
+        self.properties.prepID = None
 
         # Overrides for this workload
         self.section_("overrides")

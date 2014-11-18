@@ -7,7 +7,7 @@ WMStats.Globals.importScripts([
     "js/Models/WMStats.WorkloadSummaryModel.js",
     "js/Models/WMStats.RequestSearchModel.js",
     "js/Models/WMStats.HistoryModel.js"
-])
+]);
 
 if (WMStats.Globals.VARIANT == "tier1") {
     WMStats.Globals.importScripts(["js/Models/T1/WMStats.ActiveRequestModel.js",

@@ -195,6 +195,8 @@ class DiskSpacePoller(BasePoller):
                 if len(arr) < 6: # 6 elements on the partition entry of df output
                     continue
                 percStr, mount = arr[4:6] # see the df output pattern
+                if mount == "/usr/vice/cache": # do not check AFS cache dir
+                    continue
                 perc = int(percStr[:-1]) # without the percent sign
                 for threshold, level in zip(self.thresholds, self.levels):
                     if perc >= threshold:

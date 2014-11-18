@@ -38,7 +38,8 @@ class Create(DBCreator):
                  acquisition_era   VARCHAR2(255),
                  valid_status      VARCHAR2(20),
                  global_tag        VARCHAR2(255),
-                 parent            VARCHAR2(500)
+                 parent            VARCHAR2(500),
+                 prep_id         VARCHAR(255)
                )"""
         self.create["01dbsbuffer_dataset_seq"] = \
           """CREATE SEQUENCE dbsbuffer_dataset_seq
@@ -253,12 +254,13 @@ class Create(DBCreator):
         self.create["13dbsbuffer_workflow"] = \
           """CREATE TABLE dbsbuffer_workflow (
                id                           INTEGER,
-               name                         VARCHAR2(255),
-               task                         VARCHAR2(550),
+               name                         VARCHAR2(700),
+               task                         VARCHAR2(700),
                block_close_max_wait_time    INTEGER,
                block_close_max_files        INTEGER,
                block_close_max_events       INTEGER,
-               block_close_max_size         INTEGER
+               block_close_max_size         INTEGER,
+               completed                    INTEGER DEFAULT 0
                ) %s """ % tablespaceTable
 
         self.create["10dbsbuffer_workflow_seq"] = \

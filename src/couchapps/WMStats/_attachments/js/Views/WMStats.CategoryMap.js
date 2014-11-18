@@ -7,9 +7,9 @@ WMStats.CategorySummaryMap = function(){
         summaryMap[category] = summaryFunc;
     }
     function get(category) {
-        return summaryMap[category]
+        return summaryMap[category];
     }
-    return {add: add, get: get}
+    return {add: add, get: get};
 }();
 
 WMStats.CategoryTableMap = function(){
@@ -20,13 +20,13 @@ WMStats.CategoryTableMap = function(){
     }
     function get(category, view) {
         if (category === vm.RequestView.categoryName) {
-            return tableMap[category][vm.RequestView.format().name()]
+            return tableMap[category][vm.RequestView.format().name()];
         }else {
             return tableMap[category];
         }
         
     }
-    return {add: add, get: get}
+    return {add: add, get: get};
 }();
 
 (function(vm){

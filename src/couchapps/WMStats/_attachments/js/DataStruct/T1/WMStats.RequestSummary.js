@@ -10,44 +10,23 @@ WMStats.RequestsSummary = function() {
         var summary = WMStats.RequestsSummary();
         summary.summaryStruct.totalEvents = Number(this._get(doc, "input_events", 0));
         summary.summaryStruct.processedEvents = this._get(doc, "output_progress.0.events", 0);
-        summary.summaryStruct.progress = this.getAvgProgressSummary(doc)
+        summary.summaryStruct.progress = this.getAvgProgressSummary(doc);
         summary.summaryStruct.length = 1;
-        summary.jobStatus = this._get(doc, 'status', {})
+        summary.jobStatus = this._get(doc, 'status', {});
         //support legacy code which had cooloff jobs instead cooloff.create, cooloff.submit
         //cooloff.job
         if ((typeof summary.jobStatus.cooloff) === "number") {
-            summary.jobStatus.cooloff = {create: 0, submit: 0, job: summary.jobStatus.cooloff}
+            summary.jobStatus.cooloff = {create: 0, submit: 0, job: summary.jobStatus.cooloff};
         }
         return summary;
     };
 
     return requestSummary;
-}
+};
 
 WMStats.Requests = function(noFilterFlag) {
     var tier1Requests = new WMStats.GenericRequests(noFilterFlag);
-    //Move out of Generic
-    var statusOrder = {
-        "new": 1,
-        "testing-approved": 2,
-        "testing": 3,
-        "tested": 4,
-        "test-failed": 5,
-        "assignment-approved": 6,
-        "assigned": 7,
-        "ops-hold": 8,
-        "negotiating": 9,
-        "acquired": 10,
-        "running": 11,
-        "failed": 12,
-        "epic-FAILED": 13,
-        "completed": 14,
-        "closed-out": 15,
-        "announced": 16,
-        "aborted": 17,
-        "rejected": 18
-    }
- 
+
     tier1Requests.estimateCompletionTime = function(request) {
         //TODO need to improve the algo
         // no infomation to calulate the estimate completion time
@@ -62,7 +41,8 @@ WMStats.Requests = function(noFilterFlag) {
         //request is done
         if (lastStatus.status !== 'running' &&
             lastStatus.status !== 'running-closed' &&
-            lastStatus.status !== 'running-open') return 0;
+            lastStatus.status !== 'running-open' &&
+            lastStatus.status !== 'force-complete') return 0;
 
         var totalJobs = reqSummary.getWMBSTotalJobs() - reqSummary.getJobStatus("canceled");
         // jobCompletion percentage 

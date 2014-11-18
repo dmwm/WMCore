@@ -18,6 +18,7 @@ class Create(DBCreator):
         constraints and inserts.
         """
         myThread = threading.currentThread()
+
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
 
         self.create["01dbsbuffer_dataset"] = \
@@ -30,6 +31,7 @@ class Create(DBCreator):
                            valid_status    VARCHAR(20),
                            global_tag      VARCHAR(255),
                            parent          VARCHAR(500),
+                           prep_id         VARCHAR(255),
                            primary key(id)
                         ) ENGINE=InnoDB"""
 
@@ -80,13 +82,19 @@ class Create(DBCreator):
         self.create["03dbsbuffer_workflow"] = \
           """CREATE TABLE dbsbuffer_workflow (
                id                           INTEGER PRIMARY KEY AUTO_INCREMENT,
-               name                         VARCHAR(255),
-               task                         VARCHAR(550),
+               name                         VARCHAR(700),
+               task                         VARCHAR(700),
                block_close_max_wait_time    INTEGER UNSIGNED,
                block_close_max_files        INTEGER UNSIGNED,
                block_close_max_events       INTEGER UNSIGNED,
                block_close_max_size         BIGINT UNSIGNED,
-               UNIQUE(name, task)) ENGINE = InnoDB"""
+               completed                    INTEGER DEFAULT 0
+               ) ENGINE = InnoDB"""
+
+
+        self.constraints["01_pk_dbsbuffer_workflow"] = \
+          """ALTER TABLE dbsbuffer_workflow ADD
+               (CONSTRAINT dbsbuffer_workflow_unique UNIQUE (name,task))"""
 
         self.create["04dbsbuffer_file"] = \
           """CREATE TABLE dbsbuffer_file (

@@ -199,8 +199,14 @@ class Scram:
             for l in self.stdout.split(";\n"):
                 if l.strip() == "":
                     continue
+                if l.strip().startswith('unset'):
+                    continue
                 l = l.replace("export ", "")
-                var, val = l.split("=", 1)
+                try:
+                    var, val = l.split("=", 1)
+                except ValueError, ex:
+                    raise ValueError, "Couldn't split line: %s" % l
+
                 self.runtimeEnv[var] = val
         if self.test_mode:
             # ensure that runtime env isnt empty in test mode
@@ -228,12 +234,13 @@ class Scram:
         executeIn = runtimeDir
         if runtimeDir == None:
             executeIn = self.projectArea
-        if not os.path.exists(logName):
+        #if the caller passed a filename and not a filehandle and if the logfile does not exist then create one
+        if isinstance(logName, basestring) and not os.path.exists(logName):
             f = open(logName, 'w')
             f.write('Log for recording SCRAM command-line output\n')
             f.write('-------------------------------------------\n')
             f.close()
-        logFile = open(logName, 'a')
+        logFile = open(logName, 'a') if isinstance(logName, basestring) else logName
         proc = subprocess.Popen(["env - /bin/bash"], shell=True, cwd=executeIn,
                                 stdout=logFile,
                                 stderr=logFile,
@@ -270,7 +277,9 @@ class Scram:
         self.stdout, self.stderr = proc.communicate()
         self.code = proc.returncode
         self.lastExecuted = command
-        logFile.close()
+        #close the logfile if one has been created from the name. Let the caller close it if he passed a file object.
+        if isinstance(logName, basestring):
+            logFile.close()
         return self.code
 
 

@@ -96,7 +96,7 @@ class TrivialFileCatalogTest(unittest.TestCase):
         tfc.addMapping("stageout", match, result, chain = "direct",
                        mapping_type = "lfn-to-pfn")
 
-        in_lfn = "/T0/hufnagel/store/t0temp/WMAgentTier0Commissioning/A/RECO/v1dh/0000/4CF196F9-E302-E011-8517-0030487CD716.root"
+        in_lfn = "/this/is/a/test/lfn"
         in_pfn = "/castor/cern.ch/cms" + in_lfn
 
         out_pfn = tfc.matchLFN("stageout", in_lfn)

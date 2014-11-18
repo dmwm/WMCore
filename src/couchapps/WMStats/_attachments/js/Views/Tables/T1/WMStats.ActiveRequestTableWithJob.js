@@ -31,7 +31,7 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
             },
             { "mDataProp": function (source, type, val) { 
                               var requestInfo = _activePageData.getData(source.workflow);
-                              return requestInfo.request_status[requestInfo.request_status.length -1].status
+                              return requestInfo.request_status[requestInfo.request_status.length -1].status;
                            }, "sTitle": "status",
               "fnRender": function ( o, val ) {
                             var requestInfo = _activePageData.getData(o.aData.workflow);
@@ -54,7 +54,7 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
                             var jobs = reqSummary.getTotalQueued();
                             if (type === 'display') {
                                   var requestInfo = _activePageData.getData(source.workflow);
-                                  return WMStats.Globals.formatJobLink(jobs, requestInfo.agent_url, source.workflow, "pending")
+                                  return WMStats.Globals.formatJobLink(jobs, requestInfo.agent_url, source.workflow, "pending");
                                 }
                                 return jobs;
                           }
@@ -66,7 +66,7 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
                                 var jobs = reqSummary.getPending();
                                 if (type === 'display') {
                                   var requestInfo = _activePageData.getData(source.workflow);
-                                  return WMStats.Globals.formatJobLink(jobs, requestInfo.agent_url, source.workflow, "running")
+                                  return WMStats.Globals.formatJobLink(jobs, requestInfo.agent_url, source.workflow, "running");
                                 }
                                 return jobs;
                               }
@@ -78,7 +78,7 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
                                 var jobs = reqSummary.getRunning();
                                 if (type === 'display') {
                                   var requestInfo = _activePageData.getData(source.workflow);
-                                  return WMStats.Globals.formatJobLink(jobs, requestInfo.agent_url, source.workflow, "running")
+                                  return WMStats.Globals.formatJobLink(jobs, requestInfo.agent_url, source.workflow, "running");
                                 }
                                 return jobs;
                               }
@@ -90,7 +90,7 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
                                 var jobs = reqSummary.getJobStatus("success");
                                 if (type === 'display') {
                                   var requestInfo = _activePageData.getData(source.workflow);
-                                  return WMStats.Globals.formatJobLink(jobs, requestInfo.agent_url, source.workflow, "success")
+                                  return WMStats.Globals.formatJobLink(jobs, requestInfo.agent_url, source.workflow, "success");
                                 }
                                 return jobs;
                               }
@@ -102,7 +102,7 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
                                 var jobs = reqSummary.getTotalFailure();
                                 var requestInfo = _activePageData.getData(source.workflow);
                                 if (type === 'display') {
-                                  return WMStats.Globals.formatJobLink(jobs, requestInfo.agent_url, source.workflow, "failed")
+                                  return WMStats.Globals.formatJobLink(jobs, requestInfo.agent_url, source.workflow, "failed");
                                 }
                                 return jobs;
                               }
@@ -144,9 +144,9 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
                               }
             }
         ]
-    }
+    };
     
-    var filterConfig = {}
+    var filterConfig = {};
     
     tableConfig.aaData = requestData.getList();
     

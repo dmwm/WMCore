@@ -6,7 +6,8 @@ WMStats._RequestModelBase = function(initView, options) {
     this._options = options || {'include_docs': true};
     this._data = null;
     this._trigger = "requestReady";
-}
+    this._dbSource = WMStats.Couch;
+};
 //Class method
 WMStats._RequestModelBase.keysFromIDs = function(data) {
         var keys = [];
@@ -18,11 +19,11 @@ WMStats._RequestModelBase.keysFromIDs = function(data) {
             }
         }
         return keys;
-    }
+    };
 
 WMStats._RequestModelBase.requestAgentUrlKeys = function(requestList, requestAgentData) {
         var keys = {};
-        var requestAgentUrlList = []
+        var requestAgentUrlList = [];
         for (var i in requestAgentData.rows){
             var request = requestAgentData.rows[i].key[0];
             if (!keys[request]) {
@@ -37,12 +38,20 @@ WMStats._RequestModelBase.requestAgentUrlKeys = function(requestList, requestAge
             }
         }
         return requestAgentUrlList;
-    }
+   };
 
 WMStats._RequestModelBase.prototype = {
     
+    setInitView: function(initView) {
+        this._initialView  = initView;
+    },
+    
     setTrigger: function(triggerName) {
         this._trigger = triggerName;
+    },
+    
+    setDBSource: function(dbSource) {
+        this._dbSource = dbSource;
     },
     
     // deprecated
@@ -70,8 +79,8 @@ WMStats._RequestModelBase.prototype = {
                   // set the data cache
                   objPtr._data = requestCache;
                   // trigger custom events
-                  jQuery(WMStats.Globals.Event).triggerHandler(objPtr._trigger, objPtr._data)
-              })
+                  jQuery(WMStats.Globals.Event).triggerHandler(objPtr._trigger, objPtr._data);
+              });
     },
 
     _getLatestRequestAgentUrlAndCreateTable: function (overviewData, keys, objPtr) {
@@ -79,8 +88,8 @@ WMStats._RequestModelBase.prototype = {
                        "reduce": true, "group": true, "descending": true};
         WMStats.Couch.view('latestRequest', options,
               function(agentIDs) {
-                  objPtr._getRequestDetailsAndTriggerEvent(agentIDs, overviewData, objPtr)
-              })
+                  objPtr._getRequestDetailsAndTriggerEvent(agentIDs, overviewData, objPtr);
+              });
     },
         
     _getLatestRequestIDsAndCreateTable: function (overviewData, objPtr) {
@@ -92,9 +101,9 @@ WMStats._RequestModelBase.prototype = {
         var requestList =  WMStats._RequestModelBase.keysFromIDs(overviewData);
         WMStats.Couch.view('requestAgentUrl', options,
               function(requestAgentUrlData) {
-                  var keys = WMStats._RequestModelBase.requestAgentUrlKeys(requestList, requestAgentUrlData)
-                  objPtr._getLatestRequestAgentUrlAndCreateTable(overviewData, keys, objPtr)
-                })
+                  var keys = WMStats._RequestModelBase.requestAgentUrlKeys(requestList, requestAgentUrlData);
+                  objPtr._getLatestRequestAgentUrlAndCreateTable(overviewData, keys, objPtr);
+               });
     },
 
     retrieveData: function (viewName, options) {
@@ -103,12 +112,12 @@ WMStats._RequestModelBase.prototype = {
         if (!options) {options = WMStats.Utils.cloneObj(this._options);}
         var objPtr = this;
         if (viewName == "allDocs") {
-            WMStats.Couch.allDocs(options, function (overviewData) {
-                objPtr._getLatestRequestIDsAndCreateTable(overviewData, objPtr)
+            this._dbSource.allDocs(options, function (overviewData) {
+                objPtr._getLatestRequestIDsAndCreateTable(overviewData, objPtr);
             });
         } else {
-            WMStats.Couch.view(viewName, options,  function (overviewData) {
-                objPtr._getLatestRequestIDsAndCreateTable(overviewData, objPtr)
+            this._dbSource.view(viewName, options,  function (overviewData) {
+                objPtr._getLatestRequestIDsAndCreateTable(overviewData, objPtr);
             });
         }
     },

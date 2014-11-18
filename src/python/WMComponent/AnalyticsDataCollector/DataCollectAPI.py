@@ -10,6 +10,7 @@ Retrieve information about a job from couch and format it nicely.
 
 import os
 import time
+import subprocess
 from WMCore.Configuration import loadConfigurationFile
 import logging
 from WMCore.Agent.Daemon.Details import Details
@@ -21,12 +22,14 @@ from WMComponent.AnalyticsDataCollector.DataCollectorEmulatorSwitch import emula
 @emulatorHook
 class LocalCouchDBData():
 
-    def __init__(self, couchURL, summaryLevel):
+    def __init__(self, couchURL, statSummaryDB, summaryLevel):
         # set the connection for local couchDB call
         self.couchURL = couchURL
         self.couchURLBase, self.dbName = splitCouchServiceURL(couchURL)
         self.jobCouchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/jobs", False)
         self.fwjrsCouchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/fwjrs", False)
+        #TODO: remove the hard coded name (wma_summarydb)
+        self.summaryStatsDB = CouchServer(self.couchURLBase).connectDatabase(statSummaryDB, False)
         self.summaryLevel = summaryLevel
 
     def getJobSummaryByWorkflowAndSite(self):
@@ -76,81 +79,17 @@ class LocalCouchDBData():
                 data[x['key'][0]][x['key'][2]][x['key'][3]] = x['value']
         logging.info("Found %i requests" % len(data))
         return data
-    
-    def getJobPerformanceByTaskAndSite(self):
-        """
-        gets the job status information by workflow
-    
-        example
-        {"rows":[
-
-            {"key":['request_name1", 'task_name1', "siteA"],
-             "value": {wrappedTotalJobTime: 1612, 
-                       cmsRunCPUPerformance: {totalJobCPU: 20.132924000000003, 
-                                              totalJobTime: 421.0489, 
-                                              totalEventCPU: 4.064402}, 
-                       inputEvents: 0, 
-                       dataset: {/TestLHE/TEST_Subscriptions_WMA-Test-v1/GEN: 
-                                             {size: 5093504, events: 10000,
-                                              totalLumis: 100}}}},
-            {"key":['request_name1", 'task_name2', "siteA"],
-             "value":{wrappedTotalJobTime: 1612, 
-                       cmsRunCPUPerformance: {totalJobCPU: 20.132924000000003, 
-                                              totalJobTime: 421.0489, 
-                                              totalEventCPU: 4.064402}, 
-                       inputEvents: 0, 
-                       dataset: {/TestLHE/TEST_Subscriptions_WMA-Test-v1/GEN: 
-                                             {size: 5093504, events: 10000,
-                                              totalLumis: 100}}}}}
-         ]}
-         and convert to
-         {'request_name1': {'tasks': 
-                    {'task_name1' : { 'siteA': 
-                        {wrappedTotalJobTime: 1612, 
-                         cmsRunCPUPerformance: {totalJobCPU: 20.132924000000003, 
-                                              totalJobTime: 421.0489, 
-                                              totalEventCPU: 4.064402}, 
-                        inputEvents: 0, 
-                        dataset: {/TestLHE/TEST_Subscriptions_WMA-Test-v1/GEN: 
-                                             {size: 5093504, events: 10000,
-                                              totalLumis: 100}}},
-                                             
-                    {'task_name2' : { 'siteA': 
-                        {wrappedTotalJobTime: 1612, 
-                         cmsRunCPUPerformance: {totalJobCPU: 20.132924000000003, 
-                                              totalJobTime: 421.0489, 
-                                              totalEventCPU: 4.064402,
-                                              totalLumis: 100}, 
-                        inputEvents: 0, 
-                        dataset: {/TestLHE/TEST_Subscriptions_WMA-Test-v1/GEN: 
-                                             {size: 5093504, events: 10000,
-                                              totalLumis: 100}}}
-                                             }}
-          
-         }
-        """
-        options = {"group": True, "stale": "ok", "reduce":True}
-        # site of data should be relatively small (~1M) for put in the memory 
-        # If not, find a way to stream
-        results = self.fwjrsCouchDB.loadView("FWJRDump", "performanceSummaryByTask",
-                                        options)
+        
+    def getJobPerformanceByTaskAndSiteFromSummaryDB(self):
+        
+        options = {"include_docs": True}
+        results = self.summaryStatsDB.allDocs(options)
         data = {}
-        for x in results.get('rows', []):
-            data.setdefault(x['key'][0], {})
-            data[x['key'][0]].setdefault('tasks', {})
-            data[x['key'][0]]['tasks'].setdefault(x['key'][1], {}) 
-            data[x['key'][0]]['tasks'][x['key'][1]].setdefault('sites', {})
-            if x['key'][2] == {}:
-                logging.warning("site information is missing (ignore and continue - investigate): %s" % x)
-                continue
-            data[x['key'][0]]['tasks'][x['key'][1]]['sites'][x['key'][2]] = x['value']
-            data[x['key'][0]]['tasks'][x['key'][1]]['sites'][x['key'][2]].setdefault('dataset', {})
-            if x['key'][3]:
-                data[x['key'][0]]['tasks'][x['key'][1]]['sites'][x['key'][2]]['dataset'][x['key'][3]] = x['value']['datasetStat'] 
-                #there is duplicate datasets in data[x['key'][0]]['tasks'][x['key'][1]]['sites'][x['key'][2]], just ignore
-                
+        for row in results['rows']:
+            if not row['id'].startswith("_"):
+                data[row['id']] = {}
+                data[row['id']]['tasks'] = row['doc']['tasks']
         return data
-    
     
     def getEventSummaryByWorkflow(self):
         """
@@ -440,7 +379,67 @@ def _getCouchACDCHtmlBase(acdcCouchURL):
 
     return '%s/_design/ACDC/collections.html' % sanitizeURL(acdcCouchURL)['url']
 
-def isDrainMode():
-    configPath = os.getenv('WMAGENT_CONFIG')
-    config = loadConfigurationFile(configPath)
+def isDrainMode(config):
+    """
+    config is loaded WMAgentCofig 
+    """
     return config.WorkQueueManager.queueParams.get('DrainMode', False)
+
+def initAgentInfo(config):
+    
+    agentInfo = {}
+    agentInfo['agent_team'] = config.Agent.teamName
+    agentInfo['agent'] = config.Agent.agentName
+    # temporarly add port for the split test
+    agentInfo['agent_url'] = ("%s:%s" % (config.Agent.hostName, config.WMBSService.Webtools.port))
+    return agentInfo
+
+def diskUse():
+    """
+    This returns the % use of each disk partition
+    """
+    diskPercent=[]
+    df = subprocess.Popen(["df", "-klP"], stdout=subprocess.PIPE)
+    output = df.communicate()[0].split("\n")
+    for x in output:
+        split = x.split()
+        if split != [] and split[0] != 'Filesystem':
+            diskPercent.append({'mounted':split[5],'percent':split[4]})
+
+    return diskPercent
+
+def numberCouchProcess():
+    """
+    This returns the number of couch process
+    """
+    ps = subprocess.Popen(["ps", "-ef"], stdout=subprocess.PIPE)
+    process = ps.communicate()[0].count('couchjs')
+    
+    return process
+
+class DataUploadTime():
+    """
+    Cache class to storage the last time when data was uploaded
+    If data could not be updated, it storages the error message.
+    """
+    data_last_update = 0
+    data_error = ""
+    
+    @staticmethod
+    def setInfo(self, time, message):
+        """
+        Set the time and message  
+        """
+        if time:
+            DataUploadTime.data_last_update = time
+        DataUploadTime.data_error = message
+    
+    @staticmethod            
+    def getInfo(self):
+        """
+        Returns the last time when data was uploaded and the error message (if any)
+        """
+        answer = {}
+        answer['data_last_update'] = DataUploadTime.data_last_update
+        answer['data_error'] = DataUploadTime.data_error
+        return answer

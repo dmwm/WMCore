@@ -480,7 +480,7 @@ class ReqMgrRESTModel(RESTModel):
             except cherrypy.HTTPError as ex:
                 self.error("Create request failed, reason: %s" % ex)
                 # Assume that this is a valid HTTPError
-                raise
+                raise ex
             except (WMException, Exception) as ex:
                 # TODO problem not to expose logs to the client
                 # e.g. on ConfigCacheID not found, the entire CouchDB traceback is sent in ex_message

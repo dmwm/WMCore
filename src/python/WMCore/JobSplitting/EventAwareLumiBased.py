@@ -51,6 +51,13 @@ class EventAwareLumiBased(JobFactory):
         lumis           = kwargs.get('lumis', None)
         timePerEvent, sizePerEvent, memoryRequirement = \
                     self.getPerformanceParameters(kwargs.get('performance', {}))
+        deterministicPileup = kwargs.get('deterministicPileup', False)
+        eventsPerLumiInDataset = 0
+
+        if deterministicPileup and self.package == 'WMCore.WMBS':
+            getJobNumber = self.daoFactory(classname = "Jobs.GetNumberOfJobsPerWorkflow")
+            jobNumber = getJobNumber.execute(workflow = self.subscription.getWorkflow().id)
+            self.nJobs = jobNumber
 
         goodRunList = {}
         if runs and lumis:
@@ -115,6 +122,9 @@ class EventAwareLumiBased(JobFactory):
                 #Do average event per lumi calculation
                 if f['lumiCount']:
                     f['avgEvtsPerLumi'] = float(f['events'])/f['lumiCount']
+                    if deterministicPileup:
+                        # We assume that all lumis are equal in the dataset
+                        eventsPerLumiInDataset = f['avgEvtsPerLumi']
                 else:
                     #No lumis in the file, ignore it
                     continue
@@ -234,8 +244,10 @@ class EventAwareLumiBased(JobFactory):
                                 msg = "File %s has too many events (%d) in %d lumi(s)" % (f['lfn'],
                                                                                           f['events'],
                                                                                           f['lumiCount'])
-                            self.newJob(name = self.getJobName(length = totalJobs), failedJob = failNextJob,
+                            self.newJob(name = self.getJobName(), failedJob = failNextJob,
                                         failedReason = msg)
+                            if deterministicPileup:
+                                self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * lumisPerJob * eventsPerLumiInDataset)
                             self.currentJob.addResourceEstimates(memory = memoryRequirement)
                             failNextJob = False
                             firstLumi = lumi

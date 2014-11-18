@@ -13,6 +13,7 @@ job in two ways:
 import logging
 
 from WMCore.DataStructs.Run import Run
+from WMCore.DataStructs.LumiList import LumiList
 
 class Mask(dict):
     """
@@ -138,6 +139,10 @@ class Mask(dict):
         TODO: The name of this function is a little misleading. If you pass a list of lumis
               it ignores the content of the list and adds a range based on the max/min in
               the list. Missing lumis in the list are ignored.
+
+        NOTE: If the new run/lumi range overlaps with the pre-existing lumi ranges in the
+              mask, no attempt is made to merge these together.  This can result in a mask
+              with duplicate lumis.
         """
 
         if not type(lumis) == list:
@@ -149,6 +154,17 @@ class Mask(dict):
         self['runAndLumis'][run].append([min(lumis), max(lumis)])
 
         return
+
+    def removeLumiList(self, lumiList):
+        """
+        Remove a lumi list from this data structure
+
+        This requires conversion to LumiList to do the lumi algebra an
+        may be computationally expensive for a large number of lumis.
+        """
+        myLumis = LumiList(compactList=self['runAndLumis'])
+        myLumis = myLumis - lumiList
+        self['runAndLumis'] = myLumis.getCompactList()
 
     def getRunAndLumis(self):
         """

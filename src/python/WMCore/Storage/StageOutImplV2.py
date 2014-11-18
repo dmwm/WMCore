@@ -10,6 +10,7 @@ inherit this object and implement the methods accordingly
 from WMCore.Storage.Execute import runCommandWithOutput as runCommand
 from WMCore.Storage.StageOutError import StageOutError
 import logging
+import os
 
 class StageOutImplV2:
     """
@@ -58,7 +59,7 @@ class StageOutImplV2:
         SRM uses file:/// urls
 
         """
-        if pfn.startswith('/'):
+        if os.path.isfile(pfn):
             return "file:%s" % pfn
         else:
             return pfn

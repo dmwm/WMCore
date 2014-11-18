@@ -43,7 +43,7 @@ def biggestUpdate(field, request):
     return "%i%%" % biggest
 
 class ReqMgrBrowser(WebAPI):
-    """ For browsing and modifying requests """
+    """ For browsing and modifying requests: Disabled use WMStats instead """
     def __init__(self, config):
         WebAPI.__init__(self, config)
         # Take a guess
@@ -85,8 +85,8 @@ class ReqMgrBrowser(WebAPI):
         """ Checks if alphanumeric, tolerating spaces """
         try:
             WMCore.Lexicon.identifier(v)
-        except AssertionError:
-            raise cherrypy.HTTPError(400, "Bad input %s" % name)
+        except AssertionError, ex:
+            raise cherrypy.HTTPError(400, "Bad input: %s" % str(ex))
         return v
 
     @cherrypy.expose
@@ -108,6 +108,7 @@ class ReqMgrBrowser(WebAPI):
     def index(self):
         requests = GetRequest.getRequests()
         tableBody = self.drawRequests(requests)
+        #tableBody = []
         return self.templatepage("ReqMgrBrowser", yuiroot=self.yuiroot,
                                  fields=self.fields, tableBody=tableBody)
         
@@ -270,7 +271,7 @@ class ReqMgrBrowser(WebAPI):
         try:
             request = GetRequest.getRequestByName(requestName)
         except (Exception, RuntimeError) as ex:
-            raise cherrypy.HTTPError(400, "Invalid request.")
+            raise cherrypy.HTTPError(400, "Invalid request. %s" % str(ex))
 
         request = Utilities.prepareForTable(request)
         helper = Utilities.loadWorkload(request)

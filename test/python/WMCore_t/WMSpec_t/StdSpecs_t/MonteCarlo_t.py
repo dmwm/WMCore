@@ -234,9 +234,12 @@ class MonteCarloTest(unittest.TestCase):
         defaultArguments = MonteCarloWorkloadFactory.getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
-        defaultArguments["FirstLumi"] = 10000
+        defaultArguments["FirstLumi"] = 10001
+        defaultArguments["EventsPerJob"] = 100
+        defaultArguments["FirstEvent"] = 10001
+        #defaultArguments["FirstEvent"] = 10001
 
-        initial_lfn_counter = 10000 # EventsPerJob == EventsPerLumi, then the number of previous jobs is equal to the number of the initial lumi
+        initial_lfn_counter = 100 # EventsPerJob == EventsPerLumi, then the number of previous jobs is equal to the number of the initial lumi
 
         factory = MonteCarloWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)

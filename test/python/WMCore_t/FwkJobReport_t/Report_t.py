@@ -41,6 +41,8 @@ class ReportTest(unittest.TestCase):
                                     "WMCore_t/FwkJobReport_t/CMSSWSkippedNonExistentFile.xml")
         self.skippedAllFilesxmlPath = os.path.join(getTestBase(),
                                                    "WMCore_t/FwkJobReport_t/CMSSWSkippedAll.xml")
+        self.fallbackXmlPath = os.path.join(getTestBase(),
+                                                   "WMCore_t/FwkJobReport_t/CMSSWInputFallback.xml")
         self.testDir = self.testInit.generateWorkDir()
         return
 
@@ -698,7 +700,7 @@ cms::Exception caught in EventProcessor and rethrown
 
         myReport.save(path1)
         info = BasicAlgos.getFileInfo(filename = path1)
-        self.assertEqual(info['Size'], 6821)
+        self.assertEqual(info['Size'], 7101)
 
         inputFiles = myReport.getAllInputFiles()
         self.assertEqual(len(inputFiles), 1)
@@ -707,7 +709,7 @@ cms::Exception caught in EventProcessor and rethrown
 
         myReport.save(path2)
         info = BasicAlgos.getFileInfo(filename = path2)
-        self.assertEqual(info['Size'], 5933)
+        self.assertEqual(info['Size'], 6210)
 
         return
 
@@ -757,10 +759,9 @@ cms::Exception caught in EventProcessor and rethrown
 
     def testSkippedFiles(self):
         """
-        _testDeleteOutputModule_
+        _testSkippedFiles_
 
-        If asked delete an output module, if it doesn't
-        exist then do nothing
+        Test that skipped files are translated from FWJR into report
         """
         # Check a report where some files were skipped but not all
         originalReport = Report("cmsRun1")
@@ -779,6 +780,73 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertEqual(sorted(badReport.getAllSkippedFiles()),
                          ['/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A611-E211-A851-0019B9F581C9.root',
                           '/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C.root'])
+
+        return
+
+    def testSkippedFilesJSON(self):
+        """
+        _testSkippedFilesJSON_
+
+        Test that skipped files are translated properly into JSON
+        """
+        # Check a report where some files were skipped but not all
+        originalReport = Report("cmsRun1")
+        originalReport.parse(self.skippedFilesxmlPath)
+        originalJSON = originalReport.__to_json__(None)
+        self.assertEqual(len(originalJSON['skippedFiles']), 1)
+
+        # For negative control, check a good report with no skipped files
+        goodReport = Report("cmsRun1")
+        goodReport.parse(self.xmlPath)
+        goodJSON = goodReport.__to_json__(None)
+        self.assertEqual(goodJSON['skippedFiles'], [])
+
+        # Check a report where all files were skipped
+        badReport = Report("cmsRun1")
+        badReport.parse(self.skippedAllFilesxmlPath)
+        badJSON = badReport.__to_json__(None)
+        self.assertEqual(len(badJSON['skippedFiles']), 2)
+
+        return
+
+    def testFallbackFiles(self):
+        """
+        _testFallback_
+
+        Test that fallback files end up in the report
+        """
+
+        # For negative control, check a good report with no fallback files
+        goodReport = Report("cmsRun1")
+        goodReport.parse(self.xmlPath)
+        self.assertEqual(goodReport.getAllFallbackFiles(), [])
+
+        # Check a report where the file was a fallback
+        badReport = Report("cmsRun1")
+        badReport.parse(self.fallbackXmlPath)
+        self.assertEqual(sorted(badReport.getAllFallbackFiles()),
+                         ['/store/data/Run2012D/SingleElectron/AOD/PromptReco-v1/000/207/279/D43A5B72-1831-E211-895D-001D09F24763.root'])
+
+        return
+
+    def testFallbackFilesJSON(self):
+        """
+        _testFallbackFilesJSON_
+
+        Test that fallback attempt files are translated properly into JSON
+        """
+
+        # For negative control, check a good report with no skipped files
+        goodReport = Report("cmsRun1")
+        goodReport.parse(self.xmlPath)
+        goodJSON = goodReport.__to_json__(None)
+        self.assertEqual(goodJSON['fallbackFiles'], [])
+
+        # Check a report where all files were skipped
+        badReport = Report("cmsRun1")
+        badReport.parse(self.fallbackXmlPath)
+        badJSON = badReport.__to_json__(None)
+        self.assertEqual(len(badJSON['fallbackFiles']), 1)
 
         return
 

@@ -264,4 +264,5 @@ class DQMUpload(Executor):
         data = result.read()
         if result.headers.get('Content-encoding', '') == 'gzip':
             data = GzipFile(fileobj=StringIO(data)).read ()
+
         return (result.headers, data)

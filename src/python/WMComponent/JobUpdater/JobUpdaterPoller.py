@@ -11,7 +11,7 @@ Created on Apr 16, 2013
 
 import logging
 import threading
-
+import traceback
 from WMCore.BossAir.BossAirAPI import BossAirAPI
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.RequestManager.RequestManager import RequestManager
@@ -75,9 +75,23 @@ class JobUpdaterPoller(BaseWorkerThread):
         """
         _algorithm_
         """
-        logging.info("Synchronizing priorities with ReqMgr...")
-        self.synchronizeJobPriority()
+        try:
+            logging.info("Synchronizing priorities with ReqMgr...")
+            self.synchronizeJobPriority()
+            logging.info("Priorities were synchronized, wait until the next cycle")
 
+        except Exception, ex:
+            error = str(ex)
+            trace = str(traceback.format_exc())
+            # Handle temporary connection problems (Temporary)
+            if 'Connection refused' not in error or 'timed out' not in error and "self.workqueue.getAvailableWorkflows()" not in trace:
+                msg = 'Error in JobUpdater:\n%s' % error
+                msg += '\n\n%s\n' % trace
+                logging.error(msg)
+                raise JobUpdaterException(msg)
+            else:
+                logging.error('There was a connection problem during the JobUpdater algorithm, I will try again next cycle')
+        
     def synchronizeJobPriority(self):
         """
         _synchronizeJobPriority_

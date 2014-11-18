@@ -21,6 +21,8 @@ class LoadDBSFilesByDAS(DBFormatter):
                     dbsbuffer_algo.app_fam AS app_fam, dbsbuffer_algo.pset_hash AS pset_hash,
                     dbsbuffer_algo.config_content, dbsbuffer_dataset.path AS dataset_path,
                     dbsbuffer_dataset.global_tag AS global_tag,
+                    dbsbuffer_dataset.prep_id AS prep_id,
+                    dbsbuffer_workflow.name AS workflow,
                     dbsbuffer_workflow.block_close_max_wait_time,
                     dbsbuffer_workflow.block_close_max_files,
                     dbsbuffer_workflow.block_close_max_events,
@@ -312,7 +314,7 @@ class LoadDBSFilesByDAS(DBFormatter):
 
         finalList = []
         for entry in interimDictionary.keys():
-            tmpDict = {'id': entry, key: interimDictionry[entry]}
+            tmpDict = {'id': entry, key: interimDictionary[entry]}
             finalList.append(tmpDict)
 
 

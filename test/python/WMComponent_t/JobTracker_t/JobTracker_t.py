@@ -23,6 +23,7 @@ from nose.plugins.attrib import attr
 
 import WMCore.WMInit
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators import EmulatorSetup
 from WMCore.DAOFactory    import DAOFactory
 from WMCore.Services.UUID import makeUUID
 
@@ -167,6 +168,7 @@ class JobTrackerTest(unittest.TestCase):
         self.user = getpass.getuser()
 
         self.testDir = self.testInit.generateWorkDir()
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
 
     def tearDown(self):
         """
@@ -175,6 +177,7 @@ class JobTrackerTest(unittest.TestCase):
         self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl"])
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
+        EmulatorSetup.deleteConfig(self.configFile)
         return
 
 
@@ -185,7 +188,8 @@ class JobTrackerTest(unittest.TestCase):
         Build a basic JobTracker config
         """
 
-        config = Configuration()
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
 
         config.section_("Agent")
         config.Agent.agentName  = 'testAgent'

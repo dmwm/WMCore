@@ -463,6 +463,7 @@ class WorkflowTest(unittest.TestCase):
         Test that we get only those workflows which are finished, that is, workflows where
         all its subscriptions are finished and all other workflows with the same
         spec are finished too
+
         """
 
         owner = "no-one"
@@ -471,8 +472,10 @@ class WorkflowTest(unittest.TestCase):
         workflows = []
         for i in range(0, 100):
             scaledIndex = i % 10
-            testWorkflow = Workflow(spec = "sp00%i" % scaledIndex, owner = owner,
-                                    name = "wf00%i" % scaledIndex, task = "task%i" % i)
+            testWorkflow = Workflow(spec = "sp00%i" % scaledIndex,
+                                    owner = owner,
+                                    name = "wf00%i" % scaledIndex,
+                                    task = "task%i" % i)
             testWorkflow.create()
             workflows.append(testWorkflow)
 
@@ -516,9 +519,11 @@ class WorkflowTest(unittest.TestCase):
         #Check the workflows
         result = getFinishedDAO.execute()
         self.assertEquals(len(result), 6, "A workflow is incorrectly flagged as finished: %s" % str(result))
+
         #Check the overall structure of the workflows
         for wf in result:
             #Sanity checks on the results
+            # These are very specific checks and depends heavily on the names of task, spec and workflow
             self.assertEquals(wf[2:], result[wf]['spec'][2:],
                             "A workflow has the wrong spec-name combination: %s" % str(wf))
             self.assertTrue(int(wf[2:]) < 6,

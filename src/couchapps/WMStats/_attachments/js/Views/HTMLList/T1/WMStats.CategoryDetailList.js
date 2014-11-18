@@ -5,7 +5,7 @@ WMStats.namespace('CategoryDetailList');
         var reqDoc = requestStruct.requests[requestStruct.key];
         var reqSummary = requestStruct.summary;
         
-        htmlstr += "<div class='requestDetailBox'>"
+        htmlstr += "<div class='requestDetailBox'>";
         htmlstr += "<ul>";
         if (reqDoc) {
             htmlstr += "<li><b>campaign:</b> " + reqDoc.campaign + "</li>";

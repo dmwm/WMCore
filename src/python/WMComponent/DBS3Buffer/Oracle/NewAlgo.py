@@ -10,7 +10,6 @@ Oracle implementation of DBSBuffer.NewAlgo
 
 import logging
 
-from sqlalchemy.exceptions import IntegrityError
 from WMCore.Database.DBFormatter import DBFormatter
 
 class NewAlgo(DBFormatter):

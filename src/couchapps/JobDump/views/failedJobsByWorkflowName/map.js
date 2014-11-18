@@ -1,4 +1,5 @@
 function(doc) {
+  /* this doesn't include killed jobs */
   function stateSort(a, b) {
     if (a['timestamp'] > b['timestamp']) {
       return 1;
@@ -18,18 +19,13 @@ function(doc) {
     stateList.sort(stateSort);
     lastTransition = stateList.pop();
 
-    if (lastTransition['oldstate'] == 'jobfailed' &&
-        lastTransition['newstate'] == 'exhausted') {
-      emit([doc['workflow'], doc['task']], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'submitfailed' &&
-               lastTransition['newstate'] == 'exhausted') {
-      emit([doc['workflow'], doc['task']], doc['jobid']);
-    } else if (lastTransition['oldstate'] == 'createfailed' &&
-               lastTransition['newstate'] == 'exhausted') {
+    if (lastTransition['newstate'] == 'exhausted') {
       emit([doc['workflow'], doc['task']], doc['jobid']);
     } else if (lastTransition['oldstate'] == 'exhausted' &&
                lastTransition['newstate'] == 'cleanout') {
       emit([doc['workflow'], doc['task']], doc['jobid']);
+    } else if (lastTransition['newstate'] == 'retrydone') {
+      emit([doc['workflow'], doc['task']], doc['jobid']);	
     }
   }
 }

@@ -55,13 +55,13 @@ WMStats.RunSummary = function() {
         } else {
             baseObj[field] += additionObj[field];
         }
-    }
+    };
 
     runSummary.createSummaryFromRequestDoc = function(doc) {
         var summary = WMStats.RunSummary();
         summary.summaryStruct.numRequests = 1;
         summary.summaryStruct.runStatus = getRunStatus(doc);
-        summary.jobStatus = this._get(doc, 'status', {})
+        summary.jobStatus = this._get(doc, 'status', {});
         
         return summary;
     };

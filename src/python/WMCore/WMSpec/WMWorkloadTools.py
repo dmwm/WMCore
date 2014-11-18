@@ -8,9 +8,11 @@ Created on Jun 13, 2013
 
 @author: dballest
 """
+import json
 
+from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMException import WMException
-from WMCore.WMFactory import WMFactory
+from WMCore.Services.DBS.DBS3Reader import DBS3Reader
 
 class WMWorkloadToolsException(WMException):
     """
@@ -19,6 +21,13 @@ class WMWorkloadToolsException(WMException):
     Exception thrown by the utilities in this module
     """
     pass
+
+def makeLumiList(lumiDict):
+    try:
+        ll = LumiList(compactList = lumiDict)
+        return ll.getCompactList()
+    except:
+        raise WMWorkloadToolsException("Could not parse LumiList")
 
 def makeList(stringList):
     """
@@ -54,7 +63,16 @@ def strToBool(string):
         return False
     else:
         raise WMWorkloadToolsException()
-
+    
+def checkDBSUrl(dbsUrl):
+    if dbsUrl:
+        try:
+            DBS3Reader(dbsUrl).dbs.serverinfo()
+        except:
+            raise WMWorkloadToolsException("DBS is not responding: %s" % dbsUrl)
+    
+    return True
+    
 def parsePileupConfig(mcPileup, dataPileup):
     """
     _parsePileupConfig_

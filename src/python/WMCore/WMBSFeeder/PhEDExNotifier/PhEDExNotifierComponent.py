@@ -28,7 +28,7 @@ class PhEDExNotifierComponent(FeederImpl):
 
     """
 
-    def __init__( self, nodes, phedexURL = "https://cmsweb.cern.ch/phedex/datasvc/json/prod/fileReplicas", dbsURL = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet" ):
+    def __init__(self, nodes, phedexURL = "https://cmsweb.cern.ch/phedex/datasvc/json/prod/fileReplicas", dbsURL = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"):
 
         # Add the node specification the URL
         nodeList = self.makelist( nodes )

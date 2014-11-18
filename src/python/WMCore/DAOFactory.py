@@ -4,10 +4,6 @@ A basic action is a thing that will run a SQL statement
 A more complex one would be something that ran multiple SQL
 objects to produce a single output.
 """
-from WMCore.Database.Dialects import MySQLDialect
-from WMCore.Database.Dialects import SQLiteDialect
-from WMCore.Database.Dialects import OracleDialect
-
 class DAOFactory(object):
     def __init__(self, package='WMCore', logger=None, dbinterface=None, owner=""):
         self.package = package
@@ -15,6 +11,9 @@ class DAOFactory(object):
         self.dbinterface = dbinterface
         self.owner = owner
         #self.logger.debug("Instantiating DAOFactory for %s package" % self.package)
+        from WMCore.Database.Dialects import MySQLDialect
+        from WMCore.Database.Dialects import SQLiteDialect
+        from WMCore.Database.Dialects import OracleDialect
         self.dialects = {"Oracle" : OracleDialect,
                     "MySQL" : MySQLDialect,
                     "SQLite" : SQLiteDialect}

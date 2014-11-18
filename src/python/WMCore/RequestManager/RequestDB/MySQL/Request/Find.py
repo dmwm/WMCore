@@ -9,6 +9,7 @@ API for finding a new request by status
 
 
 from WMCore.Database.DBFormatter import DBFormatter
+from WMCore.RequestManager.RequestDB.Settings import RequestStatus
 
 class Find(DBFormatter):
     """
@@ -26,14 +27,18 @@ class Find(DBFormatter):
         returns a dictionay of { name: id, status }
 
         """
+        
         self.sql = """
         SELECT req.request_name, req.request_id, stat.status_name
           FROM reqmgr_request req
             JOIN reqmgr_request_status stat
                ON req.request_status = stat.status_id
+            WHERE stat.status_name = :status
         """
-
-        result = self.dbi.processData(self.sql,
+        binds = {}
+        for status in RequestStatus.ACTIVE_STATUS:
+            binds['status'] = status
+        result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
 
         output = self.format(result)

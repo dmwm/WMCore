@@ -32,6 +32,7 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 from WMCore_t.WMSpec_t.TestSpec import testWorkload
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators import EmulatorSetup
 
 class JobSubmitterTest(unittest.TestCase):
     """
@@ -68,6 +69,7 @@ class JobSubmitterTest(unittest.TestCase):
         self.componentName = 'JobSubmitter'
         self.heartbeatAPI = HeartbeatAPI(self.componentName)
         self.heartbeatAPI.registerComponent()
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
 
         return
 
@@ -80,6 +82,7 @@ class JobSubmitterTest(unittest.TestCase):
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
+        EmulatorSetup.deleteConfig(self.configFile)
         return
 
     def setResourceThresholds(self, site, **options):
@@ -199,6 +202,8 @@ class JobSubmitterTest(unittest.TestCase):
             testJob["siteBlacklist"] = bl
             testJob["siteWhitelist"] = wl
             testJob['priority'] = 101
+            testJob['multicoreEnabled'] = False
+            testJob['numberOfCores'] = 1
             jobCache = os.path.join(cacheDir, 'Sub_%i' % (sub), 'Job_%i' % (index))
             os.makedirs(jobCache)
             testJob.create(jobGroup)
@@ -218,7 +223,8 @@ class JobSubmitterTest(unittest.TestCase):
         Gets a basic config from default location
         """
 
-        config = Configuration()
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
 
         config.component_("Agent")
         config.Agent.WMSpecDirectory = self.testDir
@@ -249,7 +255,7 @@ class JobSubmitterTest(unittest.TestCase):
                                                          'WMComponent_t/JobSubmitter_t',
                                                          "submit.sh")
 
-        
+
         # JobSubmitter configuration
         config.component_("JobSubmitter")
         config.JobSubmitter.logLevel      = 'DEBUG'
@@ -408,7 +414,7 @@ class JobSubmitterTest(unittest.TestCase):
 
         jobSubmitter.algorithm()
 
-        # Check that jobs are in the right state, 
+        # Check that jobs are in the right state,
         # here we are limited by the pending threshold for the Processing task (45)
         result = getJobsAction.execute(state = 'Created', jobType = "Processing")
         self.assertEqual(len(result), 5)
@@ -782,6 +788,28 @@ class JobSubmitterTest(unittest.TestCase):
         # Nothing is submitted despite the empty slots at Uniandes and Florida
         result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
         self.assertEqual(len(result), nSubs * nJobs)
+
+        # Now set everything to Drain and create Merge jobs. Those should be submitted
+        for site in sites:
+            myResourceControl.changeSiteState(site, 'Draining')
+
+        nSubsMerge = 1
+        nJobsMerge = 5
+        jobGroupList = self.createJobGroups(nSubs = nSubsMerge, nJobs = nJobsMerge,
+                                            site = ['se.%s' % x for x in sites],
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir,
+                                                                        'workloadTest',
+                                                                        workloadName),
+                                            taskType = 'Merge')
+
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+        jobSubmitter.algorithm()
+
+        result = getJobsAction.execute(state = 'Executing', jobType = 'Merge')
+        self.assertEqual(len(result), nSubsMerge * nJobsMerge)
 
         # Now set everything to Aborted, and create Merge jobs. Those should fail
         # since the can only run at one place

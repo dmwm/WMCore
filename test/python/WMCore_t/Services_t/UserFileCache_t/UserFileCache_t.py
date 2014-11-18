@@ -4,6 +4,7 @@ Test case for UserFileCache
 """
 
 import unittest
+import filecmp
 import os
 from os import path
 
@@ -34,15 +35,18 @@ class UserFileCacheTest(unittest.TestCase):
         if 'UFCURL' in os.environ:
             currdir = getTestBase()
             upfile = path.join(currdir, 'WMCore_t/Services_t/UserFileCache_t/test_file.tgz') #file to upload
+            upfileLog = path.join(currdir, 'WMCore_t/Services_t/UserFileCache_t/uplog.txt') #file to upload
             ufc = UserFileCache({'endpoint':os.environ['UFCURL']})
-
-            #named upload/download
-            res = ufc.upload(upfile, 'name_publish.tgz')
-            ufc.download(name=res['name'], output='name_publish.tgz')
 
             #hashkey upload/download
             res = ufc.upload(upfile)
             ufc.download(res['hashkey'], output='pippo_publish_down.tgz')
+
+            #log upload/download
+            res = ufc.uploadLog(upfileLog)
+            ufc.downloadLog(upfileLog, upfileLog+'.downloaded')
+            self.assertTrue(filecmp.cmp(upfileLog, upfileLog+'.downloaded'))
+
 
 
 if __name__ == '__main__':

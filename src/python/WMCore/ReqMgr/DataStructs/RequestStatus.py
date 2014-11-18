@@ -36,19 +36,16 @@ REQUEST_STATE_TRANSITION = {
     
     "assignment-approved": ["assignment-approved",
                             "assigned",
-                            "rejected",
-                            "aborted"],
+                            "rejected"],
                              
     "assigned": ["assigned",
                  "negotiating",
                  "acquired",
                  "aborted",
-                 "rejected",
                  "failed"],
                              
     "negotiating": ["acquired",
                     "assigned",
-                    "rejected",
                     "aborted",
                     "failed",
                     "negotiating"],
@@ -73,6 +70,7 @@ REQUEST_STATE_TRANSITION = {
                              
     "failed": ["failed",
                "testing-approved",
+               "rejected",
                "assigned"],
                              
     "completed": ["completed",
@@ -83,17 +81,11 @@ REQUEST_STATE_TRANSITION = {
     
     "announced": ["normal-archived"],
     
-    "aborted": ["aborted",
-                "testing-approved",
-                "assigned",
-                "rejected",
-                "failed",
-                "aborted-completed"],
+    "aborted": ["aborted-completed"],
                              
     "aborted-completed": ["aborted-archived"],
     
-    "rejected": ["rejected",
-                 "rejected-archived"],
+    "rejected": ["rejected-archived"],
                              
     # final status
     "normal-archived": [],
@@ -102,6 +94,22 @@ REQUEST_STATE_TRANSITION = {
     
     "rejected-archived": []
     }
+
+ACTIVE_STATUS = ["new",
+                 "assignment-approved",
+                 "assigned",
+                 "ops-hold",
+                 "negotiating",
+                 "acquired",
+                 "running",
+                 "running-open",
+                 "running-closed",
+                 "failed",
+                 "completed",
+                 "closed-out",
+                 "announced",
+                 "aborted",
+                 "rejected"]
 
 # each item from STATUS_TRANSITION is a dictionary with 1 item, the key
 # is name of the status

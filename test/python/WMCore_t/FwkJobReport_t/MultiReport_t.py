@@ -19,7 +19,7 @@ def findThisModule():
 class MultiReport_t(unittest.TestCase):
     def setUp(self):
 
-        self.directory = os.path.dirname(inspect.getsourcefile(findThisModule))
+        self.directory = os.path.dirname(os.path.realpath(inspect.getsourcefile(findThisModule)))
         self.multiReport = os.path.join(self.directory, "CMSSWMulticoreTopReport.xml")
         self.report = Report("MultiReport_t")
 

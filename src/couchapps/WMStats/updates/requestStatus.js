@@ -14,7 +14,8 @@ function (doc, req) {
         var legalTransition = true;
         if (lastState != statusObj.status) {
             if (lastState == "completed") {
-                if ((statusObj.status != "closed-out") && (statusObj.status != "normal-archived")  && (statusObj.status != "rejected")) {
+                if ((statusObj.status != "closed-out") && (statusObj.status != "normal-archived") &&
+                    (statusObj.status != "announced") && (statusObj.status != "rejected")) {
                     legalTransition = false;
                 }
             } else if ((lastState == "aborted-completed") && (statusObj.status != "aborted-archived")) {

@@ -6,10 +6,12 @@ WorkQueue splitting by block
 __all__ = []
 
 
-
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
+
 from copy import deepcopy
 from math import ceil
+
+from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements, makeLocationsList
 from WMCore import Lexicon
@@ -121,7 +123,7 @@ class Block(StartPolicyInterface):
 
             #check lumi restrictions
             if task.getLumiMask():
-                accepted_lumis = sum( [ len(maskedBlocks[blockName][file]) for file in maskedBlocks[blockName] ] )
+                accepted_lumis = sum( [ len(maskedBlocks[blockName][file].getLumis()) for file in maskedBlocks[blockName] ] )
                 #use the information given from getMaskedBlocks to compute che size of the block
                 block['NumberOfFiles'] = len(maskedBlocks[blockName])
                 #ratio =  lumis which are ok in the block / total num lumis
@@ -185,10 +187,14 @@ class Block(StartPolicyInterface):
             else:
                 self.data[block['block']] = sitesFromStorageEelements(dbs.listFileBlockLocation(block['block']))
 
+            # TODO: need to decide what to do when location is no find.
+            # There could be case for network problem (no connection to dbs, phedex)
+            # or DBS se is not recorded (This will be retried anyway by location mapper)
             if not self.data[block['block']]:
-                # No sites for this block, move it to rejected
-                self.rejectedWork.append(blockName)
-                continue
+                self.data[block['block']] = ["NoInitialSite"]
+            #    # No sites for this block, move it to rejected
+            #    self.rejectedWork.append(blockName)
+            #    continue
 
             validBlocks.append(block)
         return validBlocks
@@ -198,40 +204,43 @@ class Block(StartPolicyInterface):
             which were ok (given the lumi mask). The data structure returned is the following:
 
             {
-                "block1" : {"file1" : [2,3,4,6,7], "file5" : [10,12,13,15,17], ...}
-                "block2" : {"file2" : [22,23,24,26,27], "file7" : [310,312,313,315,317], ...}
+                "block1" : {"file1" : LumiList(), "file5" : LumiList(), ...}
+                "block2" : {"file2" : LumiList(), "file7" : LumiList(), ...}
             }
 
         """
+
+        # Get mask and convert to LumiList to make operations easier
         maskedBlocks = {}
         lumiMask = task.getLumiMask()
+        taskMask = LumiList(compactList = lumiMask)
 
-        files = dbs.dbs.listFiles(datasetPath, retriveList=["retrive_lumi", "retrive_run"])
-        #go through the lumi and get a list of blocks after applying the lumi mask
-        for file in files:
-            for lumi in file['LumiList']:
-                if self._applyMask(lumi['LumiSectionNumber'], lumi['RunNumber'], lumiMask):
-                    #initialize the block if needed
-                    if file['Block']['Name'] not in maskedBlocks:
-                        maskedBlocks[ file['Block']['Name'] ] = {}
-                    #initialize the file if needed
-                    if file['LogicalFileName'] not in maskedBlocks[ file['Block']['Name'] ]:
-                        maskedBlocks[ file['Block']['Name'] ][ file['LogicalFileName'] ] = []
-                    #append the lumi
-                    maskedBlocks[ file['Block']['Name'] ][ file['LogicalFileName'] ].append( lumi['LumiSectionNumber'] )
+        # Find all the files that have runs and lumis we are interested in,
+        # fill block lfn part of maskedBlocks
+
+        for run, lumis in lumiMask.items():
+            files = dbs.dbs.listFiles(dataset=datasetPath, run_num=run,
+                                      lumi_list=lumis, detail=True)
+            for file in files:
+                blockName = file['block_name']
+                fileName = file['logical_file_name']
+                if blockName not in maskedBlocks:
+                    maskedBlocks[blockName] = {}
+                if fileName not in maskedBlocks[blockName]:
+                    maskedBlocks[blockName][fileName] = LumiList()
+
+        # Fill maskedLumis part of maskedBlocks
+
+        for block in maskedBlocks:
+            fileLumis = dbs.dbs.listFileLumis(block_name=block)
+            for fileLumi in fileLumis:
+                lfn = fileLumi['logical_file_name']
+                # For each run : [lumis] mask by needed lumis, append to maskedBlocks
+                if maskedBlocks[block].get(lfn, None) is not None:
+                    lumiList = LumiList(runsAndLumis = {fileLumi['run_num']: fileLumi['lumi_section_num']})
+                    maskedBlocks[block][lfn] += (lumiList & taskMask)
 
         return maskedBlocks
-
-    def _applyMask(self, lumi, run, lumiMask):
-        """
-            Return True if the lumi and the run can be found in lumiMask
-            E.g.: lumi=3, run=5, lumiMask={'1':[...], '5':[[1,7],...]} => True
-        """
-        if str(run) in lumiMask:
-            for section in lumiMask[str(run)]:
-                if int(section[0]) <= int(lumi) <= int(section[1]):
-                    return True
-        return False
 
     def modifyPolicyForWorkAddition(self, inboxElement):
         """

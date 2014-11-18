@@ -22,6 +22,7 @@ from WMCore.Agent.Configuration import loadConfigurationFile, Configuration
 
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators import EmulatorSetup
 #from WMQuality.TestInit   import TestInit
 from WMCore.DAOFactory    import DAOFactory
 from WMCore.Services.UUID import makeUUID
@@ -84,6 +85,7 @@ class JobArchiverTest(unittest.TestCase):
 
         EmulatorHelper.setEmulators(phedex = True, dbs = True,
                                     siteDB = True, requestMgr = False)
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
 
         return
 
@@ -95,6 +97,7 @@ class JobArchiverTest(unittest.TestCase):
         self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
+        EmulatorSetup.deleteConfig(self.configFile)
         if self.alertsReceiver:
             self.alertsReceiver.shutdown()
 
@@ -107,7 +110,8 @@ class JobArchiverTest(unittest.TestCase):
 
         General config file
         """
-        config = Configuration()
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
 
         #First the general stuff
         config.section_("General")

@@ -21,6 +21,7 @@ from httplib import HTTPException
 from datetime import timedelta, datetime
 
 from WMCore.Services.Requests import JSONRequests
+from WMCore.Lexicon import replaceToSantizeURL
 
 def check_name(dbname):
     match = re.match("^[a-z0-9_$()+-/]+$", urllib.unquote_plus(dbname))
@@ -82,6 +83,7 @@ class CouchDBRequests(JSONRequests):
         """
         JSONRequests.__init__(self, url, {"cachepath" : None, "pycurl" : usePYCurl, "key" : ckey, "cert" : cert, "capath" : capath})
         self.accept_type = "application/json"
+        self["timeout"] = 600
 
     def move(self, uri=None, data=None):
         """
@@ -153,8 +155,7 @@ class Database(CouchDBRequests):
     TODO: implement COPY and MOVE calls.
     TODO: remove leading whitespace when committing a view
     """
-    def __init__(self, dbname = 'database',
-                  url = 'http://localhost:5984', size = 1000):
+    def __init__(self, dbname = 'database', url = 'http://localhost:5984', size = 1000, ckey = None, cert = None):
         """
         A set of queries against a CouchDB database
         """
@@ -162,7 +163,7 @@ class Database(CouchDBRequests):
 
         self.name = urllib.quote_plus(dbname)
 
-        CouchDBRequests.__init__(self, url)
+        CouchDBRequests.__init__(self, url = url, ckey = ckey, cert = cert)
         self._reset_queue()
 
         self._queue_size = size
@@ -311,7 +312,6 @@ class Database(CouchDBRequests):
         else:
             updateUri = '/%s/_design/%s/_update/%s/%s' % \
                 (self.name, design, update_func, doc_id)
-    
             return self.put(uri=updateUri, data=fields, decode=False)
 
     def documentExists(self, id, rev = None):
@@ -333,7 +333,7 @@ class Database(CouchDBRequests):
         """
         doc = self.document(id, rev)
         doc.delete()
-        self.commitOne(doc)
+        return self.commitOne(doc)
 
     def compact(self, views=[], blocking=False, blocking_poll=5, callback=False):
         """
@@ -794,19 +794,21 @@ class CouchServer(CouchDBRequests):
     More info http://wiki.apache.org/couchdb/HTTP_database_API
     """
 
-    def __init__(self, dburl='http://localhost:5984', usePYCurl = False, ckey = None, cert = None, capath = None):
+    def __init__(self, dburl = 'http://localhost:5984', usePYCurl = False, ckey = None, cert = None, capath = None):
         """
         Set up a connection to the CouchDB server
         """
         check_server_url(dburl)
-        CouchDBRequests.__init__(self, dburl, usePYCurl=usePYCurl, ckey=ckey, cert=cert, capath=capath)
+        CouchDBRequests.__init__(self, url = dburl, usePYCurl = usePYCurl, ckey = ckey, cert = cert, capath = capath)
         self.url = dburl
+        self.ckey = ckey
+        self.cert = cert
 
     def listDatabases(self):
         "List all the databases the server hosts"
         return self.get('/_all_dbs')
 
-    def createDatabase(self, dbname):
+    def createDatabase(self, dbname, size = 1000):
         """
         A database must be named with all lowercase characters (a-z),
         digits (0-9), or any of the _$()+-/ characters and must end with a slash
@@ -817,7 +819,7 @@ class CouchServer(CouchDBRequests):
         self.put("/%s" % urllib.quote_plus(dbname))
         # Pass the Database constructor the unquoted name - the constructor will
         # quote it for us.
-        return Database(dbname, self.url)
+        return Database(dbname = dbname, url = self.url, size = size, ckey = self.ckey, cert = self.cert)
 
     def deleteDatabase(self, dbname):
         "Delete a database from the server"
@@ -833,7 +835,7 @@ class CouchServer(CouchDBRequests):
         check_name(dbname)
         if create and dbname not in self.listDatabases():
             return self.createDatabase(dbname)
-        return Database(dbname, self.url, size)
+        return Database(dbname = dbname, url = self.url, size = size, ckey = self.ckey, cert = self.cert)
 
     def replicate(self, source, destination, continuous = False,
                   create_target = False, cancel = False, doc_ids=False,
@@ -864,6 +866,10 @@ class CouchServer(CouchDBRequests):
                 check_name(destination)
             else:
                 check_server_url(destination)
+        if not destination.startswith("http"):
+            destination = '%s/%s' % (self.url, destination)
+        if not source.startswith("http"):
+            source = '%s/%s' % (self.url, source)
         data={"source":source,"target":destination}
         #There must be a nicer way to do this, but I've not had coffee yet...
         if continuous: data["continuous"] = continuous
@@ -962,7 +968,11 @@ class CouchForbidden(CouchError):
 class CouchMonitor(object):
     
     def __init__(self, couchURL):
-        self.couchServer = CouchServer(couchURL)
+        if isinstance(couchURL, CouchServer):
+            self.couchServer = couchURL
+        else:
+            self.couchServer = CouchServer(couchURL)
+            
         self.replicatorDB = self.couchServer.connectDatabase('_replicator', False)
         # this is set {source: {taget: update_sequence}}
         self.previousUpdateSequence  = {}
@@ -986,7 +996,13 @@ class CouchMonitor(object):
                     doc = {}
                     doc["_id"]  = j['id']
                     doc["_rev"] = j['value']['rev']
-                    doc["_replication_state"] = j["doc"]["_replication_state"]
+                    if doc.has_key("_replication_state"):
+                        doc["_replication_state"] = j["doc"]["_replication_state"]
+                    else:
+                        logging.error("""replication failed from %s to %s 
+                                         couch server manually need to be restarted""" % (
+                                         replaceToSantizeURL(source), 
+                                         replaceToSantizeURL(target)))
                     filteredDocs.append(doc)
         return filteredDocs
     
@@ -997,34 +1013,52 @@ class CouchMonitor(object):
     def setPreviousUpdateSequence(self, source, target, updateSeq):
         self.previousUpdateSequence[source][target] = updateSeq
         
-    def recoverReplicationErrors(self, source, target):
+    def recoverReplicationErrors(self, source, target, filter = False, 
+                                 query_params = False,
+                                 checkUpdateSeq = True,
+                                 continuous = True):
         previousUpdateNum = self.getPreviousUpdateSequence(source, target)
         
-        couchInfo = self.checkCouchServerStatus(source, target, previousUpdateNum)
+        couchInfo = self.checkCouchServerStatus(source, target, previousUpdateNum, 
+                                                checkUpdateSeq)
+
         if (couchInfo['status'] == 'error'):
-            logging.info("Deleting the replicator documents ...")
+            logging.info("Deleting the replicator documents from %s..." % source)
             self.deleteReplicatorDocs(source, target)
-            logging.info("Setting the replication to central monitor ...")
-            self.couchServer.replicate(source, target, continuous = True,
-                                   filter = 'WMStats/repfilter', useReplicator = True)
-            couchInfo = self.checkCouchServerStatus(source, target, previousUpdateNum)
+            logging.info("Setting the replication from %s ..." % source)
+            self.couchServer.replicate(source, target, filter = filter, 
+                                           query_params = query_params,
+                                           continuous = continuous,
+                                           useReplicator = True)
+            
+            couchInfo = self.checkCouchServerStatus(source, target, previousUpdateNum,
+                                                    checkUpdateSeq)
         #if (couchInfo['status'] != 'down'):
         #    restart couch server
         return couchInfo
 
     
-    def checkCouchServerStatus(self, source, target, previousUpdateNum):
+    def checkCouchServerStatus(self, source, target, previousUpdateNum, checkUpdateSeq):
         try:
-            dbInfo =  self.couchServer.get("/%s" % source)
+            if checkUpdateSeq:
+                dbInfo =  self.couchServer.get("/%s" % source)
+            else:
+                dbInfo = None
             activeTasks = self.couchServer.get("/_active_tasks")
             replicationFlag = False
             passwdStrippedURL = target.split("@")[-1]
             
             for activeStatus in activeTasks:
-                if activeStatus["type"] == "Replication":
-                    if passwdStrippedURL in activeStatus["task"]:
+                if activeStatus["type"].lower() == "replication":
+                    if passwdStrippedURL in activeStatus.get("task", "").split("->")[-1]:
                         replicationFlag = self.checkReplicationStatus(activeStatus, 
-                                                    dbInfo, source, target, previousUpdateNum)
+                                                    dbInfo, source, target, 
+                                                    previousUpdateNum, checkUpdateSeq)
+                        break
+                    elif passwdStrippedURL in activeStatus.get("target", ""):
+                        replicationFlag = self.checkReplicationStatusCouch15(activeStatus, 
+                                                    dbInfo, source, target, 
+                                                    previousUpdateNum, checkUpdateSeq)
                         break
             
             if replicationFlag:
@@ -1034,10 +1068,11 @@ class CouchMonitor(object):
         except Exception, ex:
             import traceback
             msg = traceback.format_exc() 
-            logging.debug(msg)
+            logging.error(msg)
             return {'status':'down', 'error_message': str(ex)}
     
-    def checkReplicationStatus(self, activeStatus, dbInfo, source, target, previousUpdateNum):
+    def checkReplicationStatus(self, activeStatus, dbInfo, source, target, 
+                               previousUpdateNum, checkUpdateSeq):
         """
         adhog way to check the replication
         """
@@ -1049,7 +1084,39 @@ class CouchMonitor(object):
         elif "update" in activeStatus["status"]:
             updateNum = int(activeStatus["status"].split('#')[-1])
             self.setPreviousUpdateSequence(source, target, updateNum)
-            if updateNum == dbInfo["update_seq"] or updateNum > previousUpdateNum:
+            
+            if not checkUpdateSeq:
+                logging.warning("""Update sequence is not checked\n" /
+                                   replication from %s to %s""" % (
+                                replaceToSantizeURL(source), replaceToSantizeURL(target)))
+                return True
+            elif updateNum == dbInfo["update_seq"] or updateNum > previousUpdateNum:
                 logging.info("update upto date: ok")
                 return True
+            else:
+                return False
+        return False
+    
+    def checkReplicationStatusCouch15(self, activeStatus, dbInfo, source, target, 
+                                      previousUpdateNum, checkUpdateSeq):
+        """
+        adhog way to check the replication
+        """
+        
+        logging.info("checking the replication status")
+        #if activeStatus["started_on"]:
+        #   logging.info("Starting status: ok")
+        #    return True
+        if activeStatus["updated_on"]:
+            updateNum = int(activeStatus["source_seq"])
+            self.setPreviousUpdateSequence(source, target, updateNum)
+            if not checkUpdateSeq:
+                logging.warning("Need to check replication from %s to %s" % (
+                                replaceToSantizeURL(source), replaceToSantizeURL(target)))
+                return True
+            elif updateNum == dbInfo["update_seq"] or updateNum > previousUpdateNum:
+                logging.info("update upto date: ok")
+                return True
+            else:
+                return False
         return False

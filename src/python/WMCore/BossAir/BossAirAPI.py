@@ -544,22 +544,23 @@ class BossAirAPI(WMConnectionBase):
                 jobsToReturn.extend(localRunning)
                 jobsToChange.extend(localChanges)
                 jobsToComplete.extend(localCompletes)
-                logging.debug("Changing/completing %i/%i jobs in plugin %s.\n" % (len(localChanges),
-                                                                                  len(localCompletes),
-                                                                                  plugin))
+                logging.info("Running/changing/completing %i/%i/%i jobs in plugin %s.\n" % (len(localRunning),
+                                                                                            len(localChanges),
+                                                                                            len(localCompletes),
+                                                                                            plugin))
             except WMException:
                 raise
             except Exception, ex:
-                msg =  "Unhandled Exception while tracking jobs for plugin %s!\n" % plugin
+                msg =  "Unhandled exception while tracking jobs for plugin %s!\n" % plugin
                 msg += str(ex)
                 logging.error(msg)
                 logging.debug("JobsToTrack: %s" % (jobsToTrack[plugin]))
                 raise BossAirException(msg)
 
-        logging.info("About to change %i jobs\n" % len(jobsToChange))
-        logging.debug("JobsToChange: %s" % jobsToChange)
-        logging.info("About to complete %i jobs\n" % len(jobsToComplete))
-        logging.debug("JobsToComplete: %s" % jobsToComplete)
+        logging.info("About to change %i jobs" % len(jobsToChange))
+        logging.debug("JobsToChange: %s\n" % jobsToChange)
+        logging.info("About to complete %i jobs" % len(jobsToComplete))
+        logging.debug("JobsToComplete: %s\n" % jobsToComplete)
 
         self._updateJobs(jobs = jobsToChange)
         self._complete(jobs = jobsToComplete)
@@ -811,7 +812,8 @@ class BossAirAPI(WMConnectionBase):
             try:
                 pluginInst = self.plugins[plugin]
                 tempjoblist = pluginInst.updateSiteInformation(jobs, siteName, excludeSite)
-                jobkill.extend(tempjoblist)
+                if(tempjoblist != None) :
+                    jobkill.extend(tempjoblist)
             except WMException:
                 raise
             except Exception, ex:
@@ -821,7 +823,7 @@ class BossAirAPI(WMConnectionBase):
                 raise BossAirException(msg)
         return jobkill
 
-            
+
 
 
     def _buildRunningJobsFromRunJobs(self, runJobs):

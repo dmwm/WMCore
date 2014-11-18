@@ -9,7 +9,7 @@ import random
 import time
 import urllib
 
-from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, Document
+from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, Document, CouchMonitor
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
 from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement, fixElementConflicts
 from WMCore.Wrappers import JsonWrapper as json
@@ -36,13 +36,17 @@ class WorkQueueBackend(object):
     Represents persistent storage for WorkQueue
     """
     def __init__(self, db_url, db_name = 'workqueue',
-                 inbox_name = 'workqueue_inbox', parentQueue = None,
+                 inbox_name = None, parentQueue = None,
                  queueUrl = None, logger = None):
         if logger:
             self.logger = logger
         else:
             import logging
             self.logger = logging
+        
+        if inbox_name == None:
+            inbox_name = "%s_inbox" % db_name
+            
         self.server = CouchServer(db_url)
         self.parentCouchUrlWithAuth = parentQueue
         if parentQueue:
@@ -69,7 +73,8 @@ class WorkQueueBackend(object):
                                       filter = 'WorkQueue/queueFilter',
                                       query_params = {'childUrl' : self.queueUrl, 'parentUrl' : self.parentCouchUrl},
                                       continuous = continuous,
-                                      cancel = cancel)
+                                      cancel = cancel,
+                                      useReplicator = True)
         except Exception, ex:
             self.logger.warning('Replication from %s failed: %s' % (self.parentCouchUrl, str(ex)))
 
@@ -77,12 +82,13 @@ class WorkQueueBackend(object):
         """Replicate to parent couch - blocking"""
         try:
             if self.parentCouchUrl and self.queueUrl:
-                self.server.replicate(source = "%s/%s" % (self.db['host'], self.inbox.name),
+                self.server.replicate(source = "%s" % self.inbox.name,
                                       destination = self.parentCouchUrlWithAuth,
                                       filter = 'WorkQueue/queueFilter',
                                       query_params = {'childUrl' : self.queueUrl, 'parentUrl' : self.parentCouchUrl},
                                       continuous = continuous,
-                                      cancel = cancel)
+                                      cancel = cancel,
+                                      useReplicator = True)
         except Exception, ex:
             self.logger.warning('Replication to %s failed: %s' % (self.parentCouchUrl, str(ex)))
 
@@ -322,6 +328,8 @@ class WorkQueueBackend(object):
         name and task priorities.  The value is the number of jobs running at that
         priority.
         """
+        self.logger.info("Getting available work from %s/%s" % 
+                         (sanitizeURL(self.server.url)['url'], self.db.name))
         elements = []
 
         # We used to pre-filter sites, looking to see if there are idle job slots
@@ -330,6 +338,7 @@ class WorkQueueBackend(object):
 
         # If there are no sites, punt early.
         if not thresholds:
+            self.logger.error("No thresholds is set: Please check")
             return elements, thresholds, siteJobCounts
 
         options = {}
@@ -338,6 +347,7 @@ class WorkQueueBackend(object):
         options['resources'] = thresholds
         if teams:
             options['teams'] = teams
+            self.logger.info("setting teams %s" % teams)
         if wfs:
             result = []
             for i in xrange(0, len(wfs), 20):
@@ -349,7 +359,10 @@ class WorkQueueBackend(object):
         else:
             result = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
             result = json.loads(result)
-
+            if len(result) == 0:
+                self.logger.info("""No available work in WQ or didn't pass workqueue restriction 
+                                    - check Pileup, site white list, etc""")
+            self.logger.debug("Available Work:\n %s \n for resources\n %s" % (result, thresholds))
         # Iterate through the results; apply whitelist / blacklist / data
         # locality restrictions.  Only assign jobs if they are high enough
         # priority.
@@ -365,6 +378,7 @@ class WorkQueueBackend(object):
                     # Count the number of jobs currently running of greater priority
                     prio = element['Priority']
                     curJobCount = sum(map(lambda x : x[1] if x[0] >= prio else 0, siteJobCounts.get(site, {}).items()))
+                    self.logger.debug("Job Count: %s, site: %s threshods: %s" % (curJobCount, site, thresholds[site]))
                     if curJobCount < thresholds[site]:
                         possibleSite = site
                         break
@@ -374,7 +388,12 @@ class WorkQueueBackend(object):
                 if site not in siteJobCounts:
                     siteJobCounts[site] = {}
                 siteJobCounts[site][prio] = siteJobCounts[site].setdefault(prio, 0) + element['Jobs']
-
+            else:
+                self.logger.info("No possible site for %s" % element)
+        # sort elements to get them in priority first and timestamp order
+        elements.sort(key=lambda element: element['CreationTime'])
+        elements.sort(key = lambda x: x['Priority'], reverse = True)
+        
         return elements, thresholds, siteJobCounts
 
     def getActiveData(self):
@@ -507,7 +526,7 @@ class WorkQueueBackend(object):
 
             return finalInjectionStatus
 
-    def checkReplicationStatus(self):
+    def checkReplicationStatus(self, continuous = True):
         """
         _checkReplicationStatus_
 
@@ -516,27 +535,22 @@ class WorkQueueBackend(object):
         when appropiate.
         It returns True if there is no error, and False otherwise.
         """
-
-        status = self.server.status()
-        replicationError = False
-        replicationCount = 0
-        expectedReplicationCount = 2 # GQ -> LQ-Inbox & LQ-Inbox -> GQ
-        # Remove the protocol frm the sanitized url
-        inboxUrl = sanitizeURL('%s/%s' % (self.server.url, self.inbox.name))['url'].split('/', 2)[2]
-        try:
-            for activeTasks in status['active_tasks']:
-                if activeTasks['type'] == 'Replication':
-                    if inboxUrl in activeTasks['task']:
-                        replicationCount += 1
-            if replicationCount < expectedReplicationCount:
-                replicationError = True
-        except:
-            replicationError = True
-
-        if replicationError:
-            # Stop workqueue related replication
-            self.logger.error("Stopping replication as it was in error state. It will be restarted.")
-            self.pullFromParent(continuous = True, cancel = True)
-            self.sendToParent(continuous = True, cancel = True)
-
-        return not replicationError
+        
+        if self.parentCouchUrl and self.queueUrl:
+            # only checks for local queue
+            couchMonitor = CouchMonitor(self.server)
+            filter = 'WorkQueue/queueFilter'
+            query_params = {'childUrl' : self.queueUrl, 'parentUrl' : self.parentCouchUrl}
+            self.logger.info("set replication from GQ to LQ")
+            couchMonitor.recoverReplicationErrors(self.parentCouchUrl, 
+                                                  "%s/%s" % (self.hostWithAuth, self.inbox.name), 
+                                                  filter = filter, query_params = query_params,
+                                                  checkUpdateSeq = False,
+                                                  continuous = continuous)
+            self.logger.info("set replication from LQ to GQ")
+            couchMonitor.recoverReplicationErrors(self.inbox.name, self.parentCouchUrlWithAuth,
+                                                  filter = filter, query_params = query_params,
+                                                  checkUpdateSeq = False,
+                                                  continuous = continuous)
+            return True
+        return False

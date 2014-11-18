@@ -30,6 +30,7 @@ from WMComponent.DBS3Buffer.DBSBufferBlock  import DBSBlock
 
 from WMQuality.Emulators.DBSClient.DBS3API import DbsApi as MockDbsApi
 from WMQuality.TestInit     import TestInit
+from WMQuality.Emulators import EmulatorSetup
 
 class DBSUploadTest(unittest.TestCase):
     """
@@ -50,6 +51,7 @@ class DBSUploadTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer"],
                                 useDefault = False)
         self.testDir = self.testInit.generateWorkDir(deleteOnDestruction = False)
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
 
         myThread = threading.currentThread()
         self.bufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
@@ -76,6 +78,7 @@ class DBSUploadTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
+        EmulatorSetup.deleteConfig(self.configFile)
 
         return
 
@@ -85,7 +88,8 @@ class DBSUploadTest(unittest.TestCase):
 
         This creates the actual config file used by the component.
         """
-        config = Configuration()
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
 
         #First the general stuff
         config.section_("General")

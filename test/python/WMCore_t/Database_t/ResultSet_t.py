@@ -76,38 +76,11 @@ class ResultSetTest(unittest.TestCase):
         #import pdb
         #pdb.set_trace()
         testSet.add(testProxy)
-        self.assertEqual(testProxy.rowcount, 4)
-        self.assertEqual(testSet.rowcount, 4)
+
         #Test to make sure fetchone and fetchall both work
         self.assertEqual(str(testSet.fetchone()[0]), 'value1')
         self.assertEqual(str(testSet.fetchall()[-1][1]), 'value2c')
 
-    def testRowCount(self):
-
-        testSet = ResultSet()
-        insertProxy = self.myThread.dbi.connection().execute("insert into test_tablec (column1, column2) values ('a', 'b')")
-        testSet.add(insertProxy)
-        self.assertEqual(testSet.rowcount, 1)
-
-        updateProxy = self.myThread.dbi.connection().execute("update test_tablec set column1 = 'c'")
-        testSet.add(updateProxy)
-        self.assertEqual(testSet.rowcount, 2)
-
-        updateProxy = self.myThread.dbi.connection().execute("update test_tablec set column1 = 'c' where column1 = 'a'")
-        testSet.add(updateProxy)
-        self.assertEqual(testSet.rowcount, 2)
-
-        insertProxy = self.myThread.dbi.connection().execute("insert into test_tablec (column1, column2) values ('a', 'b')")
-        testSet.add(insertProxy)
-        self.assertEqual(testSet.rowcount, 3)
-
-        selectProxy = self.myThread.dbi.connection().execute("select * from test_tablec")
-        testSet.add(selectProxy)
-        self.assertEqual(testSet.rowcount, 5)
-
-        selectProxy = self.myThread.dbi.connection().execute("delete from test_tablec")
-        testSet.add(selectProxy)
-        self.assertEqual(testSet.rowcount, 7)
 
     def test1000Binds(self):
 

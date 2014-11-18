@@ -12,8 +12,11 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 from WMCore.Services.RequestManager.RequestManager import RequestManager
+from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
+from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import sanitizeURL
+from WMCore.Database.CMSCouch import CouchNotFoundError
 
 class CleanCouchPoller(BaseWorkerThread):
     """
@@ -39,22 +42,32 @@ class CleanCouchPoller(BaseWorkerThread):
         # set the connection for local couchDB call
         self.useReqMgrForCompletionCheck   = getattr(self.config.TaskArchiver, 'useReqMgrForCompletionCheck', True)
         self.wmstatsCouchDB = WMStatsWriter(self.config.TaskArchiver.localWMStatsURL)
-        self.centralCouchDBReader = WMStatsReader(self.config.TaskArchiver.centralWMStatsURL)
+        
+        #TODO: we might need to use local db for Tier0
+        self.centralRequestDBReader = RequestDBReader(self.config.AnalyticsDataCollector.centralRequestDBURL, 
+                                                   couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
         
         if self.useReqMgrForCompletionCheck:
             self.deletableStates = ["announced"]
-            self.centralCouchDBWriter = WMStatsWriter(self.config.TaskArchiver.centralWMStatsURL)
+            self.centralRequestDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.centralRequestDBURL, 
+                                                   couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
+            #TODO: remove this for reqmgr2
             self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
         else:
             # Tier0 case
             self.deletableStates = ["completed"]
-            self.centralCouchDBWriter = self.wmstatsCouchDB
+            # use local for update
+            self.centralRequestDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.localT0RequestDBURL, 
+                                                   couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
         
         jobDBurl = sanitizeURL(self.config.JobStateMachine.couchurl)['url']
         jobDBName = self.config.JobStateMachine.couchDBName
         self.jobCouchdb  = CouchServer(jobDBurl)
         self.jobsdatabase = self.jobCouchdb.connectDatabase("%s/jobs" % jobDBName)
         self.fwjrdatabase = self.jobCouchdb.connectDatabase("%s/fwjrs" % jobDBName)
+        
+        statSummaryDBName = self.config.JobStateMachine.summaryStatsDBName
+        self.statsumdatabase = self.jobCouchdb.connectDatabase(statSummaryDBName)
 
     def algorithm(self, parameters):
         """
@@ -66,35 +79,21 @@ class CleanCouchPoller(BaseWorkerThread):
             logging.info("%s docs deleted" % report)
             logging.info("getting complete and announced requests")
             
-            deletableWorkflows = self.centralCouchDBReader.workflowsByStatus(self.deletableStates)
+            deletableWorkflows = self.centralRequestDBReader.getRequestByStatus(self.deletableStates)
             
             logging.info("Ready to archive normal %s workflows" % len(deletableWorkflows))
             numUpdated = self.archiveWorkflows(deletableWorkflows, "normal-archived")
             logging.info("archive normal %s workflows" % numUpdated)
             
-            abortedWorkflows = self.centralCouchDBReader.workflowsByStatus(["aborted-completed"])
+            abortedWorkflows = self.centralRequestDBReader.getRequestByStatus(["aborted-completed"])
             logging.info("Ready to archive aborted %s workflows" % len(abortedWorkflows))
             numUpdated = self.archiveWorkflows(abortedWorkflows, "aborted-archived")
             logging.info("archive aborted %s workflows" % numUpdated)
             
-            rejectedWorkflows = self.centralCouchDBReader.workflowsByStatus(["rejected"])
+            rejectedWorkflows = self.centralRequestDBReader.getRequestByStatus(["rejected"])
             logging.info("Ready to archive rejected %s workflows" % len(rejectedWorkflows))
             numUpdated = self.archiveWorkflows(rejectedWorkflows, "rejected-archived")
             logging.info("archive rejected %s workflows" % numUpdated)
-            
-            #TODO: following code is temproraly - remove after production archived data is cleaned 
-            removableWorkflows = self.centralCouchDBReader.workflowsByStatus(["archived"])
-            
-            logging.info("Ready to delete %s from wmagent_summary" % removableWorkflows)     
-            for workflowName in removableWorkflows:
-                logging.info("Deleting %s from WMAgent Summary Couch" % workflowName)
-                report = self.deleteWorkflowFromJobCouch(workflowName, "WMStats")
-                logging.warning("%s legacy docs deleted from wmagent_summary" % report)
-                # only updatet he status when delete is successful
-                # TODO: need to handle the case when there are multiple agent running the same request.
-                if report["status"] == "ok":
-                    self.centralCouchDBWriter.updateRequestStatus(workflowName, "normal-archived")
-                    logging.warning("legacy status updated to normal-archived from archived (this is temp solution for production) %s" % workflowName)
 
         except Exception, ex:
             logging.error(str(ex))
@@ -104,12 +103,14 @@ class CleanCouchPoller(BaseWorkerThread):
         updated = 0
         for workflowName in workflows:
             if self.cleanAllLocalCouchDB(workflowName):
-                self.centralCouchDBWriter.updateRequestStatus(workflowName, archiveState)
-                # update reqmgr workload document
                 if self.useReqMgrForCompletionCheck:
+                    #TODO: for reqmgr2 uncomment this
+                    # self.centralRequestDBWriter.updateRequestStatus(workflowName, archiveState)
                     self.reqmgrSvc.updateRequestStatus(workflowName, archiveState);
                     updated += 1 
                     logging.debug("status updated to %s %s" % (archiveState, workflowName))
+                else:
+                    self.centralRequestDBWriter.updateRequestStatus(workflowName, archiveState)
         return updated
     
     def deleteWorkflowFromJobCouch(self, workflowName, db):
@@ -128,24 +129,33 @@ class CleanCouchPoller(BaseWorkerThread):
         elif (db == "FWJRDump"):
             couchDB = self.fwjrdatabase
             view = "fwjrsByWorkflowName"
+        elif (db == "SummaryStats"):
+            couchDB = self.statsumdatabase
+            view = None
         elif (db == "WMStats"):
             couchDB = self.wmstatsCouchDB.getDBInstance()
             view = "jobsByStatusWorkflow"
-            
-        options = {"startkey": [workflowName], "endkey": [workflowName, {}], "reduce": False}
-        try:
-            jobs = couchDB.loadView(db, view, options = options)['rows']
-        except Exception, ex:
-            errorMsg = "Error on loading jobs for %s" % workflowName
-            logging.warning("%s/n%s" % (str(ex), errorMsg))
-            return {'status': 'error', 'message': errorMsg}
         
-        for j in jobs:
-            doc = {}
-            doc["_id"]  = j['value']['id']
-            doc["_rev"] = j['value']['rev']
-            couchDB.queueDelete(doc)
-        committed = couchDB.commit()
+        if view == None:
+            try:
+                committed = couchDB.delete_doc(workflowName)
+            except CouchNotFoundError, ex:
+                return {'status': 'warning', 'message': "%s: %s" % (workflowName, str(ex))}
+        else:
+            options = {"startkey": [workflowName], "endkey": [workflowName, {}], "reduce": False}
+            try:
+                jobs = couchDB.loadView(db, view, options = options)['rows']
+            except Exception, ex:
+                errorMsg = "Error on loading jobs for %s" % workflowName
+                logging.warning("%s/n%s" % (str(ex), errorMsg))
+                return {'status': 'error', 'message': errorMsg}
+            
+            for j in jobs:
+                doc = {}
+                doc["_id"]  = j['value']['id']
+                doc["_rev"] = j['value']['rev']
+                couchDB.queueDelete(doc)
+            committed = couchDB.commit()
         
         if committed:
             #create the error report
@@ -172,6 +182,9 @@ class CleanCouchPoller(BaseWorkerThread):
         
         fwjrReport = self.deleteWorkflowFromJobCouch(workflowName, "FWJRDump")
         logging.debug("%s docs deleted from FWJRDump" % fwjrReport)
+        
+        summaryReport = self.deleteWorkflowFromJobCouch(workflowName, "SummaryStats")
+        logging.debug("%s docs deleted from SummaryStats" % summaryReport)
         
         wmstatsReport = self.deleteWorkflowFromJobCouch(workflowName, "WMStats")
         logging.debug("%s docs deleted from wmagent_summary" % wmstatsReport)

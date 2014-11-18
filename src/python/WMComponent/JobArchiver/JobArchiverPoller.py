@@ -347,9 +347,9 @@ class JobArchiverPoller(BaseWorkerThread):
             except WorkQueueNoMatchingElements:
                 # workflow not known - free to cleanup
                 injected.append(name)
-            except:
-                # Do nothing if it complains
-                pass
+            except Exception, ex:
+                logging.error("Injection status checking failed, investigate: %s" % str(ex))
+                logging.debug("Traceback: %s" % traceback.format_exc())
 
         # Now, mark as injected those that returned True
         if len(injected) > 0:

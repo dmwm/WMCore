@@ -90,6 +90,7 @@ class Dataset(StartPolicyInterface):
         blockBlackList = task.inputBlockBlacklist()
         runWhiteList = task.inputRunWhitelist()
         runBlackList = task.inputRunBlacklist()
+        siteWhiteList = task.siteWhitelist()
 
         for blockName in dbs.listFileBlocks(datasetPath):
             block = dbs.getDBSSummaryInfo(datasetPath, block = blockName)
@@ -105,6 +106,12 @@ class Dataset(StartPolicyInterface):
                 # listRunLumis returns a dictionary with the lumi sections per run
                 runLumis = dbs.listRunLumis(block = block['block'])
                 runs = set(runLumis.keys())
+                recalculateLumiCounts = False
+                if len(runs) > 1:
+                    # If more than one run in the block
+                    # Then we must calculate the lumi counts after filtering the run list
+                    # This has to be done rarely and requires calling DBS file information
+                    recalculateLumiCounts = True
 
                 # apply blacklist
                 runs = runs.difference(runBlackList)
@@ -114,28 +121,52 @@ class Dataset(StartPolicyInterface):
                 # any runs left are ones we will run on, if none ignore block
                 if not runs:
                     continue
-
+                
+                if recalculateLumiCounts:
+                    # get correct lumi count
+                    # Recalculate effective size of block
+                    # We pull out file info, since we don't do this often
+                    acceptedLumiCount = 0
+                    acceptedEventCount = 0
+                    acceptedFileCount = 0
+                    fileInfo = dbs.listFilesInBlock(fileBlockName = block['block'])
+                    for fileEntry in fileInfo:
+                        acceptedFile = False
+                        acceptedFileLumiCount = 0
+                        for lumiInfo in fileEntry['LumiList']:
+                            runNumber = lumiInfo['RunNumber']
+                            if runNumber in runs:
+                                acceptedFile = True
+                                acceptedFileLumiCount += 1
+                        if acceptedFile:
+                            acceptedFileCount += 1
+                            acceptedLumiCount += acceptedFileLumiCount
+                            if len(fileEntry['LumiList']) != acceptedFileLumiCount:
+                                acceptedEventCount += float(acceptedFileLumiCount) * fileEntry['NumberOfEvents']/len(fileEntry['LumiList'])
+                            else:
+                                acceptedEventCount += fileEntry['NumberOfEvents']
+                else:
+                    acceptedLumiCount = block["NumberOfLumis"]
+                    acceptedFileCount = block['NumberOfFiles']
+                    acceptedEventCount = block['NumberOfEvents']
+                    
                 # recalculate effective size of block
                 # make a guess for new event/file numbers from ratio
                 # of accepted lumi sections (otherwise have to pull file info)
-                acceptedLumiCount = 0
-                fullLumiCount = 0
-                acceptedLumiCount = 0
-                fullLumiCount = 0
-                for run in runLumis:
-                    if run in runs:
-                        acceptedLumiCount += runLumis[run]
-                    fullLumiCount += runLumis[run]
-                ratioAccepted = float(acceptedLumiCount) / fullLumiCount
+                
+                fullLumiCount = block["NumberOfLumis"]
                 block[self.lumiType] = acceptedLumiCount
-                block['NumberOfFiles'] = int(float(block['NumberOfFiles']) * ratioAccepted)
-                block['NumberOfEvents'] = int(float(block['NumberOfEvents']) * ratioAccepted)
+                block['NumberOfFiles'] = acceptedFileCount
+                block['NumberOfEvents'] = acceptedEventCount
 
             validBlocks.append(block)
             if locations is None:
                 locations = set(sitesFromStorageEelements(dbs.listFileBlockLocation(block['block'])))
             else:
                 locations = locations.intersection(set(sitesFromStorageEelements(dbs.listFileBlockLocation(block['block']))))
+            
+            if self.wmspec.locationDataSourceFlag():
+                locations = locations.union(siteWhiteList)
 
         # all needed blocks present at these sites
         if locations:

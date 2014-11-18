@@ -28,7 +28,7 @@ class XMLDropTest(unittest.TestCase):
 
         Do nothing
         """
-        self.dbsURL = "https://cmsdbsprod.cern.ch:8443/cms_dbs_prod_global_writer/servlet/DBSServlet"
+        self.dbsURL = "https://cmsweb.cern.ch/dbs/prod/global/DBSWriter"
 
         return
 

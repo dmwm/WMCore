@@ -23,7 +23,7 @@ def isGlobalDBS(dbs):
         # fragile but if this url changes many other things will break also...
         from urlparse import urlparse
         url = urlparse(dbs.dbs.getServerUrl()) #DBSApi has url not DBSReader
-        if url.hostname.startswith('cmsdbsprod.cern.ch') and url.path.startswith('/cms_dbs_prod_global'):
+        if url.hostname.startswith('cmsweb.cern.ch') and url.path.startswith('/dbs/prod/global'):
             return True
         info = dbs.dbs.getServerInfo()
         if info and info.get('InstanceName') == 'GLOBAL':
@@ -32,7 +32,15 @@ def isGlobalDBS(dbs):
     except Exception, ex:
         # determin whether this is dbs3
         dbs.dbs.serverinfo()
-        return True
+        
+        # hacky way to check whether it is global or local dbs.
+        # issue is created, when it is resolved. use serverinfo() for that.
+        # https://github.com/dmwm/DBS/issues/355
+        url = dbs.dbs.url
+        if url.find("/global") != -1:
+            return True
+        else:
+            return False
 
 def timeFloor(number, interval = UPDATE_INTERVAL_COARSENESS):
     """Get numerical floor of time to given interval"""
@@ -74,21 +82,20 @@ class DataLocationMapper():
         dataByDbs = self.organiseByDbs(dataItems)
 
         for dbs, dataItems in dataByDbs.items():
-            # if global use phedex (not dls yet), else use dbs
+            # if global use phedex, else use dbs            
             if isGlobalDBS(dbs):
                 output, fullResync = self.locationsFromPhEDEx(dataItems, fullResync,
                                                               datasetSearch)
+                
             else:
                 output, fullResync = self.locationsFromDBS(dbs, dataItems,
                                                            datasetSearch)
-
             result[dbs] = output
         if fullResync:
             self.lastFullResync = now
 
         return result, fullResync
-
-
+    
     def locationsFromPhEDEx(self, dataItems, fullResync = False,
                             datasetSearch = False):
         """Get data location from phedex"""
@@ -127,25 +134,20 @@ class DataLocationMapper():
 
         return result, fullResync
 
-
     def locationsFromDBS(self, dbs, dataItems,
                          datasetSearch = False):
         """Get data location from dbs"""
         result = defaultdict(set)
         for item in dataItems:
-            # TODO: need to speed up dbs call somehow. it takes ~0.5 sec per call
-            # or use generator to allow partial result to be updated.
-            # However this is not the normal path and will be deprecated if it is
-            # replaced by dbs 3
             try:
                 if datasetSearch:
-                    seNames = dbs.listDatasetLocation(item)
+                    seNames = dbs.listDatasetLocation(item, dbsOnly = True)
                 else:
-                    seNames = dbs.listFileBlockLocation(item)
+                    seNames = dbs.listFileBlockLocation(item, dbsOnly = True)
                 for se in seNames:
                     result[item].update(self.sitedb.seToCMSName(se))
             except Exception, ex:
-                logging.error('Erro getting block location from dbs for %s: %s' % (item, str(ex)))
+                logging.error('Error getting block location from dbs for %s: %s' % (item, str(ex)))
 
         # convert the sets to lists
         for name, nodes in result.items():

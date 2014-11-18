@@ -7,7 +7,7 @@ WMStats.CommonControls = function($){
     function setUTCClock(selector) {
        setInterval(function() {
             $(selector).text(WMStats.Utils.utcClock());
-        }, 100)
+        }, 100);
     };
 
     function setLinkTabs(selector) {
@@ -24,14 +24,14 @@ WMStats.CommonControls = function($){
         // add controller for this view
         function changeTab(event, data) {
             $('#linkTabs li').removeClass("title-tab-selected").addClass("title-tab-hide");
-            $('#linkTabs a[href="' + data.id() +'"]').parent().removeClass("title-tab-hide").addClass("title-tab-selected")
+            $('#linkTabs a[href="' + data.id() +'"]').parent().removeClass("title-tab-hide").addClass("title-tab-selected");
         }
         // viewModel -> view control
         vm.subscribe("page", changeTab);
         
         // view -> viewModel control
         $(document).on('click', "#linkTabs li a", function(event){
-            vm.page(vmRegistry[this.hash])
+            vm.page(vmRegistry[this.hash]);
             event.preventDefault();
         });
     };
@@ -86,12 +86,12 @@ WMStats.CommonControls = function($){
             keys.searchValue = $('input[name="workloadSummarySearch"]').val();
             vm.SearchPage.keys(keys);
             event.stopPropagation();
-        })
+        });
     };
     
     return {
         setUTCClock: setUTCClock,
         setLinkTabs: setLinkTabs,
         setWorkloadSummarySearch: setWorkloadSummarySearch
-    }
+    };
 }(jQuery);

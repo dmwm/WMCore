@@ -12,7 +12,8 @@ from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname, 
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMException import WMException
 from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool, validateArgumentsCreate
+from WMCore.WMSpec.WMWorkloadTools import makeList, makeLumiList, strToBool, checkDBSUrl, validateArgumentsCreate
+
 
 analysisTaskTypes = ['Analysis', 'PrivateMC']
 
@@ -83,8 +84,8 @@ class StdBase(object):
 
         # Definition of parameters that depend on the value of others
         if hasattr(self, "multicore") and self.multicore:
+            self.multicoreNCores = int(self.multicore)
             self.multicore = True
-            self.multicoreNCores = self.multicore
 
         return
 
@@ -97,6 +98,9 @@ class StdBase(object):
         Determine the output module names and associated metadata for the
         given config.
         """
+        # set default scenarioArgs to empty dictionary if it is None.
+        scenarioArgs = scenarioArgs or {}
+
         outputModules = {}
         if configDoc != None and configDoc != "":
             url = configCacheUrl or couchURL
@@ -125,7 +129,7 @@ class StdBase(object):
             elif scenarioFunc == "alcaSkim":
                 for alcaSkim in scenarioArgs.get('skims',[]):
                     moduleLabel = "ALCARECOStream%s" % alcaSkim
-                    if alcaSkim == "PromptCalibProd":
+                    if alcaSkim.startswith("PromptCalibProd"):
                         dataTier = "ALCAPROMPT"
                     else:
                         dataTier = "ALCARECO"
@@ -212,9 +216,11 @@ class StdBase(object):
         workload.setProcessingVersion(processingVersions = self.processingVersion)
         workload.setProcessingString(processingStrings = self.processingString)
         workload.setValidStatus(validStatus = self.validStatus)
+        workload.setLumiList(lumiLists = self.lumiList)
         workload.setPriority(self.priority)
         workload.setCampaign(self.campaign)
         workload.setRequestType(self.requestType)
+        workload.setPrepID(self.prepID)
         return workload
 
     def setupProcessingTask(self, procTask, taskType, inputDataset = None, inputStep = None,
@@ -228,7 +234,7 @@ class StdBase(object):
                             userSandbox = None, userFiles = [], primarySubType = None,
                             forceMerged = False, forceUnmerged = False,
                             configCacheUrl = None, timePerEvent = None, memoryReq = None,
-                            sizePerEvent = None):
+                            sizePerEvent = None, useMulticore = True):
         """
         _setupProcessingTask_
 
@@ -246,10 +252,13 @@ class StdBase(object):
           configDoc empty - Use a Configuration.DataProcessing config.  The
             scenarioName, scenarioFunc and scenarioArgs parameters must not be
             empty.
-          if configCacheUrl is not empty, use that plus couchDBName + configDoc if not empty  
+          if configCacheUrl is not empty, use that plus couchDBName + configDoc if not empty
 
         The seeding and totalEvents parameters are only used for production jobs.
         """
+        # set default scenarioArgs to empty dictionary if it is None
+        scenarioArgs = scenarioArgs or {}
+
         self.addDashboardMonitoring(procTask)
         procTaskCmssw = procTask.makeStep("cmsRun1")
         procTaskCmssw.setStepType(stepType)
@@ -262,7 +271,7 @@ class StdBase(object):
         procTaskLogArch = procTaskCmssw.addStep("logArch1")
         procTaskLogArch.setStepType("LogArchive")
         procTaskLogArch.setNewStageoutOverride(self.enableNewStageout)
-        
+
         procTask.applyTemplates()
 
         procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
@@ -305,7 +314,7 @@ class StdBase(object):
         procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
         procTaskStageHelper = procTaskStageOut.getTypeHelper()
 
-        if self.multicore:
+        if self.multicore and useMulticore:
             # if multicore, poke in the number of cores setting
             procTaskCmsswHelper.setMulticoreCores(self.multicoreNCores)
 
@@ -324,6 +333,9 @@ class StdBase(object):
 
         procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                        scramArch = self.scramArch)
+
+        if newSplitArgs.has_key("events_per_lumi"):
+            eventsPerLumi = newSplitArgs["events_per_lumi"]
         procTaskCmsswHelper.setEventsPerLumi(eventsPerLumi)
 
         configOutput = self.determineOutputModules(scenarioFunc, scenarioArgs,
@@ -531,11 +543,9 @@ class StdBase(object):
                                         min_merge_size = self.minMergeSize,
                                         max_merge_events = self.maxMergeEvents,
                                         max_wait_time = self.maxWaitTime,
-                                        siteWhitelist = self.siteWhitelist,
-                                        siteBlacklist = self.siteBlacklist,
                                         initial_lfn_counter = lfn_counter)
 
-        if getattr(parentOutputModule, "dataTier") == "DQMROOT":
+        if getattr(parentOutputModule, "dataTier") == "DQMIO":
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge",
                                                          newDQMIO = True)
         else:
@@ -550,7 +560,7 @@ class StdBase(object):
                              forceMerged = True)
 
         self.addCleanupTask(parentTask, parentOutputModuleName)
-        if self.enableHarvesting and getattr(parentOutputModule, "dataTier") in ["DQMROOT", "DQM"]:
+        if self.enableHarvesting and getattr(parentOutputModule, "dataTier") in ["DQMIO", "DQM"]:
             self.addDQMHarvestTask(mergeTask, "Merged",
                                    uploadProxy = self.dqmUploadProxy,
                                    periodic_harvest_interval= self.periodicHarvestInterval,
@@ -640,19 +650,17 @@ class StdBase(object):
                 harvestTaskCmsswHelper.setConfigCache(self.couchURL, self.dqmConfigCacheID, self.couchDBName)
             harvestTaskCmsswHelper.setDatasetName(datasetName)
         else:
-            if getattr(parentOutputModule, "dataTier") == "DQMROOT":
-                harvestTaskCmsswHelper.setDataProcessingConfig(self.procScenario, "dqmHarvesting",
-                                                               globalTag = self.globalTag,
-                                                               datasetName = datasetName,
-                                                               runNumber = self.runNumber,
-                                                               dqmSeq = self.dqmSequences,
-                                                               newDQMIO = True)
-            else:
-                harvestTaskCmsswHelper.setDataProcessingConfig(self.procScenario, "dqmHarvesting",
-                                                               globalTag = self.globalTag,
-                                                               datasetName = datasetName,
-                                                               runNumber = self.runNumber,
-                                                               dqmSeq = self.dqmSequences)
+            scenarioArgs = { 'globalTag' : self.globalTag,
+                             'datasetName' : datasetName,
+                             'runNumber' : self.runNumber,
+                             'dqmSeq' : self.dqmSequences }
+            if self.globalTagConnect:
+                scenarioArgs['globalTagConnect'] = self.globalTagConnect
+            if getattr(parentOutputModule, "dataTier") == "DQMIO":
+                scenarioArgs['newDQMIO'] = True
+            harvestTaskCmsswHelper.setDataProcessingConfig(self.procScenario,
+                                                           "dqmHarvesting",
+                                                           **scenarioArgs)
 
         harvestTaskUploadHelper = harvestTaskUpload.getTypeHelper()
         harvestTaskUploadHelper.setProxyFile(uploadProxy)
@@ -846,7 +854,7 @@ class StdBase(object):
         _getWorkloadArguments_
 
         This represents the authorative list of request arguments that are
-        interpreted by the current spec class. 
+        interpreted by the current spec class.
         The list is formatted as a 2-level dictionary, the keys in the first level
         are the identifiers for the arguments processed by the current spec.
         The second level dictionary contains the information about that argument for
@@ -855,7 +863,7 @@ class StdBase(object):
         - default: Gives a default value if not provided,
                    this default value usually is good enough for a standard workflow. If the argument is not optional
                    and a default value is provided, this is only meant for test purposes.
-        - type: A function that verifies the type of the argument, it may also cast it into the appropiate python type.    
+        - type: A function that verifies the type of the argument, it may also cast it into the appropiate python type.
                 If the input is not compatible with the expected type, this method must throw an exception.
         - optional: This boolean value indicates if the value must be provided or not
         - validate: A function which validates the input after type casting,
@@ -888,13 +896,25 @@ class StdBase(object):
                                 "attr" : "group"},
                      "VoGroup" : {"default" : "DEFAULT", "attr" : "owner_vogroup"},
                      "VoRole" : {"default" : "DEFAULT", "attr" : "owner_vorole"},
-                     "AcquisitionEra" : {"default" : "None", "validate" : acqname},
                      "Campaign" : {"default" : None, "optional" : True, "attr" : "campaign"},
+                     "AcquisitionEra" : {"default" : "None",  "attr" : "acquisitionEra",
+                                         "validate" : acqname},
                      "CMSSWVersion" : {"default" : "CMSSW_5_3_7", "validate" : cmsswversion,
                                        "optional" : False, "attr" : "frameworkVersion"},
                      "ScramArch" : {"default" : "slc5_amd64_gcc462", "optional" : False},
-                     "ProcessingVersion" : {"default" : 0, "type" : int},
-                     "ProcessingString" : {"default" : None, "null" : True},
+                     "GlobalTag" : {"default" : None, "type" : str,
+                                    "optional" : True, "validate" : None,
+                                    "attr" : "globalTag", "null" : True},
+                     "GlobalTagConnect" : {"default" : None, "type" : str,
+                                           "optional" : True, "validate" : None,
+                                           "attr" : "globalTagConnect", "null" : True},
+                     "ProcessingVersion" : {"default" : 0, "attr" : "processingVersion",
+                                            "type" : int},
+                     "ProcessingString" : {"default" : None, "attr" : "processingString",
+                                           "null" : True},
+                     "LumiList" : {"default" : [], "type" : makeLumiList,
+                                      "optional" : True, "validate" : None,
+                                      "attr" : "lumiList", "null" : False},
                      "SiteBlacklist" : {"default" : [], "type" : makeList,
                                         "validate" : lambda x: all([cmsname(y) for y in x])},
                      "SiteWhitelist" : {"default" : [], "type" : makeList,
@@ -910,7 +930,8 @@ class StdBase(object):
                      "MaxMergeEvents" : {"default" : 100000, "type" : int,
                                          "validate" : lambda x : x > 0},
                      "ValidStatus" : {"default" : "PRODUCTION"},
-                     "DbsUrl" : {"default" : "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"},
+                     "DbsUrl" : {"default" : "https://cmsweb.cern.ch/dbs/prod/global/DBSReader",
+                                 "null" : True, "validate" : checkDBSUrl},
                      "DashboardHost" : {"default" : "cms-wmagent-job.cern.ch"},
                      "DashboardPort" : {"default" : 8884, "type" : int,
                                         "validate" : lambda x : x > 0},
@@ -937,7 +958,6 @@ class StdBase(object):
                      "IncludeParents" : {"default" : False,  "type" : strToBool},
                      "Multicore" : {"default" : None, "null" : True,
                                     "validate" : lambda x : x == "auto" or (int(x) > 0)},
-                     
                      #from assignment: performance monitoring data
                      "MaxRSS" : {"default" : 2411724, "type" : int, "validate" : lambda x : x > 0},
                      "MaxVSize" : {"default" : 20411724, "type" : int, "validate" : lambda x : x > 0},
@@ -985,17 +1005,23 @@ class StdBase(object):
                                        "attr" : "configCacheUrl", "null" : True},
                      "CouchWorkloadDBName" : {"default" : "reqmgr_workload_cache", "type" : str,
                                     "optional" : False, "validate" : identifier,
-                                    "attr" : "couchWorkloadDBName", "null" : False}}
+                                    "attr" : "couchWorkloadDBName", "null" : False},
+                     "PrepID": {"default" : None, "null" : True}}
 
         # Set defaults for the argument specification
+        StdBase.setDefaultArgumentsProperty(arguments)
+
+        return arguments
+
+    @staticmethod
+    def setDefaultArgumentsProperty(arguments):
         for arg in arguments:
             arguments[arg].setdefault("type", str)
             arguments[arg].setdefault("optional", True)
             arguments[arg].setdefault("null", False)
             arguments[arg].setdefault("validate", None)
             arguments[arg].setdefault("attr", arg[:1].lower() + arg[1:])
-
-        return arguments
+        return
 
     @classmethod
     def getTestArguments(cls):
@@ -1017,5 +1043,9 @@ class StdBase(object):
                 schema[arg] = "127.0.0.1"
             elif not workloadDefinition[arg]["optional"]:
                 schema[arg] = workloadDefinition[arg]["default"]
+
+            if arg == "CouchURL":
+                import os
+                schema[arg] = os.environ["COUCHURL"]
 
         return schema

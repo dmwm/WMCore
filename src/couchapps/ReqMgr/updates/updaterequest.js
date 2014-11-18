@@ -1,11 +1,9 @@
 // update function
 // input: valueKey (what to change), value - new value
 function(doc, req) {
-    
-	if (doc === null) {
-        log("Error: missing doc id - " + req.id);
-        return [null, "ERROR: request not found - " + req.id];
-    }
+    if (doc === null) {
+    	return [null, "Error: document not found"];
+    };
     
     function updateTransition() {
         var currentTS =  Math.round((new Date()).getTime() / 1000);
@@ -23,7 +21,21 @@ function(doc, req) {
     var newValues = req.query;
     for (key in newValues)
     {   
-        doc[key] = newValues[key];
+        if (key == "RequestTransition" ||
+            key == "SiteWhitelist" ||
+            key == "SiteBlacklist" ||
+            key == "BlockWhitelist" ||
+            key == "SoftwareVersions" ||
+            key == "InputDatasetTypes" ||
+            key == "InputDatasets" ||
+            key == "OutputDatasets" ||
+            key == "Teams") {
+    		
+    		doc[key] = JSON.parse(newValues[key]);
+    	} else {
+    		doc[key] = newValues[key];
+    	}
+       
         if (key == "RequestStatus") {
         	updateTransition();
         }

@@ -58,7 +58,7 @@ for row in results:
     blocks[row[0]].append(row[1])
 
 args = {}
-args["url"] = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+args["url"] = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
 args["version"] = "DBS_2_0_9"
 args["mode"] = "GET"
 dbsApi = DbsApi(args)

@@ -12,7 +12,7 @@ class PluginInterface(object):
         """ initialize args if needed"""
         pass
 
-    def __call__(self, requestDocs, localSummaryCouchDB, centralWMStatsCouchDB):
+    def __call__(self, requestDocs, localSummaryCouchDB, centralRequestCouchDB):
         """
         this needs to be overwritten
         requestDocs is request info collected from other resources, which has couchdb doc format.

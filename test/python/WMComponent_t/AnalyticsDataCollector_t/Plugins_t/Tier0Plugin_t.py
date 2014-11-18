@@ -13,7 +13,7 @@ import unittest
 
 from WMComponent.AnalyticsDataCollector.Plugins.Tier0Plugin import Tier0Plugin
 
-from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
@@ -37,12 +37,13 @@ class Tier0PluginTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(["WMCore.WMBS"])
-        self.wmstatsCouchDB = 'wmstats_plugin_t'
-        self.testInit.setupCouch(self.wmstatsCouchDB, 'WMStats')
+        self.requestCouchDB = 'wmstats_plugin_t'
+        self.testInit.setupCouch(self.requestCouchDB, 'T0Request')
         self.testDir = self.testInit.generateWorkDir()
 
-        self.wmstatsWriter = WMStatsWriter(os.environ['COUCHURL'], self.wmstatsCouchDB)
-
+        self.requestDBWriter = RequestDBWriter(os.environ['COUCHURL'], self.requestCouchDB, couchapp="T0Request")
+        self.requestDBWriter._setNoStale()
+        
         self.stateMap = {}
         self.orderedStates = []
         self.plugin = None
@@ -78,8 +79,8 @@ class Tier0PluginTest(unittest.TestCase):
         self.orderedStates = ['Merge', 'Processing Done']
 
         # Populate WMStats
-        self.wmstatsWriter.insertGenericRequest({'_id' : workflowName})
-        self.wmstatsWriter.updateRequestStatus(workflowName, 'Closed')
+        self.requestDBWriter.insertGenericRequest({'RequestName': workflowName})
+        self.requestDBWriter.updateRequestStatus(workflowName, 'Closed')
 
         # Create a wmspec in disk
         workload = newWorkload(workflowName)
@@ -142,8 +143,8 @@ class Tier0PluginTest(unittest.TestCase):
         self.orderedStates = ['Merge', 'Harvesting', 'Processing Done']
 
         # Populate WMStats
-        self.wmstatsWriter.insertGenericRequest({'_id' : workflowName})
-        self.wmstatsWriter.updateRequestStatus(workflowName, 'Closed')
+        self.requestDBWriter.insertGenericRequest({'RequestName' : workflowName})
+        self.requestDBWriter.updateRequestStatus(workflowName, 'Closed')
 
         # Create a wmspec in disk
         workload = newWorkload(workflowName)
@@ -217,8 +218,8 @@ class Tier0PluginTest(unittest.TestCase):
         self.orderedStates = ['AlcaSkim', 'Merge', 'Harvesting', 'Processing Done']
 
         # Populate WMStats
-        self.wmstatsWriter.insertGenericRequest({'_id' : workflowName})
-        self.wmstatsWriter.updateRequestStatus(workflowName, 'Closed')
+        self.requestDBWriter.insertGenericRequest({'RequestName' : workflowName})
+        self.requestDBWriter.updateRequestStatus(workflowName, 'Closed')
 
         topLevelTask = '/%s/Reco' % workflowName
         alcaSkimTask = '%s/AlcaSkim' % topLevelTask
@@ -286,18 +287,18 @@ class Tier0PluginTest(unittest.TestCase):
                 for transitionObject in self.stateMap[nextState][:-1]:
                     method = getattr(transitionObject, transitionMethod)
                     method(transitionTrigger)
-                self.plugin([], self.wmstatsWriter, self.wmstatsWriter)
-                currentStateWorkflows = self.wmstatsWriter.workflowsByStatus([currentState], stale = False)
-                nextStateWorkflows = self.wmstatsWriter.workflowsByStatus([nextState], stale = False)
+                self.plugin([], self.requestDBWriter, self.requestDBWriter)
+                currentStateWorkflows = self.requestDBWriter.getRequestByStatus([currentState])
+                nextStateWorkflows = self.requestDBWriter.getRequestByStatus([nextState])
                 self.assertEqual(len(currentStateWorkflows), 1, 'Workflow moved incorrectly from %s' % currentState)
                 self.assertEqual(len(nextStateWorkflows), 0, 'Workflow moved incorrectly to %s' % nextState)
             else:
                 transitionObject = self.stateMap[nextState][-1]
                 method = getattr(transitionObject, transitionMethod)
                 method(transitionTrigger)
-                self.plugin([], self.wmstatsWriter, self.wmstatsWriter)
-                currentStateWorkflows = self.wmstatsWriter.workflowsByStatus([currentState], stale = False)
-                nextStateWorkflows = self.wmstatsWriter.workflowsByStatus([nextState], stale = False)
+                self.plugin([], self.requestDBWriter, self.requestDBWriter)
+                currentStateWorkflows = self.requestDBWriter.getRequestByStatus([currentState])
+                nextStateWorkflows = self.requestDBWriter.getRequestByStatus([nextState])
                 self.assertEqual(len(currentStateWorkflows), 0, 'Workflow did not move correctly from %s' % currentState)
                 self.assertEqual(len(nextStateWorkflows), 1, 'Workflow did not move correctly to %s' % nextState)
         return

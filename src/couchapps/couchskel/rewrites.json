@@ -1,7 +1,17 @@
 [
   {
-      "from": ":_design/:dname/*",
-      "to": "*"
+    "from": "This file contains basic rewrite rules that most probably do not cover all possible use cases.",
+    "to": "You may need to add some rewrite rules for your couchapp to work."
+  },
+
+  {
+    "from": ":db/_design/:dname",
+    "to": ""
+  },
+
+  {
+    "from": ":db/_design/:dname/*",
+    "to": "*"
   },
 
   {
@@ -10,8 +20,8 @@
   },
 
   {
-      "from": "index.html",
-      "to": "index.html"
+    "from": "index.html",
+    "to": "index.html"
   },
 
   {
@@ -65,7 +75,7 @@
   },
 
   {
-      "from": ":id",
-      "to": "../../:id"
+    "from": ":id",
+    "to": "../../:id"
   }
 ]

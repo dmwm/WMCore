@@ -16,7 +16,6 @@ import threading
 import traceback
 
 from WMCore.DataStructs.Run import Run
-from WMCore.DataStructs.LumiList import LumiList
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.WMBS.File               import File
@@ -172,9 +171,6 @@ class LumiBased(JobFactory):
                 newlist.append(f)
             locationDict[key] = sorted(newlist, key = operator.itemgetter('lowestRun'))
 
-
-
-
         # Split files into jobs with each job containing
         # EXACTLY lumisPerJob number of lumis (except for maybe the last one)
 
@@ -303,57 +299,7 @@ class LumiBased(JobFactory):
                 if stopTask:
                     break
 
-            # We now have a list of jobs in a job group.  We will now iterate through them
-            # to verify we have no single lumi processed by multiple jobs.
-            jobs = self.currentGroup.newjobs
-            overlap = 0
-            lumicount = 0
-            logging.debug("Current job group has %d jobs." % len(jobs))
-            for idx1 in xrange(len(jobs)):
-                job1 = jobs[idx1]
-                lumicount += len(set(LumiList(compactList=job1['mask'].getRunAndLumis()).getLumis()))
-                for idx2 in xrange(idx1+1, len(jobs)):
-                    job2 = jobs[idx2]
-                    overlap += self.lumiCorrection(job1, job2, locationDict[location])
-            logging.info("There were %d overlapping lumis and %d total lumis." % (overlap, lumicount))
-
             if stopTask:
                 break
 
         return
-
-    def lumiCorrection(self, job1, job2, locations):
-        """
-        Due to error in processing (in particular, the Run I Tier-0), some
-        lumi sections may be spread across multiple jobs.  Where possible:
-         - Remove a lumi from job2 if it is in both job1 and job2
-         - If the lumi is in multiple files and it spanned multiple jobs,
-           make sure that all those files are processed by job1.
-
-        NOTE: This will not help in the case where a lumi is split across
-        multiple blocks.
-
-        Returns the number of affected lumis
-        """
-        lumis1 = LumiList(compactList=job1['mask'].getRunAndLumis())
-        lumis2 = LumiList(compactList=job2['mask'].getRunAndLumis())
-        ilumis = lumis1 & lumis2
-        lumiPairs = ilumis.getLumis()
-        if not lumiPairs:
-            return 0
-        logging.warning("%d lumis appear in multiple jobs: %s" % (len(lumiPairs), str(ilumis)))
-        job2['mask'].removeLumiList(ilumis)
-
-        for run, lumi in lumiPairs:
-            for fileObj in locations:
-                if fileObj in job1['input_files']:
-                    continue
-                for runObj in fileObj['runs']:
-                    if run == runObj.run:
-                        if lumi in runObj.lumis:
-                            if fileObj not in job1['input_files']:
-                                logging.warning("Adding file %s to job input files so it will process all of a lumi section." % fileObj['lfn'])
-                                job1.addFile(fileObj)
-                                break
-
-        return len(lumiPairs)

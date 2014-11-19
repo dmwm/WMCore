@@ -237,7 +237,7 @@ class LumiBasedTest(unittest.TestCase):
 
         jobFactory = splitter(package = "WMCore.DataStructs",
                               subscription = testSubscription)
-        
+
         jobGroups = jobFactory(lumis_per_job = 3,
                                halt_job_on_file_boundaries = False,
                                splitOnRun = False,

@@ -57,6 +57,8 @@ class ReqMgrCouch(object):
             db = getattr(self, db_name)
             return db
         except AttributeError:
+            import traceback
+            import sys
             trace = traceback.format_exception(*sys.exc_info())
             trace_str = ''.join(trace)
             msg = "Wrong database name '%s':\n%s" % (db_name, trace_str)

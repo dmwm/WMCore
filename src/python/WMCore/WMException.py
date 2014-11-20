@@ -143,3 +143,6 @@ class WMException(exceptions.Exception):
         strg += self.traceback
         strg += '\n'
         return strg
+    
+    def message(self):
+        return self._message

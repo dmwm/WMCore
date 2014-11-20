@@ -33,7 +33,7 @@ class RequestDBWriter(RequestDBReader):
     def updateRequestProperty(self, request, propDict):
         encodeProperty = {}
         for key, value in propDict.items():
-            if key in self._propertyNeedToBeEncoded:
+            if isinstance(value, list) or isinstance(value, dict):
                 encodeProperty[key] = JSONEncoder().encode(value)
             else:
                 encodeProperty[key] = value

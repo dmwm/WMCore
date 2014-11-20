@@ -66,6 +66,7 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         
         requestPath = os.path.join(getWMBASE(), "test", "data", "ReqMgr", "requests")
         rerecoFile = open(os.path.join(requestPath, "ReReco.json"), 'r')
+        
         rerecoArgs = JsonWrapper.load(rerecoFile)
         self.rerecoCreateArgs = rerecoArgs["createRequest"]
         self.rerecoAssignArgs = rerecoArgs["assignRequest"]
@@ -95,12 +96,12 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         return self.jsonSender.put('data/request/%s' % requestName, data, 
                                      incoming_headers=self.assign_header)
         
-    def cloneRequestWithAuth(self, requestName):
+    def cloneRequestWithAuth(self, requestName, params = {}):
         """
         WMCore.REST doesn take query for the put request.
         data need to send on the body
         """
-        return self.jsonSender.put('data/request/clone/%s' % requestName, {},
+        return self.jsonSender.put('data/request/clone/%s' % requestName, params,
                                      incoming_headers=self.assign_header)
     
     def resultLength(self, response, format="dict"):

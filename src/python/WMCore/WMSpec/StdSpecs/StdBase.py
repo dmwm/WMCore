@@ -808,42 +808,16 @@ class StdBase(object):
 
         if  (couchURL, couchDBName) in self.config_cache:
             configCache = self.config_cache[(couchURL, couchDBName)]
-            configCache.document['_id'] = configID
         else:
-            configCache = ConfigCache(dbURL = couchURL, couchDBName = couchDBName,
-                                      id = configID)
+            configCache = ConfigCache(dbURL = couchURL, couchDBName = couchDBName, detail = getOutputModules)
             self.config_cache[(couchURL, couchDBName)] = configCache
+        
         try:
-            configCache.loadDocument(configID = configID)
-        except ConfigCacheException:
-            self.raiseValidationException(msg = "Failure to load ConfigCache while validating workload")
+            # if dtail option is set return outputModules
+            return configCache.validate(configID)
+        except ConfigCacheException, ex:
+            self.raiseValidationException(ex.message())
 
-        duplicateCheck = {}
-        try:
-            outputModuleInfo = configCache.getOutputModuleInfo()
-        except Exception:
-            # Something's gone wrong with trying to open the configCache
-            msg = "Error in getting output modules from ConfigCache during workload validation.  Check ConfigCache formatting!"
-            self.raiseValidationException(msg = msg)
-        for outputModule in outputModuleInfo.values():
-            dataTier   = outputModule.get('dataTier', None)
-            filterName = outputModule.get('filterName', None)
-            if not dataTier:
-                self.raiseValidationException(msg = "No DataTier in output module.")
-
-            # Add dataTier to duplicate dictionary
-            if not dataTier in duplicateCheck.keys():
-                duplicateCheck[dataTier] = []
-            if filterName in duplicateCheck[dataTier]:
-                # Then we've seen this combination before
-                self.raiseValidationException(msg = "Duplicate dataTier/filterName combination.")
-            else:
-                duplicateCheck[dataTier].append(filterName)
-
-        if getOutputModules:
-            return outputModuleInfo
-
-        return
     
     def getSchema(self):
         return self.schema
@@ -986,7 +960,7 @@ class StdBase(object):
                      "BlockCloseMaxSize" : {"default" : 5000000000000, "type" : int, "validate" : lambda x : x > 0},
                      
                      # dashboard activity
-                     "DashboardActivity" : {"default" : "", "type" : str},
+                     "Dashboard" : {"default" : "", "type" : str},
                      # team name
                      "Team" : {"default" : "", "type" : str},
                      

@@ -27,12 +27,14 @@ from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_TRANSITION
 from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition
 
+from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 
 class Request(RESTEntity):
     def __init__(self, app, api, config, mount):
         # main CouchDB database where requests/workloads are stored
         RESTEntity.__init__(self, app, api, config, mount)
         self.reqmgr_db = api.db_handler.get_db(config.couch_reqmgr_db)
+        self.reqmgr_db_service = RequestDBWriter(self.reqmgr_db, couchapp = "ReqMgr")
         # this need for the post validtiaon 
         self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)
         
@@ -149,7 +151,7 @@ class Request(RESTEntity):
         validate state transition by getting the current data from
         couchdb
         """
-        requests = self._get_request_by_name(request_name)
+        requests = self.reqmgr_db_service.getRequestByNames(request_name)
         # generator object can't be subscribed: need to loop.
         # only one row should be returned
         for request in requests.values():
@@ -159,7 +161,7 @@ class Request(RESTEntity):
         return
     
     def initialize_clone(self, request_name):
-        requests = self._get_request_by_name(request_name)
+        requests = self.reqmgr_db_service.getRequestByNames(request_name)
         clone_args = requests.values()[0]
         # overwrite the name and time stamp.
         initialize_request_args(clone_args, self.config, clone=True)
@@ -221,33 +223,33 @@ class Request(RESTEntity):
         # eventhing should be stale view. this only needs for test
         _nostale = kwargs.get("_nostale", False)
         option = {}
-        if not _nostale:
-            option['stale'] = "update_after"
+        if _nostale:
+            self.reqmgr_db_service._setNoStale()
             
         request_info =[]
         
         if status and not team:
-            request_info.append(self.get_reqmgr_view("bystatus" , option, status))
+            request_info.append(self.reqmgr_db_service.getRequestByCouchView("bystatus" , option, status))
         if status and team:
-            request_info.append(self.get_reqmgr_view("byteamandstatus", option, [[team, status]]))
+            request_info.append(self.reqmgr_db_service.getRequestByCouchView("byteamandstatus", option, [[team, status]]))
         if name:
-            request_info.append(self._get_request_by_name(name))
+            request_info.append(self.reqmgr_db_service.getRequestByNames(name))
         if prep_id:
-            request_info.append(self.get_reqmgr_view("byprepid", option, prep_id))
+            request_info.append(self.reqmgr_db_service.getRequestByCouchView("byprepid", option, prep_id))
         if inputdataset:
-            request_info.append(self.get_reqmgr_view("byinputdataset", option, inputdataset))
+            request_info.append(self.reqmgr_db_service.getRequestByCouchView("byinputdataset", option, inputdataset))
         if outputdataset:
-            request_info.append(self.get_reqmgr_view("byoutputdataset", option, outputdataset))
+            request_info.append(self.reqmgr_db_service.getRequestByCouchView("byoutputdataset", option, outputdataset))
         if date_range:
-            request_info.append(self.get_reqmgr_view("bydate", option, date_range))
+            request_info.append(self.reqmgr_db_service.getRequestByCouchView("bydate", option, date_range))
         if campaign:
-            request_info.append(self.get_reqmgr_view("bycampaign", option, campaign))
+            request_info.append(self.reqmgr_db_service.getRequestByCouchView("bycampaign", option, campaign))
         if workqueue:
-            request_info.append(self.get_reqmgr_view("byworkqueue", option, workqueue))
+            request_info.append(self.reqmgr_db_service.getRequestByCouchView("byworkqueue", option, workqueue))
         
         #get interaction of the request
         result = self._intersection_of_request_info(request_info);
-        return [result]
+        return rows([result])
         
     def _intersection_of_request_info(self, request_info):
         requests = {}
@@ -285,23 +287,11 @@ class Request(RESTEntity):
             if  key in couchInfo:
                 del couchInfo[key]
                 
-    def get_reqmgr_view(self, view, options, keys):
-        return self._get_couch_view(self.reqmgr_db, "ReqMgr", view,
-                                    options, keys)
-    
     
     def get_wmstats_view(self, view, options, keys):
         return self._get_couch_view(self.wmstatsCouch, "WMStats", view,
                                     options, keys)
-    
-    def _get_request_by_name(self, name, stale="update_after"):
-        """
-        TODO: names can be regular expression or list of names
-        """
-        request_doc = self.reqmgr_db.document(name)
-        self.filterCouchInfo(request_doc)
-        return {name: request_doc}
-        
+            
     def _combine_request(self, request_info, requestAgentUrl, cache):
         keys = {}
         requestAgentUrlList = []
@@ -330,8 +320,7 @@ class Request(RESTEntity):
             # trailing / is needed for the savecouchUrl function
             workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
         
-        report = self.reqmgr_db.updateDocument(workload.name(), "ReqMgr", "updaterequest",
-                                             fields=request_args)
+        report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args)
         return report 
     
     @restcall

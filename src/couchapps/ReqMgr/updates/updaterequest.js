@@ -29,6 +29,9 @@ function(doc, req) {
             key == "InputDatasetTypes" ||
             key == "InputDatasets" ||
             key == "OutputDatasets" ||
+            key == "CustodialSites" ||
+            key == "NoneCustodialSites" ||
+            key == "AutoApproveSubscriptionSites" ||
             key == "Teams") {
     		
     		doc[key] = JSON.parse(newValues[key]);

@@ -48,10 +48,12 @@ class Singleton(type):
 class DocumentCache(object):
     """DocumentCache holds config ids. Use this class as singleton"""
     __metaclass__ = Singleton
-    def __init__(self, database):
+    def __init__(self, database, detail = True):
         super(DocumentCache, self).__init__()
         self.cache = {}
         self.database = database
+        # flag to decide whether update detail or not when it is prefetched
+        self.detail = detail
 
     def __getitem__(self, configID):
         """
@@ -77,11 +79,16 @@ class DocumentCache(object):
 
         Pre-fetch given list of documents from CouchDB
         """
-        options = {'include_docs':True}
+        if self.detail:
+            options = {'include_docs':True}
+        else: 
+            options = {}
         result = self.database.allDocs(options=options, keys=keys)
         for row in result['rows']:
-            doc = row['doc']
-            self.cache[doc['_id']] = doc
+            if self.detail:
+                self.cache[row['id']] = row['doc']
+            else:
+                self.cache[row['id']] = True
 
 class ConfigCache(WMObject):
     """
@@ -90,10 +97,11 @@ class ConfigCache(WMObject):
     The class that handles the upload and download of configCache
     artifacts from Couch
     """
-    def __init__(self, dbURL, couchDBName = None, id = None, rev = None, usePYCurl = False, ckey = None, cert = None, capath = None):
+    def __init__(self, dbURL, couchDBName = None, id = None, rev = None, usePYCurl = False, 
+                 ckey = None, cert = None, capath = None, detail = True):
         self.dbname = couchDBName
         self.dburl  = dbURL
-
+        self.detail = detail
         try:
             self.couchdb = CouchServer(self.dburl, usePYCurl=usePYCurl, ckey=ckey, cert=cert, capath=capath)
             if self.dbname not in self.couchdb.listDatabases():
@@ -107,7 +115,7 @@ class ConfigCache(WMObject):
             raise ConfigCacheException(message = msg)
 
         # local cache
-        self.docs_cache = DocumentCache(self.database)
+        self.docs_cache = DocumentCache(self.database, self.detail)
 
         # UserGroup variables
         self.group = None
@@ -261,11 +269,11 @@ class ConfigCache(WMObject):
 
     def loadDocument(self, configID):
         """
-        _loadDocumentID_
+        _loadDocument_
 
         Load a document from the document cache given its couchID
         """
-        self.document = self.docs_cache.cache[configID]
+        self.document = self.docs_cache[configID]
 
     def loadByID(self, configID):
         """
@@ -551,3 +559,38 @@ class ConfigCache(WMObject):
         """
 
         return self.document.__str__()
+    
+    def validate(self, configID):
+        
+        try:
+            self.loadDocument(configID = configID)
+        except Exception, ex:
+            raise ConfigCacheException("Failure to load ConfigCache while validating workload: %s" % str(ex))
+        
+        if self.detail:
+            duplicateCheck = {}
+            try:
+                outputModuleInfo = self.getOutputModuleInfo()
+            except Exception, ex:
+                # Something's gone wrong with trying to open the configCache
+                msg = "Error in getting output modules from ConfigCache during workload validation.  Check ConfigCache formatting!"
+                raise ConfigCacheException("%s: %s" % (msg, str(ex)))
+            for outputModule in outputModuleInfo.values():
+                dataTier   = outputModule.get('dataTier', None)
+                filterName = outputModule.get('filterName', None)
+                if not dataTier:
+                    raise ConfigCacheException("No DataTier in output module.")
+    
+                # Add dataTier to duplicate dictionary
+                if not dataTier in duplicateCheck.keys():
+                    duplicateCheck[dataTier] = []
+                if filterName in duplicateCheck[dataTier]:
+                    # Then we've seen this combination before
+                    raise ConfigCacheException("Duplicate dataTier/filterName combination.")
+                else:
+                    duplicateCheck[dataTier].append(filterName)            
+            return outputModuleInfo
+        else:
+            return True
+    
+

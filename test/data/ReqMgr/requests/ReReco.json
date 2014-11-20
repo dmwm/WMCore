@@ -43,34 +43,7 @@
 
 "assignRequest":
 	{
-<<<<<<< HEAD
-		"SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
-		"SiteBlacklist": [],
-		"MergedLFNBase": "/store/backfill/1",
-		"UnmergedLFNBase": "/store/unmerged",
-		"MinMergeSize": 2147483648,
-		"MaxMergeSize": 4294967296,
-		"MaxMergeEvents": 50000,
-		"AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
-		"ProcessingVersion": 1,
-		"ProcessingString" : "ProcessingString-OVERRIDE-ME",
-		"MaxRSS": 4294967296,
-		"MaxVSize": 4294967296,
-		"SoftTimeout": 129600,
-		"GracePeriod": 300,
-		"DashboardActivity": "dashboard-OVERRIDE-ME",
-		"Team": "Team--OVERRIDE-ME",
-        "CustodialSites": [],
-        "NonCustodialSites": [],
-        "AutoApproveSubscriptionSites": [],
-        "SubscriptionPriority": "Low",
-        "CustodialSubType" : "Move",
-        "BlockCloseMaxWaitTime" : 66400,
-        "BlockCloseMaxFiles" : 500,
-        "BlockCloseMaxEvents" : 250000000,
-        "BlockCloseMaxSize" : 5000000000000
-=======
-	"SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
+	"SiteWhitelist": [],
 	"SiteBlacklist": [],
 	"MergedLFNBase": "/store/backfill/1",
 	"UnmergedLFNBase": "/store/unmerged",
@@ -80,11 +53,11 @@
 	"AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
 	"ProcessingVersion": 1,
 	"ProcessingString" : "ProcessingString-OVERRIDE-ME",
-	"maxRSS": 4294967296,
-	"maxVSize": 4294967296,
+	"MaxRSS": 4294967296,
+	"MaxVSize": 4294967296,
 	"SoftTimeout": 129600,
 	"GracePeriod": 300,
-	"dashboard": "dashboard-OVERRIDE-ME",
+	"Dashboard": "dashboard-OVERRIDE-ME",
 	"Team": "Team--OVERRIDE-ME",
 	"CustodialSites": [],
 	"NonCustodialSites": [],
@@ -95,6 +68,5 @@
 	"BlockCloseMaxFiles" : 500,
 	"BlockCloseMaxEvents" : 250000000,
 	"BlockCloseMaxSize" : 5000000000000
->>>>>>> f63b43d2ef68b3d92e6404b2bfc2e9837e30ef0e
 	}
 }

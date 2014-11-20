@@ -37,11 +37,11 @@
 	"AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
 	"ProcessingVersion": 1,
 	"ProcessingString" : "ProcessingString-OVERRIDE-ME",
-	"maxRSS": 2294967,
-	"maxVSize": 4394967000,
+	"MaxRSS": 2294967,
+	"MaxVSize": 4394967000,
 	"SoftTimeout": 216000,
 	"GracePeriod": 300,
-	"dashboard": "dashboard-OVERRIDE-ME",
+	"Dashboard": "dashboard-OVERRIDE-ME",
 	"Team": "Team--OVERRIDE-ME"
 	}
 }

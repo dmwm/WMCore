@@ -124,7 +124,7 @@ class EventBased(JobFactory):
                         if f['lfn'] in [x['lfn'] for x in acdcFileList]:
                             totalJobs = self.createACDCJobs(f, acdcFileList,
                                                             timePerEvent, sizePerEvent, memoryRequirement,
-                                                            lheInput, totalJobs)
+                                                            lheInput, eventsPerJob, eventsPerLumi, totalJobs)
                         continue
                     #This assumes there's only one run which is the case for MC
                     lumis = runs[0].lumis
@@ -184,7 +184,7 @@ class EventBased(JobFactory):
 
     def createACDCJobs(self, fakeFile, acdcFileInfo,
                        timePerEvent, sizePerEvent, memoryRequirement,
-                       lheInputOption, totalJobs = 0):
+                       lheInputOption, eventsPerJob, eventsPerLumi, totalJobs = 0):
         """
         _createACDCJobs_
 
@@ -193,17 +193,36 @@ class EventBased(JobFactory):
         """
         for acdcFile in acdcFileInfo:
             if fakeFile['lfn'] == acdcFile['lfn']:
-                self.newJob(name = self.getJobName(length = totalJobs))
-                self.currentJob.addBaggageParameter("lheInputFiles", lheInputOption)
-                self.currentJob.addFile(fakeFile)
-                self.currentJob["mask"].setMaxAndSkipEvents(acdcFile["events"],
-                                                            acdcFile["first_event"])
-                self.currentJob["mask"].setMaxAndSkipLumis(len(acdcFile["lumis"]) - 1,
-                                                           acdcFile["lumis"][0])
-                jobTime = (acdcFile["events"] - acdcFile["first_event"] + 1) * timePerEvent
-                diskRequired = (acdcFile["events"] - acdcFile["first_event"] + 1) * sizePerEvent
-                self.currentJob.addResourceEstimates(jobTime = jobTime,
-                                                     memory = memoryRequirement,
-                                                     disk = diskRequired)
-                totalJobs += 1
+                eventsToRun = eventsPerLumi * (len(acdcFile["lumis"]) - 1)
+                currentEvent = acdcFile["first_event"]
+                currentLumi = acdcFile["lumis"][0]
+                while eventsToRun:
+                    self.newJob(name = self.getJobName(length = totalJobs))
+                    self.currentJob.addFile(fakeFile)
+                    self.currentJob.addBaggageParameter("lheInputFiles", lheInputOption)
+                    #Limit the number of events to a unsigned 32bit int
+                    if (currentEvent + eventsPerJob) > (2**32 - 1):
+                        currentEvent = 1
+                    if eventsToRun >= eventsPerJob:
+                        lumisPerJob = int(ceil(float(eventsPerJob)/eventsPerLumi))
+                        self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob,
+                                                                    currentEvent)
+                        self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob,
+                                                                   currentLumi)
+                    else:
+                        lumisPerJob = int(ceil(float(eventsToRun)/eventsPerLumi))
+                        self.currentJob["mask"].setMaxAndSkipEvents(eventsToRun,
+                                                                    currentEvent)
+                        self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob,
+                                                                   currentLumi)
+                        eventsToRun = eventsPerJob
+                    jobTime = eventsPerJob * timePerEvent
+                    diskRequired = eventsPerJob * sizePerEvent
+                    self.currentJob.addResourceEstimates(jobTime = jobTime,
+                                                         memory = memoryRequirement,
+                                                         disk = diskRequired)
+                    eventsToRun  -= eventsPerJob
+                    currentEvent += eventsPerJob
+                    currentLumi  += lumisPerJob
+                    totalJobs    += 1
         return totalJobs

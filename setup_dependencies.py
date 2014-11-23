@@ -70,12 +70,22 @@ dependencies = {'wmc-rest':{
                         },
                 'reqmgr2':{
                         'packages': ['WMCore.ReqMgr+',
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 76e361c97ca3c9aa59f1ee5f19d74cab0a4cd720
                                      'WMCore.WMDataMining+',
                                      'WMCore.Services.Dashboard+',
                                      'WMCore.Services.DBS+',
                                      'WMCore.Services.PhEDEx+',
                                      'WMCore.Services.WMStats+',
                                      'WMCore.Services.McM+'
+<<<<<<< HEAD
+=======
+=======
+                                     'WMCore.Services.Dashboard',
+>>>>>>> 8fcd55e0c3a92c7af001e80448e0ed2a11fee435
+>>>>>>> 76e361c97ca3c9aa59f1ee5f19d74cab0a4cd720
                                     ],
                         'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
                         'statics': ['src/couchapps/ReqMgr+',

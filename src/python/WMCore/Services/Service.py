@@ -90,7 +90,7 @@ from httplib2 import HttpLib2Error
 
 from urlparse import urlparse
 
-from WMCore.Services.Requests import Requests
+from WMCore.Services.Requests import Requests, JSONRequests
 from WMCore.WMException import WMException
 from WMCore.Wrappers import JsonWrapper as json
 
@@ -136,6 +136,8 @@ class Service(dict):
         # either passed as param to __init__, determine via scheme or default
         if type(self.get('requests')) == types.TypeType:
             requests = self['requests']
+        elif (self['accept_type'] == "application/json" and self['content_type'] == "application/json"):
+            requests = JSONRequests
         else:
             requests = Requests
         # Instantiate a Request

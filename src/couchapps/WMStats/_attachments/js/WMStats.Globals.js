@@ -17,7 +17,7 @@ WMStats.Globals = function($){
 		   "Campaign": "campaign",
 		   "RequestName": "workflow",
 		   "RequestorDN": "user_dn",
-		   "Priority": "priority",
+		   "RequestPriority": "priority",
 		   "Requestor": "requestor",
 		   "RequestType": "request_type",
 		   "DbsUrl": "dbs_url",

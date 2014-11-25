@@ -82,7 +82,10 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
                     pass # ReqMgr no longer has the workflow
                 report[wf].update({'filterEfficiency':filterEfficiency, 'runWhiteList':runWhiteList})
 
-            if not oldCouchDoc.has_key('mcmTotalEvents') or not oldCouchDoc.has_key('mcmApprovalTime'):
+            if (not oldCouchDoc.has_key('mcmTotalEvents') or
+                not oldCouchDoc.has_key('mcmApprovalTime') or
+                (oldCouchDoc.get('mcmTotalEvents', 'Unknown') != 'Unknown'
+                 and oldCouchDoc.get('mcmApprovalTime', 'Unknown')  == 'Unknown')):
                 prepID = oldCouchDoc.get('prepID', None)
                 if prepID and nMCMCalls <= maxMCMCalls:
                     nMCMCalls += 1

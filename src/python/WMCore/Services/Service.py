@@ -136,7 +136,7 @@ class Service(dict):
         # either passed as param to __init__, determine via scheme or default
         if type(self.get('requests')) == types.TypeType:
             requests = self['requests']
-        elif (self['accept_type'] == "application/json" and self['content_type'] == "application/json"):
+        elif (self.get('accept_type') == "application/json" and self.get('content_type') == "application/json"):
             requests = JSONRequests
         else:
             requests = Requests
@@ -292,7 +292,10 @@ class Service(dict):
                     cachefile.seek (0, 0) # return to beginning of file
                 else:
                     f = open(cachefile, 'w')
-                    f.write(str(data))
+                    if isinstance(data, dict) or isinstance(data, list):
+                        f.write(json.dumps(data))
+                    else:
+                        f.write(str(data))
                     f.close()
 
 

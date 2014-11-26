@@ -76,7 +76,6 @@ dependencies = {'wmc-rest':{
                                      'WMCore.Services.PhEDEx+',
                                      'WMCore.Services.WMStats+',
                                      'WMCore.Services.McM+'
-                                     'WMCore.Services.Dashboard',
                                     ],
                         'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
                         'statics': ['src/couchapps/ReqMgr+',

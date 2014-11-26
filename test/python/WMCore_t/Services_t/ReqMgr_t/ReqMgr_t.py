@@ -98,28 +98,22 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         response = self.reqSvc.insertRequests(self.rerecoCreateArgs)
         from pprint import pprint
         pprint(response)
-        self.assertEqual(response[1], 200)
-        requestName = response[0]['result'][0]['RequestName']
+        self.assertEqual(len(response), 1)
+        requestName = response[0]['RequestName']
         
         ## test get method
         # get by name
         response = self.reqSvc.getRequestByNames(requestName)
-        pprint(response)
-        self.assertEqual(response[1], 200, "get by name")
-        self.assertEqual(self.resultLength(response), 1)
+        self.assertEqual(len(response), 1)
         
         # get by status
         response = self.reqSvc.getRequestByStatus('new')
-        pprint(response)
-        self.assertEqual(response[1], 200, "get by status")
-        self.assertEqual(self.resultLength(response), 1)
+        self.assertEqual(len(response), 1)
         
 
         self.reqSvc.updateRequestStatus(requestName, 'assignment-approved')
-        pprint(response)
         response = self.reqSvc.getRequestByStatus('assignment-approved')
-        self.assertEqual(response[1], 200, "get by status")
-        self.assertEqual(self.resultLength(response), 1)
+        self.assertEqual(len(response), 1)
     
 if __name__ == '__main__':
     unittest.main()

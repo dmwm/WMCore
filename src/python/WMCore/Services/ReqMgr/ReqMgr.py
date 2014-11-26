@@ -81,78 +81,67 @@ class ReqMgr(Service):
         
         query = self._createQuery({'name': names})
         callname = 'request?%s' % query
-        #return self._getResult(callname, verb = "GET")
-        return self["requests"].get(callname)
+        return self._getResult(callname, verb = "GET")['result']
 
     def getRequestByStatus(self, statusList, detail = False):
         """
         _getRequestByStatus_
-        returns  tuples with following format
-        ({'result': [{'test_RequestString-OVERRIDE-ME_141125_142331_4966': {'BlockBlacklist': [],
+        returns  list of requests
+        [{'test_RequestString-OVERRIDE-ME_141125_142331_4966': {'BlockBlacklist': [],
                                                                     'BlockWhitelist': [],
                                                                     'CMSSWVersion': 'CMSSW_4_4_2_patch2',
                                                                     ....
                                                                     '_id': 'test_RequestString-OVERRIDE-ME_141125_142331_4966',
-                                                                    'inputMode': 'couchDB'}}]},
-        200,
-        'OK',
-        False)
+                                                                    'inputMode': 'couchDB'}}]
         """
 
         query = self._createQuery({'status': statusList})
         callname = 'request?%s' % query
-        #return self._getResult(callname, verb = "GET")
-        return self["requests"].get(callname)
-    
+        return self._getResult(callname, verb = "GET")['result']
     
     def insertRequests(self, requestDict):
         """
         _insertRequests_
-        returns  tuples with following format
-        ({'result': [{'test_RequestString-OVERRIDE-ME_141125_142331_4966': {'BlockBlacklist': [],
+        returns  list with following format
+        [{'test_RequestString-OVERRIDE-ME_141125_142331_4966': {'BlockBlacklist': [],
                                                                     'BlockWhitelist': [],
                                                                     'CMSSWVersion': 'CMSSW_4_4_2_patch2',
                                                                     ....
                                                                     '_id': 'test_RequestString-OVERRIDE-ME_141125_142331_4966',
-                                                                    'inputMode': 'couchDB'}}]},
-        200,
-        'OK',
-        False)
+                                                                    'inputMode': 'couchDB'}}]
+        need proper error handling if status is not 200 from orignal reporting.
         """
-        return self["requests"].post('request', requestDict)
+        return self["requests"].post('request', requestDict)[0]['result']
 
     def updateRequestStatus(self, request, status):
         """
         _updateRequestStatus_
-        returns  tuples with following format
-        ({'result': [{'test_RequestString-OVERRIDE-ME_141125_142331_4966': {'BlockBlacklist': [],
+        returns  list with following format
+        [{'test_RequestString-OVERRIDE-ME_141125_142331_4966': {'BlockBlacklist': [],
                                                                     'BlockWhitelist': [],
                                                                     'CMSSWVersion': 'CMSSW_4_4_2_patch2',
                                                                     ....
                                                                     '_id': 'test_RequestString-OVERRIDE-ME_141125_142331_4966',
-                                                                    'inputMode': 'couchDB'}}]},
-        200,
-        'OK',
-        False)
+                                                                    'inputMode': 'couchDB'}}]
+        need proper error handling if status is not 200 from orignal reporting.
         """
         
         status = {"RequestStatus": status}
-        return self["requests"].put('request/%s' % request, status)
+        return self["requests"].put('request/%s' % request, status)[0]['result']
 
     def updateRequestProperty(self, request, propDict):
         """
         _updateRequestProperty_
-        returns  tuples with following format
-        ({'result': [{'test_RequestString-OVERRIDE-ME_141125_142331_4966': {'BlockBlacklist': [],
+        returns  list with following format
+        [{'test_RequestString-OVERRIDE-ME_141125_142331_4966': {'BlockBlacklist': [],
                                                                     'BlockWhitelist': [],
                                                                     'CMSSWVersion': 'CMSSW_4_4_2_patch2',
                                                                     ....
                                                                     '_id': 'test_RequestString-OVERRIDE-ME_141125_142331_4966',
-                                                                    'inputMode': 'couchDB'}}]},
-        200,
-        'OK',
-        False)
+                                                                    'inputMode': 'couchDB'}}]
+        need proper error handling if status is not 200 from orignal reporting.
+        ({'result': data}, status_code, response, cache_flag)                                                            
         """
-        return self["requests"].put('request/%s' % request, propDict)
+        return self["requests"].put('request/%s' % request, propDict)[0]['result']
     
         

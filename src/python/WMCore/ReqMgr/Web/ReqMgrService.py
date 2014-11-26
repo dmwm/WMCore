@@ -42,7 +42,7 @@ from WMCore.ReqMgr.Service.Auxiliary import Info, Group, Team, Software
 from WMCore.ReqMgr.Service.Request import Request
 from WMCore.ReqMgr.Service.RestApiHub import RestApiHub
 from WMCore.REST.Main import RESTMain
-from WMCore.REST.Auth import authz_fake
+#from WMCore.REST.Auth import authz_fake
 
 def set_headers(itype, size=0):
     """
@@ -217,6 +217,11 @@ class ReqMgrService(TemplatedPage):
         self.jsdir = web_config.get('jsdir', jsdir)
         yuidir = os.environ.get('YUI_ROOT', os.getcwd()+'/yui')
         self.yuidir = web_config.get('yuidir', yuidir)
+        # read scripts area and initialize data-ops scripts
+        self.sdir = os.environ.get('RM_SCRIPTS', os.getcwd()+'/scripts')
+        self.sdict_thr = web_config.get('sdict_thr', 600) # put reasonable 10 min interval
+        self.sdict = {'ts':time.time()} # placeholder for data-ops scripts
+        self.update_scripts(force=True)
 
         # To be filled at run time
         self.cssmap = {}
@@ -263,6 +268,14 @@ class ReqMgrService(TemplatedPage):
         """
         return '/CN/bla/foo/'
 
+    def update_scripts(self, force=False):
+        "Update scripts dict"
+        if  force or abs(time.time()-self.sdict['ts']) > self.sdict_thr:
+            for item in os.listdir(self.sdir):
+                with open(os.path.join(self.sdir, item), 'r') as istream:
+                    self.sdict[item.split('.')[0]] = istream.read()
+            self.sdict['ts'] = time.time()
+
     def abs_page(self, tmpl, content):
         """generate abstract page"""
         menu = self.templatepage('menu', menus=menus(tmpl))
@@ -306,7 +319,7 @@ class ReqMgrService(TemplatedPage):
     def admin(self, **kwds):
         """admin page"""
         print "\n### ADMIN PAGE"
-        authz_fake()
+#        authz_fake()
         rows = self.admin_info.get()
         print "rows", [r for r in rows]
 
@@ -435,9 +448,28 @@ class ReqMgrService(TemplatedPage):
             return self.error(msg)
 
         # create templatized page out of provided forms
+        self.update_scripts()
         content = self.templatepage('create', table=json2table(jsondata, web_ui_names()),
-                jsondata=json.dumps(jsondata, indent=2), name=req_form)
+                jsondata=json.dumps(jsondata, indent=2), name=req_form,
+                scripts=[s for s in self.sdict.keys() if s!='ts'])
         return self.abs_page('generic', content)
+
+    @expose
+    def scripts(self, name):
+        """
+        Return script for given name, all scripts should be placed in
+        RM_SCRIPTS area. We use self.sdict look-up for given name,
+        otherwise use default script example"""
+        default = """
+def genobjs(jsondict):
+    for item in xrange(10):
+        mydict = dict(jsondict)
+        mydict.update({'myfield': item})
+        yield mydict
+"""
+        self.update_scripts()
+        value = self.sdict.get(name, default)
+        return value
 
     @expose
     def confirm_action(self, **kwds):

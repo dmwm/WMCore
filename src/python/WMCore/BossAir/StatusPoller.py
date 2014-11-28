@@ -122,7 +122,7 @@ class StatusPoller(BaseWorkerThread):
         myThread = threading.currentThread()
         myThread.transaction.begin()
         self.bossAir.update(jobs = jobsToKill)
-        self.bossAir.kill(jobs = jobsToKill, killMsg = "Job killed due to timeout")
+        self.bossAir.kill(jobs = jobsToKill, killMsg = "Job killed due to timeout", errorCode = 61304)
         myThread.transaction.commit()
 
 

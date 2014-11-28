@@ -53,7 +53,9 @@ WMJobErrorCodes = {50660 :
                    61302 :
                    "The job was killed by the WMAgent because the site it was running at was set to Draining",
                    61303 :
-                   "The job was killed by the WMAgent because the site it was running at was set to Down"}
+                   "The job was killed by the WMAgent because the site it was running at was set to Down",
+                   61304 :
+                   "The job was killed by the WMAgent for using too much wallclock time"}
 
 """
 WMJobPermanentSystemErrors

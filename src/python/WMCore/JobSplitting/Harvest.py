@@ -37,7 +37,7 @@ class Harvest(JobFactory):
 
     """
 
-    def createJobsLocationWise(self, fileset, endOfRun):
+    def createJobsLocationWise(self, fileset, endOfRun, dqmHarvestUnit):
 
         myThread = threading.currentThread()
         fileset.loadData(parentage = 0)
@@ -83,22 +83,47 @@ class Harvest(JobFactory):
             harvestType = "Periodic"
 
         for location in locationDict.keys():
-            for run in locationDict[location].keys():
-                # Should create at least one job for every location/run, putting this here will do
-                jobCount += 1
-                self.newJob(name = "%s-%s-Harvest-%i" % (baseName, harvestType, jobCount))
-                for f in locationDict[location][run]:
-                    for fileRun in runDict[f['lfn']]:
-                        if fileRun.run == run:
-                            self.currentJob['mask'].addRun(fileRun)
-                            break
-                    self.currentJob.addFile(f)
-
-                if endOfRun:
-                    self.currentJob.addBaggageParameter("runIsComplete", True)
+            
+            if dqmHarvestUnit == "byRun":
+                self.createJobByRun(locationDict, location, baseName, harvestType, jobCount, runDict, endOfRun)
+            else:
+                #TODO: need to add when specific run is specified.
+                self.createMultiRunJob(locationDict, location, baseName, harvestType, jobCount, runDict, endOfRun)
 
         return
+    
+    def createJobByRun(self, locationDict, location, baseName, harvestType, jobCount, runDict, endOfRun):
 
+        for run in locationDict[location].keys():
+            # Should create at least one job for every location/run, putting this here will do
+            jobCount += 1
+            self.newJob(name = "%s-%s-Harvest-%i" % (baseName, harvestType, jobCount))
+            for f in locationDict[location][run]:
+                for fileRun in runDict[f['lfn']]:
+                    if fileRun.run == run:
+                        self.currentJob['mask'].addRun(fileRun)
+                        break
+                self.currentJob.addFile(f)
+
+            if endOfRun:
+                self.currentJob.addBaggageParameter("runIsComplete", True)
+        return
+    
+    def createMultiRunJob(self, locationDict, location, baseName, harvestType, jobCount, runDict, endOfRun):
+        
+        jobCount += 1
+        self.newJob(name = "%s-%s-Harvest-%i" % (baseName, harvestType, jobCount))
+        for run in locationDict[location].keys():
+            for f in locationDict[location][run]:
+                for fileRun in runDict[f['lfn']]:
+                    if fileRun.run == run:
+                        self.currentJob['mask'].addRun(fileRun)
+                        break
+                self.currentJob.addFile(f)
+        if endOfRun:
+            self.currentJob.addBaggageParameter("runIsComplete", True)
+        return
+                
     def algorithm(self, *args, **kwargs):
         """
         _algorithm_
@@ -108,7 +133,8 @@ class Harvest(JobFactory):
 
         periodicInterval = kwargs.get("periodic_harvest_interval", 0)
         periodicSibling = kwargs.get("periodic_harvest_sibling", False)
-
+        dqmHarvestUnit = kwargs.get("dqmHarvestUnit", "byRun")
+        
         daoFactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
@@ -128,7 +154,7 @@ class Harvest(JobFactory):
 
             if triggerJob:
                 myThread.logger.debug("Creating Periodic harvesting job")
-                self.createJobsLocationWise(fileset, False)
+                self.createJobsLocationWise(fileset, False, dqmHarvestUnit)
 
         elif not fileset.open:
 
@@ -142,6 +168,6 @@ class Harvest(JobFactory):
 
             if triggerJob:
                 myThread.logger.debug("Creating EndOfRun harvesting job")
-                self.createJobsLocationWise(fileset, True)
+                self.createJobsLocationWise(fileset, True, dqmHarvestUnit)
 
         return

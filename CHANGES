@@ -1,3 +1,29 @@
+1.0.1 to 1.0.2.pre1:
+  - Merge pull request #5496 from ticoann/lumi_list_fix
+  - add lumilist in schema in str format
+  - Merge pull request #5463 from ticoann/multi_run_harvesting
+  - Merge pull request #5474 from ticoann/prep_id_by_task
+  - patch for setting prep ids per task in task chain
+  - Merge pull request #5495 from ticoann/move_dbs_client_import
+  - move the dbs import statement within the function since this package is imported in Runtime. DBS client is not in the sandbox.
+  - Merge pull request #5482 from amaltaro/multiRun-json
+  - new json template for RelVal multi-run harvesting
+  - Merge pull request #5484 from ericvaandering/catchup_mcm
+  - Also fetch McM data if total events is defined and approval time is not
+  - Merge pull request #5483 from ticoann/fix_priority_wmstats
+  - fix priority mapping
+  - Merge pull request #5478 from amaltaro/acdc-MCFakeFile
+  - fix job splitting for ACDC MCFakeFile
+  - Merge pull request #5466 from amaltaro/fix-inclusiveMask
+  - Merge pull request #5464 from ticoann/restrict_state_transition
+  - Merge pull request #5462 from lucacopa/tier0_status_resource_control
+  - Merge pull request #5461 from ticoann/fix_lexicon
+  - test boolean against boolean
+  - Cleanup status transition
+  - Add multi run harvesting
+  - Enable tier0 status for sites in SSB
+  - fix lexicon for dataset
+
 1.0.0 to 1.0.1:
   - 1.0.1.pre8
   - Merge pull request #5458 from amaltaro/reallyFix-keepOutput

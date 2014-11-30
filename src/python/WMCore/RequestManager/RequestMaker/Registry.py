@@ -8,8 +8,9 @@ classes and instantiate them via a factory method
 Note that a schema is retrieved via its corresponding maker.
 
 """
-import copy
+import logging
 import time
+from WMCore.Wrappers import JsonWrapper
 from WMCore.RequestManager.DataStructs.Request import Request
 
 class _Registry:
@@ -96,7 +97,6 @@ def buildWorkloadForRequest(typename, schema):
     factory  = factoryInstance()
     workload = factory.factoryWorkloadConstruction(workloadName = requestName,
                                                    arguments = schema)
-
     # Now build a request
     request = Request()
     request.update(schema)
@@ -131,19 +131,26 @@ def loadRequestSchema(workload, requestSchema):
     """
     schema = workload.data.request.section_('schema')
     for key, value in requestSchema.iteritems():
-        try:
+        if type(value) == dict and key == 'LumiList': 
+            value = JsonWrapper.dumps(value)
+        try:            
             setattr(schema, key, value)
         except Exception, ex:
             # Attach TaskChain tasks
             if type(value) == dict and requestSchema['RequestType'] == 'TaskChain' and 'Task' in key:
                 newSec = schema.section_(key)
                 for k, v in requestSchema[key].iteritems():
+                    if type(value) == dict and key == 'LumiList': 
+                        value = JsonWrapper.dumps(value)
                     try:
                         setattr(newSec, k, v)
                     except Exception, ex:
-                        pass
+                        # this logging need to change to cherry py logging
+                        logging.error("Invalid Value: %s" % str(ex))
             else:
-                pass
+                # this logging need to change to cherry py logging 
+                logging.error("Invalid Value: %s" % str(ex))
+
     schema.timeStamp = int(time.time())
     schema = workload.data.request.schema
 

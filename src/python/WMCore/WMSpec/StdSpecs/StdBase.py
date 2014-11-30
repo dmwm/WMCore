@@ -855,7 +855,7 @@ class StdBase(object):
                                             "type" : int},
                      "ProcessingString" : {"default" : None, "attr" : "processingString",
                                            "null" : True},
-                     "LumiList" : {"default" : [], "type" : makeLumiList,
+                     "LumiList" : {"default" : {}, "type" : makeLumiList,
                                       "optional" : True, "validate" : None,
                                       "attr" : "lumiList", "null" : False},
                      "SiteBlacklist" : {"default" : [], "type" : makeList,

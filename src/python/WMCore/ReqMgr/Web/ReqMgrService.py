@@ -26,7 +26,7 @@ from cherrypy import config as cherryconf
 
 # ReqMgrSrv modules
 from WMCore.ReqMgr.Web.tools import exposecss, exposejs, exposejson, TemplatedPage
-from WMCore.ReqMgr.Web.utils import json2table, genid, checkargs, tstamp
+from WMCore.ReqMgr.Web.utils import json2table, genid, checkargs, tstamp, sort
 from WMCore.ReqMgr.Utils.url_utils import getdata
 from WMCore.ReqMgr.Tools.cms import dqm_urls, dbs_urls, releases, architectures
 from WMCore.ReqMgr.Tools.cms import scenarios, cms_groups
@@ -367,7 +367,9 @@ class ReqMgrService(TemplatedPage):
     def assign(self, **kwds):
         """assign page"""
         if  not kwds:
-            kwds = {'status': 'new'}
+            kwds = {}
+        if  'status' not in kwds:
+            kwds.update({'status': 'new'})
         docs = []
         attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus']
         data = self.reqmgr.getRequestByStatus(statusList=[kwds['status']])
@@ -386,7 +388,7 @@ class ReqMgrService(TemplatedPage):
         return self.abs_page('generic', content)
 
     @expose
-    @checkargs(['status'])
+    @checkargs(['status', 'sort'])
     def approve(self, **kwds):
         """
         Approve page: get list of request associated with user DN.
@@ -394,7 +396,9 @@ class ReqMgrService(TemplatedPage):
         were seen by data-ops.
         """
         if  not kwds:
-            kwds = {'status': 'assignment-approved'}
+            kwds = {}
+        if  'status' not in kwds:
+            kwds.update({'status': 'assignment-approved'})
         kwds.update({'_nostale':True})
         docs = []
         attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus']
@@ -402,7 +406,10 @@ class ReqMgrService(TemplatedPage):
         for row in data:
             for key, val in row.items():
                 docs.append(request_attr(val, attrs))
-        content = self.templatepage('approve', requests=docs, date=tstamp())
+        sortby = kwds.get('sort', 'status')
+        docs = sort(docs, sortby)
+        content = self.templatepage('approve', requests=docs, date=tstamp(),
+                sort=sortby)
         return self.abs_page('generic', content)
 
     @expose

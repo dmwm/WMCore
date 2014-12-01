@@ -13,6 +13,7 @@ import json
 import time
 import hashlib
 import cherrypy
+from urllib2 import URLError
 
 def tstamp():
     "Generic time stamp"
@@ -112,7 +113,7 @@ def checkargs(supported):
             """Check that provided input is a string"""
             if not (isinstance(val, str) or isinstance(val, unicode)):
                 code = web_code('Invalid input')
-                raise HTTPError(500, 'DAS error, code=%s' % code)
+                raise URLError('code=%s' % code)
 
         def wrapped_f(self, *args, **kwds):
             """Wrap function arguments"""
@@ -126,7 +127,7 @@ def checkargs(supported):
                     body = None
                 if  args and kwds:
                     code = web_code('Misleading request')
-                    raise HTTPError(500, 'error, code=%s' % code)
+                    raise URLError('code=%s' % code)
                 if  body:
                     jsondict = json.loads(body, encoding='latin-1')
                 else:
@@ -140,17 +141,17 @@ def checkargs(supported):
             keys = []
             if  not isinstance(kwds, dict):
                 code  = web_code('Unsupported kwds')
-                raise HTTPError(500, 'error, code=%s' % code)
+                raise URLError('code=%s' % code)
             if  kwds:
                 keys = [i for i in kwds.keys() if i not in supported]
             if  keys:
                 code  = web_code('Unsupported key')
-                raise HTTPError(500, 'error, code=%s' % code)
+                raise URLError('code=%s' % code)
             if  checkarg(kwds, 'status'):
                 if  kwds['status'] not in \
                         ['new', 'assigned']:
                     code  = web_code('Unsupported view')
-                    raise HTTPError(500, 'error, code=%s' % code)
+                    raise URLError('code=%s' % code)
             data = func (self, *args, **kwds)
             return data
         wrapped_f.__doc__  = func.__doc__
@@ -160,3 +161,57 @@ def checkargs(supported):
     wrap.exposed = True
     return wrap
 
+WEB_CODES = [
+        (0  , 'N/A'),
+        (1  , 'Unsupported key'),
+        (2  , 'Unsupported value'),
+        (3  , 'Unsupported method'),
+        (4  , 'Unsupported collection'),
+        (5  , 'Unsupported database'),
+        (6  , 'Unsupported view'),
+        (7  , 'Unsupported format'),
+        (8  , 'Wrong type'),
+        (9  , 'Misleading request'),
+        (10 , 'Invalid query'),
+        (11 , 'Exception'),
+        (12 , 'Invalid input'),
+        (13 , 'Unsupported expire value'),
+        (14 , 'Unsupported order value'),
+        (15 , 'Unsupported skey value'),
+        (16 , 'Unsupported idx value'),
+        (17 , 'Unsupported limit value'),
+        (18 , 'Unsupported dir value'),
+        (19 , 'Unsupported sort value'),
+        (20 , 'Unsupported ajax value'),
+        (21 , 'Unsupported show value'),
+        (22 , 'Unsupported dasquery value'),
+        (23 , 'Unsupported dbcoll value'),
+        (24 , 'Unsupported msg value'),
+        (25 , 'Unable to start DASCore'),
+        (26 , 'No file id'),
+        (27 , 'Unsupported id value'),
+        (28 , 'Server error'),
+        (29 , 'Query is not suitable for this view'),
+        (30 , 'Parser error'),
+        (31 , 'Unsupported pid value'),
+        (32 , 'Unsupported interval value'),
+        (33 , 'Unsupported kwds'),
+]
+def decode_code(code):
+    """Return human readable string for provided code ID"""
+    for idx, msg in WEB_CODES:
+        if  code == idx:
+            return msg
+    return 'N/A'
+
+def web_code(error):
+    """Return WEB code for provided error string"""
+    for idx, msg in WEB_CODES:
+        if  msg.lower() == error.lower():
+            return idx
+    return -1
+
+def sort(docs, sortby):
+    "Sort given documents by sortby attribute"
+    for doc in docs:
+        yield doc

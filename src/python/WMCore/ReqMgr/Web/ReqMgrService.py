@@ -394,7 +394,7 @@ class ReqMgrService(TemplatedPage):
         were seen by data-ops.
         """
         if  not kwds:
-            kwds = {'status': 'assign-approve'}
+            kwds = {'status': 'assignment-approved'}
         kwds.update({'_nostale':True})
         docs = []
         attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus']

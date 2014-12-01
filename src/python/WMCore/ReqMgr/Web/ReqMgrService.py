@@ -44,6 +44,9 @@ from WMCore.ReqMgr.Service.RestApiHub import RestApiHub
 from WMCore.REST.Main import RESTMain
 #from WMCore.REST.Auth import authz_fake
 
+# new reqmgr2 APIs
+from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
+
 def set_headers(itype, size=0):
     """
     Set response header Content-type (itype) and Content-Length (size).
@@ -244,7 +247,12 @@ class ReqMgrService(TemplatedPage):
         app = RESTMain(config, statedir) # REST application
         mount = '/rest' # mount point for cherrypy service
         api = RestApiHub(app, config.reqmgr, mount)
-        self.reqmgr = Request(app, api, config.reqmgr, mount=mount+'/reqmgr')
+        # old access to reqmgr APIs
+#        self.reqmgr = Request(app, api, config.reqmgr, mount=mount+'/reqmgr')
+
+        # initialize access to reqmgr2 APIs
+#        url = "https://localhost:8443/reqmgr2"
+        self.reqmgr = ReqMgr(config.reqmgr.reqmgr2_url)
 
         # admin helpers
         self.admin_info = Info(app, api, config.reqmgr, mount=mount+'/info')
@@ -362,15 +370,10 @@ class ReqMgrService(TemplatedPage):
             kwds = {'status': 'new'}
         docs = []
         attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus']
-        for rid in self.reqmgr.get(**kwds):
-            if  isinstance(rid, basestring):
-                doc = self.doc(rid)
-                docs.append(request_attr(doc, attrs))
-            elif isinstance(rid, dict):
-                for key, val in rid.items():
-                    docs.append(request_attr(val, attrs))
-            else:
-                raise Exception('Wrong rid=%s' % rid)
+        data = self.reqmgr.getRequestByStatus(statusList=[kwds['status']])
+        for row in data:
+            for key, val in row.items():
+                docs.append(request_attr(val, attrs))
         content = self.templatepage('assign',
                 site_white_list=site_white_list(),
                 site_black_list=site_black_list(),
@@ -395,15 +398,10 @@ class ReqMgrService(TemplatedPage):
         kwds.update({'_nostale':True})
         docs = []
         attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus']
-        for rid in self.reqmgr.get(**kwds):
-            if  isinstance(rid, basestring):
-                doc = self.doc(rid)
-                docs.append(request_attr(doc, attrs))
-            elif isinstance(rid, dict):
-                for key, val in rid.items():
-                    docs.append(request_attr(val, attrs))
-            else:
-                raise Exception('Wrong rid=%s' % rid)
+        data = self.reqmgr.getRequestByStatus(statusList=[kwds['status']])
+        for row in data:
+            for key, val in row.items():
+                docs.append(request_attr(val, attrs))
         content = self.templatepage('approve', requests=docs, date=tstamp())
         return self.abs_page('generic', content)
 

@@ -13,6 +13,12 @@ Your request &nbsp;<span class="ticket">$ticket</span>&nbsp;
 has been created on <kbd>$time.ctime()</kbd>
 #end if
 <br/>
+#if $status=="ok"
+#set scol="green"
+#else
+#set scol="red"
+#end if
+Status: <span style="background-color:white;color:$scol">$status</span>
 <br/>
 <br/>
 <h6>Further actions</h6>

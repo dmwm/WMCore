@@ -63,8 +63,7 @@ class RequestDBReader():
         return
     
                 
-    def _formatCouchData(self, data, key = "id", filterCouch = True):
-        detail = False
+    def _formatCouchData(self, data, key = "id", detail = True, filterCouch = True):
         result = {}
         for row in data['rows']:
             if row.has_key('error'):
@@ -73,7 +72,6 @@ class RequestDBReader():
                 if filterCouch:
                     self._filterCouchInfo(row["doc"])
                 result[row[key]] = row["doc"]
-                detail = True
             else:
                 result[row[key]] = None
         if detail:
@@ -81,7 +79,7 @@ class RequestDBReader():
         else:
             return result.keys()
             
-    def _getRequestByNames(self, requestNames, detail = True):
+    def _getRequestByNames(self, requestNames, detail):
         """
         'status': list of the status
         """
@@ -121,20 +119,20 @@ class RequestDBReader():
         return self.couchDB
     
     
-    def getRequestByNames(self, requestNames):
+    def getRequestByNames(self, requestNames, detail = True):
         if isinstance(requestNames, basestring):
             requestNames = [requestNames]
         if len(requestNames) == 0:
             return {}
-        data = self._getRequestByNames(requestNames, True)
+        data = self._getRequestByNames(requestNames, detail = detail)
 
-        requestInfo = self._formatCouchData(data)
+        requestInfo = self._formatCouchData(data, detail = detail)
         return requestInfo
     
     def getRequestByStatus(self, statusList, detail = False, limit = None, skip = None):
         
         data = self._getRequestByStatus(statusList, detail, limit, skip)
-        requestInfo = self._formatCouchData(data)
+        requestInfo = self._formatCouchData(data, detail = detail)
 
         return requestInfo
     

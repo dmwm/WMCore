@@ -64,10 +64,12 @@ class RESTBaseUnitTestWithDBBackend(unittest.TestCase):
             self.jsonSender = self.server.jsonSender
             # find the way to check the api with the permission
             self.test_authz_key = self.server.test_authz_key
+            print "init root"
 
     def tearDown(self):
         if self.initRoot:
             CherrypyTestInit.stop(self.server)
+            self.test_authz_key = None
 
         if self.schemaModules:
             self.testInit.clearDatabase()

@@ -128,16 +128,13 @@ class ActionMgr(object):
         else:
             raise Exception('Unsupported request type')
         for jsondata in docs:
-            data = StringIO.StringIO(json.dumps(jsondata))
-            cherrypy.request.body = data
-            print "\n### CALL reqmgr.post()"
-#            self.reqmgr.post()
+#            data = StringIO.StringIO(json.dumps(jsondata))
+#            cherrypy.request.body = data
+#            print "\n### CALL reqmgr.post()"
 
-    def validate(self, req):
-        """
-        Validate action:
-        """
-        self.add_request('validate', req)
+#            response = self.reqmgr.insertRequests(jsondata)
+            print "self.reqmgr.insertRequests(jsondata)"
+            print pprint.pformat(jsondata)
 
     def approve(self, req):
         """
@@ -147,13 +144,14 @@ class ActionMgr(object):
         """
         self.add_request('approve', req)
         status = req.get('status', '')
-        if  status == 'assign-approve':
-            new_status = 'assigned'
-            docs = self.get_requests(req)
-            spec = loadSpecByType(docs[0]["RequestType"])
-            workloads = spec.factoryWorkloadConstruction4docs(docs)
-            for workload in workloads:
-                self.reqmgr.put(workload, {'RequestStatus': new_status})
+        if  status != 'assignment-approved':
+            return 'Can not approve status: %s' % status
+        new_status = 'assigned'
+        docs = self.get_request_names(req)
+        for rname in docs:
+#            self.reqmgr.updateRequestStatus(rname, new_status)
+            print "self.reqmgr.updateRequestStatus(%s, %s)" % (rname, new_status)
+        return 'ok'
 
     def assign(self, req):
         """
@@ -163,34 +161,26 @@ class ActionMgr(object):
         """
         self.add_request('assign', req)
         new_status = 'assign-approve'
-        docs = self.get_requests(req)
-        statuses = list(set(d['RequestStatus'] for d in docs))
-        if  len(statuses) == 1 and statuses[0] == 'new':
-            spec = loadSpecByType(docs[0]["RequestType"])
-            workloads = spec.factoryWorkloadConstruction4docs(docs)
-            for workload in workloads:
-                try:
-                    workload.updateArguments(req)
-                    self.reqmgr.put(workload, {'RequestStatus': new_status})
-                except Exception as exp:
-                    print "Fail to upgrade/put workload document"
-                    print str(exp)
-#                workload.saveCouch(self.reqmgr.config.couch_host, self.reqmgr.config.couch_reqmgr_db)
+        docs = self.get_request_names(req)
+        for rname in docs:
+#            self.reqmgr.updateRequestStatus(rname, new_status)
+            print "self.reqmgr.updateRequestStatus(%s, %s)" % (rname, new_status)
+        return 'ok'
 
     def add_request(self, action, req):
         """
         Add request to internal cache
         """
-        print "\n### %s\n%s" % (action.upper(), pprint.pformat(req))
+        print "\n### add_request %s\n%s" % (action, pprint.pformat(req))
 
-    def get_requests(self, doc):
-        "Extract requests from given documents"
+    def get_request_names(self, doc):
+        "Extract request names from given documents"
         docs = []
         for key in doc.keys():
             if  key.startswith('request'):
                 rid = key.split('request-')[-1]
                 if  rid != 'all':
-                    docs.append(self.reqmgr.reqmgr_db.document(rid))
+                    docs.append(rid)
                 del doc[key]
         return docs
 
@@ -338,7 +328,8 @@ class ReqMgrService(TemplatedPage):
     def add_user(self, **kwds):
         """add_user action"""
         rid = genid(kwds)
-        content = self.templatepage('confirm', ticket=rid, user=self.user())
+        status = "ok" # chagne to whatever it would be
+        content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
         return self.abs_page('generic', content)
 
     @expose
@@ -347,7 +338,8 @@ class ReqMgrService(TemplatedPage):
         rows = self.admin_group.get()
         print "\n### GROUPS", [r for r in rows]
         rid = genid(kwds)
-        content = self.templatepage('confirm', ticket=rid, user=self.user())
+        status = "ok" # chagne to whatever it would be
+        content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
         return self.abs_page('generic', content)
 
     @expose
@@ -357,7 +349,8 @@ class ReqMgrService(TemplatedPage):
         print "\n### TEAMS", kwds, [r for r in rows]
         print "request to add", kwds
         rid = genid(kwds)
-        content = self.templatepage('confirm', ticket=rid, user=self.user())
+        status = "ok" # chagne to whatever it would be
+        content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
         return self.abs_page('generic', content)
 
     ### Request actions ###
@@ -427,7 +420,10 @@ class ReqMgrService(TemplatedPage):
         else:
             raise NotImplemented
         req['status'] = 'assign-approve'
-        self.actionmgr.approve(req)
+        status = self.actionmgr.approve(req)
+#        rid = genid(ids)
+#        content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
+#        return self.abs_page('generic', content)
 
     @expose
     def create(self, **kwds):
@@ -482,16 +478,14 @@ def genobjs(jsondict):
         Confirm action method is called from web UI forms. It grabs input parameters
         and passed them to Action manager.
         """
-        print "\n### confirm_action", kwds
         try:
             action = kwds.pop('action')
-            getattr(self.actionmgr, action)(kwds)
+            status = getattr(self.actionmgr, action)(kwds)
             rid = genid(kwds)
-            print "called action", action, rid
-            content = self.templatepage('confirm', ticket=rid, user=self.user())
+            content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
             return self.abs_page('generic', content)
         except:
-            msg = '<div class="color-red">No action specified</div>'
+            msg = '<div class="color-red">No action is specified</div>'
             self.error(msg)
 
     @expose
@@ -508,7 +502,8 @@ def genobjs(jsondict):
             print "### generate JSON"
             print iobj
             rids.append(genid(iobj))
-        content = self.templatepage('confirm', ticket=rids, user=self.user())
+        status = "ok" # chagne to whatever it would be
+        content = self.templatepage('confirm', ticket=rids, user=self.user(), status=status)
         return self.abs_page('generic', content)
 
     @exposejson
@@ -525,16 +520,11 @@ def genobjs(jsondict):
         """Check status of requests"""
         if  not kwds:
             kwds = {'status':'acquired'}
-        results = self.reqmgr.get(**kwds)
+        results = self.reqmgr.getRequestByStatus(kwds['status'])
         requests = []
-        for rid in results:
-            if  isinstance(rid, basestring):
-                doc = self.doc(rid)
-            elif isinstance(rid, dict):
-                doc = rid[rid.keys()[0]] # new reqmgr2 returns {'rid':{doc}}
-            else:
-                raise Exception('Wrong rid=%s' % rid)
-            requests.append(request_attr(doc))
+        for req in results:
+            for key, doc in req.items():
+                requests.append(request_attr(doc))
         content = self.templatepage('requests', requests=requests)
         return self.abs_page('generic', content)
 

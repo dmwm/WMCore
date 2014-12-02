@@ -12,7 +12,6 @@ import json
 
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMException import WMException
-from WMCore.Services.DBS.DBS3Reader import DBS3Reader
 
 class WMWorkloadToolsException(WMException):
     """
@@ -65,6 +64,9 @@ def strToBool(string):
         raise WMWorkloadToolsException()
     
 def checkDBSUrl(dbsUrl):
+    # use the import statement here since this is packed and used in RunTime code.
+    # dbs client is not shipped with it.
+    from WMCore.Services.DBS.DBS3Reader import DBS3Reader
     if dbsUrl:
         try:
             DBS3Reader(dbsUrl).dbs.serverinfo()

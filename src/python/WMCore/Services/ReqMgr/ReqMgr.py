@@ -94,7 +94,6 @@ class ReqMgr(Service):
                                                                     '_id': 'test_RequestString-OVERRIDE-ME_141125_142331_4966',
                                                                     'inputMode': 'couchDB'}}]
         """
-
         query = self._createQuery({'status': statusList})
         callname = 'request?%s' % query
         return self._getResult(callname, verb = "GET")['result']
@@ -116,14 +115,18 @@ class ReqMgr(Service):
     def updateRequestStatus(self, request, status):
         """
         _updateRequestStatus_
-        returns  list with following format
-        [{'test_RequestString-OVERRIDE-ME_141125_142331_4966': {'BlockBlacklist': [],
+        
+        :param request: request(workflow name)
+        :type reqeust: str
+        :param status: status of workflow to update (i.e. 'assigned')
+        :type status: str
+        :returns:  list of dictionary -- [{'test_RequestString-OVERRIDE-ME_141125_142331_4966': {'BlockBlacklist': [],
                                                                     'BlockWhitelist': [],
                                                                     'CMSSWVersion': 'CMSSW_4_4_2_patch2',
                                                                     ....
                                                                     '_id': 'test_RequestString-OVERRIDE-ME_141125_142331_4966',
                                                                     'inputMode': 'couchDB'}}]
-        need proper error handling if status is not 200 from orignal reporting.
+        TODO: need proper error handling if status is not 200 from orignal reporting.
         """
         
         status = {"RequestStatus": status}
@@ -132,15 +135,16 @@ class ReqMgr(Service):
     def updateRequestProperty(self, request, propDict):
         """
         _updateRequestProperty_
-        returns  list with following format
-        [{'test_RequestString-OVERRIDE-ME_141125_142331_4966': {'BlockBlacklist': [],
+        :param request: request(workflow name)
+        :type reqeust: str
+        :param propDict: request property with key value -- {"SiteWhitelist": ["ABC"], "SiteBlacklist": ["A"], "RequestStatus": "assigned"}
+        :type propDict: dict
+        :returns:  list of dictionary -- [{'test_RequestString-OVERRIDE-ME_141125_142331_4966': {'BlockBlacklist': [],
                                                                     'BlockWhitelist': [],
                                                                     'CMSSWVersion': 'CMSSW_4_4_2_patch2',
                                                                     ....
                                                                     '_id': 'test_RequestString-OVERRIDE-ME_141125_142331_4966',
-                                                                    'inputMode': 'couchDB'}}]
-        need proper error handling if status is not 200 from orignal reporting.
-        ({'result': data}, status_code, response, cache_flag)                                                            
+                                                                    'inputMode': 'couchDB'}}]                                                 
         """
         return self["requests"].put('request/%s' % request, propDict)[0]['result']
     

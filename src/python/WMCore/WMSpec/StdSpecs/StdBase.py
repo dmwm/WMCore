@@ -564,7 +564,8 @@ class StdBase(object):
             self.addDQMHarvestTask(mergeTask, "Merged",
                                    uploadProxy = self.dqmUploadProxy,
                                    periodic_harvest_interval= self.periodicHarvestInterval,
-                                   doLogCollect = doLogCollect)
+                                   doLogCollect = doLogCollect,
+                                   dqmHarvestUnit = self.dqmHarvestUnit)
         return mergeTask
 
     def addCleanupTask(self, parentTask, parentOutputModuleName):
@@ -588,7 +589,7 @@ class StdBase(object):
 
     def addDQMHarvestTask(self, parentTask, parentOutputModuleName, uploadProxy = None,
                           periodic_harvest_interval = 0, periodic_harvest_sibling = False,
-                          parentStepName = "cmsRun1", doLogCollect = True):
+                          parentStepName = "cmsRun1", doLogCollect = True, dqmHarvestUnit = "byRun"):
         """
         _addDQMHarvestTask_
 
@@ -637,7 +638,8 @@ class StdBase(object):
 
         harvestTask.setSplittingAlgorithm("Harvest",
                                           periodic_harvest_interval = periodic_harvest_interval,
-                                          periodic_harvest_sibling = periodic_harvest_sibling)
+                                          periodic_harvest_sibling = periodic_harvest_sibling,
+                                          dqmHarvestUnit = dqmHarvestUnit)
 
         datasetName = "/%s/%s/%s" % (getattr(parentOutputModule, "primaryDataset"),
                                      getattr(parentOutputModule, "processedDataset"),
@@ -670,7 +672,8 @@ class StdBase(object):
         if periodic_harvest_interval:
             self.addDQMHarvestTask(parentTask = parentTask, parentOutputModuleName = parentOutputModuleName, uploadProxy = uploadProxy,
                                    periodic_harvest_interval = 0, periodic_harvest_sibling = True,
-                                   parentStepName = parentStepName, doLogCollect = doLogCollect)
+                                   parentStepName = parentStepName, doLogCollect = doLogCollect,
+                                   dqmHarvestUnit = dqmHarvestUnit)
 
         return
 
@@ -886,7 +889,7 @@ class StdBase(object):
                                             "type" : int},
                      "ProcessingString" : {"default" : None, "attr" : "processingString",
                                            "null" : True},
-                     "LumiList" : {"default" : [], "type" : makeLumiList,
+                     "LumiList" : {"default" : {}, "type" : makeLumiList,
                                       "optional" : True, "validate" : None,
                                       "attr" : "lumiList", "null" : False},
                      "SiteBlacklist" : {"default" : [], "type" : makeList,
@@ -919,6 +922,8 @@ class StdBase(object):
                                        "optional" : False, "validate" : lambda x : x > 0},
                      "PeriodicHarvestInterval" : {"default" : 0, "type" : int,
                                                   "validate" : lambda x : x >= 0},
+                     "DQMHarvestUnit" : {"default" : "byRun", "type" : str,
+                                         "attr" : "dqmHarvestUnit"},
                      "DQMUploadProxy" : {"default" : None, "null" : True,
                                          "attr" : "dqmUploadProxy"},
                      "DQMUploadUrl" : {"default" : "https://cmsweb.cern.ch/dqm/dev",

@@ -61,7 +61,7 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         RESTBaseUnitTestWithDBBackend.setUp(self)
 
         self.setFakeDN()
-        
+        #print "%s" % self.test_authz_key.data
         self.default_status_header = getAuthHeader(self.test_authz_key.data, DEFAULT_STATUS_PERMISSION)
         
         requestPath = os.path.join(getWMBASE(), "test", "data", "ReqMgr", "requests")
@@ -70,6 +70,12 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         rerecoArgs = JsonWrapper.load(rerecoFile)
         self.rerecoCreateArgs = rerecoArgs["createRequest"]
         self.rerecoAssignArgs = rerecoArgs["assignRequest"]
+        
+        lheFile = open(os.path.join(requestPath, "LHEStep0.json"), 'r')
+        lheArgs = JsonWrapper.load(lheFile)
+        self.lheStep0CreateArgs = lheArgs["createRequest"]
+        self.lheStep0AssignArgs = lheArgs["assignRequest"]
+        
         cmsswDoc = {"_id": "software"}
         cmsswDoc[self.rerecoCreateArgs["ScramArch"]] =  []
         cmsswDoc[self.rerecoCreateArgs["ScramArch"]].append(self.rerecoCreateArgs["CMSSWVersion"])
@@ -185,7 +191,37 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         self.assertEqual(respond[1], 200, "put request clone")
         respond = self.getRequestWithNoStale('status=new')
         self.assertEqual(self.resultLength(respond), 1)
+    
+    def testRequestCombinedGetCall(self):
+        """
+        test request composite get call
+        """
         
+        # test post method
+        rerecoReqName = self.insertRequest(self.rerecoCreateArgs)
+        lheReqName = self.insertRequest(self.lheStep0CreateArgs)
+        ## test get method
+        # get by name
+        respond = self.getRequestWithNoStale('name=%s&name=%s' % (rerecoReqName, lheReqName))
+        self.assertEqual(respond[1], 200, "get by name")
+        self.assertEqual(self.resultLength(respond), 2)
+        
+        # get by status
+        respond = self.getRequestWithNoStale('status=new')
+        self.assertEqual(respond[1], 200, "get by status")
+        self.assertEqual(self.resultLength(respond), 2)
+        
+        # get by prepID
+        respond = self.getRequestWithNoStale('prep_id=%s' % self.rerecoCreateArgs["PrepID"])
+        self.assertEqual(respond[1], 200)
+        self.assertEqual(self.resultLength(respond), 2)
+        #import pdb
+        #pdb.set_trace()
+        respond = self.getRequestWithNoStale('campaign=%s' % self.rerecoCreateArgs["Campaign"])
+        self.assertEqual(respond[1], 200)
+        self.assertEqual(self.resultLength(respond), 2)
+        
+            
     def atestRequestClone(self):
         requestName = self.insertRequest(self.rerecoCreateArgs)
         respond = self.cloneRequestWithAuth(requestName)

@@ -211,7 +211,7 @@ class Request(RESTEntity):
         status = kwargs.get("status", False)
         # list of request names
         name = kwargs.get("name", False)
-        type = kwargs.get("type", False)
+        request_type = kwargs.get("request_type", False)
         prep_id = kwargs.get("prep_id", False)
         inputdataset = kwargs.get("inputdataset", False)
         outputdataset = kwargs.get("outputdataset", False)
@@ -228,9 +228,11 @@ class Request(RESTEntity):
             
         request_info =[]
         
-        if status and not team:
+        if status and not team and not request_type:
             request_info.append(self.reqmgr_db_service.getRequestByCouchView("bystatus" , option, status))
         if status and team:
+            request_info.append(self.reqmgr_db_service.getRequestByCouchView("byteamandstatus", option, [[team, status]]))
+        if status and request_type:
             request_info.append(self.reqmgr_db_service.getRequestByCouchView("byteamandstatus", option, [[team, status]]))
         if name:
             request_info.append(self.reqmgr_db_service.getRequestByNames(name))
@@ -249,13 +251,15 @@ class Request(RESTEntity):
         
         #get interaction of the request
         result = self._intersection_of_request_info(request_info);
+        if len(result) == 0:
+            return {}
         return rows([result])
         
     def _intersection_of_request_info(self, request_info):
         requests = {}
         if len(request_info) < 1:
             return requests
-         
+
         request_key_set = set(request_info[0].keys())
         for info in request_info:
             request_key_set = set(request_key_set) & set(info.keys())

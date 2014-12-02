@@ -42,13 +42,6 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
     
     """
     
-    def resultLength(self, response, format="dict"):
-        # result is dict format
-        if format == "dict":
-            return len(response[0]['result'][0])
-        elif format == "list":
-            return  len(response[0]['result'])
-        
         
     def setFakeDN(self):
         # put into ReqMgr auxiliary database under "software" document scram/cmsms
@@ -114,6 +107,13 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         self.reqSvc.updateRequestStatus(requestName, 'assignment-approved')
         response = self.reqSvc.getRequestByStatus('assignment-approved')
         self.assertEqual(len(response), 1)
-    
+        
+        self.reqSvc.updateRequestProperty(requestName, {'RequestStatus': 'assigned', "SiteWhitelist": ["ABC"], "SiteBlacklist": ["A"]})
+        response = self.reqSvc.getRequestByStatus('assignment-approved')
+        self.assertEqual(len(response), 0)
+        response = self.reqSvc.getRequestByStatus('assigned')
+        self.assertEqual(len(response), 1)
+        self.assertEqual(response[0].values()[0]["SiteWhitelist"], ["ABC"])
+        
 if __name__ == '__main__':
     unittest.main()

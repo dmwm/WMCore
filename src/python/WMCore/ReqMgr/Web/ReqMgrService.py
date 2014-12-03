@@ -162,9 +162,10 @@ class ActionMgr(object):
         self.add_request('assign', req)
         new_status = 'assign-approve'
         docs = self.get_request_names(req)
+        req.update({"status": new_status})
         for rname in docs:
-#            self.reqmgr.updateRequestStatus(rname, new_status)
-            print "self.reqmgr.updateRequestStatus(%s, %s)" % (rname, new_status)
+#            self.reqmgr.updateRequestProperty(rname, req)
+            print "self.reqmgr.updateRequestProperty(%s, %s)" % (rname, req)
         return 'ok'
 
     def add_request(self, action, req):

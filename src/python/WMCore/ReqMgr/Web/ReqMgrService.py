@@ -162,9 +162,10 @@ class ActionMgr(object):
         self.add_request('assign', req)
         new_status = 'assign-approve'
         docs = self.get_request_names(req)
+        req.update({"status": new_status})
         for rname in docs:
-#            self.reqmgr.updateRequestStatus(rname, new_status)
-            print "self.reqmgr.updateRequestStatus(%s, %s)" % (rname, new_status)
+#            self.reqmgr.updateRequestProperty(rname, req)
+            print "self.reqmgr.updateRequestProperty(%s, %s)" % (rname, req)
         return 'ok'
 
     def add_request(self, action, req):
@@ -369,7 +370,9 @@ class ReqMgrService(TemplatedPage):
         for row in data:
             for key, val in row.items():
                 docs.append(request_attr(val, attrs))
-        content = self.templatepage('assign',
+        sortby = kwds.get('sort', 'status')
+        docs = sort(docs, sortby)
+        content = self.templatepage('assign', sort=sortby,
                 site_white_list=site_white_list(),
                 site_black_list=site_black_list(),
                 cust_sites=cust_sites(), non_cust_sites=non_cust_sites(),
@@ -519,13 +522,17 @@ def genobjs(jsondict):
     def requests(self, **kwds):
         """Check status of requests"""
         if  not kwds:
-            kwds = {'status':'acquired'}
+            kwds = {}
+        if  'status' not in kwds:
+            kwds.update({'status': 'acquired'})
         results = self.reqmgr.getRequestByStatus(kwds['status'])
-        requests = []
+        docs = []
         for req in results:
             for key, doc in req.items():
-                requests.append(request_attr(doc))
-        content = self.templatepage('requests', requests=requests)
+                docs.append(request_attr(doc))
+        sortby = kwds.get('sort', 'status')
+        docs = sort(docs, sortby)
+        content = self.templatepage('requests', requests=docs, sort=sortby)
         return self.abs_page('generic', content)
 
     @expose

@@ -9,10 +9,26 @@
 <nav class="navbar navbar-right">
     <ul>
         <li>Sort by:</li>
-        <li class="menu-item active underline"><a href="#" onclick="ChangeMenuItem('menu-item', this);">Status</a></li>
-        <li class="menu-item"><a href="#" onclick="ChangeMenuItem('menu-item', this);">Date</a></li>
-        <li class="menu-item"><a href="#" onclick="ChangeMenuItem('menu-item', this);">Id</a></li>
-        <li class="menu-item"><a href="#" onclick="ChangeMenuItem('menu-item', this);">Group</a></li>
+        #if $sort=='status':
+        <li class="menu-item active underline"><a href="#">Status</a></li>
+        #else
+        <li class="menu-item"><a href="$base/requests?sort=status">Status</a></li>
+        #end if
+        #if $sort=='date':
+        <li class="menu-item active underline"><a href="#">Date</a></li>
+        #else
+        <li class="menu-item"><a href="$base/requests?sort=date">Date</a></li>
+        #end if
+        #if $sort=='id':
+        <li class="menu-item active underline"><a href="#">Id</a></li>
+        #else
+        <li class="menu-item"><a href="$base/requests?sort=id">Id</a></li>
+        #end if
+        #if $sort=='group':
+        <li class="menu-item active underline"><a href="#">Group</a></li>
+        #else
+        <li class="menu-item"><a href="$base/requests?sort=group">Group</a></li>
+        #end if
     </ul>
 </nav>
 </header>

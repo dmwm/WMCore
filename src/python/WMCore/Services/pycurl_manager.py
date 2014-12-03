@@ -66,7 +66,7 @@ class RequestHandler(object):
         self.maxredirs = config.get('maxredirs', 5)
 
     def set_opts(self, curl, url, params, headers,
-                 ckey=None, cert=None, capath=None, verbose=None, verb='GET', doseq=True):
+                 ckey=None, cert=None, capath=None, cainfo=None, verbose=None, verb='GET', doseq=True):
         """Set options for given curl object
            param needs to be a dictionary in case of GET, while PUT and POST
            assume it is a string already encoded/quoted with urllib.encode and
@@ -102,6 +102,8 @@ class RequestHandler(object):
         if  capath:
             curl.setopt(pycurl.CAPATH, capath)
             curl.setopt(pycurl.SSL_VERIFYPEER, True)
+            if cainfo:
+                curl.setopt(pycurl.CAINFO, cainfo)
         else:
             curl.setopt(pycurl.SSL_VERIFYPEER, False)
         if  ckey:
@@ -140,11 +142,11 @@ class RequestHandler(object):
         return ResponseHeader(header)
 
     def request(self, url, params, headers=None, verb='GET',
-                verbose=0, ckey=None, cert=None, capath=None, doseq=True, decode=False):
+                verbose=0, ckey=None, cert=None, capath=None, cainfo=None, doseq=True, decode=False):
         """Fetch data for given set of parameters"""
         curl = pycurl.Curl()
         bbuf, hbuf = self.set_opts(curl, url, params, headers,
-                ckey, cert, capath, verbose, verb, doseq)
+                ckey, cert, capath, cainfo, verbose, verb, doseq)
         curl.perform()
         header = self.parse_header(hbuf.getvalue())
         if  header.status == 200:

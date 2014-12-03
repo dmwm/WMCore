@@ -30,15 +30,12 @@ class ReqMgr(Service):
 
         
     def _getResult(self, callname, clearCache = True,
-                   args = None, verb = "GET", encoder = JsonWrapper.loads, decoder = JsonWrapper.loads,
+                   args = None, verb = "GET", encoder = JsonWrapper.loads, 
+                   decoder = JsonWrapper.loads,
                    contentType = None):
         """
         _getResult_
-
-        retrieve JSON/XML formatted information given the service name and the
-        argument dictionaries
-
-        TODO: Probably want to move this up into Service
+        
         """
         result = ''
         file = callname.replace("/", "_")
@@ -57,8 +54,10 @@ class ReqMgr(Service):
     def _createQuery(self, queryDict):
         """
         _createQuery
-        queryDict is the format of 
-        {'name': values} fair. value can be sting, int or list
+        :param queryDict: is the format of {name: values} fair. value can be sting, int or list
+        :type queryDict: dict
+        :returns: url query string
+        
         """
         if self._noStale:
             args = "_nostale=true&"
@@ -75,7 +74,18 @@ class ReqMgr(Service):
     def getRequestByNames(self, names):
 
         """
-        _getRequest_
+        _getRequestByNames_
+        
+        :param names: list or sting of request name(s)
+        :type statusList: list, str
+        :returns:  list of dict or list of request names depending on the detail value
+         -- [{'test_RequestString-OVERRIDE-ME_141125_142331_4966': {'BlockBlacklist': [],
+                                                                    'BlockWhitelist': [],
+                                                                    'CMSSWVersion': 'CMSSW_4_4_2_patch2',
+                                                                    ....
+                                                                    '_id': 'test_RequestString-OVERRIDE-ME_141125_142331_4966',
+                                                                    'inputMode': 'couchDB'}}]
+        TODO: need proper error handling if status is not 200 from orignal reporting.
 
         """
         
@@ -86,29 +96,39 @@ class ReqMgr(Service):
     def getRequestByStatus(self, statusList, detail = False):
         """
         _getRequestByStatus_
-        returns  list of requests
-        [{'test_RequestString-OVERRIDE-ME_141125_142331_4966': {'BlockBlacklist': [],
+        
+        :param statusList: list of status
+        :type statusList: list
+        :param detail: boolean of request list.
+        :type detail: boolean
+        :returns:  list of dict or list of request names depending on the detail value
+         -- [{'test_RequestString-OVERRIDE-ME_141125_142331_4966': {'BlockBlacklist': [],
                                                                     'BlockWhitelist': [],
                                                                     'CMSSWVersion': 'CMSSW_4_4_2_patch2',
                                                                     ....
                                                                     '_id': 'test_RequestString-OVERRIDE-ME_141125_142331_4966',
                                                                     'inputMode': 'couchDB'}}]
+        TODO: need proper error handling if status is not 200 from orignal reporting.
         """
+        
         query = self._createQuery({'status': statusList})
         callname = 'request?%s' % query
         return self._getResult(callname, verb = "GET")['result']
     
+    
     def insertRequests(self, requestDict):
         """
         _insertRequests_
-        returns  list with following format
-        [{'test_RequestString-OVERRIDE-ME_141125_142331_4966': {'BlockBlacklist': [],
+        
+        :param requestDict: request argument dictionary
+        :type requestDict: dict
+        :returns:  list of dictionary -- [{'test_RequestString-OVERRIDE-ME_141125_142331_4966': {'BlockBlacklist': [],
                                                                     'BlockWhitelist': [],
                                                                     'CMSSWVersion': 'CMSSW_4_4_2_patch2',
                                                                     ....
                                                                     '_id': 'test_RequestString-OVERRIDE-ME_141125_142331_4966',
                                                                     'inputMode': 'couchDB'}}]
-        need proper error handling if status is not 200 from orignal reporting.
+        TODO: need proper error handling if status is not 200 from orignal reporting.
         """
         return self["requests"].post('request', requestDict)[0]['result']
 

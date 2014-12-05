@@ -73,7 +73,7 @@ class Harvest(JobFactory):
 
         # create separate jobs for different locations
         self.newGroup()
-        jobCount = 0
+        self.jobCount = 0
         baseName = makeUUID()
         self.newGroup()
 
@@ -85,19 +85,19 @@ class Harvest(JobFactory):
         for location in locationDict.keys():
             
             if dqmHarvestUnit == "byRun":
-                self.createJobByRun(locationDict, location, baseName, harvestType, jobCount, runDict, endOfRun)
+                self.createJobByRun(locationDict, location, baseName, harvestType, runDict, endOfRun)
             else:
                 #TODO: need to add when specific run is specified.
-                self.createMultiRunJob(locationDict, location, baseName, harvestType, jobCount, runDict, endOfRun)
+                self.createMultiRunJob(locationDict, location, baseName, harvestType, runDict, endOfRun)
 
         return
     
-    def createJobByRun(self, locationDict, location, baseName, harvestType, jobCount, runDict, endOfRun):
+    def createJobByRun(self, locationDict, location, baseName, harvestType, runDict, endOfRun):
 
         for run in locationDict[location].keys():
             # Should create at least one job for every location/run, putting this here will do
-            jobCount += 1
-            self.newJob(name = "%s-%s-Harvest-%i" % (baseName, harvestType, jobCount))
+            self.jobCount += 1
+            self.newJob(name = "%s-%s-Harvest-%i" % (baseName, harvestType, self.jobCount))
             for f in locationDict[location][run]:
                 for fileRun in runDict[f['lfn']]:
                     if fileRun.run == run:
@@ -109,10 +109,10 @@ class Harvest(JobFactory):
                 self.currentJob.addBaggageParameter("runIsComplete", True)
         return
     
-    def createMultiRunJob(self, locationDict, location, baseName, harvestType, jobCount, runDict, endOfRun):
+    def createMultiRunJob(self, locationDict, location, baseName, harvestType, runDict, endOfRun):
         
-        jobCount += 1
-        self.newJob(name = "%s-%s-Harvest-%i" % (baseName, harvestType, jobCount))
+        self.jobCount += 1
+        self.newJob(name = "%s-%s-Harvest-%i" % (baseName, harvestType, self.jobCount))
         for run in locationDict[location].keys():
             for f in locationDict[location][run]:
                 for fileRun in runDict[f['lfn']]:

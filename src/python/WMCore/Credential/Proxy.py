@@ -277,6 +277,18 @@ class Proxy(Credential):
 
         return uName
 
+    def getUsername(self, proxy = None):
+        """
+        Get the username from a proxy file.
+        """
+        subject = self.getSubject(proxy)
+        username = ''
+        for cname in subject.split('/'):
+            if cname[:3] == "CN=" and cname[3:].find('proxy') == -1:
+                username = cname[3:]
+                break
+        return username
+
     def checkAttribute( self, proxy = None ):
         """
         Check attributes from a proxy file.

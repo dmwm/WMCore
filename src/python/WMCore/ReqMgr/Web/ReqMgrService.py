@@ -115,6 +115,35 @@ class ActionMgr(object):
         self.cache = {} # cache which keeps actions, TODO make it persistent
         self.specs = {}
 
+        self.example =  {
+    "CMSSWVersion": "CMSSW_4_4_2_patch2",
+    "GlobalTag": "FT_R_44_V11::All",
+    "Campaign": "Campaign-OVERRIDE-ME",     
+    "RequestString": "RequestString-OVERRIDE-ME",
+    "RequestPriority": 1000,
+    "ScramArch": "slc5_amd64_gcc434",
+    "RequestType": "ReReco",
+    "RunWhitelist": [175866, 176933, 180250],
+    "FilterEfficiency": 1,
+    "RunBlacklist": [],
+    "BlockWhitelist": [],
+    "BlockBlacklist": [],       
+    "ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
+    "ConfigCacheID": "7559cf7a427be20436483f82fd108936",
+    "PrepID": "RERECOTEST-0001",
+    "Group": "DATAOPS",
+    "SplittingAlgo": "LumiBased",
+    "LumisPerJob": 8,
+    "TimePerEvent": 60,
+    "Memory": 2394,
+    "SizePerEvent":500,
+    "InputDataset": "/BTag/Run2011B-v1/RAW",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+    "inputMode": "couchDB",
+    "Scenario": "pp",     
+    "OpenRunningTimeout" : 0
+    }
+
     def create(self, req):
         """
         Create action:
@@ -131,16 +160,29 @@ class ActionMgr(object):
 #            data = StringIO.StringIO(json.dumps(jsondata))
 #            cherrypy.request.body = data
 #            print "\n### CALL reqmgr.post()"
-
-#            response = self.reqmgr.insertRequests(jsondata)
             print "self.reqmgr.insertRequests(jsondata)"
             print pprint.pformat(jsondata)
+            # TMP stuff to test insertion with example document
+            doc = self.example
+            for key in ['Campaign', 'RequestString']:
+                if  key in jsondata.keys():
+                    doc.update({key:jsondata[key]})
+            jsondata = doc
+            print pprint.pformat(jsondata)
+            # End of TMP stuff
+            try:
+                response = self.reqmgr.insertRequests(jsondata)
+                print "### ActionMgr::create response", pprint.pformat(response)
+            except Exception as exc:
+                print "ERROR", str(exc)
+                return 'fail'
+        return 'ok'
 
     def approve(self, req):
         """
         Approve action
         should get list of requests to approve via Request::get(status)
-        and change request status from assign-approve to assigned
+        and change request status from assignment-approved to assigned
         """
         self.add_request('approve', req)
         status = req.get('status', '')
@@ -149,8 +191,12 @@ class ActionMgr(object):
         new_status = 'assigned'
         docs = self.get_request_names(req)
         for rname in docs:
-#            self.reqmgr.updateRequestStatus(rname, new_status)
             print "self.reqmgr.updateRequestStatus(%s, %s)" % (rname, new_status)
+            try:
+                self.reqmgr.updateRequestStatus(rname, new_status)
+            except Exception as exc:
+                print "ERROR", str(exc)
+                return 'fail'
         return 'ok'
 
     def assign(self, req):
@@ -160,12 +206,17 @@ class ActionMgr(object):
         and change request status from new to assigned
         """
         self.add_request('assign', req)
-        new_status = 'assign-approve'
+        new_status = 'assignment-approved'
         docs = self.get_request_names(req)
         req.update({"status": new_status})
         for rname in docs:
-#            self.reqmgr.updateRequestProperty(rname, req)
             print "self.reqmgr.updateRequestProperty(%s, %s)" % (rname, req)
+            try:
+                response = self.reqmgr.updateRequestProperty(rname, req)
+                print "response", response
+            except Exception as exc:
+                print "ERROR", str(exc)
+                return 'fail'
         return 'ok'
 
     def add_request(self, action, req):
@@ -209,10 +260,9 @@ class ReqMgrService(TemplatedPage):
         self.cssdir = web_config.get('cssdir', cssdir)
         jsdir  = os.environ.get('RM_JSPATH', os.getcwd()+'/js')
         self.jsdir = web_config.get('jsdir', jsdir)
-        yuidir = os.environ.get('YUI_ROOT', os.getcwd()+'/yui')
-        self.yuidir = web_config.get('yuidir', yuidir)
         # read scripts area and initialize data-ops scripts
         self.sdir = os.environ.get('RM_SCRIPTS', os.getcwd()+'/scripts')
+        self.sdir = web_config.get('sdir', jsdir)
         self.sdict_thr = web_config.get('sdict_thr', 600) # put reasonable 10 min interval
         self.sdict = {'ts':time.time()} # placeholder for data-ops scripts
         self.update_scripts(force=True)
@@ -422,7 +472,7 @@ class ReqMgrService(TemplatedPage):
             req['request-%s'%ids] = 'on'
         else:
             raise NotImplemented
-        req['status'] = 'assign-approve'
+        req['status'] = 'assignment-approved'
         status = self.actionmgr.approve(req)
 #        rid = genid(ids)
 #        content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
@@ -512,11 +562,11 @@ def genobjs(jsondict):
     @exposejson
     def fetch(self, rid):
         "Fetch document for given id"
-        return self.reqmgr.reqmgr_db.document(rid)
+        return self.reqmgr.getRequestByNames(rid)
 
     def doc(self, rid):
         "Fetch document for given id"
-        return self.reqmgr.reqmgr_db.document(rid)
+        return self.reqmgr.getRequestByNames(rid)
 
     @expose
     def requests(self, **kwds):
@@ -594,8 +644,6 @@ def genobjs(jsondict):
         resource = kwargs.get('resource', 'css')
         if  resource == 'css':
             return self.serve(kwargs, self.cssmap, self.cssdir, 'css', True)
-        elif resource == 'yui':
-            return self.serve(kwargs, self.yuimap, self.yuidir)
 
     @exposejs
     @tools.gzip()
@@ -608,8 +656,6 @@ def genobjs(jsondict):
         resource = kwargs.get('resource', 'js')
         if  resource == 'js':
             return self.serve(kwargs, self.jsmap, self.jsdir)
-        elif resource == 'yui':
-            return self.serve(kwargs, self.yuimap, self.yuidir)
 
     def serve_files(self, args, scripts, resource, datatype='', minimize=False):
         """

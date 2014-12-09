@@ -26,9 +26,9 @@ The usual flow of operation is:
 There is a Tier-0 operation mode:
 
 - Look for dataset subscriptions to the Tier-0, even if already marked as subscribed.
-- Find all closed blocks belonging to the Tier-0 datasets
-  which don't contain files produced by active workflows, where
-  an active workflow is defined as a workflow still present in WMBS.
+- Find all closed blocks belonging to the Tier-0 datasets which don't contain files
+  produced by active workflows, where an active workflow is defined as a workflow
+  still present in WMBS
 - Subscribe those blocks as move custodial auto-approved
 
 The Tier-0 mode is activated using config.PhEDExInjector.tier0Mode = True
@@ -38,13 +38,15 @@ Additional options are:
 - config.PhEDExInjector.subscribeDatasets, if False then this worker doesn't run
 """
 
-import threading
 import logging
+import threading
+import time
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 from WMCore.Services.PhEDEx import XMLDrop
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Services.PhEDEx.DataStructs.PhEDExDeletion import PhEDExDeletion
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription, SubscriptionList
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 
@@ -69,6 +71,8 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
         self.dbsUrl = config.DBSInterface.globalDBSUrl
         self.group = getattr(config.PhEDExInjector, "group", "DataOps")
         self.tier0Mode = getattr(config.PhEDExInjector, "tier0Mode", False)
+        self.blockDeletionTimespan = getattr(config.PhEDExInjector, "blockTimeout", 7 * 24 * 3600)
+        self.autoDelete = getattr(config.PhEDExInjector, "autoDelete", True)
 
         # We will map node names to CMS names, that what the spec will have.
         # If a CMS name is associated to many PhEDEx node then choose the MSS option
@@ -93,7 +97,7 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
                                 dbinterface = myThread.dbi)
 
         self.getUnsubscribed = daofactory(classname = "GetUnsubscribedDatasets")
-        self.getUnsubscribedBlocks = daofactory(classname = "GetUnsubscribedBlocks")
+        self.getSubscribedBlocks = daofactory(classname = "GetSubscribedBlocks")
         self.markSubscribed = daofactory(classname = "MarkDatasetSubscribed")
 
         nodeMappings = self.phedex.getNodeMap()
@@ -119,65 +123,78 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
         Run the subscription algorithm as configured
         """
         if self.tier0Mode:
-            self.subscribeTier0Blocks()
+            self.deleteTier0Blocks()
         self.subscribeDatasets()
         return
 
-    def subscribeTier0Blocks(self):
+    def deleteTier0Blocks(self):
         """
-        _subscribeTier0Blocks_
+        _deleteTier0Blocks_
 
-        Subscribe blocks to the Tier-0 where a replica subscription
-        already exists. All Tier-0 subscriptions are move, custodial
-        and autoapproved with high priority.
+        Check blocks on Disk nodes that
+         - have at least one subscription to an MSS node
+         - the block has finished transfer for all of MSS subscriptions
+         - the workflow producing the block is complete and was cleaned up
+
+        All such blocks are then deleted. As this is an ever growing
+        query it can be configured to consider only blocks created
+        after certain date (default 1 week).
         """
-        myThread = threading.currentThread()
-        myThread.transaction.begin()
-
         # Check for candidate blocks for subscription
-        blocksToSubscribe = self.getUnsubscribedBlocks.execute(node = 'T0_CH_CERN',
-                                                               conn = myThread.transaction.conn,
-                                                               transaction = True)
+        candidateBlocks = self.getSubscribedBlocks.execute(timeout = self.blockDeletionTimespan)
 
-        if not blocksToSubscribe:
+        if not candidateBlocks:
             return
 
-        # For the blocks we don't really care about the subscription options
-        # We are subscribing all blocks with the same recipe.
-        subscriptionMap = {}
-        for subInfo in blocksToSubscribe:
-            dataset = subInfo['path']
-            if dataset not in subscriptionMap:
-                subscriptionMap[dataset] = []
-            subscriptionMap[dataset].append(subInfo['blockname'])
+        # We got the blocks, sort them by dataset.
+        blocksByDataset = {}
+        for entry in candidateBlocks:
+            dataset = entry['path']
+            if dataset not in blocksByDataset:
+                blocksByDataset[dataset] = set()
+            blocksByDataset[dataset].add(entry['blockname'])
 
-        site = 'T0_CH_CERN'
-        custodial = 'y'
-        request_only = 'n'
-        move = 'y'
-        priority = 'High'
+        # Check for dataset subscriptions to
+        # T2_CH_CERN and remove those datasets from the mix. Then check for blocks already
+        # transferred to a custodial site, these are the blocks to delete.
+        subscriptions = self.phedex.getSubscriptionMapping(*blocksByDataset.keys())
+        deletableEntries = {}
+        for dataset in blocksByDataset:
+            if dataset in subscriptions and "T2_CH_CERN" in subscriptions[dataset]:
+                # Ignore all the blocks for this dataset
+                logging.debug("Dataset %s is subscribed to T2_CH_CERN" % dataset)
+                continue
+            # Call block replicas per dataset instead of per block
+            blockInfo = self.phedex.getReplicaInfoForBlocks(dataset = dataset, custodial = 'y', complete = 'y')['phedex']['block']
+            for entry in blockInfo:
+                if entry['name'] in blocksByDataset[dataset]:
+                    if dataset not in deletableEntries:
+                        deletableEntries[dataset] = set()
+                    nodes = [x['node'] for x in entry['replica']]
+                    logging.debug("Deleting block %s from T2_CH_CERN as it is already transferred to %s" % (entry['name'], ', '.join(nodes)))
+                    deletableEntries[dataset].add(entry['name'])
 
-        # Get the phedex node
-        phedexNode = self.cmsToPhedexMap[site]["MSS"]
+        if not deletableEntries:
+            return
 
-        logging.error("Subscribing %d blocks, from %d datasets to the Tier-0" % (len(subscriptionMap), sum([len(x) for x in subscriptionMap.values()])))
-
-        newSubscription = PhEDExSubscription(subscriptionMap.keys(),
-                                             phedexNode, self.group,
-                                             custodial = custodial,
-                                             request_only = request_only,
-                                             move = move,
-                                             priority = priority,
-                                             level = 'block',
-                                             blocks = subscriptionMap)
-
-        # TODO: Check for blocks already subscribed
+        deletion = PhEDExDeletion(deletableEntries.keys(),
+                                  'T2_CH_CERN',
+                                  level = 'block',
+                                  comments = 'Blocks automatically deleted from T2_CH_CERN as it has already been processed and transferred to a custodial location',
+                                  blocks = deletableEntries)
 
         try:
             xmlData = XMLDrop.makePhEDExXMLForBlocks(self.dbsUrl,
-                                                     newSubscription.getDatasetsAndBlocks())
+                                                     deletion.getDatasetsAndBlocks())
             logging.debug(str(xmlData))
-            self.phedex.subscribe(newSubscription, xmlData)
+            response = self.phedex.delete(deletion, xmlData)
+            requestId = response['phedex']['request_created'][0]['id']
+            # Auto-approve the request unless noted otherwise
+            if self.autoDelete:
+                self.phedex.updateRequest(requestId, 'approve', 'T2_CH_CERN')
+                logging.info("Deleted %d blocks from T2_CH_CERN" % sum([len(x) for x in deletion.getDatasetsAndBlocks().values()]))
+            else:
+                logging.info("Created deletion requests for %d blocks from T2_CH_CERN" % sum([len(x) for x in deletion.getDatasetsAndBlocks().values()]))
         except Exception, ex:
             logging.error("Something went wrong when communicating with PhEDEx, will try again later.")
             logging.error("Exception: %s" % str(ex))

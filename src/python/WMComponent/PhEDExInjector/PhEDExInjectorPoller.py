@@ -225,6 +225,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 msg =  "Encountered error while attempting to inject blocks to PhEDEx.\n"
                 msg += str(ex)
                 logging.error(msg)
+                logging.exception(ex)
                 logging.debug("Traceback: %s" % str(traceback.format_exc()))
                 
                 raise PhEDExInjectorPassableError(msg)

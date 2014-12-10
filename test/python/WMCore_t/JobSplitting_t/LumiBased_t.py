@@ -74,7 +74,7 @@ class LumiBasedTest(unittest.TestCase):
                                events = 100)
                 lumis = []
                 for lumi in range(lumisPerFile):
-                    lumis.append((i * 100) + lumi)
+                    lumis.append(5 + 10 * (i * 100) + lumi) #lumis should be different
                 newFile.addRun(Run(i, *lumis))
                 newFile.setLocation('malpaquet')
                 testFileset.addFile(newFile)
@@ -237,11 +237,13 @@ class LumiBasedTest(unittest.TestCase):
 
         jobFactory = splitter(package = "WMCore.DataStructs",
                               subscription = testSubscription)
-        
+
         jobGroups = jobFactory(lumis_per_job = 3,
                                halt_job_on_file_boundaries = False,
                                splitOnRun = False,
-                               performance = self.performanceParams)
+                               performance = self.performanceParams,
+                               applyLumiCorrection = True
+                              )
 
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
@@ -250,7 +252,30 @@ class LumiBasedTest(unittest.TestCase):
         self.assertEqual(len(jobs[0]['input_files']), 2)
         self.assertEqual(len(jobs[1]['input_files']), 1)
         self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0L, 1L], [42L, 42L]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {'0': [[100L, 101L]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[100L, 101L]]})
+
+        #Test that we are not removing all the lumis from the jobs anymore
+        removedLumi = self.createSubscription(nFiles = 4, lumisPerFile = 1)
+        #Setting the lumi of job 0 to value 100, as the one of job one
+        runObj = next(iter(removedLumi.getFileset().getFiles()[0]['runs']))
+        runObj.run = 1
+        runObj[0] = 100
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = removedLumi)
+        jobGroups = jobFactory(lumis_per_job = 1,
+                               halt_job_on_file_boundaries = True,
+                               performance = self.performanceParams,
+                               applyLumiCorrection = True)
+        # we need to end up with 3 jobs and one job with two input files
+        jobs = jobGroups[0].jobs
+
+        self.assertEqual(len(jobs), 3)
+        self.assertEqual(len(jobs[0]['input_files']), 2)
+        self.assertEqual(len(jobs[1]['input_files']), 1)
+        self.assertEqual(len(jobs[2]['input_files']), 1)
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {1: [[100L, 100L]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {2: [[200L, 200L]]})
+        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {3: [[300L, 300L]]})
 
 if __name__ == '__main__':
     unittest.main()

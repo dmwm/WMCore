@@ -13,7 +13,6 @@ job in two ways:
 import logging
 
 from WMCore.DataStructs.Run import Run
-from WMCore.DataStructs.LumiList import LumiList
 
 class Mask(dict):
     """
@@ -154,17 +153,6 @@ class Mask(dict):
         self['runAndLumis'][run].append([min(lumis), max(lumis)])
 
         return
-
-    def removeLumiList(self, lumiList):
-        """
-        Remove a lumi list from this data structure
-
-        This requires conversion to LumiList to do the lumi algebra an
-        may be computationally expensive for a large number of lumis.
-        """
-        myLumis = LumiList(compactList=self['runAndLumis'])
-        myLumis = myLumis - lumiList
-        self['runAndLumis'] = myLumis.getCompactList()
 
     def getRunAndLumis(self):
         """

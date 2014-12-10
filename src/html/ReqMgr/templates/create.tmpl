@@ -27,56 +27,48 @@ Please use the following table to fill out template form. If you need to extend 
 fill free to switch to JSON format and edit JSON directly.
 </strong>
 $table
+
+    <table><tr><td>
+    Apply a script:
+    </td><td>
+    <select onChange="javascript:ajaxScript('$base')" name="script">
+    <option value="">None</option>
+    #for item in $scripts
+    <option value="$item">$item script</option>
+    #end for
+    </select>
+    </td></tr></table>
+
     <p class="units-row">
-    <div id="confirmation"></div>
     <button class="btn btn-green unit-push-right">Create</button>
     </p>
 </div>
 </form>
 <form method="post" action="$base/confirm_action" class="forms" name="$name JSON">
 <div name="edit-json" id="edit-json" class="hide">
-<textarea class="editor height-200" name="jsondict">
-$jsondata
-</textarea>
-    <br/>
+    <input type="hidden" name="action" value="create" />
+    <textarea class="editor height-200" name="jsondict">
+    $jsondata
+    </textarea>
+
+    <table><tr><td>
+    Apply a script:
+    </td><td>
+    <select onChange="javascript:ajaxScript('$base')" name="script">
+    <option value="">None</option>
+    #for item in $scripts
+    <option value="$item">$item script</option>
+    #end for
+    </select>
+    </td></tr></table>
+
     <p class="units-row">
     <button class="btn btn-green unit-push-right">Create</button>
     </p>
 </div>
 </form>
-<div>
 
 <hr/>
-
-<h4>Create series of JSON requests</h4>
-You can place your python snippet below to either update given JSON
-template or generate out of it multiple JSON objects. To do so, please
-use <strong>jsondict</strong> object as your starting point.
-</br>
-</br>
-You may also choose your favorite snippet from existing data-ops scripts:
-<select onChange="javascript:ajaxScript('$base')" id="snippets">
-#for item in $scripts
-<option value="$item">$item script</option>
-#end for
-</select>
-
-<form method="post" action="$base/generate_objs" class="forms">
-<textarea style="display:none;" name="jsondict">
-$jsondata
-</textarea>
-<textarea class="editor height-200" name="code" id="code">
-def genobjs(jsondict):
-    for item in xrange(10):
-        mydict = dict(jsondict)
-        mydict.update({'myfield': item})
-        yield mydict
-</textarea>
-<br/>
-<p class="units-row">
-    <button class="btn btn-green unit-push-right">Create</button>
-</p>
-</form>
 
 <script>
 function ActivateTable() {

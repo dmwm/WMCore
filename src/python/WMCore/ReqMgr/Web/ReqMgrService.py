@@ -13,6 +13,7 @@ import sys
 import time
 import json
 import pprint
+from types import GeneratorType
 try:
     import cStringIO as StringIO
 except:
@@ -152,7 +153,7 @@ class ActionMgr(object):
         self.add_request('create', req)
         if  isinstance(req, dict):
             docs = [req]
-        elif isinstnace(req, list):
+        elif isinstance(req, list) or isinstance(req, GeneratorType):
             docs = req
         else:
             raise Exception('Unsupported request type')
@@ -514,12 +515,10 @@ class ReqMgrService(TemplatedPage):
         Return script for given name, all scripts should be placed in
         RM_SCRIPTS area. We use self.sdict look-up for given name,
         otherwise use default script example"""
-        default = """
+        default = \
+"""
 def genobjs(jsondict):
-    for item in xrange(10):
-        mydict = dict(jsondict)
-        mydict.update({'myfield': item})
-        yield mydict
+    yield jsondict
 """
         self.update_scripts()
         value = self.sdict.get(name, default)
@@ -533,31 +532,34 @@ def genobjs(jsondict):
         """
         try:
             action = kwds.pop('action')
-            status = getattr(self.actionmgr, action)(kwds)
-            rid = genid(kwds)
-            content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
+            if  'script' in kwds: # we got a script to apply
+                script = kwds.pop('script')
+                jsondict = json.loads(kwds.get('jsondict', "{}"))
+                if  not jsondict:
+                    jsondict = kwds
+                if  script == "":
+                    docs = [jsondict]
+                    rids = genid(jsondict)
+                else:
+                    docs = self.generate_objs(script, jsondict)
+                    rids = [genid(o) for o in docs]
+                status = getattr(self.actionmgr, action)(docs)
+            else:
+                status = getattr(self.actionmgr, action)(kwds)
+                rids = genid(kwds)
+            content = self.templatepage('confirm', ticket=rids, user=self.user(), status=status)
             return self.abs_page('generic', content)
         except:
             msg = '<div class="color-red">No action is specified</div>'
             self.error(msg)
 
-    @expose
-    def generate_objs(self, **kwargs):
-        """create page interface: generate objects from givem JSON template"""
-        jsondict = json.loads(kwargs.get('jsondict'))
-        code = kwargs.get('code')
+    def generate_objs(self, script, jsondict):
+        """Generate objects from givem JSON template"""
+        code = self.scripts(script)
         if  code.find('def genobjs(jsondict)') == -1:
             return self.error("Improper python snippet, your code should start with <b>def genobjs(jsondict)</b> function")
         exec(code) # code snippet must starts with genobjs function
-        objs = genobjs(jsondict)
-        rids = []
-        for iobj in objs:
-            print "### generate JSON"
-            print iobj
-            rids.append(genid(iobj))
-        status = "ok" # chagne to whatever it would be
-        content = self.templatepage('confirm', ticket=rids, user=self.user(), status=status)
-        return self.abs_page('generic', content)
+        return [r for r in genobjs(jsondict)]
 
     @exposejson
     def fetch(self, rid):

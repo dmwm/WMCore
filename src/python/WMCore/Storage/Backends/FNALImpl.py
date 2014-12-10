@@ -127,10 +127,9 @@ class FNALImpl(StageOutImpl):
                 targetPFN += "\?eos.targetsize=%s\&eos.checksum=%s" % (original_size, checksums['adler32'])
                 print "Local File Checksum is: %s\"\n" % checksums['adler32']
             
-            # remove the file first befor it writes. 
-            # there is eos bug when disk partition is full.
-            result = "/bin/rm -f %s" % pfnWithoutChecksum
-            result += "; /usr/bin/xrdcp -d 0 "
+            # always overwrite the output
+
+            result = "/usr/bin/xrdcp -d 0 -f "
             if options != None:
                 result += " %s " % options
             result += " %s " % sourcePFN

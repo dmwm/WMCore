@@ -8,6 +8,7 @@ import cherrypy
 from datetime import datetime, timedelta
 
 import WMCore.Lexicon
+from WMCore.REST.Error import InvalidParameter
 from WMCore.Database.CMSCouch import CouchError
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
@@ -43,20 +44,25 @@ class Request(RESTEntity):
         # move the validated argument to safe
         # make param empty
         # other wise raise the error 
-        
-        if method in ['GET']:
-            for prop in param.kwargs:
-                safe.kwargs[prop] = param.kwargs[prop]
-            
-            for prop in safe.kwargs:
-                del param.kwargs[prop]
+        try:
+            if method in ['GET']:
+                for prop in param.kwargs:
+                    safe.kwargs[prop] = param.kwargs[prop]
                 
-        if method == 'PUT':
-            self.validate_request_update_args(param, safe)
+                for prop in safe.kwargs:
+                    del param.kwargs[prop]
+                    
+            if method == 'PUT':
+                self.validate_request_update_args(param, safe)
+            
+            if method == 'POST':
+                self.validate_request_create_args(safe)
+        except Exception, ex:
+            #TODO add proper error message instead of trace back
+            import traceback
+            msg = traceback.format_exc()
+            raise InvalidParameter("Missing parameter: %s\n%s" % (str(ex), msg))
         
-        if method == 'POST':
-            self.validate_request_create_args(safe)
-    
     def validate_request_update_args(self, param, safe):
         """
         param and safe structure is RESTArgs structure: named tuple

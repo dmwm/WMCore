@@ -15,6 +15,7 @@ from WMCore.DataStructs.Run import Run
 
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.DBS3Buffer.DBSBufferUtil import DBSBufferUtil
+from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBlock
 
 class DBSBufferFileTest(unittest.TestCase):
     def setUp(self):
@@ -550,12 +551,24 @@ class DBSBufferFileTest(unittest.TestCase):
         Verify that the [Set|Get]Block DAOs work correctly.
         """
         myThread = threading.currentThread()
-        uploadFactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
+
+        dataset = "/Cosmics/CRUZET09-PromptReco-v1/RECO"
+
+        uploadFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
                                    logger = myThread.logger,
                                    dbinterface = myThread.dbi)
 
-        createAction = uploadFactory(classname = "SetBlockStatus")
-        createAction.execute(block = "someblockname", locations = ["se1.cern.ch"])
+        datasetAction = uploadFactory(classname = "NewDataset")
+        createAction = uploadFactory(classname = "CreateBlocks")
+
+        datasetAction.execute(datasetPath = dataset)
+
+        newBlock = DBSBlock(name = "someblockname",
+                            location = "se1.cern.ch",
+                            das = None, workflow = None)
+        newBlock.setDataset(dataset, 'data', 'VALID')
+
+        createAction.execute(blocks = [newBlock])
 
         setBlockAction = self.daoFactory(classname = "DBSBufferFiles.SetBlock")
         getBlockAction = self.daoFactory(classname = "DBSBufferFiles.GetBlock")
@@ -565,7 +578,7 @@ class DBSBufferFileTest(unittest.TestCase):
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                               appFam = "RECO", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
-        testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        testFile.setDatasetPath(dataset)
 
         testFile.create()
 

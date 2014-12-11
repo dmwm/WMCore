@@ -46,6 +46,7 @@ class Create(DBCreator):
                     move                   INTEGER DEFAULT 0,
                     priority               VARCHAR(10) DEFAULT 'Low',
                     subscribed             INTEGER DEFAULT 0,
+                    delete_blocks          INTEGER,
                     FOREIGN KEY (dataset_id) REFERENCES dbsbuffer_dataset(id)
                         ON DELETE CASCADE,
                     UNIQUE (dataset_id, site, custodial, auto_approve, move, priority)
@@ -144,11 +145,15 @@ class Create(DBCreator):
         self.create["10dbsbuffer_block"] = \
           """CREATE TABLE dbsbuffer_block (
              id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
+             dataset_id   BIGINT UNSIGNED NOT NULL,
              blockname    VARCHAR(250) NOT NULL,
              location     INTEGER      NOT NULL,
              create_time  INTEGER,
              status       VARCHAR(20),
              status3      VARCHAR(20) DEFAULT 'Pending',
+             deleted      INTEGER DEFAULT 0,
+             FOREIGN KEY (dataset_id) REFERENCES dbsbuffer_dataset(id)
+               ON DELETE CASCADE,
              UNIQUE(blockname, location))ENGINE=InnoDB"""
 
         self.create["11dbsbuffer_checksum_type"] = \

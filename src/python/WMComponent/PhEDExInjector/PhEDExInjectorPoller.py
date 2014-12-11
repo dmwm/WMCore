@@ -85,11 +85,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                                 logger = self.logger,
                                 dbinterface = myThread.dbi)
         self.setStatus = daofactory(classname = "DBSBufferFiles.SetPhEDExStatus")
-
-        daofactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
-                                logger = self.logger,
-                                dbinterface = myThread.dbi)
-        self.setBlockStatus = daofactory(classname = "SetBlockStatus")
+        self.setBlockClosed = daofactory(classname = "SetBlockClosed")
 
         nodeMappings = self.phedex.getNodeMap()
         for node in nodeMappings["phedex"]["node"]:
@@ -316,8 +312,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 for datasetName in migratedBlocks[siteName]:
                     for blockName in migratedBlocks[siteName][datasetName]:
                         logging.debug("Closing block %s" % blockName)
-                        self.setBlockStatus.execute(blockName, locations = None,
-                                                    open_status = "Closed",
+                        self.setBlockClosed.execute(blockName,
                                                     conn = myThread.transaction.conn,
                                                     transaction = myThread.transaction)
             else:

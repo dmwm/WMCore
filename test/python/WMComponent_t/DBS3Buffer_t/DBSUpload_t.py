@@ -23,10 +23,12 @@ from WMCore.DAOFactory      import DAOFactory
 from WMCore.DataStructs.Run import Run
 from WMCore.Services.UUID   import makeUUID
 
-from WMComponent.DBS3Buffer.DBSBufferFile   import DBSBufferFile
-from WMComponent.DBS3Buffer.DBSBufferUtil   import DBSBufferUtil
+from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
+from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
+from WMComponent.DBS3Buffer.DBSBufferUtil import DBSBufferUtil
+from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBlock
+
 from WMComponent.DBS3Buffer.DBSUploadPoller import DBSUploadPoller
-from WMComponent.DBS3Buffer.DBSBufferBlock  import DBSBlock
 
 from WMQuality.Emulators.DBSClient.DBS3API import DbsApi as MockDbsApi
 from WMQuality.TestInit     import TestInit
@@ -142,6 +144,11 @@ class DBSUploadTest(unittest.TestCase):
                                   configContent = "MOREGIBBERISH")
             testFile.setDatasetPath("/Cosmics/%s-v1/RAW" % (acqEra))
 
+            testFile['block_close_max_wait_time'] = 1000000
+            testFile['block_close_max_events'] = 1000000
+            testFile['block_close_max_size'] = 1000000
+            testFile['block_close_max_files'] = 1000000
+
             lumis = []
             for j in range(10):
                 lumis.append((i * 10) + j)
@@ -174,6 +181,11 @@ class DBSUploadTest(unittest.TestCase):
                                   configContent = "MOREGIBBERISH")
             testFile.setDatasetPath("/Cosmics/%s-v1/RAW" % (acqEra))
 
+            testFile['block_close_max_wait_time'] = 1000000
+            testFile['block_close_max_events'] = 1000000
+            testFile['block_close_max_size'] = 1000000
+            testFile['block_close_max_files'] = 1000000
+
             lumis = []
             for j in range(10):
                 lumis.append((i * 10) + j)
@@ -194,6 +206,11 @@ class DBSUploadTest(unittest.TestCase):
                                   appFam = "RECO", psetHash = "GIBBERISH",
                                   configContent = "MOREGIBBERISH")
             testFile.setDatasetPath("/Cosmics/%s-v1/RECO" % (acqEra))
+
+            testFile['block_close_max_wait_time'] = 1000000
+            testFile['block_close_max_events'] = 1000000
+            testFile['block_close_max_size'] = 1000000
+            testFile['block_close_max_files'] = 1000000
 
             lumis = []
             for j in range(20):
@@ -389,12 +406,17 @@ class DBSUploadTest(unittest.TestCase):
         allFiles = parentFiles + moreParentFiles
         allBlocks = []
         for i in range(4):
+            DBSBufferDataset(parentFiles[0]["datasetPath"]).create()
             blockName = parentFiles[0]["datasetPath"] + "#" + makeUUID()
-            dbsBlock = DBSBlock(blockName, "malpaquet", 1)
+            dbsBlock = DBSBlock(blockName,
+                                location = "malpaquet",
+                                das =  None,
+                                workflow = None)
             dbsBlock.status = "Open"                
+            dbsBlock.setDataset(parentFiles[0]["datasetPath"], 'data', 'VALID')
             dbsUtil.createBlocks([dbsBlock])
             for file in allFiles[i * 5 : (i * 5) + 5]:
-                dbsBlock.addFile(file)
+                dbsBlock.addFile(file, 'data', 'VALID')
                 dbsUtil.setBlockFiles({"block": blockName, "filelfn": file["lfn"]})
                 if i < 2:
                     dbsBlock.status = "InDBS"
@@ -402,12 +424,17 @@ class DBSUploadTest(unittest.TestCase):
             dbsUtil.updateFileStatus([dbsBlock], "InDBS")
             allBlocks.append(dbsBlock)            
 
+        DBSBufferDataset(childFiles[0]["datasetPath"]).create()
         blockName = childFiles[0]["datasetPath"] + "#" + makeUUID()
-        dbsBlock = DBSBlock(blockName, "malpaquet", 1)
+        dbsBlock = DBSBlock(blockName,
+                            location = "malpaquet",
+                            das =  None,
+                            workflow = None)
         dbsBlock.status = "InDBS"
+        dbsBlock.setDataset(childFiles[0]["datasetPath"], 'data', 'VALID')
         dbsUtil.createBlocks([dbsBlock])
         for file in childFiles:
-            dbsBlock.addFile(file)
+            dbsBlock.addFile(file, 'data', 'VALID')
             dbsUtil.setBlockFiles({"block": blockName, "filelfn": file["lfn"]})
 
         dbsUtil.updateFileStatus([dbsBlock], "InDBS")

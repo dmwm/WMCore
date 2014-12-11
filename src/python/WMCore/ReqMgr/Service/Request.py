@@ -3,30 +3,23 @@ ReqMgr request handling.
 
 """
 
-import time
 import cherrypy
-from datetime import datetime, timedelta
 
-import WMCore.Lexicon
 from WMCore.REST.Error import InvalidParameter
 from WMCore.Database.CMSCouch import CouchError
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkloadTools import loadSpecByType
 from WMCore.Wrappers import JsonWrapper
 
 from WMCore.REST.Server import RESTEntity, restcall, rows
-from WMCore.REST.Auth import authz_match
-from WMCore.REST.Tools import tools
-from WMCore.REST.Validation import validate_str, validate_strlist
+from WMCore.REST.Validation import validate_str
 
 import WMCore.ReqMgr.Service.RegExp as rx
-from WMCore.ReqMgr.Auth import getWritePermission
-from WMCore.ReqMgr.DataStructs.Request import initialize_request_args, generateRequestName
-from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST, check_allowed_transition
+from WMCore.ReqMgr.DataStructs.Request import initialize_request_args
+from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_TRANSITION
 from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
-from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition
+from WMCore.ReqMgr.Utils.Validation import validate_request_create_args, \
+               validate_request_update_args
 
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 
@@ -39,6 +32,60 @@ class Request(RESTEntity):
         # this need for the post validtiaon 
         self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)
         
+    def _requestArgMapFromBrowser(self, request_args):
+        """
+        This is specific mapping function data from browser
+        
+        TO: give a key word so it doesn't have to loop though in general
+        """
+        docs = []
+        for doc in request_args:
+            for key in doc.keys():
+                if  key.startswith('request'):
+                    rid = key.split('request-')[-1]
+                    if  rid != 'all':
+                        docs.append(rid)
+                    del doc[key]
+        return docs
+    
+    def _validateGET(self, param, safe):
+        #TODO: need proper validation but for now pass everything
+        for prop in param.kwargs:
+            safe.kwargs[prop] = param.kwargs[prop]
+        
+        for prop in safe.kwargs:
+            del param.kwargs[prop]
+        return
+    
+    def _validateRequestBase(self, param, safe, valFunc):
+        
+        data = cherrypy.request.body.read()
+        if data:
+            request_args = JsonWrapper.loads(data)
+            
+            if isinstance(request_args, dict):
+                request_args = [request_args]
+        else:
+            # actually this is error case
+            cherrypy.log(str(param.kwargs))
+            request_args = {}
+            for prop in param.kwargs:
+                
+                if prop == "action":
+                    request_args["CMSSWVersion"] = "CMSSW-test"
+                else:
+                    request_args[prop] = param.kwargs[prop]
+            for prop in request_args:
+                if prop == "CMSSWVersion":
+                    del param.kwargs["action"] 
+        
+        safe.kwargs['workload_pair_list'] = []
+        if isinstance(request_args, dict):
+            request_args = [request_args]
+        for args in request_args:
+            workload, r_args = valFunc(args, self.config, self.reqmgr_db_service, param)
+            safe.kwargs['workload_pair_list'].append((workload, r_args))
+            
     def validate(self, apiobj, method, api, param, safe):
         # to make validate successful
         # move the validated argument to safe
@@ -46,125 +93,26 @@ class Request(RESTEntity):
         # other wise raise the error 
         try:
             if method in ['GET']:
-                for prop in param.kwargs:
-                    safe.kwargs[prop] = param.kwargs[prop]
-                
-                for prop in safe.kwargs:
-                    del param.kwargs[prop]
+                self._validateGET(param, safe)
                     
             if method == 'PUT':
-                self.validate_request_update_args(param, safe)
-            
+                self._validateRequestBase(param, safe, validate_request_update_args)
+                #TO: handle multiple clone
+#                 if len(param.args) == 2:
+#                     #validate clone case
+#                     if param.args[0] == "clone":
+#                         param.args.pop()
+#                         return None, request_args
+                    
             if method == 'POST':
-                self.validate_request_create_args(safe)
+                self._validateRequestBase(param, safe, validate_request_create_args)    
+                    
         except Exception, ex:
             #TODO add proper error message instead of trace back
             import traceback
             msg = traceback.format_exc()
+            print msg
             raise InvalidParameter("Missing parameter: %s\n%s" % (str(ex), msg))
-        
-    def validate_request_update_args(self, param, safe):
-        """
-        param and safe structure is RESTArgs structure: named tuple
-        RESTArgs(args=[], kwargs={})
-        
-        validate post request
-        1. read data from body
-        2. validate the permission (authentication)
-        3. validate state transition (against previous state from couchdb)
-        2. validate using workload validation
-        3. convert data from body to arguments (spec instance, argument with default setting)
-        
-        TODO: rasie right kind of error with clear message 
-        """
-        #convert request.body to json (python dict)
-        data = cherrypy.request.body.read()
-        if data:
-            request_args = JsonWrapper.loads(data)
-        else:
-            request_args = {}
-            
-        if len(param.args) == 2:
-            #validate clone case
-            if param.args[0] == "clone":
-                request_name = param.args[1]
-                param.args.pop()
-                param.args.pop()
-                safe.kwargs['workload'] = None
-                safe.kwargs['request_args'] = {"OriginalRequestName": request_name}
-                return 
-        else:
-            request_name = param.args[0]
-            param.args.pop()
-        
-        couchurl =  '%s/%s' % (self.config.couch_host, self.config.couch_reqmgr_db)
-        workload = WMWorkloadHelper()
-        # param structure is RESTArgs structure.
-        workload.loadSpecFromCouch(couchurl, request_name)
-        
-        # first validate the permission by status and request type.
-        # if the status is not set only ReqMgr Admin can change the the values
-        # TODO for each step, assigned, approved, announce find out what other values
-        # can be set
-        request_args["RequestType"] = workload.requestType()
-        permission = getWritePermission(request_args)
-        authz_match(permission['role'], permission['group'])
-        del request_args["RequestType"]
-        
-        
-        #validate the status
-        if request_args.has_key("RequestStatus"):
-            self.validate_state_transition(request_name, request_args["RequestStatus"])
-            # delete request_args since it is not part of spec argument sand validation
-            args_without_status = {}
-            args_without_status.update(request_args)
-            del args_without_status["RequestStatus"]
-        else:
-            args_without_status = request_args
-        # validate the arguments against the spec argumentSpecdefinition
-        workload.validateArgument(args_without_status)
-
-        safe.kwargs['workload'] = workload
-        safe.kwargs['request_args'] = request_args
-        return 
-            
-    def validate_request_create_args(self, safe):
-        """
-        validate post request
-        1. read data from body
-        2. validate using spec validation
-        3. convert data from body to arguments (spec instance, argument with default setting) 
-        TODO: rasie right kind of error with clear message 
-        """
-        request_args = JsonWrapper.loads(cherrypy.request.body.read())
-        
-        initialize_request_args(request_args, self.config)
-        
-        #check the permission for creating the request
-        permission = getWritePermission(request_args)
-        authz_match(permission['role'], permission['group'])
-        
-        # get the spec type and validate arguments
-        spec = loadSpecByType(request_args["RequestType"])
-        workload = spec.factoryWorkloadConstruction(request_args["RequestName"], 
-                                                    request_args)
-        safe.kwargs['workload'] = workload
-        safe.kwargs['request_args'] = request_args
-        return
-        
-    def validate_state_transition(self, request_name, new_state) :
-        """
-        validate state transition by getting the current data from
-        couchdb
-        """
-        requests = self.reqmgr_db_service.getRequestByNames(request_name)
-        # generator object can't be subscribed: need to loop.
-        # only one row should be returned
-        for request in requests.values():
-            current_state = request["RequestStatus"]
-        if not check_allowed_transition(current_state, new_state):
-            raise InvalidStateTransition(current_state, new_state)
-        return
     
     def initialize_clone(self, request_name):
         requests = self.reqmgr_db_service.getRequestByNames(request_name)
@@ -178,19 +126,6 @@ class Request(RESTEntity):
                                                     clone_args)
         return (workload, clone_args)
     
-#             
-#             permittedParams = ["statusList", "names", "type", "prepID", "inputDataset", 
-#                                "outputDataset", "dateRange", "campaign", "workqueue", "team"]
-#             validate_strlist("statusList", param, safe, '*')
-#             validate_strlist("names", param, safe, rx.RX_REQUEST_NAME)
-#             validate_str("type", param, safe, "*", optional=True)
-#             validate_str("prepID", param, safe, "*", optional=True)
-#             validate_str("inputDataset", param, safe, rx.RX_REQUEST_NAME, optional=True)
-#             validate_str("outputDataset", param, safe, rx.RX_REQUEST_NAME, optional=True)
-#             validate_strlist("dateRagne", param, safe, rx.RX_REQUEST_NAME)
-#             validate_str("campaign", param, safe, "*", optional=True)
-#             validate_str("workqueue", param, safe, "*", optional=True)
-#             validate_str("team", param, safe, "*", optional=True)
 
     @restcall
     def get(self, **kwargs):
@@ -317,9 +252,8 @@ class Request(RESTEntity):
 
         return requestAgentUrlList;
 
-    @restcall
-    def put(self, workload, request_args):
-        
+    def _updateRequest(self, workload, request_args):
+                       
         if workload == None:
             (workload, request_args) = self.initialize_clone(request_args["OriginalRequestName"])
             return self.post(workload, request_args)
@@ -331,6 +265,15 @@ class Request(RESTEntity):
             workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
         
         report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args)
+        return report
+    
+    @restcall
+    def put(self, workload_pair_list):
+        "workloadPairList is a list of tuple containing (workload, requeat_args)"
+        report = []
+        for workload, request_args in workload_pair_list:
+            report = self._updateRequest(workload, request_args)
+            
         return report 
     
     @restcall
@@ -348,7 +291,7 @@ class Request(RESTEntity):
         
     
     @restcall
-    def post(self, workload, request_args):
+    def post(self, workload_pair_list):
         """
         Create and update couchDB with  a new request. 
         request argument is passed from validation 
@@ -366,15 +309,17 @@ class Request(RESTEntity):
             (from ReqMgrRESTModel.putRequest)
                 
         """
-        cherrypy.log("INFO: Create request, input args: %s ..." % request_args)
         
         # storing the request document into Couch
-
-        workload.saveCouch(request_args["CouchURL"], request_args["CouchWorkloadDBName"],
-                           metadata=request_args)
-        
+        request_args_list = []
+        for workload, request_args in workload_pair_list:
+            cherrypy.log("INFO: Create request, input args: %s ..." % request_args)
+            request_args_list.append(request_args)
+            workload.saveCouch(request_args["CouchURL"], request_args["CouchWorkloadDBName"],
+                               metadata=request_args)
+            
         #TODO should return something else instead on whole schema
-        return [request_args]
+        return request_args_list
         
 
 class RequestStatus(RESTEntity):

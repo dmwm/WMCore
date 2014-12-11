@@ -413,7 +413,7 @@ class ReqMgrService(TemplatedPage):
         if  not kwds:
             kwds = {}
         if  'status' not in kwds:
-            kwds.update({'status': 'new'})
+            kwds.update({'status': 'assignment-approved'})
         docs = []
         attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus']
         data = self.reqmgr.getRequestByStatus(statusList=[kwds['status']])
@@ -444,7 +444,7 @@ class ReqMgrService(TemplatedPage):
         if  not kwds:
             kwds = {}
         if  'status' not in kwds:
-            kwds.update({'status': 'assignment-approved'})
+            kwds.update({'status': 'new'})
         kwds.update({'_nostale':True})
         docs = []
         attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus']

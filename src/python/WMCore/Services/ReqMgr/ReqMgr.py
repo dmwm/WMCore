@@ -150,7 +150,8 @@ class ReqMgr(Service):
         """
         
         status = {"RequestStatus": status}
-        return self["requests"].put('request/%s' % request, status)[0]['result']
+        status["RequestName"] = request
+        return self["requests"].put('request', status)[0]['result']
 
     def updateRequestProperty(self, request, propDict):
         """
@@ -166,6 +167,7 @@ class ReqMgr(Service):
                                                                     '_id': 'test_RequestString-OVERRIDE-ME_141125_142331_4966',
                                                                     'inputMode': 'couchDB'}}]                                                 
         """
+        propDict["RequestName"] = request
         return self["requests"].put('request/%s' % request, propDict)[0]['result']
     
         

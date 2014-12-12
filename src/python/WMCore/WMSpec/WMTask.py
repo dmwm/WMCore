@@ -1282,6 +1282,30 @@ class WMTaskHelper(TreeHelper):
         """
         self.deleteNode(childName)
 
+    def setPrepID(self, prepID):
+        """
+        _setPrepID_
+
+        Set the prepID to for all the tasks below
+        """
+        # if prepID doesn exist set it, if exist ignore.
+        if not self.getPrepID() and prepID:
+            self.data.prepID = prepID
+        
+        prepID = self.getPrepID()
+        # set child prepid
+        if prepID:
+            for task in self.childTaskIterator():
+                task.setPrepID(prepID)
+    
+    def getPrepID(self):
+        """
+        _getPrepID_
+
+        Get the prepID for the workflow
+        """
+        return getattr(self.data, 'prepID', None)
+    
 class WMTask(ConfigSectionTree):
     """
     _WMTask_
@@ -1296,6 +1320,7 @@ class WMTask(ConfigSectionTree):
         self.objectType = self.__class__.__name__
         self.pathName = None
         self.taskType = None
+        self.prepID = None
         self.section_("steps")
         self.steps.topStepName = None
         self.section_("parameters")

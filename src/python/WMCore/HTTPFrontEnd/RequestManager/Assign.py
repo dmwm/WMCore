@@ -386,5 +386,6 @@ class Assign(WebAPI):
         couchDb.updateDocument(request["RequestName"], "ReqMgr", "updaterequest",
                                fields={"AcquisitionEra": reqDetails["AcquisitionEra"],
                                        "Teams": JsonWrapper.JSONEncoder().encode(kwargs["Teams"]),
+                                       "OutputDatasets": JsonWrapper.JSONEncoder().encode(outputDatasets), 
                                        "SiteWhitelist": JsonWrapper.JSONEncoder().encode(whiteList),
                                        "SiteBlacklist": JsonWrapper.JSONEncoder().encode(blackList)})

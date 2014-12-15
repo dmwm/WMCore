@@ -145,6 +145,22 @@ class ActionMgr(object):
     "OpenRunningTimeout" : 0
     }
 
+    def parse_data(self, jdict):
+        "Parse json dictionary and align its values"
+        # TODO: I need to convert strings to int's for some attributes, e.g. RunList, etc.
+        for key, val in jdict.items():
+            if  isinstance(val, basestring) and val.find(",") != -1: # comma list
+                jdict[key] = val.split(",")
+        print pprint.pformat(jdict)
+        # TMP stuff to test insertion with example document
+        doc = self.example
+        for key in ['Campaign', 'RequestString']:
+            if  key in jdict.keys():
+                doc.update({key:jdict[key]})
+        print pprint.pformat(doc)
+        # END OF TMP
+        return doc
+
     def create(self, req):
         """
         Create action:
@@ -158,21 +174,11 @@ class ActionMgr(object):
         else:
             raise Exception('Unsupported request type')
         for jsondata in docs:
-#            data = StringIO.StringIO(json.dumps(jsondata))
-#            cherrypy.request.body = data
-#            print "\n### CALL reqmgr.post()"
+            doc = self.parse_data(jsondata)
             print "self.reqmgr.insertRequests(jsondata)"
-            print pprint.pformat(jsondata)
-            # TMP stuff to test insertion with example document
-            doc = self.example
-            for key in ['Campaign', 'RequestString']:
-                if  key in jsondata.keys():
-                    doc.update({key:jsondata[key]})
-            jsondata = doc
-            print pprint.pformat(jsondata)
-            # End of TMP stuff
+            print pprint.pformat(doc)
             try:
-                response = self.reqmgr.insertRequests(jsondata)
+                response = self.reqmgr.insertRequests(doc)
                 print "### ActionMgr::create response", pprint.pformat(response)
             except Exception as exc:
                 print "ERROR", str(exc)
@@ -183,12 +189,10 @@ class ActionMgr(object):
         """
         Approve action
         should get list of requests to approve via Request::get(status)
-        and change request status from assignment-approved to assigned
+        and change request status from new to assigned
         """
         self.add_request('approve', req)
         status = req.get('status', '')
-        if  status != 'assignment-approved':
-            return 'Can not approve status: %s' % status
         new_status = 'assigned'
         docs = self.get_request_names(req)
         for rname in docs:
@@ -414,7 +418,7 @@ class ReqMgrService(TemplatedPage):
         if  not kwds:
             kwds = {}
         if  'status' not in kwds:
-            kwds.update({'status': 'new'})
+            kwds.update({'status': 'assignment-approved'})
         docs = []
         attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus']
         data = self.reqmgr.getRequestByStatus(statusList=[kwds['status']])
@@ -445,7 +449,7 @@ class ReqMgrService(TemplatedPage):
         if  not kwds:
             kwds = {}
         if  'status' not in kwds:
-            kwds.update({'status': 'assignment-approved'})
+            kwds.update({'status': 'new'})
         kwds.update({'_nostale':True})
         docs = []
         attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus']
@@ -473,7 +477,6 @@ class ReqMgrService(TemplatedPage):
             req['request-%s'%ids] = 'on'
         else:
             raise NotImplemented
-        req['status'] = 'assignment-approved'
         status = self.actionmgr.approve(req)
 #        rid = genid(ids)
 #        content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
@@ -492,7 +495,9 @@ class ReqMgrService(TemplatedPage):
                 arch=json.dumps(architectures()),
                 scenarios=json.dumps(scenarios()),
                 dqm_urls=json.dumps(dqm_urls()),
-                dbs_urls=json.dumps(dbs_urls()),
+                dbs_url=dbs_urls()[0],
+                cc_url="https://cmsweb-testbed.cern.ch/couchdb", # TODO: get elsewhere
+                cc_id="some_id", # TODO: get it elsewhere
                 )
         try:
             jsondata = json.loads(jsondata)

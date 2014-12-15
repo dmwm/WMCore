@@ -876,7 +876,7 @@ class StdBase(object):
                      "Campaign" : {"default" : None, "optional" : True, "attr" : "campaign"},
                      "AcquisitionEra" : {"default" : "None",  "attr" : "acquisitionEra",
                                          "validate" : acqname},
-                     "CMSSWVersion" : {"default" : "CMSSW_5_3_7", "validate" : cmsswversion,
+                     "CMSSWVersion" : {"default" : "", "validate" : cmsswversion,
                                        "optional" : False, "attr" : "frameworkVersion"},
                      "ScramArch" : {"default" : "slc5_amd64_gcc462", "optional" : False},
                      "GlobalTag" : {"default" : None, "type" : str,

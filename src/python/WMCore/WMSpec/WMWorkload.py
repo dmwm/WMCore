@@ -90,10 +90,10 @@ class WMWorkloadHelper(PersistencyHelper):
         return
 
     def requestType(self):
-        return self.data.requstType
+        return self.data.requestType
     
     def setRequestType(self, requestType):
-        self.data.requstType = requestType
+        self.data.requestType = requestType
         
     def getInitialJobCount(self):
         """

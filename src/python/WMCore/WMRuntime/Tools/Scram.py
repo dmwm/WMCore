@@ -218,7 +218,7 @@ class Scram:
 
 
     def __call__(self, command, hackLdLibPath = True,
-                 logName = "scramOutput.log", runtimeDir = None):
+                 logName = "scramOutput.log", runtimeDir = None, cleanEnv = True):
         """
         _operator(command)_
 
@@ -241,7 +241,10 @@ class Scram:
             f.write('-------------------------------------------\n')
             f.close()
         logFile = open(logName, 'a') if isinstance(logName, basestring) else logName
-        proc = subprocess.Popen(["env - /bin/bash"], shell=True, cwd=executeIn,
+        bashcmd = "/bin/bash"
+        if cleanEnv:
+            bashcmd = "env - " + bashcmd
+        proc = subprocess.Popen([bashcmd], shell=True, cwd=executeIn,
                                 stdout=logFile,
                                 stderr=logFile,
                                 stdin=subprocess.PIPE,

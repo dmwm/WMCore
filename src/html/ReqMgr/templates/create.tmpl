@@ -3,12 +3,12 @@
 <header class="group">
     <nav class="navbar navbar-left">
         <ul>
-        <li id="rereco" class="menu-item"><a href="$base/create?form=rereco">ReReco</a></li>
-        <li id="mc" class="menu-item"><a href="$base/create?form=mc">MonteCarlo</a></li>
-        <li id="storeres" class="menu-item"><a href="$base/create?form=storeres">StoreResults</a></li>
-        <li id="dataproc" class="menu-item"><a href="$base/create?form=dataproc">DataProcessing</a></li>
-        <li id="resub" class="menu-item"><a href="$base/create?form=resub">Resubmission</a></li>
-        <li id="redigi" class="menu-item"><a href="$base/create?form=redigi">ReDigi</a></li>
+        <li id="ReReco" class="menu-item"><a href="$base/create?form=ReReco">ReReco</a></li>
+        <li id="MonteCarlo" class="menu-item"><a href="$base/create?form=MonteCarlo">MonteCarlo</a></li>
+        <li id="StoreResults" class="menu-item"><a href="$base/create?form=StoreResults">StoreResults</a></li>
+        <li id="DataProcessing" class="menu-item"><a href="$base/create?form=DataProcessing">DataProcessing</a></li>
+        <li id="Resubmission" class="menu-item"><a href="$base/create?form=Resubmission">Resubmission</a></li>
+        <li id="ReDigi" class="menu-item"><a href="$base/create?form=ReDigi">ReDigi</a></li>
         </ul>
     </nav>
     <nav class="navbar navbar-right">
@@ -37,6 +37,8 @@ $table
     <option value="$item">$item script</option>
     #end for
     </select>
+    </td>
+    <td>if provided, it will generate series of requests from given template</td>
     </td></tr></table>
 
     <p class="units-row">
@@ -60,6 +62,8 @@ $table
     <option value="$item">$item script</option>
     #end for
     </select>
+    </td>
+    <td>if provided, it will generate series of requests from given template</td>
     </td></tr></table>
 
     <p class="units-row">

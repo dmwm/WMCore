@@ -7,77 +7,50 @@ Definition of valid status values for a request and valid status transitions.
 REQUEST_START_STATE = "new"
 REQUEST_STATE_TRANSITION = {
     REQUEST_START_STATE: [REQUEST_START_STATE,
-            "testing-approved",
             "assignment-approved",
-            "rejected",
-            "failed",
-            "aborted"],
+            "rejected"],
     
-    "testing-approved": ["testing-approved",
-                         "testing",
-                         "test-failed",
-                         "aborted"],
+    "assignment-approved": ["assigned", #manual transition
+                            "rejected"], #manual transition
                              
-    "testing": ["testing",
-                "tested",
-                "test-failed",
-                "aborted"],
-                             
-    "tested": ["tested",
-               "assignment-approved",
-               "failed",
-               "rejected",
-               "aborted"],
-                             
-    "test-failed": ["test-failed",
-                    "testing-approved",
-                    "rejected",
-                    "aborted"],
-    
-    "assignment-approved": ["assignment-approved",
-                            "assigned",
-                            "rejected"],
-                             
-    "assigned": ["assigned",
-                 "negotiating",
+    "assigned": ["negotiating",
                  "acquired",
-                 "aborted",
+                 "aborted", # manual transition
                  "failed"],
                              
     "negotiating": ["acquired",
                     "assigned",
                     "aborted",
-                    "failed",
-                    "negotiating"],
+                    "failed"],
                              
     "acquired": ["running-open",
-                 "failed",
                  "completed",
                  "acquired",
                  "aborted"],
                              
     "running": ["completed",
-                "aborted",
+                "aborted", # manual transition
                 "failed"],
                              
     "running-open": ["running-closed",
-                     "aborted",
+                     "aborted", # manual transition
                      "failed"],
                              
-    "running-closed": ["completed",
-                       "aborted",
+    "running-closed": ["force-complete", # manual transition
+                       "completed",
+                       "aborted", # manual transition
                        "failed"],
+    
+    "force-complete" : ["completed"],
                              
-    "failed": ["failed",
-               "testing-approved",
-               "rejected",
-               "assigned"],
+    "failed": ["rejected",  # manual transition
+               "assigned"], # manual transition
                              
     "completed": ["completed",
                   "closed-out",
-                  "rejected"],
+                  "rejected"], # manual transition
                              
-    "closed-out": ["announced"],
+    "closed-out": ["announced"], # manual transition
     
     "announced": ["normal-archived"],
     

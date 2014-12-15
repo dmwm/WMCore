@@ -61,6 +61,8 @@ def json2table(jsondata, web_ui_map):
     keys = sorted(jsondata.keys())
     for key in keys:
         val = jsondata[key]
+        if  isinstance(val, list) and not val: # empty list replace with input text tag
+            val = ""
         if  isinstance(val, list):
             sel = "<select>"
             values = sorted(val)

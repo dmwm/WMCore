@@ -1,10 +1,10 @@
-function ajaxApproveRequests(base, method, ids) {
+function ajaxRequest(path, parameters) {
     // base is a URL base, e.g. https://cmsweb.cern.ch
     // method is request method, e.g. /request
     // ids are request ids which needs to be approved
-    new Ajax.Updater('response', base+'/'+method,
+    new Ajax.Updater('response', path,
     { method: 'post' ,
-      parameters : {'ids': ids},
+      parameters : parameters,
       onException: function() {return;},
       onComplete : function() {return;}
     });

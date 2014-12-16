@@ -12,8 +12,8 @@
 <hr/>
 
 <div id="requests">
-<form method="put" action="$base/data/request" class="forms">
-<input type="hidden" name="action" value="assign" />
+##<form method="put" action="$base/data/request" class="forms">
+##<input type="hidden" name="action" value="assign" />
 
 <header class="group">
     <nav class="navbar navbar-left">
@@ -42,7 +42,8 @@
         </ul>
     </nav>
     <nav class="navbar navbar-right">
-        <button class="btn btn-green">Assign</button>
+        <button class="btn btn-green" onclick="javascript:ProcessRequests('assigned')">Assign</button>
+        <button class="btn btn-red" onclick="javascript:ProcessRequests('rejected')">Reject</button>
     </nav>
 </header>
 
@@ -66,7 +67,7 @@
     #set id=$doc['RequestName']
         <tr>
             <td>
-               <input type="checkbox" name="request-$id" id="request-$id"/>
+               <input type="checkbox" name="request-$id" id="request-$id" class="request-id" />
             </td>
             <td><a href="$base/fetch?rid=$id">$id</a></td>
             <td>$doc['Requestor']</td>
@@ -80,6 +81,7 @@
 </div>
 </div> <!-- end of requests section -->
 
+<form id="assign-settings" name="assign-settings">
 <div id="manage" class="hide">
 <h4>Assign settings</h4>
 
@@ -213,8 +215,8 @@
 <td>Merged LFN Base</td>
 <td>
 <select name="MergedLFNBase">
-#for base in $lfn_bases
-<option value="$base">$base</option>
+#for lfnbase in $lfn_bases
+<option value="$lfnbase">$lfnbase</option>
 #end for
 </select>
 </td>
@@ -224,8 +226,8 @@
 <td>Unmerged LFN Base</td>
 <td>
 <select name="UnmergedLFNBase">
-#for base in $lfn_unmerged_bases
-<option value="$base">$base</option>
+#for lfnbase in $lfn_unmerged_bases
+<option value="$lfnbase">$lfnbase</option>
 #end for
 </select>
 </td>
@@ -331,6 +333,9 @@
 *#
 </form>
 
+##</form>
+
+
 <script>
 function activateRequests() {
     id = document.getElementById('btn-manage');
@@ -349,5 +354,25 @@ function activateManage() {
     var id = document.getElementById('btn-manage');
     id.className="btn btn-active";
     ShowTag('manage');
+}
+// helper function to call server side ajax_action method and pass
+// along action method, request ids, and new status
+// assign interface changes assignment-approved requests into assigned or rejected
+function ProcessRequests(new_status) {
+    var items = document.getElementsByClassName('request-id');
+    var ids=[];
+    for (var i = 0; i < items.length; i++ ) {
+        if(items[i].checked==true) {
+            ids.push(items[i].name);
+            items[i].disabled='disabled';
+        }
+    }
+    if (ids.length>0) {
+        var parameters = \$('assign-settings').serialize(true); // capture form id="assign-settings"
+        parameters.ids = ids;
+        parameters.new_status = new_status;
+        parameters.action = 'assign';
+        ajaxRequest('$base/ajax_action', parameters);
+    }
 }
 </script>

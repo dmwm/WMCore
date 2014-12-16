@@ -53,6 +53,7 @@ from WMCore.WMSpec.StdSpecs.StoreResults import StoreResultsWorkloadFactory
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
 from WMCore.WMSpec.StdSpecs.Resubmission import ResubmissionWorkloadFactory
 from WMCore.WMSpec.StdSpecs.ReDigi import ReDigiWorkloadFactory
+from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE, REQUEST_STATE_TRANSITION
 
 # new reqmgr2 APIs
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
@@ -198,15 +199,14 @@ class ActionMgr(object):
                 return 'fail'
         return 'ok'
 
-    def approve(self, req):
+    def approve(self, req, new_status):
         """
         Approve action
         should get list of requests to approve via Request::get(status)
-        and change request status from new to assigned
+        and change request status from new to status (assigned/rejected)
         """
         self.add_request('approve', req)
         status = req.get('status', '')
-        new_status = 'assigned'
         docs = self.get_request_names(req)
         for rname in docs:
             print "self.reqmgr.updateRequestStatus(%s, %s)" % (rname, new_status)
@@ -217,16 +217,18 @@ class ActionMgr(object):
                 return 'fail'
         return 'ok'
 
-    def assign(self, req):
+    def assign(self, req, new_status, kwds):
         """
         Assign action
         should get list of requests to assign via Request::get(status)
-        and change request status from new to assigned
+        and change request status from assignment-approved to assigned/rejected.
+        Additional parameters are passed via kwds dict.
         """
         self.add_request('assign', req)
-        new_status = 'assignment-approved'
         docs = self.get_request_names(req)
         req.update({"status": new_status})
+        if  kwds and isinstance(kwds, dict):
+            req.update(kwds)
         for rname in docs:
             print "self.reqmgr.updateRequestProperty(%s, %s)" % (rname, req)
             try:
@@ -434,7 +436,7 @@ class ReqMgrService(TemplatedPage):
     ### Request actions ###
 
     @expose
-    @checkargs(['status'])
+    @checkargs(['status', 'sort'])
     def assign(self, **kwds):
         """assign page"""
         if  not kwds:
@@ -486,23 +488,24 @@ class ReqMgrService(TemplatedPage):
         return self.abs_page('generic', content)
 
     @expose
-    def ajax_approve(self, ids, **kwds):
+    def ajax_action(self, action, ids, new_status, **kwds):
         """
-        AJAX approve action. It creates request dictionary and pass it to
-        action manager approve method.
+        AJAX action creates request dictionary and pass it to
+        action manager method.
         """
         req = {}
         if  isinstance(ids, list):
             for rid in ids:
-                req['request-%s'%rid] = 'on'
+                req[rid] = 'on'
         elif isinstance(ids, basestring):
-            req['request-%s'%ids] = 'on'
+            req[ids] = 'on'
         else:
             raise NotImplemented
-        status = self.actionmgr.approve(req)
-#        rid = genid(ids)
-#        content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
-#        return self.abs_page('generic', content)
+        print "\n### ajax_action", req, new_status, kwds
+        if  action == 'approve':
+            status = getattr(self.actionmgr, action)(req, new_status)
+        elif action == 'assign':
+            status = getattr(self.actionmgr, action)(req, new_status, kwds)
 
     @expose
     def create(self, **kwds):

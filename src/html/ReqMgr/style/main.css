@@ -59,7 +59,7 @@ input[type=text], textarea {
   margin: 5px 1px 3px 0px;
   border: 1px solid #DDDDDD;
 }
- 
+
 input[type=text]:focus, textarea:focus {
   box-shadow: 0 0 5px #333333;
   border: 1px solid #808080;
@@ -87,6 +87,22 @@ input[type=text]:focus, textarea:focus {
   border-style: dashed;
   border-color: #000;
   cursor: pointer;
+}
+::-webkit-input-placeholder {
+    color: red;
+    font-weight: bold;
+}
+:-moz-placeholder { /* Firefox 18- */
+    color: red;
+    font-weight: bold;
+}
+::-moz-placeholder {  /* Firefox 19+ */
+    color: red;
+    font-weight: bold;
+}
+:-ms-input-placeholder {
+    color: red;
+    font-weight: bold;
 }
 tr:nth-child(even){ background:#F4F4F4; }
 th { background: #B3B3B3; color: white; font-weight: bold; }

@@ -73,12 +73,15 @@ def json2table(jsondata, web_ui_map):
             sel += "</select>"
             val = sel
         elif isinstance(val, basestring):
-            if  len(val) < 80:
-                val = '<input type="text" name="%s" value="%s" />' % (key, val)
+            if  val.startswith('REPLACE-'):
+                val = '<input type="text" name="%s" value="%s" class="width-100 input-error replace">'\
+                        % (key, val)
+            elif  len(val) < 80:
+                val = '<input type="text" name="%s" value="%s" class="width-100" />' % (key, val)
             else:
                 val = '<textarea name="%s" class="width-100">%s</textarea>' % (key, val)
         else:
-            val = '<input type="text" name="%s" value="%s" />' % (key, val)
+            val = '<input type="text" name="%s" value="%s" class="width-100" />' % (key, val)
         if  key in web_ui_map:
             kname = web_ui_map[key]
         else:

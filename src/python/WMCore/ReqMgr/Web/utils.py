@@ -74,7 +74,7 @@ def json2table(jsondata, web_ui_map):
             val = sel
         elif isinstance(val, basestring):
             if  val.startswith('REPLACE-'):
-                val = '<input type="text" name="%s" value="%s" class="width-100 input-error replace">'\
+                val = '<input type="text" name="%s" placeholder="%s" class="width-100">'\
                         % (key, val)
             elif  len(val) < 80:
                 val = '<input type="text" name="%s" value="%s" class="width-100" />' % (key, val)

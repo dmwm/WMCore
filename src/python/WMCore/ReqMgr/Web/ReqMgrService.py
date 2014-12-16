@@ -524,6 +524,8 @@ class ReqMgrService(TemplatedPage):
                 dbs_url=json.dumps(dbs_urls()[0]),
                 cc_url=json.dumps("https://cmsweb-testbed.cern.ch/couchdb"), # TODO: get elsewhere
                 cc_id=json.dumps("some_id"), # TODO: get it elsewhere
+                acdc_url=json.dumps("https://cmsweb-testbed.cern.ch/couchdb"), # TODO: get elsewhere
+                acdc_dbname=json.dumps("some_db"), # TODO: get it elsewhere
                 )
         try:
             jsondata = json.loads(jsondata)
@@ -545,13 +547,29 @@ class ReqMgrService(TemplatedPage):
 
         # check if JSON template contains all required values
         vdict = {} # dict of empty values
+        tdict = {} # dict of type mismatches
+        dropdowns = ['ScramArch', 'Group', 'CMSSWVersion']
         for key in required:
             value = jsondata[key]
             if  not value:
                 vdict[key] = jsondata[key]
+            type1 = str if type(value) == unicode else type(value)
+            stype = self.specs[spec][key]['type']
+            type2 = str if stype == unicode else stype
+            if  type1 != type2 and key not in dropdowns:
+                tdict[key] = (type(value), self.specs[spec][key]['type'])
         if  vdict.keys():
             content = '<span class="color-red">Empty values in %s spec</span>: %s'\
                     % (spec, sort_bold(vdict.keys()))
+            return self.error(content)
+        if  tdict.keys():
+            types = []
+            for key, val in tdict.items():
+                type0 = str(val[0]).replace('>', '').replace('<', '')
+                type1 = str(val[1]).replace('>', '').replace('<', '')
+                types.append('<b>%s:</b> %s, should be %s' % (key, type0, type1))
+            content = '<div class="color-red">Type mismatches in %s spec:</div> %s'\
+                    % (spec, '<br/>'.join(types))
             return self.error(content)
 
         # create templatized page out of provided forms

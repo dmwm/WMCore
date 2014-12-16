@@ -30,7 +30,7 @@ from WMCore.ReqMgr.Web.tools import exposecss, exposejs, exposejson, TemplatedPa
 from WMCore.ReqMgr.Web.utils import json2table, genid, checkargs, tstamp, sort
 from WMCore.ReqMgr.Utils.url_utils import getdata
 from WMCore.ReqMgr.Tools.cms import dqm_urls, dbs_urls, releases, architectures
-from WMCore.ReqMgr.Tools.cms import scenarios, cms_groups
+from WMCore.ReqMgr.Tools.cms import scenarios, cms_groups, couch_url
 from WMCore.ReqMgr.Tools.cms import web_ui_names, next_status, sites
 from WMCore.ReqMgr.Tools.cms import lfn_bases, lfn_unmerged_bases
 from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
@@ -45,8 +45,21 @@ from WMCore.ReqMgr.Service.RestApiHub import RestApiHub
 from WMCore.REST.Main import RESTMain
 #from WMCore.REST.Auth import authz_fake
 
+# WMCore specs
+from WMCore.WMSpec.StdSpecs.StdBase import StdBase
+from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
+from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
+from WMCore.WMSpec.StdSpecs.StoreResults import StoreResultsWorkloadFactory
+from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
+from WMCore.WMSpec.StdSpecs.Resubmission import ResubmissionWorkloadFactory
+from WMCore.WMSpec.StdSpecs.ReDigi import ReDigiWorkloadFactory
+
 # new reqmgr2 APIs
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
+
+def sort_bold(docs):
+    "Return sorted list of bold items from provided doc list"
+    return ', '.join(['<b>%s</b>'%m for m in sorted(docs)])
 
 def set_headers(itype, size=0):
     """
@@ -119,7 +132,7 @@ class ActionMgr(object):
         self.example =  {
     "CMSSWVersion": "CMSSW_4_4_2_patch2",
     "GlobalTag": "FT_R_44_V11::All",
-    "Campaign": "Campaign-OVERRIDE-ME",     
+    "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "RequestPriority": 1000,
     "ScramArch": "slc5_amd64_gcc434",
@@ -128,7 +141,7 @@ class ActionMgr(object):
     "FilterEfficiency": 1,
     "RunBlacklist": [],
     "BlockWhitelist": [],
-    "BlockBlacklist": [],       
+    "BlockBlacklist": [],
     "ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
     "ConfigCacheID": "7559cf7a427be20436483f82fd108936",
     "PrepID": "RERECOTEST-0001",
@@ -141,7 +154,7 @@ class ActionMgr(object):
     "InputDataset": "/BTag/Run2011B-v1/RAW",
     "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
     "inputMode": "couchDB",
-    "Scenario": "pp",     
+    "Scenario": "pp",
     "OpenRunningTimeout" : 0
     }
 
@@ -277,6 +290,15 @@ class ReqMgrService(TemplatedPage):
         self.jsmap  = {}
         self.imgmap = {}
         self.yuimap = {}
+
+        # keep track of specs
+        self.specs = {'StdBase': StdBase().getWorkloadArguments(),
+                'ReReco': ReRecoWorkloadFactory().getWorkloadArguments(),
+                'MonteCarlo': MonteCarloWorkloadFactory().getWorkloadArguments(),
+                'StoreResults': StoreResultsWorkloadFactory().getWorkloadArguments(),
+                'DataProcessing': DataProcessing().getWorkloadArguments(),
+                'Resubmission': ResubmissionWorkloadFactory().getWorkloadArguments(),
+                'ReDigi': ReDigiWorkloadFactory().getWorkloadArguments()}
 
         # Update CherryPy configuration
         mime_types  = ['text/css']
@@ -485,32 +507,75 @@ class ReqMgrService(TemplatedPage):
     @expose
     def create(self, **kwds):
         """create page"""
-        req_form = kwds.get('form', 'rereco')
-        fname = 'json/%s' % str(req_form)
+        spec = kwds.get('form', 'ReReco')
+        fname = 'json/%s' % str(spec)
         # request form
         jsondata = self.templatepage(fname,
                 user=json.dumps(self.user()),
+                dn=json.dumps(self.user_dn()),
                 groups=json.dumps(cms_groups()),
                 releases=json.dumps(releases()),
                 arch=json.dumps(architectures()),
                 scenarios=json.dumps(scenarios()),
                 dqm_urls=json.dumps(dqm_urls()),
-                dbs_url=dbs_urls()[0],
-                cc_url="https://cmsweb-testbed.cern.ch/couchdb", # TODO: get elsewhere
-                cc_id="some_id", # TODO: get it elsewhere
+                couch_url=json.dumps(couch_url()),
+                couch_dbname=json.dumps('some_db'), # TODO get elsewhere
+                couch_wdbname=json.dumps('some_db'), # TODO get elsewhere
+                dbs_url=json.dumps(dbs_urls()[0]),
+                cc_url=json.dumps("https://cmsweb-testbed.cern.ch/couchdb"), # TODO: get elsewhere
+                cc_id=json.dumps("some_id"), # TODO: get it elsewhere
+                acdc_url=json.dumps("https://cmsweb-testbed.cern.ch/couchdb"), # TODO: get elsewhere
+                acdc_dbname=json.dumps("some_db"), # TODO: get it elsewhere
                 )
         try:
             jsondata = json.loads(jsondata)
         except Exception as exp:
-            msg  = '<div class="color-gray">Fail to load JSON for %s workflow</div>\n' % req_form
+            msg  = '<div class="color-gray">Fail to load JSON for %s workflow</div>\n' % spec
             msg += '<div class="color-red">Error: %s</div>\n' % str(exp)
             msg += '<div class="color-gray-light">JSON: %s</div>' % jsondata
             return self.error(msg)
 
+        # check if JSON template provides all required attributes
+        required = [k for k,v in self.specs[spec].items() if v['optional']==False]
+        if  set(jsondata.keys()) & set(required) != set(required):
+            missing = list(set(required)-set(jsondata.keys()))
+            content = '%s spec template does not contain all required attributes.' \
+                    % spec
+            content += '<br/><span class="color-red">Missing attributes:</span> %s' \
+                    % sort_bold(missing)
+            return self.error(content)
+
+        # check if JSON template contains all required values
+        vdict = {} # dict of empty values
+        tdict = {} # dict of type mismatches
+        dropdowns = ['ScramArch', 'Group', 'CMSSWVersion']
+        for key in required:
+            value = jsondata[key]
+            if  not value:
+                vdict[key] = jsondata[key]
+            type1 = str if type(value) == unicode else type(value)
+            stype = self.specs[spec][key]['type']
+            type2 = str if stype == unicode else stype
+            if  type1 != type2 and key not in dropdowns:
+                tdict[key] = (type(value), self.specs[spec][key]['type'])
+        if  vdict.keys():
+            content = '<span class="color-red">Empty values in %s spec</span>: %s'\
+                    % (spec, sort_bold(vdict.keys()))
+            return self.error(content)
+        if  tdict.keys():
+            types = []
+            for key, val in tdict.items():
+                type0 = str(val[0]).replace('>', '').replace('<', '')
+                type1 = str(val[1]).replace('>', '').replace('<', '')
+                types.append('<b>%s:</b> %s, should be %s' % (key, type0, type1))
+            content = '<div class="color-red">Type mismatches in %s spec:</div> %s'\
+                    % (spec, '<br/>'.join(types))
+            return self.error(content)
+
         # create templatized page out of provided forms
         self.update_scripts()
         content = self.templatepage('create', table=json2table(jsondata, web_ui_names()),
-                jsondata=json.dumps(jsondata, indent=2), name=req_form,
+                jsondata=json.dumps(jsondata, indent=2), name=spec,
                 scripts=[s for s in self.sdict.keys() if s!='ts'])
         return self.abs_page('generic', content)
 

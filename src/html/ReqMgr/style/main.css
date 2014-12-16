@@ -75,6 +75,10 @@ input[type=text]:focus, textarea:focus {
     margin-top:6px;
     border-top-width:1px;
 }
+.replace {
+    color: blue;
+    font-weight: bold;
+}
 .ticket {
   color: #000000;
   background-color: #F5C669;

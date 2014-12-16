@@ -150,6 +150,11 @@ def dbs_urls():
         urls.append(base.replace("prod", inst))
     return urls
 
+def couch_url():
+    "Return central couch url"
+    url = "https://cmsweb.cern.ch/couchdb"
+    return url
+
 def releases():
     "Return list of CMSSW releases"
     releases=["CMSSW_7_0_0", "CMSSW_6_8_1"]

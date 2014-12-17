@@ -43,7 +43,6 @@ from WMCore.ReqMgr.Service.Auxiliary import Info, Group, Team, Software
 from WMCore.ReqMgr.Service.Request import Request
 from WMCore.ReqMgr.Service.RestApiHub import RestApiHub
 from WMCore.REST.Main import RESTMain
-#from WMCore.REST.Auth import authz_fake
 
 # WMCore specs
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
@@ -53,6 +52,7 @@ from WMCore.WMSpec.StdSpecs.StoreResults import StoreResultsWorkloadFactory
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
 from WMCore.WMSpec.StdSpecs.Resubmission import ResubmissionWorkloadFactory
 from WMCore.WMSpec.StdSpecs.ReDigi import ReDigiWorkloadFactory
+from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE, REQUEST_STATE_TRANSITION
 
 # new reqmgr2 APIs
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
@@ -126,37 +126,6 @@ class ActionMgr(object):
     def __init__(self, reqmgr):
         "Action manager"
         self.reqmgr = reqmgr
-        self.cache = {} # cache which keeps actions, TODO make it persistent
-        self.specs = {}
-
-        self.example =  {
-    "CMSSWVersion": "CMSSW_4_4_2_patch2",
-    "GlobalTag": "FT_R_44_V11::All",
-    "Campaign": "Campaign-OVERRIDE-ME",
-    "RequestString": "RequestString-OVERRIDE-ME",
-    "RequestPriority": 1000,
-    "ScramArch": "slc5_amd64_gcc434",
-    "RequestType": "ReReco",
-    "RunWhitelist": [175866, 176933, 180250],
-    "FilterEfficiency": 1,
-    "RunBlacklist": [],
-    "BlockWhitelist": [],
-    "BlockBlacklist": [],
-    "ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
-    "ConfigCacheID": "7559cf7a427be20436483f82fd108936",
-    "PrepID": "RERECOTEST-0001",
-    "Group": "DATAOPS",
-    "SplittingAlgo": "LumiBased",
-    "LumisPerJob": 8,
-    "TimePerEvent": 60,
-    "Memory": 2394,
-    "SizePerEvent":500,
-    "InputDataset": "/BTag/Run2011B-v1/RAW",
-    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
-    "inputMode": "couchDB",
-    "Scenario": "pp",
-    "OpenRunningTimeout" : 0
-    }
 
     def parse_data(self, jdict):
         "Parse json dictionary and align its values"
@@ -164,15 +133,7 @@ class ActionMgr(object):
         for key, val in jdict.items():
             if  isinstance(val, basestring) and val.find(",") != -1: # comma list
                 jdict[key] = val.split(",")
-        print pprint.pformat(jdict)
-        # TMP stuff to test insertion with example document
-        doc = self.example
-        for key in ['Campaign', 'RequestString']:
-            if  key in jdict.keys():
-                doc.update({key:jdict[key]})
-        print pprint.pformat(doc)
-        # END OF TMP
-        return doc
+        return jdict
 
     def create(self, req):
         """
@@ -198,15 +159,14 @@ class ActionMgr(object):
                 return 'fail'
         return 'ok'
 
-    def approve(self, req):
+    def approve(self, req, new_status):
         """
         Approve action
         should get list of requests to approve via Request::get(status)
-        and change request status from new to assigned
+        and change request status from new to status (assigned/rejected)
         """
         self.add_request('approve', req)
         status = req.get('status', '')
-        new_status = 'assigned'
         docs = self.get_request_names(req)
         for rname in docs:
             print "self.reqmgr.updateRequestStatus(%s, %s)" % (rname, new_status)
@@ -217,16 +177,18 @@ class ActionMgr(object):
                 return 'fail'
         return 'ok'
 
-    def assign(self, req):
+    def assign(self, req, new_status, kwds):
         """
         Assign action
         should get list of requests to assign via Request::get(status)
-        and change request status from new to assigned
+        and change request status from assignment-approved to assigned/rejected.
+        Additional parameters are passed via kwds dict.
         """
         self.add_request('assign', req)
-        new_status = 'assignment-approved'
         docs = self.get_request_names(req)
         req.update({"status": new_status})
+        if  kwds and isinstance(kwds, dict):
+            req.update(kwds)
         for rname in docs:
             print "self.reqmgr.updateRequestProperty(%s, %s)" % (rname, req)
             try:
@@ -239,7 +201,7 @@ class ActionMgr(object):
 
     def add_request(self, action, req):
         """
-        Add request to internal cache
+        Add request to internal cache or log it.
         """
         print "\n### add_request %s\n%s" % (action, pprint.pformat(req))
 
@@ -253,10 +215,6 @@ class ActionMgr(object):
                     docs.append(rid)
                 del doc[key]
         return docs
-
-    def actions(self):
-        "Return list of actions from the cache"
-        return self.cache
 
 class ReqMgrService(TemplatedPage):
     """
@@ -315,8 +273,6 @@ class ReqMgrService(TemplatedPage):
         app = RESTMain(config, statedir) # REST application
         mount = '/rest' # mount point for cherrypy service
         api = RestApiHub(app, config.reqmgr, mount)
-        # old access to reqmgr APIs
-#        self.reqmgr = Request(app, api, config.reqmgr, mount=mount+'/reqmgr')
 
         # initialize access to reqmgr2 APIs
 #        url = "https://localhost:8443/reqmgr2"
@@ -329,6 +285,19 @@ class ReqMgrService(TemplatedPage):
 
         # action manager (will be replaced with appropriate class
         self.actionmgr = ActionMgr(self.reqmgr)
+
+        # get fields which we'll use in templates
+        cdict = config.reqmgr.dictionary_()
+        self.couch_url = cdict.get('couch_host', '')
+        self.couch_dbname = cdict.get('couch_reqmgr_db', '')
+        self.couch_wdbname = cdict.get('couch_workload_summary_db', '')
+        self.acdc_url = cdict.get('acdc_host', '')
+        self.acdc_dbname = cdict.get('acdc_db', '')
+        self.configcache_url = cdict.get('couch_config_cache_url', self.couch_url)
+        self.dbs_url = cdict.get('dbs_url', '')
+        self.dqm_url = cdict.get('dqm_url', '')
+        self.sw_ver = cdict.get('default_sw_version', 'CMSSW_5_2_5')
+        self.sw_arch = cdict.get('default_sw_scramarch', 'slc5_amd64_gcc434')
 
     def user(self):
         """
@@ -395,7 +364,6 @@ class ReqMgrService(TemplatedPage):
     def admin(self, **kwds):
         """admin page"""
         print "\n### ADMIN PAGE"
-#        authz_fake()
         rows = self.admin_info.get()
         print "rows", [r for r in rows]
 
@@ -434,7 +402,7 @@ class ReqMgrService(TemplatedPage):
     ### Request actions ###
 
     @expose
-    @checkargs(['status'])
+    @checkargs(['status', 'sort'])
     def assign(self, **kwds):
         """assign page"""
         if  not kwds:
@@ -486,23 +454,32 @@ class ReqMgrService(TemplatedPage):
         return self.abs_page('generic', content)
 
     @expose
-    def ajax_approve(self, ids, **kwds):
+    def ajax_action(self, action, ids, new_status, **kwds):
         """
-        AJAX approve action. It creates request dictionary and pass it to
-        action manager approve method.
+        AJAX action creates request dictionary and pass it to
+        action manager method.
         """
         req = {}
         if  isinstance(ids, list):
             for rid in ids:
-                req['request-%s'%rid] = 'on'
+                req[rid] = 'on'
         elif isinstance(ids, basestring):
-            req['request-%s'%ids] = 'on'
+            req[ids] = 'on'
         else:
             raise NotImplemented
-        status = self.actionmgr.approve(req)
-#        rid = genid(ids)
-#        content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
-#        return self.abs_page('generic', content)
+        if  action == 'approve':
+            status = getattr(self.actionmgr, action)(req, new_status)
+        elif action == 'assign':
+            status = getattr(self.actionmgr, action)(req, new_status, kwds)
+        elif action == 'create':
+            script = kwds.get('script', '')
+            if  script:
+                docs = self.generate_objs(script, kwds)
+            else:
+                docs = [kwds]
+            status = getattr(self.actionmgr, action)(docs)
+        else:
+            raise NotImplemented()
 
     @expose
     def create(self, **kwds):
@@ -514,18 +491,18 @@ class ReqMgrService(TemplatedPage):
                 user=json.dumps(self.user()),
                 dn=json.dumps(self.user_dn()),
                 groups=json.dumps(cms_groups()),
-                releases=json.dumps(releases()),
-                arch=json.dumps(architectures()),
+                releases=json.dumps(self.sw_ver),
+                arch=json.dumps(self.sw_arch),
                 scenarios=json.dumps(scenarios()),
-                dqm_urls=json.dumps(dqm_urls()),
-                couch_url=json.dumps(couch_url()),
-                couch_dbname=json.dumps('some_db'), # TODO get elsewhere
-                couch_wdbname=json.dumps('some_db'), # TODO get elsewhere
-                dbs_url=json.dumps(dbs_urls()[0]),
-                cc_url=json.dumps("https://cmsweb-testbed.cern.ch/couchdb"), # TODO: get elsewhere
+                dqm_urls=json.dumps(self.dqm_url),
+                couch_url=json.dumps(self.couch_url),
+                couch_dbname=json.dumps(self.couch_dbname),
+                couch_wdbname=json.dumps(self.couch_wdbname),
+                dbs_url=json.dumps(self.dbs_url),
+                cc_url=json.dumps(self.configcache_url),
                 cc_id=json.dumps("some_id"), # TODO: get it elsewhere
-                acdc_url=json.dumps("https://cmsweb-testbed.cern.ch/couchdb"), # TODO: get elsewhere
-                acdc_dbname=json.dumps("some_db"), # TODO: get it elsewhere
+                acdc_url=json.dumps(self.acdc_url),
+                acdc_dbname=json.dumps(self.acdc_dbname),
                 )
         try:
             jsondata = json.loads(jsondata)
@@ -580,21 +557,6 @@ class ReqMgrService(TemplatedPage):
         return self.abs_page('generic', content)
 
     @expose
-    def scripts(self, name):
-        """
-        Return script for given name, all scripts should be placed in
-        RM_SCRIPTS area. We use self.sdict look-up for given name,
-        otherwise use default script example"""
-        default = \
-"""
-def genobjs(jsondict):
-    yield jsondict
-"""
-        self.update_scripts()
-        value = self.sdict.get(name, default)
-        return value
-
-    @expose
     def confirm_action(self, **kwds):
         """
         Confirm action method is called from web UI forms. It grabs input parameters
@@ -625,7 +587,8 @@ def genobjs(jsondict):
 
     def generate_objs(self, script, jsondict):
         """Generate objects from givem JSON template"""
-        code = self.scripts(script)
+        self.update_scripts()
+        code = self.sdict.get(script, '')
         if  code.find('def genobjs(jsondict)') == -1:
             return self.error("Improper python snippet, your code should start with <b>def genobjs(jsondict)</b> function")
         exec(code) # code snippet must starts with genobjs function

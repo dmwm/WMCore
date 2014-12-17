@@ -4,9 +4,9 @@
     </nav>
     <nav class="navbar navbar-right">
         <ul>
-        <li><button class="btn btn-active" id="btn-actions" onclick="activateActions()">Actions</button></li>
-        <li><button class="btn" id="btn-accounts" onclick="activateAccounts()">Accounts</button></li>
-        <li><button class="btn" id="btn-teams" onclick="activateTeams()">Teams</button></li>
+        <li><button class="btn btn-small btn-active" id="btn-actions" onclick="activateActions()">Actions</button></li>
+        <li><button class="btn btn-small" id="btn-accounts" onclick="activateAccounts()">Accounts</button></li>
+        <li><button class="btn btn-small" id="btn-teams" onclick="activateTeams()">Teams</button></li>
         </ul>
     </nav>
 </header>
@@ -33,7 +33,7 @@
     <textarea name="team-description" class="width-50" rows="3"></textarea>
 </label>
 <p>
-    <input type="submit" class="btn btn-green" value="Add" />
+    <input type="submit" class="btn btn-small btn-green" value="Add" />
 </p>
 </fieldset>
 </form>
@@ -76,7 +76,7 @@
         <p class="input-groups">
             <input type="text" name="adduser" placeholder="New user name" />
             <span class="btn-append">
-                <button class="btn btn-green">Add</button>
+                <button class="btn btn-small btn-green">Add</button>
             </span>
         </p>
     </div>
@@ -91,7 +91,7 @@
         <p class="input-groups">
             <input type="text" name="deleteuser" placeholder="User name to delete" />
             <span class="btn-append">
-                <button class="btn btn-red">Delete</button>
+                <button class="btn btn-small btn-red">Delete</button>
             </span>
         </p>
     </div>
@@ -164,38 +164,38 @@
 <script>
 function activateActions() {
     id = document.getElementById('btn-accounts');
-    id.className="btn";
+    id.className="btn btn-small";
     HideTag('admin-accounts');
     id = document.getElementById('btn-teams');
-    id.className="btn";
+    id.className="btn btn-small";
     HideTag('admin-teams');
     // show active button
     var id = document.getElementById('btn-actions');
-    id.className="btn btn-active";
+    id.className="btn btn-small btn-active";
     ShowTag('admin-actions');
 }
 function activateAccounts() {
     id = document.getElementById('btn-actions');
-    id.className="btn";
+    id.className="btn btn-small";
     HideTag('admin-actions');
     id = document.getElementById('btn-teams');
-    id.className="btn";
+    id.className="btn btn-small";
     HideTag('admin-teams');
     // show active button
     var id = document.getElementById('btn-accounts');
-    id.className="btn btn-active";
+    id.className="btn btn-small btn-active";
     ShowTag('admin-accounts');
 }
 function activateTeams() {
     id = document.getElementById('btn-actions');
-    id.className="btn";
+    id.className="btn btn-small";
     HideTag('admin-actions');
     id = document.getElementById('btn-accounts');
-    id.className="btn";
+    id.className="btn btn-small";
     HideTag('admin-accounts');
     // show active button
     var id = document.getElementById('btn-teams');
-    id.className="btn btn-active";
+    id.className="btn btn-small btn-active";
     ShowTag('admin-teams');
 }
 function activateTeamManager() {

@@ -50,13 +50,13 @@ $table
 <form id="json-form" name="json-form">
     <input type="hidden" name="action" value="create" />
     <textarea class="editor height-200" name="jsondict" id="jsondict">
-    $jsondata
+$jsondata
     </textarea>
 
     <table><tr><td>
     Apply a script:
     </td><td>
-    <select onChange="javascript:ajaxScript('$base')" name="script">
+    <select name="jsonscript">
     <option value="">None</option>
     #for item in $scripts
     <option value="$item">$item script</option>
@@ -84,7 +84,10 @@ function CreateRequest(formtag) {
         parameters = \$('table-form').serialize(true);
     } else if (formtag=='json-form') {
         var doc = document.getElementById('jsondict');
-        parameters = eval(doc.value);
+        var data = doc.value;
+        parameters = data.evalJSON(true); // prototype way or use JSON.parse(doc.value)
+        var script = document.getElementById('jsonscript');
+        parameters.script = script;
     }
     parameters.ids = '';
     parameters.new_status = 'new';

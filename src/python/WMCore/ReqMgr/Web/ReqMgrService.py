@@ -501,11 +501,14 @@ class ReqMgrService(TemplatedPage):
             req[ids] = 'on'
         else:
             raise NotImplemented
-        print "\n### ajax_action", req, new_status, kwds
         if  action == 'approve':
             status = getattr(self.actionmgr, action)(req, new_status)
         elif action == 'assign':
             status = getattr(self.actionmgr, action)(req, new_status, kwds)
+        elif action == 'create':
+            status = getattr(self.actionmgr, action)(kwds)
+        else:
+            raise NotImplemented()
 
     @expose
     def create(self, **kwds):

@@ -1,7 +1,6 @@
 function ajaxRequest(path, parameters) {
-    // base is a URL base, e.g. https://cmsweb.cern.ch
-    // method is request method, e.g. /request
-    // ids are request ids which needs to be approved
+    // path is an URI
+    // parameters is JSON dict
     new Ajax.Updater('response', path,
     { method: 'post' ,
       parameters : parameters,

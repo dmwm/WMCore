@@ -460,6 +460,7 @@ class ReqMgrService(TemplatedPage):
         action manager method.
         """
         req = {}
+        status = None
         if  isinstance(ids, list):
             for rid in ids:
                 req[rid] = 'on'
@@ -480,6 +481,7 @@ class ReqMgrService(TemplatedPage):
             status = getattr(self.actionmgr, action)(docs)
         else:
             raise NotImplemented()
+        print "\n### ajax_action", status
 
     @expose
     def create(self, **kwds):

@@ -100,7 +100,7 @@ function RejectAllRequests() {
 function ApproveRequest(bid, rid) {
     bid.className="btn btn-disabled";
     bid.innerHTML="DONE";
-    parameters = {'ids': [rid], 'new_status': 'assignment-approved', 'action': 'approve'},
+    parameters = {'ids': [rid], 'new_status': 'assignment-approved', 'action': 'approve'};
     ajaxRequest('$base/ajax_action', parameters);
 }
 function ApproveAllRequests() {
@@ -109,7 +109,7 @@ function ApproveAllRequests() {
         items[i].className='btn btn-disabled';
         items[i].innerHTML='DONE';
     }
-    parameters = {'ids': $ids, 'new_status': 'assignment-approved', 'action': 'approve'},
+    parameters = {'ids': $ids, 'new_status': 'assignment-approved', 'action': 'approve'};
     ajaxRequest('$base/ajax_action', parameters);
 }
 </script>

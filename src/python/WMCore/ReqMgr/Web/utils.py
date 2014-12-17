@@ -64,12 +64,12 @@ def json2table(jsondata, web_ui_map):
         if  isinstance(val, list) and not val: # empty list replace with input text tag
             val = ""
         if  isinstance(val, list):
-            sel = "<select>"
+            sel = "<select name=\"%s\">" % key
             values = sorted(val)
             if  key in ['releases', 'software_releases', 'CMSSWVersion', 'ScramArch']:
                 values.reverse()
             for item in values:
-                sel += "<option>%s</option>" % item
+                sel += "<option value=\"%s\">%s</option>" % (item, item)
             sel += "</select>"
             val = sel
         elif isinstance(val, basestring):

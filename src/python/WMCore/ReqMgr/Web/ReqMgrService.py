@@ -506,7 +506,12 @@ class ReqMgrService(TemplatedPage):
         elif action == 'assign':
             status = getattr(self.actionmgr, action)(req, new_status, kwds)
         elif action == 'create':
-            status = getattr(self.actionmgr, action)(kwds)
+            script = kwds.get('script', '')
+            if  script:
+                docs = self.generate_objs(script, kwds)
+            else:
+                docs = [kwds]
+            status = getattr(self.actionmgr, action)(docs)
         else:
             raise NotImplemented()
 
@@ -586,21 +591,6 @@ class ReqMgrService(TemplatedPage):
         return self.abs_page('generic', content)
 
     @expose
-    def scripts(self, name):
-        """
-        Return script for given name, all scripts should be placed in
-        RM_SCRIPTS area. We use self.sdict look-up for given name,
-        otherwise use default script example"""
-        default = \
-"""
-def genobjs(jsondict):
-    yield jsondict
-"""
-        self.update_scripts()
-        value = self.sdict.get(name, default)
-        return value
-
-    @expose
     def confirm_action(self, **kwds):
         """
         Confirm action method is called from web UI forms. It grabs input parameters
@@ -631,7 +621,8 @@ def genobjs(jsondict):
 
     def generate_objs(self, script, jsondict):
         """Generate objects from givem JSON template"""
-        code = self.scripts(script)
+        self.update_scripts()
+        code = self.sdict.get(script, '')
         if  code.find('def genobjs(jsondict)') == -1:
             return self.error("Improper python snippet, your code should start with <b>def genobjs(jsondict)</b> function")
         exec(code) # code snippet must starts with genobjs function

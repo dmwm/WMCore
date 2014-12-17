@@ -43,7 +43,6 @@ from WMCore.ReqMgr.Service.Auxiliary import Info, Group, Team, Software
 from WMCore.ReqMgr.Service.Request import Request
 from WMCore.ReqMgr.Service.RestApiHub import RestApiHub
 from WMCore.REST.Main import RESTMain
-#from WMCore.REST.Auth import authz_fake
 
 # WMCore specs
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
@@ -127,37 +126,6 @@ class ActionMgr(object):
     def __init__(self, reqmgr):
         "Action manager"
         self.reqmgr = reqmgr
-        self.cache = {} # cache which keeps actions, TODO make it persistent
-        self.specs = {}
-
-        self.example =  {
-    "CMSSWVersion": "CMSSW_4_4_2_patch2",
-    "GlobalTag": "FT_R_44_V11::All",
-    "Campaign": "Campaign-OVERRIDE-ME",
-    "RequestString": "RequestString-OVERRIDE-ME",
-    "RequestPriority": 1000,
-    "ScramArch": "slc5_amd64_gcc434",
-    "RequestType": "ReReco",
-    "RunWhitelist": [175866, 176933, 180250],
-    "FilterEfficiency": 1,
-    "RunBlacklist": [],
-    "BlockWhitelist": [],
-    "BlockBlacklist": [],
-    "ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
-    "ConfigCacheID": "7559cf7a427be20436483f82fd108936",
-    "PrepID": "RERECOTEST-0001",
-    "Group": "DATAOPS",
-    "SplittingAlgo": "LumiBased",
-    "LumisPerJob": 8,
-    "TimePerEvent": 60,
-    "Memory": 2394,
-    "SizePerEvent":500,
-    "InputDataset": "/BTag/Run2011B-v1/RAW",
-    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
-    "inputMode": "couchDB",
-    "Scenario": "pp",
-    "OpenRunningTimeout" : 0
-    }
 
     def parse_data(self, jdict):
         "Parse json dictionary and align its values"
@@ -165,15 +133,7 @@ class ActionMgr(object):
         for key, val in jdict.items():
             if  isinstance(val, basestring) and val.find(",") != -1: # comma list
                 jdict[key] = val.split(",")
-        print pprint.pformat(jdict)
-        # TMP stuff to test insertion with example document
-        doc = self.example
-        for key in ['Campaign', 'RequestString']:
-            if  key in jdict.keys():
-                doc.update({key:jdict[key]})
-        print pprint.pformat(doc)
-        # END OF TMP
-        return doc
+        return jdict
 
     def create(self, req):
         """
@@ -241,7 +201,7 @@ class ActionMgr(object):
 
     def add_request(self, action, req):
         """
-        Add request to internal cache
+        Add request to internal cache or log it.
         """
         print "\n### add_request %s\n%s" % (action, pprint.pformat(req))
 
@@ -255,10 +215,6 @@ class ActionMgr(object):
                     docs.append(rid)
                 del doc[key]
         return docs
-
-    def actions(self):
-        "Return list of actions from the cache"
-        return self.cache
 
 class ReqMgrService(TemplatedPage):
     """
@@ -317,8 +273,6 @@ class ReqMgrService(TemplatedPage):
         app = RESTMain(config, statedir) # REST application
         mount = '/rest' # mount point for cherrypy service
         api = RestApiHub(app, config.reqmgr, mount)
-        # old access to reqmgr APIs
-#        self.reqmgr = Request(app, api, config.reqmgr, mount=mount+'/reqmgr')
 
         # initialize access to reqmgr2 APIs
 #        url = "https://localhost:8443/reqmgr2"
@@ -331,6 +285,19 @@ class ReqMgrService(TemplatedPage):
 
         # action manager (will be replaced with appropriate class
         self.actionmgr = ActionMgr(self.reqmgr)
+
+        # get fields which we'll use in templates
+        cdict = config.reqmgr.dictionary_()
+        self.couch_url = cdict.get('couch_host', '')
+        self.couch_dbname = cdict.get('couch_reqmgr_db', '')
+        self.couch_wdbname = cdict.get('couch_workload_summary_db', '')
+        self.acdc_url = cdict.get('acdc_host', '')
+        self.acdc_dbname = cdict.get('acdc_db', '')
+        self.configcache_url = cdict.get('couch_config_cache_url', self.couch_url)
+        self.dbs_url = cdict.get('dbs_url', '')
+        self.dqm_url = cdict.get('dqm_url', '')
+        self.sw_ver = cdict.get('default_sw_version', 'CMSSW_5_2_5')
+        self.sw_arch = cdict.get('default_sw_scramarch', 'slc5_amd64_gcc434')
 
     def user(self):
         """
@@ -397,7 +364,6 @@ class ReqMgrService(TemplatedPage):
     def admin(self, **kwds):
         """admin page"""
         print "\n### ADMIN PAGE"
-#        authz_fake()
         rows = self.admin_info.get()
         print "rows", [r for r in rows]
 
@@ -525,18 +491,18 @@ class ReqMgrService(TemplatedPage):
                 user=json.dumps(self.user()),
                 dn=json.dumps(self.user_dn()),
                 groups=json.dumps(cms_groups()),
-                releases=json.dumps(releases()),
-                arch=json.dumps(architectures()),
+                releases=json.dumps(self.sw_ver),
+                arch=json.dumps(self.sw_arch),
                 scenarios=json.dumps(scenarios()),
-                dqm_urls=json.dumps(dqm_urls()),
-                couch_url=json.dumps(couch_url()),
-                couch_dbname=json.dumps('some_db'), # TODO get elsewhere
-                couch_wdbname=json.dumps('some_db'), # TODO get elsewhere
-                dbs_url=json.dumps(dbs_urls()[0]),
-                cc_url=json.dumps("https://cmsweb-testbed.cern.ch/couchdb"), # TODO: get elsewhere
+                dqm_urls=json.dumps(self.dqm_url),
+                couch_url=json.dumps(self.couch_url),
+                couch_dbname=json.dumps(self.couch_dbname),
+                couch_wdbname=json.dumps(self.couch_wdbname),
+                dbs_url=json.dumps(self.dbs_url),
+                cc_url=json.dumps(self.configcache_url),
                 cc_id=json.dumps("some_id"), # TODO: get it elsewhere
-                acdc_url=json.dumps("https://cmsweb-testbed.cern.ch/couchdb"), # TODO: get elsewhere
-                acdc_dbname=json.dumps("some_db"), # TODO: get it elsewhere
+                acdc_url=json.dumps(self.acdc_url),
+                acdc_dbname=json.dumps(self.acdc_dbname),
                 )
         try:
             jsondata = json.loads(jsondata)

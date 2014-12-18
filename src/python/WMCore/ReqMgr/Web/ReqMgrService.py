@@ -186,9 +186,9 @@ class ActionMgr(object):
         """
         self.add_request('assign', req)
         docs = self.get_request_names(req)
-        req.update({"status": new_status})
         if  kwds and isinstance(kwds, dict):
             req.update(kwds)
+        req.update({"status": new_status})
         for rname in docs:
             print "self.reqmgr.updateRequestProperty(%s, %s)" % (rname, req)
             try:

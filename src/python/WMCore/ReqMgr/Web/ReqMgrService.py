@@ -467,11 +467,22 @@ class ReqMgrService(TemplatedPage):
         elif isinstance(ids, basestring):
             req[ids] = 'on'
         else:
-            raise NotImplemented
+            cherrypy.response.status = 501
+            return
         if  action == 'approve':
             status = getattr(self.actionmgr, action)(req, new_status)
+            if  status == 'ok':
+                cherrypy.response.status = 200
+            else:
+                cherrypy.response.status = 400
+            return
         elif action == 'assign':
             status = getattr(self.actionmgr, action)(req, new_status, kwds)
+            if  status == 'ok':
+                cherrypy.response.status = 200
+            else:
+                cherrypy.response.status = 400
+            return
         elif action == 'create':
             script = kwds.get('script', '')
             if  script:
@@ -479,9 +490,14 @@ class ReqMgrService(TemplatedPage):
             else:
                 docs = [kwds]
             status = getattr(self.actionmgr, action)(docs)
+            if  status == 'ok':
+                cherrypy.response.status = 201
+            else:
+                cherrypy.response.status = 400
+            return
         else:
-            raise NotImplemented()
-        print "\n### ajax_action", status
+            cherrypy.response.status = 501
+            return
 
     @expose
     def create(self, **kwds):

@@ -186,9 +186,9 @@ class ActionMgr(object):
         """
         self.add_request('assign', req)
         docs = self.get_request_names(req)
-        req.update({"status": new_status})
         if  kwds and isinstance(kwds, dict):
             req.update(kwds)
+        req.update({"status": new_status})
         for rname in docs:
             print "self.reqmgr.updateRequestProperty(%s, %s)" % (rname, req)
             try:
@@ -467,11 +467,22 @@ class ReqMgrService(TemplatedPage):
         elif isinstance(ids, basestring):
             req[ids] = 'on'
         else:
-            raise NotImplemented
+            cherrypy.response.status = 501
+            return
         if  action == 'approve':
             status = getattr(self.actionmgr, action)(req, new_status)
+            if  status == 'ok':
+                cherrypy.response.status = 200
+            else:
+                cherrypy.response.status = 400
+            return
         elif action == 'assign':
             status = getattr(self.actionmgr, action)(req, new_status, kwds)
+            if  status == 'ok':
+                cherrypy.response.status = 200
+            else:
+                cherrypy.response.status = 400
+            return
         elif action == 'create':
             script = kwds.get('script', '')
             if  script:
@@ -479,9 +490,14 @@ class ReqMgrService(TemplatedPage):
             else:
                 docs = [kwds]
             status = getattr(self.actionmgr, action)(docs)
+            if  status == 'ok':
+                cherrypy.response.status = 201
+            else:
+                cherrypy.response.status = 400
+            return
         else:
-            raise NotImplemented()
-        print "\n### ajax_action", status
+            cherrypy.response.status = 501
+            return
 
     @expose
     def create(self, **kwds):

@@ -186,13 +186,11 @@ class ActionMgr(object):
         """
         self.add_request('assign', req)
         docs = self.get_request_names(req)
-        if  kwds and isinstance(kwds, dict):
-            req.update(kwds)
-        req.update({"RequestStatus": new_status})
+        kwds.update({"RequestStatus": new_status})
         for rname in docs:
-            print "self.reqmgr.updateRequestProperty(%s, %s)" % (rname, req)
+            print "self.reqmgr.updateRequestProperty(%s, %s)" % (rname, kwds)
             try:
-                response = self.reqmgr.updateRequestProperty(rname, req)
+                response = self.reqmgr.updateRequestProperty(rname, kwds)
                 print "response", response
             except Exception as exc:
                 print "ERROR", str(exc)

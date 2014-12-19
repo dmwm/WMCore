@@ -23,16 +23,6 @@ The usual flow of operation is:
   this is done according to the configuration options and aggregated to minimize
   the number of PhEDEx requests.
 
-There is a Tier-0 operation mode:
-
-- Look for dataset subscriptions to the Tier-0, even if already marked as subscribed.
-- Find all closed blocks belonging to the Tier-0 datasets
-  which don't contain files produced by active workflows, where
-  an active workflow is defined as a workflow still present in WMBS.
-- Subscribe those blocks as move custodial auto-approved
-
-The Tier-0 mode is activated using config.PhEDExInjector.tier0Mode = True
-
 Additional options are:
 
 - config.PhEDExInjector.subscribeDatasets, if False then this worker doesn't run
@@ -68,7 +58,6 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
         self.siteDB = SiteDBJSON()
         self.dbsUrl = config.DBSInterface.globalDBSUrl
         self.group = getattr(config.PhEDExInjector, "group", "DataOps")
-        self.tier0Mode = getattr(config.PhEDExInjector, "tier0Mode", False)
 
         # We will map node names to CMS names, that what the spec will have.
         # If a CMS name is associated to many PhEDEx node then choose the MSS option
@@ -93,7 +82,6 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
                                 dbinterface = myThread.dbi)
 
         self.getUnsubscribed = daofactory(classname = "GetUnsubscribedDatasets")
-        self.getUnsubscribedBlocks = daofactory(classname = "GetUnsubscribedBlocks")
         self.markSubscribed = daofactory(classname = "MarkDatasetSubscribed")
 
         nodeMappings = self.phedex.getNodeMap()
@@ -118,69 +106,8 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
 
         Run the subscription algorithm as configured
         """
-        if self.tier0Mode:
-            self.subscribeTier0Blocks()
         self.subscribeDatasets()
         return
-
-    def subscribeTier0Blocks(self):
-        """
-        _subscribeTier0Blocks_
-
-        Subscribe blocks to the Tier-0 where a replica subscription
-        already exists. All Tier-0 subscriptions are move, custodial
-        and autoapproved with high priority.
-        """
-        myThread = threading.currentThread()
-        myThread.transaction.begin()
-
-        # Check for candidate blocks for subscription
-        blocksToSubscribe = self.getUnsubscribedBlocks.execute(node = 'T0_CH_CERN',
-                                                               conn = myThread.transaction.conn,
-                                                               transaction = True)
-
-        if not blocksToSubscribe:
-            return
-
-        # For the blocks we don't really care about the subscription options
-        # We are subscribing all blocks with the same recipe.
-        subscriptionMap = {}
-        for subInfo in blocksToSubscribe:
-            dataset = subInfo['path']
-            if dataset not in subscriptionMap:
-                subscriptionMap[dataset] = []
-            subscriptionMap[dataset].append(subInfo['blockname'])
-
-        site = 'T0_CH_CERN'
-        custodial = 'y'
-        request_only = 'n'
-        move = 'y'
-        priority = 'High'
-
-        # Get the phedex node
-        phedexNode = self.cmsToPhedexMap[site]["MSS"]
-
-        logging.error("Subscribing %d blocks, from %d datasets to the Tier-0" % (len(subscriptionMap), sum([len(x) for x in subscriptionMap.values()])))
-
-        newSubscription = PhEDExSubscription(subscriptionMap.keys(),
-                                             phedexNode, self.group,
-                                             custodial = custodial,
-                                             request_only = request_only,
-                                             move = move,
-                                             priority = priority,
-                                             level = 'block',
-                                             blocks = subscriptionMap)
-
-        # TODO: Check for blocks already subscribed
-
-        try:
-            xmlData = XMLDrop.makePhEDExXMLForBlocks(self.dbsUrl,
-                                                     newSubscription.getDatasetsAndBlocks())
-            logging.debug(str(xmlData))
-            self.phedex.subscribe(newSubscription, xmlData)
-        except Exception, ex:
-            logging.error("Something went wrong when communicating with PhEDEx, will try again later.")
-            logging.error("Exception: %s" % str(ex))
 
     def subscribeDatasets(self):
         """

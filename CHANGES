@@ -1,5 +1,23 @@
-<<<<<<< HEAD
-=======
+1.0.2 to 1.0.3.pre1:
+  - Merge pull request #5525 from mmascher/master
+  - Add option to not clean the env in Scram.py
+  - Merge pull request #5472 from amaltaro/cast-runNumbers
+  - Merge pull request #5522 from hufnagel/remove-tier0mode
+  - remove tier0mode from PhEDExInjector
+  - Merge pull request #5491 from mmascher/master
+  - Merge pull request #5516 from hufnagel/phedex-deletion
+  - add support for phedex deletions
+  - Merge pull request #5505 from HassenRiahi/IncludeCAINFO
+  - Merge pull request #5494 from AndrewLevin/master
+  - Merge pull request #5485 from holzman/fnal-xrdcp-force-stageout
+  - Include the CAINFO param. in pycurl_manager.
+  - Re-implement lumi correction algorithm. Fix #5337
+  - changed the error code that is used when a job fails due to a jobstatuslite timeout, this will allow us to make these jobs move to jobfailed instead of jobcooloff after try
+  - Revert LumiCorrection algorithm
+  - FNAL staging: fix string concat error
+  - FNAL staging: use -f option for xrdcp
+  - temporary fix for FirstRun/LastRun wrong data type
+
 1.0.1 to 1.0.2:
   - Merge pull request #5512 from amaltaro/harvest-jobCount
   - fix jobCount for Harvest jobs
@@ -29,7 +47,6 @@
   - Enable tier0 status for sites in SSB
   - fix lexicon for dataset
 
->>>>>>> b5b21a05da3368fdf7aab13b825fabd4516638d8
 1.0.1 to 1.0.2.pre1:
   - Merge pull request #5496 from ticoann/lumi_list_fix
   - add lumilist in schema in str format

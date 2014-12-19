@@ -63,8 +63,8 @@ class Mask(WMBSBase, WMMask):
                 tmpMask['inclusivemask']  = self['inclusivemask']
                 tmpMask['FirstEvent'] = self['FirstEvent']
                 tmpMask['LastEvent']  = self['LastEvent']
-                tmpMask['FirstRun']   = run
-                tmpMask['LastRun']    = run
+                tmpMask['FirstRun']   = int(run)
+                tmpMask['LastRun']    = int(run)
                 tmpMask['FirstLumi']  = lumiPair[0]
                 tmpMask['LastLumi']   = lumiPair[1]
                 maskList.append(tmpMask)

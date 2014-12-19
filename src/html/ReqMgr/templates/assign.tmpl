@@ -4,17 +4,14 @@
     </nav>
     <nav class="navbar navbar-right">
         <ul>
-        <li><button class="btn btn-active" id="btn-requests" onclick="activateRequests()">Requests</button></li>
-        <li><button class="btn" id="btn-manage" onclick="activateManage()">Settings</button></li>
+        <li><button class="btn btn-small btn-active" id="btn-requests" onclick="activateRequests()">Requests</button></li>
+        <li><button class="btn btn-small" id="btn-manage" onclick="activateManage()">Settings</button></li>
         </ul>
     </nav>
 </header>
 <hr/>
 
 <div id="requests">
-##<form method="put" action="$base/data/request" class="forms">
-##<input type="hidden" name="action" value="assign" />
-
 <header class="group">
     <nav class="navbar navbar-left">
         <ul>
@@ -42,8 +39,8 @@
         </ul>
     </nav>
     <nav class="navbar navbar-right">
-        <button class="btn btn-green" onclick="javascript:ProcessRequests('assigned')">Assign</button>
-        <button class="btn btn-red" onclick="javascript:ProcessRequests('rejected')">Reject</button>
+        <button class="btn btn-small btn-green" onclick="javascript:ProcessRequests('assigned')">Assign</button>
+        <button class="btn btn-small btn-red" onclick="javascript:ProcessRequests('rejected')">Reject</button>
     </nav>
 </header>
 
@@ -327,32 +324,29 @@
 #*
 <div class="units-row">
     <div class="unit-push-right">
-        <button class="btn btn-green">Assign</button>
+        <button class="btn btn-small btn-green">Assign</button>
     </div>
 </div>
 *#
 </form>
 
-##</form>
-
-
 <script>
 function activateRequests() {
     id = document.getElementById('btn-manage');
-    id.className="btn";
+    id.className="btn btn-small";
     HideTag('manage');
     // show active button
     var id = document.getElementById('btn-requests');
-    id.className="btn btn-active";
+    id.className="btn btn-small btn-active";
     ShowTag('requests');
 }
 function activateManage() {
     id = document.getElementById('btn-requests');
-    id.className="btn";
+    id.className="btn btn-small";
     HideTag('requests');
     // show active button
     var id = document.getElementById('btn-manage');
-    id.className="btn btn-active";
+    id.className="btn btn-small btn-active";
     ShowTag('manage');
 }
 // helper function to call server side ajax_action method and pass

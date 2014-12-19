@@ -4,8 +4,6 @@
 <h2>Approve interface</h2>
 <hr/>
 
-##<form method="put" action="$base/data/request" class="forms">
-##<input type="hidden" name="action" value="approve" />
 <header class="group">
 <nav class="navbar navbar-left">
     <ul>
@@ -33,8 +31,8 @@
     </ul>
 </nav>
 <nav class="navbar navbar-right">
-    <button class="btn btn-outline" onclick="javascript:ApproveAllRequests()">Approve All</button>
-    <button class="btn btn-outline" onclick="javascript:RejectAllRequests()">Reject All</button>
+    <button class="btn btn-small btn-outline btn-green" onclick="javascript:ApproveAllRequests()">Approve All</button>
+    <button class="btn btn-small btn-outline btn-red" onclick="javascript:RejectAllRequests()">Reject All</button>
 </nav>
 </header>
 
@@ -60,12 +58,12 @@
     <b><span style="color:$color;background-color:#fff;padding:3px;">$val</span></b>
 #elif $key=="RequestName"
 <div class="group">
-<nav class="navbar-left">
+<nav class="navbar navbar-left">
     $val
 </nav>
-<nav class="navbar-right">
-    <button class="btn btn-green" onclick="javascript:ApproveRequest(this, '$id')">Approve</button>
-    <button class="btn btn-red" onclick="javascript:RejectRequest(this, '$id')">Reject</button>
+<nav class="navbar navbar-right">
+    <button class="btn btn-small btn-green" onclick="javascript:ApproveRequest(this, '$id')">Approve</button>
+    <button class="btn btn-small btn-red" onclick="javascript:RejectRequest(this, '$id')">Reject</button>
 </nav>
 </div>
 #else
@@ -77,13 +75,13 @@
 Request seen by data-ops on 02/02/02.
 <hr/>
 #end for
-##</form>
+
 <script>
 // helper function to call server side ajax_action method and pass
 // along action method, request ids, and new status
 // approve interface changes new requests into assignment-approved or rejected
 function RejectRequest(bid, rid) {
-    bid.className="btn btn-disabled";
+    bid.className="btn btn-small btn-disabled";
     bid.innerHTML="DONE";
     parameters = {'ids': [rid], 'new_status': 'rejected', 'action': 'approve'},
     ajaxRequest('$base/ajax_action', parameters);
@@ -91,14 +89,14 @@ function RejectRequest(bid, rid) {
 function RejectAllRequests() {
     var items = document.getElementsByClassName('btn');
     for (var i = 0; i < items.length; i++ ) {
-        items[i].className='btn btn-disabled';
+        items[i].className='btn btn-small btn-disabled';
         items[i].innerHTML='DONE';
     }
     parameters = {'ids': $ids, 'new_status': 'rejected', 'action': 'approve'},
     ajaxRequest('$base/ajax_action', parameters);
 }
 function ApproveRequest(bid, rid) {
-    bid.className="btn btn-disabled";
+    bid.className="btn btn-small btn-disabled";
     bid.innerHTML="DONE";
     parameters = {'ids': [rid], 'new_status': 'assignment-approved', 'action': 'approve'};
     ajaxRequest('$base/ajax_action', parameters);
@@ -106,7 +104,7 @@ function ApproveRequest(bid, rid) {
 function ApproveAllRequests() {
     var items = document.getElementsByClassName('btn');
     for (var i = 0; i < items.length; i++ ) {
-        items[i].className='btn btn-disabled';
+        items[i].className='btn btn-small btn-disabled';
         items[i].innerHTML='DONE';
     }
     parameters = {'ids': $ids, 'new_status': 'assignment-approved', 'action': 'approve'};

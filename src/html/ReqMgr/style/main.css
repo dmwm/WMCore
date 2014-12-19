@@ -1,3 +1,6 @@
+.main-font {
+    font-size: 12px;
+}
 .main-menu-item {
     font-size: 16px;
     color: #7C81B2;
@@ -87,6 +90,20 @@ input[type=text]:focus, textarea:focus {
   border-style: dashed;
   border-color: #000;
   cursor: pointer;
+}
+.confirmation {
+    font-weight: bold;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index:999;
+    opacity: 0;
+    -webkit-transition: opacity 4s ease-in;
+    -moz-transition: opacity 4s ease-in;
+    -o-transition: opacity 4s ease-in;
+    -ms-transition: opacity 4s ease-in;
+    transition: opacity 4s ease-in;
 }
 ::-webkit-input-placeholder {
     color: red;

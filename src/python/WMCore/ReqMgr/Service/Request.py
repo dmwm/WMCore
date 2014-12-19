@@ -50,34 +50,45 @@ class Request(RESTEntity):
     
     def _validateGET(self, param, safe):
         #TODO: need proper validation but for now pass everything
+        args_length = len(param.args)
+        if args_length == 1:
+            safe.kwargs["name"] = param.args[0]
+            param.args.pop()
+            return
+            
         for prop in param.kwargs:
             safe.kwargs[prop] = param.kwargs[prop]
         
         for prop in safe.kwargs:
             del param.kwargs[prop]
+        
+        
+
         return
     
-    def _validateRequestBase(self, param, safe, valFunc):
+    def _validateRequestBase(self, param, safe, valFunc, requestName = None):
         
         data = cherrypy.request.body.read()
         if data:
             request_args = JsonWrapper.loads(data)
-            
+            if requestName:
+                request_args["RequestName"] = requestName
             if isinstance(request_args, dict):
                 request_args = [request_args]
+                
         else:
             # actually this is error case
             cherrypy.log(str(param.kwargs))
             request_args = {}
             for prop in param.kwargs:
+                request_args[prop] = param.kwargs[prop]
                 
-                if prop == "action":
-                    request_args["CMSSWVersion"] = "CMSSW-test"
-                else:
-                    request_args[prop] = param.kwargs[prop]
             for prop in request_args:
-                if prop == "CMSSWVersion":
-                    del param.kwargs["action"] 
+                del param.kwargs["prop"] 
+            if requestName:
+                request_args["RequestName"] = requestName
+            request_args = [request_args]
+        
         
         safe.kwargs['workload_pair_list'] = []
         if isinstance(request_args, dict):
@@ -96,7 +107,13 @@ class Request(RESTEntity):
                 self._validateGET(param, safe)
                     
             if method == 'PUT':
-                self._validateRequestBase(param, safe, validate_request_update_args)
+                args_length = len(param.args)
+                if args_length == 1:
+                    requestName = param.args[0]
+                    param.args.pop()
+                else:
+                    requestName = None
+                self._validateRequestBase(param, safe, validate_request_update_args, requestName)
                 #TO: handle multiple clone
 #                 if len(param.args) == 2:
 #                     #validate clone case

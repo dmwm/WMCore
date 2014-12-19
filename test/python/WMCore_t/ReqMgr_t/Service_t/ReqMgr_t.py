@@ -99,8 +99,7 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         WMCore.REST doesn take query for the put request.
         data need to send on the body
         """
-        data["RequestName"] = requestName
-        return self.jsonSender.put('data/request', data, 
+        return self.jsonSender.put('data/request/%s' % requestName, data, 
                                      incoming_headers=self.assign_header)
         
     def cloneRequestWithAuth(self, requestName, params = {}):

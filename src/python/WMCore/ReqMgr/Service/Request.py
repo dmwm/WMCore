@@ -84,7 +84,7 @@ class Request(RESTEntity):
                 request_args[prop] = param.kwargs[prop]
                 
             for prop in request_args:
-                del param.kwargs["prop"] 
+                del param.kwargs[prop] 
             if requestName:
                 request_args["RequestName"] = requestName
             request_args = [request_args]
@@ -96,6 +96,74 @@ class Request(RESTEntity):
         for args in request_args:
             workload, r_args = valFunc(args, self.config, self.reqmgr_db_service, param)
             safe.kwargs['workload_pair_list'].append((workload, r_args))
+    
+    def _get_request_names(self, ids):
+        "Extract request names from given documents"
+        cherrypy.log("***** do this ids %s" % ids)
+        doc = {}
+        if  isinstance(ids, list):
+            for rid in ids:
+                doc[rid] = 'on'
+        elif isinstance(ids, basestring):
+            doc[ids] = 'on'
+            
+        docs = []
+        for key in doc.keys():
+            if  key.startswith('request'):
+                rid = key.split('request-')[-1]
+                if  rid != 'all':
+                    docs.append(rid)
+                del doc[key]
+        return docs
+    
+    def _getMultiRequestArgs(self, multiRequestForm):
+        request_args = {}
+        cherrypy.log("***** do this multi %s" %  multiRequestForm)
+        for prop in multiRequestForm:
+            if prop == "ids":
+                request_names = self._get_request_names(multiRequestForm["ids"])
+            elif prop == "new_status":
+                request_args["RequestStatus"] = multiRequestForm[prop]
+            # remove this
+            #elif prop in ["CustodialSites", "AutoApproveSubscriptionSites"]:
+            #    request_args[prop] = [multiRequestForm[prop]]
+            else:
+                request_args[prop] = multiRequestForm[prop]
+        cherrypy.log("***** do this converted %s" % request_args)
+        return request_names, request_args
+        
+    def _validateMultiRequests(self, param, safe, valFunc):
+        
+        data = cherrypy.request.body.read()
+        if data:
+            request_names, request_args = self._getMultiRequestArgs(JsonWrapper.loads(data))
+        else:
+            # actually this is error case
+            cherrypy.log(str(param.kwargs))
+            request_names, request_args = self._getMultiRequestArgs(param.kwargs)
+            
+            for prop in request_args:
+                if prop == "RequestStatus":
+                    del param.kwargs["new_status"]
+                else:
+                    del param.kwargs[prop]
+            
+            del param.kwargs["ids"]
+            
+            #remove this
+            #tmp = []
+            #for prop in param.kwargs:
+            #    tmp.append(prop)
+            #for prop in tmp:
+            #    del param.kwargs[prop]
+        
+        safe.kwargs['workload_pair_list'] = []
+
+        for request_name in request_names:
+            request_args["RequestName"] = request_name
+            workload, r_args = valFunc(request_args, self.config, self.reqmgr_db_service, param)
+            safe.kwargs['workload_pair_list'].append((workload, r_args))
+        safe.kwargs["multi_update_flag"] = True
             
     def validate(self, apiobj, method, api, param, safe):
         # to make validate successful
@@ -122,7 +190,16 @@ class Request(RESTEntity):
 #                         return None, request_args
                     
             if method == 'POST':
-                self._validateRequestBase(param, safe, validate_request_create_args)    
+                cherrypy.log("*****")
+                cherrypy.log(str(param.args))
+                args_length = len(param.args)
+                if args_length == 1 and param.args[0] == "multi_update":
+                    #special case for multi update from browser.
+                    param.args.pop()
+                    cherrypy.log("***** do this")
+                    self._validateMultiRequests(param, safe, validate_request_update_args)
+                else:
+                    self._validateRequestBase(param, safe, validate_request_create_args)    
                     
         except Exception, ex:
             #TODO add proper error message instead of trace back
@@ -308,7 +385,7 @@ class Request(RESTEntity):
         
     
     @restcall
-    def post(self, workload_pair_list):
+    def post(self, workload_pair_list, multi_update_flag = False):
         """
         Create and update couchDB with  a new request. 
         request argument is passed from validation 
@@ -328,13 +405,17 @@ class Request(RESTEntity):
         """
         
         # storing the request document into Couch
+        
+        if multi_update_flag:
+            return self.put(workload_pair_list)
+            
         request_args_list = []
         for workload, request_args in workload_pair_list:
             cherrypy.log("INFO: Create request, input args: %s ..." % request_args)
             request_args_list.append(request_args)
             workload.saveCouch(request_args["CouchURL"], request_args["CouchWorkloadDBName"],
                                metadata=request_args)
-            
+            report = self.reqmgr_db_service.updateRequestStatus(workload.name(), "new")
         #TODO should return something else instead on whole schema
         return request_args_list
         

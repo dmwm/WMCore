@@ -366,8 +366,7 @@ function ProcessRequests(new_status) {
         var parameters = \$('assign-settings').serialize(true); // capture form id="assign-settings"
         parameters.ids = ids;
         parameters.new_status = new_status;
-        parameters.action = 'assign';
-        ajaxRequest('$base/ajax_action', parameters);
+        ajaxRequest('$base/data/request/multi_update', parameters);
     }
 }
 </script>

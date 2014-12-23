@@ -115,9 +115,7 @@
     <li>Custodial sites<br/>
         <select name="CustodialSites" class="width-50" multiple="multiple" size="10">
         #for site in $sites
-        #if $site in $cust_sites
-        <option value="$site" selected="selected">$site</option>
-        #else
+        #if $site.startswith("T1")
         <option value="$site">$site</option>
         #end if
         #end for
@@ -126,9 +124,7 @@
     <li>Non-Custodial sites<br/>
         <select name="NonCustodialSites" class="width-50" multiple="multiple" size="10">
         #for site in $sites
-        #if $site in $non_cust_sites
-        <option value="$site" selected="selected">$site</option>
-        #else
+        #if $site.startswith("T2")
         <option value="$site">$site</option>
         #end if
         #end for
@@ -137,11 +133,7 @@
     <li>Auto-Approve subscription sites<br/>
         <select name="AutoApproveSubscriptionSites" class="width-50" multiple="multiple" size="10">
         #for site in $sites
-        #if $site in $auto_approve_sites
-        <option value="$site" selected="selected">$site</option>
-        #else
         <option value="$site">$site</option>
-        #end if
         #end for
         </select>
     </li>

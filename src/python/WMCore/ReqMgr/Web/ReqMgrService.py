@@ -34,7 +34,6 @@ from WMCore.ReqMgr.Tools.cms import scenarios, cms_groups, couch_url
 from WMCore.ReqMgr.Tools.cms import web_ui_names, next_status, sites
 from WMCore.ReqMgr.Tools.cms import lfn_bases, lfn_unmerged_bases
 from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
-from WMCore.ReqMgr.Tools.cms import cust_sites, non_cust_sites, auto_approve_sites
 
 # WMCore modules
 from WMCore.WMSpec.WMWorkloadTools import loadSpecByType
@@ -418,8 +417,6 @@ class ReqMgrService(TemplatedPage):
         content = self.templatepage('assign', sort=sortby,
                 site_white_list=site_white_list(),
                 site_black_list=site_black_list(),
-                cust_sites=cust_sites(), non_cust_sites=non_cust_sites(),
-                auto_approve_sites=auto_approve_sites(),
                 user=self.user(), user_dn=self.user_dn(), requests=docs,
                 cmssw_versions=releases(), scram_arch=architectures(),
                 sites=sites(), lfn_bases=lfn_bases(),

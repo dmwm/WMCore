@@ -32,19 +32,6 @@ def site_black_list():
     t3_sites = [s for s in sites() if s.startswith('T3_')]
     return t3_sites
 
-def cust_sites():
-    "Default custodial sites"
-    return ['T1_US_FNAL', 'T1_CH_CERN']
-
-def non_cust_sites():
-    "Default non-custodial sites, all T2"
-    t2_sites = [s for s in sites() if s.startswith('T2_')]
-    return t2_sites
-
-def auto_approve_sites():
-    "Default custodial sites"
-    return ['T1_US_FNAL', 'T1_CH_CERN']
-
 def lfn_bases():
     "Return LFN Base list"
     storeResultLFNBase = [

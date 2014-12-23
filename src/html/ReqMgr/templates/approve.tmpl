@@ -83,8 +83,8 @@ Request seen by data-ops on 02/02/02.
 function RejectRequest(bid, rid) {
     bid.className="btn btn-small btn-disabled";
     bid.innerHTML="DONE";
-    parameters = {'ids': [rid], 'new_status': 'rejected', 'action': 'approve'},
-    ajaxRequest('$base/ajax_action', parameters);
+    parameters = {'ids': [rid], 'new_status': 'rejected'},
+    ajaxRequest('$base/data/request/multi_update', parameters);
 }
 function RejectAllRequests() {
     var items = document.getElementsByClassName('btn');
@@ -92,14 +92,14 @@ function RejectAllRequests() {
         items[i].className='btn btn-small btn-disabled';
         items[i].innerHTML='DONE';
     }
-    parameters = {'ids': $ids, 'new_status': 'rejected', 'action': 'approve'},
-    ajaxRequest('$base/ajax_action', parameters);
+    parameters = {'ids': $ids, 'new_status': 'rejected'},
+    ajaxRequest('$base/data/request/multi_update', parameters);
 }
 function ApproveRequest(bid, rid) {
     bid.className="btn btn-small btn-disabled";
     bid.innerHTML="DONE";
-    parameters = {'ids': [rid], 'new_status': 'assignment-approved', 'action': 'approve'};
-    ajaxRequest('$base/ajax_action', parameters);
+    parameters = {'ids': [rid], 'new_status': 'assignment-approved'};
+    ajaxRequest('$base/data/request/multi_update', parameters);
 }
 function ApproveAllRequests() {
     var items = document.getElementsByClassName('btn');
@@ -107,7 +107,7 @@ function ApproveAllRequests() {
         items[i].className='btn btn-small btn-disabled';
         items[i].innerHTML='DONE';
     }
-    parameters = {'ids': $ids, 'new_status': 'assignment-approved', 'action': 'approve'};
-    ajaxRequest('$base/ajax_action', parameters);
+    parameters = {'ids': $ids, 'new_status': 'assignment-approved'};
+    ajaxRequest('$base/data/request/multi_update', parameters);
 }
 </script>

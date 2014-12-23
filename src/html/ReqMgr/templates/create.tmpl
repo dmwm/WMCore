@@ -91,8 +91,7 @@ function CreateRequest(formtag) {
     }
     parameters.ids = '';
     parameters.new_status = 'new';
-    parameters.action = 'create';
-    ajaxRequest('$base/ajax_action', parameters);
+    ajaxRequest('$base/data/request', parameters);
 }
 function ActivateTable() {
     var id = document.getElementById('btn-table');

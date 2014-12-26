@@ -953,10 +953,10 @@ class StdBase(object):
                                         "validate" : lambda x: all([cmsname(y) for y in x])},
                      # should be Low, Normal, High
                      "SubscriptionPriority" : {"default" : "Low", "type" : str,
-                                        "validate" : lambda x: all([cmsname(y) for y in x])},
+                                        "validate" : lambda x: x in ["Low", "Normal", "High"]},
                      # shouldbe Move Replica  
                      "CustodialSubType" : {"default" : "Move", "type" : str,
-                                        "validate" : lambda x: all([cmsname(y) for y in x])},
+                                        "validate" : lambda x: x in ["Move", "Replica"]},
                      
                      # Block closing informaiont
                      "BlockCloseMaxWaitTime" : {"default" : 66400, "type" : int, "validate" : lambda x : x > 0},

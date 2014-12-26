@@ -62,8 +62,6 @@ class Request(RESTEntity):
         for prop in safe.kwargs:
             del param.kwargs[prop]
         
-        
-
         return
     
     def _validateRequestBase(self, param, safe, valFunc, requestName = None):
@@ -129,7 +127,6 @@ class Request(RESTEntity):
             #    request_args[prop] = [multiRequestForm[prop]]
             else:
                 request_args[prop] = multiRequestForm[prop]
-        cherrypy.log("***** do this converted %s" % request_args)
         return request_names, request_args
         
     def _validateMultiRequests(self, param, safe, valFunc):
@@ -163,6 +160,7 @@ class Request(RESTEntity):
             request_args["RequestName"] = request_name
             workload, r_args = valFunc(request_args, self.config, self.reqmgr_db_service, param)
             safe.kwargs['workload_pair_list'].append((workload, r_args))
+            
         safe.kwargs["multi_update_flag"] = True
             
     def validate(self, apiobj, method, api, param, safe):
@@ -415,7 +413,6 @@ class Request(RESTEntity):
             request_args_list.append(request_args)
             workload.saveCouch(request_args["CouchURL"], request_args["CouchWorkloadDBName"],
                                metadata=request_args)
-            report = self.reqmgr_db_service.updateRequestStatus(workload.name(), "new")
         #TODO should return something else instead on whole schema
         return request_args_list
         

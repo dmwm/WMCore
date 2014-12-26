@@ -945,17 +945,17 @@ class StdBase(object):
                      "UseSiteListAsLocation" : {"default" : False, "type" : bool},
                      
                      # Set phedex subscription information
-                     "CustodialSites" : {"default" : [], "type" : makeList,
+                     "CustodialSites" : {"default" : [], "type" : makeList, "assign_optional": False,
                                         "validate" : lambda x: all([cmsname(y) for y in x])},
-                     "NonCustodialSites" : {"default" : [], "type" : makeList,
+                     "NonCustodialSites" : {"default" : [], "type" : makeList, "assign_optional": False,
                                         "validate" : lambda x: all([cmsname(y) for y in x])},
-                     "AutoApproveSubscriptionSites" : {"default" : [], "type" : makeList,
+                     "AutoApproveSubscriptionSites" : {"default" : [], "type" : makeList, "assign_optional": False, 
                                         "validate" : lambda x: all([cmsname(y) for y in x])},
                      # should be Low, Normal, High
-                     "SubscriptionPriority" : {"default" : "Low", "type" : str,
+                     "SubscriptionPriority" : {"default" : "Low", "type" : str, "assign_optional": False,
                                         "validate" : lambda x: x in ["Low", "Normal", "High"]},
                      # shouldbe Move Replica  
-                     "CustodialSubType" : {"default" : "Move", "type" : str,
+                     "CustodialSubType" : {"default" : "Move", "type" : str, "assign_optional": False,
                                         "validate" : lambda x: x in ["Move", "Replica"]},
                      
                      # Block closing informaiont

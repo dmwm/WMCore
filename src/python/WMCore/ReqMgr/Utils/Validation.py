@@ -2,33 +2,14 @@
 ReqMgr request handling.
 
 """
-
-import time
-import cherrypy
-from datetime import datetime, timedelta
-
-import WMCore.Lexicon
-from WMCore.REST.Error import InvalidParameter
-from WMCore.Database.CMSCouch import CouchError
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkloadTools import loadSpecByType
-from WMCore.Wrappers import JsonWrapper
-
-from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Auth import authz_match
-from WMCore.REST.Tools import tools
-from WMCore.REST.Validation import validate_str, validate_strlist
 
-import WMCore.ReqMgr.Service.RegExp as rx
 from WMCore.ReqMgr.Auth import getWritePermission
-from WMCore.ReqMgr.DataStructs.Request import initialize_request_args, generateRequestName
-from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST, check_allowed_transition
-from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_TRANSITION
-from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
+from WMCore.ReqMgr.DataStructs.Request import initialize_request_args
+from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition
-
-from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 
 def validate_request_update_args(request_args, config, reqmgr_db_service, param):
     """
@@ -62,7 +43,6 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     authz_match(permission['role'], permission['group'])
     del request_args["RequestType"]
     
-    
     #validate the status
     if request_args.has_key("RequestStatus"):
         validate_state_transition(reqmgr_db_service, request_name, request_args["RequestStatus"])
@@ -86,9 +66,11 @@ def validate_request_create_args(request_args, config, *args, **kwargs):
     3. convert data from body to arguments (spec instance, argument with default setting) 
     TODO: rasie right kind of error with clear message 
     """
-    print request_args
-    initialize_request_args(request_args, config)
     
+    initialize_request_args(request_args, config)
+    print "xxxxx"
+    from pprint import pprint
+    pprint(request_args)
     #check the permission for creating the request
     permission = getWritePermission(request_args)
     authz_match(permission['role'], permission['group'])

@@ -28,7 +28,7 @@ def getAuthHeader(hmacData, reqAuth):
     for role in reqAuth['role']:
         roles[role] = {'group': reqAuth['group']}
         
-    return fake_authz_headers(hmacData, roles = roles, format = "dict") 
+    return fake_authz_headers(hmacData, dn = "/TEST/DN/CN", roles = roles, format = "dict") 
 
 
 class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
@@ -70,11 +70,14 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         rerecoArgs = JsonWrapper.load(rerecoFile)
         self.rerecoCreateArgs = rerecoArgs["createRequest"]
         self.rerecoAssignArgs = rerecoArgs["assignRequest"]
+        # overwrite rereco args
+        self.rerecoAssignArgs["AcquisitionEra"] = "test_aqc"
         
         lheFile = open(os.path.join(requestPath, "LHEStep0.json"), 'r')
         lheArgs = JsonWrapper.load(lheFile)
         self.lheStep0CreateArgs = lheArgs["createRequest"]
         self.lheStep0AssignArgs = lheArgs["assignRequest"]
+        self.lheStep0AssignArgs["AcquisitionEra"] = "test_aqc"
         
         cmsswDoc = {"_id": "software"}
         cmsswDoc[self.rerecoCreateArgs["ScramArch"]] =  []

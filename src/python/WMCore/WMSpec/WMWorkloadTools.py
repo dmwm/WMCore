@@ -21,6 +21,9 @@ class WMWorkloadToolsException(WMException):
     """
     pass
 
+class InvlaidSpecArgumentError(WMException):
+    pass
+
 def makeLumiList(lumiDict):
     try:
         ll = LumiList(compactList = lumiDict)
@@ -66,10 +69,16 @@ def strToBool(string):
 def checkDBSUrl(dbsUrl):
     # use the import statement here since this is packed and used in RunTime code.
     # dbs client is not shipped with it.
-    from WMCore.Services.DBS.DBS3Reader import DBS3Reader
+    
     if dbsUrl:
         try:
-            DBS3Reader(dbsUrl).dbs.serverinfo()
+            #from WMCore.Services.DBS.DBS3Reader import DBS3Reader
+            #DBS3Reader(dbsUrl).dbs.serverinfo()
+            from WMCore.Services.Requests import JSONRequests
+            jsonSender = JSONRequests(dbsUrl)
+            result = jsonSender.get("/serverinfo")
+            if not result[1] == 200:
+                raise WMWorkloadToolsException("DBS is not connected: %s : %s" % (dbsUrl, str(result)))
         except:
             raise WMWorkloadToolsException("DBS is not responding: %s" % dbsUrl)
     
@@ -93,24 +102,24 @@ def parsePileupConfig(mcPileup, dataPileup):
 def _validateArgument(argument, value, argumentDefinition):
     validNull = argumentDefinition[argument]["null"]
     if not validNull and value is None:
-        return "Argument %s can't be None" % argument
+        raise InvlaidSpecArgumentError("Argument %s can't be None" % argument)
     elif validNull and value is None:
-        return
-    
+        return value
+                    
     try:
-        argType = argumentDefinition[argument]["type"]
-        argType(value)
+        value = argumentDefinition[argument]["type"](value)
     except Exception:
-        return "Argument %s type is incorrect in schema." % argument
+        raise InvlaidSpecArgumentError("Argument %s type is incorrect in schema." % argument)
+    
     validateFunction = argumentDefinition[argument]["validate"]
     if validateFunction is not None:
         try:
-            if not validateFunction(argType(value)):
-                raise Exception
-        except:
+            if not validateFunction(value):
+                raise InvlaidSpecArgumentError("Argument %s doesn't pass the validation function." % argument)
+        except Exception, ex:
             # Some validation functions (e.g. Lexicon) will raise errors instead of returning False
-            return "Argument %s doesn't pass validation." % argument
-    return
+            raise InvlaidSpecArgumentError("Validation failed: %s, %s, %s" % (argument, value, str(ex)))
+    return value
 
 def validateArgumentsCreate(arguments, argumentDefinition):
     """
@@ -128,7 +137,8 @@ def validateArgumentsCreate(arguments, argumentDefinition):
             return "Argument %s is required." % argument
         elif optional and argument not in arguments:
             continue
-        _validateArgument(argument, arguments[argument], argumentDefinition)
+        arguments[argument] = _validateArgument(argument, arguments[argument], argumentDefinition)
+
     return
 
 def validateArgumentsUpdate(arguments, argumentDefinition):
@@ -141,7 +151,7 @@ def validateArgumentsUpdate(arguments, argumentDefinition):
     otherwise returns None
     """
     for argument in arguments:
-        _validateArgument(argument, arguments[argument], argumentDefinition)
+        arguments[argument] = _validateArgument(argument, arguments[argument], argumentDefinition)
     return
 
 def setArgumentsNoneValueWithDefault(arguments, argumentDefinition):

@@ -54,6 +54,8 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
         args_without_status = request_args
     # validate the arguments against the spec argumentSpecdefinition
     workload.validateArgument(args_without_status)
+    # to update request_args with type conversion
+    request_args.update(args_without_status)
 
     return workload, request_args
         

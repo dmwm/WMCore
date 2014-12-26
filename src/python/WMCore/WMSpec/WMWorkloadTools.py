@@ -107,7 +107,7 @@ def _validateArgument(argument, value, argumentDefinition):
         return value
                     
     try:
-        value = argumentDefinition[argument]["type"](value)
+        value = argumentDefinition[argument]["type"](value)        
     except Exception:
         raise InvlaidSpecArgumentError("Argument %s type is incorrect in schema." % argument)
     
@@ -150,6 +150,16 @@ def validateArgumentsUpdate(arguments, argumentDefinition):
     an error message if the validation went wrong,
     otherwise returns None
     """
+    for argument in argumentDefinition:
+        optional = argumentDefinition[argument].get("assign_optional", True)
+        if not optional and argument not in arguments:
+            if argumentDefinition[argument].has_key("default"):
+                arguments[argument] = argumentDefinition[argument]["default"]
+            else:
+                return "Argument %s is required." % argument
+        elif optional and argument not in arguments:
+            continue
+        
     for argument in arguments:
         arguments[argument] = _validateArgument(argument, arguments[argument], argumentDefinition)
     return

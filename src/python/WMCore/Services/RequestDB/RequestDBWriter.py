@@ -30,13 +30,14 @@ class RequestDBWriter(RequestDBReader):
         return self.couchDB.updateDocument(request, self.couchapp, "updaterequest",
                     status)
 
-    def updateRequestProperty(self, request, propDict):
+    def updateRequestProperty(self, request, propDict, dn = None):
         encodeProperty = {}
         for key, value in propDict.items():
             if isinstance(value, list) or isinstance(value, dict):
                 encodeProperty[key] = JSONEncoder().encode(value)
             else:
                 encodeProperty[key] = value
-        
+        if dn:
+            encodeProperty["DN"] = dn
         return self.couchDB.updateDocument(request, self.couchapp, "updaterequest",
                     encodeProperty)

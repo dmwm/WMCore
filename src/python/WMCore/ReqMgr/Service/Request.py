@@ -188,13 +188,10 @@ class Request(RESTEntity):
 #                         return None, request_args
                     
             if method == 'POST':
-                cherrypy.log("*****")
-                cherrypy.log(str(param.args))
                 args_length = len(param.args)
                 if args_length == 1 and param.args[0] == "multi_update":
                     #special case for multi update from browser.
                     param.args.pop()
-                    cherrypy.log("***** do this")
                     self._validateMultiRequests(param, safe, validate_request_update_args)
                 else:
                     self._validateRequestBase(param, safe, validate_request_create_args)    
@@ -355,8 +352,8 @@ class Request(RESTEntity):
             workload.updateArguments(request_args)
             # trailing / is needed for the savecouchUrl function
             workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
-        
-        report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args)
+        dn = cherrypy.request.user.get("dn", "unknown")
+        report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
         return report
     
     @restcall

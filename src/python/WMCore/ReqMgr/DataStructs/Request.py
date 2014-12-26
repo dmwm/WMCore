@@ -38,7 +38,8 @@ def initialize_request_args(request, config, clone = False):
     
     # assign first starting status, should be 'new'
     request["RequestStatus"] = REQUEST_START_STATE 
-    request["RequestTransition"] = [{"Status": request["RequestStatus"], "UpdateTime": int(time.time())}]
+    request["RequestTransition"] = [{"Status": request["RequestStatus"], 
+                                     "UpdateTime": int(time.time()), "DN": request["RequestorDN"]}]
     request["RequestDate"] = list(time.gmtime()[:6])
     
     #TODO: generate this automatically from the spec

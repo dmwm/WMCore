@@ -51,7 +51,7 @@ class Create(CreateWMBSBase):
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
                id          INTEGER      NOT NULL,
-               name        VARCHAR(500) NOT NULL,
+               name        VARCHAR(700) NOT NULL,
                open        CHAR(1)      CHECK (open IN ('0', '1' )) NOT NULL,
                last_update INTEGER      NOT NULL
                ) %s""" % tablespaceTable
@@ -67,7 +67,7 @@ class Create(CreateWMBSBase):
         self.create["02wmbs_file_details"] = \
           """CREATE TABLE wmbs_file_details (
                id          INTEGER NOT NULL,
-               lfn         VARCHAR(500) NOT NULL,
+               lfn         VARCHAR(700) NOT NULL,
                filesize    INTEGER,
                events      INTEGER,
                first_event INTEGER      DEFAULT 0,
@@ -517,8 +517,8 @@ class Create(CreateWMBSBase):
                couch_record VARCHAR(255),
                location     INTEGER,
                outcome      INTEGER       DEFAULT 0,
-               cache_dir    VARCHAR(700)  DEFAULT 'None',
-               fwjr_path    VARCHAR(700)
+               cache_dir    VARCHAR(800)  DEFAULT 'None',
+               fwjr_path    VARCHAR(800)
                ) %s""" % tablespaceTable
 
         self.indexes["01_pk_wmbs_job"] = \

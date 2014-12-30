@@ -130,7 +130,10 @@ class WebRequestSchema(WebAPI):
             # e.g. on ConfigCacheID not found, the entire CouchDB traceback is sent in ex_message
             self.error("Create request failed, reason: %s" % str(ex))
             if hasattr(ex, "message"):
+                if hasattr(ex.message, '__call__'):
                     detail = ex.message()
+                else:
+                    detail = str(ex)
             elif hasattr(ex, "name"):
                 detail = ex.name
             else:

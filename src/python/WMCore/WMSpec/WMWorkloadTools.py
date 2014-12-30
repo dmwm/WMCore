@@ -138,7 +138,12 @@ def validateArgumentsCreate(arguments, argumentDefinition):
             return "Argument %s is required." % argument
         elif optional and argument not in arguments:
             continue
-        arguments[argument] = _validateArgument(argument, arguments[argument], argumentDefinition)
+        elif optional and (argument in arguments) and \
+             (arguments[argument] == ""):
+            del arguments[argument] 
+            continue
+        else:
+            arguments[argument] = _validateArgument(argument, arguments[argument], argumentDefinition)
 
     return
 

@@ -290,40 +290,54 @@ class JobSubmitterPoller(BaseWorkerThread):
 
             loadedJob['retry_count'] = newJob['retry_count']
 
-            # Grab the possible locations
-            # This should be in terms of siteNames
-            # Because there can be multiple entry points to a site with one SE
-            # And each of them can be a separate location
-            # Note that all the files in a job have the same set of locations
-            possibleLocations = set()
-            rawLocations      = loadedJob["input_files"][0]["locations"]
+            siteWhitelist = loadedJob.get("siteWhitelist", [])
+            siteBlacklist = loadedJob.get("siteBlacklist", [])
+            trustSitelists = loadedJob.get("trustSitelists", False)
+
+            # convert site lists into correct format
+            if len(siteWhitelist) > 0:
+                whitelist = []
+                for cmsName in siteWhitelist:
+                    whitelist.extend(self.cmsNames.get(cmsName, []))
+                siteWhitelist = whitelist
+            if len(siteBlacklist) > 0:
+                blacklist = []
+                for cmsName in siteBlacklist:
+                    blacklist.extend(self.cmsNames.get(cmsName, []))
+                siteBlacklist = blacklist
+
+            # figure out possible locations for job
+            if trustSitelists:
+                possibleLocations = set(siteWhitelist) - set(siteBlacklist)
+            else:
+                possibleLocations = set()
+
+                # all files in job have same location (in se names)
+                rawLocations = loadedJob["input_files"][0]["locations"]
+
+                # transform se names into site names
+                for loc in rawLocations:
+                    if not loc in self.siteKeys.keys():
+                        # Then we have a problem
+                        logging.error('Encountered unknown location %s for job %i' % (loc, jobID))
+                        logging.error('Ignoring for now, but watch out for this')
+                    else:
+                        for siteName in self.siteKeys[loc]:
+                            possibleLocations.add(siteName)
+
+                # filter with site lists
+                if len(siteWhitelist) > 0:
+                    possibleLocations = possibleLocations & set(siteWhitelist)
+                if len(siteBlacklist) > 0:
+                    possibleLocations = possibleLocations - set(siteBlacklist)
 
             # Create another set of locations that may change when a site goes white/black listed
             # Does not care about the non_draining or aborted sites, they may change and that is the point
             potentialLocations = set()
-
-            # Transform se into siteNames
-            for loc in rawLocations:
-                if not loc in self.siteKeys.keys():
-                    # Then we have a problem
-                    logging.error('Encountered unknown location %s for job %i' % (loc, jobID))
-                    logging.error('Ignoring for now, but watch out for this')
-                else:
-                    for siteName in self.siteKeys[loc]:
-                        possibleLocations.add(siteName)
-
-            if len(loadedJob["siteWhitelist"]) > 0:
-                whiteList = []
-                for cmsName in loadedJob["siteWhitelist"]:
-                    whiteList.extend(self.cmsNames.get(cmsName, []))
-                possibleLocations = possibleLocations & set(whiteList)
-            if len(loadedJob["siteBlacklist"]) > 0:
-                blackList = []
-                for cmsName in loadedJob["siteBlacklist"]:
-                    blackList.extend(self.cmsNames.get(cmsName, []))
-                possibleLocations = possibleLocations - set(blackList)
-
             potentialLocations.update(possibleLocations)
+
+            # now check for sites in drain and adjust the possible locations
+            # also check if there is at least one site left to run the job
             if len(possibleLocations) == 0:
                 newJob['name'] = loadedJob['name']
                 badJobs[61101].append(newJob)

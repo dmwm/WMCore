@@ -234,7 +234,7 @@ class StdBase(object):
                             userSandbox = None, userFiles = [], primarySubType = None,
                             forceMerged = False, forceUnmerged = False,
                             configCacheUrl = None, timePerEvent = None, memoryReq = None,
-                            sizePerEvent = None, useMulticore = True):
+                            sizePerEvent = None, useMulticore = True, applySiteLists = True):
         """
         _setupProcessingTask_
 
@@ -275,8 +275,11 @@ class StdBase(object):
         procTask.applyTemplates()
 
         procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
-        procTask.setSiteWhitelist(self.siteWhitelist)
-        procTask.setSiteBlacklist(self.siteBlacklist)
+
+        if applySiteLists:
+            procTask.setSiteWhitelist(self.siteWhitelist)
+            procTask.setSiteBlacklist(self.siteBlacklist)
+            procTask.setTrustSitelists(self.trustSitelists)
 
         newSplitArgs = {}
         for argName in splitArgs.keys():
@@ -507,8 +510,8 @@ class StdBase(object):
         mergeTaskLogArch.setStepType("LogArchive")
         mergeTaskLogArch.setNewStageoutOverride(self.enableNewStageout)
 
-
         mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)
+
         if doLogCollect:
             self.addLogCollectTask(mergeTask, taskName = "%s%sMergeLogCollect" % (parentTask.name(), parentOutputModuleName))
 
@@ -896,6 +899,7 @@ class StdBase(object):
                                         "validate" : lambda x: all([cmsname(y) for y in x])},
                      "SiteWhitelist" : {"default" : [], "type" : makeList,
                                         "validate" : lambda x: all([cmsname(y) for y in x])},
+                     "TrustSitelists" : {"default" : False, "type" : strToBool},
                      "UnmergedLFNBase" : {"default" : "/store/unmerged"},
                      "MergedLFNBase" : {"default" : "/store/data"},
                      "MinMergeSize" : {"default" : 2 * 1024 * 1024 * 1024, "type" : int,

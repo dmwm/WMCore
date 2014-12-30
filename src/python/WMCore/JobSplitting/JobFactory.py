@@ -65,8 +65,9 @@ class JobFactory(WMObject):
         self.currentGroup = None
         self.currentJob = None
 
-        self.siteBlacklist = kwargs.get("siteBlacklist", [])
         self.siteWhitelist = kwargs.get("siteWhitelist", [])
+        self.siteBlacklist = kwargs.get("siteBlacklist", [])
+        self.trustSitelists = kwargs.get("trustSitelists", False)
 
         # Every time we restart, re-zero the jobs
         self.nJobs = 0
@@ -123,8 +124,15 @@ class JobFactory(WMObject):
         self.currentJob["jobType"] = self.subscription["type"]
         self.currentJob["taskType"] = self.subscription.workflowType()
         self.currentJob["owner"] = self.subscription.owner()
-        self.currentJob["siteBlacklist"] = self.siteBlacklist
-        self.currentJob["siteWhitelist"] = self.siteWhitelist
+
+        # only put into job object if relevant
+        # JobSubmitter can deal with absence
+        if len(self.siteBlacklist) > 0:
+            self.currentJob["siteBlacklist"] = self.siteBlacklist
+        if len(self.siteWhitelist) > 0:
+            self.currentJob["siteWhitelist"] = self.siteWhitelist
+        if self.trustSitelists:
+            self.currentJob["trustSitelists"] = self.trustSitelists
 
         # All production jobs must be run 1
         if self.subscription["type"] == "Production":

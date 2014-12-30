@@ -34,7 +34,7 @@
 }, 
 "assignRequest":
 {
-    "SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
+    "SiteWhitelist": [],
     "Team": "Team-OVERRIDE-ME",
     "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
     "ProcessingString": "ProcessingString-OVERRIDE-ME",
@@ -46,8 +46,8 @@
     "MaxMergeSize": 4294967296,
     "MaxMergeEvents": 50000,
     "ProcessingVersion": 1,
-    "maxRSS": 2352000,
-    "maxVSize": 20294967,
+    "MaxRSS": 2352000,
+    "MaxVSize": 20294967,
     "SoftTimeout": 129600,
     "GracePeriod": 300,
     "CustodialSites": [],

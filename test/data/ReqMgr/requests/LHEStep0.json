@@ -27,7 +27,7 @@
 	}, 
 "assignRequest":
 	{
-	"SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
+	"SiteWhitelist": [],
 	"SiteBlacklist": [],
 	"MergedLFNBase": "/store/generator",
 	"UnmergedLFNBase": "/store/unmerged",

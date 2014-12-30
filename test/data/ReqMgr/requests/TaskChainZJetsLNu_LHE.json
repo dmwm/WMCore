@@ -40,7 +40,7 @@
 
 "assignRequest":
     {
-        "SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
+        "SiteWhitelist": [],
         "SiteBlacklist": [],
         "MergedLFNBase": "/store/relval",
         "UnmergedLFNBase": "/store/unmerged",
@@ -50,8 +50,8 @@
         "AcquisitionEra": {"ZJetsLNu_Tune4C_8TeV_madgraph-pythia8" : "AcquisitionEra-OVERRIDE-ME"},
         "ProcessingString" : {"ZJetsLNu_Tune4C_8TeV_madgraph-pythia8" : "ProcessingString-OVERRIDE-ME"},
         "ProcessingVersion": {"ZJetsLNu_Tune4C_8TeV_madgraph-pythia8" : "ProcessingVersion-OVERRIDE-ME"},
-        "maxRSS": 3072000,
-        "maxVSize": 20294967,
+        "MaxRSS": 3072000,
+        "MaxVSize": 20294967,
         "SoftTimeout": 129600,
         "GracePeriod": 1000,
         "dashboard": "dashboard-OVERRIDE-ME",

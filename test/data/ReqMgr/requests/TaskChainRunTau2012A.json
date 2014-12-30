@@ -47,7 +47,7 @@
 
 "assignRequest":
     {
-        "SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
+        "SiteWhitelist": [],
         "SiteBlacklist": [],
         "MergedLFNBase": "/store/relval",
         "UnmergedLFNBase": "/store/unmerged",
@@ -60,8 +60,8 @@
                               "RECODreHLT" : "ProcessingString-1-OVERRIDE-ME"},
         "ProcessingVersion": {"HLTD" : "ProcessingVersion-OVERRIDE-ME",
                               "RECODreHLT" : "ProcessingVersion-1-OVERRIDE-ME"},
-        "maxRSS": 3072000,
-        "maxVSize": 20294967,
+        "MaxRSS": 3072000,
+        "MaxVSize": 20294967,
         "SoftTimeout": 129600,
         "GracePeriod": 1000,
         "dashboard": "dashboard-OVERRIDE-ME",

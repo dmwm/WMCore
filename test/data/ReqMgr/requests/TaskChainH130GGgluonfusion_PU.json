@@ -48,7 +48,7 @@
 
 "assignRequest":
     {
-        "SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
+        "SiteWhitelist": [],
         "SiteBlacklist": [],
         "MergedLFNBase": "/store/relval",
         "UnmergedLFNBase": "/store/unmerged",
@@ -61,8 +61,8 @@
                               "RECOPU1" : "ProcessingString-1-OVERRIDE-ME"},
         "ProcessingVersion": {"DIGIPU1" : "ProcessingVersion-OVERRIDE-ME",
                               "RECOPU1" : "ProcessingVersion-1-OVERRIDE-ME"},
-        "maxRSS": 3072000,
-        "maxVSize": 20294967,
+        "MaxRSS": 3072000,
+        "MaxVSize": 20294967,
         "SoftTimeout": 129600,
         "GracePeriod": 1000,
         "dashboard": "dashboard-OVERRIDE-ME",

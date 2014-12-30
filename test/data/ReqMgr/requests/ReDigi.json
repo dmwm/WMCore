@@ -43,7 +43,7 @@
 	},
 "assignRequest":
 	{
-	"SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
+	"SiteWhitelist": [],
 	"SiteBlacklist": [],
 	"MergedLFNBase": "/store/backfill/1",
 	"UnmergedLFNBase": "/store/unmerged",
@@ -53,8 +53,8 @@
 	"AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
 	"ProcessingVersion": 1,
 	"ProcessingString" : "ProcessingString-OVERRIDE-ME",
-	"maxRSS": 4294967296,
-	"maxVSize": 4294967296,
+	"MaxRSS": 4294967296,
+	"MaxVSize": 4294967296,
 	"SoftTimeout": 129600,
 	"GracePeriod": 300,
 	"dashboard": "dashboard-OVERRIDE-ME",

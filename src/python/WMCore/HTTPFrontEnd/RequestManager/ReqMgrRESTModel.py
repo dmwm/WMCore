@@ -478,14 +478,16 @@ class ReqMgrRESTModel(RESTModel):
                 request = Utilities.makeRequest(self, reqInputArgs, self.couchUrl,
                                                 self.workloadDBName, self.wmstatWriteURL)
             except cherrypy.HTTPError as ex:
-                self.error("Create request failed, reason: %s" % ex)
+                self.error("Create request failed, reason: %s" % str(ex))
                 # Assume that this is a valid HTTPError
                 raise ex
             except (WMException, Exception) as ex:
                 # TODO problem not to expose logs to the client
                 # e.g. on ConfigCacheID not found, the entire CouchDB traceback is sent in ex_message
-                self.error("Create request failed, reason: %s" % ex)
-                if hasattr(ex, "name"):
+                self.error("Create request failed, reason: %s" % str(ex))
+                if hasattr(ex, "message"):
+                    detail = ex.message()
+                elif hasattr(ex, "name"):
                     detail = ex.name
                 else:
                     detail = "check logs." 

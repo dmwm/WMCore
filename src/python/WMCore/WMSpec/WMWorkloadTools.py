@@ -8,7 +8,7 @@ Created on Jun 13, 2013
 
 @author: dballest
 """
-import json
+import logging
 
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMException import WMException
@@ -109,16 +109,17 @@ def _validateArgument(argument, value, argumentDefinition):
     try:
         value = argumentDefinition[argument]["type"](value)        
     except Exception:
-        raise InvlaidSpecArgumentError("Argument %s type is incorrect in schema." % argument)
+        raise InvlaidSpecArgumentError("Argument: %s: value: %s type is incorrect in schema." % (argument, value))
     
     validateFunction = argumentDefinition[argument]["validate"]
     if validateFunction is not None:
         try:
             if not validateFunction(value):
-                raise InvlaidSpecArgumentError("Argument %s doesn't pass the validation function." % argument)
+                raise InvlaidSpecArgumentError("Argument %s: value: %s doesn't pass the validation function." % (argument, value))
         except Exception, ex:
             # Some validation functions (e.g. Lexicon) will raise errors instead of returning False
-            raise InvlaidSpecArgumentError("Validation failed: %s, %s, %s" % (argument, value, str(ex)))
+            logging.error(str(ex))
+            raise InvlaidSpecArgumentError("Validation failed: %s value: %s" % (argument, value))
     return value
 
 def validateArgumentsCreate(arguments, argumentDefinition):

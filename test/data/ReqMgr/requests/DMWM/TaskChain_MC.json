@@ -61,7 +61,7 @@
     "ProcessingString" : {"ProdMinBias" : "ProcessingString-OVERRIDE-ME",
                           "DIGIPROD1" : "ProcessingString-1-OVERRIDE-ME",
                           "RECODreHLT" : "ProcessingString-2-OVERRIDE-ME"},
-    "dashboard": "dashboard-OVERRIDE-ME",
+    "Dashboard": "dashboard-OVERRIDE-ME",
     "SiteBlacklist": [],
     "MergedLFNBase": "/store/relval",
     "UnmergedLFNBase": "/store/unmerged",

@@ -40,7 +40,7 @@
     "MaxVSize": 4294967296,
     "SoftTimeout": 129600,
     "GracePeriod": 300,
-    "dashboard": "test",
+    "Dashboard": "test",
     "Team": "Team--OVERRIDE-ME",
     "CustodialSites": [],
     "NonCustodialSites": [],

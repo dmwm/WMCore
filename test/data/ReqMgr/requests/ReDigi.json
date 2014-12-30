@@ -57,7 +57,7 @@
 	"MaxVSize": 4294967296,
 	"SoftTimeout": 129600,
 	"GracePeriod": 300,
-	"dashboard": "dashboard-OVERRIDE-ME",
+	"Dashboard": "dashboard-OVERRIDE-ME",
 	"Team": "Team--OVERRIDE-ME",
 	"CustodialSites": [],
 	"NonCustodialSites": [],

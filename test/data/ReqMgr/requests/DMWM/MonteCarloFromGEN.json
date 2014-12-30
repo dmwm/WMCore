@@ -38,7 +38,7 @@
     "Team": "Team-OVERRIDE-ME",
     "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
     "ProcessingString": "ProcessingString-OVERRIDE-ME",
-    "dashboard": "dashboard-OVERRIDE-ME",
+    "Dashboard": "dashboard-OVERRIDE-ME",
     "SiteBlacklist": [],
     "MergedLFNBase": "/store/backfill/1",
     "UnmergedLFNBase": "/store/unmerged",

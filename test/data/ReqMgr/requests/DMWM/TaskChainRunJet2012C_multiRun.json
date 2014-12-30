@@ -53,7 +53,7 @@
                            "RECODreHLT" : "AcquisitionEra-1-OVERRIDE-ME"},
         "ProcessingString" : {"HLTD" : "ProcessingString-OVERRIDE-ME",
                               "RECODreHLT" : "ProcessingString-1-OVERRIDE-ME"},
-        "dashboard": "dashboard-OVERRIDE-ME",
+        "Dashboard": "dashboard-OVERRIDE-ME",
         "ProcessingVersion": 1,
         "SiteBlacklist": [],
         "MergedLFNBase": "/store/mc",

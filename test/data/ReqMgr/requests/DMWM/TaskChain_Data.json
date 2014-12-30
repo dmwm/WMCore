@@ -50,7 +50,7 @@
                        "ALCACOSD" : "AcquisitionEra-1-OVERRIDE-ME"},
     "ProcessingString" : {"RECOCOSD" : "ProcessingString-OVERRIDE-ME",
                           "ALCACOSD" : "ProcessingString-1-OVERRIDE-ME"},
-    "dashboard": "dashboard-OVERRIDE-ME",
+    "Dashboard": "dashboard-OVERRIDE-ME",
     "SiteBlacklist": [],
     "MergedLFNBase": "/store/relval",
     "UnmergedLFNBase": "/store/unmerged",

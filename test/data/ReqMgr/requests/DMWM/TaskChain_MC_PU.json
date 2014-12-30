@@ -68,7 +68,7 @@
     "ProcessingString" : {"ZTT" : "ProcessingString-OVERRIDE-ME",
                           "DIGIPU1" : "ProcessingString-1-OVERRIDE-ME",
                           "RECOPU1" : "ProcessingString-2-OVERRIDE-ME"},
-    "dashboard": "dashboard-OVERRIDE-ME",
+    "Dashboard": "dashboard-OVERRIDE-ME",
     "SiteBlacklist": [],
     "MergedLFNBase": "/store/relval",
     "UnmergedLFNBase": "/store/unmerged",

@@ -50,12 +50,18 @@ class WMStatsReader():
         if not options.has_key('stale'):
             options.update(self.defaultStale)
         return options
-            
-    def _updateReuestInfoWithJobInfo(self, requestInfo):
-        if len(requestInfo.keys()) != 0:
-            requestAndAgentKey = self._getRequestAndAgent(requestInfo.keys())
+    
+    def getLatestJobInfoByRequests(self, requestNames):
+        jobInfoByRequestAndAgent = {}
+        if len(requestNames) > 0:
+            requestAndAgentKey = self._getRequestAndAgent(requestNames)
             jobDocIds = self._getLatestJobInfo(requestAndAgentKey)
             jobInfoByRequestAndAgent = self._getAllDocsByIDs(jobDocIds)
+        return jobInfoByRequestAndAgent
+                    
+    def _updateRequestInfoWithJobInfo(self, requestInfo):
+        if len(requestInfo.keys()) != 0:
+            jobInfoByRequestAndAgent = self.getLatestJobInfoByRequests(requestInfo.keys())
             self._combineRequestAndJobData(requestInfo, jobInfoByRequestAndAgent)
             
     def _getCouchView(self, view, options, keys = []):
@@ -125,14 +131,15 @@ class WMStatsReader():
            "agent_url":"vocms231.cern.ch:9999",
            "type":"agent_request"}}
         """
-        for row in jobData["rows"]:
-            # condition checks if documents are deleted between calls.
-            # just ignore in that case
-            if row["doc"]:
-                jobInfo = requestData[row["doc"]["workflow"]]
-                jobInfo.setdefault("AgentJobInfo", {}) 
-                jobInfo["AgentJobInfo"][row["doc"]["agent_url"]] = row["doc"]
-    
+        if jobData:
+            for row in jobData["rows"]:
+                # condition checks if documents are deleted between calls.
+                # just ignore in that case
+                if row["doc"]:
+                    jobInfo = requestData[row["doc"]["workflow"]]
+                    jobInfo.setdefault("AgentJobInfo", {}) 
+                    jobInfo["AgentJobInfo"][row["doc"]["agent_url"]] = row["doc"]
+        
             
     def _getRequestByNames(self, requestNames, detail = True):
         """
@@ -259,7 +266,7 @@ class WMStatsReader():
         requestInfo = self._formatCouchData(data)
         if jobInfoFlag:
             # get request and agent info
-            self._updateReuestInfoWithJobInfo(requestInfo)
+            self._updateRequestInfoWithJobInfo(requestInfo)
         return requestInfo
     
     def getActiveData(self, jobInfoFlag = False):
@@ -273,6 +280,6 @@ class WMStatsReader():
 
         if jobInfoFlag:
             # get request and agent info
-            self._updateReuestInfoWithJobInfo(requestInfo)
+            self._updateRequestInfoWithJobInfo(requestInfo)
         return requestInfo
     

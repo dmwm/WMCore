@@ -1,6 +1,6 @@
 import time
 import logging
-from WMCore.Database.CMSCouch import CouchServer
+from WMCore.Database.CMSCouch import CouchServer, Database
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 from WMCore.Wrappers.JsonWrapper import JSONEncoder
 
@@ -16,13 +16,19 @@ class RequestDBReader():
         setting up comon variables for inherited class.
         inherited class should call this in their init function
         """
-        if dbName:
-            self.couchURL = couchURL
-            self.dbName = dbName
-        else:
-            self.couchURL, self.dbName = splitCouchServiceURL(couchURL)
-        self.couchServer = CouchServer(self.couchURL)
-        self.couchDB = self.couchServer.connectDatabase(self.dbName, False)
+        if isinstance(couchURL, Database):
+            self.couchDB = couchURL
+            self.couchURL = self.couchDB['host']
+            self.dbName = self.couchDB.name
+            self.couchServer = CouchServer(self.couchURL)
+        else:    
+            if dbName:
+                self.couchURL = couchURL
+                self.dbName = dbName
+            else:
+                self.couchURL, self.dbName = splitCouchServiceURL(couchURL)
+            self.couchServer = CouchServer(self.couchURL)
+            self.couchDB = self.couchServer.connectDatabase(self.dbName, False)
         self.couchapp = couchapp
         self.defaultStale = {"stale": "update_after"}
         
@@ -44,20 +50,28 @@ class RequestDBReader():
         
         options = self.setDefaultStaleOptions(options)
             
-        if keys and type(keys) == str:
+        if keys and isinstance(keys, basestring):
             keys = [keys]
         return self.couchDB.loadView(self.couchapp, view, options, keys)
-            
     
-    def _formatCouchData(self, data, key = "id"):
-        detail = False
+    
+    def _filterCouchInfo(self, couchInfo):
+        # remove the couch specific information
+        for key in ['_rev', '_attachments']:
+            if  key in couchInfo:
+                del couchInfo[key]
+        return
+    
+                
+    def _formatCouchData(self, data, key = "id", detail = True, filterCouch = True):
         result = {}
         for row in data['rows']:
             if row.has_key('error'):
                 continue
             if row.has_key("doc"):
+                if filterCouch:
+                    self._filterCouchInfo(row["doc"])
                 result[row[key]] = row["doc"]
-                detail = True
             else:
                 result[row[key]] = None
         if detail:
@@ -65,7 +79,7 @@ class RequestDBReader():
         else:
             return result.keys()
             
-    def _getRequestByNames(self, requestNames, detail = True):
+    def _getRequestByNames(self, requestNames, detail):
         """
         'status': list of the status
         """
@@ -105,18 +119,25 @@ class RequestDBReader():
         return self.couchDB
     
     
-    def getRequestByNames(self, requestNames):
+    def getRequestByNames(self, requestNames, detail = True):
+        if isinstance(requestNames, basestring):
+            requestNames = [requestNames]
         if len(requestNames) == 0:
             return {}
-        data = self._getRequestByNames(requestNames, True)
+        data = self._getRequestByNames(requestNames, detail = detail)
 
-        requestInfo = self._formatCouchData(data)
+        requestInfo = self._formatCouchData(data, detail = detail)
         return requestInfo
     
     def getRequestByStatus(self, statusList, detail = False, limit = None, skip = None):
         
         data = self._getRequestByStatus(statusList, detail, limit, skip)
-        requestInfo = self._formatCouchData(data)
+        requestInfo = self._formatCouchData(data, detail = detail)
 
         return requestInfo
     
+    def getRequestByCouchView(self, view, options, keys = []):
+        options.setdefault("include_docs", True)
+        data = self._getCouchView(view, options, keys)
+        requestInfo = self._formatCouchData(data)
+        return requestInfo

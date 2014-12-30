@@ -1,0 +1,34 @@
+<div id="workflow-summary">
+<header class="group">
+<nav class="navbar navbar-left">
+<strong>Dataset:</strong>$dataset
+<br/>
+#for key, val in $wdict.items()
+<strong>$key.capitalize():</strong>&nbsp;$val
+&nbsp;
+#end for
+</nav>
+<nav class="navbar navbar-right">
+<button class="btn" onclick="ToggleTag('workflow-info')">JSON</button>
+</nav>
+</header>
+</div>
+
+<div id="workflow-info" class="hide">
+<form method="post" action="$base/confirm_action" class="forms">
+<input type="hidden" name="action" value="workflow" />
+<textarea class="editor lined" id='some-id'>
+$code
+</textarea>
+<script type="text/javascript">MakeLines('some-id');</script>
+<br/>
+<button class="btn right btn-red">Validate</button>
+&nbsp;
+<button class="btn right btn-yellow">Re-assign</button>
+&nbsp;
+<button class="btn right btn-green">Re-submit</button>
+</form>
+</div>
+
+<hr/>
+

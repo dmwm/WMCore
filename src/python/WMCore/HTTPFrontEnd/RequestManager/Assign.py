@@ -339,8 +339,8 @@ class Assign(WebAPI):
         helper.setMergeParameters(int(kwargs.get("MinMergeSize", 2147483648)),
                                   int(kwargs.get("MaxMergeSize", 4294967296)),
                                   int(kwargs.get("MaxMergeEvents", 50000)))
-        helper.setupPerformanceMonitoring(int(kwargs.get("maxRSS", 2411724)),
-                                          int(kwargs.get("maxVSize", 20411724)),
+        helper.setupPerformanceMonitoring(int(kwargs.get("MaxRSS", 2411724)),
+                                          int(kwargs.get("MaxVSize", 20411724)),
                                           int(kwargs.get("SoftTimeout", 129600)),
                                           int(kwargs.get("GracePeriod", 300)))
 
@@ -375,7 +375,7 @@ class Assign(WebAPI):
         helper.setBlockCloseSettings(blockCloseMaxWaitTime, blockCloseMaxFiles,
                                      blockCloseMaxEvents, blockCloseMaxSize)
 
-        helper.setDashboardActivity(kwargs.get("dashboard", ""))
+        helper.setDashboardActivity(kwargs.get("Dashboard", ""))
         Utilities.saveWorkload(helper, request['RequestWorkflow'], self.wmstatWriteURL)
         
         # update AcquisitionEra in the Couch document (#4380)

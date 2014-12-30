@@ -63,7 +63,7 @@
 
 "assignRequest":
     {
-        "SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
+        "SiteWhitelist": [],
         "SiteBlacklist": [],
         "MergedLFNBase": "/store/relval",
         "UnmergedLFNBase": "/store/unmerged",
@@ -79,11 +79,11 @@
         "ProcessingVersion": {"Pyquen_ZeemumuJets_pt10_2760GeV" : "ProcessingVersion-OVERRIDE-ME",
                               "DIGIHISt3" : "ProcessingVersion-1-OVERRIDE-ME",
                               "RECOHISt4" : "ProcessingVersion-2-OVERRIDE-ME"},
-        "maxRSS": 3072000,
-        "maxVSize": 20294967,
+        "MaxRSS": 3072000,
+        "MaxVSize": 20294967,
         "SoftTimeout": 129600,
         "GracePeriod": 1000,
-        "dashboard": "dashboard-OVERRIDE-ME",
+        "Dashboard": "dashboard-OVERRIDE-ME",
         "Team": "Team-OVERRIDE-ME",
         "CustodialSites": [],
         "NonCustodialSites": [],

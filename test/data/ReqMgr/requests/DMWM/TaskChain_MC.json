@@ -53,7 +53,7 @@
     },
 "assignRequest":
     {
-    "SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
+    "SiteWhitelist": [],
     "Team": "Team-OVERRIDE-ME",
     "AcquisitionEra": {"ProdMinBias" : "AcquisitionEra-OVERRIDE-ME",
                        "DIGIPROD1" : "AcquisitionEra-1-OVERRIDE-ME",
@@ -61,7 +61,7 @@
     "ProcessingString" : {"ProdMinBias" : "ProcessingString-OVERRIDE-ME",
                           "DIGIPROD1" : "ProcessingString-1-OVERRIDE-ME",
                           "RECODreHLT" : "ProcessingString-2-OVERRIDE-ME"},
-    "dashboard": "dashboard-OVERRIDE-ME",
+    "Dashboard": "dashboard-OVERRIDE-ME",
     "SiteBlacklist": [],
     "MergedLFNBase": "/store/relval",
     "UnmergedLFNBase": "/store/unmerged",
@@ -69,8 +69,8 @@
     "MaxMergeSize": 4294967296,
     "MaxMergeEvents": 100000,
     "ProcessingVersion": 1,
-    "maxRSS": 3072000,
-    "maxVSize": 20294967,
+    "MaxRSS": 3072000,
+    "MaxVSize": 20294967,
     "SoftTimeout": 129600,
     "GracePeriod": 1000,
     "CustodialSites": [],

@@ -9,7 +9,7 @@ test_authz_key = None
 
 def fake_authz_headers(hmac_key, method = 'HNLogin',
                        login = 'test', name = 'Test User',
-                       dn = None, roles = {}):
+                       dn = None, roles = {}, format = "list"):
     """Create fake authentication and authorisation headers compatible
     with the CMSWEB front-ends. Assumes you have the HMAC signing key
     the back-end will use to validate the headers.
@@ -50,14 +50,17 @@ def fake_authz_headers(hmac_key, method = 'HNLogin',
 
     cksum = hmac.new(hmac_key, prefix + "#" + suffix, hashlib.sha1).hexdigest()
     headers['cms-authn-hmac'] = cksum
-    return headers.items()
+    if format == "list":
+        return headers.items()
+    else:
+        return headers
 
-def fake_authz_key_file():
+def fake_authz_key_file(delete=True):
     """Create temporary file for fake authorisation hmac signing key.
 
     :returns: Instance of :class:`~.NamedTemporaryFile`, whose *data*
       attribute contains the HMAC signing binary key."""
-    t = NamedTemporaryFile()
+    t = NamedTemporaryFile(delete=delete)
     t.data = open("/dev/urandom").read(20)
     t.write(t.data)
     t.seek(0)

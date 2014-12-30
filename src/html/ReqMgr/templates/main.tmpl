@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ReqMgr Prototype</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="$base/js/?f=utils.js&amp;f=prototype.js&amp;f=ajax_utils.js"></script>
+    <link rel="stylesheet" href="$base/css/?f=kube.min.css&amp;f=main.css" />
+</head>
+<body class="kubepage">
+
+    <header class="group header">
+        <nav class="navbar navbar-left">
+            <ul>
+            <li><img src="$base/images/cms_logo.jpg" alt="" style="width:30px" ></li>
+            <li><a href="$base/" class="main-menu-item">ReqMgr</a></li>
+            <li><a href="#" class="main-menu-item" onclick="ChangeMenuItem('main-menu-item', this)">Agent 1</a></li>
+            <li><a href="#" class="main-menu-item" onclick="ChangeMenuItem('main-menu-item', this)">Agent 2</a></li>
+            <li><a href="#" class="main-menu-item" onclick="ChangeMenuItem('main-menu-item', this)">Agent 3</a></li>
+            <li><a href="#" class="main-menu-item" onclick="ChangeMenuItem('main-menu-item', this)">Agent 4</a></li>
+            </ul>
+        </nav>
+        <nav class="navbar navbar-right">
+            <strong>User: $user</strong>
+        </nav>
+    </header>
+    <br/>
+
+<div class="main-font">
+    $content
+</div>
+<div id="confirmation"></div>
+
+</body>
+</html>

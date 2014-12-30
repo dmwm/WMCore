@@ -1,0 +1,113 @@
+#from WMCore.ReqMgr.Web.utils import gen_color
+#from WMCore.ReqMgr.Tools.cms import next_status
+
+<h2>Approve interface</h2>
+<hr/>
+
+<header class="group">
+<nav class="navbar navbar-left">
+    <ul>
+        <li>Sort by:</li>
+        #if $sort=='status':
+        <li class="menu-item active underline"><a href="#">Status</a></li>
+        #else
+        <li class="menu-item"><a href="$base/approve?sort=status">Status</a></li>
+        #end if
+        #if $sort=='date':
+        <li class="menu-item active underline"><a href="#">Date</a></li>
+        #else
+        <li class="menu-item"><a href="$base/approve?sort=date">Date</a></li>
+        #end if
+        #if $sort=='id':
+        <li class="menu-item active underline"><a href="#">Id</a></li>
+        #else
+        <li class="menu-item"><a href="$base/approve?sort=id">Id</a></li>
+        #end if
+        #if $sort=='group':
+        <li class="menu-item active underline"><a href="#">Group</a></li>
+        #else
+        <li class="menu-item"><a href="$base/approve?sort=group">Group</a></li>
+        #end if
+    </ul>
+</nav>
+<nav class="navbar navbar-right">
+    <button class="btn btn-small btn-outline btn-green" onclick="javascript:ApproveAllRequests()">Approve All</button>
+    <button class="btn btn-small btn-outline btn-red" onclick="javascript:RejectAllRequests()">Reject All</button>
+</nav>
+</header>
+
+<hr/>
+#set ids=[]
+#for rdict in $requests
+#set rstat=$rdict['RequestStatus']
+#set keys=$rdict.keys()
+#silent $keys.sort()
+#silent $keys.remove('RequestName') ## we want RequestName to be first in a list
+#for key in ['RequestName']+$keys
+#set val=$rdict[$key]
+#if $key=="RequestDate"
+#set val="<kbd>%s</kbd>"%$val
+#elif $key=="RequestName"
+#set id="request-"+$val
+#silent $ids.append($id)
+#set val='<span class="ticket"><a href="%s/fetch?rid=%s">%s</a></span>'%($base,$val,$val)
+#end if
+#if $key=="RequestStatus"
+    <strong>$key.capitalize():</strong>
+    #set color=$gen_color($rstat)
+    <b><span style="color:$color;background-color:#fff;padding:3px;">$val</span></b>
+#elif $key=="RequestName"
+<div class="group">
+<nav class="navbar navbar-left">
+    $val
+</nav>
+<nav class="navbar navbar-right">
+    <button class="btn btn-small btn-green" onclick="javascript:ApproveRequest(this, '$id')">Approve</button>
+    <button class="btn btn-small btn-red" onclick="javascript:RejectRequest(this, '$id')">Reject</button>
+</nav>
+</div>
+#else
+    <strong>$key.capitalize():</strong>
+    $val
+    <br/>
+#end if
+#end for
+Request seen by data-ops on 02/02/02.
+<hr/>
+#end for
+
+<script>
+// helper function to call server side ajax_action method and pass
+// along action method, request ids, and new status
+// approve interface changes new requests into assignment-approved or rejected
+function RejectRequest(bid, rid) {
+    bid.className="btn btn-small btn-disabled";
+    bid.innerHTML="DONE";
+    parameters = {'ids': [rid], 'new_status': 'rejected'},
+    ajaxRequest('$base/data/request/multi_update', parameters);
+}
+function RejectAllRequests() {
+    var items = document.getElementsByClassName('btn');
+    for (var i = 0; i < items.length; i++ ) {
+        items[i].className='btn btn-small btn-disabled';
+        items[i].innerHTML='DONE';
+    }
+    parameters = {'ids': $ids, 'new_status': 'rejected'},
+    ajaxRequest('$base/data/request/multi_update', parameters);
+}
+function ApproveRequest(bid, rid) {
+    bid.className="btn btn-small btn-disabled";
+    bid.innerHTML="DONE";
+    parameters = {'ids': [rid], 'new_status': 'assignment-approved'};
+    ajaxRequest('$base/data/request/multi_update', parameters);
+}
+function ApproveAllRequests() {
+    var items = document.getElementsByClassName('btn');
+    for (var i = 0; i < items.length; i++ ) {
+        items[i].className='btn btn-small btn-disabled';
+        items[i].innerHTML='DONE';
+    }
+    parameters = {'ids': $ids, 'new_status': 'assignment-approved'};
+    ajaxRequest('$base/data/request/multi_update', parameters);
+}
+</script>

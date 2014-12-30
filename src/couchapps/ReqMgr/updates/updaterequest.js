@@ -1,14 +1,14 @@
 // update function
 // input: valueKey (what to change), value - new value
-function(doc, req)
-{
+function(doc, req) {
     if (doc === null) {
     	return [null, "Error: document not found"];
     };
     
     function updateTransition() {
         var currentTS =  Math.round((new Date()).getTime() / 1000);
-        var statusObj = {"Status": doc.RequestStatus, "UpdateTime": currentTS};
+        var dn = doc.DN || null;
+        var statusObj = {"Status": doc.RequestStatus, "UpdateTime": currentTS, "DN": dn};
         
         if (!doc.RequestTransition) {
             doc.RequestTransition = new Array();
@@ -30,6 +30,9 @@ function(doc, req)
             key == "InputDatasetTypes" ||
             key == "InputDatasets" ||
             key == "OutputDatasets" ||
+            key == "CustodialSites" ||
+            key == "NoneCustodialSites" ||
+            key == "AutoApproveSubscriptionSites" ||
             key == "Teams") {
     		
     		doc[key] = JSON.parse(newValues[key]);

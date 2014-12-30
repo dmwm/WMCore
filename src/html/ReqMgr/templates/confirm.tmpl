@@ -1,0 +1,35 @@
+#import time
+<h6>Confirmation</h6>
+<hr/>
+<div id="results">
+#if isinstance($ticket, list)
+#for t in $ticket
+Your request &nbsp;<span class="ticket">$t</span>&nbsp;
+has been created on <kbd>$time.ctime()</kbd>
+<hr/>
+#end for
+#else
+Your request &nbsp;<span class="ticket">$ticket</span>&nbsp;
+has been created on <kbd>$time.ctime()</kbd>
+#end if
+<br/>
+#if $status=="ok"
+#set scol="green"
+#else
+#set scol="red"
+#end if
+Status: <span style="background-color:white;color:$scol">$status</span>
+<br/>
+<br/>
+<h6>Further actions</h6>
+<ul>
+#if not isinstance($ticket, list)
+<li>
+<a href="$base/requests?rid=$ticket">Check</a> status of this request
+</li>
+#end if
+<li>
+<a href="$base/requests?user=$user">Check</a> status of all requests
+</li>
+</ul>
+</div>

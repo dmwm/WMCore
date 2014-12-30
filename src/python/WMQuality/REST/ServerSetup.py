@@ -12,13 +12,16 @@ class RESTMainTestServer(object):
     def __init__(self, cfg, statedir, testName):
         self.server = RESTMain(cfg, statedir)
         self.testName = testName
-        self.cofig = cfg
+        self.config = cfg
         self.port = cfg.main.port
         self.host = '127.0.0.1'
         self.serverUrl = "http://%s:%s/%s/" % (self.host, self.port, cfg.main.application)
-        ## test permission
-        #test_authz_key = fake_authz_key_file()
-        #self.header = fake_authz_headers(test_authz_key.data, roles = {"Global Admin": {'group': ['global']}})        
+        
+        ## test authentication using fake filepermission
+        self.test_authz_key = fake_authz_key_file(False)
+        self.config.main.tools.cms_auth.key_file = self.test_authz_key.name
+        #self.header = fake_authz_headers(test_authz_key.data, roles = {"Admin": {'group': ['ReqMgr']}})        
+        
         self.jsonSender = JSONRequests(self.serverUrl)
         
     def getLastTest(self):
@@ -58,3 +61,6 @@ class RESTMainTestServer(object):
         for name, server in getattr(cherrypy, 'servers', {}).items():
             server.unsubscribe()
             del cherrypy.servers[name]
+        
+        self.test_authz_key.close()
+        os.remove(self.test_authz_key.name)

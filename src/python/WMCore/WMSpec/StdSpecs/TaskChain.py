@@ -87,8 +87,8 @@ Example initial processing task
 
 from WMCore.Lexicon import identifier, couchurl, block, primdataset, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool, validateArguments,\
-    parsePileupConfig
+from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool,\
+     validateArgumentsCreate, parsePileupConfig
 
 #
 # simple utils for data mining the request dictionary
@@ -655,15 +655,19 @@ class TaskChainWorkloadFactory(StdBase):
         Validate the task information against the given
         argument description
         """
-        msg = validateArguments(taskConf, taskArgumentDefinition)
+        msg = validateArgumentsCreate(taskConf, taskArgumentDefinition)
         if msg is not None:
             self.raiseValidationException(msg)
         # Also retrieve the "main" arguments which may be overriden in the task
         # Change them all to optional for validation
+        #TODO: can this just called
+        #validateArgumentsUpdate(taskConf, baseArgs)
         baseArgs = self.getWorkloadArguments()
+        validateArgumentsCreate(taskConf, baseArgs)
+        
         for arg in baseArgs:
             baseArgs[arg]["optional"] = True
-        msg = validateArguments(taskConf, baseArgs)
+        msg = validateArgumentsCreate(taskConf, baseArgs)
         if msg is not None:
             self.raiseValidationException(msg)
         return

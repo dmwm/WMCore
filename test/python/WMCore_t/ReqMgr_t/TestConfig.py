@@ -90,7 +90,7 @@ config.main.section_("tools")
 config.main.tools.section_("cms_auth")
 config.main.server.socket_host = "127.0.0.1"
 config.main.server.environment = "staging" # must not be "production"
-config.main.tools.cms_auth.policy = "dangerously_insecure"
+#config.main.tools.cms_auth.policy = "dangerously_insecure"
 
 # go up /deployment/reqmgr2/__file__
 first_part = os.path.abspath(__file__.rsplit('/', 3)[0])

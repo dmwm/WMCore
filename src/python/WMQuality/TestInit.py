@@ -29,7 +29,8 @@ hasDatabase = True
 try:
     from WMCore.Database.DBFormatter import DBFormatter
     from WMCore.WMInit import WMInit
-except ImportError:
+except ImportError, ex:
+    print str(ex)
     print "NOTE: TestInit is being loaded without database support"
     hasDatabase = False
 

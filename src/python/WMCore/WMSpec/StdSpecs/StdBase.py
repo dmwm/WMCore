@@ -8,11 +8,12 @@ import logging
 
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 from WMCore.Configuration import ConfigSection
-from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname
+from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname, couchurl
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMException import WMException
 from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMWorkloadTools import makeList, makeLumiList, strToBool, validateArguments, checkDBSUrl
+from WMCore.WMSpec.WMWorkloadTools import makeList, makeLumiList, strToBool, checkDBSUrl, validateArgumentsCreate
+
 
 analysisTaskTypes = ['Analysis', 'PrivateMC']
 
@@ -53,6 +54,8 @@ class StdBase(object):
         # Internal parameters
         self.workloadName = None
         self.multicoreNCores = None
+        self.schema = None
+        self.config_cache = {}
 
         return
 
@@ -64,15 +67,20 @@ class StdBase(object):
         method and pull out any that are setup by this base class.
         """
         self.workloadName = workloadName
+        self.schema = {}
         argumentDefinition = self.getWorkloadArguments()
         for arg in argumentDefinition:
             if arg in arguments:
                 if arguments[arg] is None:
                     setattr(self, argumentDefinition[arg]["attr"], arguments[arg])
                 else:
-                    setattr(self, argumentDefinition[arg]["attr"], argumentDefinition[arg]["type"](arguments[arg]))
+                    value = argumentDefinition[arg]["type"](arguments[arg])
+                    setattr(self, argumentDefinition[arg]["attr"], value)
+                    self.schema[arg] = value
             elif argumentDefinition[arg]["optional"]:
-                setattr(self, argumentDefinition[arg]["attr"], argumentDefinition[arg]["default"])
+                defaultValue = argumentDefinition[arg]["default"]
+                setattr(self, argumentDefinition[arg]["attr"], defaultValue)
+                self.schema[arg] = defaultValue
 
         # Definition of parameters that depend on the value of others
         if hasattr(self, "multicore") and self.multicore:
@@ -96,8 +104,12 @@ class StdBase(object):
         outputModules = {}
         if configDoc != None and configDoc != "":
             url = configCacheUrl or couchURL
-            configCache = ConfigCache(url, couchDBName)
-            configCache.loadByID(configDoc)
+            if  (url, couchDBName) in self.config_cache:
+                configCache = self.config_cache[(url, couchDBName)]
+            else:
+                configCache = ConfigCache(url, couchDBName)
+                self.config_cache[(url, couchDBName)] = configCache
+            configCache.loadDocument(configDoc)
             outputModules = configCache.getOutputModuleInfo()
         else:
             if 'outputs' in scenarioArgs and scenarioFunc in [ "promptReco", "expressProcessing", "repack" ]:
@@ -206,6 +218,8 @@ class StdBase(object):
         workload.setValidStatus(validStatus = self.validStatus)
         workload.setLumiList(lumiLists = self.lumiList)
         workload.setPriority(self.priority)
+        workload.setCampaign(self.campaign)
+        workload.setRequestType(self.requestType)
         workload.setPrepID(self.prepID)
         return workload
 
@@ -706,6 +720,41 @@ class StdBase(object):
         """
         pass
 
+    def factoryWorkloadConstruction4docs(self, docs):
+        """
+        _factoryWorkloadConstruction_
+
+        Build workloads from given list of of request documents.
+        Provided list of docs should have similar parameters, such as
+        request type, couch url/db, etc.
+        """
+        if len(set([d['RequestType'] for d in docs])) != 1:
+            raise Exception('Provided list of docs has different request type')
+        ids = set()
+        for doc in docs:
+            for key, val in doc.iteritems():
+                if  key.endswith('ConfigCacheID'):
+                    ids.add(val)
+        ids = list(ids)
+        couchURL = docs[0]['CouchURL']
+        couchDBName = docs[0]['CouchDBName']
+        if  (couchURL, couchDBName) in self.config_cache:
+            configCache = self.config_cache[(couchURL, couchDBName)]
+        else:
+            configCache = ConfigCache(dbURL=couchURL, couchDBName=couchDBName)
+            self.config_cache[(couchURL, couchDBName)] = configCache
+        configCache.docs_cache.prefetch(ids)
+        workloads = []
+        for doc in docs:
+            workloadName = doc['RequestName']
+            self.masterValidation(schema=doc)
+            self.validateSchema(schema=doc)
+            workload = self.__call__(workloadName=workloadName, arguments=doc)
+            self.validateWorkload(workload)
+            workloads.append(workload)
+        configCache.docs_cache.cleanup(ids)
+        return workloads
+
     def factoryWorkloadConstruction(self, workloadName, arguments):
         """
         _factoryWorkloadConstruction_
@@ -736,7 +785,7 @@ class StdBase(object):
         """
         # Validate the arguments according to the workload arguments definition
         argumentDefinition = self.getWorkloadArguments()
-        msg = validateArguments(schema, argumentDefinition)
+        msg = validateArgumentsCreate(schema, argumentDefinition)
         if msg is not None:
             self.raiseValidationException(msg)
         return
@@ -763,39 +812,21 @@ class StdBase(object):
         if configID == '' or configID == ' ':
             self.raiseValidationException(msg = "ConfigCacheID is invalid and cannot be loaded")
 
-        configCache = ConfigCache(dbURL = couchURL, couchDBName = couchDBName,
-                                  id = configID)
+        if  (couchURL, couchDBName) in self.config_cache:
+            configCache = self.config_cache[(couchURL, couchDBName)]
+        else:
+            configCache = ConfigCache(dbURL = couchURL, couchDBName = couchDBName, detail = getOutputModules)
+            self.config_cache[(couchURL, couchDBName)] = configCache
+        
         try:
-            configCache.loadByID(configID = configID)
-        except ConfigCacheException:
-            self.raiseValidationException(msg = "Failure to load ConfigCache while validating workload")
+            # if dtail option is set return outputModules
+            return configCache.validate(configID)
+        except ConfigCacheException, ex:
+            self.raiseValidationException(ex.message())
 
-        duplicateCheck = {}
-        try:
-            outputModuleInfo = configCache.getOutputModuleInfo()
-        except Exception:
-            # Something's gone wrong with trying to open the configCache
-            msg = "Error in getting output modules from ConfigCache during workload validation.  Check ConfigCache formatting!"
-            self.raiseValidationException(msg = msg)
-        for outputModule in outputModuleInfo.values():
-            dataTier   = outputModule.get('dataTier', None)
-            filterName = outputModule.get('filterName', None)
-            if not dataTier:
-                self.raiseValidationException(msg = "No DataTier in output module.")
-
-            # Add dataTier to duplicate dictionary
-            if not dataTier in duplicateCheck.keys():
-                duplicateCheck[dataTier] = []
-            if filterName in duplicateCheck[dataTier]:
-                # Then we've seen this combination before
-                self.raiseValidationException(msg = "Duplicate dataTier/filterName combination.")
-            else:
-                duplicateCheck[dataTier].append(filterName)
-
-        if getOutputModules:
-            return outputModuleInfo
-
-        return
+    
+    def getSchema(self):
+        return self.schema
 
     @staticmethod
     def getWorkloadArguments():
@@ -832,7 +863,9 @@ class StdBase(object):
 
         self.priority = arguments.get("RequestPriority", 0)
         """
-        arguments = {"RequestPriority": {"default" : 0, "type" : int,
+        arguments = {"RequestType" : {"default" : "unknown", "optional" : False,
+                                      "attr" : "requestType"},
+                     "RequestPriority": {"default" : 0, "type" : int,
                                          "optional" : False, "validate" : lambda x : (x >= 0 and x < 1e6),
                                          "attr" : "priority"},
                      "Requestor": {"default" : "unknown", "optional" : False,
@@ -843,9 +876,10 @@ class StdBase(object):
                                 "attr" : "group"},
                      "VoGroup" : {"default" : "DEFAULT", "attr" : "owner_vogroup"},
                      "VoRole" : {"default" : "DEFAULT", "attr" : "owner_vorole"},
+                     "Campaign" : {"default" : None, "optional" : True, "attr" : "campaign"},
                      "AcquisitionEra" : {"default" : "None",  "attr" : "acquisitionEra",
                                          "validate" : acqname},
-                     "CMSSWVersion" : {"default" : "CMSSW_5_3_7", "validate" : cmsswversion,
+                     "CMSSWVersion" : {"default" : "", "validate" : cmsswversion,
                                        "optional" : False, "attr" : "frameworkVersion"},
                      "ScramArch" : {"default" : "slc5_amd64_gcc462", "optional" : False},
                      "GlobalTag" : {"default" : None, "type" : str,
@@ -907,6 +941,54 @@ class StdBase(object):
                      "IncludeParents" : {"default" : False,  "type" : strToBool},
                      "Multicore" : {"default" : None, "null" : True,
                                     "validate" : lambda x : x == "auto" or (int(x) > 0)},
+                     #from assignment: performance monitoring data
+                     "MaxRSS" : {"default" : 2411724, "type" : int, "validate" : lambda x : x > 0},
+                     "MaxVSize" : {"default" : 20411724, "type" : int, "validate" : lambda x : x > 0},
+                     "SoftTimeout" : {"default" : 129600, "type" : int, "validate" : lambda x : x > 0},
+                     "GracePeriod" : {"default" : 300, "type" : int, "validate" : lambda x : x > 0},
+                     "UseSiteListAsLocation" : {"default" : False, "type" : bool},
+                     
+                     # Set phedex subscription information
+                     "CustodialSites" : {"default" : [], "type" : makeList, "assign_optional": False,
+                                        "validate" : lambda x: all([cmsname(y) for y in x])},
+                     "NonCustodialSites" : {"default" : [], "type" : makeList, "assign_optional": False,
+                                        "validate" : lambda x: all([cmsname(y) for y in x])},
+                     "AutoApproveSubscriptionSites" : {"default" : [], "type" : makeList, "assign_optional": False, 
+                                        "validate" : lambda x: all([cmsname(y) for y in x])},
+                     # should be Low, Normal, High
+                     "SubscriptionPriority" : {"default" : "Low", "type" : str, "assign_optional": False,
+                                        "validate" : lambda x: x in ["Low", "Normal", "High"]},
+                     # shouldbe Move Replica  
+                     "CustodialSubType" : {"default" : "Move", "type" : str, "assign_optional": False,
+                                        "validate" : lambda x: x in ["Move", "Replica"]},
+                     
+                     # Block closing informaiont
+                     "BlockCloseMaxWaitTime" : {"default" : 66400, "type" : int, "validate" : lambda x : x > 0},
+                     "BlockCloseMaxFiles" : {"default" : 500, "type" : int, "validate" : lambda x : x > 0},
+                     "BlockCloseMaxEvents" : {"default" : 25000000, "type" : int, "validate" : lambda x : x > 0},
+                     "BlockCloseMaxSize" : {"default" : 5000000000000, "type" : int, "validate" : lambda x : x > 0},
+                     
+                     # dashboard activity
+                     "Dashboard" : {"default" : "", "type" : str},
+                     # team name
+                     "Team" : {"default" : "", "type" : str},
+                     
+                     # this is specified automatically by reqmgr.
+#                      "RequestName" : {"default" : "AnotherRequest", "type" : str,
+#                                      "optional" : False, "validate" : None,
+#                                      "attr" : "requestName", "null" : False},
+                     "CouchURL" : {"default" : "http://localhost:5984", "type" : str,
+                                 "optional" : False, "validate" : couchurl,
+                                 "attr" : "couchURL", "null" : False},
+                     "CouchDBName" : {"default" : "dp_configcache", "type" : str,
+                                    "optional" : True, "validate" : identifier,
+                                    "attr" : "couchDBName", "null" : False},
+                     "ConfigCacheUrl" : {"default" : None, "type" : str,
+                                       "optional" : True, "validate" : None,
+                                       "attr" : "configCacheUrl", "null" : True},
+                     "CouchWorkloadDBName" : {"default" : "reqmgr_workload_cache", "type" : str,
+                                    "optional" : False, "validate" : identifier,
+                                    "attr" : "couchWorkloadDBName", "null" : False},
                      "PrepID": {"default" : None, "null" : True}}
 
         # Set defaults for the argument specification

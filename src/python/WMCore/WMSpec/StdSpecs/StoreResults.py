@@ -50,9 +50,11 @@ class StoreResultsWorkloadFactory(StdBase):
         
         mergeTaskLogArch = mergeTaskCmssw.addStep("logArch1")
         mergeTaskLogArch.setStepType("LogArchive")
-        
-        self.addLogCollectTask(mergeTask,
-                               taskName = "StoreResultsLogCollect")
+
+        mergeTask.setSiteWhitelist(self.siteWhitelist)
+        mergeTask.setSiteBlacklist(self.siteBlacklist)
+
+        self.addLogCollectTask(mergeTask, taskName = "StoreResultsLogCollect")
         
         mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
@@ -70,9 +72,7 @@ class StoreResultsWorkloadFactory(StdBase):
         mergeTask.setSplittingAlgorithm(splitAlgo,
                                         max_merge_size = self.maxMergeSize,
                                         min_merge_size = self.minMergeSize,
-                                        max_merge_events = self.maxMergeEvents,
-                                        siteWhitelist = self.siteWhitelist,
-                                        siteBlacklist = self.siteBlacklist)
+                                        max_merge_events = self.maxMergeEvents)
         
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
         mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",

@@ -66,7 +66,7 @@ class CreateWMBSBase(DBCreator):
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
              id          INTEGER      PRIMARY KEY AUTO_INCREMENT,
-             name        VARCHAR(500) NOT NULL,
+             name        VARCHAR(700) NOT NULL,
              open        INT(1)       NOT NULL DEFAULT 0,
              last_update INTEGER      NOT NULL,
              UNIQUE (name))"""
@@ -74,7 +74,7 @@ class CreateWMBSBase(DBCreator):
         self.create["02wmbs_file_details"] = \
           """CREATE TABLE wmbs_file_details (
              id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
-             lfn          VARCHAR(500) NOT NULL,
+             lfn          VARCHAR(700) NOT NULL,
              filesize     BIGINT,
              events       INTEGER,
              first_event  BIGINT       NOT NULL DEFAULT 0,
@@ -285,8 +285,8 @@ class CreateWMBSBase(DBCreator):
              couch_record VARCHAR(255),
              location     INTEGER,
              outcome      INTEGER       DEFAULT 0,
-             cache_dir    VARCHAR(700)  DEFAULT 'None',
-             fwjr_path    VARCHAR(700),
+             cache_dir    VARCHAR(800)  DEFAULT 'None',
+             fwjr_path    VARCHAR(800),
              FOREIGN KEY (jobgroup)
              REFERENCES wmbs_jobgroup(id) ON DELETE CASCADE,
              FOREIGN KEY (state) REFERENCES wmbs_job_state(id),

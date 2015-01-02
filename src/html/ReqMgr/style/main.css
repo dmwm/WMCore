@@ -123,3 +123,14 @@ input[type=text]:focus, textarea:focus {
 }
 tr:nth-child(even){ background:#F4F4F4; }
 th { background: #B3B3B3; color: white; font-weight: bold; }
+
+#container ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+.lift {
+    position: relative;
+    top: -40px;
+    bottom: -40px;
+}

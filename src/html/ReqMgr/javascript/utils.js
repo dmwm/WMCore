@@ -256,3 +256,45 @@ function ChangeMenuItem(cls, tag) {
     }
     tag.parentNode.className = cls+" active underline"
 }
+// Sort functions
+function ByStatus(a, b) {
+    if (a.RequestStatus > b.RequestStatus) {
+        return 1;
+    }
+    if (a.RequestStatus < b.RequestStatus) {
+        return -1;
+    }
+    return 0;
+}
+function ByDate(a, b) {
+    if (a.RequestDate > b.RequestDate) {
+        return 1;
+    }
+    if (a.RequestDate < b.RequestDate) {
+        return -1;
+    }
+    return 0;
+}
+function ByRequestor(a, b) {
+    if (a.Requestor > b.Requestor) {
+        return 1;
+    }
+    if (a.Requestor < b.Requestor) {
+        return -1;
+    }
+    return 0;
+}
+function ByGroup(a, b) {
+    if (a.Group > b.Group) {
+        return 1;
+    }
+    if (a.Group < b.Group) {
+        return -1;
+    }
+    return 0;
+}
+function genColor(s) {
+    var hash=md5(s);
+    var color = '#'+hash.substr(0,6);
+    return color;
+}

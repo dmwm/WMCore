@@ -46,7 +46,7 @@
 #for key in ['RequestName']+$keys
 #set val=$rdict[$key]
 #if $key=="RequestDate"
-#set val="<kbd>%s</kbd>"%$val
+#set val="<code>%s</code>"%$val
 #elif $key=="RequestName"
 #set id="request-"+$val
 #silent $ids.append($id)

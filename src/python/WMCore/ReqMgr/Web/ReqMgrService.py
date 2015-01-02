@@ -29,7 +29,7 @@ from cherrypy import config as cherryconf
 from WMCore.ReqMgr.Web.tools import exposecss, exposejs, exposejson, TemplatedPage
 from WMCore.ReqMgr.Web.utils import json2table, genid, checkargs, tstamp, sort
 from WMCore.ReqMgr.Utils.url_utils import getdata
-from WMCore.ReqMgr.Tools.cms import dqm_urls, dbs_urls, releases, architectures
+from WMCore.ReqMgr.Tools.cms import releases, architectures
 from WMCore.ReqMgr.Tools.cms import scenarios, cms_groups, couch_url
 from WMCore.ReqMgr.Tools.cms import web_ui_names, next_status, sites
 from WMCore.ReqMgr.Tools.cms import lfn_bases, lfn_unmerged_bases
@@ -121,98 +121,6 @@ def request_attr(doc, attrs=None):
                 rdict[key] = doc[key]
     return rdict
 
-class ActionMgr(object):
-    def __init__(self, reqmgr):
-        "Action manager"
-        self.reqmgr = reqmgr
-
-    def parse_data(self, jdict):
-        "Parse json dictionary and align its values"
-        # TODO: I need to convert strings to int's for some attributes, e.g. RunList, etc.
-        for key, val in jdict.items():
-            if  isinstance(val, basestring) and val.find(",") != -1: # comma list
-                jdict[key] = val.split(",")
-        return jdict
-
-    def create(self, req):
-        """
-        Create action:
-        create new request and send it to Requset Manager via POST method
-        """
-        self.add_request('create', req)
-        if  isinstance(req, dict):
-            docs = [req]
-        elif isinstance(req, list) or isinstance(req, GeneratorType):
-            docs = req
-        else:
-            raise Exception('Unsupported request type')
-        for jsondata in docs:
-            doc = self.parse_data(jsondata)
-            print "self.reqmgr.insertRequests(jsondata)"
-            print pprint.pformat(doc)
-            try:
-                response = self.reqmgr.insertRequests(doc)
-                print "### ActionMgr::create response", pprint.pformat(response)
-            except Exception as exc:
-                print "ERROR", str(exc)
-                return 'fail'
-        return 'ok'
-
-    def approve(self, req, new_status):
-        """
-        Approve action
-        should get list of requests to approve via Request::get(status)
-        and change request status from new to status (assigned/rejected)
-        """
-        self.add_request('approve', req)
-        status = req.get('status', '')
-        docs = self.get_request_names(req)
-        for rname in docs:
-            print "self.reqmgr.updateRequestStatus(%s, %s)" % (rname, new_status)
-            try:
-                self.reqmgr.updateRequestStatus(rname, new_status)
-            except Exception as exc:
-                print "ERROR", str(exc)
-                return 'fail'
-        return 'ok'
-
-    def assign(self, req, new_status, kwds):
-        """
-        Assign action
-        should get list of requests to assign via Request::get(status)
-        and change request status from assignment-approved to assigned/rejected.
-        Additional parameters are passed via kwds dict.
-        """
-        self.add_request('assign', req)
-        docs = self.get_request_names(req)
-        kwds.update({"RequestStatus": new_status})
-        for rname in docs:
-            print "self.reqmgr.updateRequestProperty(%s, %s)" % (rname, kwds)
-            try:
-                response = self.reqmgr.updateRequestProperty(rname, kwds)
-                print "response", response
-            except Exception as exc:
-                print "ERROR", str(exc)
-                return 'fail'
-        return 'ok'
-
-    def add_request(self, action, req):
-        """
-        Add request to internal cache or log it.
-        """
-        print "\n### add_request %s\n%s" % (action, pprint.pformat(req))
-
-    def get_request_names(self, doc):
-        "Extract request names from given documents"
-        docs = []
-        for key in doc.keys():
-            if  key.startswith('request'):
-                rid = key.split('request-')[-1]
-                if  rid != 'all':
-                    docs.append(rid)
-                del doc[key]
-        return docs
-
 class ReqMgrService(TemplatedPage):
     """
     Request Manager web service class
@@ -280,9 +188,6 @@ class ReqMgrService(TemplatedPage):
         self.admin_group = Group(app, api, config.reqmgr, mount=mount+'/group')
         self.admin_team = Team(app, api, config.reqmgr, mount=mount+'/team')
 
-        # action manager (will be replaced with appropriate class
-        self.actionmgr = ActionMgr(self.reqmgr)
-
         # get fields which we'll use in templates
         cdict = config.reqmgr.dictionary_()
         self.couch_url = cdict.get('couch_host', '')
@@ -308,7 +213,10 @@ class ReqMgrService(TemplatedPage):
         Return user DN.
         This method should implement fetching user DN
         """
-        return '/CN/bla/foo/'
+        default = '/CN/bla/foo'
+        if  hasattr(cherrypy.request, "user"):
+            return cherrypy.request.user.get('dn', default)
+        return default
 
     def update_scripts(self, force=False):
         "Update scripts dict"
@@ -449,52 +357,6 @@ class ReqMgrService(TemplatedPage):
         return self.abs_page('generic', content)
 
     @expose
-    def ajax_action(self, action, ids, new_status, **kwds):
-        """
-        AJAX action creates request dictionary and pass it to
-        action manager method.
-        """
-        req = {}
-        status = None
-        if  isinstance(ids, list):
-            for rid in ids:
-                req[rid] = 'on'
-        elif isinstance(ids, basestring):
-            req[ids] = 'on'
-        else:
-            cherrypy.response.status = 501
-            return
-        if  action == 'approve':
-            status = getattr(self.actionmgr, action)(req, new_status)
-            if  status == 'ok':
-                cherrypy.response.status = 200
-            else:
-                cherrypy.response.status = 400
-            return
-        elif action == 'assign':
-            status = getattr(self.actionmgr, action)(req, new_status, kwds)
-            if  status == 'ok':
-                cherrypy.response.status = 200
-            else:
-                cherrypy.response.status = 400
-            return
-        elif action == 'create':
-            script = kwds.get('script', '')
-            if  script:
-                docs = self.generate_objs(script, kwds)
-            else:
-                docs = [kwds]
-            status = getattr(self.actionmgr, action)(docs)
-            if  status == 'ok':
-                cherrypy.response.status = 201
-            else:
-                cherrypy.response.status = 400
-            return
-        else:
-            cherrypy.response.status = 501
-            return
-
-    @expose
     def create(self, **kwds):
         """create page"""
         spec = kwds.get('form', 'ReReco')
@@ -513,7 +375,7 @@ class ReqMgrService(TemplatedPage):
                 couch_wdbname=json.dumps(self.couch_wdbname),
                 dbs_url=json.dumps(self.dbs_url),
                 cc_url=json.dumps(self.configcache_url),
-                cc_id=json.dumps("some_id"), # TODO: get it elsewhere
+                cc_id=json.dumps("REPLACE-ID"),
                 acdc_url=json.dumps(self.acdc_url),
                 acdc_dbname=json.dumps(self.acdc_dbname),
                 )
@@ -568,35 +430,6 @@ class ReqMgrService(TemplatedPage):
                 jsondata=json.dumps(jsondata, indent=2), name=spec,
                 scripts=[s for s in self.sdict.keys() if s!='ts'])
         return self.abs_page('generic', content)
-
-    @expose
-    def confirm_action(self, **kwds):
-        """
-        Confirm action method is called from web UI forms. It grabs input parameters
-        and passed them to Action manager.
-        """
-        try:
-            action = kwds.pop('action')
-            if  'script' in kwds: # we got a script to apply
-                script = kwds.pop('script')
-                jsondict = json.loads(kwds.get('jsondict', "{}"))
-                if  not jsondict:
-                    jsondict = kwds
-                if  script == "":
-                    docs = [jsondict]
-                    rids = genid(jsondict)
-                else:
-                    docs = self.generate_objs(script, jsondict)
-                    rids = [genid(o) for o in docs]
-                status = getattr(self.actionmgr, action)(docs)
-            else:
-                status = getattr(self.actionmgr, action)(kwds)
-                rids = genid(kwds)
-            content = self.templatepage('confirm', ticket=rids, user=self.user(), status=status)
-            return self.abs_page('generic', content)
-        except:
-            msg = '<div class="color-red">No action is specified</div>'
-            self.error(msg)
 
     def generate_objs(self, script, jsondict):
         """Generate objects from givem JSON template"""

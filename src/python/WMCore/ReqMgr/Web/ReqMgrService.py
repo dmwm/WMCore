@@ -321,7 +321,7 @@ class ReqMgrService(TemplatedPage):
             for key, val in row.items():
                 docs.append(request_attr(val, attrs))
         sortby = kwds.get('sort', 'status')
-        docs = sort(docs, sortby)
+        docs = [r for r in sort(docs, sortby)]
         content = self.templatepage('assign', sort=sortby,
                 site_white_list=site_white_list(),
                 site_black_list=site_black_list(),
@@ -351,7 +351,7 @@ class ReqMgrService(TemplatedPage):
             for key, val in row.items():
                 docs.append(request_attr(val, attrs))
         sortby = kwds.get('sort', 'status')
-        docs = sort(docs, sortby)
+        docs = [r for r in sort(docs, sortby)]
         content = self.templatepage('approve', requests=docs, date=tstamp(),
                 sort=sortby)
         return self.abs_page('generic', content)

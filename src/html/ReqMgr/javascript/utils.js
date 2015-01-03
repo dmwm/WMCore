@@ -298,3 +298,8 @@ function genColor(s) {
     var color = '#'+hash.substr(0,6);
     return color;
 }
+function ByPattern(item) {
+    var input = $('filter').value;
+    var pat = new RegExp(input, "g");
+    return pat.test(item.RequestName);
+}

@@ -11,71 +11,44 @@
 </header>
 <hr/>
 
-<div id="requests">
-<header class="group">
-    <nav class="navbar navbar-left">
+<script>
+var requests = $requests;
+</script>
+
+<table class="table-stripped">
+<tbody>
+<tr><td class="width-30">
+        <input id="filter" type="search" class="width-100" placeholder="Filter by pattern ...">
+</td><td class="width-10">
+        <a href="#" class="" onclick="BuildList('', requests.filter(ByPattern))">Search</a>
+</td><td class="width-60 right">
+<div class="group">
+    <nav class="navbar navbar-right">
         <ul>
-        <li>Sort by:</li>
-        #if $sort=='status':
-        <li class="menu-item active underline"><a href="#">Status</a></li>
-        #else
-        <li class="menu-item"><a href="$base/assign?sort=status">Status</a></li>
-        #end if
-        #if $sort=='date':
-        <li class="menu-item active underline"><a href="#">Date</a></li>
-        #else
-        <li class="menu-item"><a href="$base/assign?sort=date">Date</a></li>
-        #end if
-        #if $sort=='id':
-        <li class="menu-item active underline"><a href="#">Id</a></li>
-        #else
-        <li class="menu-item"><a href="$base/assign?sort=id">Id</a></li>
-        #end if
-        #if $sort=='group':
-        <li class="menu-item active underline"><a href="#">Group</a></li>
-        #else
-        <li class="menu-item"><a href="$base/assign?sort=group">Group</a></li>
-        #end if
+        <li><b>Sort</b> by:</li>
+        <li class="menu-item active underline"><a href="#" onclick="BuildList(this, requests.filter(ByPattern).sort(ByStatus))">Status</a></li>
+        <li class="menu-item"><a href="#" onclick="BuildList(this, requests.filter(ByPattern).sort(ByDate))">Date</a></li>
+        <li class="menu-item"><a href="#" onclick="BuildList(this, requests.filter(ByPattern).sort(ByRequestor))">User</a></li>
+        <li class="menu-item"><a href="#" onclick="BuildList(this, requests.filter(ByPattern).sort(ByGroup))">Group</a></li>
         </ul>
     </nav>
-    <nav class="navbar navbar-right">
-        <button class="btn btn-small btn-green" onclick="javascript:ProcessRequests('assigned')">Assign</button>
-        <button class="btn btn-small btn-red" onclick="javascript:ProcessRequests('rejected')">Reject</button>
-    </nav>
-</header>
-
-<div class="table-container">
-    <table class="table-bordered width-100">
-    <thead>
-        <tr>
-            <th class="width-10">
-                <input type="checkbox" name="request-all" id="request-all" onclick="CheckAll(this)"/>
-                Select
-            </th>
-            <th>Requests</th>
-            <th>Users</th>
-            <th>Groups</th>
-            <th>Dates</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-    #for doc in $requests
-    #set id=$doc['RequestName']
-        <tr>
-            <td>
-               <input type="checkbox" name="request-$id" id="request-$id" class="request-id" />
-            </td>
-            <td><a href="$base/fetch?rid=$id">$id</a></td>
-            <td>$doc['Requestor']</td>
-            <td>$doc['Group']</td>
-            <td>$doc['RequestDate']</td>
-            <td>$doc['RequestStatus']</td>
-        </tr>
-    #end for
-    </tbody>
-    </table>
 </div>
+</td></tr>
+</tbody>
+</table>
+
+<div class="group">
+    <nav class="navbar navbar-left">
+        <input type="checkbox" name="request-all" id="request-all" onclick="CheckAll(this)"/>
+        Select all requests
+    </nav>
+    <nav class="navbar navbar-right">
+        <button class="btn btn-smaller btn-green" onclick="javascript:ProcessRequests('assigned')">Assign</button>
+        <button class="btn btn-smaller btn-red" onclick="javascript:ProcessRequests('rejected')">Reject</button>
+    </nav>
+</div>
+<hr/>
+<div id="container"></div>
 </div> <!-- end of requests section -->
 
 <form id="assign-settings" name="assign-settings">
@@ -361,4 +334,33 @@ function ProcessRequests(new_status) {
         ajaxRequest('$base/data/request/multi_update', parameters);
     }
 }
+function BuildList(tag, data) {
+    $('container').innerHTML="";
+    var listContainer = document.createElement('div');
+    $('container').appendChild(listContainer);
+    var listElement = document.createElement("ul");
+    listContainer.appendChild(listElement);
+    data.forEach(function(item) {
+        var html = '<div>';
+        var rid = 'request-'+item.RequestName;
+        html += '<input type="checkbox" name="'+rid+'" id="'+rid+'" class="request-id" /> '
+        html += '<b>Request:</b> <span class="record"><a href="$base/fetch?rid='+rid+'">'+item.RequestName+'</a></span><br/>';
+        html += '<b>Status:</b> <span style="color:'+genColor(item.RequestStatus)+';background-color:#fff;padding:3px;">'+item.RequestStatus+'</span>&nbsp;';
+        html += '<b>Date:</b> <code>'+item.RequestDate+'</code>&nbsp;';
+        html += '<b>User:</b> '+item.Requestor+'&nbsp;';
+        html += '<b>Group:</b> '+item.Group;
+        html += '</div><hr/>'
+        var listItem = document.createElement("li");
+        listItem.innerHTML = html;
+        listElement.appendChild(listItem);
+    });
+    // change CSS
+    var items = document.getElementsByClassName('menu-item');
+    for (var i = 0; i < items.length; i++ ) {
+        items[i].className='menu-item';
+    }
+    tag.className='menu-item active underline';
+}
+// Put data into container
+BuildList(document.getElementsByClassName('menu-item')[0], requests);
 </script>

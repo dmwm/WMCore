@@ -204,19 +204,18 @@ class ReqMgrService(TemplatedPage):
     def user(self):
         """
         Return user name associated with this instance.
-        This method should implement fetching user parameters through passed DN
         """
-        return 'testuser'
+        try:
+            return cherrypy.request.user['login']
+        except:
+            return 'testuser'
 
     def user_dn(self):
-        """
-        Return user DN.
-        This method should implement fetching user DN
-        """
-        default = '/CN/bla/foo'
-        if  hasattr(cherrypy.request, "user"):
-            return cherrypy.request.user.get('dn', default)
-        return default
+        "Return user DN"
+        try:
+            return cherrypy.request.user['dn']
+        except:
+            return '/CN/bla/foo'
 
     def update_scripts(self, force=False):
         "Update scripts dict"

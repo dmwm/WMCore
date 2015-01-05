@@ -53,6 +53,8 @@ function RejectRequest(bid, rid) {
     bid.innerHTML="DONE";
     parameters = {'ids': [rid], 'new_status': 'rejected'},
     ajaxRequest('$base/data/request/multi_update', parameters);
+    var tag = 'div-'+rid;
+    document.getElementById(tag).className = 'tools-alert tools-alert-black';
 }
 function RejectAllRequests() {
     var items = document.getElementsByName('reject-request');
@@ -70,6 +72,8 @@ function ApproveRequest(bid, rid) {
     bid.innerHTML="DONE";
     parameters = {'ids': [rid], 'new_status': 'assignment-approved'};
     ajaxRequest('$base/data/request/multi_update', parameters);
+    var tag = 'div-'+rid;
+    document.getElementById(tag).className = 'tools-alert tools-alert-black';
 }
 function ApproveAllRequests() {
     var items = document.getElementsByName('approve-request');
@@ -89,8 +93,8 @@ function BuildList(tag, data) {
     var listElement = document.createElement("ul");
     listContainer.appendChild(listElement);
     data.forEach(function(item) {
-        var html = '<div>';
         var rid = 'request-'+item.RequestName;
+        var html = '<div id="div-'+rid+'">';
         html += '<b>Request:</b> <span class="record"><a href="$base/fetch?rid='+rid+'">'+item.RequestName+'</a></span><br/>';
         html += '<b>Status:</b> <span style="color:'+genColor(item.RequestStatus)+';background-color:#fff;padding:3px;">'+item.RequestStatus+'</span>&nbsp;';
         html += '<b>Date:</b> <code>'+item.RequestDate+'</code>&nbsp;';
@@ -105,7 +109,7 @@ function BuildList(tag, data) {
         html += '<button name="reject-request" id="'+rid+'" class="btn btn-small btn-red" onclick="javascript:RejectRequest(this, \''+rid+'\')">Reject</button>';
         html += '</nav>'
         html += '</div>';
-        html += '</div><hr/>'
+        html += '<hr/></div>'
         var listItem = document.createElement("li");
         listItem.innerHTML = html;
         listElement.appendChild(listItem);

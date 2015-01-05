@@ -433,14 +433,22 @@ class ReqMgrService(TemplatedPage):
         exec(code) # code snippet must starts with genobjs function
         return [r for r in genobjs(jsondict)]
 
-    @exposejson
+    @expose
     def fetch(self, rid):
         "Fetch document for given id"
-        return self.reqmgr.getRequestByNames(rid)
-
-    def doc(self, rid):
-        "Fetch document for given id"
-        return self.reqmgr.getRequestByNames(rid)
+        rid = rid.replace('request-', '')
+        doc = self.reqmgr.getRequestByNames(rid)
+        if  len(doc) == 1:
+            try:
+                doc = pprint.pformat(doc[0][rid])
+            except:
+                doc = pprint.pformat(doc[0])
+        elif len(doc) > 1:
+            doc = [pprint.pformat(d) for d in doc]
+        else:
+            doc = 'No request found for name=%s' % rid
+        content = self.templatepage('doc', doc=doc)
+        return self.abs_page('request', content)
 
     @expose
     def requests(self, **kwds):
@@ -455,7 +463,7 @@ class ReqMgrService(TemplatedPage):
             for key, doc in req.items():
                 docs.append(request_attr(doc))
         sortby = kwds.get('sort', 'status')
-        docs = sort(docs, sortby)
+        docs = [r for r in sort(docs, sortby)]
         content = self.templatepage('requests', requests=docs, sort=sortby)
         return self.abs_page('requests', content)
 

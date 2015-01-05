@@ -92,12 +92,10 @@ def minify(content):
     content = content.replace('  ', ' ')
     return content
 
-def menus(active='search'):
+def menus():
     "Return dict of menus"
-    items = ['admin', 'assign', 'approve', 'create', 'requests']
-    mdict = dict(zip(items, ['']*len(items)))
-    mdict[active] = 'active'
-    return mdict
+    items = ['admin', 'create', 'approve', 'assign', 'requests']
+    return items
 
 def request_attr(doc, attrs=None):
     "Return request attributes/values in separate document"
@@ -227,13 +225,9 @@ class ReqMgrService(TemplatedPage):
 
     def abs_page(self, tmpl, content):
         """generate abstract page"""
-        menu = self.templatepage('menu', menus=menus(tmpl))
-        if  tmpl == 'main':
-            body = self.templatepage('generic', menu=menu, content=content)
-            page = self.templatepage('main', content=body, user=self.user())
-        else:
-            body = self.templatepage(tmpl, menu=menu, content=content)
-            page = self.templatepage('main', content=body, user=self.user())
+        menu = self.templatepage('menu', menus=menus(), tmpl=tmpl)
+        body = self.templatepage('generic', menu=menu, content=content)
+        page = self.templatepage('main', content=body, user=self.user())
         return page
 
     def page(self, content):
@@ -245,7 +239,7 @@ class ReqMgrService(TemplatedPage):
     def error(self, content):
         "Generate common error page"
         content = self.templatepage('error', content=content)
-        return self.abs_page('generic', content)
+        return self.abs_page('error', content)
 
     @expose
     def index(self, **kwds):
@@ -260,7 +254,7 @@ class ReqMgrService(TemplatedPage):
             sval = '%s description' % skey
             scripts[skey] = sval
         content = self.templatepage('apis', apis=apis, scripts=scripts)
-        return self.abs_page('generic', content)
+        return self.abs_page('main', content)
 
     ### Admin actions ###
 
@@ -272,7 +266,7 @@ class ReqMgrService(TemplatedPage):
         print "rows", [r for r in rows]
 
         content = self.templatepage('admin')
-        return self.abs_page('generic', content)
+        return self.abs_page('admin', content)
 
     @expose
     def add_user(self, **kwds):
@@ -280,7 +274,7 @@ class ReqMgrService(TemplatedPage):
         rid = genid(kwds)
         status = "ok" # chagne to whatever it would be
         content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
-        return self.abs_page('generic', content)
+        return self.abs_page('admin', content)
 
     @expose
     def add_group(self, **kwds):
@@ -290,7 +284,7 @@ class ReqMgrService(TemplatedPage):
         rid = genid(kwds)
         status = "ok" # chagne to whatever it would be
         content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
-        return self.abs_page('generic', content)
+        return self.abs_page('admin', content)
 
     @expose
     def add_team(self, **kwds):
@@ -301,7 +295,7 @@ class ReqMgrService(TemplatedPage):
         rid = genid(kwds)
         status = "ok" # chagne to whatever it would be
         content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
-        return self.abs_page('generic', content)
+        return self.abs_page('admin', content)
 
     ### Request actions ###
 
@@ -328,7 +322,7 @@ class ReqMgrService(TemplatedPage):
                 cmssw_versions=releases(), scram_arch=architectures(),
                 sites=sites(), lfn_bases=lfn_bases(),
                 lfn_unmerged_bases=lfn_unmerged_bases())
-        return self.abs_page('generic', content)
+        return self.abs_page('assign', content)
 
     @expose
     @checkargs(['status', 'sort'])
@@ -353,7 +347,7 @@ class ReqMgrService(TemplatedPage):
         docs = [r for r in sort(docs, sortby)]
         content = self.templatepage('approve', requests=docs, date=tstamp(),
                 sort=sortby)
-        return self.abs_page('generic', content)
+        return self.abs_page('approve', content)
 
     @expose
     def create(self, **kwds):
@@ -428,7 +422,7 @@ class ReqMgrService(TemplatedPage):
         content = self.templatepage('create', table=json2table(jsondata, web_ui_names()),
                 jsondata=json.dumps(jsondata, indent=2), name=spec,
                 scripts=[s for s in self.sdict.keys() if s!='ts'])
-        return self.abs_page('generic', content)
+        return self.abs_page('create', content)
 
     def generate_objs(self, script, jsondict):
         """Generate objects from givem JSON template"""
@@ -463,7 +457,7 @@ class ReqMgrService(TemplatedPage):
         sortby = kwds.get('sort', 'status')
         docs = sort(docs, sortby)
         content = self.templatepage('requests', requests=docs, sort=sortby)
-        return self.abs_page('generic', content)
+        return self.abs_page('requests', content)
 
     @expose
     def request(self, **kwargs):
@@ -479,7 +473,7 @@ class ReqMgrService(TemplatedPage):
         winfo = self.templatepage('workflow', wdict=wdict,
                 dataset=dataset, code=pprint.pformat(wdata))
         content = self.templatepage('search', content=winfo)
-        return self.abs_page('generic', content)
+        return self.abs_page('request', content)
 
     ### Aux methods ###
 

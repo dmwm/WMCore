@@ -101,8 +101,8 @@ function BuildList(tag, data) {
         html += '<span></span>'
         html += '</nav>';
         html += '<nav class="navbar navbar-right">'
-        html += '<button name="approve-request" id="'+rid+'" class="btn btn-small btn-green" onclick="javascript:ApproveRequest(this, '+rid+')">Approve</button>';
-        html += '<button name="reject-request" id="'+rid+'" class="btn btn-small btn-red" onclick="javascript:RejectRequest(this, '+rid+')">Reject</button>';
+        html += '<button name="approve-request" id="'+rid+'" class="btn btn-small btn-green" onclick="javascript:ApproveRequest(this, \''+rid+'\')">Approve</button>';
+        html += '<button name="reject-request" id="'+rid+'" class="btn btn-small btn-red" onclick="javascript:RejectRequest(this, \''+rid+'\')">Reject</button>';
         html += '</nav>'
         html += '</div>';
         html += '</div><hr/>'

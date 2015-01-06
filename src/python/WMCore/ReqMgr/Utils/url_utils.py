@@ -9,6 +9,7 @@ Description:
 
 # system modules
 import os
+import sys
 import time
 import urllib
 import urllib2
@@ -92,7 +93,7 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
                                                 cert_file=self.cert)
         return httplib.HTTPSConnection(host)
 
-def getdata(url, params, headers=None, post=None, verbose=False):
+def getdata(url, params, headers=None, post=None, verbose=False, jsondecoder=True):
     """
     Invoke URL call and retrieve data from data-service based
     on provided URL and set of parameters. Use post=True to
@@ -100,11 +101,19 @@ def getdata(url, params, headers=None, post=None, verbose=False):
     """
     encoded_data = urllib.urlencode(params)
     if  not post:
-        url = url + '?' + encoded_data
+        if  encoded_data:
+            url = url + '?' + encoded_data
     if  not headers:
         headers = {}
     if  verbose:
         print '+++ getdata, url=%s, headers=%s' % (url, headers)
+    obj=sys.version_info
+    if  obj[0] == 2 and obj[1] == 7 and obj[2] >= 9:
+        # disable SSL verification, since it is default in python 2.7.9
+        # and many CMS services do not verify SSL cert.
+        # https://www.python.org/dev/peps/pep-0476/
+        import ssl
+        ssl._create_default_https_context = ssl._create_unverified_context
     req = urllib2.Request(url)
     for key, val in headers.iteritems():
         req.add_header(key, val)
@@ -114,6 +123,8 @@ def getdata(url, params, headers=None, post=None, verbose=False):
         urllib2.install_opener(opener)
     ckey, cert = get_key_cert()
     handler = HTTPSClientAuthHandler(ckey, cert, verbose)
+    if  verbose:
+        print "handler", handler, handler.__dict__
     opener  = urllib2.build_opener(handler)
     urllib2.install_opener(opener)
     try:
@@ -126,7 +137,10 @@ def getdata(url, params, headers=None, post=None, verbose=False):
         if  verbose > 1:
             print "+++ response code:", code
             print "+++ response info\n", info
-        data = json.load(data)
+        if  jsondecoder:
+            data = json.load(data)
+        else:
+            data = data.read()
     except urllib2.HTTPError as httperror:
         msg  = 'HTTPError, url=%s, args=%s, headers=%s' \
                     % (url, params, headers)

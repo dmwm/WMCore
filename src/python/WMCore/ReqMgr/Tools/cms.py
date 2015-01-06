@@ -1,5 +1,66 @@
+#!/usr/bin/env python
+#-*- coding: utf-8 -*-
+#pylint: disable=
+"""
+File       : cms.py
+Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
+Description: CMS modules
+"""
+
+# system modules
+import os
+import time
+
+# CMS modules
 from WMCore.RequestManager.RequestDB.Settings.RequestStatus import StatusList, NextStatus
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
+from WMCore.ReqMgr.Utils.url_utils import getdata
+from WMCore.ReqMgr.Utils.utils import xml_parser
+
+class TagCollector(object):
+    """
+    Class which provides interface to CMS TagCollector web-service
+    """
+    def __init__(self, url="https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML"):
+        self.url = url
+        self.cache = os.path.join(os.getcwd(), '.tagcollector')
+
+    def data(self):
+        "Fetch data from tag collector or local cache"
+        tstamp = time.time()
+        if  os.path.isfile(self.cache):
+            data = open(self.cache, 'r').read()
+        else:
+            params = {}
+            data = getdata(self.url, params, verbose=1, jsondecoder=False)
+            with open(self.cache, 'w') as ostream:
+                ostream.write(data)
+        pkey = 'architecture'
+        for row in xml_parser(data, pkey):
+            yield row[pkey]
+
+    def releases(self, arch=None):
+        "Yield CMS releases known in tag collector"
+        arr = []
+        for row in self.data():
+            if  arch:
+                if  arch == row['name']:
+                    for item in row['project']:
+                        arr.append(item['label'])
+            else:
+                for item in row['project']:
+                    arr.append(item['label'])
+        return list(set(arr))
+
+    def architectures(self):
+        "Yield CMS architectures known in tag collector"
+        arr = []
+        for row in self.data():
+            arr.append(row['name'])
+        return list(set(arr))
+
+# initialize TagCollector instance to be used in this module
+TC = TagCollector()
 
 def next_status(status=None):
     "Return next ReqMgr status for given status"
@@ -142,15 +203,13 @@ def couch_url():
     url = "https://cmsweb.cern.ch/couchdb"
     return url
 
-def releases():
+def releases(arch=None):
     "Return list of CMSSW releases"
-    releases=["CMSSW_7_0_0", "CMSSW_6_8_1"]
-    return releases
+    return TC.releases(arch)
 
 def architectures():
     "Return list of CMSSW architectures"
-    arch=["slc5_amd64_gcc472", "slc5_ad4_gcc481"]
-    return arch
+    return TC.architectures()
 
 def scenarios():
     "Return list of scenarios"
@@ -161,4 +220,3 @@ def cms_groups():
     "Return list of CMS data-ops groups"
     groups = ["DATAOPS"]
     return groups
-

@@ -29,7 +29,7 @@ from cherrypy import config as cherryconf
 from WMCore.ReqMgr.Web.tools import exposecss, exposejs, exposejson, TemplatedPage
 from WMCore.ReqMgr.Web.utils import json2table, genid, checkargs, tstamp, sort
 from WMCore.ReqMgr.Utils.url_utils import getdata
-from WMCore.ReqMgr.Tools.cms import dqm_urls, dbs_urls, releases, architectures
+from WMCore.ReqMgr.Tools.cms import releases, architectures
 from WMCore.ReqMgr.Tools.cms import scenarios, cms_groups, couch_url
 from WMCore.ReqMgr.Tools.cms import web_ui_names, next_status, sites
 from WMCore.ReqMgr.Tools.cms import lfn_bases, lfn_unmerged_bases
@@ -39,6 +39,7 @@ from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
 from WMCore.WMSpec.WMWorkloadTools import loadSpecByType
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.ReqMgr.Service.Auxiliary import Info, Group, Team, Software
+from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
 from WMCore.ReqMgr.Service.Request import Request
 from WMCore.ReqMgr.Service.RestApiHub import RestApiHub
 from WMCore.REST.Main import RESTMain
@@ -92,12 +93,10 @@ def minify(content):
     content = content.replace('  ', ' ')
     return content
 
-def menus(active='search'):
+def menus():
     "Return dict of menus"
-    items = ['admin', 'assign', 'approve', 'create', 'requests']
-    mdict = dict(zip(items, ['']*len(items)))
-    mdict[active] = 'active'
-    return mdict
+    items = ['admin', 'create', 'approve', 'assign', 'requests']
+    return items
 
 def request_attr(doc, attrs=None):
     "Return request attributes/values in separate document"
@@ -120,98 +119,6 @@ def request_attr(doc, attrs=None):
             else:
                 rdict[key] = doc[key]
     return rdict
-
-class ActionMgr(object):
-    def __init__(self, reqmgr):
-        "Action manager"
-        self.reqmgr = reqmgr
-
-    def parse_data(self, jdict):
-        "Parse json dictionary and align its values"
-        # TODO: I need to convert strings to int's for some attributes, e.g. RunList, etc.
-        for key, val in jdict.items():
-            if  isinstance(val, basestring) and val.find(",") != -1: # comma list
-                jdict[key] = val.split(",")
-        return jdict
-
-    def create(self, req):
-        """
-        Create action:
-        create new request and send it to Requset Manager via POST method
-        """
-        self.add_request('create', req)
-        if  isinstance(req, dict):
-            docs = [req]
-        elif isinstance(req, list) or isinstance(req, GeneratorType):
-            docs = req
-        else:
-            raise Exception('Unsupported request type')
-        for jsondata in docs:
-            doc = self.parse_data(jsondata)
-            print "self.reqmgr.insertRequests(jsondata)"
-            print pprint.pformat(doc)
-            try:
-                response = self.reqmgr.insertRequests(doc)
-                print "### ActionMgr::create response", pprint.pformat(response)
-            except Exception as exc:
-                print "ERROR", str(exc)
-                return 'fail'
-        return 'ok'
-
-    def approve(self, req, new_status):
-        """
-        Approve action
-        should get list of requests to approve via Request::get(status)
-        and change request status from new to status (assigned/rejected)
-        """
-        self.add_request('approve', req)
-        status = req.get('status', '')
-        docs = self.get_request_names(req)
-        for rname in docs:
-            print "self.reqmgr.updateRequestStatus(%s, %s)" % (rname, new_status)
-            try:
-                self.reqmgr.updateRequestStatus(rname, new_status)
-            except Exception as exc:
-                print "ERROR", str(exc)
-                return 'fail'
-        return 'ok'
-
-    def assign(self, req, new_status, kwds):
-        """
-        Assign action
-        should get list of requests to assign via Request::get(status)
-        and change request status from assignment-approved to assigned/rejected.
-        Additional parameters are passed via kwds dict.
-        """
-        self.add_request('assign', req)
-        docs = self.get_request_names(req)
-        kwds.update({"RequestStatus": new_status})
-        for rname in docs:
-            print "self.reqmgr.updateRequestProperty(%s, %s)" % (rname, kwds)
-            try:
-                response = self.reqmgr.updateRequestProperty(rname, kwds)
-                print "response", response
-            except Exception as exc:
-                print "ERROR", str(exc)
-                return 'fail'
-        return 'ok'
-
-    def add_request(self, action, req):
-        """
-        Add request to internal cache or log it.
-        """
-        print "\n### add_request %s\n%s" % (action, pprint.pformat(req))
-
-    def get_request_names(self, doc):
-        "Extract request names from given documents"
-        docs = []
-        for key in doc.keys():
-            if  key.startswith('request'):
-                rid = key.split('request-')[-1]
-                if  rid != 'all':
-                    docs.append(rid)
-                del doc[key]
-        return docs
 
 class ReqMgrService(TemplatedPage):
     """
@@ -280,9 +187,6 @@ class ReqMgrService(TemplatedPage):
         self.admin_group = Group(app, api, config.reqmgr, mount=mount+'/group')
         self.admin_team = Team(app, api, config.reqmgr, mount=mount+'/team')
 
-        # action manager (will be replaced with appropriate class
-        self.actionmgr = ActionMgr(self.reqmgr)
-
         # get fields which we'll use in templates
         cdict = config.reqmgr.dictionary_()
         self.couch_url = cdict.get('couch_host', '')
@@ -299,16 +203,18 @@ class ReqMgrService(TemplatedPage):
     def user(self):
         """
         Return user name associated with this instance.
-        This method should implement fetching user parameters through passed DN
         """
-        return 'testuser'
+        try:
+            return cherrypy.request.user['login']
+        except:
+            return 'testuser'
 
     def user_dn(self):
-        """
-        Return user DN.
-        This method should implement fetching user DN
-        """
-        return '/CN/bla/foo/'
+        "Return user DN"
+        try:
+            return cherrypy.request.user['dn']
+        except:
+            return '/CN/bla/foo'
 
     def update_scripts(self, force=False):
         "Update scripts dict"
@@ -320,13 +226,9 @@ class ReqMgrService(TemplatedPage):
 
     def abs_page(self, tmpl, content):
         """generate abstract page"""
-        menu = self.templatepage('menu', menus=menus(tmpl))
-        if  tmpl == 'main':
-            body = self.templatepage('generic', menu=menu, content=content)
-            page = self.templatepage('main', content=body, user=self.user())
-        else:
-            body = self.templatepage(tmpl, menu=menu, content=content)
-            page = self.templatepage('main', content=body, user=self.user())
+        menu = self.templatepage('menu', menus=menus(), tmpl=tmpl)
+        body = self.templatepage('generic', menu=menu, content=content)
+        page = self.templatepage('main', content=body, user=self.user())
         return page
 
     def page(self, content):
@@ -338,7 +240,7 @@ class ReqMgrService(TemplatedPage):
     def error(self, content):
         "Generate common error page"
         content = self.templatepage('error', content=content)
-        return self.abs_page('generic', content)
+        return self.abs_page('error', content)
 
     @expose
     def index(self, **kwds):
@@ -353,7 +255,7 @@ class ReqMgrService(TemplatedPage):
             sval = '%s description' % skey
             scripts[skey] = sval
         content = self.templatepage('apis', apis=apis, scripts=scripts)
-        return self.abs_page('generic', content)
+        return self.abs_page('main', content)
 
     ### Admin actions ###
 
@@ -365,7 +267,7 @@ class ReqMgrService(TemplatedPage):
         print "rows", [r for r in rows]
 
         content = self.templatepage('admin')
-        return self.abs_page('generic', content)
+        return self.abs_page('admin', content)
 
     @expose
     def add_user(self, **kwds):
@@ -373,7 +275,7 @@ class ReqMgrService(TemplatedPage):
         rid = genid(kwds)
         status = "ok" # chagne to whatever it would be
         content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
-        return self.abs_page('generic', content)
+        return self.abs_page('admin', content)
 
     @expose
     def add_group(self, **kwds):
@@ -383,7 +285,7 @@ class ReqMgrService(TemplatedPage):
         rid = genid(kwds)
         status = "ok" # chagne to whatever it would be
         content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
-        return self.abs_page('generic', content)
+        return self.abs_page('admin', content)
 
     @expose
     def add_team(self, **kwds):
@@ -394,7 +296,7 @@ class ReqMgrService(TemplatedPage):
         rid = genid(kwds)
         status = "ok" # chagne to whatever it would be
         content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
-        return self.abs_page('generic', content)
+        return self.abs_page('admin', content)
 
     ### Request actions ###
 
@@ -413,7 +315,7 @@ class ReqMgrService(TemplatedPage):
             for key, val in row.items():
                 docs.append(request_attr(val, attrs))
         sortby = kwds.get('sort', 'status')
-        docs = sort(docs, sortby)
+        docs = [r for r in sort(docs, sortby)]
         content = self.templatepage('assign', sort=sortby,
                 site_white_list=site_white_list(),
                 site_black_list=site_black_list(),
@@ -421,7 +323,7 @@ class ReqMgrService(TemplatedPage):
                 cmssw_versions=releases(), scram_arch=architectures(),
                 sites=sites(), lfn_bases=lfn_bases(),
                 lfn_unmerged_bases=lfn_unmerged_bases())
-        return self.abs_page('generic', content)
+        return self.abs_page('assign', content)
 
     @expose
     @checkargs(['status', 'sort'])
@@ -443,160 +345,22 @@ class ReqMgrService(TemplatedPage):
             for key, val in row.items():
                 docs.append(request_attr(val, attrs))
         sortby = kwds.get('sort', 'status')
-        docs = sort(docs, sortby)
+        docs = [r for r in sort(docs, sortby)]
         content = self.templatepage('approve', requests=docs, date=tstamp(),
                 sort=sortby)
-        return self.abs_page('generic', content)
-
-    @expose
-    def ajax_action(self, action, ids, new_status, **kwds):
-        """
-        AJAX action creates request dictionary and pass it to
-        action manager method.
-        """
-        req = {}
-        status = None
-        if  isinstance(ids, list):
-            for rid in ids:
-                req[rid] = 'on'
-        elif isinstance(ids, basestring):
-            req[ids] = 'on'
-        else:
-            cherrypy.response.status = 501
-            return
-        if  action == 'approve':
-            status = getattr(self.actionmgr, action)(req, new_status)
-            if  status == 'ok':
-                cherrypy.response.status = 200
-            else:
-                cherrypy.response.status = 400
-            return
-        elif action == 'assign':
-            status = getattr(self.actionmgr, action)(req, new_status, kwds)
-            if  status == 'ok':
-                cherrypy.response.status = 200
-            else:
-                cherrypy.response.status = 400
-            return
-        elif action == 'create':
-            script = kwds.get('script', '')
-            if  script:
-                docs = self.generate_objs(script, kwds)
-            else:
-                docs = [kwds]
-            status = getattr(self.actionmgr, action)(docs)
-            if  status == 'ok':
-                cherrypy.response.status = 201
-            else:
-                cherrypy.response.status = 400
-            return
-        else:
-            cherrypy.response.status = 501
-            return
+        return self.abs_page('approve', content)
 
     @expose
     def create(self, **kwds):
         """create page"""
         spec = kwds.get('form', 'ReReco')
-        fname = 'json/%s' % str(spec)
-        # request form
-        jsondata = self.templatepage(fname,
-                user=json.dumps(self.user()),
-                dn=json.dumps(self.user_dn()),
-                groups=json.dumps(cms_groups()),
-                releases=json.dumps(self.sw_ver),
-                arch=json.dumps(self.sw_arch),
-                scenarios=json.dumps(scenarios()),
-                dqm_urls=json.dumps(self.dqm_url),
-                couch_url=json.dumps(self.couch_url),
-                couch_dbname=json.dumps(self.couch_dbname),
-                couch_wdbname=json.dumps(self.couch_wdbname),
-                dbs_url=json.dumps(self.dbs_url),
-                cc_url=json.dumps(self.configcache_url),
-                cc_id=json.dumps("some_id"), # TODO: get it elsewhere
-                acdc_url=json.dumps(self.acdc_url),
-                acdc_dbname=json.dumps(self.acdc_dbname),
-                )
-        try:
-            jsondata = json.loads(jsondata)
-        except Exception as exp:
-            msg  = '<div class="color-gray">Fail to load JSON for %s workflow</div>\n' % spec
-            msg += '<div class="color-red">Error: %s</div>\n' % str(exp)
-            msg += '<div class="color-gray-light">JSON: %s</div>' % jsondata
-            return self.error(msg)
-
-        # check if JSON template provides all required attributes
-        required = [k for k,v in self.specs[spec].items() if v['optional']==False]
-        if  set(jsondata.keys()) & set(required) != set(required):
-            missing = list(set(required)-set(jsondata.keys()))
-            content = '%s spec template does not contain all required attributes.' \
-                    % spec
-            content += '<br/><span class="color-red">Missing attributes:</span> %s' \
-                    % sort_bold(missing)
-            return self.error(content)
-
-        # check if JSON template contains all required values
-        vdict = {} # dict of empty values
-        tdict = {} # dict of type mismatches
-        dropdowns = ['ScramArch', 'Group', 'CMSSWVersion']
-        for key in required:
-            value = jsondata[key]
-            if  not value:
-                vdict[key] = jsondata[key]
-            type1 = str if type(value) == unicode else type(value)
-            stype = self.specs[spec][key]['type']
-            type2 = str if stype == unicode else stype
-            if  type1 != type2 and key not in dropdowns:
-                tdict[key] = (type(value), self.specs[spec][key]['type'])
-        if  vdict.keys():
-            content = '<span class="color-red">Empty values in %s spec</span>: %s'\
-                    % (spec, sort_bold(vdict.keys()))
-            return self.error(content)
-        if  tdict.keys():
-            types = []
-            for key, val in tdict.items():
-                type0 = str(val[0]).replace('>', '').replace('<', '')
-                type1 = str(val[1]).replace('>', '').replace('<', '')
-                types.append('<b>%s:</b> %s, should be %s' % (key, type0, type1))
-            content = '<div class="color-red">Type mismatches in %s spec:</div> %s'\
-                    % (spec, '<br/>'.join(types))
-            return self.error(content)
-
+        jsondata = get_request_template_from_type(spec)
         # create templatized page out of provided forms
         self.update_scripts()
         content = self.templatepage('create', table=json2table(jsondata, web_ui_names()),
                 jsondata=json.dumps(jsondata, indent=2), name=spec,
                 scripts=[s for s in self.sdict.keys() if s!='ts'])
-        return self.abs_page('generic', content)
-
-    @expose
-    def confirm_action(self, **kwds):
-        """
-        Confirm action method is called from web UI forms. It grabs input parameters
-        and passed them to Action manager.
-        """
-        try:
-            action = kwds.pop('action')
-            if  'script' in kwds: # we got a script to apply
-                script = kwds.pop('script')
-                jsondict = json.loads(kwds.get('jsondict', "{}"))
-                if  not jsondict:
-                    jsondict = kwds
-                if  script == "":
-                    docs = [jsondict]
-                    rids = genid(jsondict)
-                else:
-                    docs = self.generate_objs(script, jsondict)
-                    rids = [genid(o) for o in docs]
-                status = getattr(self.actionmgr, action)(docs)
-            else:
-                status = getattr(self.actionmgr, action)(kwds)
-                rids = genid(kwds)
-            content = self.templatepage('confirm', ticket=rids, user=self.user(), status=status)
-            return self.abs_page('generic', content)
-        except:
-            msg = '<div class="color-red">No action is specified</div>'
-            self.error(msg)
+        return self.abs_page('create', content)
 
     def generate_objs(self, script, jsondict):
         """Generate objects from givem JSON template"""
@@ -607,14 +371,22 @@ class ReqMgrService(TemplatedPage):
         exec(code) # code snippet must starts with genobjs function
         return [r for r in genobjs(jsondict)]
 
-    @exposejson
+    @expose
     def fetch(self, rid):
         "Fetch document for given id"
-        return self.reqmgr.getRequestByNames(rid)
-
-    def doc(self, rid):
-        "Fetch document for given id"
-        return self.reqmgr.getRequestByNames(rid)
+        rid = rid.replace('request-', '')
+        doc = self.reqmgr.getRequestByNames(rid)
+        if  len(doc) == 1:
+            try:
+                doc = pprint.pformat(doc[0][rid])
+            except:
+                doc = pprint.pformat(doc[0])
+        elif len(doc) > 1:
+            doc = [pprint.pformat(d) for d in doc]
+        else:
+            doc = 'No request found for name=%s' % rid
+        content = self.templatepage('doc', doc=doc)
+        return self.abs_page('request', content)
 
     @expose
     def requests(self, **kwds):
@@ -629,9 +401,9 @@ class ReqMgrService(TemplatedPage):
             for key, doc in req.items():
                 docs.append(request_attr(doc))
         sortby = kwds.get('sort', 'status')
-        docs = sort(docs, sortby)
+        docs = [r for r in sort(docs, sortby)]
         content = self.templatepage('requests', requests=docs, sort=sortby)
-        return self.abs_page('generic', content)
+        return self.abs_page('requests', content)
 
     @expose
     def request(self, **kwargs):
@@ -647,7 +419,7 @@ class ReqMgrService(TemplatedPage):
         winfo = self.templatepage('workflow', wdict=wdict,
                 dataset=dataset, code=pprint.pformat(wdata))
         content = self.templatepage('search', content=winfo)
-        return self.abs_page('generic', content)
+        return self.abs_page('request', content)
 
     ### Aux methods ###
 

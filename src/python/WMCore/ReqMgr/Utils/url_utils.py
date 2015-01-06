@@ -108,7 +108,7 @@ def getdata(url, params, headers=None, post=None, verbose=False, jsondecoder=Tru
     if  verbose:
         print '+++ getdata, url=%s, headers=%s' % (url, headers)
     obj=sys.version_info
-    if  obj.major == 2 and obj.minor == 7 and obj.micro >= 9:
+    if  obj[0] == 2 and obj[1] == 7 and obj[2] >= 9:
         # disable SSL verification, since it is default in python 2.7.9
         # and many CMS services do not verify SSL cert.
         # https://www.python.org/dev/peps/pep-0476/

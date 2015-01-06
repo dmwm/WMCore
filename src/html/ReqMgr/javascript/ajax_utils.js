@@ -1,15 +1,24 @@
 function cleanConfirmation () {
-  var doc = document.getElementById('confirmation');
-  doc.innerHTML='';
-  doc.className='';
+    var doc = document.getElementById('confirmation');
+    doc.innerHTML='';
+    doc.className='';
 }
 function errorMessage(err) {
-  var doc = document.getElementById('confirmation');
-  var html = '<div><button class="btn btn-small btn-blue right" onclick="javascript:cleanConfirmation()">Close</button>';
-  html += err.replace(/\n/g, '<br/>') ;
-  html += '</div>'
-  doc.innerHTML=html;
-  doc.className='tools-alert tools-alert-red confirmation shadow';
+    // extract X-Error-Detail from server error
+    var pat = 'X-Error-Detail:'
+    var arr = err.split('\n')
+    var msg = "<h3>Error message</h3>";
+    for(var i=0; i<arr.length; i++) {
+        if(arr[i].startsWith(pat)) {
+           msg += arr[i].replace(pat, '');
+        }
+    }
+    // find out confirmation placeholder and fill it up with appropriate message
+    var doc = document.getElementById('confirmation');
+    var html = '<div><button class="btn btn-small btn-blue right" onclick="javascript:cleanConfirmation()">Close</button>';
+    html += msg+'</div>'
+    doc.innerHTML=html;
+    doc.className='tools-alert tools-alert-red confirmation shadow';
 }
 function ajaxRequest(path, parameters) {
     // path is an URI binded to certain server method

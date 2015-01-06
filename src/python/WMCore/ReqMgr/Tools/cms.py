@@ -50,14 +50,14 @@ class TagCollector(object):
             else:
                 for item in row['project']:
                     arr.append(item['label'])
-        return arr
+        return list(set(arr))
 
     def architectures(self):
         "Yield CMS architectures known in tag collector"
         arr = []
         for row in self.data():
             arr.append(row['name'])
-        return arr
+        return list(set(arr))
 
 # initialize TagCollector instance to be used in this module
 TC = TagCollector()
@@ -205,13 +205,11 @@ def couch_url():
 
 def releases(arch=None):
     "Return list of CMSSW releases"
-    for row in set(TC.releases(arch)):
-        yield row
+    return TC.releases(arch)
 
 def architectures():
     "Return list of CMSSW architectures"
-    for row in set(TC.architectures()):
-        yield row
+    return TC.architectures()
 
 def scenarios():
     "Return list of scenarios"

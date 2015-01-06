@@ -103,6 +103,8 @@ input[type=text]:focus, textarea:focus {
     left: 50%;
     transform: translate(-50%, -50%);
     z-index:999;
+}
+.fadeout {
     opacity: 0;
     -webkit-transition: opacity 4s ease-in;
     -moz-transition: opacity 4s ease-in;

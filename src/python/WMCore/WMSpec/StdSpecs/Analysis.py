@@ -116,7 +116,7 @@ class AnalysisWorkloadFactory(StdBase):
 
         # set the LFN bases (normally done by request manager)
         # also pass runNumber (workload evaluates it)
-        workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
+        self.workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
                             runNumber = self.runNumber)
 
         return self.workload
@@ -152,7 +152,11 @@ class AnalysisWorkloadFactory(StdBase):
     def getWorkloadArguments():
         baseArgs = StdBase.getWorkloadArguments()
         del baseArgs["AcquisitionEra"]
-        specArgs = {"userSandbox" : {"default" : "http://home.fnal.gov/~ewv/agent.tgz",
+        reqMgrArgs = StdBase.getWorkloadArgumentsWithReqMgr()
+        baseArgs.update(reqMgrArgs)
+        specArgs = {"RequestType" : {"default" : "Analysis", "optional" : True,
+                                      "attr" : "requestType"},
+                    "userSandbox" : {"default" : "http://home.fnal.gov/~ewv/agent.tgz",
                                      "type" : str,
                                      "optional" : True, "validate" : None,
                                      "attr" : "userSandbox", "null" : True},
@@ -234,6 +238,7 @@ class AnalysisWorkloadFactory(StdBase):
                                      "optional" : True, "validate" : lambda x : x > 0,
                                      "attr" : "lumisPerJob", "null" : False}, }
         baseArgs.update(specArgs)
+        StdBase.setDefaultArgumentsProperty(baseArgs)
         return baseArgs
 
     def validateSchema(self, schema):

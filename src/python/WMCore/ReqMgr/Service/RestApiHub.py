@@ -12,6 +12,7 @@ from WMCore.REST.Format import RawFormat
 
 from WMCore.ReqMgr.ReqMgrCouch import ReqMgrCouch
 from WMCore.ReqMgr.Service.Auxiliary import HelloWorld
+from WMCore.ReqMgr.Service.Auxiliary import RequestSpec
 from WMCore.ReqMgr.Service.Auxiliary import Info
 from WMCore.ReqMgr.Service.Auxiliary import Group
 from WMCore.ReqMgr.Service.Auxiliary import Team
@@ -50,4 +51,5 @@ class RestApiHub(RESTApi):
                    "software": Software(app, self, config, mount),
                    "status": RequestStatus(app, self, config, mount),
                    "type": RequestType(app, self, config, mount),
+                   "spec_template": RequestSpec(self, app, config, mount),
                   })

@@ -115,7 +115,7 @@ def request_attr(doc, attrs=None):
                     gmt = time.gmtime(time.mktime(tval))
                     rdict[key] = time.strftime("%Y-%m-%d %H:%M:%S GMT", gmt)
                 else:
-                    rdictp[key] = tval
+                    rdict[key] = tval
             else:
                 rdict[key] = doc[key]
     return rdict

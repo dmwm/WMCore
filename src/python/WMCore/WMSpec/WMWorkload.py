@@ -1706,10 +1706,7 @@ class WMWorkloadHelper(PersistencyHelper):
     def validateArgument(self, schema):
         specClass = loadSpecClassByType(self.requestType())
         argumentDefinition = specClass.getWorkloadArguments()
-        msg = validateArgumentsUpdate(schema, argumentDefinition)
-        if msg is not None:
-            from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
-            raise WMSpecFactoryException(message = msg)
+        validateArgumentsUpdate(schema, argumentDefinition)
         return
     
     def _checkKeys(self, kwargs, keys):

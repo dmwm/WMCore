@@ -284,7 +284,9 @@ class PromptRecoWorkloadFactory(StdBase):
     @staticmethod
     def getWorkloadArguments():
         baseArgs = StdBase.getWorkloadArguments()
-        specArgs = {"Scenario" : {"default" : None, "type" : str,
+        specArgs = {"RequestType" : {"default" : "PromptReco", "optional" : True,
+                                      "attr" : "requestType"},
+                    "Scenario" : {"default" : None, "type" : str,
                                   "optional" : False, "validate" : None,
                                   "attr" : "procScenario", "null" : False},
                     "GlobalTag" : {"default" : None, "type" : str,
@@ -304,15 +306,6 @@ class PromptRecoWorkloadFactory(StdBase):
                     "PromptSkims" : {"default" : [], "type" : makeList,
                                      "optional" : True, "validate" : None,
                                      "attr" : "promptSkims", "null" : False},
-                    "CouchURL" : {"default" : None, "type" : str,
-                                  "optional" : False, "validate" : couchurl,
-                                  "attr" : "couchURL", "null" : False},
-                    "CouchDBName" : {"default" : "promptreco_t", "type" : str,
-                                     "optional" : True, "validate" : identifier,
-                                     "attr" : "couchDBName", "null" : False},
-                    "ConfigCacheUrl" : {"default" : None, "type" : str,
-                                        "optional" : True, "validate" : couchurl,
-                                        "attr" : "configCacheUrl", "null" : False},
                     "InitCommand" : {"default" : None, "type" : str,
                                      "optional" : True, "validate" : None,
                                      "attr" : "initCommand", "null" : False},
@@ -367,5 +360,17 @@ class PromptRecoWorkloadFactory(StdBase):
                                          "optional" : True, "validate" : lambda x : x > 0,
                                          "attr" : "blockCloseDelay", "null" : False}
                     }
+        
         baseArgs.update(specArgs)
+        # add more optional arguments in case it is created using ReqMgr (not T0 case but should support both)
+        reqMgrArguments = {"CouchURL" : {"default" : "https://cmsweb.cern.ch/couchdb",
+                                         "validate" : couchurl},
+                           "CouchDBName" : {"default" : "reqmgr_config_cache", "type" : str,
+                                            "validate" : identifier},
+                           "ConfigCacheUrl" : {"default" :"https://cmsweb.cern.ch/couchdb", "validate" : couchurl},
+                           "ConfigCacheID" : {},
+                           "CouchWorkloadDBName" : {"default" : "reqmgr_workload_cache", "validate" : identifier},
+                         }
+        baseArgs.update(reqMgrArguments)
+        StdBase.setDefaultArgumentsProperty(baseArgs)
         return baseArgs

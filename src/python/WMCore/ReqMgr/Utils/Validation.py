@@ -5,11 +5,13 @@ ReqMgr request handling.
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.WMWorkloadTools import loadSpecByType
 from WMCore.REST.Auth import authz_match
+from WMCore.WMFactory import WMFactory
 
 from WMCore.ReqMgr.Auth import getWritePermission
 from WMCore.ReqMgr.DataStructs.Request import initialize_request_args
 from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition
+from WMCore.ReqMgr.Tools.cms import releases, architectures
 
 def validate_request_update_args(request_args, config, reqmgr_db_service, param):
     """
@@ -96,3 +98,33 @@ def validate_state_transition(reqmgr_db_service, request_name, new_state) :
     if not check_allowed_transition(current_state, new_state):
         raise InvalidStateTransition(current_state, new_state)
     return
+
+def create_json_template_spec(specArgs):
+    template = {}
+    for key, prop in specArgs.items():
+        
+        if key == "RequestorDN":
+            # this will be automatically collected so skip it.
+            continue
+        
+        if key == "CMSSWVersion":
+            # get if from tag collector
+            value = releases()
+        elif key == "ScramArch":
+            value = architectures()
+        elif prop.get("optional", True):
+            # if optional need to always have default value
+            value = prop["default"]
+        else:
+            value = "REPLACE-%s" % key
+        template[key] = value
+    return template
+
+def get_request_template_from_type(request_type):
+    pluginFactory = WMFactory("specArgs", "WMSpec.StdSpecs" )
+    alteredClassName = "%sWorkloadFactory" % request_type
+    spec = pluginFactory.loadObject(classname = request_type, alteredClassName = alteredClassName)
+    specArgs = spec.getWorkloadArguments()
+
+    result = create_json_template_spec(specArgs)
+    return result

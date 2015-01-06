@@ -38,21 +38,14 @@ class DataProcessing(StdBase):
     @staticmethod
     def getWorkloadArguments():
         baseArgs = StdBase.getWorkloadArguments()
+        reqMgrArgs = StdBase.getWorkloadArgumentsWithReqMgr()
+        baseArgs.update(reqMgrArgs)
         specArgs = {"InputDataset" : {"default" : "/MinimumBias/ComissioningHI-v1/RAW", "type" : str,
                                       "optional" : False, "validate" : dataset,
                                       "attr" : "inputDataset", "null" : False},
                     "GlobalTag" : {"default" : "GT_DP_V1", "type" : str,
                                    "optional" : False, "validate" : None,
                                    "attr" : "globalTag", "null" : False},
-                    "CouchURL" : {"default" : "http://localhost:5984", "type" : str,
-                                  "optional" : False, "validate" : couchurl,
-                                  "attr" : "couchURL", "null" : False},
-                    "CouchDBName" : {"default" : "dp_configcache", "type" : str,
-                                     "optional" : False, "validate" : identifier,
-                                     "attr" : "couchDBName", "null" : False},
-                    "ConfigCacheUrl" : {"default" : None, "type" : str,
-                                        "optional" : True, "validate" : None,
-                                        "attr" : "configCacheUrl", "null" : True},
                     "OpenRunningTimeout" : {"default" : 0, "type" : int,
                                             "optional" : True, "validate" : lambda x : x >= 0,
                                             "attr" : "openRunningTimeout", "null" : False},
@@ -84,4 +77,5 @@ class DataProcessing(StdBase):
                     }
 
         baseArgs.update(specArgs)
+        StdBase.setDefaultArgumentsProperty(baseArgs)
         return baseArgs

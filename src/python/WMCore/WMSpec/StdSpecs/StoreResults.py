@@ -96,7 +96,11 @@ class StoreResultsWorkloadFactory(StdBase):
     @staticmethod
     def getWorkloadArguments():
         baseArgs = StdBase.getWorkloadArguments()
-        specArgs = {"InputDataset" : {"default" : "/MinimumBias/Run2010A-Dec22ReReco_v1/USER",
+        reqMgrArgs = StdBase.getWorkloadArgumentsWithReqMgr()
+        baseArgs.update(reqMgrArgs)
+        specArgs = {"RequestType" : {"default" : "StoreResults", "optional" : True,
+                                      "attr" : "requestType"},
+                    "InputDataset" : {"default" : None,
                                       "type" : str, "optional" : False,
                                       "validate" : dataset, "attr" : "inputDataset",
                                       "null" : False},
@@ -137,4 +141,5 @@ class StoreResultsWorkloadFactory(StdBase):
                                       "optional" : True, "validate" : lambda x: all([int(y) > 0 for y in x]),
                                       "attr" : "runWhitelist", "null" : False}}
         baseArgs.update(specArgs)
+        StdBase.setDefaultArgumentsProperty(baseArgs)
         return baseArgs

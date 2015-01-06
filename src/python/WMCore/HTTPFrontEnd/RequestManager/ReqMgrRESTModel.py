@@ -15,6 +15,7 @@ import cherrypy
 import json
 import threading
 import urllib
+import traceback
 
 import WMCore.Lexicon
 from WMCore.Wrappers import JsonWrapper
@@ -478,13 +479,15 @@ class ReqMgrRESTModel(RESTModel):
                 request = Utilities.makeRequest(self, reqInputArgs, self.couchUrl,
                                                 self.workloadDBName, self.wmstatWriteURL)
             except cherrypy.HTTPError as ex:
-                self.error("Create request failed, reason: %s" % str(ex))
+                msg = traceback.format_exc()
+                self.error("Create request failed, reason: %s" % msg)
                 # Assume that this is a valid HTTPError
                 raise ex
             except (WMException, Exception) as ex:
                 # TODO problem not to expose logs to the client
                 # e.g. on ConfigCacheID not found, the entire CouchDB traceback is sent in ex_message
-                self.error("Create request failed, reason: %s" % str(ex))
+                msg = traceback.format_exc()
+                self.error("Create request failed, reason: %s" % msg)
                 if hasattr(ex, "message"):
                     if hasattr(ex.message, '__call__'):
                         detail = ex.message()

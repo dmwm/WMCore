@@ -39,6 +39,7 @@ class ConfigCacheException(WMException):
 class Singleton(type):
     """Implementation of Singleton class"""
     _instances = {}
+
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             cls._instances[cls] = \
@@ -563,7 +564,9 @@ class ConfigCache(WMObject):
     def validate(self, configID):
         
         try:
-            self.loadDocument(configID = configID)
+            #TODO: need to change to DataCache
+            #self.loadDocument(configID = configID)
+            self.loadByID(configID = configID)
         except Exception, ex:
             raise ConfigCacheException("Failure to load ConfigCache while validating workload: %s" % str(ex))
         

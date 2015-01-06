@@ -5,7 +5,6 @@ ReqMgr request handling.
 
 import cherrypy
 
-from WMCore.REST.Error import InvalidParameter
 from WMCore.Database.CMSCouch import CouchError
 from WMCore.WMSpec.WMWorkloadTools import loadSpecByType
 from WMCore.Wrappers import JsonWrapper
@@ -18,6 +17,7 @@ from WMCore.ReqMgr.DataStructs.Request import initialize_request_args
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_TRANSITION
 from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
+from WMCore.ReqMgr.DataStructs.RequestError import  InvalidSpecParameterValue
 from WMCore.ReqMgr.Utils.Validation import validate_request_create_args, \
                validate_request_update_args
 
@@ -201,7 +201,14 @@ class Request(RESTEntity):
             import traceback
             msg = traceback.format_exc()
             print msg
-            raise InvalidParameter("Missing parameter: %s\n%s" % (str(ex), msg))
+            if hasattr(ex, "message"):
+                if hasattr(ex.message, '__call__'):
+                    msg = ex.message()
+                else:
+                    msg = str(ex)
+            else:
+                msg = str(ex)
+            raise InvalidSpecParameterValue(msg)
     
     def initialize_clone(self, request_name):
         requests = self.reqmgr_db_service.getRequestByNames(request_name)

@@ -18,7 +18,7 @@ from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
+from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
 
 def makeGeneratorConfig(couchDatabase):

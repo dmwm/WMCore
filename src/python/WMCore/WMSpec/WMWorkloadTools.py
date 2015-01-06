@@ -11,32 +11,24 @@ Created on Jun 13, 2013
 import logging
 
 from WMCore.DataStructs.LumiList import LumiList
-from WMCore.WMException import WMException
-
-class WMWorkloadToolsException(WMException):
-    """
-    _WMWorkloadToolsException_
-
-    Exception thrown by the utilities in this module
-    """
-    pass
-
-class InvlaidSpecArgumentError(WMException):
-    pass
+from WMCore.Wrappers import JsonWrapper
+from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
 def makeLumiList(lumiDict):
     try:
+        if isinstance(lumiDict, basestring):
+            lumiDict = JsonWrapper.loads(lumiDict)
         ll = LumiList(compactList = lumiDict)
         return ll.getCompactList()
     except:
-        raise WMWorkloadToolsException("Could not parse LumiList")
+        raise WMSpecFactoryException("Could not parse LumiList, %s: %s" % (type(lumiDict), lumiDict))
 
 def makeList(stringList):
     """
     _makeList_
 
     Make a python list out of a comma separated list of strings,
-    throws a WMWorkloadToolsException if the input is not
+    throws a WMSpecFactoryException if the input is not
     well formed. If the stringList is already of type list
     then it is return untouched
     """
@@ -47,7 +39,7 @@ def makeList(stringList):
         if toks == ['']:
             return []
         return[str(tok.strip(' \'"')) for tok in toks]
-    raise WMWorkloadToolsException
+    raise WMSpecFactoryException("Can't convert to list %s" % stringList)
 
 def strToBool(string):
     """
@@ -64,7 +56,7 @@ def strToBool(string):
     elif string == "False":
         return False
     else:
-        raise WMWorkloadToolsException()
+        raise WMSpecFactoryException("Can't convert to bool: %s" % string)
     
 def checkDBSUrl(dbsUrl):
     # use the import statement here since this is packed and used in RunTime code.
@@ -78,9 +70,9 @@ def checkDBSUrl(dbsUrl):
             jsonSender = JSONRequests(dbsUrl)
             result = jsonSender.get("/serverinfo")
             if not result[1] == 200:
-                raise WMWorkloadToolsException("DBS is not connected: %s : %s" % (dbsUrl, str(result)))
+                raise WMSpecFactoryException("DBS is not connected: %s : %s" % (dbsUrl, str(result)))
         except:
-            raise WMWorkloadToolsException("DBS is not responding: %s" % dbsUrl)
+            raise WMSpecFactoryException("DBS is not responding: %s" % dbsUrl)
     
     return True
     
@@ -102,25 +94,45 @@ def parsePileupConfig(mcPileup, dataPileup):
 def _validateArgument(argument, value, argumentDefinition):
     validNull = argumentDefinition[argument]["null"]
     if not validNull and value is None:
-        raise InvlaidSpecArgumentError("Argument %s can't be None" % argument)
+        raise WMSpecFactoryException("Argument %s can't be None" % argument)
     elif validNull and value is None:
         return value
                     
     try:
         value = argumentDefinition[argument]["type"](value)        
     except Exception:
-        raise InvlaidSpecArgumentError("Argument: %s: value: %s type is incorrect in schema." % (argument, value))
+        raise WMSpecFactoryException("Argument: %s: value: %s type is incorrect in schema." % (argument, value))
     
     validateFunction = argumentDefinition[argument]["validate"]
     if validateFunction is not None:
         try:
             if not validateFunction(value):
-                raise InvlaidSpecArgumentError("Argument %s: value: %s doesn't pass the validation function." % (argument, value))
+                raise WMSpecFactoryException("Argument %s: value: %s doesn't pass the validation function." % (argument, value))
         except Exception, ex:
             # Some validation functions (e.g. Lexicon) will raise errors instead of returning False
             logging.error(str(ex))
-            raise InvlaidSpecArgumentError("Validation failed: %s value: %s" % (argument, value))
+            raise WMSpecFactoryException("Validation failed: %s value: %s" % (argument, value))
     return value
+
+def _validateArgumentOptions(arguments, argumentDefinition, optionKey):
+    
+    for argument in argumentDefinition:
+        if optionKey == None:
+            optional = True
+        else:
+            optional = argumentDefinition[argument].get(optionKey, True)
+        if not optional and argument not in arguments:
+            raise WMSpecFactoryException("Validation failed: %s is mendatory %s" % (argument, 
+                                                                argumentDefinition[argument]))
+        # specific case when user GUI returns empty string for optional arguments
+        elif optional and argument not in arguments:
+            continue
+        elif optional and (argument in arguments) and \
+             (arguments[argument] == ""):
+            del arguments[argument] 
+        else:
+            arguments[argument] = _validateArgument(argument, arguments[argument], argumentDefinition)
+        return
 
 def validateArgumentsCreate(arguments, argumentDefinition):
     """
@@ -132,21 +144,8 @@ def validateArgumentsCreate(arguments, argumentDefinition):
     otherwise returns None, this is used for spec creation 
     checks the whether argument is optional as well as validation
     """
-    for argument in argumentDefinition:
-        optional = argumentDefinition[argument]["optional"]
-        if not optional and argument not in arguments:
-            return "Argument %s is required." % argument
-        elif optional and argument not in arguments:
-            continue
-        elif optional and (argument in arguments) and \
-             (arguments[argument] == ""):
-            del arguments[argument] 
-            continue
-        else:
-            arguments[argument] = _validateArgument(argument, arguments[argument], argumentDefinition)
-
-    return
-
+    return _validateArgumentOptions(arguments, argumentDefinition, "optional")
+    
 def validateArgumentsUpdate(arguments, argumentDefinition):
     """
     _validateArgumentsUpdate_
@@ -156,19 +155,19 @@ def validateArgumentsUpdate(arguments, argumentDefinition):
     an error message if the validation went wrong,
     otherwise returns None
     """
-    for argument in argumentDefinition:
-        optional = argumentDefinition[argument].get("assign_optional", True)
-        if not optional and argument not in arguments:
-            if argumentDefinition[argument].has_key("default"):
-                arguments[argument] = argumentDefinition[argument]["default"]
-            else:
-                return "Argument %s is required." % argument
-        elif optional and argument not in arguments:
-            continue
-        
-    for argument in arguments:
-        arguments[argument] = _validateArgument(argument, arguments[argument], argumentDefinition)
-    return
+    return _validateArgumentOptions(arguments, argumentDefinition, "assign_optional")
+
+def validateArgumentsNoOptionalCheck(arguments, argumentDefinition):
+    """
+    _validateArgumentsNoOptionalCheck_
+
+    Validate a set of arguments against and argument definition
+    as defined in StdBase.getWorkloadArguments. But treats everything optional
+    This is used for TaskChain request if some argument need to be overwritten
+    It returns an error message if the validation went wrong,
+    otherwise returns None
+    """
+    return _validateArgumentOptions(arguments, argumentDefinition, None)
 
 def setArgumentsNoneValueWithDefault(arguments, argumentDefinition):
     """

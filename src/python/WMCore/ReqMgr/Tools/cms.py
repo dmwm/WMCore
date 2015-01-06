@@ -41,19 +41,23 @@ class TagCollector(object):
 
     def releases(self, arch=None):
         "Yield CMS releases known in tag collector"
+        arr = []
         for row in self.data():
             if  arch:
                 if  arch == row['name']:
                     for item in row['project']:
-                        yield item['label']
+                        arr.append(item['label'])
             else:
                 for item in row['project']:
-                    yield item['label']
+                    arr.append(item['label'])
+        return arr
 
     def architectures(self):
         "Yield CMS architectures known in tag collector"
+        arr = []
         for row in self.data():
-            yield row['name']
+            arr.append(row['name'])
+        return arr
 
 # initialize TagCollector instance to be used in this module
 TC = TagCollector()

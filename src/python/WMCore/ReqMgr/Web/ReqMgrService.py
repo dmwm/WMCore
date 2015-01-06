@@ -39,6 +39,7 @@ from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
 from WMCore.WMSpec.WMWorkloadTools import loadSpecByType
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.ReqMgr.Service.Auxiliary import Info, Group, Team, Software
+from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
 from WMCore.ReqMgr.Service.Request import Request
 from WMCore.ReqMgr.Service.RestApiHub import RestApiHub
 from WMCore.REST.Main import RESTMain
@@ -353,70 +354,7 @@ class ReqMgrService(TemplatedPage):
     def create(self, **kwds):
         """create page"""
         spec = kwds.get('form', 'ReReco')
-        fname = 'json/%s' % str(spec)
-        # request form
-        jsondata = self.templatepage(fname,
-                user=json.dumps(self.user()),
-                dn=json.dumps(self.user_dn()),
-                groups=json.dumps(cms_groups()),
-                releases=json.dumps(self.sw_ver),
-                arch=json.dumps(self.sw_arch),
-                scenarios=json.dumps(scenarios()),
-                dqm_urls=json.dumps(self.dqm_url),
-                couch_url=json.dumps(self.couch_url),
-                couch_dbname=json.dumps(self.couch_dbname),
-                couch_wdbname=json.dumps(self.couch_wdbname),
-                dbs_url=json.dumps(self.dbs_url),
-                cc_url=json.dumps(self.configcache_url),
-                cc_id=json.dumps("REPLACE-ID"),
-                acdc_url=json.dumps(self.acdc_url),
-                acdc_dbname=json.dumps(self.acdc_dbname),
-                )
-        try:
-            jsondata = json.loads(jsondata)
-        except Exception as exp:
-            msg  = '<div class="color-gray">Fail to load JSON for %s workflow</div>\n' % spec
-            msg += '<div class="color-red">Error: %s</div>\n' % str(exp)
-            msg += '<div class="color-gray-light">JSON: %s</div>' % jsondata
-            return self.error(msg)
-
-        # check if JSON template provides all required attributes
-        required = [k for k,v in self.specs[spec].items() if v['optional']==False]
-        if  set(jsondata.keys()) & set(required) != set(required):
-            missing = list(set(required)-set(jsondata.keys()))
-            content = '%s spec template does not contain all required attributes.' \
-                    % spec
-            content += '<br/><span class="color-red">Missing attributes:</span> %s' \
-                    % sort_bold(missing)
-            return self.error(content)
-
-        # check if JSON template contains all required values
-        vdict = {} # dict of empty values
-        tdict = {} # dict of type mismatches
-        dropdowns = ['ScramArch', 'Group', 'CMSSWVersion']
-        for key in required:
-            value = jsondata[key]
-            if  not value:
-                vdict[key] = jsondata[key]
-            type1 = str if type(value) == unicode else type(value)
-            stype = self.specs[spec][key]['type']
-            type2 = str if stype == unicode else stype
-            if  type1 != type2 and key not in dropdowns:
-                tdict[key] = (type(value), self.specs[spec][key]['type'])
-        if  vdict.keys():
-            content = '<span class="color-red">Empty values in %s spec</span>: %s'\
-                    % (spec, sort_bold(vdict.keys()))
-            return self.error(content)
-        if  tdict.keys():
-            types = []
-            for key, val in tdict.items():
-                type0 = str(val[0]).replace('>', '').replace('<', '')
-                type1 = str(val[1]).replace('>', '').replace('<', '')
-                types.append('<b>%s:</b> %s, should be %s' % (key, type0, type1))
-            content = '<div class="color-red">Type mismatches in %s spec:</div> %s'\
-                    % (spec, '<br/>'.join(types))
-            return self.error(content)
-
+        jsondata = get_request_template_from_type(spec)
         # create templatized page out of provided forms
         self.update_scripts()
         content = self.templatepage('create', table=json2table(jsondata, web_ui_names()),

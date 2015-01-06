@@ -4,77 +4,46 @@
 <h2>Approve interface</h2>
 <hr/>
 
-<header class="group">
-<nav class="navbar navbar-left">
-    <ul>
-        <li>Sort by:</li>
-        #if $sort=='status':
-        <li class="menu-item active underline"><a href="#">Status</a></li>
-        #else
-        <li class="menu-item"><a href="$base/approve?sort=status">Status</a></li>
-        #end if
-        #if $sort=='date':
-        <li class="menu-item active underline"><a href="#">Date</a></li>
-        #else
-        <li class="menu-item"><a href="$base/approve?sort=date">Date</a></li>
-        #end if
-        #if $sort=='id':
-        <li class="menu-item active underline"><a href="#">Id</a></li>
-        #else
-        <li class="menu-item"><a href="$base/approve?sort=id">Id</a></li>
-        #end if
-        #if $sort=='group':
-        <li class="menu-item active underline"><a href="#">Group</a></li>
-        #else
-        <li class="menu-item"><a href="$base/approve?sort=group">Group</a></li>
-        #end if
-    </ul>
-</nav>
-<nav class="navbar navbar-right">
-    <button class="btn btn-small btn-outline btn-green" onclick="javascript:ApproveAllRequests()">Approve All</button>
-    <button class="btn btn-small btn-outline btn-red" onclick="javascript:RejectAllRequests()">Reject All</button>
-</nav>
-</header>
+<script>
+var requests = $requests;
+</script>
 
-<hr/>
-#set ids=[]
-#for rdict in $requests
-#set rstat=$rdict['RequestStatus']
-#set keys=$rdict.keys()
-#silent $keys.sort()
-#silent $keys.remove('RequestName') ## we want RequestName to be first in a list
-#for key in ['RequestName']+$keys
-#set val=$rdict[$key]
-#if $key=="RequestDate"
-#set val="<kbd>%s</kbd>"%$val
-#elif $key=="RequestName"
-#set id="request-"+$val
-#silent $ids.append($id)
-#set val='<span class="ticket"><a href="%s/fetch?rid=%s">%s</a></span>'%($base,$val,$val)
-#end if
-#if $key=="RequestStatus"
-    <strong>$key.capitalize():</strong>
-    #set color=$gen_color($rstat)
-    <b><span style="color:$color;background-color:#fff;padding:3px;">$val</span></b>
-#elif $key=="RequestName"
+<div id="requests">
+
+<table class="table-stripped">
+<tbody>
+<tr><td class="width-30">
+        <input id="filter" type="search" class="width-100" placeholder="Filter by pattern ...">
+</td><td class="width-10">
+        <a href="#" class="" onclick="BuildList('', requests.filter(ByPattern))">Search</a>
+</td><td class="width-60 right">
 <div class="group">
-<nav class="navbar navbar-left">
-    $val
-</nav>
-<nav class="navbar navbar-right">
-    <button class="btn btn-small btn-green" onclick="javascript:ApproveRequest(this, '$id')">Approve</button>
-    <button class="btn btn-small btn-red" onclick="javascript:RejectRequest(this, '$id')">Reject</button>
-</nav>
+    <nav class="navbar navbar-right">
+        <ul>
+        <li><b>Sort</b> by:</li>
+        <li class="menu-item active underline"><a href="#" onclick="BuildList(this, requests.filter(ByPattern).sort(ByStatus))">Status</a></li>
+        <li class="menu-item"><a href="#" onclick="BuildList(this, requests.filter(ByPattern).sort(ByDate))">Date</a></li>
+        <li class="menu-item"><a href="#" onclick="BuildList(this, requests.filter(ByPattern).sort(ByRequestor))">User</a></li>
+        <li class="menu-item"><a href="#" onclick="BuildList(this, requests.filter(ByPattern).sort(ByGroup))">Group</a></li>
+        </ul>
+    </nav>
 </div>
-#else
-    <strong>$key.capitalize():</strong>
-    $val
-    <br/>
-#end if
-#end for
-Request seen by data-ops on 02/02/02.
+</td></tr>
+</tbody>
+</table>
+
+<div class="group">
+    <nav class="navbar navbar-left">
+    </nav>
+    <nav class="navbar navbar-right">
+        <button class="btn btn-small btn-outline btn-green" onclick="javascript:ApproveAllRequests()">Approve All</button>
+        <button class="btn btn-small btn-outline btn-red" onclick="javascript:RejectAllRequests()">Reject All</button>
+    </nav>
+</div>
 <hr/>
-#end for
+
+<div id="container"></div>
+</div> <!-- end of requests section -->
 
 <script>
 // helper function to call server side ajax_action method and pass
@@ -85,14 +54,18 @@ function RejectRequest(bid, rid) {
     bid.innerHTML="DONE";
     parameters = {'ids': [rid], 'new_status': 'rejected'},
     ajaxRequest('$base/data/request/multi_update', parameters);
+    var tag = 'div-'+rid;
+    document.getElementById(tag).className = 'tools-alert tools-alert-black';
 }
 function RejectAllRequests() {
-    var items = document.getElementsByClassName('btn');
+    var items = document.getElementsByName('reject-request');
+    var ids = [];
     for (var i = 0; i < items.length; i++ ) {
         items[i].className='btn btn-small btn-disabled';
         items[i].innerHTML='DONE';
+        ids.push(items[i].id);
     }
-    parameters = {'ids': $ids, 'new_status': 'rejected'},
+    parameters = {'ids': ids, 'new_status': 'rejected'},
     ajaxRequest('$base/data/request/multi_update', parameters);
 }
 function ApproveRequest(bid, rid) {
@@ -100,14 +73,55 @@ function ApproveRequest(bid, rid) {
     bid.innerHTML="DONE";
     parameters = {'ids': [rid], 'new_status': 'assignment-approved'};
     ajaxRequest('$base/data/request/multi_update', parameters);
+    var tag = 'div-'+rid;
+    document.getElementById(tag).className = 'tools-alert tools-alert-black';
 }
 function ApproveAllRequests() {
-    var items = document.getElementsByClassName('btn');
+    var items = document.getElementsByName('approve-request');
+    var ids = [];
     for (var i = 0; i < items.length; i++ ) {
         items[i].className='btn btn-small btn-disabled';
         items[i].innerHTML='DONE';
+        ids.push(items[i].id);
     }
-    parameters = {'ids': $ids, 'new_status': 'assignment-approved'};
+    parameters = {'ids': ids, 'new_status': 'assignment-approved'};
     ajaxRequest('$base/data/request/multi_update', parameters);
 }
+function BuildList(tag, data) {
+    $('container').innerHTML="";
+    var listContainer = document.createElement('div');
+    $('container').appendChild(listContainer);
+    var listElement = document.createElement("ul");
+    listContainer.appendChild(listElement);
+    data.forEach(function(item) {
+        var rid = 'request-'+item.RequestName;
+        var html = '<div id="div-'+rid+'">';
+        html += '<b>Request:</b> <span class="record"><a href="$base/fetch?rid='+rid+'">'+item.RequestName+'</a></span><br/>';
+        html += '<b>Status:</b> <span style="color:'+genColor(item.RequestStatus)+';background-color:#fff;padding:3px;">'+item.RequestStatus+'</span>&nbsp;';
+        html += '<b>Date:</b> <code>'+item.RequestDate+'</code>&nbsp;';
+        html += '<b>User:</b> '+item.Requestor+'&nbsp;';
+        html += '<b>Group:</b> '+item.Group;
+        html += '<div class="lift">'
+        html += '<nav class="navbar navbar-left">';
+        html += '<span></span>'
+        html += '</nav>';
+        html += '<nav class="navbar navbar-right">'
+        html += '<button name="approve-request" id="'+rid+'" class="btn btn-small btn-green" onclick="javascript:ApproveRequest(this, \''+rid+'\')">Approve</button>';
+        html += '<button name="reject-request" id="'+rid+'" class="btn btn-small btn-red" onclick="javascript:RejectRequest(this, \''+rid+'\')">Reject</button>';
+        html += '</nav>'
+        html += '</div>';
+        html += '<hr/></div>'
+        var listItem = document.createElement("li");
+        listItem.innerHTML = html;
+        listElement.appendChild(listItem);
+    });
+    // change CSS
+    var items = document.getElementsByClassName('menu-item');
+    for (var i = 0; i < items.length; i++ ) {
+        items[i].className='menu-item';
+    }
+    tag.className='menu-item active underline';
+}
+// Put data into container
+BuildList(document.getElementsByClassName('menu-item')[0], requests);
 </script>

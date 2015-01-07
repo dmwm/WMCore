@@ -4,8 +4,8 @@
     </nav>
     <nav class="navbar navbar-right">
         <ul>
+        <li><button class="btn btn-small btn-yellow bold" id="btn-manage" onclick="activateManage()">Settings</button></li>
         <li><button class="btn btn-small btn-active" id="btn-requests" onclick="activateRequests()">Requests</button></li>
-        <li><button class="btn btn-small" id="btn-manage" onclick="activateManage()">Settings</button></li>
         </ul>
     </nav>
 </header>
@@ -45,7 +45,10 @@ var requests = $requests;
         Select all requests
     </nav>
     <nav class="navbar navbar-right">
+    <!--
         <button class="btn btn-smaller btn-green" onclick="javascript:ProcessRequests('assigned')">Assign</button>
+    -->
+        <button class="btn btn-smaller btn-green" onclick="javascript:confirmAssign()">Assign</button>
         <button class="btn btn-smaller btn-red" onclick="javascript:ProcessRequests('rejected')">Reject</button>
     </nav>
 </div>
@@ -303,7 +306,7 @@ var requests = $requests;
 <script>
 function activateRequests() {
     id = document.getElementById('btn-manage');
-    id.className="btn btn-small";
+    id.className="btn btn-small btn-yellow bold";
     HideTag('manage');
     // show active button
     var id = document.getElementById('btn-requests');
@@ -318,6 +321,18 @@ function activateManage() {
     var id = document.getElementById('btn-manage');
     id.className="btn btn-small btn-active";
     ShowTag('manage');
+}
+function confirmAssign() {
+    var doc = document.getElementById('confirmation');
+    var msg = '<h3>Please note</h3>';
+    msg += 'Chosen requests require individual settings. If you already set them please click <em>Assign</em> button below, otherwise click <em>Cancel</em> button and go to <em>Settings</em> section where you can adjust your request settings';
+    var html = '<div>'+msg+'</div>';
+    html += '<div>';
+    html += '<button class="btn btn-small right" onclick="javascript:cleanConfirmation()">Cancel</button>';
+    html += '<button class="btn btn-small btn-green bold right" onclick="javascript:ProcessRequests(\'assigned\')">Assign</button>';
+    html += '</div>';
+    doc.innerHTML=html;
+    doc.className='tools-alert tools-message-yellow confirmation shadow';
 }
 // helper function to call server side ajax_action method and pass
 // along action method, request ids, and new status

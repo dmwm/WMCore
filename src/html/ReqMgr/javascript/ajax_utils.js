@@ -7,7 +7,7 @@ function errorMessage(err) {
     // extract X-Error-Detail from server error
     var pat = 'X-Error-Detail:'
     var arr = err.split('\n')
-    var msg = "<h3>Error message</h3>";
+    var msg = "<h3>Server error message</h3>";
     for(var i=0; i<arr.length; i++) {
         if(arr[i].startsWith(pat)) {
            msg += arr[i].replace(pat, '');
@@ -15,10 +15,12 @@ function errorMessage(err) {
     }
     // find out confirmation placeholder and fill it up with appropriate message
     var doc = document.getElementById('confirmation');
-    var html = '<div><button class="btn btn-small btn-blue right" onclick="javascript:cleanConfirmation()">Close</button>';
-    html += msg+'</div>'
+    var html = '<div>'+msg+'</div>';
+    html += '<div>';
+    html += '<button class="btn btn-smaller btn-blue right" onclick="javascript:cleanConfirmation()">Close</button>';
+    html += '</div>';
     doc.innerHTML=html;
-    doc.className='tools-alert tools-alert-red confirmation shadow';
+    doc.className='width-50 tools-alert tools-alert-red confirmation shadow';
 }
 function ajaxRequest(path, parameters) {
     // path is an URI binded to certain server method

@@ -45,9 +45,6 @@ var requests = $requests;
         Select all requests
     </nav>
     <nav class="navbar navbar-right">
-    <!--
-        <button class="btn btn-smaller btn-green" onclick="javascript:ProcessRequests('assigned')">Assign</button>
-    -->
         <button class="btn btn-smaller btn-green" onclick="javascript:confirmAssign()">Assign</button>
         <button class="btn btn-smaller btn-red" onclick="javascript:ProcessRequests('rejected')">Reject</button>
     </nav>
@@ -58,10 +55,10 @@ var requests = $requests;
 <div id="container"></div>
 </div> <!-- end of requests section -->
 
-<form id="assign-settings" name="assign-settings">
 <div id="manage" class="hide">
 <h4>Assign settings</h4>
 
+<form id="assign-settings" name="assign-settings">
 <h5>Site lists</h5>
 <ul class="blocks-3">
     <li>Whitelist<br/>
@@ -119,191 +116,56 @@ var requests = $requests;
     </li>
 </ul>
 
+</form>
+
 <hr/>
 
-<h5>Misc Options</h5>
-<div class="table-container">
-<table class="table-bordered width-100">
-
-#*
-<tr>
-<td>CMSSW version</td>
-<td>
-<select name="cmsswVersion">
-#for ver in $cmssw_versions
-<option value="$ver">$ver</option>
-#end for
-</select>
-</td>
-</tr>
-
-<tr>
-<td>SCRAM architecture</td>
-<td>
-<select name="scramArch">
-#for arch in $scram_arch
-<option value="$arch">$arch</option>
-#end for
-</select>
-</td>
-</tr>
-
-<tr>
-<td>Global Tag</td>
-<td><input name="globalTag" value="" /></td>
-</tr>
-
-<tr>
-<td>Campaign</td>
-<td><input name="campaign" value="" /></td>
-</tr>
-*#
-
-<tr>
-<td>Subscription Priority</td>
-<td>
-<select name="SubscriptionPriority">
-<option value="Low">Low</option>
-<option value="Normal">Normal</option>
-<option value="High">High</option>
-</select>
-</td>
-</tr>
-
-<tr>
-<td>Custodial Subscription Type</td>
-<td>
-<select name="CustodialSubType">
-<option value="Move">Move</option>
-<option value="Replica">Replica</option>
-</select>
-</td>
-</tr>
-
-<tr>
-<td>Merged LFN Base</td>
-<td>
-<select name="MergedLFNBase">
-#for lfnbase in $lfn_bases
-<option value="$lfnbase">$lfnbase</option>
-#end for
-</select>
-</td>
-</tr>
-
-<tr>
-<td>Unmerged LFN Base</td>
-<td>
-<select name="UnmergedLFNBase">
-#for lfnbase in $lfn_unmerged_bases
-<option value="$lfnbase">$lfnbase</option>
-#end for
-</select>
-</td>
-</tr>
-
-<tr>
-<td>Min Merge Size</td>
-<td><input name="MinMergeSize" value="2147483648" /></td>
-</tr>
-<tr>
-<td>Max Merge Size</td>
-<td><input name="MaxMergeSize" value="4294967296" /></td>
-</tr>
-<tr>
-<td>Max Merge Events</td>
-<td><input name="MaxMergeEvents" value="50000" /></td>
-</tr>
-<tr>
-<td>Memory limit RSS (KiBytes)</td>
-<td><input name="MaxRSS" value="20411724" /></td>
-</tr>
-<tr>
-<td>Memory limit VSS (KiBytes)</td>
-<td><input name="MaxVSize" value="20411724" /></td>
-</tr>
-<tr>
-<td>Timeout (Seconds)</td>
-<td><input name="SoftTimeout" value="129600" /></td>
-</tr>
-<tr>
-<td>GracePeriod (Seconds)</td>
-<td><input name="GracePeriod" value="300" /></td>
-</tr>
-<tr>
-<td>Block close timeout (Seconds)</td>
-<td><input name="BlockCloseMaxWaitTime" value="66400" /></td>
-</tr>
-<tr>
-<td>Block close max number of files</td>
-<td><input name="BlockCloseMaxFiles" value="500" /></td>
-</tr>
-<tr>
-<td>Block close max number of events</td>
-<td><input name="BlockCloseMaxEvents" value="250000000" /></td>
-</tr>
-<tr>
-<td>Block close max block size (Bytes)</td>
-<td><input name="BlockCloseMaxSize" value="5000000000000" /></td>
-</tr>
-#*
-<tr>
-<td>Acquisition Era:</td>
-<td><input name="AcquisitionEra" /></td>
-</tr>
-*#
-<tr>
-<td>Processing Version:</td>
-<td><input name="ProcessingVersion" value="1" /></td>
-</tr>
-<tr>
-<td>Processing String:</td>
-<td><input name="ProcessingString"/></td>
-</tr>
-#*
-<tr>
-<td>Dashboard Activity:</td>
-<td>
-<select name="DashboardActivity">
-<option>integration</option>
-<option>reprocessing</option>
-<option>production</option>
-<option>relval</option>
-<option>test</option>
-<option>analysis</option>
-</select>
-</td>
-</tr>
-*#
-
-<tr>
-<td>Group name</td>
-<td>
-<select name="Group">
-    <option>SomeGroupName</option>
-    <option>SomeGroupName</option>
-    <option>SomeGroupName</option>
-</select>
-</td>
-</tr>
-
-</table>
-</div> <!-- end of table-container -->
-
-
+<div id="misc-options"> <!-- Misc Options -->
+<div class="group">
+    <nav class="navbar navbar-left">
+        <h5>Misc Options</h5>
+    </nav>
+    <nav class="navbar navbar-right">
+        <ul>
+        <li><button class="btn btn-small btn-active" id="btn-misc-table" onclick="activateMiscTable()">Table</button></li>
+        <li><button class="btn btn-small" id="btn-misc-json" onclick="activateMiscJSON()">JSON</button></li>
+        </ul>
+    </nav>
+</div>
+<form id="assign-misc-settings" name="assign-misc-settings">
+<div id="misc-table">
+$misc_table
+</div>
+<div id="misc-json" class="hide">
+<textarea class="editor height-200" name="jsondict" id="jsondict">
+$misc_json
+</textarea>
+</div>
+</form>
+</div> <!-- Misc Options -->
 
 </div> <!-- end of manage section -->
 
-#*
-<div class="units-row">
-    <div class="unit-push-right">
-        <button class="btn btn-small btn-green">Assign</button>
-    </div>
-</div>
-*#
-</form>
 
 <script>
+function activateMiscTable() {
+    id = document.getElementById('btn-misc-json');
+    id.className="btn btn-small";
+    HideTag('misc-json');
+    // show active button
+    var id = document.getElementById('btn-misc-table');
+    id.className="btn btn-small btn-active";
+    ShowTag('misc-table');
+}
+function activateMiscJSON() {
+    id = document.getElementById('btn-misc-table');
+    id.className="btn btn-small";
+    HideTag('misc-table');
+    // show active button
+    var id = document.getElementById('btn-misc-json');
+    id.className="btn btn-small btn-active";
+    ShowTag('misc-json');
+}
 function activateRequests() {
     id = document.getElementById('btn-manage');
     id.className="btn btn-small btn-yellow bold";
@@ -332,7 +194,7 @@ function confirmAssign() {
     html += '<button class="btn btn-small btn-green bold right" onclick="javascript:ProcessRequests(\'assigned\')">Assign</button>';
     html += '</div>';
     doc.innerHTML=html;
-    doc.className='tools-alert tools-message-yellow confirmation shadow';
+    doc.className='width-50 tools-alert tools-message-yellow confirmation shadow';
 }
 // helper function to call server side ajax_action method and pass
 // along action method, request ids, and new status
@@ -347,7 +209,12 @@ function ProcessRequests(new_status) {
         }
     }
     if (ids.length>0) {
-        var parameters = \$('assign-settings').serialize(true); // capture form id="assign-settings"
+        // capture form id="assign-settings"
+        var parameters = \$('assign-settings').serialize(true);
+        // capture form id="assign-misc-settings"
+        var misc_args = \$('assign-misc-settings').serialize(true);
+        // merge misc_args with parameters
+        for (var attr in misc_args) { parameters[attr] = misc_args[attr]; }
         parameters.ids = ids;
         parameters.new_status = new_status;
         ajaxRequest('$base/data/request/multi_update', parameters);

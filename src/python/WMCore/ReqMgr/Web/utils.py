@@ -51,6 +51,14 @@ def quote(data):
             res = ""
     return res
 
+def json2form(jsondata, indent=2, keep_first_value=True):
+    "Convert input json dict into one used by HTML form"
+    if  keep_first_value:
+        for key, val in jsondata.items():
+            if  isinstance(val, list):
+                jsondata[key] = val[0]
+    return json.dumps(jsondata, indent=2)
+
 def json2table(jsondata, web_ui_map):
     """
     Convert input json dict into HTML table based on assumtion that

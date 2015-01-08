@@ -27,7 +27,7 @@ from cherrypy import config as cherryconf
 
 # ReqMgrSrv modules
 from WMCore.ReqMgr.Web.tools import exposecss, exposejs, exposejson, TemplatedPage
-from WMCore.ReqMgr.Web.utils import json2table, genid, checkargs, tstamp, sort
+from WMCore.ReqMgr.Web.utils import json2table, json2form, genid, checkargs, tstamp, sort
 from WMCore.ReqMgr.Utils.url_utils import getdata
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 from WMCore.ReqMgr.Tools.cms import scenarios, cms_groups, couch_url
@@ -316,13 +316,33 @@ class ReqMgrService(TemplatedPage):
                 docs.append(request_attr(val, attrs))
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
+        misc_json = {'CMSSW Releases':releases(),
+                'CMSSW architectures':architectures(),
+                'SubscriptionPriority':['Low', 'Normal', 'High'],
+                'CustodialSubType':['Move', 'Replica'],
+                'MinMergeSize':2147483648,
+                'MaxMergeSize':4294967296,
+                'MaxMergeEvents':50000,
+                'MaxRSS':20411724,
+                'MaxVSize':20411724,
+                'SoftTimeout':129600,
+                'GracePeriod':300,
+                'BlockCloseMaxWaitTime':66400,
+                'BlockCloseMaxFiles':500,
+                'BlockCloseMaxEvents':250000000,
+                'BlockCloseMaxSize':5000000000000,
+                'AcquisitionEra':'',
+                'ProcessingVersion':1,
+                'ProcessingString':'',
+                'MergedLFNBase':lfn_bases(),
+                'UnmergedLFNBase':lfn_unmerged_bases(),}
         content = self.templatepage('assign', sort=sortby,
+                sites=sites(),
                 site_white_list=site_white_list(),
                 site_black_list=site_black_list(),
                 user=self.user(), user_dn=self.user_dn(), requests=docs,
-                cmssw_versions=releases(), scram_arch=architectures(),
-                sites=sites(), lfn_bases=lfn_bases(),
-                lfn_unmerged_bases=lfn_unmerged_bases())
+                misc_table=json2table(misc_json, web_ui_names()),
+                misc_json=json2form(misc_json, indent=2, keep_first_value=True))
         return self.abs_page('assign', content)
 
     @expose
@@ -358,7 +378,7 @@ class ReqMgrService(TemplatedPage):
         # create templatized page out of provided forms
         self.update_scripts()
         content = self.templatepage('create', table=json2table(jsondata, web_ui_names()),
-                jsondata=json.dumps(jsondata, indent=2), name=spec,
+                jsondata=json2form(jsondata, indent=2, keep_first_value=True), name=spec,
                 scripts=[s for s in self.sdict.keys() if s!='ts'])
         return self.abs_page('create', content)
 

@@ -39,7 +39,7 @@ class LoadForErrorHandler(DBFormatter):
 
     fileSQL = """SELECT wfd.id, wfd.lfn, wfd.filesize size, wfd.events, wfd.first_event,
                    wfd.merged, wja.job jobid,
-                   wls.se_name se_name
+                   wls.se_name pnn
                  FROM wmbs_file_details wfd
                  INNER JOIN wmbs_job_assoc wja ON wja.fileid = wfd.id
                  INNER JOIN wmbs_file_location wfl ON wfl.fileid = wfd.id
@@ -155,7 +155,7 @@ class LoadForErrorHandler(DBFormatter):
             if f['id'] not in filesForJobs[jobid].keys():
                 wmbsFile = File(id = f['id'])
                 wmbsFile.update(f)
-                wmbsFile['locations'].add(f['se_name'])
+                wmbsFile['locations'].add(f['pnn'])
                 for r in wmbsFile['newRuns']:
                     wmbsFile.addRun(r)
                 for entry in parentList:
@@ -164,7 +164,7 @@ class LoadForErrorHandler(DBFormatter):
                 filesForJobs[jobid][f['id']] = wmbsFile
             else:
                 # If the file is there, just add the location
-                filesForJobs[jobid][f['id']]['locations'].add(f['se_name'])
+                filesForJobs[jobid][f['id']]['locations'].add(f['pnn'])
 
         for j in jobList:
             if j['id'] in filesForJobs.keys():

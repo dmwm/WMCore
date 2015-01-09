@@ -47,8 +47,8 @@ class PileupFetcher(FetcherInterface):
         the result data structure is a Python dict following dictionary:
             FileList is a list of LFNs
 
-        {"pileupTypeA": {"BlockA": {"FileList": [], "StorageElementNames": []},
-                         "BlockB": {"FileList": [], "StorageElementName": []}, ....}
+        {"pileupTypeA": {"BlockA": {"FileList": [], "PhEDExNodeNames": []},
+                         "BlockB": {"FileList": [], "PhEDExNodeName": []}, ....}
 
         this structure preserves knowledge of where particular files of data
         set are physically (list of SEs) located. DBS only lists sites which
@@ -75,10 +75,10 @@ class PileupFetcher(FetcherInterface):
                 # iterate over and query each block to get list of files
                 for dbsBlockName in blockNames:
                     blockDict[dbsBlockName] = {"FileList": sorted(dbsReader.lfnsInBlock(dbsBlockName)),
-                                               "StorageElementNames": dbsReader.listFileBlockLocation(dbsBlockName),
+                                               "PhEDExNodeNames": dbsReader.listFileBlockLocation(dbsBlockName),
                                                "NumberOfEvents": dbsReader.getDBSSummaryInfo(block=dbsBlockName)['NumberOfEvents']}
-                    blockDict[dbsBlockName]['StorageElementNames'].extend(x for x in fakeSE if x not in \
-                                                                          blockDict[dbsBlockName]['StorageElementNames'])
+                    blockDict[dbsBlockName]['PhEDExNodeNames'].extend(x for x in fakeSE if x not in \
+                                                                      blockDict[dbsBlockName]['PhEDExNodeNames'])
             resultDict[pileupType] = blockDict
         return resultDict
 

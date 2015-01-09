@@ -50,18 +50,18 @@ class ParentlessMergeBySize(JobFactory):
             else:
                 continue
 
-            if mergeableFile["se_name"] not in fileGroups:
+            if mergeableFile["pnn"] not in fileGroups:
                 if self.mergeAcrossRuns:
-                    fileGroups[mergeableFile["se_name"]] = []
+                    fileGroups[mergeableFile["pnn"]] = []
                 else:
-                    fileGroups[mergeableFile["se_name"]] = {}
+                    fileGroups[mergeableFile["pnn"]] = {}
 
             if self.mergeAcrossRuns:
-                fileGroups[mergeableFile["se_name"]].append(mergeableFile)
+                fileGroups[mergeableFile["pnn"]].append(mergeableFile)
             else:
-                if mergeableFile["file_run"] not in fileGroups[mergeableFile["se_name"]]:
-                    fileGroups[mergeableFile["se_name"]][mergeableFile["file_run"]] = []
-                fileGroups[mergeableFile["se_name"]][mergeableFile["file_run"]].append(mergeableFile)
+                if mergeableFile["file_run"] not in fileGroups[mergeableFile["pnn"]]:
+                    fileGroups[mergeableFile["pnn"]][mergeableFile["file_run"]] = []
+                fileGroups[mergeableFile["pnn"]][mergeableFile["file_run"]].append(mergeableFile)
 
         return fileGroups
 
@@ -93,7 +93,7 @@ class ParentlessMergeBySize(JobFactory):
             # the constructor in the "newlocations" attribute.  We want these to
             # be in the "locations" attribute so that they get picked up by the
             # job submitter.
-            newFile["locations"] = set([mergeFile["se_name"]])
+            newFile["locations"] = set([mergeFile["pnn"]])
             newFile.addRun(Run(mergeFile["file_run"], mergeFile["file_lumi"]))
             self.currentJob.addFile(newFile)
 

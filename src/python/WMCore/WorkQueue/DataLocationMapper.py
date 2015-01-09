@@ -130,7 +130,10 @@ class DataLocationMapper():
 
         # convert from PhEDEx name to cms site name
         for name, nodes in result.items():
-            result[name] = list(set([self.sitedb.phEDExNodetocmsName(x) for x in nodes]))
+            psns = set()
+            for x in nodes:
+                psns.update(self.sitedb.PNNtoPSN(x))
+            result[name] = list(psns)
 
         return result, fullResync
 
@@ -141,17 +144,20 @@ class DataLocationMapper():
         for item in dataItems:
             try:
                 if datasetSearch:
-                    seNames = dbs.listDatasetLocation(item, dbsOnly = True)
+                    phedexNodeNames = dbs.listDatasetLocation(item, dbsOnly = True)
                 else:
-                    seNames = dbs.listFileBlockLocation(item, dbsOnly = True)
-                for se in seNames:
-                    result[item].update(self.sitedb.seToCMSName(se))
+                    phedexNodeNames = dbs.listFileBlockLocation(item, dbsOnly = True)
+                for pnn in phedexNodeNames:
+                    result[item].update(pnn)
             except Exception as ex:
                 logging.error('Error getting block location from dbs for %s: %s' % (item, str(ex)))
 
         # convert the sets to lists
         for name, nodes in result.items():
-            result[name] = list(nodes)
+            psns = set()
+            for x in nodes:
+                psns.update(self.sitedb.PNNtoPSN(x))
+            result[name] = list(psns)
 
         return result, True # partial dbs updates not supported
 

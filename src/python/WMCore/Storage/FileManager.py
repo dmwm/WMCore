@@ -103,9 +103,10 @@ class FileManager:
             methodCounter += 1
             # the PFN that is received here is mapped from the LFN
             log.info("Getting transfer details for %s LFN %s" % (currentMethod, lfn))
-            (seName, command, options, pfn, protocol) =\
+            (seName, pnn, command, options, pfn, protocol) =\
                 self.getTransferDetails(lfn, currentMethod)
             log.info("Using SE:      %s" % seName)
+            log.info("Using PNN:     %s" % pnn)
             log.info("Command:       %s" % command)
             log.info("Options:       %s" % options)
             log.info("Protocol:      %s" % protocol)
@@ -117,6 +118,7 @@ class FileManager:
                 log.info("Transfer succeeded: %s" % fileToStage)
                 fileToStage['PFN'] = newPfn
                 fileToStage['SEName'] = seName
+                fileToStage['PNN'] = pnn
                 fileToStage['StageOutCommand'] = command
                 self.completedFiles[fileToStage['LFN']] = fileToStage
                 return fileToStage
@@ -144,12 +146,13 @@ class FileManager:
         methodCounter = 0
         for currentMethod in stageOutMethods:
             methodCounter += 1
-            (seName, command, options, pfn, protocol) =\
+            (seName, pnn, command, options, pfn, protocol) =\
                 self.getTransferDetails(lfn, currentMethod)
 
             retval = { 'LFN' : lfn,
                       'PFN': pfn,
-                      'SEName': seName}
+                      'SEName': seName,
+                       'PNN': pnn}
 
             log.info("Attempting deletion method %s" % (methodCounter, ))
             log.info("Current method information: %s" % currentMethod)
@@ -202,17 +205,18 @@ class FileManager:
         Extract required information from site conf and TFC
 
         """
-        implName = seName = catalog = option = None
+        implName = seName = pnn = catalog = option = None
         try:
             implName = self.siteCfg.localStageOut.get("command")
             seName   = self.siteCfg.localStageOut.get("se-name")
+            pnn      = self.siteCfg.localStageOut.get("pnn")
             catalog  = self.siteCfg.localStageOut.get("catalog")
             option   = self.siteCfg.localStageOut.get('option', None)
 
         except:
-            log.critical( 'Either command, se-name or the catalog are missing from site-local-config.xml' )
+            log.critical( 'Either command, se-name, pnn or the catalog are missing from site-local-config.xml' )
             log.critical( 'File operations cannot proceed like this' )
-            log.critical( 'command: %s se-name: %s catalog: %s' % (implName, seName, catalog) )
+            log.critical( 'command: %s se-name: %s pnn: %s catalog: %s' % (implName, seName, pnn, catalog) )
             raise
         try:
             self.tfc = self.siteCfg.trivialFileCatalog()
@@ -223,12 +227,14 @@ class FileManager:
         self.fallbacks = self.siteCfg.fallbackStageOut
         self.defaultMethod = { 'command' : implName,
                               'se-name' : seName,
+                              'pnn' : pnn,
                               'catalog' : catalog }
         if option:
             self.defaultMethod['option'] = option
 
         log.info("Local Stage Out Implementation to be used is: %s" % implName)
         log.info("Local Stage Out SE Name to be used is %s" % seName)
+        log.info("Local Stage Out PNN to be used is %s" % pnn)
         log.info("Local Stage Out Catalog to be used is %s" % catalog)
         log.info("Trivial File Catalog has been loaded:\n%s" % str(self.tfc))
         log.info("There are %s fallback stage out definitions" % len(self.fallbacks))
@@ -245,22 +251,24 @@ class FileManager:
         but I can't think of a nice way to do it
 
         """
-        implName = seName = lfn_prefix = None
+        implName = seName = pnn = lfn_prefix = None
         option = ""
         try:
             implName   = self.overrideConf["command"]
             seName     = self.overrideConf["se-name"]
+            pnn        = self.overrideConf["pnn"]
             lfn_prefix = self.overrideConf["lfn-prefix"]
 
         except:
-            log.critical( 'Either command, se-name or the lfn-prefix are missing from the override' )
+            log.critical( 'Either command, se-name pnn, or the lfn-prefix are missing from the override' )
             log.critical( 'File operations cannot proceed like this' )
-            log.critical( 'command: %s se-name: %s lfn-prefix: %s' % (implName, seName, lfn_prefix) )
+            log.critical( 'command: %s se-name: %s pnn: %s lfn-prefix: %s' % (implName, seName, pnn, lfn_prefix) )
             raise
 
         self.fallbacks = []
         self.defaultMethod = { 'command' : implName,
                               'se-name' : seName,
+                              'pnn' : pnn,
                               'lfn-prefix' : lfn_prefix }
         if option:
             self.defaultMethod['option'] = option
@@ -268,6 +276,7 @@ class FileManager:
         log.info("Note: We have been directed to use a StageOut override")
         log.info("Local Stage Out Implementation to be used is: %s" % implName)
         log.info("Local Stage Out SE Name to be used is %s" % seName)
+        log.info("Local Stage Out PNN to be used is %s" % pnn)
         log.info("Local Stage Out lfn-prefix to be used is %s" % lfn_prefix)
 
 
@@ -280,17 +289,19 @@ class FileManager:
 
         if 'lfn-prefix' in currentMethod:
             seName   = currentMethod['se-name']
+            pnn      = currentMethod['pnn']
             command  = currentMethod['command']
             options  = currentMethod.get('option', None)
             pfn      = "%s%s" % (currentMethod['lfn-prefix'], lfn)
             protocol = command
         else:
             seName   = self.siteCfg.localStageOut['se-name']
+            pnn      = self.siteCfg.localStageOut['pnn']
             command  = self.siteCfg.localStageOut['command']
             options  = self.siteCfg.localStageOut.get('option', None)
             pfn      = self.searchTFC(lfn)
             protocol = self.tfc.preferredProtocol
-        return (seName, command, options, pfn, protocol)
+        return (seName, pnn, command, options, pfn, protocol)
 
     def stageIn(self,fileToStage):
         return self.stageFile(fileToStage, stageOut=False)
@@ -304,7 +315,7 @@ class FileManager:
         necessary because python doesn't have a good nested loop break syntax
         """
 
-        (seName, command, options, _, protocol) =\
+        (seName, pnn, command, options, _, protocol) =\
             self.getTransferDetails(localFileName, currentMethod)
 
         # Swap directions if we're staging in

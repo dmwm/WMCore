@@ -78,10 +78,12 @@ class DeleteFiles(Executor):
 
         stageOutCall = {}
         if "command" in overrides and "option" in overrides \
-               and "se-name" in overrides and "lfn-prefix" in overrides:
+               and "se-name" in overrides and "pnn" in overrides \
+               and"lfn-prefix" in overrides:
             stageOutCall['command']    = overrides.get('command')
             stageOutCall['option']     = overrides.get('option')
             stageOutCall['se-name']    = overrides.get('se-name')
+            stageOutCall['pnn']    = overrides.get('pnn')
             stageOutCall['lfn-prefix'] = overrides.get('lfn-prefix')
 
         # naw man, this is real
@@ -113,6 +115,7 @@ class DeleteFiles(Executor):
             fileForTransfer = {'LFN': file.get('lfn'),
                                'PFN': None,  # PFNs are assigned in the Delete Manager
                                'SEName' : None,  # SEName is assigned in the delete manager
+                               'PNN' : None,  # PNN is assigned in the delete manager
                                'StageOutCommand': None}
             filesDeleted.append( self.deleteOneFile(fileForTransfer, manager, waitTime))
 
@@ -124,6 +127,7 @@ class DeleteFiles(Executor):
                     fileForTransfer = {'LFN' : v,
                                        'PFN' : None,
                                        'SEName' : None,
+                                       'PNN' : None,
                                        'StageOutCommand' : None}
                     filesDeleted.append( self.deleteOneFile(fileForTransfer, manager, waitTime))
 

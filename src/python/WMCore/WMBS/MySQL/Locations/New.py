@@ -20,10 +20,10 @@ class New(DBFormatter):
                       (SELECT id FROM wmbs_location_state WHERE name = 'Normal') AS state"""
 
     seSQL = """INSERT IGNORE INTO wmbs_location_senames (location, se_name)
-                 SELECT id, :se_name FROM wmbs_location WHERE site_name = :location """
+                 SELECT id, :pnn FROM wmbs_location WHERE site_name = :location """
 
     def execute(self, siteName, runningSlots = 0, pendingSlots = 0,
-                seName = "None",
+                pnn = "None",
                 ceName = None, plugin = None, cmsName = None,
                 conn = None, transaction = False):
         """
@@ -36,7 +36,7 @@ class New(DBFormatter):
                  "plugin": plugin, "cmsname": cmsName}
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
-        binds = {'location': siteName, 'se_name': seName}
+        binds = {'location': siteName, 'pnn': pnn}
         self.dbi.processData(self.seSQL, binds, conn = conn,
                              transaction = transaction)
         return

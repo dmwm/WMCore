@@ -44,6 +44,7 @@ class DeleteMgr:
         self.numberOfRetries = 3
         self.retryPauseTime  = 600
         self.seName          = None
+        self.pnn             = None
         self.fallbacks       = []
 
         #  //
@@ -83,6 +84,13 @@ class DeleteMgr:
             msg += "Unable to perform StageOut operation"
             raise StageOutInitError( msg)
         msg += "Local Stage Out SE Name to be used is %s\n" % seName
+        pnn = self.siteCfg.localStageOut.get("pnn", None)
+        if pnn == None:
+            msg = "Unable to retrieve local stage out pnn\n"
+            msg += "From site config file.\n"
+            msg += "Unable to perform StageOut operation"
+            raise StageOutInitError( msg)
+        msg += "Local Stage Out PNN to be used is %s\n" % pnn
         catalog = self.siteCfg.localStageOut.get("catalog", None)
         if catalog == None:
             msg = "Unable to retrieve local stage out catalog\n"
@@ -103,6 +111,7 @@ class DeleteMgr:
 
         print msg
         self.seName = seName
+        self.pnn = pnn
         return
 
 
@@ -118,12 +127,14 @@ class DeleteMgr:
             "command" : None,
             "option" : None,
             "se-name" : None,
+            "pnn" : None,
             "lfn-prefix" : None,
             }
 
         try:
             overrideParams['command'] = overrideConf['command']
             overrideParams['se-name'] = overrideConf['se-name']
+            overrideParams['pnn'] = overrideConf['pnn']
             overrideParams['lfn-prefix'] = overrideConf['lfn-prefix']
         except Exception as ex:
             msg = "Unable to extract Override parameters from config:\n"
@@ -142,6 +153,7 @@ class DeleteMgr:
         print msg
         self.fallbacks.append(overrideParams)
         self.seName = overrideParams['se-name']
+        self.pnn = overrideParams['pnn']
         return
 
 
@@ -156,6 +168,7 @@ class DeleteMgr:
 
         lfn = fileToDelete['LFN']
         fileToDelete['SEName'] = self.seName
+        fileToDelete['PNN'] = self.pnn
 
         deleteSuccess = False
 
@@ -191,6 +204,7 @@ class DeleteMgr:
             msg += "====> LFN: %s\n" % fileToDelete['LFN']
             msg += "====> PFN: %s\n" % fileToDelete['PFN']
             msg += "====> SE:  %s\n" % fileToDelete['SEName']
+            msg += "====> PNN:  %s\n" % fileToDelete['PNN']
             print msg
             return fileToDelete
         else:
@@ -216,12 +230,14 @@ class DeleteMgr:
 
         if override:
             seName = override['se-name']
+            pnn = override['pnn']
             command = override['command']
             options = override['option']
             pfn = "%s%s" % (override['lfn-prefix'], lfn)
             protocol = command
         else:
             seName = self.siteCfg.localStageOut['se-name']
+            pnn = self.siteCfg.localStageOut['pnn']
             command = self.siteCfg.localStageOut['command']
             options = self.siteCfg.localStageOut.get('option', None)
             pfn = self.searchTFC(lfn)

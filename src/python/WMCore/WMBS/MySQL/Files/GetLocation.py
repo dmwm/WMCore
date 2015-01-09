@@ -11,7 +11,7 @@ MySQL implementation of File.GetLocation
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetLocation(DBFormatter):
-    sql = """SELECT wls.se_name FROM wmbs_location_senames wls
+    sql = """SELECT wls.se_name AS pnn FROM wmbs_location_senames wls
                INNER JOIN wmbs_location ON wmbs_location.id = wls.location
                INNER JOIN wmbs_file_location wfl ON wfl.location = wmbs_location.id
                INNER JOIN wmbs_file_details wfd ON wfd.id = wfl.fileid

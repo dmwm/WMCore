@@ -85,11 +85,13 @@ class StageOut(Executor):
 
         stageOutCall = {}
         if "command" in overrides and "option" in overrides \
-               and "se-name" in overrides and "lfn-prefix" in overrides:
+               and "se-name" in overrides and "pnn" in overrides \
+               and"lfn-prefix" in overrides:
             logging.critical('using override in StageOut')
             stageOutCall['command']    = overrides.get('command')
             stageOutCall['option']     = overrides.get('option')
             stageOutCall['se-name']    = overrides.get('se-name')
+            stageOutCall['pnn']        = overrides.get('pnn')
             stageOutCall['lfn-prefix'] = overrides.get('lfn-prefix')
 
         # naw man, this is real
@@ -200,6 +202,7 @@ class StageOut(Executor):
                 fileForTransfer = {'LFN': lfn,
                                    'PFN': getattr(file, 'pfn'),
                                    'SEName' : None,
+                                   'PNN' : None,
                                    'StageOutCommand': None,
                                    'Checksums' : getattr(file, 'checksums', None)}
                 signal.signal(signal.SIGALRM, alarmHandler)
@@ -209,7 +212,8 @@ class StageOut(Executor):
                     #Afterwards, the file should have updated info.
                     filesTransferred.append(fileForTransfer)
                     file.StageOutCommand = fileForTransfer['StageOutCommand']
-                    file.location        = fileForTransfer['SEName']
+#                    file.location        = fileForTransfer['SEName']
+                    file.location        = fileForTransfer['PNN']
                     file.OutputPFN       = fileForTransfer['PFN']
                 except Alarm:
                     msg = "Indefinite hang during stageOut of logArchive"

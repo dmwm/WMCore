@@ -28,7 +28,7 @@ class GetFilesForParentlessMerge(DBFormatter):
                     wmbs_file_details.first_event AS file_first_event,
                     MIN(wmbs_file_runlumi_map.run) AS file_run,
                     MIN(wmbs_file_runlumi_map.lumi) AS file_lumi,
-                    wmbs_location_senames.se_name AS se_name,
+                    wmbs_location_senames.se_name AS pnn,
                     wmbs_fileset_files.insert_time AS insert_time,
                     wmbs_workflow.injected AS injected
              FROM wmbs_sub_files_available

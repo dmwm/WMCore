@@ -26,6 +26,7 @@ from WMCore.DataStructs.JobPackage            import JobPackage
 from WMCore.FwkJobReport.Report               import Report
 from WMCore.WMException                       import WMException
 from WMCore.BossAir.BossAirAPI                import BossAirAPI
+from WMCore.Services.SiteDB.SiteDB            import SiteDBJSON as SiteDB
 
 def siteListCompare(a, b):
     """
@@ -291,7 +292,6 @@ class JobSubmitterPoller(BaseWorkerThread):
             siteWhitelist = loadedJob.get("siteWhitelist", [])
             siteBlacklist = loadedJob.get("siteBlacklist", [])
             trustSitelists = loadedJob.get("trustSitelists", False)
-
             # convert site lists into correct format
             if len(siteWhitelist) > 0:
                 whitelist = []
@@ -312,16 +312,25 @@ class JobSubmitterPoller(BaseWorkerThread):
 
                 # all files in job have same location (in se names)
                 rawLocations = loadedJob["input_files"][0]["locations"]
+                
+                sitedb = SiteDB()
+ #               sitedb_names = set()
+                for l in rawLocations:
+#                    sitedb_names.update(sitedb.PNNtoPSN(l) or [])
+                    possibleLocations.update(sitedb.PNNtoPSN(l) or [])
+#                    if l in self.cmsNames:
+#                        possibleLocations.update(self.cmsNames.get(l))
+
 
                 # transform se names into site names
-                for loc in rawLocations:
-                    if not loc in self.siteKeys.keys():
-                        # Then we have a problem
-                        logging.error('Encountered unknown location %s for job %i' % (loc, jobID))
-                        logging.error('Ignoring for now, but watch out for this')
-                    else:
-                        for siteName in self.siteKeys[loc]:
-                            possibleLocations.add(siteName)
+#                for loc in rawLocations:
+#                    if not loc in self.siteKeys.keys():
+#                        # Then we have a problem
+#                        logging.error('Encountered unknown location %s for job %i' % (loc, jobID))
+#                        logging.error('Ignoring for now, but watch out for this')
+#                    else:
+#                        for siteName in self.siteKeys[loc]:
+#                            possibleLocations.add(siteName)
 
                 # filter with site lists
                 if len(siteWhitelist) > 0:
@@ -416,7 +425,9 @@ class JobSubmitterPoller(BaseWorkerThread):
                        newJob['task_name'],
                        frozenset(potentialLocations),
                        loadedJob.get("numberOfCores", 1),
-                       newJob['task_id']
+                       newJob['task_id'],
+                       loadedJob.get('inputDataset', None),
+                       loadedJob.get('inputDatasetLocations', None)
                        )
 
             self.jobDataCache[workflowName][jobID] = jobInfo
@@ -509,11 +520,11 @@ class JobSubmitterPoller(BaseWorkerThread):
             if state in ["Down", "Aborted"]:
                 newAbortSites.add(siteName)
 
-            for seName in rcThresholds[siteName]["se_names"]:
-                if not seName in self.siteKeys.keys():
-                    self.siteKeys[seName] = []
-                if not siteName in self.siteKeys[seName]:
-                    self.siteKeys[seName].append(siteName)
+            for pnn in rcThresholds[siteName]["pnns"]:
+                if not pnn in self.siteKeys.keys():
+                    self.siteKeys[pnn] = []
+                if not siteName in self.siteKeys[pnn]:
+                    self.siteKeys[pnn].append(siteName)
 
         # When the list of drain/abort sites changes between iteration then a location
         # refresh is needed, for now it forces a full cache refresh
@@ -730,9 +741,12 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'estimatedMemoryUsage' : cachedJob[16],
                                'taskPriority' : self.workflowPrios[workflow],
                                'taskName' : cachedJob[17],
+                               'potentialSites' : potentialSites,
                                'numberOfCores' : cachedJob[19],
                                'taskID' : cachedJob[20],
-                               'potentialSites' : potentialSites}
+                               'inputDataset' : cachedJob[21],
+                               'inputDatasetLocations' : cachedJob[22]
+                               }
 
                     # Add to jobsToSubmit
                     jobsToSubmit[package].append(jobDict)

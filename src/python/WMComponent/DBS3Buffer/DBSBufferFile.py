@@ -344,19 +344,19 @@ class DBSBufferFile(WMBSBase, WMFile):
         self.commitTransaction(existingTransaction)
         return
 
-    def setLocation(self, se, immediateSave = True):
+    def setLocation(self, pnn, immediateSave = True):
         """
         _setLocation_
 
         Sets the location of a file. If immediateSave is True, commit change to
         the DB immediately, otherwise queue for addition when save() is called.
         """
-        if isinstance(se, str):
-            self["newlocations"].add(se)
-            self["locations"].add(se)
+        if isinstance(pnn, str):
+            self["newlocations"].add(pnn)
+            self["locations"].add(pnn)
         else:
-            self["newlocations"].update(se)
-            self["locations"].update(se)
+            self["newlocations"].update(pnn)
+            self["locations"].update(pnn)
 
         if immediateSave:
             self.updateLocations()

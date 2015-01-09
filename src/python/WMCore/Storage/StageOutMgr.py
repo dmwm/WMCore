@@ -99,6 +99,13 @@ class StageOutMgr:
             msg += "Unable to perform StageOut operation"
             raise StageOutInitError( msg)
         msg += "Local Stage Out SE Name to be used is %s\n" % seName
+        pnn = self.siteCfg.localStageOut.get("pnn", None)
+        if pnn == None:
+            msg = "Unable to retrieve local stage out pnn\n"
+            msg += "From site config file.\n"
+            msg += "Unable to perform StageOut operation"
+            raise StageOutInitError( msg)
+        msg += "Local Stage Out pnn to be used is %s\n" % pnn
         catalog = self.siteCfg.localStageOut.get("catalog", None)
         if catalog == None:
             msg = "Unable to retrieve local stage out catalog\n"
@@ -141,12 +148,14 @@ class StageOutMgr:
             "command" : None,
             "option" : None,
             "se-name" : None,
+            "pnn" : None,
             "lfn-prefix" : None,
             }
 
         try:
             overrideParams['command'] = overrideConf['command']
             overrideParams['se-name'] = overrideConf['se-name']
+            overrideParams['pnn'] = overrideConf['pnn']
             overrideParams['lfn-prefix'] = overrideConf['lfn-prefix']
         except Exception as ex:
             msg = "Unable to extract Override parameters from config:\n"
@@ -189,6 +198,7 @@ class StageOutMgr:
                 pfn = self.localStageOut(lfn, fileToStage['PFN'], fileToStage.get('Checksums'))
                 fileToStage['PFN'] = pfn
                 fileToStage['SEName'] = self.siteCfg.localStageOut['se-name']
+                fileToStage['PNN'] = self.siteCfg.localStageOut['pnn']
                 fileToStage['StageOutCommand'] = self.siteCfg.localStageOut['command']
                 self.completedFiles[fileToStage['LFN']] = fileToStage
 
@@ -214,6 +224,7 @@ class StageOutMgr:
                                             fallback, fileToStage.get('Checksums'))
                 fileToStage['PFN'] = pfn
                 fileToStage['SEName'] = fallback['se-name']
+                fileToStage['PNN'] = fallback['pnn']
                 fileToStage['StageOutCommand'] = fallback['command']
                 print "attempting fallback"
                 self.completedFiles[fileToStage['LFN']] = fileToStage
@@ -275,6 +286,7 @@ class StageOutMgr:
 
         """
         seName = self.siteCfg.localStageOut['se-name']
+        pnn = self.siteCfg.localStageOut['pnn']
         command = self.siteCfg.localStageOut['command']
         options = self.siteCfg.localStageOut.get('option', None)
         pfn = self.searchTFC(lfn)

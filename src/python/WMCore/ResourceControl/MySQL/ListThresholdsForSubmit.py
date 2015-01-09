@@ -52,7 +52,7 @@ class ListThresholdsForSubmit(DBFormatter):
                   wmbs_sub_types.id = job_count.subtype
                ORDER BY wmbs_sub_types.priority DESC"""
     seSql = """SELECT wl.site_name AS site_name,
-                      wls.se_name
+                      wls.se_name AS pnn
                FROM wmbs_location wl
                       INNER JOIN wmbs_location_senames wls ON
                           wls.location = wl.id
@@ -69,11 +69,11 @@ class ListThresholdsForSubmit(DBFormatter):
         results = DBFormatter.formatDict(self, results)
         storageElements = DBFormatter.formatDict(self, storageElements)
 
-        mappedSEs = {}
-        for se in storageElements:
-            if se['site_name'] not in mappedSEs:
-                mappedSEs[se['site_name']] = []
-            mappedSEs[se['site_name']].append(se['se_name'])
+        mappedPNNs = {}
+        for pnn in storageElements:
+            if pnn['site_name'] not in mappedPNNs:
+                mappedPNNs[pnn['site_name']] = []
+            mappedPNNs[pnn['site_name']].append(pnn['pnn'])
 
         formattedResults = {}
         for result in results:
@@ -96,7 +96,7 @@ class ListThresholdsForSubmit(DBFormatter):
                 siteInfo = {}
                 formattedResults[siteName] = siteInfo
                 siteInfo['cms_name']             = result['cms_name']
-                siteInfo['se_names']             = mappedSEs[siteName]
+                siteInfo['pnns']                 = mappedPNNs.get(siteName, [])
                 siteInfo['state']                = result['state']
                 siteInfo['total_pending_slots']  = result['pending_slots']
                 siteInfo['total_running_slots']  = result['running_slots']
@@ -147,8 +147,8 @@ class ListThresholdsForSubmit(DBFormatter):
 
     def execute(self, conn = None, transaction = False, tableFormat = False):
         results = self.dbi.processData(self.sql, conn = conn, transaction = transaction)
-        ses     = self.dbi.processData(self.seSql, conn = conn, transaction = transaction)
-        results = self.format(results, ses)
+        pnns    = self.dbi.processData(self.seSql, conn = conn, transaction = transaction)
+        results = self.format(results, pnns)
 
         if tableFormat:
             return self.formatTable(results)

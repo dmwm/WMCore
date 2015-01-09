@@ -141,11 +141,11 @@ class DataLocationMapper():
         for item in dataItems:
             try:
                 if datasetSearch:
-                    seNames = dbs.listDatasetLocation(item, dbsOnly = True)
+                    phedexNodeNames = dbs.listDatasetLocation(item, dbsOnly = True)
                 else:
-                    seNames = dbs.listFileBlockLocation(item, dbsOnly = True)
-                for se in seNames:
-                    result[item].update(self.sitedb.seToCMSName(se))
+                    phedexNodeNames = dbs.listFileBlockLocation(item, dbsOnly = True)
+                for pnn in phedexNodeNames:
+                    result[item].update(pnn)
             except Exception, ex:
                 logging.error('Error getting block location from dbs for %s: %s' % (item, str(ex)))
 

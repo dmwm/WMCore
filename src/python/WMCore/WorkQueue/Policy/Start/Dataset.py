@@ -161,9 +161,9 @@ class Dataset(StartPolicyInterface):
 
             validBlocks.append(block)
             if locations is None:
-                locations = set(sitesFromStorageEelements(dbs.listFileBlockLocation(block['block'])))
+                locations = set(dbs.listFileBlockLocation(block['block']))
             else:
-                locations = locations.intersection(set(sitesFromStorageEelements(dbs.listFileBlockLocation(block['block']))))
+                locations = locations.intersection(dbs.listFileBlockLocation(block['block']))
             
             if self.wmspec.locationDataSourceFlag():
                 locations = locations.union(siteWhiteList)

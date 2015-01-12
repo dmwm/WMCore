@@ -557,7 +557,7 @@ class PyCondorPlugin(BasePlugin):
 
         # Get the job
         jobInfo, sd = self.getClassAds()
-        if jobInfo == None:
+        if not jobInfo :
             return runningList, changeList, completeList
         if len(jobInfo.keys()) == 0:
             noInfoFlag = True
@@ -796,8 +796,12 @@ class PyCondorPlugin(BasePlugin):
         if 'taskPriority' in kwargs and 'requestPriority' in kwargs:
             # Do a priority update
             priority = (int(kwargs['requestPriority']) + int(kwargs['taskPriority'])*self.maxTaskPriority)
-            sd.edit('WMAgent_JobID =!= UNDEFINED && WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"'% (task,workflow),
-                    "JobPrio", classad.ExprTree('"%s"'% priority))
+            try:
+                sd.edit('WMAgent_JobID =!= UNDEFINED && WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"'% (task,workflow),
+                        "JobPrio", classad.ExprTree('"%s"'% priority))
+            except:
+                msg = "Couldn\'t edit classAd to change job Priority for WMAgent_SubTaskName=%s, WMAgent_RequestName=%s " % (task, workflow)
+                logging.debug(msg)
 
         return
 
@@ -1035,28 +1039,27 @@ class PyCondorPlugin(BasePlugin):
         schedd = condor.Schedd()
         results=[]
 
-        if not schedd:
-            return jobInfo, None
-        else:
+        try :
             results = schedd.query('WMAgent_JobID =!= "UNDEFINED" && WMAgent_AgentName == "%s"' % self.agent,
                                    ["JobStatus", "EnteredCurrentStatus", "JobStartDate", "QDate", "DESIRED_Sites",
                                     "ExtDESIRED_Sites", "MATCH_EXP_JOBGLIDEIN_CMSSite", "WMAgent_JobID"]
                                    )
-            if not results:
-                logging.error("Not able to find WMAgent jobs")
-                return jobInfo, schedd
-            else:
-                for i in range(0, len(results)):
-                    tmpDict={}
-                    tmpDict["JobStatus"]=int(results[i].get("JobStatus"))
-                    tmpDict["stateTime"]=int(results[i].get("EnteredCurrentStatus"))
-                    tmpDict["runningTime"]=results[i].get("JobStartDate")
-                    tmpDict["submitTime"]=int(results[i].get("QDate"))
-                    tmpDict["DESIRED_Sites"]=results[i].get("DESIRED_Sites")
-                    tmpDict["ExtDESIRED_Sites"]=results[i].get("ExtDESIRED_Sites")
-                    tmpDict["runningCMSSite"]=results[i].get("MATCH_EXP_JOBGLIDEIN_CMSSite")
-                    tmpDict["WMAgentID"]=int(results[i].get("WMAgent_JobID"))
-                    jobInfo[int(results[i].get("WMAgent_JobID"))] = tmpDict
-
-                logging.info("Retrieved %i classAds" % len(jobInfo))
-                return jobInfo, schedd
+        except :
+            msg = "Query to condor schedd failed in PyCondorPlugin"
+            logging.debug(msg)
+        else:
+            for i in range(0, len(results)):
+                tmpDict={}
+                tmpDict["JobStatus"]=int(results[i].get("JobStatus"))
+                tmpDict["stateTime"]=int(results[i].get("EnteredCurrentStatus"))
+                tmpDict["runningTime"]=results[i].get("JobStartDate")
+                tmpDict["submitTime"]=int(results[i].get("QDate"))
+                tmpDict["DESIRED_Sites"]=results[i].get("DESIRED_Sites")
+                tmpDict["ExtDESIRED_Sites"]=results[i].get("ExtDESIRED_Sites")
+                tmpDict["runningCMSSite"]=results[i].get("MATCH_EXP_JOBGLIDEIN_CMSSite")
+                tmpDict["WMAgentID"]=int(results[i].get("WMAgent_JobID"))
+                jobInfo[int(results[i].get("WMAgent_JobID"))] = tmpDict
+                
+            logging.info("Retrieved %i classAds" % len(jobInfo))
+            
+        return jobInfo, schedd

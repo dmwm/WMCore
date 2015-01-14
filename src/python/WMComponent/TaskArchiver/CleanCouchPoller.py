@@ -41,6 +41,7 @@ class CleanCouchPoller(BaseWorkerThread):
         """
         # set the connection for local couchDB call
         self.useReqMgrForCompletionCheck   = getattr(self.config.TaskArchiver, 'useReqMgrForCompletionCheck', True)
+        self.archiveDelayHours   = getattr(self.config.TaskArchiver, 'archiveDelayHours', 0)
         self.wmstatsCouchDB = WMStatsWriter(self.config.TaskArchiver.localWMStatsURL)
         
         #TODO: we might need to use local db for Tier0
@@ -48,14 +49,14 @@ class CleanCouchPoller(BaseWorkerThread):
                                                    couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
         
         if self.useReqMgrForCompletionCheck:
-            self.deletableStates = ["announced"]
+            self.deletableState = "announced"
             self.centralRequestDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.centralRequestDBURL, 
                                                    couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
             #TODO: remove this for reqmgr2
             self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
         else:
             # Tier0 case
-            self.deletableStates = ["completed"]
+            self.deletableState = "completed"
             # use local for update
             self.centralRequestDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.localT0RequestDBURL, 
                                                    couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
@@ -79,8 +80,9 @@ class CleanCouchPoller(BaseWorkerThread):
             logging.info("%s docs deleted" % report)
             logging.info("getting complete and announced requests")
             
-            deletableWorkflows = self.centralRequestDBReader.getRequestByStatus(self.deletableStates)
-            
+            endTime = int(time.time()) - self.archiveDelayHours * 3600
+            deletableWorkflows = self.centralRequestDBReader.getRequestByStatusAndStartTime(self.deletableState, 
+                                                                                            False, endTime)
             logging.info("Ready to archive normal %s workflows" % len(deletableWorkflows))
             numUpdated = self.archiveWorkflows(deletableWorkflows, "normal-archived")
             logging.info("archive normal %s workflows" % numUpdated)

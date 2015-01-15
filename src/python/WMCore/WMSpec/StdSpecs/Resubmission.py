@@ -42,16 +42,15 @@ class ResubmissionWorkloadFactory(StdBase):
 
     @staticmethod
     def getWorkloadArguments():
-        specArgs = {"RequestName" : {"default" : "AnotherRequest", "type" : str,
-                                     "optional" : False, "validate" : None,
-                                     "attr" : "requestName", "null" : False},
+        specArgs = {"RequestType" : {"default" : "Resubmission", "optional" : True, "type" : str,
+                                      "attr" : "requestType", "null" : False},
                     "InitialTaskPath" : {"default" : "/SomeRequest/Task1", "type" : str,
                                          "optional" : False, "validate" : lambda x : len(x.split('/')) > 2,
                                          "attr" : "initialTaskPath", "null" : False},
-                    "ACDCServer" : {"default" : "http://localhost:5984", "type" : str,
+                    "ACDCServer" : {"default" : "https://cmsweb.cern.ch/couchdb", "type" : str,
                                     "optional" : False, "validate" : couchurl,
                                     "attr" : "acdcServer", "null" : False},
-                    "ACDCDatabase" : {"default" : "acdc_t", "type" : str,
+                    "ACDCDatabase" : {"default" : "acdcserver", "type" : str,
                                       "optional" : False, "validate" : identifier,
                                       "attr" : "acdcDatabase", "null" : False},
                     "CollectionName" : {"default" : None, "type" : str,
@@ -60,4 +59,5 @@ class ResubmissionWorkloadFactory(StdBase):
                     "IgnoredOutputModules" : {"default" : [], "type" : makeList,
                                               "optional" : True, "validate" : None,
                                               "attr" : "ignoredOutputModules", "null" : False}}
+        StdBase.setDefaultArgumentsProperty(specArgs)
         return specArgs

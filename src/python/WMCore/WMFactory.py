@@ -41,7 +41,7 @@ namespace (package): %s """ % (name, str(namespace))
         myThread.factory[name] = self
 
     def loadObject(self, classname, args = None, storeInCache = True,
-                   getFromCache = True, listFlag = False):
+                   getFromCache = True, listFlag = False, alteredClassName = None):
         """
         Dynamically loads the object from file.
         For this to work the class name has to
@@ -63,7 +63,8 @@ namespace (package): %s """ % (name, str(namespace))
         else:
             module = "%s.%s" % (self.namespace, classname)
             errModule = "%s.%s" % (self.namespace, classname)
-
+        if alteredClassName:
+            classname = alteredClassName 
         module = __import__(module, globals(), locals(), [classname])
         obj = getattr(module, classname.split('.')[-1])
         if args == None:

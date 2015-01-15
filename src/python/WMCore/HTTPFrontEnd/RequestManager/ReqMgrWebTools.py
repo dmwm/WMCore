@@ -10,6 +10,7 @@ import re
 import cgi
 from os import path
 import cherrypy
+import traceback
 from cherrypy import HTTPError
 from cherrypy.lib.static import serve_file
 
@@ -29,7 +30,7 @@ import WMCore.Services.WorkQueue.WorkQueue as WorkQueue
 import WMCore.RequestManager.RequestMaker.CheckIn as CheckIn
 from WMCore.RequestManager.RequestMaker.Registry import buildWorkloadForRequest
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
+from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 
@@ -364,7 +365,8 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
         request = buildWorkloadForRequest(typename = reqSchema["RequestType"], 
                                           schema = reqSchema)
     except WMSpecFactoryException, ex:
-        raise HTTPError(400, "Error in Workload Validation: %s" % str(ex))
+        logging.error(traceback.format_exc())
+        raise HTTPError(400, "Error in Workload Validation: %s" % ex.message())
     
     helper = WMWorkloadHelper(request['WorkloadSpec'])
     

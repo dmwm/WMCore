@@ -136,7 +136,11 @@ class MonteCarloWorkloadFactory(StdBase):
     @staticmethod
     def getWorkloadArguments():
         baseArgs = StdBase.getWorkloadArguments()
-        specArgs = {"PrimaryDataset" : {"default" : "BlackHoleTest", "type" : str,
+        reqMgrArgs = StdBase.getWorkloadArgumentsWithReqMgr()
+        baseArgs.update(reqMgrArgs)
+        specArgs = {"RequestType" : {"default" : "MonteCarlo", "optional" : True,
+                                      "attr" : "requestType"},
+                    "PrimaryDataset" : {"default" : "BlackHoleTest", "type" : str,
                                         "optional" : False, "validate" : primdataset,
                                         "attr" : "inputPrimaryDataset", "null" : False},
                     "Seeding" : {"default" : "AutomaticSeeding", "type" : str,
@@ -146,18 +150,6 @@ class MonteCarloWorkloadFactory(StdBase):
                     "GlobalTag" : {"default" : "GT_MC_V1:All", "type" : str,
                                    "optional" : False, "validate" : None,
                                    "attr" : "globalTag", "null" : False},
-                    "ConfigCacheID" : {"default" : None, "type" : str,
-                                       "optional" : False, "validate" : None,
-                                       "attr" : "configCacheID", "null" : False},
-                    "CouchURL" : {"default" : "http://localhost:5984", "type" : str,
-                                  "optional" : False, "validate" : couchurl,
-                                  "attr" : "couchURL", "null" : False},
-                    "CouchDBName" : {"default" : "mc_configcache", "type" : str,
-                                     "optional" : False, "validate" : identifier,
-                                     "attr" : "couchDBName", "null" : False},
-                    "ConfigCacheUrl" : {"default" : None, "type" : str,
-                                        "optional" : True, "validate" : None,
-                                        "attr" : "configCacheUrl", "null" : False},
                     "FilterEfficiency" : {"default" : 1.0, "type" : float,
                                           "optional" : True, "validate" : lambda x : x > 0.0,
                                           "attr" : "filterEfficiency", "null" : False},
@@ -187,5 +179,5 @@ class MonteCarloWorkloadFactory(StdBase):
                                        "attr" : "lheInputFiles", "null" : False}
                     }
         baseArgs.update(specArgs)
-
+        StdBase.setDefaultArgumentsProperty(baseArgs)
         return baseArgs

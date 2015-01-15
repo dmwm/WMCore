@@ -183,13 +183,14 @@ class ReRecoWorkloadFactory(DataProcessing):
     def getWorkloadArguments():
 
         baseArgs = DataProcessing.getWorkloadArguments()
-        specArgs = {"TransientOutputModules" : {"default" : [], "type" : makeList,
+        specArgs = {"RequestType" : {"default" : "ReReco", "optional" : True,
+                                     "attr" : "requestType"},
+                    "TransientOutputModules" : {"default" : [], "type" : makeList,
                                                 "optional" : True, "validate" : None,
-                                                "attr" : "transientModules", "null" : False},
-                    "ConfigCacheID" : {"default" : None, "type" : str,
-                                       "optional" : False, "validate" : None,
-                                       "attr" : "configCacheID", "null" : False}}
+                                                "attr" : "transientModules", "null" : False}
+                    }
         baseArgs.update(specArgs)
+        DataProcessing.setDefaultArgumentsProperty(baseArgs)
         return baseArgs
 
     @staticmethod

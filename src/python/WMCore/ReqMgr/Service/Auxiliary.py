@@ -18,11 +18,10 @@ from WMCore.Database.CMSCouch import CouchError, CouchNotFoundError
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
 from WMCore.REST.Validation import validate_str
+from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
 
 import WMCore.ReqMgr.Service.RegExp as rx
 from WMCore.REST.Format import *
-
-
 
 class HelloWorld(RESTEntity):
     
@@ -52,7 +51,33 @@ class HelloWorld(RESTEntity):
         #return rows(["Hello: world"]) returns the same as above
         return msg
     
+    
+class RequestSpec(RESTEntity):
+    
+    def validate(self, apiobj, method, api, param, safe):
+        """
+        Validate request input data.
+        Has to be implemented, otherwise the service fails to start.
+        If it's not implemented correctly (e.g. just pass), the arguments
+        are not passed in the method at all.
+        
+        """
+        validate_str("name", param, safe, rx.RX_REQUEST_NAME, optional=False)
 
+
+    @restcall(formats = [('application/json', JSONFormat())])
+    @tools.expires(secs=-1)
+    def get(self, name):
+        """
+        Hello world API call.
+        
+        :arg str name: name to appear in the result message.
+        :returns: row with response, here 1 item list with message.
+        
+        """
+        result = get_request_template_from_type(name)
+        return [result]
+    
 class Info(RESTEntity):
     def __init__(self, app, api, config, mount):
         RESTEntity.__init__(self, app, api, config, mount)

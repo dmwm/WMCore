@@ -88,7 +88,7 @@ Example initial processing task
 from WMCore.Lexicon import identifier, couchurl, block, primdataset, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool,\
-     validateArgumentsCreate, parsePileupConfig
+     validateArgumentsCreate, validateArgumentsNoOptionalCheck, parsePileupConfig
 
 #
 # simple utils for data mining the request dictionary
@@ -487,7 +487,11 @@ class TaskChainWorkloadFactory(StdBase):
     @staticmethod
     def getWorkloadArguments():
         baseArgs = StdBase.getWorkloadArguments()
-        specArgs = {"GlobalTag" : {"default" : "GT_TC_V1", "type" : str,
+        reqMgrArgs = StdBase.getWorkloadArgumentsWithReqMgr()
+        baseArgs.update(reqMgrArgs)
+        specArgs = {"RequestType" : {"default" : "TaskChain", "optional" : False,
+                                      "attr" : "requestType"},
+                    "GlobalTag" : {"default" : "GT_TC_V1", "type" : str,
                                    "optional" : False, "validate" : None,
                                    "attr" : "globalTag", "null" : False},
                     "CouchURL" : {"default" : "http://localhost:5984", "type" : str,
@@ -513,6 +517,7 @@ class TaskChainWorkloadFactory(StdBase):
                                     "attr" : "firstLumi", "null" : False}
                     }
         baseArgs.update(specArgs)
+        StdBase.setDefaultArgumentsProperty(baseArgs)
         return baseArgs
 
     @staticmethod
@@ -528,6 +533,9 @@ class TaskChainWorkloadFactory(StdBase):
         specArgs = {"TaskName" : {"default" : None, "type" : str,
                                   "optional" : False, "validate" : None,
                                   "null" : False},
+                    "ConfigCacheUrl" : {"default" : "https://cmsweb.cern.ch/couchdb", "type" : str,
+                                        "optional" : False, "validate" : None,
+                                        "attr" : "configCacheUrl", "null" : False},
                     "ConfigCacheID" : {"default" : None, "type" : str,
                                        "optional" : False, "validate" : None,
                                        "null" : False},
@@ -599,6 +607,7 @@ class TaskChainWorkloadFactory(StdBase):
                                "optional" : True, "validate" : None,
                                 "attr" : "prepID",  "null" : True}
                     }
+        StdBase.setDefaultArgumentsProperty(specArgs)
         return specArgs
 
     def validateSchema(self, schema):
@@ -658,12 +667,11 @@ class TaskChainWorkloadFactory(StdBase):
         msg = validateArgumentsCreate(taskConf, taskArgumentDefinition)
         if msg is not None:
             self.raiseValidationException(msg)
+            
         # Also retrieve the "main" arguments which may be overriden in the task
         # Change them all to optional for validation
-        #TODO: can this just called
-        #validateArgumentsUpdate(taskConf, baseArgs)
         baseArgs = self.getWorkloadArguments()
-        validateArgumentsCreate(taskConf, baseArgs)
+        validateArgumentsNoOptionalCheck(taskConf, baseArgs)
         
         for arg in baseArgs:
             baseArgs[arg]["optional"] = True

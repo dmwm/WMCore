@@ -10,23 +10,12 @@ from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 from WMCore.Configuration import ConfigSection
 from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname, couchurl
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
-from WMCore.WMException import WMException
+from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMWorkloadTools import makeList, makeLumiList, strToBool, checkDBSUrl, validateArgumentsCreate
 
 
 analysisTaskTypes = ['Analysis', 'PrivateMC']
-
-class WMSpecFactoryException(WMException):
-    """
-    _WMSpecFactoryException_
-
-    This exception will be raised by validation functions if
-    the code fails validation.  It will then be changed into
-    a proper HTTPError in the ReqMgr, with the message you enter
-    used as the message for farther up the line.
-    """
-    pass
 
 class StdBase(object):
     """
@@ -70,17 +59,20 @@ class StdBase(object):
         self.schema = {}
         argumentDefinition = self.getWorkloadArguments()
         for arg in argumentDefinition:
-            if arg in arguments:
-                if arguments[arg] is None:
-                    setattr(self, argumentDefinition[arg]["attr"], arguments[arg])
-                else:
-                    value = argumentDefinition[arg]["type"](arguments[arg])
-                    setattr(self, argumentDefinition[arg]["attr"], value)
-                    self.schema[arg] = value
-            elif argumentDefinition[arg]["optional"]:
-                defaultValue = argumentDefinition[arg]["default"]
-                setattr(self, argumentDefinition[arg]["attr"], defaultValue)
-                self.schema[arg] = defaultValue
+            try:
+                if arg in arguments:
+                    if arguments[arg] is None:
+                        setattr(self, argumentDefinition[arg]["attr"], arguments[arg])
+                    else:
+                        value = argumentDefinition[arg]["type"](arguments[arg])
+                        setattr(self, argumentDefinition[arg]["attr"], value)
+                        self.schema[arg] = value
+                elif argumentDefinition[arg]["optional"]:
+                    defaultValue = argumentDefinition[arg]["default"]
+                    setattr(self, argumentDefinition[arg]["attr"], defaultValue)
+                    self.schema[arg] = defaultValue
+            except Exception, ex:
+                raise WMSpecFactoryException("parameter %s: %s" % (arg, str(ex)))
 
         # Definition of parameters that depend on the value of others
         if hasattr(self, "multicore") and self.multicore:
@@ -107,9 +99,11 @@ class StdBase(object):
             if  (url, couchDBName) in self.config_cache:
                 configCache = self.config_cache[(url, couchDBName)]
             else:
-                configCache = ConfigCache(url, couchDBName)
+                configCache = ConfigCache(url, couchDBName, True)
                 self.config_cache[(url, couchDBName)] = configCache
-            configCache.loadDocument(configDoc)
+            #TODO: need to change to DataCache
+            #configCache.loadDocument(configDoc)
+            configCache.loadByID(configDoc)
             outputModules = configCache.getOutputModuleInfo()
         else:
             if 'outputs' in scenarioArgs and scenarioFunc in [ "promptReco", "expressProcessing", "repack" ]:
@@ -802,7 +796,7 @@ class StdBase(object):
         raise WMSpecFactoryException(message = msg)
 
     def validateConfigCacheExists(self, configID, couchURL, couchDBName,
-                                  getOutputModules = False):
+                                  getOutputModules = True):
         """
         _validateConfigCacheExists_
 
@@ -845,11 +839,23 @@ class StdBase(object):
                    and a default value is provided, this is only meant for test purposes.
         - type: A function that verifies the type of the argument, it may also cast it into the appropiate python type.
                 If the input is not compatible with the expected type, this method must throw an exception.
-        - optional: This boolean value indicates if the value must be provided or not
+        - optional: This boolean value indicates if the value must be provided or not by user 
+                    or inherited class can overwrite with default value.
+        - assign_optional: This boolean value indicates if the value must be provided when workflow is assinged if False.
+                    
         - validate: A function which validates the input after type casting,
                     it returns True if the input is valid, it can throw exceptions on invalid input.
         - attr: This represents the name of the attribute corresponding to the argument in the WMSpec object.
         - null: This indicates if the argument can have None as its value.
+        
+        If above is not specifyed, automatically set by following default value
+        - default: None
+        - type: str
+        - optional: True
+        - assign_optional: True
+        - validate: None
+        - attr: change first letter to lower case
+        - null: False
         Example:
         {
             RequestPriority : {'default' : 0,
@@ -863,38 +869,27 @@ class StdBase(object):
 
         self.priority = arguments.get("RequestPriority", 0)
         """
-        arguments = {"RequestType" : {"default" : "unknown", "optional" : False,
-                                      "attr" : "requestType"},
-                     "RequestPriority": {"default" : 0, "type" : int,
-                                         "optional" : False, "validate" : lambda x : (x >= 0 and x < 1e6),
+        # if key is not specified it is set by default value
+        
+        arguments = {"RequestType" : {"optional" : False}, # this need to be overwritten by inherited class
+                     "Requestor": {"default": "unknown", "attr" : "owner"},
+                     "RequestorDN" : {"default": "unknown", "attr" : "owner_dn"},
+                     "Group" : {"default": "unknown"},
+                     "RequestPriority": {"default" : 8000, "type" : int, 
+                                         "validate" : lambda x : (x >= 0 and x < 1e6),
                                          "attr" : "priority"},
-                     "Requestor": {"default" : "unknown", "optional" : False,
-                                   "attr" : "owner"},
-                     "RequestorDN" : {"default" : "unknown", "optional" : False,
-                                      "attr" : "owner_dn"},
-                     "Group" : {"default" : "unknown", "optional" : False,
-                                "attr" : "group"},
-                     "VoGroup" : {"default" : "DEFAULT", "attr" : "owner_vogroup"},
-                     "VoRole" : {"default" : "DEFAULT", "attr" : "owner_vorole"},
-                     "Campaign" : {"default" : None, "optional" : True, "attr" : "campaign"},
-                     "AcquisitionEra" : {"default" : "None",  "attr" : "acquisitionEra",
-                                         "validate" : acqname},
-                     "CMSSWVersion" : {"default" : "", "validate" : cmsswversion,
+                     "VoGroup" : {"default" : "unknown", "attr" : "owner_vogroup"},
+                     "VoRole" : {"default" : "unknown", "attr" : "owner_vorole"},
+                     "Campaign" : {"default" : ""},
+                     "AcquisitionEra" : {"default" : "None", "validate" : acqname},
+                     "CMSSWVersion" : {"validate" : cmsswversion,
                                        "optional" : False, "attr" : "frameworkVersion"},
                      "ScramArch" : {"default" : "slc5_amd64_gcc462", "optional" : False},
-                     "GlobalTag" : {"default" : None, "type" : str,
-                                    "optional" : True, "validate" : None,
-                                    "attr" : "globalTag", "null" : True},
-                     "GlobalTagConnect" : {"default" : None, "type" : str,
-                                           "optional" : True, "validate" : None,
-                                           "attr" : "globalTagConnect", "null" : True},
-                     "ProcessingVersion" : {"default" : 0, "attr" : "processingVersion",
-                                            "type" : int},
-                     "ProcessingString" : {"default" : None, "attr" : "processingString",
-                                           "null" : True},
-                     "LumiList" : {"default" : {}, "type" : makeLumiList,
-                                      "optional" : True, "validate" : None,
-                                      "attr" : "lumiList", "null" : False},
+                     "GlobalTag" : {"null" : True},
+                     "GlobalTagConnect" : {"null" : True},
+                     "ProcessingVersion" : {"default" : 0, "type" : int},
+                     "ProcessingString" : {"null" : True},
+                     "LumiList" : {"default" : {}, "type" : makeLumiList},
                      "SiteBlacklist" : {"default" : [], "type" : makeList,
                                         "validate" : lambda x: all([cmsname(y) for y in x])},
                      "SiteWhitelist" : {"default" : [], "type" : makeList,
@@ -916,7 +911,7 @@ class StdBase(object):
                      "DashboardHost" : {"default" : "cms-wmagent-job.cern.ch"},
                      "DashboardPort" : {"default" : 8884, "type" : int,
                                         "validate" : lambda x : x > 0},
-                     "OverrideCatalog" : {"default" : None, "null" : True},
+                     "OverrideCatalog" : {"null" : True},
                      "RunNumber" : {"default" : 0, "type" : int},
                      "TimePerEvent" : {"default" : 12.0, "type" : float,
                                        "optional" : False, "validate" : lambda x : x > 0},
@@ -926,20 +921,15 @@ class StdBase(object):
                                        "optional" : False, "validate" : lambda x : x > 0},
                      "PeriodicHarvestInterval" : {"default" : 0, "type" : int,
                                                   "validate" : lambda x : x >= 0},
-                     "DQMHarvestUnit" : {"default" : "byRun", "type" : str,
-                                         "attr" : "dqmHarvestUnit"},
-                     "DQMUploadProxy" : {"default" : None, "null" : True,
-                                         "attr" : "dqmUploadProxy"},
-                     "DQMUploadUrl" : {"default" : "https://cmsweb.cern.ch/dqm/dev",
-                                       "attr" : "dqmUploadUrl"},
-                     "DQMSequences" : {"default" : [], "type" : makeList,
-                                       "attr" : "dqmSequences"},
-                     "DQMConfigCacheID" : {"default" : None, "null" : True,
-                                           "attr" : "dqmConfigCacheID"},
+                     "DQMHarvestUnit" : {"default" : "byRun", "type" : str, "attr" : "dqmHarvestUnit"},
+                     "DQMUploadProxy" : {"null" : True, "attr" : "dqmUploadProxy"},
+                     "DQMUploadUrl" : {"default" : "https://cmsweb.cern.ch/dqm/dev", "attr" : "dqmUploadUrl"},
+                     "DQMSequences" : {"default" : [], "type" : makeList, "attr" : "dqmSequences"},
+                     "DQMConfigCacheID" : {"null" : True, "attr" : "dqmConfigCacheID"},
                      "EnableHarvesting" : {"default" : False, "type" : strToBool},
                      "EnableNewStageout" : {"default" : False, "type" : strToBool},
                      "IncludeParents" : {"default" : False,  "type" : strToBool},
-                     "Multicore" : {"default" : None, "null" : True,
+                     "Multicore" : {"default" : 1, "null" : True,
                                     "validate" : lambda x : x == "auto" or (int(x) > 0)},
                      #from assignment: performance monitoring data
                      "MaxRSS" : {"default" : 2411724, "type" : int, "validate" : lambda x : x > 0},
@@ -949,17 +939,17 @@ class StdBase(object):
                      "UseSiteListAsLocation" : {"default" : False, "type" : bool},
                      
                      # Set phedex subscription information
-                     "CustodialSites" : {"default" : [], "type" : makeList, "assign_optional": False,
+                     "CustodialSites" : {"default" : [], "type" : makeList, "assign_optional": True,
                                         "validate" : lambda x: all([cmsname(y) for y in x])},
-                     "NonCustodialSites" : {"default" : [], "type" : makeList, "assign_optional": False,
+                     "NonCustodialSites" : {"default" : [], "type" : makeList, "assign_optional": True,
                                         "validate" : lambda x: all([cmsname(y) for y in x])},
-                     "AutoApproveSubscriptionSites" : {"default" : [], "type" : makeList, "assign_optional": False, 
+                     "AutoApproveSubscriptionSites" : {"default" : [], "type" : makeList, "assign_optional": True, 
                                         "validate" : lambda x: all([cmsname(y) for y in x])},
                      # should be Low, Normal, High
-                     "SubscriptionPriority" : {"default" : "Low", "type" : str, "assign_optional": False,
+                     "SubscriptionPriority" : {"default" : "Low", "assign_optional": True,
                                         "validate" : lambda x: x in ["Low", "Normal", "High"]},
                      # shouldbe Move Replica  
-                     "CustodialSubType" : {"default" : "Move", "type" : str, "assign_optional": False,
+                     "CustodialSubType" : {"default" : "Move", "type" : str, "assign_optional": True,
                                         "validate" : lambda x: x in ["Move", "Replica"]},
                      
                      # Block closing informaiont
@@ -969,38 +959,43 @@ class StdBase(object):
                      "BlockCloseMaxSize" : {"default" : 5000000000000, "type" : int, "validate" : lambda x : x > 0},
                      
                      # dashboard activity
-                     "Dashboard" : {"default" : "", "type" : str},
+                     "Dashboard" : {"default": "", "type" : str},
                      # team name
-                     "Team" : {"default" : "", "type" : str},
-                     
-                     # this is specified automatically by reqmgr.
-#                      "RequestName" : {"default" : "AnotherRequest", "type" : str,
-#                                      "optional" : False, "validate" : None,
-#                                      "attr" : "requestName", "null" : False},
-                     "CouchURL" : {"default" : "http://localhost:5984", "type" : str,
-                                 "optional" : False, "validate" : couchurl,
-                                 "attr" : "couchURL", "null" : False},
-                     "CouchDBName" : {"default" : "dp_configcache", "type" : str,
-                                    "optional" : True, "validate" : identifier,
-                                    "attr" : "couchDBName", "null" : False},
-                     "ConfigCacheUrl" : {"default" : None, "type" : str,
-                                       "optional" : True, "validate" : None,
-                                       "attr" : "configCacheUrl", "null" : True},
-                     "CouchWorkloadDBName" : {"default" : "reqmgr_workload_cache", "type" : str,
-                                    "optional" : False, "validate" : identifier,
-                                    "attr" : "couchWorkloadDBName", "null" : False},
-                     "PrepID": {"default" : None, "null" : True}}
-
+                     "Team" : {"default": "", "type" : str},
+                     "PrepID": {"default" : None, "null" : True}
+                     }
+       
         # Set defaults for the argument specification
         StdBase.setDefaultArgumentsProperty(arguments)
 
         return arguments
+    
+    @staticmethod
+    def getWorkloadArgumentsWithReqMgr():
+        # arguments need to be defined all the workflows which uses reqmgr
+        reqMgrArguments = {"Requestor": {"optional" : False, "attr" : "owner"},
+                           "RequestorDN" : {"default" : None, "optional" : False, "attr" : "owner_dn"},
+                           "Group" : {"optional" : False},
+                           "CouchURL" : {"default" : "https://cmsweb.cern.ch/couchdb",
+                                         "validate" : couchurl},
+                           "CouchDBName" : {"default" : "reqmgr_config_cache", "type" : str,
+                                            "validate" : identifier},
+                           "ConfigCacheUrl" : {"default" :"https://cmsweb.cern.ch/couchdb", "validate" : couchurl},
+                           "ConfigCacheID" : {"optional" : False, "validate" : None},
+                           "CouchWorkloadDBName" : {"default" : "reqmgr_workload_cache", "validate" : identifier},
+                         }
+
+        # Set defaults for the argument specification
+        StdBase.setDefaultArgumentsProperty(reqMgrArguments)
+        return reqMgrArguments
 
     @staticmethod
     def setDefaultArgumentsProperty(arguments):
         for arg in arguments:
+            arguments[arg].setdefault("default", None)
             arguments[arg].setdefault("type", str)
             arguments[arg].setdefault("optional", True)
+            arguments[arg].setdefault("assign_optional", True)
             arguments[arg].setdefault("null", False)
             arguments[arg].setdefault("validate", None)
             arguments[arg].setdefault("attr", arg[:1].lower() + arg[1:])

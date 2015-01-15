@@ -66,7 +66,7 @@ class PrivateMCWorkloadFactory(AnalysisWorkloadFactory):
 
         # set the LFN bases (normally done by request manager)
         # also pass runNumber (workload evaluates it)
-        workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
+        self.workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
                             runNumber = self.runNumber)
 
         return self.workload
@@ -74,7 +74,9 @@ class PrivateMCWorkloadFactory(AnalysisWorkloadFactory):
     @staticmethod
     def getWorkloadArguments():
         baseArgs = AnalysisWorkloadFactory.getWorkloadArguments()
-        specArgs = {"PrimaryDataset" : {"default" : "MonteCarloData", "type" : str,
+        specArgs = {"RequestType" : {"default" : "PrivateMC", "optional" : True,
+                                      "attr" : "requestType"},
+                    "PrimaryDataset" : {"default" : "MonteCarloData", "type" : str,
                                         "optional" : False, "validate" : None,
                                         "attr" : "inputPrimaryDataset", "null" : False},
                     "Seeding" : {"default" : "AutomaticSeeding", "type" : str,
@@ -98,4 +100,5 @@ class PrivateMCWorkloadFactory(AnalysisWorkloadFactory):
                                     "attr" : "totalEvents", "null" : False}}
         baseArgs["InputDataset"]["optional"] = True
         baseArgs.update(specArgs)
+        AnalysisWorkloadFactory.setDefaultArgumentsProperty(baseArgs)
         return baseArgs

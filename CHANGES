@@ -1,3 +1,53 @@
+1.0.2 to 1.0.3.pre4:
+  - Merge pull request #5558 from hufnagel/copy-delete-subscription-prelim
+  - Merge pull request #5567 from ticoann/acdc_view_change2
+  - remove couch view from acdc
+  - Merge pull request #5555 from ticoann/reqmgr2
+  - Merge pull request #5553 from ticoann/acdc_cleanup_cherrypy
+  - first part of acdc db cleanup
+  - add rest api to send the arguments template for request
+  - some preliminary work for a copy-delete type subscription
+  - Merge pull request #5560 from vkuznet/master
+  - Implement button for misc options and parse it correctly within assign form
+  - Replace content of assign interface with misc_json which can be represented as table/json on web UI
+  - Re-arrage error message appearance
+  - Add new json2form helper function
+  - Merge pull request #5557 from vkuznet/master
+  - Add confirm action for assign interface to force end-user to use Settings within assignment
+  - Merge pull request #5556 from vkuznet/master_rebase2
+  - Full squashed with Seangchan help.
+  - Merge pull request #5552 from ticoann/reqmgr2_merge_master
+  - relax optional arguments checking if it is empty string ignore
+  - Merge pull request #5551 from ticoann/reqmgr2_merge_master
+  - refine 400 error message
+  - 1.0.3.pre3
+  - Merge pull request #5550 from ticoann/reqmgr2_merge_master
+  - Squashed commit of the following:
+  - 1.0.3.pre2
+  - Merge pull request #5268 from hufnagel/force-sitewhitelist
+  - Merge pull request #5465 from amaltaro/adapt-columnSize
+  - 1.0.3.pre1
+  - Merge pull request #5525 from mmascher/master
+  - Add option to not clean the env in Scram.py
+  - Merge pull request #5472 from amaltaro/cast-runNumbers
+  - Merge pull request #5522 from hufnagel/remove-tier0mode
+  - remove tier0mode from PhEDExInjector
+  - Merge pull request #5491 from mmascher/master
+  - Merge pull request #5516 from hufnagel/phedex-deletion
+  - add support for phedex deletions
+  - Merge pull request #5505 from HassenRiahi/IncludeCAINFO
+  - Merge pull request #5494 from AndrewLevin/master
+  - Merge pull request #5485 from holzman/fnal-xrdcp-force-stageout
+  - Include the CAINFO param. in pycurl_manager.
+  - Re-implement lumi correction algorithm. Fix #5337
+  - changed the error code that is used when a job fails due to a jobstatuslite timeout, this will allow us to make these jobs move to jobfailed instead of jobcooloff after try
+  - Revert LumiCorrection algorithm
+  - FNAL staging: fix string concat error
+  - FNAL staging: use -f option for xrdcp
+  - temporary fix for FirstRun/LastRun wrong data type
+  - increases column sizes for TaskChain stuff
+  - ignore location for job submission and only use sitewhitelist and siteblacklist
+
 1.0.2 to 1.0.3.pre3:
   - initial reqmgr2 code merge
   - Merge pull request #5550 from ticoann/reqmgr2_merge_master

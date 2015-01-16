@@ -256,13 +256,13 @@ class DBSBlock:
         self.data['dataset']['physics_group_name'] = group
         return
 
-    def hasDataset(self):
+    def getDataset(self):
         """
-        _hasDataset_
+        _getDataset_
 
-        Check and see if the dataset has been properly set
+        Return the dataset (None if not set)
         """
-        return self.data['dataset'].get('dataset', False)
+        return self.data['dataset'].get('dataset', None)
 
     def setDataset(self, datasetName, primaryType,
                    datasetType, physicsGroup = None, 
@@ -273,7 +273,7 @@ class DBSBlock:
         Set all the information concerning a single dataset, including
         the primary, processed and tier info
         """
-        if self.hasDataset() and not overwrite:
+        if self.getDataset() != None and not overwrite:
             # Do nothing, we already have a dataset
             return
 

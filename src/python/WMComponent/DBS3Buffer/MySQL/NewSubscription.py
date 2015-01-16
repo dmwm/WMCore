@@ -18,8 +18,8 @@ class NewSubscription(DBFormatter):
     """
 
     sql = """INSERT IGNORE INTO dbsbuffer_dataset_subscription
-            (dataset_id, site, custodial, auto_approve, move, priority)
-            VALUES (:id, :site, :custodial, :auto_approve, :move, :priority)
+            (dataset_id, site, custodial, auto_approve, move, priority, subscribed, delete_blocks)
+            VALUES (:id, :site, :custodial, :auto_approve, :move, :priority, 0, :delete_blocks)
           """
 
 
@@ -32,13 +32,24 @@ class NewSubscription(DBFormatter):
         Execute the query and retrieve the subscriptions
         """
         binds = []
+
+        # DeleteFromSource is not supported for move subscriptions
+        delete_blocks = None
+        if subscriptionInfo['CustodialSubType'] == 'Move':
+                isMove = 1
+        else:
+                isMove = 0
+                if subscriptionInfo.get('DeleteFromSource', False):
+                    delete_blocks = 1
+
         for site in subscriptionInfo['CustodialSites']:
             subInfo = {'id' : datasetID,
                        'site' : site,
                        'custodial' : 1,
                        'auto_approve' : 1 if site in subscriptionInfo['AutoApproveSites'] else 0,
-                       'move' : 1 if subscriptionInfo['CustodialSubType'] == 'Move' else 0,
-                       'priority' : subscriptionInfo['Priority']}
+                       'move' : isMove,
+                       'priority' : subscriptionInfo['Priority'],
+                       'delete_blocks' : delete_blocks}
             binds.append(subInfo)
 
         for site in subscriptionInfo['NonCustodialSites']:
@@ -47,7 +58,8 @@ class NewSubscription(DBFormatter):
                        'custodial' : 0,
                        'auto_approve' : 1 if site in subscriptionInfo['AutoApproveSites'] else 0,
                        'move' : 0,
-                       'priority' : subscriptionInfo['Priority']}
+                       'priority' : subscriptionInfo['Priority'],
+                       'delete_blocks' : delete_blocks}
             binds.append(subInfo)
 
         if not binds:

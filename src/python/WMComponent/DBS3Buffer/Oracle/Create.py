@@ -65,7 +65,8 @@ class Create(DBCreator):
                     auto_approve       INT DEFAULT 0,
                     move               INT DEFAULT 0,
                     priority           VARCHAR(10) DEFAULT 'Low',
-                    subscribed         INT DEFAULT 0
+                    subscribed         INT DEFAULT 0,
+                    delete_blocks      INT
                 )"""
 
         self.create["02dbsbuffer_dataset_subscription_seq"] = \
@@ -207,11 +208,14 @@ class Create(DBCreator):
         self.create["10dbsbuffer_block"] = \
           """CREATE TABLE dbsbuffer_block (
           id          INTEGER,
+          dataset_id  INTEGER NOT NULL,
           blockname   VARCHAR(250) NOT NULL,
           location    INTEGER      NOT NULL,
           create_time INTEGER,
           status      VARCHAR(20),
-          status3     VARCHAR(20) DEFAULT 'Pending') %s""" % tablespaceTable
+          status3     VARCHAR(20) DEFAULT 'Pending',
+          deleted     INTEGER DEFAULT 0
+          )%s""" % tablespaceTable
 
         self.create["10dbsbuffer_block_seq"] = \
           """CREATE SEQUENCE dbsbuffer_block_seq
@@ -351,6 +355,11 @@ class Create(DBCreator):
         self.constraints["01_fk_dbsbuffer_block"] = \
           """ALTER TABLE dbsbuffer_block ADD
                (CONSTRAINT dbsbuffer_block_location FOREIGN KEY (location) REFERENCES dbsbuffer_location(id)
+                 ON DELETE CASCADE)"""
+
+        self.constraints["02_fk_dbsbuffer_block"] = \
+          """ALTER TABLE dbsbuffer_block ADD
+               (CONSTRAINT dbsbuffer_block_dataset_id FOREIGN KEY (dataset_id) REFERENCES dbsbuffer_dataset(id)
                  ON DELETE CASCADE)"""
 
         self.indexes["01_pk_dbsbuffer_algodset_assoc"] = \

@@ -11,6 +11,8 @@ import unittest
 
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
+from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBlock
+
 from WMComponent.PhEDExInjector.PhEDExInjectorSubscriber import PhEDExInjectorSubscriber
 
 from WMCore.DAOFactory import DAOFactory
@@ -102,8 +104,8 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
 
         All files will be already in GLOBAL and in_phedex
         """
-
         myThread = threading.currentThread()
+
         buffer3Factory = DAOFactory(package = "WMComponent.DBS3Buffer",
                                    logger = myThread.logger,
                                    dbinterface = myThread.dbi)
@@ -171,15 +173,31 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         self.testFilesB.append(testFileD)
         self.testFilesB.append(testFileE)
 
-        uploadFactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
+        uploadFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
                                    logger = myThread.logger,
                                    dbinterface = myThread.dbi)
-        createBlock = uploadFactory(classname = "SetBlockStatus")
+        datasetAction = uploadFactory(classname = "NewDataset")
+        createAction = uploadFactory(classname = "CreateBlocks")
+
+        datasetAction.execute(datasetPath = self.testDatasetA)
+        datasetAction.execute(datasetPath = self.testDatasetB)
 
         self.blockAName = self.testDatasetA + "#" + makeUUID()
         self.blockBName = self.testDatasetB + "#" + makeUUID()
-        createBlock.execute(block = self.blockAName, locations = ["srm-cms.cern.ch"], open_status = 'Closed')
-        createBlock.execute(block = self.blockBName, locations = ["srm-cms.cern.ch"], open_status = 'Closed')
+
+        newBlockA = DBSBlock(name = self.blockAName,
+                             location = "srm-cms.cern.ch",
+                             das = None, workflow = None)
+        newBlockA.setDataset(self.testDatasetA, 'data', 'VALID')
+        newBlockA.status = 'Closed'
+
+        newBlockB = DBSBlock(name = self.blockBName,
+                             location = "srm-cms.cern.ch",
+                             das = None, workflow = None)
+        newBlockB.setDataset(self.testDatasetB, 'data', 'VALID')
+        newBlockB.status = 'Closed'
+
+        createAction.execute(blocks = [newBlockA, newBlockB])
 
         bufferFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
                                    logger = myThread.logger,

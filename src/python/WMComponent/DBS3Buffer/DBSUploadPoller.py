@@ -672,7 +672,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 # What are we doing?
                 logging.debug("Skipping empty block")
                 continue
-            if not block.hasDataset():
+            if block.getDataset() == None:
                 # Then we have to fix the dataset
                 dbsFile = block.files[0]
                 block.setDataset(datasetName  = dbsFile['datasetPath'],

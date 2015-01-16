@@ -17,5 +17,6 @@ TypesList = [
     "ReDigi",
     "MonteCarloFromGEN",
     "TaskChain",
-    "PrivateMC"
+    "PrivateMC",
+    "DQMHarverst"
     ]

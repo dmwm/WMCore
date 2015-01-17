@@ -12,7 +12,6 @@ import os
 import time
 
 # CMS modules
-from WMCore.RequestManager.RequestDB.Settings.RequestStatus import StatusList, NextStatus
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 from WMCore.ReqMgr.Utils.url_utils import getdata
 from WMCore.ReqMgr.Utils.utils import xml_parser
@@ -61,15 +60,6 @@ class TagCollector(object):
 
 # initialize TagCollector instance to be used in this module
 TC = TagCollector()
-
-def next_status(status=None):
-    "Return next ReqMgr status for given status"
-    if  status:
-        if  status in NextStatus:
-            return NextStatus[status]
-        else:
-            return 'N/A'
-    return StatusList
 
 def sites():
     "Return known CMS site list from SiteDB"

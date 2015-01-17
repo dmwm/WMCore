@@ -69,7 +69,8 @@ dependencies = {'wmc-rest':{
                                     'src/couchapps/WMStats+'],
                         },
                 'reqmgr2':{
-                        'packages': ['WMCore.ReqMgr+',
+                        'packages': ['WMCore.RequestManager+',
+                                     'WMCore.ReqMgr+',
                                      'WMCore.WMDataMining+',
                                      'WMCore.Services+',
                                      'WMCore.ACDC'

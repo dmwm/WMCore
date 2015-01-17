@@ -31,7 +31,7 @@ from WMCore.ReqMgr.Web.utils import json2table, json2form, genid, checkargs, tst
 from WMCore.ReqMgr.Utils.url_utils import getdata
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 from WMCore.ReqMgr.Tools.cms import scenarios, cms_groups, couch_url
-from WMCore.ReqMgr.Tools.cms import web_ui_names, next_status, sites
+from WMCore.ReqMgr.Tools.cms import web_ui_names, sites
 from WMCore.ReqMgr.Tools.cms import lfn_bases, lfn_unmerged_bases
 from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
 

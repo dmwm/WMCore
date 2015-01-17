@@ -71,11 +71,8 @@ dependencies = {'wmc-rest':{
                 'reqmgr2':{
                         'packages': ['WMCore.ReqMgr+',
                                      'WMCore.WMDataMining+',
-                                     'WMCore.Services.Dashboard+',
-                                     'WMCore.Services.DBS+',
-                                     'WMCore.Services.PhEDEx+',
-                                     'WMCore.Services.WMStats+',
-                                     'WMCore.Services.McM+'
+                                     'WMCore.Services+',
+                                     'WMCore.ACDC'
                                     ],
                         'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
                         'statics': ['src/couchapps/ReqMgr+',

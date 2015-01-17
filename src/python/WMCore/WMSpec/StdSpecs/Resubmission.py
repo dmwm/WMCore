@@ -26,8 +26,12 @@ class ResubmissionWorkloadFactory(StdBase):
         Build a resubmission workload from a previous
         workload, it loads the workload and truncates it.
         """
+        #TODO remove the dependency on reqmgr1
         originalRequest = getRequestByName(self.originalRequestName)
         helper = loadWorkload(originalRequest)
+
+        #helper = WMWorkloadHelper()
+        #helper.loadSpecFromCouch(couchurl, request_name)
         helper.truncate(self.requestName, self.initialTaskPath,
                         self.acdcServer, self.acdcDatabase,
                         self.collectionName)

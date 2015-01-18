@@ -76,7 +76,7 @@ class Request(RESTEntity):
                 
         else:
             # actually this is error case
-            cherrypy.log(str(param.kwargs))
+            #cherrypy.log(str(param.kwargs))
             request_args = {}
             for prop in param.kwargs:
                 request_args[prop] = param.kwargs[prop]
@@ -97,7 +97,7 @@ class Request(RESTEntity):
     
     def _get_request_names(self, ids):
         "Extract request names from given documents"
-        cherrypy.log("***** do this ids %s" % ids)
+        #cherrypy.log("request names %s" % ids)
         doc = {}
         if  isinstance(ids, list):
             for rid in ids:
@@ -116,7 +116,6 @@ class Request(RESTEntity):
     
     def _getMultiRequestArgs(self, multiRequestForm):
         request_args = {}
-        cherrypy.log("***** do this multi %s" %  multiRequestForm)
         for prop in multiRequestForm:
             if prop == "ids":
                 request_names = self._get_request_names(multiRequestForm["ids"])
@@ -136,7 +135,7 @@ class Request(RESTEntity):
             request_names, request_args = self._getMultiRequestArgs(JsonWrapper.loads(data))
         else:
             # actually this is error case
-            cherrypy.log(str(param.kwargs))
+            #cherrypy.log(str(param.kwargs))
             request_names, request_args = self._getMultiRequestArgs(param.kwargs)
             
             for prop in request_args:

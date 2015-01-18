@@ -31,7 +31,7 @@ from WMCore.ReqMgr.Web.utils import json2table, json2form, genid, checkargs, tst
 from WMCore.ReqMgr.Utils.url_utils import getdata
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 from WMCore.ReqMgr.Tools.cms import scenarios, cms_groups, couch_url
-from WMCore.ReqMgr.Tools.cms import web_ui_names, sites
+from WMCore.ReqMgr.Tools.cms import web_ui_names, next_status, sites
 from WMCore.ReqMgr.Tools.cms import lfn_bases, lfn_unmerged_bases
 from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
 
@@ -126,13 +126,11 @@ class ReqMgrService(TemplatedPage):
     """
     def __init__(self, app, config, mount):
         print "\n### Configuration:"
-        print config
         self.base = config.base
         if  config and not isinstance(config, dict):
             web_config = config.dictionary_()
         if  not config:
             web_config = {'base': self.base}
-        pprint.pprint(web_config)
         TemplatedPage.__init__(self, web_config)
         imgdir = os.environ.get('RM_IMAGESPATH', os.getcwd()+'/images')
         self.imgdir = web_config.get('imgdir', imgdir)

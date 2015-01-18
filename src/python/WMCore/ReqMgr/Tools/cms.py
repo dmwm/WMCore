@@ -12,9 +12,19 @@ import os
 import time
 
 # CMS modules
+from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST, REQUEST_STATE_TRANSITION
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 from WMCore.ReqMgr.Utils.url_utils import getdata
 from WMCore.ReqMgr.Utils.utils import xml_parser
+
+def next_status(status=None):
+    "Return next ReqMgr status for given status"
+    if status:
+        if status in REQUEST_STATE_TRANSITION:
+            return REQUEST_STATE_TRANSITION[status]
+        else:
+            return 'N/A'
+    return REQUEST_STATE_LIST
 
 class TagCollector(object):
     """

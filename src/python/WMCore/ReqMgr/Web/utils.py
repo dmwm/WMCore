@@ -46,7 +46,6 @@ def quote(data):
             else:
                 res = ""
         except Exception as exc:
-            print_exc(exc)
             print "Unable to cgi.escape(%s, quote=True)" % data
             res = ""
     return res
@@ -56,7 +55,10 @@ def json2form(jsondata, indent=2, keep_first_value=True):
     if  keep_first_value:
         for key, val in jsondata.items():
             if  isinstance(val, list):
-                jsondata[key] = val[0]
+                if len(val) == 0:
+                    jsondata[key] = ""
+                else:
+                    jsondata[key] = val[0]
     return json.dumps(jsondata, indent=2)
 
 def json2table(jsondata, web_ui_map):

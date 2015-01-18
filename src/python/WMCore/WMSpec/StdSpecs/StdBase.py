@@ -881,7 +881,8 @@ class StdBase(object):
                      "VoGroup" : {"default" : "unknown", "attr" : "owner_vogroup"},
                      "VoRole" : {"default" : "unknown", "attr" : "owner_vorole"},
                      "Campaign" : {"default" : ""},
-                     "AcquisitionEra" : {"default" : "None", "validate" : acqname},
+                     "AcquisitionEra" : {"default" : "None", "validate" : acqname,
+                                         "assign_optional": False},
                      "CMSSWVersion" : {"validate" : cmsswversion,
                                        "optional" : False, "attr" : "frameworkVersion"},
                      "ScramArch" : {"default" : "slc5_amd64_gcc462", "optional" : False},
@@ -975,7 +976,7 @@ class StdBase(object):
         # arguments need to be defined all the workflows which uses reqmgr
         reqMgrArguments = {"Requestor": {"optional" : False, "attr" : "owner"},
                            "RequestorDN" : {"default" : None, "optional" : False, "attr" : "owner_dn"},
-                           "Group" : {"optional" : False},
+                           "Group" : {"default" : "DATAOPS"},
                            "CouchURL" : {"default" : "https://cmsweb.cern.ch/couchdb",
                                          "validate" : couchurl},
                            "CouchDBName" : {"default" : "reqmgr_config_cache", "type" : str,

@@ -121,7 +121,7 @@ def create_json_template_spec(specArgs):
     return template
 
 def get_request_template_from_type(request_type):
-    pluginFactory = WMFactory("specArgs", "WMSpec.StdSpecs" )
+    pluginFactory = WMFactory("specArgs", "WMSpec.StdSpecs")
     alteredClassName = "%sWorkloadFactory" % request_type
     spec = pluginFactory.loadObject(classname = request_type, alteredClassName = alteredClassName)
     specArgs = spec.getWorkloadArguments()

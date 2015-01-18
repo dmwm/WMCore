@@ -6,9 +6,8 @@ Resubmission module, this creates truncated workflows
 with limited input for error recovery.
 """
 
-from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import loadWorkload
 from WMCore.Lexicon import couchurl, identifier
-from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest import getRequestByName
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import makeList
 
@@ -19,7 +18,7 @@ class ResubmissionWorkloadFactory(StdBase):
     Build Resubmission workloads.
     """
 
-    def buildWorkload(self):
+    def buildWorkload(self, originalRequestURL):
         """
         _buildWorkload_
 
@@ -27,11 +26,17 @@ class ResubmissionWorkloadFactory(StdBase):
         workload, it loads the workload and truncates it.
         """
         #TODO remove the dependency on reqmgr1
-        originalRequest = getRequestByName(self.originalRequestName)
-        helper = loadWorkload(originalRequest)
-
-        #helper = WMWorkloadHelper()
-        #helper.loadSpecFromCouch(couchurl, request_name)
+        if originalRequestURL == None:
+            # reqmgr1 call (Due to reqmgr2 dependency imports here
+            from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import loadWorkload
+            from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest import getRequestByName
+            originalRequest = getRequestByName(self.originalRequestName)
+            helper = loadWorkload(originalRequest)
+        else:
+            # reqmgr2 call
+            helper = WMWorkloadHelper()
+            helper.loadSpecFromCouch(originalRequestURL, self.originalRequestName)
+            
         helper.truncate(self.requestName, self.initialTaskPath,
                         self.acdcServer, self.acdcDatabase,
                         self.collectionName)
@@ -42,26 +47,20 @@ class ResubmissionWorkloadFactory(StdBase):
     def __call__(self, workloadName, arguments):
         StdBase.__call__(self, workloadName, arguments)
         self.originalRequestName = self.initialTaskPath.split('/')[1]
-        return self.buildWorkload()
+        #TODO remove the None case when reqmgr is retired
+        return self.buildWorkload(arguments.get("OriginalRequestCouchURL", None))
 
     @staticmethod
     def getWorkloadArguments():
-        specArgs = {"RequestType" : {"default" : "Resubmission", "optional" : True, "type" : str,
-                                      "attr" : "requestType", "null" : False},
-                    "InitialTaskPath" : {"default" : "/SomeRequest/Task1", "type" : str,
+        specArgs = {"RequestType" : {"default" : "Resubmission"},
+                    "InitialTaskPath" : {"default" : "/SomeRequest/Task1", 
                                          "optional" : False, "validate" : lambda x : len(x.split('/')) > 2,
-                                         "attr" : "initialTaskPath", "null" : False},
-                    "ACDCServer" : {"default" : "https://cmsweb.cern.ch/couchdb", "type" : str,
-                                    "optional" : False, "validate" : couchurl,
-                                    "attr" : "acdcServer", "null" : False},
-                    "ACDCDatabase" : {"default" : "acdcserver", "type" : str,
-                                      "optional" : False, "validate" : identifier,
-                                      "attr" : "acdcDatabase", "null" : False},
-                    "CollectionName" : {"default" : None, "type" : str,
-                                        "optional" : True, "validate" : None,
-                                        "attr" : "collectionName", "null" : True},
-                    "IgnoredOutputModules" : {"default" : [], "type" : makeList,
-                                              "optional" : True, "validate" : None,
-                                              "attr" : "ignoredOutputModules", "null" : False}}
+                                         },
+                    "ACDCServer" : {"default" : "https://cmsweb.cern.ch/couchdb", "validate" : couchurl,
+                                    "attr" : "acdcServer"},
+                    "ACDCDatabase" : {"default" : "acdcserver", "validate" : identifier,
+                                      "attr" : "acdcDatabase"},
+                    "CollectionName" : {"default" : None, "null" : True},
+                    "IgnoredOutputModules" : {"default" : [], "type" : makeList}}
         StdBase.setDefaultArgumentsProperty(specArgs)
         return specArgs

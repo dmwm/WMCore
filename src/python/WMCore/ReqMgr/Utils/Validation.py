@@ -72,15 +72,15 @@ def validate_request_create_args(request_args, config, *args, **kwargs):
     """
     
     initialize_request_args(request_args, config)
-    print "xxxxx"
-    from pprint import pprint
-    pprint(request_args)
     #check the permission for creating the request
     permission = getWritePermission(request_args)
     authz_match(permission['role'], permission['group'])
     
     # get the spec type and validate arguments
     spec = loadSpecByType(request_args["RequestType"])
+    if request_args["RequestType"] == "Resubmission":
+        request_args["OriginalRequestCouchURL"] = '%s/%s' % (config.couch_host, 
+                                                             config.couch_reqmgr_db)
     workload = spec.factoryWorkloadConstruction(request_args["RequestName"], 
                                                 request_args)
     return workload, request_args

@@ -133,11 +133,11 @@ class ResourceControlUpdater(BaseWorkerThread):
             for site in listSites:
                 if site in currentSites:
                     sitestate = stateBySite.get(site,'Normal')
-                    if not slotsCPU[site] or not slotsIO[site]:
+                    if site not in slotsCPU or site not in slotsIO:
                         pluginResponse = self.updateSiteInfo(site, sitestate, 0, 0, agentsNum)
                         if not pluginResponse: 
                             continue
-                        logging.error('Setting site %s to %s, forcing CPUBound: 0, IOBound: 0 due to missing information in SSB' % 
+                        logging.warn('Setting site %s to %s, forcing CPUBound: 0, IOBound: 0 due to missing information in SSB' % 
                                  (site, sitestate))
                         continue
                     

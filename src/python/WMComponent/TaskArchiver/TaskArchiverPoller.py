@@ -234,7 +234,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                                                    couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
             self.centralCouchDBWriter = self.requestLocalCouchDB;
         else:
-            self.requestLocalCouchDB = WMStatsWriter(self.config.TaskArchiver.centralWMStatsURL)
+            self.centralCouchDBWriter = WMStatsWriter(self.config.TaskArchiver.centralWMStatsURL)
             self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
         # Start a couch server for getting job info
         # from the FWJRs for committal to archive

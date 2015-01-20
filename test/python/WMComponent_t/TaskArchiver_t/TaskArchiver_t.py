@@ -5,18 +5,15 @@ TaskArchiver test
 Tests both the archiving of tasks and the creation of the
 workloadSummary
 """
-import os
 import os.path
 import logging
 import threading
 import unittest
 import time
-import shutil
 import inspect
 import re
 import json
-import urllib2
-import httplib
+
 
 from nose.plugins.attrib import attr
 
@@ -25,7 +22,6 @@ import WMCore.WMBase
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 #from WMQuality.TestInit   import TestInit
 from WMCore.DAOFactory    import DAOFactory
-from WMCore.WMFactory     import WMFactory
 from WMCore.Services.UUID import makeUUID
 
 from WMCore.WMBS.File         import File
@@ -39,12 +35,11 @@ from WMCore.Lexicon           import sanitizeURL
 from WMCore.WMBase            import getTestBase
 
 from WMComponent.DBS3Buffer.DBSBufferFile        import DBSBufferFile
-from WMComponent.TaskArchiver.TaskArchiver       import TaskArchiver
 from WMComponent.TaskArchiver.TaskArchiverPoller import TaskArchiverPoller
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.FwkJobReport.Report         import Report
-from WMCore.Database.CMSCouch           import CouchServer, CouchNotFoundError
+from WMCore.Database.CMSCouch           import CouchServer
 
 from WMCore_t.WMSpec_t.TestSpec     import testWorkload
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
@@ -81,6 +76,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.testInit.setupCouch("%s/fwjrs" % self.databaseName, "FWJRDump")
         self.testInit.setupCouch("wmagent_summary_t", "WMStats")
         self.testInit.setupCouch("wmagent_summary_central_t", "WMStats")
+        self.testInit.setupCouch("stat_summary_t", "SummaryStats")
 
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
@@ -136,6 +132,7 @@ class TaskArchiverTest(unittest.TestCase):
         config.JobStateMachine.couchurl     = os.getenv("COUCHURL", "cmssrv52.fnal.gov:5984")
         config.JobStateMachine.couchDBName  = self.databaseName
         config.JobStateMachine.jobSummaryDBName = 'wmagent_summary_t'
+        config.JobStateMachine.summaryStatsDBName = 'stat_summary_t'
 
         config.component_("JobCreator")
         config.JobCreator.jobCacheDir       = os.path.join(self.testDir, 'testDir')
@@ -627,7 +624,11 @@ class TaskArchiverTest(unittest.TestCase):
 
         self.assertEqual(workloadSummary['errors']['/TestWorkload/ReReco']['failureTime'], 500)
         self.assertTrue(workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1'].has_key('99999'))
-        self.assertEquals(workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1']['99999']['runs'], {'10' : [12312]},
+
+        failedRunInfo = workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1']['99999']['runs']
+        for key, value in failedRunInfo.items():
+            failedRunInfo[key] = list(set(value))
+        self.assertEquals(failedRunInfo, {'10' : [12312]},
                           "Wrong lumi information in the summary for failed jobs")
 
         # Check the failures by site histograms
@@ -642,7 +643,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertEqual(workloadSummary['histograms']['stepLevel']['/TestWorkload/ReReco']['cmsRun1']['errorsBySite']['stdDev']['8020'], 0)
         return
 
-    def atestC_Profile(self):
+    def testC_Profile(self):
         """
         _Profile_
 
@@ -675,7 +676,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         return
 
-    def atestD_Timing(self):
+    def testD_Timing(self):
         """
         _Timing_
 
@@ -715,7 +716,7 @@ class TaskArchiverTest(unittest.TestCase):
         logging.info("TaskArchiver took %f seconds" % (stopTime - startTime))
 
 
-    def atestTaskArchiverPollerAlertsSending_notifyWorkQueue(self):
+    def testTaskArchiverPollerAlertsSending_notifyWorkQueue(self):
         """
         Cause exception (alert-worthy situation) in
         the TaskArchiverPoller notifyWorkQueue method.
@@ -752,7 +753,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertEqual(alert["Source"], "TaskArchiverPoller")
 
 
-    def atestTaskArchiverPollerAlertsSending_killSubscriptions(self):
+    def testTaskArchiverPollerAlertsSending_killSubscriptions(self):
         """
         Cause exception (alert-worthy situation) in
         the TaskArchiverPoller killSubscriptions method.
@@ -795,13 +796,13 @@ class TaskArchiverTest(unittest.TestCase):
         # Didn't like to have done that, but the test doesn't provide all info I need in the system, so faking it:
         myThread.dbi.processData("""insert into dbsbuffer_workflow(id, name) values (1, 'TestWorkload')"""
                                  , transaction = False)
-        myThread.dbi.processData("""insert into dbsbuffer_file (id, lfn, workflow) values (1, '/store/t/e/s/t.test', 1)"""
+        myThread.dbi.processData("""insert into dbsbuffer_file (id, lfn, dataset_algo, workflow) values (1, '/store/t/e/s/t.test', 1, 1)"""
                                  , transaction = False)
-        myThread.dbi.processData("""insert into dbsbuffer_file (id, lfn, workflow) values (2, '/store/t/e/s/t.test2', 1)"""
+        myThread.dbi.processData("""insert into dbsbuffer_file (id, lfn, dataset_algo, workflow) values (2, '/store/t/e/s/t.test2', 1, 1)"""
                                  , transaction = False)
-        myThread.dbi.processData("""insert into dbsbuffer_file_runlumi_map (run, filename) values (207214, 1)"""
+        myThread.dbi.processData("""insert into dbsbuffer_file_runlumi_map (run, lumi, filename) values (207214, 100, 1)"""
                                  , transaction = False)
-        myThread.dbi.processData("""insert into dbsbuffer_file_runlumi_map (run, filename) values (207215, 2)"""
+        myThread.dbi.processData("""insert into dbsbuffer_file_runlumi_map (run, lumi, filename) values (207215, 200, 2)"""
                                  , transaction = False)
 
         config = self.getConfig()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-SavannahRequestQuery
-@DEPRECATED
+RequestQuery
+DEPRECATED
 Provides an interface between the StoreResultsAccountant
 and the Savannah Request Interface. Responsible for querying
 the Request Interface, creation of the JSON steering file and
@@ -410,13 +410,12 @@ class RequestQuery:
                     control = self.br.find_control("assigned_to",type="select")
                     AssignedToByValueDict = self.getLabelByValueDict(control)
                     assignedTo_id = control.value
+
                     ##Assign task to the physics group squad
                     if AssignedToByValueDict[assignedTo_id[0]]!=group_squad:
                         assignedTo_id = [self.getValueByLabelDict(control)[group_squad]]
                         control.value = assignedTo_id
-                        #TODO
-                        print "Assigned to %s"%assignedTo_id
-                        #self.br.submit()
+                        self.br.submit()
 
                     # Set default Adquisition Era for StoreResults 
                     acquisitionEra = "StoreResults"
@@ -524,11 +523,8 @@ class RequestQuery:
                         
             #DBS Drop Down is a mandatory field, if set to None (for old requests), it is not possible to close the request
             self.setDBSDropDown()
-            
-            #TODO            
-            #self.br.submit()
-            print "Ticket %s should be closed"%task
-
+                        
+            self.br.submit()
 
             #remove JSON ticket
             self.removeJSONFile(task)

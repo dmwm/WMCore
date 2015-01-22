@@ -2,6 +2,7 @@
 import os
 import unittest
 import shutil
+import time
 
 from WMCore.Wrappers import JsonWrapper
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
@@ -42,7 +43,7 @@ class RequestDBTest(unittest.TestCase):
 
     def testRequestDBWriter(self):
         # test getWork
-        schema = generate_reqmgr_schema()
+        schema = generate_reqmgr_schema(3)
         result =  self.requestWriter.insertGenericRequest(schema[0])
 
         self.assertEquals(len(result), 1, 'insert fail');
@@ -57,10 +58,21 @@ class RequestDBTest(unittest.TestCase):
         self.assertEquals(self.requestWriter.updateRequestProperty("not_exist_schema", {'Teams': 'teamA'}),
                           'Error: document not found')
         
-        result = self.requestWriter.getRequestByNames([schema[0]['RequestName']])
+        result = self.requestReader.getRequestByNames([schema[0]['RequestName']])
         self.assertEquals(len(result), 1, "should be 1")
-        result = self.requestWriter.getRequestByStatus(["failed"], False, 1)
+        result = self.requestReader.getRequestByStatus(["failed"], False, 1)
         self.assertEquals(len(result), 1, "should be 1")
+        
+        
+        result =  self.requestWriter.insertGenericRequest(schema[1])
+        time.sleep(2)
+        result =  self.requestWriter.insertGenericRequest(schema[2])
+        endTime = int(time.time()) - 1
+        result = self.requestReader.getRequestByStatusAndStartTime("new", False, endTime)
+        self.assertEquals(len(result), 1, "should be 1")
+        endTime = int(time.time()) + 1
+        result = self.requestReader.getRequestByStatusAndStartTime("new", False, endTime)
+        self.assertEquals(len(result), 2, "should be 2")
       
 
 if __name__ == '__main__':

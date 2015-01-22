@@ -272,9 +272,10 @@ config.TaskArchiver.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl, 
 config.TaskArchiver.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
 config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 config.TaskArchiver.centralWMStatsURL = "Central WMStats URL"
-config.TaskArchiver.DataKeepDays = 0.125 # delete after 3 hours
+config.TaskArchiver.DataKeepDays = 0.125 # couhch history keeping days.
 config.TaskArchiver.cleanCouchInterval = 60 * 20 # 20 min
 config.TaskArchiver.ReqMgrServiceURL = "ReqMgr rest service"
+config.TaskArchiver.archiveDelayHours = 24 # delay the archiving so monitor can still show. default 24 hours
 
 config.webapp_('WMBSService')
 config.WMBSService.default_expires = 0

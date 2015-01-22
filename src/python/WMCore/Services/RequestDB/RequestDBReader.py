@@ -101,6 +101,19 @@ class RequestDBReader():
             options["skip"] = skip
         keys = statusList
         return self._getCouchView("bystatus", options, keys)
+    
+    def _getRequestByStatusAndStartTime(self, status, detail, endTime):
+        """
+        'status': is the status of the workflow
+        'startTime': unix timestamp for start time
+        """
+        options = {}
+        options["include_docs"] = detail
+        options["startkey"] = [status, 0]
+        options["endkey"] = [status, endTime]
+        options["descending"] = False
+
+        return self._getCouchView("bystatusandtime", options)
   
     def _getAllDocsByIDs(self, ids, include_docs = True):
         """
@@ -132,6 +145,17 @@ class RequestDBReader():
     def getRequestByStatus(self, statusList, detail = False, limit = None, skip = None):
         
         data = self._getRequestByStatus(statusList, detail, limit, skip)
+        requestInfo = self._formatCouchData(data, detail = detail)
+
+        return requestInfo
+    
+    def getRequestByStatusAndStartTime(self, status, detail = False, endTime = 0):
+        
+        if endTime == 0:
+            data = self._getRequestByStatus([status], detail, limit = None, skip = None)
+        else:
+            data = self._getRequestByStatusAndStartTime(status, detail, endTime)
+            
         requestInfo = self._formatCouchData(data, detail = detail)
 
         return requestInfo

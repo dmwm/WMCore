@@ -37,7 +37,7 @@ class ResubmissionWorkloadFactory(StdBase):
             helper = WMWorkloadHelper()
             helper.loadSpecFromCouch(originalRequestURL, self.originalRequestName)
             
-        helper.truncate(self.requestName, self.initialTaskPath,
+        helper.truncate(self.workloadName, self.initialTaskPath,
                         self.acdcServer, self.acdcDatabase,
                         self.collectionName)
         helper.ignoreOutputModules(self.ignoredOutputModules)

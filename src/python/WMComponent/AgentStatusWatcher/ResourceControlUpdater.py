@@ -55,6 +55,9 @@ class ResourceControlUpdater(BaseWorkerThread):
         # tier mode
         self.tier0Mode = hasattr(config, "Tier0Feeder")
         self.t1SitesCores = config.AgentStatusWatcher.t1SitesCores
+
+        # switch this component on/off
+        self.enabled = getattr(config.AgentStatusWatcher, 'enabled', True)
         
     def setup(self, parameters):
         """
@@ -81,10 +84,13 @@ class ResourceControlUpdater(BaseWorkerThread):
             3. Set site status and set therholds for each valid site
         Sites from SSB are validated with PhEDEx node names
         """
+        # set variables every polling cycle
+        self.setVariables(self.config)
+        if not self.enabled:
+            logging.info("This component is not enabled in the configuration. Doing nothing.")
+            return
+
         try:
-            # set variables every polling cycle
-            self.setVariables(self.config)
-            
             # Get sites in Resource Control
             currentSites = self.resourceControl.listCurrentSites()
             

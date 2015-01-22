@@ -253,8 +253,14 @@ class Scram:
         # Passing the environment in to the subprocess call results in all of
         # the variables being quoted which causes problems for search paths.
         # We'll setup the environment the hard way to avoid this.
+        rtCmsswBase = None
+        rtScramArch = self.architecture
         for varName in self.runtimeEnv:
             self.procWriter(proc, 'export %s=%s\n' % (varName, self.runtimeEnv[varName]))
+            if varName == "CMSSW_RELEASE_BASE":
+                rtCmsswBase = self.runtimeEnv[varName].replace('\"','')
+            if varName == "SCRAM_ARCH":
+                rtScramArch = self.runtimeEnv[varName].replace('\"','')
 
         if os.environ.get('VO_CMS_SW_DIR', None ) != None:
             self.procWriter(proc, 'export VO_CMS_SW_DIR=%s\n'%os.environ['VO_CMS_SW_DIR'])
@@ -265,15 +271,20 @@ class Scram:
 
         if hackLdLibPath:
             self.procWriter(proc, "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
-        self.procWriter(proc, "%s\n" % self.preCommand())
 
-        # scram fucks up the python environment from the parent shell
-        if hackLdLibPath:
-            self.procWriter(proc,
-                "export PYTHONPATH==%s:$PYTHONPATH\n" % ":".join(sys.path)[1:])
+        self.procWriter(proc, "%s\n" % self.preCommand())
 
         if self.envCmd != None:
             self.procWriter(proc, "%s\n" % self.envCmd)
+
+        if command.startswith(sys.executable):
+            # replace python version with python 2.7 from CMSSW release if possible
+            python27exec = "%s/external/%s/bin/python2.7" % (rtCmsswBase, rtScramArch)
+            if os.path.islink(python27exec):
+                command = command.replace(sys.executable, python27exec)
+            elif hackLdLibPath:
+                # reset python path for DMWM python (scram will have changed env to point at its own)
+                self.procWriter(proc, "export PYTHONPATH==%s:$PYTHONPATH\n" % ":".join(sys.path)[1:])
 
         self.procWriter(proc, "%s\n" % command)
         self.procWriter(proc,"""if [ "$?" -ne "0" ]; then exit 5; fi\n""")
@@ -284,9 +295,6 @@ class Scram:
         if isinstance(logName, basestring):
             logFile.close()
         return self.code
-
-
-
 
 
     def diagnostic(self):

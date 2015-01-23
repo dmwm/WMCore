@@ -31,6 +31,11 @@ class Create(DBCreator):
         if dbi == None:
             dbi = myThread.dbi
 
+        tablespaceIndex = ""
+        if params:
+            if params.has_key("tablespace_index"):
+                tablespaceIndex = "USING INDEX TABLESPACE %s" % params["tablespace_index"]
+
         DBCreator.__init__(self, logger, dbi)
 
         self.requiredTables = ["01bl_status", "02bl_runjob"]
@@ -72,6 +77,17 @@ class Create(DBCreator):
 
         """
 
+        self.constraints["01_idx_bl_runjob"] = \
+          """CREATE INDEX idx_bl_runjob_wmbs ON bl_runjob(wmbs_id) %s""" % tablespaceIndex
+
+        self.constraints["02_idx_bl_runjob"] = \
+          """CREATE INDEX idx_bl_runjob_status ON bl_runjob(sched_status) %s""" % tablespaceIndex
+
+        self.constraints["03_idx_bl_runjob"] = \
+          """CREATE INDEX idx_bl_runjob_users ON bl_runjob(user_id) %s""" % tablespaceIndex
+
+        self.constraints["04_idx_bl_runjob"] = \
+          """CREATE INDEX idx_bl_runjob_location ON bl_runjob(location) %s""" % tablespaceIndex
 
         return
 

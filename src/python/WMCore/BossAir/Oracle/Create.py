@@ -83,39 +83,45 @@ class Create(DBCreator):
            user_id       INTEGER
            ) %s  """ % (tablespaceTable)
 
-
-        self.indexes["02_pk_bl_runjob"] = \
-          """ALTER TABLE bl_runjob ADD
-               (CONSTRAINT bl_runjob_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
-
-
         self.indexes["01_pk_bl_status"] = \
           """ALTER TABLE bl_status ADD
                (CONSTRAINT bl_status_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
 
+        self.indexes["02_pk_bl_runjob"] = \
+          """ALTER TABLE bl_runjob ADD
+               (CONSTRAINT bl_runjob_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
 
         self.constraints["01_fk_bl_runjob"] = \
             """ALTER TABLE bl_runjob ADD
                (CONSTRAINT bl_runjob_fk1 FOREIGN KEY(wmbs_id)
                REFERENCES wmbs_job(id) ON DELETE CASCADE)"""
 
+        self.constraints["01_idx_bl_runjob"] = \
+          """CREATE INDEX idx_bl_runjob_wmbs ON bl_runjob(wmbs_id) %s""" % tablespaceIndex
 
         self.constraints["02_fk_bl_runjob"] = \
             """ALTER TABLE bl_runjob ADD
                (CONSTRAINT bl_runjob_fk2 FOREIGN KEY(sched_status)
                REFERENCES bl_status(id) ON DELETE CASCADE)"""
 
+        self.constraints["02_idx_bl_runjob"] = \
+          """CREATE INDEX idx_bl_runjob_status ON bl_runjob(sched_status) %s""" % tablespaceIndex
 
         self.constraints["03_fk_bl_runjob"] = \
             """ALTER TABLE bl_runjob ADD
                (CONSTRAINT bl_runjob_fk3 FOREIGN KEY(user_id)
                REFERENCES wmbs_users(id) ON DELETE CASCADE)"""
 
+        self.constraints["03_idx_bl_runjob"] = \
+          """CREATE INDEX idx_bl_runjob_users ON bl_runjob(user_id) %s""" % tablespaceIndex
+
         self.constraints["04_fk_bl_runjob"] = \
             """ALTER TABLE bl_runjob ADD
                (CONSTRAINT bl_runjob_fk4 FOREIGN KEY(location)
                REFERENCES wmbs_location(id) ON DELETE CASCADE)"""
 
+        self.constraints["04_idx_bl_runjob"] = \
+          """CREATE INDEX idx_bl_runjob_location ON bl_runjob(location) %s""" % tablespaceIndex
 
 
         j = 50

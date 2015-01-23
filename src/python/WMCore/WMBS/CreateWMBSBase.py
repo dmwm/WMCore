@@ -285,8 +285,8 @@ class CreateWMBSBase(DBCreator):
              couch_record VARCHAR(255),
              location     INTEGER,
              outcome      INTEGER       DEFAULT 0,
-             cache_dir    VARCHAR(800)  DEFAULT 'None',
-             fwjr_path    VARCHAR(800),
+             cache_dir    VARCHAR(767)  DEFAULT 'None',
+             fwjr_path    VARCHAR(767),
              FOREIGN KEY (jobgroup)
              REFERENCES wmbs_jobgroup(id) ON DELETE CASCADE,
              FOREIGN KEY (state) REFERENCES wmbs_job_state(id),

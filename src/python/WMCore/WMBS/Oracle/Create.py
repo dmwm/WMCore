@@ -517,8 +517,8 @@ class Create(CreateWMBSBase):
                couch_record VARCHAR(255),
                location     INTEGER,
                outcome      INTEGER       DEFAULT 0,
-               cache_dir    VARCHAR(800)  DEFAULT 'None',
-               fwjr_path    VARCHAR(800)
+               cache_dir    VARCHAR(767)  DEFAULT 'None',
+               fwjr_path    VARCHAR(767)
                ) %s""" % tablespaceTable
 
         self.indexes["01_pk_wmbs_job"] = \

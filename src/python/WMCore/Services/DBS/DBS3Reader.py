@@ -190,6 +190,14 @@ class DBS3Reader:
         """
         return [ x['logical_file_name'] for x in self.dbs.listFiles(dataset = datasetPath)]
 
+    def listValidDatasetFiles(self, datasetPath):
+        """
+        _listValidDatasetFiles_
+
+        Get a list of only valid files for dataset
+        """
+        return [ x['logical_file_name'] for x in self.dbs.listFiles(dataset = datasetPath, detail=True) if x['is_file_valid']]
+
     def listDatasetFileDetails(self, datasetPath, getParents=False):
         """
         _listDatasetFileDetails_
@@ -211,16 +219,17 @@ class DBS3Reader:
         #Iterate over the files and prepare the set of blocks and a dict where the keys are the files
         files = {}
         for f in fileDetails:
-            blocks.add(f['block_name'])
-            files[f['logical_file_name']] = {
-                "BlockName" : f['block_name'],
-                "NumberOfEvents" : f['event_count'],
-                "Lumis" : {},
-                "Parents" : [],
-                "Size" : f['file_size'],
-                "ValidFile" : f['is_file_valid'],
-                "Checksums" : {'Adler32': f['adler32'], 'Checksum': f['check_sum'], 'Md5': f['md5']}
-            }
+            if f['is_file_valid']:
+                blocks.add(f['block_name'])
+                files[f['logical_file_name']] = {
+                    "BlockName" : f['block_name'],
+                    "NumberOfEvents" : f['event_count'],
+                    "Lumis" : {},
+                    "Parents" : [],
+                    "Size" : f['file_size'],
+                    "ValidFile" : f['is_file_valid'],
+                    "Checksums" : {'Adler32': f['adler32'], 'Checksum': f['check_sum'], 'Md5': f['md5']}
+                }
 
         #Iterate over the blocks and get parents and lumis
         for blockName in blocks:
@@ -250,7 +259,7 @@ class DBS3Reader:
         Return the list of lfns that are in the dataset
 
         """
-        allLfns = self.listDatasetFiles(datasetPath)
+        allLfns = self.listValidDatasetFiles(datasetPath)
         setOfAllLfns = set(allLfns)
         setOfKnownLfns = set(lfns)
         return list(setOfAllLfns.intersection(setOfKnownLfns))
@@ -263,7 +272,7 @@ class DBS3Reader:
         are *not* known by DBS
 
         """
-        allLfns = self.listDatasetFiles(datasetPath)
+        allLfns = self.listValidDatasetFiles(datasetPath)
         setOfAllLfns = set(allLfns)
         setOfKnownLfns = set(lfns)
         knownFiles = setOfAllLfns.intersection(setOfKnownLfns)

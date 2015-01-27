@@ -160,7 +160,7 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data.owner.name = name
         self.data.owner.group = "undefined"
 
-        if not type(ownerProperties) == dict:
+        if not isinstance(ownerProperties, dict):
             raise Exception("Someone is trying to setOwner without a dictionary")
 
         for key in ownerProperties.keys():
@@ -177,7 +177,8 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data.owner.name = name
         self.data.owner.group = group
-        if not type(ownerProperties) == dict:
+
+        if not isinstance(ownerProperties, dict):
             raise Exception("Someone is trying to setOwnerDetails without a dictionary")
         for key in ownerProperties.keys():
             setattr(self.data.owner, key, ownerProperties[key])
@@ -497,7 +498,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Set the site white list for the top level tasks in the workload.
         """
-        if type(siteWhitelist) != type([]):
+        if not isinstance(siteWhitelist, type([])):
             siteWhitelist = [siteWhitelist]
 
         taskIterator = self.taskIterator()
@@ -513,7 +514,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Set the site black list for the top level tasks in the workload.
         """
-        if type(siteBlacklist) != type([]):
+        if not isinstance(siteBlacklist, type([])):
             siteBlacklist = [siteBlacklist]
 
         taskIterator = self.taskIterator()
@@ -530,7 +531,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the block white list for all tasks that have an input dataset
         defined.
         """
-        if type(blockWhitelist) != type([]):
+        if not isinstance(blockWhitelist, type([])):
             blockWhitelist = [blockWhitelist]
 
         if initialTask:
@@ -552,7 +553,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the block black list for all tasks that have an input dataset
         defined.
         """
-        if type(blockBlacklist) != type([]):
+        if not isinstance(blockBlacklist, type([])):
             blockBlacklist = [blockBlacklist]
 
         if initialTask:
@@ -573,7 +574,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Set the run white list for all tasks that have an input dataset defined.
         """
-        if type(runWhitelist) != type([]):
+        if not isinstance(runWhitelist, type([])):
             runWhitelist = [runWhitelist]
 
         if initialTask:
@@ -595,7 +596,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Set the run black list for all tasks that have an input dataset defined.
         """
-        if type(runBlacklist) != type([]):
+        if not isinstance(runBlacklist, type([])):
             runBlacklist = [runBlacklist]
 
         if initialTask:
@@ -642,7 +643,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def setAcquisitionEra(self, acquisitionEras, parentAcquisitionEra = None):
+    def setAcquisitionEra(self, acquisitionEras):
         """
         _setAcquistionEra_
 
@@ -658,7 +659,7 @@ class WMWorkloadHelper(PersistencyHelper):
         self.acquisitionEra = acquisitionEras
         return
 
-    def setProcessingVersion(self, processingVersions, parentProcessingVersion = 0):
+    def setProcessingVersion(self, processingVersions):
         """
         _setProcessingVersion_
 
@@ -674,7 +675,7 @@ class WMWorkloadHelper(PersistencyHelper):
         self.processingVersion = processingVersions
         return
 
-    def setProcessingString(self, processingStrings, parentProcessingString = None):
+    def setProcessingString(self, processingStrings):
         """
         _setProcessingString_
 
@@ -690,7 +691,7 @@ class WMWorkloadHelper(PersistencyHelper):
         self.processingString = processingStrings
         return
 
-    def setLumiList(self, lumiLists,  parentLumiList = None):
+    def setLumiList(self, lumiLists):
         """
         _setLumiList_
 
@@ -1136,7 +1137,8 @@ class WMWorkloadHelper(PersistencyHelper):
     def setSubscriptionInformationWildCards(self, wildcardDict, custodialSites = None,
                                             nonCustodialSites = None, autoApproveSites = None,
                                             custodialSubType = "Replica", nonCustodialSubType = "Replica",
-                                            priority = "Low", primaryDataset = None, dataTier = None):
+                                            priority = "Low", primaryDataset = None, dataTier = None,
+                                            deleteFromSource = False):
         """
         _setSubscriptonInformationWildCards_
 
@@ -1145,11 +1147,11 @@ class WMWorkloadHelper(PersistencyHelper):
         See WMWorkload.WMWorkloadHelper.setSiteWildcardsLists for details on the wildcardDict
         """
 
-        if custodialSites and type(custodialSites) != type([]):
+        if custodialSites and not isinstance(custodialSites, type([])):
             custodialSites = [custodialSites]
-        if nonCustodialSites and type(nonCustodialSites) != type([]):
+        if nonCustodialSites and not isinstance(nonCustodialSites, type([])):
             nonCustodialSites = [nonCustodialSites]
-        if autoApproveSites and type(autoApproveSites) != type([]):
+        if autoApproveSites and not isinstance(autoApproveSites, type([])):
             autoApproveSites = [autoApproveSites]
 
         newCustodialList = self.removeWildcardsFromList(siteList = custodialSites, wildcardDict = wildcardDict)
@@ -1176,12 +1178,14 @@ class WMWorkloadHelper(PersistencyHelper):
                                         nonCustodialSubType = nonCustodialSubType,
                                         priority = priority,
                                         primaryDataset = primaryDataset,
-                                        dataTier = dataTier)
+                                        dataTier = dataTier,
+                                        deleteFromSource = deleteFromSource)
 
     def setSubscriptionInformation(self, initialTask = None, custodialSites = None,
                                    nonCustodialSites = None, autoApproveSites = None,
                                    custodialSubType = "Replica", nonCustodialSubType = "Replica",
-                                   priority = "Low", primaryDataset = None, dataTier = None):
+                                   priority = "Low", primaryDataset = None, dataTier = None,
+                                   deleteFromSource = False):
         """
         _setSubscriptionInformation_
 
@@ -1189,11 +1193,11 @@ class WMWorkloadHelper(PersistencyHelper):
         in the workload that match the given primaryDataset (if any)
         """
 
-        if custodialSites and type(custodialSites) != type([]):
+        if custodialSites and not isinstance(custodialSites, type([])):
             custodialSites = [custodialSites]
-        if nonCustodialSites and type(nonCustodialSites) != type([]):
+        if nonCustodialSites and not isinstance(nonCustodialSites, type([])):
             nonCustodialSites = [nonCustodialSites]
-        if autoApproveSites and type(autoApproveSites) != type([]):
+        if autoApproveSites and not isinstance(autoApproveSites, type([])):
             autoApproveSites = [autoApproveSites]
 
         if initialTask:
@@ -1205,11 +1209,13 @@ class WMWorkloadHelper(PersistencyHelper):
             task.setSubscriptionInformation(custodialSites, nonCustodialSites,
                                             autoApproveSites, custodialSubType,
                                             nonCustodialSubType, priority,
-                                            primaryDataset, dataTier)
+                                            primaryDataset, dataTier,
+                                            deleteFromSource)
             self.setSubscriptionInformation(task, custodialSites, nonCustodialSites,
                                             autoApproveSites, custodialSubType,
                                             nonCustodialSubType, priority,
-                                            primaryDataset, dataTier)
+                                            primaryDataset, dataTier,
+                                            deleteFromSource)
 
         return
 
@@ -1230,6 +1236,15 @@ class WMWorkloadHelper(PersistencyHelper):
         # Choose replica over move
         solveTypeConflicts = lambda x, y: y if x == "Move" else x
 
+
+
+
+
+
+
+        # Always choose a logical AND
+        solveDelConflicts = lambda x, y : x and y
+
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
             subInfo = initialTask.getSubscriptionInformation()
@@ -1248,6 +1263,8 @@ class WMWorkloadHelper(PersistencyHelper):
                                                                               subInfo[dataset]["AutoApproveSites"])
                     subInfo[dataset]["Priority"]          = solvePrioConflicts(taskSubInfo[dataset]["Priority"],
                                                                                subInfo[dataset]["Priority"])
+                    subInfo[dataset]["DeleteFromSource"] = solveDelConflicts(taskSubInfo[dataset]["DeleteFromSource"],
+                                                                               subInfo[dataset]["DeleteFromSource"])
                     subInfo[dataset]["CustodialSubType"] = solveTypeConflicts(taskSubInfo[dataset]["CustodialSubType"],
                                                                               subInfo[dataset]["CustodialSubType"])
                     subInfo[dataset]["NonCustodialSubType"] = solveTypeConflicts(taskSubInfo[dataset]["NonCustodialSubType"],

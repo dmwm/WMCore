@@ -25,7 +25,7 @@ class NewSubscription(DBFormatter):
     def _createPhEDExSubBinds(self, datasetID, subscriptionInfo, custodialFlag):
         
         # DeleteFromSource is not supported for move subscriptions
-        delete_blocks = None 
+        delete_blocks = None
         if custodialFlag:
             sites = subscriptionInfo['CustodialSites']
             if subscriptionInfo['CustodialSubType'] == 'Move':
@@ -40,7 +40,7 @@ class NewSubscription(DBFormatter):
                 isMove = 1
             else:
                 isMove = 0
-                if subscriptionInfo.get('DeleteFromSourceNonCustodial', False):
+                if subscriptionInfo.get('DeleteFromSource', False):
                     delete_blocks = 1
                     
         binds = []

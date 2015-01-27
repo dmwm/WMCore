@@ -63,7 +63,7 @@ class WMTaskTest(unittest.TestCase):
         task2a = task1.addTask("task2a")
         task2b = task1.addTask("task2b")
         task2c = task1.addTask("task2c")
-        task3 = task2a.addTask("task3")
+        task2a.addTask("task3")
 
         step1 = makeWMStep("step1")
         step1.addStep("step1a")
@@ -478,7 +478,8 @@ class WMTaskTest(unittest.TestCase):
                              "AutoApproveSites" : ["earth"],
                              "Priority" : "High",
                              "CustodialSubType" : "Replica",
-                             "NonCustodialSubType" : "Move"}
+                             "NonCustodialSubType" : "Move",
+                             "DeleteFromSource" : False}
         
         self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"],
                          outputRecoSubInfo, "The RECO subscription information is wrong")
@@ -510,14 +511,14 @@ class WMTaskTest(unittest.TestCase):
 
         task1 = makeWMTask("task1")
 
-        task2a = task1.addTask("task2a")
-        task2b = task1.addTask("task2b")
-        task2c = task1.addTask("task2c")
-
+        task1.addTask("task2a")
+        task1.addTask("task2b")
+        task1.addTask("task2c")
         task1.deleteChild("task2a")
+
         childrenNumber = 0
         for childTask in task1.childTaskIterator():
-            if childTask.name() == task2a.name():
+            if childTask.name() == "task2a":
                 self.fail("Error: It was possible to find the deleted child")
             childrenNumber += 1
         self.assertEqual(childrenNumber, 2, "Error: Wrong number of children tasks")

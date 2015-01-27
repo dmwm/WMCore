@@ -35,6 +35,7 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 from WMCore.Services.PhEDEx import XMLDrop
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Services.PhEDEx.DataStructs.PhEDExDeletion import PhEDExDeletion
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription, SubscriptionList
 
 from WMCore.DAOFactory import DAOFactory
@@ -63,6 +64,7 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
         #    self.sendAlert will be then be available
         self.initAlerts(compName = "PhEDExInjector")
 
+        return
 
     def setup(self, parameters):
         """
@@ -76,6 +78,8 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
                                 logger = self.logger,
                                 dbinterface = myThread.dbi)
 
+        self.findDeletableBlocks = daofactory(classname = "GetDeletableBlocks")
+        self.markBlocksDeleted = daofactory(classname = "MarkBlocksDeleted")
         self.getUnsubscribed = daofactory(classname = "GetUnsubscribedDatasets")
         self.markSubscribed = daofactory(classname = "MarkDatasetSubscribed")
 
@@ -91,8 +95,139 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
 
         Run the subscription algorithm as configured
         """
+        self.deleteBlocks()
         self.subscribeDatasets()
         return
+
+    def deleteBlocks(self):
+        """
+        _deleteBlocks_
+
+        Find deletable blocks, then decide if to delete based on:
+
+        Is there an active subscription for dataset or block ?
+          If yes => set deleted=2
+          If no => next check
+
+        Has transfer to all destinations finished ?
+          If yes => request block deletion, approve request, set deleted=1
+          If no => do nothing (check again next cycle)
+
+        """
+        logging.info("Starting deleteBlocks method")
+
+        blockDict = self.findDeletableBlocks.execute(transaction = False)
+
+        if len(blockDict) == 0:
+            return
+
+        subscriptions = self.phedex.getSubscriptionMapping(*blockDict.keys())
+
+        skippableBlocks = []
+        deletableEntries = {}
+        for blockName in blockDict:
+
+            location = blockDict[blockName]['location']
+
+            # should never be triggered, better safe than sorry
+            if location.endswith('_MSS'):
+                logging.debug("Location %s for block %s is MSS, skip deletion", location, blockName)
+                skippableBlocks.append(blockName)
+                continue
+
+            dataset = blockDict[blockName]['dataset']
+            sites = blockDict[blockName]['sites']
+
+            if blockName in subscriptions and location in subscriptions[blockName]:
+                logging.debug("Block %s subscribed to %s, skip deletion",  blockName, location)
+                binds = { 'DELETED' : 2,
+                          'BLOCKNAME' : blockName }
+                self.markBlocksDeleted.execute(binds, transaction = False)
+            else:
+                blockInfo = []
+                try:
+                    blockInfo = self.phedex.getReplicaInfoForBlocks(block = blockName, complete = 'y')['phedex']['block']
+                except:
+                    logging.error("Couldn't get block info from PhEDEx, retry next cycle")
+                for entry in blockInfo:
+                    if entry['name'] == blockName:
+                        nodes = set([x['node'] for x in entry['replica']])
+                        if location not in nodes:
+                            logging.debug("Block %s not present on %s, mark as deleted", blockName, location)
+                            binds = { 'DELETED' : 1,
+                                      'BLOCKNAME' : blockName }
+                            self.markBlocksDeleted.execute(binds, transaction = False)
+                        elif sites.issubset(nodes):
+                            logging.debug("Deleting block %s from %s since it is fully transfered", blockName, location)
+                            if location not in deletableEntries:
+                                deletableEntries[location] = {}
+                            if dataset not in deletableEntries[location]:
+                                deletableEntries[location][dataset] = set()
+                            deletableEntries[location][dataset].add(blockName)
+
+
+        binds = []
+        for blockName in skippableBlocks:
+            binds.append( { 'DELETED' : 2,
+                            'BLOCKNAME' : blockName } )
+        if len(binds) > 0:
+            self.markBlocksDeleted.execute(binds, transaction = False)
+
+        for location in deletableEntries:
+
+            chunkSize = 100
+            numberOfBlocks = 0
+            blocksToDelete = {}
+            for dataset in deletableEntries[location]:
+
+                blocksToDelete[dataset] = deletableEntries[location][dataset]
+                numberOfBlocks += len(blocksToDelete[dataset])
+
+                if numberOfBlocks > chunkSize:
+
+                    self.deleteBlocksPhEDExCalls(location, blocksToDelete)
+                    numberOfBlocks = 0
+                    blocksToDelete = {}
+
+            self.deleteBlocksPhEDExCalls(location, blocksToDelete)
+
+        return
+
+    def deleteBlocksPhEDExCalls(self, location, blocksToDelete):
+        """
+        _deleteBlocksPhEDExCalls_
+
+        actual PhEDEx calls for block deletion
+        """
+        deletion = PhEDExDeletion(blocksToDelete.keys(), location,
+                                  level = 'block',
+                                  comments = "WMAgent blocks auto-delete from %s" % location,
+                                  blocks = blocksToDelete)
+
+        try:
+            xmlData = XMLDrop.makePhEDExXMLForBlocks(self.dbsUrl,
+                                                     deletion.getDatasetsAndBlocks())
+            logging.debug(str(xmlData))
+            response = self.phedex.delete(deletion, xmlData)
+            requestId = response['phedex']['request_created'][0]['id']
+
+            # auto-approve deletion request
+            self.phedex.updateRequest(requestId, 'approve', location)
+
+            binds = []
+            for dataset in blocksToDelete:
+                for blockName in blocksToDelete[dataset]:
+                    binds.append( { 'DELETED' : 1,
+                                    'BLOCKNAME' : blockName } )
+
+            self.markBlocksDeleted.execute(binds, transaction = False)
+
+        except Exception as ex:
+            logging.error("Something went wrong when communicating with PhEDEx, will try again later.")
+            logging.error("Exception: %s", str(ex))
+
+        return
+
 
     def subscribeDatasets(self):
         """
@@ -100,6 +235,8 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
 
         Poll the database for datasets and subscribe them.
         """
+        logging.info("Starting subscribeDatasets method")
+
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
@@ -160,7 +297,7 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
                 self.phedex.subscribe(subscription, xmlData)
             except Exception as ex:
                 logging.error("Something went wrong when communicating with PhEDEx, will try again later.")
-                logging.error("Exception: %s" % str(ex))
+                logging.error("Exception: %s", str(ex))
             else:
                 subscriptionsMade.extend(subscription.getSubscriptionIds())
 

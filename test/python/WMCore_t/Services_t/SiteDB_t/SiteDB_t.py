@@ -33,20 +33,6 @@ class SiteDBTest(unittest.TestCase):
         results = self.mySiteDB.cmsNametoPhEDExNode("T1_US_FNAL")
         self.failUnless(sorted(results) == sorted(target))
 
-    def testPhEDExNodetocmsName(self):
-        """
-        Tests PhEDExNodetocmsName
-        """
-        result = self.mySiteDB.phEDExNodetocmsName('T1_US_FNAL_MSS')
-        self.failUnless(result == 'T1_US_FNAL')
-        result = self.mySiteDB.phEDExNodetocmsName('T1_US_FNAL_Buffer')
-        self.failUnless(result == 'T1_US_FNAL')
-        result = self.mySiteDB.phEDExNodetocmsName('T2_UK_London_IC')
-        self.failUnless(result == 'T2_UK_London_IC')
-        # don't check this anymore, see comment in phEDExNodetocmsName function
-        #self.assertRaises(ValueError, self.mySiteDB.phEDExNodetocmsName,
-        #                  'T9_DOESNT_EXIST_Buffer')
-
     def testCmsNametoSE(self):
         """
         Tests CmsNametoSE

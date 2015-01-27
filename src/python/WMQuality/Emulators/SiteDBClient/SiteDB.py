@@ -210,19 +210,6 @@ class SiteDBJSON(object):
         phedexnames = map(lambda x: x['alias'], phedexnames)
         return phedexnames
 
-    def phEDExNodetocmsName(self, node):
-        """
-        Convert PhEDEx node name to cms site
-        """
-        # api doesn't work at the moment - so reverse engineer
-        # first strip special endings and check with cmsNametoPhEDExNode
-        # if this fails (to my knowledge no node does fail) do a full lookup
-        name = node.replace('_MSS',
-                            '').replace('_Buffer',
-                                        '').replace('_Export', '')
-
-        return name
-
     def PNNtoPSN(self, pnn):
         """
         Emulator to convert PhEDEx node name to Processing Site Name(s)

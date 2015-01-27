@@ -249,29 +249,6 @@ class SiteDBJSON(Service):
         return phedexnames
 
 
-    def phEDExNodetocmsName(self, node):
-        """
-        Convert PhEDEx node name to cms site
-        """
-        # api doesn't work at the moment - so reverse engineer
-        # first strip special endings and check with cmsNametoPhEDExNode
-        # if this fails (to my knowledge no node does fail) do a full lookup
-        name = node.replace('_MSS',
-                            '').replace('_Disk',
-                                '').replace('_Buffer',
-                                    '').replace('_Export', '')
-
-        return name
-        # Disable cross-check until following bug fixed.
-        # https://savannah.cern.ch/bugs/index.php?67044
-#        if node in self.cmsNametoPhEDExNode(name):
-#            return name
-#
-#        # As far as i can tell there is no way to get a full listing, would
-#        # need to call CMSNametoPhEDExNode?cms_name= but can't find a way to do
-#        # that. So simply raise an error
-#        raise ValueError, "Unable to find CMS name for \'%s\'" % node
-
     def PNNtoPSN(self, pnn):
         """
         Convert PhEDEx node name to Processing Site Name(s)

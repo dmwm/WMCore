@@ -57,7 +57,11 @@ def reqMgrConfig(
         config.reqmgr.Webtools.host = '0.0.0.0'
         config.reqmgr.Webtools.port = port
         config.reqmgr.Webtools.environment = 'devel'
-        config.reqmgr.database.connectUrl = connectURL                
+        config.reqmgr.database.connectUrl = connectURL
+        # workload summary update
+        config.section_("WorkloadSummary")
+        config.WorkloadSummary.couchurl = connectURL
+        config.WorkloadSummary.database = "workloadsummary"                
 
     config.reqmgr.componentDir = componentDir
     config.reqmgr.templates = reqMgrTemplates

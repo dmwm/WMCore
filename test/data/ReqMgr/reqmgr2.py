@@ -248,7 +248,7 @@ class ReqMgrClient(RESTClient):
         new_request_name = self.create_request(config) 
         
         data = self._caller_checker("/request?name=%s" % new_request_name, "GET")
-        request = data[0]
+        request = data[0][new_request_name]
         assert request["RequestName"] == new_request_name  
         assert request["RequestStatus"] == "new"
                         

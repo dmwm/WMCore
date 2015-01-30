@@ -21,7 +21,7 @@ from WMCore.REST.Validation import validate_str
 from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
 
 import WMCore.ReqMgr.Service.RegExp as rx
-from WMCore.REST.Format import *
+from WMCore.REST.Format import JSONFormat
 
 class HelloWorld(RESTEntity):
     

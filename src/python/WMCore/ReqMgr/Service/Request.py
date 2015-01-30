@@ -11,6 +11,7 @@ from WMCore.Wrappers import JsonWrapper
 
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Validation import validate_str
+from WMCore.REST.Format import JSONFormat
 
 import WMCore.ReqMgr.Service.RegExp as rx
 from WMCore.ReqMgr.DataStructs.Request import initialize_request_args
@@ -427,9 +428,14 @@ class RequestStatus(RESTEntity):
 
     def validate(self, apiobj, method, api, param, safe):
         validate_str("transition", param, safe, rx.RX_BOOL_FLAG, optional=True)
+        args_length = len(param.args)
+        if args_length == 1:
+            safe.kwargs["transiton"] = param.args[0]
+            param.args.pop()
+            return
+        
     
-    
-    @restcall
+    @restcall(formats = [('application/json', JSONFormat())])
     def get(self, transition):
         """
         Return list of allowed request status.
@@ -438,8 +444,10 @@ class RequestStatus(RESTEntity):
         
         """
         if transition == "true":
-            return rows(REQUEST_STATE_TRANSITION)
+            return rows([REQUEST_STATE_TRANSITION])
         else:
+            print transition
+            print "$$$$"
             return rows(REQUEST_STATE_LIST)
     
     

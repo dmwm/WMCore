@@ -263,13 +263,14 @@ def changeStatus(requestName, status, wmstatUrl, acdcUrl):
             abortRequest(requestName)
         else:
             raise cherrypy.HTTPError(400, "You cannot abort a request in state %s" % oldStatus)
-        
-    if status == 'announced':
-        # cleanup acdc database, if possible
-        if acdcUrl:
-            url, database = WMCore.Lexicon.splitCouchServiceURL(acdcUrl)
-            acdcService = CouchService(url = url, database = database)
-            acdcService.removeFilesetsByCollectionName(requestName)
+
+#     ACDC database is cleaned by separate thread        
+#     if status == 'announced':
+#         # cleanup acdc database, if possible
+#         if acdcUrl:
+#             url, database = WMCore.Lexicon.splitCouchServiceURL(acdcUrl)
+#             acdcService = CouchService(url = url, database = database)
+#             acdcService.removeFilesetsByCollectionName(requestName)
 
     # finally, perform the transition, have to do it in both Oracle and CouchDB
     # and in WMStats

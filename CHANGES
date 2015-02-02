@@ -1,3 +1,102 @@
+1.0.2 to 1.0.3.pre13:
+  - Merge pull request #5597 from ticoann/reqmgr_announce_fix
+  - fix announced transition
+  - Merge pull request #5595 from ticoann/reqmgr2_script_fix
+  - fix reqmgr2 script
+  - 1.0.3.pre12
+  - Merge pull request #5593 from ticoann/fix_reqmgr_modify_button
+  - fix reqmgr modify button
+  - Merge pull request #5588 from amaltaro/adapt-columns
+  - Merge pull request #5566 from ticoann/acdc_view_change
+  - Merge pull request #5591 from ticoann/fix_all_in_one_test1
+  - Merge pull request #5590 from amaltaro/only-valid-files
+  - fix all in one test
+  - List and process only valid files in DBS
+  - Create indexes to wmbs_job and fix column lengths
+  - 1.0.3.pre11
+  - Merge pull request #5586 from ticoann/resubmission_fix
+  - fix resubmission workflow
+  - Merge pull request #5584 from amaltaro/switch-for-nanny
+  - Merge pull request #5579 from hufnagel/cmssw-python
+  - Merge pull request #5564 from ticoann/tier0_monitor_pending
+  - switch for disabling (or not) AgentStatusWatcher
+  - delay archiving so wmstats can monitor workflow after (completed, announced)
+  - Merge pull request #5578 from hufnagel/remove-migratefileblocks
+  - remove MigrateFileBlocks script
+  - Merge pull request #5576 from ticoann/task_archiver_fix
+  - fix test archiver unittest
+  - use CMSSW python 2.7 for runtime
+  - Merge pull request #5575 from ticoann/task_archiver_fix
+  - fix the archive reporting problem
+  - 1.0.3.pre10
+  - Merge pull request #5573 from ticoann/reqmgr2_fix
+  - fix empty list handling on webpage, etc
+  - 1.0.3.pre9
+  - Merge pull request #5572 from ticoann/t0_view_change
+  - add new view for delayed clean up
+  - 1.0.3.pre8
+  - Merge pull request #5571 from ticoann/reqmgr2-dependency2
+  - remove reqmgr dependency for reqmgr2
+  - 1.0.3.pre7
+  - Merge pull request #5570 from ticoann/reqmgr2-dependency2
+  - add temporary dependency for the reqmgr2. Resubmission need to remove reqmgr dependency.
+  - 1.0.3.pre6
+  - Merge pull request #5569 from ticoann/reqmgr_dep
+  - fix reqmgr2 dependencies
+  - 1.0.3.pre5
+  - Merge pull request #5568 from ticoann/dqm_spec
+  - add DQMHarvest spec
+  - 1.0.3.pre4
+  - Merge pull request #5558 from hufnagel/copy-delete-subscription-prelim
+  - Merge pull request #5567 from ticoann/acdc_view_change2
+  - remove couch view from acdc
+  - acdc view change to reduce the size
+  - Merge pull request #5555 from ticoann/reqmgr2
+  - Merge pull request #5553 from ticoann/acdc_cleanup_cherrypy
+  - first part of acdc db cleanup
+  - add rest api to send the arguments template for request
+  - some preliminary work for a copy-delete type subscription
+  - Merge pull request #5560 from vkuznet/master
+  - Implement button for misc options and parse it correctly within assign form
+  - Replace content of assign interface with misc_json which can be represented as table/json on web UI
+  - Re-arrage error message appearance
+  - Add new json2form helper function
+  - Merge pull request #5557 from vkuznet/master
+  - Add confirm action for assign interface to force end-user to use Settings within assignment
+  - Merge pull request #5556 from vkuznet/master_rebase2
+  - Full squashed with Seangchan help.
+  - Merge pull request #5552 from ticoann/reqmgr2_merge_master
+  - relax optional arguments checking if it is empty string ignore
+  - Merge pull request #5551 from ticoann/reqmgr2_merge_master
+  - refine 400 error message
+  - 1.0.3.pre3
+  - Merge pull request #5550 from ticoann/reqmgr2_merge_master
+  - Squashed commit of the following:
+  - 1.0.3.pre2
+  - Merge pull request #5268 from hufnagel/force-sitewhitelist
+  - Merge pull request #5465 from amaltaro/adapt-columnSize
+  - 1.0.3.pre1
+  - Merge pull request #5525 from mmascher/master
+  - Add option to not clean the env in Scram.py
+  - Merge pull request #5472 from amaltaro/cast-runNumbers
+  - Merge pull request #5522 from hufnagel/remove-tier0mode
+  - remove tier0mode from PhEDExInjector
+  - Merge pull request #5491 from mmascher/master
+  - Merge pull request #5516 from hufnagel/phedex-deletion
+  - add support for phedex deletions
+  - Merge pull request #5505 from HassenRiahi/IncludeCAINFO
+  - Merge pull request #5494 from AndrewLevin/master
+  - Merge pull request #5485 from holzman/fnal-xrdcp-force-stageout
+  - Include the CAINFO param. in pycurl_manager.
+  - Re-implement lumi correction algorithm. Fix #5337
+  - changed the error code that is used when a job fails due to a jobstatuslite timeout, this will allow us to make these jobs move to jobfailed instead of jobcooloff after try
+  - Revert LumiCorrection algorithm
+  - FNAL staging: fix string concat error
+  - FNAL staging: use -f option for xrdcp
+  - temporary fix for FirstRun/LastRun wrong data type
+  - increases column sizes for TaskChain stuff
+  - ignore location for job submission and only use sitewhitelist and siteblacklist
+
 1.0.2 to 1.0.3.pre12:
   - Merge pull request #5593 from ticoann/fix_reqmgr_modify_button
   - fix reqmgr modify button

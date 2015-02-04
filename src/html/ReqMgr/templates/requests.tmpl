@@ -6,35 +6,19 @@ var requests = $requests;
 
 <div id="requests">
 
-<table class="table-stripped">
-<tbody>
-<tr><td class="width-30">
-        <input id="filter" type="search" class="width-100" placeholder="Filter by pattern ...">
-</td><td class="width-10">
-        <a href="#" class="" onclick="BuildList('', requests.filter(ByPattern))">Search</a>
-</td><td class="width-60 right">
-<div class="group">
-    <nav class="navbar navbar-right">
-        <ul>
-        <li><b>Sort</b> by:</li>
-        <li class="menu-item active underline"><a href="#" onclick="BuildList(this, requests.filter(ByPattern).sort(ByStatus))">Status</a></li>
-        <li class="menu-item"><a href="#" onclick="BuildList(this, requests.filter(ByPattern).sort(ByDate))">Date</a></li>
-        <li class="menu-item"><a href="#" onclick="BuildList(this, requests.filter(ByPattern).sort(ByRequestor))">User</a></li>
-        <li class="menu-item"><a href="#" onclick="BuildList(this, requests.filter(ByPattern).sort(ByGroup))">Group</a></li>
-        </ul>
-    </nav>
-</div>
-</td></tr>
-</tbody>
-</table>
-
+$filter_sort_table
 <hr/>
 
 <div id="container"></div>
 </div> <!-- end of requests section -->
 
 <script>
+var _order=1; // global variable to keep track of asc/desc order on web UI
 function BuildList(tag, data) {
+    if(_order%2) {
+        data.reverse();
+    }
+    _order += 1;
     $('container').innerHTML="";
     var listContainer = document.createElement('div');
     $('container').appendChild(listContainer);
@@ -58,8 +42,8 @@ function BuildList(tag, data) {
     for (var i = 0; i < items.length; i++ ) {
         items[i].className='menu-item';
     }
-    tag.className='menu-item active underline';
+    tag.className='menu-item underline';
 }
 // Put data into container
-BuildList(document.getElementsByClassName('menu-item')[0], requests);
+BuildList(document.getElementsByClassName('menu-item')[0], requests.filter(ByPattern).sort(ByDate));
 </script>

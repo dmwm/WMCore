@@ -334,7 +334,9 @@ class ReqMgrService(TemplatedPage):
                 'ProcessingString':'',
                 'MergedLFNBase':lfn_bases(),
                 'UnmergedLFNBase':lfn_unmerged_bases(),}
+        filter_sort = self.templatepage('filter_sort')
         content = self.templatepage('assign', sort=sortby,
+                filter_sort_table=filter_sort,
                 sites=sites(),
                 site_white_list=site_white_list(),
                 site_black_list=site_black_list(),
@@ -364,8 +366,9 @@ class ReqMgrService(TemplatedPage):
                 docs.append(request_attr(val, attrs))
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
+        filter_sort = self.templatepage('filter_sort')
         content = self.templatepage('approve', requests=docs, date=tstamp(),
-                sort=sortby)
+                sort=sortby, filter_sort_table=filter_sort)
         return self.abs_page('approve', content)
 
     @expose
@@ -420,7 +423,9 @@ class ReqMgrService(TemplatedPage):
                 docs.append(request_attr(doc))
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
-        content = self.templatepage('requests', requests=docs, sort=sortby)
+        filter_sort = self.templatepage('filter_sort')
+        content = self.templatepage('requests', requests=docs, sort=sortby,
+                filter_sort_table=filter_sort)
         return self.abs_page('requests', content)
 
     @expose

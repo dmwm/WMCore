@@ -38,7 +38,7 @@ class _MockDBSApi():
 
         return res
 
-    def listFileLumis(self, logical_file_name = None, block_name = None):
+    def listFileLumis(self, logical_file_name = None, block_name = None, validFileOnly = 1):
         """
         Mock out listFileLumis
         """
@@ -66,7 +66,7 @@ class _MockDBSApi():
 
         return results
 
-    def listFileSummaries(self, block_name = None, dataset = None, run_num = None):
+    def listFileSummaries(self, block_name = None, dataset = None, run_num = None, validFileOnly = 1):
         """
         Mock out listFileSummaries
 

@@ -232,7 +232,7 @@ class Block(StartPolicyInterface):
         # Fill maskedLumis part of maskedBlocks
 
         for block in maskedBlocks:
-            fileLumis = dbs.dbs.listFileLumis(block_name=block)
+            fileLumis = dbs.dbs.listFileLumis(block_name=block, validFileOnly = 1)
             for fileLumi in fileLumis:
                 lfn = fileLumi['logical_file_name']
                 # For each run : [lumis] mask by needed lumis, append to maskedBlocks

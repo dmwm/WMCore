@@ -52,10 +52,11 @@ from WMCore.WMSpec.StdSpecs.StoreResults import StoreResultsWorkloadFactory
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
 from WMCore.WMSpec.StdSpecs.Resubmission import ResubmissionWorkloadFactory
 from WMCore.WMSpec.StdSpecs.ReDigi import ReDigiWorkloadFactory
-from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE, REQUEST_STATE_TRANSITION
 
 # new reqmgr2 APIs
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
+from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE, REQUEST_STATE_TRANSITION
+from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS
 
 def sort_bold(docs):
     "Return sorted list of bold items from provided doc list"
@@ -95,7 +96,7 @@ def minify(content):
 
 def menus():
     "Return dict of menus"
-    items = ['admin', 'create', 'approve', 'assign', 'requests']
+    items = ['home', 'admin', 'create', 'approve', 'assign']
     return items
 
 def request_attr(doc, attrs=None):
@@ -243,17 +244,13 @@ class ReqMgrService(TemplatedPage):
     @expose
     def index(self, **kwds):
         """Main page"""
-        apis = {}
-        scripts = {}
-        for idx in range(5):
-            key = 'api_%s' % idx
-            val = '%s description' % key
-            apis[key] = val
-            skey = 'script_%s' % idx
-            sval = '%s description' % skey
-            scripts[skey] = sval
-        content = self.templatepage('apis', apis=apis, scripts=scripts)
+        content = self.templatepage('index', requests=ACTIVE_STATUS, rdict=REQUEST_STATE_TRANSITION)
         return self.abs_page('main', content)
+
+    @expose
+    def home(self, **kwds):
+        """Main page"""
+        return self.index(**kwds)
 
     ### Admin actions ###
 
@@ -425,7 +422,7 @@ class ReqMgrService(TemplatedPage):
         docs = [r for r in sort(docs, sortby)]
         filter_sort = self.templatepage('filter_sort')
         content = self.templatepage('requests', requests=docs, sort=sortby,
-                filter_sort_table=filter_sort)
+                status=kwds['status'], filter_sort_table=filter_sort)
         return self.abs_page('requests', content)
 
     @expose

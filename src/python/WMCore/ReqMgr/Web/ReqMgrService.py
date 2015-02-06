@@ -422,7 +422,7 @@ class ReqMgrService(TemplatedPage):
         docs = [r for r in sort(docs, sortby)]
         filter_sort = self.templatepage('filter_sort')
         content = self.templatepage('requests', requests=docs, sort=sortby,
-                filter_sort_table=filter_sort)
+                status=kwds['status'], filter_sort_table=filter_sort)
         return self.abs_page('requests', content)
 
     @expose

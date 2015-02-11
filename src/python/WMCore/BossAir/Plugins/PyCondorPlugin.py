@@ -18,6 +18,7 @@ import subprocess
 import multiprocessing
 import glob
 import shlex
+import fnmatch
 
 import WMCore.Algorithms.BasicAlgos as BasicAlgos
 
@@ -32,6 +33,8 @@ from WMCore.Algorithms                 import SubprocessAlgos
 ##  python-condor stuff
 import htcondor as condor
 import classad
+import datetime
+import calendar
 
 
 def submitWorker(input, results, timeout = None):
@@ -556,11 +559,25 @@ class PyCondorPlugin(BasePlugin):
         noInfoFlag   = False
 
         # Get the job
+        logging.debug("PyCondor is going to track %s jobs" % (len(jobs)))
         jobInfo, sd = self.getClassAds()
-        if jobInfo == None:
+        if jobInfo is None :
             return runningList, changeList, completeList
+        else:
+            logging.debug("PyCondor retrieved %s classAds from condor schedd" % (len(jobInfo)))
+
         if len(jobInfo.keys()) == 0:
             noInfoFlag = True
+
+        ###  Exit Codes and their meaing
+        ###  https://htcondor-wiki.cs.wisc.edu/index.cgi/wiki?p=MagicNumbers
+        exitCodeMap = { 0 : "Unknown", 
+                        1 : "Idle",
+                        2 : "Running",
+                        3 : "Removed",
+                        4 : "Complete",
+                        5 : "Held",
+                        6 : "Running" }
 
         for job in jobs:
             # Now go over the jobs from WMBS and see what we have
@@ -579,43 +596,86 @@ class PyCondorPlugin(BasePlugin):
                         # then self.removeTime, remove it.
                         completeList.append(job)
                 else:
-                    completeList.append(job)
+                    ### There could be multiple condor log files under the same cache_dir
+                    ### Get the one that corresponds to [jobid] ==> WMAgent_JobID
+                    jobLogInfo = self.readCondorLog(job)
+                    jobAd = jobLogInfo.get(job['jobid'])
+                    if jobAd is None :
+                        ## If neither jobAd and no jobLog, assume job is complete
+                        logging.debug("No job log Info for jobid=%i. Assume it is Complete. Check DB." % job['jobid'])
+                        completeList.append(job)
+                        break
+
+                    jobStatus = int(jobAd.get('JobStatus',100))
+
+                    statName  = 'Unknown'
+                    if jobStatus in exitCodeMap.keys():
+                        statName = exitCodeMap[jobStatus]
+                        
+                    if statName == "Unknown" :
+                        logging.info("jobid=%i in unknown state %i" % (job['jobid'], jobStatus))
+
+                    # Get the global state
+                    job['globalState'] = PyCondorPlugin.stateMap()[statName]
+                    logging.debug("JobLogInfo: JobStatus for jobid=%i is %s" % (job['jobid'],job['status']))
+                    if statName != job['status']:
+                        job['status']      = statName
+                        job['status_time'] = 0
+                        logging.debug("JobLogInfo: JobStatus for jobid=%i changed to %s" % (job['jobid'],job['status']))
+
+                    if job['status'] == "Complete" :
+                        completeList.append(job)
+
+                    #Check if we have a valid status time
+                    if not job['status_time']:
+                        if job['status'] == 'Running':
+                            try:
+                                job['status_time'] = int(jobAd.get('runningTime', 0))
+                            except ValueError, ex:
+                                job['status_time'] = 0
+
+                        job['location'] = jobAd.get('runningCMSSite', None)
+                        if job['location'] is None:
+                            logging.debug('Something is not right here, a job (%s) is running with no CMS site' % str(jobAd))
+
+                        if job['status'] == 'Idle':
+                            try:
+                                job['status_time'] = int(jobAd.get('submitTime', 0))
+                            except ValueError, ex:
+                                job['status_time'] = 0
+                        else:
+                            try:
+                                job['status_time'] = int(jobAd.get('stateTime', 0))
+                            except ValueError, ex:
+                                job['status_time'] = 0
+
+                        changeList.append(job)
+                    runningList.append(job) 
             else:
                 jobAd     = jobInfo.get(job['jobid'])
-                try:
-                    # sometimes it returns 'undefined' (probably over high load)
-                    jobStatus = int(jobAd.get('JobStatus', 0))
-                except ValueError, ex:
-                    jobStatus = 0  # unknown
+
+                ### Make it concise
+                jobStatus = int(jobAd.get('JobStatus',100))
+
                 statName  = 'Unknown'
-                if jobStatus == 1:
-                    # Job is Idle, waiting for something to happen
-                    statName = 'Idle'
-                elif jobStatus == 5:
-                    # Job is Held; experienced an error
-                    statName = 'Held'
-                elif jobStatus == 2 or jobStatus == 6:
-                    # Job is Running, doing what it was supposed to
-                    # NOTE: Status 6 is transferring output
-                    # I'm going to list this as running for now because it fits.
-                    statName = 'Running'
-                elif jobStatus == 3:
-                    # Job is in X-state: List as error
-                    statName = 'Error'
-                elif jobStatus == 4:
-                    # Job is completed
-                    statName = 'Complete'
-                else:
-                    # What state are we in?
-                    logging.info("Job in unknown state %i" % jobStatus)
+                if jobStatus in exitCodeMap.keys():
+                    statName = exitCodeMap[jobStatus]
+                    
+                if statName == "Unknown" :
+                    logging.info("jobid=%i in unknown state %i" % (job['jobid'], jobStatus))
 
                 # Get the global state
                 job['globalState'] = PyCondorPlugin.stateMap()[statName]
 
+                logging.debug("JobAdInfo: JobStatus for jobid=%i is %s" % (job['jobid'],job['status']))
                 if statName != job['status']:
                     # Then the status has changed
                     job['status']      = statName
                     job['status_time'] = 0
+                    logging.debug("JobAdInfo: JobStatus for jobid=%i changed to %s" % (job['jobid'],job['status']))
+
+                if job['status'] == "Complete" :
+                    completeList.append(job)
 
                 #Check if we have a valid status time
                 if not job['status_time']:
@@ -775,10 +835,11 @@ class PyCondorPlugin(BasePlugin):
         Kill can happen for schedd running on localhost... TBC
 
         """
-        jobInfo, sd = self.getClassAds()
+        sd = condor.Schedd()
         for job in jobs:
-            jobID = job['jobid']
-            sd.act(condor.JobAction.Remove, 'WMAgent_JobID == %i'% jobID)
+            logging.debug("Going to remove jobid=%i from the queue" % job['jobid'])
+            sd.act(condor.JobAction.Remove, 'WMAgent_JobID == %i' % job['jobid'])
+            logging.debug("Removed jobid=%i from the queue" % job['jobid'])
 
         return
 
@@ -792,12 +853,16 @@ class PyCondorPlugin(BasePlugin):
         The currently supported changes are only priority for which both the task (taskPriority)
         and workflow priority (requestPriority) must be provided.
         """
-        jobInfo, sd = self.getClassAds()
+        sd = condor.Schedd()
         if 'taskPriority' in kwargs and 'requestPriority' in kwargs:
             # Do a priority update
             priority = (int(kwargs['requestPriority']) + int(kwargs['taskPriority'])*self.maxTaskPriority)
-            sd.edit('WMAgent_JobID =!= UNDEFINED && WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"'% (task,workflow),
-                    "JobPrio", classad.ExprTree('"%s"'% priority))
+            try:
+                sd.edit('WMAgent_JobID =!= "UNDEFINED" && WMAgent_SubTaskName == %s && WMAgent_RequestName == %s'% (classad.quote(str(task)),classad.quote(str(workflow))),
+                        "JobPrio", classad.ExprTree('"%s"'% priority))
+            except:
+                msg = "Couldn\'t edit classAd to change job Priority for WMAgent_SubTaskName=%s, WMAgent_RequestName=%s " % (classad.quote(str(task)), classad.quote(str(workflow)))
+                logging.debug(msg)
 
         return
 
@@ -830,7 +895,7 @@ class PyCondorPlugin(BasePlugin):
 
         jdl.append("+WMAgent_AgentName = \"%s\"\n" %(self.agent))
         jdl.append("+JOBGLIDEIN_CMSSite= \"$$([ifThenElse(GLIDEIN_CMSSite is undefined, \\\"Unknown\\\", GLIDEIN_CMSSite)])\"\n")
-
+        
         jdl.extend(self.customizeCommon(jobList))
 
         if self.proxy:
@@ -943,6 +1008,10 @@ class PyCondorPlugin(BasePlugin):
             jdl.append("priority = %i\n" % (task_priority + prio*self.maxTaskPriority))
 
             jdl.append("+WMAgent_JobID = %s\n" % job['jobid'])
+            jdl.append("job_machine_attrs = GLIDEIN_CMSSite\n")
+
+            ### print all the variables needed for us to rely on condor userlog
+            jdl.append("job_ad_information_attrs = JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,ExtDESIRED_Sites,WMAgent_JobID,MachineAttrGLIDEIN_CMSSite0\n")
 
             jdl.append("Queue 1\n")
 
@@ -1034,29 +1103,81 @@ class PyCondorPlugin(BasePlugin):
         jobInfo = {}
         schedd = condor.Schedd()
         results=[]
-
-        if not schedd:
-            return jobInfo, None
+        
+        try :
+            logging.debug("Start: Retrieving classAds using Condor Python XQuery")
+            itobj = schedd.xquery('WMAgent_JobID =!= "UNDEFINED" && WMAgent_AgentName == %s' % classad.quote(str(self.agent)),
+                                  ["JobStatus", "EnteredCurrentStatus", "JobStartDate", "QDate", "DESIRED_Sites",
+                                   "ExtDESIRED_Sites", "MachineAttrGLIDEIN_CMSSite0", "WMAgent_JobID"]
+                                  )
+            results = list(itobj)
+            logging.debug("Finish: Retrieving classAds using Condor Python XQuery")
+        except :
+            msg = "Query to condor schedd failed in PyCondorPlugin"
+            logging.debug(msg)
+            return None, None
         else:
-            results = schedd.query('WMAgent_JobID =!= "UNDEFINED" && WMAgent_AgentName == "%s"' % self.agent,
-                                   ["JobStatus", "EnteredCurrentStatus", "JobStartDate", "QDate", "DESIRED_Sites",
-                                    "ExtDESIRED_Sites", "MATCH_EXP_JOBGLIDEIN_CMSSite", "WMAgent_JobID"]
-                                   )
-            if not results:
-                logging.error("Not able to find WMAgent jobs")
-                return jobInfo, schedd
-            else:
-                for i in range(0, len(results)):
-                    tmpDict={}
-                    tmpDict["JobStatus"]=int(results[i].get("JobStatus"))
-                    tmpDict["stateTime"]=int(results[i].get("EnteredCurrentStatus"))
-                    tmpDict["runningTime"]=results[i].get("JobStartDate")
-                    tmpDict["submitTime"]=int(results[i].get("QDate"))
-                    tmpDict["DESIRED_Sites"]=results[i].get("DESIRED_Sites")
-                    tmpDict["ExtDESIRED_Sites"]=results[i].get("ExtDESIRED_Sites")
-                    tmpDict["runningCMSSite"]=results[i].get("MATCH_EXP_JOBGLIDEIN_CMSSite")
-                    tmpDict["WMAgentID"]=int(results[i].get("WMAgent_JobID"))
-                    jobInfo[int(results[i].get("WMAgent_JobID"))] = tmpDict
+            for i in range(0, len(results)):
+                tmpDict={}
+                tmpDict["JobStatus"]=int(results[i].get("JobStatus"))
+                tmpDict["stateTime"]=int(results[i].get("EnteredCurrentStatus"))
+                tmpDict["runningTime"]=results[i].get("JobStartDate")
+                tmpDict["submitTime"]=int(results[i].get("QDate"))
+                tmpDict["DESIRED_Sites"]=results[i].get("DESIRED_Sites")
+                tmpDict["ExtDESIRED_Sites"]=results[i].get("ExtDESIRED_Sites")
+                tmpDict["runningCMSSite"]=results[i].get("MachineAttrGLIDEIN_CMSSite0")
+                tmpDict["WMAgentID"]=int(results[i].get("WMAgent_JobID"))
+                jobInfo[int(results[i].get("WMAgent_JobID"))] = tmpDict
+                
+            logging.info("Retrieved %i classAds" % len(jobInfo))
+            
+        return jobInfo, schedd
 
-                logging.info("Retrieved %i classAds" % len(jobInfo))
-                return jobInfo, schedd
+
+    def readCondorLog(self, job):
+        """
+        __readCondorLog
+        
+        If schedd fails to give information about a job
+        Check the condor log file for ths job
+        Extract Exit status
+
+        """
+        def LogToScheddExitCodeMap(x):
+            ### JobStatus shows the last status of the job
+            ### Get TriggerEventTypeNumber which is the current status of the job
+            ### Map it back to Schedd Status
+            ### Mapping done using the exit codes from condor website,
+            ### https://htcondor-wiki.cs.wisc.edu/index.cgi/wiki?p=MagicNumbers
+            LogExitCode={0:1,1:1,2:0,3:2,4:3,5:4,6:2,7:0,8:0,9:0,10:0,11:1,12:5,13:2}
+            n = LogExitCode.get(x) if LogExitCode.get(x) is not None else 100
+            return n
+
+
+        jobLogInfo={}
+        for joblog in os.listdir(job['cache_dir']):
+            if fnmatch.fnmatch(joblog, 'condor.*.*.log'):
+                logFile=os.path.join(job['cache_dir'],joblog)
+                tmpDict={}
+                try :
+                    logging.debug("Opening condor job log file: %s" % logFile)
+                    logfileobj=open(logFile,"r")
+                except :
+                    logging.debug('Cannot open condor job log file %s'% logFile)
+                else :
+                    cres=condor.read_events(logfileobj,1)
+                    ulog=list(cres)
+                    
+                    tmpDict["JobStatus"]=LogToScheddExitCodeMap(int(ulog[-1]["TriggerEventTypeNumber"]))
+                    tmpDict["submitTime"]=int(ulog[-1]["QDate"])
+                    tmpDict["runningTime"]=int(ulog[-1]["JobStartDate"])
+                    tmpDict["stateTime"]=int(ulog[-1]["EnteredCurrentStatus"])
+                    tmpDict["runningCMSSite"]=ulog[-1]["MachineAttrGLIDEIN_CMSSite0"]
+                    tmpDict["WMAgentID"]=int(ulog[-1]["WMAgent_JobID"])
+                    jobLogInfo[int(ulog[-1]["WMAgent_JobID"])] = tmpDict
+
+                logging.info("Retrieved %i Info from Condor Job Log file %s" % (len(jobLogInfo), logFile))
+                    
+        return jobLogInfo
+
+        

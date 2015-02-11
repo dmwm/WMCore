@@ -20,7 +20,7 @@ WMStats.Agents = function (couchData) {
         var currentTime = Math.round(new Date().getTime() / 1000);
         var dataList = this.getData();
         var agentPollingCycle = 600;
-        agentData.agentNumber = {error: 0, stable:0};
+        agentData.agentNumber = {error: 0, warning:0, stable:0};
         
         function getStatus(agentInfo) {
             var lastUpdatedDuration = currentTime - agentInfo.timestamp;
@@ -37,22 +37,22 @@ WMStats.Agents = function (couchData) {
 				agentData.agentNumber.error += 1;
                 report = {status: "error",
                           message:"Components or Thread down"};
-            } else if (agentInfo.drain_mode) {
-                agentData.agentNumber.error += 1;
-                report = {status: "error",
-                          message: "Draining Agent"};
             } else if (agentInfo.data_error && (agentInfo.data_error !== "ok")) {
             	agentData.agentNumber.error += 1;
             	report = {status: "error",
                           message: "Data collect error"};
-            } else if (agentInfo.disk_warning && (agentInfo.disk_warning.length > 0)) {
-            	agentData.agentNumber.error += 1;
-            	report = {status: "error",
-                          message: "disk is almost full" };
             } else if (agentInfo.couch_process_warning) {
             	agentData.agentNumber.error += 1;
             	report = {status: "error",
                           message: "couchdb process maxed out: " + agentInfo.couch_process_warning};
+            } else if (agentInfo.drain_mode) {
+                agentData.agentNumber.warning += 1;
+                report = {status: "warning",
+                          message: "Draining Agent"};
+            } else if (agentInfo.disk_warning && (agentInfo.disk_warning.length > 0)) {
+            	agentData.agentNumber.warning += 1;
+            	report = {status: "warning",
+                          message: "disk is almost full" };
             } else {
                 agentData.agentNumber.stable += 1;
                 report = {status: "ok", 

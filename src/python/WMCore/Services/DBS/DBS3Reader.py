@@ -189,32 +189,7 @@ class DBS3Reader:
 
         """
         return [ x['logical_file_name'] for x in self.dbs.listFiles(dataset = datasetPath)]
-
-    def _listValidDatasetFiles(self, datasetPath, onlyLFN = False):
-        """
-        _listValidDatasetFiles_
-
-        Get a list of only valid files for dataset
-        """
-        allFiles = self.dbs.listFiles(dataset = datasetPath, detail=True)
         
-        if onlyLFN:
-            return [x['logical_file_name'] for x in allFiles if x['is_file_valid']]
-        else:
-            return [x for x in allFiles if x['is_file_valid']]
-        
-
-    def _listValidBlockFiles(self, fileBlockName, onlyLFN = False):
-        """
-        _listValidBlockFiles_
-
-        Get a list of only valid files for dataset
-        """
-        allFiles = self.dbs.listFiles(block_name = fileBlockName, detail = True)
-        if onlyLFN:
-            return [x['logical_file_name'] for x in allFiles if x['is_file_valid']]
-        else:
-            return [x for x in allFiles if x['is_file_valid']]
 
     def listDatasetFileDetails(self, datasetPath, getParents=False):
         """
@@ -232,7 +207,7 @@ class DBS3Reader:
             }
 
         """
-        fileDetails = self._listValidDatasetFiles(datasetPath)
+        fileDetails = self.dbs.listFiles(dataset = datasetPath, validFileOnly = 1, detail=True)
         blocks = set() #the set of blocks of the dataset
         #Iterate over the files and prepare the set of blocks and a dict where the keys are the files
         files = {}
@@ -256,7 +231,7 @@ class DBS3Reader:
                 for p in parents:
                     files[p['logical_file_name']]['Parents'].extend(p['parent_logical_file_name'])
             #get the lumis
-            file_lumis = self.dbs.listFileLumis(block_name=blockName)
+            file_lumis = self.dbs.listFileLumis(block_name=blockName, validFileOnly = 1)
             for f in file_lumis:
                 if f['run_num'] in files[f['logical_file_name']]['Lumis']:
                     files[f['logical_file_name']]['Lumis'][f['run_num']].extend(f['lumi_section_num'])
@@ -276,7 +251,7 @@ class DBS3Reader:
         Return the list of lfns that are in the dataset
 
         """
-        allLfns = self._listValidDatasetFiles(datasetPath, onlyLFN = True)
+        allLfns = self.dbs.listFiles(dataset = datasetPath, validFileOnly = 1, detail = False)
         setOfAllLfns = set(allLfns)
         setOfKnownLfns = set(lfns)
         return list(setOfAllLfns.intersection(setOfKnownLfns))
@@ -289,7 +264,7 @@ class DBS3Reader:
         are *not* known by DBS
 
         """
-        allLfns = self._listValidDatasetFiles(datasetPath, onlyLFN = True)
+        allLfns = self.dbs.listFiles(dataset = datasetPath, validFileOnly = 1, detail = False)
         setOfAllLfns = set(allLfns)
         setOfKnownLfns = set(lfns)
         knownFiles = setOfAllLfns.intersection(setOfKnownLfns)
@@ -306,9 +281,9 @@ class DBS3Reader:
             self.checkDatasetPath(dataset)
         try:
             if block:
-                summary = self.dbs.listFileSummaries(block_name = block)
+                summary = self.dbs.listFileSummaries(block_name = block, validFileOnly = 1)
             else: # dataset case dataset shouldn't be None
-                summary = self.dbs.listFileSummaries(dataset = dataset)
+                summary = self.dbs.listFileSummaries(dataset = dataset, validFileOnly = 1)
         except dbsClientException, ex:
             msg = "Error in DBSReader.listDatasetSummary(%s, %s)\n" % (dataset, block)
             msg += "%s\n" % formatEx3(ex)
@@ -447,7 +422,7 @@ class DBS3Reader:
             raise DBSReaderError(msg % fileBlockName)
 
         try:
-            files = self._listValidBlockFiles(fileBlockName)
+            files = self.dbs.listFiles(block_name = fileBlockName, validFileOnly = 1, detail = True)
         except dbsClientException, ex:
             msg = "Error in "
             msg += "DBSReader.listFilesInBlock(%s)\n" % fileBlockName
@@ -456,7 +431,7 @@ class DBS3Reader:
 
         if lumis:
             try:
-                lumiLists = self.dbs.listFileLumis(block_name = fileBlockName)
+                lumiLists = self.dbs.listFileLumis(block_name = fileBlockName, validFileOnly = 1)
             except dbsClientException, ex:
                 msg = "Error in "
                 msg += "DBSReader.listFileLumis(%s)\n" % fileBlockName
@@ -522,7 +497,7 @@ class DBS3Reader:
             raise DBSReaderError(msg % fileBlockName)
 
         try:
-            lfns = self._listValidBlockFiles(fileBlockName, onlyLFN = True)
+            lfns =  self.dbs.listFiles(block_name = fileBlockName, validFileOnly = 1, detail = False)
             return lfns
         except dbsClientException, ex:
             msg = "Error in "

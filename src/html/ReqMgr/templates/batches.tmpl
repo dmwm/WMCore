@@ -1,0 +1,63 @@
+<header class="group">
+    <nav class="navbar navbar-left">
+        <h2>Batch interface</h2>
+    </nav>
+    <nav class="navbar navbar-right">
+        <ul>
+        <li><button class="btn btn-small btn-green" id="btn-manage" onclick="load('$base/batch')">Create</button></li>
+        </ul>
+    </nav>
+</header>
+<hr/>
+<script>
+var requests = $batches;
+</script>
+
+<div id="batches">
+
+$filter_sort_table
+<hr/>
+
+<div id="container"></div>
+</div> <!-- end of batches section -->
+
+<script>
+var _order=1; // global variable to keep track of asc/desc order on web UI
+function BuildList(tag, data) {
+    if(_order%2) {
+        data.reverse();
+    }
+    _order += 1;
+    $('container').innerHTML="";
+    var listContainer = document.createElement('div');
+    $('container').appendChild(listContainer);
+    var listElement = document.createElement("ul");
+    listContainer.appendChild(listElement);
+    data.forEach(function(item) {
+        var html = '<div>';
+        var name = item.Name;
+        var desc = item.Description;
+        var user = item.Creator;
+        var group = item.Group;
+        var bdate = item.Date;
+        var burl = '$base/batch?name='+name;
+        html += '<b>Batch:</b> <span class="record"><a href="'+burl+'">'+name+'</a></span><br/>';
+        html += '<b>Description:</b>' + desc + '&nbsp;';
+        html += '<b>Date:</b> <code>'+bdate+'</code>&nbsp;';
+        html += '<b>User:</b> '+user+'&nbsp;';
+        html += '<b>Group:</b> '+group;
+        html += '</div><hr/>'
+        var listItem = document.createElement("li");
+        listItem.innerHTML = html;
+        listElement.appendChild(listItem);
+    });
+    // change CSS
+    var items = document.getElementsByClassName('menu-item');
+    for (var i = 0; i < items.length; i++ ) {
+        items[i].className='menu-item';
+    }
+    tag.className='menu-item underline';
+}
+// Put data into container
+BuildList(document.getElementsByClassName('menu-item')[0], requests.filter(ByPattern).sort(ByDate));
+</script>

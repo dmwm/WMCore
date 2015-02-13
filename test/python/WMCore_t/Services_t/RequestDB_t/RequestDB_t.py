@@ -27,8 +27,9 @@ class RequestDBTest(unittest.TestCase):
                                 useDefault = False)
         dbName = 'requsetdb_t'
         self.testInit.setupCouch(dbName, *self.couchApps)
-        self.requestWriter = RequestDBWriter(self.testInit.couchUrl, dbName)
-        self.requestReader = RequestDBReader(self.testInit.couchUrl, dbName)
+        reqDBURL = "%s/%s" % (self.testInit.couchUrl, dbName)
+        self.requestWriter = RequestDBWriter(reqDBURL)
+        self.requestReader = RequestDBReader(reqDBURL)
         self.requestWriter.defaultStale = {}
         self.requestReader.defaultStale = {}
         return

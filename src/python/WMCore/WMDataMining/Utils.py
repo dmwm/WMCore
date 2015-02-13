@@ -25,7 +25,7 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
     analyticsServer = CouchServer(server)
     couchdb = analyticsServer.connectDatabase(database)
 
-    WMStats = WMStatsReader(wmstatsUrl)
+    WMStats = WMStatsReader(wmstatsUrl, reqmgrUrl, reqdbCouchApp = "ReqMgr")
 
     reqMgrServer, reqMgrDB = splitCouchServiceURL(reqmgrUrl)
 
@@ -45,7 +45,7 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
     else:
         checkStates = WMStatsReader.ACTIVE_STATUS
         jobInfoFlag = True
-    requests = WMStats.getRequestByStatus(checkStates, jobInfoFlag = jobInfoFlag)
+    requests = WMStats.getRequestByStatus(checkStates, jobInfoFlag = jobInfoFlag, legacyFormat = True)
 
     requestCollection = RequestInfoCollection(requests)
     result = requestCollection.getJSONData()

@@ -96,7 +96,7 @@ def minify(content):
 
 def menus():
     "Return dict of menus"
-    items = ['home', 'admin', 'create', 'approve', 'assign']
+    items = ['home', 'admin', 'create', 'approve', 'assign', 'batches']
     return items
 
 def request_attr(doc, attrs=None):
@@ -408,7 +408,7 @@ class ReqMgrService(TemplatedPage):
 
     @expose
     def requests(self, **kwds):
-        """Check status of requests"""
+        """Page showing requests"""
         if  not kwds:
             kwds = {}
         if  'status' not in kwds:
@@ -440,6 +440,53 @@ class ReqMgrService(TemplatedPage):
                 dataset=dataset, code=pprint.pformat(wdata))
         content = self.templatepage('search', content=winfo)
         return self.abs_page('request', content)
+
+    @expose
+    def batch(self, **kwds):
+        """batch page"""
+        # TODO: we need a template for batch attributes
+        #       and read it from separate area, like DASMaps
+        name = kwds.get('name', '')
+        batch = {}
+        if  name:
+#            batch = self.reqmgr.getBatchesByName(name)
+            batch = {'Name':'Batch1', 'Description': 'Bla-bla', 'Creator':'valya', 'Group':'test',
+                    'Workflows':['workflow1', 'workflow2'],
+                    'Attributes':{'HeavyIon':['true', 'false']}}
+        attributes = batch.get('Attributes', {})
+        workflows = batch.get('Workflows', [])
+        description = batch.get('Description', '')
+        creator = batch.get('Creator', self.user_dn())
+        content = self.templatepage('batch', name=name,
+                attributes=json2table(attributes, web_ui_names()),
+                workflows=workflows, creator=creator,
+                description=description)
+        return self.abs_page('batch', content)
+
+    @expose
+    def batches(self, **kwds):
+        """Page showing batches"""
+        if  not kwds:
+            kwds = {}
+        if  'name' not in kwds:
+            kwds.update({'name': ''})
+        sortby = kwds.get('sort', 'name')
+#        results = self.reqmgr.getBatchesByName(kwds['name'])
+        results = [
+                {'Name':'Batch1', 'Description': 'Bla-bla', 'Creator':'valya', 'Group':'test',
+                    'Workflows':['workflow1', 'workflow2'],
+                    'Date': 'Fri Feb 13 10:36:41 EST 2015',
+                    'Attributes':{'HeavyIon':['true', 'false']}},
+                {'Name':'Batch2', 'Description': 'lksdjflksjdf', 'Creator':'valya', 'Group':'test',
+                    'Workflows':['workflow1', 'workflow2'],
+                    'Date': 'Fri Feb 10 10:36:41 EST 2015',
+                    'Attributes':{'HeavyIon':['true', 'false']}},
+                   ]
+        docs = [r for r in sort(results, sortby)]
+        filter_sort = self.templatepage('filter_sort')
+        content = self.templatepage('batches', batches=docs, sort=sortby,
+                filter_sort_table=filter_sort)
+        return self.abs_page('batches', content)
 
     ### Aux methods ###
 

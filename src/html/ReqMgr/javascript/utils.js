@@ -293,6 +293,15 @@ function ByGroup(a, b) {
     }
     return 0;
 }
+function ByName(a, b) {
+    if (a.Name > b.Name) {
+        return 1;
+    }
+    if (a.Name < b.Name) {
+        return -1;
+    }
+    return 0;
+}
 function genColor(s) {
     var hash=md5(s);
     var color = '#'+hash.substr(0,6);

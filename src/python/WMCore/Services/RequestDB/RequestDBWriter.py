@@ -4,10 +4,10 @@ from WMCore.Database.CMSCouch import Document
 
 class RequestDBWriter(RequestDBReader):
 
-    def __init__(self, couchURL, dbName = None, couchapp = "ReqMgr"):
+    def __init__(self, couchURL, couchapp = "ReqMgr"):
         # set the connection for local couchDB call
         # inherited from WMStatsReader
-        self._commonInit(couchURL, dbName, couchapp)
+        self._commonInit(couchURL, couchapp)
         self._propertyNeedToBeEncoded = ["RequestTransition",
                                          "SiteWhitelist",
                                          "SiteBlacklist",

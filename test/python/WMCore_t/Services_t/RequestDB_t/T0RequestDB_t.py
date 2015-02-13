@@ -23,8 +23,9 @@ class T0RequestDBTest(unittest.TestCase):
                                 useDefault = False)
         dbName = 't0_requsetdb_t'
         self.testInit.setupCouch(dbName, *self.couchApps)
-        self.requestWriter = RequestDBWriter(self.testInit.couchUrl, dbName, self.couchApps[0])
-        self.requestReader = RequestDBReader(self.testInit.couchUrl, dbName, self.couchApps[0])
+        reqDBURL = "%s/%s" % (self.testInit.couchUrl, dbName)
+        self.requestWriter = RequestDBWriter(reqDBURL, self.couchApps[0])
+        self.requestReader = RequestDBReader(reqDBURL, self.couchApps[0])
         self.requestWriter.defaultStale = {}
         self.requestReader.defaultStale = {}
         return

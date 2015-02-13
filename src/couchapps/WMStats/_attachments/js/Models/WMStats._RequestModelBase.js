@@ -2,7 +2,7 @@ WMStats.namespace("_RequestModelBase");
 
 WMStats._RequestModelBase = function(initView, options) {
 
-    this._initialView = initView || 'requestByCampaignAndDate';
+    this._initialView = initView || 'bystatus';
     this._options = options || {'include_docs': true};
     this._data = null;
     this._trigger = "requestReady";

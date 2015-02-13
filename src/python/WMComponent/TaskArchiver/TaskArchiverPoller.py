@@ -234,7 +234,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                                                    couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
             self.centralCouchDBWriter = self.requestLocalCouchDB;
         else:
-            self.centralCouchDBWriter = WMStatsWriter(self.config.TaskArchiver.centralWMStatsURL)
+            self.centralCouchDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.centralRequestDBURL)
             self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
         # Start a couch server for getting job info
         # from the FWJRs for committal to archive
@@ -360,7 +360,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         centralCouchAlive = True
         try:
             #TODO: need to enable when reqmgr2 -wmstats is ready
-            #abortedWorkflows = self.reqmgrCouchDBWriter.workflowsByStatus(["aborted"], format = "dict");
+            #abortedWorkflows = self.reqmgrCouchDBWriter.getRequestByStatus(["aborted"], format = "dict");
             abortedWorkflows = self.centralCouchDBWriter.getRequestByStatus(["aborted"])
             forceCompleteWorkflows = self.centralCouchDBWriter.getRequestByStatus(["force-complete"]);
             

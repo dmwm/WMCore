@@ -86,13 +86,14 @@ models =["Models/WMStats._ModelBase.js",
          "Models/WMStats.JobDetailModel.js",
          "Models/WMStats.AgentModel.js",
          "Models/WMStats.WorkloadSummaryModel.js",
-         "Models/WMStats.RequestSearchModel.js",
          "Models/WMStats.HistoryModel.js"]
 
 t1_models =["Models/T1/WMStats.ActiveRequestModel.js",
-            "Models/T1/WMStats.ReqMgrRequestModel.js"]
+            "Models/T1/WMStats.ReqMgrRequestModel.js",
+            "Models/T1/WMStats.RequestSearchModel.js"]
 
-t0_models =["Models/T0/WMStats.ActiveRequestModel.js"]
+t0_models =["Models/T0/WMStats.ActiveRequestModel.js",
+            "Models/T0/WMStats.RequestSearchModel.js",]
 
 
 controller = ["Controller/WMStats.GenericController.js",

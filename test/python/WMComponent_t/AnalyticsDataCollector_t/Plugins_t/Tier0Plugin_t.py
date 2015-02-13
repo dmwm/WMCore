@@ -40,8 +40,8 @@ class Tier0PluginTest(unittest.TestCase):
         self.requestCouchDB = 'wmstats_plugin_t'
         self.testInit.setupCouch(self.requestCouchDB, 'T0Request')
         self.testDir = self.testInit.generateWorkDir()
-
-        self.requestDBWriter = RequestDBWriter(os.environ['COUCHURL'], self.requestCouchDB, couchapp="T0Request")
+        reqDBURL = "%s/%s" % (os.environ['COUCHURL'], self.requestCouchDB)
+        self.requestDBWriter = RequestDBWriter(reqDBURL, couchapp="T0Request")
         self.requestDBWriter._setNoStale()
         
         self.stateMap = {}

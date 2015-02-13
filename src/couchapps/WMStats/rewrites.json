@@ -44,38 +44,8 @@
   },
 
   {
-    "from": "_view/requestByCampaignAndDate",
-    "to": "../WMStatsErl/_view/requestByCampaignAndDate"
-  },
-
-  {
-    "from": "_view/requestByDate",
-    "to": "../WMStatsErl/_view/requestByDate"
-  },
-
-  {
-    "from": "_view/requestByInputDataset",
-    "to": "../WMStatsErl/_view/requestByInputDataset"
-  },
-
-  {
     "from": "_view/agentInfo",
     "to": "../WMStatsErl/_view/agentInfo"
-  },
-
-  {
-    "from": "_view/tier0Requests",
-    "to": "../WMStatsErl/_view/tier0Requests"
-  },
-
-  {
-    "from": "_view/requestByOutputDataset",
-    "to": "../WMStatsErl/_view/requestByOutputDataset"
-  },
-
-  {
-    "from": "_view/requestByPrepID",
-    "to": "../WMStatsErl/_view/requestByPrepID"
   },
 
   {

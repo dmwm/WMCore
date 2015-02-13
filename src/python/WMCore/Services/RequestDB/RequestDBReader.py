@@ -6,12 +6,12 @@ from WMCore.Wrappers.JsonWrapper import JSONEncoder
 
 class RequestDBReader():
 
-    def __init__(self, couchURL, dbName = None, couchapp = "ReqMgr"):
+    def __init__(self, couchURL, couchapp = "ReqMgr"):
         couchURL = sanitizeURL(couchURL)['url']
         # set the connection for local couchDB call
-        self._commonInit(couchURL, dbName, couchapp)
+        self._commonInit(couchURL, couchapp)
         
-    def _commonInit(self, couchURL, dbName, couchapp):
+    def _commonInit(self, couchURL, couchapp):
         """
         setting up comon variables for inherited class.
         inherited class should call this in their init function
@@ -22,11 +22,7 @@ class RequestDBReader():
             self.dbName = self.couchDB.name
             self.couchServer = CouchServer(self.couchURL)
         else:    
-            if dbName:
-                self.couchURL = couchURL
-                self.dbName = dbName
-            else:
-                self.couchURL, self.dbName = splitCouchServiceURL(couchURL)
+            self.couchURL, self.dbName = splitCouchServiceURL(couchURL)
             self.couchServer = CouchServer(self.couchURL)
             self.couchDB = self.couchServer.connectDatabase(self.dbName, False)
         self.couchapp = couchapp

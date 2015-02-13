@@ -1,7 +1,6 @@
 WMStats.namespace("ActiveRequestModel");
 WMStats.ActiveRequestModel = function() {
-    //var initView  = 'tier0Requests';
-    //var options = {'include_docs': true};
+
     var initView = 'bystatus'; 
     var options = {'keys': [
                             "new",

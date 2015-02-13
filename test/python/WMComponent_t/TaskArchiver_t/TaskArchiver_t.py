@@ -153,12 +153,14 @@ class TaskArchiverTest(unittest.TestCase):
         config.TaskArchiver.dashBoardUrl = 'http://dashboard43.cern.ch/dashboard/request.py/putluminositydata'
         config.TaskArchiver.workloadSummaryCouchDBName = "%s/workloadsummary" % self.databaseName
         config.TaskArchiver.workloadSummaryCouchURL    = config.JobStateMachine.couchurl
-        config.TaskArchiver.centralWMStatsURL          = '%s/wmagent_summary_central_t' % config.JobStateMachine.couchurl
         config.TaskArchiver.requireCouch               = True
         config.TaskArchiver.uploadPublishInfo = self.uploadPublishInfo
         config.TaskArchiver.uploadPublishDir  = self.uploadPublishDir
         config.TaskArchiver.userFileCacheURL = os.getenv('UFCURL', 'http://cms-xen38.fnal.gov:7725/userfilecache/')
         config.TaskArchiver.ReqMgrServiceURL = "https://cmsweb-dev.cern.ch/reqmgr/rest"
+        
+        config.component_("AnalyticsDataCollector")
+        config.AnalyticsDataCollector.centralRequestDBURL = '%s/reqmgrdb_t' % config.JobStateMachine.couchurl
 
         config.section_("ACDC")
         config.ACDC.couchurl                = config.JobStateMachine.couchurl

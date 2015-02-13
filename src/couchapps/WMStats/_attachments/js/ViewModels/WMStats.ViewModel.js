@@ -167,16 +167,16 @@ WMStats.ViewModel = (function (){
                 view = "allDocs";
                 options.key = searchStr;
             } else if (selectedSearch === 'outputdataset') {
-                view = "requestByOutputDataset";
+                view = "byoutputdataset";
                 options.key = searchStr;
             } else if (selectedSearch === 'inputdataset') {
-                view = "requestByInputDataset";
+                view = "byinputdataset";
                 options.key = searchStr;
             } else if (selectedSearch === 'prep_id') {
-                view = "requestByPrepID";
+                view = "byprepid";
                 options.key = searchStr;
             } else if (selectedSearch === 'request_date') {
-                view = "requestByDate";
+                view = "bydate";
                 var beginDate = $('input[name="dateRange1"]').val().split("/");
                 var endDate = $('input[name="dateRange2"]').val().split("/");
                 options.startkey = [Number(beginDate[0]), Number(beginDate[1]), Number(beginDate[2])];

@@ -8,7 +8,8 @@ WMStats.WorkloadSummary = function (couchData) {
                                      var dataRows = data.rows;
                                      var workloadSummary = [];
                                      for (var i in dataRows){
-                                         workloadSummary.push(dataRows[i].doc);
+                                     	 var wmstatsDoc = WMStats.Globals.convertRequestDocToWMStatsFormat(dataRows[i].doc);
+                                         workloadSummary.push(wmstatsDoc);
                                      }
                                      return workloadSummary;
                                  };

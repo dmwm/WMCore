@@ -1,6 +1,5 @@
 WMStats.namespace("ActiveRequestModel");
 WMStats.ActiveRequestModel = function() {
-    //var initView = 'requestByStatus'; 
     var initView = 'bystatus';
     var options = {'keys': [
                             "new",

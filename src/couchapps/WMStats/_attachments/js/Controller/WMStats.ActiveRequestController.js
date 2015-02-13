@@ -56,16 +56,17 @@ WMStats.namespace("ActiveRequestController");
     $(WMStats.Globals.Event).on(E.SWITCH_DB, 
         function(event, data) {
         	var initView, dbSource;
-        	if (WMStats.Globals.INIT_DB === "WMStats") {
-        		initView = 'requestByStatus';
-        	 	dbSource = WMStats.Couch;
-        	} else if (WMStats.Globals.INIT_DB === "ReqMgr") {
+        	if (WMStats.Globals.INIT_DB === "ReqMgr") {
         		initView = 'bystatus';
         	 	dbSource = WMStats.ReqMgrCouch;
         	} else if (WMStats.Globals.INIT_DB === "T0Request") {
         		initView = 'bystatus';
         	 	dbSource = WMStats.T0Couch;
+        	} else {
+        		initView = 'bystatus';
+        	 	dbSource = WMStats.ReqMgrCouch;
         	}
+        	
             WMStats.ActiveRequestModel.setInitView(initView);
             WMStats.ActiveRequestModel.setDBSource(dbSource);
 			WMStats.ActiveRequestModel.retrieveData();

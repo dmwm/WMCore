@@ -1,3 +1,29 @@
+1.0.3 to 1.0.4.pre3:
+  - Merge pull request #5612 from ticoann/fix_dependency
+  - add more dependency in reqmgr and workqueue
+  - 1.0.4.pre2
+  - Merge pull request #5611 from vkuznet/batches
+  - Code changes to support batch interface
+  - Merge pull request #5581 from julianbadillo/master
+  - Merge pull request #5603 from ticoann/valid_file_fix
+  - 1.0.4.pre1
+  - Merge pull request #5609 from ticoann/wmstats_cleanup2
+  - cleanup WMStats view and replace the all the calls
+  - Merge pull request #5606 from ticoann/couchdb_test
+  - change to warning for drain and disk space warning
+  - Merge pull request #5605 from tsarangi/issue4716
+  - Fix #5507, #5587, #4716, #4837
+  - Merge pull request #5604 from vkuznet/home-changes2
+  - Changes for home page
+  - get only valid files from dbs
+  - Merge pull request #5594 from ticoann/fix_valid_file
+  - Merge pull request #5599 from vkuznet/fix-order
+  - Fix order behavior on web UI; move filter_sort table into separate tempalte; made date asc order as default
+  - handle only valid files
+  - Create SavannahRequestQuery.py
+  - Update MigrationToGlobal.py
+  - Update RequestQuery.py
+
 1.0.3 to 1.0.4.pre2:
   - Merge pull request #5611 from vkuznet/batches
   - Code changes to support batch interface

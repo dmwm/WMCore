@@ -23,7 +23,9 @@ def remapDBS3Keys(data, stringify = False, **others):
                    'event_count' : 'NumberOfEvents', 'run_num' : 'RunNumber',
                    'file_size' : 'FileSize', 'block_size' : 'BlockSize',
                    'file_count' : 'NumberOfFiles', 'open_for_writing' : 'OpenForWriting',
-                   'logical_file_name' : 'LogicalFileName'}
+                   'logical_file_name' : 'LogicalFileName',
+                   'adler32': 'Adler32', 'check_sum': 'Checksum', 'md5': 'Md5',
+                   'block_name': 'BlockName','run_num': 'RunNumber', 'lumi_section_num': 'LumiSectionNumber'}
     mapping.update(others)
     format = lambda x: str(x) if stringify and type(x) == unicode else x
     for name, newname in mapping.iteritems():
@@ -452,12 +454,34 @@ class DBS3Reader:
             result.append(remapDBS3Keys(file, stringify = True))
         return result
 
-    def listFilesInBlockWithParents(self, fileBlockName):
+    def _getLumiList(self, lfn):
+        try:
+            lumiLists = self.dbs.listFileLumis(logical_file_name = lfn)
+        except dbsClientException, ex:
+            msg = "Error in "
+            msg += "DBSReader.listFileLumis(%s)\n" % lfn
+            msg += "%s\n" % formatEx3(ex)
+            raise DBSReaderError(msg)
+
+        lumiDict = {}
+        for lumisItem in lumiLists:
+            lumiDict.setdefault(lumisItem['logical_file_name'], [])
+            item = {}
+            item["RunNumber"] = lumisItem['run_num']
+            item['LumiSectionNumber'] = lumisItem['lumi_section_num']
+            lumiDict[lumisItem['logical_file_name']].append(item)
+        return lumiDict[lfn]
+        
+    def listFilesInBlockWithParents(self, fileBlockName, lumis = True):
         """
         _listFilesInBlockWithParents_
 
         Get a list of files in the named fileblock including
         the parents of that file.
+        
+        TODO: lumis can be false when lumi splitting is not required
+        However WMBSHelper expect file['LumiList'] to get the run number
+        so for now it will be always true.
 
         """
         if not self.blockExists(fileBlockName):
@@ -466,6 +490,7 @@ class DBS3Reader:
 
         try:
             files = self.dbs.listFileParents(block_name = fileBlockName)
+            fileDetails = self.listFilesInBlock(fileBlockName, lumis)
 
         except dbsClientException, ex:
             msg = "Error in "
@@ -474,13 +499,24 @@ class DBS3Reader:
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
 
-        result = []
+        parentsByLFN = {}
         for f in files:
-            result.append({'Block' : {'Name' : fileBlockName},
-                           'LogicalFileName' : f['logical_file_name'],
-                           'ParentList' : [{'LogicalFileName' : x} for x in f['parent_logical_file_name']]
-                           })
-        return result
+            for parentLFN in f['parent_logical_file_name']:
+                parentFileInfo =  self.dbs.listFiles(logical_file_name = parentLFN, detail = True)
+                # should return  only one but in case it supports multiple lfns as input.
+                parentList = []
+                for pf in parentFileInfo:
+                    dbsFile = remapDBS3Keys(pf, stringify = True)
+                    if lumis:
+                        dbsFile["LumiList"] = self._getLumiList(parentLFN)
+                    parentList.append(dbsFile)
+                        
+            parentsByLFN[f['logical_file_name']] = parentList
+            
+        for fileInfo in fileDetails:
+            fileInfo["ParentList"] = parentsByLFN[fileInfo['logical_file_name']]
+             
+        return fileDetails
 
 
     def lfnsInBlock(self, fileBlockName):

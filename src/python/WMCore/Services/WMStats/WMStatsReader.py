@@ -15,8 +15,8 @@ REQUEST_PROPERTY_MAP = {
            "Requestor": "requestor",
            "RequestType": "request_type",
            "DbsUrl": "dbs_url",
-           "SoftWareVersions": "cmssw",
-           "Outputdatasets": "outputdatasets",
+           "SoftwareVersions": "cmssw",
+           "OutputDatasets": "outputdatasets",
            "RequestTransition": "request_status", # Status: status,  UpdateTime: update_time
            "SiteWhitelist": "site_white_list",
            "Teams": "teams",

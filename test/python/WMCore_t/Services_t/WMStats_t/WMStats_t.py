@@ -80,7 +80,7 @@ class WMStatsTest(unittest.TestCase):
         production.setSiteWhitelist(['TEST_SITE'])
         properties = {"RequestPriority": spec1.priority(),
                       'SiteWhitelist': spec1.getTopLevelTask()[0].siteWhitelist(),
-                      'Outputdatasets': spec1.listOutputDatasets()}
+                      'OutputDatasets': spec1.listOutputDatasets()}
         result = self.reqDBWriter.updateRequestProperty(spec1.name(), properties)
         self.assertEquals(result, 'OK', 'update fail')
         
@@ -89,7 +89,7 @@ class WMStatsTest(unittest.TestCase):
         production.setTaskType("Merge")
         properties = {"RequestPriority": spec2.priority(),
                       'SiteWhitelist': spec2.getTopLevelTask()[0].siteWhitelist(),
-                      'Outputdatasets': spec2.listOutputDatasets()}
+                      'OutputDatasets': spec2.listOutputDatasets()}
         result = self.reqDBWriter.updateRequestProperty(spec2.name(), properties)
         self.assertEquals(result, 'Error: document not found')
 

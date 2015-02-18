@@ -10,12 +10,13 @@ WMStats.namespace('CategoryDetailList');
         if (reqDoc) {
             htmlstr += "<li><b>campaign:</b> " + reqDoc.campaign + "</li>";
             htmlstr += "<li><b>workflow:</b> " + WMStats.Utils.formatReqDetailUrl(reqDoc.workflow) + "</li>";
-            htmlstr += "<li><b>requetor:</b> " + reqDoc.requestor + "</li>";
+            htmlstr += "<li><b>requestor:</b> " + reqDoc.requestor + "</li>";
             htmlstr += "<li><b>request date:</b> " + reqDoc.request_date + "</li>";
             htmlstr += "<li><b>request type:</b> " + reqDoc.request_type + "</li>";
+            htmlstr += "<li><b>CMSSW:</b> " + reqDoc.cmssw + "</li>";
             htmlstr += "<li><b>user dn:</b> " + reqDoc.user_dn + "</li>";
-            htmlstr += "<li><b>vo role:</b> " + reqDoc.vo_role + "</li>";
-            htmlstr += "<li><b>vo group:</b> " + reqDoc.vo_group + "</li>";
+            //htmlstr += "<li><b>vo role:</b> " + reqDoc.vo_role + "</li>";
+            //htmlstr += "<li><b>vo group:</b> " + reqDoc.vo_group + "</li>";
             htmlstr += "<li><b>status:</b> " + WMStats.Utils.formatWorkloadSummarylUrl(reqDoc.workflow, 
                                                  reqDoc.request_status[reqDoc.request_status.length - 1].status) + "</li>";
             htmlstr += "<li><b>input dataset:</b> " + reqDoc.inputdataset + "</li>";

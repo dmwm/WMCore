@@ -313,7 +313,7 @@ class ResourceControlUpdater(BaseWorkerThread):
                                                 runningJobSlots = CPUBound)
         
         # Set thresholds for CPU bound task types
-        cpuTasks = ['Processing', 'Production', 'Analysis']
+        cpuTasks = ['Processing', 'Production', 'MultiProcessing', 'MultiProduction', 'Analysis']
         for task in cpuTasks:
             self.resourceControl.insertThreshold(siteName = siteName, taskType = task,
                                                  maxSlots = CPUBound, pendingSlots = taskCPUPending)

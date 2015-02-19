@@ -6,7 +6,6 @@ MySQL implementation of Jobs.GetFWJRTaskName
 """
 
 from WMCore.Database.DBFormatter import DBFormatter
-import logging
 
 class GetFWJRTaskName(DBFormatter):
     """

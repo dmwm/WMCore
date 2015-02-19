@@ -1,4 +1,3 @@
-s
 #!/usr/bin/env python
 """
 _GetFWJRTaskName_

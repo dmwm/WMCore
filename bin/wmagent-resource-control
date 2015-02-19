@@ -32,6 +32,8 @@ def getTaskTypes(tier0 = False):
                  "Skim",
                  "Production",
                  "Processing",
+                 "MultiProcessing",
+                 "MultiProduction",
                  "Analysis"]
 
     if tier0:

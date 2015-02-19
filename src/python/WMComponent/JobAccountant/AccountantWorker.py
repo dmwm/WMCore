@@ -76,18 +76,19 @@ class AccountantWorker(WMConnectionBase):
         self.jobCompleteInput        = self.daofactory(classname = "Jobs.CompleteInput")
         self.setBulkOutcome          = self.daofactory(classname = "Jobs.SetOutcomeBulk")
         self.getWorkflowSpec         = self.daofactory(classname = "Workflow.GetSpecAndNameFromTask")
-        self.getJobInfoByID         = self.daofactory(classname = "Jobs.LoadFromID")
-        self.getFullJobInfo         = self.daofactory(classname = "Jobs.LoadForErrorHandler")
+        self.getJobInfoByID          = self.daofactory(classname = "Jobs.LoadFromID")
+        self.getFullJobInfo          = self.daofactory(classname = "Jobs.LoadForErrorHandler")
+        self.getJobTaskNameAction    = self.daofactory(classname = "Jobs.GetFWJRTaskName")
 
-        self.dbsStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.SetStatus")
+        self.dbsStatusAction       = self.dbsDaoFactory(classname = "DBSBufferFiles.SetStatus")
         self.dbsParentStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.GetParentStatus")
-        self.dbsChildrenAction = self.dbsDaoFactory(classname = "DBSBufferFiles.GetChildren")
-        self.dbsCreateFiles    = self.dbsDaoFactory(classname = "DBSBufferFiles.Add")
-        self.dbsSetLocation    = self.dbsDaoFactory(classname = "DBSBufferFiles.SetLocationByLFN")
-        self.dbsInsertLocation = self.dbsDaoFactory(classname = "DBSBufferFiles.AddLocation")
-        self.dbsSetChecksum    = self.dbsDaoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
-        self.dbsSetRunLumi     = self.dbsDaoFactory(classname = "DBSBufferFiles.AddRunLumi")
-        self.dbsGetWorkflow    = self.dbsDaoFactory(classname = "ListWorkflow")
+        self.dbsChildrenAction     = self.dbsDaoFactory(classname = "DBSBufferFiles.GetChildren")
+        self.dbsCreateFiles        = self.dbsDaoFactory(classname = "DBSBufferFiles.Add")
+        self.dbsSetLocation        = self.dbsDaoFactory(classname = "DBSBufferFiles.SetLocationByLFN")
+        self.dbsInsertLocation     = self.dbsDaoFactory(classname = "DBSBufferFiles.AddLocation")
+        self.dbsSetChecksum        = self.dbsDaoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
+        self.dbsSetRunLumi         = self.dbsDaoFactory(classname = "DBSBufferFiles.AddRunLumi")
+        self.dbsGetWorkflow        = self.dbsDaoFactory(classname = "ListWorkflow")
 
         self.dbsLFNHeritage      = self.dbsDaoFactory(classname = "DBSBufferFiles.BulkHeritageParent")
 
@@ -217,11 +218,25 @@ class AccountantWorker(WMConnectionBase):
 
     def isTaskExistInFWJR(self, jobReport, jobStatus):
         """
-        TODO: fix it, if it doesn't exist
+        If taskName is not available in the FWJR, then tries to
+        recover it getting data from the SQL database.
         """
         if not jobReport.getTaskName():
-            msg = "Report to developers, Investigate currupted fwjr for %s job id %s" % (jobStatus, jobReport.getJobID())
-            raise AccountantWorkerException(msg)
+            logging.warning("Trying to recover a corrupted FWJR for a %s job with job id %s" % (jobStatus,
+                                                                                                jobReport.getJobID()))
+            jobInfo = self.getJobTaskNameAction.execute(jobId = jobReport.getJobID(),
+                                                        conn = self.getDBConn(),
+                                                        transaction = self.existingTransaction())
+
+            jobReport.setTaskName(jobInfo['taskName'])
+            jobReport.save(jobInfo['fwjr_path'])
+            if not jobReport.getTaskName():
+                msg = "Report to developers. Failed to recover corrupted fwjr for %s job id %s" % (jobStatus, 
+                                                                                                   jobReport.getJobID())
+                raise AccountantWorkerException(msg)
+            else:
+                logging.info("TaskName '%s' successfully recovered and added to fwjr id %s." % (jobReport.getTaskName(),
+                                                                                                jobReport.getJobID()))
         
     def __call__(self, parameters):
         """

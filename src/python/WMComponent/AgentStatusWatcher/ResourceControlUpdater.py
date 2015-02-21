@@ -98,27 +98,22 @@ class ResourceControlUpdater(BaseWorkerThread):
             logging.debug("Setting status and thresholds for all sites, site pending: %s%%, task pending: %s%%" % 
                           (str(self.pendingSlotsSitePercent), str(self.pendingSlotsTaskPercent))) 
             
-            if self.queueParams.get('DrainMode', False):
-                agentsNum = 1
-                logging.debug("This agent is in DrainMode, don't divide pending thresholds")
-                
+            # get number of agents working in the same team (not in DrainMode)
+            agentsByTeam = self.getAgentsByTeam()
+            if not agentsByTeam:
+                agentsNum = 5
+                logging.debug("agentInfo couch view is not available, don't divide pending thresholds")
             else:
-                # get number of agents working in the same team (not in DrainMode)
-                agentsByTeam = self.getAgentsByTeam()
-                if not agentsByTeam:
-                    agentsNum = 1
-                    logging.debug("agentInfo couch view is not available, don't divide pending thresholds")
-                else:
-                    self.agentsByTeam = agentsByTeam
-                    teams = self.teamNames.split(',')
-                    agentsCount = []
-                    for team in teams:
-                        if self.agentsByTeam[team] == 0:
-                            agentsCount.append(1)
-                        else:
-                            agentsCount.append(self.agentsByTeam[team])
-                    agentsNum = min(agentsCount) # If agent is in several teams, we choose the team with less agents
-                    logging.debug("Number of agents not in DrainMode running in the same team: %s" % str(agentsNum))
+                self.agentsByTeam = agentsByTeam
+                teams = self.teamNames.split(',')
+                agentsCount = []
+                for team in teams:
+                    if self.agentsByTeam[team] == 0:
+                        agentsCount.append(1)
+                    else:
+                        agentsCount.append(self.agentsByTeam[team])
+                agentsNum = min(agentsCount) # If agent is in several teams, we choose the team with less agents
+                logging.debug("Number of agents not in DrainMode running in the same team: %s" % str(agentsNum))
             
             # set site status and thresholds
             listSites = stateBySite.keys()

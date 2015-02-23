@@ -56,8 +56,8 @@ from WMCore.BossAir.Plugins.gLitePlugin          import getDefaultDelegation
 from WMCore.Credential.Proxy                     import Proxy
 from WMComponent.JobCreator.CreateWorkArea       import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller     import retrieveWMSpec
-from WMCore.Services.WMStats.WMStatsWriter       import WMStatsWriter
 from WMCore.Services.RequestManager.RequestManager import RequestManager
+from WMCore.Services.RequestDB.RequestDBWriter   import RequestDBWriter
 
 from WMCore.DataStructs.MathStructs.DiscreteSummaryHistogram import DiscreteSummaryHistogram
 from WMCore.DataStructs.MathStructs.ContinuousSummaryHistogram import ContinuousSummaryHistogram
@@ -229,10 +229,11 @@ class TaskArchiverPoller(BaseWorkerThread):
         
         if not self.useReqMgrForCompletionCheck:
             #sets the local monitor summary couch db
-            self.wmstatsCouchDB = WMStatsWriter(self.config.TaskArchiver.localWMStatsURL)
-            self.centralCouchDBWriter = self.wmstatsCouchDB;
+            self.requestLocalCouchDB = RequestDBWriter(self.config.AnalyticsDataCollector.localT0RequestDBURL, 
+                                                    couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
+            self.centralCouchDBWriter = self.requestLocalCouchDB;
         else:
-            self.centralCouchDBWriter = WMStatsWriter(self.config.TaskArchiver.centralWMStatsURL)
+            self.centralCouchDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.centralRequestDBURL)
             self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
         # Start a couch server for getting job info
         # from the FWJRs for committal to archive
@@ -358,10 +359,9 @@ class TaskArchiverPoller(BaseWorkerThread):
         centralCouchAlive = True
         try:
             #TODO: need to enable when reqmgr2 -wmstats is ready
-            #abortedWorkflows = self.reqmgrCouchDBWriter.workflowsByStatus(["aborted"], format = "dict");
-            abortedWorkflows = self.centralCouchDBWriter.workflowsByStatus(["aborted"], format = "dict")
-            forceCompleteWorkflows = self.centralCouchDBWriter.workflowsByStatus(["force-complete"], 
-                                                                                 format = "dict");
+            #abortedWorkflows = self.reqmgrCouchDBWriter.getRequestByStatus(["aborted"], format = "dict");
+            abortedWorkflows = self.centralCouchDBWriter.getRequestByStatus(["aborted"])
+            forceCompleteWorkflows = self.centralCouchDBWriter.getRequestByStatus(["force-complete"]);
             
         except Exception, ex:
             centralCouchAlive = False

@@ -7,6 +7,18 @@ import subprocess
 
 from StringIO import StringIO
 
+
+from WMCore.WMException import WMException
+
+class McMNoDataError(WMException):
+    """
+    _McMNoDataError_
+        McM responded but has no data for the request
+    """
+
+    def __init__(self):
+        WMException.__init__(self, 'McM responded correctly but has no data')
+
 class McM():
     def __init__(self, cert, key, url='https://cms-pdmv.cern.ch/mcm', tmpDir='/tmp'):
         self.url = url
@@ -20,7 +32,7 @@ class McM():
         process = subprocess.Popen(["cern-get-sso-cookie", "--cert", self.cert, "--key", self.key, "-u", self.url, "-o", self.cookieFile], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         strout = process.communicate()[0]
         if process.returncode != 0:
-            raise Exception(" FATAL -- could not generate SSO cookie\nError msg: %s" % (str(strout)))
+            raise RuntimeError(" FATAL -- could not generate SSO cookie\nError msg: %s" % (str(strout)))
         return self
 
     def __exit__(self, type, value, traceback):
@@ -46,30 +58,31 @@ class McM():
             c.setopt(c.COOKIEFILE, self.cookieFile)
             c.setopt(c.WRITEFUNCTION, b.write)
             c.perform()
-
-            body = b.getvalue()
-            res = json.loads(body)
-            c.close()
-            return res
+            if c.getinfo(pycurl.HTTP_CODE) != 200:
+                raise IOError
         except:
+            c.close()
             raise(IOError, 'Was not able to fetch or decode URL from McM')
 
+        body = b.getvalue()
+        res = json.loads(body)
+        c.close()
+
+        return res
+	
     def getHistory(self, prepID):
-        url = 'search?db_name=batches&contains=%s&get_raw' % prepID
         try:
+            url = 'search?db_name=batches&contains=%s&get_raw' % prepID
             res = self._getURL(url)
             history = res['rows'][0]['doc']['history']
             return history
-        except (IndexError, IOError):
-            return []
+        except IndexError:
+            raise McMNoDataError
 
     def getRequest(self, prepID):
-        try:
-            url = 'public/restapi/requests/get/%s' % prepID
-            res = self._getURL(url)
-            return res['results']
-        except IOError:
-            return {}
+        url = 'public/restapi/requests/get/%s' % prepID
+        res = self._getURL(url)
+        return res['results']
 
 if __name__ == '__main__':
     with McM(cert = '.globus/usercert.pem', key = '.globus/nopasskey.pem') as mcm:

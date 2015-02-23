@@ -3,15 +3,17 @@ from __future__ import division
 
 import cjson
 import copy
+import logging
 import pprint
 import time
-import logging
+import sys
+
 from datetime import datetime
 
 from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Database.CMSCouch import Document as CouchDoc
-from WMCore.Services.McM.McM import McM
+from WMCore.Services.McM.McM import McM, McMNoDataError
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfoCollection
 
@@ -84,22 +86,43 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
 
             if (not oldCouchDoc.has_key('mcmTotalEvents') or
                 not oldCouchDoc.has_key('mcmApprovalTime') or
-                (oldCouchDoc.get('mcmTotalEvents', 'Unknown') != 'Unknown'
-                 and oldCouchDoc.get('mcmApprovalTime', 'Unknown')  == 'Unknown')):
+                oldCouchDoc.get('mcmTotalEvents', 'Unknown') == 'Unknown' or
+                oldCouchDoc.get('mcmApprovalTime', 'Unknown') == 'Unknown'):
                 prepID = oldCouchDoc.get('prepID', None)
                 if prepID and nMCMCalls <= maxMCMCalls:
+                    # Get information from McM. Don't call too many times, can take a long time
                     nMCMCalls += 1
-                    mcmHistory = mcm.getHistory(prepID = prepID)
-                    mcmRequest = mcm.getRequest(prepID = prepID)
-                    report[wf].update({'mcmTotalEvents': mcmRequest.get('total_events', 'Unknown')})
+                    try:
+                        mcmHistory = mcm.getHistory(prepID = prepID)
+                        if not oldCouchDoc.has_key('mcmApprovalTime'):
+                            report[wf].update({'mcmApprovalTime':'NoMcMData'})
+                        for entry in mcmHistory:
+                            if entry['action'] == 'set status' and entry['step'] == 'announced':
+                                dateString = entry['updater']['submission_date']
+                                dt = datetime.strptime(dateString, '%Y-%m-%d-%H-%M')
+                                report[wf].update({'mcmApprovalTime':time.mktime(dt.timetuple())})
+                    except McMNoDataError:
+                        report[wf].update({'mcmApprovalTime':'NoMcMData'})
+                    except (RuntimeError, IOError):
+                        exc_type, exc_value, exc_traceback = sys.exc_info()
+                        log("ERROR: %s getting history from McM for PREP ID %s. May be transient and/or SSO problem." %
+                            (exc_type, prepID))
+                    except:
+                        exc_type, exc_value, exc_traceback = sys.exc_info()
+                        log("ERROR: %s getting history from McM for PREP ID %s. Unknown error." %
+                            (exc_type, prepID))
 
-                    if not oldCouchDoc.has_key('mcmApprovalTime'):
-                        report[wf].update({'mcmApprovalTime':'Unknown'})
-                    for entry in mcmHistory:
-                        if entry['action'] == 'set status' and entry['step'] == 'announced':
-                            dateString = entry['updater']['submission_date']
-                            dt = datetime.strptime(dateString, '%Y-%m-%d-%H-%M')
-                            report[wf].update({'mcmApprovalTime':time.mktime(dt.timetuple())})
+                    try:
+                        mcmRequest = mcm.getRequest(prepID = prepID)
+                        report[wf].update({'mcmTotalEvents': mcmRequest.get('total_events', 'NoMcMData')})
+                    except (RuntimeError, IOError):
+                        exc_type, exc_value, exc_traceback = sys.exc_info()
+                        log("ERROR: %s getting request from McM for PREP ID %s. May be transient and/or SSO problem." %
+                            (exc_type, prepID))
+                    except:
+                        exc_type, exc_value, exc_traceback = sys.exc_info()
+                        log("ERROR: %s getting request from McM for PREP ID %s. Unknown error." %
+                            (exc_type, prepID))
 
             # Basic parameters of the workflow
             priority = requests[wf]['priority']

@@ -1110,7 +1110,11 @@ class PyCondorPlugin(BasePlugin):
                 ### In this case print out the entire ClassAd
                 ### It happens that for the same job, runningCMSSite is also not published
                 if results[i].get("JobStartDate") is None :
+<<<<<<< Updated upstream
                     logging.info("THIS SHOULD NOT HAPPEN. LETS CHECK THE ENTIRE CLASSAD")
+=======
+                    logging.info("THIS SHOULD NOT HAVE HAPPENED... LETS SEE THE ENTIRE CLASSAD")
+>>>>>>> Stashed changes
                     logging.info("%s" % str(results[i]))
 
                 tmpDict={}

@@ -1111,7 +1111,11 @@ class PyCondorPlugin(BasePlugin):
                 ### It happens that for the same job, runningCMSSite is also not published
                 if results[i].get("JobStartDate") is None :
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                     logging.info("THIS SHOULD NOT HAPPEN. LETS CHECK THE ENTIRE CLASSAD")
+=======
+                    logging.info("THIS SHOULD NOT HAVE HAPPENED... LETS SEE THE ENTIRE CLASSAD")
+>>>>>>> Stashed changes
 =======
                     logging.info("THIS SHOULD NOT HAVE HAPPENED... LETS SEE THE ENTIRE CLASSAD")
 >>>>>>> Stashed changes

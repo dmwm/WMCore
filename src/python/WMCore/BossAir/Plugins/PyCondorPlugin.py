@@ -627,28 +627,21 @@ class PyCondorPlugin(BasePlugin):
                         completeList.append(job)
 
                     #Check if we have a valid status time
+                    #Do not catch exception here, Wait for next polling cycle
                     if not job['status_time']:
                         if job['status'] == 'Running':
-                            try:
-                                job['status_time'] = int(jobAd.get('runningTime', 0))
-                            except ValueError, ex:
-                                job['status_time'] = 0
+                            job['status_time'] = int(jobAd.get('runningTime', 0))
 
-                        job['location'] = jobAd.get('runningCMSSite', None)
-                        if job['location'] is None:
-                            logging.debug('Something is not right here, a job (%s) is running with no CMS site' % str(jobAd))
+                            # Check location for THIS running Job
+                            job['location'] = jobAd.get('runningCMSSite', None)
+                            if job['location'] is None:
+                                logging.debug('Something IS NOT right here, a job (%s) is running with no CMS site' % str(jobAd))
 
-                        if job['status'] == 'Idle':
-                            try:
-                                job['status_time'] = int(jobAd.get('submitTime', 0))
-                            except ValueError, ex:
-                                job['status_time'] = 0
+                        elif job['status'] == 'Idle':
+                            job['status_time'] = int(jobAd.get('submitTime', 0))
                         else:
-                            try:
-                                job['status_time'] = int(jobAd.get('stateTime', 0))
-                            except ValueError, ex:
-                                job['status_time'] = 0
-
+                            job['status_time'] = int(jobAd.get('stateTime', 0))
+                            
                         changeList.append(job)
                     runningList.append(job) 
             else:
@@ -678,26 +671,21 @@ class PyCondorPlugin(BasePlugin):
                     completeList.append(job)
 
                 #Check if we have a valid status time
+                #Do not catch exception here, wait for the next polling cycle
                 if not job['status_time']:
                     if job['status'] == 'Running':
-                        try:
-                            job['status_time'] = int(jobAd.get('runningTime', 0))
-                        except ValueError, ex:
-                            job['status_time'] = 0
-                        # If we transitioned to running then check the site we are running at
+                        job['status_time'] = int(jobAd.get('runningTime', 0))
+
+                        # Check location for THIS running Job
                         job['location'] = jobAd.get('runningCMSSite', None)
                         if job['location'] is None:
-                            logging.debug('Something is not right here, a job (%s) is running with no CMS site' % str(jobAd))
+                            logging.debug('Something IS NOT right here, a job (%s) is running with no CMS site' % str(jobAd))
+
                     elif job['status'] == 'Idle':
-                        try:
-                            job['status_time'] = int(jobAd.get('submitTime', 0))
-                        except ValueError, ex:
-                            job['status_time'] = 0
+                        job['status_time'] = int(jobAd.get('submitTime', 0))
                     else:
-                        try:
-                            job['status_time'] = int(jobAd.get('stateTime', 0))
-                        except ValueError, ex:
-                            job['status_time'] = 0
+                        job['status_time'] = int(jobAd.get('stateTime', 0))
+                    
                     changeList.append(job)
 
                 runningList.append(job)
@@ -1118,10 +1106,19 @@ class PyCondorPlugin(BasePlugin):
             return None, None
         else:
             for i in range(0, len(results)):
+                
+                ## For some strange race condition, schedd sometimes does not publish StatDate for a Running Job
+                ## Get the entire classad for such a job
+                ## Do not crash WMA, wait for next polling cycle to get all the info.
+                if results[i].get("JobStatus")==2 and results[i].get("JobStartDate") is None :
+                    logging.info("THIS SHOULD NOT HAPPEN. JobStartDate is MISSING from the CLASSAD.")
+                    logging.info("Could be caused by some race condition. Wait for the next Polling Cycle")
+                    logging.debug("%s" % str(results[i]))
+                
                 tmpDict={}
                 tmpDict["JobStatus"]=int(results[i].get("JobStatus"))
                 tmpDict["stateTime"]=int(results[i].get("EnteredCurrentStatus"))
-                tmpDict["runningTime"]=results[i].get("JobStartDate")
+                tmpDict["runningTime"]=int(results[i].get("JobStartDate")) if results[i].get("JobStartDate") is not None else 0
                 tmpDict["submitTime"]=int(results[i].get("QDate"))
                 tmpDict["DESIRED_Sites"]=results[i].get("DESIRED_Sites")
                 tmpDict["ExtDESIRED_Sites"]=results[i].get("ExtDESIRED_Sites")

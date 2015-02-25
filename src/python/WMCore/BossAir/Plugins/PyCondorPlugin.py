@@ -1112,6 +1112,9 @@ class PyCondorPlugin(BasePlugin):
                                   )
             results = list(itobj)
             logging.debug("Finish: Retrieving classAds using Condor Python XQuery")
+            NoneElements = [ j for j in results if j is None ]
+            if len(NoneElements) != 0 :
+                logging.info("Some elements in the classAds have None Type:  %s" % str(NoneElements))
         except :
             msg = "Query to condor schedd failed in PyCondorPlugin"
             logging.debug(msg)
@@ -1121,7 +1124,7 @@ class PyCondorPlugin(BasePlugin):
                 tmpDict={}
                 tmpDict["JobStatus"]=int(results[i].get("JobStatus"))
                 tmpDict["stateTime"]=int(results[i].get("EnteredCurrentStatus"))
-                tmpDict["runningTime"]=results[i].get("JobStartDate")
+                tmpDict["runningTime"]=int(results[i].get("JobStartDate"))
                 tmpDict["submitTime"]=int(results[i].get("QDate"))
                 tmpDict["DESIRED_Sites"]=results[i].get("DESIRED_Sites")
                 tmpDict["ExtDESIRED_Sites"]=results[i].get("ExtDESIRED_Sites")

@@ -59,7 +59,8 @@ class RequestDBReader():
         return
     
                 
-    def _formatCouchData(self, data, key = "id", detail = True, filterCouch = True):
+    def _formatCouchData(self, data, key = "id", detail = True, filterCouch = True, 
+                         returnDict = False):
         result = {}
         for row in data['rows']:
             if row.has_key('error'):
@@ -69,8 +70,8 @@ class RequestDBReader():
                     self._filterCouchInfo(row["doc"])
                 result[row[key]] = row["doc"]
             else:
-                result[row[key]] = None
-        if detail:
+                result[row[key]] = row["value"]
+        if detail or returnDict:
             return result
         else:
             return result.keys()
@@ -156,8 +157,17 @@ class RequestDBReader():
 
         return requestInfo
     
-    def getRequestByCouchView(self, view, options, keys = []):
+    def getRequestByCouchView(self, view, options, keys = [], returnDict = True):
         options.setdefault("include_docs", True)
         data = self._getCouchView(view, options, keys)
-        requestInfo = self._formatCouchData(data)
+        requestInfo = self._formatCouchData(data, returnDict)
+        return requestInfo
+    
+    def getStatusAndTypeByRequest(self, requestNames):
+        if isinstance(requestNames, basestring):
+            requestNames = [requestNames]
+        if len(requestNames) == 0:
+            return {}
+        data = self._getCouchView("byrequest", {}, requestNames)
+        requestInfo = self._formatCouchData(data, returnDict = False)
         return requestInfo

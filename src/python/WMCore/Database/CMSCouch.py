@@ -294,6 +294,32 @@ class Database(CouchDBRequests):
             uri += '?' + urllib.urlencode({'rev' : rev})
         return Document(id = id, inputDict = self.get(uri))
 
+    def getPrevisousRevision(self, doc_id, numberBefore = 1):
+        """
+        :param: doc_id, couch document id
+        :param: numberBefore: previous revision, 1 means one previous revision, 2 means 2 doucments eariler.
+                       special case 0 means the first revision.
+        
+        :return: previous revision document specified by numberBefore
+          
+        """
+        uri = '/%s/%s?revs=true&open_revs=all' % (self.name, urllib.quote_plus(doc_id))
+        revisionRecord = self.get(uri)
+        rev = revisionRecord[0]['ok']['_revisions']
+        
+        if numberBefore == 0:
+            revNum = 1
+            revID = rev['start'] - 1
+        else:
+            revNum = rev['start'] - numberBefore
+            revID = rev['ids'][numberBefore]
+        preRev = "%s-%s" % (revNum, revID)
+        
+        if doc_id != revisionRecord[0]['ok']['_id']:
+            raise CouchError("revision record doesn match", revisionRecord[0]['ok']['_id'], doc_id)
+        
+        return self.document(doc_id, preRev)
+    
     def updateDocument(self, doc_id, design, update_func, fields={}, useBody=False):
         """
         Call the update function update_func defined in the design document

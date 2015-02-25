@@ -1120,7 +1120,8 @@ class PyCondorPlugin(BasePlugin):
             for i in range(0, len(results)):
 
                 if results[i].get("JobStartDate") is None :
-                    logging.debug("%s" % str(results[i]))
+                    logging.info("THIS SHOULD NOT HAPPEN. LETS CHECK THE ENTIRE CLASSAD")
+                    logging.info("%s" % str(results[i]))
 
                 tmpDict={}
                 tmpDict["JobStatus"]=int(results[i].get("JobStatus"))

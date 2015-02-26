@@ -539,32 +539,22 @@ class SetupCMSSWPset(ScriptInterface):
 
         self.fixupProcess()
 
-        # This is probably overly complex since enabled and numberOfCores > 1 both convey the same thing
-        if self.step.data.application.multicore.enabled:
-            numCores = self.step.data.application.multicore.numberOfCores
-        else:
-            numCores = 1
+        try:
+            if int(self.step.data.application.multicore.numberOfCores) > 1:
+                numCores = int(self.step.data.application.multicore.numberOfCores)
+                options = getattr(self.process, "options", None)
+                if options == None:
+                    self.process.options = cms.untracked.PSet()
+                    options = getattr(self.process, "options")
 
-        if numCores == "auto": # This should never happen
-            raise NotImplementedError("We no longer support automatic detection of the number of cores.")
-        else:
-            numCores = int(numCores)
-
-        if numCores > 1:
-            options = getattr(self.process, "options", None)
-            if options == None:
-                self.process.options = cms.untracked.PSet()
-                options = getattr(self.process, "options")
-
-
-            options.numberOfThreads = cms.untracked.uint32(numCores)
-            options.numberOfStreams = cms.untracked.uint32(0)        # For now, same as numCores
+                options.numberOfThreads = cms.untracked.uint32(numCores)
+                options.numberOfStreams = cms.untracked.uint32(0)        # For now, same as numCores
+        except AttributeError:
+                print "No value for numberOfCores. Not setting"
 
         psetTweak = getattr(self.step.data.application.command, "psetTweak", None)
         if psetTweak != None:
             self.applyPSetTweak(psetTweak, self.fixupDict)
-
-
 
         # Apply task level tweaks
         taskTweak = makeTaskTweak(self.step.data)

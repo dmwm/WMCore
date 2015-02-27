@@ -91,10 +91,10 @@ class WMWorkloadHelper(PersistencyHelper):
 
     def requestType(self):
         return self.data.requestType
-    
+
     def setRequestType(self, requestType):
         self.data.requestType = requestType
-        
+
     def getInitialJobCount(self):
         """
         _getInitialJobCount_
@@ -628,8 +628,7 @@ class WMWorkloadHelper(PersistencyHelper):
             for stepName in task.listAllStepNames():
                 stepHelper = task.getStepHelper(stepName)
 
-                if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
+                if stepHelper.stepType() == "CMSSW":
                     for outputModuleName in stepHelper.listOutputModules():
                         outputModule = stepHelper.getOutputModule(outputModuleName)
                         filterName = getattr(outputModule, "filterName", None)
@@ -705,8 +704,7 @@ class WMWorkloadHelper(PersistencyHelper):
                 for stepName in task.listAllStepNames():
                     stepHelper = task.getStepHelper(stepName)
 
-                    if stepHelper.stepType() == "CMSSW" or \
-                           stepHelper.stepType() == "MulticoreCMSSW":
+                    if stepHelper.stepType() == "CMSSW":
                         cmsswHelper = stepHelper.getTypeHelper()
                         cmsswHelper.setDatasetName(datasetName)
 
@@ -901,8 +899,8 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Set the prepID to for all the tasks below
         """
-        
-        taskIterator = self.taskIterator() 
+
+        taskIterator = self.taskIterator()
         for task in taskIterator:
             task.setPrepID(prepID)
         self.data.properties.prepID = prepID
@@ -1138,8 +1136,7 @@ class WMWorkloadHelper(PersistencyHelper):
                 if not getattr(stepHelper.data.output, "keep", True):
                     continue
 
-                if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
+                if stepHelper.stepType() == "CMSSW":
                     for outputModuleName in stepHelper.listOutputModules():
                         # Only consider non-transient output
                         outputModule = stepHelper.getOutputModule(outputModuleName)
@@ -1175,8 +1172,7 @@ class WMWorkloadHelper(PersistencyHelper):
         for task in taskIterator:
             for stepName in task.listAllStepNames():
                 stepHelper = task.getStepHelper(stepName)
-                if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
+                if stepHelper.stepType() == "CMSSW":
                     pileupSection = stepHelper.getPileup()
                     if pileupSection is None: continue
                     dbsUrl = stepHelper.data.dbsUrl
@@ -1209,8 +1205,7 @@ class WMWorkloadHelper(PersistencyHelper):
                 if not getattr(stepHelper.data.output, "keep", True):
                     continue
 
-                if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
+                if stepHelper.stepType() == "CMSSW":
                     if stepHelper.listOutputModules():
                         taskList.append(task.getPathName())
                         break
@@ -1563,8 +1558,7 @@ class WMWorkloadHelper(PersistencyHelper):
                 #Tell any CMSSW step to ignore the output modules
                 for stepName in task.listAllStepNames():
                     stepHelper = task.getStepHelper(stepName)
-                    if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
+                    if stepHelper.stepType() == "CMSSW":
                         stepHelper.setIgnoredOutputModules(badModules)
             #Go deeper in the tree
             self.ignoreOutputModules(badModules, task)
@@ -1588,8 +1582,7 @@ class WMWorkloadHelper(PersistencyHelper):
             for stepName in task.listAllStepNames():
                 stepHelper = task.getStepHelper(stepName)
 
-                if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
+                if stepHelper.stepType() == "CMSSW":
                     if cmsswVersion != None:
                         if scramArch != None:
                             stepHelper.cmsswSetup(cmsswVersion = cmsswVersion,
@@ -1616,7 +1609,7 @@ class WMWorkloadHelper(PersistencyHelper):
             for stepName in task.listAllStepNames():
 
                 stepHelper = task.getStepHelper(stepName)
-                if stepHelper.stepType() != "CMSSW" and stepHelper.stepType() != "MulticoreCMSSW":
+                if stepHelper.stepType() != "CMSSW":
                     continue
                 version = stepHelper.getCMSSWVersion()
                 if not version in versions:
@@ -1702,16 +1695,16 @@ class WMWorkloadHelper(PersistencyHelper):
         for task in self.getTopLevelTask():
             return task.inputLocationFlag()
         return False
-    
+
     def validateArgument(self, schema):
         specClass = loadSpecClassByType(self.requestType())
         argumentDefinition = specClass.getWorkloadArguments()
         validateArgumentsUpdate(schema, argumentDefinition)
         return
-    
+
     def _checkKeys(self, kwargs, keys):
         """
-        check whether list of keys exist in the kwargs 
+        check whether list of keys exist in the kwargs
         if no keys exist return False
         if all keys exist return True
         if partial keys exsit raise Exception
@@ -1729,54 +1722,54 @@ class WMWorkloadHelper(PersistencyHelper):
         else:
             #TODO raise proper exception
             raise Exception("not all the key is specified %s" % keys)
-         
+
     def updateArguments(self, kwargs, wildcardSites = {}):
         """
         set up all the argument related to assigning request.
         args are validated before update.
         assignment is common for all different types spec.
         """
-        
+
         specClass = loadSpecClassByType(self.requestType())
         argumentDefinition = specClass.getWorkloadArguments()
         setArgumentsNoneValueWithDefault(kwargs, argumentDefinition)
-        
+
         if self._checkKeys(kwargs, ["SiteWhitelist", "SiteBlacklist"]):
-            self.setSiteWildcardsLists(siteWhitelist = kwargs["SiteWhitelist"], 
+            self.setSiteWildcardsLists(siteWhitelist = kwargs["SiteWhitelist"],
                                        siteBlacklist = kwargs["SiteBlacklist"],
                                        wildcardDict = wildcardSites)
         #FIXME not validated
         if self._checkKeys(kwargs, ["MergedLFNBase", "UnmergedLFNBase"]):
             self.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
-        
+
         if self._checkKeys(kwargs, ["MinMergeSize", "MaxMergeSize", "MaxMergeEvents"]):
             self.setMergeParameters(int(kwargs["MinMergeSize"]),
                                     int(kwargs["MaxMergeSize"]),
                                     int(kwargs["MaxMergeEvents"]))
-        
+
         # Set ProcessingVersion and AcquisitionEra, which could be json encoded dicts
         # it should be processed once LFNBase are set
         if self._checkKeys(kwargs, "ProcessingVersion"):
             self.setProcessingVersion(kwargs["ProcessingVersion"])
         if self._checkKeys(kwargs, "AcquisitionEra"):
             self.setAcquisitionEra(kwargs["AcquisitionEra"])
-        if self._checkKeys(kwargs, "ProcessingString"):    
+        if self._checkKeys(kwargs, "ProcessingString"):
             self.setProcessingString(kwargs["ProcessingString"])
-        
-        if self._checkKeys(kwargs, ["MaxRSS", "MaxVSize", "SoftTimeout", "GracePeriod"]):              
+
+        if self._checkKeys(kwargs, ["MaxRSS", "MaxVSize", "SoftTimeout", "GracePeriod"]):
             self.setupPerformanceMonitoring(int(kwargs["MaxRSS"]),
                                           int(kwargs["MaxVSize"]),
                                           int(kwargs["SoftTimeout"]),
                                           int(kwargs["GracePeriod"]))
-        
+
         # Check whether we should check location for the data
         if self._checkKeys(kwargs, "useSiteListAsLocation"):
             self.setLocationDataSourceFlag()
 
         # Set phedex subscription information
-        
-        if self._checkKeys(kwargs, ["CustodialSites", "NonCustodialSites", 
-                                    "AutoApproveSubscriptionSites", 
+
+        if self._checkKeys(kwargs, ["CustodialSites", "NonCustodialSites",
+                                    "AutoApproveSubscriptionSites",
                                     "CustodialSubType", "SubscriptionPriority"]):
             self.setSubscriptionInformationWildCards(wildcardDict = wildcardSites,
                                         custodialSites = kwargs["CustodialSites"],
@@ -1786,26 +1779,26 @@ class WMWorkloadHelper(PersistencyHelper):
                                         priority = kwargs["SubscriptionPriority"])
 
         # Block closing information
-        if self._checkKeys(kwargs, ["BlockCloseMaxWaitTime", "BlockCloseMaxFiles", 
+        if self._checkKeys(kwargs, ["BlockCloseMaxWaitTime", "BlockCloseMaxFiles",
                                     "BlockCloseMaxEvents", "BlockCloseMaxSize"]):
             self.setBlockCloseSettings(kwargs["BlockCloseMaxWaitTime"],
                                        kwargs["BlockCloseMaxFiles"],
-                                       kwargs["BlockCloseMaxEvents"], 
+                                       kwargs["BlockCloseMaxEvents"],
                                        kwargs["BlockCloseMaxSize"])
 
         if self._checkKeys(kwargs, "DashboardActivity"):
             self.setDashboardActivity(kwargs["DashboardActivity"])
-        
+
 
         return kwargs
-    
-    
+
+
     def loadSpecFromCouch(self, couchurl, requestName):
         """
         This depends on PersitencyHelper.py saveCouch (That method better be decomposed)
         """
         return self.load("%s/%s/spec" % (couchurl, requestName))
-    
+
 
     def setTaskPropertiesFromWorkload(self):
         """
@@ -1884,7 +1877,7 @@ class WMWorkload(ConfigSection):
         #  worklaod spec type
         self.section_("request_type")
         self.requestType = ""
-        
+
         self.sandbox = None
         self.initialJobCount = 0
 

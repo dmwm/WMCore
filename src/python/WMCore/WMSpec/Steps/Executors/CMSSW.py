@@ -65,8 +65,6 @@ class CMSSW(Executor):
         if hasattr(self.step, "pileup"):
             self.stepSpace.getFromSandbox("pileupconf.json")
 
-        # if step is multicore Enabled, add the multicore setup
-        # that generates the input file manifest and per process splitting
         stepHelper = WMStepHelper(self.step)
 
         # add in ths scram env PSet manip script whatever happens
@@ -106,12 +104,10 @@ class CMSSW(Executor):
 
 
         multicoreSettings = self.step.application.multicore
-        multicoreEnabled  = multicoreSettings.enabled
-        numberOfCores = 1
-        if multicoreEnabled:
-            numberOfCores = multicoreSettings.numberOfCores
-            logging.info("Multitheaded CMSSW configured for %s cores" % numberOfCores)
-
+        try:
+            logging.info("CMSSW configured for %s cores" % multicoreSettings.numberOfCores)
+        except AttributeError:
+            logging.info("No value set for multicore.numberOfCores")
 
         logging.info("Executing CMSSW step")
 

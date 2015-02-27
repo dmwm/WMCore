@@ -660,30 +660,6 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertTrue(myReport.taskSuccessful(ignoreString = 'cmsRun'))
         return
 
-    def testMultiCoreReport(self):
-        """
-        _testMultiCoreReport_
-
-        Verify that multicore reports can be json encoded and uploaded to couch.
-        """
-        couchdb = CouchServer(os.environ["COUCHURL"])
-        fwjrdatabase = couchdb.connectDatabase("report_t/fwjrs")
-
-        self.mcPath = os.path.join(getTestBase(),
-                                   "WMCore_t/FwkJobReport_t/MulticoreReport.pkl")
-        myReport = Report()
-        myReport.unpersist(self.mcPath)
-
-        fwjrDocument = {"_id": "303-0",
-                        "jobid": 303,
-                        "retrycount": 0,
-                        "fwjr": myReport.__to_json__(None),
-                        "type": "fwjr"}
-
-        fwjrdatabase.queue(fwjrDocument, timestamp = True)
-        fwjrdatabase.commit()
-        return
-
     def testStripReport(self):
         """
         _testStripReport_

@@ -202,7 +202,6 @@ class JobSubmitterTest(unittest.TestCase):
             testJob["siteBlacklist"] = bl
             testJob["siteWhitelist"] = wl
             testJob['priority'] = 101
-            testJob['multicoreEnabled'] = False
             testJob['numberOfCores'] = 1
             jobCache = os.path.join(cacheDir, 'Sub_%i' % (sub), 'Job_%i' % (index))
             os.makedirs(jobCache)

@@ -858,8 +858,7 @@ class WMTaskHelper(TreeHelper):
                 if not getattr(stepHelper.data.output, "keep", True):
                     continue
 
-                if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
+                if stepHelper.stepType() == "CMSSW":
                     for outputModuleName in stepHelper.listOutputModules():
                         outputModule = stepHelper.getOutputModule(outputModuleName)
                         outputDataset = "/%s/%s/%s" % (outputModule.primaryDataset,
@@ -1309,13 +1308,13 @@ class WMTaskHelper(TreeHelper):
         # if prepID doesn exist set it, if exist ignore.
         if not self.getPrepID() and prepID:
             self.data.prepID = prepID
-        
+
         prepID = self.getPrepID()
         # set child prepid
         if prepID:
             for task in self.childTaskIterator():
                 task.setPrepID(prepID)
-    
+
     def getPrepID(self):
         """
         _getPrepID_
@@ -1323,7 +1322,7 @@ class WMTaskHelper(TreeHelper):
         Get the prepID for the workflow
         """
         return getattr(self.data, 'prepID', None)
-    
+
 class WMTask(ConfigSectionTree):
     """
     _WMTask_

@@ -1,8 +1,51 @@
-import time
-import logging
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
-from WMCore.Wrappers.JsonWrapper import JSONEncoder
+from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
+
+REQUEST_PROPERTY_MAP = {
+           "_id": "_id",
+           "InputDataset": "inputdataset",
+           "PrepID": "prep_id",
+           "Group": "group",
+           "RequestDate": "request_date",
+           "Campaign": "campaign",
+           "RequestName": "workflow",
+           "RequestorDN": "user_dn",
+           "RequestPriority": "priority",
+           "Requestor": "requestor",
+           "RequestType": "request_type",
+           "DbsUrl": "dbs_url",
+           "SoftWareVersions": "cmssw",
+           "Outputdatasets": "outputdatasets",
+           "RequestTransition": "request_status", # Status: status,  UpdateTime: update_time
+           "SiteWhitelist": "site_white_list",
+           "Teams": "teams",
+           "TotalEstimatedJobs": "total_jobs",
+           "TotalInputEvents": "input_events",
+           "TotalInputLumis": "input_lumis",
+           "TotalInputFiles": "input_num_files",
+           "Run": "run",
+           # Status and UpdateTime is under "RequestTransition"
+           "Status": "status",
+           "UpdateTime": "update_time"
+        }
+
+def convertToLegacyFormat(requestDoc):
+    converted = {}
+    for key, value in requestDoc.items():
+        
+        if key == "RequestTransition":
+            newValue = []
+            for transDict in value:
+                newItem = {}
+                for transKey, transValue in transDict.items():
+                    newItem[REQUEST_PROPERTY_MAP.get(transKey, transKey)] = transValue
+                    newValue.append(newItem)
+            value = newValue
+        
+        converted[REQUEST_PROPERTY_MAP.get(key, key)] = value
+            
+    return converted
 
 class WMStatsReader():
     
@@ -23,21 +66,22 @@ class WMStatsReader():
                     "aborted",
                     "rejected"]
 
-    def __init__(self, couchURL, dbName = None):
+    def __init__(self, couchURL, reqdbURL = None, reqdbCouchApp = "ReqMgr"):
         couchURL = sanitizeURL(couchURL)['url']
         # set the connection for local couchDB call
-        self._commonInit(couchURL, dbName)
+        self._commonInit(couchURL)
+        if reqdbURL:
+            self.reqDB = RequestDBReader(reqdbURL)
+        else:
+            self.reqDB = None
         
-    def _commonInit(self, couchURL, dbName):
+    def _commonInit(self, couchURL):
         """
         setting up comon variables for inherited class.
         inherited class should call this in their init function
         """
-        if dbName:
-            self.couchURL = couchURL
-            self.dbName = dbName
-        else:
-            self.couchURL, self.dbName = splitCouchServiceURL(couchURL)
+        
+        self.couchURL, self.dbName = splitCouchServiceURL(couchURL)
         self.couchServer = CouchServer(self.couchURL)
         self.couchDB = self.couchServer.connectDatabase(self.dbName, False)
         self.couchapp = "WMStats"
@@ -50,12 +94,18 @@ class WMStatsReader():
         if not options.has_key('stale'):
             options.update(self.defaultStale)
         return options
-            
-    def _updateReuestInfoWithJobInfo(self, requestInfo):
-        if len(requestInfo.keys()) != 0:
-            requestAndAgentKey = self._getRequestAndAgent(requestInfo.keys())
+    
+    def getLatestJobInfoByRequests(self, requestNames):
+        jobInfoByRequestAndAgent = {}
+        if len(requestNames) > 0:
+            requestAndAgentKey = self._getRequestAndAgent(requestNames)
             jobDocIds = self._getLatestJobInfo(requestAndAgentKey)
             jobInfoByRequestAndAgent = self._getAllDocsByIDs(jobDocIds)
+        return jobInfoByRequestAndAgent
+                    
+    def _updateRequestInfoWithJobInfo(self, requestInfo):
+        if len(requestInfo.keys()) != 0:
+            jobInfoByRequestAndAgent = self.getLatestJobInfoByRequests(requestInfo.keys())
             self._combineRequestAndJobData(requestInfo, jobInfoByRequestAndAgent)
             
     def _getCouchView(self, view, options, keys = []):
@@ -72,7 +122,10 @@ class WMStatsReader():
         for row in data['rows']:
             if row.has_key('error'):
                 continue
-            result[row[key]] = row["doc"]
+            if row.has_key("doc"):
+                result[row[key]] = row["doc"]
+            else:
+                result[row[key]] = None
         return result
     
     def _combineRequestAndJobData(self, requestData, jobData):
@@ -122,37 +175,15 @@ class WMStatsReader():
            "agent_url":"vocms231.cern.ch:9999",
            "type":"agent_request"}}
         """
-        for row in jobData["rows"]:
-            # condition checks if documents are deleted between calls.
-            # just ignore in that case
-            if row["doc"]:
-                jobInfo = requestData[row["doc"]["workflow"]]
-                jobInfo.setdefault("AgentJobInfo", {}) 
-                jobInfo["AgentJobInfo"][row["doc"]["agent_url"]] = row["doc"]
-    
-            
-    def _getRequestByNames(self, requestNames, detail = True):
-        """
-        'status': list of the status
-        """
-        options = {}
-        options["include_docs"] = detail
-        result = self.couchDB.allDocs(options, requestNames)
-        return result
+        if jobData:
+            for row in jobData["rows"]:
+                # condition checks if documents are deleted between calls.
+                # just ignore in that case
+                if row["doc"]:
+                    jobInfo = requestData[row["doc"]["workflow"]]
+                    jobInfo.setdefault("AgentJobInfo", {}) 
+                    jobInfo["AgentJobInfo"][row["doc"]["agent_url"]] = row["doc"]
         
-    def _getRequestByStatus(self, statusList, detail = True, limit = None, skip = None):
-        """
-        'status': list of the status
-        """
-        options = {}
-        options["include_docs"] = detail
-        if limit != None:
-            options["limit"] = limit
-        if limit != None:
-            options["skip"] = skip
-        keys = statusList or WMStatsReader.ACTIVE_STATUS
-        return self._getCouchView("requestByStatus", options, keys)
-    
     def _getRequestAndAgent(self, filterRequest = None):
         """
         returns the [['request_name', 'agent_url'], ....]
@@ -185,6 +216,8 @@ class WMStatsReader():
         keys is [id, ....]
         returns document
         """
+        if len(ids) == 0:
+            return None
         options = {}
         options["include_docs"] =  include_docs
         result = self.couchDB.allDocs(options, ids)
@@ -221,24 +254,6 @@ class WMStatsReader():
                     response[team] += 1
         return response
     
-    def workflowsByStatus(self, statusList, format = "list"):
-        """
-        just return the workflow name for the given status
-        need to be depricated
-        """
-        result = self._getRequestByStatus(statusList, detail = False)
-
-        if format == "dict":
-            workflowDict = {}
-            for item in result["rows"]:
-                workflowDict[item["id"]] = None
-            return workflowDict
-        else:
-            workflowList = []
-            for item in result["rows"]:
-                workflowList.append(item["id"])
-            return workflowList
-    
     def getDBInstance(self):
         return self.couchDB
     
@@ -249,25 +264,40 @@ class WMStatsReader():
             return {'error_message': str(ex)}
     
     def getRequestByNames(self, requestNames, jobInfoFlag = False):
-        data = self._getRequestByNames(requestNames, True)
+        """
+        To use this function reqDBURL need to be set when wmstats initialized.
+        This will be deplicated so please don use this. 
+        """
+        requestInfo = self.reqDB.getRequestByNames(requestNames, True)
 
-        requestInfo = self._formatCouchData(data)
         if jobInfoFlag:
             # get request and agent info
-            self._updateReuestInfoWithJobInfo(requestInfo)
+            self._updateRequestInfoWithJobInfo(requestInfo)
         return requestInfo
     
     def getActiveData(self, jobInfoFlag = False):
         
         return self.getRequestByStatus(WMStatsReader.ACTIVE_STATUS, jobInfoFlag)
     
-    def getRequestByStatus(self, statusList, jobInfoFlag = False, limit = None, skip = None):
+    def getRequestByStatus(self, statusList, jobInfoFlag = False, limit = None, skip = None, 
+                           legacyFormat = False):
         
-        data = self._getRequestByStatus(statusList, True, limit, skip)
-        requestInfo = self._formatCouchData(data)
-
+        """
+        To use this function reqDBURL need to be set when wmstats initialized.
+        This will be deplicated so please don use this.
+        If legacyFormat is True convert data to old wmstats format from current reqmgr format.
+        Shouldn't be set to True unless existing code breaks  
+        """
+        
+        requestInfo = self.reqDB.getRequestByStatus(statusList, True, limit, skip)
+        
+        if legacyFormat:
+            # convert the format to wmstas old format
+            for requestName, doc in requestInfo.items():
+                requestInfo[requestName] = convertToLegacyFormat(doc)
+                
         if jobInfoFlag:
             # get request and agent info
-            self._updateReuestInfoWithJobInfo(requestInfo)
+            self._updateRequestInfoWithJobInfo(requestInfo)
         return requestInfo
     

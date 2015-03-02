@@ -1065,8 +1065,7 @@ class PyCondorPlugin(BasePlugin):
             jdl.append('request_disk = %d\n' % int(job['estimatedDiskUsage']))
 
         # Set up JDL for multithreaded jobs
-        # In the future hope to remove multicoreEnabled setting and just key off of nCores
-        if job.get('multicoreEnabled', False) or job.get('numberOfCores', 1) > 1:
+        if job.get('numberOfCores', 1) > 1:
             jdl.append('machine_count = 1\n')
             jdl.append('request_cpus = %s\n' % job.get('numberOfCores', 1))
 

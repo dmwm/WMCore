@@ -18,5 +18,5 @@ TypesList = [
     "MonteCarloFromGEN",
     "TaskChain",
     "PrivateMC",
-    "DQMHarverst"
+    "DQMHarvest"
     ]

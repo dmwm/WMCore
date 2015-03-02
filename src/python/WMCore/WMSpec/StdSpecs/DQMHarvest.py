@@ -1,5 +1,6 @@
-from WMCore.Lexicon import dataset
+from WMCore.Lexicon import dataset, block
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
+from WMCore.WMSpec.WMWorkloadTools import makeList
 
 class DQMHarvestWorkloadFactory(StdBase):
     """
@@ -83,7 +84,24 @@ class DQMHarvestWorkloadFactory(StdBase):
         baseArgs.update(reqMgrArgs)
         specArgs = {"RequestType" : {"default" : "DQMHarvest"},
                     "InputDataset" : {"default" : None, "optional" : False,
-                                      "validate" : dataset}
+                                      "validate" : dataset},
+                    "DataTier" : {"default" : "DQMIO"},
+                    "UnmergedLFNBase" : {"default" : "/store/unmerged"},
+                    "MergedLFNBase" : {"default" : "/store/results"},
+                    "MinMergeSize" : {"default" : 2 * 1024 * 1024 * 1024, "type" : int,
+                                      "validate" : lambda x : x > 0},
+                    "MaxMergeSize" : {"default" : 4 * 1024 * 1024 * 1024, "type" : int,
+                                      "validate" : lambda x : x > 0},
+                    "MaxMergeEvents" : {"default" : 100000, "type" : int,
+                                        "validate" : lambda x : x > 0},
+                    "BlockBlacklist" : {"default" : [], "type" : makeList,
+                                        "validate" : lambda x: all([block(y) for y in x])},
+                    "BlockWhitelist" : {"default" : [], "type" : makeList,
+                                        "validate" : lambda x: all([block(y) for y in x])},
+                    "RunBlacklist" : {"default" : [], "type" : makeList, 
+                                      "validate" : lambda x: all([int(y) > 0 for y in x])},
+                    "RunWhitelist" : {"default" : [], "type" : makeList,
+                                      "validate" : lambda x: all([int(y) > 0 for y in x])}
                     }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)

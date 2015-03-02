@@ -48,7 +48,8 @@ class ResourceControlUpdater(BaseWorkerThread):
         # agent teams (for dynamic threshold) and queueParams (drain mode)
         self.teamNames = config.Agent.teamName
         self.queueParams = config.WorkQueueManager.queueParams
-        
+        self.agentsNumByTeam = getattr(config.AgentStatusWatcher, 'defaultAgentsNumByTeam', 5)
+                
         # only SSB sites
         self.onlySSB = config.AgentStatusWatcher.onlySSB
         
@@ -58,6 +59,7 @@ class ResourceControlUpdater(BaseWorkerThread):
 
         # switch this component on/off
         self.enabled = getattr(config.AgentStatusWatcher, 'enabled', True)
+       
         
     def setup(self, parameters):
         """
@@ -104,28 +106,23 @@ class ResourceControlUpdater(BaseWorkerThread):
             logging.debug("Setting status and thresholds for all sites, site pending: %s%%, task pending: %s%%" % 
                           (str(self.pendingSlotsSitePercent), str(self.pendingSlotsTaskPercent))) 
             
-            if self.queueParams.get('DrainMode', False):
-                agentsNum = 1
-                logging.debug("This agent is in DrainMode, don't divide pending thresholds")
-                
+        
+            # get number of agents working in the same team (not in DrainMode)
+            agentsByTeam = self.getAgentsByTeam()
+            if not agentsByTeam:
+                logging.debug("agentInfo couch view is not available, use previous agent count %s" % self.agentsNumByTeam)
             else:
-                # get number of agents working in the same team (not in DrainMode)
-                agentsByTeam = self.getAgentsByTeam()
-                if not agentsByTeam:
-                    agentsNum = 1
-                    logging.debug("agentInfo couch view is not available, don't divide pending thresholds")
-                else:
-                    self.agentsByTeam = agentsByTeam
-                    teams = self.teamNames.split(',')
-                    agentsCount = []
-                    for team in teams:
-                        if self.agentsByTeam[team] == 0:
-                            agentsCount.append(1)
-                        else:
-                            agentsCount.append(self.agentsByTeam[team])
-                    agentsNum = min(agentsCount) # If agent is in several teams, we choose the team with less agents
-                    logging.debug("Number of agents not in DrainMode running in the same team: %s" % str(agentsNum))
-            
+                self.agentsByTeam = agentsByTeam
+                teams = self.teamNames.split(',')
+                agentsCount = []
+                for team in teams:
+                    if self.agentsByTeam[team] == 0:
+                        agentsCount.append(1)
+                    else:
+                        agentsCount.append(self.agentsByTeam[team])
+                self.agentsNumByTeam = min(agentsCount) # If agent is in several teams, we choose the team with less agents
+                logging.debug("Number of agents not in DrainMode running in the same team: %s" % str(self.agentsNumByTeam))
+        
             # set site status and thresholds
             listSites = stateBySite.keys()
             if self.forcedSiteList:
@@ -140,14 +137,14 @@ class ResourceControlUpdater(BaseWorkerThread):
                 if site in currentSites:
                     sitestate = stateBySite.get(site,'Normal')
                     if site not in slotsCPU or site not in slotsIO:
-                        pluginResponse = self.updateSiteInfo(site, sitestate, 0, 0, agentsNum)
+                        pluginResponse = self.updateSiteInfo(site, sitestate, 0, 0, self.agentsNumByTeam)
                         if not pluginResponse: 
                             continue
                         logging.warn('Setting site %s to %s, forcing CPUBound: 0, IOBound: 0 due to missing information in SSB' % 
                                  (site, sitestate))
                         continue
                     
-                    pluginResponse = self.updateSiteInfo(site, sitestate, slotsCPU[site], slotsIO[site], agentsNum)
+                    pluginResponse = self.updateSiteInfo(site, sitestate, slotsCPU[site], slotsIO[site], self.agentsNumByTeam)
                     if not pluginResponse:
                         continue
                     logging.info('Setting site %s to %s, CPUBound: %s, IOBound: %s' % 
@@ -158,7 +155,7 @@ class ResourceControlUpdater(BaseWorkerThread):
             # if onlySSB sites or forcedSiteList, force to down all the sites not in SSB/forcedSiteList
             if self.onlySSB or self.forcedSiteList:
                 for site in set(currentSites).difference(set(listSites)):
-                    pluginResponse = self.updateSiteInfo(site, 'Down', 0, 0)
+                    pluginResponse = self.updateSiteInfo(site, 'Down', 0, 0, self.agentsNumByTeam)
                     if not pluginResponse:
                         continue
                     logging.info('Only SSBsites/forcedSiteList, forcing site %s to Down, CPUBound: 0, IOBound: 0' % site)
@@ -278,7 +275,7 @@ class ResourceControlUpdater(BaseWorkerThread):
         else:
             return None
 
-    def updateSiteInfo(self, siteName, state, CPUBound, IOBound, agentsNum = 1):
+    def updateSiteInfo(self, siteName, state, CPUBound, IOBound, agentsNum):
         """
         _updateSiteInfo_
     

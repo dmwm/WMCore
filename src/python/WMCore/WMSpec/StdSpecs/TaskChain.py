@@ -464,7 +464,7 @@ class TaskChainWorkloadFactory(StdBase):
                                        taskConf.get("FilterEfficiency")
 
         if taskConf["EventsPerJob"] is None:
-            taskConf["EventsPerJob"] = (8.0 * 3600.0)/(taskConf.get("TimePerEvent", self.timePerEvent))
+            taskConf["EventsPerJob"] = int((8.0 * 3600.0)/(taskConf.get("TimePerEvent", self.timePerEvent)))
         if taskConf["EventsPerLumi"] is None:
             taskConf["EventsPerLumi"] = taskConf["EventsPerJob"]
 

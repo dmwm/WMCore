@@ -180,6 +180,7 @@ class DashboardInfo():
         self.jobStarted     = False
         self.failedStep     = None
         self.lastStep       = None
+        self.maxCores       = 1     # Accumulated over individual steps
         self.WrapperWCTime  = 0
         self.WrapperCPUTime = 0
 
@@ -223,6 +224,7 @@ class DashboardInfo():
         data['taskId']         = self.taskName
         data['jobId']          = self.jobName
         data['ExeEnd']         = self.lastStep
+        data['NCores']         = self.maxCores
         data['WrapperCPUTime'] = self.WrapperCPUTime
         data['WrapperWCTime']  = self.WrapperWCTime
         data['JobExitCode']    = self.jobSuccess
@@ -314,6 +316,8 @@ class DashboardInfo():
         if times['stopTime'] != None and times['startTime'] != None:
             data['%d_ExeWCTime' % self.stepCount] = \
                                        times['stopTime'] - times['startTime']
+            data['%d_NCores' % self.stepCount] = helper.getNumberOfCores()
+            self.maxCores = max(self.maxCores, helper.getNumberOfCores())
 
         step = stepReport.retrieveStep(step = helper.name())
 

@@ -1,3 +1,41 @@
+1.0.3 to 1.0.4:
+  - Merge pull request #5640 from tsarangi/issue5636_Again
+  - Fix #5636. Add debug statement. Remove exception and wait for next polling cycle
+  - Merge pull request #5623 from amaltaro/heal-corruptedFwjr
+  - add self-healing for corrupted FWJR
+  - 1.0.4.pre4
+  - Merge pull request #5614 from ticoann/dbs_parent_fix
+  - dbs parent call fix
+  - Merge pull request #5620 from ticoann/wmstats_fix_outputds
+  - fix wmstats cmssw and output dataset filter and acdc sw upload
+  - Merge pull request #5618 from amaltaro/multiProcessing-task
+  - Properly set taskType for ReReco spec
+  - 1.0.4.pre3
+  - Merge pull request #5612 from ticoann/fix_dependency
+  - add more dependency in reqmgr and workqueue
+  - 1.0.4.pre2
+  - Merge pull request #5611 from vkuznet/batches
+  - Code changes to support batch interface
+  - Merge pull request #5581 from julianbadillo/master
+  - Merge pull request #5603 from ticoann/valid_file_fix
+  - 1.0.4.pre1
+  - Merge pull request #5609 from ticoann/wmstats_cleanup2
+  - cleanup WMStats view and replace the all the calls
+  - Merge pull request #5606 from ticoann/couchdb_test
+  - change to warning for drain and disk space warning
+  - Merge pull request #5605 from tsarangi/issue4716
+  - Fix #5507, #5587, #4716, #4837
+  - Merge pull request #5604 from vkuznet/home-changes2
+  - Changes for home page
+  - get only valid files from dbs
+  - Merge pull request #5594 from ticoann/fix_valid_file
+  - Merge pull request #5599 from vkuznet/fix-order
+  - Fix order behavior on web UI; move filter_sort table into separate tempalte; made date asc order as default
+  - handle only valid files
+  - Create SavannahRequestQuery.py
+  - Update MigrationToGlobal.py
+  - Update RequestQuery.py
+
 1.0.3 to 1.0.4.pre4:
   - Merge pull request #5614 from ticoann/dbs_parent_fix
   - dbs parent call fix

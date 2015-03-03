@@ -1497,27 +1497,3 @@ class Report:
                     delattr(source.files, "file%d" % fileNum)
                 source.files.fileCount = 0
         return
-
-
-def addFiles(file1, file2):
-    """
-    _addFiles_
-
-    Combine two files. Used for multicore report building
-
-    # This is almost certainly not used anymore (for forked CMSSW)
-    #ToDo: parents & locations.
-    """
-    file1['events'] += file2['events']
-    f1runs = {}
-    [ f1runs.__setitem__(x.run, x) for x in file1['runs']]
-    for r in file2['runs']:
-        if r.run not in f1runs.keys():
-            file1['runs'].add(r)
-        else:
-            thisRun = f1runs[r.run]
-            if r != thisRun:
-                for l in r.lumis:
-                    if l not in thisRun.lumis:
-                        thisRun.lumis.append(l)
-    return

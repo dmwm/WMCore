@@ -14,7 +14,7 @@ import select
 import logging
 import time
 
-from WMCore.FwkJobReport.Report import addAttributesToFile, addFiles
+from WMCore.FwkJobReport.Report import addAttributesToFile
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 from WMCore.WMRuntime.Tools.Scram import Scram

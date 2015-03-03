@@ -2,6 +2,11 @@ from WMCore.REST.Error import *
 import math, re
 import numbers 
 
+def return_message(main_err, custom_err):
+    if custom_err:
+        return custom_err
+    return main_err
+
 def _arglist(argname, kwargs):
     val = kwargs.get(argname, None)
     if val == None:
@@ -11,15 +16,15 @@ def _arglist(argname, kwargs):
     else:
         return val
 
-def _check_rx(argname, val):
+def _check_rx(argname, val, custom_err = None):
     if not isinstance(val, basestring):
-        raise InvalidParameter("Incorrect '%s' parameter" % argname)
+        raise InvalidParameter(return_message("Incorrect '%s' parameter" % argname, custom_err))
     try:
         return re.compile(val)
     except:
-        raise InvalidParameter("Invalid '%s' parameter" % argname)
+        raise InvalidParameter(return_message("Incorrect '%s' parameter" % argname, custom_err))
 
-def _check_str(argname, val, rx):
+def _check_str(argname, val, rx, custom_err = None):
     """
     convert unicode to str first to support cherrypy 3.2.2
     This is not really check val is ASCII.
@@ -28,48 +33,48 @@ def _check_str(argname, val, rx):
         try:
             val = str(val)
         except:
-            raise InvalidParameter("Invalid '%s' parameter" % argname)
+            raise InvalidParameter(return_message("Invalid '%s' parameter" % argname, custom_err))
     if not isinstance(val, basestring) or not rx.match(val):
-        raise InvalidParameter("Incorrect '%s' parameter" % argname)
+        raise InvalidParameter(return_message("Incorrect '%s' parameter" % argname, custom_err))
     return val
 
-def _check_ustr(argname, val, rx):
+def _check_ustr(argname, val, rx, custom_err = None):
     if isinstance(val, str):
         try:
             val = unicode(val, "utf-8")
         except:
-            raise InvalidParameter("Incorrect '%s' parameter" % argname)
+            raise InvalidParameter(return_message("Incorrect '%s' parameter" % argname, custom_err))
     if not isinstance(val, basestring) or not rx.match(val):
-        raise InvalidParameter("Incorrect '%s' parameter" % argname)
+        raise InvalidParameter(return_message("Incorrect '%s' parameter" % argname, custom_err))
     return val
 
-def _check_num(argname, val, bare, minval, maxval):
+def _check_num(argname, val, bare, minval, maxval, custom_err = None):
     if not isinstance(val, numbers.Integral) and (not isinstance(val, basestring) or (bare and not val.isdigit())):
-        raise InvalidParameter("Incorrect '%s' parameter" % argname)
+        raise InvalidParameter(return_message("Incorrect '%s' parameter" % argname, custom_err))
     try:
         n = int(val)
         if (minval != None and n < minval) or (maxval != None and n > maxval):
-            raise InvalidParameter("Parameter '%s' value out of bounds" % argname)
+            raise InvalidParameter(return_message("Parameter '%s' value out of bounds" % argname, custom_err))
         return n
     except InvalidParameter:
         raise
     except:
-        raise InvalidParameter("Invalid '%s' parameter" % argname)
+        raise InvalidParameter(return_message("Invalid '%s' parameter" % argname, custom_err))
 
-def _check_real(argname, val, special, minval, maxval):
+def _check_real(argname, val, special, minval, maxval, custom_err = None):
     if not isinstance(val, numbers.Number) and not isinstance(val, basestring):
-        raise InvalidParameter("Incorrect '%s' parameter" % argname)
+        raise InvalidParameter(return_message("Incorrect '%s' parameter" % argname, custom_err))
     try:
         n = float(val)
         if not special and (math.isnan(n) or math.isinf(n)):
-            raise InvalidParameter("Parameter '%s' improper value" % argname)
+            raise InvalidParameter(return_message("Parameter '%s' improper value" % argname, custom_err))
         if (minval != None and n < minval) or (maxval != None and n > maxval):
-            raise InvalidParameter("Parameter '%s' value out of bounds" % argname)
+            raise InvalidParameter(return_message("Parameter '%s' value out of bounds" % argname, custom_err))
         return n
     except InvalidParameter:
         raise
     except:
-        raise InvalidParameter("Invalid '%s' parameter" % argname)
+        raise InvalidParameter(return_message("Invalid '%s' parameter" % argname, custom_err))
 
 def _validate_one(argname, param, safe, checker, optional, *args):
     val = param.kwargs.get(argname, None)
@@ -85,7 +90,7 @@ def _validate_all(argname, param, safe, checker, *args):
     if argname in param.kwargs:
         del param.kwargs[argname]
 
-def validate_rx(argname, param, safe, optional = False):
+def validate_rx(argname, param, safe, optional = False, custom_err = None):
     """Validates that an argument is a valid regexp.
 
     Checks that an argument named `argname` exists in `param.kwargs`,
@@ -96,9 +101,9 @@ def validate_rx(argname, param, safe, optional = False):
     If `optional` is True, the argument is not required to exist in
     `param.kwargs`; None is then inserted into `safe.kwargs`. Otherwise
     a missing value raises an exception."""
-    _validate_one(argname, param, safe, _check_rx, optional)
+    _validate_one(argname, param, safe, _check_rx, optional, custom_err)
 
-def validate_str(argname, param, safe, rx, optional = False):
+def validate_str(argname, param, safe, rx, optional = False, custom_err = None):
     """Validates that an argument is a string and matches a regexp.
 
     Checks that an argument named `argname` exists in `param.kwargs`
@@ -113,9 +118,9 @@ def validate_str(argname, param, safe, rx, optional = False):
     If `optional` is True, the argument is not required to exist in
     `param.kwargs`; None is then inserted into `safe.kwargs`. Otherwise
     a missing value raises an exception."""
-    _validate_one(argname, param, safe, _check_str, optional, rx)
+    _validate_one(argname, param, safe, _check_str, optional, rx, custom_err)
 
-def validate_ustr(argname, param, safe, rx, optional = False):
+def validate_ustr(argname, param, safe, rx, optional = False, custom_err = None):
     """Validates that an argument is a string and matches a regexp,
     once converted from utf-8 into unicode.
 
@@ -132,10 +137,10 @@ def validate_ustr(argname, param, safe, rx, optional = False):
     If `optional` is True, the argument is not required to exist in
     `param.kwargs`; None is then inserted into `safe.kwargs`. Otherwise
     a missing value raises an exception."""
-    _validate_one(argname, param, safe, _check_ustr, optional, rx)
+    _validate_one(argname, param, safe, _check_ustr, optional, rx, custom_err)
 
 def validate_num(argname, param, safe, optional = False,
-                 bare = False, minval = None, maxval = None):
+                 bare = False, minval = None, maxval = None, custom_err = None):
     """Validates that an argument is a valid integer number.
 
     Checks that an argument named `argname` exists in `param.kwargs`,
@@ -156,10 +161,10 @@ def validate_num(argname, param, safe, optional = False,
 
     If `minval` or `maxval` are given, values less than or greater than,
     respectively, the threshold are rejected."""
-    _validate_one(argname, param, safe, _check_num, optional, bare, minval, maxval)
+    _validate_one(argname, param, safe, _check_num, optional, bare, minval, maxval, custom_err)
 
 def validate_real(argname, param, safe, optional = False,
-                  special = False, minval = None, maxval = None):
+                  special = False, minval = None, maxval = None, custom_err = None):
     """Validates that an argument is a valid real number.
 
     Checks that an argument named `argname` exists in `param.kwargs`,
@@ -177,9 +182,9 @@ def validate_real(argname, param, safe, optional = False,
 
     If `minval` or `maxval` are given, values less than or greater than,
     respectively, the threshold are rejected."""
-    _validate_one(argname, param, safe, _check_real, optional, special, minval, maxval)
+    _validate_one(argname, param, safe, _check_real, optional, special, minval, maxval, custom_err)
 
-def validate_rxlist(argname, param, safe):
+def validate_rxlist(argname, param, safe, custom_err = None):
     """Validates that an argument is an array of strings, each of which
     can be compiled into a python regexp object.
 
@@ -191,9 +196,9 @@ def validate_rxlist(argname, param, safe):
 
     Note that an array of zero length is accepted, meaning there were no
     `argname` parameters at all in `param.kwargs`."""
-    _validate_all(argname, param, safe, _check_rx)
+    _validate_all(argname, param, safe, _check_rx, custom_err)
 
-def validate_strlist(argname, param, safe, rx):
+def validate_strlist(argname, param, safe, rx, custom_err = None):
     """Validates that an argument is an array of strings, each of which
     matches a regexp.
 
@@ -209,9 +214,9 @@ def validate_strlist(argname, param, safe, rx):
 
     Note that an array of zero length is accepted, meaning there were no
     `argname` parameters at all in `param.kwargs`."""
-    _validate_all(argname, param, safe, _check_str, rx)
+    _validate_all(argname, param, safe, _check_str, rx, custom_err)
 
-def validate_ustrlist(argname, param, safe, rx):
+def validate_ustrlist(argname, param, safe, rx, custom_err = None):
     """Validates that an argument is an array of strings, each of which
     matches a regexp once converted from utf-8 into unicode.
 
@@ -228,9 +233,9 @@ def validate_ustrlist(argname, param, safe, rx):
 
     Note that an array of zero length is accepted, meaning there were no
     `argname` parameters at all in `param.kwargs`."""
-    _validate_all(argname, param, safe, _check_ustr, rx)
+    _validate_all(argname, param, safe, _check_ustr, rx, custom_err)
 
-def validate_numlist(argname, param, safe, bare=False, minval=None, maxval=None):
+def validate_numlist(argname, param, safe, bare=False, minval=None, maxval=None, custom_err = None):
     """Validates that an argument is an array of integers, as checked by
     `validate_num()`.
 
@@ -243,9 +248,9 @@ def validate_numlist(argname, param, safe, bare=False, minval=None, maxval=None)
 
     Note that an array of zero length is accepted, meaning there were no
     `argname` parameters at all in `param.kwargs`."""
-    _validate_all(argname, param, safe, _check_num, bare, minval, maxval)
+    _validate_all(argname, param, safe, _check_num, bare, minval, maxval, custom_err)
 
-def validate_reallist(argname, param, safe, special=False, minval=None, maxval=None):
+def validate_reallist(argname, param, safe, special=False, minval=None, maxval=None, custom_err = None):
     """Validates that an argument is an array of integers, as checked by
     `validate_real()`.
 
@@ -258,7 +263,7 @@ def validate_reallist(argname, param, safe, special=False, minval=None, maxval=N
 
     Note that an array of zero length is accepted, meaning there were no
     `argname` parameters at all in `param.kwargs`."""
-    _validate_all(argname, param, safe, _check_real, special, minval, maxval)
+    _validate_all(argname, param, safe, _check_real, special, minval, maxval, custom_err)
 
 def validate_no_more_input(param):
     """Verifies no more input is left in `param.args` or `param.kwargs`."""

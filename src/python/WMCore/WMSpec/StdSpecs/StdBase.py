@@ -915,11 +915,11 @@ class StdBase(object):
                      "OverrideCatalog" : {"null" : True},
                      "RunNumber" : {"default" : 0, "type" : int},
                      "TimePerEvent" : {"default" : 12.0, "type" : float,
-                                       "optional" : False, "validate" : lambda x : x > 0},
+                                       "validate" : lambda x : x > 0},
                      "Memory" : {"default" : 2300.0, "type" : float,
-                                 "optional" : False, "validate" : lambda x : x > 0},
+                                 "validate" : lambda x : x > 0},
                      "SizePerEvent" : {"default" : 512.0, "type" : float,
-                                       "optional" : False, "validate" : lambda x : x > 0},
+                                        "validate" : lambda x : x > 0},
                      "PeriodicHarvestInterval" : {"default" : 0, "type" : int,
                                                   "validate" : lambda x : x >= 0},
                      "DQMHarvestUnit" : {"default" : "byRun", "type" : str, "attr" : "dqmHarvestUnit"},
@@ -1020,11 +1020,18 @@ class StdBase(object):
             # Dashboard parameter must be re-defined for test purposes
             if arg == "DashboardHost":
                 schema[arg] = "127.0.0.1"
-            elif not workloadDefinition[arg]["optional"]:
-                schema[arg] = workloadDefinition[arg]["default"]
-
-            if arg == "CouchURL":
+            if arg == "CouchURL" or arg == "ConfigCacheUrl":
                 import os
                 schema[arg] = os.environ["COUCHURL"]
-
+            if arg == "CouchDBName":
+                schema[arg] = "reqmgr_config_cache_t"
+            elif not workloadDefinition[arg]["optional"]:
+                if workloadDefinition[arg]["type"] == str:
+                    if arg == "InputDataset":
+                        schema[arg] = "/MinimumBias/ComissioningHI-v1/RAW"
+                    else:
+                        schema[arg] = "fake"
+                if workloadDefinition[arg]["type"] == int or workloadDefinition[arg]["type"] == float:
+                    schema[arg] = 1
+            
         return schema

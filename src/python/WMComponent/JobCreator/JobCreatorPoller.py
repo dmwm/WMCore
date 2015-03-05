@@ -555,8 +555,9 @@ class JobCreatorPoller(BaseWorkerThread):
                                'ownerGroup': wmWorkload.getOwner().get('vogroup', ''),
                                'ownerRole': wmWorkload.getOwner().get('vorole', '')}
                 try:
-                    multicore = wmTask.steps().applicationSection().multicore
-                    processDict.update({'numberOfCores' : multicore.numberOfCores})
+                    # steps() seems to return just the first step in the task
+                    # what we really need to do here is iterate over the steps and set nCores to the max found
+                    processDict.update({'numberOfCores' : wmTask.steps().getNumberOfCores()})
                 except AttributeError:
                     logging.info("Failed to read multicore settings from task %s" % wmTask.getPathName())
 

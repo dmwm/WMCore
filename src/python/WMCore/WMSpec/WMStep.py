@@ -44,9 +44,17 @@ class WMStepHelper(TreeHelper):
         """
         return self.data.stepType
 
-    def applicationSection(self):
-        """get application ConfigSection ref"""
-        return self.data.application
+    def getNumberOfCores(self):
+        """
+        _getNumberOfCores_
+
+        Return the number of cores for the step in question
+        """
+
+        try:
+            return int(self.data.application.multicore.numberOfCores)
+        except:
+            return 1
 
     def addStep(self, stepName):
         """

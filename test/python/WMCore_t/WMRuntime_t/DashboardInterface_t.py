@@ -158,6 +158,7 @@ class DashboardInterfaceTest(unittest.TestCase):
         self.assertEqual(data['1_ExeEnd'], step.name())
         self.assertEqual(data['1_ExeExitCode'], 0)
         self.assertTrue(data['1_ExeWCTime'] >= 0)
+        self.assertEqual(data['1_NCores'], 1)
         self.assertEqual(report.retrieveStep("cmsRun1").counter, 1)
 
         #Do a second step
@@ -173,6 +174,7 @@ class DashboardInterfaceTest(unittest.TestCase):
         self.assertEqual(data['2_ExeEnd'], step.name())
         self.assertEqual(data['2_ExeExitCode'], 0)
         self.assertTrue(data['2_ExeWCTime'] >= 0)
+        self.assertEqual(data['2_NCores'], 1)
         self.assertEqual(report.retrieveStep("cmsRun1").counter, 2)
 
         # End the job!
@@ -184,6 +186,49 @@ class DashboardInterfaceTest(unittest.TestCase):
         self.assertNotEqual(data['JobExitReason'], "")
 
         return
+
+    def testMultithreadedApplication(self):
+        """
+        _testMultithreadedApplication_
+
+        Check that the data packets have NCores and it picks it up successfully from the CMSSW step
+        """
+
+        # Get the necessary objects
+        name     = 'testMT'
+        job      = self.createTestJob()
+        workload = self.createWorkload()
+        task     = workload.getTask(taskName = "DataProcessing")
+        report   = self.createReport()
+
+        # Fill the job environment
+        self.setupJobEnvironment(name = name)
+
+        # Instantiate DBInfo
+        dbInfo   = DashboardInfo(job = job, task = task)
+        dbInfo.addDestination('127.0.0.1', 8884)
+
+        # Check jobStart information
+        data = dbInfo.jobStart()
+
+        # Do the first step
+        step = task.getStep(stepName = "cmsRun1")
+        step.getTypeHelper().setMulticoreCores(8)
+
+        # Do the step start
+        data = dbInfo.stepStart(step = step.data)
+
+        #Do the step end
+        data = dbInfo.stepEnd(step = step.data, stepReport = report)
+        self.assertEqual(data['1_NCores'], 8)
+        self.assertEqual(report.retrieveStep("cmsRun1").counter, 1)
+
+        # End the job and test the final NCores report
+        data = dbInfo.jobEnd()
+        self.assertEqual(data['NCores'], 8)
+
+        return
+
 
 
     def testAFailedJobMonitoring(self):

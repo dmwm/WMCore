@@ -25,6 +25,8 @@ import traceback
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.Configuration import loadConfigurationFile
 from WMCore.WMException         import WMException
+from WMCore.WMBase import getWMBASE
+
 hasDatabase = True
 try:
     from WMCore.Database.DBFormatter import DBFormatter
@@ -324,3 +326,12 @@ class TestInit:
                 print "dbFactory removed"
         except Exception, e:
             print "tried to delete factory but failed %s" % e
+            
+def getTestFilename(partialPath):
+    """
+    Return a full filename for a path in the test directories
+    """
+        
+    fullPath = os.path.normpath(os.path.join(getWMBASE(), 'test', partialPath))
+    return fullPath
+    

@@ -97,6 +97,7 @@ class WMStatsReader():
     
     def getLatestJobInfoByRequests(self, requestNames):
         jobInfoByRequestAndAgent = {}
+        
         if len(requestNames) > 0:
             requestAndAgentKey = self._getRequestAndAgent(requestNames)
             jobDocIds = self._getLatestJobInfo(requestAndAgentKey)
@@ -204,6 +205,8 @@ class WMStatsReader():
         keys is [['request_name', 'agent_url'], ....]
         returns ids
         """
+        if len(keys) == 0:
+            return []
         options = {}
         options["reduce"] = True
         options["group"] = True

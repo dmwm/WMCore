@@ -185,7 +185,7 @@ class RequestInfo(object):
         return self.tasks
         
     def getTotalTopLevelJobs(self):
-        return self.data["total_jobs"]
+        return self.data.get("total_jobs", "N/A")
     
     def getTotalTopLevelJobsInWMBS(self):
         inWMBS = 0
@@ -198,7 +198,7 @@ class RequestInfo(object):
         return self.data.get("input_lumis", "N/A")
     
     def getTotalInputEvents(self):
-        return self.data["input_events"]
+        return self.data.get("input_events", "N/A")
     
     def getProgressSummaryByOutputDataset(self):
         """

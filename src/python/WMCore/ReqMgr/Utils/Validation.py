@@ -44,7 +44,7 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     permission = getWritePermission(request_args)
     authz_match(permission['role'], permission['group'])
     del request_args["RequestType"]
-    
+
     #validate the status
     if request_args.has_key("RequestStatus"):
         validate_state_transition(reqmgr_db_service, request_name, request_args["RequestStatus"])
@@ -54,8 +54,12 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
         del args_without_status["RequestStatus"]
     else:
         args_without_status = request_args
-    # validate the arguments against the spec argumentSpecdefinition
-    workload.validateArgument(args_without_status)
+
+    if len(args_without_status) > 0:
+        # validate the arguments against the spec argumentSpecdefinition
+        #TODO: currently only assigned status allows any update other then Status update
+        workload.validateArgumentForAssignment(args_without_status)
+
     # to update request_args with type conversion
     request_args.update(args_without_status)
 

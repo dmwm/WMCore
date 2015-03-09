@@ -108,12 +108,14 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         response = self.reqSvc.getRequestByStatus('assignment-approved')
         self.assertEqual(len(response), 1)
         
-        self.reqSvc.updateRequestProperty(requestName, {'RequestStatus': 'assigned', "SiteWhitelist": ["ABC"], "SiteBlacklist": ["A"]})
+        self.reqSvc.updateRequestProperty(requestName, {'RequestStatus': 'assigned', 
+                                                        "SiteWhitelist": ["T1_US_CBS"], 
+                                                        "SiteBlacklist": ["T1_US_FOX"]})
         response = self.reqSvc.getRequestByStatus('assignment-approved')
         self.assertEqual(len(response), 0)
         response = self.reqSvc.getRequestByStatus('assigned')
         self.assertEqual(len(response), 1)
-        self.assertEqual(response[0].values()[0]["SiteWhitelist"], ["ABC"])
+        self.assertEqual(response[0].values()[0]["SiteWhitelist"], ["T1_US_CBS"])
         
 if __name__ == '__main__':
     unittest.main()

@@ -1696,7 +1696,7 @@ class WMWorkloadHelper(PersistencyHelper):
             return task.inputLocationFlag()
         return False
 
-    def validateArgument(self, schema):
+    def validateArgumentForAssignment(self, schema):
         specClass = loadSpecClassByType(self.requestType())
         argumentDefinition = specClass.getWorkloadArguments()
         validateArgumentsUpdate(schema, argumentDefinition)

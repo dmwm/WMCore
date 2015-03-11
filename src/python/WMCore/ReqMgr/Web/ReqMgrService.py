@@ -306,9 +306,8 @@ class ReqMgrService(TemplatedPage):
         docs = []
         attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus']
         data = self.reqmgr.getRequestByStatus(statusList=[kwds['status']])
-        for row in data:
-            for key, val in row.items():
-                docs.append(request_attr(val, attrs))
+        for key, val in data.items():
+            docs.append(request_attr(val, attrs))
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
         misc_json = {'CMSSW Releases':releases(),
@@ -358,9 +357,8 @@ class ReqMgrService(TemplatedPage):
         docs = []
         attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus']
         data = self.reqmgr.getRequestByStatus(statusList=[kwds['status']])
-        for row in data:
-            for key, val in row.items():
-                docs.append(request_attr(val, attrs))
+        for key, val in data.items():
+            docs.append(request_attr(val, attrs))
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
         filter_sort = self.templatepage('filter_sort')
@@ -394,11 +392,11 @@ class ReqMgrService(TemplatedPage):
         "Fetch document for given id"
         rid = rid.replace('request-', '')
         doc = self.reqmgr.getRequestByNames(rid)
-        if  len(doc) == 1:
+        if len(doc) == 1:
             try:
-                doc = pprint.pformat(doc[0][rid])
+                doc = pprint.pformat(doc[rid])
             except:
-                doc = pprint.pformat(doc[0])
+                doc = pprint.pformat(doc)
         elif len(doc) > 1:
             doc = [pprint.pformat(d) for d in doc]
         else:
@@ -415,9 +413,8 @@ class ReqMgrService(TemplatedPage):
             kwds.update({'status': 'acquired'})
         results = self.reqmgr.getRequestByStatus(kwds['status'])
         docs = []
-        for req in results:
-            for key, doc in req.items():
-                docs.append(request_attr(doc))
+        for key, doc in results.items():
+            docs.append(request_attr(doc))
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
         filter_sort = self.templatepage('filter_sort')

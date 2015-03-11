@@ -3,6 +3,7 @@
 """
 
 from WMCore.Services.RequestManager.RequestManager import RequestManager
+from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
 from WMCore.Database.CMSCouch import CouchError
 from WMCore.Database.CouchUtils import CouchConnectionError
@@ -10,6 +11,8 @@ from WMCore import Lexicon
 import os
 import time
 import socket
+from operator import itemgetter
+import traceback
 
 class WorkQueueReqMgrInterface():
     """Helper class for ReqMgr interaction"""
@@ -19,6 +22,9 @@ class WorkQueueReqMgrInterface():
             kwargs['logger'] = logging
         self.logger = kwargs['logger']
         self.reqMgr = RequestManager(kwargs)
+        self.reqmgr2Only = kwargs.get("reqmgr2_only", False)
+        #this will break all in one test
+        self.reqMgr2 = ReqMgr(kwargs.get("reqmgr2_endpoint", None))
         self.previous_state = {}
 
     def __call__(self, queue):
@@ -60,9 +66,10 @@ class WorkQueueReqMgrInterface():
             return 0
 
         try:
-            workLoads = self.getAvailableRequests(*queue.params['Teams'])
+            workLoads = self.getAvailableRequests(queue.params['Teams'])
         except Exception, ex:
-            msg = "Error contacting RequestManager: %s" % str(ex)
+            traceMsg = traceback.format_exc()
+            msg = "Error contacting RequestManager: %s" % traceMsg
             self.logger.warning(msg)
             return 0
 
@@ -108,7 +115,10 @@ class WorkQueueReqMgrInterface():
                 continue
 
             try:
-                self.markAcquired(reqName, queue.params.get('QueueURL', 'No Queue'))
+                if self.reqmgr2Only:
+                    self.reqMgr2.updateRequestStatus(reqName, "acquired")
+                else:
+                    self.markAcquired(reqName, queue.params.get('QueueURL', 'No Queue'))
             except Exception, ex:
                 self.logger.warning("Unable to update ReqMgr state: %s" % str(ex))
                 self.logger.warning('Will try again later')
@@ -133,7 +143,7 @@ class WorkQueueReqMgrInterface():
         for ele in elements:
             ele = elements[ele][0] # 1 element tuple
             try:
-                request = self.reqMgr.getRequest(ele['RequestName'])
+                request = self.reqMgr2.getRequestByNames(ele['RequestName'])[ele['RequestName']]
                 if request['RequestStatus'] in ('failed', 'completed', 'announced',
                                                 'epic-FAILED', 'closed-out', 'rejected'):
                     # requests can be done in reqmgr but running in workqueue
@@ -156,21 +166,21 @@ class WorkQueueReqMgrInterface():
                     queue.cancelWork(WorkflowName=request['RequestName'])
                 # Check consistency of running-open/closed and the element closure status
                 elif request['RequestStatus'] == 'running-open' and not ele.get('OpenForNewData', False):
-                    self.reqMgr.reportRequestStatus(ele['RequestName'], 'running-closed')
+                    if self.reqmgr2Only:
+                        self.reqMgr2.updateRequestStatus(ele['RequestName'], 'running-closed')
+                    else:
+                        self.reqMgr.reportRequestStatus(ele['RequestName'], 'running-closed')
                 elif request['RequestStatus'] == 'running-closed' and ele.get('OpenForNewData', False):
                     queue.closeWork(ele['RequestName'])
                 # update request status if necessary
                 elif ele['Status'] not in self._reqMgrToWorkQueueStatus(request['RequestStatus']):
                     self.reportElement(ele)
-                # check if we need to update progress, only update if we have progress
-                elif ele['PercentComplete'] > request['percent_complete'] + 1 or \
-                     ele['PercentSuccess'] > request['percent_success'] + 1:
-                    self.reportProgress(ele['RequestName'], percent_complete = ele['PercentComplete'],
-                                                            percent_success = ele['PercentSuccess'])
+                    
                 uptodate_elements.append(ele)
             except Exception, ex:
                 msg = 'Error talking to ReqMgr about request "%s": %s'
-                self.logger.error(msg % (ele['RequestName'], str(ex)))
+                traceMsg = traceback.format_exc()
+                self.logger.error(msg % (ele['RequestName'], traceMsg))
 
         return uptodate_elements
 
@@ -183,31 +193,37 @@ class WorkQueueReqMgrInterface():
                                                          and element.inEndState():
                 finished.append(element['RequestName'])
         return queue.deleteWorkflows(*finished)
-
-    def getAvailableRequests(self, *teams):
-        """Get requests for the given teams"""
-        results = []
-        if not teams:
-            teams = self.reqMgr.getTeam()
-        for team in teams:
-            try:
-                reqs = self.reqMgr.getAssignment(team)
-                results.extend([(team, req, spec_url) for req, spec_url in reqs])
-            except Exception, ex:
-                self.logger.error('Error getting work for team "%s": %s' % (team, str(ex)))
-        return results
-
-    def getOpenRunningRequests(self, *teams):
-        """Get open running requests for the given teams"""
-        results = []
-        if not teams:
-            teams = self.reqMgr.getTeam()
-        for team in teams:
-            try:
-                reqs = self.reqMgr.getRunningOpen(team)
-                results.extend(reqs)
-            except Exception, ex:
-                self.logger.error('Error getting open running requests for team "%s": %s' % (team, str(ex)))
+    
+    def _getRequestsByTeamsAndStatus(self, status, teams = []):
+        """
+        TODO: now it assumes one team per requests - check whether this assumption is correct
+        Check whether we actually use the team for this.
+        Also switch to byteamandstatus couch call instead of 
+        """
+        requests = self.reqMgr2.getRequestByStatus(status)
+        #Then sort by Team name then sort by Priority
+        #https://docs.python.org/2/howto/sorting.html
+        if teams and len(teams) > 0:
+            results = {}
+            for reqName, value in requests.items():
+                if value["Teams"][0] in teams:
+                    results[reqName] = value
+            return results 
+        else:
+            return requests    
+            
+    def getAvailableRequests(self, teams):
+        """
+        Get available requests for the given teams and sort by team and priority
+        returns [(team, request_name, request_spec_url)]
+        """
+        
+        tempResults = self._getRequestsByTeamsAndStatus("assigned", teams).values()
+        tempResults.sort(key = itemgetter('RequestPriority'), reverse = True)
+        tempResults.sort(key = lambda r: r["Teams"][0])
+        
+        results = [(x["Teams"][0], x["RequestName"], x["RequestWorkflow"]) for x in tempResults]
+        
         return results
 
     def reportRequestStatus(self, request, status, message = None):
@@ -217,7 +233,10 @@ class WorkQueueReqMgrInterface():
         if message:
             self.sendMessage(request, str(message))
         if self._workQueueToReqMgrStatus(status): # only send known states
-            self.reqMgr.reportRequestStatus(request, self._workQueueToReqMgrStatus(status))
+            if self.reqmgr2Only:
+                self.reqMgr2.updateRequestStatus(request, self._workQueueToReqMgrStatus(status))
+            else:
+                self.reqMgr.reportRequestStatus(request, self._workQueueToReqMgrStatus(status))
 
     def sendMessage(self, request, message):
         """Attach a message to the request"""
@@ -259,21 +278,9 @@ class WorkQueueReqMgrInterface():
         else:
             return []
 
-    def reportProgress(self, request, **args):
-        """report progress for the request"""
-        try:
-            return self.reqMgr.reportRequestProgress(request, **args)
-        except Exception, ex:
-            # metrics are nice to have but not essential
-            self.logger.warning("Error updating reqmgr metrics for %s: %s" % (request, str(ex)))
-
     def reportElement(self, element):
         """Report element to ReqMgr"""
         self.reportRequestStatus(element['RequestName'], element['Status'])
-        if element['PercentComplete'] or element['PercentSuccess']:
-            args = {'percent_complete' : element['PercentComplete'],
-                    'percent_success' : element['PercentSuccess']}
-            self.reportProgress(element['RequestName'], **args)
 
     def addNewElementsToOpenRequests(self, queue):
         """Add new elements to open requests which are in running-open state, only works adding new blocks from the input dataset"""
@@ -292,9 +299,10 @@ class WorkQueueReqMgrInterface():
             return 0
 
         try:
-            requests = self.getOpenRunningRequests(*queue.params['Teams'])
+            requests = self._getRequestsByTeamsAndStatus("running-open", queue.params['Teams']).keys()
         except Exception, ex:
-            msg = "Error contacting RequestManager: %s" % str(ex)
+            traceMsg = traceback.format_exc()
+            msg = "Error contacting RequestManager: %s" % traceMsg
             self.logger.warning(msg)
             return 0
 

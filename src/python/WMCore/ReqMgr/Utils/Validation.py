@@ -13,6 +13,10 @@ from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 
+def workqueue_stat_validation(request_args):
+    stat_keys = ['total_jobs', 'input_lumis', 'input_events', 'input_num_files']
+    return set(request_args.keys()) == set(stat_keys)
+    
 def validate_request_update_args(request_args, config, reqmgr_db_service, param):
     """
     param and safe structure is RESTArgs structure: named tuple
@@ -55,7 +59,7 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     else:
         args_without_status = request_args
 
-    if len(args_without_status) > 0:
+    if len(args_without_status) > 0 and not workqueue_stat_validation(args_without_status):
         # validate the arguments against the spec argumentSpecdefinition
         #TODO: currently only assigned status allows any update other then Status update
         workload.validateArgumentForAssignment(args_without_status)

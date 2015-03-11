@@ -97,11 +97,13 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         ## test get method
         # get by name
         response = self.reqSvc.getRequestByNames(requestName)
+        self.assertEqual(response[requestName]['RequestPriority'], 1000)
         self.assertEqual(len(response), 1)
         
         # get by status
         response = self.reqSvc.getRequestByStatus('new')
         self.assertEqual(len(response), 1)
+        print response
         
 
         self.reqSvc.updateRequestStatus(requestName, 'assignment-approved')
@@ -115,7 +117,12 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         self.assertEqual(len(response), 0)
         response = self.reqSvc.getRequestByStatus('assigned')
         self.assertEqual(len(response), 1)
-        self.assertEqual(response[0].values()[0]["SiteWhitelist"], ["T1_US_CBS"])
+        self.assertEqual(response.values()[0]["SiteWhitelist"], ["T1_US_CBS"])
+        
+        self.reqSvc.updateRequestStats(requestName, {'total_jobs': 100, 'input_lumis': 100,
+                               'input_events': 100, 'input_num_files': 100})
+        
+        
         
 if __name__ == '__main__':
     unittest.main()

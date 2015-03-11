@@ -289,7 +289,7 @@ class Request(RESTEntity):
         #get interaction of the request
         result = self._intersection_of_request_info(request_info);
         if len(result) == 0:
-            return {}
+            return []
         return rows([result])
         
     def _intersection_of_request_info(self, request_info):
@@ -354,13 +354,20 @@ class Request(RESTEntity):
             (workload, request_args) = self.initialize_clone(request_args["OriginalRequestName"])
             return self.post(workload, request_args)
         
-        # if is not just updating status
-        if len(request_args) > 1 or not request_args.has_key("RequestStatus"):
-            workload.updateArguments(request_args)
-            # trailing / is needed for the savecouchUrl function
-            workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
         dn = cherrypy.request.user.get("dn", "unknown")
-        report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
+        
+        if "total_jobs" in request_args:
+            # only GQ update this stats
+            # request_args should contain only 4 keys 'total_jobs', 'input_lumis', 'input_events', 'input_num_files'}
+            report = self.reqmgr_db_service.updateRequestStats(workload.name(), request_args)
+        # if is not just updating status
+        else:
+            if len(request_args) > 1 or "RequestStatus" not in request_args:
+                workload.updateArguments(request_args)
+                # trailing / is needed for the savecouchUrl function
+                workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
+                
+            report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
         return report
     
     @restcall

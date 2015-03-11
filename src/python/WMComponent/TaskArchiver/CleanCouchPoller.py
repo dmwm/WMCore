@@ -3,15 +3,12 @@ Perform cleanup actions
 """
 __all__ = []
 
-
-
-import threading
 import logging
 import time
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
-from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 from WMCore.Services.RequestManager.RequestManager import RequestManager
+from WMCore.Services.ReqMgr.ReqMgr         import ReqMgr
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Database.CMSCouch import CouchServer
@@ -52,8 +49,11 @@ class CleanCouchPoller(BaseWorkerThread):
             self.deletableState = "announced"
             self.centralRequestDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.centralRequestDBURL, 
                                                    couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
-            #TODO: remove this for reqmgr2
-            self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
+            if self.config.TaskArchiver.reqmgr2Only:
+                self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
+            else:
+                #TODO: remove this for reqmgr2
+                self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
         else:
             # Tier0 case
             self.deletableState = "completed"
@@ -106,9 +106,11 @@ class CleanCouchPoller(BaseWorkerThread):
         for workflowName in workflows:
             if self.cleanAllLocalCouchDB(workflowName):
                 if self.useReqMgrForCompletionCheck:
-                    #TODO: for reqmgr2 uncomment this
-                    # self.centralRequestDBWriter.updateRequestStatus(workflowName, archiveState)
-                    self.reqmgrSvc.updateRequestStatus(workflowName, archiveState);
+                    
+                    if self.config.TaskArchiver.reqmgr2Only:
+                        self.reqmgr2Svc.updateRequestStatus(workflowName, archiveState)
+                    else:
+                        self.reqmgrSvc.updateRequestStatus(workflowName, archiveState);
                     updated += 1 
                     logging.debug("status updated to %s %s" % (archiveState, workflowName))
                 else:

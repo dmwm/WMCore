@@ -136,18 +136,20 @@ def modifyConfiguration(config, **args):
         config.TaskArchiver.centralWMStatsURL = args["wmstats_url"]
         config.TaskArchiver.dqmUrl = args["dqm_url"]
         # t0 agent doesn't have reqmgr_url
-        if args.has_key("reqmgr_url"):
+        if "reqmgr_url" in args:
             config.TaskArchiver.ReqMgrServiceURL = args["reqmgr_url"]
+        if "reqmgr2_url" in args:
+            config.TaskArchiver.ReqMgr2ServiceURL = args["reqmgr2_url"]
 
     if hasattr(config, "ACDC"):
         # t0 agent may not have acdc_url
-        if args.has_key("acdc_url"):
+        if "acdc_url" in args:
             config.ACDC.couchurl, config.ACDC.database = splitCouchServiceURL(args["acdc_url"])
 
     if hasattr(config, "JobUpdater"):
         # t0 agent doesn't have reqmgr_url
-        if args.has_key("reqmgr_url"):
-            config.JobUpdater.reqMgrUrl = args["reqmgr_url"]
+        if "reqmgr2_url" in args:
+            config.JobUpdater.reqMgr2Url = args["reqmgr2_url"]
 
     if hasattr(config, "DBS3Upload"):
         config.DBS3Upload.dbsUrl = args["dbs3_url"]
@@ -190,10 +192,10 @@ def modifyConfiguration(config, **args):
 
     if hasattr(config,"RetryManager"):
         # only needed for CRAB instance
-        if args.has_key("couch_url"):
+        if "couch_url" in args:
             config.RetryManager.couch_instance = args["couch_url"]
         # only needed for CRAB instance
-        if args.has_key("ops_proxy"):
+        if "ops_proxy" in args:
             config.RetryManager.opsProxy = args["ops_proxy"]
 
     if hasattr(config,"CRABInterface"):
@@ -333,7 +335,7 @@ def main(argv=None):
              "workqueue_db_name=", "cs_hostname=", "cs_port=", "host_dn=", "couch_url=",
              "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=",
              "ufc_service_url=", "ufc_cachedir=", "client_mapping=", "wmbs_service_port=",
-             "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=", "reqmgr_url=",
+             "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=", "reqmgr_url=", "reqmgr2_url=",
              "acdc_url=", "amq_auth_file=", "dbs3_url=", "phedex_url=", "dqm_url=", "dashboard_url=",
              "requestcouch_url="])
 
@@ -355,7 +357,7 @@ def main(argv=None):
                           '--sb_hostname', '--sb_port', '--sb_basepath', '--ufc_hostname',
                           '--ufc_port', '--ufc_service_url', '--ufc_cachedir',
                           '--client_mapping', '--wmbs_service_port', '--workload_summary_url',
-                          '--wmstats_url', '--ops_proxy', '--reqmgr_url', '--acdc_url',
+                          '--wmstats_url', '--ops_proxy', '--reqmgr_url', '--reqmgr2_url', '--acdc_url',
                           '--amq_auth_file', '--dbs3_url', '--phedex_url', '--dqm_url', '--dashboard_url',
                           '--requestcouch_url'):
 

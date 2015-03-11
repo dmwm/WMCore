@@ -49,7 +49,14 @@ class ReqMgr(Service):
 
         if result and decoder:
             result = decoder(result)
-        return result
+            
+        data = result['result']    
+        if len(data) == 0:
+            return {}
+        elif len(data) == 1:
+            return data[0]
+        else:
+            return data
     
     def _createQuery(self, queryDict):
         """
@@ -91,9 +98,9 @@ class ReqMgr(Service):
         
         query = self._createQuery({'name': names})
         callname = 'request?%s' % query
-        return self._getResult(callname, verb = "GET")['result']
+        return self._getResult(callname, verb = "GET")
 
-    def getRequestByStatus(self, statusList, detail = False):
+    def getRequestByStatus(self, statusList):
         """
         _getRequestByStatus_
         
@@ -113,9 +120,8 @@ class ReqMgr(Service):
         
         query = self._createQuery({'status': statusList})
         callname = 'request?%s' % query
-        return self._getResult(callname, verb = "GET")['result']
-    
-    
+        return  self._getResult(callname, verb = "GET")
+        
     def insertRequests(self, requestDict):
         """
         _insertRequests_
@@ -152,6 +158,17 @@ class ReqMgr(Service):
         status = {"RequestStatus": status}
         status["RequestName"] = request
         return self["requests"].put('request', status)[0]['result']
+    
+    def updateRequestStats(self, request, stats):
+        """
+        put initial stats for request
+        param: stats: dict of {'total_jobs': 100, 'input_lumis': 100,
+                               'input_events': 100, 'input_num_files': 100}
+        specific to ReqMgr app. not implemented for T0
+        """
+        #TODO: add stats validation here
+        
+        self.updateRequestProperty(request, stats)
 
     def updateRequestProperty(self, request, propDict):
         """

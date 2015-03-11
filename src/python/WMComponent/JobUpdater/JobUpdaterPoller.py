@@ -14,7 +14,7 @@ import threading
 import traceback
 from WMCore.BossAir.BossAirAPI import BossAirAPI
 from WMCore.DAOFactory import DAOFactory
-from WMCore.Services.RequestManager.RequestManager import RequestManager
+from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WMException import WMException
@@ -42,7 +42,7 @@ class JobUpdaterPoller(BaseWorkerThread):
         self.config = config
 
         self.bossAir = BossAirAPI(config = self.config)
-        self.reqmgr = RequestManager({'endpoint' : self.config.JobUpdater.reqMgrUrl})
+        self.reqmgr2 = ReqMgr(self.config.JobUpdater.reqMgr2Url)
         self.workqueue = WorkQueue(self.config.WorkQueueManager.couchurl,
                                    self.config.WorkQueueManager.dbname)
 
@@ -108,7 +108,7 @@ class JobUpdaterPoller(BaseWorkerThread):
         for workflow, priority in workflowsToCheck:
             if workflow not in priorityCache:
                 try:
-                    priorityCache[workflow] = self.reqmgr.getRequest(workflow)['RequestPriority']
+                    priorityCache[workflow] = self.reqmgr2.getRequestByNames(workflow)[workflow]['RequestPriority']
                 except Exception, ex:
                     logging.error("Couldn't retrieve the priority of request %s" % workflow)
                     logging.error("Error: %s" % ex)
@@ -126,7 +126,7 @@ class JobUpdaterPoller(BaseWorkerThread):
             workflow = workflowEntry['name']
             if workflow not in priorityCache:
                 try:
-                    priorityCache[workflow] = self.reqmgr.getRequest(workflow)['RequestPriority']
+                    priorityCache[workflow] = self.reqmgr2.getRequestByNames(workflow)[workflow]['RequestPriority']
                 except Exception, ex:
                     logging.error("Couldn't retrieve the priority of request %s" % workflow)
                     logging.error("Error: %s" % ex)

@@ -57,24 +57,31 @@ def strToBool(string):
         return False
     else:
         raise WMSpecFactoryException("Can't convert to bool: %s" % string)
+
+def _verifyDBSCall(dbsURL, uri):
+    try:
+        #from WMCore.Services.DBS.DBS3Reader import DBS3Reader
+        #DBS3Reader(dbsUrl).dbs.serverinfo()
+        from WMCore.Services.Requests import JSONRequests
+        jsonSender = JSONRequests(dbsURL)
+        result = jsonSender.get("/%s" % uri)
+        if not result[1] == 200:
+            raise WMSpecFactoryException("DBS is not connected: %s : %s" % (dbsURL, str(result)))
+    except:
+        raise WMSpecFactoryException("DBS is not responding: %s" % dbsURL)
     
-def checkDBSUrl(dbsUrl):
+    return result[0]
+    
+def checkDBSURL(dbsURL):
     # use the import statement here since this is packed and used in RunTime code.
     # dbs client is not shipped with it.
     
-    if dbsUrl:
-        try:
-            #from WMCore.Services.DBS.DBS3Reader import DBS3Reader
-            #DBS3Reader(dbsUrl).dbs.serverinfo()
-            from WMCore.Services.Requests import JSONRequests
-            jsonSender = JSONRequests(dbsUrl)
-            result = jsonSender.get("/serverinfo")
-            if not result[1] == 200:
-                raise WMSpecFactoryException("DBS is not connected: %s : %s" % (dbsUrl, str(result)))
-        except:
-            raise WMSpecFactoryException("DBS is not responding: %s" % dbsUrl)
+    if dbsURL:
+        _verifyDBSCall(dbsURL, "serverinfo")
+        return True
     
     return True
+
     
 def parsePileupConfig(mcPileup, dataPileup):
     """
@@ -134,6 +141,32 @@ def _validateArgumentOptions(arguments, argumentDefinition, optionKey):
             arguments[argument] = _validateArgument(argument, arguments[argument], argumentDefinition)
         return
 
+def _validateInputDataset(arguments):
+    inputdataset = arguments.get("InputDataset", None)
+    if inputdataset != None:
+        dbsURL = arguments.get("DbsUrl", None)
+        result = _varifyDBSCall(dbsURL, "datasets?&dataset_access_type=*&dataset=%s" % inputdataset)
+        if len(result) == 0:
+            msg = "Inputdataset %s doesn't exist on %s" % (inputdataset, dbsURL)
+            raise WMSpecFactoryException(msg)
+    return
+
+def validateInputDatasSetAndParentFlag(arguments):
+    inputdataset = arguments.get("InputDataset", None)
+    if arguments.get("IncludeParents", False):
+        if inputdataset == None:
+            msg = "Validation failed: IncludeParent flag is True but there is no inputdataset"
+            raise WMSpecFactoryException(msg)
+        else:
+            dbsURL = arguments.get("DbsUrl", None)
+            result = _varifyDBSCall(dbsURL, "datasetparents?dataset=%s" % inputdataset)
+            if len(result) == 0:
+                msg = "Validation failed: IncludeParent flag is True but inputdataset %s doesn't have parents" % (inputdataset)
+                raise WMSpecFactoryException(msg)
+    else:
+        _validateInputDataset(arguments)
+    return
+            
 def validateArgumentsCreate(arguments, argumentDefinition):
     """
     _validateArguments_
@@ -144,8 +177,10 @@ def validateArgumentsCreate(arguments, argumentDefinition):
     otherwise returns None, this is used for spec creation 
     checks the whether argument is optional as well as validation
     """
-    return _validateArgumentOptions(arguments, argumentDefinition, "optional")
-    
+    _validateArgumentOptions(arguments, argumentDefinition, "optional")
+    validateInputDatasSetAndParentFlag(arguments)
+    return
+
 def validateArgumentsUpdate(arguments, argumentDefinition):
     """
     _validateArgumentsUpdate_

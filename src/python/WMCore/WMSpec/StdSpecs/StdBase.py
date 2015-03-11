@@ -12,7 +12,7 @@ from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname, 
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMWorkloadTools import makeList, makeLumiList, strToBool, checkDBSUrl, validateArgumentsCreate
+from WMCore.WMSpec.WMWorkloadTools import makeList, makeLumiList, strToBool, checkDBSURL, validateArgumentsCreate
 
 
 analysisTaskTypes = ['Analysis', 'PrivateMC']
@@ -908,7 +908,7 @@ class StdBase(object):
                                          "validate" : lambda x : x > 0},
                      "ValidStatus" : {"default" : "PRODUCTION"},
                      "DbsUrl" : {"default" : "https://cmsweb.cern.ch/dbs/prod/global/DBSReader",
-                                 "null" : True, "validate" : checkDBSUrl},
+                                 "null" : True, "validate" : checkDBSURL},
                      "DashboardHost" : {"default" : "cms-wmagent-job.cern.ch"},
                      "DashboardPort" : {"default" : 8884, "type" : int,
                                         "validate" : lambda x : x > 0},
@@ -1020,10 +1020,11 @@ class StdBase(object):
             # Dashboard parameter must be re-defined for test purposes
             if arg == "DashboardHost":
                 schema[arg] = "127.0.0.1"
-            if arg == "CouchURL" or arg == "ConfigCacheUrl":
+            elif arg == "CouchURL" or arg == "ConfigCacheUrl":
+                
                 import os
                 schema[arg] = os.environ["COUCHURL"]
-            if arg == "CouchDBName":
+            elif arg == "CouchDBName":
                 schema[arg] = "reqmgr_config_cache_t"
             elif not workloadDefinition[arg]["optional"]:
                 if workloadDefinition[arg]["type"] == str:
@@ -1033,5 +1034,6 @@ class StdBase(object):
                         schema[arg] = "fake"
                 if workloadDefinition[arg]["type"] == int or workloadDefinition[arg]["type"] == float:
                     schema[arg] = 1
-            
+            else:
+                schema[arg] = workloadDefinition[arg]['default']
         return schema

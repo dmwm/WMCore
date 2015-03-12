@@ -7,8 +7,9 @@ Created on Jun 14, 2013
 """
 
 import unittest
-
+from nose.plugins.attrib import attr
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
+from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
 class StdBaseTest(unittest.TestCase):
     """
@@ -42,12 +43,38 @@ class StdBaseTest(unittest.TestCase):
         i.e. no exception should be raised.
         """
         arguments = StdBase.getTestArguments()
-        print
         for k in sorted(arguments.keys()):
             print k, arguments[k]
         stdBaseInstance = StdBase()
         stdBaseInstance.factoryWorkloadConstruction("TestWorkload", arguments)
         return
+    
+    @attr('integration')
+    def testStdBaseIncludeParentsValidation(self):
+        """
+        _testStdBaseValidation_
+
+        Check that the test arguments pass basic validation,
+        i.e. no exception should be raised.
+        """
+        arguments = StdBase.getTestArguments()
+        stdBaseInstance = StdBase()
+        
+        arguments["IncludeParents"] = True
+        arguments["InputDataset"] = "/Cosmics/Commissioning2015-v1/RAW"
+        self.assertRaises(WMSpecFactoryException, stdBaseInstance.factoryWorkloadConstruction, "TestWorkload", arguments)
+        
+        arguments["IncludeParents"] = True
+        self.assertRaises(WMSpecFactoryException, stdBaseInstance.factoryWorkloadConstruction, "TestWorkload", arguments)
+        
+        arguments["IncludeParents"] = True
+        arguments["InputDataset"] = "/Cosmics/Commissioning2015-6Mar2015-v1/RECO"
+        stdBaseInstance.factoryWorkloadConstruction("TestWorkload", arguments)
+        
+        arguments["IncludeParents"] = False
+        arguments["InputDataset"] = "/Cosmics/Commissioning2015-6Mar2015-v1/RECO"
+        stdBaseInstance.factoryWorkloadConstruction("TestWorkload", arguments)
+        return 
 
 if __name__ == "__main__":
     unittest.main()

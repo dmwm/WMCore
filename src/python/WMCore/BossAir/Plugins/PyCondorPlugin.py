@@ -1151,7 +1151,9 @@ class PyCondorPlugin(BasePlugin):
 
 
         jobLogInfo={}
-        for joblog in os.listdir(job['cache_dir']):
+        cacheDirs = os.listdir(job['cache_dir'])
+        cacheDirs.sort(key=str.lower,reverse=True)
+        for joblog in cacheDirs:
             if fnmatch.fnmatch(joblog, 'condor.*.*.log'):
                 logFile=os.path.join(job['cache_dir'],joblog)
                 tmpDict={}

@@ -143,9 +143,9 @@ def _validateArgumentOptions(arguments, argumentDefinition, optionKey):
 
 def _validateInputDataset(arguments):
     inputdataset = arguments.get("InputDataset", None)
-    if inputdataset != None:
-        dbsURL = arguments.get("DbsUrl", None)
-        result = _varifyDBSCall(dbsURL, "datasets?&dataset_access_type=*&dataset=%s" % inputdataset)
+    dbsURL = arguments.get("DbsUrl", None)
+    if inputdataset != None and dbsURL != None:
+        result = _verifyDBSCall(dbsURL, "datasets?&dataset_access_type=*&dataset=%s" % inputdataset)
         if len(result) == 0:
             msg = "Inputdataset %s doesn't exist on %s" % (inputdataset, dbsURL)
             raise WMSpecFactoryException(msg)
@@ -159,10 +159,11 @@ def validateInputDatasSetAndParentFlag(arguments):
             raise WMSpecFactoryException(msg)
         else:
             dbsURL = arguments.get("DbsUrl", None)
-            result = _varifyDBSCall(dbsURL, "datasetparents?dataset=%s" % inputdataset)
-            if len(result) == 0:
-                msg = "Validation failed: IncludeParent flag is True but inputdataset %s doesn't have parents" % (inputdataset)
-                raise WMSpecFactoryException(msg)
+            if dbsURL != None:
+                result = _verifyDBSCall(dbsURL, "datasetparents?dataset=%s" % inputdataset)
+                if len(result) == 0:
+                    msg = "Validation failed: IncludeParent flag is True but inputdataset %s doesn't have parents" % (inputdataset)
+                    raise WMSpecFactoryException(msg)
     else:
         _validateInputDataset(arguments)
     return

@@ -96,14 +96,12 @@ class DataCollectionService(CouchService):
         keys = [[group, user, collectionName, filesetName]]
         results = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs", option, keys)
         
-        filesetFiles = {}
+        filesInfo = []
         for row in results["rows"]:
             files = row["doc"].get("files", False)
-            if (files):
-                filesetFiles.update(files)
-        
-        filesInfo = filesetFiles.values()
-        
+            if files:
+                filesInfo.extend(files.values())
+
         # second lfn sort
         filesInfo.sort(key = lambda x: x["lfn"])
         #primary location sort (python preserve sort result) 

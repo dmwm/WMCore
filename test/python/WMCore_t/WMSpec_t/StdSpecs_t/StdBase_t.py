@@ -74,6 +74,11 @@ class StdBaseTest(unittest.TestCase):
         arguments["IncludeParents"] = False
         arguments["InputDataset"] = "/Cosmics/Commissioning2015-6Mar2015-v1/RECO"
         stdBaseInstance.factoryWorkloadConstruction("TestWorkload", arguments)
+        
+        arguments["IncludeParents"] = False
+        arguments["InputDataset"] = "/Cosmics/ABS/RAW" 
+        arguments["DbsUrl"] = None
+        stdBaseInstance.factoryWorkloadConstruction("TestWorkload", arguments)
         return 
 
 if __name__ == "__main__":

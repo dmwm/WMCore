@@ -21,7 +21,6 @@
     "MergedLFNBase": "/store/relval",
     "Multicore": 4,
     "Task1": {"InputDataset": "/SingleElectron/Run2012D-v1/RAW",
-        "Multicore": 4,
         "RunWhitelist": [208307],
         "ProcessingString": "GR_H_V55A_RelVal_electron2012D_TEST_Multicore",
         "AcquisitionEra": "CMSSW_7_4_0_pre8",

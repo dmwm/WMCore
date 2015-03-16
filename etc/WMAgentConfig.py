@@ -214,7 +214,7 @@ config.JobUpdater.componentDir = config.General.workDir + "/JobUpdater"
 config.JobUpdater.logLevel = globalLogLevel
 config.JobUpdater.pollInterval = 120
 #reqmgr url 'https://cmsweb.cern.ch/reqmgr/reqMgr'
-config.JobUpdater.reqMgrUrl = "OVER_WRITE_BY_SECETES"
+config.JobUpdater.reqMgr2Url = "OVER_WRITE_BY_SECETES"
 
 config.component_("ErrorHandler")
 config.ErrorHandler.namespace = "WMComponent.ErrorHandler.ErrorHandler"
@@ -274,7 +274,9 @@ config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl
 config.TaskArchiver.DataKeepDays = 0.125 # couhch history keeping days.
 config.TaskArchiver.cleanCouchInterval = 60 * 20 # 20 min
 config.TaskArchiver.ReqMgrServiceURL = "ReqMgr rest service"
+config.TaskArchiver.ReqMgr2ServiceURL = "ReqMgr2 rest service"
 config.TaskArchiver.archiveDelayHours = 24 # delay the archiving so monitor can still show. default 24 hours
+config.TaskArchiver.reqmgr2Only = False
 
 config.webapp_('WMBSService')
 config.WMBSService.default_expires = 0

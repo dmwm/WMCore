@@ -41,8 +41,6 @@ import traceback
 
 from WMCore.Algorithms                           import MathAlgos
 from WMCore.DAOFactory                           import DAOFactory
-from WMCore.DataStructs.Mask                     import Mask
-from WMCore.DataStructs.Run                      import Run
 from WMCore.Database.CMSCouch                    import CouchServer
 from WMCore.Lexicon                              import sanitizeURL
 from WMCore.Services.UserFileCache.UserFileCache import UserFileCache
@@ -56,12 +54,11 @@ from WMCore.BossAir.Plugins.gLitePlugin          import getDefaultDelegation
 from WMCore.Credential.Proxy                     import Proxy
 from WMComponent.JobCreator.CreateWorkArea       import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller     import retrieveWMSpec
-from WMCore.Services.WMStats.WMStatsWriter       import WMStatsWriter
 from WMCore.Services.RequestManager.RequestManager import RequestManager
+from WMCore.Services.ReqMgr.ReqMgr               import ReqMgr
 from WMCore.Services.RequestDB.RequestDBWriter   import RequestDBWriter
 
 from WMCore.DataStructs.MathStructs.DiscreteSummaryHistogram import DiscreteSummaryHistogram
-from WMCore.DataStructs.MathStructs.ContinuousSummaryHistogram import ContinuousSummaryHistogram
 
 class TaskArchiverPollerException(WMException):
     """
@@ -235,7 +232,13 @@ class TaskArchiverPoller(BaseWorkerThread):
             self.centralCouchDBWriter = self.requestLocalCouchDB;
         else:
             self.centralCouchDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.centralRequestDBURL)
-            self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
+            
+            if self.config.TaskArchiver.reqmgr2Only:
+                self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
+            else:
+                #TODO this need to be remove when reqmgr is not used
+                self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
+            
         # Start a couch server for getting job info
         # from the FWJRs for committal to archive
         try:
@@ -410,7 +413,12 @@ class TaskArchiverPoller(BaseWorkerThread):
                             # reqmgr
                             self.requestLocalCouchDB.updateRequestStatus(workflow, newState)
                         else:
-                            self.reqmgrSvc.updateRequestStatus(workflow, newState) 
+                            if self.config.TaskArchiver.reqmgr2Only:
+                                self.reqmgr2Svc.updateRequestStatus(workflow, newState)
+                            else:
+                                #TODO this need to be remove when reqmgr is not used 
+                                self.reqmgrSvc.updateRequestStatus(workflow, newState)
+                            
                         logging.info("status updated to %s : %s" % (newState, workflow))
     
                     wfsToDelete[workflow] = {"spec" : spec, "workflows": finishedwfs[workflow]["workflows"]}

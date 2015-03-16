@@ -30,7 +30,6 @@ from WMCore.WorkQueue.WorkQueueExceptions import TERMINAL_EXCEPTIONS
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueError
 from WMCore.WorkQueue.WorkQueueUtils import get_dbs
 from WMCore.WorkQueue.WorkQueueUtils import cmsSiteNames
-from WMCore.WorkQueue.WorkQueueUtils import makeLocationsList
 
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
 from WMCore.ACDC.DataCollectionService import DataCollectionService
@@ -41,7 +40,7 @@ from WMCore.Database.CMSCouch import CouchNotFoundError, CouchInternalServerErro
 
 from WMCore import Lexicon
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
-from WMCore.Services.RequestManager.RequestManager import RequestManager
+from WMCore.Services.ReqMgr.ReqMgr         import ReqMgr
 #  //
 # // Convenience constructor functions
 #//
@@ -975,7 +974,8 @@ class WorkQueue(WorkQueueBase):
                                 rejectedWork = rejectedWork[chunkSize:]
                                 chunkProcessed = processedInputs[:chunkSize]
                                 chunkRejected = rejectedWork[:chunkSize]
-
+                    
+                    #TODO: remove this when reqmgr is dropped
                     if not self.params.get('LocalQueueFlag') and self.params.get('WMStatsCouchUrl'):
                         # only update global stats for global queue
                         try:
@@ -989,8 +989,8 @@ class WorkQueue(WorkQueueBase):
                         # only update global stats for global queue
                         try:
                             # add the total work on wmstat summary or add the recently split work
-                            reqmgrSvc = RequestManager({'endpoint': self.params.get('ReqMgrServiceURL')})
-                            reqmgrSvc.putRequestStats(inbound['WMSpec'].name(), totalStats)
+                            reqmgrSvc = ReqMgr(self.params.get('ReqMgrServiceURL'))
+                            reqmgrSvc.updateRequestStats(inbound['WMSpec'].name(), totalStats)
                         except Exception, ex:
                             self.logger.info('Error publishing %s to Request Mgr: %s' % (inbound['RequestName'], str(ex)))
 

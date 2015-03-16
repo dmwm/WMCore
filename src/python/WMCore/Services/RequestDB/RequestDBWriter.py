@@ -29,6 +29,16 @@ class RequestDBWriter(RequestDBReader):
         status = {"RequestStatus": status}
         return self.couchDB.updateDocument(request, self.couchapp, "updaterequest",
                     status)
+        
+    def updateRequestStats(self, request, stats):
+        """
+        This functionis only available ReqMgr couch app currutly (not T0)
+        WQ specific function
+        param: stats: dict of {'total_jobs': 0, 'input_lumis': 0,
+                               'input_events': 0, 'input_num_files': 0}
+        """
+        return self.couchDB.updateDocument(request, self.couchapp, "totalstats",
+                    fields = stats)
 
     def updateRequestProperty(self, request, propDict, dn = None):
         encodeProperty = {}

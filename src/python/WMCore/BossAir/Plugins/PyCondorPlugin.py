@@ -1067,7 +1067,7 @@ class PyCondorPlugin(BasePlugin):
         if job.get('inputDataset', None):
             jdl.append('+DESIRED_CMSDataset = "%s"\n' % job['inputDataset'])
         if job.get('inputDatasetLocations', None):
-            jdl.append('+DESIRED_CMSDatasetLocations = %s\n' % job['inputDatasetLocations'])
+            jdl.append('+DESIRED_CMSDatasetLocations = "%s"\n' % ','.join(job['inputDatasetLocations']))
 
         # Performance estimates
         if job.get('estimatedJobTime', None):

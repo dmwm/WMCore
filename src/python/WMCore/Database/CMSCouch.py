@@ -339,6 +339,19 @@ class Database(CouchDBRequests):
             updateUri = '/%s/_design/%s/_update/%s/%s' % \
                 (self.name, design, update_func, doc_id)
             return self.put(uri=updateUri, data=fields, decode=False)
+    
+    def putDocument(self, doc_id, fields):
+        """
+        Call the update function update_func defined in the design document
+        design for the document doc_id with a query string built from fields.
+
+        http://wiki.apache.org/couchdb/Document_Update_Handlers
+        """
+        # Clean up /'s in the name etc.
+        doc_id = urllib.quote_plus(doc_id)
+        
+        updateUri = '/%s/%s' % (self.name, doc_id)
+        return self.put(uri=updateUri, data=fields, decode=False)
 
     def documentExists(self, id, rev = None):
         """
@@ -577,6 +590,24 @@ class Database(CouchDBRequests):
         if (id == "nonexistantid"):
             print attachment
         return attachment
+    
+    def bulkDeleteByIDs(self, ids):
+        """
+        delete bulk documents
+        """
+        # do the safty check other wise it will delete whole db.
+        if type(ids) != list:
+            raise
+        if len(ids) == 0:
+            return None
+        
+        docs = self.allDocs(keys=ids)['rows']
+        for j in docs:
+            doc = {}
+            doc["_id"]  = j['id']
+            doc["_rev"] = j['value']['rev']
+            self.queueDelete(doc)
+        return self.commit()
 
 class RotatingDatabase(Database):
     """

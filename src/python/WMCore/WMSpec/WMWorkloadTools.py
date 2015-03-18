@@ -128,14 +128,17 @@ def _validateArgumentOptions(arguments, argumentDefinition, optionKey):
             optional = True
         else:
             optional = argumentDefinition[argument].get(optionKey, True)
-        if not optional and argument not in arguments:
+        if not optional and (argument not in arguments):
             raise WMSpecFactoryException("Validation failed: %s is mendatory %s" % (argument, 
                                                                 argumentDefinition[argument]))
+        #If assign_optional is set to false it need to be assigned later.
+        #TODO this need to be done earlier then this function
+        #elif optionKey == "optional" and not argumentDefinition[argument].get("assign_optional", True):
+        #    del arguments[argument]
         # specific case when user GUI returns empty string for optional arguments
-        elif optional and argument not in arguments:
+        elif optional and (argument not in arguments):
             continue
-        elif optional and (argument in arguments) and \
-             (arguments[argument] == ""):
+        elif optional and (argument in arguments) and (arguments[argument] == ""):
             del arguments[argument] 
         else:
             arguments[argument] = _validateArgument(argument, arguments[argument], argumentDefinition)
@@ -205,13 +208,13 @@ def validateArgumentsNoOptionalCheck(arguments, argumentDefinition):
     """
     return _validateArgumentOptions(arguments, argumentDefinition, None)
 
-def setArgumentsNoneValueWithDefault(arguments, argumentDefinition):
+def setAssignArgumentsWithDefault(arguments, argumentDefinition, checkList):
     """
     sets the default value if arguments value is specified as None
     """
-    for argument in arguments:
-        if arguments[argument] == None:
-            argumentDefinition[argument]["default"]
+    for argument in checkList:
+        if not argument in arguments:
+            arguments[argument] = argumentDefinition[argument]["default"]
     return
 
 def loadSpecClassByType(specType):        

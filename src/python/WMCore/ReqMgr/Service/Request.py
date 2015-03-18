@@ -4,6 +4,7 @@ ReqMgr request handling.
 """
 
 import cherrypy
+import traceback
 
 from WMCore.Database.CMSCouch import CouchError
 from WMCore.WMSpec.WMWorkloadTools import loadSpecByType
@@ -198,9 +199,8 @@ class Request(RESTEntity):
                     
         except Exception, ex:
             #TODO add proper error message instead of trace back
-            import traceback
             msg = traceback.format_exc()
-            print msg
+            cherrypy.log("Error: %s" % msg)
             if hasattr(ex, "message"):
                 if hasattr(ex.message, '__call__'):
                     msg = ex.message()
@@ -363,7 +363,13 @@ class Request(RESTEntity):
         # if is not just updating status
         else:
             if len(request_args) > 1 or "RequestStatus" not in request_args:
-                workload.updateArguments(request_args)
+                try:
+                    workload.updateArguments(request_args)
+                except Exception, ex:
+                    msg = traceback.format_exc()
+                    cherrypy.log("Error for request args %s: %s" % (request_args, msg))
+                    raise InvalidSpecParameterValue(str(ex))
+                    
                 # trailing / is needed for the savecouchUrl function
                 workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
                 
@@ -453,8 +459,6 @@ class RequestStatus(RESTEntity):
         if transition == "true":
             return rows([REQUEST_STATE_TRANSITION])
         else:
-            print transition
-            print "$$$$"
             return rows(REQUEST_STATE_LIST)
     
     

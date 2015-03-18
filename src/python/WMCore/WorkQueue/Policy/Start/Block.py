@@ -209,7 +209,7 @@ class Block(StartPolicyInterface):
             }
 
         """
-
+        sliceSize = 50
         # Get mask and convert to LumiList to make operations easier
         maskedBlocks = {}
         lumiMask = task.getLumiMask()
@@ -219,15 +219,20 @@ class Block(StartPolicyInterface):
         # fill block lfn part of maskedBlocks
 
         for run, lumis in lumiMask.items():
-            files = dbs.dbs.listFiles(dataset=datasetPath, run_num=run,
-                                      lumi_list=lumis, detail=True)
-            for file in files:
-                blockName = file['block_name']
-                fileName = file['logical_file_name']
-                if blockName not in maskedBlocks:
-                    maskedBlocks[blockName] = {}
-                if fileName not in maskedBlocks[blockName]:
-                    maskedBlocks[blockName][fileName] = LumiList()
+            while True:
+                lumisSlice = lumis[:sliceSize]
+                lumis = lumis[sliceSize:]
+                files = dbs.dbs.listFiles(dataset=datasetPath, run_num=run,
+                                          lumi_list=lumisSlice, detail=True)
+                for file in files:
+                    blockName = file['block_name']
+                    fileName = file['logical_file_name']
+                    if blockName not in maskedBlocks:
+                        maskedBlocks[blockName] = {}
+                    if fileName not in maskedBlocks[blockName]:
+                        maskedBlocks[blockName][fileName] = LumiList()
+                if lumis == []:
+                    break
 
         # Fill maskedLumis part of maskedBlocks
 

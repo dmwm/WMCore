@@ -10,7 +10,7 @@ from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop
 from WMCore.WMSpec.Persistency import PersistencyHelper
 from WMCore.WMSpec.WMWorkloadTools import validateArgumentsUpdate, \
-                        loadSpecClassByType, setArgumentsNoneValueWithDefault
+                        loadSpecClassByType, setAssignArgumentsWithDefault
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 from WMCore.Lexicon import lfnBase, sanitizeURL
 from WMCore.WMException import WMException
@@ -1729,26 +1729,46 @@ class WMWorkloadHelper(PersistencyHelper):
         args are validated before update.
         assignment is common for all different types spec.
         """
-
+        siteParams = ["SiteWhitelist", "SiteBlacklist"]
+        lfnParams = ["MergedLFNBase", "UnmergedLFNBase"]
+        mergeParams = ["MinMergeSize", "MaxMergeSize", "MaxMergeEvents"]
+        performanceParams = ["MaxRSS", "MaxVSize", "SoftTimeout", "GracePeriod"]
+        phedexParams =["CustodialSites", "NonCustodialSites",
+                        "AutoApproveSubscriptionSites",
+                        "CustodialSubType", "SubscriptionPriority"]
+        blockCloseParams = ["BlockCloseMaxWaitTime", "BlockCloseMaxFiles",
+                                    "BlockCloseMaxEvents", "BlockCloseMaxSize"]
+        
+        assignParams = []
+        assignParams.extend(siteParams)
+        assignParams.extend(lfnParams)
+        assignParams.extend(mergeParams)
+        assignParams.extend(performanceParams)
+        assignParams.extend(phedexParams)
+        assignParams.extend(blockCloseParams)
+        
+        
         specClass = loadSpecClassByType(self.requestType())
         argumentDefinition = specClass.getWorkloadArguments()
-        setArgumentsNoneValueWithDefault(kwargs, argumentDefinition)
-
-        if self._checkKeys(kwargs, ["SiteWhitelist", "SiteBlacklist"]):
+        setAssignArgumentsWithDefault(kwargs, argumentDefinition, assignParams)
+        
+        
+        if self._checkKeys(kwargs, siteParams):
             self.setSiteWildcardsLists(siteWhitelist = kwargs["SiteWhitelist"],
                                        siteBlacklist = kwargs["SiteBlacklist"],
                                        wildcardDict = wildcardSites)
         #FIXME not validated
-        if self._checkKeys(kwargs, ["MergedLFNBase", "UnmergedLFNBase"]):
+        if self._checkKeys(kwargs, lfnParams):
             self.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
 
-        if self._checkKeys(kwargs, ["MinMergeSize", "MaxMergeSize", "MaxMergeEvents"]):
+        if self._checkKeys(kwargs, mergeParams):
             self.setMergeParameters(int(kwargs["MinMergeSize"]),
                                     int(kwargs["MaxMergeSize"]),
                                     int(kwargs["MaxMergeEvents"]))
 
         # Set ProcessingVersion and AcquisitionEra, which could be json encoded dicts
         # it should be processed once LFNBase are set
+        
         if self._checkKeys(kwargs, "ProcessingVersion"):
             self.setProcessingVersion(kwargs["ProcessingVersion"])
         if self._checkKeys(kwargs, "AcquisitionEra"):
@@ -1756,7 +1776,7 @@ class WMWorkloadHelper(PersistencyHelper):
         if self._checkKeys(kwargs, "ProcessingString"):
             self.setProcessingString(kwargs["ProcessingString"])
 
-        if self._checkKeys(kwargs, ["MaxRSS", "MaxVSize", "SoftTimeout", "GracePeriod"]):
+        if self._checkKeys(kwargs, performanceParams):
             self.setupPerformanceMonitoring(int(kwargs["MaxRSS"]),
                                           int(kwargs["MaxVSize"]),
                                           int(kwargs["SoftTimeout"]),
@@ -1768,9 +1788,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         # Set phedex subscription information
 
-        if self._checkKeys(kwargs, ["CustodialSites", "NonCustodialSites",
-                                    "AutoApproveSubscriptionSites",
-                                    "CustodialSubType", "SubscriptionPriority"]):
+        if self._checkKeys(kwargs, phedexParams):
             self.setSubscriptionInformationWildCards(wildcardDict = wildcardSites,
                                         custodialSites = kwargs["CustodialSites"],
                                         nonCustodialSites = kwargs["NonCustodialSites"],
@@ -1779,8 +1797,7 @@ class WMWorkloadHelper(PersistencyHelper):
                                         priority = kwargs["SubscriptionPriority"])
 
         # Block closing information
-        if self._checkKeys(kwargs, ["BlockCloseMaxWaitTime", "BlockCloseMaxFiles",
-                                    "BlockCloseMaxEvents", "BlockCloseMaxSize"]):
+        if self._checkKeys(kwargs, blockCloseParams):
             self.setBlockCloseSettings(kwargs["BlockCloseMaxWaitTime"],
                                        kwargs["BlockCloseMaxFiles"],
                                        kwargs["BlockCloseMaxEvents"],

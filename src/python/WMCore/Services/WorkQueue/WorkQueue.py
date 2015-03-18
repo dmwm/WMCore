@@ -10,13 +10,16 @@ class WorkQueue(object):
     API for dealing with retrieving information from WorkQueue DataService
     """
 
-    def __init__(self, couchURL, dbName = None):
+    def __init__(self, couchURL, dbName = None, inboxDBName = None):
         # if dbName not given assume we have to split
         if not dbName:
             couchURL, dbName = splitCouchServiceURL(couchURL)
         self.hostWithAuth = couchURL
         self.server = CouchServer(couchURL)
         self.db = self.server.connectDatabase(dbName, create = False)
+        if not inboxDBName:
+            inboxDBName = "%s_inbox" % dbName
+        self.inboxDB = self.server.connectDatabase(inboxDBName, create = False)
         self.defaultOptions = {'stale': "update_after", 'reduce' : True, 'group' : True}
 
     def getTopLevelJobsByRequest(self):
@@ -141,3 +144,38 @@ class WorkQueue(object):
             dummy_values = {'name' : wmspec.name()}
             wmspec.saveCouch(self.hostWithAuth, self.db.name, dummy_values)
         return
+
+    def getWorkflowNames(self, inboxFlag = False):
+        """Get workflow names from workqueue db"""
+        if inboxFlag:
+            db = self.inboxDB
+        else:
+            db = self.db
+        data = db.loadView('WorkQueue', 'elementsByWorkflow', self.defaultOptions)
+        return [x['key'] for x in data.get('rows', [])]
+    
+    def deleteWQElementsByWorkflow(self, workflowNames):
+        """
+        delete workqueue elements belongs to given workflow names
+        """
+        deleted = 0
+        dbs = [self.db, self.inboxDB]
+        if type(workflowNames) != list:
+            workflowNames = [workflowNames]
+        
+        if len(workflowNames) == 0:
+            return deleted
+        
+        options = {} 
+        options["stale"] = "ok"
+        options["reduce"] = False
+        
+        for couchdb in dbs:
+            result = couchdb.loadView("WorkQueue", "elementsByWorkflow", options, workflowNames)
+            ids = []
+            for entry in result["rows"]:
+                ids.append(entry["id"])
+            if ids:
+                couchdb.bulkDeleteByIDs(ids)
+                deleted += len(ids)
+        return deleted

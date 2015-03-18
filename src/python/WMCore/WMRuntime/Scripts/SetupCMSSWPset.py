@@ -311,8 +311,11 @@ class SetupCMSSWPset(ScriptInterface):
         import FWCore.ParameterSet.Config as PSetConfig
 
         # include the default performance report services
-        if getattr(self.step.data.application.command, 'memoryCheck', True):
+        if getattr(self.step.data.application.command, 'silentMemoryCheck', False):
+            self.process.add_(PSetConfig.Service("SimpleMemoryCheck", jobReportOutputOnly=PSetConfig.untracked.bool(True)))
+        else:
             self.process.add_(PSetConfig.Service("SimpleMemoryCheck"))
+
         self.process.add_(PSetConfig.Service("CPU"))
         self.process.add_(PSetConfig.Service("Timing"))
         self.process.Timing.summaryOnly = PSetConfig.untracked(PSetConfig.bool(True))

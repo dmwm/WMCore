@@ -40,6 +40,7 @@ class EventAwareLumiBased(JobFactory):
         """
 
         avgEventsPerJob = int(kwargs.get('events_per_job', 5000))
+        jobLimit        = int(kwargs.get('job_limit', 0))
         eventLimit      = int(kwargs.get('max_events_per_lumi', 20000))
         totalEvents     = int(kwargs.get('total_events', 0))
         splitOnFile     = bool(kwargs.get('halt_job_on_file_boundaries', True))
@@ -264,6 +265,9 @@ class EventAwareLumiBased(JobFactory):
                             lumisInJobInFile = 0
                             currentJobAvgEventCount = 0
                             totalJobs += 1
+                            if jobLimit and totalJobs > jobLimit:
+                                msg = "Job limit of {0} jobs exceeded.".format(jobLimit)
+                                raise RuntimeError(msg)
 
                             # Add the file to new jobs
                             self.currentJob.addFile(f)

@@ -26,7 +26,7 @@ def remapDBS3Keys(data, stringify = False, **others):
                    'logical_file_name' : 'LogicalFileName',
                    'adler32': 'Adler32', 'check_sum': 'Checksum', 'md5': 'Md5',
                    'block_name': 'BlockName','run_num': 'RunNumber', 'lumi_section_num': 'LumiSectionNumber'}
-    
+
     mapping.update(others)
     format = lambda x: str(x) if stringify and type(x) == unicode else x
     for name, newname in mapping.iteritems():
@@ -82,7 +82,7 @@ class DBS3Reader:
             item['LumiSectionNumber'] = lumisItem['lumi_section_num']
             lumiDict[lumisItem['logical_file_name']].append(item)
         return lumiDict
-    
+
     def listPrimaryDatasets(self, match = '*'):
         """
         _listPrimaryDatasets_
@@ -216,13 +216,13 @@ class DBS3Reader:
 
         """
         return [ x['logical_file_name'] for x in self.dbs.listFiles(dataset = datasetPath)]
-        
+
 
     def listDatasetFileDetails(self, datasetPath, getParents=False):
         """
         TODO: This is completely wrong need to be redone. or be removed - getting dataset altogether
-        might be to costly 
-        
+        might be to costly
+
         _listDatasetFileDetails_
 
         Get list of lumis, events, and parents for each file in a dataset
@@ -231,8 +231,8 @@ class DBS3Reader:
               'BlockName': '/HighPileUp/Run2011A-v1/RAW#dd6e0796-cbcc-11e0-80a9-003048caaace',
               'Lumis': {173658: [8, 12, 9, 14, 19, 109, 105]},
               'Parents': [],
-              'Checksum': '22218315', 
-              'Adler32': 'a41a1446', 
+              'Checksum': '22218315',
+              'Adler32': 'a41a1446',
               'Md5': 'NOTSET',
               'FileSize': 286021145
             }
@@ -242,7 +242,7 @@ class DBS3Reader:
         blocks = set() #the set of blocks of the dataset
         #Iterate over the files and prepare the set of blocks and a dict where the keys are the files
         files = {}
-        for f in fileDetails:        
+        for f in fileDetails:
             blocks.add(f['block_name'])
             files[f['logical_file_name']] = remapDBS3Keys(f, stringify = True)
             files[f['logical_file_name']]['Lumis'] = {}
@@ -255,7 +255,8 @@ class DBS3Reader:
             if getParents:
                 parents = self.dbs.listFileParents(block_name=blockName)
                 for p in parents:
-                    files[p['logical_file_name']]['Parents'].extend(p['parent_logical_file_name'])
+                    if p['logical_file_name'] in files: #invalid files are not there
+                        files[p['logical_file_name']]['Parents'].extend(p['parent_logical_file_name'])
             #get the lumis
             file_lumis = self.dbs.listFileLumis(block_name=blockName, validFileOnly = 1)
             for f in file_lumis:
@@ -504,12 +505,12 @@ class DBS3Reader:
                     if lumis:
                         dbsFile["LumiList"] = self._getLumiList(parentLFN)[parentLFN]
                     parentList.append(dbsFile)
-                        
+
             parentsByLFN[f['logical_file_name']] = parentList
-            
+
         for fileInfo in fileDetails:
             fileInfo["ParentList"] = parentsByLFN[fileInfo['logical_file_name']]
-             
+
         return fileDetails
 
     def lfnsInBlock(self, fileBlockName):

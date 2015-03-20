@@ -21,7 +21,7 @@ class _MockDBSApi():
         self.args = args
         self.dbg = DataBlockGenerator3()
 
-    def listFiles(self, dataset = None, block_name = None, run_num = None, lumi_list = [], detail = False):
+    def listFileArray(self, dataset = None, block_name = None, run_num = None, lumi_list = [], detail = False):
         res = []
 
         if dataset:
@@ -86,7 +86,7 @@ class _MockDBSApi():
             raise NotImplementedError
 
         if block_name:
-            files = self.listFiles(block_name = block_name)
+            files = self.listFileArray(block_name = block_name)
             summary = {'num_files' : 0, 'num_lumi' : 0, 'num_block' : 1, 'num_event' : 0, 'file_size' : 0}
             for file in files:
                 summary['num_files'] += 1

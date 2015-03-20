@@ -140,7 +140,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     args["version"] = "DBS_2_0_9"
     args["mode"] = "GET"
     dbsApi = DbsApi(args)
-    dbsResults = dbsApi.listFiles(path = datasetPath, retriveList = ["retrive_block","retrive_lumi", "retrive_run"])
+    dbsResults = dbsApi.listFileArray(path = datasetPath, retriveList = ["retrive_block","retrive_lumi", "retrive_run"])
 
     # NOTE : this is to limit the number of jobs to create ... simply using first 10 files get for the needed dataset
     dbsResults =dbsResults[0:2]

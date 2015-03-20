@@ -72,7 +72,7 @@ class AnalysisCollectionService(CouchService):
 
         dbsReader = DBSReader(dbsURL, version="DBS_2_0_9", mode="GET")
 
-        dbsResults = dbsReader.dbs.listFiles(path=dataset, retriveList=["retrive_lumi", "retrive_run"])
+        dbsResults = dbsReader.dbs.listFileArray(path=dataset, retriveList=["retrive_lumi", "retrive_run"])
         logging.info('Found %s files from DBS' % len(dbsResults))
 
         for dbsResult in dbsResults:

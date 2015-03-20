@@ -83,7 +83,7 @@ for blockName in blocks.keys():
     print "%s:" % blockName
     blockFiles = []
     try:
-        dbsFiles = dbsApi.listFiles(blockName = blockName)
+        dbsFiles = dbsApi.listFileArray(blockName = blockName)
     except Exception, ex:
         dbsFiles = []
         

@@ -118,12 +118,10 @@ def request_attr(doc, attrs=None):
 def spec_list(root, spec_path):
     "Return list of specs from given root directory"
     specs = []
-    print "root", root, spec_path
     for fname in os.listdir(root):
         if  not fname.endswith('.py') or fname == '__init__.py':
             continue
         sname = fname.split('.')[0]
-        print "local load", sname, spec_path
         pluginFactory = WMFactory("specArgs", spec_path)
         alteredClassName = "%sWorkloadFactory" % sname
         try:
@@ -132,7 +130,6 @@ def spec_list(root, spec_path):
             print str(err)
             continue
         specs.append(sname)
-    print "\n### specs", specs
     return specs
 
 class ReqMgrService(TemplatedPage):

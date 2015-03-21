@@ -43,15 +43,9 @@ from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
 from WMCore.ReqMgr.Service.Request import Request
 from WMCore.ReqMgr.Service.RestApiHub import RestApiHub
 from WMCore.REST.Main import RESTMain
-
-# WMCore specs
-from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
-from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
-from WMCore.WMSpec.StdSpecs.StoreResults import StoreResultsWorkloadFactory
-from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
-from WMCore.WMSpec.StdSpecs.Resubmission import ResubmissionWorkloadFactory
-from WMCore.WMSpec.StdSpecs.ReDigi import ReDigiWorkloadFactory
+from WMCore.WMFactory import WMFactory
+# import WMCore itself to determine path of modules
+import WMCore
 
 # new reqmgr2 APIs
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
@@ -121,6 +115,26 @@ def request_attr(doc, attrs=None):
                 rdict[key] = doc[key]
     return rdict
 
+def spec_list(root, spec_path):
+    "Return list of specs from given root directory"
+    specs = []
+    print "root", root, spec_path
+    for fname in os.listdir(root):
+        if  not fname.endswith('.py') or fname == '__init__.py':
+            continue
+        sname = fname.split('.')[0]
+        print "local load", sname, spec_path
+        pluginFactory = WMFactory("specArgs", spec_path)
+        alteredClassName = "%sWorkloadFactory" % sname
+        try:
+            _ = pluginFactory.loadObject(classname=sname, alteredClassName=alteredClassName)
+        except Exception as err:
+            print str(err)
+            continue
+        specs.append(sname)
+    print "\n### specs", specs
+    return specs
+
 class ReqMgrService(TemplatedPage):
     """
     Request Manager web service class
@@ -128,6 +142,7 @@ class ReqMgrService(TemplatedPage):
     def __init__(self, app, config, mount):
         print "\n### Configuration:"
         self.base = config.base
+        self.rootdir = '/'.join(WMCore.__file__.split('/')[:-1])
         if  config and not isinstance(config, dict):
             web_config = config.dictionary_()
         if  not config:
@@ -139,6 +154,8 @@ class ReqMgrService(TemplatedPage):
         self.cssdir = web_config.get('cssdir', cssdir)
         jsdir  = os.environ.get('RM_JSPATH', os.getcwd()+'/js')
         self.jsdir = web_config.get('jsdir', jsdir)
+        spdir  = os.environ.get('RM_SPECPATH', os.getcwd()+'/specs')
+        self.spdir = web_config.get('spdir', jsdir)
         # read scripts area and initialize data-ops scripts
         self.sdir = os.environ.get('RM_SCRIPTS', os.getcwd()+'/scripts')
         self.sdir = web_config.get('sdir', self.sdir)
@@ -151,15 +168,6 @@ class ReqMgrService(TemplatedPage):
         self.jsmap  = {}
         self.imgmap = {}
         self.yuimap = {}
-
-        # keep track of specs
-        self.specs = {'StdBase': StdBase().getWorkloadArguments(),
-                'ReReco': ReRecoWorkloadFactory().getWorkloadArguments(),
-                'MonteCarlo': MonteCarloWorkloadFactory().getWorkloadArguments(),
-                'StoreResults': StoreResultsWorkloadFactory().getWorkloadArguments(),
-                'DataProcessing': DataProcessing().getWorkloadArguments(),
-                'Resubmission': ResubmissionWorkloadFactory().getWorkloadArguments(),
-                'ReDigi': ReDigiWorkloadFactory().getWorkloadArguments()}
 
         # Update CherryPy configuration
         mime_types  = ['text/css']
@@ -178,7 +186,6 @@ class ReqMgrService(TemplatedPage):
         api = RestApiHub(app, config.reqmgr, mount)
 
         # initialize access to reqmgr2 APIs
-#        url = "https://localhost:8443/reqmgr2"
         self.reqmgr = ReqMgr(config.reqmgr.reqmgr2_url)
 
         # admin helpers
@@ -369,13 +376,27 @@ class ReqMgrService(TemplatedPage):
     @expose
     def create(self, **kwds):
         """create page"""
-        spec = kwds.get('form', 'ReReco')
+        # get list of standard specs from WMCore and new ones from local area
+        std_specs_dir = os.path.join(self.rootdir, 'WMSpec/StdSpecs')
+        std_specs = spec_list(std_specs_dir, 'WMSpec.StdSpecs')
+        loc_specs_dir = os.path.join(self.spdir, 'Specs') # local specs
+        loc_specs = spec_list(loc_specs_dir, 'Specs')
+        all_specs = std_specs + loc_specs
+        all_specs.sort()
+        spec = kwds.get('form', '')
+        if  not spec:
+            spec = std_specs[0]
+        # make spec first in all_specs list
+        if  spec in all_specs:
+            all_specs.remove(spec)
+        all_specs = [spec] + all_specs
         jsondata = get_request_template_from_type(spec)
         # create templatized page out of provided forms
         self.update_scripts()
         content = self.templatepage('create', table=json2table(jsondata, web_ui_names()),
                 jsondata=json2form(jsondata, indent=2, keep_first_value=True), name=spec,
-                scripts=[s for s in self.sdict.keys() if s!='ts'])
+                scripts=[s for s in self.sdict.keys() if s!='ts'],
+                specs=all_specs)
         return self.abs_page('create', content)
 
     def generate_objs(self, script, jsondict):

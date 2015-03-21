@@ -2,14 +2,12 @@
 <hr/>
 <header class="group">
     <nav class="navbar navbar-left">
-        <ul>
-        <li id="ReReco" class="menu-item"><a href="$base/create?form=ReReco">ReReco</a></li>
-        <li id="MonteCarlo" class="menu-item"><a href="$base/create?form=MonteCarlo">MonteCarlo</a></li>
-        <li id="StoreResults" class="menu-item"><a href="$base/create?form=StoreResults">StoreResults</a></li>
-        <li id="DataProcessing" class="menu-item"><a href="$base/create?form=DataProcessing">DataProcessing</a></li>
-        <li id="Resubmission" class="menu-item"><a href="$base/create?form=Resubmission">Resubmission</a></li>
-        <li id="ReDigi" class="menu-item"><a href="$base/create?form=ReDigi">ReDigi</a></li>
-        </ul>
+        Workflow template:
+        <select onchange="loadSpec(this)">
+        #for spec in $specs
+        <option value="$spec">$spec</option>
+        #end for
+        </select>
     </nav>
     <nav class="navbar navbar-right">
         <ul>
@@ -107,9 +105,8 @@ function ActivateJSON() {
     id.className="btn btn-small";
     ShowTag('edit-json');HideTag('edit-table');
 }
-function ShowForm(tag) {
-    var id=document.getElementById(tag);
-    id.className='menu-item active underline'
+function loadSpec(tag) {
+    var url="$base/create?form="+tag.value;
+    load(url);
 }
-ShowForm('$name')
 </script>

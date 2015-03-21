@@ -1,3 +1,67 @@
+1.0.4 to 1.0.5.pre6:
+  - Merge pull request #5692 from amaltaro/slice-lumiList
+  - Merge pull request #5695 from mmascher/fix_keyerror
+  - Fix for invalid files in listDatasetFileDetails. Fixes #5694
+  - 1.0.5.pre5
+  - Merge pull request #5693 from ticoann/reqmgr2-fix
+  - fix reqmgr2 assignment validation and WQ cleanup library
+  - Merge pull request #5691 from juztas/patch-1
+  - split lumiList into smaller slices for dbs call
+  - Turn on Memory report output
+  - Merge pull request #5690 from dmwm/pause_jobs_zero_retries
+  - Accept zero retries in the paused job algorithm
+  - 1.0.5.pre4
+  - Merge pull request #5689 from ticoann/workqueue_clean_up
+  - change default grace period
+  - Merge pull request #5684 from amaltaro/fix-acdc-lumiBased
+  - Fixes ACDC documents retrieval. LumiBased splitting at least
+  - 1.0.5.pre3
+  - Merge pull request #5674 from ticoann/reqmgr2_transition
+  - Merge pull request #5686 from amaltaro/rereco-skim
+  - small change to TC multicore; new ReReco+Skim template
+  - Merge pull request #5683 from ticoann/fix_parent_validationwq
+  - fix tier0 case and typo
+  - make workqueue and agent compatible with reqmgr2
+  - 1.0.5.pre2
+  - Merge pull request #5648 from ticoann/add_getRevision
+  - make event per job always int for task chain add function to get the revision history in couch
+  - Merge pull request #5645 from amaltaro/harvesting-templates
+  - Merge pull request #5676 from ticoann/add_parent_file_validation
+  - add include parent flag validation
+  - Merge pull request #5671 from ticoann/reqmgr2_transition
+  - fix the validation other than the assignment status change
+  - Merge pull request #5662 from ericvaandering/ncore_dashboard_rebase
+  - 1.0.5.pre1
+  - Merge pull request #5666 from amaltaro/taskChain-multicore-json
+  - Add multicore taskchain template (request basis)
+  - Merge pull request #5664 from ticoann/wmstats_call_fix
+  - fix job info retrieval when there is no job info is available
+  - Update dashboard unit test to test multithreaded reporting of NCores
+  - Add NCores to dashboard info per step plus max(NCores) for the job Add getNumberOfCores to WMTask and replace unused function with it
+  - Merge pull request #5654 from ticoann/set_agent_number
+  - Merge pull request #5661 from ticoann/fix_unit_test
+  - fix ReportEmu_t, DashboardInterface_t
+  - Merge pull request #5658 from ericvaandering/clean_addfiles
+  - Remove addFiles function needed for forked CMSSW job report
+  - Merge pull request #5559 from juztas/custom_err_message
+  - Possibility to raise own error message
+  - Merge pull request #5655 from ericvaandering/remove_multicore_enabled
+  - Merge pull request #5652 from ericvaandering/setup_cmssw_noenabled
+  - Merge pull request #5650 from ericvaandering/multicore_condor_cleanup
+  - Merge pull request #5651 from ericvaandering/fix_mcm_service2
+  - Get rid of multicore enabled flag everywhere. Remove MulticoreCMSSW step type, FWJR consolidation used by old code, and various obsolete tests for the forking way of doing multicore jobs.
+  - Merge pull request #5649 from mmascher/master
+  - Merge pull request #5639 from ticoann/fix_task_chain_event_per_job
+  - Merge pull request #5638 from ticoann/rm_global_monitor
+  - set default agent number
+  - Remove some error trapping from McM service class, and Update to catch all exceptions McM service can throw. Do right thing when no data exists.
+  - Simplify setting options, remove multicore.enabled
+  - Change condor plugins to only key off of number of CPUs
+  - Add the possibility to turn off SimpleMemoryCheck in SetupCMSSWPSet
+  - multiRun template for the new DQMHarvest spec
+  - make event per job always int for task chain
+  - remove global monitor code
+
 1.0.4 to 1.0.5.pre5:
   - Merge pull request #5693 from ticoann/reqmgr2-fix
   - fix reqmgr2 assignment validation and WQ cleanup library

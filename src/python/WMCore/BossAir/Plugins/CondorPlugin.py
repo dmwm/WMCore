@@ -190,6 +190,10 @@ class CondorPlugin(BasePlugin):
         self.defaultTaskPriority = getattr(config.BossAir, 'defaultTaskPriority', 0)
         self.maxTaskPriority     = getattr(config.BossAir, 'maxTaskPriority', 1e7)
 
+        # Required for global pool accounting
+        self.acctGroup = getattr(config.BossAir, 'acctGroup', "production")
+        self.acctGroupUser = getattr(config.BossAir, 'acctGroupUser', "cmsdataops")
+
         # Build ourselves a pool
         self.pool     = []
         self.input    = None
@@ -849,6 +853,11 @@ class CondorPlugin(BasePlugin):
 
         jdl.append("+WMAgent_AgentName = \"%s\"\n" %(self.agent))
         jdl.append("+JOBGLIDEIN_CMSSite= \"$$([ifThenElse(GLIDEIN_CMSSite is undefined, \\\"Unknown\\\", GLIDEIN_CMSSite)])\"\n")
+
+        # Required for global pool accounting
+        jdl.append("+AcctGroup = \"%s\"\n" % (self.acctGroup))
+        jdl.append("+AcctGroupUser = \"%s\"\n" %(self.acctGroupUser))
+        jdl.append("+AccountingGroup = \"%s.%s\"\n" %(self.acctGroup, self.acctGroupUser))
 
         jdl.extend(self.customizeCommon(jobList))
 

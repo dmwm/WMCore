@@ -1,5 +1,73 @@
-<pre>
-<code>
-$doc
-</code>
-</pre>
+#if $table
+<header class="group">
+    <nav class="navbar navbar-left">
+    <h3>$title</h3>
+    </nav>
+    <nav class="navbar navbar-right">
+        <ul>
+        <li><button class="btn btn-small btn-active" id="btn-table" onclick="ActivateTable()">Table</button></li>
+        <li><button class="btn btn-small" id="btn-json" onclick="ActivateJSON()">JSON</button></li>
+        </ul>
+    </nav>
+</header>
+<hr/>
+<form id="change-status-form" name="change-status-form" method="post">
+<header class="group">
+<nav class="navbar navbar-right">
+<ul>
+<li>
+Status: <b>$status</b> to
+<select id="RequestStatus" name="RequestStatus">
+#for val in $transitions
+<option value="$val">$val</option>
+#end for
+</select>
+</li>
+<li>
+<input type="hidden" id="RequestName" name="RequestName" value="$name" />
+<button class="btn btn-small btn-green unit-push-right" onclick="javascript:ChangeRequestStatus()">Submit</button>
+</li>
+</nav>
+</header>
+</form>
+
+<div name="edit-table" id="edit-table">
+$table
+</div>
+
+<div name="edit-json" id="edit-json" class="hide">
+<h3>Series of requests</h3>
+<pre><code>
+$jsondata
+</code></pre>
+</div>
+#else
+<pre><code>
+$jsondata
+</code></pre>
+#end if
+
+<script>
+function ChangeRequestStatus() {
+    var parameters = \$('change-status-form').serialize(true);
+    ajaxRequest('$base/data/request', parameters);
+}
+function ActivateTable() {
+    var id = document.getElementById('btn-table');
+    id.className="btn btn-small btn-active";
+    id = document.getElementById('btn-json');
+    id.className="btn btn-small";
+    ShowTag('edit-table');HideTag('edit-json');
+}
+function ActivateJSON() {
+    var id = document.getElementById('btn-json');
+    id.className="btn btn-small btn-active";
+    id = document.getElementById('btn-table');
+    id.className="btn btn-small";
+    ShowTag('edit-json');HideTag('edit-table');
+}
+function loadSpec(tag) {
+    var url="$base/create?form="+tag.value;
+    load(url);
+}
+</script>

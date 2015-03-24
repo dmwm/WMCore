@@ -101,6 +101,7 @@ pluginLookup = { 'test-win' : 'TestWinImpl',
                 "srmv2": 'SRMV2Impl',
                 "xrdcp": 'XRDCPImpl',
                 "vandy": 'VandyImpl',
+                "gfal2": 'GFAL2Impl',
                 # NOTE NOTE NOTE:
                 # do NOT implement this
                 "testFallbackToOldBackend" : 'TestBackendForFallbacksDontImplement'}

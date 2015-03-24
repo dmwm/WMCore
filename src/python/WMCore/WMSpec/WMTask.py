@@ -870,8 +870,8 @@ class WMTaskHelper(TreeHelper):
         return outputDatasets
 
     def setSubscriptionInformation(self, custodialSites = None, nonCustodialSites = None,
-                                         autoApproveSites = None, priority = "Low",
-                                         custodialSubType = "Move",
+                                         autoApproveSites = None, custodialSubType = "Move",
+                                         nonCustodialSubType = "Replica", priority = "Low",
                                          primaryDataset = None, dataTier = None):
         """
         _setSubscriptionsInformation_
@@ -885,6 +885,7 @@ class WMTaskHelper(TreeHelper):
         data.subscriptions.<outputModule>.autoApproveSites
         data.subscriptions.<outputModule>.priority
         data.subscriptions.<outputModule>.custodialSubType
+        data.subscriptions.<outputModule>.nonCustodialSubType
 
         The filters arguments allow to define a dataTier and primaryDataset. Only datasets
         matching those values will be configured.
@@ -915,6 +916,7 @@ class WMTaskHelper(TreeHelper):
                 outputModuleSection.nonCustodialSites = []
                 outputModuleSection.autoApproveSites = []
                 outputModuleSection.custodialSubType = "Move"
+                outputModuleSection.nonCustodialSubType = "Replica"
                 outputModuleSection.priority = "Low"
 
             outputModuleSection = getattr(self.data.subscriptions, outputModule)
@@ -926,6 +928,7 @@ class WMTaskHelper(TreeHelper):
                 outputModuleSection.autoApproveSites = autoApproveSites
             outputModuleSection.priority = priority
             outputModuleSection.custodialSubType = custodialSubType
+            outputModuleSection.nonCustodialSubType = nonCustodialSubType
 
         return
 
@@ -956,7 +959,8 @@ class WMTaskHelper(TreeHelper):
                       NonCustodialSites : [],
                       AutoApproveSites : [],
                       Priority : "Low",
-                      CustodialSubType : "Move"
+                      CustodialSubType : "Move",
+                      NonCustodialSubType : "Replica"
                      }
         }
         """
@@ -972,7 +976,8 @@ class WMTaskHelper(TreeHelper):
                                        "AutoApproveSites" : outputModuleSection.autoApproveSites,
                                        "Priority" : outputModuleSection.priority,
                                        # Specs assigned before HG1303 don't have the CustodialSubtype
-                                       "CustodialSubType" : getattr(outputModuleSection, "custodialSubType", "Move")}
+                                       "CustodialSubType" : getattr(outputModuleSection, "custodialSubType", "Move"),
+                                       "NonCustodialSubType" : getattr(outputModuleSection, "nonCustodialSubType", "Replica")}
         return subInformation
 
     def parentProcessingFlag(self):

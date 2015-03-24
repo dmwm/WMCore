@@ -146,10 +146,12 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
                 site = self.cmsToPhedexMap[site].get("MSS") or self.cmsToPhedexMap[site]["Disk"] 
 
             # Avoid custodial subscriptions to disk nodes
-            if site not in self.phedexNodes['MSS']: subInfo['custodial'] = 'n'
-            # Avoid move subscriptions and replica
-            if subInfo['custodial'] == 'n': subInfo['move'] = 'n'
-           
+            if site not in self.phedexNodes['MSS']: 
+                subInfo['custodial'] = 'n'
+            # Avoid auto approval in T1 sites
+            elif site.startswith("T1"):
+                subInfo['request_only'] = 'y'
+            
             phedexSub = PhEDExSubscription(subInfo['path'], site,
                                            self.group, priority = subInfo['priority'],
                                            move = subInfo['move'], custodial = subInfo['custodial'],

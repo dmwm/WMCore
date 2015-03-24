@@ -418,7 +418,7 @@ class WMWorkloadTest(unittest.TestCase):
         testWorkload.setMergeParameters(minSize = 10, maxSize = 100, maxEvents = 1000)
 
         procSplitParams = procTask.jobSplittingParameters(performance = False)
-        self.assertEqual(len(procSplitParams.keys()), 4,
+        self.assertEqual(len(procSplitParams.keys()), 5,
                          "Error: Wrong number of params for proc task.")
         self.assertEqual(procSplitParams["algorithm"], "FileBased",
                          "Error: Wrong job splitting algo for proc task.")
@@ -430,7 +430,7 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Site black list was updated.")
 
         skimSplitParams = skimTask.jobSplittingParameters(performance = False)
-        self.assertEqual(len(skimSplitParams.keys()), 5,
+        self.assertEqual(len(skimSplitParams.keys()), 6,
                          "Error: Wrong number of params for skim task.")
         self.assertEqual(skimSplitParams["algorithm"], "FileBased",
                          "Error: Wrong job splitting algo for skim task.")
@@ -444,7 +444,7 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Site black list was updated.")
 
         mergeSplitParams = mergeTask.jobSplittingParameters(performance = False)
-        self.assertEqual(len(mergeSplitParams.keys()), 6,
+        self.assertEqual(len(mergeSplitParams.keys()), 7,
                          "Error: Wrong number of params for merge task.")
         self.assertEqual(mergeSplitParams["algorithm"], "WMBSMergeBySize",
                          "Error: Wrong job splitting algo for merge task.")
@@ -460,7 +460,7 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Site black list was updated.")
 
         mergeDQMSplitParams = mergeDQMTask.jobSplittingParameters(performance = False)
-        self.assertEqual(len(mergeDQMSplitParams.keys()), 6,
+        self.assertEqual(len(mergeDQMSplitParams.keys()), 7,
                          "Error: Wrong number of params for merge task.")
         self.assertEqual(mergeDQMSplitParams["algorithm"], "WMBSMergeBySize",
                          "Error: Wrong job splitting algo for merge task.")
@@ -907,6 +907,7 @@ class WMWorkloadTest(unittest.TestCase):
             self.assertEquals(datasetSub["AutoApproveSites"], [], "Wrong auto-approve sites for %s" % outputDataset)
             self.assertEquals(datasetSub["Priority"], "Low", "Wrong priority for %s" % outputDataset)
             self.assertEquals(datasetSub["CustodialSubType"], "Move", "Wrong custodial subscription type for %s" % outputDataset)
+            self.assertEquals(datasetSub["NonCustodialSubType"], "Replica", "Wrong custodial subscription type for %s" % outputDataset)
 
 
     def testUpdatingSplitParameters(self):
@@ -958,7 +959,7 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertFalse(testWorkload.startPolicyParameters().has_key("SubSliceSize"),
                          "Error: Shouldn't have sub-slice size.")
         procSplitParams = procTask.jobSplittingParameters(performance = False)
-        self.assertEqual(len(procSplitParams.keys()), 5,
+        self.assertEqual(len(procSplitParams.keys()), 6,
                          "Error: Wrong number of params for proc task.")
         self.assertEqual(procSplitParams["algorithm"], "FileBased",
                          "Error: Wrong job splitting algo for proc task.")
@@ -976,8 +977,7 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Wrong min merge size: %s" % stepHelper.minMergeSize())
 
         skimSplitParams = skimTask.jobSplittingParameters(performance = False)
-        print skimSplitParams.keys()
-        self.assertEqual(len(skimSplitParams.keys()), 6,
+        self.assertEqual(len(skimSplitParams.keys()), 7,
                          "Error: Wrong number of params for skim task.")
         self.assertEqual(skimSplitParams["algorithm"], "RunBased",
                          "Error: Wrong job splitting algo for skim task.")
@@ -993,7 +993,7 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Site black list was updated.")
 
         mergeSplitParams = mergeTask.jobSplittingParameters(performance = False)
-        self.assertEqual(len(mergeSplitParams.keys()), 6,
+        self.assertEqual(len(mergeSplitParams.keys()), 7,
                          "Error: Wrong number of params for merge task.")
         self.assertEqual(mergeSplitParams["algorithm"], "ParentlessMergeBySize",
                          "Error: Wrong job splitting algo for merge task.")
@@ -1023,7 +1023,7 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Wrong min merge size.")
 
         mergeSplitParams = mergeTask.jobSplittingParameters(performance = False)
-        self.assertEqual(len(mergeSplitParams.keys()), 6,
+        self.assertEqual(len(mergeSplitParams.keys()), 7,
                          "Error: Wrong number of params for merge task.")
         self.assertEqual(mergeSplitParams["algorithm"], "WMBSMergeBySize",
                          "Error: Wrong job splitting algo for merge task.")
@@ -1099,7 +1099,7 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(testWorkload.startPolicyParameters()["SubSliceSize"],
                          15, "Error: Wrong sub-slice size.")
         prodSplitParams = prodTask.jobSplittingParameters(performance = False)
-        self.assertEqual(len(prodSplitParams.keys()), 5,
+        self.assertEqual(len(prodSplitParams.keys()), 6,
                          "Error: Wrong number of params for proc task.")
         self.assertEqual(prodSplitParams["algorithm"], "EventBased",
                          "Error: Wrong job splitting algo for proc task.")
@@ -1121,7 +1121,7 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Wrong min merge size: %s" % stepHelper.minMergeSize())
 
         mergeSplitParams = mergeTask.jobSplittingParameters(performance = False)
-        self.assertEqual(len(mergeSplitParams.keys()), 6,
+        self.assertEqual(len(mergeSplitParams.keys()), 7,
                          "Error: Wrong number of params for merge task.")
         self.assertEqual(mergeSplitParams["algorithm"], "ParentlessMergeBySize",
                          "Error: Wrong job splitting algo for merge task.")
@@ -1176,17 +1176,18 @@ class WMWorkloadTest(unittest.TestCase):
                         "Error: Task is missing.")
         self.assertTrue("/TestWorkload/ProcessingTask/MergeTask/SkimTask" in results.keys(),
                         "Error: Task is missing.")
-
         self.assertEqual(results["/TestWorkload/ProcessingTask"], {"files_per_job": 2,
                                                                    "algorithm": "FileBased",
+                                                                   'trustSitelists': False,
                                                                    "type": "Processing"},
                          "Error: Wrong splitting parameters: %s" % results["/TestWorkload/ProcessingTask"])
         self.assertEqual(results["/TestWorkload/ProcessingTask/MergeTask/SkimTask"],
-                         {"max_files": 21, "algorithm": "RunBased", "some_other_param": "value", "type": "Skim"},
+                         {"max_files": 21, "algorithm": "RunBased", "some_other_param": "value", 
+                          'trustSitelists': False, "type": "Skim"},
                          "Error: Wrong splitting parameters.")
         self.assertEqual(results["/TestWorkload/ProcessingTask/MergeTask"],
                          {"algorithm": "ParentlessMergeBySize", "max_merge_size": 2,
-                          "max_merge_events": 2, "min_merge_size": 2, "type": "Merge"},
+                          "max_merge_events": 2, "min_merge_size": 2, 'trustSitelists': False, "type": "Merge"},
                          "Error: Wrong splitting parameters.")
 
         return

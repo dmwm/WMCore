@@ -314,6 +314,7 @@ class ReqMgrService(TemplatedPage):
                 'CMSSW architectures':architectures(),
                 'SubscriptionPriority':['Low', 'Normal', 'High'],
                 'CustodialSubType':['Move', 'Replica'],
+                'NonCustodialSubType':['Move', 'Replica'],
                 'MinMergeSize':2147483648,
                 'MaxMergeSize':4294967296,
                 'MaxMergeEvents':50000,

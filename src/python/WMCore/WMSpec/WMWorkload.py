@@ -1216,8 +1216,8 @@ class WMWorkloadHelper(PersistencyHelper):
 
     def setSubscriptionInformationWildCards(self, wildcardDict, custodialSites = None,
                                             nonCustodialSites = None, autoApproveSites = None,
-                                            priority = "Low", custodialSubType = "Move",
-                                            primaryDataset = None, dataTier = None):
+                                            custodialSubType = "Move", nonCustodialSubType = "Replica",
+                                            priority = "Low", primaryDataset = None, dataTier = None):
         """
         _setSubscriptonInformationWildCards_
 
@@ -1253,15 +1253,16 @@ class WMWorkloadHelper(PersistencyHelper):
         self.setSubscriptionInformation(custodialSites = newCustodialList,
                                         nonCustodialSites = newNonCustodialList,
                                         autoApproveSites = newAutoApproveList,
-                                        priority = priority,
                                         custodialSubType = custodialSubType,
+                                        nonCustodialSubType = nonCustodialSubType,
+                                        priority = priority,
                                         primaryDataset = primaryDataset,
                                         dataTier = dataTier)
 
     def setSubscriptionInformation(self, initialTask = None, custodialSites = None,
-                                         nonCustodialSites = None, autoApproveSites = None,
-                                         priority = "Low", custodialSubType = "Move",
-                                         primaryDataset = None, dataTier = None):
+                                   nonCustodialSites = None, autoApproveSites = None,
+                                   custodialSubType = "Move", nonCustodialSubType = "Replica",
+                                   priority = "Low", primaryDataset = None, dataTier = None):
         """
         _setSubscriptionInformation_
 
@@ -1283,12 +1284,12 @@ class WMWorkloadHelper(PersistencyHelper):
 
         for task in taskIterator:
             task.setSubscriptionInformation(custodialSites, nonCustodialSites,
-                                            autoApproveSites, priority,
-                                            custodialSubType,
+                                            autoApproveSites, custodialSubType,
+                                            nonCustodialSubType, priority,
                                             primaryDataset, dataTier)
             self.setSubscriptionInformation(task, custodialSites, nonCustodialSites,
-                                            autoApproveSites, priority,
-                                            custodialSubType,
+                                            autoApproveSites, custodialSubType,
+                                            nonCustodialSubType, priority,
                                             primaryDataset, dataTier)
 
         return
@@ -1330,6 +1331,8 @@ class WMWorkloadHelper(PersistencyHelper):
                                                                                subInfo[dataset]["Priority"])
                     subInfo[dataset]["CustodialSubType"] = solveTypeConflicts(taskSubInfo[dataset]["CustodialSubType"],
                                                                                subInfo[dataset]["CustodialSubType"])
+                    subInfo[dataset]["NonCustodialSubType"] = solveTypeConflicts(taskSubInfo[dataset]["NonCustodialSubType"],
+                                                                               subInfo[dataset]["NonCustodialSubType"])
                 else:
                     subInfo[dataset] = taskSubInfo[dataset]
                 subInfo[dataset]["CustodialSites"] = list(set(subInfo[dataset]["CustodialSites"]) - set(subInfo[dataset]["NonCustodialSites"]))
@@ -1734,8 +1737,8 @@ class WMWorkloadHelper(PersistencyHelper):
         mergeParams = ["MinMergeSize", "MaxMergeSize", "MaxMergeEvents"]
         performanceParams = ["MaxRSS", "MaxVSize", "SoftTimeout", "GracePeriod"]
         phedexParams =["CustodialSites", "NonCustodialSites",
-                        "AutoApproveSubscriptionSites",
-                        "CustodialSubType", "SubscriptionPriority"]
+                        "AutoApproveSubscriptionSites", "CustodialSubType",
+                        "NonCustodialSubType", "SubscriptionPriority"]
         blockCloseParams = ["BlockCloseMaxWaitTime", "BlockCloseMaxFiles",
                                     "BlockCloseMaxEvents", "BlockCloseMaxSize"]
         
@@ -1794,6 +1797,7 @@ class WMWorkloadHelper(PersistencyHelper):
                                         nonCustodialSites = kwargs["NonCustodialSites"],
                                         autoApproveSites = kwargs["AutoApproveSubscriptionSites"],
                                         custodialSubType = kwargs["CustodialSubType"],
+                                        nonCustodialSubType = kwargs["NonCustodialSubType"],
                                         priority = kwargs["SubscriptionPriority"])
 
         # Block closing information

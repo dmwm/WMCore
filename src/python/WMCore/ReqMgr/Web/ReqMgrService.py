@@ -392,16 +392,29 @@ class ReqMgrService(TemplatedPage):
         "Fetch document for given id"
         rid = rid.replace('request-', '')
         doc = self.reqmgr.getRequestByNames(rid)
+        transitions = []
         if len(doc) == 1:
             try:
-                doc = pprint.pformat(doc[rid])
+                doc = doc[rid]
             except:
-                doc = pprint.pformat(doc)
+                pass
+            name = doc.get('RequestName', 'NA')
+            title = 'Request %s' % name
+            status = doc.get('RequestStatus', '')
+            transitions = REQUEST_STATE_TRANSITION.get(status, [])
+            if  status in transitions:
+                transitions.remove(status)
+            content = self.templatepage('doc', title=title, status=status, name=name,
+                    table=json2table(doc, web_ui_names()),
+                    jsondata=json2form(doc, indent=2, keep_first_value=False),
+                    transitions=transitions)
         elif len(doc) > 1:
-            doc = [pprint.pformat(d) for d in doc]
+            jsondata = [pprint.pformat(d) for d in doc]
+            content = self.templatepage('doc', title='Series of docs: %s' % rid,
+                    table="", jsondata=jsondata,
+                    transitions=transitions)
         else:
             doc = 'No request found for name=%s' % rid
-        content = self.templatepage('doc', doc=doc)
         return self.abs_page('request', content)
 
     @expose

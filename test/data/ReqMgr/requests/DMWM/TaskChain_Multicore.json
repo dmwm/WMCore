@@ -17,7 +17,7 @@
     "ScramArch": "slc6_amd64_gcc491",
     "Memory": 2400,
     "SizePerEvent": 1234,
-    "TimePerEvent": 20,
+    "TimePerEvent": 0.8,
     "MergedLFNBase": "/store/relval",
     "Multicore": 4,
     "Task1": {"InputDataset": "/SingleElectron/Run2012D-v1/RAW",

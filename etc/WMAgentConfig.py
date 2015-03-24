@@ -50,8 +50,9 @@ agentNumber = 0
 # List of BossAir plugins that this agent will use.
 bossAirPlugins = ["CondorPlugin"]
 
-## Plugin with Condor-Python API ...
-bossAirPlugins = ["PyCondorPlugin", "CondorPlugin"]
+# Required for global pool accounting
+glideInAcctGroup = "production"
+glideInAcctGroupUser = "cmsdataops"
 
 # DBS Information.
 localDBSUrl = "https://cmst0dbs.cern.ch:8443/cms_dbs_prod_tier0_writer/servlet/DBSServlet"
@@ -107,6 +108,8 @@ config.BossAir.pluginNames = bossAirPlugins
 config.BossAir.nCondorProcesses = 1
 config.BossAir.multicoreTaskTypes = ["MultiProcessing", "MultiProduction"]
 config.BossAir.submitWMSMode = True
+config.BossAir.acctGroup = glideInAcctGroup
+config.BossAir.acctGroupUser = glideInAcctGroupUser
 
 config.section_("CoreDatabase")
 config.CoreDatabase.connectUrl = databaseUrl

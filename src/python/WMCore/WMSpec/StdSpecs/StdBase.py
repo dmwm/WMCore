@@ -940,17 +940,19 @@ class StdBase(object):
                      
                      # Set phedex subscription information
                      "CustodialSites" : {"default" : [], "type" : makeList, "assign_optional": True,
-                                        "validate" : lambda x: all([cmsname(y) for y in x])},
+                                         "validate" : lambda x: all([cmsname(y) for y in x])},
                      "NonCustodialSites" : {"default" : [], "type" : makeList, "assign_optional": True,
-                                        "validate" : lambda x: all([cmsname(y) for y in x])},
+                                            "validate" : lambda x: all([cmsname(y) for y in x])},
                      "AutoApproveSubscriptionSites" : {"default" : [], "type" : makeList, "assign_optional": True, 
-                                        "validate" : lambda x: all([cmsname(y) for y in x])},
+                                                       "validate" : lambda x: all([cmsname(y) for y in x])},
                      # should be Low, Normal, High
                      "SubscriptionPriority" : {"default" : "Low", "assign_optional": True,
-                                        "validate" : lambda x: x in ["Low", "Normal", "High"]},
-                     # shouldbe Move Replica  
+                                               "validate" : lambda x: x in ["Low", "Normal", "High"]},
+                     # should be Move Replica  
                      "CustodialSubType" : {"default" : "Move", "type" : str, "assign_optional": True,
-                                        "validate" : lambda x: x in ["Move", "Replica"]},
+                                           "validate" : lambda x: x in ["Move", "Replica"]},
+                     "NonCustodialSubType" : {"default" : "Replica", "type" : str, "assign_optional": True,
+                                              "validate" : lambda x: x in ["Move", "Replica"]},
                      
                      # Block closing informaiont
                      "BlockCloseMaxWaitTime" : {"default" : 66400, "type" : int, "validate" : lambda x : x > 0},

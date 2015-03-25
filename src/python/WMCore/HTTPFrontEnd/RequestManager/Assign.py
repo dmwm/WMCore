@@ -355,15 +355,19 @@ class Assign(WebAPI):
         subscriptionPriority = kwargs.get("SubscriptionPriority", "Low")
         if subscriptionPriority not in ["Low", "Normal", "High"]:
             raise cherrypy.HTTPError(400, "Invalid subscription priority %s" % subscriptionPriority)
-        subscriptionType = kwargs.get("CustodialSubType", "Move")
-        if subscriptionType not in ["Move", "Replica"]:
-            raise cherrypy.HTTPError(400, "Invalid custodial subscription type %s" % subscriptionType)
+        custodialType = kwargs.get("CustodialSubType", "Move")
+        if custodialType not in ["Move", "Replica"]:
+            raise cherrypy.HTTPError(400, "Invalid custodial subscription type %s" % custodialType)
+        nonCustodialType = kwargs.get("NonCustodialSubType", "Replica")
+        if nonCustodialType not in ["Move", "Replica"]:
+            raise cherrypy.HTTPError(400, "Invalid noncustodial subscription type %s" % nonCustodialType)
 
         helper.setSubscriptionInformationWildCards(wildcardDict = self.wildcardSites,
                                                    custodialSites = custodialList,
                                                    nonCustodialSites = nonCustodialList,
                                                    autoApproveSites = autoApproveList,
-                                                   custodialSubType = subscriptionType,
+                                                   custodialSubType = custodialType,
+                                                   nonCustodialSubType = nonCustodialType,
                                                    priority = subscriptionPriority)
 
         # Block closing information

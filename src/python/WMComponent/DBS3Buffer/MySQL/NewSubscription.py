@@ -22,49 +22,51 @@ class NewSubscription(DBFormatter):
             VALUES (:id, :site, :custodial, :auto_approve, :move, :priority, 0, :delete_blocks)
           """
 
-
-    def execute(self, datasetID, subscriptionInfo,
-                conn = None,
-                transaction = False):
-        """
-        _execute_
-
-        Execute the query and retrieve the subscriptions
-        """
-        binds = []
-
+    def _createPhEDExSubBinds(self, datasetID, subscriptionInfo, custodialFlag):
+        
         # DeleteFromSource is not supported for move subscriptions
-        delete_blocks = None
-        if subscriptionInfo['CustodialSubType'] == 'Move':
+        delete_blocks = None 
+        if custodialFlag:
+            sites = subscriptionInfo['CustodialSites']
+            if subscriptionInfo['CustodialSubType'] == 'Move':
                 isMove = 1
-        else:
+            else:
                 isMove = 0
                 if subscriptionInfo.get('DeleteFromSource', False):
                     delete_blocks = 1
-
-        for site in subscriptionInfo['CustodialSites']:
+        else:
+            sites = subscriptionInfo['NonCustodialSites']
+            if subscriptionInfo['NonCustodialSubType'] == 'Move':
+                isMove = 1
+            else:
+                isMove = 0
+                if subscriptionInfo.get('DeleteFromSourceNonCustodial', False):
+                    delete_blocks = 1
+                    
+        binds = []
+        for site in sites:
             subInfo = {'id' : datasetID,
                        'site' : site,
-                       'custodial' : 1,
+                       'custodial' : custodialFlag,
                        'auto_approve' : 1 if site in subscriptionInfo['AutoApproveSites'] else 0,
                        'move' : isMove,
                        'priority' : subscriptionInfo['Priority'],
                        'delete_blocks' : delete_blocks}
             binds.append(subInfo)
+        return binds
+    
+    def execute(self, datasetID, subscriptionInfo,
+                conn = None, transaction = False):
+        """
+        _execute_
 
-        for site in subscriptionInfo['NonCustodialSites']:
-            subInfo = {'id' : datasetID,
-                       'site' : site,
-                       'custodial' : 0,
-                       'auto_approve' : 1 if site in subscriptionInfo['AutoApproveSites'] else 0,
-                       'move' : 0,
-                       'priority' : subscriptionInfo['Priority'],
-                       'delete_blocks' : delete_blocks}
-            binds.append(subInfo)
-
+        Execute the query and retrieve the subscriptions
+        """
+        binds = self._createPhEDExSubBinds(datasetID, subscriptionInfo, True)
+        binds.extend(self._createPhEDExSubBinds(datasetID, subscriptionInfo, False))
+        
         if not binds:
             return
 
-        self.dbi.processData(self.sql,
-                             binds = binds, conn = conn,
-                             transaction = transaction)
+        self.dbi.processData(self.sql, binds = binds, 
+                             conn = conn, transaction = transaction)

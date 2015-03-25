@@ -175,10 +175,10 @@ class WMTaskTest(unittest.TestCase):
                "Error: Wrong job splitting algorithm name.")
 
         algoParams = testTask.jobSplittingParameters(performance = False)
-        self.assertEqual(len(algoParams), 8,
+        self.assertEqual(len(algoParams), 9,
                          "Error: Wrong number of algo parameters.")
         algoParams = testTask.jobSplittingParameters()
-        self.assertEqual(len(algoParams), 9,
+        self.assertEqual(len(algoParams), 10,
                          "Error: Wrong number of algo parameters.")
 
         self.assertTrue("algorithm" in algoParams,
@@ -469,7 +469,7 @@ class WMTaskTest(unittest.TestCase):
         self.assertEqual(testTask.getSubscriptionInformation(), {}, "There should not be any subscription info")
 
         testTask.setSubscriptionInformation(["mercury"], ["mars", "earth"],
-                                            ["earth"], "High", "Replica",
+                                            ["earth"], "Replica", "Move", "High",
                                             "OneParticle")
         subInfo = testTask.getSubscriptionInformation()
 
@@ -477,7 +477,9 @@ class WMTaskTest(unittest.TestCase):
                              "NonCustodialSites" : ["mars", "earth"],
                              "AutoApproveSites" : ["earth"],
                              "Priority" : "High",
-                             "CustodialSubType" : "Replica"}
+                             "CustodialSubType" : "Replica",
+                             "NonCustodialSubType" : "Move"}
+        
         self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"],
                          outputRecoSubInfo, "The RECO subscription information is wrong")
         self.assertTrue("/OneParticle/DawnOfAnEra-v1/AOD" in subInfo, "The AOD subscription information is wrong")

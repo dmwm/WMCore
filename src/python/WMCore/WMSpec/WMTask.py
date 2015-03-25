@@ -840,8 +840,7 @@ class WMTaskHelper(TreeHelper):
                 if not getattr(stepHelper.data.output, "keep", True):
                     continue
 
-                if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
+                if stepHelper.stepType() == "CMSSW":
                     for outputModuleName in stepHelper.listOutputModules():
                         outputModule = stepHelper.getOutputModule(outputModuleName)
                         outputDataset = "/%s/%s/%s" % (outputModule.primaryDataset,

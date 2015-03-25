@@ -395,7 +395,6 @@ class JobSubmitterPoller(BaseWorkerThread):
                        loadedJob.get("estimatedMemoryUsage", None),
                        newJob['task_name'],
                        frozenset(potentialLocations),
-                       loadedJob.get("multicoreEnabled", False),
                        loadedJob.get("numberOfCores", 1),
                       )
 
@@ -704,8 +703,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'estimatedMemoryUsage' : cachedJob[16],
                                'taskPriority' : self.workflowPrios[workflow],
                                'taskName' : cachedJob[17],
-                               'multicoreEnabled' : cachedJob[19],
-                               'numberOfCores' : cachedJob[20],
+                               'numberOfCores' : cachedJob[19],
                                'potentialSites' : potentialSites}
 
                     # Add to jobsToSubmit

@@ -530,32 +530,3 @@ def xmlToJobReport(reportInstance, xmlFile):
 
     return
 childrenMatching = lambda node, nname: [x for x in node.children if x.name == nname]
-
-
-def multiXmlToJobReport(reportInstance, multiReportFile, directory = None):
-    """
-    _multiXmlToJobReport_
-
-    Util for reading a top level job report from a multi threaded CMSSW job report
-
-    the multi report file is expected to contain a list of entries like:
-
-    <ChildProcessFiles>
-      <ChildProcessFile>FrameworkJobReport_0.xml</ChildProcessFile>
-      <ChildProcessFile>FrameworkJobReport_1.xml</ChildProcessFile>
-      <ChildProcessFile>FrameworkJobReport_2.xml</ChildProcessFile>
-    </ChildProcessFiles>
-
-    """
-    # read XML, build node structure
-    jobRepNode = xmlFileToNode(multiReportFile)
-    for repNode in childrenMatching(jobRepNode, "FrameworkJobReport"):
-        for childProcFiles in childrenMatching(repNode, "ChildProcessFiles"):
-            for childRep in childrenMatching(childProcFiles, "ChildProcessFile"):
-                fileName =  childRep.text
-                if directory != None:
-                    fileName = "%s/%s" % (directory, fileName)
-                if os.path.exists(fileName):
-                    xmlToJobReport(reportInstance, fileName)
-                else:
-                    print "File %s not found" % fileName

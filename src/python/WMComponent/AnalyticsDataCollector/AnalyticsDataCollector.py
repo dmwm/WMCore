@@ -12,7 +12,6 @@ import threading
 
 from WMCore.Agent.Harness import Harness
 from WMComponent.AnalyticsDataCollector.AnalyticsPoller import AnalyticsPoller
-from WMComponent.AnalyticsDataCollector.AgentStatusPoller import AgentStatusPoller
 
 class AnalyticsDataCollector(Harness):
     """
@@ -35,10 +34,8 @@ class AnalyticsDataCollector(Harness):
         Sets up the workers threads
         """
         pollInterval = self.config.AnalyticsDataCollector.pollInterval
-        agentPollInterval = self.config.AnalyticsDataCollector.agentPollInterval
         
         myThread = threading.currentThread()
-        myThread.workerThreadManager.addWorker(AgentStatusPoller(self.config),
-                                               agentPollInterval)
+        
         myThread.workerThreadManager.addWorker(AnalyticsPoller(self.config),
                                                pollInterval)

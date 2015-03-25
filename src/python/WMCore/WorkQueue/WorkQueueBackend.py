@@ -59,13 +59,12 @@ class WorkQueueBackend(object):
         self.queueUrl = sanitizeURL(queueUrl or (db_url + '/' + db_name))['url']
 
     def forceQueueSync(self):
-        """Force a blocking replication
-            - for use mainly in tests"""
+        """Force a blocking replication - used only in tests"""
         self.pullFromParent(continuous = False)
         self.sendToParent(continuous = False)
 
     def pullFromParent(self, continuous = True, cancel = False):
-        """Replicate from parent couch - blocking"""
+        """Replicate from parent couch - blocking: used only int test"""
         try:
             if self.parentCouchUrl and self.queueUrl:
                 self.server.replicate(source = self.parentCouchUrl,
@@ -79,7 +78,7 @@ class WorkQueueBackend(object):
             self.logger.warning('Replication from %s failed: %s' % (self.parentCouchUrl, str(ex)))
 
     def sendToParent(self, continuous = True, cancel = False):
-        """Replicate to parent couch - blocking"""
+        """Replicate to parent couch - blocking: used only int test"""
         try:
             if self.parentCouchUrl and self.queueUrl:
                 self.server.replicate(source = "%s" % self.inbox.name,
@@ -525,32 +524,3 @@ class WorkQueueBackend(object):
                     finalInjectionStatus.append({element._id : False})
 
             return finalInjectionStatus
-
-    def checkReplicationStatus(self, continuous = True):
-        """
-        _checkReplicationStatus_
-
-        Check if the workqueue replication is ok, if not
-        then delete the documents so that new replications can be triggered
-        when appropiate.
-        It returns True if there is no error, and False otherwise.
-        """
-        
-        if self.parentCouchUrl and self.queueUrl:
-            # only checks for local queue
-            couchMonitor = CouchMonitor(self.server)
-            filter = 'WorkQueue/queueFilter'
-            query_params = {'childUrl' : self.queueUrl, 'parentUrl' : self.parentCouchUrl}
-            self.logger.info("set replication from GQ to LQ")
-            couchMonitor.recoverReplicationErrors(self.parentCouchUrl, 
-                                                  "%s/%s" % (self.hostWithAuth, self.inbox.name), 
-                                                  filter = filter, query_params = query_params,
-                                                  checkUpdateSeq = False,
-                                                  continuous = continuous)
-            self.logger.info("set replication from LQ to GQ")
-            couchMonitor.recoverReplicationErrors(self.inbox.name, self.parentCouchUrlWithAuth,
-                                                  filter = filter, query_params = query_params,
-                                                  checkUpdateSeq = False,
-                                                  continuous = continuous)
-            return True
-        return False

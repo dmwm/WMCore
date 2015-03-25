@@ -807,7 +807,7 @@ class RotatingDatabase(Database):
         """
         return [doc['value'] for doc in self._find_dbs_in_state('archived')]
 
-    def non_rotating_commit():
+    def non_rotating_commit(self):
         # might need this after all....
         pass
 
@@ -1034,7 +1034,7 @@ class CouchMonitor(object):
         # this is set {source: {taget: update_sequence}}
         self.previousUpdateSequence  = {}
     
-    def deleteReplicatorDocs(self, source, target, repDocs = None):
+    def deleteReplicatorDocs(self, source = None, target = None, repDocs = None):
         if repDocs == None:
             repDocs = self.replicatorDB.allDocs(options={'include_docs': True})['rows']
         
@@ -1049,11 +1049,12 @@ class CouchMonitor(object):
         filteredDocs = []
         for j in repDocs:
             if not j['id'].startswith('_'):
-                if j['doc']['source'] == source and j['doc']['target'] == target:
+                if (source == None and target == None) or \
+                   (j['doc']['source'] == source and j['doc']['target'] == target):
                     doc = {}
                     doc["_id"]  = j['id']
                     doc["_rev"] = j['value']['rev']
-                    if doc.has_key("_replication_state"):
+                    if "_replication_state" in j["doc"]:
                         doc["_replication_state"] = j["doc"]["_replication_state"]
                     else:
                         logging.error("""replication failed from %s to %s 
@@ -1074,10 +1075,8 @@ class CouchMonitor(object):
                                  query_params = False,
                                  checkUpdateSeq = True,
                                  continuous = True):
-        previousUpdateNum = self.getPreviousUpdateSequence(source, target)
         
-        couchInfo = self.checkCouchServerStatus(source, target, previousUpdateNum, 
-                                                checkUpdateSeq)
+        couchInfo = self.checkCouchServerStatus(source, target, checkUpdateSeq)
 
         if (couchInfo['status'] == 'error'):
             logging.info("Deleting the replicator documents from %s..." % source)
@@ -1088,14 +1087,13 @@ class CouchMonitor(object):
                                            continuous = continuous,
                                            useReplicator = True)
             
-            couchInfo = self.checkCouchServerStatus(source, target, previousUpdateNum,
-                                                    checkUpdateSeq)
+            couchInfo = self.checkCouchServerStatus(source, target, checkUpdateSeq)
         #if (couchInfo['status'] != 'down'):
         #    restart couch server
         return couchInfo
 
     
-    def checkCouchServerStatus(self, source, target, previousUpdateNum, checkUpdateSeq):
+    def checkCouchServerStatus(self, source, target, checkUpdateSeq):
         try:
             if checkUpdateSeq:
                 dbInfo =  self.couchServer.get("/%s" % source)
@@ -1107,15 +1105,9 @@ class CouchMonitor(object):
             
             for activeStatus in activeTasks:
                 if activeStatus["type"].lower() == "replication":
-                    if passwdStrippedURL in activeStatus.get("task", "").split("->")[-1]:
+                    if passwdStrippedURL in activeStatus.get("target", ""):
                         replicationFlag = self.checkReplicationStatus(activeStatus, 
-                                                    dbInfo, source, target, 
-                                                    previousUpdateNum, checkUpdateSeq)
-                        break
-                    elif passwdStrippedURL in activeStatus.get("target", ""):
-                        replicationFlag = self.checkReplicationStatusCouch15(activeStatus, 
-                                                    dbInfo, source, target, 
-                                                    previousUpdateNum, checkUpdateSeq)
+                                                    dbInfo, source, target, checkUpdateSeq)
                         break
             
             if replicationFlag:
@@ -1127,35 +1119,9 @@ class CouchMonitor(object):
             msg = traceback.format_exc() 
             logging.error(msg)
             return {'status':'down', 'error_message': str(ex)}
-    
-    def checkReplicationStatus(self, activeStatus, dbInfo, source, target, 
-                               previousUpdateNum, checkUpdateSeq):
-        """
-        adhog way to check the replication
-        """
         
-        logging.info("checking the replication status")
-        if "Starting" in activeStatus["status"]:
-            logging.info("Starting status: ok")
-            return True
-        elif "update" in activeStatus["status"]:
-            updateNum = int(activeStatus["status"].split('#')[-1])
-            self.setPreviousUpdateSequence(source, target, updateNum)
-            
-            if not checkUpdateSeq:
-                logging.warning("""Update sequence is not checked\n" /
-                                   replication from %s to %s""" % (
-                                replaceToSantizeURL(source), replaceToSantizeURL(target)))
-                return True
-            elif updateNum == dbInfo["update_seq"] or updateNum > previousUpdateNum:
-                logging.info("update upto date: ok")
-                return True
-            else:
-                return False
-        return False
-    
-    def checkReplicationStatusCouch15(self, activeStatus, dbInfo, source, target, 
-                                      previousUpdateNum, checkUpdateSeq):
+    def checkReplicationStatus(self, activeStatus, dbInfo, source, target, 
+                                      checkUpdateSeq):
         """
         adhog way to check the replication
         """
@@ -1164,6 +1130,8 @@ class CouchMonitor(object):
         #if activeStatus["started_on"]:
         #   logging.info("Starting status: ok")
         #    return True
+        previousUpdateNum = self.getPreviousUpdateSequence(source, target)
+        
         if activeStatus["updated_on"]:
             updateNum = int(activeStatus["source_seq"])
             self.setPreviousUpdateSequence(source, target, updateNum)

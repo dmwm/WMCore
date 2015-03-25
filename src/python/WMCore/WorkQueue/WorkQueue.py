@@ -686,11 +686,6 @@ class WorkQueue(WorkQueueBase):
         from get from wmbs.
         """
         
-        # do this whether we have work or not - other events i.e. cancel may have happened
-        replicationFlag = self.backend.checkReplicationStatus(continuous = continuousReplication)
-        if replicationFlag:
-            self.logger.info("Replication is set for LocalQueue")
-        
         if not self.params['ParentQueueCouchUrl']:
             msg = 'Unable to pull work from parent, ParentQueueCouchUrl not provided'
             self.logger.warning(msg)
@@ -831,7 +826,6 @@ class WorkQueue(WorkQueueBase):
             return
 
         if self.params['LocalQueueFlag']:
-            self.backend.checkReplicationStatus() # Check any replication error and fix it.
             self.backend.fixConflicts() # before doing anything fix any conflicts
 
         wf_to_cancel = [] # record what we did for task_activity
@@ -901,7 +895,6 @@ class WorkQueue(WorkQueueBase):
                                                                             for x in finished_elements]),
                                                                  ', '.join(wf_to_cancel))
         self.backend.recordTaskActivity('housekeeping', msg)
-        self.backend.checkReplicationStatus() # update parent queue with new status's
 
     def _splitWork(self, wmspec, parentQueueId = None,
                    data = None, mask = None, team = None,

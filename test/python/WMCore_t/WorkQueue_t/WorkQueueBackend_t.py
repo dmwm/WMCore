@@ -103,22 +103,5 @@ class WorkQueueBackendTest(unittest.TestCase):
         self.assertEqual(len(self.backend.db.allDocs()['rows']), 4) # design doc + workflow + 2 elements
         self.assertEqual(self.backend.db.loadView('WorkQueue', 'conflicts')['total_rows'], 0)
 
-    def testReplicationStatus(self):
-        """
-        _testReplicationStatus_
-
-        Check that we can catch replication errors,
-        the checkReplicationStatus returns True if there is no error.
-        """
-        self.backend.pullFromParent(continuous = True)
-        self.backend.sendToParent(continuous = True)
-        self.assertTrue(self.backend.checkReplicationStatus())
-        self.backend.pullFromParent(continuous = True, cancel = True)
-        self.backend.sendToParent(continuous = True, cancel = True)
-        self.assertFalse(self.backend.checkReplicationStatus())
-        self.backend.pullFromParent(continuous = True)
-        self.backend.sendToParent(continuous = True)
-        self.assertTrue(self.backend.checkReplicationStatus())
-
 if __name__ == '__main__':
     unittest.main()

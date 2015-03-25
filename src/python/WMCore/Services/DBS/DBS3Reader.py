@@ -215,7 +215,7 @@ class DBS3Reader:
         Get list of files for dataset
 
         """
-        return [ x['logical_file_name'] for x in self.dbs.listFiles(dataset = datasetPath)]
+        return [ x['logical_file_name'] for x in self.dbs.listFileArray(dataset = datasetPath)]
 
 
     def listDatasetFileDetails(self, datasetPath, getParents=False):
@@ -238,7 +238,7 @@ class DBS3Reader:
             }
 
         """
-        fileDetails = self.dbs.listFiles(dataset = datasetPath, validFileOnly = 1, detail=True)
+        fileDetails = self.dbs.listFileArray(dataset = datasetPath, validFileOnly = 1, detail=True)
         blocks = set() #the set of blocks of the dataset
         #Iterate over the files and prepare the set of blocks and a dict where the keys are the files
         files = {}
@@ -278,7 +278,7 @@ class DBS3Reader:
         Return the list of lfns that are in the dataset
 
         """
-        allLfns = self.dbs.listFiles(dataset = datasetPath, validFileOnly = 1, detail = False)
+        allLfns = self.dbs.listFileArray(dataset = datasetPath, validFileOnly = 1, detail = False)
         setOfAllLfns = set(allLfns)
         setOfKnownLfns = set(lfns)
         return list(setOfAllLfns.intersection(setOfKnownLfns))
@@ -291,7 +291,7 @@ class DBS3Reader:
         are *not* known by DBS
 
         """
-        allLfns = self.dbs.listFiles(dataset = datasetPath, validFileOnly = 1, detail = False)
+        allLfns = self.dbs.listFileArray(dataset = datasetPath, validFileOnly = 1, detail = False)
         setOfAllLfns = set(allLfns)
         setOfKnownLfns = set(lfns)
         knownFiles = setOfAllLfns.intersection(setOfKnownLfns)
@@ -449,7 +449,7 @@ class DBS3Reader:
             raise DBSReaderError(msg % fileBlockName)
 
         try:
-            files = self.dbs.listFiles(block_name = fileBlockName, validFileOnly = 1, detail = True)
+            files = self.dbs.listFileArray(block_name = fileBlockName, validFileOnly = 1, detail = True)
         except dbsClientException, ex:
             msg = "Error in "
             msg += "DBSReader.listFilesInBlock(%s)\n" % fileBlockName
@@ -497,7 +497,7 @@ class DBS3Reader:
         for f in files:
             #TODO: this need to be multiple parents update when dbs api changes
             for parentLFN in f['parent_logical_file_name']:
-                parentFileInfo =  self.dbs.listFiles(logical_file_name = parentLFN, detail = True)
+                parentFileInfo =  self.dbs.listFileArray(logical_file_name = parentLFN, detail = True)
                 # should return  only one but in case it supports multiple lfns as input.
                 parentList = []
                 for pf in parentFileInfo:
@@ -525,7 +525,7 @@ class DBS3Reader:
             raise DBSReaderError(msg % fileBlockName)
 
         try:
-            lfns =  self.dbs.listFiles(block_name = fileBlockName, validFileOnly = 1, detail = False)
+            lfns =  self.dbs.listFileArray(block_name = fileBlockName, validFileOnly = 1, detail = False)
             return lfns
         except dbsClientException, ex:
             msg = "Error in "

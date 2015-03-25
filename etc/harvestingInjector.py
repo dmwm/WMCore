@@ -103,7 +103,7 @@ def injectFilesFromDBS(inputFileset, datasetPath, runsWhiteList=[]):
     args["version"] = "DBS_2_1_1"
     args["mode"] = "GET"
     dbsApi = DbsApi(args)
-    dbsResults = dbsApi.listFiles(path = datasetPath, retriveList = ["retrive_lumi", "retrive_run"])
+    dbsResults = dbsApi.listFileArray(path = datasetPath, retriveList = ["retrive_lumi", "retrive_run"])
     print "  found %d files, inserting into wmbs..." % (len(dbsResults))
 
     for dbsResult in dbsResults:

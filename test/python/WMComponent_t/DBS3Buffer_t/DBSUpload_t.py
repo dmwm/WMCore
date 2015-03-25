@@ -263,7 +263,7 @@ class DBSUploadTest(unittest.TestCase):
             self.assertEqual(result["open_for_writing"], 0,
                              "Error: Block should be closed.")
         
-        results = self.dbsApi.listFiles(dataset = datasetName, detail = True)
+        results = self.dbsApi.listFileArray(dataset = datasetName, detail = True)
         for result in results:
             file = None
             for file in files:

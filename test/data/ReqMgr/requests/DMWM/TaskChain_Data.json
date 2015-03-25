@@ -17,7 +17,7 @@
     "ScramArch": "slc5_amd64_gcc481",
     "Memory": 2400,
     "SizePerEvent": 1234,
-    "TimePerEvent": 20,
+    "TimePerEvent": 0.8,
     "MergedLFNBase": "/store/relval",
     "Task1": {"InputDataset": "/Cosmics/Run2011A-v1/RAW",
         "RunWhitelist": [160960],

@@ -14,7 +14,7 @@
     "ScramArch": "slc5_amd64_gcc481",
     "Memory": 2400,
     "SizePerEvent": 1234,
-    "TimePerEvent": 20,
+    "TimePerEvent": 0.8,
     "mergedLFNBase": "/store/relval",
     "unmergedLFNBase": "/store/unmerged",
     "Task1": {"AcquisitionEra": "CMSSW_7_0_0_pre11",

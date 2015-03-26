@@ -137,7 +137,7 @@ class PhEDExNotifierComponent(FeederImpl):
     def getRunLumi( self, lfn ):
         try:
             # List all lumi sections of the file
-            lumiSections = self.dbsapi.listFileLumis( lfn )
+            lumiSections = self.dbsapi.listFileLumiArray( lfn )
 
         except DbsDatabaseError,e:
             print e

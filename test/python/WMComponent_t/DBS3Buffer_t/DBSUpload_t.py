@@ -295,7 +295,7 @@ class DBSUploadTest(unittest.TestCase):
                 self.assertEqual(len(file["parents"]), len(dbsParents[0]["parent_logical_file_name"]),
                                  "Error: Wrong number of parents.")
 
-            runLumis = self.dbsApi.listFileLumis(logical_file_name = file["lfn"])
+            runLumis = self.dbsApi.listFileLumiArray(logical_file_name = file["lfn"])
             for runLumi in runLumis:
                 fileRun = None
                 for fileRun in file["runs"]:

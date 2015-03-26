@@ -389,7 +389,7 @@ class ReqMgrService(TemplatedPage):
         return [r for r in genobjs(jsondict)]
 
     @expose
-    def fetch(self, rid):
+    def fetch(self, rid, **kwds):
         "Fetch document for given id"
         rid = rid.replace('request-', '')
         doc = self.reqmgr.getRequestByNames(rid)
@@ -500,6 +500,19 @@ class ReqMgrService(TemplatedPage):
         return self.abs_page('batches', content)
 
     ### Aux methods ###
+
+    @expose
+    def put_request(self, *args, **kwds):
+        "PUT request callback to reqmgr server, should be used in AJAX"
+        reqname = kwds.get('RequestName', '')
+        status = kwds.get('RequestStatus', '')
+        if  not reqname:
+            msg = 'Unable to update request status, empty request name'
+            raise cherrypy.HTTPError(406, msg)
+        if  not status:
+            msg = 'Unable to update request status, empty status value'
+            raise cherrypy.HTTPError(406, msg)
+        return self.reqmgr.updateRequestStatus(reqname, status)
 
     @expose
     def images(self, *args, **kwargs):

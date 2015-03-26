@@ -66,12 +66,12 @@ class DBS3Reader:
         """
         try:
             if blockName:
-                lumiLists = self.dbs.listFileLumis(block_name=blockName, validFileOnly = 1)
+                lumiLists = self.dbs.listFileLumiArray(block_name=blockName, validFileOnly = 1)
             elif lfns:
-                lumiLists = self.dbs.listFileLumis(logical_file_name = lfns)
+                lumiLists = self.dbs.listFileLumiArray(logical_file_name = lfns)
         except dbsClientException, ex:
             msg = "Error in "
-            msg += "DBSReader.listFileLumis(%s)\n" % lfns
+            msg += "DBSReader.listFileLumiArray(%s)\n" % lfns
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
 
@@ -259,7 +259,7 @@ class DBS3Reader:
                     if p['logical_file_name'] in files: #invalid files are not there
                         files[p['logical_file_name']]['Parents'].extend(p['parent_logical_file_name'])
             #get the lumis
-            file_lumis = self.dbs.listFileLumis(block_name=blockName, validFileOnly = 1)
+            file_lumis = self.dbs.listFileLumiArray(block_name=blockName, validFileOnly = 1)
             for f in file_lumis:
                 if f['run_num'] in files[f['logical_file_name']]['Lumis']:
                     files[f['logical_file_name']]['Lumis'][f['run_num']].extend(f['lumi_section_num'])

@@ -501,10 +501,10 @@ class DBS3Reader:
 
         parentsByLFN = {}
         for f in files:
+            parentList = []
             for parentLFN in f['parent_logical_file_name']:
                 parentFileInfo =  self.dbs.listFiles(logical_file_name = parentLFN, detail = True)
                 # should return  only one but in case it supports multiple lfns as input.
-                parentList = []
                 for pf in parentFileInfo:
                     dbsFile = remapDBS3Keys(pf, stringify = True)
                     if lumis:

@@ -5,6 +5,7 @@ _DBSReader_
 Readonly DBS Interface
 
 """
+from collections import defaultdict
 from dbs.apis.dbsClient import DbsApi
 from dbs.exceptions.dbsClientException import *
 
@@ -493,21 +494,27 @@ class DBS3Reader:
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
 
-        parentsByLFN = {}
+        childByParents = defaultdict(list)
         for f in files:
-            #TODO: this need to be multiple parents update when dbs api changes
-            parentList = []
-            for parentLFN in f['parent_logical_file_name']:
-                parentFileInfo =  self.dbs.listFileArray(logical_file_name = parentLFN, detail = True)
-                # should return  only one but in case it supports multiple lfns as input.
-                for pf in parentFileInfo:
-                    dbsFile = remapDBS3Keys(pf, stringify = True)
-                    if lumis:
-                        dbsFile["LumiList"] = self._getLumiList(parentLFN)[parentLFN]
-                    parentList.append(dbsFile)
-
-            parentsByLFN[f['logical_file_name']] = parentList
-
+            childByParents[f['parent_logical_file_name']].append(f['logical_file_name'])
+        parentsLFNs = childByParents.keys()
+        
+        parentFilesDetail = self.dbs.listFileArray(logical_file_name = parentsLFNs, detail = True)
+        
+        if lumis:
+            parentLumis = self._getLumiList(lfn = parentsLFNs)
+        
+        parentsByLFN = defaultdict(list)
+        
+        for pf in parentFilesDetail:
+            parentLFN = pf['logical_file_name']
+            dbsFile = remapDBS3Keys(pf, stringify = True)
+            if lumis:
+                dbsFile["LumiList"] = parentLumis[parentLFN]
+                
+            for childLFN in childByParents[parentLFN]:
+                parentsByLFN[childLFN].append(dbsFile)
+            
         for fileInfo in fileDetails:
             fileInfo["ParentList"] = parentsByLFN[fileInfo['logical_file_name']]
 

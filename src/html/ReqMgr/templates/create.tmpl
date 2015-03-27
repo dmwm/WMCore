@@ -81,7 +81,7 @@ $jsondata
 function CreateRequest(formtag) {
     var parameters = {};
     if (formtag=='table-form') {
-        parameters = \$('table-form').serialize(true);
+        parameters = \$('#table-form').serialize();
     } else if (formtag=='json-form') {
         var doc = document.getElementById('jsondict');
         var data = doc.value;

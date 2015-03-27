@@ -49,8 +49,8 @@ $jsondata
 
 <script>
 function ChangeRequestStatus() {
-    var parameters = \$('change-status-form').serialize(true);
-    ajaxRequest('$base/put_request', parameters);
+    var parameters = \$('#change-status-form').serialize();
+    ajaxRequest('$base/data/request', parameters, 'PUT');
 }
 function ActivateTable() {
     var id = document.getElementById('btn-table');

@@ -72,20 +72,20 @@ function ajaxRequest(path, parameters, verb) {
     request.done(function(data) {
         $('response').html(data);
     });
-    request.fail(function(xhr, status) {
+    request.fail(function(xhr, msg) {
         var doc = document.getElementById('confirmation');
-        doc.innerHTML='ERROR! Your request has been failed';
+        doc.innerHTML='ERROR! Your request has been failed with status code '+xhr.status+' and error message '+msg;
         doc.className='tools-alert tools-alert-red confirmation fadeout shadow';
         setTimeout(cleanConfirmation, 5000);
     });
-    request.always(function (xhr, status) {
+    request.always(function (xhr, msg) {
         var doc = document.getElementById('confirmation');
-        if  (status==200 || status==201) {
-            doc.innerHTML='SUCCESS! Your request has been processed with status '+status;
+        if  (xhr.status==200 || xhr.status==201) {
+            doc.innerHTML='SUCCESS! Your request has been processed with status code '+xhr.status;
             doc.className='tools-alert tools-alert-green confirmation fadeout shadow';
             setTimeout(cleanConfirmation, 5000);
         } else {
-            doc.innerHTML='WARNING! Your request has been processed with status '+status;
+            doc.innerHTML='WARNING! Your request has been processed with status code '+xhr.status+' and error message'+msg;
             doc.className='tools-alert tools-alert-yellow confirmation fadeout shadow';
             var headers = xhr.getAllResponseHeaders();
             errorMessage(headers);

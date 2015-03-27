@@ -38,7 +38,7 @@ class _MockDBSApi():
 
         return res
 
-    def listFileLumiArray(self, logical_file_name = None, block_name = None, validFileOnly = 1):
+    def listFileLumis(self, logical_file_name = None, block_name = None, validFileOnly = 1):
         """
         Mock out listFileLumis
         """

@@ -63,6 +63,7 @@ function ajaxRequest(path, parameters, verb) {
         type: verb || 'POST',
         // headers: {"X-HTTP-Method-Override": "PUT"}, // X-HTTP-Method-Override set to PUT.
         dataType: "json",
+        cache: false,
         beforeSend: function() {
             var doc = document.getElementById('confirmation');
             doc.innerHTML='Your request has been submitted';
@@ -72,20 +73,21 @@ function ajaxRequest(path, parameters, verb) {
     request.done(function(data) {
         $('response').html(data);
     });
-    request.fail(function(xhr, msg) {
+    request.fail(function(xhr, msg, err) {
         var doc = document.getElementById('confirmation');
-        doc.innerHTML='ERROR! Your request has been failed with status code '+xhr.status+' and error message '+msg;
+        doc.innerHTML='ERROR! Your request has been failed with status code '+xhr.status+' and '+msg+' '+err;
         doc.className='tools-alert tools-alert-red confirmation fadeout shadow';
-        setTimeout(cleanConfirmation, 5000);
+        var headers = xhr.getAllResponseHeaders();
+        errorMessage(headers);
     });
-    request.always(function (xhr, msg) {
+    request.always(function (xhr, msg, err) {
         var doc = document.getElementById('confirmation');
         if  (xhr.status==200 || xhr.status==201) {
             doc.innerHTML='SUCCESS! Your request has been processed with status code '+xhr.status;
             doc.className='tools-alert tools-alert-green confirmation fadeout shadow';
             setTimeout(cleanConfirmation, 5000);
         } else {
-            doc.innerHTML='WARNING! Your request has been processed with status code '+xhr.status+' and error message'+msg;
+            doc.innerHTML='WARNING! Your request has been processed with status code '+xhr.status+' and '+msg+' '+err;
             doc.className='tools-alert tools-alert-yellow confirmation fadeout shadow';
             var headers = xhr.getAllResponseHeaders();
             errorMessage(headers);

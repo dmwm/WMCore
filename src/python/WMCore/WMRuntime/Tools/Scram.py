@@ -139,7 +139,7 @@ class Scram:
         # send commands to the subshell utilising the process writer method
         self.procWriter(proc, "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
         self.procWriter(proc, self.preCommand())
-        self.procWriter(proc, "%s project CMSSW %s\n" % (self.command, self.version))
+        self.procWriter(proc, "%s --arch %s project CMSSW %s\n" % (self.command, self.architecture, self.version))
         self.procWriter(proc, """if [ "$?" -ne "0" ]; then exit 3; fi\n""")
         self.procWriter(proc, "exit 0")
 

@@ -156,7 +156,7 @@ def _validateInputDataset(arguments):
 
 def validateInputDatasSetAndParentFlag(arguments):
     inputdataset = arguments.get("InputDataset", None)
-    if arguments.get("IncludeParents", False):
+    if strToBool(arguments.get("IncludeParents", False)):
         if inputdataset == None:
             msg = "Validation failed: IncludeParent flag is True but there is no inputdataset"
             raise WMSpecFactoryException(msg)

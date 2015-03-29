@@ -80,14 +80,17 @@ function ajaxRequest(path, parameters, verb) {
         var headers = xhr.getAllResponseHeaders();
         errorMessage(headers);
     });
-    request.always(function (xhr, msg, err) {
+    request.always(function (arg1, msg, arg2) {
+        // from jQuery docs: http://api.jquery.com/jquery.ajax/
+        // for successful events the input parameters are (data, msg, xhr)
+        // for failed events the input parameters are (xhr, msg, err)
         var doc = document.getElementById('confirmation');
-        if  (xhr.status==200 || xhr.status==201) {
-            doc.innerHTML='SUCCESS! Your request has been processed with status code '+xhr.status;
+        if  (arg2.status==200 || arg2.status==201 || msg=='success') {
+            doc.innerHTML='SUCCESS! Your request has been processed with code '+arg2.status;
             doc.className='tools-alert tools-alert-green confirmation fadeout shadow';
             setTimeout(cleanConfirmation, 5000);
         } else {
-            doc.innerHTML='WARNING! Your request has been processed with status code '+xhr.status+' and '+msg+' '+err;
+            doc.innerHTML='WARNING! Your request has been processed with status code '+arg1.status+' and '+msg+' '+arg2;
             doc.className='tools-alert tools-alert-yellow confirmation fadeout shadow';
             var headers = xhr.getAllResponseHeaders();
             errorMessage(headers);

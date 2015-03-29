@@ -11,5 +11,6 @@ REQUEST_TYPES = [
     "ReDigi",
     "MonteCarloFromGEN",
     "TaskChain",
-    "PrivateMC"
+    "PrivateMC",
+    "DQMHarvest"
 ]

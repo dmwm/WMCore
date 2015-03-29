@@ -13,7 +13,7 @@ from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx3
 from WMCore.Services.EmulatorSwitch import emulatorHook
 
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-from WMCore.Lexicon import cmsname
+from WMCore.Lexicon import cmsname, slicedIterator
 
 def remapDBS3Keys(data, stringify = False, **others):
     """Fields have been renamed between DBS2 and 3, take fields from DBS3
@@ -68,7 +68,9 @@ class DBS3Reader:
             if blockName:
                 lumiLists = self.dbs.listFileLumis(block_name=blockName, validFileOnly = 1)
             elif lfns:
-                lumiLists = self.dbs.listFileLumiArray(logical_file_name = lfns)
+                lumiLists = []
+                for slfn in slicedIterator(lfns, 50):
+                    lumiLists.extend(self.dbs.listFileLumiArray(logical_file_name = slfn))
         except dbsClientException, ex:
             msg = "Error in "
             msg += "DBSReader.listFileLumiArray(%s)\n" % lfns
@@ -499,7 +501,11 @@ class DBS3Reader:
             childByParents[f['parent_logical_file_name']].append(f['logical_file_name'])
         parentsLFNs = childByParents.keys()
         
-        parentFilesDetail = self.dbs.listFileArray(logical_file_name = parentsLFNs, detail = True)
+        parentFilesDetail = []
+        #TODO: slicing parentLFNs util DBS api is handling that.
+        #Remove slicing if DBS api handles 
+        for pLFNs in slicedIterator(parentsLFNs, 50):
+            parentFilesDetail.extend(self.dbs.listFileArray(logical_file_name = pLFNs, detail = True))
         
         if lumis:
             parentLumis = self._getLumiList(lfn = parentsLFNs)

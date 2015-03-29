@@ -48,7 +48,7 @@ $jsondata
 <script>
 function ChangeRequestStatus() {
     var parameters = {'RequestStatus':\$('#RequestStatus').val()};
-    ajaxRequest('$base/data/request', parameters, 'PUT');
+    ajaxRequest('$base/data/request/$name', parameters, 'PUT');
 }
 function ActivateTable() {
     var id = document.getElementById('btn-table');

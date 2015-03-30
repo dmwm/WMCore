@@ -219,8 +219,11 @@ class Block(StartPolicyInterface):
         # fill block lfn part of maskedBlocks
 
         for run, lumis in lumiMask.items():
-            files = dbs.dbs.listFileArray(dataset=datasetPath, run_num=run,
-                                      lumi_list=lumis, detail=True)
+            files = []
+            for slumis in Lexicon.slicedIterator(lumis, 50):
+                slicedFiles = dbs.dbs.listFileArray(dataset=datasetPath, run_num=run,
+                                       lumi_list=slumis, detail=True)
+                files.extend(slicedFiles)
             for file in files:
                 blockName = file['block_name']
                 fileName = file['logical_file_name']

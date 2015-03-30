@@ -22,7 +22,7 @@ function errorMessage(err) {
     doc.innerHTML=html;
     doc.className='width-50 tools-alert tools-alert-red confirmation shadow';
 }
-function ajaxRequest(path, parameters) {
+function ajaxRequestPrototype(path, parameters) {
     // path is an URI binded to certain server method
     // parameters is dict of parameters passed to the server function
     new Ajax.Updater('response', path,
@@ -52,5 +52,48 @@ function ajaxRequest(path, parameters) {
               errorMessage(headers);
           }
       }
+    });
+}
+function ajaxRequest(path, parameters, verb) {
+    // path is an URI binded to certain server method
+    // parameters is dict of parameters passed to the server function
+    var request = $.ajax({
+        url: path,
+        data: parameters,
+        type: verb || 'POST',
+        // headers: {"X-HTTP-Method-Override": "PUT"}, // X-HTTP-Method-Override set to PUT.
+        dataType: "json",
+        cache: false,
+        beforeSend: function() {
+            var doc = document.getElementById('confirmation');
+            doc.innerHTML='Your request has been submitted';
+            doc.className='tools-alert tools-alert-blue confirmation fadeout shadow';
+        }
+    });
+    request.done(function(data) {
+        $('response').html(data);
+    });
+    request.fail(function(xhr, msg, err) {
+        var doc = document.getElementById('confirmation');
+        doc.innerHTML='ERROR! Your request has been failed with status code '+xhr.status+' and '+msg+' '+err;
+        doc.className='tools-alert tools-alert-red confirmation fadeout shadow';
+        var headers = xhr.getAllResponseHeaders();
+        errorMessage(headers);
+    });
+    request.always(function (arg1, msg, arg2) {
+        // from jQuery docs: http://api.jquery.com/jquery.ajax/
+        // for successful events the input parameters are (data, msg, xhr)
+        // for failed events the input parameters are (xhr, msg, err)
+        var doc = document.getElementById('confirmation');
+        if  (arg2.status==200 || arg2.status==201 || msg=='success') {
+            doc.innerHTML='SUCCESS! Your request has been processed with code '+arg2.status;
+            doc.className='tools-alert tools-alert-green confirmation fadeout shadow';
+            setTimeout(cleanConfirmation, 5000);
+        } else {
+            doc.innerHTML='WARNING! Your request has been processed with status code '+arg1.status+' and '+msg+' '+arg2;
+            doc.className='tools-alert tools-alert-yellow confirmation fadeout shadow';
+            var headers = xhr.getAllResponseHeaders();
+            errorMessage(headers);
+        }
     });
 }

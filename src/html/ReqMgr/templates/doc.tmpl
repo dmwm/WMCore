@@ -11,7 +11,6 @@
     </nav>
 </header>
 <hr/>
-<form id="change-status-form" name="change-status-form" method="post">
 <header class="group">
 <nav class="navbar navbar-right">
 <ul>
@@ -29,7 +28,6 @@ Status: <b>$status</b> to
 </li>
 </nav>
 </header>
-</form>
 
 <div name="edit-table" id="edit-table">
 $table
@@ -49,8 +47,8 @@ $jsondata
 
 <script>
 function ChangeRequestStatus() {
-    var parameters = \$('change-status-form').serialize(true);
-    ajaxRequest('$base/put_request', parameters);
+    var parameters = {'RequestStatus':\$('#RequestStatus').val()};
+    ajaxRequest('$base/data/request/$name', parameters, 'PUT');
 }
 function ActivateTable() {
     var id = document.getElementById('btn-table');

@@ -14,6 +14,7 @@ from collections import defaultdict
 import os
 import threading
 import time
+from httplib import HTTPException
 
 from WMCore.Alerts import API as alertAPI
 
@@ -923,8 +924,10 @@ class WorkQueue(WorkQueueBase):
                 totalFiles += unit['NumberOfFiles']
             totalUnits.extend(units)
 
-        return totalUnits, {'total_jobs': totalToplevelJobs, 'input_events': totalEvents, 'input_lumis': totalLumis, 'input_num_files': totalFiles}, \
-               rejectedWork
+        return (totalUnits, {'total_jobs': totalToplevelJobs, 
+                             'input_events': totalEvents, 
+                             'input_lumis': totalLumis, 
+                             'input_num_files': totalFiles}, rejectedWork)
 
     def processInboundWork(self, inbound_work = None, throw = False, continuous = False):
         """Retrieve work from inbox, split and store
@@ -975,15 +978,6 @@ class WorkQueue(WorkQueueBase):
                                 chunkProcessed = processedInputs[:chunkSize]
                                 chunkRejected = rejectedWork[:chunkSize]
                     
-                    #TODO: remove this when reqmgr is dropped
-                    if not self.params.get('LocalQueueFlag') and self.params.get('WMStatsCouchUrl'):
-                        # only update global stats for global queue
-                        try:
-                            # add the total work on wmstat summary or add the recently split work
-                            wmstatSvc = WMStatsWriter(self.params.get('WMStatsCouchUrl'))
-                            wmstatSvc.insertTotalStats(inbound['WMSpec'].name(), totalStats)
-                        except Exception, ex:
-                            self.logger.info('Error publishing %s to WMStats: %s' % (inbound['RequestName'], str(ex)))
                     # update request mgr couch doc
                     if not self.params.get('LocalQueueFlag'):
                         # only update global stats for global queue
@@ -991,8 +985,28 @@ class WorkQueue(WorkQueueBase):
                             # add the total work on wmstat summary or add the recently split work
                             reqmgrSvc = ReqMgr(self.params.get('ReqMgrServiceURL'))
                             reqmgrSvc.updateRequestStats(inbound['WMSpec'].name(), totalStats)
+                        except HTTPException, httpEx:
+                            msg = "status: %s, reason: %s" % (httpEx.status, httpEx.reason)
+                            self.logger.error('Error publishing %s to Request Mgr for %s: %s' % (totalStats,
+                                                                        inbound['RequestName'], msg))
                         except Exception, ex:
-                            self.logger.info('Error publishing %s to Request Mgr: %s' % (inbound['RequestName'], str(ex)))
+                            self.logger.error('Error publishing %s to Request Mgr for %s: %s' % (totalStats,
+                                                                        inbound['RequestName'], str(ex)))
+                    
+                    #TODO: remove this when reqmgr is dropped
+                    if not self.params.get('LocalQueueFlag') and self.params.get('WMStatsCouchUrl'):
+                        # only update global stats for global queue
+                        try:
+                            # add the total work on wmstat summary or add the recently split work
+                            wmstatSvc = WMStatsWriter(self.params.get('WMStatsCouchUrl'))
+                            wmstatSvc.insertTotalStats(inbound['WMSpec'].name(), totalStats)
+                        except HTTPException, httpEx:
+                            msg = "status: %s, reason: %s" % (httpEx.status, httpEx.reason)
+                            self.logger.error('Error publishing %s to Request Mgr for %s: %s' % (totalStats,
+                                                                        inbound['RequestName'], msg))
+                        except Exception, ex:
+                            self.logger.error('Error publishing %s to WMStats for %s: %s' % (totalStats,
+                                                                            inbound['RequestName'], str(ex)))
 
             except TERMINAL_EXCEPTIONS, ex:
                 if not continuous:

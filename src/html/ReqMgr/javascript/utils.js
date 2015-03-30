@@ -308,7 +308,7 @@ function genColor(s) {
     return color;
 }
 function ByPattern(item) {
-    var input = $('filter').value;
+    var input = $("#filter").val();
     var pat = new RegExp(input, "g");
     return pat.test(item.RequestName);
 }

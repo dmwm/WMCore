@@ -73,9 +73,10 @@ function BuildList(tag, data) {
         data.reverse();
     }
     _order += 1;
-    $('container').innerHTML="";
+    var container = document.getElementById('container');
+    container.innerHTML="";
     var listContainer = document.createElement('div');
-    $('container').appendChild(listContainer);
+    container.appendChild(listContainer);
     var listElement = document.createElement("ul");
     listContainer.appendChild(listElement);
     data.forEach(function(item) {

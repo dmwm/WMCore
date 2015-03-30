@@ -3,7 +3,7 @@
 <tr><td class="width-30">
         <input id="filter" type="search" class="width-100" placeholder="Filter by pattern ...">
 </td><td class="width-10">
-        <a href="#" class="" onclick="BuildList('', requests.filter(ByPattern))">Search</a>
+        <a href="#" id="search-btn" class="" onclick="BuildList('', requests.filter(ByPattern))">Search</a>
 </td><td class="width-60 right">
 <div class="group">
     <nav class="navbar navbar-right">
@@ -19,3 +19,12 @@
 </td></tr>
 </tbody>
 </table>
+
+<script>
+// use jQuery to trigger press of Enter in search input field
+\$("\#filter").keyup(function(event) {
+    if(event.keyCode == 13){
+        \$("\#search-btn").click();
+    }
+});
+</script>

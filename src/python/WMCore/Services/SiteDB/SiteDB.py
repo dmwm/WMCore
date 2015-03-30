@@ -171,6 +171,20 @@ class SiteDBJSON(Service):
         cmsnames = filter(lambda x: x['type']=='psn', sitenames)
         cmsnames = map(lambda x: x['alias'], cmsnames)
         return cmsnames
+    
+    def getAllPhEDExNodeNames(self, excludeBuffer = False):
+        """
+        _getAllPhEDExNodeNames_
+
+        Get all the CMSNames from siteDB
+        This will allow us to add them in resourceControl at once
+        """
+        sitenames = self._sitenames()
+        node_names = filter(lambda x: x['type']=='phedex', sitenames)
+        node_names = map(lambda x: x['alias'], node_names)
+        if excludeBuffer:
+            node_names = filter(lambda x: not x.endswith("_Buffer"), node_names)
+        return node_names
 
     def cmsNametoList(self, cmsname_pattern, kind, file=None):
         """

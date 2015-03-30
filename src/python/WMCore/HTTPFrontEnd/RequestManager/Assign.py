@@ -49,6 +49,8 @@ class Assign(WebAPI):
                 sitedb = SiteDBJSON()
                 self.sites = sitedb.getAllCMSNames()    
                 self.sites.sort()
+                self.phedexNodes = sitedb.getAllPhEDExNodeNames(excludeBuffer = True)
+                self.phedexNodes.sort()
             except Exception, ex:
                 msg = "ERROR: Could not retrieve sites from SiteDB, reason: %s" % ex
                 cherrypy.log(msg)
@@ -167,6 +169,7 @@ class Assign(WebAPI):
 
         return self.templatepage("Assign", requests = [request], teams = teams,
                                  assignments = assignments, sites = self.sites,
+                                 phedexNodes = self.phedexNodes,
                                  mergedLFNBases = self.allMergedLFNBases,
                                  reqMergedBase = reqMergedBase,
                                  unmergedLFNBases = self.allUnmergedLFNBases,
@@ -233,6 +236,7 @@ class Assign(WebAPI):
 
         return self.templatepage("Assign", all = all, requests = goodRequests, teams = teams,
                                  assignments = [], sites = self.sites,
+                                 phedexNodes = self.phedexNodes,
                                  mergedLFNBases = self.allMergedLFNBases,
                                  reqMergedBase = reqMergedBase,
                                  unmergedLFNBases = self.allUnmergedLFNBases,

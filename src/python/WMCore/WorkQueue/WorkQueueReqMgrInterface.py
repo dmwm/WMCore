@@ -219,10 +219,16 @@ class WorkQueueReqMgrInterface():
         """
         
         tempResults = self._getRequestsByTeamsAndStatus("assigned", teams).values()
-        tempResults.sort(key = itemgetter('RequestPriority'), reverse = True)
-        tempResults.sort(key = lambda r: r["Teams"][0])
+        filteredResults = []
+        for request in tempResults:
+            if "Teams" in request and len(request["Teams"]) == 1:
+                filteredResults.append(request)
+            else:
+                self.logger.warning("no team or more than one team are assigined: %s" % request["RequestName"])
+        filteredResults.sort(key = itemgetter('RequestPriority'), reverse = True)
+        filteredResults.sort(key = lambda r: r["Teams"][0])
         
-        results = [(x["Teams"][0], x["RequestName"], x["RequestWorkflow"]) for x in tempResults]
+        results = [(x["Teams"][0], x["RequestName"], x["RequestWorkflow"]) for x in filteredResults]
         
         return results
 

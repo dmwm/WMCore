@@ -769,9 +769,12 @@ class WorkQueue(WorkQueueBase):
                 # Check if the delay has passed
                 newDataFoundTime = element.get('TimestampFoundNewData', 0)
                 childrenElements = self.backend.getElementsForParent(element)
-                lastUpdate = float(max(childrenElements, key = lambda x: x.timestamp).timestamp)
-                if (currentTime - max(newDataFoundTime, lastUpdate)) > openRunningTimeout:
-                    workflowsToClose.append(element.id)
+                if len(childrenElements) > 0:
+                    lastUpdate = float(max(childrenElements, key = lambda x: x.timestamp).timestamp)
+                    if (currentTime - max(newDataFoundTime, lastUpdate)) > openRunningTimeout:
+                        workflowsToClose.append(element.id)
+                else:
+                    self.logger.error("ChildElement is empty for element id %s: investigate" % element.id)
 
         msg = 'No workflows to close.\n'
         if workflowsToClose:

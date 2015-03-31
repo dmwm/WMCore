@@ -158,7 +158,7 @@ class RFCPCERNImpl(StageOutImpl):
             if useChecksum:
 
                 result += "echo \"Local File Checksum is: %s\"\n" % checksums['adler32']
-                result += "REMOTE_XS=`xrd '%s' getchecksum '%s' | sed -r 's/.* eos ([0-9a-fA-F]{8}).*/\\1/'`\n" % (host, path)
+                result += "REMOTE_XS=`xrd '%s' getchecksum '%s' | sed -r 's/.* adler32 ([0-9a-fA-F]{8}).*/\\1/'`\n" % (host, path)
                 result += "echo \"Remote File Checksum is: $REMOTE_XS\"\n"
 
                 result += "if [ $REMOTE_SIZE ] && [ $REMOTE_XS ] && [ $LOCAL_SIZE == $REMOTE_SIZE ] && [ '%s' == $REMOTE_XS ]; then exit 0; " % checksums['adler32']

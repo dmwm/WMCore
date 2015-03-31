@@ -8,7 +8,7 @@ https://github.com/dmwm/WMCore/issues/5705
 import os
 
 # project modules
-from WMCore.LogDB.LogDBBackend import LogDBBackend
+from WMCore.Services.LogDB.LogDBBackend import LogDBBackend
 
 class LogDB(object):
     """

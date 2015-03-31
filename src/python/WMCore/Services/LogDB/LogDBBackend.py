@@ -10,7 +10,7 @@ import datetime
 
 from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError
 from WMCore.Wrappers import JsonWrapper as json
-from WMCore.LogDB.LogDBExceptions import LogDBError
+from WMCore.Services.LogDB.LogDBExceptions import LogDBError
 
 def formatReply(answer, *items):
     """Take reply from couch bulk api and format labeling errors etc

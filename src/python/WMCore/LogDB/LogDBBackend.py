@@ -7,7 +7,6 @@ Interface to LogDB persistent storage
 
 import time
 import datetime
-import requests
 
 from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError
 from WMCore.Wrappers import JsonWrapper as json

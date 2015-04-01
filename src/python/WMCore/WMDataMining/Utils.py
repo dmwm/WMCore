@@ -132,6 +132,10 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
             campaign = requests[wf]['campaign']
             prep_id = requests[wf].get('prep_id', None)
             outputdatasets = requests[wf].get('outputdatasets', [])
+            statuses = requests[wf].get('request_status', [])
+
+            if not statuses:
+                log("ERROR: Could not find any status from workflow: %s" % wf) # Should not happen but it does.
 
             # Can be an empty list, full list, empty string, or non-empty string!
             inputdataset = requests[wf].get('inputdataset', "")
@@ -226,7 +230,8 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
             announcedTime = None
             archivedTime = None
             requestDate = None
-            for status in requests[wf]['request_status']:
+
+            for status in statuses:
                 finalStatus = status['status']
                 if status['status'] == 'new':
                     newTime = status['update_time']

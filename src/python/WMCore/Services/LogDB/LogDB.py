@@ -24,13 +24,20 @@ class LogDB(object):
         # config argument (within params) shall be reference to
         # Configuration instance
         self.config = params.get("Config", None)
-        self.params.setdefault('CouchUrl', os.environ.get('COUCHURL'))
-        if not self.params.get('CouchUrl'):
-            raise RuntimeError, 'CouchUrl config value mandatory'
+        if  'CouchUrl' not in self.params:
+            self.params.setdefault('CouchUrl', os.environ.get('COUCHURL', ''))
+        if  'CentralCouchUrl' not in self.params:
+            self.params.setdefault('CentralCouchUrl', os.environ.get('CENTRALCOUCHURL', ''))
+        for attr in ['CouchUrl', 'CentralCouchUrl']:
+            if  not self.params.get(attr):
+                raise RuntimeError, '%s config value mandatory' % attr
         self.params.setdefault('DbName', 'logdb')
 
         self.backend = LogDBBackend(self.params['CouchUrl'],
                 self.params['DbName'], logger=self.logger)
+        self.central = LogDBBackend(self.params['CentralCouchUrl'],
+                self.params['DbName'], logger=self.logger)
+
         if  self.logger:
             self.logger.debug("LogDB created successfully")
 
@@ -53,4 +60,24 @@ class LogDB(object):
         res = self.backend.delete(request, agent)
         if  self.logger:
             self.logger.debug("LogDB delete request, res=%s", res)
+        return res
+
+    def summary(self, request, agent):
+        """Generate summary document for given request/agent pair"""
+        res = self.backend.summary(request, agent)
+        if  self.logger:
+            self.logger.debug("LogDB summary request, res=%s", res)
+        return res
+
+    def upload2central(self, request, agent):
+        """
+        Upload local LogDB docs corresponding to given request/agent
+        into central LogDB database
+        """
+        docs = self.backend.summary(request, agent)
+        for doc in docs:
+            self.central.db.queue(doc)
+        res = self.central.db.commit()
+        if  self.logger:
+            self.logger.debug("LogDB upload2central request, res=%s", res)
         return res

@@ -213,7 +213,7 @@ class DashboardInterfaceTest(unittest.TestCase):
 
         # Do the first step
         step = task.getStep(stepName = "cmsRun1")
-        step.getTypeHelper().setMulticoreCores(8)
+        step.getTypeHelper().setNumberOfCores(8)
 
         # Do the step start
         data = dbInfo.stepStart(step = step.data)

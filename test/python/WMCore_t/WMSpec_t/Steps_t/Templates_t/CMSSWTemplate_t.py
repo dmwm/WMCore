@@ -103,7 +103,7 @@ class CMSSWTemplateTest(unittest.TestCase):
         helper = template.helper(step)
 
         self.assertEqual(helper.getNumberOfCores(), 1)
-        helper.setMulticoreCores(8)
+        helper.setNumberOfCores(8)
         self.assertEqual(helper.getNumberOfCores(), 8)
 
 

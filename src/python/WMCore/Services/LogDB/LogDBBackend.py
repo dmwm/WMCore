@@ -93,13 +93,22 @@ class LogDBBackend(object):
         for doc in docs.get('rows', []):
             entry = doc['value']
             key = (entry['request'], entry['type'])
-            if  key in odict:
-                if  entry['ts'] > odict[key]['ts']:
+            if  entry['type'].startswith('agent-'):
+                if  key in odict:
+                    if  entry['ts'] > odict[key]['ts']:
+                        odict[key] = clean_entry(entry)
+                else:
                     odict[key] = clean_entry(entry)
-            else:
-                odict[key] = clean_entry(entry)
+            else: # keep all user-based messages
+                odict.setdefault(key, []).append(clean_entry(entry))
         for key, val in odict.items():
             doc = {'request':request, 'agent':agent}
-            doc.update(val)
-            out.append(doc)
+            if  isinstance(val, list):
+                for item in val:
+                    rec = dict(doc)
+                    rec.update(item)
+                    out.append(rec)
+            else:
+                doc.update(val)
+                out.append(doc)
         return out

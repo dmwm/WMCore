@@ -16,22 +16,33 @@ class LogDB(object):
 
     LogDB object - interface to LogDB functionality.
     """
-    def __init__(self, logger = None, **params):
+    def __init__(self, config=None, logger=None, **params):
 
-        self.params = params
+        self.config = config
         self.logger = logger
+        self.params = params
+        default_couch = os.environ.get('COUCHURL', '')
+        default_central_couch = os.environ.get('CENTRALCOUCHURL', '')
+        default_db_name = 'logdb'
+        if  config:
+            config = config.dictionary_()
+            if  'logdb' in config:
+                lconfig = config.get('logdb', {})
+                if not isinstance(lconfig, dict):
+                    lconfig = lconfig.dictionary_()
+                self.params['CouchUrl'] = lconfig.get('couch_url', default_couch)
+                self.params['CentralCouchUrl'] = lconfig.get('couch_url', default_central_couch)
+                self.params['DbName'] = lconfig.get('db_name', default_db_name)
 
-        # config argument (within params) shall be reference to
-        # Configuration instance
-        self.config = params.get("Config", None)
         if  'CouchUrl' not in self.params:
-            self.params.setdefault('CouchUrl', os.environ.get('COUCHURL', ''))
+            self.params.setdefault('CouchUrl', default_couch)
         if  'CentralCouchUrl' not in self.params:
-            self.params.setdefault('CentralCouchUrl', os.environ.get('CENTRALCOUCHURL', ''))
+            self.params.setdefault('CentralCouchUrl', default_central_couch)
         for attr in ['CouchUrl', 'CentralCouchUrl']:
             if  not self.params.get(attr):
                 raise RuntimeError, '%s config value mandatory' % attr
-        self.params.setdefault('DbName', 'logdb')
+        if  'DbName' not in self.params:
+            self.params.setdefault('DbName', 'logdb')
 
         self.backend = LogDBBackend(self.params['CouchUrl'],
                 self.params['DbName'], logger=self.logger)

@@ -187,6 +187,11 @@ config.JobCreator.pollInterval = 120
 config.JobCreator.jobCacheDir = config.General.workDir + "/JobCache"
 config.JobCreator.defaultJobType = "Processing"
 config.JobCreator.workerThreads = 1
+# don't specify the value if there is no limit or if it is not using GlideIn (T0)
+# config.JobCreator.GlideInRestriction = {}
+config.JobCreator.GlideInRestriction = {"MaxWallTimeMins": 48 * 60, # unit minutes to sync with GlideIn value
+                                        "RequestDisk": 27 * 1000, # unit KB, 27G
+                                        }
 
 config.component_("JobSubmitter")
 config.JobSubmitter.namespace = "WMComponent.JobSubmitter.JobSubmitter"

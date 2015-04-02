@@ -45,6 +45,12 @@ class JobFactory(WMObject):
         self.grabByProxy   = False
         self.daoFactory    = None
         self.timing = {'jobInstance': 0, 'sortByLocation': 0, 'acquireFiles': 0, 'jobGroup': 0}
+        
+        # maps between GlideIn key words and wmagent equivalent values, and unit conversion parameter by multiplication)
+        # i.e unit MaxWallTimeMins * 60 = estimatedJobTime
+        self.glideInKeyMap = {"MaxWallTimeMins": ("estimatedJobTime", 60), 
+                              "RequestMemory": ("estimatedMemoryUsage", 10 ** 6), 
+                              "RequestDisk": ("estimatedDiskUsage", 10 ** 6)}
 
         if package == 'WMCore.WMBS':
             myThread = threading.currentThread()
@@ -68,7 +74,12 @@ class JobFactory(WMObject):
         self.siteWhitelist = kwargs.get("siteWhitelist", [])
         self.siteBlacklist = kwargs.get("siteBlacklist", [])
         self.trustSitelists = kwargs.get("trustSitelists", False)
-
+        
+        self.glideInRestriction = {}
+        for key in self.glideInKeyMap:
+            if key in kwargs:
+                self.glideInRestriction[key] = kwargs[key]
+               
         # Every time we restart, re-zero the jobs
         self.nJobs = 0
 
@@ -114,7 +125,7 @@ class JobFactory(WMObject):
         map(lambda x: x.startGroup(self.currentGroup), self.generators)
 
 
-    def newJob(self, name=None, files=None, failedJob=False, failedReason=None):
+    def newJob(self, name=None, files=None, failedJob=False, failedReason=""):
         """
         Instantiate a new Job onject, apply all the generators to it
         """
@@ -139,9 +150,7 @@ class JobFactory(WMObject):
             self.currentJob["mask"].setMaxAndSkipRuns(0, 1)
 
         # Some jobs are not meant to be submitted, ever
-        if failedJob:
-            self.currentJob["failedOnCreation"] = True
-            self.currentJob["failedReason"] = failedReason
+        self.checkCreateFailCondition(failedJob, failedReason)
 
         self.nJobs += 1
         for gen in self.generators:
@@ -420,3 +429,20 @@ class JobFactory(WMObject):
         sizePerEvent = defaultParams.get('sizePerEvent', None) or 0
         memory = defaultParams.get('memoryRequirement', None) or 0
         return timePerEvent, sizePerEvent, memory
+    
+    def checkCreateFailCondition(self, failedJob, failedReason):
+        
+        for glideInKey in self.glideInRestriction:
+            wmKey = self.glideInKeyMap[glideInKey][0]
+            unitConvertValue = self.glideInKeyMap[glideInKey][1]
+            limit = self.glideInRestriction[glideInKey] * unitConvertValue
+            
+            if self.currentJob[wmKey] and (self.currentJob[wmKey] > limit):
+                failJob = True
+                failedReason += " %s (%s) exceeded %s (%s) " % (wmKey, self.currentJob[wmKey], 
+                                                               glideInKey, self.glideInRestriction[glideInKey])
+            
+        if failJob:
+            self.currentJob["failedOnCreation"] = True
+            self.currentJob["failedReason"] = failedReason
+            

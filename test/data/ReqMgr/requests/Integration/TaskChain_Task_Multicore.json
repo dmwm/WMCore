@@ -1,6 +1,7 @@
 { 
 "createRequest":
-    {
+{
+    "Comments": "TaskChain data with 3 tasks, 4-cores task1, 8-cores task2 and 1-core task3. Harvesting enabled",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_4_0_pre8",
@@ -31,6 +32,7 @@
         "KeepOutput": "True",
         "TaskName": "HLTD"},
     "Task2": {"AcquisitionEra": "CMSSW_7_4_0_pre8",
+        "Multicore": 8,
         "ConfigCacheID": "0d6d2c921e3ce552e8f513db7f91acbb",
         "GlobalTag": "GR_R_74_V8A",
         "InputFromOutputModule": "RAWoutput",
@@ -41,6 +43,7 @@
         "LumisPerJob": 2,
         "TaskName": "RECODreHLT"},
     "Task3": {"AcquisitionEra": "CMSSW_7_4_0_pre8",
+        "Multicore": 1,
         "ConfigCacheID": "0d6d2c921e3ce552e8f513db7f91ca7e",
         "GlobalTag": "GR_R_74_V8A",
         "InputFromOutputModule": "RECOoutput",
@@ -51,10 +54,9 @@
         "LumisPerJob": 10,
         "TaskName": "MINIAODDreHLT"},
     "TaskChain": 3
-    },
-
+},
 "assignRequest":
-    {
+{
     "SiteWhitelist": [],
     "Team": "Team-OVERRIDE-ME",
     "AcquisitionEra": {"HLTD" : "AcquisitionEra-OVERRIDE-ME",
@@ -63,7 +65,7 @@
     "ProcessingString": {"HLTD" : "ProcessingString-OVERRIDE-ME",
                           "RECODreHLT" : "ProcessingString-1-OVERRIDE-ME",
                           "MINIAODDreHLT" : "ProcessingString-2-OVERRIDE-ME"},
-    "Dashboard": "dashboard-OVERRIDE-ME",
+    "Dashboard": "Dashboard-OVERRIDE-ME",
     "SiteBlacklist": [],
     "MergedLFNBase": "/store/relval",
     "UnmergedLFNBase": "/store/unmerged",
@@ -80,9 +82,9 @@
     "AutoApproveSubscriptionSites": [],
     "SubscriptionPriority": "Low",
     "CustodialSubType" : "Move",
-    "BlockCloseMaxWaitTime" : 36000,
+    "BlockCloseMaxWaitTime" : 72000,
     "BlockCloseMaxFiles" : 500,
     "BlockCloseMaxEvents" : 200000000,
     "BlockCloseMaxSize" : 5000000000000
-    }
+}
 }

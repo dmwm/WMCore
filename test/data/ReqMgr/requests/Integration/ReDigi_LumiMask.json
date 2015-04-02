@@ -1,6 +1,7 @@
 { 
 "createRequest":
 {         
+    "Comments": "ReDigi single step with LumiMask, 1 run and 129l in total.",
     "Campaign": "Campaign-OVERRIDE-ME",        
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_0_6_patch1",
@@ -21,6 +22,7 @@
     "KeepStepOneOutput" : "True",
     "PrepID": "BPH-Spring14miniaod-00004",            
     "Group": "DATAOPS",
+    "LumiList": {"1": [[643, 730], [931,940], [1810,1840]]},
     "SplittingAlgo": "LumiBased",
     "RequestNumEvents": 23036,
     "LumisPerJob": 10,
@@ -41,11 +43,11 @@
 },
 "assignRequest":
 {
-    "SiteWhitelist": [],
+    "SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
     "Team": "Team--OVERRIDE-ME",
     "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
     "ProcessingString" : "ProcessingString-OVERRIDE-ME",
-    "Dashboard": "dashboard-OVERRIDE-ME",
+    "Dashboard": "Dashboard-OVERRIDE-ME",
     "SiteBlacklist": [],
     "MergedLFNBase": "/store/backfill/1",
     "UnmergedLFNBase": "/store/unmerged",
@@ -62,7 +64,8 @@
     "AutoApproveSubscriptionSites": [],
     "SubscriptionPriority": "Low",
     "CustodialSubType" : "Move",
-    "BlockCloseMaxWaitTime" : 14400,
+    "useSiteListAsLocation" : "true",
+    "BlockCloseMaxWaitTime" : 72000,
     "BlockCloseMaxFiles" : 500,
     "BlockCloseMaxEvents" : 200000000,
     "BlockCloseMaxSize" : 5000000000000

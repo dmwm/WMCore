@@ -1,6 +1,7 @@
 { 
 "createRequest":
-    {     
+{     
+    "Comments": "MC extension wf. 10l per job",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_5_3_19",
@@ -25,23 +26,23 @@
     "SizePerEvent": 1,
     "FirstEvent": 11001,
     "FirstLumi": 111
-    }, 
+}, 
 "changeSplitting":
-    {
+{
     "Production" :
         {
         "SplittingAlgo" : "EventBased",
         "events_per_job" : 500,
         "include_parents" : "False"
         }
-    },
+},
 "assignRequest":
-    {
+{
     "SiteWhitelist": [],
     "Team": "Team-OVERRIDE-ME",
     "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
     "ProcessingString": "ProcessingString-OVERRIDE-ME",
-    "Dashboard": "dashboard-OVERRIDE-ME",
+    "Dashboard": "Dashboard-OVERRIDE-ME",
     "SiteBlacklist": [],
     "MergedLFNBase": "/store/backfill/1",
     "UnmergedLFNBase": "/store/unmerged",
@@ -62,5 +63,5 @@
     "BlockCloseMaxFiles" : 500,
     "BlockCloseMaxEvents" : 20000000,
     "BlockCloseMaxSize" : 5000000000000
-    }
+}
 }

@@ -1,6 +1,7 @@
 { 
 "createRequest":
-{         
+{
+    "Comments": "MC from scratch with very low f.eff. 2l per job",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_5_3_16",
@@ -41,7 +42,7 @@
     "Team": "Team-OVERRIDE-ME",
     "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
     "ProcessingString": "ProcessingString-OVERRIDE-ME",
-    "Dashboard": "dashboard-OVERRIDE-ME",
+    "Dashboard": "Dashboard-OVERRIDE-ME",
     "SiteBlacklist": [],
     "MergedLFNBase": "/store/backfill/1",
     "UnmergedLFNBase": "/store/unmerged",

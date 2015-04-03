@@ -17,7 +17,6 @@ import cProfile, pstats
 from nose.plugins.attrib import attr
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
-from WMQuality.Emulators.DBSClient.DBS2Interface import DBS2Interface
 
 from WMComponent.DBSUpload.DBSUploadPoller import DBSUploadPoller
 from WMComponent.DBS3Buffer.DBSBufferFile  import DBSBufferFile
@@ -674,7 +673,7 @@ class DBSUploadTest(unittest.TestCase):
         configured for individual workflows.
         This unit test that doesn't require an actual DBS instance to run.
         """
-
+        self.assertTrue(False, 'This unit test disabled since we do not have DBS2 mock')
         myThread = threading.currentThread()
         config = self.createConfig()
         config.DBSInterface.doGlobalMigration = False
@@ -694,7 +693,7 @@ class DBSUploadTest(unittest.TestCase):
 
         # Change the DBSUploadPoller imports on runtime
         from WMComponent.DBSUpload import DBSUploadPoller as MockDBSUploadPoller
-        MockDBSUploadPoller.DBSInterface = DBS2Interface
+        #MockDBSUploadPoller.DBSInterface = DBS2Interface
 
         # In the first round we should create blocks for the first dataset
         # The child dataset should not be handled until the parent is uploaded

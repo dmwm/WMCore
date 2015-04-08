@@ -170,7 +170,7 @@ class BlockTestCase(unittest.TestCase):
         self.assertEqual(len(rejectedWork), 46)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset + '#b469f816-0946-11e1-8347-003048caaace'])
 
-    def atestLumiMask(self): # Fails with DBS2 test since Block.getMaskedBlocks is DBS3 only
+    def atestLumiMask(self):
         """Lumi mask test"""
         rerecoArgs2 = {}
         rerecoArgs2.update(rerecoArgs)

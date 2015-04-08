@@ -1011,9 +1011,6 @@ class PyCondorPlugin(BasePlugin):
 
             jdl.append("priority = %i\n" % (task_priority + prio*self.maxTaskPriority))
 
-            jdl.append("+PostJobPrio1 = -%d\n" % len(job.get('potentialSites', [])))
-            jdl.append("+PostJobPrio2 = -%d\n" % job['taskID'])
-
             jdl.append("+WMAgent_JobID = %s\n" % job['jobid'])
             jdl.append("job_machine_attrs = GLIDEIN_CMSSite\n")
 
@@ -1060,8 +1057,8 @@ class PyCondorPlugin(BasePlugin):
         if job.get('taskName', None):
             jdl.append('+WMAgent_SubTaskName = "%s"\n' % job['taskName'])
 
-        if job.get('taskType', None):
-            jdl.append('+CMS_JobType = "%s"\n' % job['taskType'])
+        if job.get('subTaskType', None):
+            jdl.append('+WMAgent_SubTaskType = "%s"\n' % job['taskType'])
 
         # Performance estimates
         if job.get('estimatedJobTime', None):
@@ -1176,31 +1173,42 @@ class PyCondorPlugin(BasePlugin):
             return n
 
 
-        jobLogInfo={}
+        ### This should select the latest log file in the cache_dir
+        fmtime=0
+        logFile=None
         for joblog in os.listdir(job['cache_dir']):
             if fnmatch.fnmatch(joblog, 'condor.*.*.log'):
-                logFile=os.path.join(job['cache_dir'],joblog)
-                tmpDict={}
-                try :
-                    logging.debug("Opening condor job log file: %s" % logFile)
-                    logfileobj=open(logFile,"r")
-                except :
-                    logging.debug('Cannot open condor job log file %s'% logFile)
-                else :
-                    cres=condor.read_events(logfileobj,1)
-                    ulog=list(cres)
-                    
-                    _tmpStat = int(ulog[-1]["TriggerEventTypeNumber"])
-                    tmpDict["JobStatus"]=LogToScheddExitCodeMap(_tmpStat)
-                    tmpDict["submitTime"]=int(ulog[-1]["QDate"])
-                    tmpDict["runningTime"]=int(ulog[-1]["JobStartDate"]) if ulog[-1]["JobStartDate"] is not None else 0
-                    tmpDict["stateTime"]=int(ulog[-1]["EnteredCurrentStatus"])
-                    tmpDict["runningCMSSite"]=ulog[-1]["MachineAttrGLIDEIN_CMSSite0"]
-                    tmpDict["WMAgentID"]=int(ulog[-1]["WMAgent_JobID"])
-                    _tmpID = tmpDict["WMAgentID"]
-                    jobLogInfo[_tmpID] = tmpDict
+                _tmplogFile=os.path.join(job['cache_dir'],joblog)
+                _tmpfmtime=int(os.path.getmtime(_tmplogFile))
+                if _tmpfmtime > fmtime:
+                    fmtime = _tmpfmtime
+                    logFile = _tmplogFile
 
-                logging.info("Retrieved %i Info from Condor Job Log file %s" % (len(jobLogInfo), logFile))
+
+        jobLogInfo={}
+        try :
+            logging.debug("Opening condor job log file: %s" % logFile)
+            logfileobj=open(logFile,"r")
+        except :
+            logging.debug('Cannot open condor job log file %s'% logFile)
+        else :
+            tmpDict={}
+            cres=condor.read_events(logfileobj,1)
+            ulog=list(cres)
+            if len(ulog) > 0:
+                _tmpStat = int(ulog[-1]["TriggerEventTypeNumber"])
+                tmpDict["JobStatus"]=LogToScheddExitCodeMap(_tmpStat)
+                tmpDict["submitTime"]=int(ulog[-1]["QDate"])
+                tmpDict["runningTime"]=int(ulog[-1]["JobStartDate"]) if ulog[-1]["JobStartDate"] is not None else 0
+                tmpDict["stateTime"]=int(ulog[-1]["EnteredCurrentStatus"])
+                tmpDict["runningCMSSite"]=ulog[-1]["MachineAttrGLIDEIN_CMSSite0"]
+                tmpDict["WMAgentID"]=int(ulog[-1]["WMAgent_JobID"])
+                _tmpID = tmpDict["WMAgentID"]
+                jobLogInfo[_tmpID] = tmpDict
+            else :
+                logging.debug('%s is EMPTY' % str(logFile))
+
+        logging.info("Retrieved %i Info from Condor Job Log file %s" % (len(jobLogInfo), logFile))
                     
         return jobLogInfo
 

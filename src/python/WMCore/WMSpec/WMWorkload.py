@@ -620,8 +620,7 @@ class WMWorkloadHelper(PersistencyHelper):
             for stepName in task.listAllStepNames():
                 stepHelper = task.getStepHelper(stepName)
 
-                if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
+                if stepHelper.stepType() == "CMSSW":
                     for outputModuleName in stepHelper.listOutputModules():
                         outputModule = stepHelper.getOutputModule(outputModuleName)
                         filterName = getattr(outputModule, "filterName", None)
@@ -697,8 +696,7 @@ class WMWorkloadHelper(PersistencyHelper):
                 for stepName in task.listAllStepNames():
                     stepHelper = task.getStepHelper(stepName)
 
-                    if stepHelper.stepType() == "CMSSW" or \
-                           stepHelper.stepType() == "MulticoreCMSSW":
+                    if stepHelper.stepType() == "CMSSW":
                         cmsswHelper = stepHelper.getTypeHelper()
                         cmsswHelper.setDatasetName(datasetName)
 
@@ -1130,8 +1128,7 @@ class WMWorkloadHelper(PersistencyHelper):
                 if not getattr(stepHelper.data.output, "keep", True):
                     continue
 
-                if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
+                if stepHelper.stepType() == "CMSSW":
                     for outputModuleName in stepHelper.listOutputModules():
                         # Only consider non-transient output
                         outputModule = stepHelper.getOutputModule(outputModuleName)
@@ -1167,8 +1164,7 @@ class WMWorkloadHelper(PersistencyHelper):
         for task in taskIterator:
             for stepName in task.listAllStepNames():
                 stepHelper = task.getStepHelper(stepName)
-                if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
+                if stepHelper.stepType() == "CMSSW":
                     pileupSection = stepHelper.getPileup()
                     if pileupSection is None: continue
                     dbsUrl = stepHelper.data.dbsUrl
@@ -1201,8 +1197,7 @@ class WMWorkloadHelper(PersistencyHelper):
                 if not getattr(stepHelper.data.output, "keep", True):
                     continue
 
-                if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
+                if stepHelper.stepType() == "CMSSW":
                     if stepHelper.listOutputModules():
                         taskList.append(task.getPathName())
                         break
@@ -1555,8 +1550,7 @@ class WMWorkloadHelper(PersistencyHelper):
                 #Tell any CMSSW step to ignore the output modules
                 for stepName in task.listAllStepNames():
                     stepHelper = task.getStepHelper(stepName)
-                    if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
+                    if stepHelper.stepType() == "CMSSW":
                         stepHelper.setIgnoredOutputModules(badModules)
             #Go deeper in the tree
             self.ignoreOutputModules(badModules, task)
@@ -1580,8 +1574,7 @@ class WMWorkloadHelper(PersistencyHelper):
             for stepName in task.listAllStepNames():
                 stepHelper = task.getStepHelper(stepName)
 
-                if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
+                if stepHelper.stepType() == "CMSSW":
                     if cmsswVersion != None:
                         if scramArch != None:
                             stepHelper.cmsswSetup(cmsswVersion = cmsswVersion,
@@ -1608,7 +1601,7 @@ class WMWorkloadHelper(PersistencyHelper):
             for stepName in task.listAllStepNames():
 
                 stepHelper = task.getStepHelper(stepName)
-                if stepHelper.stepType() != "CMSSW" and stepHelper.stepType() != "MulticoreCMSSW":
+                if stepHelper.stepType() != "CMSSW":
                     continue
                 version = stepHelper.getCMSSWVersion()
                 if not version in versions:

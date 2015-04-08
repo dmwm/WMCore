@@ -105,7 +105,7 @@ def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
             owner = None, ownerDN = None,
             ownerGroup = '', ownerRole = '',
             scramArch = None, swVersion = None, agentNumber = 0,
-            multicoreEnabled = False, numberOfCores = 1):
+            numberOfCores = 1):
     """
     _saveJob_
 
@@ -129,7 +129,6 @@ def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
     job['ownerRole']   = ownerRole
     job['scramArch'] = scramArch
     job['swVersion'] = swVersion
-    job['multicoreEnabled'] = multicoreEnabled
     job['numberOfCores'] = numberOfCores
     output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
     cPickle.dump(job, output, cPickle.HIGHEST_PROTOCOL)
@@ -161,7 +160,6 @@ def creatorProcess(work, jobCacheDir):
         swVersion    = work.get('swVersion', None)
         agentNumber  = work.get('agentNumber', 0)
         numberOfCores = work.get('numberOfCores', 1)
-        multicoreEnabled = work.get('multicoreEnabled', False)
 
         if ownerDN == None:
             ownerDN = owner
@@ -200,7 +198,6 @@ def creatorProcess(work, jobCacheDir):
                     scramArch = scramArch,
                     swVersion = swVersion,
                     agentNumber = agentNumber,
-                    multicoreEnabled = multicoreEnabled,
                     numberOfCores = numberOfCores)
 
     except Exception, ex:
@@ -559,8 +556,7 @@ class JobCreatorPoller(BaseWorkerThread):
                                'ownerRole': wmWorkload.getOwner().get('vorole', '')}
                 try:
                     multicore = wmTask.steps().applicationSection().multicore
-                    processDict.update({'numberOfCores' : multicore.numberOfCores,
-                                        'multicoreEnabled' : multicore.enabled})
+                    processDict.update({'numberOfCores' : multicore.numberOfCores})
                 except AttributeError:
                     logging.info("Failed to read multicore settings from task %s" % wmTask.getPathName())
 

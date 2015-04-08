@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# encoding: utf-8
+
 """
 _TaskChain_t_
 
@@ -7,10 +7,12 @@ Created by Dave Evans on 2011-06-21.
 Copyright (c) 2011 Fermilab. All rights reserved.
 """
 
+import json
 import os
 import unittest
 
 from WMCore.WMSpec.StdSpecs.TaskChain import TaskChainWorkloadFactory
+from WMQuality.TestInit import getTestFilename
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
@@ -122,33 +124,6 @@ def makeProcessingConfigs(couchDatabase):
     }
     return docMap
 
-
-def makePromptSkimConfigs(couchDatabase):
-    """
-    Fake a prompt skim config in ConfigCache for Tier0 test
-    """
-    skimsConfig = Document()
-    skimsConfig["info"] = None
-    skimsConfig["config"] = None
-    skimsConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5cab2755"
-    skimsConfig["pset_hash"] = "7c856ad35f9f544839d8524ca5372888"
-    skimsConfig["owner"] = {"group": "cmsdataops", "user": "gutsche"}
-    skimsConfig["pset_tweak_details"] = {
-       "process": {"outputModules_": ["writeSkim1", "writeSkim2", "writeSkim3", "writeSkim4", "writeSkim5"],
-                   "writeSkim1": {"dataset": {"dataTier":  "RECO-AOD", "filterName": "skim1"}},
-                   "writeSkim2":  {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim2"}},
-                   "writeSkim3":  {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim3"}},
-                   "writeSkim4":  {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim4"}},
-                   "writeSkim5":  {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim5"}},
-                }
-        }
-    couchDatabase.queue(skimsConfig)
-    result = couchDatabase.commit()
-    docMap = {
-        "Skims" :result[0][u'id']
-    }
-    return docMap
-
 def outputModuleList(task):
     """
     _outputModuleList_
@@ -181,6 +156,10 @@ class TaskChainTests(unittest.TestCase):
         self.configDatabase = couchServer.connectDatabase("taskchain_t")
         self.testInit.generateWorkDir()
         self.workload = None
+
+        self.multithreaded = getTestFilename('data/ReqMgr/requests/DMWM/TaskChain_Multicore.json')
+        self.differentNCores = getTestFilename('data/ReqMgr/requests/DMWM/TaskChain_Task_Multicore.json')
+
         return
 
 
@@ -283,7 +262,7 @@ class TaskChainTests(unittest.TestCase):
         }
         testArguments.update(arguments)
         arguments = testArguments
-        print arguments
+
         factory = TaskChainWorkloadFactory()
 
         # Test a malformed task chain definition
@@ -293,12 +272,12 @@ class TaskChainTests(unittest.TestCase):
         arguments['Task4']['TransientOutputModules'].remove('writeAOD')
         try:
             self.workload = factory.factoryWorkloadConstruction("PullingTheChain", arguments)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error invoking TaskChainWorkloadFactory:\n%s" % str(ex)
             import traceback
             traceback.print_exc()
             self.fail(msg)
-        print self.workload.data
+
         testWMBSHelper = WMBSHelper(self.workload, "GenSim", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
@@ -425,7 +404,6 @@ class TaskChainTests(unittest.TestCase):
                     else:
                         allParts = False
                 if allParts:
-                    print "yes"
                     self.assertEqual("%s-%s-v%s" % (taskConf["AcquisitionEra"], taskConf["ProcessingString"],
                                                    taskConf["ProcessingVersion"]), "Wrong processed dataset for module")
 
@@ -531,7 +509,7 @@ class TaskChainTests(unittest.TestCase):
         factory = TaskChainWorkloadFactory()
         try:
             self.workload = factory.factoryWorkloadConstruction("YankingTheChain", arguments)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error invoking TaskChainWorkloadFactory:\n%s" % str(ex)
             self.fail(msg)
 
@@ -597,6 +575,111 @@ class TaskChainTests(unittest.TestCase):
                             "/MinimumBias/ReleaseValidation-skim%d-v1/RECO-AOD not in output datasets" % i)
 
         return
+
+    def testMultithreadedTaskChain(self):
+        """
+        Test for multithreaded task chains where all steps run with the same
+        number of cores
+        """
+
+        arguments = self.buildMultitheadedTaskChain(self.multithreaded)
+
+        factory = TaskChainWorkloadFactory()
+        try:
+            self.workload = factory.factoryWorkloadConstruction("MultiChain", arguments)
+        except Exception as ex:
+            msg = "Error invoking TaskChainWorkloadFactory:\n%s" % str(ex)
+            self.fail(msg)
+
+        hlt = self.workload.getTaskByPath('/MultiChain/HLTD')
+        reco = self.workload.getTaskByPath('/MultiChain/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT')
+        miniAOD = self.workload.getTaskByPath('/MultiChain/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT/RECODreHLTMergewriteALCA/MINIAODDreHLT')
+
+        hltStep = hlt.getStepHelper("cmsRun1")
+        recoStep = reco.getStepHelper("cmsRun1")
+        miniAODStep = miniAOD.getStepHelper("cmsRun1")
+
+        self.assertEqual(hltStep.getNumberOfCores(), 4)
+        self.assertEqual(recoStep.getNumberOfCores(), 4)
+        self.assertEqual(miniAODStep.getNumberOfCores(), 4)
+
+        return
+
+    def testMultithreadedTasksTaskChain(self):
+        """
+        Test for multithreaded task chains where each step
+        may run with a different number of cores
+        """
+
+        arguments = self.buildMultitheadedTaskChain(self.differentNCores)
+
+        factory = TaskChainWorkloadFactory()
+        try:
+            self.workload = factory.factoryWorkloadConstruction("MultiChain2", arguments)
+        except Exception as ex:
+            msg = "Error invoking TaskChainWorkloadFactory:\n%s" % str(ex)
+            self.fail(msg)
+
+        hlt = self.workload.getTaskByPath('/MultiChain2/HLTD')
+        reco = self.workload.getTaskByPath('/MultiChain2/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT')
+        miniAOD = self.workload.getTaskByPath('/MultiChain2/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT/RECODreHLTMergewriteALCA/MINIAODDreHLT')
+
+        hltStep = hlt.getStepHelper("cmsRun1")
+        recoStep = reco.getStepHelper("cmsRun1")
+        miniAODStep = miniAOD.getStepHelper("cmsRun1")
+
+        self.assertEqual(hltStep.getNumberOfCores(), 4)
+        self.assertEqual(recoStep.getNumberOfCores(), 8)
+        self.assertEqual(miniAODStep.getNumberOfCores(), 1)
+
+        return
+
+    def buildMultitheadedTaskChain(self, filename):
+        """
+        Build a TaskChain from several sources and customization
+        """
+
+        processorDocs = makeProcessingConfigs(self.configDatabase)
+        testArguments = TaskChainWorkloadFactory.getTestArguments()
+
+        # Read in the request
+        request = json.load(open(filename))
+
+        # Construct args from the pieces starting with test args ...
+        arguments = testArguments
+
+        # ... continuing with the request
+        for key in ['CMSSWVersion', 'ScramArch', 'GlobalTag', 'ProcessingVersion',
+                    'Multicore',
+                    'TaskChain', 'Task1', 'Task2', 'Task3']:
+            arguments.update({key : request['createRequest'][key]})
+
+        for key in ['SiteBlacklist']:
+            arguments.update({key : request['assignRequest'][key]})
+
+        # ... then some local overrides
+
+        del arguments['ConfigCacheID']
+        del arguments['ConfigCacheUrl']
+        arguments.update({
+            "CouchURL": self.testInit.couchUrl,
+            "CouchDBName": self.testInit.couchDbName,
+        })
+
+        # ... now fill in the ConfigCache documents created and override the inputs to link them up
+
+        arguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
+
+        arguments['Task2']['ConfigCacheID'] = processorDocs['Reco']
+        arguments['Task2']['InputFromOutputModule'] = 'writeRAWDIGI'
+
+        arguments['Task3']['ConfigCacheID'] = processorDocs['ALCAReco']
+        arguments['Task3']['InputFromOutputModule'] = 'writeALCA'
+
+        return arguments
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

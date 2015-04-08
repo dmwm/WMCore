@@ -137,11 +137,8 @@ class ResourceControlUpdater(BaseWorkerThread):
                 if site in currentSites:
                     sitestate = stateBySite.get(site,'Normal')
                     if site not in slotsCPU or site not in slotsIO:
-                        pluginResponse = self.updateSiteInfo(site, sitestate, 0, 0, self.agentsNumByTeam)
-                        if not pluginResponse: 
-                            continue
-                        logging.warn('Setting site %s to %s, forcing CPUBound: 0, IOBound: 0 due to missing information in SSB' % 
-                                 (site, sitestate))
+                        logging.warn("%s not available in SSB. Changing only site status to %s." % (site,sitestate))
+                        pluginResponse = self.updateSiteInfo(site, sitestate, None, None, self.agentsNumByTeam)
                         continue
                     
                     pluginResponse = self.updateSiteInfo(site, sitestate, slotsCPU[site], slotsIO[site], self.agentsNumByTeam)
@@ -293,6 +290,8 @@ class ResourceControlUpdater(BaseWorkerThread):
         
         # set site state:
         self.resourceControl.changeSiteState(siteName, state)
+        if CPUBound == None or IOBound == None:
+            return True
         
         # tier0 T1 cores utilization
         if self.tier0Mode and 'T1_' in siteName:

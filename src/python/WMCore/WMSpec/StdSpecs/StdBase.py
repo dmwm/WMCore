@@ -313,7 +313,7 @@ class StdBase(object):
 
         if self.multicore and useMulticore:
             # if multicore, poke in the number of cores setting
-            procTaskCmsswHelper.setMulticoreCores(self.multicoreNCores)
+            procTaskCmsswHelper.setNumberOfCores(self.multicoreNCores)
 
         procTaskCmsswHelper.setUserSandbox(userSandbox)
         procTaskCmsswHelper.setUserFiles(userFiles)

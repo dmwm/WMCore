@@ -354,13 +354,11 @@ class CMSSWStepHelper(CoreHelper):
         setattr(self.data.application.configuration, "skipBadFiles",
                 skipBadFiles)
 
-    def setMulticoreCores(self, ncores):
+    def setNumberOfCores(self, ncores):
         """
-        _setMulticoreCores_
+        _setNumberOfCores_
 
-        Preset the number of cores for CMSSW to run on, expect this to dribble away
-        as batch systems get better at dynamic discovery etc, or be used as an override for
-        testing
+        Set the number of cores for CMSSW to run on
         """
         self.data.application.multicore.numberOfCores = ncores
 

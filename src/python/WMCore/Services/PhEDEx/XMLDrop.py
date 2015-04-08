@@ -211,7 +211,7 @@ def makePhEDExDrop(dbsUrl, datasetPath, *blockNames):
     """
     _makePhEDExDrop_
 
-    Given a DBS2 Url, dataset name and list of blockNames,
+    Given a DBS Url, dataset name and list of blockNames,
     generate an XML structure for injection
 
     """

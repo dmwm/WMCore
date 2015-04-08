@@ -13,7 +13,7 @@ import urlparse
 
 from WMCore.WMException import WMException
 
-#restriction enforced by DBS. for different types blocks. 
+#restriction enforced by DBS. for different types blocks.
 #It could have a strict restriction
 # i.e production should end with v[number]
 PRIMARY_DS = {'re': '[a-zA-Z0-9\.\-_]+', 'maxLength': 99}
@@ -46,8 +46,8 @@ STORE_RESULTS_LFN = '/store/results/%(physics_group)s/%(era)s/%(primDS)s/%(tier)
 
 def DBSUser(candidate):
     """
-    create_by and last_modified_by in DBS are in several formats. The major ones are: 
-    1. DN that is mostly used in DBS2: example /DC=org/DC=doegrids/OU=People/CN=Lothar A.T. Bauerdick 301799; 
+    create_by and last_modified_by in DBS are in several formats. The major ones are:
+    1. DN that was mostly used in DBS2: example /DC=org/DC=doegrids/OU=People/CN=Lothar A.T. Bauerdick 301799;
     2. CERN HN account name that used in DBS3/CMSWEB if the HN is assocated with DN: example giffels ;
     3. username with host name: example cmsprod@vocms39.cern.ch;
     """
@@ -134,7 +134,7 @@ def countrycode(candidate):
 
 def _blockStructCheck(candidate):
     """
-    Basic block structure check 
+    Basic block structure check
     /primary/process/tier#uuid
     """
     assert candidate.count('/') == 3, "need to have / between the 3 parts which construct block name"
@@ -143,19 +143,19 @@ def _blockStructCheck(candidate):
     #should be empty string for the first part
     check(r"", parts[0])
     return parts
-    
+
 def block(candidate):
     """assert if not a valid block name"""
-    
+
     parts = _blockStructCheck(candidate)
-    
+
     primDSCheck = check(r"%s" % PRIMARY_DS['re'], parts[1], PRIMARY_DS['maxLength'])
     procDSCheck = check(r"%s" % PROCESSED_DS['re'], parts[2], PROCESSED_DS['maxLength'])
     lastParts = parts[3].split("#")
     tierCheck = check(r"%s" % TIER['re'], lastParts[0], TIER['maxLength'])
     blockCheck = check(r"%s" % BLOCK_STR['re'], "#%s" % lastParts[1], BLOCK_STR['maxLength'])
     return (primDSCheck and procDSCheck and tierCheck and blockCheck)
-                
+
 def identifier(candidate):
     """ letters, numbers, whitespace, periods, dashes, underscores """
     return check(r'[a-zA-Z0-9\s\.\-_]{1,100}$', candidate)
@@ -265,7 +265,7 @@ def lfn(candidate):
     storeResultsLFN = "%s/%s" % (STORE_RESULTS_LFN, storeResultRootPart)
 
     lheLFN1 = '/store/lhe/([0-9]+)/([a-zA-Z0-9\-_]+).lhe(.xz){0,1}'
-    #This is for future lhe LFN structure. Need to be tested. 
+    #This is for future lhe LFN structure. Need to be tested.
     lheLFN2= '/store/lhe/%(primDS)s/%(secondary)s/([0-9]+)/([a-zA-Z0-9\-_]+).lhe(.xz){0,1}' % lfnParts
 
     try:
@@ -302,7 +302,7 @@ def lfn(candidate):
         return check(storeMcLFN, candidate)
     except AssertionError:
         pass
-   
+
     try:
         return check(lheLFN1, candidate)
     except AssertionError:
@@ -312,7 +312,7 @@ def lfn(candidate):
         return check(lheLFN2, candidate)
     except AssertionError:
         pass
- 
+
     try:
         return check(storeResults2LFN, candidate)
     except AssertionError:
@@ -343,7 +343,7 @@ def lfnBase(candidate):
         return check(regexp3, candidate)
     except AssertionError:
         pass
-    
+
     try:
         return check(tier0LFN, candidate)
     except AssertionError:
@@ -573,7 +573,7 @@ def slicedIterator(sourceList, sliceSize):
     :type: list
     :param: sliceSize: size of the slice
     :type: int
-    :return: iterator of the sliced list 
+    :return: iterator of the sliced list
     """
     start = 0
     end = 0

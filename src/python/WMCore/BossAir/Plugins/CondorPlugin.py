@@ -1015,8 +1015,8 @@ class CondorPlugin(BasePlugin):
         if job.get('taskName', None):
             jdl.append('+WMAgent_SubTaskName = "%s"\n' % job['taskName'])
 
-        if job.get('subTaskType', None):
-            jdl.append('+WMAgent_SubTaskType = "%s"\n' % job['taskType'])
+        if job.get('taskType', None):
+            jdl.append('+CMS_JobType = "%s"\n' % job['taskType'])
 
         # Performance estimates
         if job.get('estimatedJobTime', None):

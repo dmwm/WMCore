@@ -547,7 +547,7 @@ class DBS3Reader:
             raise DBSReaderError(msg)
 
 
-    def listFileBlockLocation(self, fileBlockNames, dbsOnly = False, phedexNodes=True):
+    def listFileBlockLocation(self, fileBlockName, dbsOnly = False):
         """
         _listFileBlockLocation_
 
@@ -567,7 +567,7 @@ class DBS3Reader:
         node_filter = set(['UNKNOWN', None])
         if not dbsOnly:
             try:
-                blocksInfo = self.phedex.getReplicaSEForBlocks(phedexNodes=phedexNodes, block=fileBlockNames, complete='y')
+                blockInfo = self.phedex.getReplicaSEForBlocks(block=blockNames, complete='y')
             except Exception, ex:
                 msg = "Error while getting block location from PhEDEx for block_name=%s)\n" % fileBlockName
                 msg += "%s\n" % str(ex)
@@ -597,15 +597,11 @@ class DBS3Reader:
 
             for name, node in blocksInfo.iteritems():
                 try:
-                    cmsname(node)
-                except AssertError:
-                    n = self.phedex.getNodeNames(node) if phedexNodes else [node]
-                else:
-                    n = [node] if phedexNodes else [self.phedex.getNodeSE(node)]
-
-                valid_nodes = set(n) - node_filter
-                if valid_nodes:  # dont add if only 'UNKNOWN' or None
-                    locations[name] = list(valid_nodes)
+                    cmsname(n)
+                except AssertionError: ## is SE
+                    raise TypeError("node '%s' is not a PNN" % n)
+                final_nodes = final_nodes.union([n])
+            locations[name] = list(final_nodes - node_filter_list)
 
         #returning single list if a single block is passed
         if singleBlockName is not None:

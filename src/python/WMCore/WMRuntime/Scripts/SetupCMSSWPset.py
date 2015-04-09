@@ -423,7 +423,7 @@ class SetupCMSSWPset(ScriptInterface):
                         if seLocalName in blockDict["StorageElementNames"]:
                             eventsAvailable += int(blockDict.get('NumberOfEvents', 0))
                             for fileLFN in blockDict["FileList"]:
-                                inputTypeAttrib.fileNames.append(str(fileLFN))
+                                inputTypeAttrib.fileNames.append(fileLFN['logical_file_name'])
                     if requestedPileupType == 'data':
                         baggage = self.job.getBaggage()
                         if getattr(baggage, 'skipPileupEvents', None) is not None:

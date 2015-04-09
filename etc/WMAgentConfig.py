@@ -30,6 +30,7 @@ databaseSocket = "/opt/MySQL-5.1/var/lib/mysql/mysql.sock"
 # database.  The GroupUser and ACDC couchapps needs to be install into the
 # acdc database.
 couchURL = "http://USERNAME:PASSWORD@COUCHSERVER:5984"
+logDBName = "wmagent_logdb"
 jobDumpDBName = "wmagent_jobdump"
 jobSummaryDBName = "wmagent_summary"
 summaryStatsDBName = "stat_summary"
@@ -87,6 +88,9 @@ config.Agent.useHeartbeat = True
 
 config.section_("General")
 config.General.workDir = workDirectory
+config.General.logdb_name = logDBName
+config.General.logdb_url = "%s/%s" % (couchURL, config.General.logdb_name)
+config.General.central_logdb_url = "need to get from secrete file"
 
 config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = couchURL

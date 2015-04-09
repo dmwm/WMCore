@@ -64,9 +64,7 @@ def modifyConfiguration(config, **args):
     mapping = {
         "coredb_url" : [("CoreDatabase","connectUrl") ],
         "mysql_url" : [("CoreDatabase","connectUrl") ],
-        "couch_url" : [("JobStateMachine", "couchurl"), ("ACDC", "couchurl"), ("WorkQueueManager", "couchurl"),
-
-                       ],
+        "couch_url" : [("JobStateMachine", "couchurl"), ("ACDC", "couchurl"), ("WorkQueueManager", "couchurl")],
         "working_dir" : [("General", "workDir")],
     }
 
@@ -121,6 +119,10 @@ def modifyConfiguration(config, **args):
             config.AlertGenerator.mysqlDbSizePoller.critical = 25 # GB
             config.AlertGenerator.mysqlDbSizePoller.pollInterval = 600 # [second]
 
+    if hasattr(config, "General"):
+        config.General.central_logdb_url = args["central_logdb_url"]
+        config.General.logdb_url = "%s/%s" % (args["couch_url"], config.General.logdb_name)
+            
     if hasattr(config,"WorkloadSummary"):
         splited = args["workload_summary_url"].strip().rstrip('/').rsplit('/', 1)
         config.WorkloadSummary.couchurl = splited[0]
@@ -277,6 +279,12 @@ def modifyConfiguration(config, **args):
         config.WorkQueueManager.reqMgrConfig['endpoint'] = reqMgrSvc
         config.WorkQueueManager.queueParams['WMStatsCouchUrl'] = "%s/%s" % (config.WorkQueueManager.couchurl.rstrip(), config.WorkQueueManager.wmstatDBName)
         config.WorkQueueManager.queueParams['ReqMgrServiceURL'] = reqMgrSvc
+        config.WorkQueueManager.reqMgrConfig['central_logdb_url'] = config.General.central_logdb_url
+        config.WorkQueueManager.reqMgrConfig['logdb_url'] = config.General.logdb_url
+        config.WorkQueueManager.reqMgrConfig['log_reporter'] = "TEST_global_queue"
+        config.WorkQueueManager.queueParams['central_logdb_url'] = config.General.central_logdb_url
+        config.WorkQueueManager.queueParams['logdb_url'] = config.General.logdb_url
+        config.WorkQueueManager.queueParams['log_reporter'] = "TEST_global_queue"
 
     # Custom Local WorkQueue
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'LocalQueue':
@@ -295,6 +303,10 @@ def modifyConfiguration(config, **args):
         if args.get('workqueue_db_name'):
             config.WorkQueueManager.dbname = args['workqueue_db_name']
             config.WorkQueueManager.inboxDatabase = config.WorkQueueManager.dbname + '_inbox'
+        
+        config.WorkQueueManager.queueParams['central_logdb_url'] = config.General.central_logdb_url
+        config.WorkQueueManager.queueParams['logdb_url'] = config.General.logdb_url
+        config.WorkQueueManager.queueParams['log_reporter'] = config.Agent.hostName
 
     # custom wmbs service
     if hasattr(config, "WMBSService"):
@@ -337,7 +349,7 @@ def main(argv=None):
              "ufc_service_url=", "ufc_cachedir=", "client_mapping=", "wmbs_service_port=",
              "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=", "reqmgr_url=", "reqmgr2_url=",
              "acdc_url=", "amq_auth_file=", "dbs3_url=", "phedex_url=", "dqm_url=", "dashboard_url=",
-             "requestcouch_url="])
+             "requestcouch_url=", "central_logdb_url="])
 
         except getopt.error, msg:
             raise Usage(msg)
@@ -359,7 +371,7 @@ def main(argv=None):
                           '--client_mapping', '--wmbs_service_port', '--workload_summary_url',
                           '--wmstats_url', '--ops_proxy', '--reqmgr_url', '--reqmgr2_url', '--acdc_url',
                           '--amq_auth_file', '--dbs3_url', '--phedex_url', '--dqm_url', '--dashboard_url',
-                          '--requestcouch_url'):
+                          '--requestcouch_url', '--central_logdb_url'):
 
                 parameters[option[2:]] = value
 

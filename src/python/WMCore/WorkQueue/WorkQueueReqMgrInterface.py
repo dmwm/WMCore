@@ -4,6 +4,7 @@
 
 from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
+from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
 from WMCore.Database.CMSCouch import CouchError
 from WMCore.Database.CouchUtils import CouchConnectionError
@@ -13,6 +14,7 @@ import time
 import socket
 from operator import itemgetter
 import traceback
+import threading
 
 class WorkQueueReqMgrInterface():
     """Helper class for ReqMgr interaction"""
@@ -25,6 +27,18 @@ class WorkQueueReqMgrInterface():
         self.reqmgr2Only = kwargs.get("reqmgr2_only", False)
         #this will break all in one test
         self.reqMgr2 = ReqMgr(kwargs.get("reqmgr2_endpoint", None))
+        
+        centralurl = kwargs.get("central_logdb_url", "")
+        localdburl = kwargs.get("logdb_url", "")
+        identifier = kwargs.get("log_reporter", "")
+        
+        # set the thread name before creat the log db. 
+        # only sets that when it is not set already
+        myThread = threading.currentThread()
+        if myThread.getName() == "MainThread":
+            myThread.setName(self.__class__.__name__)
+            
+        self.logdb = LogDB(localdburl, identifier, centralurl, logger=self.logger)
         self.previous_state = {}
 
     def __call__(self, queue):
@@ -104,14 +118,14 @@ class WorkQueueReqMgrInterface():
                 msg = 'Error processing request "%s": will try again later.' \
                 '\nError: "%s"' % (reqName, str(ex))
                 self.logger.info(msg)
-                self.sendMessage(reqName, msg)
+                self.sendMessage(reqName, msg, 'error')
                 continue
             except Exception, ex:
                 # Log exception as it isnt a communication problem
                 msg = 'Error processing request "%s": will try again later.' \
                 '\nSee log for details.\nError: "%s"' % (reqName, str(ex))
                 self.logger.exception('Unknown error processing %s' % reqName)
-                self.sendMessage(reqName, msg)
+                self.sendMessage(reqName, msg, 'error')
                 continue
 
             try:
@@ -237,19 +251,20 @@ class WorkQueueReqMgrInterface():
            Optionally, take a message to append to the request
         """
         if message:
-            self.sendMessage(request, str(message))
+            self.sendMessage(request, str(message), 'info')
         if self._workQueueToReqMgrStatus(status): # only send known states
             if self.reqmgr2Only:
                 self.reqMgr2.updateRequestStatus(request, self._workQueueToReqMgrStatus(status))
             else:
                 self.reqMgr.reportRequestStatus(request, self._workQueueToReqMgrStatus(status))
 
-    def sendMessage(self, request, message):
+    def sendMessage(self, request, message, mtype = 'message'):
         """Attach a message to the request"""
         try:
-            self.reqMgr.sendMessage(request, message)
+            self.logdb.post(request, message, mtype)
+            #self.logdb.upload2central(request)
         except Exception, ex:
-            self.logger.error('Error sending message to reqmgr: %s' % str(ex))
+            self.logger.error('Error sending message to logdb: %s' % str(ex))
 
     def markAcquired(self, request, url = None):
         """Mark request acquired"""
@@ -321,21 +336,21 @@ class WorkQueueReqMgrInterface():
                 msg = 'Error adding further work to request "%s". Will try again later' \
                 '\nError: "%s"' % (reqName, str(ex))
                 self.logger.info(msg)
-                self.sendMessage(reqName, msg)
+                self.sendMessage(reqName, msg, 'error')
                 continue
             except (IOError, socket.error, CouchError, CouchConnectionError), ex:
                 # temporary problem - try again later
                 msg = 'Error processing request "%s": will try again later.' \
                 '\nError: "%s"' % (reqName, str(ex))
                 self.logger.info(msg)
-                self.sendMessage(reqName, msg)
+                self.sendMessage(reqName, msg, 'error')
                 continue
             except Exception, ex:
                 # Log exception as it isnt a communication problem
                 msg = 'Error processing request "%s": will try again later.' \
                 '\nSee log for details.\nError: "%s"' % (reqName, str(ex))
                 self.logger.exception('Unknown error processing %s' % reqName)
-                self.sendMessage(reqName, msg)
+                self.sendMessage(reqName, msg, 'error')
                 continue
 
             self.logger.info('%s units(s) queued for "%s"' % (units, reqName))

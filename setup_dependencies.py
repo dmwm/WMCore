@@ -141,7 +141,8 @@ dependencies = {'wmc-rest':{
                         'statics': ['src/couchapps/WMStats+',
                                     'src/couchapps/WMStatsErl+',
                                     'src/couchapps/WorkloadSummary+',
-                                    'src/couchapps/T0Request+'],
+                                    'src/couchapps/T0Request+',
+                                    'src/couchapps/LogDB+'],
                         },
                 'alertscollector':
                 {

@@ -42,6 +42,8 @@ from WMCore.Database.CMSCouch import CouchNotFoundError, CouchInternalServerErro
 from WMCore import Lexicon
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Services.ReqMgr.ReqMgr         import ReqMgr
+from WMCore.Services.LogDB.LogDB         import LogDB
+
 #  //
 # // Convenience constructor functions
 #//
@@ -210,7 +212,20 @@ class WorkQueue(WorkQueueBase):
             alertAPI.setUpAlertsMessaging(self, compName = "WorkQueueManager")
         self.sendAlert = alertAPI.getSendAlert(sender = self.alertSender,
                                                preAlert = preAlert)
+        
+        # set the thread name before creat the log db. 
+        # only sets that when it is not set already
+        #setLogDB
 
+        myThread = threading.currentThread()
+        if myThread.getName() == "MainThread": # this should be only GQ case other cases thread name should be set
+            myThread.setName(self.__class__.__name__)
+        
+        centralurl = self.params.get("central_logdb_url", "")
+        localdburl = self.params.get("logdb_url", "")
+        identifier = self.params.get("log_reporter", "")
+        self.logdb = LogDB(localdburl, identifier, centralurl, logger=self.logger)
+            
         self.logger.debug("WorkQueue created successfully")
 
     def __len__(self):
@@ -774,7 +789,10 @@ class WorkQueue(WorkQueueBase):
                     if (currentTime - max(newDataFoundTime, lastUpdate)) > openRunningTimeout:
                         workflowsToClose.append(element.id)
                 else:
-                    self.logger.error("ChildElement is empty for element id %s: investigate" % element.id)
+                    msg = "ChildElement is empty for element id %s: investigate" % element.id
+                    self.logdb.post(element.id, msg, "error")
+                    #self.logdb.upload2central(element.id)
+                    self.logger.error(msg)
 
         msg = 'No workflows to close.\n'
         if workflowsToClose:

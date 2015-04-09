@@ -43,7 +43,6 @@ from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
 from WMCore.ReqMgr.Service.Request import Request
 from WMCore.ReqMgr.Service.RestApiHub import RestApiHub
 from WMCore.REST.Main import RESTMain
-from WMCore.WMFactory import WMFactory
 # import WMCore itself to determine path of modules
 import WMCore
 
@@ -122,14 +121,9 @@ def spec_list(root, spec_path):
         if  not fname.endswith('.py') or fname == '__init__.py':
             continue
         sname = fname.split('.')[0]
-        pluginFactory = WMFactory("specArgs", spec_path)
-        alteredClassName = "%sWorkloadFactory" % sname
-        try:
-            _ = pluginFactory.loadObject(classname=sname, alteredClassName=alteredClassName)
-        except Exception as err:
-            print str(err)
-            continue
-        specs.append(sname)
+        clsName = "%sWorkloadFactory" % sname
+        if  clsName in open(os.path.join(root, fname)).read():
+            specs.append(sname)
     return specs
 
 class ReqMgrService(TemplatedPage):
@@ -165,6 +159,10 @@ class ReqMgrService(TemplatedPage):
         self.jsmap  = {}
         self.imgmap = {}
         self.yuimap = {}
+
+        std_specs_dir = os.path.join(self.rootdir, 'WMSpec/StdSpecs')
+        self.std_specs = spec_list(std_specs_dir, 'WMSpec.StdSpecs')
+        self.std_specs.sort()
 
         # Update CherryPy configuration
         mime_types  = ['text/css']
@@ -375,15 +373,13 @@ class ReqMgrService(TemplatedPage):
     def create(self, **kwds):
         """create page"""
         # get list of standard specs from WMCore and new ones from local area
-        std_specs_dir = os.path.join(self.rootdir, 'WMSpec/StdSpecs')
-        std_specs = spec_list(std_specs_dir, 'WMSpec.StdSpecs')
         loc_specs_dir = os.path.join(self.spdir, 'Specs') # local specs
         loc_specs = spec_list(loc_specs_dir, 'Specs')
-        all_specs = std_specs + loc_specs
+        all_specs = list(set(self.std_specs + loc_specs))
         all_specs.sort()
         spec = kwds.get('form', '')
         if  not spec:
-            spec = std_specs[0]
+            spec = self.std_specs[0]
         # make spec first in all_specs list
         if  spec in all_specs:
             all_specs.remove(spec)

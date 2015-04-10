@@ -6,9 +6,11 @@ https://github.com/dmwm/WMCore/issues/5705
 
 # standard modules
 import os
+import logging
 
 # project modules
 from WMCore.Services.LogDB.LogDBBackend import LogDBBackend
+from WMCore.Lexicon import splitCouchServiceURL
 
 class LogDB(object):
     """
@@ -16,76 +18,66 @@ class LogDB(object):
 
     LogDB object - interface to LogDB functionality.
     """
-    def __init__(self, config=None, logger=None, **params):
+    def __init__(self, url, identifier, centralurl=None, logger=None, **kwds):
+        self.logger = logger if logger else logging.getLogger()
+        if  not url or not identifier:
+            raise RuntimeError("Attempt to init LogDB with url='%s', identifier='%s'"\
+                    % (url, identifier))
+        self.identifier = identifier
+        self.agent = 1 if centralurl else 0
+        self.localurl = url
+        self.centralurl = centralurl
+        couch_url, db_name = splitCouchServiceURL(self.localurl)
+        self.backend = LogDBBackend(couch_url, db_name, identifier, self.agent, **kwds)
+        self.central = None
+        if  centralurl:
+            couch_url, db_name = splitCouchServiceURL(self.centralurl)
+            self.central = LogDBBackend(couch_url, db_name, identifier, self.agent, **kwds)
+        self.logger.info(self)
 
-        self.config = config
-        self.logger = logger
-        self.params = params
-        default_couch = os.environ.get('COUCHURL', '')
-        default_central_couch = os.environ.get('CENTRALCOUCHURL', '')
-        default_db_name = 'logdb'
-        if  config:
-            config = config.dictionary_()
-            if  'logdb' in config:
-                lconfig = config.get('logdb', {})
-                if not isinstance(lconfig, dict):
-                    lconfig = lconfig.dictionary_()
-                self.params['CouchUrl'] = lconfig.get('couch_url', default_couch)
-                self.params['CentralCouchUrl'] = lconfig.get('couch_url', default_central_couch)
-                self.params['DbName'] = lconfig.get('db_name', default_db_name)
+    def __repr__(self):
+        "Return representation for class"
+        return "<LogDB(local=%s, central=%s, agent=%s)>" \
+                % (self.localurl, self.centralurl, self.agent)
 
-        if  'CouchUrl' not in self.params:
-            self.params.setdefault('CouchUrl', default_couch)
-        if  'CentralCouchUrl' not in self.params:
-            self.params.setdefault('CentralCouchUrl', default_central_couch)
-        for attr in ['CouchUrl', 'CentralCouchUrl']:
-            if  not self.params.get(attr):
-                raise RuntimeError, '%s config value mandatory' % attr
-        if  'DbName' not in self.params:
-            self.params.setdefault('DbName', 'logdb')
-
-        self.backend = LogDBBackend(self.params['CouchUrl'],
-                self.params['DbName'], logger=self.logger)
-        self.central = LogDBBackend(self.params['CentralCouchUrl'],
-                self.params['DbName'], logger=self.logger)
-
-        if  self.logger:
-            self.logger.debug("LogDB created successfully")
-
-    def post(self, request, agent, msg, mtype="comment"):
-        """Post new entry into LogDB for given request/agent pair"""
-        res = self.backend.post(request, agent, msg, mtype)
+    def post(self, request, msg, mtype="comment"):
+        """Post new entry into LogDB for given request"""
+        res = self.backend.post(request, msg, mtype)
         if  self.logger:
             self.logger.debug("LogDB post request, res=%s", res)
         return res
 
-    def get(self, request, agent, mtype="comment"):
-        """Retrieve all entries from LogDB for given request/agent pair"""
-        res = self.backend.get(request, agent, mtype)
+    def get(self, request, mtype="comment"):
+        """Retrieve all entries from LogDB for given request"""
+        res = self.backend.get(request, mtype)
         if  self.logger:
             self.logger.debug("LogDB get request, res=%s", res)
         return res
 
-    def delete(self, request, agent):
-        """Delete entry in LogDB for given request/agent pair"""
-        res = self.backend.delete(request, agent)
+    def delete(self, request):
+        """Delete entry in LogDB for given request"""
+        res = self.backend.delete(request)
         if  self.logger:
             self.logger.debug("LogDB delete request, res=%s", res)
         return res
 
-    def summary(self, request, agent):
-        """Generate summary document for given request/agent pair"""
-        res = self.backend.summary(request, agent)
+    def summary(self, request):
+        """Generate summary document for given request"""
+        res = self.backend.summary(request)
         if  self.logger:
             self.logger.debug("LogDB summary request, res=%s", res)
         return res
 
-    def upload2central(self, request, agent):
+    def upload2central(self, request):
         """
-        Upload local LogDB docs corresponding to given request/agent
+        Upload local LogDB docs corresponding to given request
         into central LogDB database
         """
-        docs = self.backend.summary(request, agent)
+        if  not self.central:
+            if  self.logger:
+                self.logger.debug("LogDB upload2central does nothing, no central setup")
+            return -1
+        docs = self.backend.summary(request)
         for doc in docs:
             self.central.db.queue(doc)
         res = self.central.db.commit()

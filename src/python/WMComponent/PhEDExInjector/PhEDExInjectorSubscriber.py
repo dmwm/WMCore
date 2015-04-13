@@ -222,7 +222,9 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
             if site not in self.phedexNodes['MSS']: subInfo['custodial'] = 'n'
             # Avoid move subscriptions and replica
             if subInfo['custodial'] == 'n': subInfo['move'] = 'n'
-           
+            # Do not allow auto-approve subscriptions to MSS
+            if site in self.phedexNodes['MSS']: subInfo['request_only'] = 'y'
+
             phedexSub = PhEDExSubscription(subInfo['path'], site,
                                            self.group, priority = subInfo['priority'],
                                            move = subInfo['move'], custodial = subInfo['custodial'],

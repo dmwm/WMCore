@@ -36,7 +36,8 @@ class NewSubscription(DBFormatter):
             subInfo = {'id' : datasetID,
                        'site' : site,
                        'custodial' : 1,
-                       'auto_approve' : 1 if site in subscriptionInfo['AutoApproveSites'] else 0,
+                       'auto_approve' : 1 if site in subscriptionInfo['AutoApproveSites'] and \
+                                        not site.endswith('_MSS') else 0,
                        'move' : 1 if subscriptionInfo['CustodialSubType'] == 'Move' else 0,
                        'priority' : subscriptionInfo['Priority']}
             binds.append(subInfo)
@@ -45,7 +46,8 @@ class NewSubscription(DBFormatter):
             subInfo = {'id' : datasetID,
                        'site' : site,
                        'custodial' : 0,
-                       'auto_approve' : 1 if site in subscriptionInfo['AutoApproveSites'] else 0,
+                       'auto_approve' : 1 if site in subscriptionInfo['AutoApproveSites'] and \
+                                        not site.endswith('_MSS') else 0,
                        'move' : 0,
                        'priority' : subscriptionInfo['Priority']}
             binds.append(subInfo)

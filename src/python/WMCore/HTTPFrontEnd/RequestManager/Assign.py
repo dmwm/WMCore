@@ -356,6 +356,9 @@ class Assign(WebAPI):
         custodialList = kwargs.get("CustodialSites", [])
         nonCustodialList = kwargs.get("NonCustodialSites", [])
         autoApproveList = kwargs.get("AutoApproveSubscriptionSites", [])
+        for site in autoApproveList:
+            if site.endswith('_MSS'):
+                raise cherrypy.HTTPError(400, "Auto-approval to MSS endpoint not allowed %s" % autoApproveList)
         subscriptionPriority = kwargs.get("SubscriptionPriority", "Low")
         if subscriptionPriority not in ["Low", "Normal", "High"]:
             raise cherrypy.HTTPError(400, "Invalid subscription priority %s" % subscriptionPriority)

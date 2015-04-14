@@ -29,7 +29,8 @@ def clean_entry(doc):
 def design_doc():
     """Return basic design document"""
     rmap = dict(map="function(doc){ if(doc.request) emit(doc.request, doc)}")
-    views = dict(requests=rmap)
+    tmap = dict(map="function(doc){ if(doc.ts) emit(doc.ts, null)}")
+    views = dict(requests=rmap, tstamp=tmap)
     doc = dict(_id="_design/LogDB", views=views)
     return doc
 
@@ -49,6 +50,7 @@ class LogDBBackend(object):
         self.db = self.server.connectDatabase(db_name, create=create, size=size)
         self.design = kwds.get('design', 'LogDB') # name of design document
         self.view = kwds.get('view', 'requests') # name of view to look-up requests
+        self.tsview = kwds.get('tsview', 'tstamp') # name of tsview to look-up requests
         if  create:
             uri = '/%s/_design/%s' % (db_name, self.design)
             data = design_doc()
@@ -131,3 +133,16 @@ class LogDBBackend(object):
                 doc.update(val)
                 out.append(doc)
         return out
+
+    def cleanup(self, thr):
+        """
+        Clean-up docs older then given threshold (thr should be specified in seconds).
+        This is done via tstamp view end endkey, e.g.
+        curl "http://127.0.0.1:5984/logdb/_design/LogDB/_view/tstamp?endkey=1427912282"
+        """
+        tstamp = round(time.time()+thr)
+        docs = self.db.allDocs() # may need another view to look-up old docs
+        spec = {'endkey':tstamp}
+        docs = self.db.loadView(self.design, self.tsview, spec)
+        ids = [d['id'] for d in docs.get('rows', [])]
+        self.db.bulkDeleteByIDs(ids)

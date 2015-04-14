@@ -99,3 +99,16 @@ class LogDB(object):
             res = 'summary-error'
         self.logger.debug("LogDB upload2central request, res=%s", res)
         return res
+
+    def cleanup(self, thr, backend='local'):
+        """Clean-up back-end LogDB"""
+        try:
+            if  backend=='local':
+                self.backend.cleanup(thr)
+            elif backend=='central':
+                self.central.cleanup(thr)
+            else:
+                raise RuntimeError()
+        except Exception as exc:
+            self.logger.error('LogDBBackend cleanup API failed, backend=%s, error=%s'\
+                    % (backend, str(exc))

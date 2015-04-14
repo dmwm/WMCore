@@ -75,5 +75,20 @@ class LogDBTest(unittest.TestCase):
         res = self.globaldb.upload2central(request)
         self.assertEqual(res, -1) # does nothing
 
+    def test_cleanup(self):
+        "Test clean-up LogDB API"
+        request = 'abc'
+        self.localdb.post(request, 'msg1', 'info')
+        self.localdb.post(request, 'msg2', 'comment')
+        self.localdb.post(request, 'msg3', 'warning')
+        self.localdb.post(request, 'msg4', 'error')
+        all_docs = self.localdb.summary(request)
+        self.localdb.backend.cleanup(thr=-10) # look into past
+        past_docs = self.localdb.summary(request)
+        self.assertEqual(len(all_docs), len(past_docs))
+        self.localdb.backend.cleanup(thr=10) # look into future
+        docs = self.localdb.summary(request)
+        self.assertEqual(len(docs), 0)
+
 if __name__ == "__main__":
     unittest.main()

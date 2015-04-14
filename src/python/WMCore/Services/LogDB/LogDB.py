@@ -42,30 +42,42 @@ class LogDB(object):
 
     def post(self, request, msg, mtype="comment"):
         """Post new entry into LogDB for given request"""
-        res = self.backend.post(request, msg, mtype)
-        if  self.logger:
-            self.logger.debug("LogDB post request, res=%s", res)
+        try:
+            res = self.backend.post(request, msg, mtype)
+        except Exception as exc:
+            self.logger.error("LogDBBackend post API failed, error=%s" % str(exc))
+            res = 'post-error'
+        self.logger.debug("LogDB post request, res=%s", res)
         return res
 
     def get(self, request, mtype="comment"):
         """Retrieve all entries from LogDB for given request"""
-        res = self.backend.get(request, mtype)
-        if  self.logger:
-            self.logger.debug("LogDB get request, res=%s", res)
+        try:
+            res = self.backend.get(request, mtype)
+        except Exception as exc:
+            self.logger.error("LogDBBackend get API failed, error=%s" % str(exc))
+            res = 'get-error'
+        self.logger.debug("LogDB get request, res=%s", res)
         return res
 
     def delete(self, request):
         """Delete entry in LogDB for given request"""
-        res = self.backend.delete(request)
-        if  self.logger:
-            self.logger.debug("LogDB delete request, res=%s", res)
+        try:
+            res = self.backend.delete(request)
+        except Exception as exc:
+            self.logger.error("LogDBBackend delete API failed, error=%s" % str(exc))
+            res = 'delete-error'
+        self.logger.debug("LogDB delete request, res=%s", res)
         return res
 
     def summary(self, request):
         """Generate summary document for given request"""
-        res = self.backend.summary(request)
-        if  self.logger:
-            self.logger.debug("LogDB summary request, res=%s", res)
+        try:
+            res = self.backend.summary(request)
+        except Exception as exc:
+            self.logger.error("LogDBBackend summary API failed, error=%s" % str(exc))
+            res = 'summary-error'
+        self.logger.debug("LogDB summary request, res=%s", res)
         return res
 
     def upload2central(self, request):
@@ -77,10 +89,13 @@ class LogDB(object):
             if  self.logger:
                 self.logger.debug("LogDB upload2central does nothing, no central setup")
             return -1
-        docs = self.backend.summary(request)
-        for doc in docs:
-            self.central.db.queue(doc)
-        res = self.central.db.commit()
-        if  self.logger:
-            self.logger.debug("LogDB upload2central request, res=%s", res)
+        try:
+            docs = self.backend.summary(request)
+            for doc in docs:
+                self.central.db.queue(doc)
+            res = self.central.db.commit()
+        except Exception as exc:
+            self.logger.error("LogDBBackend summary API failed, error=%s" % str(exc))
+            res = 'summary-error'
+        self.logger.debug("LogDB upload2central request, res=%s", res)
         return res

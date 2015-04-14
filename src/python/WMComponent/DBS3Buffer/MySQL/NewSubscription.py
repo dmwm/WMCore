@@ -48,7 +48,9 @@ class NewSubscription(DBFormatter):
             subInfo = {'id' : datasetID,
                        'site' : site,
                        'custodial' : custodialFlag,
-                       'auto_approve' : 1 if site in subscriptionInfo['AutoApproveSites'] else 0,
+                       # remove the MSS thing when #5775 gets deployed in cmsweb
+                       'auto_approve' : 1 if site in subscriptionInfo['AutoApproveSites'] and \
+                       not site.endswith('_MSS') else 0,
                        'move' : isMove,
                        'priority' : subscriptionInfo['Priority'],
                        'delete_blocks' : delete_blocks}

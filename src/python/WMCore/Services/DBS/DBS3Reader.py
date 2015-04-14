@@ -547,7 +547,7 @@ class DBS3Reader:
             raise DBSReaderError(msg)
 
 
-    def listFileBlockLocation(self, fileBlockName, dbsOnly = False):
+    def listFileBlockLocation(self, fileBlockNames, dbsOnly = False):
         """
         _listFileBlockLocation_
 

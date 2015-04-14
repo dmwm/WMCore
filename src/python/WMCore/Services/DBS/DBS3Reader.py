@@ -764,7 +764,7 @@ class DBS3Reader:
                 dbsOnly = True
             else:
                 for blockSites in blocksInfo.values():
-                    locations.update(blockSites)
+                    locations.intersection_update(blockSites)
 
         if dbsOnly:
             try:

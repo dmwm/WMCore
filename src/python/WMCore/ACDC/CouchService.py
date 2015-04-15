@@ -134,3 +134,12 @@ class CouchService(Service):
             count += 1
         self.couchdb.commit()
         return count
+    
+    @CouchUtils.connectToCouch
+    def listCollectionNames(self):
+        options = {'reduce': True, 'group_level': 1, 'stale': "update_after"}
+        result = self.couchdb.loadView("ACDC", "byCollectionName", options)
+        collectionNames = []
+        for row in result["rows"]:
+            collectionNames.append(row["key"])
+        return collectionNames

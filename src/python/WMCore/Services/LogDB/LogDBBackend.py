@@ -28,22 +28,22 @@ def clean_entry(doc):
 
 def design_doc():
     """Return basic design document"""
-    rmap = dict(map="function(doc){ if(doc.request) emit(doc.request, doc)}")
+    rmap = dict(map="function(doc){ if(doc.request) emit(doc.request, doc)}", reduce="_count")
     tmap = dict(map="function(doc){ if(doc.ts) emit(doc.ts, null)}")
     views = dict(requests=rmap, tstamp=tmap)
     doc = dict(_id="_design/LogDB", views=views)
     return doc
 
-
 class LogDBBackend(object):
     """
     Represents persistent storage for LogDB
     """
-    def __init__(self, db_url, db_name, identifier, agent, **kwds):
+    def __init__(self, db_url, db_name, identifier, thread_name, agent, **kwds):
         self.db_url = db_url
         self.server = CouchServer(db_url)
         self.db_name = db_name
         self.dbid = identifier
+        self.thread_name = thread_name
         self.agent = agent
         create = kwds.get('create', False)
         size = kwds.get('size', 10000)
@@ -84,26 +84,32 @@ class LogDBBackend(object):
         """Post new entry into LogDB for given request"""
         self.check(request)
         mtype = self.prefix(mtype)
-        data = {"request":request, "agent": self.dbid, "ts":tstamp(), "msg":msg, "type":mtype}
+        data = {"request":request, "agent": self.dbid, "worker": self.thread_name,
+                "ts":tstamp(), "msg":msg, "type":mtype}
         res = self.db.commitOne(data)
         return res
 
     def get(self, request, mtype=None):
         """Retrieve all entries from LogDB for given request"""
         self.check(request)
-        spec = {'request':request}
+        spec = {'request':request, 'reduce':False}
         if  mtype:
             spec.update({'type':mtype})
+        docs = self.db.loadView(self.design, self.view, spec)
+        return docs
+
+    def get_all_requests(self):
+        """Retrieve all entries from LogDB"""
+        spec = {'reduce':True, 'group_level':1}
         docs = self.db.loadView(self.design, self.view, spec)
         return docs
 
     def delete(self, request):
         """Delete entry in LogDB for given request"""
         self.check(request)
-        mtype = self.prefix(mtype)
-        docs = self.get(request, mtype)
+        docs = self.get(request)
         ids = [r['value']['_id'] for r in docs.get('rows', [])]
-        res = self.db.bulkDeleteByIds(ids)
+        res = self.db.bulkDeleteByIDs(ids)
         return res
 
     def summary(self, request):
@@ -113,6 +119,8 @@ class LogDBBackend(object):
         odict = {}
         for doc in docs.get('rows', []):
             entry = doc['value']
+            if  entry['worker'] != self.thread_name:
+                continue
             key = (entry['request'], entry['type'])
             if  entry['type'].startswith('agent-'):
                 if  key in odict:
@@ -140,9 +148,9 @@ class LogDBBackend(object):
         This is done via tstamp view end endkey, e.g.
         curl "http://127.0.0.1:5984/logdb/_design/LogDB/_view/tstamp?endkey=1427912282"
         """
-        tstamp = round(time.time()+thr)
+        tstamp = round(time.time()-thr)
         docs = self.db.allDocs() # may need another view to look-up old docs
-        spec = {'endkey':tstamp}
+        spec = {'endkey':tstamp, 'reduce':False}
         docs = self.db.loadView(self.design, self.tsview, spec)
         ids = [d['id'] for d in docs.get('rows', [])]
         self.db.bulkDeleteByIDs(ids)

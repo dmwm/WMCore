@@ -7,9 +7,10 @@ https://github.com/dmwm/WMCore/issues/5705
 # standard modules
 import os
 import logging
+import threading
 
 # project modules
-from WMCore.Services.LogDB.LogDBBackend import LogDBBackend
+from WMCore.Services.LogDB.LogDBBackend import LogDBBackend, clean_entry
 from WMCore.Lexicon import splitCouchServiceURL
 
 class LogDB(object):
@@ -24,15 +25,19 @@ class LogDB(object):
             raise RuntimeError("Attempt to init LogDB with url='%s', identifier='%s'"\
                     % (url, identifier))
         self.identifier = identifier
+        try:
+            self.thread_name = kwds.pop('thread_name')
+        except KeyError:
+            self.thread_name = threading.currentThread().getName()
         self.agent = 1 if centralurl else 0
         self.localurl = url
         self.centralurl = centralurl
         couch_url, db_name = splitCouchServiceURL(self.localurl)
-        self.backend = LogDBBackend(couch_url, db_name, identifier, self.agent, **kwds)
+        self.backend = LogDBBackend(couch_url, db_name, identifier, self.thread_name, self.agent, **kwds)
         self.central = None
         if  centralurl:
             couch_url, db_name = splitCouchServiceURL(self.centralurl)
-            self.central = LogDBBackend(couch_url, db_name, identifier, self.agent, **kwds)
+            self.central = LogDBBackend(couch_url, db_name, identifier, self.thread_name, self.agent, **kwds)
         self.logger.info(self)
 
     def __repr__(self):
@@ -53,11 +58,25 @@ class LogDB(object):
     def get(self, request, mtype="comment"):
         """Retrieve all entries from LogDB for given request"""
         try:
-            res = self.backend.get(request, mtype)
+            res = [clean_entry(r['value']) for r in \
+                    self.backend.get(request, mtype).get('rows', [])]
         except Exception as exc:
             self.logger.error("LogDBBackend get API failed, error=%s" % str(exc))
             res = 'get-error'
         self.logger.debug("LogDB get request, res=%s", res)
+        return res
+
+    def get_all_requests(self):
+        """Retrieve all entries from LogDB for given request"""
+        try:
+            results = self.backend.get_all_requests()
+            res = []
+            for row in results['rows']:
+                res.append(row["key"])
+        except Exception as exc:
+            self.logger.error("LogDBBackend get_all_requests API failed, error=%s" % str(exc))
+            res = 'get-error'
+        self.logger.debug("LogDB get_all_requests request, res=%s", res)
         return res
 
     def delete(self, request):
@@ -110,5 +129,5 @@ class LogDB(object):
             else:
                 raise RuntimeError()
         except Exception as exc:
-            self.logger.error('LogDBBackend cleanup API failed, backend=%s, error=%s'\
-                    % (backend, str(exc))
+            self.logger.error('LogDBBackend cleanup API failed, backend=%s, error=%s' \
+                    % (backend, str(exc)))

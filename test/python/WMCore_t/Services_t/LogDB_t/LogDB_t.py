@@ -58,8 +58,11 @@ class LogDBTest(unittest.TestCase):
 
         # if we post messages for the same request only last one should survive
         self.localdb.post(request, 'msg1')
+        time.sleep(0.5)
         self.localdb.post(request, 'msg2')
+        time.sleep(0.5)
         self.localdb.post(request, 'msg3')
+        time.sleep(0.5)
         self.localdb.post(request, 'msg4')
         docs = self.localdb.summary(request)
         self.assertEqual(len(docs), 1)

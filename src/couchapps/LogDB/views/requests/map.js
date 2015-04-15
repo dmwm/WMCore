@@ -1,5 +1,5 @@
 function(doc) {
     if (doc.request) {
-        emit(doc.request, doc);
+        emit(doc.request, null);
     }
 }

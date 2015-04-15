@@ -89,12 +89,14 @@ class LogDBBackend(object):
         res = self.db.commitOne(data)
         return res
 
-    def get(self, request, mtype=None):
+    def get(self, request, mtype=None, detail=True):
         """Retrieve all entries from LogDB for given request"""
         self.check(request)
         spec = {'request':request, 'reduce':False}
         if  mtype:
             spec.update({'type':mtype})
+        if detail:
+            spec.update({'include_docs': True})
         docs = self.db.loadView(self.design, self.view, spec)
         return docs
 
@@ -107,21 +109,24 @@ class LogDBBackend(object):
     def delete(self, request):
         """Delete entry in LogDB for given request"""
         self.check(request)
-        docs = self.get(request)
-        ids = [r['value']['_id'] for r in docs.get('rows', [])]
+        docs = self.get(request, detail=False)
+        ids = [r['id'] for r in docs.get('rows', [])]
         res = self.db.bulkDeleteByIDs(ids)
         return res
 
     def summary(self, request):
         """Generate summary document for given request"""
+        import cherrypy
         docs = self.get(request)
         out = [] # output list of documents
         odict = {}
+        cherrypy.log("doc length %s" % len(docs['rows']))
         for doc in docs.get('rows', []):
-            entry = doc['value']
-            if  entry['worker'] != self.thread_name:
-                continue
-            key = (entry['request'], entry['type'])
+            entry = doc['doc']
+            agent = entry['agent'] 
+            worker = entry['worker']
+            m_type = entry['type']
+            key = (entry['request'], agent, worker, m_type)
             if  entry['type'].startswith('agent-'):
                 if  key in odict:
                     if  entry['ts'] > odict[key]['ts']:
@@ -130,8 +135,9 @@ class LogDBBackend(object):
                     odict[key] = clean_entry(entry)
             else: # keep all user-based messages
                 odict.setdefault(key, []).append(clean_entry(entry))
+        
         for key, val in odict.items():
-            doc = {'request':request, 'agent':self.dbid}
+            doc = {'_id': "--".join(key)}
             if  isinstance(val, list):
                 for item in val:
                     rec = dict(doc)

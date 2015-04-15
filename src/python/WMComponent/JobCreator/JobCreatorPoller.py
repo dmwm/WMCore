@@ -553,11 +553,15 @@ class JobCreatorPoller(BaseWorkerThread):
                                'owner': wmWorkload.getOwner().get('name', None),
                                'ownerDN': wmWorkload.getOwner().get('dn', None),
                                'ownerGroup': wmWorkload.getOwner().get('vogroup', ''),
-                               'ownerRole': wmWorkload.getOwner().get('vorole', '')}
+                               'ownerRole': wmWorkload.getOwner().get('vorole', ''),
+                               'numberOfCores': 1,}
                 try:
-                    # steps() seems to return just the first step in the task
-                    # what we really need to do here is iterate over the steps and set nCores to the max found
-                    processDict.update({'numberOfCores' : wmTask.steps().getNumberOfCores()})
+                    maxCores = 1
+                    stepNames = wmTask.listAllStepNames()
+                    for stepName in stepNames:
+                        sh = wmTask.getStep(stepName)
+                        maxCores = max(maxCores, sh.getNumberOfCores())
+                    processDict.update({'numberOfCores' : maxCores})
                 except AttributeError:
                     logging.info("Failed to read multicore settings from task %s" % wmTask.getPathName())
 

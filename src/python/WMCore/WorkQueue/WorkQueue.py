@@ -471,8 +471,9 @@ class WorkQueue(WorkQueueBase):
         # if local queue, kill jobs, update parent to Canceled and delete elements
         if self.params['LocalQueueFlag']:
             # if we can talk to wmbs kill the jobs
+            badWfsCancel = []
             if self.params['PopulateFilesets']:
-                self.logger.info("""Canceling work for workflow(s): %s""" % (requestNames))
+                self.logger.info("Canceling work for workflow(s): %s" % (requestNames))
                 from WMCore.WorkQueue.WMBSHelper import killWorkflow
                 for workflow in requestNames:
                     try:
@@ -483,6 +484,15 @@ class WorkQueue(WorkQueueBase):
                                      self.params["BossAirConfig"])
                     except Exception, ex:
                         self.logger.error('Aborting %s wmbs subscription failed: %s' % (workflow, str(ex)))
+                        badWfsCancel.append(workflow)
+                        self.logger.error('It will be retried in the next loop')
+            # now we remove any wf that failed to be cancelled (and its inbox elements)
+            requestNames -= set(badWfsCancel)
+            for wf in badWfsCancel:
+                elementsToRemove = self.backend.getInboxElements(WorkflowName = wf)
+                inbox_elements = list(set(inbox_elements) - set(elementsToRemove))
+            self.logger.info("New list of cancelled requests: %s" % requestNames)
+
             # Don't update as fails sometimes due to conflicts (#3856)
             [x.load().__setitem__('Status', 'Canceled') for x in inbox_elements if x['Status'] != 'Canceled']
             updated_inbox_ids = [x.id for x in self.backend.saveElements(*inbox_elements)]

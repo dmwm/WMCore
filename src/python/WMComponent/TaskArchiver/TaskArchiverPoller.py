@@ -351,7 +351,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         finishedwfs = finishedWorkflowsDAO.execute()
 
         #Only delete those where the upload and notification succeeded
-        logging.info("Found %d candidate workflows for deletion" % len(finishedwfs))
+        logging.info("Found %d candidate workflows for deletion: %s" % (len(finishedwfs),finishedwfs.keys()))
         # update the completed flag in dbsbuffer_workflow table so blocks can be closed
         # create updateDBSBufferWorkflowComplete DAO
         if len(finishedwfs) ==0:
@@ -365,7 +365,9 @@ class TaskArchiverPoller(BaseWorkerThread):
             #TODO: need to enable when reqmgr2 -wmstats is ready
             #abortedWorkflows = self.reqmgrCouchDBWriter.getRequestByStatus(["aborted"], format = "dict");
             abortedWorkflows = self.centralCouchDBWriter.getRequestByStatus(["aborted"])
+            logging.info("There are %d requests in 'aborted' status in central couch." % len(abortedWorkflows))
             forceCompleteWorkflows = self.centralCouchDBWriter.getRequestByStatus(["force-complete"]);
+            logging.info("List of 'force-complete' workflows in central couch: %s" % forceCompleteWorkflows)
             
         except Exception, ex:
             centralCouchAlive = False
@@ -378,7 +380,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                     #Upload summary to couch
                     spec = retrieveWMSpec(wmWorkloadURL = finishedwfs[workflow]["spec"])
                     if not spec:
-                        raise Exception(msg = "Couldn't load spec from %s" % workflow[1])
+                        raise Exception(msg = "Couldn't load spec for %s" % workflow)
                     self.archiveWorkflowSummary(spec = spec)
                     
                     #Send Reconstruciton performance information to DashBoard
@@ -388,11 +390,12 @@ class TaskArchiverPoller(BaseWorkerThread):
                     #Notify the WorkQueue, if there is one
                     if self.workQueue != None:
                         subList = []
+                        logging.info("Marking subscriptions as Done ...")
                         for l in finishedwfs[workflow]["workflows"].values():
                             subList.extend(l)
                         self.notifyWorkQueue(subList)
                     
-                    #Now we now the workflow as a whole is gone, we can delete the information from couch
+                    #Now we know the workflow as a whole is gone, we can delete the information from couch
                     if not self.useReqMgrForCompletionCheck:
                         self.requestLocalCouchDB.updateRequestStatus(workflow, "completed")
                         logging.info("status updated to completed %s" % workflow)
@@ -417,14 +420,16 @@ class TaskArchiverPoller(BaseWorkerThread):
                                 self.reqmgr2Svc.updateRequestStatus(workflow, newState)
                             else:
                                 #TODO this need to be remove when reqmgr is not used 
+                                logging.info("Updating status to '%s' in both oracle and couchdb ..." % newState)
                                 self.reqmgrSvc.updateRequestStatus(workflow, newState)
                             
-                        logging.info("status updated to %s : %s" % (newState, workflow))
+                        logging.info("status updated to '%s' : %s" % (newState, workflow))
     
                     wfsToDelete[workflow] = {"spec" : spec, "workflows": finishedwfs[workflow]["workflows"]}
     
                 except TaskArchiverPollerException, ex:
                     #Something didn't go well when notifying the workqueue, abort!!!
+                    logging.error("Something bad happened while archiving tasks.")
                     logging.error(str(ex))
                     self.sendAlert(1, msg = str(ex))
                     continue
@@ -437,7 +442,8 @@ class TaskArchiverPoller(BaseWorkerThread):
                     logging.error(msg)
                     self.sendAlert(3, msg = msg)
                     continue
-    
+
+            logging.info("Time to kill %d workflows." % len(wfsToDelete))
             self.killWorkflows(wfsToDelete)
 
         return
@@ -455,6 +461,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                 self.workQueue.doneWork(SubscriptionId = sub)
             except WorkQueueNoMatchingElements:
                 #Subscription wasn't known to WorkQueue, feel free to clean up
+                logging.info("Local WorkQueue knows nothing about this subscription: %s" % sub)
                 pass
             except Exception, ex:
                 msg = "Error talking to workqueue: %s\n" % str(ex)
@@ -765,7 +772,7 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         # Now we have the workflowData in the right format
         # Time to send them on
-        logging.info("About to commit workflow summary to couch")
+        logging.info("About to commit workflow summary for %s" % workflowName)
         self.workdatabase.commitOne(workflowData)
 
         logging.info("Finished committing workflow summary to couch")

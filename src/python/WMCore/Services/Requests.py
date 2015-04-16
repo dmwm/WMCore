@@ -42,8 +42,8 @@ def check_server_url(srvurl):
     """Check given url for correctness"""
     good_name = srvurl.startswith('http://') or srvurl.startswith('https://')
     if not good_name:
-        msg  = "You must include"
-        msg += "http(s):// in your servers address, %s doesn't" % srvurl
+        msg  = "You must include "
+        msg += "http(s):// in your server's address, %s doesn't" % srvurl
         raise ValueError(msg)
 
 

@@ -149,7 +149,7 @@ class RequestHandler(object):
                 ckey, cert, capath, verbose, verb, doseq, cainfo)
         curl.perform()
         header = self.parse_header(hbuf.getvalue())
-        if  header.status == 200:
+        if  header.status < 300:
             data = self.parse_body(bbuf.getvalue(), decode)
         else:
             data = bbuf.getvalue()

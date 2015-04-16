@@ -12,6 +12,9 @@ from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, CouchConfl
 from WMCore.Wrappers import JsonWrapper as json
 from WMCore.Services.LogDB.LogDBExceptions import LogDBError
 
+# define full list of supported LogDB types
+LOGDB_MSG_TYPES = ['info', 'error', 'warning', 'comment']
+
 def tstamp():
     "Return timestamp with microseconds"
     now = datetime.datetime.now()
@@ -67,11 +70,14 @@ class LogDBBackend(object):
         if  self.db_name in self.server.listDatabases():
             self.server.deleteDatabase(self.db_name)
 
-    def check(self, request):
+    def check(self, request, mtype=None):
         """Check that given request name is valid"""
         # TODO: we may add some logic to check request name, etc.
         if  not request:
             raise LogDBError("Request name is empty")
+        if  mtype and mtype not in LOGDB_MSG_TYPES:
+            raise LogDBError("Unsupported message type: '%s', supported types %s" \
+                    % (mtype, LOGDB_MSG_TYPES))
 
     def prefix(self, mtype):
         """Generate agent specific prefix for given message type"""
@@ -82,7 +88,7 @@ class LogDBBackend(object):
 
     def post(self, request, msg='', mtype="comment"):
         """Post new entry into LogDB for given request"""
-        self.check(request)
+        self.check(request, mtype)
         mtype = self.prefix(mtype)
         data = {"request":request, "agent": self.dbid, "worker": self.thread_name,
                 "ts":tstamp(), "msg":msg, "type":mtype}
@@ -91,7 +97,7 @@ class LogDBBackend(object):
 
     def get(self, request, mtype=None, detail=True):
         """Retrieve all entries from LogDB for given request"""
-        self.check(request)
+        self.check(request, mtype)
         spec = {'request':request, 'reduce':False}
         if  mtype:
             spec.update({'type':mtype})

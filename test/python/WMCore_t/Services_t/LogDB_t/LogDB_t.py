@@ -12,6 +12,8 @@ import unittest
 import threading
 
 from WMCore.Services.LogDB.LogDB import LogDB
+from WMCore.Services.LogDB.LogDBBackend import LOGDB_MSG_TYPES
+from WMCore.Services.LogDB.LogDBExceptions import LogDBError
 
 class LogDBTest(unittest.TestCase):
     """
@@ -158,6 +160,20 @@ class LogDBTest(unittest.TestCase):
         worker2 = set([r['worker'] for r in thr_docs])
         self.assertEqual(len(worker2), 1)
         self.assertEqual(worker1!=worker2, True)
+
+    def test_checks(self):
+        "Tests LogDB check/mtype functionality"
+        request = 'abc'
+        res = self.localdb.post(request, 'msg', 'ingo') # should be silent, i.o. no Exceptions
+        self.assertEqual('post-error', res)
+        args = (request, 'msg', 'ingo') # wrong type
+        self.assertRaises(LogDBError, self.localdb.backend.post, *args)
+        args = (request, 'ingo') # wrong type
+        self.assertRaises(LogDBError, self.localdb.backend.check, *args)
+        args = ('', 'msg', 'info') # empty request string
+        self.assertRaises(LogDBError, self.localdb.backend.post, *args)
+        args = ('', 'info') # empty request string
+        self.assertRaises(LogDBError, self.localdb.backend.check, *args)
 
 if __name__ == "__main__":
     unittest.main()

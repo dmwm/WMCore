@@ -12,6 +12,7 @@ import threading
 # project modules
 from WMCore.Services.LogDB.LogDBBackend import LogDBBackend, clean_entry
 from WMCore.Lexicon import splitCouchServiceURL
+from WMCore.Database.CMSCouch import CouchNotFoundError
 
 class LogDB(object):
     """
@@ -58,7 +59,7 @@ class LogDB(object):
     def get(self, request, mtype="comment"):
         """Retrieve all entries from LogDB for given request"""
         try:
-            res = [clean_entry(r['value']) for r in \
+            res = [clean_entry(r['doc']) for r in \
                     self.backend.get(request, mtype).get('rows', [])]
         except Exception as exc:
             self.logger.error("LogDBBackend get API failed, error=%s" % str(exc))
@@ -111,6 +112,12 @@ class LogDB(object):
         try:
             docs = self.backend.summary(request)
             for doc in docs:
+                try:
+                    exist_doc = self.central.db.document(doc["_id"])
+                    doc["_rev"] = exist_doc["_rev"]
+                except CouchNotFoundError:
+                    self.logger.debug("initial update for %s" % doc["_id"])
+                
                 self.central.db.queue(doc)
             res = self.central.db.commit()
         except Exception as exc:

@@ -1,3 +1,75 @@
+1.0.5 to 1.0.6.pre1:
+  - Merge pull request #5796 from ticoann/auto_approval_validation
+  - Merge pull request #5775 from amaltaro/validate-auto-approve
+  - add auto approval validation
+  - Merge pull request #5769 from amaltaro/validation-templates
+  - Merge pull request #5786 from ericvaandering/remove_JSONParser
+  - Merge pull request #5795 from ericvaandering/fix_typos0416
+  - Fix two typos
+  - Merge pull request #5765 from ticoann/logdb_set
+  - add logdb deployment
+  - Merge pull request #5792 from vkuznet/logdb-types
+  - Add pre-defined LogDB Message types and associative unit test
+  - Merge pull request #5789 from ticoann/summary_fix
+  - Merge pull request #5790 from vkuznet/pycurl-fix
+  - Allow to handle all 1XX/2XX HTTP statuses
+  - fix summary call to have one id per thread
+  - Merge pull request #5788 from ticoann/move_logdb_test
+  - move test under Service_t
+  - Merge pull request #5787 from ticoann/acdc_cleanup
+  - add missing method
+  - Remove JSON Parser
+  - Merge pull request #5783 from vkuznet/logdb-thread
+  - Add thread name support and fix bugs
+  - Merge pull request #5782 from vkuznet/logdb-cleanup
+  - Changes to perform LogDB clean-up, add new tstamp view and unit test
+  - Merge pull request #5781 from vkuznet/logdb_wrap
+  - Wrap LogDB APIs into try/except block, upon exception dump loger error message
+  - Merge pull request #5773 from vkuznet/logdb2
+  - Forbids auto-approval to MSS endpoint
+  - Changes for LogDB
+  - Add templates for Integration tests
+  - Merge pull request #5763 from amaltaro/cmssw-pileup-setup
+  - Merge pull request #5764 from vkuznet/load_specs
+  - Remove WMFactory and read spec files themselves for probing class names
+  - Corrects format of PU files in the CMSSW MixingModule
+  - 1.0.5.patch1
+  - Merge pull request #5743 from vkuznet/logdb
+  - Merge pull request #5760 from tsarangi/issue5672_again
+  - Fix #5672 . Read latest and non-empty condor log for classAd information
+  - Merge pull request #5759 from ericvaandering/fix_dashboard_getter_conflict
+  - Fix the conflicts introduced in two different pull requests
+  - Merge branch 'ericvaandering-multithread_taskchain'
+  - multi thread task chain
+  - Merge pull request #5758 from ericvaandering/remove_dbs2code
+  - Merge pull request #5752 from amaltaro/set-thresholds-ssb
+  - Merge pull request #5755 from ericvaandering/fix_5420
+  - Merge pull request #5756 from ericvaandering/report_jobtype
+  - Merge pull request #5753 from ericvaandering/fix_js_linefeed
+  - Merge pull request #5749 from hufnagel/secondary-priority
+  - Merge pull request #5751 from ericvaandering/dashboard_ncore_start
+  - Merge pull request #5708 from juztas/gfal2
+  - Merge pull request #5679 from tsarangi/issue5659
+  - Merge pull request #5699 from amaltaro/create-test-wfs
+  - Script to create and assign DMWM workflows
+  - Fix #5659 . Ignore accounting for jobs that are in X state. Fixed Exceptions Multiple typos Fixed Add job to complete list if the job status is removed Do not trust classAd and update the status to Removed if the jobStatus is New Reorder job status report. Break after jobs are pushed to completeList. Ignore getClassAd for jobs in Removed Status
+  - Remove DBS2 code and references
+  - Add CMS_JobType into the JDL. Can be for reprioritization by HTCondor or enforcing global resource control in GlideinWMS.
+  - Loop over tasks and find the maximum # of cores to request for the job
+  - Re-factor ctor to use DMWM config
+  - Collect all user messages and only last ones for agent-X type messages
+  - Fix linefeeds in two javascript files
+  - don't change site thresholds if site not in ssb
+  - Report out # of cores to dashboard on job start, not just job end
+  - Implement logic according to new set of requirements (see issue 5705)
+  - Implement dynamic creation of logdb_agent and upload requests view
+  - Move under WMCore/Services and adjusted classes to read modules from proper location
+  - Added production-manager and t0operator roles to global access
+  - Remove requests module
+  - Initial prototype of LogDB interface: include code base and associative couchapp
+  - set secondary job priority, fixes #5688
+  - add gfal2 support.
+
 1.0.5 to 1.0.5.patch1:
   - Merge pull request #5743 from vkuznet/logdb
   - Merge pull request #5760 from tsarangi/issue5672_again

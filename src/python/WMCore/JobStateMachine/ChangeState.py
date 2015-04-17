@@ -150,23 +150,24 @@ class ChangeState(WMObject, WMConnectionBase):
 
         # 2. Load workflow/task information into the jobs
         self.loadExtraJobInformation(jobs)
+        
+        # 3. Make the state transition
+        self.persist(jobs, newstate, oldstate)
 
-        # 3. Document the state transition in couch
+        # 4. Document the state transition in couch
         try:
             self.recordInCouch(jobs, newstate, oldstate, updatesummary)
         except Exception, ex:
             logging.error("Error updating job in couch: %s" % str(ex))
             logging.error(traceback.format_exc())
 
-        # 4. Report the job transition to the dashboard
+        # 5. Report the job transition to the dashboard
         try:
             self.reportToDashboard(jobs, newstate, oldstate)
         except Exception, ex:
             logging.error("Error reporting to the dashboard: %s" % str(ex))
             logging.error(traceback.format_exc())
 
-        # 4. Make the state transition
-        self.persist(jobs, newstate, oldstate)
         return
 
     def check(self, newstate, oldstate):
@@ -415,12 +416,13 @@ class ChangeState(WMObject, WMConnectionBase):
 
         Update the job state in the database.
         """
-        if oldstate == "submitcooloff" or oldstate == "jobcooloff" or oldstate == "createcooloff" :
-            self.incrementRetryDAO.execute(jobs,
-                                           conn = self.getDBConn(),
-                                           transaction = self.existingTransaction())
+        
         if newstate == "killed":
             self.incrementRetryDAO.execute(jobs, increment = 99999,
+                                           conn = self.getDBConn(),
+                                           transaction = self.existingTransaction())
+        elif oldstate == "submitcooloff" or oldstate == "jobcooloff" or oldstate == "createcooloff" :
+            self.incrementRetryDAO.execute(jobs,
                                            conn = self.getDBConn(),
                                            transaction = self.existingTransaction())
         for job in jobs:

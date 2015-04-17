@@ -12,13 +12,8 @@ class WMAgent(Service):
 
     def __init__(self, dict={}):
         """
-        responseType will be either xml or json
+        responseType will be JSON
         """
-
-        #if self.responseType == 'json':
-            #self.parser = JSONParser()
-        #elif self.responseType == 'xml':
-            #self.parser = XMLParser()
 
         dict.setdefault("accept_type", "application/json")
         dict.setdefault("content_type", "application/json")

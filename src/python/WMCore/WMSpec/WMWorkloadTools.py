@@ -170,6 +170,18 @@ def validateInputDatasSetAndParentFlag(arguments):
     else:
         _validateInputDataset(arguments)
     return
+
+def validatePhEDExSubscription(arguments):
+    autoApproveList = arguments.get("AutoApproveSubscriptionSites", [])
+    notAllowedSites = []
+    for site in autoApproveList:
+        if site.endswith('_MSS'):
+            notAllowedSites.append(site)
+
+    if len(notAllowedSites) > 0:
+        msg = "Validation failed: Auto-approval to MSS endpoint not allowed: %s" % notAllowedSites
+        raise WMSpecFactoryException(msg)
+    return 
             
 def validateArgumentsCreate(arguments, argumentDefinition):
     """
@@ -183,6 +195,7 @@ def validateArgumentsCreate(arguments, argumentDefinition):
     """
     _validateArgumentOptions(arguments, argumentDefinition, "optional")
     validateInputDatasSetAndParentFlag(arguments)
+    validatePhEDExSubscription(arguments)
     return
 
 def validateArgumentsUpdate(arguments, argumentDefinition):
@@ -194,7 +207,10 @@ def validateArgumentsUpdate(arguments, argumentDefinition):
     an error message if the validation went wrong,
     otherwise returns None
     """
-    return _validateArgumentOptions(arguments, argumentDefinition, "assign_optional")
+    _validateArgumentOptions(arguments, argumentDefinition, "assign_optional")
+    validatePhEDExSubscription(arguments)
+    return
+
 
 def validateArgumentsNoOptionalCheck(arguments, argumentDefinition):
     """

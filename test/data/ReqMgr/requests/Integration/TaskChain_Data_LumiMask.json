@@ -1,7 +1,7 @@
 { 
 "createRequest":
 {
-    "Comments": "TaskChain Data with 1 run and 2 tasks. Drop output of 1st task. 2l task1 and 20l task2. Harvesting enabled",
+    "Comments": "TaskChain data with 2 tasks and LumiMask, with 1 run and 36 l. Harvesting enabled",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_0_0_pre11",
@@ -13,12 +13,12 @@
     "GlobalTag": "GR_R_62_V3::All",
     "Group": "DATAOPS",
     "ProcessingVersion": 1,
-    "RequestPriority": 150000,
+    "RequestPriority": 50000,
     "RequestType": "TaskChain",
     "ScramArch": "slc5_amd64_gcc481",
     "Memory": 2400,
     "SizePerEvent": 1234,
-    "TimePerEvent": 0.8,
+    "TimePerEvent": 0.3,
     "MergedLFNBase": "/store/relval",
     "Task1": {"InputDataset": "/Cosmics/Run2011A-v1/RAW",
         "RunWhitelist": [160960],
@@ -26,9 +26,10 @@
         "AcquisitionEra": "CMSSW_7_0_0_pre11",
         "GlobalTag": "GR_R_62_V3::All",
         "ConfigCacheID": "5f4811e9ccd63d563cd62572350f0db8",
+        "LumiList": {"160960": [[277, 287], [79,85], [167,177], [226,232]]},
         "SplittingAlgo": "LumiBased",
         "LumisPerJob": 2,
-        "KeepOutput": "False",
+        "KeepOutput": "True",
         "TaskName": "RECOCOSD"},
     "Task2": {"AcquisitionEra": "CMSSW_7_0_0_pre11",
         "ConfigCacheID": "5f4811e9ccd63d563cd62572350f8304",
@@ -41,16 +42,15 @@
         "LumisPerJob": 20,
         "TaskName": "ALCACOSD"},
     "TaskChain": 2
-    },
-
+},
 "assignRequest":
-    {
-    "SiteWhitelist": [],
+{
+    "SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
     "Team": "Team-OVERRIDE-ME",
     "AcquisitionEra": {"RECOCOSD" : "AcquisitionEra-OVERRIDE-ME",
                        "ALCACOSD" : "AcquisitionEra-1-OVERRIDE-ME"},
-    "ProcessingString" : {"RECOCOSD" : "ProcessingString-OVERRIDE-ME",
-                          "ALCACOSD" : "ProcessingString-1-OVERRIDE-ME"},
+    "ProcessingString": {"RECOCOSD" : "ProcessingString-OVERRIDE-ME",
+                         "ALCACOSD" : "ProcessingString-1-OVERRIDE-ME"},
     "Dashboard": "Dashboard-OVERRIDE-ME",
     "SiteBlacklist": [],
     "MergedLFNBase": "/store/relval",
@@ -68,9 +68,10 @@
     "AutoApproveSubscriptionSites": [],
     "SubscriptionPriority": "Low",
     "CustodialSubType" : "Move",
+    "useSiteListAsLocation" : "true",
     "BlockCloseMaxWaitTime" : 72000,
     "BlockCloseMaxFiles" : 500,
     "BlockCloseMaxEvents" : 200000000,
     "BlockCloseMaxSize" : 5000000000000
-    }
+}
 }

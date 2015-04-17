@@ -1,7 +1,7 @@
 { 
 "createRequest":
 {         
-    "Comments": "ReDigi with 2 steps per job. One block whitelisted. 1l per job",
+    "Comments": "ReDigi with 2 steps per job. LumiMask for 1 run and 7l in total",
     "Campaign": "Campaign-OVERRIDE-ME",        
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_5_3_19",
@@ -25,9 +25,10 @@
     "KeepStepTwoOutput": "True",        
     "PrepID": "B2G-Summer12DR53X-00743",            
     "Group": "DATAOPS",
+    "LumiList": {"1": [[11, 11], [96,96], [203,204], [23,23], [132,132], [72,72]]},
     "SplittingAlgo": "LumiBased",
     "LumisPerJob": 1,
-    "TimePerEvent": 1.75,
+    "TimePerEvent": 7.5,
     "Memory": 2300,
     "SizePerEvent": 450,
     "OpenRunningTimeout" : 0
@@ -44,7 +45,7 @@
 },
 "assignRequest":
 {
-    "SiteWhitelist": [],
+    "SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
     "Team": "Team-OVERRIDE-ME",
     "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
     "ProcessingString": "ProcessingString-OVERRIDE-ME",
@@ -65,7 +66,8 @@
     "AutoApproveSubscriptionSites": [],
     "SubscriptionPriority": "Low",
     "CustodialSubType" : "Move",
-    "BlockCloseMaxWaitTime" : 14400,
+    "useSiteListAsLocation" : "true",
+    "BlockCloseMaxWaitTime" : 72000,
     "BlockCloseMaxFiles" : 500,
     "BlockCloseMaxEvents" : 200000000,
     "BlockCloseMaxSize" : 5000000000000

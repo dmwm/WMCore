@@ -1,6 +1,7 @@
 { 
 "createRequest":
 {
+    "Comments": "MC from scratch reading LHE files. 10l per job",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_5_3_16",
@@ -19,7 +20,7 @@
     "Memory": 2300,
     "LheInputFiles": "True",
     "EventsPerJob": 500000,
-    "EventsPerLumi": 200,
+    "EventsPerLumi": 50000,
     "SizePerEvent": 1,
     "FirstEvent": 1,
     "FirstLumi": 1,
@@ -31,7 +32,7 @@
     "Team": "Team-OVERRIDE-ME",
     "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
     "ProcessingString": "ProcessingString-OVERRIDE-ME",
-    "Dashboard": "dashboard-OVERRIDE-ME",
+    "Dashboard": "Dashboard-OVERRIDE-ME",
     "SiteBlacklist": [],
     "MergedLFNBase": "/store/generator",
     "UnmergedLFNBase": "/store/unmerged",

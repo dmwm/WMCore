@@ -122,11 +122,9 @@ class LogDBBackend(object):
 
     def summary(self, request):
         """Generate summary document for given request"""
-        import cherrypy
         docs = self.get(request)
         out = [] # output list of documents
         odict = {}
-        cherrypy.log("doc length %s" % len(docs['rows']))
         for doc in docs.get('rows', []):
             entry = doc['doc']
             agent = entry['agent'] 

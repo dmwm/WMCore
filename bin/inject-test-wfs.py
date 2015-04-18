@@ -1,14 +1,16 @@
 """
 Pre-requisites:
- - a valid proxy set to your X509_USER_PROXY variable
+ 1. a valid proxy in your X509_USER_PROXY variable
+ 2. wmagent env: /data/srv/wmagent/current/apps/wmagent/etc/profile.d/init.sh
 
 Script used during cmsweb-testbed validation (or a new agent validation).
 It will:
- 1. clone the official WMCore repository
- 2. fetch all templates available in WMCore/test/data/ReqMgr/requests/
-    either under DMWMW or Integration directory
- 3. loop over all those templates and create and assign them (based on the
-    parameters given  in command line)
+ 1. clone the WMCore repository
+ 2. fetch all templates available in WMCore/test/data/ReqMgr/requests/DMWMW
+ 3. create a new request for each of them (based on the parameters given
+ in command line)
+ 4. assign workflows during creation time (also based on the parameters
+ provided in command line) 
 """
 
 import sys, os, shlex, json
@@ -20,6 +22,8 @@ def main():
     """
     Util to create and assign requests based on the templates available
     in WMCore repository.
+
+    NOTE: it will inject and assign ALL templates under DMWM folder 
     """
     usage = "Usage: %prog -c Campaign -r requestString [-u url -t team -s site -a acqEra -p procStr -d]"
     parser = OptionParser(usage = usage)
@@ -32,6 +36,8 @@ def main():
     parser.add_option('-s', '--site', help = 'Site white list for assignment', dest = 'site')
     parser.add_option('-a', '--acqEra', help = 'AcquisitionEra for assignment', dest = 'acqEra')
     parser.add_option('-p', '--procStr', help = 'ProcessingString for assignment', dest = 'procStr')
+    parser.add_option('-i', '--injectOnly', action = "store_true", help = 'Only injects requests but do not assign them',
+                      dest = 'injOnly', default=False)
     parser.add_option('-d', '--dryRun', action = "store_true", help = 'Simulation mode only', dest = 'dryRun', default=False)
     (options, args) = parser.parse_args()
     if not options.camp and not options.reqStr:
@@ -64,7 +70,7 @@ def main():
             print "Execution failed:", e
             sys.exit(2)
 
-    # Retrieve (or handle the one specified) template names available
+    # Retrieve template names available and filter blacklisted
     os.chdir("WMCore/test/data/ReqMgr")
     wmcorePath = "requests/" + mode + "/"
     if file:
@@ -79,33 +85,37 @@ def main():
     templates = [ item for item in templates if item not in blacklist ]
 
     for filename in templates:
-        strComm = "python reqmgr.py -u CMSWEB_TESTBED -f TEMPLATE.json -i -g "
+        strComm = "python reqmgr.py -u CMSWEB_TESTBED -f TEMPLATE.json -i "
         # create request setup
         name = filename.split('.json')[0]
         createRequest = {"createRequest": {}}
         createRequest['createRequest']['Campaign']      = options.camp
         createRequest['createRequest']['RequestString'] = name + '_' + options.reqStr
 
-        # assignment setup
-        assignRequest = {"assignRequest": {}}
-        assignRequest['assignRequest']['SiteWhitelist']    = site 
-        assignRequest['assignRequest']['Team']             = team 
-        assignRequest['assignRequest']['Dashboard']        = "integration" 
-        assignRequest['assignRequest']['AcquisitionEra']   = acqEra 
-        assignRequest['assignRequest']['ProcessingString'] = procStr 
+        if not options.injOnly:
+            strComm += "-g "
+            # merge template name and current procStr, to avoid dups
+            tmpProcStr = filename.replace('.json','_') + procStr
+            # assignment setup
+            assignRequest = {"assignRequest": {}}
+            assignRequest['assignRequest']['SiteWhitelist']    = site 
+            assignRequest['assignRequest']['Team']             = team 
+            assignRequest['assignRequest']['Dashboard']        = "integration" 
+            assignRequest['assignRequest']['AcquisitionEra']   = acqEra 
+            assignRequest['assignRequest']['ProcessingString'] = tmpProcStr 
+  
+            # assignment override for TaskChain
+            if filename.startswith("TaskChain"):
+                config = json.loads(open(wmcorePath+filename).read())
+                assignRequest['assignRequest']['AcquisitionEra']   = config['assignRequest']['AcquisitionEra'] 
+                assignRequest['assignRequest']['ProcessingString'] = config['assignRequest']['ProcessingString'] 
+                for task,_ in assignRequest['assignRequest']['AcquisitionEra'].iteritems():
+                    assignRequest['assignRequest']['AcquisitionEra'][task] = config['createRequest']['CMSSWVersion']
+                for task,_ in assignRequest['assignRequest']['ProcessingString'].iteritems():
+                    assignRequest['assignRequest']['ProcessingString'][task] = task + '_' + tmpProcStr
+            createRequest.update(assignRequest)
 
-        # assignment override for TaskChain
-        if filename.startswith("TaskChain"):
-            config = json.loads(open(wmcorePath+filename).read())
-            assignRequest['assignRequest']['AcquisitionEra']   = config['assignRequest']['AcquisitionEra'] 
-            assignRequest['assignRequest']['ProcessingString'] = config['assignRequest']['ProcessingString'] 
-            for task,_ in assignRequest['assignRequest']['AcquisitionEra'].iteritems():
-                assignRequest['assignRequest']['AcquisitionEra'][task] = config['createRequest']['CMSSWVersion']
-            for task,_ in assignRequest['assignRequest']['ProcessingString'].iteritems():
-                assignRequest['assignRequest']['ProcessingString'][task] = task + '_' + procStr
-        createRequest.update(assignRequest)
-
-        # Hack to go around single/double quotes and format 
+        # Hack to go around single, double quotes and format 
         with open("/tmp/alan.json", "w") as outfile:
             json.dump(createRequest, outfile)
         configOver = json.loads(open("/tmp/alan.json").read())

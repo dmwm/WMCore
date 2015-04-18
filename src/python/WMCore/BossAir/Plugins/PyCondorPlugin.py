@@ -855,10 +855,10 @@ class PyCondorPlugin(BasePlugin):
         sd = condor.Schedd()
         if 'taskPriority' in kwargs and 'requestPriority' in kwargs:
             # Do a priority update
-            priority = (int(kwargs['requestPriority']) + int(kwargs['taskPriority'])*self.maxTaskPriority)
+            priority = (int(kwargs['requestPriority']) + int(kwargs['taskPriority'] * self.maxTaskPriority))
             try:
                 sd.edit('WMAgent_JobID =!= "UNDEFINED" && WMAgent_SubTaskName == %s && WMAgent_RequestName == %s'% (classad.quote(str(task)),classad.quote(str(workflow))),
-                        "JobPrio", classad.ExprTree('"%s"'% priority))
+                        "JobPrio", classad.Literal(int(priority)))
             except:
                 msg = "Couldn\'t edit classAd to change job Priority for WMAgent_SubTaskName=%s, WMAgent_RequestName=%s " % (classad.quote(str(task)), classad.quote(str(workflow)))
                 logging.debug(msg)

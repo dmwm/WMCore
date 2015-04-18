@@ -60,11 +60,11 @@ class LogDBTest(unittest.TestCase):
 
         # if we post messages for the same request only last one should survive
         self.localdb.post(request, 'msg1')
-        time.sleep(0.5)
+        time.sleep(1)
         self.localdb.post(request, 'msg2')
-        time.sleep(0.5)
+        time.sleep(1)
         self.localdb.post(request, 'msg3')
-        time.sleep(0.5)
+        time.sleep(1)
         self.localdb.post(request, 'msg4')
         docs = self.localdb.summary(request)
         self.assertEqual(len(docs), 1)
@@ -127,9 +127,9 @@ class LogDBTest(unittest.TestCase):
         self.localdb.post(request, 'msg3', 'warning')
         self.localdb.post(request, 'msg4', 'error')
         sum_docs = self.localdb.summary(request)
-        self.assertEqual(len(sum_docs), 3) # since we have two info records in localdb
+        self.assertEqual(len(sum_docs), 4) # there should be 4 docs one for Test thread and 3 for MainThread
         thr_docs = self.localdb2.summary(request)
-        self.assertEqual(len(thr_docs), 1) # number of docs in different thread
+        self.assertEqual(len(thr_docs), 4) # this should result the same as above.
         docs1 = self.localdb.get(request, 'info')
         docs2 = self.localdb.get(request, 'info')
         req1 = set([r['request'] for r in docs1])
@@ -147,19 +147,18 @@ class LogDBTest(unittest.TestCase):
         self.localdb.post(request, 'msg3', 'warning')
         self.localdb.post(request, 'msg4', 'error')
         sum_docs = self.localdb.summary(request)
-        self.assertEqual(len(sum_docs), 3) # since we have two info records in localdb
+        self.assertEqual(len(sum_docs), 4) # since we have two info records in localdb
         thr_docs = self.localdb2.summary(request)
-        self.assertEqual(len(thr_docs), 1) # number of docs in different thread
+        self.assertEqual(len(thr_docs), 4) # number of docs in different thread
         req1 = set([r['request'] for r in sum_docs])
         self.assertEqual(len(req1), 1)
         req2 = set([r['request'] for r in thr_docs])
         self.assertEqual(len(req2), 1)
         self.assertEqual(req1, req2)
         worker1 = set([r['worker'] for r in sum_docs])
-        self.assertEqual(len(worker1), 1)
+        self.assertEqual(worker1, set(["Test", "MainThread"]))
         worker2 = set([r['worker'] for r in thr_docs])
-        self.assertEqual(len(worker2), 1)
-        self.assertEqual(worker1!=worker2, True)
+        self.assertEqual(worker2, set(["Test", "MainThread"]))
 
     def test_checks(self):
         "Tests LogDB check/mtype functionality"

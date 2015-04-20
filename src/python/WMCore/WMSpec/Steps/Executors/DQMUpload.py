@@ -160,13 +160,14 @@ class DQMUpload(Executor):
         logging.info(msg)
 
         try:
-            (headers, data) = self.upload(self.step.upload.URL, args, filename)
-            msg = 'HTTP upload finished succesfully with response:\n'
-            msg += 'Status code: %s\n' % headers.get("Dqm-Status-Code", None)
-            msg += 'Message: %s\n' % headers.get("Dqm-Status-Message", None)
-            msg += 'Detail: %s\n' % headers.get("Dqm-Status-Detail", None)
-            msg += 'Data: %s\n' % str(data)
-            logging.info(msg)
+            for uploadURL in self.step.upload.URL.split(';'):
+                (headers, data) = self.upload(uploadURL, args, filename)
+                msg = 'HTTP upload finished succesfully with response:\n'
+                msg += 'Status code: %s\n' % headers.get("Dqm-Status-Code", None)
+                msg += 'Message: %s\n' % headers.get("Dqm-Status-Message", None)
+                msg += 'Detail: %s\n' % headers.get("Dqm-Status-Detail", None)
+                msg += 'Data: %s\n' % str(data)
+                logging.info(msg)
         except urllib2.HTTPError, ex:
             msg = 'HTTP upload failed with response:\n'
             msg += 'Status code: %s\n' % ex.hdrs.get("Dqm-Status-Code", None)

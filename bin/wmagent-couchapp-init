@@ -286,10 +286,10 @@ if __name__ == "__main__":
     wmagentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
     
     if hasattr(wmagentConfig, "General") and hasattr(wmagentConfig.General, "logdb_url"):
-        log_couch_url, logdb_name = splitCouchServiceURL(wmagentConfig.General.log_couch_url)
-        installCouchApp(log_couch_url, logdb_name, "LogDB")
+        logdb_url, logdb_name = splitCouchServiceURL(wmagentConfig.General.logdb_url)
+        installCouchApp(logdb_url, logdb_name, "LogDB")
         if options.cron:
-             setupCronCompaction(log_couch_url, logdb_name)
+             setupCronCompaction(logdb_url, logdb_name)
             
     if hasattr(wmagentConfig, "JobStateMachine") and hasattr(wmagentConfig.JobStateMachine, "couchDBName"):
         fwjrDumpName = urllib.quote_plus("%s/fwjrs" % wmagentConfig.JobStateMachine.couchDBName)

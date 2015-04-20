@@ -389,6 +389,14 @@ class JobSubmitterPoller(BaseWorkerThread):
 
                 locTypeCache[workflowName].add(jobID)
 
+            # allow job baggage to override numberOfCores
+            #       => used for repacking to get more slots/disk
+            numberOfCores = loadedJob.get('numberOfCores', 1)
+            if numberOfCores == 1:
+                baggage = loadedJob.getBaggage()
+                numberOfCores = getattr(baggage, "numberOfCores", 1)
+            loadedJob['numberOfCores'] = numberOfCores
+
             # Now that we're out of that loop, put the job data in the cache
             jobInfo = (jobID,
                        newJob["retry_count"],

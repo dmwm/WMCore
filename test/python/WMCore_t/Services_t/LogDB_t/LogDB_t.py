@@ -12,8 +12,9 @@ import unittest
 import threading
 
 from WMCore.Services.LogDB.LogDB import LogDB
-from WMCore.Services.LogDB.LogDBBackend import LOGDB_MSG_TYPES
+from WMCore.Services.LogDB.LogDBBackend import LOGDB_MSG_TYPES, gen_hash
 from WMCore.Services.LogDB.LogDBExceptions import LogDBError
+from WMCore.Services.LogDB.LogDBReport import LogDBReport
 
 class LogDBTest(unittest.TestCase):
     """
@@ -29,13 +30,13 @@ class LogDBTest(unittest.TestCase):
         logging.basicConfig()
         self.logger = logging.getLogger('LogDBTest')
 #        self.logger.setLevel(logging.DEBUG)
-        localurl = 'http://localhost:5984/locallogdb_t'
-        centralurl = 'http://localhost:5984/globallogdb_t'
-        identifier = 'agent-db'
-        self.localdb = LogDB(localurl, identifier, centralurl, logger=self.logger, create=True)
-        self.localdb2 = LogDB(localurl, identifier, centralurl, logger=self.logger, create=True, thread_name="Test")
-        identifier = 'central-db'
-        self.globaldb = LogDB(localurl, identifier, logger=self.logger, create=True)
+        url = 'http://localhost:5984/logdb_t'
+        identifier = 'agentname'
+        self.agent_inst = LogDB(url, identifier, logger=self.logger, create=True)
+        self.agent_inst2 = LogDB(url, identifier, logger=self.logger, create=True, thread_name="Test")
+        identifier = '/DC=org/DC=doegrids/OU=People/CN=First Last 123'
+        self.user_inst = LogDB(url, identifier, logger=self.logger, create=True)
+        self.report = LogDBReport(self.agent_inst)
 
     def tearDown(self):
         """
@@ -43,95 +44,108 @@ class LogDBTest(unittest.TestCase):
 
         Drop all the WMBS tables.
         """
-        self.localdb.backend.deleteDatabase()
-        self.globaldb.backend.deleteDatabase()
+        self.agent_inst.backend.deleteDatabase()
+
+    def test_docid(self):
+        "Test docid API"
+        request = 'abs'
+        mtype = self.agent_inst.backend.prefix('info')
+        res = self.agent_inst.backend.docid(request, mtype)
+        key = '--'.join([request, self.agent_inst.identifier, self.agent_inst.thread_name, mtype])
+        khash = gen_hash(key)
+        self.assertEqual(res, khash)
+
+    def test_prefix(self):
+        "Test prefix LogDBBackend API"
+        request = 'abc'
+
+        self.assertEqual(self.agent_inst.agent, 1)
+        mtype = self.agent_inst.backend.prefix('msg')
+        self.assertEqual(mtype, 'agent-msg')
+
+        self.assertEqual(self.user_inst.agent, 0)
+        mtype = self.user_inst.backend.prefix('msg')
+        self.assertEqual(mtype, 'msg')
 
     def test_apis(self):
         "Test LogDB APIs"
         request = 'abc'
 
-        self.assertEqual(self.localdb.agent, 1)
-        mtype = self.localdb.backend.prefix('msg')
-        self.assertEqual(mtype, 'agent-msg')
-
-        self.assertEqual(self.globaldb.agent, 0)
-        mtype = self.globaldb.backend.prefix('msg')
-        self.assertEqual(mtype, 'msg')
-
         # if we post messages for the same request only last one should survive
-        self.localdb.post(request, 'msg1')
-        time.sleep(1)
-        self.localdb.post(request, 'msg2')
-        time.sleep(1)
-        self.localdb.post(request, 'msg3')
-        time.sleep(1)
-        self.localdb.post(request, 'msg4')
-        docs = self.localdb.summary(request)
+        self.agent_inst.post(request, 'msg1')
+#        time.sleep(1)
+        self.agent_inst.post(request, 'msg2')
+#        time.sleep(1)
+        self.agent_inst.post(request, 'msg3')
+#        time.sleep(1)
+        self.agent_inst.post(request, 'msg4')
+#        time.sleep(1)
+        docs = self.agent_inst.get(request)
         self.assertEqual(len(docs), 1)
         self.assertEqual(docs[0]['msg'], 'msg4')
 
-        # add message to global logdb
-        # upload local messages into global logdb
-        # we should have only two messages now, doc1 and msg4
-        self.globaldb.post(request, 'doc1')
-        self.localdb.upload2central(request)
-        docs = self.globaldb.summary(request)
-        self.assertEqual(len(docs), 2)
-
-        res = self.globaldb.upload2central(request)
-        self.assertEqual(res, -1) # does nothing
+        # add message as user, user based messages will grow
+        self.user_inst.post(request, 'doc1')
+#        time.sleep(1)
+        docs = self.user_inst.get(request)
+        self.assertEqual(len(docs), 2) # we have msg4 and doc1
+        self.user_inst.post(request, 'doc1') # we have msg2 and two doc1 messages
+#        time.sleep(1)
+        docs = self.user_inst.get(request)
+        self.assertEqual(len(docs), 3)
 
     def test_cleanup(self):
         "Test clean-up LogDB API"
         request = 'abc'
-        self.localdb.post(request, 'msg1', 'info')
-        self.localdb.post(request, 'msg2', 'comment')
-        self.localdb.post(request, 'msg3', 'warning')
-        self.localdb.post(request, 'msg4', 'error')
-        all_docs = self.localdb.summary(request)
-        self.localdb.backend.cleanup(thr=10) # look into past
-        past_docs = self.localdb.summary(request)
+        self.agent_inst.post(request, 'msg1', 'info')
+        self.agent_inst.post(request, 'msg2', 'comment')
+        self.agent_inst.post(request, 'msg3', 'warning')
+        self.agent_inst.post(request, 'msg4', 'error')
+        all_docs = self.agent_inst.get(request)
+        self.agent_inst.backend.cleanup(thr=10) # look into past
+        past_docs = self.agent_inst.get(request)
         self.assertEqual(len(all_docs), len(past_docs))
-        self.localdb.backend.cleanup(thr=-10) # look into future
-        docs = self.localdb.summary(request)
+        self.agent_inst.backend.cleanup(thr=-10) # look into future
+        docs = self.agent_inst.get(request)
         self.assertEqual(len(docs), 0)
 
     def test_get_all_requests(self):
         "Test get_all_requests LogDB API"
         request = 'abc'
-        self.localdb.post(request, 'msg1', 'info')
-        self.localdb.post(request, 'msg2', 'info')
-        self.localdb.post(request, 'msg3', 'warning')
-        self.localdb.post(request, 'msg4', 'error')
-        sum_docs = self.localdb.summary(request)
+        self.agent_inst.post(request, 'msg1', 'info')
+        self.agent_inst.post(request, 'msg2', 'info')
+        self.agent_inst.post(request, 'msg3', 'warning')
+        self.agent_inst.post(request, 'msg4', 'error')
+        sum_docs = self.agent_inst.get(request)
         self.assertEqual(len(sum_docs), 3) # since we have two info records
         request = 'abc2'
-        self.localdb.post(request, 'msg1', 'info')
-        all_docs = self.localdb.get_all_requests()
+        self.agent_inst.post(request, 'msg1', 'info')
+        all_docs = self.agent_inst.get_all_requests()
         self.assertEqual(len(all_docs), 2) # we only have two distinct request names
 
     def test_delete(self):
         "Test delete LogDB API"
         request = 'abc'
-        self.localdb.post(request, 'msg1', 'info')
-        self.localdb.delete(request)
-        all_docs = self.localdb.get_all_requests()
+        self.agent_inst.post(request, 'msg1', 'info')
+        self.agent_inst.delete(request)
+        all_docs = self.agent_inst.get_all_requests()
         self.assertEqual(len(all_docs), 0)
 
     def test_get(self):
         "Test get LogDB API"
         request = 'abc'
-        self.localdb2.post(request, 'msg1', 'info') # doc with different thread name
-        self.localdb.post(request, 'msg1', 'info')
-        self.localdb.post(request, 'msg2', 'info')
-        self.localdb.post(request, 'msg3', 'warning')
-        self.localdb.post(request, 'msg4', 'error')
-        sum_docs = self.localdb.summary(request)
-        self.assertEqual(len(sum_docs), 4) # there should be 4 docs one for Test thread and 3 for MainThread
-        thr_docs = self.localdb2.summary(request)
-        self.assertEqual(len(thr_docs), 4) # this should result the same as above.
-        docs1 = self.localdb.get(request, 'info')
-        docs2 = self.localdb.get(request, 'info')
+        self.agent_inst2.post(request, 'msg1', 'info') # doc with different thread name
+        self.agent_inst.post(request, 'msg1', 'info')
+        self.agent_inst.post(request, 'msg2', 'info')
+        self.agent_inst.post(request, 'msg3', 'warning')
+        self.agent_inst.post(request, 'msg4', 'error')
+        docs = self.agent_inst.get(request)
+        self.assertEqual(len(docs), 4) # there should be 4 docs one for Test thread and 3 for MainThread
+        docs = self.agent_inst2.get(request)
+        self.assertEqual(len(docs), 4) # this should result the same as above.
+
+        docs1 = self.agent_inst.get(request, 'info')
+        docs2 = self.agent_inst.get(request, 'info')
         req1 = set([r['request'] for r in docs1])
         self.assertEqual(len(req1), 1)
         req2 = set([r['request'] for r in docs2])
@@ -141,38 +155,61 @@ class LogDBTest(unittest.TestCase):
     def test_thread_name(self):
         "Test thread name support by LogDB APIs"
         request = 'abc'
-        self.localdb2.post(request, 'msg1', 'info') # doc with different thread name
-        self.localdb.post(request, 'msg1', 'info')
-        self.localdb.post(request, 'msg2', 'info')
-        self.localdb.post(request, 'msg3', 'warning')
-        self.localdb.post(request, 'msg4', 'error')
-        sum_docs = self.localdb.summary(request)
-        self.assertEqual(len(sum_docs), 4) # since we have two info records in localdb
-        thr_docs = self.localdb2.summary(request)
+        self.agent_inst2.post(request, 'msg1', 'info') # doc with different thread name
+        self.agent_inst.post(request, 'msg1', 'info')
+        self.agent_inst.post(request, 'msg2', 'info')
+        self.agent_inst.post(request, 'msg3', 'warning')
+        self.agent_inst.post(request, 'msg4', 'error')
+        maindocs = self.agent_inst.get(request)
+        self.assertEqual(len(maindocs), 4) # since we have two info records in agent_inst
+        thr_docs = self.agent_inst2.get(request)
         self.assertEqual(len(thr_docs), 4) # number of docs in different thread
-        req1 = set([r['request'] for r in sum_docs])
+        req1 = set([r['request'] for r in maindocs])
         self.assertEqual(len(req1), 1)
         req2 = set([r['request'] for r in thr_docs])
         self.assertEqual(len(req2), 1)
         self.assertEqual(req1, req2)
-        worker1 = set([r['worker'] for r in sum_docs])
+        worker1 = set([r['thr'] for r in maindocs])
         self.assertEqual(worker1, set(["Test", "MainThread"]))
-        worker2 = set([r['worker'] for r in thr_docs])
+        worker2 = set([r['thr'] for r in thr_docs])
         self.assertEqual(worker2, set(["Test", "MainThread"]))
+
+        docs = set([r['identifier'] for r in maindocs])
+        self.assertEqual(docs, set([self.agent_inst.identifier]))
+        docs = set([r['identifier'] for r in thr_docs])
+        self.assertEqual(docs, set([self.agent_inst.identifier]))
 
     def test_checks(self):
         "Tests LogDB check/mtype functionality"
         request = 'abc'
-        res = self.localdb.post(request, 'msg', 'ingo') # should be silent, i.o. no Exceptions
+        res = self.agent_inst.post(request, 'msg', 'ingo') # should be silent, i.o. no Exceptions
         self.assertEqual('post-error', res)
         args = (request, 'msg', 'ingo') # wrong type
-        self.assertRaises(LogDBError, self.localdb.backend.post, *args)
+        self.assertRaises(LogDBError, self.agent_inst.backend.agent_update, *args)
         args = (request, 'ingo') # wrong type
-        self.assertRaises(LogDBError, self.localdb.backend.check, *args)
+        self.assertRaises(LogDBError, self.agent_inst.backend.check, *args)
         args = ('', 'msg', 'info') # empty request string
-        self.assertRaises(LogDBError, self.localdb.backend.post, *args)
+        self.assertRaises(LogDBError, self.agent_inst.backend.agent_update, *args)
         args = ('', 'info') # empty request string
-        self.assertRaises(LogDBError, self.localdb.backend.check, *args)
+        self.assertRaises(LogDBError, self.agent_inst.backend.check, *args)
+
+    def test_report(self):
+        "Test LogDBReport APIs"
+        request = 'abc'
+        self.agent_inst.post(request, 'msg1', 'info')
+        self.agent_inst.post(request, 'msg2', 'comment')
+        self.agent_inst.post(request, 'msg3', 'warning')
+        self.agent_inst.post(request, 'msg4', 'error')
+        self.report.to_stdout(request)
+        out = self.report.to_txt(request)
+        print "\n### txt report\n", out
+        out = self.report.to_html(request)
+        print "\n### html report\n", out
+
+        docs = self.agent_inst.get(request)
+        tdocs = self.report.orderby(docs, order='ts')
+        messages = [d['msg'] for d in tdocs]
+        self.assertEqual(messages, ['msg4', 'msg3', 'msg2', 'msg1'])
 
 if __name__ == "__main__":
     unittest.main()

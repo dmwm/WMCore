@@ -1,5 +1,7 @@
 function(doc) {
-    if (doc.ts) {
-        emit(doc.ts, null);
+    if(doc.comments) {
+        for(i=0;i<doc.comments.length;i++) {
+            emit(doc.comments[i].ts, null);
+        }
     }
 }

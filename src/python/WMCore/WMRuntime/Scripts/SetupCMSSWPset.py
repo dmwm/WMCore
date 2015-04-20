@@ -6,6 +6,7 @@ Create a CMSSW PSet suitable for running a WMAgent job.
 """
 
 import os
+import random
 import types
 import socket
 import traceback
@@ -429,6 +430,8 @@ class SetupCMSSWPset(ScriptInterface):
                         if getattr(baggage, 'skipPileupEvents', None) is not None:
                             inputTypeAttrib.skipEvents = cms.untracked.uint32(int(baggage.skipPileupEvents) % eventsAvailable)
                             inputTypeAttrib.sequential = cms.untracked.bool(True)
+                # Prevent each worker at a site from requesting the same file to find products
+                random.shuffle(inputTypeAttrib.fileNames)
 
     def _getPileupMixingModules(self):
         """

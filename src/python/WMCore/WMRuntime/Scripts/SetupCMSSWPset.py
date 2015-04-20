@@ -546,6 +546,17 @@ class SetupCMSSWPset(ScriptInterface):
 
         self.fixupProcess()
 
+        # repack is only run at CERN and has a streaming format as input that should never use lazy-download
+        if funcName == "repack":
+            print "Hardcoding read/cache strategies for repack"
+            self.process.add_(
+                cms.Service("SiteLocalConfigService",
+                            overrideSourceCacheHintDir = cms.untracked.string("storage-only"),
+                            overrideSourceReadHint = cms.untracked.string("read-ahead-buffered"),
+                            overrideSourceTTreeCacheSize = cms.untracked.uint32(20*1024*1024)
+                            )
+                )
+
         try:
             if int(self.step.data.application.multicore.numberOfCores) > 1:
                 numCores = int(self.step.data.application.multicore.numberOfCores)

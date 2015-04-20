@@ -1049,11 +1049,20 @@ class Report:
             return []
 
         analysisFiles = stepReport.analysis.files
-        result = []
-        for fileNum in range(analysisFiles.fileCount):
-            result.append(getattr(analysisFiles, "file%s" % fileNum))
 
-        return result
+        results = []
+        for fileNum in range(analysisFiles.fileCount):
+            results.append(getattr(analysisFiles, "file%s" % fileNum))
+
+        # filter out duplicates
+        fileNames = []
+        filteredResults = []
+        for result in results:
+            if result.fileName not in fileNames:
+                fileNames.append(result.fileName)
+                filteredResults.append(result)
+
+        return filteredResults
 
 
     def getAllFileRefsFromStep(self, step):

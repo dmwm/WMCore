@@ -1,45 +1,27 @@
 { 
 "createRequest":
 {         
-    "Comments": "ReReco with LumiMask. 2 runs and 45 lumis in total. Xrootd and harvesting enabled",
+    "Comments": "ReReco with IncludeParents True, 4 runs whitelisted, 8h opened",
     "Campaign": "Campaign-OVERRIDE-ME",        
     "RequestString": "RequestString-OVERRIDE-ME",
-    "CMSSWVersion": "CMSSW_7_0_3",
-    "GlobalTag": "FT_R_70_V1::All",
-    "RequestPriority": 100000,
-    "ScramArch": "slc6_amd64_gcc481",
+    "CMSSWVersion": "CMSSW_7_3_2",
+    "GlobalTag": "GR_P_V49",
+    "RequestPriority": 150000,
+    "ScramArch": "slc6_amd64_gcc491",
     "RequestType": "ReReco",
-    "RunWhitelist": [203777, 204511],
+    "RunWhitelist": [234297, 234304, 234321, 234332],
     "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
-    "ConfigCacheID": "a6d326cfbc11d3e636125d7b08b6624a",
-    "DQMConfigCacheID": "a6d326cfbc11d3e636125d7b08b54b1b",
-    "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
-    "EnableHarvesting": "True",
-    "IncludeParents": "False",
+    "ConfigCacheID": "029a0b63329659025f308af53c7e092b",
+    "IncludeParents": "True",
     "Group": "DATAOPS",
-    "SplittingAlgo": "LumiBased",
-    "LumiList": {"203777": [[1, 15], [50,70], [115,115]], "204511": [[16,18], [30,30], [28,29], [31,32]]},
-    "PrepID": "ReReco-Prep-Alan",
-    "LumisPerJob": 2,
-    "TimePerEvent": 0.2,
-    "Memory": 2394,
-    "SizePerEvent": 2000,
-    "InputDataset": "/DoubleElectron/Run2012D-v1/RAW",
+    "PrepID": "IncludeParents-Prep-Alan",
+    "TimePerEvent": 2,
+    "Memory": 2300,
+    "SizePerEvent": 512,
+    "InputDataset": "/Cosmics/Commissioning2015-PromptReco-v1/RECO",
     "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
     "inputMode": "couchDB",
-    "Scenario": "pp",      
-    "OpenRunningTimeout" : 0
-},
-"changeSplitting":
-{
-    "DataProcessing" :
-    {
-        "SplittingAlgo" : "EventAwareLumiBased",
-        "avg_events_per_job" : 1400,
-        "max_events_per_lumi" : 20000,
-        "halt_job_on_file_boundaries_event_aware" : "True",
-        "include_parents" : "False"
-    }
+    "OpenRunningTimeout" : 28800
 },
 "assignRequest":
 {
@@ -64,7 +46,6 @@
     "AutoApproveSubscriptionSites": [],
     "SubscriptionPriority": "Low",
     "CustodialSubType" : "Move",
-    "useSiteListAsLocation" : "true",
     "BlockCloseMaxWaitTime" : 72000,
     "BlockCloseMaxFiles" : 500,
     "BlockCloseMaxEvents" : 200000000,

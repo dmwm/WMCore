@@ -305,7 +305,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
                 fileNames = []
             m = ("Pileup configuration file list '%s' and mixing modules input "
                  "filelist '%s' are not identical." % (filesInConfigDict, fileNames))
-            self.assertEqual(filesInConfigDict, fileNames, m)
+            self.assertEqual(sorted(filesInConfigDict), sorted(fileNames), m)
 
 
 

@@ -105,6 +105,9 @@ class WMStatsTest(unittest.TestCase):
         requests = self.wmstatsReader.getRequestByStatus(["failed"])
         self.assertEquals(requests.keys(), [schema[0]['RequestName']])
         
+        requests = self.wmstatsReader.getRequestSummaryWithJobInfo(schema[0]['RequestName'])
+        self.assertEquals(requests.keys(), [schema[0]['RequestName']])
+        
 
 if __name__ == '__main__':
 

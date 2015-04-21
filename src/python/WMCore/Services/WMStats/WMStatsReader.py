@@ -304,3 +304,13 @@ class WMStatsReader():
             self._updateRequestInfoWithJobInfo(requestInfo)
         return requestInfo
     
+    def getRequestSummaryWithJobInfo(self, requestName):
+        """
+        get request info with job status
+        """
+        requestInfo = self.reqDB.getRequestByNames(requestName)
+        self._updateRequestInfoWithJobInfo(requestInfo)
+        return requestInfo
+        
+        
+    

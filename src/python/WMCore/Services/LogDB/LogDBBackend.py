@@ -5,15 +5,26 @@ LogDBBackend
 Interface to LogDB persistent storage
 """
 
+# syste modules
 import time
 import datetime
+import hashlib
 
+# WMCore modules
 from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, CouchConflictError
 from WMCore.Wrappers import JsonWrapper as json
 from WMCore.Services.LogDB.LogDBExceptions import LogDBError
 
 # define full list of supported LogDB types
 LOGDB_MSG_TYPES = ['info', 'error', 'warning', 'comment']
+
+def gen_hash(key):
+    "Generate hash for given key"
+    if  not isinstance(key, basestring):
+        raise NotImplementedError
+    keyhash = hashlib.md5()
+    keyhash.update(key)
+    return keyhash.hexdigest()
 
 def tstamp():
     "Return timestamp with microseconds"
@@ -31,8 +42,9 @@ def clean_entry(doc):
 
 def design_doc():
     """Return basic design document"""
-    rmap = dict(map="function(doc){ if(doc.request) emit(doc.request, doc)}", reduce="_count")
-    tmap = dict(map="function(doc){ if(doc.ts) emit(doc.ts, null)}")
+    rmap = dict(map="function(doc){ if(doc.request) emit(doc.request, null)}",
+            reduce="_count")
+    tmap = dict(map="function(doc){ if(doc.comments) for(i=0;i<doc.comments.length;i++) emit(doc.comments[i].ts, null)}")
     views = dict(requests=rmap, tstamp=tmap)
     doc = dict(_id="_design/LogDB", views=views)
     return doc
@@ -41,13 +53,13 @@ class LogDBBackend(object):
     """
     Represents persistent storage for LogDB
     """
-    def __init__(self, db_url, db_name, identifier, thread_name, agent, **kwds):
+    def __init__(self, db_url, db_name, identifier, thread_name, **kwds):
         self.db_url = db_url
         self.server = CouchServer(db_url)
         self.db_name = db_name
         self.dbid = identifier
         self.thread_name = thread_name
-        self.agent = agent
+        self.agent = kwds.get('agent', 0)
         create = kwds.get('create', False)
         size = kwds.get('size', 10000)
         self.db = self.server.connectDatabase(db_name, create=create, size=size)
@@ -79,6 +91,10 @@ class LogDBBackend(object):
             raise LogDBError("Unsupported message type: '%s', supported types %s" \
                     % (mtype, LOGDB_MSG_TYPES))
 
+    def docid(self, request, mtype):
+        """Generate doc id, we use double dash to avoid dashes from thread names"""
+        return gen_hash('--'.join((request, self.dbid, self.thread_name, mtype)))
+
     def prefix(self, mtype):
         """Generate agent specific prefix for given message type"""
         if  self.agent:
@@ -86,13 +102,39 @@ class LogDBBackend(object):
             mtype = 'agent-%s' % mtype
         return mtype
 
-    def post(self, request, msg='', mtype="comment"):
-        """Post new entry into LogDB for given request"""
+    def agent_update(self, request, msg='', mtype="info"):
+        """Update agent info in LogDB for given request"""
         self.check(request, mtype)
         mtype = self.prefix(mtype)
-        data = {"request":request, "agent": self.dbid, "worker": self.thread_name,
-                "ts":tstamp(), "msg":msg, "type":mtype}
-        res = self.db.commitOne(data)
+        rec = {"ts":tstamp(), "msg":msg}
+        doc = {"_id": self.docid(request, mtype), "comments": [rec],
+                "request":request, "identifier":self.dbid,
+                "thr":self.thread_name, "type":mtype}
+        try:
+            exist_doc = self.db.document(doc["_id"])
+            doc["_rev"] = exist_doc["_rev"]
+        except CouchNotFoundError:
+            # this means document is not exist so we will just insert
+            pass
+        finally:
+            res = self.db.commitOne(doc)
+        return res
+
+    def user_update(self, request, msg, mtype='comment'):
+        """Update user info in LogDB for given request"""
+        rec = {"ts":tstamp(), "msg":msg}
+        doc = {"_id": self.docid(request, mtype), "comments": [rec],
+                "request":request, "identifier":self.dbid,
+                "thr":self.thread_name, "type":mtype}
+        try:
+            exist_doc = self.db.document(doc["_id"])
+            doc["_rev"] = exist_doc["_rev"]
+            doc["comments"] += exist_doc["comments"]
+        except CouchNotFoundError:
+            # this means document is not exist so we will just insert
+            pass
+        finally:
+            res = self.db.commitOne(doc)
         return res
 
     def get(self, request, mtype=None, detail=True):
@@ -119,38 +161,6 @@ class LogDBBackend(object):
         ids = [r['id'] for r in docs.get('rows', [])]
         res = self.db.bulkDeleteByIDs(ids)
         return res
-
-    def summary(self, request):
-        """Generate summary document for given request"""
-        docs = self.get(request)
-        out = [] # output list of documents
-        odict = {}
-        for doc in docs.get('rows', []):
-            entry = doc['doc']
-            agent = entry['agent'] 
-            worker = entry['worker']
-            m_type = entry['type']
-            key = (entry['request'], agent, worker, m_type)
-            if  entry['type'].startswith('agent-'):
-                if  key in odict:
-                    if  entry['ts'] > odict[key]['ts']:
-                        odict[key] = clean_entry(entry)
-                else:
-                    odict[key] = clean_entry(entry)
-            else: # keep all user-based messages
-                odict.setdefault(key, []).append(clean_entry(entry))
-        
-        for key, val in odict.items():
-            doc = {'_id': "--".join(key)}
-            if  isinstance(val, list):
-                for item in val:
-                    rec = dict(doc)
-                    rec.update(item)
-                    out.append(rec)
-            else:
-                doc.update(val)
-                out.append(doc)
-        return out
 
     def cleanup(self, thr):
         """

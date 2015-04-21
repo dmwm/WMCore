@@ -19,31 +19,14 @@ class LogDBTasks(CherryPyPeriodicTask):
         """
         sets the list of functions which
         """
-        self.concurrentTasks = [{'func': self.centralLogDBUpdate, 'duration': config.logDBUpdateDuration},
-                                {'func': self.logDBCleanUp, 'duration': config.logDBCleanDuration}]
+        self.concurrentTasks = [{'func': self.logDBCleanUp, 'duration': config.logDBCleanDuration}]
 
-    def centralLogDBUpdate(self, config):
-        """
-        gather active data statistics
-        """
-        
-        logdb = LogDB(config.logdb_url, config.log_reporter, 
-                      config.central_logdb_url)
-        
-        requests = logdb.get_all_requests()
-        for req in requests:
-            logdb.upload2central(req)
-            
-        cherrypy.log("total %s requests updated" % len(requests))        
-        return
-    
     def logDBCleanUp(self, config):
         """
         gather active data statistics
         """
         
-        logdb = LogDB(config.logdb_url, config.log_reporter, 
-                      config.central_logdb_url)
+        logdb = LogDB(config.central_logdb_url, config.log_reporter)
         logdb.cleanup(config.logDBCleanDuration)
         
         cherrypy.log("cleaned up log db")        

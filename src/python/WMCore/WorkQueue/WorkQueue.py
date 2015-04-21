@@ -222,9 +222,8 @@ class WorkQueue(WorkQueueBase):
             myThread.setName(self.__class__.__name__)
         
         centralurl = self.params.get("central_logdb_url", "")
-        localdburl = self.params.get("logdb_url", "")
         identifier = self.params.get("log_reporter", "")
-        self.logdb = LogDB(localdburl, identifier, centralurl, logger=self.logger)
+        self.logdb = LogDB(centralurl, identifier, logger=self.logger)
             
         self.logger.debug("WorkQueue created successfully")
 

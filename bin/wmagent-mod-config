@@ -121,7 +121,6 @@ def modifyConfiguration(config, **args):
 
     if hasattr(config, "General"):
         config.General.central_logdb_url = args["central_logdb_url"]
-        config.General.logdb_url = "%s/%s" % (args["couch_url"], config.General.logdb_name)
             
     if hasattr(config,"WorkloadSummary"):
         splited = args["workload_summary_url"].strip().rstrip('/').rsplit('/', 1)
@@ -280,10 +279,8 @@ def modifyConfiguration(config, **args):
         config.WorkQueueManager.queueParams['WMStatsCouchUrl'] = "%s/%s" % (config.WorkQueueManager.couchurl.rstrip(), config.WorkQueueManager.wmstatDBName)
         config.WorkQueueManager.queueParams['ReqMgrServiceURL'] = reqMgrSvc
         config.WorkQueueManager.reqMgrConfig['central_logdb_url'] = config.General.central_logdb_url
-        config.WorkQueueManager.reqMgrConfig['logdb_url'] = config.General.logdb_url
         config.WorkQueueManager.reqMgrConfig['log_reporter'] = "TEST_global_queue"
         config.WorkQueueManager.queueParams['central_logdb_url'] = config.General.central_logdb_url
-        config.WorkQueueManager.queueParams['logdb_url'] = config.General.logdb_url
         config.WorkQueueManager.queueParams['log_reporter'] = "TEST_global_queue"
 
     # Custom Local WorkQueue
@@ -305,7 +302,6 @@ def modifyConfiguration(config, **args):
             config.WorkQueueManager.inboxDatabase = config.WorkQueueManager.dbname + '_inbox'
         
         config.WorkQueueManager.queueParams['central_logdb_url'] = config.General.central_logdb_url
-        config.WorkQueueManager.queueParams['logdb_url'] = config.General.logdb_url
         config.WorkQueueManager.queueParams['log_reporter'] = config.Agent.hostName
 
     # custom wmbs service

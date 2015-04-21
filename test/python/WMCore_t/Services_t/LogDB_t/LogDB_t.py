@@ -197,9 +197,13 @@ class LogDBTest(unittest.TestCase):
         "Test LogDBReport APIs"
         request = 'abc'
         self.agent_inst.post(request, 'msg1', 'info')
+        time.sleep(1)
         self.agent_inst.post(request, 'msg2', 'comment')
+        time.sleep(1)
         self.agent_inst.post(request, 'msg3', 'warning')
+        time.sleep(1)
         self.agent_inst.post(request, 'msg4', 'error')
+        time.sleep(1)
         self.report.to_stdout(request)
         out = self.report.to_txt(request)
         print "\n### txt report\n", out

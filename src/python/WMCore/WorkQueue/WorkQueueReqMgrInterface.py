@@ -29,7 +29,6 @@ class WorkQueueReqMgrInterface():
         self.reqMgr2 = ReqMgr(kwargs.get("reqmgr2_endpoint", None))
         
         centralurl = kwargs.get("central_logdb_url", "")
-        localdburl = kwargs.get("logdb_url", "")
         identifier = kwargs.get("log_reporter", "")
         
         # set the thread name before creat the log db. 
@@ -38,7 +37,7 @@ class WorkQueueReqMgrInterface():
         if myThread.getName() == "MainThread":
             myThread.setName(self.__class__.__name__)
             
-        self.logdb = LogDB(localdburl, identifier, centralurl, logger=self.logger)
+        self.logdb = LogDB(centralurl, identifier, logger=self.logger)
         self.previous_state = {}
 
     def __call__(self, queue):

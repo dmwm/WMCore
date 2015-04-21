@@ -236,7 +236,6 @@ class DBS3Reader:
               'Parents': [],
               'Checksum': '22218315',
               'Adler32': 'a41a1446',
-              'Md5': 'NOTSET',
               'FileSize': 286021145
             }
 

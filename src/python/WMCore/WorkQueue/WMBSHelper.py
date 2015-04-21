@@ -76,19 +76,11 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
     killFilesAction = daoFactory(classname = "Subscriptions.KillWorkflow")
     killJobsAction = daoFactory(classname = "Jobs.KillWorkflow")
 
-    existingTransaction = False
-    if myThread.transaction.conn:
-        existingTransaction = True
-    else:
-        myThread.transaction.begin()
-
     killFilesAction.execute(workflowName = workflowName,
-                            conn = myThread.transaction.conn,
-                            transaction = True)
+                            conn = myThread.transaction.conn)
 
     liveJobs = killJobsAction.execute(workflowName = workflowName,
-                                      conn = myThread.transaction.conn,
-                                      transaction = True)
+                                      conn = myThread.transaction.conn)
 
     changeState = ChangeState(jobCouchConfig)
 
@@ -102,7 +94,6 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
                 # Then we need to kill this on the batch system
                 liveWMBSJob = Job(id = liveJob["id"])
                 liveWMBSJob.update(liveJob)
-                changeState.propagate(liveWMBSJob, "killed", liveJob["state"])
                 killableJobs.append(liveJob)
         # Now kill them
         try:
@@ -117,17 +108,24 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
             # But continue; we need to kill the jobs in the master
             # the batch system will have to take care of itself.
             pass
-
+    
+    liveWMBSJobs = defaultdict(list)
     for liveJob in liveJobs:
         if liveJob["state"] == "killed":
             # Then we've killed it already
             continue
         liveWMBSJob = Job(id = liveJob["id"])
         liveWMBSJob.update(liveJob)
-        changeState.propagate(liveWMBSJob, "killed", liveJob["state"])
-
-    if not existingTransaction:
-        myThread.transaction.commit()
+        liveWMBSJobs[liveJob["state"]].append(liveWMBSJob)
+    
+    for state, jobsByState in liveWMBSJobs.items():
+        if len(jobsByState) > 100 and state != "executing":
+            # if there are to many jobs skip the couch and dashboard update
+            # TODO: couch and dashboard need to be updated or parallel.
+            changeState.check("killed", state)
+            changeState.persist(jobsByState, "killed", state)
+        else:
+            changeState.propagate(jobsByState, "killed", state)
     return
 
 def freeSlots(multiplier = 1.0, minusRunning = False, allowedStates = ['Normal'], knownCmsSites = None):

@@ -18,6 +18,8 @@ from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WMException import WMException
+from WMCore.Database.CMSCouch import CouchConflictError
+from WMCore.Database.CouchUtils import CouchConnectionError
 
 class JobUpdaterException(WMException):
     """
@@ -79,18 +81,23 @@ class JobUpdaterPoller(BaseWorkerThread):
             logging.info("Synchronizing priorities with ReqMgr...")
             self.synchronizeJobPriority()
             logging.info("Priorities were synchronized, wait until the next cycle")
-
+        except CouchConnectionError, ex:
+            msg = "Caught CouchConnectionError exception in JobUpdater\n"
+            msg += "transactions postponed until the next polling cycle\n"
+            msg += str(ex)
+            logging.exception(msg)
+        except CouchConflictError, ex:
+            msg = "Caught CouchConflictError exception in JobUpdater\n"
+            msg += "transactions postponed until the next polling cycle\n"
+            msg += str(ex)
+            logging.exception(msg)
         except Exception, ex:
-            error = str(ex)
-            trace = str(traceback.format_exc())
-            # Handle temporary connection problems (Temporary)
-            if 'Connection refused' not in error or 'timed out' not in error and "self.workqueue.getAvailableWorkflows()" not in trace:
-                msg = 'Error in JobUpdater:\n%s' % error
-                msg += '\n\n%s\n' % trace
-                logging.error(msg)
-                raise JobUpdaterException(msg)
-            else:
-                logging.error('There was a connection problem during the JobUpdater algorithm, I will try again next cycle')
+            msg = "Caught unexpected exception in JobUpdater\n"
+            msg += str(ex)
+            msg += str(traceback.format_exc())
+            msg += "\n\n"
+            logging.error(msg)
+            raise JobUpdaterException(msg)
         
     def synchronizeJobPriority(self):
         """
@@ -115,6 +122,7 @@ class JobUpdaterPoller(BaseWorkerThread):
                     continue
             if priority != priorityCache[workflow]:
                 workflowsToUpdate[workflow] = priorityCache[workflow]
+        logging.info("Found %d workflows to update in workqueue" % len(workflowsToUpdate))
         for workflow in workflowsToUpdate:
             self.workqueue.updatePriority(workflow, workflowsToUpdate[workflow])
 
@@ -142,4 +150,5 @@ class JobUpdaterPoller(BaseWorkerThread):
                                                       taskPriority = workflowEntry['task_priority'])
                 workflowsToUpdateWMBS[workflow] = priorityCache[workflow]
         if workflowsToUpdateWMBS:
+            logging.info("Updating %d workflows in WMBS." % len(workflowsToUpdateWMBS))
             self.updateWorkflowPrioDAO.execute(workflowsToUpdateWMBS)

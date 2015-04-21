@@ -498,7 +498,9 @@ class DBS3Reader:
 
         childByParents = defaultdict(list)
         for f in files:
-            childByParents[f['parent_logical_file_name']].append(f['logical_file_name'])
+            # Probably a child can have more than 1 parent file
+            for fp in f['parent_logical_file_name']:
+                childByParents[fp].append(f['logical_file_name'])
         parentsLFNs = childByParents.keys()
         
         parentFilesDetail = []
@@ -508,7 +510,7 @@ class DBS3Reader:
             parentFilesDetail.extend(self.dbs.listFileArray(logical_file_name = pLFNs, detail = True))
         
         if lumis:
-            parentLumis = self._getLumiList(lfn = parentsLFNs)
+            parentLumis = self._getLumiList(lfns = parentsLFNs)
         
         parentsByLFN = defaultdict(list)
         

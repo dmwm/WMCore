@@ -20,6 +20,7 @@ from WMCore.ReqMgr.Service.Auxiliary import Software
 from WMCore.ReqMgr.Service.Request import Request
 from WMCore.ReqMgr.Service.Request import RequestStatus
 from WMCore.ReqMgr.Service.Request import RequestType
+from WMCore.ReqMgr.Service.WMStatsInfo import WMStatsInfo
 
 
 
@@ -52,4 +53,5 @@ class RestApiHub(RESTApi):
                    "status": RequestStatus(app, self, config, mount),
                    "type": RequestType(app, self, config, mount),
                    "spec_template": RequestSpec(self, app, config, mount),
+                   "wmstats_info":WMStatsInfo(self, app, config, mount)
                   })

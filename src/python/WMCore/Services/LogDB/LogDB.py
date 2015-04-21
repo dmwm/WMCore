@@ -66,7 +66,7 @@ class LogDB(object):
                 identifier = row['doc']['identifier']
                 thr = row['doc']['thr']
                 mtype = row['doc']['type']
-                for rec in row['doc']['comments']:
+                for rec in row['doc']['messages']:
                     rec.update({'request':request, 'identifier':identifier, 'thr': thr, 'type':mtype})
                     res.append(rec)
         except Exception as exc:

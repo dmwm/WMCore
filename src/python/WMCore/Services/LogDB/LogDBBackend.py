@@ -44,7 +44,7 @@ def design_doc():
     """Return basic design document"""
     rmap = dict(map="function(doc){ if(doc.request) emit(doc.request, null)}",
             reduce="_count")
-    tmap = dict(map="function(doc){ if(doc.comments) for(i=0;i<doc.comments.length;i++) emit(doc.comments[i].ts, null)}")
+    tmap = dict(map="function(doc){ if(doc.messages) for(i=0;i<doc.messages.length;i++) emit(doc.messages[i].ts, null)}")
     views = dict(requests=rmap, tstamp=tmap)
     doc = dict(_id="_design/LogDB", views=views)
     return doc
@@ -107,7 +107,7 @@ class LogDBBackend(object):
         self.check(request, mtype)
         mtype = self.prefix(mtype)
         rec = {"ts":tstamp(), "msg":msg}
-        doc = {"_id": self.docid(request, mtype), "comments": [rec],
+        doc = {"_id": self.docid(request, mtype), "messages": [rec],
                 "request":request, "identifier":self.dbid,
                 "thr":self.thread_name, "type":mtype}
         try:
@@ -123,13 +123,13 @@ class LogDBBackend(object):
     def user_update(self, request, msg, mtype='comment'):
         """Update user info in LogDB for given request"""
         rec = {"ts":tstamp(), "msg":msg}
-        doc = {"_id": self.docid(request, mtype), "comments": [rec],
+        doc = {"_id": self.docid(request, mtype), "messages": [rec],
                 "request":request, "identifier":self.dbid,
                 "thr":self.thread_name, "type":mtype}
         try:
             exist_doc = self.db.document(doc["_id"])
             doc["_rev"] = exist_doc["_rev"]
-            doc["comments"] += exist_doc["comments"]
+            doc["messages"] += exist_doc["messages"]
         except CouchNotFoundError:
             # this means document is not exist so we will just insert
             pass

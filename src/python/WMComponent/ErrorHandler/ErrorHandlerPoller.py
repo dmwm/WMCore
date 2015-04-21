@@ -131,6 +131,9 @@ class ErrorHandlerPoller(BaseWorkerThread):
         for job in jobList:
             job.failInputFiles()
 
+        # Do not build ACDC for utilitarian job types
+        jobList = [ job for job in jobList if job['type'] not in ['LogCollect','Cleanup'] ]
+
         self.handleACDC(jobList)
 
         return

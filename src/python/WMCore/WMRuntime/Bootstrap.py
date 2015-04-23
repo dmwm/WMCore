@@ -60,20 +60,6 @@ def getSyncCE():
         except:
             pass
         return result
-    if os.environ.has_key('EDG_WL_JOBID'):
-        #  //
-        # // LCG, Sync CE from edg command
-        #//
-        command = "glite-brokerinfo getCE"
-        pop = popen2.Popen3(command)
-        pop.wait()
-        exitCode = pop.poll()
-        if exitCode:
-            return result
-
-        content = pop.fromchild.read()
-        result = content.strip()
-        return result
 
     if os.environ.has_key('NORDUGRID_CE'):
         #  //

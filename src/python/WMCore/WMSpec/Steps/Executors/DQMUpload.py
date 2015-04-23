@@ -21,11 +21,7 @@ HTTPS = httplib.HTTPS
 if sys.version_info[:3] >= (2, 4, 0):
     HTTPS = httplib.HTTPSConnection
 
-# Compatibility with python2.4 or earlier
-try:
-    from hashlib import md5
-except ImportError:
-    from md5 import md5
+from hashlib import md5
 
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.FwkJobReport.Report import Report

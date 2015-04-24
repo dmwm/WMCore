@@ -949,7 +949,7 @@ class StdBase(object):
                      "SubscriptionPriority" : {"default" : "Low", "assign_optional": True,
                                                "validate" : lambda x: x in ["Low", "Normal", "High"]},
                      # should be Move Replica  
-                     "CustodialSubType" : {"default" : "Move", "type" : str, "assign_optional": True,
+                     "CustodialSubType" : {"default" : "Replica", "type" : str, "assign_optional": True,
                                            "validate" : lambda x: x in ["Move", "Replica"]},
                      "NonCustodialSubType" : {"default" : "Replica", "type" : str, "assign_optional": True,
                                               "validate" : lambda x: x in ["Move", "Replica"]},

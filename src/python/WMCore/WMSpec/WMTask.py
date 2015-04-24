@@ -870,7 +870,7 @@ class WMTaskHelper(TreeHelper):
         return outputDatasets
 
     def setSubscriptionInformation(self, custodialSites = None, nonCustodialSites = None,
-                                         autoApproveSites = None, custodialSubType = "Move",
+                                         autoApproveSites = None, custodialSubType = "Replica",
                                          nonCustodialSubType = "Replica", priority = "Low",
                                          primaryDataset = None, dataTier = None):
         """
@@ -915,7 +915,7 @@ class WMTaskHelper(TreeHelper):
                 outputModuleSection.custodialSites = []
                 outputModuleSection.nonCustodialSites = []
                 outputModuleSection.autoApproveSites = []
-                outputModuleSection.custodialSubType = "Move"
+                outputModuleSection.custodialSubType = "Replica"
                 outputModuleSection.nonCustodialSubType = "Replica"
                 outputModuleSection.priority = "Low"
 
@@ -976,7 +976,7 @@ class WMTaskHelper(TreeHelper):
                                        "AutoApproveSites" : outputModuleSection.autoApproveSites,
                                        "Priority" : outputModuleSection.priority,
                                        # Specs assigned before HG1303 don't have the CustodialSubtype
-                                       "CustodialSubType" : getattr(outputModuleSection, "custodialSubType", "Move"),
+                                       "CustodialSubType" : getattr(outputModuleSection, "custodialSubType", "Replica"),
                                        "NonCustodialSubType" : getattr(outputModuleSection, "nonCustodialSubType", "Replica")}
         return subInformation
 

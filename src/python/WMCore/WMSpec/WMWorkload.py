@@ -1216,7 +1216,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
     def setSubscriptionInformationWildCards(self, wildcardDict, custodialSites = None,
                                             nonCustodialSites = None, autoApproveSites = None,
-                                            custodialSubType = "Move", nonCustodialSubType = "Replica",
+                                            custodialSubType = "Replica", nonCustodialSubType = "Replica",
                                             priority = "Low", primaryDataset = None, dataTier = None):
         """
         _setSubscriptonInformationWildCards_
@@ -1261,7 +1261,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
     def setSubscriptionInformation(self, initialTask = None, custodialSites = None,
                                    nonCustodialSites = None, autoApproveSites = None,
-                                   custodialSubType = "Move", nonCustodialSubType = "Replica",
+                                   custodialSubType = "Replica", nonCustodialSubType = "Replica",
                                    priority = "Low", primaryDataset = None, dataTier = None):
         """
         _setSubscriptionInformation_

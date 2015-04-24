@@ -362,7 +362,7 @@ class Assign(WebAPI):
         subscriptionPriority = kwargs.get("SubscriptionPriority", "Low")
         if subscriptionPriority not in ["Low", "Normal", "High"]:
             raise cherrypy.HTTPError(400, "Invalid subscription priority %s" % subscriptionPriority)
-        custodialType = kwargs.get("CustodialSubType", "Move")
+        custodialType = kwargs.get("CustodialSubType", "Replica")
         if custodialType not in ["Move", "Replica"]:
             raise cherrypy.HTTPError(400, "Invalid custodial subscription type %s" % custodialType)
         nonCustodialType = kwargs.get("NonCustodialSubType", "Replica")

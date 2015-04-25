@@ -131,7 +131,6 @@ class ReqMgrService(TemplatedPage):
     Request Manager web service class
     """
     def __init__(self, app, config, mount):
-        print "\n### Configuration:"
         self.base = config.base
         self.rootdir = '/'.join(WMCore.__file__.split('/')[:-1])
         if  config and not isinstance(config, dict):
@@ -146,7 +145,7 @@ class ReqMgrService(TemplatedPage):
         jsdir  = os.environ.get('RM_JSPATH', os.getcwd()+'/js')
         self.jsdir = web_config.get('jsdir', jsdir)
         spdir  = os.environ.get('RM_SPECPATH', os.getcwd()+'/specs')
-        self.spdir = web_config.get('spdir', jsdir)
+        self.spdir = web_config.get('spdir', spdir)
         # read scripts area and initialize data-ops scripts
         self.sdir = os.environ.get('RM_SCRIPTS', os.getcwd()+'/scripts')
         self.sdir = web_config.get('sdir', self.sdir)
@@ -373,10 +372,11 @@ class ReqMgrService(TemplatedPage):
     def create(self, **kwds):
         """create page"""
         # get list of standard specs from WMCore and new ones from local area
-        loc_specs_dir = os.path.join(self.spdir, 'Specs') # local specs
-        loc_specs = spec_list(loc_specs_dir, 'Specs')
-        all_specs = list(set(self.std_specs + loc_specs))
-        all_specs.sort()
+        #loc_specs_dir = os.path.join(self.spdir, 'Specs') # local specs
+        #loc_specs = spec_list(loc_specs_dir, 'Specs')
+        #all_specs = list(set(self.std_specs + loc_specs))
+        #all_specs.sort()
+        all_specs = self.std_specs
         spec = kwds.get('form', '')
         if  not spec:
             spec = self.std_specs[0]

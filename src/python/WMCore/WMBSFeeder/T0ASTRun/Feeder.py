@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0613,E1103
+#pylint: disable=W0613,E1103
 """
 _Feeder_
 """

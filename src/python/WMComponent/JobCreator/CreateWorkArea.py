@@ -1,5 +1,5 @@
 #!/bin/env python
-#pylint: disable-msg=E1101, W6501, W0142, E1103, C0121
+#pylint: disable=E1101, W6501, W0142, E1103, C0121
 #E1101 doesn't allow you to define config sections using .section_()
 #W6501: Allow us to use string formatting for logging messages
 #W0142: Use ** magic

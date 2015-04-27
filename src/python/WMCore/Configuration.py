@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# pylint: disable-msg=C0321,C0103
+# pylint: disable=C0321,C0103
 """
 _Configuration_
 

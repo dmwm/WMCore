@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=C0301,R0903
+#pylint: disable=C0301,R0903
 """
 Handler to remove workflow
 """

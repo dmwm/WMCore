@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0102, W6501, C0103, W0621, W0105, W0703
+#pylint: disable=W0102, W6501, C0103, W0621, W0105, W0703
 """
 _ProcessPool_
 

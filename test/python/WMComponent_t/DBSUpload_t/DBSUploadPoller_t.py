@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101, W6501, W0142, C0103, W0401, E1103
+#pylint: disable=E1101, W6501, W0142, C0103, W0401, E1103
 # W0401: I am not going to import all those functions by hand
 """
 _DBSUploadPoller_t_

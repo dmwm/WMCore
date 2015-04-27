@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0142
+#pylint: disable=W0142
 # W0142: Dave likes himself some **
 """
 _Report_

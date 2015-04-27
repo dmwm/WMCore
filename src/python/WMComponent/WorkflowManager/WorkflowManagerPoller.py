@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0613
+#pylint: disable=W0613
 """
 The actual subscription creation algorithm
 """

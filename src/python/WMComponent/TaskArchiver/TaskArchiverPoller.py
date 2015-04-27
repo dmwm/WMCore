@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W6501, W0142
+#pylint: disable=W6501, W0142
 # W6501: pass information to logging using string arguments
 # W0142: Some people like ** magic
 """

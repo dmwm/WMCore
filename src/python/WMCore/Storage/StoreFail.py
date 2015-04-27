@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# pylint: disable-msg=W0142,R0903
+# pylint: disable=W0142,R0903
 """
 _StoreFail_
 

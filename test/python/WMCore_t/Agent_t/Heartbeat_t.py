@@ -11,7 +11,7 @@ import unittest
 import time
 from WMQuality.TestInit import TestInit
 from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
-# pylint: disable-msg = W0611
+# pylint: disable = W0611
 
 class HeartbeatTest(unittest.TestCase):
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101, W6501, W0142
+#pylint: disable=E1101, W6501, W0142
 # E1101:  Doesn't recognize section_() as defining objects
 # W6501:  String formatting in log output
 # W0142:  Dave likes himself some ** magic

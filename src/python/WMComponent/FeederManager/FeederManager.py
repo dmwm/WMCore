@@ -1,5 +1,5 @@
 #!/usr/bin/env
-#pylint: disable-msg=W0613
+#pylint: disable=W0613
 """
 The feeder manager itself, set up event listeners and work event thread
 """

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# pylint: disable-msg=W0201, W0142, W0102
+# pylint: disable=W0201, W0142, W0102
 # W0201: Steve defines all global vars in __call__
 #   I don't know why, but I'm not getting blamed for it
 # W0142: Dave loves the ** magic

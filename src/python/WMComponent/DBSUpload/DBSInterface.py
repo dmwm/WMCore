@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-#pylint: disable-msg=W6501
+#pylint: disable=W6501
 # W6501: Allow logging messages to have string formatting
 """
 _DBSInterface_
@@ -110,7 +110,7 @@ def createProcessedDataset(algorithm, apiRef, primary, processedName, dataTier,
     return processedDataset
 
 
-# pylint: disable-msg=C0103
+# pylint: disable=C0103
 def createAlgorithm(apiRef, appName, appVer, appFam,
                     PSetHash = None, PSetContent = None):
     """

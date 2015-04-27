@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W1201, E1101
+#pylint: disable=W1201, E1101
 # W1201: Allow string formatting in logging messages
 # E1101: Allow imports from currentThread
 """

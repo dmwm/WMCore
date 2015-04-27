@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1103, W6501, E1101, C0301
+#pylint: disable=E1103, W6501, E1101, C0301
 #E1103: Use DB objects attached to thread
 #W6501: Allow string formatting in error messages
 #E1101: Create config sections

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W6501, E1103, C0103
+#pylint: disable=W6501, E1103, C0103
 # E1103: Attach methods to threads
 # W6501: Allow logging messages to have string formatting
 # C0103: Internal method names start with '_'

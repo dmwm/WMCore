@@ -45,7 +45,7 @@ mcArgs = getMCArgs()
 def getFirstTask(wmspec):
     """Return the 1st top level task"""
     # http://www.logilab.org/ticket/8774
-    # pylint: disable-msg=E1101,E1103
+    # pylint: disable=E1101,E1103
     return wmspec.taskIterator().next()
 
 class WMBSHelperTest(unittest.TestCase):

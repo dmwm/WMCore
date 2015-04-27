@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # I'm afraid *args, **kwargs magic is needed here
-# pylint: disable-msg=W0142
+# pylint: disable=W0142
 #-*- coding: ISO-8859-1 -*-
 """
 Rest Model abstract implementation

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=C0301
+#pylint: disable=C0301
 """
 Slave used by RemoveFromWorkflowManagementLocationList handler
 """

@@ -65,7 +65,7 @@ class ParentlessMergeBySize(JobFactory):
 
         return fileGroups
 
-    def createMergeJob(self, mergeableFiles):
+    def createMergeJob(self, mergeFiles):
         """
         _createMergeJob_
 
@@ -76,20 +76,39 @@ class ParentlessMergeBySize(JobFactory):
             self.newGroup()
 
         self.newJob(name = self.getJobName())
-        mergeableFiles.sort(fileCompare)
+        mergeFiles.sort(fileCompare)
 
-        for file in mergeableFiles:
-            newFile = File(id = file["file_id"], lfn = file["file_lfn"],
-                           events = file["file_events"])
+        jobSize = 0
+        largestFile = 0
+        for mergeFile in mergeFiles:
+
+            jobSize += mergeFile["file_size"]
+            largestFile = max(largestFile, mergeFile["file_size"])
+
+            newFile = File(id = mergeFile["file_id"],
+                           lfn = mergeFile["file_lfn"],
+                           events = mergeFile["file_events"])
 
             # The WMBS data structure puts locations that are passed in through
             # the constructor in the "newlocations" attribute.  We want these to
             # be in the "locations" attribute so that they get picked up by the
             # job submitter.
-            newFile["locations"] = set([file["se_name"]])
-            newFile.addRun(Run(file["file_run"], file["file_lumi"]))
+            newFile["locations"] = set([mergeFile["se_name"]])
+            newFile.addRun(Run(mergeFile["file_run"], mergeFile["file_lumi"]))
             self.currentJob.addFile(newFile)
-            self.currentJob.addResourceEstimates(disk = float(file["file_size"])/1024)
+
+        # job time based on
+        #   - 5 min initialization
+        #   - 5MB/s merge speed
+        #   - checksum calculation at 5MB/s (twice)
+        #   - stageout at 5MB/s
+        # job disk based on
+        #  - input for largest file on local disk
+        #  - output on local disk (factor 1)
+        jobTime = 300 + (jobSize*4)/5000000
+        self.currentJob.addResourceEstimates(jobTime = jobTime, disk = (jobSize+largestFile)/1024)
+
+        return
 
     def defineMergeJobs(self, mergeableFiles):
         """

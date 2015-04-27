@@ -84,7 +84,7 @@ def _VmB(VmKey):
     return float(v[1]) * _scale[v[2]]
 
 
-#pylint: enable-msg=C0103
+#pylint: enable=C0103
 
 def retrieveWMSpec(subscription):
     """

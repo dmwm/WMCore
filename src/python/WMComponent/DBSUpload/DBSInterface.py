@@ -152,7 +152,7 @@ def createAlgorithm(apiRef, appName, appVer, appFam,
             raise DBSInterfaceError(msg)
     return algorithmInstance
 
-# pylint: enable-msg=C0103
+# pylint: enable=C0103
 
 
 def createUncheckedBlock(apiRef, name, datasetPath, seName):

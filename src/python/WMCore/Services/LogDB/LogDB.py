@@ -41,7 +41,7 @@ class LogDB(object):
 
     def __repr__(self):
         "Return representation for class"
-        return "<LogDB(url=%s, identifier=%s, agent=%1)>" \
+        return "<LogDB(url=%s, identifier=%s, agent=%d)>" \
                 % (self.url, self.identifier, self.agent)
 
     def post(self, request, msg, mtype="comment"):

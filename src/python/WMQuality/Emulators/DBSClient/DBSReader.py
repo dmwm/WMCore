@@ -63,7 +63,7 @@ class DBSReader:
                 raise DBSReaderError('DbsBadRequest: DBS Server Raised An Error')
         if locations:
             for block in blocks:
-                block['StorageElementList'] = [{'Role' : '', 'Name' : x} for x in \
+                block['PhEDExNodeList'] = [{'Role' : '', 'Name' : x} for x in \
                                                self.listFileBlockLocation(block['Name'])]
         return blocks
 
@@ -108,7 +108,7 @@ class DBSReader:
     def getFileBlock(self, block):
         """Return block + locations"""
         result = { block : {
-            "StorageElements" : self.listFileBlockLocation(block),
+            "PhEDExNodeNames" : self.listFileBlockLocation(block),
             "Files" : self.listFilesInBlock(block),
             "IsOpen" : self.dataBlocks._openForWriting(),
             }
@@ -121,7 +121,7 @@ class DBSReader:
 
         return a dictionary:
         { blockName: {
-             "StorageElements" : [<se list>],
+             "PhEDExNodeNames" : [<pnn list>],
              "Files" : dictionaries representing each file
              }
         }
@@ -131,7 +131,7 @@ class DBSReader:
         """
 
         result = { fileBlockName: {
-            "StorageElements" : self.listFileBlockLocation(fileBlockName),
+            "PhEDExNodeNames" : self.listFileBlockLocation(fileBlockName),
             "Files" : self.listFilesInBlockWithParents(fileBlockName),
             "IsOpen" : self.dataBlocks._openForWriting(),
 
@@ -235,7 +235,7 @@ class DBSReader:
 
         result = set()
         for block in blocks:
-            result |= set([x['Name'] for x in block['StorageElementList']])
+            result |= set([x['Name'] for x in block['PhEDExNodeList']])
 
         return list(result)
 

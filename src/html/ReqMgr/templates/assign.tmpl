@@ -190,9 +190,9 @@ function ProcessRequests(new_status) {
     }
     if (ids.length>0) {
         // capture form id="assign-settings"
-        var parameters = \$('#assign-settings').serialize();
+        var parameters = \$('#assign-settings').serializeObject();
         // capture form id="assign-misc-settings"
-        var misc_args = \$('#assign-misc-settings').serialize();
+        var misc_args = \$('#assign-misc-settings').serializeObject();
         // merge misc_args with parameters
         for (var attr in misc_args) { parameters[attr] = misc_args[attr]; }
         parameters.ids = ids;

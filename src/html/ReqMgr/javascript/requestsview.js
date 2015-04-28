@@ -186,4 +186,4 @@ var requestsView =
 	} // update()
 
     
-} // requestsView
+}; // requestsView

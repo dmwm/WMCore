@@ -79,11 +79,11 @@ $jsondata
 function CreateRequest(formtag) {
     var parameters = {};
     if (formtag=='table-form') {
-        parameters = \$('#table-form').serialize();
+        parameters = \$('#table-form').serializeObject();
     } else if (formtag=='json-form') {
         var doc = document.getElementById('jsondict');
         var data = doc.value;
-        parameters = data.evalJSON(true); // prototype way or use JSON.parse(doc.value)
+        parameters = JSON.parse(doc.value)
         var script = document.getElementById('jsonscript');
         parameters.script = script;
     }

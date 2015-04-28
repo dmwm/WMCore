@@ -65,7 +65,7 @@ $attributes
 function CreateBatch(formtag) {
     var parameters = {};
     if (formtag=='batch-form') {
-        parameters = \$('#batch-form').serialize();
+        parameters = \$('#batch-form').serializeObject();
     }
     ajaxRequest('$base/data/request', parameters);
 }

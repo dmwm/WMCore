@@ -53,7 +53,7 @@ class _CreateDatasetOperator:
             cfgInt = pnode.cfgInterface
             cfgMeta = cfgInt.configMetadata
             cfgMeta['Type'] = self.workflow.parameters["RequestCategory"]
-        except Exception, ex:
+        except Exception as ex:
             msg = "Unable to Extract cfg data from workflow"
             msg += str(ex)
             logging.error(msg)
@@ -209,7 +209,7 @@ class DBSWriter:
                 globalArgs.update(contact)
                 self.globalDBS = DbsApi(globalArgs)
 
-        except DbsException, ex:
+        except DbsException as ex:
             msg = "Error in DBSWriterError with DbsApi\n"
             msg += "%s\n" % formatEx(ex)
             raise DBSWriterError(msg)
@@ -227,7 +227,7 @@ class DBSWriter:
             workflowSpec.payload.operate(
                 _CreateDatasetOperator(self.dbs, workflowSpec)
                 )
-        except DbsException, ex:
+        except DbsException as ex:
             msg = "Error in DBSWriter.createDatasets\n"
             msg += "For Workflow: %s\n" % workflowSpec.workflowName()
             msg += "%s\n" % formatEx(ex)
@@ -353,7 +353,7 @@ class DBSWriter:
             fileBlock['files'] = []
             #if not fileBlock in affectedBlocks:
             #    affectedBlocks.append(fileBlock)
-        except DbsException, ex:
+        except DbsException as ex:
             msg = "Error in DBSWriter.insertFilesForDBSBuffer\n"
             msg += "Cannot retrieve FileBlock for dataset:\n"
             msg += " %s\n" % procDataset['Path']
@@ -378,7 +378,7 @@ class DBSWriter:
                         procDataset,
                         seName)
                     fileBlock['files'] = []
-                except DbsException, ex:
+                except DbsException as ex:
                     msg = "Error in DBSWriter.insertFilesForDBSBuffer\n"
                     msg += "Cannot retrieve FileBlock for dataset:\n"
                     msg += " %s\n" % procDataset['Path']
@@ -395,7 +395,7 @@ class DBSWriter:
                     logging.debug("Inserted files: %s to FileBlock: %s" \
                                   % ( ([ x['LogicalFileName'] for x in insertFiles ]),fileBlock['Name']))
 
-                except DbsException, ex:
+                except DbsException as ex:
                     msg = "Error in DBSWriter.insertFiles\n"
                     msg += "Cannot insert processed files:\n"
                     msg += " %s\n" % ([ x['LogicalFileName'] for x in insertFiles ],)
@@ -410,7 +410,7 @@ class DBSWriter:
                 logging.debug("Inserted files: %s to FileBlock: %s" \
                               % ( ([ x['LogicalFileName'] for x in insertFiles ]),fileBlock['Name']))
 
-            except DbsException, ex:
+            except DbsException as ex:
                 msg = "Error in DBSWriter.insertFiles\n"
                 msg += "Cannot insert processed files:\n"
                 msg += " %s\n" % ([ x['LogicalFileName'] for x in insertFiles ],)
@@ -591,7 +591,7 @@ class DBSWriter:
                 else:
                     dbsFiles = DBSWriterObjects.createDBSFiles(outFile,
                                                                fwkJobRep.jobType)
-            except DbsException, ex:
+            except DbsException as ex:
                 msg = "Error in DBSWriter.insertFiles:\n"
                 msg += "Error creating DbsFile instances for file:\n"
                 msg += "%s\n" % outFile['LFN']
@@ -633,7 +633,7 @@ class DBSWriter:
                     procDataset,
                     fileList.seName)
 
-            except DbsException, ex:
+            except DbsException as ex:
                 msg = "Error in DBSWriter.insertFiles\n"
                 msg += "Cannot retrieve FileBlock for dataset:\n"
                 msg += " %s\n" % procDataset
@@ -654,7 +654,7 @@ class DBSWriter:
                         self.dbs.insertMergedFile(mergedFile['ParentList'],
                                                   mergedFile)
 
-                    except DbsException, ex:
+                    except DbsException as ex:
                         msg = "Error in DBSWriter.insertFiles\n"
                         msg += "Cannot insert merged file:\n"
                         msg += "  %s\n" % mergedFile['LogicalFileName']
@@ -672,7 +672,7 @@ class DBSWriter:
                 try:
                     self.dbs.insertFiles(procDataset, list(fileList),
                                          fileBlock)
-                except DbsException, ex:
+                except DbsException as ex:
                     msg = "Error in DBSWriter.insertFiles\n"
                     msg += "Cannot insert processed files:\n"
                     msg += " %s\n" % (
@@ -730,7 +730,7 @@ class DBSWriter:
                     filesToCommit = []
 
 
-                except DbsException, ex:
+                except DbsException as ex:
                     msg = "Error in DBSWriter.insertFiles\n"
                     msg += "Cannot insert processed files:\n"
                     raise DBSWriterError(msg)
@@ -796,7 +796,7 @@ class DBSWriter:
                     #logging.debug("Inserted files: %s to FileBlock: %s" \
                     #              % ( ([ x['LogicalFileName'] for x in insertFiles ]),fileBlock['Name']))
 
-                except DbsException, ex:
+                except DbsException as ex:
                     msg = "Error in DBSWriter.insertFiles\n"
                     msg += "Cannot insert processed files:\n"
                     #msg += " %s\n" % ([ x['LogicalFileName'] for x in insertFiles ],)
@@ -880,7 +880,7 @@ class DBSWriter:
 
             try:
                 xferData = reader.dbs.listDatasetContents(datasetPath,  block)
-            except DbsException, ex:
+            except DbsException as ex:
                 msg = "Error in DBSWriter.migrateDatasetBlocks\n"
                 msg += "Could not read content of dataset:\n ==> %s\n" % (
                     datasetPath,)
@@ -892,7 +892,7 @@ class DBSWriter:
 
             try:
                 self.dbs.insertDatasetContents(xferData)
-            except DbsException, ex:
+            except DbsException as ex:
                 msg = "Error in DBSWriter.migrateDatasetBlocks\n"
                 msg += "Could not write content of dataset:\n ==> %s\n" % (
                     datasetPath,)
@@ -952,7 +952,7 @@ class DBSWriter:
                 xferData = reader.dbs.listDatasetContents(
                     sourceDatasetPath,  block
                     )
-            except DbsException, ex:
+            except DbsException as ex:
                 msg = "Error in DBSWriter.importDatasetWithExistingParents\n"
                 msg += "Could not read content of dataset:\n ==> %s\n" % (
                     sourceDatasetPath,)
@@ -961,7 +961,7 @@ class DBSWriter:
                 raise DBSWriterError(msg)
             try:
                 self.dbs.insertDatasetContents(xferData)
-            except DbsException, ex:
+            except DbsException as ex:
                 msg = "Error in DBSWriter.importDatasetWithExistingParents\n"
                 msg += "Could not write content of dataset:\n ==> %s\n" % (
                     sourceDatasetPath,)
@@ -1031,7 +1031,7 @@ class DBSWriter:
             try:
 
                 self.dbs.migrateDatasetContents(sourceDBS, targetDBS, sourceDatasetPath, block_name=block, noParentsReadOnly = False)
-            except DbsException, ex:
+            except DbsException as ex:
                 msg = "Error in DBSWriter.importDataset\n"
                 msg += "Could not write content of dataset:\n ==> %s\n" % (
                     sourceDatasetPath,)
@@ -1096,7 +1096,7 @@ class DBSWriter:
 
             try:
                 self.dbs.migrateDatasetContents(sourceDBS, targetDBS, sourceDatasetPath, block_name=block, noParentsReadOnly = True )
-            except DbsException, ex:
+            except DbsException as ex:
                 msg = "Error in DBSWriter.importDatasetWithoutParentage\n"
                 msg += "Could not write content of dataset:\n ==> %s\n" % (
                     sourceDatasetPath,)
@@ -1141,7 +1141,7 @@ class DBSWriter:
                 config = payloadNode.cfgInterface
                 psetStr = config.originalContent()
                 resultEntry['PSetContent'] = psetStr
-            except Exception, ex:
+            except Exception as ex:
                 resultEntry['PSetContent'] = None
 
             result.append(resultEntry)

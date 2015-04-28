@@ -40,7 +40,7 @@ class RESTBaseUnitTest(unittest.TestCase):
             self.rt = Root(self.config, testName=self._testMethodName)
             try:
                 self.rt.start(blocking=False)
-            except RuntimeError, e:
+            except RuntimeError as e:
                 # there appears to be worker threads from a previous test
                 # hanging out. Try to slay them so that we can keep going
                 print "Failed to load cherrypy with exception: %s\n" % e

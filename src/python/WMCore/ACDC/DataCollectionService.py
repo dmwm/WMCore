@@ -62,7 +62,7 @@ class DataCollectionService(CouchService):
             try:
                 taskName = job['task']
                 workflow = job['workflow']
-            except KeyError, ex:
+            except KeyError as ex:
                 msg =  "Missing required, non-standard key %s in job in ACDC.DataCollectionService" % (str(ex))
                 logging.error(msg)
                 raise ACDCDCSException(msg)

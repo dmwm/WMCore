@@ -245,7 +245,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
                 report.addError(stepName = "PerformanceError", exitCode = errorCodeLookup[reason],
                                 errorType = "PerformanceKill", errorDetails = msg)
                 report.save(logPath)
-            except Exception, ex:
+            except Exception as ex:
                 # Basically, we can't write a log report and we're hosed
                 # Kill anyway, and hope the logging file gets written out
                 msg2 =  "Exception while writing out jobReport.\n"

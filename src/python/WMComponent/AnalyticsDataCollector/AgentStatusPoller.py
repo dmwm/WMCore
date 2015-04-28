@@ -64,7 +64,7 @@ class AgentStatusPoller(BaseWorkerThread):
             logging.info("Agent in drain mode:\n %s \nsleep for next WMStats alarm updating cycle"
                           % agentInfo['drain_mode'])
             
-        except Exception, ex:
+        except Exception as ex:
             logging.error("Error occurred, will retry later:")
             logging.error(str(ex))
             logging.error("Trace back: \n%s" % traceback.format_exc())

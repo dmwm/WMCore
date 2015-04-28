@@ -62,7 +62,7 @@ class RequestManagerTest(RESTBaseUnitTest):
         try:
             r = self.jsonSender.put('request/' + schema['RequestName'], schema)
             self.requestName = r[0]['RequestName']
-        except Exception, ex:
+        except Exception as ex:
             print "Exception during set up, reason: %s" % ex
             raise ex
 

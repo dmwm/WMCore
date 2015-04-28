@@ -103,7 +103,7 @@ class Harness:
         try:
             if not os.path.isdir(compSect.componentDir):
                 os.makedirs(compSect.componentDir)
-        except Exception, ex:
+        except Exception as ex:
             logging.error("Encountered exception while making componentDirs: %s" % str(ex))
             logging.error("Ignoring")
 
@@ -209,7 +209,7 @@ class Harness:
                 myThread.dialect = 'SQLite'
 
             logging.info("Harness part constructor finished")
-        except Exception, ex:
+        except Exception as ex:
             logging.critical("Problem instantiating "+str(ex))
             logging.error("Traceback: %s" % str(traceback.format_exc()))
             raise
@@ -427,7 +427,7 @@ class Harness:
             while True:
                 time.sleep(360)
 
-        except Exception, ex:
+        except Exception as ex:
             if self.state == 'initialize':
                 errormsg = """PostMortem: choked when initializing with error: %s\n""" % (str(ex))
                 stackTrace = traceback.format_tb(sys.exc_info()[2], None)

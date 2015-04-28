@@ -58,13 +58,13 @@ def submitWorker(input, results, timeout = None):
     while True:
         try:
             work = input.get()
-        except (EOFError, IOError), ex:
+        except (EOFError, IOError) as ex:
             crashMessage = "Hit EOF/IO in getting new work\n"
             crashMessage += "Assuming this is a graceful break attempt.\n"
             crashMessage += str(ex)
             logging.error(crashMessage)
             break
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Hit unidentified exception getting work\n"
             msg += str(ex)
             msg += "Assuming everything's totally hosed.  Killing process.\n"
@@ -91,7 +91,7 @@ def submitWorker(input, results, timeout = None):
                              'stderr': 'Non-zero exit code: %s\n stderr: %s' % (returnCode, stderr),
                              'exitCode': returnCode,
                              'idList': idList})
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Critical error in subprocess while submitting to condor"
             msg += str(ex)
             msg += str(traceback.format_exc())
@@ -234,7 +234,7 @@ class PyCondorPlugin(BasePlugin):
             logging.debug("proxyDir not found: creating it.")
             try:
                 os.makedirs(self.proxyDir, 01777)
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Error: problem when creating proxyDir directory - '%s'" % str(ex)
                 raise BossAirPluginException(msg)
         elif not os.path.isdir(self.proxyDir):
@@ -290,7 +290,7 @@ class PyCondorPlugin(BasePlugin):
         for x in self.pool:
             try:
                 self.input.put('STOP')
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Hit some exception in deletion\n"
                 msg += str(ex)
                 logging.error(msg)
@@ -305,17 +305,17 @@ class PyCondorPlugin(BasePlugin):
             if terminate:
                 try:
                     proc.terminate()
-                except Exception, ex:
+                except Exception as ex:
                     logging.error("Failure while attempting to terminate process")
                     logging.error(str(ex))
                     continue
             else:
                 try:
                     proc.join()
-                except Exception, ex:
+                except Exception as ex:
                     try:
                         proc.terminate()
-                    except Exception, ex2:
+                    except Exception as ex2:
                         logging.error("Failure to join or terminate process")
                         logging.error(str(ex))
                         logging.error(str(ex2))
@@ -421,7 +421,7 @@ class PyCondorPlugin(BasePlugin):
 
                 try:
                     self.input.put({'command': command, 'idList': idList})
-                except AssertionError, ex:
+                except AssertionError as ex:
                     msg =  "Critical error: input pipeline probably closed.\n"
                     msg += str(ex)
                     msg += "Error Procedure: Something critical has happened in the worker process\n"
@@ -446,7 +446,7 @@ class PyCondorPlugin(BasePlugin):
                 logging.error("Either process failed, or process timed out after %s seconds." % timeout)
                 queueError = True
                 continue
-            except AssertionError, ex:
+            except AssertionError as ex:
                 msg =  "Found Assertion error while retrieving output from worker process.\n"
                 msg += str(ex)
                 msg += "This indicates something critical happened to a worker process"
@@ -461,7 +461,7 @@ class PyCondorPlugin(BasePlugin):
                 error    = res['stderr']
                 idList   = res['idList']
                 exitCode = res['exitCode']
-            except KeyError, ex:
+            except KeyError as ex:
                 msg =  "Error in finding key from result pipe\n"
                 msg += "Something has gone crticially wrong in the worker\n"
                 try:
@@ -767,7 +767,7 @@ class PyCondorPlugin(BasePlugin):
                     try:
                         os.remove(reportName)
                         condorReport.save(filename = reportName)
-                    except Exception, ex:
+                    except Exception as ex:
                         logging.error("Cannot remove and replace empty report %s" % reportName)
                         logging.error("Report continuing without error!")
             else:
@@ -1004,7 +1004,7 @@ class PyCondorPlugin(BasePlugin):
                     logging.error("Priority for job %i not castable to an int\n" % job['id'])
                     logging.error("Not setting priority")
                     logging.debug("Priority: %s" % job['priority'])
-                except Exception, ex:
+                except Exception as ex:
                     logging.error("Got unhandled exception while setting priority for job %i\n" % job['id'])
                     logging.error(str(ex))
                     logging.error("Not setting priority")

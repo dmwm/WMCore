@@ -165,12 +165,12 @@ def creatorProcess(work, jobCacheDir):
             ownerDN = owner
 
         jobNumber    = work.get('jobNumber', 0)
-    except KeyError, ex:
+    except KeyError as ex:
         msg =  "Could not find critical key-value in work input.\n"
         msg += str(ex)
         logging.error(msg)
         raise JobCreatorException(msg)
-    except Exception, ex:
+    except Exception as ex:
         msg =  "Exception in opening work package.\n"
         msg += str(ex)
         msg += str(traceback.format_exc())
@@ -200,7 +200,7 @@ def creatorProcess(work, jobCacheDir):
                     agentNumber = agentNumber,
                     numberOfCores = numberOfCores)
 
-    except Exception, ex:
+    except Exception as ex:
         # Register as failure; move on
         msg =  "Exception in processing wmbsJobGroup %i\n" % wmbsJobGroup.id
         msg += str(ex)
@@ -363,7 +363,7 @@ class JobCreatorPoller(BaseWorkerThread):
             self.check()
         except WMException:
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Unhandled exception while setting up jobCacheDir!\n"
             msg += str(ex)
             logging.error(msg)
@@ -404,7 +404,7 @@ class JobCreatorPoller(BaseWorkerThread):
                    and getattr(myThread.transaction, 'transaction', False):
                 myThread.transaction.rollback()
             raise
-        except Exception, ex:
+        except Exception as ex:
             #self.close()
             myThread = threading.currentThread()
             if getattr(myThread, 'transaction', False) \
@@ -485,7 +485,7 @@ class JobCreatorPoller(BaseWorkerThread):
                     seederList = manager.getGeneratorList()
                 else:
                     seederList = []
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Had failure loading generators for subscription %i\n" % (subscriptionID)
                 msg += "Exception: %s\n" % str(ex)
                 msg += "Passing over this error.  It will reoccur next interation!\n"
@@ -599,7 +599,7 @@ class JobCreatorPoller(BaseWorkerThread):
                                                   transaction = True)
                 except WMException:
                     raise
-                except Exception, ex:
+                except Exception as ex:
                     msg =  "Unknown exception while setting the bulk cache:\n"
                     msg += str(ex)
                     logging.error(msg)
@@ -691,7 +691,7 @@ class JobCreatorPoller(BaseWorkerThread):
             self.changeState.propagate(createFailedJobs, 'createfailed', 'created')
         except WMException:
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg = "Unhandled exception while calling changeState.\n"
             msg += str(ex)
             logging.error(msg)

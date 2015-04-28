@@ -49,7 +49,7 @@ class DBFactoryTest(unittest.TestCase):
                 print testname, " : ", testurl, "  .... OK!"
             else:
                 print testname, " : ", testurl, "  .... FAIL!"
-        except Exception, e:
+        except Exception as e:
             print testname, " : ", testurl, "  .... EXCEPTION!", e
 
     def testAllURLs(self):
@@ -76,7 +76,7 @@ class DBFactoryTest(unittest.TestCase):
                     print "testAllURLs : ", testurl, "  .... OK!"
                 else:
                     print "testAllURLs : ", testurl, "  .... FAIL!"
-            except Exception, e:
+            except Exception as e:
                 print "testAllURLs : ", testurl, "  .... EXCEPTION!", e
 
     def testSQLiteInMemory(self):

@@ -47,7 +47,7 @@ class EventBased(JobFactory):
                 logging.info('Creating jobs for ACDC fileset %s' % filesetName)
                 dcs = DataCollectionService(couchURL, couchDB)
                 acdcFileList = dcs.getProductionACDCInfo(collectionName, filesetName, owner, group)
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Exception while trying to load goodRunList\n"
                 msg +=  "Refusing to create any jobs.\n"
                 msg += str(ex)

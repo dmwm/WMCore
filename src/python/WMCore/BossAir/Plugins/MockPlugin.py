@@ -62,7 +62,7 @@ def processWorker(myinput, tmp):
             logging.debug('Process worker is dumping the report to ' + f.name)
             pickle.dump(report, f)
             f.close()
-    except Exception, ex:
+    except Exception as ex:
         logging.exception(ex)
 
 
@@ -253,7 +253,7 @@ class MockPlugin(BasePlugin):
             try:
                 logging.debug("Shutting down %s " % str(x))
                 input.put( ('-1', 'STOP', 'control') )
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Hit some exception in deletion\n"
                 msg += str(ex)
                 logging.error(msg)

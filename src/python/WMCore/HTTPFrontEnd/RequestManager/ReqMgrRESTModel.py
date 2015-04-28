@@ -451,7 +451,7 @@ class ReqMgrRESTModel(RESTModel):
         if requestName:
             try:
                 request = self.getRequest(requestName)
-            except Exception, ex:
+            except Exception as ex:
                 # request presumably doesn't exist                
                 request = None
     

@@ -70,7 +70,7 @@ class Fileset(WMObject):
 
             try:
                 files.sort(lambda x, y: cmp(x['lfn'], y['lfn']))
-            except Exception, e:
+            except Exception as e:
                 print 'Problem with listFiles for fileset:', self.name
                 print files.pop()
                 raise e

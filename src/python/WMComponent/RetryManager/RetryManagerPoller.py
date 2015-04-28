@@ -131,7 +131,7 @@ class RetryManagerPoller(BaseWorkerThread):
                 plugin = self.pluginFactory.loadObject(classname = pluginName,
                                                             args = config)
                 self.plugins[pluginName] = plugin
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Error loading plugin %s on path %s\n" % (pluginName, pluginPath)
                 msg += str(ex)
                 logging.error(msg)
@@ -160,12 +160,12 @@ class RetryManagerPoller(BaseWorkerThread):
             myThread.transaction.begin()
             self.doRetries()
             myThread.transaction.commit()
-        except WMException, ex:
+        except WMException as ex:
             if getattr(myThread, 'transaction', None) and \
                getattr(myThread.transaction, 'transaction', None):
                 myThread.transaction.rollback()
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg = "Caught exception in RetryManager\n"
             msg += str(ex)
             msg += str(traceback.format_exc())
@@ -274,7 +274,7 @@ class RetryManagerPoller(BaseWorkerThread):
 
                 if plugin.isReady(job = job, cooloffType = cooloffType):
                     result.append(job)
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Exception while checking for cooloff timeout for job %i\n" % job['id']
                 msg += str(ex)
                 logging.error(msg)

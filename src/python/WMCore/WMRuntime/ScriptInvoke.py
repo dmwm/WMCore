@@ -88,7 +88,7 @@ if __name__ == '__main__':
     try:
         stepModule = sys.argv[1]
         scriptModule = sys.argv[2]
-    except Exception, ex:
+    except Exception as ex:
         msg = "Usage: ScriptInvoke.py <Step Module> <Script Module>"
         raise RuntimeError, msg
 
@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
     try:
         invoker.boot()
-    except Exception, ex:
+    except Exception as ex:
         msg = "Error booting script invoker for step %s\n" % stepModule
         msg += "withe Script module: %s\n" % scriptModule
         msg += str(ex)
@@ -107,7 +107,7 @@ if __name__ == '__main__':
 
     try:
         invoker.invoke()
-    except Exception, ex:
+    except Exception as ex:
         msg = "Error invoking script for step %s\n" % stepModule
         msg += "withe Script module: %s\n" % scriptModule
         msg += str(ex)

@@ -121,7 +121,7 @@ class Feeder(FeederImpl):
 
             try:
                 locationNew.execute(siteName = "caf.cern.ch", seName = "caf.cern.ch")
-            except Exception,e:
+            except Exception as e:
                 logging.debug("Error when adding new location...")
                 logging.debug(e)
                 logging.debug( format_exc() )
@@ -182,7 +182,7 @@ class Feeder(FeederImpl):
                             logging.debug("new file created/loaded added by T0ASTRun...")
                             filesetRun.commit()
 
-                except Exception,e:
+                except Exception as e:
 
                     logging.debug("Error when adding new files in T0ASTRun...")
                     logging.debug(e)

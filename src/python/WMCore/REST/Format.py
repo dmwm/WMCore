@@ -150,10 +150,10 @@ class XMLFormat(RESTFormat):
                     etag.update(trailer)
                     yield trailer
 
-        except RESTError, e:
+        except RESTError as e:
             etag.invalidate()
             report_rest_error(e, format_exc(), False)
-        except Exception, e:
+        except Exception as e:
             etag.invalidate()
             report_rest_error(ExecutionError(), format_exc(), False)
 
@@ -240,10 +240,10 @@ class JSONFormat(RESTFormat):
                     yield trailer
 
             cherrypy.response.headers["X-REST-Status"] = 100
-        except RESTError, e:
+        except RESTError as e:
             etag.invalidate()
             report_rest_error(e, format_exc(), False)
-        except Exception, e:
+        except Exception as e:
             etag.invalidate()
             report_rest_error(ExecutionError(), format_exc(), False)
 
@@ -286,10 +286,10 @@ class RawFormat(RESTFormat):
                 etag.update(chunk)
                 yield chunk
 
-        except RESTError, e:
+        except RESTError as e:
             etag.invalidate()
             report_rest_error(e, format_exc(), False)
-        except Exception, e:
+        except Exception as e:
             etag.invalidate()
             report_rest_error(ExecutionError(), format_exc(), False)
         except BaseException:

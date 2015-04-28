@@ -51,7 +51,7 @@ def runCommand(command):
         if outfd in ready[0]:
             try:
                 outchunk = outfile.read()
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Unable to read stdout chunk... skipping"
                 print msg
                 outchunk = ''
@@ -60,7 +60,7 @@ def runCommand(command):
         if errfd in ready[0]:
             try:
                 errchunk = errfile.read()
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Unable to read stderr chunk... skipping"
                 print msg, str(ex)
                 errchunk = ""
@@ -104,7 +104,7 @@ def runCommandWithOutput(command):
         if outfd in ready[0]:
             try:
                 outchunk = outfile.read()
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Unable to read stdout chunk... skipping"
                 print msg
                 outchunk = ''
@@ -113,7 +113,7 @@ def runCommandWithOutput(command):
         if errfd in ready[0]:
             try:
                 errchunk = errfile.read()
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Unable to read stderr chunk... skipping"
                 print msg, str(ex)
                 errchunk = ""
@@ -145,7 +145,7 @@ def execute(command):
         exitCode = runCommand(command)
         msg = "Command exited with status: %s" % (exitCode)
         print msg
-    except Exception, ex:
+    except Exception as ex:
         msg = "Command threw exception"
         print "ERROR: Exception During Stage Out:\n"
         print msg

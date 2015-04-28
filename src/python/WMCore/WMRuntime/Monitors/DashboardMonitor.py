@@ -91,7 +91,7 @@ class DashboardMonitor(WMRuntimeMonitor):
         """
         try:
             self.dashboardInfo.jobStart()
-        except Exception, ex:
+        except Exception as ex:
             logging.error(str(ex))
             logging.error(str(traceback.format_exc()))
 
@@ -105,7 +105,7 @@ class DashboardMonitor(WMRuntimeMonitor):
         """
         try:
             self.dashboardInfo.jobEnd()
-        except Exception, ex:
+        except Exception as ex:
             logging.error(str(ex))
             logging.error(str(traceback.format_exc()))
 
@@ -122,7 +122,7 @@ class DashboardMonitor(WMRuntimeMonitor):
         self.startTime        = time.time()
         try:
             self.dashboardInfo.stepStart(step = step)
-        except Exception, ex:
+        except Exception as ex:
             logging.error(str(ex))
             logging.error(str(traceback.format_exc()))
         return
@@ -138,7 +138,7 @@ class DashboardMonitor(WMRuntimeMonitor):
         try:
             self.dashboardInfo.stepEnd(step = step,
                                    stepReport = stepReport)
-        except Exception, ex:
+        except Exception as ex:
             logging.error(str(ex))
             logging.error(str(traceback.format_exc()))
         return
@@ -154,7 +154,7 @@ class DashboardMonitor(WMRuntimeMonitor):
         self.currentStepName = None
         try:
             self.dashboardInfo.stepKilled(step = step)
-        except Exception, ex:
+        except Exception as ex:
             logging.error(str(ex))
             logging.error(str(traceback.format_exc()))
         return
@@ -166,7 +166,7 @@ class DashboardMonitor(WMRuntimeMonitor):
         """
         try:
             self.dashboardInfo.jobKilled()
-        except Exception, ex:
+        except Exception as ex:
             logging.error(str(ex))
             logging.error(str(traceback.format_exc()))
         return
@@ -181,7 +181,7 @@ class DashboardMonitor(WMRuntimeMonitor):
 
         try:
             self.dashboardInfo.periodicUpdate()
-        except Exception, ex:
+        except Exception as ex:
             logging.error(str(ex))
             logging.error(str(traceback.format_exc()))
         return

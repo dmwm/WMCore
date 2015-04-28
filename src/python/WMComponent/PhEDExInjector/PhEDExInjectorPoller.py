@@ -206,7 +206,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             xmlData = self.createInjectionSpec(uninjectedFiles[siteName])
             try:
                 injectRes = self.phedex.injectBlocks(location, xmlData)
-            except HTTPException, ex:
+            except HTTPException as ex:
                 # If we get an HTTPException of certain types, raise it as an error
                 if ex.status == 400:
                     # assume it is duplicate injection error. but if that is not the case
@@ -215,7 +215,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 
                 msg = "PhEDEx injection failed with %s error: %s" % (ex.status, ex.result)
                 raise PhEDExInjectorPassableError(msg)
-            except Exception, ex:
+            except Exception as ex:
                 # If we get an error here, assume that it's temporary (it usually is)
                 # log it, and ignore it in the algorithm() loop
                 msg =  "Encountered error while attempting to inject blocks to PhEDEx.\n"
@@ -284,7 +284,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 xmlData = self.createInjectionSpec(migratedBlocks[siteName])
                 injectRes = self.phedex.injectBlocks(location, xmlData)
                 logging.info("Block closing result: %s" % injectRes)
-            except HTTPException, ex:
+            except HTTPException as ex:
                 # If we get an HTTPException of certain types, raise it as an error
                 if ex.status == 400:
                     msg =  "Received 400 HTTP Error From PhEDEx: %s" % str(ex.result)
@@ -299,7 +299,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                     logging.error(msg)
                     logging.debug("Traceback: %s" % str(traceback.format_exc()))
                     raise PhEDExInjectorPassableError(msg)
-            except Exception, ex:
+            except Exception as ex:
                 # If we get an error here, assume that it's temporary (it usually is)
                 # log it, and ignore it in the algorithm() loop
                 msg =  "Encountered error while attempting to close blocks in PhEDEx.\n"
@@ -362,7 +362,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                         
             self.injectFiles()
             self.closeBlocks()
-        except PhEDExInjectorPassableError, ex:
+        except PhEDExInjectorPassableError as ex:
             logging.error("Encountered PassableError in PhEDExInjector")
             logging.error("Rolling back current transaction and terminating current loop, but not killing component.")
             if getattr(myThread, 'transaction', None):

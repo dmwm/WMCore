@@ -54,7 +54,7 @@ class StageOutImpl:
             exitCode = runCommand(command)
             msg = "Command exited with status: %s" % (exitCode)
             print msg
-        except Exception, ex:
+        except Exception as ex:
             raise StageOutError(str(ex), Command = command, ExitCode = 60311)
         if exitCode in self.directoryErrorCodes:
             raise StageOutInvalidPath()
@@ -171,7 +171,7 @@ class StageOutImpl:
                     self.createOutputDirectory(targetPFN)
                 break
 
-            except StageOutError, ex:
+            except StageOutError as ex:
                 msg = "Attempted directory creation for stageout %s failed\n" % retryCount
                 msg += "Automatically retrying in %s secs\n " % self.retryPause
                 msg += "Error details:\n%s\n" % str(ex)
@@ -194,7 +194,7 @@ class StageOutImpl:
 
                 try:
                     self.executeCommand(command)
-                except StageOutInvalidPath, ex:
+                except StageOutInvalidPath as ex:
                     # plugin indicated directory missing,create and retry
                     msg = "Copy failure indicates directory does not exist.\n"
                     msg += "Create now"
@@ -203,7 +203,7 @@ class StageOutImpl:
                     self.executeCommand(command)
                 return
 
-            except StageOutError, ex:
+            except StageOutError as ex:
                 msg = "Attempted stage out %s failed\n" % retryCount
                 msg += "Automatically retrying in %s secs\n " % self.retryPause
                 msg += "Error details:\n%s\n" % str(ex)

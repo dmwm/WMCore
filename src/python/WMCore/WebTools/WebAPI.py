@@ -156,7 +156,7 @@ class WebAPI(DatabasePage):
                 dict = self.methods[method]['call'](**input)
             else:
                 dict = self.methods[method]['call']()
-        except Exception, e:
+        except Exception as e:
             error = e.__str__()
             self.debug(error)
             self.debug(traceback.print_exc())

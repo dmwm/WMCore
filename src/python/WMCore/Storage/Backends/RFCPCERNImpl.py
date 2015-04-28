@@ -230,7 +230,7 @@ class RFCPCERNImpl(StageOutImpl):
         print "Check dir existence : %s" % command
         try:
             exitCode, output = runCommandWithOutput(command)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error: Exception while invoking command:\n"
             msg += "%s\n" % command
             msg += "Exception: %s\n" % str(ex)

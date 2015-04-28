@@ -95,7 +95,7 @@ class DeleteMgr:
             self.tfc = self.siteCfg.trivialFileCatalog()
             msg += "Trivial File Catalog has been loaded:\n"
             msg += str(self.tfc)
-        except StandardError, ex:
+        except StandardError as ex:
             msg = "Unable to load Trivial File Catalog:\n"
             msg += "Local stage out will not be attempted\n"
             msg += str(ex)
@@ -125,7 +125,7 @@ class DeleteMgr:
             overrideParams['command'] = overrideConf['command']
             overrideParams['se-name'] = overrideConf['se-name']
             overrideParams['lfn-prefix'] = overrideConf['lfn-prefix']
-        except StandardError, ex:
+        except StandardError as ex:
             msg = "Unable to extract Override parameters from config:\n"
             msg += str(overrideConf)
             raise StageOutInitError(msg)
@@ -167,7 +167,7 @@ class DeleteMgr:
             try:
                 fileToDelete['PFN'] = self.deleteLFN(lfn)
                 deleteSuccess = True
-            except StageOutFailure, ex:
+            except StageOutFailure as ex:
                 msg = "===> Local Stage Out Failure for file:\n"
                 msg += "======>  %s\n" % fileToDelete['LFN']
                 msg += str(ex)
@@ -183,7 +183,7 @@ class DeleteMgr:
                     try:
                         fileToDelete['PFN'] = self.deleteLFN(lfn, fallback)
                         deleteSuccess = True
-                    except StageOutFailure, ex:
+                    except StageOutFailure as ex:
                         continue
 
         if deleteSuccess:
@@ -240,7 +240,7 @@ class DeleteMgr:
         """
         try:
             impl = retrieveStageOutImpl(command)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Unable to retrieve impl for file deletion in:\n"
             msg += "Error retrieving StageOutImpl for command named: %s\n" % (
                 command,)
@@ -251,13 +251,13 @@ class DeleteMgr:
 
         try:
             impl.removeFile(pfn)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failure for file deletion in:\n"
             msg += str(ex)
             try:
                 import traceback
                 msg += traceback.format_exc()
-            except AttributeError, ex:
+            except AttributeError as ex:
                 msg += "Traceback unavailable\n"
             raise StageOutFailure(msg, Command = command, Protocol = command,
                                   LFN = lfn, TargetPFN = pfn)

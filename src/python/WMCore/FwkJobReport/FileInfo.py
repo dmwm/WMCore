@@ -42,7 +42,7 @@ def readAdler32(filename):
             sum = adler32(line, sum)
         f.close()
         return '%x' % (sum & 0xffffffffL) # +ve values and convert to hex
-    except StandardError, e:
+    except StandardError as e:
         print('Error computing Adler32 checksum of %s. %s' % (filename, str(e)))
 
 

@@ -60,7 +60,7 @@ def doGenericPeriodAndProcessPolling(ti):
     """
     try:
         poller = ti.pollerClass(ti.config, ti.testCase.generator)
-    except Exception, ex:
+    except Exception as ex:
         ti.testCase.fail("%s: exception: %s" % (ti.testCase.testName, ex))
 
     handler, receiver = setUpReceiver(ti.testCase.generator.config.Alert.address,
@@ -128,7 +128,7 @@ def doGenericValueBasedPolling(ti):
     """
     try:
         poller = ti.pollerClass(ti.config, ti.testCase.generator)
-    except Exception, ex:
+    except Exception as ex:
         ti.testCase.fail("%s: exception: %s" % (ti.testCase.testName, ex))
     # inject own input sample data provider, don't care about the directory
     poller.sample = lambda dir: random.randint(ti.thresholdToTest,

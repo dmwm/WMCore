@@ -59,7 +59,7 @@ class DBCreator(DBFormatter):
                 self.dbi.processData(self.create[i],
                                      conn = conn,
                                      transaction = transaction)
-            except Exception, e:
+            except Exception as e:
                 msg = WMEXCEPTION['WMCore-2'] + '\n\n' +\
                                   str(self.create[i]) +'\n\n' +str(e)
                 self.logger.debug( msg )
@@ -71,7 +71,7 @@ class DBCreator(DBFormatter):
                 self.dbi.processData(self.indexes[i],
                                      conn = conn,
                                      transaction = transaction)
-            except Exception, e:
+            except Exception as e:
                 msg = WMEXCEPTION['WMCore-2'] + '\n\n' +\
                                   str(self.indexes[i]) +'\n\n' +str(e)
                 self.logger.debug( msg )
@@ -83,7 +83,7 @@ class DBCreator(DBFormatter):
                 self.dbi.processData(self.constraints[i],
                                  conn = conn,
                                  transaction = transaction)
-            except Exception, e:
+            except Exception as e:
                 msg = WMEXCEPTION['WMCore-2'] + '\n\n' +\
                                   str(self.constraints[i]) +'\n\n' +str(e)
                 self.logger.debug( msg )
@@ -95,7 +95,7 @@ class DBCreator(DBFormatter):
                 self.dbi.processData(self.inserts[i],
                                      conn = conn,
                                      transaction = transaction)
-            except Exception, e:
+            except Exception as e:
                 msg = WMEXCEPTION['WMCore-2'] + '\n\n' +\
                                   str(self.inserts[i]) +'\n\n' +str(e)
                 self.logger.debug( msg )

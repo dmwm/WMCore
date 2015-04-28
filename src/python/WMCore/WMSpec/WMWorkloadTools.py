@@ -115,7 +115,7 @@ def _validateArgument(argument, value, argumentDefinition):
         try:
             if not validateFunction(value):
                 raise WMSpecFactoryException("Argument %s: value: %s doesn't pass the validation function." % (argument, value))
-        except Exception, ex:
+        except Exception as ex:
             # Some validation functions (e.g. Lexicon) will raise errors instead of returning False
             logging.error(str(ex))
             raise WMSpecFactoryException("Validation failed: %s value: %s" % (argument, value))

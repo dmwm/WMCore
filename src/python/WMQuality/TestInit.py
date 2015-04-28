@@ -31,7 +31,7 @@ hasDatabase = True
 try:
     from WMCore.Database.DBFormatter import DBFormatter
     from WMCore.WMInit import WMInit
-except ImportError, ex:
+except ImportError as ex:
     print str(ex)
     print "NOTE: TestInit is being loaded without database support"
     hasDatabase = False
@@ -212,7 +212,7 @@ class TestInit:
 
         try:
             self.init.setSchema(modules.keys(), params = params)
-        except Exception, ex:
+        except Exception as ex:
             print traceback.format_exc()
             raise ex
 
@@ -317,14 +317,14 @@ class TestInit:
                 myThread.transaction.conn.close()
                 myThread.transaction.conn = None
                 print "Connection Closed"
-        except Exception, e:
+        except Exception as e:
             print "tried to close DBI but failed: %s" % e
 
         try:
             if hasattr(myThread, "dbFactory"):
                 del myThread.dbFactory
                 print "dbFactory removed"
-        except Exception, e:
+        except Exception as e:
             print "tried to delete factory but failed %s" % e
             
 def getTestFilename(partialPath):

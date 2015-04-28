@@ -116,7 +116,7 @@ class RESTModel(WebAPI):
                 self.warning(msg)
             data = methodCall(*params, **kwargs)
         # If a type error is raised the data from the client is bad - 400 error
-        except TypeError, e:
+        except TypeError as e:
             error = e.__str__()
             self.debug(error)
             self.debug(traceback.format_exc())
@@ -266,10 +266,10 @@ class RESTModel(WebAPI):
         for fnc in validators:
             try:
                 filteredInput = fnc(input_data)
-            except HTTPError, he:
+            except HTTPError as he:
                 self.debug(he)
                 raise he
-            except Exception, e:
+            except Exception as e:
                 self.debug(e)
                 raise HTTPError(400, 'Invalid input: Input data failed validation.')
             result.update(filteredInput)

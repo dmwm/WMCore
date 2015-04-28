@@ -51,7 +51,7 @@ class Assign(WebAPI):
                 self.sites.sort()
                 self.phedexNodes = sitedb.getAllPhEDExNodeNames(excludeBuffer = True)
                 self.phedexNodes.sort()
-            except Exception, ex:
+            except Exception as ex:
                 msg = "ERROR: Could not retrieve sites from SiteDB, reason: %s" % ex
                 cherrypy.log(msg)
                 raise
@@ -130,7 +130,7 @@ class Assign(WebAPI):
                 WMCore.Lexicon.procstring(strValue)
             else:
                 WMCore.Lexicon.identifier(strValue)
-        except AssertionError, ex:
+        except AssertionError as ex:
             raise cherrypy.HTTPError(400, "Bad input: %s" % str(ex))
         return v
 
@@ -333,7 +333,7 @@ class Assign(WebAPI):
             procds = tokens[2]
             try:
                 WMCore.Lexicon.procdataset(procds)
-            except AssertionError, ex:
+            except AssertionError as ex:
                 raise cherrypy.HTTPError(400, 
                             "Bad output dataset name, check the processed dataset.\n %s" % 
                             str(ex))

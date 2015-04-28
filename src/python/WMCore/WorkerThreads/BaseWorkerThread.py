@@ -163,7 +163,7 @@ class BaseWorkerThread:
                                     if getattr(self.component.config.Agent, "useHeartbeat", True):
                                         self.heartbeatAPI.updateWorkerHeartbeat(
                                             myThread.getName(), "Running")
-                            except (CouchError, CouchConnectionError), ex:
+                            except (CouchError, CouchConnectionError) as ex:
                                 msg  = " Failed to update heartbeat for worker %s" % str(self)
                                 msg += ":\n %s" % str(ex)
                                 msg += "\n Skipping worker algorithm!"
@@ -177,7 +177,7 @@ class BaseWorkerThread:
                                     msg += " Raise a bug against me. Rollback."
                                     logging.error(msg)
                                     myThread.transaction.rollback()
-                        except Exception, ex:
+                        except Exception as ex:
                             if myThread.transaction.transaction is not None:
                                 myThread.transaction.rollback()
                             msg = "Error in worker algorithm (1):\nBacktrace:\n "
@@ -189,7 +189,7 @@ class BaseWorkerThread:
                             # force entire component to terminate
                             try:
                                 self.component.prepareToStop()
-                            except Exception, ex:
+                            except Exception as ex:
                                 logging.error("Failed to halt component after worker crash: %s" % str(ex))
                             if hasattr(self.component.config, "Agent"):
                                 if getattr(self.component.config.Agent, "useHeartbeat", True):
@@ -201,7 +201,7 @@ class BaseWorkerThread:
 
             # Call specific thread termination method
             self.terminate(parameters)
-        except Exception, ex:
+        except Exception as ex:
             # Notify error
             msg = "Error in event loop (2): %s %s\nBacktrace:\n"
             msg = msg % (str(self), str(ex))

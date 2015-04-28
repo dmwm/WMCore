@@ -23,7 +23,7 @@ class TemplateTest(unittest.TestCase):
         """instantiation"""
         try:
             template = Template()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failed to instantiate Template object:\n"
             msg += str(ex)
             self.fail(msg)
@@ -36,7 +36,7 @@ class TemplateTest(unittest.TestCase):
 
         try:
             template.coreInstall(step)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error calling Template.coreInstall(step)\n"
             msg += str(ex)
             self.fail(msg)
@@ -73,7 +73,7 @@ class CoreHelperTest(unittest.TestCase):
         """instantiation"""
         try:
             helper = CoreHelper(WMStep("TestHelper"))
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failed to instantiate CoreHelper object:\n"
             msg += str(ex)
             self.fail(msg)
@@ -85,7 +85,7 @@ class CoreHelperTest(unittest.TestCase):
 
         try:
             name = helper.stepName()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failed to call CoreHelper.stepName:\n"
             msg += str(ex)
             self.fail(msg)
@@ -103,7 +103,7 @@ class CoreHelperTest(unittest.TestCase):
 
         try:
             helper.addEnvironmentVariable("Variable1", "Value1")
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failed to call CoreHelper.addEnvironmentVariable:\n"
             msg += str(ex)
             self.fail(msg)
@@ -122,7 +122,7 @@ class CoreHelperTest(unittest.TestCase):
             helper.addEnvironmentPath("Path1", "Entry1")
             helper.addEnvironmentPath("Path1", "Entry2")
             helper.addEnvironmentPath("Path1", "Entry3")
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failed to call CoreHelper.addEnvironmentPath:\n"
             msg += str(ex)
             self.fail(msg)
@@ -152,7 +152,7 @@ class CoreHelperTest(unittest.TestCase):
             helper.addDirectory("dir1/dir3")
             helper.addDirectory("dir1/dir4")
             helper.addDirectory("/dir1/dir5")
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error calling CoreHelper.addDirectory\n"
             msg += str(ex)
             self.fail(msg)

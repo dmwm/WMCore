@@ -29,7 +29,7 @@ class CouchService(object):
         result = ''
         try:
             result = self.couchdb.document(docId)
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Error loading document from couch"
             msg += str(ex)
             msg += str(traceback.format_exc())
@@ -43,7 +43,7 @@ class CouchService(object):
         """
         try:
             self.couchdb.queueDelete(doc)
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Error queuing document for delete from couch"
             msg += str(ex)
             msg += str(traceback.format_exc())
@@ -51,7 +51,7 @@ class CouchService(object):
 
         try:
             self.couchdb.commit()
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Error commiting documents in couch"
             msg += str(ex)
             msg += str(traceback.format_exc())
@@ -64,7 +64,7 @@ class CouchService(object):
         """
         try:
             self.couchdb.queue(doc)
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Error queuing document into couch"
             msg += str(ex)
             msg += str(traceback.format_exc())
@@ -72,7 +72,7 @@ class CouchService(object):
 
         try:
             self.couchdb.commit()
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Error commiting document in couch"
             msg += str(ex)
             msg += str(traceback.format_exc())

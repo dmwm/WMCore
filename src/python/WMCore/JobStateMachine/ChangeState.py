@@ -52,7 +52,7 @@ def discardConflictingDocument(couchDbInstance, data, result):
                 break
 
         return retval
-    except CouchError, ex:
+    except CouchError as ex:
         logging.error("Couldn't resolve conflict when updating document with id %s" % result["id"])
         logging.error("Error: %s" % str(ex))
         return result
@@ -76,7 +76,7 @@ class ChangeState(WMObject, WMConnectionBase):
 
         try:
             self.dashboardReporter = DashboardReporter(config)
-        except Exception, ex:
+        except Exception as ex:
             logging.error("Error setting up the \
 -                          dashboard reporter: %s" % str(ex))
             raise
@@ -98,7 +98,7 @@ class ChangeState(WMObject, WMConnectionBase):
         if not hasattr(self, 'jobsdatabase') or self.jobsdatabase is None:
             try:
                 self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname, size = 250)
-            except Exception, ex:
+            except Exception as ex:
                 logging.error("Error connecting to couch db '%s/jobs': %s" % (self.dbname, str(ex)))
                 self.jobsdatabase = None
                 return False
@@ -106,7 +106,7 @@ class ChangeState(WMObject, WMConnectionBase):
         if not hasattr(self, 'fwjrdatabase') or self.fwjrdatabase is None:
             try:
                 self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % self.dbname, size = 250)
-            except Exception, ex:
+            except Exception as ex:
                 logging.error("Error connecting to couch db '%s/fwjrs': %s" % (self.dbname, str(ex)))
                 self.fwjrdatabase = None
                 return False
@@ -115,7 +115,7 @@ class ChangeState(WMObject, WMConnectionBase):
             dbname = getattr(self.config.JobStateMachine, 'jobSummaryDBName')
             try:
                 self.jsumdatabase = self.couchdb.connectDatabase(dbname, size = 250 )
-            except Exception, ex:
+            except Exception as ex:
                 logging.error("Error connecting to couch db '%s': %s" % (dbname, str(ex)))
                 self.jsumdatabase = None
                 return False
@@ -124,7 +124,7 @@ class ChangeState(WMObject, WMConnectionBase):
             dbname = getattr(self.config.JobStateMachine, 'summaryStatsDBName')
             try:
                 self.statsumdatabase = self.couchdb.connectDatabase(dbname, size = 250 )
-            except Exception, ex:
+            except Exception as ex:
                 logging.error("Error connecting to couch db '%s': %s" % (dbname, str(ex)))
                 self.jsumdatabase = None
                 return False
@@ -157,14 +157,14 @@ class ChangeState(WMObject, WMConnectionBase):
         # 4. Document the state transition in couch
         try:
             self.recordInCouch(jobs, newstate, oldstate, updatesummary)
-        except Exception, ex:
+        except Exception as ex:
             logging.error("Error updating job in couch: %s" % str(ex))
             logging.error(traceback.format_exc())
 
         # 5. Report the job transition to the dashboard
         try:
             self.reportToDashboard(jobs, newstate, oldstate)
-        except Exception, ex:
+        except Exception as ex:
             logging.error("Error reporting to the dashboard: %s" % str(ex))
             logging.error(traceback.format_exc())
 
@@ -561,6 +561,6 @@ class ChangeState(WMObject, WMConnectionBase):
                 updateUri = "/" + self.jobsdatabase.name + "/_design/JobDump/_update/locationTransition/" + couchRecord
                 updateUri += "?location=%s" % (location)
                 self.jobsdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
-        except Exception, ex:
+        except Exception as ex:
             logging.error("Error updating job in couch: %s" % str(ex))
             logging.error(traceback.format_exc())

@@ -70,7 +70,7 @@ for blockName in blocks.keys():
     blockFiles = []
     try:
         dbsFiles = dbsApi.listFileArray(blockName = blockName)
-    except Exception, ex:
+    except Exception as ex:
         dbsFiles = []
         
     for dbsFile in dbsFiles:
@@ -95,7 +95,7 @@ for badFile in badFiles:
         dbsFile = dbsApi.listFileArray(patternLFN = badFile)[0]
         if dbsFile["Block"]["Name"] not in badBlocks:
             badBlocks.append(dbsFile["Block"]["Name"])
-    except Exception, ex:
+    except Exception as ex:
         continue
 
 print "Bad:"

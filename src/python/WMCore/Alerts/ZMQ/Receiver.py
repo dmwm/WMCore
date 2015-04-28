@@ -126,7 +126,7 @@ class ReceiverLogic(object):
             self._workChannel = context.socket(zmq.PULL)
             logging.info("Receiver - going to bind (alerts target): %s" % self._alertsAddr)
             self._workChannel.bind(self._alertsAddr)
-        except Exception, ex:
+        except Exception as ex:
             logging.error("Failed to bind (alerts target) %s, reason: %s" % (self._alertsAddr, ex))
             raise
 
@@ -136,7 +136,7 @@ class ReceiverLogic(object):
             logging.info("Receiver - going to bind (alerts control): %s" % self._controlAddr)
             self._contChannel.bind(self._controlAddr)
             self._contChannel.setsockopt(zmq.SUBSCRIBE, "")
-        except Exception, ex:
+        except Exception as ex:
             logging.error("Failed to bind (control target) %s, reason: %s" % (self._controlAddr, ex))
             raise
 

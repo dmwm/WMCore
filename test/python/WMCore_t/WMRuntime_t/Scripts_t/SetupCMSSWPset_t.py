@@ -90,7 +90,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
             testFile = "PSet.py"
             pset = imp.load_source('process', testFile)
             loadedProcess = pset.process
-        except Exception, ex:
+        except Exception as ex:
             self.fail("An exception was caught while trying to load the PSet, %s" % str(ex))
         finally:
             os.chdir(currentPath)
@@ -199,7 +199,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         """
         try:
             from DBSAPI.dbsApi import DbsApi
-        except ImportError, ex:
+        except ImportError as ex:
             raise nose.SkipTest
 
         # this is modified and shortened version of

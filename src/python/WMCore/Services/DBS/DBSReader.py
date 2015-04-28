@@ -21,7 +21,7 @@ def DBSReader(endpoint, **kwargs):
         # if this doesn't throw endpoint is dbs3
         dbs.dbs.serverinfo()
         return dbs
-    except Exception, ex:
+    except Exception as ex:
         msg += 'Instantiating DBS3Reader failed with %s\n' % str(ex)
     raise DBSReaderError("Can't contact DBS at %s, got errors %s" % (endpoint, msg))
 

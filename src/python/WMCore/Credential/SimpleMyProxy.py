@@ -263,7 +263,7 @@ if __name__ == '__main__':
         ret = myproxy_client(ctx, opt.op, opt.username, lifetime=int(opt.lifetime),
                              host=opt.host, port=int(opt.port), logger=logger)
         sys.stdout.write(ret)
-    except Exception,e:
+    except Exception as e:
         if opt.debug:
             import traceback
             traceback.print_exc()

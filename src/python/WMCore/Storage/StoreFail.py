@@ -65,7 +65,7 @@ class StoreFailMgr:
                 result = self.mgr(**fileToStage)
                 fileToStage.update(result)
                 stagedOutFiles.append(newLfn)
-            except StageOutFailure, ex:
+            except StageOutFailure as ex:
                 msg = "Unable to stage out %s " % newLfn
                 msg += " due to Stage Out Failure:\n"
                 msg += str(ex)

@@ -402,7 +402,7 @@ class Proxy(Credential):
                     hours, minutes, seconds = timeleftList[0]
                     proxyTimeleft = int(hours)*3600 + int(\
                       minutes)*60 + int(seconds)
-                except Exception, e:
+                except Exception as e:
                     self.logger.error('Error extracting timeleft from proxy %s' % str(e))
 
             elif len(self.serverDN.strip()) > 0:
@@ -421,7 +421,7 @@ class Proxy(Credential):
                     try:
                         hours, minutes, seconds = credTimeleftList[ credNameList.index(serverCredName) ]
                         proxyTimeleft = int(hours) * 3600 + int(minutes) * 60 + int(seconds)
-                    except Exception, e:
+                    except Exception as e:
                         self.logger.error('Error extracting timeleft from credential name %s' % str(e))
 
             else:
@@ -462,7 +462,7 @@ class Proxy(Credential):
                 try:
                     hours, minutes, seconds = timeleftList[0]
                     timeleft = int(hours) * 3600 + int(minutes) * 60 + int(seconds)
-                except Exception, e:
+                except Exception as e:
                     self.logger.error('Error extracting timeleft from proxy %s' % str(e))
                     return False
 
@@ -493,7 +493,7 @@ class Proxy(Credential):
                 try:
                     hours, minutes, seconds = credTimeleftList[ credNameList.index(serverCredName) ]
                     timeleft = int(hours) * 3600 + int(minutes) * 60 + int(seconds)
-                except Exception, e:
+                except Exception as e:
                     self.logger.error('Error extracting timeleft from credential name %s' % str(e))
                     return False
 

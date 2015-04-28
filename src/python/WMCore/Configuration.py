@@ -550,7 +550,7 @@ def loadConfigurationFile(filename):
     try:
         modRef = imp.load_module(cfgBaseName, modPath[0],
                                  modPath[1], modPath[2])
-    except Exception, ex:
+    except Exception as ex:
         msg = "Unable to load Configuration File:\n"
         msg += "%s\n" % filename
         msg += "Due to error:\n"

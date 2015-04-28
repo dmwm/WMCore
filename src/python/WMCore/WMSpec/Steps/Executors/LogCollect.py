@@ -99,7 +99,7 @@ class LogCollect(Executor):
                 deleteMgr   = DeleteMgr.DeleteMgr()
                 stageInMgr  = StageInMgr.StageInMgr()
                 stageOutMgr = StageOutMgr.StageOutMgr(**stageOutParams)
-        except StandardError, ex:
+        except StandardError as ex:
             msg = "Unable to load StageIn/Out/Delete Impl: %s" % str(ex)
             logging.error(msg)
             raise WMExecutionFailure(60312, "MgrImplementationError", msg)
@@ -125,12 +125,12 @@ class LogCollect(Executor):
                     logging.error(msg)
                     self.report.addError(self.stepName, 60407, "LogCollectTimeout", msg)
                     self.report.persist("Report.pkl")
-                except StageOutFailure, ex:
+                except StageOutFailure as ex:
                     msg = "Unable to StageIn %s" % file['LFN']
                     logging.error(msg)
                     # Don't do anything other then record it
                     self.report.addSkippedFile(file.get('PFN', None), file['LFN'])
-                except Exception, ex:
+                except Exception as ex:
                     raise
 
                 signal.alarm(0)
@@ -165,7 +165,7 @@ class LogCollect(Executor):
                 msg = "Indefinite hang during stageOut of LogCollect"
                 logging.error(msg)
                 raise WMExecutionFailure(60409, "LogCollectTimeout", msg)
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Unable to stage out log archive:\n"
                 msg += str(ex)
                 print "MSG: %s" % msg
@@ -186,7 +186,7 @@ class LogCollect(Executor):
                     msg = "Indefinite hang during delete of LogCollect"
                     logging.error(msg)
                     raise WMExecutionFailure(60411, "DeleteTimeout", msg)
-                except Exception, ex:
+                except Exception as ex:
                     msg = "Unable to delete files:\n"
                     msg += str(ex)
                     logging.error(msg)

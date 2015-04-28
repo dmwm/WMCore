@@ -42,7 +42,7 @@ def getApmonInstance( logr, apmonServer ):
                     apmonInstance = apmon.ApMon(apmonConf, logr) #apmonLoggingLevel)
                 else:
                     apmonInstance = apmon.ApMon(apmonServer, logr)
-            except Exception, e :
+            except Exception as e :
                 pass
     return apmonInstance
 
@@ -55,7 +55,7 @@ def apmonFree() :
     if apmonInstance is not None :
         try :
             apmonInstance.free()
-        except Exception, e :
+        except Exception as e :
             pass
         apmonInstance = None
     apmonInit = False
@@ -73,6 +73,6 @@ def apmonSend(taskid, jobid, params, logr, apmonServer) :
         try :
             apm.sendParameters(taskid, jobid, params)
             return 0
-        except Exception, e:
+        except Exception as e:
             pass
     return 1

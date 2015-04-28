@@ -26,7 +26,7 @@ class BaseAction(object):
         action = daofactory(classname=self.name)
         try:
             return action.execute()
-        except Exception, e:
+        except Exception as e:
             self.logger.exception(e)
             return False
 
@@ -42,6 +42,6 @@ class BoundAction(BaseAction):
         action = daofactory(classname=self.name)
         try:
             return action.execute(kwargs)
-        except Exception, e:
+        except Exception as e:
             self.logger.exception(e)
             return False

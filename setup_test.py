@@ -623,7 +623,7 @@ class ReportCommand(Command):
                refactor += stats['refactor']
                convention += stats['convention']
                statement += stats['statement']
-       except Exception,e:
+       except Exception as e:
            # and restore the stdout/stderr
            sys.stderr = sys.__stderr__
            sys.stdout = sys.__stderr__

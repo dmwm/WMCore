@@ -199,7 +199,7 @@ class Group(RESTEntity):
         """
         try:
             groups = self.reqmgr_aux_db.document("groups")
-        except CouchNotFoundError, ex:
+        except CouchNotFoundError as ex:
             msg = ("ERROR: Retrieving groups document failed, reason: %s"
                    " Creating the document ..." % ex)
             cherrypy.log(msg)
@@ -207,7 +207,7 @@ class Group(RESTEntity):
                 doc = Document(id="groups", inputDict={group_name: None})
                 self.reqmgr_aux_db.commitOne(doc)
                 return
-            except CouchError, ex:
+            except CouchError as ex:
                 msg = "ERROR: Creating document groups failed, reason: %s" % ex
                 cherrypy.log(msg)
                 raise cherrypy.HTTPError(400, msg)
@@ -289,7 +289,7 @@ class Team(RESTEntity):
         """
         try:
             teams = self.reqmgr_aux_db.document("teams")
-        except CouchNotFoundError, ex:
+        except CouchNotFoundError as ex:
             msg = ("ERROR: Retrieving teams document failed, reason: %s"
                    " Creating the document ..." % ex)
             cherrypy.log(msg)
@@ -297,7 +297,7 @@ class Team(RESTEntity):
                 doc = Document(id="teams", inputDict={team_name: None})
                 self.reqmgr_aux_db.commitOne(doc)
                 return
-            except CouchError, ex:
+            except CouchError as ex:
                 msg = "ERROR: Creating document teams failed, reason: %s" % ex
                 cherrypy.log(msg)
                 raise cherrypy.HTTPError(400, msg)
@@ -358,7 +358,7 @@ def _get_all_scramarchs_and_versions(url):
         logging.debug("Getting data from %s ..." % url)
         f = urllib.urlopen(url)
         dom_doc = xml.dom.minidom.parse(f)
-    except ExpatError, ex:
+    except ExpatError as ex:
         logging.error("Could not get data from CMS tag collector, abort."
                       " Reason: %s" % ex)
         return {}

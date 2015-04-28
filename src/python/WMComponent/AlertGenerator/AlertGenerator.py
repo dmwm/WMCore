@@ -98,7 +98,7 @@ class AlertGenerator(Harness):
                     pollerObj = pollerClass(pollerConf, self)
                     self._pollers.append(pollerObj)
                     logging.info("%s initialized." % pollerObj.__class__.__name__)
-                except Exception, ex:
+                except Exception as ex:
                     trace = traceback.format_exception(*sys.exc_info())
                     traceString = '\n '.join(trace)
                     logging.error("%s failed to initialize, reason: %s\n%s" %

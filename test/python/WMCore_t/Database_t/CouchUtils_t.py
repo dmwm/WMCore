@@ -48,7 +48,7 @@ class CouchUtils_t(unittest.TestCase):
 
         try:
             CouchUtils.initialiseCouch(couchThingy)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error initialising couch client for test object:\n %s " % str(ex)
             self.fail(msg)
 
@@ -56,7 +56,7 @@ class CouchUtils_t(unittest.TestCase):
         # test decorator on already connected object
         try:
             couchThingy()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error invoking connectToCouch decorator:\n %s" % str(msg)
             self.fail(msg)
 
@@ -66,7 +66,7 @@ class CouchUtils_t(unittest.TestCase):
         # 2nd call will make sure full connection is called
         try:
             newCouchThingy()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error invoking connectToCouch decorator:\n %s" % str(msg)
             self.fail(msg)
         self.failUnless(newCouchThingy != None)
@@ -97,12 +97,12 @@ class CouchUtils_t(unittest.TestCase):
 
         try:
             thingy.call1()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failure in requireCollection decorator: %s" % str(ex)
             self.fail(msg)
         try:
             thingy.call4()
-        except Execption, ex:
+        except Execption as ex:
             msg = "Failure in requireOwner decorator: %s" % str(ex)
             self.fail(msg)
 

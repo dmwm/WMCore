@@ -212,7 +212,7 @@ class ThreadPool(Queue):
                 key, parameters = slaveServer.retrieveWork()
                 self.callQueue -= 1
                 exceptCount = 0
-            except Exception, ex:
+            except Exception as ex:
                 logging.error("Problem with retrieving work : "+str(ex))
                 logging.error("Trying to salvage it")
                 slaveServer.sane = False

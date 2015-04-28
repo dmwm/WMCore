@@ -99,7 +99,7 @@ class RFCPCERNImpl(StageOutImplV2):
         print "Check dir existence : %s" % rfstatCmd
         try:
             rfstatExitCode, rfstatOutput = runCommandWithOutput(rfstatCmd)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error: Exception while invoking command:\n"
             msg += "%s\n" % rfstatCmd
             msg += "Exception: %s\n" % str(ex)

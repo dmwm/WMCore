@@ -151,7 +151,7 @@ class WorkerThreadManager:
                         # the slave we wanted wasn't running
                         try:
                             self.slavelist.remove(slavename)
-                        except Exception, ex:
+                        except Exception as ex:
                             print "couldn't remove thread.. %s " % ex
                             pass
                         else:

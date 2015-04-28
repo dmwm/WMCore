@@ -148,7 +148,7 @@ class Report:
         from WMCore.FwkJobReport.XMLParser import xmlToJobReport
         try:
             xmlToJobReport(self, xmlfile)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error reading XML job report file, possibly corrupt XML File:\n"
             msg += "Details: %s" % str(ex)
             crashMessage = "\nStacktrace:\n"

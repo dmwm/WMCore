@@ -111,7 +111,7 @@ class CouchDBRequests(JSONRequests):
             result, status, reason, cached = JSONRequests.makeRequest(
                                         self, uri, data, type, incoming_headers,
                                         encode, decode,contentType)
-        except HTTPException, e:
+        except HTTPException as e:
             self.checkForCouchError(getattr(e, "status", None),
                                     getattr(e, "reason", None), data)
 
@@ -1122,7 +1122,7 @@ class CouchMonitor(object):
                 return {'status': 'ok'}
             else:
                 return {'status':'error', 'error_message': "replication stopped"}
-        except Exception, ex:
+        except Exception as ex:
             import traceback
             msg = traceback.format_exc() 
             logging.error(msg)

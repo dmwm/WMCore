@@ -133,7 +133,7 @@ def uploadWorker(input, results, dbsUrl):
             logging.debug("About to call insert block with block: %s" % block)
             dbsApi.insertBulkBlock(blockDump = block)
             results.put({'name': name, 'success': "uploaded"})
-        except Exception, ex:
+        except Exception as ex:
             exString = str(ex)
             if 'Block %s already exists' % name in exString:
                 # Then this is probably a duplicate
@@ -264,7 +264,7 @@ class DBSUploadPoller(BaseWorkerThread):
         for _ in self.pool:
             try:
                 self.input.put('STOP')
-            except Exception, ex:
+            except Exception as ex:
                 # Something very strange happens here
                 # It's like it raises a blank exception
                 # Upon being told to return
@@ -328,7 +328,7 @@ class DBSUploadPoller(BaseWorkerThread):
             self.retrieveBlocks()
         except WMException:
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Unhandled Exception in DBSUploadPoller!\n"
             msg += str(ex)
             msg += str(str(traceback.format_exc()))
@@ -357,7 +357,7 @@ class DBSUploadPoller(BaseWorkerThread):
             logging.info("Loaded blocks: %s" % loadedBlocks)
         except WMException:
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Unhandled exception while loading blocks.\n"
             msg += str(ex)
             logging.error(msg)
@@ -379,7 +379,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 logging.info("Have %i files for block %s" % (len(files), blockname))
             except WMException:
                 raise
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Unhandled exception while loading files for existing blocks.\n"
                 msg += str(ex)
                 logging.error(msg)
@@ -424,7 +424,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 loadedFiles = self.dbsUtil.findUploadableFilesByDAS(das = dasID)
             except WMException:
                 raise
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Unhandled exception while loading uploadable files for DAS.\n"
                 msg += str(ex)
                 logging.error(msg)
@@ -635,7 +635,7 @@ class DBSUploadPoller(BaseWorkerThread):
         except WMException:
             myThread.transaction.rollback()
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Unhandled exception while writing new blocks into DBSBuffer\n"
             msg += str(ex)
             logging.error(msg)
@@ -658,7 +658,7 @@ class DBSUploadPoller(BaseWorkerThread):
         except WMException:
             myThread.transaction.rollback()
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Unhandled exception while setting blocks in files.\n"
             msg += str(ex)
             logging.error(msg)
@@ -768,7 +768,7 @@ class DBSUploadPoller(BaseWorkerThread):
         except WMException:
             myThread.transaction.rollback()
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Unhandled exception while finished closed blocks in DBSBuffer\n"
             msg += str(ex)
             logging.error(msg)
@@ -813,7 +813,7 @@ class DBSUploadPoller(BaseWorkerThread):
                         loadedBlock.status = 'InDBS'
                         blocksUploaded.append(loadedBlock)
                         break
-            except Exception, ex:
+            except Exception as ex:
                 exString = str(ex)
                 msg =  "Error trying to check block %s through DBS.\n" % block
                 msg += exString
@@ -829,7 +829,7 @@ class DBSUploadPoller(BaseWorkerThread):
         except WMException:
             myThread.transaction.rollback()
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Unhandled exception while finished closed blocks in DBSBuffer\n"
             msg += str(ex)
             logging.error(msg)

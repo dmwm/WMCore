@@ -45,7 +45,7 @@ class TestWrapper(unittest.TestCase):
 
         try:
             json_wrap.loads("bogusbogus")
-        except cjson.DecodeError, ex:
+        except cjson.DecodeError as ex:
             self.assertEqual(ex.args, ("cannot parse JSON description: bogusbogus",))
 
     def test_json(self):
@@ -65,7 +65,7 @@ class TestWrapper(unittest.TestCase):
 
         try:
             json_wrap.loads("bogusbogus")
-        except ValueError, ex:
+        except ValueError as ex:
             self.assertEqual(ex.args, ("No JSON object could be decoded: bogusbogus",))
 
     def test_string_compare(self):

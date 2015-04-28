@@ -47,7 +47,7 @@ class MySQLTest(unittest.TestCase):
         # appropriate attributes set
         try:
             poller = MySQLPoller(config.AlertGenerator.mysqlCPUPoller, generator)
-        except Exception, ex:
+        except Exception as ex:
             self.fail("%s: exception: %s" % (self.testName, ex))
         # this class would not have defined polling sample function, give it one
         poller.sample = lambda proc: float(12)
@@ -67,7 +67,7 @@ class MySQLTest(unittest.TestCase):
         generator = utils.AlertGeneratorMock(config)
         try:
             poller = MySQLCPUPoller(config.AlertGenerator.mysqlCPUPoller, generator)
-        except Exception, ex:
+        except Exception as ex:
             self.fail("%s: exception: %s" % (self.testName, ex))
         self.assertEqual(len(poller._measurements), 0)
         poller.check()
@@ -179,7 +179,7 @@ class MySQLTest(unittest.TestCase):
         generator = utils.AlertGeneratorMock(config)
         try:
             poller = MySQLDbSizePoller(config.AlertGenerator.mysqlCPUPoller, generator)
-        except Exception, ex:
+        except Exception as ex:
             self.fail("%s: exception: %s" % (self.testName, ex))
         poller.check()
 

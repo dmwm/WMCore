@@ -428,7 +428,7 @@ class RequestQuery:
                         stripped_dataset = input_processed_dataset.split("-")[1:]
                         new_dataset = '_'.join(stripped_dataset)
                     
-                except Exception, ex:
+                except Exception as ex:
                     self.br.back()
                     print "There is a problem with this ticket %s, please have a look to the error:" % task
                     print str(ex)

@@ -101,7 +101,7 @@ class TaskMaker:
         if not os.path.isdir(inputWorkdir):
             try:
                 os.mkdir(inputWorkdir)
-            except Exception, ex:
+            except Exception as ex:
                 print 'Caught exception %s in creating workdir %s' %(str(ex), inputWorkdir)
                 raise Exception(ex)
 

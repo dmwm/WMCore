@@ -263,7 +263,7 @@ class WMStatsReader():
     def getHeartbeat(self):
         try:
             return self.couchDB.info();
-        except Exception, ex:
+        except Exception as ex:
             return {'error_message': str(ex)}
     
     def getRequestByNames(self, requestNames, jobInfoFlag = False):

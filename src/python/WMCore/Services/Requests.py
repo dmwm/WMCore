@@ -363,7 +363,7 @@ class Requests(dict):
             # if not proceed as not all https connections require them
             try:
                 key, cert = self.getKeyCert()
-            except Exception, ex:
+            except Exception as ex:
                 msg = 'No certificate or key found, authentication may fail'
                 self['logger'].info(msg)
                 self['logger'].debug(str(ex))

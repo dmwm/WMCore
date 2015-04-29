@@ -76,7 +76,9 @@ class EventBased(JobFactory):
                         lumiDict = fileLumis.get(f['id'], {})
                         for run in lumiDict.keys():
                             f.addRun(run = Run(run, *lumiDict[run]))
-            for f in fileList:
+            
+            file_enum = enumurate(fileList)
+            for index, f in file_enum:
                 currentEvent = f['first_event']
                 eventsInFile = f['events']
                 runs = list(f['runs'])
@@ -112,9 +114,32 @@ class EventBased(JobFactory):
                             totalJobs    += 1
                     else:
                         self.newJob(name = self.getJobName(length=totalJobs))
+                        i = iter(fileList)
+                        map(next, [i]*(index+1))
                         self.currentJob.addFile(f)
-                        jobTime = eventsInFile * timePerEvent
-                        diskRequired = eventsInFile * sizePerEvent
+                        total_events = eventsInFile
+                        while True:
+                            try:
+                                next_file  = i.next()
+                            except StopIteration:
+                                break
+                            else:
+                                if total_events + next_file['events'] > eventsPerJob:
+                                    break
+                                index, f = file_enum.next()
+                                ## the modifications to the file from above, don't know if they are important
+                                f['runs'] = set()
+                                if getParents:
+                                    parentLFNs = self.findParent(lfn = f['lfn'])
+                                    for lfn in parentLFNs:
+                                        parent = File(lfn = lfn)
+                                        f['parents'].add(parent)
+                                ####################################################
+                                self.currentJob.addFile(f)
+                                total_events += f['events']
+                        
+                        jobTime = total_events * timePerEvent
+                        diskRequired = total_events * sizePerEvent
                         self.currentJob.addResourceEstimates(jobTime = jobTime,
                                                              memory = memoryRequirement,
                                                              disk = diskRequired)
@@ -167,16 +192,43 @@ class EventBased(JobFactory):
                     else:
                         self.newJob(name = self.getJobName(length=totalJobs))
                         self.currentJob.addFile(f)
+                        total_events = eventsInFile
+                        i = iter(fileList)
+                        map(next, [i]*(index+1))
+                        
+                        while True:
+                            try:
+                                next_file  = i.next()
+                            except StopIteration:
+                                break
+                            else:
+                                if total_events + next_file['events'] > eventsPerJob:
+                                    break
+                                index, f = file_enum.next()
+                                ## the modifications to the file from above, don't know if they are important
+                                runs = list(f['runs'])
+                                #We got the runs, clean the file.
+                                f['runs'] = set()    
+                                if getParents:
+                                    parentLFNs = self.findParent(lfn = f['lfn'])
+                                    for lfn in parentLFNs:
+                                        parent = File(lfn = lfn)
+                                        f['parents'].add(parent)
+                                ####################################################
+                                self.currentJob.addFile(f)
+                                total_events += f['events']
+                                lastLumi = max(runs[0].lumis)               
+
                         #For MC we use firstEvent instead of skipEvents so set it to 1
                         #We must check for events going over 2**32 - 1 here too
-                        if (eventsInFile + currentEvent - 1) > (2**32 - 1):
+                        if (total_events + currentEvent - 1) > (2**32 - 1):
                             currentEvent = 1
-                        self.currentJob["mask"].setMaxAndSkipEvents(eventsInFile,
+                        self.currentJob["mask"].setMaxAndSkipEvents(total_events,
                                                                     currentEvent)
                         self.currentJob["mask"].setMaxAndSkipLumis(lastLumi -
                                                         currentLumi + 1, currentLumi)
-                        jobTime = eventsInFile * timePerEvent
-                        diskRequired = eventsInFile * sizePerEvent
+                        jobTime = total_events * timePerEvent
+                        diskRequired = total_events * sizePerEvent
                         self.currentJob.addResourceEstimates(jobTime = jobTime,
                                                              memory = memoryRequirement,
                                                              disk = diskRequired)

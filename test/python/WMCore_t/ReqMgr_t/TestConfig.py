@@ -17,7 +17,7 @@ main = config.section_("main")
 srv = main.section_("server")
 srv.thread_pool = 30
 main.application = "reqmgr2"
-main.port = 8246 # main application port it listens on
+main.port = 9988 # main application port it listens on
 main.index = "ui"
 # Defaults to allow any CMS authenticated user. Write APIs should require
 # additional roles in SiteDB (i.e. "Admin" role for the "ReqMgr" group)

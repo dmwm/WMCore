@@ -34,7 +34,7 @@ class RequestManagerTest(RESTBaseUnitTest):
         self.config.setFormatter('WMCore.WebTools.RESTFormatter')
         self.config.setupRequestConfig()
         self.config.setupCouchDatabase(dbName = self.couchDBName)
-        self.config.setPort(8888)
+        self.config.setPort(8899)
         self.schemaModules = ["WMCore.RequestManager.RequestDB"]
                 
         

@@ -63,7 +63,7 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
 
         self.setFakeDN()
         
-        requestPath = os.path.join(getWMBASE(), "test", "data", "ReqMgr", "requests")
+        requestPath = os.path.join(getWMBASE(), "test", "data", "ReqMgr", "requests", "DMWM")
         rerecoFile = open(os.path.join(requestPath, "ReReco.json"), 'r')
         
         rerecoArgs = JsonWrapper.load(rerecoFile)
@@ -97,7 +97,7 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         ## test get method
         # get by name
         response = self.reqSvc.getRequestByNames(requestName)
-        self.assertEqual(response[requestName]['RequestPriority'], 1000)
+        self.assertEqual(response[requestName]['RequestPriority'], 10000)
         self.assertEqual(len(response), 1)
         
         # get by status

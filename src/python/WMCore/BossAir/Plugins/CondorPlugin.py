@@ -803,16 +803,17 @@ class CondorPlugin(BasePlugin):
         if 'taskPriority' in kwargs and 'requestPriority' in kwargs:
             # Do a priority update
             priority = (int(kwargs['requestPriority']) + int(kwargs['taskPriority'] * self.maxTaskPriority))
-            command = 'condor_qedit -constraint \'WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"\' ' %(task, workflow)
-            command += 'JobPrio %d' % priority
+            command = 'condor_qedit -constraint \'WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s" ' %(task, workflow)
+            command += '&& (JobPrio != %d)\' JobPrio %d' % (priority, priority)
             command = shlex.split(command)
             proc = subprocess.Popen(command, stderr = subprocess.PIPE,
                                     stdout = subprocess.PIPE)
             _, stderr = proc.communicate()
             if proc.returncode != 0:
                 # Check if there are actually jobs to update
-                command = 'condor_q -constraint \'WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"\' ' %(task, workflow)
-                command += '-format \'WMAgentID:\%d:::\' WMAgent_JobID'
+                command = 'condor_q -constraint \'WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"' %(task, workflow)
+                command += ' && (JobPrio != %d)\'' % priority
+                command += ' -format \'WMAgentID:\%d:::\' WMAgent_JobID'               
                 command = shlex.split(command)
                 proc = subprocess.Popen(command, stderr = subprocess.PIPE,
                                         stdout = subprocess.PIPE)

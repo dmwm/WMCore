@@ -60,7 +60,12 @@ class Requests(dict):
         if  not idict:
             idict = {}
         dict.__init__(self, idict)
-        self.pycurl = idict.get('pycurl', None)
+        try:
+            import pycurl
+            self.pycurl = True
+        except ImportError:
+            logging.debug("Not using pycurl")
+            self.pycurl = False
         self.capath = idict.get('capath', None)
         if self.pycurl:
             self.reqmgr = RequestHandler()

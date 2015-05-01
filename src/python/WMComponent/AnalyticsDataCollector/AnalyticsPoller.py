@@ -54,7 +54,8 @@ class AnalyticsPoller(BaseWorkerThread):
         # set wmagent db data
         self.wmagentDB = WMAgentDBData(self.summaryLevel, myThread.dbi, myThread.logger)
         # set the connection for local couchDB call
-        self.localSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL)
+        self.localSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL, 
+                                                 "WMStatsAgent")
         
         if hasattr(self.config, "Tier0Feeder"):
             #use local db for tier0

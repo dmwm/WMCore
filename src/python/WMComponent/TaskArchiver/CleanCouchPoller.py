@@ -39,7 +39,8 @@ class CleanCouchPoller(BaseWorkerThread):
         # set the connection for local couchDB call
         self.useReqMgrForCompletionCheck   = getattr(self.config.TaskArchiver, 'useReqMgrForCompletionCheck', True)
         self.archiveDelayHours   = getattr(self.config.TaskArchiver, 'archiveDelayHours', 0)
-        self.wmstatsCouchDB = WMStatsWriter(self.config.TaskArchiver.localWMStatsURL)
+        self.wmstatsCouchDB = WMStatsWriter(self.config.TaskArchiver.localWMStatsURL, 
+                                            "WMStatsAgent")
         
         #TODO: we might need to use local db for Tier0
         self.centralRequestDBReader = RequestDBReader(self.config.AnalyticsDataCollector.centralRequestDBURL, 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# pylint: disable-msg=W0104
+# pylint: disable=W0104
 """
 _Run_
 

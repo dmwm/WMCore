@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0102, W6501, C0301
+#pylint: disable=W0102, W6501, C0301
 # W0102: We want to pass blank lists by default
 # for the whitelist and the blacklist
 # W6501: pass information to logging using string arguments

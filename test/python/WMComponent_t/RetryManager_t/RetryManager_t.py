@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101, W0142, C0103
+#pylint: disable=E1101, W0142, C0103
 # E1101: Use configuration files
 # W0142: Use ** magic
 # C0103: Different naming conventions apply for tests

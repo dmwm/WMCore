@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W6501
+#pylint: disable=W6501
 # W6501: pass information to logging using string arguments
 """
 The actual jobArchiver algorithm

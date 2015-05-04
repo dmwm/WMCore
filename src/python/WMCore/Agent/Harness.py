@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101, W6501
+#pylint: disable=E1101, W6501
 # W6501: It doesn't like string formatting in logging messages
 """
 Harness class that wraps standard functionality used in all daemon

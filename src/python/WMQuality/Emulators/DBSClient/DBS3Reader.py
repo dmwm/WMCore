@@ -322,4 +322,4 @@ class DBS3Reader:
 
         return list(result)
 
-# pylint: enable-msg=W0613,R0201
+# pylint: enable=W0613,R0201

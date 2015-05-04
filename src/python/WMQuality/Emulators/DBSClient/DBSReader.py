@@ -36,7 +36,7 @@ class _MockDBSApi():
         return res
 
 #//     - ignore some params in dbs spec - silence pylint warnings
-# pylint: disable-msg=W0613,R0201
+# pylint: disable=W0613,R0201
 from WMQuality.Emulators.DataBlockGenerator.DataBlockGenerator import DataBlockGenerator
 
 class DBSReader:
@@ -239,4 +239,4 @@ class DBSReader:
 
         return list(result)
 
-# pylint: enable-msg=W0613,R0201
+# pylint: enable=W0613,R0201

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=C0103,R0913,W0102
+#pylint: disable=C0103,R0913,W0102
 """
 _Requests_
 

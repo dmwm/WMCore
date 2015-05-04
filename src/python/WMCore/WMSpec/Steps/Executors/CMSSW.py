@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W1201
+#pylint: disable=W1201
 # W1201: Allow string formatting in logging messages
 """
 _Step.Executor.CMSSW_

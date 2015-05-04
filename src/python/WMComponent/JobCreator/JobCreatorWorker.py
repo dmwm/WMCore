@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101, W6501, W0142, E1103, R0903, R0914
+#pylint: disable=E1101, W6501, W0142, E1103, R0903, R0914
 #E1101 doesn't allow you to define config sections using .section_()
 #W6501: Allow us to use string formatting for logging messages
 #W0142: Use ** magic
@@ -55,7 +55,7 @@ from WMComponent.JobCreator.CreateWorkArea              import CreateWorkArea
 from WMCore.Agent.Configuration import Configuration
 
 
-#pylint: disable-msg=C0103
+#pylint: disable=C0103
 # I borrowed this code from elsewhere
 # So I'm not changing it
 # See: http://code.activestate.com/recipes/286222-memory-usage/
@@ -84,7 +84,7 @@ def _VmB(VmKey):
     return float(v[1]) * _scale[v[2]]
 
 
-#pylint: enable-msg=C0103
+#pylint: enable=C0103
 
 def retrieveWMSpec(subscription):
     """

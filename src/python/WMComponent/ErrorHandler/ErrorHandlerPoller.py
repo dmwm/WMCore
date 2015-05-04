@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0613, W6501
+#pylint: disable=W0613, W6501
 # W6501: It doesn't like string formatting in logging messages
 """
 The actual error handler algorithm

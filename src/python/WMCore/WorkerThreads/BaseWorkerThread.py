@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=R0902,R0201,W0613,W0703,E1102
+#pylint: disable=R0902,R0201,W0613,W0703,E1102
 """
 _BaseWorkerThread_
 

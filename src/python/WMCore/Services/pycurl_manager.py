@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-*- coding: ISO-8859-1 -*-
-#pylint: disable-msg=R0913,W0702,R0914,R0912,R0201
+#pylint: disable=R0913,W0702,R0914,R0912,R0201
 """
 File: pycurl_manager.py
 Author: Valentin Kuznetsov <vkuznet@gmail.com>

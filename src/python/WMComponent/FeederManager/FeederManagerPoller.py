@@ -1,5 +1,5 @@
 #!/usr/bin/env
-#pylint: disable-msg=W0613
+#pylint: disable=W0613
 """
 Filesets and Feeders manager
 """

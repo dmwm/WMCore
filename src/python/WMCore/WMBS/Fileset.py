@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 #Turn off to many arguments
-#pylint: disable-msg=R0913
+#pylint: disable=R0913
 #Turn off over riding built in id
-#pylint: disable-msg=W0622
+#pylint: disable=W0622
 """
 _Fileset_
 

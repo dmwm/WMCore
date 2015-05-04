@@ -11,7 +11,7 @@ PhEDEx Emulator
 # need to clean this up at some point
 
 #//     - ignore some params in dbs spec - silence pylint warnings
-# pylint: disable-msg=W0613,R0201
+# pylint: disable=W0613,R0201
 from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
 from WMQuality.Emulators.DataBlockGenerator.DataBlockGenerator import DataBlockGenerator
 
@@ -376,4 +376,4 @@ class PhEDEx(dict):
 
     def emulator(self):
         return "PhEDEx emulator ...."
-# pylint: enable-msg=W0613,R0201
+# pylint: enable=W0613,R0201

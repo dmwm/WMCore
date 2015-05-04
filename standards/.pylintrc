@@ -35,7 +35,7 @@ include-ids=no
 # disable W0142 - Allow use of * and ** magic (which we use a lot)
 # disable W6501 - I see no reason to not use string formatting in logging...
 
-disable-msg=F0401, E1103, W0142, W6501
+disable=F0401, E1103, W0142, W6501
 
 
 # checks for :

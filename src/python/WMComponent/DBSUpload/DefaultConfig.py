@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101,E1103,C0103,R0902
+#pylint: disable=E1101,E1103,C0103,R0902
 """
 Defines default config values for DBSUpload specific
 parameters.

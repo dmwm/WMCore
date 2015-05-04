@@ -71,6 +71,7 @@ insert into test (bind1, bind2) values (:bind1, :bind2) """
         myThread.transaction.commit()
         self.testInit.clearDatabase()
 
+    @attr("integration")
     def testBFormatting(self):
         """
         Test various formats

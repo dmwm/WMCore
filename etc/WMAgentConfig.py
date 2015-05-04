@@ -200,6 +200,7 @@ config.JobSubmitter.maxThreads = 1
 config.JobSubmitter.pollInterval = 120
 config.JobSubmitter.workerThreads = 1
 config.JobSubmitter.jobsPerWorker = 100
+config.JobSubmitter.maxJobsPerPoll = 1000
 config.JobSubmitter.submitScript = os.path.join(os.environ["WMCORE_ROOT"], "etc/submit.sh")
 
 config.component_("JobTracker")

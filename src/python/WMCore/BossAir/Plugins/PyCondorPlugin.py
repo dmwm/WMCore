@@ -857,8 +857,8 @@ class PyCondorPlugin(BasePlugin):
             # Do a priority update
             priority = (int(kwargs['requestPriority']) + int(kwargs['taskPriority'] * self.maxTaskPriority))
             try:
-                sd.edit('WMAgent_JobID =!= "UNDEFINED" && WMAgent_SubTaskName == %s && WMAgent_RequestName == %s'% (classad.quote(str(task)),classad.quote(str(workflow))),
-                        "JobPrio", classad.Literal(int(priority)))
+                sd.edit('WMAgent_JobID =!= "UNDEFINED" && WMAgent_SubTaskName == %s && WMAgent_RequestName == %s && JobPrio != %d' %
+                        (classad.quote(str(task)),classad.quote(str(workflow)),classad.Literal(int(priority))), "JobPrio", classad.Literal(int(priority)))
             except:
                 msg = "Couldn\'t edit classAd to change job Priority for WMAgent_SubTaskName=%s, WMAgent_RequestName=%s " % (classad.quote(str(task)), classad.quote(str(workflow)))
                 logging.debug(msg)

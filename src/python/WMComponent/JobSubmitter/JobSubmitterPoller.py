@@ -76,6 +76,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         self.changeState = ChangeState(self.config)
         self.repollCount = getattr(self.config.JobSubmitter, 'repollCount', 10000)
+        self.maxJobsPerPoll = int(getattr(self.config.JobSubmitter, 'maxJobsPerPoll', 1000))
 
         # BossAir
         self.bossAir = BossAirAPI(config = self.config)
@@ -550,8 +551,12 @@ class JobSubmitterPoller(BaseWorkerThread):
         """
         jobsToSubmit = {}
         jobsToPrune = {}
+        jobsCount = 0
+        exitLoop = False 
 
         for siteName in self.sortedSites:
+            if exitLoop:
+                break
 
             totalPending = None
             if siteName not in self.cachedJobs:
@@ -570,6 +575,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                 logging.error(msg)
                 continue
             for threshold in self.currentRcThresholds[siteName].get('thresholds', []):
+                if exitLoop:
+                    break
                 try:
                     # Pull basic info for the threshold
                     taskType            = threshold["task_type"]
@@ -722,6 +729,9 @@ class JobSubmitterPoller(BaseWorkerThread):
 
                     # Add to jobsToSubmit
                     jobsToSubmit[package].append(jobDict)
+                    jobsCount += 1
+                    if jobsCount >= self.maxJobsPerPoll:
+                        breakLoop, exitLoop = True, True
 
                     # Deal with accounting
                     if len(possibleSites) == 1:
@@ -767,6 +777,10 @@ class JobSubmitterPoller(BaseWorkerThread):
         jobList   = []
         idList    = []
 
+        if len(jobsToSubmit) == 0:
+            logging.debug("There are no packages to submit.")
+            return
+
         for package in jobsToSubmit.keys():
 
             sandbox = self.sandboxPackage[package]
@@ -787,17 +801,22 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # Run the actual underlying submit code using bossAir
         successList, failList = self.bossAir.submit(jobs = jobList)
+        logging.info("Jobs that succeeded/failed submission: %d/%d." % (len(successList),len(failList)))
 
         # Propagate states in the WMBS database
+        logging.debug("Propagating success state to WMBS.")
         self.changeState.propagate(successList, 'executing', 'created')
+        logging.debug("Propagating fail state to WMBS.")
         self.changeState.propagate(failList, 'submitfailed', 'created')
 
         # At the end we mark the locations of the jobs
         # This applies even to failed jobs, since the location
         # could be part of the failure reason.
+        logging.debug("Updating job location...")
         self.setLocationAction.execute(bulkList = idList, conn = myThread.transaction.conn,
                                        transaction = True)
         myThread.transaction.commit()
+        logging.info("Transaction cycle successfully completed.")
 
         return
 

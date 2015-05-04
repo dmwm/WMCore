@@ -6,23 +6,16 @@ Being in itself a wrapped class around a config cache
 """
 
 
-import urllib
+import hashlib
 import logging
 import traceback
-
-
-try:
-    import hashlib
-except:
-    import md5 as hashlib
+import urllib
 
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.DataStructs.WMObject import WMObject
 
 from WMCore.WMException import WMException
 from WMCore.Database.CMSCouch import CouchNotFoundError
-
-
 from WMCore.GroupUser.Group import Group
 from WMCore.GroupUser.User  import makeUser
 

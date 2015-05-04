@@ -9,12 +9,13 @@ Always returns new/unique files.
 __all__ = []
 
 
+import random
+import time
 
-from WMCore.DataStructs.WMObject import WMObject
+from hashlib import md5
+
 from WMCore.DataStructs.File import File
 from WMCore.WMBSFeeder.FeederImpl import FeederImpl
-
-import time, random, md5
 
 def uuid( *args ):
     """
@@ -29,7 +30,7 @@ def uuid( *args ):
         # if we can't get a network address, just imagine one
         a = random.random()*100000000000000000L
     data = str(t)+' '+str(r)+' '+str(a)+' '+str(args)
-    data = md5.md5(data).hexdigest()
+    data = md5(data).hexdigest()
     return data
 
 

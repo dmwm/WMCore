@@ -99,9 +99,22 @@ class CouchFileset(Fileset):
         _add_
 
         Add files to this fileset
+
+        Note: if job was lumi based splitted, then we do not have
+        reliable events information. If job was event based splitted,
+        then we do not have reliable lumi information.
         """
         filteredFiles = []
         if mask:
+            for f in files:
+                # There is no LastEvent for last job of a file
+                if mask['LastEvent'] and mask['FirstEvent']:
+                    f['events'] = mask['LastEvent'] - mask['FirstEvent']
+                    f['first_event'] = mask['FirstEvent']
+                elif mask['FirstEvent']:
+                    f['events'] -= mask['FirstEvent']
+                    f['first_event'] = mask['FirstEvent']
+
             maskLumis = mask.getRunAndLumis()
             if maskLumis != {}:
                 # Then we actually have to do something
@@ -111,6 +124,7 @@ class CouchFileset(Fileset):
                         f['runs'] = newRuns
                         filteredFiles.append(f)
             else:
+                # Likely real data with EventBased splitting
                 filteredFiles = files
         else:
             filteredFiles = files

@@ -148,7 +148,7 @@ class DeleteFiles(Executor):
         except Alarm:
             msg = "Indefinite hang during stageOut of logArchive"
             logging.error(msg)
-        except Exception, ex:
+        except Exception as ex:
             msg = "General failure in StageOut for DeleteFiles"
             msg += str(ex)
             logging.error(msg)

@@ -67,7 +67,7 @@ class DQMUpload(Executor):
         if self.step.upload.proxy:
             try:
                 self.stepSpace.getFromSandbox(self.step.upload.proxy)
-            except Exception, ex:
+            except Exception as ex:
                 #Let it go, it wasn't in the sandbox. Then it must be
                 #somewhere else
                 pass
@@ -168,7 +168,7 @@ class DQMUpload(Executor):
                 msg += 'Detail: %s\n' % headers.get("Dqm-Status-Detail", None)
                 msg += 'Data: %s\n' % str(data)
                 logging.info(msg)
-        except urllib2.HTTPError, ex:
+        except urllib2.HTTPError as ex:
             msg = 'HTTP upload failed with response:\n'
             msg += 'Status code: %s\n' % ex.hdrs.get("Dqm-Status-Code", None)
             msg += 'Message: %s\n' % ex.hdrs.get("Dqm-Status-Message", None)
@@ -176,7 +176,7 @@ class DQMUpload(Executor):
             msg += 'Error: %s\n' % str(ex)
             logging.error(msg)
             raise WMExecutionFailure(60318, "DQMUploadFailure", msg)
-        except Exception, ex:
+        except Exception as ex:
             msg = 'HTTP upload failed with response:\n'
             msg += 'Problem unknown.\n'
             msg += 'Error: %s\n' % str(ex)

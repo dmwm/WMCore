@@ -697,7 +697,7 @@ class MiniRESTApi:
             return self._call(RESTArgs(list(args), kwargs))
         except HTTPRedirect:
             raise
-        except Exception, e:
+        except Exception as e:
             report_rest_error(e, format_exc(), True)
         finally:
             if getattr(request, 'start_time', None):
@@ -758,7 +758,7 @@ class MiniRESTApi:
             formats = apiobj.get('formats', self.formats)
             format = cherrypy.lib.cptools.accept([f[0] for f in formats])
             fmthandler = [f[1] for f in formats if f[0] == format][0]
-        except HTTPError, e:
+        except HTTPError as e:
             format_names = ', '.join(f[0] for f in formats)
             raise NotAcceptable('Available types: %s' % format_names)
 
@@ -1451,7 +1451,7 @@ class DBConnectionPool(Thread):
                 if "expires" in dbh:
                     del dbh["expires"]
                 break
-            except Exception, e:
+            except Exception as e:
                 # The connection didn't work, report and remember this exception.
                 # Note that for every exception reported for the server itself
                 # we may report up to max_tries exceptions for it first. That's
@@ -1579,7 +1579,7 @@ class DBConnectionPool(Thread):
             trace and cherrypy.log("%s RELEASED %s@%s timeout=%d inuse=%d idle=%d"
                                    % (trace, s["user"], s["dsn"], s["timeout"],
                                       len(self.inuse), len(self.idle)))
-        except Exception, e:
+        except Exception as e:
             # Something went wrong, nuke the connection from orbit.
             self._error("RELEASE", " failed to release connection", e, format_exc())
 
@@ -1615,7 +1615,7 @@ class DBConnectionPool(Thread):
             trace and cherrypy.log("%s DISCONNECTED %s@%s timeout=%d inuse=%d idle=%d"
                                    % (trace, s["user"], s["dsn"], s["timeout"],
                                       len(self.inuse), len(self.idle)))
-        except Exception, e:
+        except Exception as e:
             self._error("DISCONNECT", " (ignored)", e, format_exc())
 
 ######################################################################
@@ -1726,7 +1726,7 @@ class DatabaseRESTApi(RESTApi):
         def dbapi_wrapper(*xargs, **xkwargs):
             try:
                 return handler(*xargs, **xkwargs)
-            except Exception, e:
+            except Exception as e:
                 self._dberror(e, format_exc(), False)
         return dbapi_wrapper
 

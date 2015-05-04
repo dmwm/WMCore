@@ -167,7 +167,7 @@ class FileManager:
             # do the delete. The implementation is responsible for its own verification
             try:
                 deleteSlave.doDelete( pfn, seName, command, options, protocol  )
-            except StageOutError, ex:
+            except StageOutError as ex:
                 log.info("Delete failed in an expected manner. Exception is:")
                 log.info("%s" % str(ex))
                 log.info(traceback.format_exc())
@@ -178,7 +178,7 @@ class FileManager:
             # this makes sense because no matter what the exception, we want to keep going
             # additionally, it prints out the proper backtrace so we can diagnose issues
             # AMM - 6/30/2010
-            except Exception, ex:
+            except Exception as ex:
                 log.critical("Delete failed in an unexpected manner. Exception is:")
                 log.critical("%s" % str(ex))
                 log.info(traceback.format_exc())
@@ -332,7 +332,7 @@ class FileManager:
             try:
                 # FIXME add checksum stuff
                 newPfn = stageOutSlave.doTransfer( localFileName, pfn, stageOut, seName, command, options, protocol, None  )
-            except StageOutError, ex:
+            except StageOutError as ex:
                 log.info("Transfer failed in an expected manner. Exception is:")
                 log.info("%s" % str(ex))
                 log.info("Sleeping for %s seconds" % self.retryPauseTime)
@@ -345,7 +345,7 @@ class FileManager:
             # this makes sense because no matter what the exception, we want to keep going
             # additionally, it prints out the proper backtrace so we can diagnose issues
             # AMM - 6/30/2010
-            except Exception, ex:
+            except Exception as ex:
                 log.critical("Transfer failed in an unexpected manner. Exception is:")
                 log.critical("%s" % str(ex))
                 log.critical("Since this is an unexpected error, we are continuing to the next method")
@@ -376,7 +376,7 @@ class FileManager:
             self.info("Cleaning out file: %s\n" % lfn)
             try:
                 self.deleteLFN(lfn)
-            except StageOutFailure, ex:
+            except StageOutFailure as ex:
                 log.info("Failed to cleanup staged out file after error:")
                 log.info(" %s\n%s" % (lfn, str(ex)))
                 log.info(traceback.format_exc())

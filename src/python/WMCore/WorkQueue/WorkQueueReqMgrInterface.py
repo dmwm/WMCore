@@ -80,7 +80,7 @@ class WorkQueueReqMgrInterface():
 
         try:
             workLoads = self.getAvailableRequests(queue.params['Teams'])
-        except Exception, ex:
+        except Exception as ex:
             traceMsg = traceback.format_exc()
             msg = "Error contacting RequestManager: %s" % traceMsg
             self.logger.warning(msg)
@@ -98,7 +98,7 @@ class WorkQueueReqMgrInterface():
             try:
                 try:
                     Lexicon.couchurl(workLoadUrl)
-                except Exception, ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+                except Exception as ex: # can throw many errors e.g. AttributeError, AssertionError etc.
                     # check its not a local file
                     if not os.path.exists(workLoadUrl):
                         error = WorkQueueWMSpecError(None, "Workflow url validation error: %s" % str(ex))
@@ -106,20 +106,20 @@ class WorkQueueReqMgrInterface():
 
                 self.logger.info("Processing request %s at %s" % (reqName, workLoadUrl))
                 units = queue.queueWork(workLoadUrl, request = reqName, team = team)
-            except (WorkQueueWMSpecError, WorkQueueNoWorkError), ex:
+            except (WorkQueueWMSpecError, WorkQueueNoWorkError) as ex:
                 # fatal error - report back to ReqMgr
                 self.logger.info('Permanent failure processing request "%s": %s' % (reqName, str(ex)))
                 self.logger.info("Marking request %s as failed in ReqMgr" % reqName)
                 self.reportRequestStatus(reqName, 'Failed', message = str(ex))
                 continue
-            except (IOError, socket.error, CouchError, CouchConnectionError), ex:
+            except (IOError, socket.error, CouchError, CouchConnectionError) as ex:
                 # temporary problem - try again later
                 msg = 'Error processing request "%s": will try again later.' \
                 '\nError: "%s"' % (reqName, str(ex))
                 self.logger.info(msg)
                 self.sendMessage(reqName, msg, 'error')
                 continue
-            except Exception, ex:
+            except Exception as ex:
                 # Log exception as it isnt a communication problem
                 msg = 'Error processing request "%s": will try again later.' \
                 '\nSee log for details.\nError: "%s"' % (reqName, str(ex))
@@ -132,7 +132,7 @@ class WorkQueueReqMgrInterface():
                     self.reqMgr2.updateRequestStatus(reqName, "acquired")
                 else:
                     self.markAcquired(reqName, queue.params.get('QueueURL', 'No Queue'))
-            except Exception, ex:
+            except Exception as ex:
                 self.logger.warning("Unable to update ReqMgr state: %s" % str(ex))
                 self.logger.warning('Will try again later')
 
@@ -190,7 +190,7 @@ class WorkQueueReqMgrInterface():
                     self.reportElement(ele)
                     
                 uptodate_elements.append(ele)
-            except Exception, ex:
+            except Exception as ex:
                 msg = 'Error talking to ReqMgr about request "%s": %s'
                 traceMsg = traceback.format_exc()
                 self.logger.error(msg % (ele['RequestName'], traceMsg))
@@ -262,7 +262,7 @@ class WorkQueueReqMgrInterface():
         try:
             self.logdb.post(request, message, mtype)
             #self.logdb.upload2central(request)
-        except Exception, ex:
+        except Exception as ex:
             self.logger.error('Error sending message to logdb: %s' % str(ex))
 
     def markAcquired(self, request, url = None):
@@ -320,7 +320,7 @@ class WorkQueueReqMgrInterface():
 
         try:
             requests = self._getRequestsByTeamsAndStatus("running-open", queue.params['Teams']).keys()
-        except Exception, ex:
+        except Exception as ex:
             traceMsg = traceback.format_exc()
             msg = "Error contacting RequestManager: %s" % traceMsg
             self.logger.warning(msg)
@@ -330,21 +330,21 @@ class WorkQueueReqMgrInterface():
             try:
                 self.logger.info("Processing request %s" % (reqName))
                 units = queue.addWork(requestName = reqName)
-            except (WorkQueueWMSpecError, WorkQueueNoWorkError), ex:
+            except (WorkQueueWMSpecError, WorkQueueNoWorkError) as ex:
                 # fatal error - but at least it was split the first time. Log and skip.
                 msg = 'Error adding further work to request "%s". Will try again later' \
                 '\nError: "%s"' % (reqName, str(ex))
                 self.logger.info(msg)
                 self.sendMessage(reqName, msg, 'error')
                 continue
-            except (IOError, socket.error, CouchError, CouchConnectionError), ex:
+            except (IOError, socket.error, CouchError, CouchConnectionError) as ex:
                 # temporary problem - try again later
                 msg = 'Error processing request "%s": will try again later.' \
                 '\nError: "%s"' % (reqName, str(ex))
                 self.logger.info(msg)
                 self.sendMessage(reqName, msg, 'error')
                 continue
-            except Exception, ex:
+            except Exception as ex:
                 # Log exception as it isnt a communication problem
                 msg = 'Error processing request "%s": will try again later.' \
                 '\nSee log for details.\nError: "%s"' % (reqName, str(ex))

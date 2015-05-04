@@ -85,7 +85,7 @@ class DCCPFNALImpl(StageOutImpl):
             print "Check dir existence : %s" %checkdircmd
             try:
                 (checkdirexitCode, output) = commands.getstatusoutput(checkdircmd)
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Warning: Exception while invoking command:\n"
                 msg += "%s\n" % checkdircmd
                 msg += "Exception: %s\n" % str(ex)
@@ -97,7 +97,7 @@ class DCCPFNALImpl(StageOutImpl):
                 print "=> creating the dir : %s" %mkdircmd
                 try:
                     self.executeCommand(mkdircmd)
-                except Exception, ex:
+                except Exception as ex:
                     msg = "Warning: Exception while invoking command:\n"
                     msg += "%s\n" % mkdircmd
                     msg += "Exception: %s\n" % str(ex)

@@ -185,7 +185,7 @@ filesetId = fileset.id, feederType = feederId, \
             feeder = factory.loadObject( classname = "Feeder", getFromCache = False )
             feeder(fileset)
 
-        except Exception,e :
+        except Exception as e :
 
             msg = "Feeder plugin \'%s\' unknown" \
               % (fileset.name).split(":")[1]

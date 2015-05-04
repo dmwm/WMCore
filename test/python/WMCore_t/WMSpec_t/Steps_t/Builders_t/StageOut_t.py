@@ -25,7 +25,7 @@ class StageOutTest(unittest.TestCase):
 
         try:
             self.testBuilder = StepFactory.getStepBuilder("StageOut")
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failed to instantiate Builder:\n"
             msg += str(ex)
             self.fail(msg)

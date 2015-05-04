@@ -159,7 +159,7 @@ class ResourceControlUpdater(BaseWorkerThread):
             
             logging.info("Resource update is completed, waiting for the next cycle.\n")
             
-        except Exception, ex:
+        except Exception as ex:
             logging.error("Error occurred, will retry later:")
             logging.error(str(ex))
             logging.error("Trace back: \n%s" % traceback.format_exc())
@@ -174,7 +174,7 @@ class ResourceControlUpdater(BaseWorkerThread):
         try:
             agentsByTeam = self.centralCouchDBReader.agentsByTeam()
             return agentsByTeam
-        except Exception, ex:
+        except Exception as ex:
             logging.error("WMStats is not available or is unresponsive. Don't divide thresholds by team")
             return agentsByTeam
 

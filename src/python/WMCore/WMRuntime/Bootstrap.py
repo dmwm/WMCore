@@ -117,7 +117,7 @@ def locateWMSandbox():
     """
     try:
         import WMSandbox
-    except ImportError, ex:
+    except ImportError as ex:
         msg = "Error importing WMSandbox module"
         msg += str(ex)
         raise BootstrapException(msg)
@@ -142,7 +142,7 @@ def loadJobDefinition():
     packageLoc = os.path.join(sandboxLoc, "JobPackage.pcl")
     try:
         package.load(packageLoc)
-    except Exception, ex:
+    except Exception as ex:
         msg = "Failed to load JobPackage:%s\n" % packageLoc
         msg += str(ex)
         createErrorReport(exitCode = 11001, errorType = "JobPackageError", errorDetails = msg)
@@ -150,7 +150,7 @@ def loadJobDefinition():
 
     try:
         import WMSandbox.JobIndex
-    except ImportError, ex:
+    except ImportError as ex:
         msg = "Failed to import WMSandbox.JobIndex module\n"
         msg += str(ex)
         createErrorReport(exitCode = 11002, errorType = "JobIndexError", errorDetails = msg)
@@ -160,7 +160,7 @@ def loadJobDefinition():
 
     try:
         job = package[index]
-    except Exception, ex:
+    except Exception as ex:
         msg = "Failed to extract Job %i\n" % (index)
         msg += str(ex)
         createErrorReport(exitCode = 11003, errorType = "JobExtractionError", errorDetails = msg)
@@ -203,13 +203,13 @@ def loadTask(job):
 
     try:
         task = workload.getTaskByPath(job['task'])
-    except KeyError, ex:
+    except KeyError as ex:
         msg =  "Task name not in job object"
         msg += str(ex)
         createErrorReport(exitCode = 11103, errorType = "TaskNotInJob", errorDetails = msg,
                           logLocation = "Report.%i.pkl" % job['retry_count'])
         raise BootstrapException, msg
-    except Exception, ex:
+    except Exception as ex:
         msg = "Error looking up task %s\n" % job['task']
         msg += str(ex)
         createErrorReport(exitCode = 11101, errorType = "TaskLookupError", errorDetails = msg,
@@ -326,7 +326,7 @@ def setupLogging(logDir):
 
         myThread = threading.currentThread()
         myThread.logger = logging.getLogger()
-    except Exception, ex:
+    except Exception as ex:
         msg = "Error setting up logging in dir %s:\n" % logDir
         msg += str(ex)
         raise BootstrapException, msg
@@ -344,7 +344,7 @@ def setupMonitoring(logPath):
         myThread = threading.currentThread
         myThread.watchdogMonitor = monitor
         return monitor
-    except Exception, ex:
+    except Exception as ex:
         msg = "Error setting up Watchdog monitoring:\n"
         msg += str(ex)
         raise BootstrapException, msg

@@ -23,7 +23,7 @@ class StepFactoryTest(unittest.TestCase):
         """template"""
         try:
             cmssw = StepFactory.getStepTemplate("CMSSW")
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error loading Step Template of Type CMSSW\n"
             msg += str(ex)
             self.fail(msg)
@@ -41,7 +41,7 @@ class StepFactoryTest(unittest.TestCase):
         """builder"""
         try:
             cmssw = StepFactory.getStepBuilder("CMSSW")
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error loading Step Builder of Type CMSSW\n"
             msg += str(ex)
             self.fail(msg)
@@ -59,7 +59,7 @@ class StepFactoryTest(unittest.TestCase):
         """executor"""
         try:
             cmssw = StepFactory.getStepExecutor("CMSSW")
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error loading Step Executor of Type CMSSW\n"
             msg += str(ex)
             self.fail(msg)
@@ -77,7 +77,7 @@ class StepFactoryTest(unittest.TestCase):
         """emulator"""
         try:
             cmssw = StepFactory.getStepEmulator("CMSSW")
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error loading Step Emulator of Type CMSSW\n"
             msg += str(ex)
             self.fail(msg)

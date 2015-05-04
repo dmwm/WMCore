@@ -147,12 +147,12 @@ class LogArchive(Executor):
             self.report.addError(self.stepName, 60404, "LogArchiveTimeout", msg)
             self.report.persist("Report.pkl")
             raise WMExecutionFailure(60404, "LogArchiveTimeout", msg)
-        except WMException, ex:
+        except WMException as ex:
             self.report.addError(self.stepName, 60307, "LogArchiveFailure", str(ex))
             self.report.setStepStatus(self.stepName, 0)
             self.report.persist("Report.pkl")
             raise ex
-        except Exception, ex:
+        except Exception as ex:
             self.report.addError(self.stepName, 60405, "LogArchiveFailure", str(ex))
             self.report.setStepStatus(self.stepName, 0)
             self.report.persist("Report.pkl")

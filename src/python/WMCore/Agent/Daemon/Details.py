@@ -125,5 +125,5 @@ class Details(dict):
         newLocation = os.path.join(path, newFile)
         try:
             shutil.move(self.daemonXmlFile, newLocation)
-        except Exception,ex:
+        except Exception as ex:
             print('Move failed. Remove manual: '+str(ex))

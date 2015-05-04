@@ -23,7 +23,7 @@ class WMTweakTest(unittest.TestCase):
 
         try:
             tweak = WMTweaks.TweakMaker()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failed to instantiate WMTweak:\n"
             msg += str(ex)
             self.fail(msg)

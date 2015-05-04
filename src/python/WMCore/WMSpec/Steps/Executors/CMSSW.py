@@ -116,7 +116,7 @@ class CMSSW(Executor):
         #
         try:
             os.environ['FRONTIER_ID'] = 'wmagent_%s' % (self.report.data.workload)
-        except Exception, ex:
+        except Exception as ex:
             logging.error('Have critical error in setting FRONTIER_ID: %s' % str(ex))
             logging.error('Continuing, as this is not a critical function yet.')
             pass
@@ -135,7 +135,7 @@ class CMSSW(Executor):
         logging.info("Runing SCRAM")
         try:
             projectOutcome = scram.project()
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Exception raised while running scram.\n"
             msg += str(ex)
             logging.critical("Error running SCRAM")
@@ -247,7 +247,7 @@ class CMSSW(Executor):
 
         try:
             self.report.parse(jobReportXML, stepName = self.stepName)
-        except Exception, ex:
+        except Exception as ex:
             # Catch it if something goes wrong
             raise WMExecutionFailure(50115, "BadJobReportXML", str(ex))
 

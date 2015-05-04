@@ -19,7 +19,7 @@ class Service_t(unittest.TestCase):
 
         try:
             s = Service()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failed to instantiate Service: %s" % str(ex)
             self.fail(msg)
 

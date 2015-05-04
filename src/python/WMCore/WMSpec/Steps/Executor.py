@@ -34,7 +34,7 @@ def getStepSpace(stepName):
             #taskspace = __import__(modName, globals(), locals(), ['taskSpace'], -1)
             taskspace = __import__(modName, globals(), locals(), ['taskSpace'])
 
-        except ImportError, ex:
+        except ImportError as ex:
             msg = "Unable to load WMTaskSpace module:\n"
             msg += str(ex)
             #TODO: Generic ExecutionException...
@@ -42,7 +42,7 @@ def getStepSpace(stepName):
 
     try:
         stepSpace = taskspace.taskSpace.stepSpace(stepName)
-    except Exception, ex:
+    except Exception as ex:
         msg = "Error retrieving stepSpace from TaskSpace:\n"
         msg += str(ex)
         raise RuntimeError, msg

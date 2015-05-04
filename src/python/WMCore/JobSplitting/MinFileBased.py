@@ -33,7 +33,7 @@ class MinFileBased(JobFactory):
         fileset = self.subscription.getFileset()
         try:
             fileset.load()
-        except AttributeError, ae:
+        except AttributeError as ae:
             pass
 
         #Get a dictionary of sites, files

@@ -160,7 +160,7 @@ class CleanUpManager:
             msg = "Trivial File Catalog has been loaded:\n"
             msg += str(self.tfc)
             print msg
-        except StandardError, ex:
+        except StandardError as ex:
             msg = "Unable to load Trivial File Catalog:\n"
             msg += "Clean Up will not be attempted\n"
             msg += str(ex)
@@ -196,7 +196,7 @@ class CleanUpManager:
                 print "Deleting File: %s" % deleteFile
                 self.invokeCleanUp(deleteFile)
                 self.success.append(deleteFile)
-            except CleanUpFailure, ex:
+            except CleanUpFailure as ex:
 
                 self.failed.append(deleteFile)
 
@@ -243,7 +243,7 @@ class CleanUpManager:
         try:
 
             implInstance = retrieveStageOutImpl(self.implName)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error retrieving Stage Out Impl for name: "
             msg += "%s\n" % self.implName
             msg += str(ex)
@@ -269,7 +269,7 @@ class CleanUpManager:
         try:
 
             implInstance.removeFile(pfn)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error performing Cleanup command for impl "
             msg += "%s\n" % self.implName
             msg += "On PFN: %s\n" % pfn
@@ -355,7 +355,7 @@ def cleanUp():
 
         config = state._RunResDB.toDictionary()[state.taskAttrs['Name']]
 
-    except StandardError, ex:
+    except StandardError as ex:
         msg = "Unable to load details from task directory:\n"
         msg += "Error reading RunResDB XML file:\n"
         msg += "%s\n" % state.runresdb

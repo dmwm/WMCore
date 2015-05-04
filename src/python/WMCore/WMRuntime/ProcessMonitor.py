@@ -75,7 +75,7 @@ class ChildProcess(object):
                 sys.stdout.flush()
                 sys.stderr.flush()
                 os._exit( exitCode )
-            except Exception, e:
+            except Exception as e:
                 print "Something bad happened in ChildProcess.forkAndExecute in the child: %s" % e
                 os._exit(99)
 

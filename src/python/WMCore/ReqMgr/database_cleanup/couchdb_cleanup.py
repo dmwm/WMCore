@@ -52,7 +52,7 @@ def main():
         print "Response: %s" % resp.status
         try:
             data = json.loads(resp.read())
-        except Exception, ex:
+        except Exception as ex:
             print "Reason: %s, %s" % (resp.reason, ex)
             sys.exit(1)
         if resp.status != 200:

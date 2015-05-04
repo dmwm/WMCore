@@ -86,7 +86,7 @@ def handleSoft(targets, config):
                 # it into dispatcher or later in __call__ undesirably catches StopIteration
                 try:
                     target.send(alertBuffer)
-                except Exception, ex:
+                except Exception as ex:
                     trace = traceback.format_exception(*sys.exc_info())
                     traceString = '\n '.join(trace)
                     m = ("Sending alerts failed (soft) on %s, reason: %s\n%s" %
@@ -112,7 +112,7 @@ def handleCritical(targets, config):
             try:
                 # sink's send() method expects list of Alert instances
                 target.send([alert])
-            except Exception, ex:
+            except Exception as ex:
                 trace = traceback.format_exception(*sys.exc_info())
                 traceString = '\n '.join(trace)
                 m = ("Sending alerts failed (critical) on %s, reason: %s\n%s" %
@@ -135,7 +135,7 @@ class Processor(object):
             sinkInstance = None
             try:
                 sinkInstance = sinkClass(sinkConfig)
-            except Exception, ex:
+            except Exception as ex:
                 trace = traceback.format_exception(*sys.exc_info())
                 traceString = '\n '.join(trace)
                 m = ("Instantiating sink '%s' failed, reason: %s\n"

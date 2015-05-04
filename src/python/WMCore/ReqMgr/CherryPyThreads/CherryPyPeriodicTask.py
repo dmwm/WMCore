@@ -72,7 +72,7 @@ class PeriodicWorker(Thread):
             self.wakeUp.acquire()
             try:
                 self.taskFunc(self.config)
-            except Exception, e:
+            except Exception as e:
                 cherrypy.log("Periodic Thread ERROR %s.%s %s"
                 % (getattr(e, "__module__", "__builtins__"),
                 e.__class__.__name__, str(e)))
@@ -94,7 +94,7 @@ class SequentialTaskBase(object):
         for call in self._callSequence:
             try:
                 call(config)
-            except Exception, ex:
+            except Exception as ex:
                 #log the excpeiotn and break. 
                 #SequencialTasks are interconnected between functions  
                 print (str(ex))

@@ -138,7 +138,7 @@ class ProcessPool:
                 self.sender.bind("tcp://*:%s" % inPort)
                 self.sink = context.socket(zmq.PULL)
                 self.sink.bind("tcp://*:%s" % outPort)
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Error attempting to open TCP sockets\n"
                 msg += str(ex)
                 logging.error(msg)
@@ -216,7 +216,7 @@ class ProcessPool:
             try:
                 encodedWork = self.jsonHandler.encode('STOP')
                 self.sender.send(encodedWork)
-            except Exception, ex:
+            except Exception as ex:
                 # Might be already failed.  Nothing you can
                 # really do about that.
                 logging.error("Failure killing running process: %s" % str(ex))
@@ -237,10 +237,10 @@ class ProcessPool:
         for worker in self.workers:
             try:
                 worker.join()
-            except Exception, ex:
+            except Exception as ex:
                 try:
                     worker.terminate()
-                except Exception, ex2:
+                except Exception as ex2:
                     logging.error("Failure to join or terminate process")
                     logging.error(str(ex))
                     logging.error(str(ex2))
@@ -306,7 +306,7 @@ class ProcessPool:
                 completedWork.append(decode)
                 self.runningWork -= 1
                 totalItems -= 1
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Exception while getting slave outputin ProcessPool.\n"
                 msg += str(ex)
                 logging.error(msg)
@@ -425,7 +425,7 @@ if __name__ == "__main__":
 
         try:
             input = jsonHandler.decode(encodedInput)
-        except Exception, ex:
+        except Exception as ex:
             logging.error("Error decoding: %s" % str(ex))
             break
 
@@ -435,7 +435,7 @@ if __name__ == "__main__":
         try:
             logging.error(input)
             output = slaveClass(input)
-        except Exception, ex:
+        except Exception as ex:
             crashMessage = "Slave process crashed with exception: " + str(ex)
             crashMessage += "\nStacktrace:\n"
 
@@ -450,7 +450,7 @@ if __name__ == "__main__":
                 sender.send(encodedOutput)
                 logging.error("Sent error message and now breaking")
                 break
-            except Exception, ex:
+            except Exception as ex:
                 logging.error("Failed to send error message")
                 logging.error(str(ex))
                 del jsonHandler

@@ -102,7 +102,7 @@ class StageInMgr:
             self.tfc = self.siteCfg.trivialFileCatalog()
             msg += "Trivial File Catalog has been loaded:\n"
             msg += str(self.tfc)
-        except StandardError, ex:
+        except StandardError as ex:
             msg = "Unable to load Trivial File Catalog:\n"
             msg += "Local stage out will not be attempted\n"
             msg += str(ex)
@@ -131,7 +131,7 @@ class StageInMgr:
             overrideParams['command'] = overrideConf['command']
             overrideParams['se-name'] = overrideConf['se-name']
             overrideParams['lfn-prefix'] = overrideConf['lfn-prefix']
-        except StandardError, ex:
+        except StandardError as ex:
             msg = "Unable to extract Override parameters from config:\n"
             msg += str(overrideConf)
             raise StageOutInitError(msg)
@@ -174,7 +174,7 @@ class StageInMgr:
                     pfn = self.localStageIn(lfn)
                     fileToStage['PFN'] = pfn
                     raise StageInSuccess
-                except StageOutFailure, ex:
+                except StageOutFailure as ex:
                     msg = "===> Local Stage Out Failure for file:\n"
                     msg += "======>  %s\n" % fileToStage['LFN']
                     msg += str(ex)
@@ -188,7 +188,7 @@ class StageInMgr:
                     pfn = self.localStageIn(lfn, fallback)
                     fileToStage['PFN'] = pfn
                     raise StageInSuccess
-                except StageOutFailure, ex:
+                except StageOutFailure as ex:
                     continue
 
         except StageInSuccess:
@@ -238,7 +238,7 @@ class StageInMgr:
 
         try:
             impl = retrieveStageOutImpl(command, stagein=True)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Unable to retrieve impl for local stage in:\n"
             msg += "Error retrieving StageOutImpl for command named: %s\n" % (
                 command,)
@@ -249,7 +249,7 @@ class StageInMgr:
 
         try:
             impl(protocol, pfn, localPfn, options)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failure for local stage in:\n"
             msg += str(ex)
             raise StageOutFailure(msg, Command = command, Protocol = protocol,

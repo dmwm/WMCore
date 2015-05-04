@@ -289,7 +289,7 @@ class DBSBlock:
                 junk, primary, processed, tier = datasetName.split('/')
             else:
                 primary, processed, tier = datasetName.split('/')
-        except Exception, ex:
+        except Exception as ex:
             msg = "Invalid dataset name %s" % datasetName
             logging.error(msg)
             raise DBSBlockException(msg)

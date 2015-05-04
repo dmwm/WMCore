@@ -39,5 +39,5 @@ class WorkQueueManagerLocationPoller(BaseWorkerThread):
         self.queue.logger.info("Updating data locations")
         try:
             self.queue.updateLocationInfo()
-        except Exception, ex:
+        except Exception as ex:
             self.queue.logger.error("Error updating locations: %s" % str(ex))

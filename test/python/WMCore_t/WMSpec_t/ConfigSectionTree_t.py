@@ -19,14 +19,14 @@ class ConfigSectionTreeTest(unittest.TestCase):
         """instantiation"""
         try:
             cst = ConfigSectionTree("node1")
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error instantiating ConfigSectionTree:\n"
             msg += str(ex)
             self.fail(msg)
 
         try:
             helper = TreeHelper(cst)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error instantiating TreeHelper:\n"
             msg += str(ex)
             self.fail(msg)

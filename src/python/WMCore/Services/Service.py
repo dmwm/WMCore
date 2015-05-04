@@ -143,7 +143,7 @@ class Service(dict):
         # Instantiate a Request
         try:
             self["requests"] = requests(cfg_dict['endpoint'], cfg_dict)
-        except WMException, ex:
+        except WMException as ex:
             msg = str(ex)
             self["logger"].exception(msg)
             raise
@@ -299,7 +299,7 @@ class Service(dict):
                     f.close()
 
 
-        except (IOError, HttpLib2Error, HTTPException), he:
+        except (IOError, HttpLib2Error, HTTPException) as he:
             #
             # Overly complicated exception handling. This is due to a request
             # from *Ops that it is very clear that data is is being returned

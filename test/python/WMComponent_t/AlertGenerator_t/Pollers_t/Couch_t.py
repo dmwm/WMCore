@@ -42,7 +42,7 @@ class CouchTest(unittest.TestCase):
         config = getConfig("/tmp")
         try:
             poller = CouchDbSizePoller(config.AlertGenerator.couchDbSizePoller, self.generator)
-        except Exception, ex:
+        except Exception as ex:
             self.fail("%s: exception: %s" % (self.testName, ex))
         poller.check() # -> on real system dir may result in permission denied
         poller._dbDirectory = "/dev"
@@ -113,7 +113,7 @@ class CouchTest(unittest.TestCase):
         try:
             poller = CouchPoller(self.config.AlertGenerator.bogusCouchPoller,
                                  self.generator)
-        except Exception, ex:
+        except Exception as ex:
             self.fail("%s: exception: %s" % (self.testName, ex))
         # this class would not have defined polling sample function, give it one
         poller.sample = lambda proc: float(12)
@@ -234,7 +234,7 @@ class CouchTest(unittest.TestCase):
     def testAlertGeneratorCouchErrorsPollerBasic(self):
         try:
             poller = CouchErrorsPoller(self.config.AlertGenerator.couchErrorsPoller, self.generator)
-        except Exception, ex:
+        except Exception as ex:
             self.fail("Exception, reason: %s" % ex)
 
         # even a single values to observe shall be turned into particular iterables
@@ -242,7 +242,7 @@ class CouchTest(unittest.TestCase):
         self.config.AlertGenerator.couchErrorsPoller.observables = 400
         try:
             poller = CouchErrorsPoller(self.config.AlertGenerator.couchErrorsPoller, self.generator)
-        except Exception, ex:
+        except Exception as ex:
             self.fail("Exception, reason: %s" % ex)
         #self.assertTrue(isinstance(obs, (types.ListType, types.TupleType)))
         self.assertTrue(isinstance(self.config.AlertGenerator.couchErrorsPoller.observables,

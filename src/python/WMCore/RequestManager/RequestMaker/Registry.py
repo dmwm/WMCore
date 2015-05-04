@@ -83,7 +83,7 @@ def buildWorkloadForRequest(typename, schema):
         except ImportError:
             msg =  "Spec type %s not found in WMCore.WMSpec.StdSpecs" % typename
             raise RuntimeError, msg
-        except AttributeError, ex:
+        except AttributeError as ex:
             msg = "Factory not found in Spec for type %s" % typename
             raise RuntimeError, msg
         _Registry._Factories[typename] = factoryInstance
@@ -135,7 +135,7 @@ def loadRequestSchema(workload, requestSchema):
             value = JsonWrapper.dumps(value)
         try:            
             setattr(schema, key, value)
-        except Exception, ex:
+        except Exception as ex:
             # Attach TaskChain tasks
             if type(value) == dict and requestSchema['RequestType'] == 'TaskChain' and 'Task' in key:
                 newSec = schema.section_(key)
@@ -144,7 +144,7 @@ def loadRequestSchema(workload, requestSchema):
                         value = JsonWrapper.dumps(value)
                     try:
                         setattr(newSec, k, v)
-                    except Exception, ex:
+                    except Exception as ex:
                         # this logging need to change to cherry py logging
                         logging.error("Invalid Value: %s" % str(ex))
             else:

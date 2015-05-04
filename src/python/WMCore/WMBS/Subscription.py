@@ -243,7 +243,7 @@ class Subscription(WMBSBase, WMSubscription):
 
         try:
             self.commitTransaction(existingTransaction)
-        except Exception, ex:
+        except Exception as ex:
             print "Found exception %s" % (ex)
             logging.error("Exception found in commiting " \
                           + "acquireFiles transaction: %s" % (ex))

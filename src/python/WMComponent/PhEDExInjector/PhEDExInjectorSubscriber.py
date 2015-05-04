@@ -178,7 +178,7 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
                 msg += "Move: %s, Custodial: %s, Request Only: %s" % (subscription.move, subscription.custodial, subscription.request_only)
                 logging.info(msg)
                 self.phedex.subscribe(subscription, xmlData)
-            except Exception, ex:
+            except Exception as ex:
                 logging.error("Something went wrong when communicating with PhEDEx, will try again later.")
                 logging.error("Exception: %s" % str(ex))
             else:

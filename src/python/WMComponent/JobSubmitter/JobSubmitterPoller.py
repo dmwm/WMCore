@@ -108,7 +108,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
             if not os.path.exists(self.packageDir):
                 os.makedirs(self.packageDir)
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Error while trying to create packageDir %s\n!"
             msg += str(ex)
             logging.error(msg)
@@ -281,7 +281,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 jobHandle = open(pickledJobPath, "r")
                 loadedJob = cPickle.load(jobHandle)
                 jobHandle.close()
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Error while loading pickled job object %s\n" % pickledJobPath
                 msg += str(ex)
                 logging.error(msg)
@@ -478,7 +478,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             try:
                 job['fwjr'].save(fwjrPath)
                 fwjrBinds.append({"jobid" : job["id"], "fwjrpath" : fwjrPath})
-            except IOError, ioer:
+            except IOError as ioer:
                 logging.error("Failed to write FWJR for submit failed job %d, message: %s" % (job['id'], str(ioer)))
         self.changeState.propagate(badJobs, "submitfailed", "created")
         self.setFWJRPathAction.execute(binds = fwjrBinds)
@@ -573,7 +573,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 totalRunning        = self.currentRcThresholds[siteName]["total_running_jobs"]
                 totalPending        = self.currentRcThresholds[siteName]["total_pending_jobs"]
                 state               = self.currentRcThresholds[siteName]["state"]
-            except KeyError, ex:
+            except KeyError as ex:
                 msg =  "Had invalid site info %s\n" % siteName['thresholds']
                 msg += str(ex)
                 logging.error(msg)
@@ -587,7 +587,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                     taskRunning         = threshold["task_running_jobs"]
                     taskPending         = threshold["task_pending_jobs"]
                     taskPriority        = threshold["priority"]
-                except KeyError, ex:
+                except KeyError as ex:
                     msg =  "Had invalid threshold %s\n" % threshold
                     msg += str(ex)
                     logging.error(msg)
@@ -848,7 +848,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             if getattr(myThread, 'transaction', None) != None:
                 myThread.transaction.rollback()
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg = 'Fatal error in JobSubmitter:\n'
             msg += str(ex)
             #msg += str(traceback.format_exc())

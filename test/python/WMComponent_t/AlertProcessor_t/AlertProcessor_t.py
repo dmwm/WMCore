@@ -56,7 +56,7 @@ class AlertProcessorTest(unittest.TestCase):
             # alertProcessor.startDaemon() no good for this either ... puts everything
             # on background
             alertProcessor.prepareToStart()
-        except Exception, ex:
+        except Exception as ex:
             print ex
             self.fail(str(ex))
 
@@ -66,7 +66,7 @@ class AlertProcessorTest(unittest.TestCase):
         # stop via component method
         try:
             alertProcessor.stopAlertProcessor()
-        except Exception, ex:
+        except Exception as ex:
             print ex
             self.fail(str(ex))
 

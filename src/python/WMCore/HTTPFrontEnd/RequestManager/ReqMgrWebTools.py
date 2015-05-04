@@ -71,7 +71,7 @@ def allScramArchsAndVersions():
     try:
         f = urllib.urlopen(TAG_COLLECTOR_URL)
         domDoc   = parseDOM(f)
-    except ExpatError, ex:
+    except ExpatError as ex:
         logging.error("Could not connect to tag collector!")
         logging.error("Not changing anything!")
         return {}
@@ -365,7 +365,7 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
     try:
         request = buildWorkloadForRequest(typename = reqSchema["RequestType"], 
                                           schema = reqSchema)
-    except WMSpecFactoryException, ex:
+    except WMSpecFactoryException as ex:
         logging.error(traceback.format_exc())
         raise HTTPError(400, "Error in Workload Validation: %s" % ex.message())
     
@@ -400,7 +400,7 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
     request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
     try:
         CheckIn.checkIn(request, reqSchema['RequestType'])
-    except CheckIn.RequestCheckInError, ex:
+    except CheckIn.RequestCheckInError as ex:
         raise HTTPError(400, "Error in Request check-in: %s" % str(ex))
         
     # Inconsistent request parameters between Oracle and Couch (#4380, #4388)
@@ -594,6 +594,6 @@ def parseBlockList(l):
     for block in result:
         try:
             WMCore.Lexicon.block(candidate = block)
-        except AssertionError, ex:
+        except AssertionError as ex:
             raise cherrypy.HTTPError(400, "Block in blockList has invalid name")
     return result

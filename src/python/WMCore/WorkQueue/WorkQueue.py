@@ -104,7 +104,7 @@ class WorkQueue(WorkQueueBase):
                 else:
                     self.parent_queue = WorkQueueBackend(self.params['ParentQueueCouchUrl'].rsplit('/', 1)[0],
                                                          self.params['ParentQueueCouchUrl'].rsplit('/', 1)[1])
-            except IndexError, ex:
+            except IndexError as ex:
                 # Probable cause: Someone didn't put the global WorkQueue name in
                 # the ParentCouchUrl
                 msg =  "Parsing failure for ParentQueueCouchUrl - probably missing dbname in input\n"
@@ -496,7 +496,7 @@ class WorkQueue(WorkQueueBase):
                         myThread.logger = self.logger
                         killWorkflow(workflow, self.params["JobDumpConfig"],
                                      self.params["BossAirConfig"])
-                    except Exception, ex:
+                    except Exception as ex:
                         self.logger.error('Aborting %s wmbs subscription failed: %s' % (workflow, str(ex)))
                         badWfsCancel.append(workflow)
                         self.logger.error('It will be retried in the next loop')
@@ -574,7 +574,7 @@ class WorkQueue(WorkQueueBase):
         if request: # validate request name
             try:
                 Lexicon.requestName(request)
-            except Exception, ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+            except Exception as ex: # can throw many errors e.g. AttributeError, AssertionError etc.
                 error = WorkQueueWMSpecError(wmspec, "Request name validation error: %s" % str(ex))
                 raise error
             if request != wmspec.name():
@@ -808,12 +808,12 @@ class WorkQueue(WorkQueueBase):
             try:
                 self.backend.updateInboxElements(*workflowsToClose, OpenForNewData = False)
                 msg = 'Closed workflows : %s.\n' % ', '.join(workflows)
-            except CouchInternalServerError, ex:
+            except CouchInternalServerError as ex:
                 msg = 'Failed to close workflows. Error was CouchInternalServerError.'
                 self.logger.error(msg)
                 self.logger.error('Error message: %s' % str(ex))
                 raise
-            except Exception, ex:
+            except Exception as ex:
                 msg = 'Failed to close workflows. Generic exception caught.'
                 self.logger.error(msg)
                 self.logger.error('Error message: %s' % str(ex))
@@ -894,7 +894,7 @@ class WorkQueue(WorkQueueBase):
                     if not updated_elements and (float(parent.updatetime) + self.params['stuckElementAlertTime']) < time.time():
                         self.sendAlert(5, msg = 'Element for %s stuck for 24 hours.' % wf)
                     [self.backend.updateElements(x.id, **x.statusMetrics()) for x in updated_elements]
-            except Exception, ex:
+            except Exception as ex:
                 self.logger.error('Error processing workflow "%s": %s' % (wf, str(ex)))
 
         msg = 'Finished elements: %s\nCanceled workflows: %s' % (', '.join(["%s (%s)" % (x.id, x['RequestName']) \
@@ -1015,11 +1015,11 @@ class WorkQueue(WorkQueueBase):
                             # add the total work on wmstat summary or add the recently split work
                             reqmgrSvc = ReqMgr(self.params.get('ReqMgrServiceURL'))
                             reqmgrSvc.updateRequestStats(inbound['WMSpec'].name(), totalStats)
-                        except HTTPException, httpEx:
+                        except HTTPException as httpEx:
                             msg = "status: %s, reason: %s" % (httpEx.status, httpEx.reason)
                             self.logger.error('Error publishing %s to Request Mgr for %s: %s' % (totalStats,
                                                                         inbound['RequestName'], msg))
-                        except Exception, ex:
+                        except Exception as ex:
                             self.logger.error('Error publishing %s to Request Mgr for %s: %s' % (totalStats,
                                                                         inbound['RequestName'], str(ex)))
                     
@@ -1030,22 +1030,22 @@ class WorkQueue(WorkQueueBase):
                             # add the total work on wmstat summary or add the recently split work
                             wmstatSvc = WMStatsWriter(self.params.get('WMStatsCouchUrl'))
                             wmstatSvc.insertTotalStats(inbound['WMSpec'].name(), totalStats)
-                        except HTTPException, httpEx:
+                        except HTTPException as httpEx:
                             msg = "status: %s, reason: %s" % (httpEx.status, httpEx.reason)
                             self.logger.error('Error publishing %s to Request Mgr for %s: %s' % (totalStats,
                                                                         inbound['RequestName'], msg))
-                        except Exception, ex:
+                        except Exception as ex:
                             self.logger.error('Error publishing %s to WMStats for %s: %s' % (totalStats,
                                                                             inbound['RequestName'], str(ex)))
 
-            except TERMINAL_EXCEPTIONS, ex:
+            except TERMINAL_EXCEPTIONS as ex:
                 if not continuous:
                     # Only fail on first splitting
                     self.logger.info('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))
                     self.backend.updateInboxElements(inbound.id, Status = 'Failed')
                     if throw:
                         raise
-            except Exception, ex:
+            except Exception as ex:
                 if continuous:
                     continue
                 # if request has been failing for too long permanently fail it.

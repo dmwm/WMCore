@@ -44,7 +44,7 @@ class WebRequestSchema(WebAPI):
         server = WMCore.Database.CMSCouch.CouchServer(self.couchUrl)
         try:
             database = server.connectDatabase(self.configDBName)
-        except CouchUnauthorisedError, ex:
+        except CouchUnauthorisedError as ex:
             # We can't talk to couch...it's not authorized
             raise cherrypy.HTTPError(400, "Couch has raised an authorisation error on pulling allDocs!")
         docs = database.allDocs()

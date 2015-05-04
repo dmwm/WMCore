@@ -109,7 +109,7 @@ class ConfigCache(WMObject):
                 self.createDatabase()
 
             self.database = self.couchdb.connectDatabase(self.dbname)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error connecting to couch: %s\n" % str(ex)
             msg += str(traceback.format_exc())
             logging.error(msg)
@@ -223,7 +223,7 @@ class ConfigCache(WMObject):
             commitResults = rawResults[-1]
             self.document["_rev"] = commitResults.get('rev')
             self.document["_id"]  = commitResults.get('id')
-        except KeyError, ex:
+        except KeyError as ex:
             msg  = "Document returned from couch without ID or Revision\n"
             msg += "Document probably bad\n"
             msg += str(ex)
@@ -291,13 +291,13 @@ class ConfigCache(WMObject):
                 # Then we need to load the attachments
                 for key in self.document['_attachments'].keys():
                     self.loadAttachment(name = key)
-        except CouchNotFoundError, ex:
+        except CouchNotFoundError as ex:
             msg =  "Document with id %s not found in couch\n" % (configID)
             msg += str(ex)
             msg += str(traceback.format_exc())
             logging.error(msg)
             raise ConfigCacheException(message = msg)
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Error loading document from couch\n"
             msg += str(ex)
             msg += str(traceback.format_exc())
@@ -428,7 +428,7 @@ class ConfigCache(WMObject):
             raise ConfigCacheException("Could not find process field in PSet while getting output modules!")
         try:
             outputModuleNames = psetTweaks["process"]["outputModules_"]
-        except KeyError, ex:
+        except KeyError as ex:
             msg =  "Could not find outputModules_ in psetTweaks['process'] while getting output modules.\n"
             msg += str(ex)
             logging.error(msg)
@@ -512,7 +512,7 @@ class ConfigCache(WMObject):
         try:
             self.database.queueDelete(self.document)
             self.database.commit()
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Error in deleting document from couch"
             msg += str(ex)
             msg += str(traceback.format_exc())
@@ -567,14 +567,14 @@ class ConfigCache(WMObject):
             #TODO: need to change to DataCache
             #self.loadDocument(configID = configID)
             self.loadByID(configID = configID)
-        except Exception, ex:
+        except Exception as ex:
             raise ConfigCacheException("Failure to load ConfigCache while validating workload: %s" % str(ex))
         
         if self.detail:
             duplicateCheck = {}
             try:
                 outputModuleInfo = self.getOutputModuleInfo()
-            except Exception, ex:
+            except Exception as ex:
                 # Something's gone wrong with trying to open the configCache
                 msg = "Error in getting output modules from ConfigCache during workload validation.  Check ConfigCache formatting!"
                 raise ConfigCacheException("%s: %s" % (msg, str(ex)))

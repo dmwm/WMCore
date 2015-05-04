@@ -56,14 +56,14 @@ class RESTFormatter(TemplatedPage):
 
         try:
             response_data = self.supporttypes[datatype](data)
-        except HTTPError, h:
+        except HTTPError as h:
             # This won't be triggered with a default formatter, but could be by a subclass
             response.status = h[0]
             expires=0
             response_data = self.supporttypes[datatype]({'exception': h[0],
                                                 'type': 'HTTPError',
                                                 'message': h[1]}, expires=0)
-        except Exception, e:
+        except Exception as e:
             response.status = 500
             expires=0
             response_data = self.supporttypes[datatype]({'exception': 500,

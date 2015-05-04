@@ -457,7 +457,7 @@ class BossAirAPI(WMConnectionBase):
                     failureJobs.append(job.buildWMBSJob())
             except WMException:
                 raise
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Unhandled exception while submitting jobs to plugin: %s\n" % plugin
                 msg += str(ex)
                 logging.error(msg)
@@ -471,7 +471,7 @@ class BossAirAPI(WMConnectionBase):
             self.createNewJobs(wmbsJobs = successJobs)
         except WMException:
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Unhandled error in creation of %i new jobs.\n" % len(successJobs)
             msg += str(ex)
             logging.error(msg)
@@ -548,7 +548,7 @@ class BossAirAPI(WMConnectionBase):
                                                                                             plugin))
             except WMException:
                 raise
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Unhandled exception while tracking jobs for plugin %s!\n" % plugin
                 msg += str(ex)
                 logging.error(msg)
@@ -601,7 +601,7 @@ class BossAirAPI(WMConnectionBase):
                 self.plugins[plugin].complete(jobsToComplete[plugin])
         except WMException:
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Exception while completing jobs!\n"
             msg += str(ex)
             logging.error(msg)
@@ -723,11 +723,11 @@ class BossAirAPI(WMConnectionBase):
                         errorReport.addError("JobKilled", errorCode, "JobKilled", reportedMsg)
                         try:
                             errorReport.save(filename = reportName)
-                        except IOError, ioe:
+                        except IOError as ioe:
                             logging.warning('Cannot write report %s because of %s' % (reportName, ioe))
                 except WMException:
                     raise
-                except Exception, ex:
+                except Exception as ex:
                     msg =  "Unhandled exception while calling kill method for plugin %s\n" % plugin
                     msg += str(ex)
                     logging.error(msg)
@@ -791,7 +791,7 @@ class BossAirAPI(WMConnectionBase):
                 pluginInst.updateJobInformation(workflow, task, **kwargs)
             except WMException:
                 raise
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Unhandled exception while calling update method for plugin %s\n" % plugin
                 msg += str(ex)
                 logging.error(msg)
@@ -814,7 +814,7 @@ class BossAirAPI(WMConnectionBase):
                     jobkill.extend(tempjoblist)
             except WMException:
                 raise
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Unhandled exception while calling update method for plugin %s\n" % plugin
                 msg += str(ex)
                 logging.error(msg)

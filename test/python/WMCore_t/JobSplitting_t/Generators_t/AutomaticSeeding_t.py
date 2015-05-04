@@ -23,7 +23,7 @@ class AutomaticSeeding_tTests(unittest.TestCase):
         """test creating the plugin"""
         try:
             seeder = AutomaticSeeding()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failed to instantiate an AutomaticSeeder: "
             msg += str(ex)
             self.fail(msg)

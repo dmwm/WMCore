@@ -79,7 +79,7 @@ def createRequest(hnUser, groupName, requestName, requestType, workflowName,
             workflow = workflowName,
             prep_id = prep_id,
             requestPriority = requestPriority)
-    except Exception, ex:
+    except Exception as ex:
         msg = "Unable to create request named %s\n" % requestName
         msg += str(ex)
         raise RuntimeError, msg
@@ -159,7 +159,7 @@ def associateSoftware(requestName, softwareName):
 
     try:
         softwareAssoc.execute(reqId, swId[0])
-    except Exception, ex:
+    except Exception as ex:
         msg = "Unable to associate software to request\n"
         msg += "request: %s software: %s " % (requestName, softwareName)
         raise RuntimeError, msg

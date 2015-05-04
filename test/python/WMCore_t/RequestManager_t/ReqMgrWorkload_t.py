@@ -128,7 +128,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         raises = False
         try:
             self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
             self.assertTrue("Error in Workload Validation: Argument GlobalTag is required." in ex.result)
@@ -139,7 +139,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         raises = False
         try:
             self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
             print ex.result
@@ -150,7 +150,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         del schema['ConfigCacheID']
         try:
             self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
             self.assertTrue("rror in Workload Validation: Argument ConfigCacheID is required." in ex.result)
@@ -165,7 +165,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         raises = False
         try:
             self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
             self.assertTrue("Error in Workload Validation: "
@@ -180,7 +180,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
 
         try:
             result = self.jsonSender.put('request/testRequest', schema)
-        except Exception,ex:
+        except Exception as ex:
             raise
 
         self.assertEqual(result[1], 200)
@@ -210,7 +210,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
         self.assertTrue(raises)
@@ -247,7 +247,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
             self.assertTrue("Error in Workload Validation: Argument StepOneConfigCacheID is required." in ex.result)
@@ -259,7 +259,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
             self.assertTrue("Failure to load ConfigCache while validating workload" in ex.result)
@@ -298,7 +298,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
             print ex.result
@@ -420,7 +420,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
             print ex.result
@@ -433,7 +433,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
             self.assertTrue("Failure to load ConfigCache while validating workload" in ex.result)
@@ -479,7 +479,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
             self.assertTrue("Error in Workload Validation: Argument ConfigCacheID can't be None" in ex.result)
@@ -493,7 +493,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
         self.assertTrue(raises)
@@ -505,7 +505,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
             # until exception handling is redone (New REST API)
@@ -556,7 +556,7 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
             self.assertTrue("Error in Workload Validation: Argument InitialTaskPath is required." in ex.result)

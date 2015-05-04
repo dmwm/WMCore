@@ -20,7 +20,7 @@ class WMBuilderTest(unittest.TestCase):
         """instantiation"""
         try:
             self.testBuilder = Builder()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failed to instantiate Builder:\n"
             msg += str(ex)
             self.fail(msg)

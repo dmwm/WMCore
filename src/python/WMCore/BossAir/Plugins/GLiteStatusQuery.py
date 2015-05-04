@@ -242,7 +242,7 @@ class GLiteStatusQuery(object):
 
                 jobIds[jobSchedId] = job
 
-            except Exception, err :
+            except Exception as err :
                 errors.append(
                     "skipping " + jobId + " : " +  str(err) )
 
@@ -327,7 +327,7 @@ class GLiteStatusQuery(object):
 
                 self.st = self.st + 1
 
-            except Exception, err :
+            except Exception as err :
                 errors.append("skipping " + bulkId + " : " +  str(err))
 
 
@@ -354,7 +354,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:],
                                    "", ["help", "parentId=", "jobId="])
-    except getopt.GetoptError, err:
+    except getopt.GetoptError as err:
         print usage()
         sys.exit(1)
 

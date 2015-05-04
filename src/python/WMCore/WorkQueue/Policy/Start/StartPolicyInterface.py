@@ -45,7 +45,7 @@ class StartPolicyInterface(PolicyInterface):
         """Common validation stuff"""
         try:
             Lexicon.requestName(self.wmspec.name())
-        except Exception, ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+        except Exception as ex: # can throw many errors e.g. AttributeError, AssertionError etc.
             error = WorkQueueWMSpecError(self.wmspec, "Workflow name validation error: %s" % str(ex))
             raise error
 
@@ -55,7 +55,7 @@ class StartPolicyInterface(PolicyInterface):
                 raise error
             try:
                 [Lexicon.cmsname(site) for site in self.initialTask.siteWhitelist()]
-            except Exception, ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+            except Exception as ex: # can throw many errors e.g. AttributeError, AssertionError etc.
                 error = WorkQueueWMSpecError(self.wmspec, "Site whitelist validation error: %s" % str(ex))
                 raise error
 
@@ -65,7 +65,7 @@ class StartPolicyInterface(PolicyInterface):
                 raise error
             try:
                 [Lexicon.cmsname(site) for site in self.initialTask.siteBlacklist()]
-            except Exception, ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+            except Exception as ex: # can throw many errors e.g. AttributeError, AssertionError etc.
                 error = WorkQueueWMSpecError(self.wmspec, "Site blacklist validation error: %s" % str(ex))
                 raise error
 
@@ -81,7 +81,7 @@ class StartPolicyInterface(PolicyInterface):
         try:
             if self.initialTask.getInputDatasetPath():
                 Lexicon.dataset(self.initialTask.getInputDatasetPath())
-        except Exception, ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+        except Exception as ex: # can throw many errors e.g. AttributeError, AssertionError etc.
             error = WorkQueueWMSpecError(self.wmspec, "Dataset validation error: %s" % str(ex))
             raise error
 
@@ -91,7 +91,7 @@ class StartPolicyInterface(PolicyInterface):
             for dbsUrl in pileupDatasets:
                 for dataset in pileupDatasets[dbsUrl]:
                     Lexicon.dataset(dataset)
-        except Exception, ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+        except Exception as ex: # can throw many errors e.g. AttributeError, AssertionError etc.
             error = WorkQueueWMSpecError(self.wmspec, "Pileup dataset validation error: %s" % str(ex))
             raise error
 
@@ -140,15 +140,15 @@ class StartPolicyInterface(PolicyInterface):
                 self.pileupData = self.getDatasetLocations(pileupDatasets)
             self.split()
         # For known exceptions raise custom error that will fail the workflow.
-        except DbsConfigurationError, ex:
+        except DbsConfigurationError as ex:
             # A dbs configuration error implies the spec is invalid
             error = WorkQueueWMSpecError(self.wmspec, "DBS config error: %s" % str(ex))
             raise error
-        except AssertionError, ex:
+        except AssertionError as ex:
             # Assertion generally means validation of an input field failed
             error = WorkQueueWMSpecError(self.wmspec, "Assertion error: %s" % str(ex))
             raise error
-        except DBSReaderError, ex:
+        except DBSReaderError as ex:
             # Hacky way of identifying non-existant data, DbsBadRequest chomped by DBSReader
             # DbsConnectionError: Database exception,Invalid parameters thrown by Summary api
             if 'DbsBadRequest' in str(ex) or 'Invalid parameters' in str(ex):

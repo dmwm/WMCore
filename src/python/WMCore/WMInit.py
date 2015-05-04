@@ -199,7 +199,7 @@ class WMInit:
         # Actually run a transaction and delete the DB
         try:
             destroyDAO.execute()
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Critical error while attempting to delete entire DB!\n"
             msg += str(ex)
             msg += str(traceback.format_exc())

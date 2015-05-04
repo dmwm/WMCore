@@ -183,7 +183,7 @@ class AccountantWorker(WMConnectionBase):
 
         try:
             jobReport.load(jobReportPath)
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Error loading jobReport %s\n" % jobReportPath
             msg += str(ex)
             logging.error(msg)
@@ -502,7 +502,7 @@ class AccountantWorker(WMConnectionBase):
             if jobType == "LogCollect":
                 try:
                     self.associateLogCollectToParentJobsInWMStats(fwkJobReport, fwjrFile["lfn"], fwkJobReport.getTaskName())
-                except Exception, ex:
+                except Exception as ex:
                     bookKeepingSuccess = False
                     logging.error("Error occurred: associating log collect location, will try again\n %s" % str(ex))
                     break
@@ -676,7 +676,7 @@ class AccountantWorker(WMConnectionBase):
                                                'assocID': assocID})
                 except WMException:
                     raise
-                except Exception, ex:
+                except Exception as ex:
                     msg =  "Unhandled exception while inserting datasetAlgo: %s\n" % datasetAlgoPath
                     msg += str(ex)
                     logging.error(msg)
@@ -751,7 +751,7 @@ class AccountantWorker(WMConnectionBase):
                                            transaction = self.existingTransaction())
         except WMException:
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Got exception while inserting files into DBSBuffer!\n"
             msg += str(ex)
             logging.error(msg)
@@ -841,7 +841,7 @@ class AccountantWorker(WMConnectionBase):
 
         except WMException:
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Error while adding files to WMBS!\n"
             msg += str(ex)
             logging.error(msg)
@@ -908,7 +908,7 @@ class AccountantWorker(WMConnectionBase):
                                             transaction = self.existingTransaction())
             except WMException:
                 raise
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Error while trying to handle the DBS LFN heritage\n"
                 msg += str(ex)
                 msg += "BindList: %s" % bindList

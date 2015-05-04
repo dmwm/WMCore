@@ -289,7 +289,7 @@ class PhEDEx(Service):
                                 result[dsname].update(nodes)
                             if block['name'] in items:
                                 result[block['name']].update(nodes)
-            except Exception, ex:
+            except Exception as ex:
                 logging.error('Error looking up phedex subscription for %s: %s' % (dsname, str(ex)))
         return result
 

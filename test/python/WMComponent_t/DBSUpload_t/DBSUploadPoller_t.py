@@ -297,7 +297,7 @@ class DBSUploadTest(unittest.TestCase):
         try:
             listDatasetFiles(apiRef = localAPI,
                              datasetPath = '/%s/%s_2/%s' % (name, name, tier))
-        except Exception, ex:
+        except Exception as ex:
             flag = True
         self.assertTrue(flag)
 
@@ -330,7 +330,7 @@ class DBSUploadTest(unittest.TestCase):
         try:
             listDatasetFiles(apiRef = localAPI,
                              datasetPath = '/%s/%s_2/%s' % (name, name, tier))
-        except Exception, ex:
+        except Exception as ex:
             flag = True
         self.assertTrue(flag)
 
@@ -347,7 +347,7 @@ class DBSUploadTest(unittest.TestCase):
         try:
             result = listDatasetFiles(apiRef = localAPI,
                                       datasetPath = '/%s/%s_2/%s' % (name, name, tier))
-        except Exception, ex:
+        except Exception as ex:
             flag = True
         self.assertFalse(flag)
 
@@ -475,7 +475,7 @@ class DBSUploadTest(unittest.TestCase):
 
         try:
             testDBSUpload.algorithm()
-        except Exception, ex:
+        except Exception as ex:
             pass
 
         # Aborting in step two should result in no results
@@ -488,7 +488,7 @@ class DBSUploadTest(unittest.TestCase):
 
         try:
             testDBSUpload.algorithm()
-        except Exception, ex:
+        except Exception as ex:
             pass
 
 

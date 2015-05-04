@@ -187,7 +187,7 @@ class LumiBased(JobFactory):
                 logging.info('Creating jobs for ACDC fileset %s' % filesetName)
                 dcs = DataCollectionService(couchURL, couchDB)
                 goodRunList = dcs.getLumiWhitelist(collectionName, filesetName, owner, group)
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Exception while trying to load goodRunList\n"
                 if ignoreACDC:
                     msg += "Ditching goodRunList\n"

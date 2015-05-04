@@ -84,7 +84,7 @@ for blockName in blocks.keys():
     blockFiles = []
     try:
         dbsFiles = dbsApi.listFileArray(blockName = blockName)
-    except Exception, ex:
+    except Exception as ex:
         dbsFiles = []
         
     for dbsFile in dbsFiles:

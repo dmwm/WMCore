@@ -131,7 +131,7 @@ def runUnpacker(sandbox, package, jobIndex, jobname):
         jobArea = createWorkArea(sandbox)
         installPackage(jobArea, package, jobIndex)
         #sys.exit(0)
-    except Exception, ex:
+    except Exception as ex:
         msg = "Unable to create job area for bootstrap\n"
         msg += str(ex)
         msg += str(traceback.format_exc())
@@ -145,7 +145,7 @@ if __name__ == '__main__':
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "", options.keys())
-    except getopt.GetoptError, ex:
+    except getopt.GetoptError as ex:
         msg = "Error processing commandline args:\n"
         msg += str(ex)
         print msg

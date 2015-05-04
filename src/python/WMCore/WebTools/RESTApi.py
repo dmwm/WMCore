@@ -104,7 +104,7 @@ class RESTApi(WebAPI):
             return self._formatResponse(data, expires,
                                        kwargs.get('return_type', None))
 
-        except HTTPError, h:
+        except HTTPError as h:
             # If something raises an HTTPError assume it's something that should
             # go to the client
             response.status = h[0]
@@ -116,7 +116,7 @@ class RESTApi(WebAPI):
                                         'type': 'HTTPError',
                                         'message': h[1]}, expires=0,
                                         format=kwargs.get('return_type', None))
-        except Exception, e:
+        except Exception as e:
             # If something raises a generic exception assume the details are private
             # and should not go to the client
             response.status = 500

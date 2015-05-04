@@ -81,17 +81,17 @@ class JobUpdaterPoller(BaseWorkerThread):
             logging.info("Synchronizing priorities with ReqMgr...")
             self.synchronizeJobPriority()
             logging.info("Priorities were synchronized, wait until the next cycle")
-        except CouchConnectionError, ex:
+        except CouchConnectionError as ex:
             msg = "Caught CouchConnectionError exception in JobUpdater\n"
             msg += "transactions postponed until the next polling cycle\n"
             msg += str(ex)
             logging.exception(msg)
-        except CouchConflictError, ex:
+        except CouchConflictError as ex:
             msg = "Caught CouchConflictError exception in JobUpdater\n"
             msg += "transactions postponed until the next polling cycle\n"
             msg += str(ex)
             logging.exception(msg)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Caught unexpected exception in JobUpdater\n"
             msg += str(ex)
             msg += str(traceback.format_exc())
@@ -116,7 +116,7 @@ class JobUpdaterPoller(BaseWorkerThread):
             if workflow not in priorityCache:
                 try:
                     priorityCache[workflow] = self.reqmgr2.getRequestByNames(workflow)[workflow]['RequestPriority']
-                except Exception, ex:
+                except Exception as ex:
                     logging.error("Couldn't retrieve the priority of request %s" % workflow)
                     logging.error("Error: %s" % ex)
                     continue
@@ -135,7 +135,7 @@ class JobUpdaterPoller(BaseWorkerThread):
             if workflow not in priorityCache:
                 try:
                     priorityCache[workflow] = self.reqmgr2.getRequestByNames(workflow)[workflow]['RequestPriority']
-                except Exception, ex:
+                except Exception as ex:
                     logging.error("Couldn't retrieve the priority of request %s" % workflow)
                     logging.error("Error: %s" % ex)
                     continue

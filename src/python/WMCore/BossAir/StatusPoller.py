@@ -63,12 +63,12 @@ class StatusPoller(BaseWorkerThread):
         myThread = threading.currentThread()
         try:
             self.checkStatus()
-        except WMException, ex:
+        except WMException as ex:
             if getattr(myThread, 'transaction', None):
                 myThread.transaction.rollbackForError()
             self.sendAlert(6, msg = str(ex))
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Unhandled error in statusPoller"
             msg += str(ex)
             logging.exception(msg)

@@ -107,6 +107,6 @@ class Create(DBCreator):
         try:
             DBCreator.execute(self, conn, transaction)
             return True
-        except Exception, e:
+        except Exception as e:
             print "ERROR: %s" % e
             return False

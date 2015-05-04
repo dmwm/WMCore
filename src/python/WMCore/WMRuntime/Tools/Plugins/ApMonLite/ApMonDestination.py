@@ -55,7 +55,7 @@ class ApMonDestination(dict):
                 self.udpSocket = socket.socket(socket.AF_INET,
                                                socket.SOCK_DGRAM)
 
-            except StandardError, ex:
+            except StandardError as ex:
                 msg = "Error in ApMonDestination.connect:\n"
                 msg += "Unable to create UDP Socket:\n"
                 msg += str(ex)
@@ -93,7 +93,7 @@ class ApMonDestination(dict):
         """
         try:
             udpPacket = self.makeUDPPacket(**params)
-        except StandardError, ex:
+        except StandardError as ex:
             msg = "StandardError creating UDP Packet:\n"
             msg += str(ex)
             raise ApMonException(msg, Destination = str(self))
@@ -194,9 +194,9 @@ class ApMonDestination(dict):
         returnValue = 0
         try:
             self.udpSocket.sendto(bufferContent, (self['Host'], self['Port']))
-        except StandardError, ex:
+        except StandardError as ex:
             returnValue = 1
-        except Exception, ex:
+        except Exception as ex:
             returnValue = 2
         if openedSocket:
             self.disconnect()

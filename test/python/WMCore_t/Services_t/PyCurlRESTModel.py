@@ -51,7 +51,7 @@ class PyCurlRESTModel(RESTModel):
             f = open('UploadedFile.txt', 'wt')
             f.write( file1.file.read() )
             f.close()
-        except Exception,e:
+        except Exception as e:
             logging.exception(e)
 
         return {'result':'Success'}

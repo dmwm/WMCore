@@ -66,7 +66,7 @@ class MigrationToGlobal:
         try:
             toDelete = {'migration_rqst_id': migration['id']}
             self.dbsApi.removeMigration(toDelete)
-        except Exception, ex:
+        except Exception as ex:
             print 'There was something wrong when migrating %s' % migration['dataset']
             print 'Exception: '+str(ex)+'/n'
             print 'Traceback: '+str(traceback.format_exc())
@@ -137,7 +137,7 @@ class MigrationToGlobal:
                 # Report submitting
                 print "Migration submitted: Request %s" % migration_request_id
             
-            except Exception, ex:
+            except Exception as ex:
                 print 'Exception: '+str(ex)+'/n'
                 print 'Traceback: '+str(traceback.format_exc())
                 

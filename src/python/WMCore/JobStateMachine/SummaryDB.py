@@ -175,7 +175,7 @@ def updateSummaryDB(sumdb, document):
                                     useBody = True)
         #TODO: check response whether update successfull or not
         return True
-    except Exception, ex:
+    except Exception as ex:
         import traceback
         logging.error("Error fetching summary doc %s: %s" % (
                                     sum_doc['_id'], traceback.format_exc()))

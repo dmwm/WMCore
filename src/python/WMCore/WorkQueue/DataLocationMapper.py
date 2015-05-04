@@ -29,7 +29,7 @@ def isGlobalDBS(dbs):
         if info and info.get('InstanceName') == 'GLOBAL':
             return True
         return False
-    except Exception, ex:
+    except Exception as ex:
         # determin whether this is dbs3
         dbs.dbs.serverinfo()
         
@@ -123,7 +123,7 @@ class DataLocationMapper():
                             result[dataItem].update(nodes)
                         else:
                             result[block['name']].update(nodes)
-                except Exception, ex:
+                except Exception as ex:
                     logging.error('Error getting block location from phedex for %s: %s' % (dataItem, str(ex)))
         else:
             raise RuntimeError, "shouldn't get here"
@@ -146,7 +146,7 @@ class DataLocationMapper():
                     seNames = dbs.listFileBlockLocation(item, dbsOnly = True)
                 for se in seNames:
                     result[item].update(self.sitedb.seToCMSName(se))
-            except Exception, ex:
+            except Exception as ex:
                 logging.error('Error getting block location from dbs for %s: %s' % (item, str(ex)))
 
         # convert the sets to lists

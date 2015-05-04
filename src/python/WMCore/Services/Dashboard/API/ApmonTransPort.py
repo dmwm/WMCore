@@ -55,7 +55,7 @@ class ApmonTransPort:
         """
         try:
             params.items()
-        except AttributeError, ex:
+        except AttributeError as ex:
             msg = "ApmonTransPort: Unable to sendAll the params, use _dict_ - "
             msg += str(ex)
             print msg

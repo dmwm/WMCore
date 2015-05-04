@@ -87,7 +87,7 @@ class HarnessTest(unittest.TestCase):
         errorMsg = ''
         try:
             testComponent.handleMessage('NonExistingMessageType','')
-        except Exception,ex:
+        except Exception as ex:
             errorMsg = str(ex)
         self.assertTrue(errorMsg.startswith('Message NonExistingMessageType with payload'))
 

@@ -197,7 +197,7 @@ class Request(RESTEntity):
                 else:
                     self._validateRequestBase(param, safe, validate_request_create_args)    
                     
-        except Exception, ex:
+        except Exception as ex:
             #TODO add proper error message instead of trace back
             msg = traceback.format_exc()
             cherrypy.log("Error: %s" % msg)
@@ -365,7 +365,7 @@ class Request(RESTEntity):
             if len(request_args) > 1 or "RequestStatus" not in request_args:
                 try:
                     workload.updateArguments(request_args)
-                except Exception, ex:
+                except Exception as ex:
                     msg = traceback.format_exc()
                     cherrypy.log("Error for request args %s: %s" % (request_args, msg))
                     raise InvalidSpecParameterValue(str(ex))
@@ -390,7 +390,7 @@ class Request(RESTEntity):
         cherrypy.log("INFO: Deleting request document '%s' ..." % request_name)
         try:
             self.reqmgr_db.delete_doc(request_name)
-        except CouchError, ex:
+        except CouchError as ex:
             msg = "ERROR: Delete failed."
             cherrypy.log(msg + " Reason: %s" % ex)
             raise cherrypy.HTTPError(404, msg)        

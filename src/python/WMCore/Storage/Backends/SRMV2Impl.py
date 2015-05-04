@@ -79,7 +79,7 @@ class SRMV2Impl(StageOutImpl):
                     raise RuntimeError, "Error checking directory existence, %s" % str(output)
                 if not output.count('SRM_FAILURE'): # any other codes?
                     break
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Warning: Exception while invoking command:\n"
                 msg += "%s\n" % checkdircmd + dir
                 msg += "Exception: %s\n" % str(ex)
@@ -95,7 +95,7 @@ class SRMV2Impl(StageOutImpl):
                 exitCode, output = self.run(mkdircommand + dir)
                 if exitCode:
                     raise RuntimeError, "Error creating directory, %s" % str(output)
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Warning: Exception while invoking command:\n"
                 msg += "%s\n" % mkdircommand + dir
                 msg += "Exception: %s\n" % str(ex)

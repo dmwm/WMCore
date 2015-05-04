@@ -220,7 +220,7 @@ class ApMon:
         try:
             self.__udpSocket.sendto(buffer, (host, port))
             self.logger.debug("Packet sent to "+host+":"+str(port)+" "+passwd)
-        except socket.error, msg:
+        except socket.error as msg:
             self.logger.error("Cannot send packet to "+host+":"+str(port)+" "+passwd+": "+str(msg[1]))
         xdrPacker.reset()
         paramsPacker.reset()
@@ -252,7 +252,7 @@ class ApMon:
             self.__packFunctions[typeValue] (xdrPacker, value)
             self.logger.debug("Adding parameter "+str(name)+" = "+str(value))
             return True
-        except Exception, ex:
+        except Exception as ex:
             self.logger.debug("Error packing %s = %s; got %s" % (name, str(value), ex))
             return False
 
@@ -347,7 +347,7 @@ class ApMon:
         port = int(port)
         try:
             host = socket.gethostbyname(host) # convert hostnames to IP addresses to avoid suffocating DNSs
-        except socket.error, msg:
+        except socket.error as msg:
             self.logger.error("Error resolving "+host+": "+str(msg))
             return
         for h, p, w in tempDestinations.keys():

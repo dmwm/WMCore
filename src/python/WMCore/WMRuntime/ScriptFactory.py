@@ -43,10 +43,10 @@ def getScript(scriptName):
     """
     try:
         return _ScriptFactory.loadObject(scriptName)
-    except WMException, wmEx:
+    except WMException as wmEx:
         msg = "ScriptFactory Unable to load Object: %s" % scriptName
         raise ScriptFactoryException(msg)
-    except Exception, ex:
+    except Exception as ex:
         msg = "Error creating object %s in ScriptFactory:\n" % scriptName
         msg += str(ex)
         raise ScriptFactoryException(msg)

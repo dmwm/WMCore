@@ -173,7 +173,7 @@ class JSONThunker:
                 tempDict[thunktype] = self._thunk(toThunk.__dict__)
                 self.unrecurse(toThunk)
                 return tempDict
-            except Exception, e:
+            except Exception as e:
                 tempDict = {'json_thunk_exception_' : "%s" % e }
                 self.unrecurse(toThunk)
                 return tempDict
@@ -317,12 +317,12 @@ class JSONThunker:
                         try:
                             value.__class__ = getattr(ourClass, name).__class__
                             #print "changed the class to %s " % value.__class__
-                        except Exception, ex:
+                        except Exception as ex:
                             #print "Except1 in requests %s " % ex
                             try:
                                 #value = _EmptyClass()
                                 value.__class__ = ourClass
-                            except Exception, ex2:
+                            except Exception as ex2:
                                 #print "Except2 in requests %s " % ex2
                                 #print type(ourClass)
                                 try:
